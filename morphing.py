@@ -1311,6 +1311,7 @@ class DAZ_OT_RenameCategory(DazPropsOperator, CustomEnums, CategoryString, IsMes
         cat = rig.DazMorphCats[self.custom]
         cat.name = self.category
 
+
 def removeFromPropGroup(pgs, prop):
     idxs = []
     for n,item in enumerate(pgs):
@@ -1319,6 +1320,14 @@ def removeFromPropGroup(pgs, prop):
     idxs.reverse()
     for n in idxs:
         pgs.remove(n)
+
+
+def removeFromAllMorphsets(rig, prop):
+    for morphset in theStandardMorphSets:
+        pgs = getattr(rig, "Daz" + morphset)
+        removeFromPropGroup(pgs, prop)
+    for cat in rig.DazMorphCats.values():
+        removeFromPropGroup(cat.morphs, prop)
 
 #------------------------------------------------------------------------
 #   Remove category
@@ -2179,20 +2188,11 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
     def handleShapekey(self, sname, rig, ob):
         skey = ob.data.shape_keys.key_blocks[sname]
         skey.driver_remove("value")
-        rig = ob.parent
-        if rig and rig.type == 'ARMATURE':
-            final = finalProp(sname)
-            rig.data.driver_remove(propRef(final))
-            if final in rig.data.keys():
-                del rig.data[final]
-            if sname in rig.keys():
-                del rig[sname]
-
+        removeShapeDriversAndProps(ob.parent, sname)
 
     def includeShapekey(self, skeys, sname):
         from .driver import getShapekeyDriver
         return getShapekeyDriver(skeys, sname)
-
 
     def getCategory(self, rig, ob, sname):
         if rig is None:
@@ -2202,6 +2202,17 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
                 if sname == morph.name:
                     return cat.name
         return ""
+
+
+def removeShapeDriversAndProps(rig, sname):
+    if rig and rig.type == 'ARMATURE':
+        final = finalProp(sname)
+        rig.data.driver_remove(propRef(final))
+        if final in rig.data.keys():
+            del rig.data[final]
+        if sname in rig.keys():
+            del rig[sname]
+        removeFromAllMorphsets(rig, sname)
 
 #-------------------------------------------------------------
 #

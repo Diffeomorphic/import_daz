@@ -825,15 +825,15 @@ class DAZ_OT_MixShapekeys(DazOperator):
             skey.data[n].co = co
         if self.delete:
             if skey2:
-                self.deleteShape(ob, skeys, shape2)
+                self.deleteShape(ob, skeys, skey2, shape2)
             if not self.overwrite:
-                self.deleteShape(ob, skeys, shape1)
+                self.deleteShape(ob, skeys, skey1, shape1)
 
 
-    def deleteShape(self, ob, skeys, sname):
-        if skeys.animation_data:
-            path = 'key_blocks["%s"].value' % sname
-            skeys.driver_remove(path)
+    def deleteShape(self, ob, skeys, skey, sname):
+        from .morphing import removeShapeDriversAndProps
+        skey.driver_remove("value")
+        removeShapeDriversAndProps(ob.parent, sname)
         updateDrivers(skeys)
         idx = skeys.key_blocks.keys().index(sname)
         ob.active_shape_key_index = idx
