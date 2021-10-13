@@ -758,7 +758,14 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
 
                     if (bname == "@selection" or
                         bname in self.KnownRigs):
-                        if self.affectObject != 'NONE':
+                        master = self.getMasterBone(rig)
+                        if self.affectObject == 'NONE':
+                            pass
+                        elif (self.affectObject == 'MASTER' and
+                              master and
+                              master in rig.pose.bones.keys()):
+                            self.transformBone(rig, master, tfm, value, n, offset, False)
+                        else:
                             tfm.setRna(rig)
                             if self.useInsertKeys:
                                 tfm.insertKeys(rig, None, n+offset, rig.name, self.driven)
