@@ -170,21 +170,24 @@ class MorphGroup:
     morphset : StringProperty(default = "")
     category : StringProperty(default = "")
     prefix : StringProperty(default = "")
-    filterType : IntProperty(default = 0)
+    ftype : StringProperty(default = "")
 
-    def init(self, morphset, category, prefix, filterType):
+    def init(self, morphset, category, prefix, ftype):
         self.morphset = morphset
         self.category = category
         self.prefix = prefix
-        self.filterType = filterType
+        self.ftype = ftype
 
 
     def getFiltered(self):
         from .panel import filterFlags, filterInvert
-        if filterInvert[self.filterType]:
-            return [(f == 0) for f in filterFlags[self.filterType]]
+        if self.ftype in filterFlags.keys():
+            if filterInvert[self.ftype]:
+                return [(f == 0) for f in filterFlags[self.ftype]]
+            else:
+                return filterFlags[self.ftype]
         else:
-            return filterFlags[self.filterType]
+            return 50*[True]
 
 
     def getRelevantMorphs(self, scn, rig):
@@ -2402,7 +2405,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
             if self.useUpdateLimits:
                 self.updateLimits(rig)
         mgrp = MorphGroup()
-        mgrp.init("Visemes", "", "", 0)
+        mgrp.init("Visemes", "", "", "DazVisemes")
         for frame,moho,value in frames:
             if moho == "rest":
                 setMorphs(0.0, rig, mgrp, scn, frame, True)

@@ -506,6 +506,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         op = row.operator("daz.pin_prop", icon='UNPINNED')
         op.key = key
         op.morphset, op.category = self.getMorphCat(data, indexProp)
+        op.ftype = self.getFilterType1(data, indexProp)
 
 
     def getRigAmt(self, context):
@@ -537,28 +538,35 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         if not flt_flags:
             flt_flags = [self.bitflag_filter_item] * len(morphs)
         flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")
-        filterFlags[self.filterType] = flt_flags
-        filterInvert[self.filterType] = self.use_filter_invert
+        ftype = self.getFilterType2(data, propname)
+        filterFlags[ftype] = flt_flags
+        filterInvert[ftype] = self.use_filter_invert
         return flt_flags, flt_neworder
 
 
 class DAZ_UL_Morphs(DAZ_UL_MorphList):
-    filterType = 0
-
     def getMorphCat(self, data, indexProp):
         return indexProp[8:], ""
 
+    def getFilterType1(self, data, indexProp):
+        return "Daz%s" % indexProp[8:]
+
+    def getFilterType2(self, data, propname):
+        return propname
+
 
 class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
-    filterType = 1
-
     def getMorphCat(self, cat, indexProp):
         return "Custom", cat.name
 
+    def getFilterType1(self, cat, indexProp):
+        return "Custom/%s" % cat.name
+
+    def getFilterType2(self, cat, propname):
+        return "Custom/%s" % cat.name
+
 
 class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
-    filterType = 2
-
     def draw_item(self, context, layout, cat, morph, icon, active, indexProp):
         ob = context.object
         skeys = ob.data.shape_keys
@@ -572,13 +580,15 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
             op.key = key
             op.category = cat.name
 
+    def getFilterType2(self, cat, propname):
+        return "Mesh/%s" % cat.name
+
 #----------------------------------------------------------
 #   Morphs panel
 #----------------------------------------------------------
 
 class DAZ_PT_Morphs:
     useMesh = False
-    filterType = 0
 
     @classmethod
     def poll(self, context):
@@ -624,25 +634,26 @@ class DAZ_PT_Morphs:
 
 
     def preamble(self, layout, rig):
-        self.activateLayout(layout, "", rig)
-        self.keyLayout(layout, "", rig)
+        ftype = "Daz%s" % self.morphset
+        self.activateLayout(layout, "", ftype, rig)
+        self.keyLayout(layout, "", ftype, rig)
 
 
-    def activateLayout(self, layout, category, rig):
+    def activateLayout(self, layout, category, ftype, rig):
         split = layout.split(factor=0.333)
         op = split.operator("daz.activate_all")
         op.morphset = self.morphset
         op.category = category
         op.useMesh = self.useMesh
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = split.operator("daz.deactivate_all")
         op.morphset = self.morphset
         op.category = category
         op.useMesh = self.useMesh
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = self.setMorphsBtn(split)
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
 
 
     def setMorphsBtn(self, layout):
@@ -651,24 +662,24 @@ class DAZ_PT_Morphs:
         return op
 
 
-    def keyLayout(self, layout, category, rig):
+    def keyLayout(self, layout, category, ftype, rig):
         split = layout.split(factor=0.25)
         op = split.operator("daz.add_keyset", text="", icon='KEYINGSET')
         op.morphset = self.morphset
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = split.operator("daz.key_morphs", text="", icon='KEY_HLT')
         op.morphset = self.morphset
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = split.operator("daz.unkey_morphs", text="", icon='KEY_DEHLT')
         op.morphset = self.morphset
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = split.operator("daz.clear_morphs", text="", icon='X')
         op.morphset = self.morphset
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
 
     def drawItems(self, scn, rig):
         self.layout.template_list( "DAZ_UL_Morphs", "",
@@ -703,26 +714,31 @@ class DAZ_PT_Standard(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Unclassified Standard Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Standard"
+    ftype = "DazStandard"
 
 class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Face Units"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Units"
+    ftype = "DazUnits"
 
 class DAZ_PT_Head(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Head"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Head"
+    ftype = "DazHead"
 
 class DAZ_PT_Expressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Expressions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Expressions"
+    ftype = "DazExpressions"
 
 class DAZ_PT_Visemes(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Visemes"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Visemes"
+    ftype = "DazVisemes"
 
     def draw(self, context):
         self.layout.operator("daz.load_moho")
@@ -733,6 +749,7 @@ class DAZ_PT_FacsUnits(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "FACS Units"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facs"
+    ftype = "DazFacs"
 
     def preamble(self, layout, rig):
         layout.operator("daz.import_facecap")
@@ -744,24 +761,28 @@ class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "FACS Expressions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facsexpr"
+    ftype = "DazFacsexpr"
 
 
 class DAZ_PT_BodyMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Body Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Body"
+    ftype = "DazBody"
 
 
 class DAZ_PT_JCMs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "JCMs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Jcms"
+    ftype = "DazJcms"
 
 
 class DAZ_PT_Flexions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Flexions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Flexions"
+    ftype = "DazFlexions"
 
 #------------------------------------------------------------------------
 #    Custom panels
@@ -790,7 +811,6 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
     bl_label = "Custom Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
-    filterType = 1
 
     def hasTheseMorphs(self, ob):
         return ob.DazCustomMorphs
@@ -810,8 +830,9 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
             box.prop(rig, propRef(adj))
         if len(cat.morphs) == 0:
             return
-        self.activateLayout(box, cat.name, rig)
-        self.keyLayout(box, cat.name, rig)
+        ftype = "Custom/%s" % cat.name
+        self.activateLayout(box, cat.name, ftype, rig)
+        self.keyLayout(box, cat.name, ftype, rig)
         self.layout.template_list("DAZ_UL_CustomMorphs", "", cat, "morphs", cat, "index")
 
 
@@ -820,7 +841,6 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
     useMesh = True
-    filterType = 2
 
     @classmethod
     def poll(self, context):
@@ -869,25 +889,26 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
     def setMorphsBtn(self, layout):
         return layout.operator("daz.set_shapes")
 
-    def keyLayout(self, layout, category, rig):
+    def keyLayout(self, layout, category, ftype, rig):
         split = layout.split(factor=0.333)
         op = split.operator("daz.key_shapes", text="", icon='KEY_HLT')
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = split.operator("daz.unkey_shapes", text="", icon='KEY_DEHLT')
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
         op = split.operator("daz.clear_shapes", text="", icon='X')
         op.category = category
-        op.filterType = self.filterType
+        op.ftype = ftype
 
 
     def drawCustomBox(self, box, cat, scn, ob):
         skeys = ob.data.shape_keys
         if skeys is None:
             return
-        self.activateLayout(box, cat.name, ob)
-        self.keyLayout(box, cat.name, ob)
+        ftype = "Mesh/%s" % cat
+        self.activateLayout(box, cat.name, ftype, ob)
+        self.keyLayout(box, cat.name, ftype, ob)
         self.layout.template_list("DAZ_UL_Shapekeys", "", cat, "morphs", cat, "index")
 
 #------------------------------------------------------------------------
