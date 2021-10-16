@@ -547,11 +547,11 @@ class CyclesTree:
         strength,tex = self.getColorTex(["Detail Normal Map"], "NONE", 1.0)
         weight = weight*strength
         mode = self.getValue(["Detail Normal Map Mode"], 0)
-        # Height Map, Normal Map
-        if mode == 0:
-            if weight == 0:
-                pass
-            elif self.bump:
+        if weight == 0 or tex is None:
+            pass
+        elif mode == 0:
+            # Height Map
+            if self.bump:
                 link = getLinkTo(self, self.bump, "Height")
                 if link:
                     mult = self.addNode("ShaderNodeMath", 3)
@@ -565,9 +565,8 @@ class CyclesTree:
                 self.bump = self.buildBumpMap(weight, tex, col=3)
                 self.linkNormal(self.bump)
         elif mode == 1:
-            if weight == 0:
-                pass
-            elif self.normal:
+            # Normal Map
+            if self.normal:
                 link = getLinkTo(self, self.normal, "Color")
                 if link:
                     mix = self.addNode("ShaderNodeMixRGB", 3)
