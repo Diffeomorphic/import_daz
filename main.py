@@ -463,17 +463,20 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
             raise DazError("No valid files selected")
         if self.useFavoMorphs:
             self.favoPath = getExistingFilePath(self.favoPath, ".json")
+        theFilePaths = G.theFilePaths
         for filepath in filepaths:
+            G.theFilePaths = [filepath]
             try:
-                self.easyImport(context, filepath)
+                self.easyImport(context)
             except DazError as msg:
                 raise DazError(msg)
+            finally:
+                G.theFilePaths = theFilePaths
 
 
-    def easyImport(self, context, filepath):
+    def easyImport(self, context):
         from time import perf_counter
         time1 = perf_counter()
-        G.theFilePaths = [filepath]
         bpy.ops.daz.import_daz(
             skinColor = self.skinColor,
             clothesColor = self.clothesColor,

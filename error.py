@@ -213,7 +213,6 @@ class DazOperator(bpy.types.Operator):
             bpy.ops.daz.error('INVOKE_DEFAULT')
         finally:
             self.sequel(context)
-            G.theFilePaths = ""
         return{'FINISHED'}
 
 
