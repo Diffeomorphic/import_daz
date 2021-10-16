@@ -180,7 +180,7 @@ class MorphGroup:
 
 
     def getFiltered(self):
-        from .panel import theFilterFlags, theFilterInvert
+        from .uilist import theFilterFlags, theFilterInvert
         if self.ftype in theFilterFlags.keys():
             if theFilterInvert[self.ftype]:
                 return [(f == 0) for f in theFilterFlags[self.ftype]]

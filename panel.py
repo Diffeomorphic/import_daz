@@ -28,6 +28,7 @@
 import bpy
 from .utils import *
 from .buildnumber import BUILD
+from .uilist import DAZ_UL_Morphs
 
 #----------------------------------------------------------
 #   Panels
@@ -481,103 +482,6 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
         layout.operator("daz.rotate_bones")
 
 #----------------------------------------------------------
-#   Morphs UIList
-#----------------------------------------------------------
-
-theFilterFlags = {}
-theFilterInvert = {}
-
-class DAZ_UL_MorphList(bpy.types.UIList):
-    def draw_item(self, context, layout, data, morph, icon, active, indexProp):
-        rig,amt = self.getRigAmt(context)
-        key = morph.name
-        if rig is None or key not in rig.keys():
-            return
-        split = layout.split(factor=0.8)
-        final = finalProp(key)
-        if GS.showFinalProps and final in amt.keys():
-            split2 = split.split(factor=0.8)
-            split2.prop(rig, propRef(key), text=morph.text)
-            split2.label(text = "%.3f" % amt[final])
-        else:
-            split.prop(rig, propRef(key), text=morph.text)
-        row = split.row()
-        self.showBool(row, rig, key)
-        op = row.operator("daz.pin_prop", icon='UNPINNED')
-        op.key = key
-        op.morphset, op.category = self.getMorphCat(data, indexProp)
-        op.ftype = self.getFilterType(data)
-
-
-    def getRigAmt(self, context):
-        rig = context.object
-        while rig.type != 'ARMATURE' and rig.parent:
-            rig = rig.parent
-        if rig.type == 'ARMATURE':
-            amt = rig.data
-            return rig, amt
-        else:
-            return None, None
-
-
-    def showBool(self, layout, ob, key, text=""):
-        from .morphing import getExistingActivateGroup
-        pg = getExistingActivateGroup(ob, key)
-        if pg is not None:
-            layout.prop(pg, "active", text=text)
-
-
-    def filter_items(self, context, data, propname):
-        global theFilterFlags, theFilterInvert
-        morphs = getattr(data, propname)
-        helper_funcs = bpy.types.UI_UL_list
-        flt_flags = []
-        if self.filter_name:
-            flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.bitflag_filter_item, morphs, "text")
-        if not flt_flags:
-            flt_flags = [self.bitflag_filter_item] * len(morphs)
-        flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")
-        ftype = self.getFilterType(data)
-        theFilterFlags[ftype] = flt_flags
-        theFilterInvert[ftype] = self.use_filter_invert
-        return flt_flags, flt_neworder
-
-
-class DAZ_UL_Morphs(DAZ_UL_MorphList):
-    def getMorphCat(self, data, indexProp):
-        return self.morphset, ""
-
-    def getFilterType(self, data):
-        return "Daz%s" % self.morphset
-
-
-class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
-    def getMorphCat(self, cat, indexProp):
-        return "Custom", cat.name
-
-    def getFilterType(self, cat):
-        return "Custom/%s" % cat.name
-
-
-class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
-    def draw_item(self, context, layout, cat, morph, icon, active, indexProp):
-        ob = context.object
-        skeys = ob.data.shape_keys
-        key = morph.name
-        if skeys and key in skeys.key_blocks.keys():
-            skey = skeys.key_blocks[key]
-            row = layout.split(factor=0.8)
-            row.prop(skey, "value", text=morph.text)
-            self.showBool(row, ob, key)
-            op = row.operator("daz.pin_shape", icon='UNPINNED')
-            op.key = key
-            op.category = cat.name
-
-    def getFilterType(self, cat):
-        return "Mesh/%s" % cat.name
-
-#----------------------------------------------------------
 #   Morphs panel
 #----------------------------------------------------------
 
@@ -834,6 +738,7 @@ class CustomDrawItems:
         op = row.operator("daz.toggle_all_cats", text="Close All Categories")
         op.useOpen = False
         op.useMesh = self.useMesh
+        row.operator("daz.update_dynamic_classes")
         self.layout.separator()
         for cat in ob.DazMorphCats:
             box = self.layout.box()
@@ -871,7 +776,11 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
         ftype = "Custom/%s" % cat.name
         self.activateLayout(box, cat.name, ftype, rig)
         self.keyLayout(box, cat.name, ftype, rig)
-        self.layout.template_list("DAZ_UL_CustomMorphs", "", cat, "morphs", cat, "index")
+        uilist = "DAZ_UL_Custom_%s.uilist" % cat.name
+        if hasattr(scn, uilist):
+            self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
+        else:
+            self.layout.template_list("DAZ_UL_CustomMorphs", "", cat, "morphs", cat, "index")
 
 
 class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDrawItems):
@@ -948,7 +857,11 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
         ftype = "Mesh/%s" % cat.name
         self.activateLayout(box, cat.name, ftype, ob)
         self.keyLayout(box, cat.name, ftype, ob)
-        self.layout.template_list("DAZ_UL_Shapekeys", "", cat, "morphs", cat, "index")
+        uilist = "DAZ_UL_Shape_%s" % cat.name
+        if hasattr(scn, uilist):
+            self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
+        else:
+            self.layout.template_list("DAZ_UL_Shapekeys", "", cat, "morphs", cat, "index")
 
 #------------------------------------------------------------------------
 #    Simple IK Panel
@@ -1136,8 +1049,6 @@ classes = [
     DAZ_UL_Body,
     DAZ_UL_JCMs,
     DAZ_UL_Flexions,
-    DAZ_UL_CustomMorphs,
-    DAZ_UL_Shapekeys,
 
     DAZ_PT_MorphGroup,
     DAZ_PT_Standard,
@@ -1156,14 +1067,21 @@ classes = [
     DAZ_PT_SimpleRig,
     DAZ_PT_Visibility,
     DAZ_PT_DazRigifyProps,
+
+    DAZ_OT_UpdateDynamicClasses,
 ]
 
+theDynamicMorphClasses = {}
+theDynamicShapeClasses = {}
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-
 def unregister():
-    for cls in classes:
+    for cls in theDynamicMorphClasses.values():
+        bpy.utils.unregister_class(cls)
+    for cls in theDynamicShapeClasses.values():
+        bpy.utils.unregister_class(cls)
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

@@ -29,8 +29,8 @@
 bl_info = {
     "name": "DAZ (.duf, .dsf) importer",
     "author": "Thomas Larsson",
-    "version": (1,6,0),
-    "blender": (2,91,0),
+    "version": (1,6,1),
+    "blender": (2,93,0),
     "location": "UI > Daz Importer",
     "description": "Import native DAZ files (.duf, .dsf)",
     "warning": "",
@@ -55,7 +55,7 @@ def importModules():
             importlib.reload(mod)
     else:
         print("\nLoading DAZ")
-        modnames = ["buildnumber", "globvars", "settings", "utils", "error",
+        modnames = ["buildnumber", "globvars", "settings", "utils", "error", "uilist",
                     "propgroups", "daz", "fileutils", "load_json", "driver", "asset", "channels", "formula",
                     "transform", "node", "figure", "bone", "geometry", "objfile",
                     "fix", "modifier", "animation", "load_morph", "morphing", "panel",
@@ -82,72 +82,26 @@ from .api import *
 #   Register
 #----------------------------------------------------------
 
-def register():
-    convert.register()
-    propgroups.register()
-    daz.register()
-    driver.register()
-    figure.register()
-    finger.register()
-    fix.register()
-    geometry.register()
-    guess.register()
-    layers.register()
-    main.register()
-    material.register()
-    merge.register()
-    morphing.register()
-    animation.register()
-    matedit.register()
-    cgroup.register()
-    hair.register()
-    mhx.register()
-    objfile.register()
-    proxy.register()
-    rigify.register()
-    hide.register()
-    transfer.register()
-    panel.register()
-    if bpy.app.version >= (2,82,0):
-        udim.register()
-        facecap.register()
-    hdmorphs.register()
-    dforce.register()
+regnames = ["propgroups", "daz", "uilist", "driver",
+            "figure", "geometry", "objfile",
+            "fix", "animation", "morphing", "panel",
+            "material", "cgroup",
+            "guess", "convert", "main", "finger",
+            "matedit", "proxy", "rigify", "merge", "hide",
+            "mhx", "layers", "hair", "transfer", "dforce",
+            "hdmorphs", "facecap", "udim"]
 
-    settings.GS.loadDefaults()
+def register():
+    for mod in theModules:
+        if mod.__name__[11:] in regnames:
+            mod.register()
+    GS.loadDefaults()
 
 
 def unregister():
-    animation.unregister()
-    convert.unregister()
-    propgroups.unregister()
-    daz.unregister()
-    driver.unregister()
-    figure.unregister()
-    finger.unregister()
-    fix.unregister()
-    geometry.unregister()
-    guess.unregister()
-    layers.unregister()
-    main.unregister()
-    material.unregister()
-    merge.unregister()
-    morphing.unregister()
-    matedit.unregister()
-    cgroup.unregister()
-    hair.unregister()
-    mhx.unregister()
-    objfile.unregister()
-    proxy.unregister()
-    rigify.unregister()
-    hide.unregister()
-    transfer.unregister()
-    panel.unregister()
-    if bpy.app.version >= (2,82,0):
-        udim.unregister()
-        facecap.unregister()
-    hdmorphs.unregister()
-    dforce.unregister()
+    for mod in reversed(theModules):
+        if mod.__name__[11:] in regnames:
+            mod.unregister()
 
 
 if __name__ == "__main__":
