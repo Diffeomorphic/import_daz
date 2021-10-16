@@ -484,8 +484,8 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
 #   Morphs UIList
 #----------------------------------------------------------
 
-filterFlags = {0: [], 1: [], 2: []}
-filterInvert = {0: False, 1: False, 2: False}
+filterFlags = {}
+filterInvert = {}
 
 class DAZ_UL_MorphList(bpy.types.UIList):
     def draw_item(self, context, layout, data, morph, icon, active, indexProp):
@@ -506,7 +506,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         op = row.operator("daz.pin_prop", icon='UNPINNED')
         op.key = key
         op.morphset, op.category = self.getMorphCat(data, indexProp)
-        op.ftype = self.getFilterType1(data, indexProp)
+        op.ftype = self.getFilterType(data)
 
 
     def getRigAmt(self, context):
@@ -538,7 +538,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         if not flt_flags:
             flt_flags = [self.bitflag_filter_item] * len(morphs)
         flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")
-        ftype = self.getFilterType2(data, propname)
+        ftype = self.getFilterType(data)
         filterFlags[ftype] = flt_flags
         filterInvert[ftype] = self.use_filter_invert
         return flt_flags, flt_neworder
@@ -546,23 +546,17 @@ class DAZ_UL_MorphList(bpy.types.UIList):
 
 class DAZ_UL_Morphs(DAZ_UL_MorphList):
     def getMorphCat(self, data, indexProp):
-        return indexProp[8:], ""
+        return self.morphset, ""
 
-    def getFilterType1(self, data, indexProp):
-        return "Daz%s" % indexProp[8:]
-
-    def getFilterType2(self, data, propname):
-        return propname
+    def getFilterType(self, data):
+        return "Daz%s" % self.morphset
 
 
 class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
     def getMorphCat(self, cat, indexProp):
         return "Custom", cat.name
 
-    def getFilterType1(self, cat, indexProp):
-        return "Custom/%s" % cat.name
-
-    def getFilterType2(self, cat, propname):
+    def getFilterType(self, cat):
         return "Custom/%s" % cat.name
 
 
@@ -580,7 +574,7 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
             op.key = key
             op.category = cat.name
 
-    def getFilterType2(self, cat, propname):
+    def getFilterType(self, cat):
         return "Mesh/%s" % cat.name
 
 #----------------------------------------------------------
@@ -682,7 +676,7 @@ class DAZ_PT_Morphs:
         op.ftype = ftype
 
     def drawItems(self, scn, rig):
-        self.layout.template_list( "DAZ_UL_Morphs", "",
+        self.layout.template_list( self.uilist, "",
                                    rig, "Daz%s" % self.morphset,
                                    rig.data, "DazIndex%s" % self.morphset )
 
@@ -709,47 +703,74 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         self.layout.operator("daz.morph_armature")
 
 
+class DAZ_UL_Standard(DAZ_UL_Morphs):
+    morphset = "Standard"
 
 class DAZ_PT_Standard(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Unclassified Standard Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Standard"
     ftype = "DazStandard"
+    uilist = "DAZ_UL_Standard"
+
+
+class DAZ_UL_Units(DAZ_UL_Morphs):
+    morphset = "Units"
 
 class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Face Units"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Units"
     ftype = "DazUnits"
+    uilist = "DAZ_UL_Units"
+
+
+class DAZ_UL_Head(DAZ_UL_Morphs):
+    morphset = "Head"
 
 class DAZ_PT_Head(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Head"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Head"
     ftype = "DazHead"
+    uilist = "DAZ_UL_Head"
+
+
+class DAZ_UL_Expressions(DAZ_UL_Morphs):
+    morphset = "Expressions"
 
 class DAZ_PT_Expressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Expressions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Expressions"
     ftype = "DazExpressions"
+    uilist = "DAZ_UL_Expressions"
+
+
+class DAZ_UL_Visemes(DAZ_UL_Morphs):
+    morphset = "Visemes"
 
 class DAZ_PT_Visemes(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Visemes"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Visemes"
     ftype = "DazVisemes"
+    uilist = "DAZ_UL_Visemes"
 
     def draw(self, context):
         self.layout.operator("daz.load_moho")
         DAZ_PT_Morphs.draw(self, context)
 
 
-class DAZ_PT_FacsUnits(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_UL_Facs(DAZ_UL_Morphs):
+    morphset = "Facs"
+
+class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "FACS Units"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facs"
     ftype = "DazFacs"
+    uilist = "DAZ_UL_Facs"
 
     def preamble(self, layout, rig):
         layout.operator("daz.import_facecap")
@@ -757,32 +778,48 @@ class DAZ_PT_FacsUnits(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         DAZ_PT_Morphs.preamble(self, layout, rig)
 
 
+class DAZ_UL_FacsExpressions(DAZ_UL_Morphs):
+    morphset = "FacsExpressions"
+
 class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "FACS Expressions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facsexpr"
     ftype = "DazFacsexpr"
+    uilist = "DAZ_UL_FacsExpressions"
 
 
-class DAZ_PT_BodyMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_UL_Body(DAZ_UL_Morphs):
+    morphset = "Body"
+
+class DAZ_PT_Body(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Body Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Body"
     ftype = "DazBody"
+    uilist = "DAZ_UL_Body"
 
+
+class DAZ_UL_JCMs(DAZ_UL_Morphs):
+    morphset = "Jcms"
 
 class DAZ_PT_JCMs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "JCMs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Jcms"
     ftype = "DazJcms"
+    uilist = "DAZ_UL_JCMs"
 
+
+class DAZ_UL_Flexions(DAZ_UL_Morphs):
+    morphset = "Flexions"
 
 class DAZ_PT_Flexions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "Flexions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Flexions"
     ftype = "DazFlexions"
+    uilist = "DAZ_UL_Flexions"
 
 #------------------------------------------------------------------------
 #    Custom panels
@@ -811,6 +848,7 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
     bl_label = "Custom Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
+    uilist = "DAZ_UL_CustomMorphs"
 
     def hasTheseMorphs(self, ob):
         return ob.DazCustomMorphs
@@ -841,6 +879,7 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
     useMesh = True
+    uilist = "DAZ_UL_Shapekeys"
 
     @classmethod
     def poll(self, context):
@@ -906,7 +945,7 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
         skeys = ob.data.shape_keys
         if skeys is None:
             return
-        ftype = "Mesh/%s" % cat
+        ftype = "Mesh/%s" % cat.name
         self.activateLayout(box, cat.name, ftype, ob)
         self.keyLayout(box, cat.name, ftype, ob)
         self.layout.template_list("DAZ_UL_Shapekeys", "", cat, "morphs", cat, "index")
@@ -1087,7 +1126,16 @@ classes = [
     DAZ_PT_Utils,
     DAZ_PT_Posing,
 
-    DAZ_UL_Morphs,
+    DAZ_UL_Standard,
+    DAZ_UL_Units,
+    DAZ_UL_Head,
+    DAZ_UL_Expressions,
+    DAZ_UL_Visemes,
+    DAZ_UL_Facs,
+    DAZ_UL_FacsExpressions,
+    DAZ_UL_Body,
+    DAZ_UL_JCMs,
+    DAZ_UL_Flexions,
     DAZ_UL_CustomMorphs,
     DAZ_UL_Shapekeys,
 
@@ -1097,9 +1145,9 @@ classes = [
     DAZ_PT_Head,
     DAZ_PT_Expressions,
     DAZ_PT_Visemes,
-    DAZ_PT_FacsUnits,
+    DAZ_PT_Facs,
     DAZ_PT_FacsExpressions,
-    DAZ_PT_BodyMorphs,
+    DAZ_PT_Body,
     DAZ_PT_JCMs,
     DAZ_PT_Flexions,
 
