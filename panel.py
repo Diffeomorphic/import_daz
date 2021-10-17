@@ -28,7 +28,7 @@
 import bpy
 from .utils import *
 from .buildnumber import BUILD
-from .uilist import DAZ_UL_Morphs
+from .uilist import DAZ_UL_StandardMorphs
 
 #----------------------------------------------------------
 #   Panels
@@ -607,7 +607,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         self.layout.operator("daz.morph_armature")
 
 
-class DAZ_UL_Standard(DAZ_UL_Morphs):
+class DAZ_UL_Standard(DAZ_UL_StandardMorphs):
     morphset = "Standard"
 
 class DAZ_PT_Standard(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -618,7 +618,7 @@ class DAZ_PT_Standard(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_Standard"
 
 
-class DAZ_UL_Units(DAZ_UL_Morphs):
+class DAZ_UL_Units(DAZ_UL_StandardMorphs):
     morphset = "Units"
 
 class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -629,7 +629,7 @@ class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_Units"
 
 
-class DAZ_UL_Head(DAZ_UL_Morphs):
+class DAZ_UL_Head(DAZ_UL_StandardMorphs):
     morphset = "Head"
 
 class DAZ_PT_Head(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -640,7 +640,7 @@ class DAZ_PT_Head(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_Head"
 
 
-class DAZ_UL_Expressions(DAZ_UL_Morphs):
+class DAZ_UL_Expressions(DAZ_UL_StandardMorphs):
     morphset = "Expressions"
 
 class DAZ_PT_Expressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -651,7 +651,7 @@ class DAZ_PT_Expressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_Expressions"
 
 
-class DAZ_UL_Visemes(DAZ_UL_Morphs):
+class DAZ_UL_Visemes(DAZ_UL_StandardMorphs):
     morphset = "Visemes"
 
 class DAZ_PT_Visemes(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -666,7 +666,7 @@ class DAZ_PT_Visemes(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         DAZ_PT_Morphs.draw(self, context)
 
 
-class DAZ_UL_Facs(DAZ_UL_Morphs):
+class DAZ_UL_Facs(DAZ_UL_StandardMorphs):
     morphset = "Facs"
 
 class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -682,7 +682,7 @@ class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         DAZ_PT_Morphs.preamble(self, layout, rig)
 
 
-class DAZ_UL_FacsExpressions(DAZ_UL_Morphs):
+class DAZ_UL_FacsExpressions(DAZ_UL_StandardMorphs):
     morphset = "FacsExpressions"
 
 class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -693,7 +693,7 @@ class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_FacsExpressions"
 
 
-class DAZ_UL_Body(DAZ_UL_Morphs):
+class DAZ_UL_Body(DAZ_UL_StandardMorphs):
     morphset = "Body"
 
 class DAZ_PT_Body(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -704,7 +704,7 @@ class DAZ_PT_Body(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_Body"
 
 
-class DAZ_UL_JCMs(DAZ_UL_Morphs):
+class DAZ_UL_JCMs(DAZ_UL_StandardMorphs):
     morphset = "Jcms"
 
 class DAZ_PT_JCMs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -715,7 +715,7 @@ class DAZ_PT_JCMs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     uilist = "DAZ_UL_JCMs"
 
 
-class DAZ_UL_Flexions(DAZ_UL_Morphs):
+class DAZ_UL_Flexions(DAZ_UL_StandardMorphs):
     morphset = "Flexions"
 
 class DAZ_PT_Flexions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
@@ -768,6 +768,7 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
         return ob
 
     def drawCustomBox(self, box, cat, scn, rig):
+        from .uilist import getCustomUIList
         adj = "Adjust Custom/%s" % cat.name
         if adj in rig.keys():
             box.prop(rig, propRef(adj))
@@ -776,11 +777,9 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
         ftype = "Custom/%s" % cat.name
         self.activateLayout(box, cat.name, ftype, rig)
         self.keyLayout(box, cat.name, ftype, rig)
-        uilist = "DAZ_UL_Custom_%s.uilist" % cat.name
-        if hasattr(scn, uilist):
-            self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
-        else:
-            self.layout.template_list("DAZ_UL_CustomMorphs", "", cat, "morphs", cat, "index")
+        uilist = getCustomUIList(cat)
+        print("LAY", uilist)
+        self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 
 class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDrawItems):
@@ -1068,20 +1067,12 @@ classes = [
     DAZ_PT_Visibility,
     DAZ_PT_DazRigifyProps,
 
-    DAZ_OT_UpdateDynamicClasses,
 ]
-
-theDynamicMorphClasses = {}
-theDynamicShapeClasses = {}
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
-    for cls in theDynamicMorphClasses.values():
-        bpy.utils.unregister_class(cls)
-    for cls in theDynamicShapeClasses.values():
-        bpy.utils.unregister_class(cls)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

@@ -32,6 +32,14 @@ from .utils import *
 #   Morphs UIList
 #----------------------------------------------------------
 
+# These would be saved with the .blend file
+class UIListProps(bpy.types.PropertyGroup):
+    # ~ name: bpy.props.StringProperty()  # this is created implicitly
+    use_filter_invert: bpy.props.BoolProperty(name="Invert", default=False, description="Invert filtering")
+    reverse_order: bpy.props.BoolProperty(name="Reverse", default=False, description="Reverse the order of shown items")
+    filter_name: bpy.props.StringProperty(name="Filter by Name", default="", description="Only show items matching this name (use '*' as wildcard)", options={'TEXTEDIT_UPDATE'})
+
+
 theFilterFlags = {}
 theFilterInvert = {}
 
@@ -53,7 +61,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         self.showBool(row, rig, key)
         op = row.operator("daz.pin_prop", icon='UNPINNED')
         op.key = key
-        op.morphset, op.category = self.getMorphCat(data, indexProp)
+        op.morphset, op.category = self.getMorphCat(data)
         op.ftype = self.getFilterType(data)
 
 
@@ -92,8 +100,8 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
-class DAZ_UL_Morphs(DAZ_UL_MorphList):
-    def getMorphCat(self, data, indexProp):
+class DAZ_UL_StandardMorphs(DAZ_UL_MorphList):
+    def getMorphCat(self, data):
         return self.morphset, ""
 
     def getFilterType(self, data):
@@ -101,14 +109,14 @@ class DAZ_UL_Morphs(DAZ_UL_MorphList):
 
 
 class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
-    def getMorphCat(self, cat, indexProp):
+    def getMorphCat(self, cat):
         return "Custom", cat.name
 
     def getFilterType(self, cat):
         return "Custom/%s" % cat.name
 
 
-class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
+class DAZ_UL_Shapes(DAZ_UL_MorphList):
     def draw_item(self, context, layout, cat, morph, icon, active, indexProp):
         ob = context.object
         skeys = ob.data.shape_keys
@@ -125,19 +133,9 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
     def getFilterType(self, cat):
         return "Mesh/%s" % cat.name
 
-
-# These would be saved with the .blend file
-class UIListProps(bpy.types.PropertyGroup):
-    # ~ name: bpy.props.StringProperty()  # this is created implicitly
-    use_filter_invert: bpy.props.BoolProperty(name="Invert", default=False, description="Invert filtering")
-    reverse_order: bpy.props.BoolProperty(name="Reverse", default=False, description="Reverse the order of shown items")
-    filter_name: bpy.props.StringProperty(name="Filter by Name", default="", description="Only show items matching this name (use '*' as wildcard)", options={'TEXTEDIT_UPDATE'})
-
-
-class AddonProps(bpy.types.PropertyGroup):
-    dynamicMorphs : bpy.props.CollectionProperty(type=UIListProps)
-    dynamicShapes : bpy.props.CollectionProperty(type=UIListProps)
-
+#-------------------------------------------------------------
+#   Update dynamic classes
+#-------------------------------------------------------------
 
 class DAZ_OT_UpdateDynamicClasses(bpy.types.Operator):
     bl_idname = "daz.update_dynamic_classes"
@@ -147,52 +145,80 @@ class DAZ_OT_UpdateDynamicClasses(bpy.types.Operator):
     def execute(self, context):
         for ob in getVisibleObjects(context):
             if ob.type == 'ARMATURE':
-                updateRigClasses(ob)
+                updateRigClasses(context, ob)
             elif ob.type == 'MESH':
-                updateMeshClasses(ob)
+                updateMeshClasses(context, ob)
         return{'FINISHED'}
 
 
-def updateRigClasses(rig):
+def updateRigClasses(context, rig):
     global theDynamicMorphClasses
-    print("RIG", rig)
+    dynmorphs = context.scene.DazDynMorphs
     for cat in rig.DazMorphCats:
-        if cat.name not in theDynamicMorphClasses.keys():
-            theDynamicMorphClasses[cat.name] = addDynamicClass(cat)
+        uil = getattr(dynmorphs, cat.name, None)
+        if uil is None:
+            classname = "DAZ_UL_Custom_%s" % cat.name
+            data = {}
+            new_type = type(classname, (DAZ_UL_CustomMorphs,), data)
+            bpy.utils.register_class(new_type)
+            theDynamicMorphClasses[cat.name] = new_type
+            uil = dynmorphs.add()
+            uil.name = cat.name
+    print("DD", theDynamicMorphClasses.items())
 
-def updateMeshClasses(ob):
+
+def updateMeshClasses(context, ob):
     global theDynamicShapeClasses
     print("MES", ob)
-    return
+    dynshapes = context.scene.DazDynShapes
     for cat in ob.DazMorphCats:
-        if cat.name not in theDynamicShapeClasses.keys():
-            theDynamicShapeClasses[cat.name] = addDynamicClass(cat)
+        uil = getattr(dynshapes, cat.name, None)
+        if uil is None:
+            classname = "DAZ_UL_Shapes_%s" % cat.name
+            data = {}
+            new_type = type(classname, (DAZ_UL_Shapes,), data)
+            bpy.utils.register_class(new_type)
+            theDynamicShapeClasses[cat.name] = new_type
+            uil = dynshapes.add()
+            uil.name = cat.name
+    print("SSS", theDynamicShapeClasses.items())
 
 
-def addDynamicClass(cat):
-    classname = "DAZ_UL_Custom_%s" % cat.name
-    data = {
-        'bl_label': classname,
-        'bl_idname': "daz.%s" % classname,
-        '__annotations__': {
-            "uilist": DAZ_UL_CustomMorphs(classname),
-        }
-    }
-    dynclass = type(classname, (bpy.types.PropertyGroup,), data)
-    bpy.utils.register_class(dynclass)
-    bpy.types.Scene.classname = bpy.props.PointerProperty(type=dynclass)
-    return dynclass
+def getCustomUIList(cat):
+    global theDynamicMorphClasses
+    if cat.name in theDynamicMorphClasses.keys():
+        return "DAZ_UL_Custom_%s" % cat.name
+    else:
+        return "DAZ_UL_CustomMorphs"
 
+#-------------------------------------------------------------
+#   Initialize
+#-------------------------------------------------------------
 
 classes = [
+    UIListProps,
     DAZ_UL_CustomMorphs,
-    DAZ_UL_Shapekeys,
+    DAZ_UL_Shapes,
+
+    DAZ_OT_UpdateDynamicClasses,
 ]
+
+theDynamicMorphClasses = {}
+theDynamicShapeClasses = {}
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.Scene.DazDynMorphs = bpy.props.CollectionProperty(type=UIListProps)
+    bpy.types.Scene.DazDynShapes = bpy.props.CollectionProperty(type=UIListProps)
+
 
 def unregister():
-    for cls in classes:
+    for cls in theDynamicMorphClasses.values():
+        bpy.utils.unregister_class(cls)
+    del bpy.types.Scene.DazDynMorphs
+    for cls in theDynamicShapeClasses:
+        bpy.utils.unregister_class(cls)
+    del bpy.types.Scene.DazDynShapes
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
