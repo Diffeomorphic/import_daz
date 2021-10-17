@@ -753,7 +753,7 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
     bl_label = "Custom Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
-    uilist = "DAZ_UL_CustomMorphs"
+    #uilist = "DAZ_UL_CustomMorphs"
 
     def hasTheseMorphs(self, ob):
         return ob.DazCustomMorphs
@@ -777,8 +777,7 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
         ftype = "Custom/%s" % cat.name
         self.activateLayout(box, cat.name, ftype, rig)
         self.keyLayout(box, cat.name, ftype, rig)
-        uilist = getCustomUIList(cat)
-        print("LAY", uilist)
+        uilist = getCustomUIList(cat, scn)
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 
@@ -787,7 +786,7 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
     useMesh = True
-    uilist = "DAZ_UL_Shapekeys"
+    #uilist = "DAZ_UL_Shapekeys"
 
     @classmethod
     def poll(self, context):
@@ -853,14 +852,12 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
         skeys = ob.data.shape_keys
         if skeys is None:
             return
+        from .uilist import getShapeUIList
         ftype = "Mesh/%s" % cat.name
         self.activateLayout(box, cat.name, ftype, ob)
         self.keyLayout(box, cat.name, ftype, ob)
-        uilist = "DAZ_UL_Shape_%s" % cat.name
-        if hasattr(scn, uilist):
-            self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
-        else:
-            self.layout.template_list("DAZ_UL_Shapekeys", "", cat, "morphs", cat, "index")
+        uilist = getShapeUIList(cat, scn)
+        self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 #------------------------------------------------------------------------
 #    Simple IK Panel

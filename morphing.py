@@ -2302,7 +2302,7 @@ def pinProp(rig, scn, key, mgrp, frame, value=1.0):
 def pinShape(ob, scn, key, mgrp, frame):
     skeys = ob.data.shape_keys
     if skeys:
-        clearShapes(ob, mgrp, scn, frame)
+        setShapes(0.0, ob, mgrp, scn, frame)
         skeys.key_blocks[key].value = 1.0
         autoKeyShape(skeys, key, scn, frame)
 
