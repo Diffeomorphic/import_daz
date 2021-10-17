@@ -85,7 +85,7 @@ def morphArmature(rig, heads, tails, offsets):
 #----------------------------------------------------------
 
 @persistent
-def updateHandler(scn):
+def onFrameChange(scn):
     data = []
     for ob in scn.objects:
         if (ob.type == 'ARMATURE' and
@@ -103,10 +103,10 @@ def updateHandler(scn):
 
 
 def register():
-    bpy.app.handlers.frame_change_post.append(updateHandler)
+    bpy.app.handlers.frame_change_post.append(onFrameChange)
 
 def unregister():
-    bpy.app.handlers.frame_change_post.remove(updateHandler)
+    bpy.app.handlers.frame_change_post.remove(onFrameChange)
 
 if __name__ == "__main__":
     register()

@@ -753,7 +753,6 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
     bl_label = "Custom Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
-    #uilist = "DAZ_UL_CustomMorphs"
 
     def hasTheseMorphs(self, ob):
         return ob.DazCustomMorphs
@@ -786,7 +785,6 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
     useMesh = True
-    #uilist = "DAZ_UL_Shapekeys"
 
     @classmethod
     def poll(self, context):
@@ -821,10 +819,8 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
         else:
             layout.prop(ob, propRef(sname), text=text)
 
-
     def getCurrentRig(self, context):
         return context.object
-
 
     def drawItems(self, scn, ob):
         CustomDrawItems.drawItems(self, scn, ob)

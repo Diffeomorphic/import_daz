@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import bpy
+from bpy.app.handlers import persistent
 from .utils import *
 
 #----------------------------------------------------------
@@ -135,43 +136,44 @@ class DAZ_OT_UpdateDynamicClasses(bpy.types.Operator):
     bl_description = "Update all dynamic classes in the scene"
 
     def execute(self, context):
-        for ob in getVisibleObjects(context):
-            if ob.type == 'ARMATURE':
-                updateRigClasses(context, ob)
-            elif ob.type == 'MESH':
-                updateMeshClasses(context, ob)
+        updateDynamicClasses(context.scene)
         return{'FINISHED'}
 
 
-def updateRigClasses(context, rig):
-    global theDynamicMorphClasses
-    dynmorphs = context.scene.DazDynMorphs
-    for cat in rig.DazMorphCats:
-        uil = getattr(dynmorphs, cat.name, None)
-        if uil is None:
-            classname = "DAZ_UL_Custom_%s" % cat.name
-            data = {}
-            new_type = type(classname, (DAZ_UL_CustomMorphs,), data)
-            bpy.utils.register_class(new_type)
-            theDynamicMorphClasses[cat.name] = new_type
-            uil = dynmorphs.add()
-            uil.name = cat.name
+def updateDynamicClasses(scn):
+    def updateRigClasses(scn, rig):
+        global theDynamicMorphClasses
+        for cat in rig.DazMorphCats:
+            uil = getattr(scn.DazDynMorphs, cat.name, None)
+            if uil is None:
+                classname = "DAZ_UL_Custom_%s" % cat.name
+                new_type = type(classname, (DAZ_UL_CustomMorphs,), {})
+                bpy.utils.register_class(new_type)
+                theDynamicMorphClasses[cat.name] = new_type
+                uil = scn.DazDynMorphs.add()
+                uil.name = cat.name
 
+    def updateMeshClasses(scn, ob):
+        global theDynamicShapeClasses
+        for cat in ob.DazMorphCats:
+            uil = getattr(scn.DazDynShapes, cat.name, None)
+            if uil is None:
+                classname = "DAZ_UL_Shape_%s" % cat.name
+                new_type = type(classname, (DAZ_UL_Shapekeys,), {})
+                bpy.utils.register_class(new_type)
+                theDynamicShapeClasses[cat.name] = new_type
+                uil = scn.DazDynShapes.add()
+                uil.name = cat.name
 
-def updateMeshClasses(context, ob):
-    global theDynamicShapeClasses
-    dynshapes = context.scene.DazDynShapes
-    for cat in ob.DazMorphCats:
-        uil = getattr(dynshapes, cat.name, None)
-        if uil is None:
-            classname = "DAZ_UL_Shape_%s" % cat.name
-            data = {"suffix" : cat.name}
-            new_type = type(classname, (DAZ_UL_Shapekeys,), data)
-            bpy.utils.register_class(new_type)
-            theDynamicShapeClasses[cat.name] = new_type
-            uil = dynshapes.add()
-            uil.name = cat.name
+    for ob in scn.objects:
+        if ob.type == 'ARMATURE':
+            updateRigClasses(scn, ob)
+        elif ob.type == 'MESH':
+            updateMeshClasses(scn, ob)
 
+#-------------------------------------------------------------
+#   Get UIList class name
+#-------------------------------------------------------------
 
 def getCustomUIList(cat, scn):
     global theDynamicMorphClasses
@@ -192,6 +194,11 @@ def getShapeUIList(cat, scn):
 #   Initialize
 #-------------------------------------------------------------
 
+@persistent
+def onLoad(dummy):
+    updateDynamicClasses(bpy.context.scene)
+
+
 classes = [
     DAZ_UL_CustomMorphs,
     DAZ_UL_Shapekeys,
@@ -206,9 +213,11 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.DazDynMorphs = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
     bpy.types.Scene.DazDynShapes = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
+    bpy.app.handlers.load_post.append(onLoad)
 
 
 def unregister():
+    bpy.app.handlers.load_post.remove(onLoad)
     for cls in theDynamicMorphClasses.values():
         bpy.utils.unregister_class(cls)
     for cls in theDynamicShapeClasses.values():
