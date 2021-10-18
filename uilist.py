@@ -144,27 +144,22 @@ def updateDynamicClasses(scn):
     def updateRigClasses(scn, rig):
         global theDynamicMorphClasses
         for cat in rig.DazMorphCats:
-            uil = getattr(scn.DazDynMorphs, cat.name, None)
-            if uil is None:
+            if cat.name not in theDynamicMorphClasses.keys():
                 classname = "DAZ_UL_Custom_%s" % cat.name
                 new_type = type(classname, (DAZ_UL_CustomMorphs,), {})
                 bpy.utils.register_class(new_type)
                 theDynamicMorphClasses[cat.name] = new_type
-                uil = scn.DazDynMorphs.add()
-                uil.name = cat.name
 
     def updateMeshClasses(scn, ob):
         global theDynamicShapeClasses
         for cat in ob.DazMorphCats:
-            uil = getattr(scn.DazDynShapes, cat.name, None)
-            if uil is None:
+            if cat.name not in theDynamicShapeClasses.keys():
                 classname = "DAZ_UL_Shape_%s" % cat.name
                 new_type = type(classname, (DAZ_UL_Shapekeys,), {})
                 bpy.utils.register_class(new_type)
                 theDynamicShapeClasses[cat.name] = new_type
-                uil = scn.DazDynShapes.add()
-                uil.name = cat.name
 
+    print("Update Dynamic Classes:", [ob.name for ob in scn.objects])
     for ob in scn.objects:
         if ob.type == 'ARMATURE':
             updateRigClasses(scn, ob)
@@ -211,9 +206,9 @@ theDynamicShapeClasses = {}
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.DazDynMorphs = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
-    bpy.types.Scene.DazDynShapes = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
     bpy.app.handlers.load_post.append(onLoad)
+    if False and bpy.context:
+        updateDynamicClasses(bpy.context._real_data)
 
 
 def unregister():
@@ -222,7 +217,5 @@ def unregister():
         bpy.utils.unregister_class(cls)
     for cls in theDynamicShapeClasses.values():
         bpy.utils.unregister_class(cls)
-    del bpy.types.Scene.DazDynMorphs
-    del bpy.types.Scene.DazDynShapes
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
