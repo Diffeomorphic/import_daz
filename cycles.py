@@ -475,7 +475,7 @@ class CyclesTree:
     def buildNormal(self, uvname):
         if not self.isEnabled("Normal"):
             return
-        strength,tex = self.getColorTex("getChannelNormal", "NONE", 1.0)
+        strength,tex = self.getColorTex("getChannelNormal", "NONE", 1.0, useFactor=False)
         if strength>0 and tex:
             self.buildNormalMap(strength, tex, uvname)
 
@@ -489,6 +489,20 @@ class CyclesTree:
             self.normal.uv_map = self.material.uv_set.name
         self.normal.inputs["Strength"].default_value = strength
         self.links.new(tex.outputs[0], self.normal.inputs["Color"])
+
+
+    def mixNormals(self, fac, factex, socket1, tex2, col=3):
+        NORMAL = (0.5, 0.5, 1, 1)
+        mix = self.addNode("ShaderNodeMixRGB", col)
+        mix.blend_type = 'OVERLAY'
+        self.linkScalar(factex, mix, fac, "Fac")
+        mix.inputs["Color1"].default_value = NORMAL
+        mix.inputs["Color2"].default_value = NORMAL
+        if socket1:
+            self.links.new(socket1, mix.inputs["Color1"])
+        if tex2:
+            self.links.new(tex2.outputs[0], mix.inputs["Color2"])
+        return mix
 
 #-------------------------------------------------------------
 #   Bump
@@ -544,7 +558,7 @@ class CyclesTree:
         ky = self.getValue(["Detail Vertical Tiles"], 1)
         self.mapTexco(ox, oy, kx, ky)
 
-        strength,tex = self.getColorTex(["Detail Normal Map"], "NONE", 1.0)
+        strength,tex = self.getColorTex(["Detail Normal Map"], "NONE", 1.0, useFactor=False)
         weight = weight*strength
         mode = self.getValue(["Detail Normal Map Mode"], 0)
         if weight == 0 or tex is None:
@@ -569,15 +583,14 @@ class CyclesTree:
             if self.normal:
                 link = getLinkTo(self, self.normal, "Color")
                 if link:
-                    mix = self.addNode("ShaderNodeMixRGB", 3)
-                    mix.blend_type = 'OVERLAY'
-                    self.linkScalar(wttex, mix, weight, "Fac")
-                    NORMAL = (0.5, 0.5, 1, 1)
-                    mix.inputs["Color1"].default_value = NORMAL
-                    mix.inputs["Color2"].default_value = NORMAL
-                    self.links.new(link.from_socket, mix.inputs["Color1"])
-                    if tex:
-                        self.links.new(tex.outputs[0], mix.inputs["Color2"])
+                    strength = self.normal.inputs["Strength"].default_value
+                    if strength != 1.0:
+                        mix1 = self.mixNormals(1.0-strength, None, link.from_socket, None, col=2)
+                        socket = mix1.outputs["Color"]
+                        self.normal.inputs["Strength"].default_value = 1.0
+                    else:
+                        socket = link.from_socket
+                    mix = self.mixNormals(weight, wttex, socket, tex)
                     self.links.new(mix.outputs["Color"], self.normal.inputs["Color"])
                 else:
                     self.links.new(tex.outputs[0], self.normal.inputs["Color"])
