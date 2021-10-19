@@ -93,14 +93,16 @@ regnames = ["propgroups", "daz", "uilist", "driver",
 
 def register():
     for mod in theModules:
-        if mod.__name__[11:] in regnames:
+        modname = mod.__name__.rsplit(".",1)[-1]
+        if modname in regnames:
             mod.register()
     GS.loadDefaults()
 
 
 def unregister():
     for mod in reversed(theModules):
-        if mod.__name__[11:] in regnames:
+        modname = mod.__name__.rsplit(".",1)[-1]
+        if modname in regnames:
             mod.unregister()
 
 
