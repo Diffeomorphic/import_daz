@@ -491,17 +491,13 @@ class CyclesTree:
         self.links.new(tex.outputs[0], self.normal.inputs["Color"])
 
 
-    def mixNormals(self, fac, factex, socket1, tex2, col=3):
+    def addOverlay(self, fac, factex, col):
         NORMAL = (0.5, 0.5, 1, 1)
         mix = self.addNode("ShaderNodeMixRGB", col)
         mix.blend_type = 'OVERLAY'
         self.linkScalar(factex, mix, fac, "Fac")
         mix.inputs["Color1"].default_value = NORMAL
         mix.inputs["Color2"].default_value = NORMAL
-        if socket1:
-            self.links.new(socket1, mix.inputs["Color1"])
-        if tex2:
-            self.links.new(tex2.outputs[0], mix.inputs["Color2"])
         return mix
 
 #-------------------------------------------------------------
@@ -585,12 +581,16 @@ class CyclesTree:
                 if link:
                     strength = self.normal.inputs["Strength"].default_value
                     if strength != 1.0:
-                        mix1 = self.mixNormals(1.0-strength, None, link.from_socket, None, col=2)
+                        mix1 = self.addOverlay(strength, None, 2)
+                        self.links.new(link.from_socket, mix1.inputs["Color2"])
                         socket = mix1.outputs["Color"]
                         self.normal.inputs["Strength"].default_value = 1.0
                     else:
                         socket = link.from_socket
-                    mix = self.mixNormals(weight, wttex, socket, tex)
+                    mix = self.addOverlay(weight, wttex, 3)
+                    self.links.new(socket, mix.inputs["Color1"])
+                    if tex:
+                        self.links.new(tex.outputs[0], mix.inputs["Color2"])
                     self.links.new(mix.outputs["Color"], self.normal.inputs["Color"])
                 else:
                     self.links.new(tex.outputs[0], self.normal.inputs["Color"])
