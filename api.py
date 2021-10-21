@@ -27,6 +27,7 @@
 
 from . import globvars as G
 from .error import DazError
+from .settings import GS
 
 #----------------------------------------------------------
 #   Api functions available for external scripting
@@ -113,7 +114,7 @@ def set_selection(files):
     ?files: A list of file paths (strings).
     """
     if isinstance(files, list):
-        G.theFilePaths = files
+        G.theFilePaths = [file.replace("\\", "/") for file in files]
     else:
         try:
             raise DazError("File paths must be a list of strings")
@@ -132,6 +133,42 @@ def update_drivers(ob):
     from .utils import updateDrivers
     updateDrivers(ob)
     updateDrivers(ob.data)
+
+#-------------------------------------------------------------
+#   Access to paths relative to root directories
+#-------------------------------------------------------------
+
+def get_root_paths():
+    """get_root_paths()
+
+    Get the DAZ root paths
+
+    Returns:
+    The list of DAZ root paths
+    """
+    return GS.getDazPaths()
+
+
+def get_absolute_paths(paths):
+    """get_absolute_paths()
+
+    Get the absolute filepaths corresponding to the given relative filepaths.
+
+    Arguments:
+    Paths or references relative to the DAZ root paths.
+
+    Returns:
+    The corresponding absolute paths if they exist.
+    """
+    from .asset import getDazPath, setDazPaths
+    setDazPaths()
+    abspaths = []
+    for path in paths:
+        path = path.replace("\\", "/")
+        abspath = getDazPath(path, False)
+        if abspath:
+            abspaths.append(abspath)
+    return abspaths
 
 #-------------------------------------------------------------
 #   Paths used by Xin's HD-morphs add-on
