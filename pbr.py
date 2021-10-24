@@ -186,7 +186,7 @@ class PbrTree(CyclesTree):
                 self.links.new(tex.outputs[0], self.pbr.inputs["Specular"])
 
         # Clearcoat
-        top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False)
+        top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
         if self.material.shader == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
                 refl,reftex = self.getColorTex("getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
@@ -218,7 +218,7 @@ class PbrTree(CyclesTree):
             return
         if not self.checkTranslucency():
             return
-        wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0)
+        wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         if wt == 0:
             return
         color,coltex = self.getTranslucentColor()
@@ -240,7 +240,7 @@ class PbrTree(CyclesTree):
     def getRefractionWeight(self):
         channel = self.material.getChannelRefractionWeight()
         if channel:
-            return self.getColorTex("getChannelRefractionWeight", "NONE", 0.0)
+            return self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
         channel = self.material.getChannelOpacity()
         if channel:
             value,tex = self.getColorTex("getChannelOpacity", "NONE", 1.0)
@@ -250,7 +250,7 @@ class PbrTree(CyclesTree):
 
 
     def buildPBRRefraction(self):
-        weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0)
+        weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
         if weight == 0:
             return
         color,coltex,roughness,roughtex = self.getRefractionColor()
@@ -297,7 +297,7 @@ class PbrTree(CyclesTree):
             self.material.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
-            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
             clearcoat = (ior-1)*10*strength
             self.removeLink(pbr, "Clearcoat")
             self.linkScalar(strtex, pbr, clearcoat, "Clearcoat")

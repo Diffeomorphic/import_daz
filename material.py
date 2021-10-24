@@ -627,7 +627,7 @@ class Map:
             ("url", None),
             ("color", BLACK),
             ("label", None),
-            ("operation", "alpha_blend"),
+            ("operation", None),
             ("literal_image", None),
             ("invert", False),
             ("transparency", 1),

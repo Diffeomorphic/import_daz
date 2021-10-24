@@ -216,7 +216,7 @@ class CyclesTree:
         self.nodes = None
         self.links = None
         self.groups = {}
-        self.liegroups = []
+        self.liegroups = {}
 
         self.diffuseTex = None
         self.fresnel = None
@@ -544,7 +544,7 @@ class CyclesTree:
     def buildDetail(self, uvname):
         if not self.isEnabled("Detail"):
             return
-        weight,wttex = self.getColorTex(["Detail Weight"], "NONE", 0.0)
+        weight,wttex = self.getColorTex(["Detail Weight"], "NONE", 0.0, isMask=True)
         if weight == 0:
             return
         texco = self.texco
@@ -643,7 +643,7 @@ class CyclesTree:
         if self.getValue(["Diffuse Overlay Weight"], 0):
             self.column += 1
             slot = self.getImageSlot(["Diffuse Overlay Weight"])
-            weight,wttex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot)
+            weight,wttex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
             if self.getValue(["Diffuse Overlay Weight Squared"], False):
                 power = 4
             else:
@@ -680,14 +680,14 @@ class CyclesTree:
         return node
 
 
-    def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, slot=0):
+    def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, slot=0, isMask=False):
         channel = self.material.getChannel(attr)
         if channel is None:
             return default,None
         if isinstance(channel, tuple):
             channel = channel[0]
         if useTex:
-            tex = self.addTexImageNode(channel, colorSpace)
+            tex = self.addTexImageNode(channel, colorSpace, isMask)
         else:
             tex = None
         if value is not None:
@@ -724,7 +724,7 @@ class CyclesTree:
         roughness,roughtex = self.getColorTex(["Makeup Roughness Mult"], "NONE", 0.0, False)
         self.linkScalar(roughtex, node, roughness, "Roughness")
         self.linkBumpNormal(node)
-        wt,wttex = self.getColorTex(["Makeup Weight"], "NONE", 0.0, False)
+        wt,wttex = self.getColorTex(["Makeup Weight"], "NONE", 0.0, False, isMask=True)
         self.mixWithActive(wt, wttex, node)
         return True
 
@@ -742,7 +742,7 @@ class CyclesTree:
             node = self.addGroup(DualLobeGroupPBRSkin, "DAZ Dual Lobe PBR", size=100)
         else:
             node = self.addGroup(DualLobeGroupUberIray, "DAZ Dual Lobe Uber", size=100)
-        value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 0.5, False)
+        value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 0.5, False, isMask=True)
         node.inputs["Weight"].default_value = value
         if tex:
             wttex = self.multiplyScalarTex(value, tex)
@@ -776,7 +776,7 @@ class CyclesTree:
 
     def getGlossyColor(self):
         #   glossy bsdf color = iray glossy color * iray glossy layered weight
-        strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+        strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
         color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, False)
         if tex and strtex:
             tex = self.mixTexs('MULTIPLY', tex, strtex)
@@ -881,7 +881,7 @@ class CyclesTree:
             bump *= self.bumpval
             bumptex = None
 
-        _,tex = self.getColorTex(["Top Coat Weight"], "NONE", 0, value=weight)
+        _,tex = self.getColorTex(["Top Coat Weight"], "NONE", 0, value=weight, isMask=True)
         weighttex = self.multiplyTexs(tex, refltex)
         color,coltex = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
         roughness,roughtex = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
@@ -954,7 +954,7 @@ class CyclesTree:
         node.inputs["Eevee Mix Factor"].default_value = 1.0
         self.linkBumpNormal(node)
 
-        fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0)
+        fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         if effect == 1: # Scatter and transmit
             fac = 0.5 + fac/2
             if factex and factex.type == 'MATH':
@@ -1287,12 +1287,6 @@ class CyclesTree:
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
-        if self.liegroups:
-            node = self.addNode("ShaderNodeValue", col=self.column-1)
-            node.outputs[0].default_value = 1.0
-            for lie in self.liegroups:
-                self.links.new(node.outputs[0], lie.inputs["Alpha"])
-
         if self.volume or self.eevee:
             output.target = 'CYCLES'
             outputEevee = self.addNode("ShaderNodeOutputMaterial")
@@ -1311,7 +1305,7 @@ class CyclesTree:
                 self.isEnabled("Displacement") and
                 GS.useDisplacement):
             return
-        tex = self.addTexImageNode(channel, "NONE")
+        tex = self.addTexImageNode(channel, "NONE", False)
         if tex:
             strength = self.material.getChannelValue(channel, 1)
             if strength == 0:
@@ -1404,7 +1398,7 @@ class CyclesTree:
             self.links.new(texco.outputs["UV"], node.inputs[slot])
 
 
-    def addTexImageNode(self, channel, colorSpace=None):
+    def addTexImageNode(self, channel, colorSpace, isMask):
         col = self.column-2
         assets,maps = self.material.getTextures(channel)
         if len(assets) != len(maps):
@@ -1420,19 +1414,23 @@ class CyclesTree:
             return texnode
 
         from .cgroup import LieGroup
-        node = self.addNode("ShaderNodeGroup", col)
-        node.width = 240
         try:
             name = os.path.basename(assets[0].map.url)
         except:
-            name = "Group"
-        group = LieGroup()
-        group.create(node, name, self)
-        self.linkVector(self.texco, node)
-        group.addTextureNodes(assets, maps, colorSpace)
-        node.inputs["Alpha"].default_value = 1
-        self.liegroups.append(node)
-        return node
+            name = "L.I.E."
+        if name in self.liegroups.keys():
+            return self.liegroups[name]
+        else:
+            node = self.addNode("ShaderNodeGroup", col)
+            node.width = 240
+            node.label = name
+            group = LieGroup()
+            group.create(node, name, self)
+            self.linkVector(self.texco, node)
+            group.addTextureNodes(assets, maps, colorSpace, isMask)
+            node.inputs["Influence"].default_value = 1.0
+            self.liegroups[name] = node
+            return node
 
 
     def mixTexs(self, op, tex1, tex2, slot1=0, slot2=0, color1=None, color2=None, fac=1, factex=None):
@@ -1506,9 +1504,9 @@ class CyclesTree:
         return tex
 
 
-    def addSlot(self, channel, node, slot, value, value0, invert):
+    def addSlot(self, channel, node, slot, value, value0, invert, isMask=False):
         node.inputs[slot].default_value = value
-        tex = self.addTexImageNode(channel, "NONE")
+        tex = self.addTexImageNode(channel, "NONE", isMask)
         if tex:
             tex = self.fixTex(tex, value0, invert)
             if tex:

@@ -1084,19 +1084,19 @@ class LieGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Vector", "Alpha"]
+        self.insockets += ["Vector", "Influence"]
         self.outsockets += ["Color"]
 
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 6)
+        CyclesGroup.create(self, node, name, parent, 7)
         self.group.inputs.new("NodeSocketVector", "Vector")
         self.texco = self.inputs.outputs[0]
-        self.group.inputs.new("NodeSocketFloat", "Alpha")
+        self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.outputs.new("NodeSocketColor", "Color")
 
 
-    def addTextureNodes(self, assets, maps, colorSpace):
+    def addTextureNodes(self, assets, maps, colorSpace, isMask):
         texnodes = []
         for idx,asset in enumerate(assets):
             texnode,isnew = self.addSingleTexture(3, asset, maps[idx], colorSpace)
@@ -1117,63 +1117,105 @@ class LieGroup(CyclesGroup):
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
             texnodes.append([texnode])
 
-        if texnodes:
-            nassets = len(assets)
-            for idx in range(1, nassets):
-                map = maps[idx]
-                if map.invert:
-                    inv = self.addNode("ShaderNodeInvert", 4)
-                    node = texnodes[idx][0]
-                    self.links.new(node.outputs[0], inv.inputs["Color"])
-                    texnodes[idx].append(inv)
+        if not texnodes:
+            pass
+        elif isMask:
+            self.mixMask(maps, texnodes, len(assets))
+        else:
+            self.mixColor(maps, texnodes, len(assets))
 
-            texnode = texnodes[0][-1]
-            alphamix = self.addNode("ShaderNodeMixRGB", 6)
-            alphamix.blend_type = 'MIX'
-            alphamix.inputs[0].default_value = 1.0
-            self.links.new(self.inputs.outputs["Alpha"], alphamix.inputs[0])
-            self.links.new(texnode.outputs["Color"], alphamix.inputs[1])
 
-            masked = False
-            for idx in range(1, nassets):
-                map = maps[idx]
-                if map.ismask:
-                    if idx == nassets-1:
-                        continue
-                    mix = self.addNode("ShaderNodeMixRGB", 5)    # ShaderNodeMixRGB
-                    mix.blend_type = 'MULTIPLY'
-                    mix.use_alpha = False
-                    mask = texnodes[idx][-1]
-                    self.setColorSpace(mask, 'NONE')
-                    self.links.new(mask.outputs["Color"], mix.inputs[0])
-                    self.links.new(texnode.outputs["Color"], mix.inputs[1])
-                    self.links.new(texnodes[idx+1][-1].outputs["Color"], mix.inputs[2])
-                    texnode = mix
-                    masked = True
-                elif not masked:
-                    mix = self.addNode("ShaderNodeMixRGB", 5)
-                    alpha = setMixOperation(mix, map)
-                    mix.inputs[0].default_value = alpha
-                    node = texnodes[idx][-1]
-                    base = texnodes[idx][0]
-                    if alpha != 1:
-                        node = self.multiplyScalarTex(alpha, base, "Alpha", 4)
-                        self.links.new(node.outputs[0], mix.inputs[0])
-                    elif "Alpha" in base.outputs.keys():
-                        self.links.new(base.outputs["Alpha"], mix.inputs[0])
-                    else:
-                        print("No LIE alpha:", base)
-                        mix.inputs[0].default_value = alpha
-                    mix.use_alpha = True
-                    self.links.new(texnode.outputs["Color"], mix.inputs[1])
-                    self.links.new(texnodes[idx][-1].outputs["Color"], mix.inputs[2])
-                    texnode = mix
-                    masked = False
+    def mixColor(self, maps, texnodes, nassets):
+        self.addInverts(maps, texnodes, nassets)
+        texnode = texnodes[0][-1]
+        alphamix = self.addNode("ShaderNodeMixRGB", 6)
+        alphamix.blend_type = 'MIX'
+        alphamix.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Influence"], alphamix.inputs[0])
+        self.links.new(texnode.outputs["Color"], alphamix.inputs[1])
+
+        masked = False
+        for idx in range(1, nassets):
+            mapn = maps[idx]
+            node = texnodes[idx][-1]
+            base = texnodes[idx][0]
+            slotn = self.getAlphaSlot(mapn, base)
+            if mapn.ismask:
+                if idx == nassets-1:
+                    continue
+                mix = self.addNode("ShaderNodeMixRGB", 5)    # ShaderNodeMixRGB
+                mix.blend_type = 'MULTIPLY'
+                mix.use_alpha = False
+                mask = texnodes[idx][-1]
+                self.setColorSpace(mask, 'NONE')
+                self.links.new(mask.outputs["Color"], mix.inputs[0])
+                self.links.new(texnode.outputs["Color"], mix.inputs[1])
+                self.links.new(texnodes[idx+1][-1].outputs["Color"], mix.inputs[2])
+                texnode = mix
+                masked = True
+            elif not masked:
+                mix = self.addNode("ShaderNodeMixRGB", 5)
+                alpha = self.setMixOperation(mix, mapn)
+                mix.inputs[0].default_value = alpha
+                if alpha != 1:
+                    node = self.multiplyScalarTex(alpha, base, "Alpha", 4)
+                    self.links.new(node.outputs[0], mix.inputs[0])
                 else:
-                    masked = False
+                    self.links.new(base.outputs[slotn], mix.inputs[0])
+                mix.use_alpha = True
+                self.links.new(texnode.outputs["Color"], mix.inputs[1])
+                self.links.new(texnodes[idx][-1].outputs["Color"], mix.inputs[2])
+                texnode = mix
+                masked = False
+            else:
+                masked = False
+        self.links.new(texnode.outputs[0], alphamix.inputs[2])
+        self.links.new(alphamix.outputs[0], self.outputs.inputs["Color"])
 
-            self.links.new(texnode.outputs[0], alphamix.inputs[2])
-            self.links.new(alphamix.outputs[0], self.outputs.inputs["Color"])
+
+    def mixMask(self, maps, texnodes, nassets):
+        self.addInverts(maps, texnodes, nassets)
+        texnode0 = texnodes[0][-1]
+        slot0 = self.getAlphaSlot(maps[0], texnode0)
+        masked = False
+        for idx in range(1, nassets):
+            mapn = maps[idx]
+            texnode = texnodes[idx][-1]
+            base = texnodes[idx][0]
+            slotn = self.getAlphaSlot(mapn, texnode)
+            if mapn.ismask:
+                print("Unhandled case mixAlpha: mask")
+                masked = True
+            elif not masked:
+                mix = self.addNode("ShaderNodeMixRGB", 5)
+                mix.blend_type = 'ADD'
+                mix.inputs[0].default_value = 1.0
+                mix.use_alpha = True
+                self.links.new(texnode0.outputs[slot0], mix.inputs[1])
+                self.links.new(texnode.outputs[slotn], mix.inputs[2])
+                texnode = mix
+                slot0 = "Color"
+                masked = False
+            else:
+                masked = False
+        self.links.new(texnode.outputs[0], self.outputs.inputs["Color"])
+
+
+    def getAlphaSlot(self, map, node):
+        if (map.operation == "alpha_blend" and
+            "Alpha" in node.outputs.keys()):
+            return "Alpha"
+        return "Color"
+
+
+    def addInverts(self, maps, texnodes, nassets):
+        for idx in range(1, nassets):
+            mapn = maps[idx]
+            if mapn.invert:
+                inv = self.addNode("ShaderNodeInvert", 4)
+                node = texnodes[idx][0]
+                self.links.new(node.outputs[0], inv.inputs["Color"])
+                texnodes[idx].append(inv)
 
 
     def mapTexture(self, asset, map):
@@ -1182,25 +1224,22 @@ class LieGroup(CyclesGroup):
             return self.addMappingNode(data, map)
 
 
-def setMixOperation(mix, map):
-    alpha = 1
-    op = map.operation
-    alpha = map.transparency
-    if op == "multiply":
-        mix.blend_type = 'MULTIPLY'
-        useAlpha = True
-    elif op == "add":
-        mix.blend_type = 'ADD'
-        useAlpha = False
-    elif op == "subtract":
-        mix.blend_type = 'SUBTRACT'
-        useAlpha = False
-    elif op == "alpha_blend":
-        mix.blend_type = 'MIX'
-        useAlpha = True
-    else:
-        print("MIX", asset, map.operation)
-    return alpha
+    def setMixOperation(self, mix, mapn):
+        alpha = 1
+        opn = mapn.operation
+        alpha = mapn.transparency
+        if opn == "multiply":
+            mix.blend_type = 'MULTIPLY'
+        elif opn == "add":
+            mix.blend_type = 'ADD'
+        elif opn == "subtract":
+            mix.blend_type = 'SUBTRACT'
+        elif opn == "alpha_blend":
+            mix.blend_type = 'MIX'
+            return alpha
+        else:
+            print("MIX", asset, mapn.operation)
+        return alpha
 
 #----------------------------------------------------------
 #   Make shader group
