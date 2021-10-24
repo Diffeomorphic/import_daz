@@ -216,7 +216,7 @@ class CyclesTree:
         self.nodes = None
         self.links = None
         self.groups = {}
-        self.liegroups = {}
+        self.layeredGroups = {}
 
         self.diffuseTex = None
         self.fresnel = None
@@ -1413,23 +1413,23 @@ class CyclesTree:
                 self.linkVector(self.texco, texnode)
             return texnode
 
-        from .cgroup import LieGroup
-        try:
-            name = os.path.basename(assets[0].map.url)
-        except:
-            name = "L.I.E."
-        if name in self.liegroups.keys():
-            return self.liegroups[name]
+        from .cgroup import LayeredGroup
+        if "image" in channel.keys():
+            name = channel["image"]
+        else:
+            name = "Layered"
+        if name in self.layeredGroups.keys() and name != "Layered":
+            return self.layeredGroups[name]
         else:
             node = self.addNode("ShaderNodeGroup", col)
             node.width = 240
             node.label = name
-            group = LieGroup()
+            group = LayeredGroup()
             group.create(node, name, self)
             self.linkVector(self.texco, node)
             group.addTextureNodes(assets, maps, colorSpace, isMask)
             node.inputs["Influence"].default_value = 1.0
-            self.liegroups[name] = node
+            self.layeredGroups[name] = node
             return node
 
 

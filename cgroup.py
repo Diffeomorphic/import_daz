@@ -1077,10 +1077,10 @@ class DecalGroup(CyclesGroup):
         self.links.new(mix.outputs[0], self.outputs.inputs["Combined"])
 
 # ---------------------------------------------------------------------
-#   LIE Group
+#   Layered Group
 # ---------------------------------------------------------------------
 
-class LieGroup(CyclesGroup):
+class LayeredGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
