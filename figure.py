@@ -694,7 +694,7 @@ class ExtraBones(DriverUser):
                 drvBone(bname) not in rig.pose.bones.keys()):
                 del self.bnames[bname]
             else:
-                bone = rig.data.bones[bname)
+                bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
                 fb = rig.data.bones[finBone(bname)]
                 db.DazExtraBone = fb.DazExtraBone = bone.DazExtraBone
