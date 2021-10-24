@@ -68,7 +68,7 @@ def getEditBones(rig):
             while parent and parent.bone.DazExtraBone:
                 parent = parent.parent
             if parent:
-                offsets[pb.name] = offsets[parent.name]
+                offsets[pb.name] += offsets[parent.name]
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
             bname = pb.name[:-5]
@@ -110,6 +110,11 @@ def onFrameChange(scn):
 
 
 def register():
+    bpy.types.Object.DazScale = bpy.props.FloatProperty(default = 0.01)
+    bpy.types.Bone.DazExtraBone = bpy.props.BoolProperty(default=False)
+    bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+    bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+    bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
     bpy.app.handlers.frame_change_post.append(onFrameChange)
 
 def unregister():
