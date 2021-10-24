@@ -686,7 +686,7 @@ class RigInfo:
                 self.addObjects(child)
 
 
-    def getEditBones(self, mainbones):
+    def getEditBones(self, mainbones, extrabones):
         setMode('EDIT')
         for eb in self.rig.data.edit_bones:
             if eb.name not in mainbones:
@@ -699,6 +699,7 @@ class RigInfo:
         setMode('OBJECT')
         for pb in self.rig.pose.bones:
             if pb.name not in mainbones:
+                extrabones.append(pb.name)
                 key = self.getBoneKey(pb.name)
                 self.posebones[key] = (pb, pb.matrix.copy())
                 if not self.button.useCreateDuplicates:
@@ -935,8 +936,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         print("Merge infos to %s:" % rig.name)
         self.applyTransforms([info]+subinfos)
         mainbones = list(rig.pose.bones.keys())
+        extrabones = []
         for subinfo in subinfos:
-            subinfo.getEditBones(mainbones)
+            subinfo.getEditBones(mainbones, extrabones)
         adds, hdadds, removes = self.createNewCollections(rig)
 
         layers = (self.clothesLayer-1)*[False] + [True] + (32-self.clothesLayer)*[False]
@@ -946,6 +948,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
             if subinfo.conforms:
                 subinfo.addEditBones(rig, layers)
         setMode('OBJECT')
+        for bone in rig.data.bones:
+            if bone.name in extrabones:
+                bone.DazExtraBone = True
         self.reparentObjects(info, rig, adds, hdadds, removes)
         for subinfo in subinfos:
             if subinfo.conforms:

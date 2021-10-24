@@ -693,6 +693,11 @@ class ExtraBones(DriverUser):
             if (bname not in rig.pose.bones.keys() or
                 drvBone(bname) not in rig.pose.bones.keys()):
                 del self.bnames[bname]
+            else:
+                bone = rig.data.bones[bname)
+                db = rig.data.bones[drvBone(bname)]
+                fb = rig.data.bones[finBone(bname)]
+                db.DazExtraBone = fb.DazExtraBone = bone.DazExtraBone
 
         setMode('EDIT')
         for bname in self.bnames:

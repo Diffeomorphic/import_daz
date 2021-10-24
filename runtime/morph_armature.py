@@ -65,10 +65,21 @@ def getEditBones(rig):
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
             bname = pb.name[:-5]
-            fbname = "%s(fin)" % bname
-            heads[bname] = heads[fbname] = heads[pb.name]
-            tails[bname] = tails[fbname] = tails[pb.name]
-            offsets[bname] = offsets[fbname] = offsets[pb.name]
+            finname = "%s(fin)" % bname
+            heads[bname] = heads[finname] = heads[pb.name]
+            tails[bname] = tails[finname] = tails[pb.name]
+            offsets[bname] = offsets[finname] = offsets[pb.name]
+    for pb in rig.pose.bones:
+        if pb.bone.DazExtraBone:
+            parent = pb.parent
+            while parent and parent.bone.DazExtraBone:
+                parent = parent.parent
+            if parent:
+                offsets[pb.name] += offsets[parent.name]
+                if pb.name[-5:] == "(drv)":
+                    bname = pb.name[:-5]
+                    finname = "%s(fin)" % bname
+                    offsets[bname] = offsets[finname] = offsets[pb.name]
     return heads, tails, offsets
 
 
