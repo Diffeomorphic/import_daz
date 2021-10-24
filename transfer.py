@@ -392,57 +392,70 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             return None
 
 
+    # Improvements by Suttisak Denduangchai, issue 749
     def correctForRigidity(self, ob, skey):
         from mathutils import Matrix
-
-        if "Rigidity" in ob.vertex_groups.keys():
-            idx = ob.vertex_groups["Rigidity"].index
-            for v in ob.data.vertices:
-                for g in v.groups:
-                    if g.group == idx:
-                        x = skey.data[v.index]
-                        x.co = v.co + (1 - g.weight)*(x.co - v.co)
-
         for rgroup in ob.data.DazRigidityGroups:
             rotmode = rgroup.rotation_mode
-            scalemodes = rgroup.scale_modes.split(" ")
             maskverts = [elt.a for elt in rgroup.mask_vertices]
             refverts = [elt.a for elt in rgroup.reference_vertices]
             nrefverts = len(refverts)
             if nrefverts == 0:
                 continue
-
             if rotmode != "none":
                 raise RuntimeError("Not yet implemented: Rigidity rotmode = %s" % rotmode)
 
-            xcoords = [ob.data.vertices[vn].co for vn in refverts]
-            ycoords = [skey.data[vn].co for vn in refverts]
-            xsum = Vector((0,0,0))
-            ysum = Vector((0,0,0))
-            for co in xcoords:
-                xsum += co
-            for co in ycoords:
-                ysum += co
-            xcenter = xsum/nrefverts
-            ycenter = ysum/nrefverts
+            base_coords = [ob.data.vertices[vn].co for vn in refverts]
+            shapekey_coords = [skey.data[vn].co for vn in refverts]
+            base_sum = Vector((0,0,0))
+            skey_sum = Vector((0,0,0))
+            for co in base_coords:
+                base_sum += co
+            for co in shapekey_coords:
+                skey_sum += co
+            base_center = base_sum/nrefverts
+            skey_center = skey_sum/nrefverts
 
-            xdim = ydim = 0
+            scale = Vector((1,1,1)) #(x,y,z)
             for n in range(3):
-                xs = [abs(co[n]-xcenter[n]) for co in xcoords]
-                ys = [abs(co[n]-ycenter[n]) for co in ycoords]
+                xdim = ydim = 0
+                xs = [abs(co[n]-base_center[n]) for co in base_coords]
+                ys = [abs(co[n]-skey_center[n]) for co in shapekey_coords]
                 xdim += sum(xs)
                 ydim += sum(ys)
-            if xdim == 0 or ydim == 0:
-                print("Rigidity division by zero")
-                continue
-            scale = ydim/xdim
+                if xdim == 0 or ydim == 0:
+                    print("Rigidity division by zero")
+                    continue
+                scale[n] = ydim/xdim
+
+            # Calculate dimension of reference group for determining primary secondary and tertiary axes
+            transpose = np.array(base_coords).T
+            xdimension = abs(max(transpose[0])-min(transpose[0]))
+            ydimension = abs(max(transpose[1])-min(transpose[1]))
+            zdimension = abs(max(transpose[2])-min(transpose[2]))
+            refverts_base_dimension = [[xdimension,scale[0]],[ydimension,scale[1]],[zdimension,scale[2]]]
+            refverts_base_dimension.sort(key=lambda x: -x[0])
+
+            scalemodes = rgroup.scale_modes.split(" ")
             smat = Matrix.Identity(3)
             for n,smode in enumerate(scalemodes):
                 if smode == "primary":
-                    smat[n][n] = scale
+                    smat[n][n] = refverts_base_dimension[0][1]-1
+                elif smode == "secondary":
+                    smat[n][n] = refverts_base_dimension[1][1]-1
+                elif smode == "tertiary":
+                    smat[n][n] = refverts_base_dimension[2][1]-1
+                else: # No-scale
+                    smat[n][n] = 1-1
 
-            for n,vn in enumerate(maskverts):
-                skey.data[vn].co = smat @ (ob.data.vertices[vn].co - xcenter) + ycenter
+            if "Rigidity" in ob.vertex_groups.keys():
+                idx = ob.vertex_groups["Rigidity"].index
+                for n,vn in enumerate(maskverts):
+                    for v in ob.data.vertices:
+                        if(v.index == vn):
+                            for g in v.groups:
+                                if g.group == idx:
+                                    skey.data[vn].co = (smat*(1-g.weight) @ (ob.data.vertices[vn].co - base_center)) + (ob.data.vertices[vn].co - base_center) + skey_center
 
 
     def ignoreMorph(self, src, trg, hskey):
