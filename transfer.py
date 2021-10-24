@@ -400,62 +400,75 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             maskverts = [elt.a for elt in rgroup.mask_vertices]
             refverts = [elt.a for elt in rgroup.reference_vertices]
             nrefverts = len(refverts)
+
             if nrefverts == 0:
                 continue
+
             if rotmode != "none":
                 raise RuntimeError("Not yet implemented: Rigidity rotmode = %s" % rotmode)
 
+            scalemodes = rgroup.scale_modes.split(" ")
+
             base_coords = [ob.data.vertices[vn].co for vn in refverts]
             shapekey_coords = [skey.data[vn].co for vn in refverts]
-            base_sum = Vector((0,0,0))
-            skey_sum = Vector((0,0,0))
-            for co in base_coords:
-                base_sum += co
-            for co in shapekey_coords:
-                skey_sum += co
-            base_center = base_sum/nrefverts
-            skey_center = skey_sum/nrefverts
 
-            scale = Vector((1,1,1)) #(x,y,z)
-            for n in range(3):
-                xdim = ydim = 0
-                xs = [abs(co[n]-base_center[n]) for co in base_coords]
-                ys = [abs(co[n]-skey_center[n]) for co in shapekey_coords]
-                xdim += sum(xs)
-                ydim += sum(ys)
-                if xdim == 0 or ydim == 0:
-                    print("Rigidity division by zero")
-                    continue
-                scale[n] = ydim/xdim
+            # I think Daz3d use Singular Value Decomposition to determine which X,Y,Z scaling between shapekey_coords and base_coords
+            # https://www.daz3d.com/forums/discussion/comment/636426/
+            # https://gregorygundersen.com/blog/2018/12/10/svd/
 
-            # Calculate dimension of reference group for determining primary secondary and tertiary axes
-            transpose = np.array(base_coords).T
-            xdimension = abs(max(transpose[0])-min(transpose[0]))
-            ydimension = abs(max(transpose[1])-min(transpose[1]))
-            zdimension = abs(max(transpose[2])-min(transpose[2]))
-            refverts_base_dimension = [[xdimension,scale[0]],[ydimension,scale[1]],[zdimension,scale[2]]]
-            refverts_base_dimension.sort(key=lambda x: -x[0])
+            base_center_coords = np.average(base_coords, axis=0)
+            shapekey_center_coords = np.average(shapekey_coords, axis=0)
 
-            scalemodes = rgroup.scale_modes.split(" ")
-            smat = Matrix.Identity(3)
-            for n,smode in enumerate(scalemodes):
+            # Transfrom Base Coordinate to be relative to its center
+            base_coords_relative_to_base_center_coords = base_coords - base_center_coords
+            # Singular value decomposition
+            U, S1, V = np.linalg.svd(base_coords_relative_to_base_center_coords)
+            # Transfrom Shapekey Coordinate to be relative to its center
+            shapekey_coords_relative_to_shapekey_center_coords = shapekey_coords - shapekey_center_coords
+            # Singular value decomposition
+            U, S2, V = np.linalg.svd(shapekey_coords_relative_to_shapekey_center_coords)
+            # U matrix is average coordinates of polygon, S is matrix is how coordinates dilate and reflex. The dilated and reflexed shape (without rotation) is U cross S
+            scale_between_shapekey_and_base_averagecoords = S2/S1
+
+            refverts_base_dimension = [["X",S1[0],scale_between_shapekey_and_base_averagecoords[0]],["Y",S1[1],scale_between_shapekey_and_base_averagecoords[1]],["Z",S1[2],scale_between_shapekey_and_base_averagecoords[2]]]
+            # Sort from max dimension to min dimension to determine Primary (scaling of max dimension) to Tertiary (scaling of min dimension) scale mode
+            # ex. [["Y",10,1.1],["X",5,1.2],["Z",2,1.05]]
+            refverts_base_dimension.sort(key=lambda x: -x[1])
+
+            # Determine First - Thrid axis by target object (eg. Geograft) dimensions
+            target_dimension= [["X",ob.dimensions.x,1],["Y",ob.dimensions.y,1],["Z",ob.dimensions.z,1]]
+            target_dimension.sort(key=lambda x: -x[1])
+
+            for n,smode in enumerate(scalemodes): # Scale mode of First to Third axis which is defined in Rigidity group editor in Daz3d
                 if smode == "primary":
-                    smat[n][n] = refverts_base_dimension[0][1]-1
+                    target_dimension[n][2] = refverts_base_dimension[0][2]
                 elif smode == "secondary":
-                    smat[n][n] = refverts_base_dimension[1][1]-1
+                    target_dimension[n][2] = refverts_base_dimension[1][2]
                 elif smode == "tertiary":
-                    smat[n][n] = refverts_base_dimension[2][1]-1
-                else: # No-scale
-                    smat[n][n] = 1-1
-
+                    target_dimension[n][2] = refverts_base_dimension[2][2]
+                # No-scale No need to reassign 1 again
+            target_dimension.sort(key=lambda x: x[0])
+            smat = Matrix.Identity(3)
+            base_center_vector = Vector((0,0,0))
+            shapekey_center_vector = Vector((0,0,0))
+            for n in range(3):
+                base_center_vector[n] = base_center_coords[n]
+                shapekey_center_vector[n] = shapekey_center_coords[n]
+            for n in range(3):
+                smat[n][n]= target_dimension[n][2]
             if "Rigidity" in ob.vertex_groups.keys():
                 idx = ob.vertex_groups["Rigidity"].index
-                for n,vn in enumerate(maskverts):
+                for n,vn in enumerate(maskverts): # Called Rigidity Participant Vertex in Daz3D
                     for v in ob.data.vertices:
                         if(v.index == vn):
                             for g in v.groups:
                                 if g.group == idx:
-                                    skey.data[vn].co = (smat*(1-g.weight) @ (ob.data.vertices[vn].co - base_center)) + (ob.data.vertices[vn].co - base_center) + skey_center
+                                    # Max Rigidity (Rigidity=1) coordinate
+                                    max_rigidity_coordinate = (smat @ (ob.data.vertices[vn].co - base_center_vector)) + shapekey_center_vector
+                                    # Min Rigidity (Rigidity=0) coordinate
+                                    min_rididity_coordinate = skey.data[vn].co
+                                    # Mix both coordinate using Rigidity Weight Map
+                                    skey.data[vn].co = (max_rigidity_coordinate * g.weight) + ((1-g.weight)*min_rididity_coordinate)
 
 
     def ignoreMorph(self, src, trg, hskey):

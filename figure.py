@@ -697,7 +697,7 @@ class ExtraBones(DriverUser):
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
                 fb = rig.data.bones[finBone(bname)]
-                db.DazExtraBone = fb.DazExtraBone = bone.DazExtraBone
+                bone.DazExtraBone = fb.DazExtraBone = db.DazExtraBone
 
         setMode('EDIT')
         for bname in self.bnames:
