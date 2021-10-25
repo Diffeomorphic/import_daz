@@ -63,19 +63,19 @@ def getEditBones(rig):
         tails[pb.name] = Vector(pb.DazTailLocal)
         offsets[pb.name] = d2b90(pb.HdOffset)
     for pb in rig.pose.bones:
-        if pb.bone.DazExtraBone:
-            parent = pb.parent
-            while parent and parent.bone.DazExtraBone:
-                parent = parent.parent
-            if parent:
-                offsets[pb.name] += offsets[parent.name]
-    for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
             bname = pb.name[:-5]
             finname = "%s(fin)" % bname
             heads[bname] = heads[finname] = heads[pb.name]
             tails[bname] = tails[finname] = tails[pb.name]
             offsets[bname] = offsets[finname] = offsets[pb.name]
+    for pb in rig.pose.bones:
+        if pb.bone.DazExtraBone:
+            parent = pb.parent
+            while parent and parent.bone.DazExtraBone:
+                parent = parent.parent
+            if parent:
+                offsets[pb.name] = offsets[pb.name] + offsets[parent.name]
     return heads, tails, offsets
 
 
