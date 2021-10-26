@@ -127,60 +127,60 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
         return "Mesh/%s" % cat.name
 
 #-------------------------------------------------------------
-#   Update dynamic classes
+#   Update scrollbars
 #-------------------------------------------------------------
 
-class DAZ_OT_UpdateDynamicClasses(bpy.types.Operator):
-    bl_idname = "daz.update_dynamic_classes"
-    bl_label = "Update Dynamic Classes"
-    bl_description = "Update all dynamic classes in the scene"
+class DAZ_OT_UpdateScrollbars(bpy.types.Operator):
+    bl_idname = "daz.update_scrollbars"
+    bl_label = "Update Scrollbars"
+    bl_description = "Update all scrollbars"
 
     def execute(self, context):
-        updateDynamicClasses(context.scene)
+        updateScrollbars(context.scene)
         return{'FINISHED'}
 
 
-def updateDynamicClasses(scn):
-    def updateRigClasses(scn, rig):
-        global theDynamicMorphClasses
+def updateScrollbars(scn):
+    def updateRigScrollbars(scn, rig):
+        global theMorphScrollbars
         for cat in rig.DazMorphCats:
-            if cat.name not in theDynamicMorphClasses.keys():
+            if cat.name not in theMorphScrollbars.keys():
                 classname = "DAZ_UL_Custom_%s" % cat.name
                 new_type = type(classname, (DAZ_UL_CustomMorphs,), {})
                 bpy.utils.register_class(new_type)
-                theDynamicMorphClasses[cat.name] = new_type
+                theMorphScrollbars[cat.name] = new_type
 
-    def updateMeshClasses(scn, ob):
-        global theDynamicShapeClasses
+    def updateMeshScrollbars(scn, ob):
+        global theShapeScrollbars
         for cat in ob.DazMorphCats:
-            if cat.name not in theDynamicShapeClasses.keys():
+            if cat.name not in theShapeScrollbars.keys():
                 classname = "DAZ_UL_Shape_%s" % cat.name
                 new_type = type(classname, (DAZ_UL_Shapekeys,), {})
                 bpy.utils.register_class(new_type)
-                theDynamicShapeClasses[cat.name] = new_type
+                theShapeScrollbars[cat.name] = new_type
 
-    print("Update Dynamic Classes:", [ob.name for ob in scn.objects])
+    print("Update Scrollbars:", [ob.name for ob in scn.objects])
     for ob in scn.objects:
         if ob.type == 'ARMATURE':
-            updateRigClasses(scn, ob)
+            updateRigScrollbars(scn, ob)
         elif ob.type == 'MESH':
-            updateMeshClasses(scn, ob)
+            updateMeshScrollbars(scn, ob)
 
 #-------------------------------------------------------------
 #   Get UIList class name
 #-------------------------------------------------------------
 
 def getCustomUIList(cat, scn):
-    global theDynamicMorphClasses
-    if cat.name in theDynamicMorphClasses.keys():
+    global theMorphScrollbars
+    if cat.name in theMorphScrollbars.keys():
         return "DAZ_UL_Custom_%s" % cat.name
     else:
         return "DAZ_UL_CustomMorphs"
 
 
 def getShapeUIList(cat, scn):
-    global theDynamicShapeClasses
-    if cat.name in theDynamicShapeClasses.keys():
+    global theShapeScrollbars
+    if cat.name in theShapeScrollbars.keys():
         return "DAZ_UL_Shape_%s" % cat.name
     else:
         return "DAZ_UL_Shapekeys"
@@ -191,31 +191,29 @@ def getShapeUIList(cat, scn):
 
 @persistent
 def onLoad(dummy):
-    updateDynamicClasses(bpy.context.scene)
+    updateScrollbars(bpy.context.scene)
 
 
 classes = [
     DAZ_UL_CustomMorphs,
     DAZ_UL_Shapekeys,
-    DAZ_OT_UpdateDynamicClasses,
+    DAZ_OT_UpdateScrollbars,
 ]
 
-theDynamicMorphClasses = {}
-theDynamicShapeClasses = {}
+theMorphScrollbars = {}
+theShapeScrollbars = {}
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.app.handlers.load_post.append(onLoad)
-    if False and bpy.context:
-        updateDynamicClasses(bpy.context._real_data)
 
 
 def unregister():
     bpy.app.handlers.load_post.remove(onLoad)
-    for cls in theDynamicMorphClasses.values():
+    for cls in theMorphScrollbars.values():
         bpy.utils.unregister_class(cls)
-    for cls in theDynamicShapeClasses.values():
+    for cls in theShapeScrollbars.values():
         bpy.utils.unregister_class(cls)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

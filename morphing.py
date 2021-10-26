@@ -1239,7 +1239,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
     def run(self, context):
         from .driver import setBoolProp
-        from .uilist import updateDynamicClasses
+        from .uilist import updateScrollbars
         self.findIked()
         namepaths = self.getNamePaths()
         msg = self.getAllMorphs(namepaths, context)
@@ -1249,7 +1249,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             props = self.shapekeys.keys()
             addToCategories(self.mesh, props, self.category)
             self.mesh.DazMeshMorphs = True
-        updateDynamicClasses(context.scene)
+        updateScrollbars(context.scene)
         if msg:
             raise DazError(msg, warning=True)
 

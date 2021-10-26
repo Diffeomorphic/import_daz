@@ -738,7 +738,7 @@ class CustomDrawItems:
         op = row.operator("daz.toggle_all_cats", text="Close All Categories")
         op.useOpen = False
         op.useMesh = self.useMesh
-        row.operator("daz.update_dynamic_classes")
+        row.operator("daz.update_scrollbars")
         self.layout.separator()
         for cat in ob.DazMorphCats:
             box = self.layout.box()
