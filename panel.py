@@ -683,7 +683,7 @@ class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 
 
 class DAZ_UL_FacsExpressions(DAZ_UL_StandardMorphs):
-    morphset = "FacsExpressions"
+    morphset = "Facsexpr"
 
 class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     bl_label = "FACS Expressions"

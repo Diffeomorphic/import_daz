@@ -1002,7 +1002,7 @@ class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardM
 
     morphset = "Facsexpr"
     bodypart = "Face"
-    loadMissing = False
+    #loadMissing = False
 
 
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):

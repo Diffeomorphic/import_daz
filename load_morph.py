@@ -89,9 +89,8 @@ class LoadMorph(DriverUser):
         print("Making morphs")
         self.makeAllMorphs(namepaths, True)
         if self.loadMissing:
-            print("Making missing morphs")
             bodypart = namepaths[0][2]
-            self.makeMissingMorphs(bodypart)
+            self.makeMissingMorphs(bodypart, 0)
         else:
             print("Cannot make missing morphs for this type")
         if self.rig:
@@ -644,15 +643,18 @@ class LoadMorph(DriverUser):
     #   Second pass: Load missing morphs
     #------------------------------------------------------------------
 
-    def makeMissingMorphs(self, bodypart):
+    def makeMissingMorphs(self, bodypart, level):
+        print("Making missing morphs level %d" % level)
         from .asset import getDazPath
         for fileref in self.loaded:
             self.referred[fileref] = False
         morphset = self.morphset
         namepaths = []
         groupedpaths,morphfiles = self.setupMorphGroups()
+        someMissing = False
         for ref,unloaded in self.referred.items():
             if unloaded:
+                someMissing = True
                 path = getDazPath(ref)
                 if path:
                     name = ref.rsplit("/",1)[-1]
@@ -662,12 +664,16 @@ class LoadMorph(DriverUser):
                         groupedpaths[morphset].append(data)
                     else:
                         namepaths.append(data)
-        if namepaths:
-            self.makeAllMorphs(namepaths, False)
-        for mset,namepaths in groupedpaths.items():
+        if someMissing:
+            self.referred = {}
             if namepaths:
-                self.morphset = mset
                 self.makeAllMorphs(namepaths, False)
+            for mset,namepaths in groupedpaths.items():
+                if namepaths:
+                    self.morphset = mset
+                    self.makeAllMorphs(namepaths, False)
+            if level < 5:
+                self.makeMissingMorphs(bodypart, level+1)
         self.morphset = morphset
 
 
