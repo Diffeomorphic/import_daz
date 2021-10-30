@@ -221,7 +221,7 @@ class Instance(Accessor, Channels, SimNode):
             elif extra["type"] == "studio/node/shell":
                 self.shstruct = extra
             elif extra["type"] == "studio/node/group_node":
-                self.isGroupNode = True
+                self.addGroupNode(context)
             elif extra["type"] == "studio/node/instance":
                 self.isNodeInstance = True
             elif extra["type"] == "studio/node/strand_hair":
@@ -238,11 +238,16 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def preprocess2(self, context):
-        if self.isGroupNode:
-            coll = bpy.data.collections.new(name=self.label)
+        pass
+
+
+    def addGroupNode(self, context):
+        print("AGG", self.label, self.parent, self.collection.name)
+        coll = bpy.data.collections.new(name=self.label)
+        if self.parent is None:
             self.collection.children.link(coll)
-            self.collection = coll
-            self.groupChildren(self.collection)
+        self.collection = coll
+        self.groupChildren(coll)
 
 
     def groupChildren(self, coll):
@@ -356,14 +361,14 @@ class Instance(Accessor, Channels, SimNode):
         empty = self.rna
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = refcoll
-        addToCollection(empty, parent.collection)
+        #addToCollection(empty, parent.collection)
 
 
     def makeNewRefColl(self, context, ob, parcoll):
-        refname = ob.name + " REF"
+        refname = "%s REF" % ob.name
         refcoll = bpy.data.collections.new(name=refname)
         if LS.refColls is None:
-            LS.refColls = bpy.data.collections.new(name=LS.collection.name + " REFS")
+            LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
             context.scene.collection.children.link(LS.refColls)
         LS.refColls.children.link(refcoll)
         LS.duplis[refname] = Dupli(ob, refcoll, parcoll)
@@ -514,6 +519,7 @@ class Dupli:
         self.empty.instance_type = 'COLLECTION'
         self.empty.instance_collection = self.refcoll
         parcoll.objects.link(self.empty)
+        print("DUP", self.empty.name, parcoll.name)
 
 
     def addToRefColl(self, ob):
@@ -785,6 +791,7 @@ class Node(Asset, Formula, Channels):
         ob.DazRotMode = self.rotation_order
         ob.DazMorphPrefixes = False
         inst.collection.objects.link(ob)
+        print("ARR", ob.name, inst.collection.name)
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)
         ob.DazScene = LS.scene
