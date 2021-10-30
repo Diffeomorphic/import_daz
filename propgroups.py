@@ -106,51 +106,6 @@ class DazRigidityScaleFactor(bpy.types.PropertyGroup):
     affected_bones: bpy.props.CollectionProperty(type=DazAffectedBone)
 
 #-------------------------------------------------------------
-#   Property groups, for drivers
-#-------------------------------------------------------------
-
-class DazMorphGroupProps:
-    prop : StringProperty()
-    factor : FloatProperty()
-    factor2 : FloatProperty()
-    index : IntProperty()
-    default : FloatProperty()
-    simple : BoolProperty(default=True)
-
-
-class DazMorphGroup(bpy.types.PropertyGroup, DazMorphGroupProps):
-    def __repr__(self):
-        return "<MorphGroup %d %s %f %f>" % (self.index, self.prop, self.factor, self.default)
-
-    def eval(self, rig):
-        if self.simple:
-            return self.factor*(rig[self.name] - self.default)
-        else:
-            value = rig[self.name] - self.default
-            return (self.factor*(value > 0) + self.factor2*(value < 0))*value
-
-    def display(self):
-        return ("MG %d %-25s %10.6f %10.6f %10.2f" % (self.index, self.name, self.factor, self.factor2, self.default))
-
-    def init(self, prop, idx, default, factor, factor2):
-        self.name = prop
-        self.index = idx
-        self.factor = factor
-        self.default = default
-        if factor2 is None:
-            self.factor2 = 0
-            self.simple = True
-        else:
-            self.factor2 = factor2
-            self.simple = False
-
-    def __lt__(self,other):
-        if self.name == other.name:
-            return (self.index < other.index)
-        else:
-            return (self.name < other.name)
-
-#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -168,7 +123,6 @@ classes = [
     DazStringStringGroup,
     DazTextGroup,
     DazMorphInfoGroup,
-    DazMorphGroup,
     ]
 
 def register():
