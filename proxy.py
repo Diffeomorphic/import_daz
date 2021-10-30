@@ -1534,9 +1534,6 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                         if mat_i.material == fmat:
                             f.material_index = i
                             break
-            else:
-                mat = self.getDefaultMaterial(ob)
-                me.materials.append(mat)
 
         updateScene(context)
 
