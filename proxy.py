@@ -1324,151 +1324,8 @@ class DAZ_OT_PrintStatistics(bpy.types.Operator, IsMesh):
 
 #-------------------------------------------------------------
 #   Add mannequin
+#   With improvements by ViSlArT, issue 756
 #-------------------------------------------------------------
-
-def remapBones(bone, headType, vgrps, majors, remap):
-    special = {
-        'SOLID' : ["head"],
-        'JAW' : ["head", "lowerjaw", "leye", "reye"],
-        'FULL' : []
-          }
-    if bone.name.lower() in special[headType]:
-        if bone.name in vgrps.keys():
-            remap = vgrps[bone.name].index
-    elif remap is not None:
-        if bone.name in vgrps.keys():
-            gn = vgrps[bone.name].index
-            if gn in majors.keys():
-                majors[remap] += majors[gn]
-                del majors[gn]
-    for child in bone.children:
-        remapBones(child, headType, vgrps, majors, remap)
-
-
-def addMannequins(self, context):
-    selected = getSelectedObjects(context)
-    meshes = getSelectedMeshes(context)
-    ob = context.object
-    rig = ob.parent
-    if not (rig and rig.type == 'ARMATURE'):
-        raise DazError("Mesh %s has no armature parent" % ob)
-    setActiveObject(context, rig)
-    setMode('OBJECT')
-    oldlayers = list(rig.data.layers)
-    rig.data.layers = 32*[True]
-
-    # Create group/collection
-    mangrp = None
-    scn = context.scene
-    coll = rigcoll = getCollection(rig)
-    if self.useGroup:
-        from .hide import createSubCollection
-        coll = createSubCollection(rigcoll, self.group)
-
-    # Add mannequin objects for selected meshes
-    for ob in meshes:
-        addMannequin(ob, context, rig, coll, mangrp, self.headType)
-
-    for ob in getSelectedObjects(context):
-        if ob in selected:
-            selectSet(ob, True)
-        else:
-            selectSet(ob, False)
-    rig.data.layers = oldlayers
-
-
-def addMannequin(ob, context, rig, coll, mangrp, headType):
-    from random import random
-    from .node import setParent
-    from .guess import getSkinMaterial
-
-    mat = bpy.data.materials.new("%sMannequin" % ob.name)
-    mat.diffuse_color[0:3] = (random(), random(), random())
-    for omat in ob.data.materials:
-        mat.diffuse_color = omat.diffuse_color
-        if getSkinMaterial(omat) == 'Skin':
-            break
-
-    faceverts, vertfaces = getVertFaces(ob)
-    majors = {}
-    skip = []
-    for vgrp in ob.vertex_groups:
-        if vgrp.name in rig.data.bones:
-            majors[vgrp.index] = []
-        else:
-            skip.append(vgrp.index)
-    for v in ob.data.vertices:
-        wmax = 1e-3
-        vbest = None
-        for g in v.groups:
-            if g.weight > wmax and g.group not in skip:
-                wmax = g.weight
-                vbest = v
-                gbest = g.group
-        if vbest is not None:
-            majors[gbest].append(vbest)
-
-    roots = [bone for bone in rig.data.bones if bone.parent is None]
-    for bone in roots:
-        remapBones(bone, headType, ob.vertex_groups, majors, None)
-
-    obverts = ob.data.vertices
-    vmax = 0.49
-    if ob.data.shape_keys:
-        for skey in ob.data.shape_keys.key_blocks:
-            if skey.value > vmax:
-                print("Using shapekey %s for %s locations" % (skey.name, ob.name))
-                obverts = skey.data
-                vmax = skey.value
-
-    nobs = []
-    for vgrp in ob.vertex_groups:
-        if (vgrp.name not in rig.pose.bones.keys() or
-            vgrp.index not in majors.keys()):
-            continue
-        fnums = []
-        for v in majors[vgrp.index]:
-            for fn in vertfaces[v.index]:
-                fnums.append(fn)
-        fnums = list(set(fnums))
-
-        nverts = []
-        nfaces = []
-        for fn in fnums:
-            f = ob.data.polygons[fn]
-            nverts += f.vertices
-            nfaces.append(f.vertices)
-        if not nfaces:
-            continue
-        nverts = list(set(nverts))
-        nverts.sort()
-
-        bone = rig.data.bones[vgrp.name]
-        head = bone.head_local
-        verts = [obverts[vn].co-head for vn in nverts]
-        assoc = dict([(vn,n) for n,vn in enumerate(nverts)])
-        faces = []
-        for fverts in nfaces:
-            faces.append([assoc[vn] for vn in fverts])
-
-        name = ob.name[0:3] + "_" + vgrp.name
-        me = bpy.data.meshes.new(name)
-        me.from_pydata(verts, [], faces)
-        nob = bpy.data.objects.new(name, me)
-        coll.objects.link(nob)
-        nob.location = head
-        nob.lock_location = nob.lock_rotation = nob.lock_scale = (True,True,True)
-        nobs.append((nob, rig, bone, me))
-
-    updateScene(context)
-    for nob, rig, bone, me in nobs:
-        setParent(context, nob, rig, bone.name, update=False)
-        nob.DazMannequin = True
-        if mangrp:
-            mangrp.objects.link(nob)
-        me.materials.append(mat)
-    return nobs
-
 
 class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
     bl_idname = "daz.add_mannequin"
@@ -1495,13 +1352,228 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         description = "Add mannequin to this collection",
         default = "Mannequin")
 
+    useNormals : BoolProperty(
+        name = "Transfer Normals",
+        description = "Transfer custom normals to mannequin meshes",
+        default = True)
+
+    useVertexGroups : BoolProperty(
+        name = "Transfer Vertex Groups",
+        description = "Transfer vertex groups to mannequin meshes",
+        default = False)
+
+    useVertexColors : BoolProperty(
+        name = "Transfer Vertex Colors",
+        description = "Transfer vertex colors to mannequin meshes",
+        default = False)
+
+    useUvLayers : BoolProperty(
+        name = "Transfer UV Layers",
+        description = "Transfer UV layers to mannequin meshes",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "headType")
         self.layout.prop(self, "useGroup")
         self.layout.prop(self, "group")
+        self.layout.prop(self, "useNormals")
+        self.layout.prop(self, "useVertexGroups")
+        self.layout.prop(self, "useVertexColors")
+        self.layout.prop(self, "useUvLayers")
 
     def run(self, context):
-        addMannequins(self, context)
+        obs,nobs = self.addMannequins(context)
+        for obname,ob in obs.items():
+            self.transferData(context, ob, nobs[obname])
+
+
+    def addMannequins(self, context):
+        selected = getSelectedObjects(context)
+        meshes = getSelectedMeshes(context)
+        ob = context.object
+        rig = ob.parent
+        if not (rig and rig.type == 'ARMATURE'):
+            raise DazError("Mesh %s has no armature parent" % ob)
+        setActiveObject(context, rig)
+        setMode('OBJECT')
+        oldlayers = list(rig.data.layers)
+        rig.data.layers = 32*[True]
+        oldpose = rig.data.pose_position
+        rig.data.pose_position = 'REST'
+
+        # Create group/collection
+        mangrp = None
+        scn = context.scene
+        coll = rigcoll = getCollection(rig)
+        obs = {}
+        nobs = {}
+        if self.useGroup:
+            from .hide import createSubCollection
+            coll = createSubCollection(rigcoll, self.group)
+
+        # Add mannequin objects for selected meshes
+        for ob in meshes:
+            obs[ob.name] = ob
+            nobs[ob.name] = self.addMannequin(ob, context, rig, coll, mangrp)
+
+        for ob in getSelectedObjects(context):
+            if ob in selected:
+                selectSet(ob, True)
+            else:
+                selectSet(ob, False)
+        rig.data.layers = oldlayers
+        rig.data.pose_position = oldpose
+        return obs, nobs
+
+
+    def addMannequin(self, ob, context, rig, coll, mangrp):
+        from random import random
+        from .node import setParent
+        from .guess import getSkinMaterial
+
+        faceverts, vertfaces = getVertFaces(ob)
+        majors = {}
+        skip = []
+        for vgrp in ob.vertex_groups:
+            bone = rig.data.bones.get(vgrp.name)
+            if bone and bone.use_deform:
+                majors[vgrp.index] = []
+            else:
+                skip.append(vgrp.index)
+        for v in ob.data.vertices:
+            wmax = 1e-3
+            vbest = None
+            for g in v.groups:
+                if g.weight > wmax and g.group not in skip:
+                    wmax = g.weight
+                    vbest = v
+                    gbest = g.group
+            if vbest is not None:
+                majors[gbest].append(vbest)
+
+        roots = [bone for bone in rig.data.bones if bone.parent is None]
+        for bone in roots:
+            self.remapBones(bone, ob.vertex_groups, majors, None)
+
+        mob = ob.evaluated_get(context.evaluated_depsgraph_get())
+
+        mat = None
+        face_mats = dict()
+        if ob.data.materials:
+            for rnd in range(3, 8):
+                face_mats[rnd] = dict()
+                for f in mob.data.polygons:
+                    face_mats[rnd][tuple(round(x, rnd) for x in f.normal)] = ob.material_slots[f.material_index].material
+
+        obverts = mob.data.vertices
+        nobinfos = []
+        for vgrp in ob.vertex_groups:
+            if (vgrp.name not in rig.pose.bones.keys() or
+                vgrp.index not in majors.keys()):
+                continue
+            fnums = []
+            for v in majors[vgrp.index]:
+                for fn in vertfaces[v.index]:
+                    fnums.append(fn)
+            fnums = list(set(fnums))
+
+            nverts = []
+            nfaces = []
+            for fn in fnums:
+                f = ob.data.polygons[fn]
+                nverts += f.vertices
+                nfaces.append(f.vertices)
+            if not nfaces:
+                continue
+            nverts = list(set(nverts))
+            nverts.sort()
+
+            bone = rig.data.bones[vgrp.name]
+            head = bone.head_local
+            verts = [obverts[vn].co-head for vn in nverts]
+            assoc = dict([(vn,n) for n,vn in enumerate(nverts)])
+            faces = []
+            for fverts in nfaces:
+                faces.append([assoc[vn] for vn in fverts])
+
+            name = ob.name[0:3] + "_" + vgrp.name
+            me = bpy.data.meshes.new(name)
+            me.from_pydata(verts, [], faces)
+            nob = bpy.data.objects.new(name, me)
+            coll.objects.link(nob)
+            nob.location = head
+            nob.lock_location = nob.lock_rotation = nob.lock_scale = (True,True,True)
+            nobinfos.append((nob, rig, bone, me))
+
+            if face_mats:
+                for f in me.polygons:
+                    for rnd in reversed(range(3, 8)):
+                        fmat = face_mats[rnd].get(tuple(round(x, rnd) for x in f.normal))
+                        if fmat:
+                            break
+                    else:
+                        "Insert code to generate the mannequin material"
+                        fmat = mat
+                    if fmat.name not in me.materials:
+                        me.materials.append(fmat)
+                    for (i, mat_i) in enumerate(nob.material_slots):
+                        if mat_i.material == fmat:
+                            f.material_index = i
+                            break
+
+        updateScene(context)
+
+        for nob, rig, bone, me in nobinfos:
+            setParent(context, nob, rig, bone.name, update=False)
+            nob.DazMannequin = True
+            if mangrp:
+                mangrp.objects.link(nob)
+            me.materials.append(mat)
+        return [nobinfo[0] for nobinfo in nobinfos]
+
+
+    def remapBones(self, bone, vgrps, majors, remap):
+        special = {
+            'SOLID' : ["head"],
+            'JAW' : ["head", "lowerjaw", "leye", "reye"],
+            'FULL' : []
+              }
+        if bone.name.lower() in special[self.headType]:
+            if bone.name in vgrps.keys():
+                remap = vgrps[bone.name].index
+        elif remap is not None:
+            if bone.name in vgrps.keys():
+                gn = vgrps[bone.name].index
+                if gn in majors.keys():
+                    majors[remap] += majors[gn]
+                    del majors[gn]
+        for child in bone.children:
+            self.remapBones(child, vgrps, majors, remap)
+
+
+    def transferData(self, context, ob, nobs):
+        print("Transfer data from %s to %d meshes" % (ob.name, len(nobs)))
+        transfer = bpy.ops.object.data_transfer
+        activateObject(context, ob)
+        for nob in nobs:
+            nob.select_set(True)
+
+        if self.useNormals:
+            for face in ob.data.polygons:
+                if face.use_smooth:
+                    bpy.ops.object.shade_smooth()
+                    break
+            if ob.data.use_auto_smooth:
+                transfer(data_type='CUSTOM_NORMAL')
+                for nob in nobs:
+                    nob.data.use_auto_smooth = True
+
+        if ob.vertex_groups and self.useVertexGroups:
+            transfer(data_type='VGROUP_WEIGHTS', layers_select_src='ALL', layers_select_dst='NAME')
+        if ob.data.vertex_colors and self.useVertexColors:
+            transfer(data_type='VCOL', layers_select_src='ALL', layers_select_dst='NAME')
+        if ob.data.uv_layers and self.useUvLayers:
+            transfer(data_type='UV', layers_select_src='ALL', layers_select_dst='NAME')
 
 #-------------------------------------------------------------
 #   Add push
