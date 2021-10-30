@@ -915,17 +915,35 @@ class DAZ_OT_MixShapekeys(DazOperator):
 
 #-------------------------------------------------------------
 #   Prune vertex groups
+#   pruneVertexGroups used in proxy.py
 #-------------------------------------------------------------
 
-def findVertexGroups(ob):
+def findVertexGroups(ob, bnames):
     nverts = len(ob.data.vertices)
     nvgrps = len(ob.vertex_groups)
-    vnames = [vgrp.name for vgrp in ob.vertex_groups]
+    vnames = [vgrp.name for vgrp in ob.vertex_groups if vgrp.name not in bnames]
     weights = dict([(gn, np.zeros(nverts, dtype=np.float)) for gn in range(nvgrps)])
     for v in ob.data.vertices:
         for g in v.groups:
             weights[g.group][v.index] = g.weight
     return vnames,weights
+
+
+def pruneVertexGroups(ob, threshold, bnames, verbose):
+    vnames,weights = findVertexGroups(ob, bnames)
+    for vgrp in list(ob.vertex_groups):
+        ob.vertex_groups.remove(vgrp)
+    for gn,vname in enumerate(vnames):
+        cweights = weights[gn]
+        cweights[cweights > 1] = 1
+        cweights[cweights < threshold] = 0
+        nonzero = np.nonzero(cweights)[0].astype(int)
+        if len(nonzero) > 0:
+            vgrp = ob.vertex_groups.new(name=vname)
+            for vn in nonzero:
+                vgrp.add([int(vn)], cweights[vn], 'REPLACE')
+            if verbose:
+                print("  * %s" % vname)
 
 
 class DAZ_OT_PruneVertexGroups(DazPropsOperator, ThresholdFloat, IsMesh):
@@ -939,22 +957,7 @@ class DAZ_OT_PruneVertexGroups(DazPropsOperator, ThresholdFloat, IsMesh):
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            self.pruneVertexGroups(ob)
-
-    def pruneVertexGroups(self, ob):
-        vnames,weights = findVertexGroups(ob)
-        for vgrp in list(ob.vertex_groups):
-            ob.vertex_groups.remove(vgrp)
-        for gn,vname in enumerate(vnames):
-            cweights = weights[gn]
-            cweights[cweights > 1] = 1
-            cweights[cweights < self.threshold] = 0
-            nonzero = np.nonzero(cweights)[0].astype(int)
-            if len(nonzero) > 0:
-                vgrp = ob.vertex_groups.new(name=vname)
-                for vn in nonzero:
-                    vgrp.add([int(vn)], cweights[vn], 'REPLACE')
-                print("  * %s" % vname)
+            pruneVertexGroups(ob, self.threshold, [], True)
 
 #----------------------------------------------------------
 #   Initialize

@@ -1362,6 +1362,18 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         description = "Transfer vertex groups to mannequin meshes",
         default = False)
 
+    ignoreBoneGroups : BoolProperty(
+        name = "Ignore Bone Groups",
+        description = "Don't transfer bone vertex groups",
+        default = False)
+
+    threshold : FloatProperty(
+        name = "Threshold",
+        description = "Minimum vertex weight to keep",
+        min = 0.0, max = 1.0,
+        precision = 4,
+        default = 1e-3)
+
     useVertexColors : BoolProperty(
         name = "Transfer Vertex Colors",
         description = "Transfer vertex colors to mannequin meshes",
@@ -1378,13 +1390,20 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         self.layout.prop(self, "group")
         self.layout.prop(self, "useNormals")
         self.layout.prop(self, "useVertexGroups")
+        if self.useVertexGroups:
+            self.layout.prop(self, "ignoreBoneGroups")
+            self.layout.prop(self, "threshold")
         self.layout.prop(self, "useVertexColors")
         self.layout.prop(self, "useUvLayers")
 
     def run(self, context):
-        obs,nobs = self.addMannequins(context)
+        obs,nobs,rig = self.addMannequins(context)
+        if self.ignoreBoneGroups:
+            bnames = rig.data.bones.keys()
+        else:
+            bnames = []
         for obname,ob in obs.items():
-            self.transferData(context, ob, nobs[obname])
+            self.transferData(context, ob, nobs[obname], bnames)
 
 
     def addMannequins(self, context):
@@ -1423,14 +1442,10 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                 selectSet(ob, False)
         rig.data.layers = oldlayers
         rig.data.pose_position = oldpose
-        return obs, nobs
+        return obs, nobs, rig
 
 
     def addMannequin(self, ob, context, rig, coll, mangrp):
-        from random import random
-        from .node import setParent
-        from .guess import getSkinMaterial
-
         faceverts, vertfaces = getVertFaces(ob)
         majors = {}
         skip = []
@@ -1457,7 +1472,6 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
 
         mob = ob.evaluated_get(context.evaluated_depsgraph_get())
 
-        mat = None
         face_mats = dict()
         if ob.data.materials:
             for rnd in range(3, 8):
@@ -1467,6 +1481,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
 
         obverts = mob.data.vertices
         nobinfos = []
+        self.defaultMaterial = None
         for vgrp in ob.vertex_groups:
             if (vgrp.name not in rig.pose.bones.keys() or
                 vgrp.index not in majors.keys()):
@@ -1496,7 +1511,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             for fverts in nfaces:
                 faces.append([assoc[vn] for vn in fverts])
 
-            name = ob.name[0:3] + "_" + vgrp.name
+            name = "%s_%s" % (ob.name[0:3], vgrp.name)
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             nob = bpy.data.objects.new(name, me)
@@ -1512,24 +1527,40 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                         if fmat:
                             break
                     else:
-                        "Insert code to generate the mannequin material"
-                        fmat = mat
+                        fmat = self.getDefaultMaterial(ob)
                     if fmat.name not in me.materials:
                         me.materials.append(fmat)
                     for (i, mat_i) in enumerate(nob.material_slots):
                         if mat_i.material == fmat:
                             f.material_index = i
                             break
+            else:
+                mat = self.getDefaultMaterial(ob)
+                me.materials.append(mat)
 
         updateScene(context)
 
+        from .node import setParent
         for nob, rig, bone, me in nobinfos:
             setParent(context, nob, rig, bone.name, update=False)
             nob.DazMannequin = True
             if mangrp:
                 mangrp.objects.link(nob)
-            me.materials.append(mat)
         return [nobinfo[0] for nobinfo in nobinfos]
+
+
+    def getDefaultMaterial(self, ob):
+        from random import random
+        from .guess import getSkinMaterial
+        if self.defaultMaterial is None:
+            mat = bpy.data.materials.new("%s_Mannequin" % ob.name)
+            self.defaultMaterial = mat
+            mat.diffuse_color[0:3] = (random(), random(), random())
+            for omat in ob.data.materials:
+                mat.diffuse_color = omat.diffuse_color
+                if getSkinMaterial(omat) == 'Skin':
+                    break
+        return self.defaultMaterial
 
 
     def remapBones(self, bone, vgrps, majors, remap):
@@ -1551,7 +1582,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             self.remapBones(child, vgrps, majors, remap)
 
 
-    def transferData(self, context, ob, nobs):
+    def transferData(self, context, ob, nobs, bnames):
         print("Transfer data from %s to %d meshes" % (ob.name, len(nobs)))
         transfer = bpy.ops.object.data_transfer
         activateObject(context, ob)
@@ -1569,7 +1600,10 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                     nob.data.use_auto_smooth = True
 
         if ob.vertex_groups and self.useVertexGroups:
+            from .transfer import pruneVertexGroups
             transfer(data_type='VGROUP_WEIGHTS', layers_select_src='ALL', layers_select_dst='NAME')
+            for nob in nobs:
+                pruneVertexGroups(nob, self.threshold, bnames, False)
         if ob.data.vertex_colors and self.useVertexColors:
             transfer(data_type='VCOL', layers_select_src='ALL', layers_select_dst='NAME')
         if ob.data.uv_layers and self.useUvLayers:
