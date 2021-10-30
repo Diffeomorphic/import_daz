@@ -392,7 +392,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             return None
 
 
-    # Improvements by Suttisak Denduangchai, issue 749
+    # Improvements by Suttisak Denduangchai, issue 749, 754
     def correctForRigidity(self, ob, skey):
         from mathutils import Matrix
         for rgroup in ob.data.DazRigidityGroups:
@@ -422,11 +422,11 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             # Transfrom Base Coordinate to be relative to its center
             base_coords_relative_to_base_center_coords = base_coords - base_center_coords
             # Singular value decomposition
-            U, S1, V = np.linalg.svd(base_coords_relative_to_base_center_coords)
+            S1= np.linalg.svd(base_coords_relative_to_base_center_coords, compute_uv=False)
             # Transfrom Shapekey Coordinate to be relative to its center
             shapekey_coords_relative_to_shapekey_center_coords = shapekey_coords - shapekey_center_coords
             # Singular value decomposition
-            U, S2, V = np.linalg.svd(shapekey_coords_relative_to_shapekey_center_coords)
+            S2= np.linalg.svd(shapekey_coords_relative_to_shapekey_center_coords, compute_uv=False)
             # U matrix is average coordinates of polygon, S is matrix is how coordinates dilate and reflex. The dilated and reflexed shape (without rotation) is U cross S
             scale_between_shapekey_and_base_averagecoords = S2/S1
 
@@ -457,18 +457,66 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             for n in range(3):
                 smat[n][n]= target_dimension[n][2]
             if "Rigidity" in ob.vertex_groups.keys():
-                idx = ob.vertex_groups["Rigidity"].index
+                rigidity_map_vertex_group_index = ob.vertex_groups["Rigidity"].index
                 for n,vn in enumerate(maskverts): # Called Rigidity Participant Vertex in Daz3D
                     for v in ob.data.vertices:
                         if(v.index == vn):
                             for g in v.groups:
-                                if g.group == idx:
+                                if g.group == rigidity_map_vertex_group_index:
                                     # Max Rigidity (Rigidity=1) coordinate
                                     max_rigidity_coordinate = (smat @ (ob.data.vertices[vn].co - base_center_vector)) + shapekey_center_vector
                                     # Min Rigidity (Rigidity=0) coordinate
                                     min_rididity_coordinate = skey.data[vn].co
                                     # Mix both coordinate using Rigidity Weight Map
                                     skey.data[vn].co = (max_rigidity_coordinate * g.weight) + ((1-g.weight)*min_rididity_coordinate)
+
+                # Save DazRigidityScaleFactor to Armature
+                parent = ob.parent
+                while parent:
+                    if(parent.type == "ARMATURE"):
+                        rig = parent
+                        break
+                    parent = parent.parent
+                if rig:
+                    if ob.name in rig.data.DazRigidityScaleFactors:
+                        rigidity_group = rig.data.DazRigidityScaleFactors[ob.name]
+                    else:
+                        rigidity_group = rig.data.DazRigidityScaleFactors.add()
+                        rigidity_group.name = ob.name
+                        rigidity_group.base_center_coord = base_center_vector
+
+                    rigidity_group.affected_bones.clear()
+                    affectedbones = [vx for vx in ob.vertex_groups.keys() if vx in rig.data.bones];
+                    for affectedbonename in affectedbones:
+                        newbonename = rigidity_group.affected_bones.add()
+                        newbonename.name = affectedbonename
+                        affectedbone_vertex_group_index = ob.vertex_groups[affectedbonename].index
+                        vertex_group_weight = 0
+                        rigidity_map_weight_sum = 0
+                        for v in ob.data.vertices:
+                            vertex_enveloping_bone_map = None
+                            rigidity_map = None
+                            for g in v.groups:
+                                if g.group == affectedbone_vertex_group_index:
+                                    vertex_enveloping_bone_map = g
+                                if g.group == rigidity_map_vertex_group_index:
+                                    rigidity_map = g
+                            if(vertex_enveloping_bone_map and rigidity_map):
+                                rigidity_map_weight_sum = rigidity_map_weight_sum + vertex_enveloping_bone_map.weight*rigidity_map.weight
+                                vertex_group_weight = vertex_group_weight + vertex_enveloping_bone_map.weight
+                        if(vertex_group_weight>0):
+                            newbonename.weight = rigidity_map_weight_sum/vertex_group_weight
+
+                    if skey.name in rigidity_group.shapekeys:
+                        shapekey_scalefactor = rigidity_group.shapekeys[skey.name]
+                    else:
+                        shapekey_scalefactor = rigidity_group.shapekeys.add()
+                        shapekey_scalefactor.name = skey.name
+
+                    shapekey_scalefactor.shapekey_center_coord = shapekey_center_vector
+                    shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
+
+                    print("Save scale factor for"," ".join(affectedbones))
 
 
     def ignoreMorph(self, src, trg, hskey):

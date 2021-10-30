@@ -41,7 +41,7 @@
 
 import bpy
 from bpy.app.handlers import persistent
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 def getEditBones(rig):
     def d2b90(v):
@@ -69,8 +69,45 @@ def getEditBones(rig):
             heads[bname] = heads[finname] = heads[pb.name]
             tails[bname] = tails[finname] = tails[pb.name]
             offsets[bname] = offsets[finname] = offsets[pb.name]
+
+    processed_bonenames = []
+    skeys = None
+    for ob in rig.children:
+        if ob.DazMesh:
+            skeys = ob.data.shape_keys
+            break
+    if skeys:
+        for rigidity_group in rig.data.DazRigidityScaleFactors:
+            base_center_coord = rigidity_group.base_center_coord
+            combined_all_used_shapekeys_center_coord = Vector(base_center_coord) # Copy
+            combined_all_used_shapekeys_scale_difference_from_baseshape = Matrix(([0,0,0],[0,0,0],[0,0,0]))
+            for shapekey_scale_factor in rigidity_group.shapekeys:
+                if shapekey_scale_factor.name in skeys.key_blocks.keys():
+                    shapekey = skeys.key_blocks[shapekey_scale_factor.name]
+                    if shapekey.value != 0:
+                        shapekey_center_coord = shapekey_scale_factor.shapekey_center_coord
+                        scale = shapekey_scale_factor.scale
+                        for n in range(3):
+                           combined_all_used_shapekeys_scale_difference_from_baseshape[n][n] =((shapekey.value * scale[n][n] + (1-shapekey.value) * 1)-1) + combined_all_used_shapekeys_scale_difference_from_baseshape[n][n]
+                           combined_all_used_shapekeys_center_coord[n] = (shapekey.value * (shapekey_center_coord[n] - base_center_coord[n])) + combined_all_used_shapekeys_center_coord[n]
+            combined_all_used_shapekeys_scale_difference_from_baseshape = combined_all_used_shapekeys_scale_difference_from_baseshape + Matrix.Identity(3)
+
+            for bone in rigidity_group.affected_bones:
+                parent = rig.pose.bones[bone.name].parent
+                while parent and parent.bone.DazExtraBone:
+                    parent = parent.parent
+                heads[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (heads[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(heads[bone.name]+ offsets[parent.name]))
+                tails[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (tails[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(tails[bone.name]+ offsets[parent.name]))
+                offsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ offsets[bone.name]) + ((1-bone.weight)*offsets[bone.name])
+                finname = "%s(fin)" % bone.name
+                drvname = "%s(drv)" % bone.name
+                heads[drvname] = heads[finname] = heads[bone.name]
+                tails[drvname] = tails[finname] = tails[bone.name]
+                offsets[drvname] = offsets[finname] = offsets[bone.name]
+                processed_bonenames.append(bone.name)
+
     for pb in rig.pose.bones:
-        if pb.bone.DazExtraBone:
+        if pb.bone.DazExtraBone and pb.name not in processed_bonenames :
             parent = pb.parent
             while parent and parent.bone.DazExtraBone:
                 parent = parent.parent

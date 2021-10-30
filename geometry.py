@@ -1538,10 +1538,11 @@ classes = [
 ]
 
 def register():
-    from .propgroups import DazIntGroup, DazFloatGroup, DazPairGroup, DazRigidityGroup, DazStringStringGroup, DazTextGroup
+    from .propgroups import DazIntGroup, DazFloatGroup, DazPairGroup, DazRigidityGroup, DazRigidityScaleFactor, DazStringStringGroup, DazTextGroup
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    bpy.types.Armature.DazRigidityScaleFactors = bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
     bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)
     bpy.types.Mesh.DazOrigVerts = CollectionProperty(type = DazIntGroup)
     bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
