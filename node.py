@@ -152,11 +152,11 @@ class Instance(Accessor, Channels, SimNode):
         self.cpoint = Vector((0,0,0))
         self.wmat = self.wrot = self.wscale = Matrix()
         self.refcoll = None
-        self.isGroupNode = False
+        self.groupNode = None
         self.isStrandHair = False
         self.ignore = False
         self.isNodeInstance = False
-        self.node2 = None
+        self.instanceTarget = None
         self.hdobject = None
         self.modifiers = {}
         self.attributes = copyElements(node.attributes)
@@ -196,14 +196,15 @@ class Instance(Accessor, Channels, SimNode):
 
     def preprocess(self, context):
         self.updateMatrices()
-        for channel in self.channels.values():
-            if "type" not in channel.keys():
-                continue
-            elif channel["type"] == "node" and "node" in channel.keys():
+        for key,channel in self.channels.items():
+            if key == "Instance Target":
                 ref = channel["node"]
                 node = self.getAsset(ref)
                 if node:
-                    self.node2 = node.getInstance(ref)
+                    self.instanceTarget = node.getInstance(ref)
+                print("TRG", key, ref)
+            elif "type" not in channel.keys():
+                continue
             elif channel["type"] == "bool":
                 words = channel["id"].split("_")
                 if len(words) > 2 and words[1] == "group" and words[-1] == "vis":
@@ -221,7 +222,7 @@ class Instance(Accessor, Channels, SimNode):
             elif extra["type"] == "studio/node/shell":
                 self.shstruct = extra
             elif extra["type"] == "studio/node/group_node":
-                self.addGroupNode(context)
+                self.isGroupNode = True
             elif extra["type"] == "studio/node/instance":
                 self.isNodeInstance = True
             elif extra["type"] == "studio/node/strand_hair":
@@ -239,21 +240,6 @@ class Instance(Accessor, Channels, SimNode):
 
     def preprocess2(self, context):
         pass
-
-
-    def addGroupNode(self, context):
-        print("AGG", self.label, self.parent, self.collection.name)
-        coll = bpy.data.collections.new(name=self.label)
-        if self.parent is None:
-            self.collection.children.link(coll)
-        self.collection = coll
-        self.groupChildren(coll)
-
-
-    def groupChildren(self, coll):
-        for child in self.children.values():
-            child.collection = coll
-            child.groupChildren(coll)
 
 
     def buildChannels(self, ob):
@@ -334,55 +320,56 @@ class Instance(Accessor, Channels, SimNode):
             geonode.postbuild(context, self)
 
 
-    def buildInstance(self, context):
-        if self.isNodeInstance and GS.useInstancing:
-            if self.node2 is None:
-                print('Instance "%s" has no node' % self.name)
-            elif self.rna is None:
-                print('Instance "%s" has not been built' % self.name)
-            elif self.rna.type != 'EMPTY':
-                print('Instance "%s" is not an empty' % self.name)
-            elif self.node2.rna is None:
-                print('Instance "%s" node2 "%s" not built' % (inst.name, inst.node2.name))
-            else:
-                self.buildNodeInstance(context)
+    def addGroupNode(self, context):
+        coll = bpy.data.collections.new(name=self.label)
+        self.groupNode = coll
+        if self.parent is None:
+            self.collection.children.link(coll)
+        self.collection = coll
+        self.groupChildren(coll)
+
+
+    def groupChildren(self, coll):
+        for child in self.children.values():
+            child.collection = coll
+            child.groupChildren(coll)
+
+
+    def getRefColl(self, context):
+        if self.refcoll:
+            return self.refcoll
+        ob = self.rna
+        obname = ob.name
+        ob.name = "%s REF" % obname
+
+        if LS.refColls is None:
+            LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
+            LS.collection.children.link(LS.refColls)
+        self.refcoll = bpy.data.collections.new(name = obname)
+        LS.refColls.children.link(self.refcoll)
+        self.refcoll.objects.link(ob)
+        self.collection.objects.unlink(ob)
+        toplayer = context.view_layer.layer_collection
+        layer = findLayerCollection(toplayer, self.refcoll)
+        layer.exclude = True
+
+        empty = bpy.data.objects.new(obname, None)
+        empty.instance_type = 'COLLECTION'
+        empty.instance_collection = self.refcoll
+        self.collection.objects.link(empty)
+        LS.duplis.append(Dupli(ob, empty))
+        print("GROFF", empty.name, ob.name)
+        return self.refcoll
 
 
     def buildNodeInstance(self, context):
-        parent = self.node2
-        ob = parent.rna
-        if parent.refcoll:
-            refcoll = parent.refcoll
-        else:
-            refcoll = self.getInstanceColl(ob)
-        if refcoll is None:
-            refcoll = self.makeNewRefColl(context, ob, parent.collection)
-            parent.refcoll = refcoll
+        if not self.instanceTarget:
+            return
+        coll = self.instanceTarget.getRefColl(context)
+        print("INST", self, coll)
         empty = self.rna
         empty.instance_type = 'COLLECTION'
-        empty.instance_collection = refcoll
-        #addToCollection(empty, parent.collection)
-
-
-    def makeNewRefColl(self, context, ob, parcoll):
-        refname = "%s REF" % ob.name
-        refcoll = bpy.data.collections.new(name=refname)
-        if LS.refColls is None:
-            LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
-            context.scene.collection.children.link(LS.refColls)
-        LS.refColls.children.link(refcoll)
-        LS.duplis[refname] = Dupli(ob, refcoll, parcoll)
-        return refcoll
-
-
-    def getInstanceColl(self, ob):
-        if ob.instance_type == 'COLLECTION':
-            #for ob1 in ob.instance_collection.objects:
-            #    coll = self.getInstanceColl(ob1)
-            #    if coll:
-            #        return coll
-            return ob.instance_collection
-        return None
+        empty.instance_collection = coll
 
 
     def poseRig(self, context):
@@ -509,30 +496,9 @@ class Instance(Accessor, Channels, SimNode):
 #-------------------------------------------------------------
 
 class Dupli:
-    def __init__(self, ob, refcoll, parcoll):
+    def __init__(self, ob, empty):
         self.object = ob
-        self.refcoll = refcoll
-        self.parcoll = parcoll
-        obname = ob.name
-        ob.name = refcoll.name
-        self.empty = bpy.data.objects.new(obname, None)
-        self.empty.instance_type = 'COLLECTION'
-        self.empty.instance_collection = self.refcoll
-        parcoll.objects.link(self.empty)
-        print("DUP", self.empty.name, parcoll.name)
-
-
-    def addToRefColl(self, ob):
-        if ob.name in self.parcoll.objects:
-            self.parcoll.objects.unlink(ob)
-        addToCollection(ob, self.refcoll)
-        for child in ob.children:
-            self.addToRefColl(child)
-
-
-    def excludeRefColl(self, toplayer):
-        layer = findLayerCollection(toplayer, self.refcoll)
-        layer.exclude = True
+        self.empty = empty
 
 
     def storeTransforms(self, wmats):
@@ -555,15 +521,10 @@ class Dupli:
 
 def transformDuplis(context):
     wmats = {}
-    for dupli in LS.duplis.values():
+    for dupli in LS.duplis:
         dupli.storeTransforms(wmats)
-    for dupli in LS.duplis.values():
+    for dupli in LS.duplis:
         dupli.transformEmpty()
-    for dupli in LS.duplis.values():
-        dupli.addToRefColl(dupli.object)
-    toplayer = context.view_layer.layer_collection
-    for dupli in LS.duplis.values():
-        dupli.excludeRefColl(toplayer)
 
 
 def copyCollections(src, trg):
@@ -760,6 +721,8 @@ class Node(Asset, Formula, Channels):
             self.buildObject(context, inst, center)
         if inst.extra:
             inst.buildExtra(context)
+        if GS.useInstancing:
+            inst.buildNodeInstance(context)
 
 
     def buildObject(self, context, inst, center):
