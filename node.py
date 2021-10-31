@@ -155,6 +155,7 @@ class Instance(Accessor, Channels, SimNode):
         self.groupNode = None
         self.isStrandHair = False
         self.ignore = False
+        self.isGroupNode = False
         self.instanceTarget = None
         self.hdobject = None
         self.modifiers = {}
@@ -219,8 +220,8 @@ class Instance(Accessor, Channels, SimNode):
                 continue
             elif extra["type"] == "studio/node/shell":
                 self.shstruct = extra
-            #elif extra["type"] == "studio/node/group_node":
-            #    self.isGroupNode = True
+            elif extra["type"] == "studio/node/group_node":
+                self.isGroupNode = True
             #elif extra["type"] == "studio/node/instance":
             #    self.isNodeInstance = True
             elif extra["type"] == "studio/node/strand_hair":
@@ -354,10 +355,9 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def linkRefChildren(self, ob, refcoll):
-        if ob is None:
+        if ob is None or ob.type == 'EMPTY':
             return
-        if ob.name not in refcoll.objects:
-            refcoll.objects.link(ob)
+        refcoll.objects.link(ob)
         if ob.name in self.collection.objects:
             self.collection.objects.unlink(ob)
         for child in self.children.values():
@@ -369,6 +369,9 @@ class Instance(Accessor, Channels, SimNode):
             return
         coll = self.instanceTarget.getRefColl(context)
         empty = self.rna
+        if empty.name in coll.objects:
+            print("Unlink '%s' from '%s'" % (empty.name, coll.name))
+            coll.objects.unlink(empty)
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = coll
 
@@ -541,11 +544,20 @@ def finishNodeInstances(context):
         wmats[empty.name] = ob.matrix_world.copy()
         empty.parent = ob.parent
         empty.parent_type = ob.parent_type
+        for child in ob.children:
+            if child.type == 'EMPTY':
+                wmats[child.name] = child.matrix_world.copy()
+                child.parent = empty
         ob.parent = None
+
     unit = Matrix()
     for ob,empty in LS.refObjects:
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
+        for child in empty.children:
+            if child.name in wmats.keys():
+                setWorldMatrix(child, wmats[child.name])
+
     if LS.refColls:
         toplayer = context.view_layer.layer_collection
         layer = findLayerCollection(toplayer, LS.refColls)
