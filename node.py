@@ -344,24 +344,36 @@ class Instance(Accessor, Channels, SimNode):
             LS.collection.children.link(LS.refColls)
         self.refcoll = bpy.data.collections.new(name = obname)
         LS.refColls.children.link(self.refcoll)
-        self.linkRefChildren(ob, self.refcoll)
+        self.linkRefChildren(ob, self.refcoll, self)
 
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = self.refcoll
         self.collection.objects.link(empty)
-        LS.refObjects.append((ob, empty))
+        LS.refObjects.append((ob, empty, self.refcoll))
         return self.refcoll
 
 
-    def linkRefChildren(self, ob, refcoll):
-        if ob is None or ob.type == 'EMPTY':
+    def linkRefChildren(self, ob, refcoll, target):
+        if ob.type == 'EMPTY' and self.refersTo(target):
             return
+        unlinkAll(ob)
         refcoll.objects.link(ob)
-        if ob.name in self.collection.objects:
-            self.collection.objects.unlink(ob)
+        #if ob.name in self.collection.objects:
+        #    self.collection.objects.unlink(ob)
         for child in self.children.values():
-            child.linkRefChildren(child.rna, refcoll)
+            if child.rna:
+                child.linkRefChildren(child.rna, refcoll, target)
+
+
+    def refersTo(self, target):
+        if self.instanceTarget:
+            return (self.instanceTarget.id == target.id)
+        else:
+            for child in self.children.values():
+                if child.refersTo(target):
+                    return True
+        return False
 
 
     def buildNodeInstance(self, context):
@@ -540,18 +552,18 @@ def createHiddenCollection(context, ob):
 
 def finishNodeInstances(context):
     wmats = {}
-    for ob,empty in LS.refObjects:
+    for ob,empty,refcoll in LS.refObjects:
         wmats[empty.name] = ob.matrix_world.copy()
-        empty.parent = ob.parent
-        empty.parent_type = ob.parent_type
         for child in ob.children:
-            if child.type == 'EMPTY':
+            if child.name not in refcoll.objects.keys():
                 wmats[child.name] = child.matrix_world.copy()
                 child.parent = empty
+        empty.parent = ob.parent
+        empty.parent_type = ob.parent_type
         ob.parent = None
 
     unit = Matrix()
-    for ob,empty in LS.refObjects:
+    for ob,empty,refcoll in LS.refObjects:
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
