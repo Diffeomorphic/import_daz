@@ -155,7 +155,6 @@ class Instance(Accessor, Channels, SimNode):
         self.groupNode = None
         self.isStrandHair = False
         self.ignore = False
-        self.isNodeInstance = False
         self.instanceTarget = None
         self.hdobject = None
         self.modifiers = {}
@@ -197,12 +196,11 @@ class Instance(Accessor, Channels, SimNode):
     def preprocess(self, context):
         self.updateMatrices()
         for key,channel in self.channels.items():
-            if key == "Instance Target":
+            if key == "Instance Target" and "node" in channel.keys():
                 ref = channel["node"]
                 node = self.getAsset(ref)
                 if node:
                     self.instanceTarget = node.getInstance(ref)
-                print("TRG", key, ref)
             elif "type" not in channel.keys():
                 continue
             elif channel["type"] == "bool":
@@ -221,10 +219,10 @@ class Instance(Accessor, Channels, SimNode):
                 continue
             elif extra["type"] == "studio/node/shell":
                 self.shstruct = extra
-            elif extra["type"] == "studio/node/group_node":
-                self.isGroupNode = True
-            elif extra["type"] == "studio/node/instance":
-                self.isNodeInstance = True
+            #elif extra["type"] == "studio/node/group_node":
+            #    self.isGroupNode = True
+            #elif extra["type"] == "studio/node/instance":
+            #    self.isNodeInstance = True
             elif extra["type"] == "studio/node/strand_hair":
                 self.isStrandHair = True
                 for geonode in self.geometries:
@@ -236,10 +234,6 @@ class Instance(Accessor, Channels, SimNode):
 
         for geonode in self.geometries:
             geonode.preprocess(context, self)
-
-
-    def preprocess2(self, context):
-        pass
 
 
     def buildChannels(self, ob):
@@ -318,6 +312,8 @@ class Instance(Accessor, Channels, SimNode):
         self.parentObject(context, self.rna)
         for geonode in self.geometries:
             geonode.postbuild(context, self)
+        if GS.useInstancing:
+            self.buildNodeInstance(context)
 
 
     def addGroupNode(self, context):
@@ -347,26 +343,31 @@ class Instance(Accessor, Channels, SimNode):
             LS.collection.children.link(LS.refColls)
         self.refcoll = bpy.data.collections.new(name = obname)
         LS.refColls.children.link(self.refcoll)
-        self.refcoll.objects.link(ob)
-        self.collection.objects.unlink(ob)
-        toplayer = context.view_layer.layer_collection
-        layer = findLayerCollection(toplayer, self.refcoll)
-        layer.exclude = True
+        self.linkRefChildren(ob, self.refcoll)
 
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = self.refcoll
         self.collection.objects.link(empty)
-        LS.duplis.append(Dupli(ob, empty))
-        print("GROFF", empty.name, ob.name)
+        LS.refObjects.append((ob, empty))
         return self.refcoll
+
+
+    def linkRefChildren(self, ob, refcoll):
+        if ob is None:
+            return
+        if ob.name not in refcoll.objects:
+            refcoll.objects.link(ob)
+        if ob.name in self.collection.objects:
+            self.collection.objects.unlink(ob)
+        for child in self.children.values():
+            child.linkRefChildren(child.rna, refcoll)
 
 
     def buildNodeInstance(self, context):
         if not self.instanceTarget:
             return
         coll = self.instanceTarget.getRefColl(context)
-        print("INST", self, coll)
         empty = self.rna
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = coll
@@ -492,40 +493,8 @@ class Instance(Accessor, Channels, SimNode):
         return orient.inverted() @ lsmat @ orient
 
 #-------------------------------------------------------------
-#   Dupli
+#   Collection utilities
 #-------------------------------------------------------------
-
-class Dupli:
-    def __init__(self, ob, empty):
-        self.object = ob
-        self.empty = empty
-
-
-    def storeTransforms(self, wmats):
-        ob = self.object
-        wmat = ob.matrix_world.copy()
-        wmats[ob.name] = (ob, wmat)
-        for child in ob.children:
-            wmat = child.matrix_world.copy()
-            wmats[child.name] = (child, wmat)
-
-
-    def transformEmpty(self):
-        ob = self.object
-        wmat = ob.matrix_world.copy()
-        self.empty.parent = ob.parent
-        setWorldMatrix(self.empty, wmat)
-        ob.parent = None
-        ob.matrix_world = Matrix()
-
-
-def transformDuplis(context):
-    wmats = {}
-    for dupli in LS.duplis:
-        dupli.storeTransforms(wmats)
-    for dupli in LS.duplis:
-        dupli.transformEmpty()
-
 
 def copyCollections(src, trg):
     for coll in bpy.data.collections:
@@ -564,6 +533,25 @@ def createHiddenCollection(context, ob):
     if layer:
         layer.exclude = True
     return coll
+
+
+def finishNodeInstances(context):
+    wmats = {}
+    for ob,empty in LS.refObjects:
+        wmats[empty.name] = ob.matrix_world.copy()
+        empty.parent = ob.parent
+        empty.parent_type = ob.parent_type
+        ob.parent = None
+    unit = Matrix()
+    for ob,empty in LS.refObjects:
+        setWorldMatrix(ob, unit)
+        setWorldMatrix(empty, wmats[empty.name])
+    if LS.refColls:
+        toplayer = context.view_layer.layer_collection
+        layer = findLayerCollection(toplayer, LS.refColls)
+        layer.exclude = True
+        for child in layer.children:
+            child.exclude = True
 
 #-------------------------------------------------------------
 #   Node
@@ -721,8 +709,6 @@ class Node(Asset, Formula, Channels):
             self.buildObject(context, inst, center)
         if inst.extra:
             inst.buildExtra(context)
-        if GS.useInstancing:
-            inst.buildNodeInstance(context)
 
 
     def buildObject(self, context, inst, center):
@@ -754,7 +740,6 @@ class Node(Asset, Formula, Channels):
         ob.DazRotMode = self.rotation_order
         ob.DazMorphPrefixes = False
         inst.collection.objects.link(ob)
-        print("ARR", ob.name, inst.collection.name)
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)
         ob.DazScene = LS.scene

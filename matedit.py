@@ -961,7 +961,7 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
         if ob.name in self.parents.keys():
             wmat = ob.matrix_world.copy()
             (ob.parent, ob.parent_type, ob.parent_bone) = self.parents[ob.name]
-            ob.matrix_world = wmat
+            setWorldMatrix(ob, wmat)
 
 #----------------------------------------------------------
 #   Initialize

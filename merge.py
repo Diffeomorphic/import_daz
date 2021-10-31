@@ -776,7 +776,7 @@ class RigInfo:
             subrig.parent_bone = self.parbone
         else:
             subrig.parent_type = 'OBJECT'
-        subrig.matrix_world = wmat
+        setWorldMatrix(subrig, wmat)
 
 
     def renameVertexGroups(self, ob):
@@ -985,7 +985,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
                 ob.parent_bone = parbone
             else:
                 ob.parent_bone = info.getBoneKey(parbone)
-            ob.matrix_world = wmat
+            setWorldMatrix(ob, wmat)
             self.addToCollections(ob, adds, hdadds, removes)
             ob.name = stripName(ob.name)
             if ob.data:

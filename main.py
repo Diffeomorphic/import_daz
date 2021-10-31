@@ -196,8 +196,6 @@ class ImportDAZ(DazOperator, DazOptions, MultiFile):
             fitToFile(filepath, main.nodes)
         showProgress(30, 100)
 
-        for asset,inst in main.nodes:
-            inst.preprocess2(context)
         for asset,inst in main.modifiers:
             asset.preprocess(inst)
 
@@ -232,16 +230,13 @@ class ImportDAZ(DazOperator, DazOptions, MultiFile):
         for asset in main.materials:
             asset.postbuild()
 
-        print("Postprocessing...")
         for asset,inst in main.modifiers:
             asset.postbuild(context, inst)
-        #for _,inst in main.nodes:
-        #    inst.buildInstance(context)
         for _,inst in main.nodes:
             inst.finalize(context)
 
-        from .node import transformDuplis
-        transformDuplis(context)
+        from .node import finishNodeInstances
+        finishNodeInstances(context)
 
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))

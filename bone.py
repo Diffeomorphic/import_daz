@@ -972,10 +972,6 @@ class Bone(Node):
         pass
 
 
-    def preprocess2(self, context, inst):
-        pass
-
-
     def poseRig(self, context, inst):
         pass
 

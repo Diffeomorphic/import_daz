@@ -1171,7 +1171,7 @@ class DAZ_OT_ChangeArmature(DazOperator, IsArmature):
                 ob.parent = rig
                 ob.parent_type = 'BONE'
                 ob.parent_bone = bname
-                ob.matrix_world = wmat
+                setWorldMatrix(ob, wmat)
             else:
                 ob.parent = rig
         activateObject(context, rig)
