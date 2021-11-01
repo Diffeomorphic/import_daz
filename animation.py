@@ -1149,7 +1149,7 @@ theMorphTables = {}
 
 class NodePose:
     def parseAnimations(self, struct, bones, values):
-        if "nodes" in struct.keys():
+        if "nodes" in struct.keys() and self.affectBones:
             for node in struct["nodes"]:
                 key = node["id"]
                 self.addTransform(node, "translation", bones, key)
@@ -1158,6 +1158,14 @@ class NodePose:
                 #self.addTransform(node, "general_scale", bones, key)
         elif self.verbose:
             print("No nodes in this file")
+        if "modifiers" in struct.keys() and self.affectMorphs:
+            for mod in struct["modifiers"]:
+                key = mod.get("id")
+                channel = mod.get("channel")
+                if key and channel:
+                    value = channel.get("current_value")
+                    if value is not None:
+                        values[key] = [[0, value]]
 
 
     def addTransform(self, node, channel, bones, key):
@@ -1196,19 +1204,6 @@ class DAZ_OT_ImportAction(HideOperator, ActionBase, StandardAnimation):
     def run(self, context):
         StandardAnimation.run(self, context)
 
-
-class DAZ_OT_ImportNodeAction(HideOperator, NodePose, ActionBase, StandardAnimation):
-    bl_idname = "daz.import_node_action"
-    bl_label = "Import Action From Scene"
-    bl_description = "Import poses from DAZ scene file(s) (not pose preset files) to action"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        StandardAnimation.run(self, context)
-
-    def parseAnimations(self, struct, bones, values):
-        NodePose.parseAnimations(self, struct, bones, values)
-
 #-------------------------------------------------------------
 #   Import Poselib
 #-------------------------------------------------------------
@@ -1237,19 +1232,6 @@ class DAZ_OT_ImportPoseLib(HideOperator, PoselibBase, StandardAnimation):
 
     def run(self, context):
         StandardAnimation.run(self, context)
-
-
-class DAZ_OT_ImportNodePoseLib(HideOperator, NodePose, PoselibBase, StandardAnimation):
-    bl_idname = "daz.import_node_poselib"
-    bl_label = "Import Pose Library From Scene"
-    bl_description = "Import a poses from DAZ scene file(s) (not pose preset files) to pose library"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        StandardAnimation.run(self, context)
-
-    def parseAnimations(self, struct, bones, values):
-        NodePose.parseAnimations(self, struct, bones, values)
 
 #-------------------------------------------------------------
 #   Import Single Pose
@@ -2296,9 +2278,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
 
 classes = [
     DAZ_OT_ImportAction,
-    DAZ_OT_ImportNodeAction,
     DAZ_OT_ImportPoseLib,
-    DAZ_OT_ImportNodePoseLib,
     DAZ_OT_ImportPose,
     DAZ_OT_ImportNodePose,
     DAZ_OT_ClearPose,
