@@ -562,6 +562,9 @@ class LoadMorph(DriverUser):
         vec = Vector((0,0,0))
         vec[idx] = factor
         self.setFcurves(pb, vec, prop, "HdOffset", "pose")
+        # Keyframes for "lCarpal4" missing for G8F
+        if bname == "lCarpal3":
+            self.makeCenterFormula("lCarpal4", idx, expr)
 
     #-------------------------------------------------------------
     #   Add posebone driver
