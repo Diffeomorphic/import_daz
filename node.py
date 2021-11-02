@@ -145,6 +145,8 @@ class Instance(Accessor, Channels, SimNode):
         node.visible = True
         self.extra = node.extra
         node.extra = []
+        self.nodeExtra = node.nodeExtra
+        node.nodeExtra = {}
         self.channels = node.channels
         node.channels = {}
         self.shstruct = {}
@@ -155,7 +157,6 @@ class Instance(Accessor, Channels, SimNode):
         self.groupNode = None
         self.isStrandHair = False
         self.ignore = False
-        self.isGroupNode = False
         self.instanceTarget = None
         self.hdobject = None
         self.modifiers = {}
@@ -220,10 +221,12 @@ class Instance(Accessor, Channels, SimNode):
                 continue
             elif extra["type"] == "studio/node/shell":
                 self.shstruct = extra
-            elif extra["type"] == "studio/node/group_node":
-                self.isGroupNode = True
+            #elif extra["type"] == "studio/node/group_node":
+            #    self.isGroupNode = True
             #elif extra["type"] == "studio/node/instance":
             #    self.isNodeInstance = True
+            #elif extra["type"] == "studio/node/group_instance":
+            #    self.isGroupInstance = True
             elif extra["type"] == "studio/node/strand_hair":
                 self.isStrandHair = True
                 for geonode in self.geometries:
@@ -350,7 +353,7 @@ class Instance(Accessor, Channels, SimNode):
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = self.refcoll
         self.collection.objects.link(empty)
-        LS.refObjects.append((ob, empty, self.refcoll))
+        LS.refObjects[obname] = (ob, empty, self.refcoll, [])
         return self.refcoll
 
 
@@ -379,13 +382,31 @@ class Instance(Accessor, Channels, SimNode):
     def buildNodeInstance(self, context):
         if not self.instanceTarget:
             return
+        items = self.nodeExtra.get("instance_items")
         coll = self.instanceTarget.getRefColl(context)
         empty = self.rna
         if empty.name in coll.objects:
             print("Unlink '%s' from '%s'" % (empty.name, coll.name))
             coll.objects.unlink(empty)
-        empty.instance_type = 'COLLECTION'
-        empty.instance_collection = coll
+        if items is None:
+            empty.instance_type = 'COLLECTION'
+            empty.instance_collection = coll
+        else:
+            first = True
+            _,_,_,empties = LS.refObjects[coll.name]
+            for item in items:
+                if first:
+                    first = False
+                    empty.name = item["label"]
+                else:
+                    empty = bpy.data.objects.new(item["label"], None)
+                    self.collection.objects.link(empty)
+                    empties.append(empty)
+                empty.instance_type = 'COLLECTION'
+                empty.instance_collection = coll
+                trans, rotation, scale, genscale, orientation = self.getTransformation(item)
+                self.updateMatrices1(trans, rotation, scale, genscale, orientation)
+                setWorldMatrix(empty, self.worldmat)
 
 
     def poseRig(self, context):
@@ -411,7 +432,22 @@ class Instance(Accessor, Channels, SimNode):
         pass
 
 
+    def getTransformation(self, attributes):
+        trans = d2b00(attributes["translation"])
+        rotation = Vector(attributes["rotation"])*D
+        genscale = attributes["general_scale"]
+        scale = Vector(attributes["scale"]) * genscale
+        orientation = Vector(attributes["orientation"])*D
+        self.cpoint = d2b00(attributes["center_point"])
+        return trans, rotation, scale, genscale, orientation
+
+
     def updateMatrices(self):
+        trans, rotation, scale, genscale, orientation = self.getTransformation(self.attributes)
+        self.updateMatrices1(trans, rotation, scale, genscale, orientation)
+
+
+    def updateMatrices1(self, trans, rotation, scale, genscale, orientation):
         # From http://docs.daz3d.com/doku.php/public/dson_spec/object_definitions/node/start
         #
         # center_offset = center_point - parent.center_point
@@ -420,13 +456,6 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes that inherit scale = parent.global_scale * orientation * scale * general_scale * (orientation)-1
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
-
-        trans = d2b00(self.attributes["translation"])
-        rotation = Vector(self.attributes["rotation"])*D
-        genscale = self.attributes["general_scale"]
-        scale = Vector(self.attributes["scale"]) * genscale
-        orientation = Vector(self.attributes["orientation"])*D
-        self.cpoint = d2b00(self.attributes["center_point"])
 
         lrot = Euler(rotation, self.rotation_order).to_matrix().to_4x4()
         self.lscale = Matrix()
@@ -552,23 +581,30 @@ def createHiddenCollection(context, ob):
 
 def finishNodeInstances(context):
     wmats = {}
-    for ob,empty,refcoll in LS.refObjects:
+    for ob,empty,refcoll,items in LS.refObjects.values():
         wmats[empty.name] = ob.matrix_world.copy()
+        for item in items:
+            wmats[item.name] = item.matrix_world.copy()
         for child in ob.children:
             if child.name not in refcoll.objects.keys():
                 wmats[child.name] = child.matrix_world.copy()
                 child.parent = empty
         empty.parent = ob.parent
         empty.parent_type = ob.parent_type
+        for item in items:
+            item.parent = ob.parent
+            item.parent_type = ob.parent_type
         ob.parent = None
 
     unit = Matrix()
-    for ob,empty,refcoll in LS.refObjects:
+    for ob,empty,refcoll,items in LS.refObjects.values():
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
             if child.name in wmats.keys():
                 setWorldMatrix(child, wmats[child.name])
+        for item in items:
+            setWorldMatrix(item, wmats[item.name])
 
     if LS.refColls:
         toplayer = context.view_layer.layer_collection
@@ -599,6 +635,7 @@ class Node(Asset, Formula, Channels):
         self.origAttrs = self.defaultAttributes()
         self.figure = None
         self.rigtype = ""
+        self.nodeExtra = {}
 
 
     def defaultAttributes(self):
@@ -674,7 +711,8 @@ class Node(Asset, Formula, Channels):
 
 
     def setExtra(self, extra):
-        pass
+        if "instance_items" in extra.keys():
+            self.nodeExtra["instance_items"] = extra["instance_items"]
 
 
     Indices = { "x": 0, "y": 1, "z": 2 }
