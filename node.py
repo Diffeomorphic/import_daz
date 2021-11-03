@@ -158,6 +158,7 @@ class Instance(Accessor, Channels, SimNode):
         self.isStrandHair = False
         self.ignore = False
         self.instanceTarget = None
+        self.shellNode = None
         self.hdobject = None
         self.modifiers = {}
         self.attributes = copyElements(node.attributes)
@@ -198,11 +199,10 @@ class Instance(Accessor, Channels, SimNode):
     def preprocess(self, context):
         self.updateMatrices()
         for key,channel in self.channels.items():
-            if key == "Instance Target" and "node" in channel.keys():
-                ref = channel["node"]
-                node = self.getAsset(ref)
-                if node:
-                    self.instanceTarget = node.getInstance(ref)
+            if key == "Instance Target":
+                self.instanceTarget = self.getChannelInstance(channel)
+            elif key == "Shell Node":
+                self.shellNode = self.getChannelInstance(channel)
             elif "type" not in channel.keys():
                 continue
             elif channel["type"] == "bool":
@@ -238,6 +238,15 @@ class Instance(Accessor, Channels, SimNode):
 
         for geonode in self.geometries:
             geonode.preprocess(context, self)
+
+
+    def getChannelInstance(self, channel):
+        if "node" in channel.keys():
+            ref = channel["node"]
+            node = self.getAsset(ref)
+            if node:
+                return node.getInstance(ref)
+        return None
 
 
     def buildChannels(self, ob):

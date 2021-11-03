@@ -672,14 +672,14 @@ class Geometry(Asset, Channels):
                 if "material_uvs" in extra.keys():
                     self.uvs = dict(extra["material_uvs"])
         if GS.mergeShells:
-            if inst.instanceTarget:
-                missing = self.addShells(inst.instanceTarget, inst, self.material_group_vis)
+            if inst.shellNode:
+                missing = self.addShells(inst.shellNode, inst, self.material_group_vis)
                 for mname,shmat,uv in missing:
                     msg = ("Missing shell material\n" +
                            "Material: %s\n" % mname +
                            "Node: %s\n" % geonode.name +
                            "Inst: %s\n" % inst.name +
-                           "Target: %s\n" % inst.instanceTarget.name +
+                           "Shell: %s\n" % inst.shellNode.name +
                            "UV set: %s\n" % uv)
                     reportError(msg, trigger=(2,4))
 
