@@ -345,15 +345,16 @@ class Instance(Accessor, Channels, SimNode):
         if LS.refColls is None:
             LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
             LS.collection.children.link(LS.refColls)
-        self.refcoll = bpy.data.collections.new(name = obname)
-        LS.refColls.children.link(self.refcoll)
-        self.linkRefChildren(ob, self.refcoll, self)
+        refcoll = bpy.data.collections.new(name = obname)
+        LS.refColls.children.link(refcoll)
+        self.linkRefChildren(ob, refcoll, self)
 
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
-        empty.instance_collection = self.refcoll
+        empty.instance_collection = refcoll
         self.collection.objects.link(empty)
-        LS.refObjects[obname] = (ob, empty, self.refcoll, [])
+        LS.refObjects[obname] = (ob, empty, refcoll)
+        self.refcoll = (refcoll, ob)
         return self.refcoll
 
 
@@ -383,7 +384,7 @@ class Instance(Accessor, Channels, SimNode):
         if not self.instanceTarget:
             return
         items = self.nodeExtra.get("instance_items")
-        coll = self.instanceTarget.getRefColl(context)
+        coll,ob = self.instanceTarget.getRefColl(context)
         empty = self.rna
         if empty.name in coll.objects:
             print("Unlink '%s' from '%s'" % (empty.name, coll.name))
@@ -392,21 +393,27 @@ class Instance(Accessor, Channels, SimNode):
             empty.instance_type = 'COLLECTION'
             empty.instance_collection = coll
         else:
-            first = True
-            _,_,_,empties = LS.refObjects[coll.name]
+            first = False
             for item in items:
+                if item["label"]:
+                    ename = item["label"]
+                else:
+                    ename = item["name"]
                 if first:
                     first = False
-                    empty.name = item["label"]
+                    emptyi = empty
+                    emptyi.name = ename
                 else:
-                    empty = bpy.data.objects.new(item["label"], None)
-                    self.collection.objects.link(empty)
-                    empties.append(empty)
-                empty.instance_type = 'COLLECTION'
-                empty.instance_collection = coll
+                    emptyi = bpy.data.objects.new(ename, None)
+                    emptyi.parent = empty
+                    #emptyi.parent_type = empty.parent_type
+                    emptyi.rotation_mode = empty.rotation_mode
+                    self.collection.objects.link(emptyi)
+                emptyi.instance_type = 'COLLECTION'
+                emptyi.instance_collection = coll
                 trans, rotation, scale, genscale, orientation = self.getTransformation(item)
                 self.updateMatrices1(trans, rotation, scale, genscale, orientation)
-                setWorldMatrix(empty, self.worldmat)
+                setWorldMatrix(emptyi, self.worldmat)
 
 
     def poseRig(self, context):
@@ -578,33 +585,29 @@ def createHiddenCollection(context, ob):
         layer.exclude = True
     return coll
 
+#-------------------------------------------------------------
+#   Final pass for node instances
+#-------------------------------------------------------------
 
 def finishNodeInstances(context):
     wmats = {}
-    for ob,empty,refcoll,items in LS.refObjects.values():
+    for ob,empty,refcoll in LS.refObjects.values():
         wmats[empty.name] = ob.matrix_world.copy()
-        for item in items:
-            wmats[item.name] = item.matrix_world.copy()
         for child in ob.children:
             if child.name not in refcoll.objects.keys():
                 wmats[child.name] = child.matrix_world.copy()
                 child.parent = empty
         empty.parent = ob.parent
         empty.parent_type = ob.parent_type
-        for item in items:
-            item.parent = ob.parent
-            item.parent_type = ob.parent_type
         ob.parent = None
 
     unit = Matrix()
-    for ob,empty,refcoll,items in LS.refObjects.values():
+    for ob,empty,refcoll in LS.refObjects.values():
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
             if child.name in wmats.keys():
                 setWorldMatrix(child, wmats[child.name])
-        for item in items:
-            setWorldMatrix(item, wmats[item.name])
 
     if LS.refColls:
         toplayer = context.view_layer.layer_collection
