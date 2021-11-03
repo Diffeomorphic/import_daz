@@ -106,7 +106,7 @@ class FileAsset(Asset):
                 for nstruct in scene["nodes"]:
                     asset = self.parseUrlAsset(nstruct)
                     if isinstance(asset, Geometry):
-                        reportError("Bug: expected node not geometry" % asset, trigger=(2,3))
+                        reportError("Bug: expected node not geometry.\n%s" % asset, trigger=(2,3))
                     elif asset:
                         inst = asset.makeInstance(self.fileref, nstruct)
                         self.instances[inst.id] = inst
