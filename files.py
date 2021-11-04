@@ -101,16 +101,25 @@ class FileAsset(Asset):
 
             if LS.useNodes and "nodes" in scene.keys():
                 from .node import Node
-                from .geometry import Geometry
+                from .geometry import Geometry, GeoNode
                 from .bone import Bone
+                from .asset import replaceAsset
                 for nstruct in scene["nodes"]:
                     asset = self.parseUrlAsset(nstruct)
                     if isinstance(asset, Geometry):
-                        reportError("Bug: expected node not geometry.\n%s" % asset, trigger=(2,3))
-                    elif asset:
+                        geo = asset
+                        url = nstruct.get("url")
+                        if url and url.endswith("-1"):
+                            nstruct["url"] = url[:-2]
+                            asset = self.parseUrlAsset(nstruct)
+                            print("Replace geometry\n %s\nwith node\n %s" % (geo, asset))
+                    if isinstance(asset, Node):
                         inst = asset.makeInstance(self.fileref, nstruct)
                         self.instances[inst.id] = inst
                         self.nodes.append((asset, inst))
+                    else:
+                        msg = ("Expected node but got\n%s" % asset)
+                        reportError(msg, trigger=(2,3))
 
             if LS.useMaterials and "materials" in scene.keys():
                 for mstruct in scene["materials"]:
