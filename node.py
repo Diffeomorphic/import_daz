@@ -402,27 +402,21 @@ class Instance(Accessor, Channels, SimNode):
             empty.instance_type = 'COLLECTION'
             empty.instance_collection = coll
         else:
-            first = False
             for item in items:
                 if item["label"]:
                     ename = item["label"]
                 else:
                     ename = item["name"]
-                if first:
-                    first = False
-                    emptyi = empty
-                    emptyi.name = ename
-                else:
-                    emptyi = bpy.data.objects.new(ename, None)
-                    emptyi.parent = empty
-                    #emptyi.parent_type = empty.parent_type
-                    emptyi.rotation_mode = empty.rotation_mode
-                    self.collection.objects.link(emptyi)
+                emptyi = bpy.data.objects.new(ename, None)
+                emptyi.parent = empty
+                emptyi.rotation_mode = empty.rotation_mode
+                self.collection.objects.link(emptyi)
                 emptyi.instance_type = 'COLLECTION'
                 emptyi.instance_collection = coll
-                trans, rotation, scale, genscale, orientation = self.getTransformation(item)
-                self.updateMatrices1(trans, rotation, scale, genscale, orientation)
-                setWorldMatrix(emptyi, self.worldmat)
+                cpoint, orient, tfm = self.getTransformation(item)
+                mats = self.calcMatrices(self, cpoint, orient, tfm)
+                wmat = mats[0]
+                setWorldMatrix(emptyi, wmat)
 
 
     def poseRig(self, context):
@@ -450,20 +444,21 @@ class Instance(Accessor, Channels, SimNode):
 
     def getTransformation(self, attributes):
         trans = d2b00(attributes["translation"])
-        rotation = Vector(attributes["rotation"])*D
-        genscale = attributes["general_scale"]
-        scale = Vector(attributes["scale"]) * genscale
+        rot = Vector(attributes["rotation"])*D
+        gen = attributes["general_scale"]
+        scale = Vector(attributes["scale"]) * gen
         orientation = Vector(attributes["orientation"])*D
-        self.cpoint = d2b00(attributes["center_point"])
-        return trans, rotation, scale, genscale, orientation
+        cpoint = d2b00(attributes["center_point"])
+        return cpoint, orientation, (trans, rot, scale)
 
 
     def updateMatrices(self):
-        trans, rotation, scale, genscale, orientation = self.getTransformation(self.attributes)
-        self.updateMatrices1(trans, rotation, scale, genscale, orientation)
+        cpoint, orient, tfm = self.getTransformation(self.attributes)
+        self.worldmat, self.wtrans, self.wrot, self.wscale, self.wmat = self.calcMatrices(self.parent, cpoint, orient, tfm)
+        self.cpoint = cpoint
 
 
-    def updateMatrices1(self, trans, rotation, scale, genscale, orientation):
+    def calcMatrices(self, parent, cpoint, orient, tfm):
         # From http://docs.daz3d.com/doku.php/public/dson_spec/object_definitions/node/start
         #
         # center_offset = center_point - parent.center_point
@@ -473,33 +468,36 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
 
-        lrot = Euler(rotation, self.rotation_order).to_matrix().to_4x4()
-        self.lscale = Matrix()
+        trans, rot, scale = tfm
+        lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
+        lscale = Matrix()
         for i in range(3):
-            self.lscale[i][i] = scale[i]
-        orient = Euler(orientation).to_matrix().to_4x4()
+            lscale[i][i] = scale[i]
+        ormat = Euler(orient).to_matrix().to_4x4()
 
-        par = self.parent
-        if par:
-            coffset = self.cpoint - self.parent.cpoint
-            self.wtrans = par.wmat @ (coffset + trans)
-            self.wrot = par.wrot @ orient @ lrot @ orient.inverted()
-            oscale = orient @ self.lscale @ orient.inverted()
+        if parent:
+            coffset = cpoint - parent.cpoint
+            wtrans = parent.wmat @ (coffset + trans)
+            wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
+            oscale = ormat @ lscale @ ormat.inverted()
             if True:  # self.inherits_scale:
-                self.wscale = par.wscale @ oscale
+                wscale = parent.wscale @ oscale
             else:
-                self.wscale = par.wscale @ par.lscale.inverted() @ oscale
+                wscale = parent.wscale @ parent.lscale.inverted() @ oscale
         else:
-            self.wtrans = self.cpoint + trans
-            self.wrot = orient @ lrot @ orient.inverted()
-            self.wscale = orient @ self.lscale @ orient.inverted()
+            wtrans = cpoint + trans
+            wrot = ormat @ lrot @ ormat.inverted()
+            wscale = ormat @ lscale @ ormat.inverted()
 
-        transmat = Matrix.Translation(self.wtrans)
-        self.wmat = transmat @ self.wrot @ self.wscale
+        transmat = Matrix.Translation(wtrans)
+        wmat = transmat @ wrot @ wscale
         if GS.zup:
-            self.worldmat = self.RXP @ self.wmat @ self.RXN
+            worldmat = self.RXP @ wmat @ self.RXN
         else:
-            self.worldmat = self.wmat
+            worldmat = wmat
+
+        return worldmat, wtrans, wrot, wscale, wmat
+
 
     RXP = Matrix.Rotation(math.pi/2, 4, 'X')
     RXN = Matrix.Rotation(-math.pi/2, 4, 'X')
