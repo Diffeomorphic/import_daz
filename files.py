@@ -101,9 +101,8 @@ class FileAsset(Asset):
 
             if LS.useNodes and "nodes" in scene.keys():
                 from .node import Node
-                from .geometry import Geometry, GeoNode
+                from .geometry import Geometry
                 from .bone import Bone
-                from .asset import replaceAsset
                 for nstruct in scene["nodes"]:
                     asset = self.parseUrlAsset(nstruct)
                     if isinstance(asset, Geometry):
