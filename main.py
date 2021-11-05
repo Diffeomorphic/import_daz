@@ -374,7 +374,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
 
     useMergeLashes : BoolProperty(
         name = "Merge Lashes",
-        description = "Merge separate eyelash mesh to character.\nShapekeys are always transferred first",
+        description = "Merge separate eyelash mesh to character.\nIneffective if there are unmerged geografts.\nShapekeys are always transferred first",
         default = False)
 
     useConvertWidgets : BoolProperty(
@@ -605,7 +605,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
 
 
         # Merge geografts
+        useLashes = self.useMergeLashes
         if geografts:
+            useLashes = (self.useMergeLashes and self.useMergeGeografts)
             if self.useTransferShapes or self.useMergeGeografts:
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
@@ -627,9 +629,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
 
         # Merge lashes
         if lashes:
-            if self.useTransferShapes or self.useMergeLashes:
-                self.transferShapes(context, mainMesh, lashes, self.useMergeLashes, "Face")
-            if self.useMergeLashes and activateObject(context, mainMesh):
+            if self.useTransferShapes or useLashes:
+                self.transferShapes(context, mainMesh, lashes, useLashes, "Face")
+            if useLashes and activateObject(context, mainMesh):
                 for ob in lashes:
                     selectSet(ob, True)
                 print("Merge lashes")
