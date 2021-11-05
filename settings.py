@@ -60,7 +60,10 @@ class GlobalSettings:
 
         self.materialMethod = 'BSDF'
         self.refractiveMethod = 'BSDF'
-        self.sssMethod = 'RANDOM_WALK'
+        if bpy.app.version < (3,0,0):
+            self.sssMethod = 'RANDOM_WALK'
+        else:
+            self.sssMethod = 'RANDOM_WALK_FIXED_RADIUS'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.caseSensitivePaths = (platform != 'win32')

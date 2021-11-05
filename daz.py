@@ -496,12 +496,20 @@ def register():
         description = "Material Method",
         default = 'BSDF')
 
-    bpy.types.Scene.DazSSSMethod = EnumProperty(
-        items = [('BURLEY', "Christensen-Burley", "Chiristensen-Burley"),
-                 ('RANDOM_WALK', "Random Walk", "Random walk")],
-        name = "SSS Method",
-        description = "Method for subsurface scattering",
-        default = 'RANDOM_WALK')
+    if bpy.app.version < (3,0,0):
+        bpy.types.Scene.DazSSSMethod = EnumProperty(
+            items = [('BURLEY', "Christensen-Burley", "Chiristensen-Burley"),
+                     ('RANDOM_WALK', "Random Walk", "Random walk")],
+            name = "SSS Method",
+            description = "Method for subsurface scattering",
+            default = 'RANDOM_WALK')
+    else:
+        bpy.types.Scene.DazSSSMethod = EnumProperty(
+            items = [('RANDOM_WALK', "Random Walk", "Random walk"),
+                     ('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)")],
+            name = "SSS Method",
+            description = "Method for subsurface scattering",
+            default = 'RANDOM_WALK_FIXED_RADIUS')
 
     bpy.types.Scene.DazRefractiveMethod = EnumProperty(
         items = [('BSDF', "BSDF", "Add BSDF refractive node group"),
