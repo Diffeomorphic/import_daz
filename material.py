@@ -812,7 +812,10 @@ class Texture:
             if colorSpace == "COLOR":
                 img.colorspace_settings.name = "sRGB"
             elif colorSpace == "NONE":
-                img.colorspace_settings.name = "Non-Color"
+                try:
+                    img.colorspace_settings.name = "Non-Color"
+                except TypeError:
+                    img.colorspace_settings.name = "Linear"
             else:
                 img.colorspace_settings.name = colorSpace
         self.images[colorSpace] = img
