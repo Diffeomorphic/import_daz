@@ -413,8 +413,7 @@ class Instance(Accessor, Channels, SimNode):
                 self.collection.objects.link(emptyi)
                 emptyi.instance_type = 'COLLECTION'
                 emptyi.instance_collection = coll
-                cpoint, orient, tfm = self.getTransformation(item)
-                mats = self.calcMatrices(self, cpoint, orient, tfm)
+                mats = self.calcMatrices(item, self)
                 wmat = mats[0]
                 setWorldMatrix(emptyi, wmat)
 
@@ -442,23 +441,11 @@ class Instance(Accessor, Channels, SimNode):
         pass
 
 
-    def getTransformation(self, attributes):
-        trans = d2b00(attributes["translation"])
-        rot = Vector(attributes["rotation"])*D
-        gen = attributes["general_scale"]
-        scale = Vector(attributes["scale"]) * gen
-        orientation = Vector(attributes["orientation"])*D
-        cpoint = d2b00(attributes["center_point"])
-        return cpoint, orientation, (trans, rot, scale)
-
-
     def updateMatrices(self):
-        cpoint, orient, tfm = self.getTransformation(self.attributes)
-        self.worldmat, self.wtrans, self.wrot, self.wscale, self.wmat = self.calcMatrices(self.parent, cpoint, orient, tfm)
-        self.cpoint = cpoint
+        self.worldmat, self.wtrans, self.wrot, self.wscale, self.wmat, self.cpoint = self.calcMatrices(self.attributes, self.parent)
 
 
-    def calcMatrices(self, parent, cpoint, orient, tfm):
+    def calcMatrices(self, attributes, parent):
         # From http://docs.daz3d.com/doku.php/public/dson_spec/object_definitions/node/start
         #
         # center_offset = center_point - parent.center_point
@@ -468,7 +455,13 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
 
-        trans, rot, scale = tfm
+        trans = d2b00(attributes["translation"])
+        rot = Vector(attributes["rotation"])*D
+        gen = attributes["general_scale"]
+        scale = Vector(attributes["scale"]) * gen
+        orient = Vector(attributes["orientation"])*D
+        cpoint = d2b00(attributes["center_point"])
+
         lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
         lscale = Matrix()
         for i in range(3):
@@ -496,7 +489,7 @@ class Instance(Accessor, Channels, SimNode):
         else:
             worldmat = wmat
 
-        return worldmat, wtrans, wrot, wscale, wmat
+        return worldmat, wtrans, wrot, wscale, wmat, cpoint
 
 
     RXP = Matrix.Rotation(math.pi/2, 4, 'X')
