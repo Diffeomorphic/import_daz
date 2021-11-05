@@ -624,7 +624,7 @@ class TranslucentGroup(MixGroup):
         self.links.new(self.inputs.outputs["Gamma"], gamma.inputs["Gamma"])
 
         sss = self.addNode("ShaderNodeSubsurfaceScattering", 1)
-        sss.falloff = GS.sssMethod
+        sss.falloff = GS.getSSSMethod()
         self.links.new(gamma.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])

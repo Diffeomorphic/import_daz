@@ -111,6 +111,15 @@ class GlobalSettings:
         self.useSimulation = True
 
 
+    def getSSSMethod(self):
+        if bpy.app.version < (3,0,0) and self.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
+            return 'RANDOM_WALK'
+        elif bpy.app.version >= (3,0,0) and self.sssMethod == 'BURLEY':
+            return 'RANDOM_WALK_FIXED_RADIUS'
+        else:
+            return self.sssMethod
+
+
     SceneTable = {
         # General
         "DazUnitScale" : "unitScale",

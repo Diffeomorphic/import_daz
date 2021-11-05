@@ -498,7 +498,7 @@ def register():
 
     if bpy.app.version < (3,0,0):
         bpy.types.Scene.DazSSSMethod = EnumProperty(
-            items = [('BURLEY', "Christensen-Burley", "Chiristensen-Burley"),
+            items = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
                      ('RANDOM_WALK', "Random Walk", "Random walk")],
             name = "SSS Method",
             description = "Method for subsurface scattering",
