@@ -33,6 +33,7 @@ from .material import Material, WHITE, BLACK, isBlack
 from .cycles import CyclesMaterial, CyclesTree
 from .cgroup import CyclesGroup
 from .utils import *
+from .error import DazOperator
 
 #-------------------------------------------------------------
 #   Render Options
@@ -316,3 +317,57 @@ def parseRenderOptions(renderSettings, sceneSettings, backdrop, fileref):
             LS.render.initSettings(sceneSettings, backdrop)
             for element in renderOptions["render_elements"]:
                 LS.render.parse(element)
+
+#-------------------------------------------------------------
+#   Utility for rendering a range of frames.
+#-------------------------------------------------------------
+
+class Renderer:
+    def run(self, context):
+        scn = context.scene
+        path = scn.render.filepath
+        try:
+            for frame in range(scn.frame_start, scn.frame_end+1):
+                scn.frame_current = frame
+                updateScene(context)
+                scn.render.filepath = "%s%04d" % (path, frame)
+                self.render(scn)
+        finally:
+            scn.render.filepath = path
+
+
+class DAZ_OT_RenderFrames(DazOperator, Renderer):
+    bl_idname = "daz.render_frames"
+    bl_label = "Render Frames"
+    bl_description = "Render a range of frames as still images.\nTo overcome problems with morphing armatures and rendering"
+
+    def render(self, scn):
+        bpy.ops.render.render(animation=False, write_still=True, use_viewport=True)
+
+
+class DAZ_OT_OpenGLFrames(DazOperator, Renderer):
+    bl_idname = "daz.opengl_frames"
+    bl_label = "OpenGL Frames"
+    bl_description = "Render a range of frames as still images with OpenGL.\nTo overcome problems with morphing armatures and rendering"
+
+    def render(self, scn):
+        from .runtime import morph_armature
+        morph_armature.onFrameChangeDaz(scn)
+        bpy.ops.render.opengl(animation=False, write_still=True)
+
+#-------------------------------------------------------------
+#   Register
+#-------------------------------------------------------------
+
+classes = [
+    DAZ_OT_RenderFrames,
+    DAZ_OT_OpenGLFrames,
+]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)

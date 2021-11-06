@@ -357,6 +357,9 @@ class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
         ob = context.object
         scn = context.scene
         layout = self.layout
+        layout.operator("daz.render_frames")
+        layout.operator("daz.opengl_frames")
+        layout.separator()
         layout.operator("daz.decode_file")
         layout.operator("daz.quote_unquote")
         layout.operator("daz.print_statistics")

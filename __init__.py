@@ -85,7 +85,7 @@ from .api import *
 regnames = ["propgroups", "daz", "uilist", "driver",
             "figure", "geometry", "objfile",
             "fix", "animation", "morphing", "panel",
-            "material", "cgroup",
+            "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
             "matedit", "proxy", "rigify", "merge", "hide",
             "mhx", "layers", "hair", "transfer", "dforce",
