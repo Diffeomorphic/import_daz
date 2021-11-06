@@ -152,13 +152,13 @@ def register():
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
-    oldFcns = [fcn for fcn in bpy.app.handlers.frame_change_post if fcn.__name__ == "onFrameChangeDaz"]
-    for fcn in oldFcns:
-        bpy.app.handlers.frame_change_post.remove(fcn)
+    unregister()
     bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 
 def unregister():
-    bpy.app.handlers.frame_change_post.remove(onFrameChangeDaz)
+    oldFcns = [fcn for fcn in bpy.app.handlers.frame_change_post if fcn.__name__ == "onFrameChangeDaz"]
+    for fcn in oldFcns:
+        bpy.app.handlers.frame_change_post.remove(fcn)
 
 if __name__ == "__main__":
     register()
