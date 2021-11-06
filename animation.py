@@ -1686,6 +1686,8 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
         self.F = {}
         self.Finv = {}
         self.idxs = {}
+        self.loclocks = {}
+        self.rotlocks = {}
 
         Fn = rig.matrix_local.inverted() @ self.Z
         self.F[""] = Fn
@@ -1704,6 +1706,8 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
                 for n in range(3):
                     idx = ord(pb.DazRotMode[n]) - ord('X')
                     idxs.append(idx)
+                self.rotlocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_rotation) @ Fn.to_3x3()]
+                self.loclocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_location) @ Fn.to_3x3()]
 
 
     def setupFrames(self, rig):
@@ -1945,7 +1949,7 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
                 anims.append(anim)
         else:
             for idx,x in enumerate(["x","y","z"]):
-                if not self.includeLocks and pb.DazLocLocks[idx]:
+                if not self.includeLocks and self.loclocks[pb.name][idx]:
                     continue
                 anim = {}
                 anim["url"] = "name://@selection/%s:?translation/%s/value" % (bname, x)
@@ -1966,7 +1970,7 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
         else:
             twname,twidx = self.getTwistBone(pb.name)
             for idx,x in enumerate(["x","y","z"]):
-                if ((not self.includeLocks and pb.DazRotLocks[idx]) or
+                if ((not self.includeLocks and self.rotlocks[pb.name][idx]) or
                     (twname and idx == twidx)):
                     continue
                 anim = {}
