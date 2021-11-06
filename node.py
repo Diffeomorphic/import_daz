@@ -356,7 +356,9 @@ class Instance(Accessor, Channels, SimNode):
             LS.collection.children.link(LS.refColls)
         refcoll = bpy.data.collections.new(name = obname)
         LS.refColls.children.link(refcoll)
-        self.linkRefChildren(ob, refcoll, self)
+        unlinkAll(ob)
+        refcoll.objects.link(ob)
+        self.linkRefChildren(refcoll, self)
 
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
@@ -367,16 +369,15 @@ class Instance(Accessor, Channels, SimNode):
         return self.refcoll
 
 
-    def linkRefChildren(self, ob, refcoll, target):
-        if ob.type == 'EMPTY' and self.refersTo(target):
-            return
-        unlinkAll(ob)
-        refcoll.objects.link(ob)
-        #if ob.name in self.collection.objects:
-        #    self.collection.objects.unlink(ob)
+    def linkRefChildren(self, refcoll, target):
         for child in self.children.values():
-            if child.rna:
-                child.linkRefChildren(child.rna, refcoll, target)
+            ob = child.rna
+            if ob:
+                if ob.type == 'EMPTY' and self.refersTo(target):
+                    return
+                unlinkAll(ob)
+                refcoll.objects.link(ob)
+            child.linkRefChildren(refcoll, target)
 
 
     def refersTo(self, target):
