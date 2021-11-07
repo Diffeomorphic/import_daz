@@ -33,7 +33,7 @@ from .material import Material, WHITE, BLACK, isBlack
 from .cycles import CyclesMaterial, CyclesTree
 from .cgroup import CyclesGroup
 from .utils import *
-from .error import DazOperator
+from .error import DazPropsOperator
 
 #-------------------------------------------------------------
 #   Render Options
@@ -323,20 +323,42 @@ def parseRenderOptions(renderSettings, sceneSettings, backdrop, fileref):
 #-------------------------------------------------------------
 
 class Renderer:
+    useAllArmatures : bpy.props.BoolProperty(
+        name = "All Armatures",
+        description = "Auto morph all visible armatures instead of just the visible ones",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useAllArmatures")
+
+    def storeState(self, context):
+        self.filepath = context.scene.render.filepath
+        DazPropsOperator.storeState(self, context)
+
+    def restoreState(self, context):
+        DazPropsOperator.restoreState(self, context)
+        context.scene.render.filepath = self.filepath
+
     def run(self, context):
+        from .runtime.morph_armature import onFrameChangeDaz
         scn = context.scene
-        path = scn.render.filepath
-        try:
-            for frame in range(scn.frame_start, scn.frame_end+1):
-                scn.frame_current = frame
-                updateScene(context)
-                scn.render.filepath = "%s%04d" % (path, frame)
-                self.render(scn)
-        finally:
-            scn.render.filepath = path
+        rigs = getVisibleArmatures(context)
+        if self.useAllArmatures:
+            for rig in rigs:
+                rig.select_set(True)
+        ob = context.object
+        if rigs and not (ob and ob.type == 'ARMATURE'):
+            context.view_layer.objects.active = rigs[0]
+        for frame in range(scn.frame_start, scn.frame_end+1):
+            scn.frame_current = frame
+            updateScene(context)
+            scn.render.filepath = "%s%04d" % (self.filepath, frame)
+            if rigs:
+                onFrameChangeDaz(scn)
+            self.render(scn)
 
 
-class DAZ_OT_RenderFrames(DazOperator, Renderer):
+class DAZ_OT_RenderFrames(Renderer, DazPropsOperator):
     bl_idname = "daz.render_frames"
     bl_label = "Render Frames"
     bl_description = "Render a range of frames as still images.\nTo overcome problems with morphing armatures and rendering"
@@ -345,14 +367,12 @@ class DAZ_OT_RenderFrames(DazOperator, Renderer):
         bpy.ops.render.render(animation=False, write_still=True, use_viewport=True)
 
 
-class DAZ_OT_OpenGLFrames(DazOperator, Renderer):
+class DAZ_OT_OpenGLFrames(Renderer, DazPropsOperator):
     bl_idname = "daz.opengl_frames"
     bl_label = "OpenGL Frames"
     bl_description = "Render a range of frames as still images with OpenGL.\nTo overcome problems with morphing armatures and rendering"
 
     def render(self, scn):
-        from .runtime import morph_armature
-        morph_armature.onFrameChangeDaz(scn)
         bpy.ops.render.opengl(animation=False, write_still=True)
 
 #-------------------------------------------------------------

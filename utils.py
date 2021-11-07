@@ -48,6 +48,10 @@ def getVisibleMeshes(context):
     return [ob for ob in context.view_layer.objects
         if ob.type == 'MESH' and not (ob.hide_get() or ob.hide_viewport)]
 
+def getVisibleArmatures(context):
+    return [ob for ob in context.view_layer.objects
+        if ob.type == 'ARMATURE' and not (ob.hide_get() or ob.hide_viewport)]
+
 def getSelectedObjects(context):
     return [ob for ob in context.view_layer.objects
         if ob.select_get() and not (ob.hide_get() or ob.hide_viewport)]

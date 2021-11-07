@@ -862,16 +862,6 @@ def toggleRotLimits(self, context):
 def toggleLocLimits(self, context):
     toggleLimits(self, context, "DazLocLimits", "LIMIT_LOCATION")
 
-#----------------------------------------------------------
-#   Toggle Morph Armature
-#----------------------------------------------------------
-
-def toggleMorphArmatures(self, context):
-    from .runtime.morph_armature import onFrameChangeDaz, unregister
-    unregister()
-    if context.scene.DazAutoMorphArmatures:
-        bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
-
 #-------------------------------------------------------------
 #   Simple IK
 #-------------------------------------------------------------
@@ -1873,12 +1863,6 @@ def register():
         description = "Location Limits",
         default = True,
         update = toggleLocLimits)
-
-    bpy.types.Scene.DazAutoMorphArmatures = BoolProperty(
-        name = "Auto Morph Armatures",
-        description = "Automatically morph armatures on frame change",
-        default = False,
-        update = toggleMorphArmatures)
 
     for cls in classes:
         bpy.utils.register_class(cls)

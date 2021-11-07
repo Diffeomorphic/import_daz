@@ -608,7 +608,6 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
             self.layout.operator("daz.disable_drivers")
         self.preamble(self.layout, rig)
         self.layout.operator("daz.morph_armature")
-        self.layout.prop(context.scene, "DazAutoMorphArmatures")
 
 
 class DAZ_UL_Standard(DAZ_UL_StandardMorphs):
