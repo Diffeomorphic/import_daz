@@ -349,35 +349,41 @@ class Instance(Accessor, Channels, SimNode):
             return self.refcoll
         ob = self.rna
         obname = ob.name
-        ob.name = "%s REF" % obname
 
         if LS.refColls is None:
             LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
             LS.collection.children.link(LS.refColls)
         refcoll = bpy.data.collections.new(name = obname)
         LS.refColls.children.link(refcoll)
-        unlinkAll(ob)
-        refcoll.objects.link(ob)
-        self.linkRefChildren(refcoll, self)
+        missing = self.linkRefChildren(ob, refcoll, self, True)
+        ob.name = "%s REF" % obname
 
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = refcoll
         self.collection.objects.link(empty)
-        LS.refObjects[obname] = (ob, empty, refcoll)
+        LS.refObjects[obname] = (ob, empty, refcoll, missing)
         self.refcoll = (refcoll, ob)
         return self.refcoll
 
 
-    def linkRefChildren(self, refcoll, target):
-        for child in self.children.values():
-            ob = child.rna
-            if ob:
-                if ob.type == 'EMPTY' and self.refersTo(target):
-                    return
+    def linkRefChildren(self, ob, refcoll, target, top):
+        if ob.name[-4:] == " REF":
+            data = LS.refObjects.get(ob.name[:-4])
+            if data:
+                refcoll.objects.link(data[1])
+            return False
+        elif ob.type == 'EMPTY' and self.refersTo(target):
+            if top:
                 unlinkAll(ob)
                 refcoll.objects.link(ob)
-            child.linkRefChildren(refcoll, target)
+            return top
+        unlinkAll(ob)
+        refcoll.objects.link(ob)
+        for child in self.children.values():
+            if child.rna:
+                child.linkRefChildren(child.rna, refcoll, target, False)
+        return False
 
 
     def refersTo(self, target):
@@ -591,8 +597,11 @@ def createHiddenCollection(context, ob):
 #-------------------------------------------------------------
 
 def finishNodeInstances(context):
+    def missChildren(ob, refcoll):
+        print("Missing children for instance '%s':\n%s" % (refcoll.name, [child.name for child in ob.children]))
+
     wmats = {}
-    for ob,empty,refcoll in LS.refObjects.values():
+    for ob,empty,refcoll,missing in LS.refObjects.values():
         wmats[empty.name] = ob.matrix_world.copy()
         for child in ob.children:
             if child.name not in refcoll.objects.keys():
@@ -603,12 +612,14 @@ def finishNodeInstances(context):
         ob.parent = None
 
     unit = Matrix()
-    for ob,empty,refcoll in LS.refObjects.values():
+    for ob,empty,refcoll,missing in LS.refObjects.values():
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
             if child.name in wmats.keys():
                 setWorldMatrix(child, wmats[child.name])
+        if missing:
+            missChildren(empty, refcoll)
 
     if LS.refColls:
         toplayer = context.view_layer.layer_collection
