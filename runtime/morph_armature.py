@@ -130,7 +130,6 @@ def morphArmature(rig, heads, tails, offsets):
 
 @persistent
 def onFrameChangeDaz(scn):
-    print("onFrameChangeDaz", scn.frame_current)
     data = []
     for ob in scn.objects:
         if (ob.type == 'ARMATURE' and
