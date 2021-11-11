@@ -154,7 +154,7 @@ class Instance(Accessor, Channels, SimNode):
         self.cpoint = Vector((0,0,0))
         self.wmat = self.wrot = self.wscale = Matrix()
         self.refcoll = None
-        self.groupNode = None
+        self.isGroupNode = False
         self.isStrandHair = False
         self.ignore = False
         self.instanceTarget = None
@@ -221,8 +221,8 @@ class Instance(Accessor, Channels, SimNode):
                 continue
             elif extra["type"] == "studio/node/shell":
                 self.shstruct = extra
-            #elif extra["type"] == "studio/node/group_node":
-            #    self.isGroupNode = True
+            elif extra["type"] == "studio/node/group_node":
+                self.isGroupNode = True
             #elif extra["type"] == "studio/node/instance":
             #    self.isNodeInstance = True
             #elif extra["type"] == "studio/node/group_instance":
@@ -329,21 +329,6 @@ class Instance(Accessor, Channels, SimNode):
             self.buildNodeInstance(context)
 
 
-    def addGroupNode(self, context):
-        coll = bpy.data.collections.new(name=self.label)
-        self.groupNode = coll
-        if self.parent is None:
-            self.collection.children.link(coll)
-        self.collection = coll
-        self.groupChildren(coll)
-
-
-    def groupChildren(self, coll):
-        for child in self.children.values():
-            child.collection = coll
-            child.groupChildren(coll)
-
-
     def getRefColl(self, context):
         if self.refcoll:
             return self.refcoll
@@ -353,37 +338,39 @@ class Instance(Accessor, Channels, SimNode):
         if LS.refColls is None:
             LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
             LS.collection.children.link(LS.refColls)
-        refcoll = bpy.data.collections.new(name = obname)
+        self.refcoll = refcoll = bpy.data.collections.new(name = obname)
         LS.refColls.children.link(refcoll)
-        missing = self.linkRefChildren(ob, refcoll, self, True)
+        print("AA", ob.name, self.isGroupNode)
+        unlinkAll(ob)
+        refcoll.objects.link(ob)
+        self.linkRefChildren(refcoll, self, context)
         ob.name = "%s REF" % obname
 
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = refcoll
         self.collection.objects.link(empty)
-        LS.refObjects[obname] = (ob, empty, refcoll, missing)
-        self.refcoll = (refcoll, ob)
+        LS.refObjects[ob.name] = (ob, empty, refcoll)
         return self.refcoll
 
 
-    def linkRefChildren(self, ob, refcoll, target, top):
-        if ob.name[-4:] == " REF":
-            data = LS.refObjects.get(ob.name[:-4])
-            if data:
-                refcoll.objects.link(data[1])
-            return False
-        elif ob.type == 'EMPTY' and self.refersTo(target):
-            if top:
-                unlinkAll(ob)
-                refcoll.objects.link(ob)
-            return top
-        unlinkAll(ob)
-        refcoll.objects.link(ob)
+    def linkRefChildren(self, refcoll, target, context):
         for child in self.children.values():
-            if child.rna:
-                child.linkRefChildren(child.rna, refcoll, target, False)
-        return False
+            ob = child.rna
+            if child.instanceTarget:
+                print("CC", self.name, child.name, child.instanceTarget.name, child.isGroupNode)
+                coll = child.instanceTarget.getRefColl(context)
+            elif ob:
+                if ob.name in LS.refObjects.keys():
+                    print("DD", ob.name, child.isGroupNode)
+                    empty = LS.refObjects[ob.name][1]
+                    #unlinkAll(empty)
+                    #refcoll.objects.link(empty)
+                else:
+                    print("BB", ob.name, child.isGroupNode)
+                    unlinkAll(ob)
+                    refcoll.objects.link(ob)
+                    child.linkRefChildren(refcoll, target, context)
 
 
     def refersTo(self, target):
@@ -400,7 +387,7 @@ class Instance(Accessor, Channels, SimNode):
         if not self.instanceTarget:
             return
         items = self.nodeExtra.get("instance_items")
-        coll,ob = self.instanceTarget.getRefColl(context)
+        coll = self.instanceTarget.getRefColl(context)
         empty = self.rna
         if empty.name in coll.objects:
             print("Unlink '%s' from '%s'" % (empty.name, coll.name))
@@ -597,29 +584,28 @@ def createHiddenCollection(context, ob):
 #-------------------------------------------------------------
 
 def finishNodeInstances(context):
-    def missChildren(ob, refcoll):
-        print("Missing children for instance '%s':\n%s" % (refcoll.name, [child.name for child in ob.children]))
-
     wmats = {}
-    for ob,empty,refcoll,missing in LS.refObjects.values():
+    for ob,empty,refcoll in LS.refObjects.values():
         wmats[empty.name] = ob.matrix_world.copy()
         for child in ob.children:
-            if child.name not in refcoll.objects.keys():
-                wmats[child.name] = child.matrix_world.copy()
-                child.parent = empty
+            wmats[child.name] = child.matrix_world.copy()
+
+    for ob,empty,refcoll in LS.refObjects.values():
         empty.parent = ob.parent
         empty.parent_type = ob.parent_type
         ob.parent = None
+        for child in ob.children:
+            if child.name not in refcoll.objects:
+                child.parent = empty
 
     unit = Matrix()
-    for ob,empty,refcoll,missing in LS.refObjects.values():
+    for ob,empty,refcoll in LS.refObjects.values():
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
-            if child.name in wmats.keys():
+            if (child.name not in refcoll.objects and
+                child.name in wmats.keys()):
                 setWorldMatrix(child, wmats[child.name])
-        if missing:
-            missChildren(empty, refcoll)
 
     if LS.refColls:
         toplayer = context.view_layer.layer_collection
