@@ -338,39 +338,40 @@ class Instance(Accessor, Channels, SimNode):
         if LS.refColls is None:
             LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
             LS.collection.children.link(LS.refColls)
-        self.refcoll = refcoll = bpy.data.collections.new(name = obname)
-        LS.refColls.children.link(refcoll)
-        print("AA", ob.name, self.isGroupNode)
-        unlinkAll(ob)
-        refcoll.objects.link(ob)
-        self.linkRefChildren(refcoll, self, context)
+        self.refcoll = bpy.data.collections.new(name = obname)
+        LS.refColls.children.link(self.refcoll)
         ob.name = "%s REF" % obname
-
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
-        empty.instance_collection = refcoll
+        empty.instance_collection = self.refcoll
         self.collection.objects.link(empty)
-        LS.refObjects[ob.name] = (ob, empty, refcoll)
+        LS.refObjects[ob.name] = (self, empty, self.refcoll)
+        unlinkAll(ob)
+        self.refcoll.objects.link(ob)
         return self.refcoll
 
 
-    def linkRefChildren(self, refcoll, target, context):
+    def linkRefChildren(self, refcoll, parent, context, wmats):
         for child in self.children.values():
             ob = child.rna
+            wmats[ob.name] = ob.matrix_world.copy()
             if child.instanceTarget:
-                print("CC", self.name, child.name, child.instanceTarget.name, child.isGroupNode)
                 coll = child.instanceTarget.getRefColl(context)
+                child.linkRefChildren(coll, ob, context, wmats)
             elif ob:
                 if ob.name in LS.refObjects.keys():
-                    print("DD", ob.name, child.isGroupNode)
-                    empty = LS.refObjects[ob.name][1]
-                    #unlinkAll(empty)
-                    #refcoll.objects.link(empty)
+                    empty0 = LS.refObjects[ob.name][1]
+                    empty = bpy.data.objects.new(empty0.name, None)
+                    empty.instance_type = 'COLLECTION'
+                    empty.instance_collection = empty0.instance_collection
+                    refcoll.objects.link(empty)
+                    wmats[empty.name] = ob.matrix_world.copy()
+                    empty.parent = ob.parent
+                    empty.parent_type = ob.parent_type
                 else:
-                    print("BB", ob.name, child.isGroupNode)
                     unlinkAll(ob)
                     refcoll.objects.link(ob)
-                    child.linkRefChildren(refcoll, target, context)
+                    child.linkRefChildren(refcoll, ob, context, wmats)
 
 
     def refersTo(self, target):
@@ -585,12 +586,13 @@ def createHiddenCollection(context, ob):
 
 def finishNodeInstances(context):
     wmats = {}
-    for ob,empty,refcoll in LS.refObjects.values():
+    for node,empty,refcoll in list(LS.refObjects.values()):
+        ob = node.rna
         wmats[empty.name] = ob.matrix_world.copy()
-        for child in ob.children:
-            wmats[child.name] = child.matrix_world.copy()
+        node.linkRefChildren(refcoll, node.rna, context, wmats)
 
-    for ob,empty,refcoll in LS.refObjects.values():
+    for node,empty,refcoll in LS.refObjects.values():
+        ob = node.rna
         empty.parent = ob.parent
         empty.parent_type = ob.parent_type
         ob.parent = None
@@ -599,7 +601,8 @@ def finishNodeInstances(context):
                 child.parent = empty
 
     unit = Matrix()
-    for ob,empty,refcoll in LS.refObjects.values():
+    for node,empty,refcoll in LS.refObjects.values():
+        ob = node.rna
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
