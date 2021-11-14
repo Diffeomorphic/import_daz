@@ -134,6 +134,11 @@ class ImportDAZ(DazOperator, DazOptions, MultiFile):
             msg = ("Some assets were not found.\n" +
                    "Check that all Daz paths have been set up correctly.        \n" +
                    "For details see\n'%s'" % getErrorPath())
+        elif LS.hasInstanceChildren:
+            msg = ("The following objects have instance children.\n" +
+                   "The result may be incorrect.\n")
+            for obname in LS.hasInstanceChildren.keys():
+                msg += ("  %s\n" % obname)
         else:
             if LS.hdFailures:
                 msg += "Could not rebuild subdivisions for the following HD objects:       \n"

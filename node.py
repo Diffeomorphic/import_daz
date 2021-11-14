@@ -368,10 +368,23 @@ class Instance(Accessor, Channels, SimNode):
                     wmats[empty.name] = ob.matrix_world.copy()
                     empty.parent = ob.parent
                     empty.parent_type = ob.parent_type
+                elif child.hasInstanceChildren(refcoll):
+                    print('Warning: "%s" has instance children' % ob.name)
+                    LS.hasInstanceChildren[ob.name] = True
                 else:
                     unlinkAll(ob)
                     refcoll.objects.link(ob)
                     child.linkRefChildren(refcoll, ob, context, wmats)
+
+
+    def hasInstanceChildren(self, refcoll):
+        if self.instanceTarget and self.instanceTarget.name == refcoll.name:
+            print('"%s" is an instance of "%s"' % (self.name, refcoll.name))
+            return True
+        for child in self.children.values():
+            if child.hasInstanceChildren(refcoll):
+                return True
+        return False
 
 
     def refersTo(self, target):

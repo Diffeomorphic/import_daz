@@ -408,6 +408,7 @@ class LocalSettings:
         self.fps = 30
         self.integerFrames = True
         self.missingAssets = {}
+        self.hasInstanceChildren = {}
         self.hdFailures = []
         self.hdWeights = []
         self.hdUvMissing = []
