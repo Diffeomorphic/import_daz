@@ -125,6 +125,38 @@ def morphArmature(rig, heads, tails, offsets):
         eb.tail = tails[eb.name] + offsets[eb.name]
 
 #----------------------------------------------------------
+#   Render a sequence of frames, morphing armatures before rendering each frame
+#----------------------------------------------------------
+
+def renderFrames(first=None, last=None, useOpenGl=False, useAllArmatures=True):
+    scn = bpy.context.scene
+    filepath = scn.render.filepath
+    if first is None:
+        first = scn.frame_start
+    if last is None:
+        last = scn.frame_end
+    vly = bpy.context.view_layer
+    rigs = [ob for ob in vly.objects
+            if ob.type == 'ARMATURE' and not (ob.hide_get() or ob.hide_viewport)]
+    if useAllArmatures:
+        for rig in rigs:
+            rig.select_set(True)
+    ob = bpy.context.object
+    if rigs and not (ob and ob.type == 'ARMATURE'):
+        vly.objects.active = rigs[0]
+    for frame in range(first, last+1):
+        scn.frame_current = frame
+        bpy.context.evaluated_depsgraph_get().update()
+        scn.render.filepath = "%s%04d" % (filepath, frame)
+        if rigs:
+            onFrameChangeDaz(scn)
+        if useOpenGl:
+            bpy.ops.render.opengl(animation=False, write_still=True)
+        else:
+            bpy.ops.render.render(animation=False, write_still=True, use_viewport=True)
+    scn.render.filepath = filepath
+
+#----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
@@ -160,5 +192,11 @@ def unregister():
     for fcn in oldFcns:
         bpy.app.handlers.frame_change_post.remove(fcn)
 
+#----------------------------------------------------------
+#
+#----------------------------------------------------------
+
 if __name__ == "__main__":
     register()
+    # Enable this to render with armature morphing
+    # renderFrames()
