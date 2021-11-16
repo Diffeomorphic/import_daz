@@ -448,13 +448,20 @@ class Instance(Accessor, Channels, SimNode):
             riggrp = self.nodeExtra.get("rigidity_group")
             if par and riggrp and vcount and len(par.data.vertices) == vcount:
                 refverts = riggrp["reference_vertices"]["values"]
-                vn = refverts[0]
-                x = par.data.vertices[vn].co
-                y,quat,scale = ob.matrix_world.decompose()
                 ob.parent = par
-                ob.parent_type = 'VERTEX'
-                ob.parent_vertices[0] = vn
-                ob.location = y-x
+                if False and len(refverts) >= 3:
+                    vnums = [refverts[n] for n in [0,1,-1]]
+                    xs = [par.data.vertices[vn].co for vn in vnums]
+                    x = (xs[0] + xs[1] + xs[2])/3
+                    ob.parent_type = 'VERTEX_3'
+                    ob.parent_vertices = vnums
+                else:
+                    vn = refverts[0]
+                    x = par.data.vertices[vn].co
+                    ob.parent_type = 'VERTEX'
+                    ob.parent_vertices[0] = vn
+                loc,quat,scale = ob.matrix_world.decompose()
+                ob.location = loc-x
                 ob.rotation_euler = Zero
                 ob.scale = One
 

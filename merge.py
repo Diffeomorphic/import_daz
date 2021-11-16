@@ -677,7 +677,7 @@ class RigInfo:
 
     def addObjects(self, ob):
         for child in ob.children:
-            if getHideViewport(child):
+            if getHideViewport(child) or child.parent_type in ['VERTEX', 'VERTEX_3']:
                 continue
             elif child.type != 'ARMATURE':
                 partype = child.parent_type
@@ -976,6 +976,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         from .proxy import stripName
         for ob,data in info.objects:
             partype, parbone = data
+            if partype in ['VERTEX', 'VERTEX_3']:
+                continue
             wmat = ob.matrix_world
             ob.parent = rig
             ob.parent_type = partype
