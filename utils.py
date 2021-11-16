@@ -178,7 +178,7 @@ def deleteObjects(context, objects):
 
 def setWorldMatrix(ob, wmat):
     if ob.parent:
-        if ob.parent_type == 'OBJECT':
+        if ob.parent_type in ['OBJECT', 'VERTEX']:
             ob.matrix_parent_inverse = ob.parent.matrix_world.inverted()
         elif ob.parent_type == 'BONE':
             pb = ob.parent.pose.bones[ob.parent_bone]

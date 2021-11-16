@@ -155,6 +155,7 @@ class Instance(Accessor, Channels, SimNode):
         self.wmat = self.wrot = self.wscale = Matrix()
         self.refcoll = None
         self.isGroupNode = False
+        self.rigidFollow = None
         self.isStrandHair = False
         self.ignore = False
         self.instanceTarget = None
@@ -217,23 +218,26 @@ class Instance(Accessor, Channels, SimNode):
                         pass
 
         for extra in self.extra:
-            if "type" not in extra.keys():
+            etype = extra.get("type")
+            if etype == None:
                 continue
-            elif extra["type"] == "studio/node/shell":
+            elif etype == "studio/node/shell":
                 self.shstruct = extra
-            elif extra["type"] == "studio/node/group_node":
+            elif etype == "studio/node/group_node":
                 self.isGroupNode = True
-            #elif extra["type"] == "studio/node/instance":
+            #elif etype == "studio/node/instance":
             #    self.isNodeInstance = True
-            #elif extra["type"] == "studio/node/group_instance":
+            #elif etype == "studio/node/group_instance":
             #    self.isGroupInstance = True
-            elif extra["type"] == "studio/node/strand_hair":
+            elif etype == "studio/node/strand_hair":
                 self.isStrandHair = True
                 for geonode in self.geometries:
                     geonode.isStrandHair = True
-            elif extra["type"] == "studio/node/environment":
+            elif etype == "studio/node/rigid_follow":
+                self.rigidFollow = extra
+            elif etype == "studio/node/environment":
                 self.ignore = True
-            elif extra["type"] == "studio/node/tone_mapper":
+            elif etype == "studio/node/tone_mapper":
                 self.ignore = True
 
         for geonode in self.geometries:
@@ -437,6 +441,23 @@ class Instance(Accessor, Channels, SimNode):
         for geonode in self.geometries:
             geonode.finalize(context, self)
         self.buildChannels(ob)
+
+        if self.rigidFollow:
+            par = self.parent.geometries[0].rna
+            vcount = self.nodeExtra.get("vertex_count")
+            riggrp = self.nodeExtra.get("rigidity_group")
+            if par and riggrp and vcount and len(par.data.vertices) == vcount:
+                refverts = riggrp["reference_vertices"]["values"]
+                vn = refverts[0]
+                x = par.data.vertices[vn].co
+                y,quat,scale = ob.matrix_world.decompose()
+                ob.parent = par
+                ob.parent_type = 'VERTEX'
+                ob.parent_vertices[0] = vn
+                ob.location = y-x
+                ob.rotation_euler = Zero
+                ob.scale = One
+
         if self.dynsim:
             self.dynsim.build(context)
         if self.dyngenhair:
@@ -728,8 +749,9 @@ class Node(Asset, Formula, Channels):
 
 
     def setExtra(self, extra):
-        if "instance_items" in extra.keys():
-            self.nodeExtra["instance_items"] = extra["instance_items"]
+        for key,value in extra.items():
+            if key in ["instance_items", "vertex_count", "rigidity_group"]:
+                self.nodeExtra[key] = extra[key]
 
 
     Indices = { "x": 0, "y": 1, "z": 2 }
