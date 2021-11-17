@@ -135,7 +135,6 @@ class Collision:
 
     def addCollision(self, ob):
         subsurf = hideModifier(ob, 'SUBSURF')
-        #multires = hideModifier(ob, 'MULTIRES')
         mod = getModifier(ob, 'COLLISION')
         if mod is None:
             mod = ob.modifiers.new("Collision", 'COLLISION')
@@ -201,7 +200,6 @@ class Cloth:
         scale = ob.DazScale
         collision = hideModifier(ob, 'COLLISION')
         subsurf = hideModifier(ob, 'SUBSURF')
-        #multires = hideModifier(ob, 'MULTIRES')
 
         cloth = getModifier(ob, 'CLOTH')
         if cloth is None:
@@ -222,8 +220,6 @@ class Cloth:
 
         if subsurf:
             subsurf.restore(ob)
-        #if multires:
-        #    multires.restore(ob)
         if collision:
             collision.restore(ob)
 
