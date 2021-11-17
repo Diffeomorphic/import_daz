@@ -135,15 +135,13 @@ class Collision:
 
     def addCollision(self, ob):
         subsurf = hideModifier(ob, 'SUBSURF')
-        multires = hideModifier(ob, 'MULTIRES')
+        #multires = hideModifier(ob, 'MULTIRES')
         mod = getModifier(ob, 'COLLISION')
         if mod is None:
             mod = ob.modifiers.new("Collision", 'COLLISION')
         ob.collision.thickness_outer = 0.1*ob.DazScale*self.collDist
         if subsurf:
             subsurf.restore(ob)
-        if multires:
-            multires.restore(ob)
 
 
 class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
@@ -203,7 +201,7 @@ class Cloth:
         scale = ob.DazScale
         collision = hideModifier(ob, 'COLLISION')
         subsurf = hideModifier(ob, 'SUBSURF')
-        multires = hideModifier(ob, 'MULTIRES')
+        #multires = hideModifier(ob, 'MULTIRES')
 
         cloth = getModifier(ob, 'CLOTH')
         if cloth is None:
@@ -222,12 +220,12 @@ class Cloth:
         cset.vertex_group_mass = self.pinGroup
         cset.pin_stiffness = 1.0
 
-        if collision:
-            collision.restore(ob)
         if subsurf:
             subsurf.restore(ob)
-        if multires:
-            multires.restore(ob)
+        #if multires:
+        #    multires.restore(ob)
+        if collision:
+            collision.restore(ob)
 
 
     def setPreset(self, cset):
