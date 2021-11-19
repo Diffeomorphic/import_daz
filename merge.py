@@ -80,6 +80,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
 
         grafts = dict([(ncverts, []) for ncverts in chars.keys()])
         ngrafts = 0
+        misses = []
         for aob in getSelectedMeshes(context):
             if aob.data.DazGraftGroup:
                 ncverts = aob.data.DazVertexCount
@@ -88,8 +89,16 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
                     ngrafts += 1
                 else:
                     print("No matching mesh found for geograft %s" % aob.name)
+                    misses.append(aob)
         if ngrafts == 0:
-            raise DazError("No geograft selected")
+            if misses:
+                msg = "No matching mesh found for these geografts:\n"
+                for aob in misses:
+                    msg += "    %s\n" % aob.name
+                msg += "Has some mesh been edited?"
+            else:
+                msg = "No geograft selected"
+            raise DazError(msg)
 
         for ncverts,cob in chars.items():
             if prio[ncverts]:
