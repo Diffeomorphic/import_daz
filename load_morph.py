@@ -821,6 +821,8 @@ class LoadMorph(DriverUser):
 
 
     def addMissingVars(self, fcu, vvars):
+        if not fcu.driver:
+            return
         vnames = [var.name for var in fcu.driver.variables]
         for vname,vvar in vvars.items():
             if vname not in vnames:
