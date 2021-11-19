@@ -463,8 +463,7 @@ class ExtraBones(DriverUser):
     def run(self, context):
         from time import perf_counter
         rig = context.object
-        if rig.DazRig[0:3] in ["mhx", "rig"]:
-            raise DazError("Cannot make %s bones poseable.     " % rig.DazRig)
+        self.checkAllowed(rig)
         t1 = perf_counter()
         oldvis = list(rig.data.layers)
         rig.data.layers = 32*[True]
@@ -651,6 +650,7 @@ class ExtraBones(DriverUser):
             pb.lock_rotation = db.lock_rotation
             pb.lock_scale = db.lock_scale
             pb.custom_shape = db.custom_shape
+            pb.custom_shape_scale = db.custom_shape_scale
             pb.DazRotLocks = db.DazRotLocks
             pb.DazLocLocks = db.DazLocLocks
 
@@ -662,8 +662,6 @@ class ExtraBones(DriverUser):
             print(msg)
             #raise DazError(msg)
 
-        if rig.DazRig[0:6] == "rigify":
-            raise DazError("Cannot add extra bones to Rigify rig")
         drivenLayers = 31*[False] + [True]
         finalLayers = 30*[False] + [True,False]
 
@@ -687,6 +685,7 @@ class ExtraBones(DriverUser):
             fb.use_deform = False
             db.layers = drivenLayers
             db.use_deform = False
+            self.changeLayer(eb, rig)
         setMode('OBJECT')
 
         for bname in self.bnames:
@@ -772,7 +771,7 @@ class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
 
     def getBoneNames(self, rig):
         inface = [
-            "lEye", "rEye",
+            "lEye", "rEye", "eye.L", "eye.R",
             "lowerJaw", "upperTeeth", "lowerTeeth", "lowerFaceRig",
             "tongue01", "tongue02", "tongue03", "tongue04",
             "tongue05", "tongue06", "tongueBase", "tongueTip",
@@ -782,6 +781,15 @@ class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
                   if bname in keys and drvBone(bname) not in keys]
         bnames += getAnchoredBoneNames(rig, ["upperFaceRig", "lowerFaceRig"])
         return bnames
+
+    def checkAllowed(self, rig):
+        pass
+
+    def changeLayer(self, eb, rig):
+        if rig.DazRig == "mhx":
+            eb.layers = 8*[False] + [True] + 23*[False]
+        elif rig.DazRig[0:6] == "rigify":
+            eb.layers = 2*[False] + [True] + 29*[False]
 
 
 def getAnchoredBoneNames(rig, anchors):
@@ -816,6 +824,13 @@ class DAZ_OT_MakeAllBonesPoseable(DazPropsOperator, ExtraBones, IsArmature):
                 isBoneDriven(rig, pb) and
                 drvBone(pb.name) not in rig.pose.bones.keys() and
                 pb.name not in exclude]
+
+    def checkAllowed(self, rig):
+        if rig.DazRig[0:3] in ["mhx", "rig"]:
+            raise DazError("Cannot make %s bones poseable.     " % rig.DazRig)
+
+    def changeLayer(self, eb, rig):
+        pass
 
 #-------------------------------------------------------------
 #   Toggle locks and constraints
