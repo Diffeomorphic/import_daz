@@ -1288,11 +1288,11 @@ class DAZ_OT_ReparentToes(DazOperator, IsArmature):
 def mergeBonesAndVgroups(rig, mergers, parents, context):
     from .driver import removeBoneSumDrivers
 
-    activateObject(context, rig)
-
-    setMode('OBJECT')
+    deletes = []
     for bones in mergers.values():
-        removeBoneSumDrivers(rig, bones)
+        deletes += bones + [finBone(bone) for bone in bones] + [drvBone(bone) for bone in bones]
+    activateObject(context, rig)
+    removeBoneSumDrivers(rig, deletes)
 
     setMode('EDIT')
     for bname,pname in parents.items():
@@ -1304,11 +1304,9 @@ def mergeBonesAndVgroups(rig, mergers, parents, context):
             eb.parent = parb
             parb.tail = eb.head
 
-    for bones in mergers.values():
-        for eb in rig.data.edit_bones:
-            if eb.name in bones:
-                rig.data.edit_bones.remove(eb)
-
+    for eb in rig.data.edit_bones:
+        if eb.name in deletes:
+            rig.data.edit_bones.remove(eb)
     setMode('OBJECT')
 
     for ob in rig.children:
