@@ -413,6 +413,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         "upper_armBend.R" : "upper_arm.bend.R",
         "forearmBend.R" : "forearm.bend.R",
         "thighBend.R" : "thigh.bend.R",
+
+        "lShldrBend(fin)" : "upper_arm.bend.L",
+        "lForearmBend(fin)" : "forearm.bend.L",
+        "lThighBend(fin)" : "thigh.bend.L",
+        "rShldrBend(fin)" : "upper_arm.bend.R",
+        "rForearmBend(fin)" : "forearm.bend.R",
+        "rThighBend(fin)" : "thigh.bend.R",
     }
 
     DrivenParents = {
