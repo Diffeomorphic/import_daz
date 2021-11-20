@@ -1057,13 +1057,21 @@ class Rigify:
 
         # Fix drivers
         print("  Fix drivers")
-        assoc = dict([(bname,bname) for bname in rig.data.bones.keys()])
-        for daz,rigi,_ in Genesis3Spine:
-            assoc[daz] = rigi
-        for rigi,daz in RigifySkeleton.items():
-            if isinstance(daz, tuple):
-                daz = daz[0]
-            assoc[daz] = rigi
+        assoc = {}
+        for bname in rig.data.bones.keys():
+            rname = bname
+            if isDrvBone(bname) or isFinal(bname):
+                continue
+            assoc[bname] = bname
+            assoc[finBone(bname)] = bname
+        for dname,rname,_ in Genesis3Spine:
+            assoc[dname] = rname
+            assoc[finBone(dname)] = rname
+        for rname,dname in RigifySkeleton.items():
+            if isinstance(dname, tuple):
+                dname = dname[0]
+            assoc[dname] = rname
+            assoc[finBone(dname)] = rname
         for fcu in getPropDrivers(rig):
             fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen)
         for fcu in getPropDrivers(rig.data):
@@ -1080,12 +1088,21 @@ class Rigify:
         print("  Fix correctives")
         correctives = {}
         for dname,rname in assoc.items():
-            if self.isCopyTransformed("ORG-"+rname, gen):
-                correctives[dname] = "ORG-"+rname
-            elif self.isCopyTransformed("DEF-"+rname, gen):
-                correctives[dname] = "DEF-"+rname
-            else:
-                correctives[dname] = rname
+            correctives[dname] = self.getOrgDefBone(rname, gen)
+        specials = {
+            "lShldr" : "upper_arm.L",
+            "lForearm" : "forearm.L",
+            "lThigh" : "thigh.L",
+            "rShldr" : "upper_arm.R",
+            "rForearm" : "forearm.R",
+            "rThigh" : "thigh.R",
+        }
+        for dname,rname in specials.items():
+            bname = self.getOrgDefBone(rname, gen)
+            correctives[dname] = bname
+            correctives["%sBend" % dname] = bname
+            correctives[finBone(dname)] = bname
+            correctives[finBone("%sBend" % dname)] = bname
         self.fixBoneDrivers(gen, correctives)
 
         # Gaze bones
@@ -1163,11 +1180,19 @@ class Rigify:
             setOverridable(trg, prop)
 
 
-    def isCopyTransformed(self, bname, rig):
-        if bname not in rig.pose.bones.keys():
-            return False
-        pb = rig.pose.bones[bname]
-        return getConstraint(pb, 'COPY_TRANSFORMS')
+    def getOrgDefBone(self, bname, rig):
+        def isCopyTransformed(bname, rig):
+            if bname not in rig.pose.bones.keys():
+                return False
+            pb = rig.pose.bones[bname]
+            return getConstraint(pb, 'COPY_TRANSFORMS')
+
+        if isCopyTransformed("ORG-"+bname, rig):
+            return "ORG-"+bname
+        elif isCopyTransformed("DEF-"+bname, rig):
+            return "DEF-"+bname
+        else:
+            return bname
 
 
     def getChildren(self, pb):
