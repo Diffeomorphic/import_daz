@@ -442,7 +442,7 @@ class Instance(Accessor, Channels, SimNode):
             geonode.finalize(context, self)
         self.buildChannels(ob)
 
-        if self.rigidFollow:
+        if self.rigidFollow and self.parent and self.parent.geometries:
             par = self.parent.geometries[0].rna
             vcount = self.nodeExtra.get("vertex_count")
             riggrp = self.nodeExtra.get("rigidity_group")
