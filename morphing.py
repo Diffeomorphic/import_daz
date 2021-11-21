@@ -749,7 +749,6 @@ class MorphLoader(LoadMorph):
     loadMissing = True
     category = ""
     adjuster = None
-    useUniqueNames = False
 
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacter
@@ -1204,11 +1203,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         description = "Mesh categories",
         default = False)
 
-    useUniqueNames : BoolProperty(
-        name = "Unique Morph Names",
-        description = "Use unique morph names, to distinguish different morphs with the same name.\nDoes not work with morphs driving other morphs",
-        default = False)
-
     bodypart : EnumProperty(
         items = [("Face", "Face", "Face"),
                  ("Body", "Body", "Body"),
@@ -1235,7 +1229,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             if self.useMeshCats:
                 self.layout.prop(self, "category")
         self.layout.prop(self, "bodypart")
-        self.layout.prop(self, "useUniqueNames")
         self.layout.prop(self, "treatHD")
 
 
@@ -1276,14 +1269,14 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def setupUniqueSuffix(self, path):
-        if self.useUniqueNames:
-            self.uniqueSuffix = "_%x" % (hash(path) & 0xffffffff)
+        if self.mesh and not self.mesh.DazMesh:
+            self.uniqueSuffix = ":%s" % self.mesh.name
         else:
             self.uniqueSuffix = ""
 
 
     def getUniqueName(self, string):
-        if self.useUniqueNames:
+        if self.uniqueSuffix:
             if string.endswith(self.uniqueSuffix):
                 return string
             else:
