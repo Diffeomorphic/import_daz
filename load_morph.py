@@ -261,7 +261,7 @@ class LoadMorph(DriverUser):
             asset.buildMorph(self.mesh, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
-            prop = self.getUniqueName(asset.getName())
+            prop = self.getUniqueName(unquote(skey.name))
             self.alias[prop] = skey.name
             skey.name = prop
             self.shapekeys[prop] = skey

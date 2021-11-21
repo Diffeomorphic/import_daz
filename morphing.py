@@ -772,9 +772,6 @@ class MorphLoader(LoadMorph):
     def findPropGroup(self, prop):
         return None
 
-    def getAssetName(self, asset):
-        return asset.getName()
-
     def addUrl(self, asset, aliases, filepath, bodypart):
         if self.mesh:
             pgs = self.mesh.DazMorphUrls
@@ -1270,7 +1267,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def getNamePaths(self):
-        from .asset import normalizeRef
         namepaths = []
         folder = ""
         for path in self.getMultiFiles(["duf", "dsf"]):
@@ -1291,7 +1287,9 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             if string.endswith(self.uniqueSuffix):
                 return string
             else:
-                return "%s%s" % (string, self.uniqueSuffix)
+                string = "%s%s" % (string, self.uniqueSuffix)
+                return string[:57]      # 64-character limit
+
         else:
             return string
 
