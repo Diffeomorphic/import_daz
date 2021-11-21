@@ -138,6 +138,7 @@ class LoadMorph(DriverUser):
         asset = parseAssetFile(struct)
         fileref = self.getFileRef(filepath)
         self.loaded.append(fileref)
+        self.setupUniqueSuffix(filepath)
         if not force:
             if self.alreadyLoaded(asset):
                 return " ."
@@ -159,7 +160,7 @@ class LoadMorph(DriverUser):
 
 
     def alreadyLoaded(self, asset):
-        raw = asset.getName()
+        raw = self.getUniqueName(asset.getName())
         final = finalProp(raw)
         if self.rig and raw in self.rig.keys() and final in self.amt.keys():
             self.adjustMults(raw, final)
@@ -260,7 +261,7 @@ class LoadMorph(DriverUser):
             asset.buildMorph(self.mesh, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
-            prop = unquote(skey.name)
+            prop = self.getUniqueName(asset.getName())
             self.alias[prop] = skey.name
             skey.name = prop
             self.shapekeys[prop] = skey
@@ -285,7 +286,7 @@ class LoadMorph(DriverUser):
 
     def makeFormulas(self, asset, skey):
         from .formula import Formula
-        prop = asset.getName()
+        prop = self.getUniqueName(asset.getName())
         if prop != asset.name:
             self.setAlias(asset.name, prop)
         self.addNewProp(prop, asset, skey)
@@ -468,12 +469,13 @@ class LoadMorph(DriverUser):
 
 
     def makeValueFormula(self, output, expr):
+        output = self.getUniqueName(output)
         if expr["prop"]:
             self.addNewProp(output)
-            prop = expr["prop"]
+            prop = self.getUniqueName(expr["prop"])
             self.drivers[output].append(("PROP", prop, expr["factor"]))
         if expr["mult"]:
-            mult = expr["mult"]
+            mult = self.getUniqueName(expr["mult"])
             if output not in self.mults.keys():
                 self.mults[output] = []
             self.mults[output].append(mult)
@@ -512,7 +514,7 @@ class LoadMorph(DriverUser):
         factor = expr["factor"]
         if "points" in expr.keys():
             factor = self.cheatSplineTCB(expr["points"], factor)
-        raw = expr["prop"]
+        raw = self.getUniqueName(expr["prop"])
         final = self.addNewProp(raw)
         tfm = Transform()
         return tfm, pb, final, factor

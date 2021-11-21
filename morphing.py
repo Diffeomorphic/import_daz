@@ -749,6 +749,7 @@ class MorphLoader(LoadMorph):
     loadMissing = True
     category = ""
     adjuster = None
+    useUniqueNames = False
 
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacter
@@ -756,6 +757,11 @@ class MorphLoader(LoadMorph):
         if mesh:
             self.mesh = mesh
 
+    def setupUniqueSuffix(self, path):
+        pass
+
+    def getUniqueName(self, string):
+        return string
 
     def getMorphSet(self, asset):
         return self.morphset
@@ -765,6 +771,9 @@ class MorphLoader(LoadMorph):
 
     def findPropGroup(self, prop):
         return None
+
+    def getAssetName(self, asset):
+        return asset.getName()
 
     def addUrl(self, asset, aliases, filepath, bodypart):
         if self.mesh:
@@ -1198,6 +1207,11 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         description = "Mesh categories",
         default = False)
 
+    useUniqueNames : BoolProperty(
+        name = "Unique Morph Names",
+        description = "Use unique morph names, to distinguish different morphs with the same name.\nDoes not work with morphs driving other morphs",
+        default = False)
+
     bodypart : EnumProperty(
         items = [("Face", "Face", "Face"),
                  ("Body", "Body", "Body"),
@@ -1224,6 +1238,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             if self.useMeshCats:
                 self.layout.prop(self, "category")
         self.layout.prop(self, "bodypart")
+        self.layout.prop(self, "useUniqueNames")
         self.layout.prop(self, "treatHD")
 
 
@@ -1255,12 +1270,30 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def getNamePaths(self):
+        from .asset import normalizeRef
         namepaths = []
         folder = ""
         for path in self.getMultiFiles(["duf", "dsf"]):
             name = os.path.splitext(os.path.basename(path))[0]
             namepaths.append((name,path,self.bodypart))
         return namepaths
+
+
+    def setupUniqueSuffix(self, path):
+        if self.useUniqueNames:
+            self.uniqueSuffix = "_%x" % (hash(path) & 0xffffffff)
+        else:
+            self.uniqueSuffix = ""
+
+
+    def getUniqueName(self, string):
+        if self.useUniqueNames:
+            if string.endswith(self.uniqueSuffix):
+                return string
+            else:
+                return "%s%s" % (string, self.uniqueSuffix)
+        else:
+            return string
 
 
     def getAdjustProp(self):
