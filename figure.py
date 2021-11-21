@@ -650,7 +650,10 @@ class ExtraBones(DriverUser):
             pb.lock_rotation = db.lock_rotation
             pb.lock_scale = db.lock_scale
             pb.custom_shape = db.custom_shape
-            pb.custom_shape_scale = db.custom_shape_scale
+            if hasattr(pb, "custom_shape_scale"):
+                pb.custom_shape_scale = db.custom_shape_scale
+            else:
+                pb.custom_shape_scale_xyz = db.custom_shape_scale_xyz
             pb.DazRotLocks = db.DazRotLocks
             pb.DazLocLocks = db.DazLocLocks
 
