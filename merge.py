@@ -945,6 +945,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         rig = info.rig
 
         print("Merge infos to %s:" % rig.name)
+        lmat = rig.matrix_local.copy()
         self.applyTransforms([info]+subinfos)
         mainbones = list(rig.pose.bones.keys())
         extrabones = []
@@ -980,7 +981,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         activateObject(context, rig)
         self.cleanVertexGroups(rig)
         setMode('OBJECT')
+        rig.matrix_local = lmat.inverted()
         self.applyTransforms([info])
+        rig.matrix_local = lmat
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):
