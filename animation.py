@@ -353,6 +353,16 @@ class ConvertOptions:
         default = "genesis_3_female")
 
 
+def getGeograftItems(scn, context):
+    enums = [("-", "-", "-")]
+    rig = context.object
+    for ob in rig.children:
+        if ob.DazMesh and ob.type == 'MESH':
+            enums += [(key,key,key) for key in ob.data.DazMergedGeografts.keys()]
+            return enums
+    return enums
+
+
 class AffectOptions:
     affectBones : BoolProperty(
         name = "Affect Bones",
@@ -373,6 +383,11 @@ class AffectOptions:
         name = "Clear Morphs",
         description = "Clear all morph properties before loading new ones",
         default = True)
+
+    affectGeograft : EnumProperty(
+        items = getGeograftItems,
+        name = "Affect Geograft",
+        description = "Add morphs to this merged geograft")
 
     affectObject : EnumProperty(
         items = [('OBJECT', "Object", "Animate global object transformation"),
@@ -502,6 +517,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         layout.prop(self, "affectMorphs")
         if self.affectMorphs:
             layout.prop(self, "clearMorphs")
+            layout.prop(self, "affectGeograft")
             layout.prop(self, "onMissingMorphs")
         layout.prop(self, "convertPoses")
         if self.convertPoses:
@@ -886,6 +902,10 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
 
     def getRigKey(self, key, rig, value):
         prop = unquote(key)
+        if self.affectGeograft != "-":
+            prop2 = "%s:%s" % (prop, self.affectGeograft)
+            if prop2 in rig.keys():
+                return prop2
         if prop in rig.keys():
             return prop
         if prop in self.alias.keys():

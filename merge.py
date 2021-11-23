@@ -214,6 +214,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         for aob in anatomies:
             selectSet(aob, True)
             names.append(aob.name)
+            pg = cob.data.DazMergedGeografts.add()
+            pg.name = aob.name
             for pair in aob.data.DazGraftGroup:
                 aob.data.vertices[pair.a].select = True
                 if pair.b in assoc.keys():

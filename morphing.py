@@ -1214,7 +1214,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
     useUniqueNames : BoolProperty(
         name = "Unique Morph Names",
         description = "Use unique morph names, to distinguish different morphs with the same name",
-        default = False)
+        default = True)
 
     treatHD : EnumProperty(
         items = [('ERROR', "Error", "Raise error"),
@@ -1233,7 +1233,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             self.layout.prop(self, "useMeshCats")
             if self.useMeshCats:
                 self.layout.prop(self, "category")
-        self.layout.prop(self, "useUniqueNames")
+        #self.layout.prop(self, "useUniqueNames")
         self.layout.prop(self, "bodypart")
         self.layout.prop(self, "treatHD")
 
@@ -1275,7 +1275,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def setupUniqueSuffix(self, path):
-        if self.useUniqueNames and self.mesh and not self.mesh.DazMesh:
+        if self.useUniqueNames and self.mesh and self.mesh.data.DazGraftGroup:
             self.uniqueSuffix = ":%s" % self.mesh.name
         else:
             self.uniqueSuffix = ""

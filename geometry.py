@@ -1552,6 +1552,7 @@ def register():
     bpy.types.Mesh.DazVertexCount = IntProperty(default=0)
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
+    bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Object.DazMultires = BoolProperty(default=False)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
 
