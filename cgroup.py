@@ -1099,23 +1099,22 @@ class LayeredGroup(CyclesGroup):
     def addTextureNodes(self, assets, maps, colorSpace, isMask):
         texnodes = []
         for idx,asset in enumerate(assets):
-            texnode,isnew = self.addSingleTexture(3, asset, maps[idx], colorSpace)
+            innode,outnode,isnew = self.addSingleTexture(3, asset, None, colorSpace)
             if isnew:
-                innode = texnode
                 mapping = self.mapTexture(asset, maps[idx])
                 if mapping:
-                    texnode.extension = 'CLIP'
-                    self.links.new(mapping.outputs["Vector"], texnode.inputs["Vector"])
+                    innode.extension = 'CLIP'
+                    self.links.new(mapping.outputs["Vector"], innode.inputs["Vector"])
                     innode = mapping
                 else:
                     img = asset.images[colorSpace]
                     if img:
-                        self.setTexNode(img.name, texnode, colorSpace)
+                        self.setTexNode(img.name, outnode, colorSpace)
                     else:
                         msg = ("Missing image: %s" % asset.getName())
                         reportError(msg, trigger=(3,5))
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
-            texnodes.append([texnode])
+            texnodes.append([outnode])
 
         if not texnodes:
             pass

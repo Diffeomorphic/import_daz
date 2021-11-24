@@ -824,25 +824,26 @@ class Texture:
 
 
     def hasMapping(self, map):
-        if map:
-            return (map.size is not None)
-        else:
-            return (self.map and self.map.size is not None)
+        return (map and map.size is not None)
 
 
     def getMapping(self, mat, map):
+        if self.images["COLOR"]:
+            img = self.images["COLOR"]
+            return self.getImageMapping(img, mat, map)
+        elif self.images["NONE"]:
+            img = self.images["NONE"]
+            return self.getImageMapping(img, mat, map)
+        else:
+            reportError("BUG: getMapping finds no image", trigger=(3,5))
+            return (0,0,1,1,0)
+
+
+    def getImageMapping(self, img, mat, map):
         # mapping scale x = texture width / lie document size x * (lie x scale / 100)
         # mapping scale y = texture height / lie document size y * (lie y scale / 100)
         # mapping location x = udim place + lie x position * (lie y scale / 100) / lie document size x
         # mapping location y = (lie document size y - texture height * (lie y scale / 100) - lie y position) / lie document size y
-
-        if self.images["COLOR"]:
-            img = self.images["COLOR"]
-        elif self.images["NONE"]:
-            img = self.images["NONE"]
-        else:
-            reportError("BUG: getMapping finds no image", trigger=(3,5))
-            return (0,0,1,1,0)
 
         tx,ty = img.size
         mx,my = map.size

@@ -1336,16 +1336,24 @@ class CyclesTree:
             imgname = img.name
         else:
             imgname = asset.getName()
-        hasMap = asset.hasMapping(map)
         texnode = self.getTexNode(imgname, colorSpace)
-        if not hasMap and texnode:
-            return texnode, False
+        if asset.hasMapping(map):
+            innode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
+            data = asset.getImageMapping(img, self.material, map)
+            mapping = self.addMappingNode(data, None)
+            if mapping:
+                innode.extension = 'CLIP'
+                self.linkVector(mapping, innode)
+                innode = mapping
+            if map.invert:
+                color,outnode = self.invertColor(map.color, outnode, col+1)
+            return innode, outnode, True
+        elif texnode:
+            return texnode, texnode, False
         else:
             texnode = self.addTextureNode(col, img, imgname, colorSpace)
-            isnew = True
-            if not hasMap:
-                self.setTexNode(imgname, texnode, colorSpace)
-        return texnode, isnew
+            self.setTexNode(imgname, texnode, colorSpace)
+            return texnode, texnode, True
 
 
     def addTextureNode(self, col, img, imgname, colorSpace):
@@ -1408,10 +1416,10 @@ class CyclesTree:
         elif len(assets) == 0:
             return None
         elif len(assets) == 1:
-            texnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
+            innode,outnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
             if isnew:
-                self.linkVector(self.texco, texnode)
-            return texnode
+                self.linkVector(self.texco, innode)
+            return outnode
 
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
