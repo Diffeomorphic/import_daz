@@ -165,10 +165,11 @@ class Transform:
         rna.scale = (1,1,1)
 
 
-    def insertKeys(self, rig, pb, frame, group, driven):
-        self.insertTranslationKey(rig, pb, frame, group, driven)
-        self.insertRotationKey(rig, pb, frame, group, driven)
-        self.insertScaleKey(rig, pb, frame, group, driven)
+    def insertKeys(self, rig, pb, frame, group, btn):
+        self.insertTranslationKey(rig, pb, frame, group, btn.driven)
+        self.insertRotationKey(rig, pb, frame, group, btn.driven)
+        if btn.affectScale:
+            self.insertScaleKey(rig, pb, frame, group, btn.driven)
 
 
     def insertTranslationKey(self, rig, pb, frame, group, driven):

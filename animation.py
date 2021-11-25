@@ -697,7 +697,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                 tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
             if self.useInsertKeys:
-                tfm.insertKeys(rig, None, frame, rig.name, self.driven)
+                tfm.insertKeys(rig, None, frame, rig.name, self)
         if rig.type != 'ARMATURE':
             return
         if self.affectBones:
@@ -708,7 +708,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                     if not self.affectScale:
                         pb.scale = scale
                     if self.useInsertKeys:
-                        tfm.insertKeys(rig, pb, frame, pb.name, self.driven)
+                        tfm.insertKeys(rig, pb, frame, pb.name, self)
         if self.affectMorphs and self.clearMorphs:
             from .morphing import getAllLowerMorphNames
             lprops = getAllLowerMorphNames(rig)
@@ -791,7 +791,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                                 tfm.setScale(rig.scale, False)
                             tfm.setRna(rig)
                             if self.useInsertKeys:
-                                tfm.insertKeys(rig, None, n+offset, rig.name, self.driven)
+                                tfm.insertKeys(rig, None, n+offset, rig.name, self)
                     elif rig.type != 'ARMATURE':
                         continue
                     elif bname in rig.data.bones.keys():
@@ -822,9 +822,9 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                         hand.location = foot.location = Zero
                         self.fixForearmFollow("MhaForearmFollow_" + suffix, rig, hand, forearm)
                         if self.useInsertKeys:
-                            tfm.insertKeys(rig, forearm, n+offset, forearm.name, self.driven)
-                            tfm.insertKeys(rig, hand, n+offset, hand.name, self.driven)
-                            tfm.insertKeys(rig, foot, n+offset, foot.name, self.driven)
+                            tfm.insertKeys(rig, forearm, n+offset, forearm.name, self)
+                            tfm.insertKeys(rig, hand, n+offset, hand.name, self)
+                            tfm.insertKeys(rig, foot, n+offset, foot.name, self)
 
                 self.saveScales(rig, n+offset)
 
@@ -943,7 +943,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                 setBoneTransform(tfm, pb)
                 self.imposeLocks(pb)
             if self.useInsertKeys:
-                tfm.insertKeys(rig, pb, n+offset, bname, self.driven)
+                tfm.insertKeys(rig, pb, n+offset, bname, self)
         else:
             pass
 
