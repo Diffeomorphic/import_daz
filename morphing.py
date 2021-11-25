@@ -749,6 +749,7 @@ class MorphLoader(LoadMorph):
     loadMissing = True
     category = ""
     adjuster = None
+    useUniqueNames = False
 
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacter
@@ -756,11 +757,24 @@ class MorphLoader(LoadMorph):
         if mesh:
             self.mesh = mesh
 
+
     def setupUniqueSuffix(self, path):
-        pass
+        if self.useUniqueNames and self.mesh and self.mesh.data.DazGraftGroup:
+            self.uniqueSuffix = ":%s" % self.mesh.name
+        else:
+            self.uniqueSuffix = ""
+
 
     def getUniqueName(self, string):
-        return string
+        if self.uniqueSuffix:
+            if string.endswith(self.uniqueSuffix):
+                return string
+            else:
+                string = "%s%s" % (string, self.uniqueSuffix)
+                return string[:57]      # 64-character limit
+        else:
+            return string
+
 
     def getMorphSet(self, asset):
         return self.morphset
@@ -1272,25 +1286,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             name = os.path.splitext(os.path.basename(path))[0]
             namepaths.append((name,path,self.bodypart))
         return namepaths
-
-
-    def setupUniqueSuffix(self, path):
-        if self.useUniqueNames and self.mesh and self.mesh.data.DazGraftGroup:
-            self.uniqueSuffix = ":%s" % self.mesh.name
-        else:
-            self.uniqueSuffix = ""
-
-
-    def getUniqueName(self, string):
-        if self.uniqueSuffix:
-            if string.endswith(self.uniqueSuffix):
-                return string
-            else:
-                string = "%s%s" % (string, self.uniqueSuffix)
-                return string[:57]      # 64-character limit
-
-        else:
-            return string
 
 
     def getAdjustProp(self):
@@ -2731,12 +2726,14 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
             if finger != ustruct["finger_print"]:
                 print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
+        self.useUniqueNames = False
         for morphset in theStandardMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", True)
         for morphset in theJCMMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", False)
+        self.useUniqueNames = True
         for key in ustruct["morphs"].keys():
             if key[0:7] == "Custom/":
                 rig.DazCustomMorphs = True
