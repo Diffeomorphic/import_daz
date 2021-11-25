@@ -693,6 +693,8 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
         if self.affectObject == 'OBJECT':
+            if not self.affectScale:
+                tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
             if self.useInsertKeys:
                 tfm.insertKeys(rig, None, frame, rig.name, self.driven)
@@ -701,7 +703,10 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         if self.affectBones:
             for pb in rig.pose.bones:
                 if self.isAvailable(pb, rig):
+                    scale = pb.scale.copy()
                     pb.matrix_basis = Matrix()
+                    if not self.affectScale:
+                        pb.scale = scale
                     if self.useInsertKeys:
                         tfm.insertKeys(rig, pb, frame, pb.name, self.driven)
         if self.affectMorphs and self.clearMorphs:
@@ -782,6 +787,8 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                               master in rig.pose.bones.keys()):
                             self.transformBone(rig, master, tfm, value, n, offset, False)
                         else:
+                            if not self.affectScale:
+                                tfm.setScale(rig.scale, False)
                             tfm.setRna(rig)
                             if self.useInsertKeys:
                                 tfm.insertKeys(rig, None, n+offset, rig.name, self.driven)
@@ -931,6 +938,8 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
             if twist:
                 setBoneTwist(tfm, pb)
             else:
+                if not self.affectScale:
+                    tfm.setScale(pb.scale, False)
                 setBoneTransform(tfm, pb)
                 self.imposeLocks(pb)
             if self.useInsertKeys:
