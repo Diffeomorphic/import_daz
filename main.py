@@ -401,6 +401,11 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
         name = "Favorite Morphs",
         description = "Path to favorite morphs")
 
+    useUniqueNames : BoolProperty(
+        name = "Unique Morph Names",
+        description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
+        default = True)
+
     useConvertHair : BoolProperty(
         name = "Convert Hair",
         description = "Convert strand-based hair to particle hair",
@@ -428,7 +433,8 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
         self.layout.prop(self, "useMergeToes")
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
-            self.layout.prop(self, "favoPath")
+            self.subprop("favoPath")
+            self.subprop("useUniqueNames")
         MorphTypeOptions.draw(self, context)
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
@@ -587,7 +593,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
         if mainChar and mainRig and mainMesh:
             if self.useFavoMorphs:
                 if activateObject(context, mainRig) and self.favoPath:
-                    bpy.ops.daz.load_favo_morphs(filepath = self.favoPath)
+                    bpy.ops.daz.load_favo_morphs(
+                        filepath = self.favoPath,
+                        useUniqueNames = self.useUniqueNames)
             if (self.units or
                   self.expressions or
                   self.visemes or

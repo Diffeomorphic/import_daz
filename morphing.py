@@ -1227,7 +1227,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
     useUniqueNames : BoolProperty(
         name = "Unique Morph Names",
-        description = "Use unique morph names, to distinguish different morphs with the same name",
+        description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
         default = True)
 
     treatHD : EnumProperty(
@@ -1247,7 +1247,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             self.layout.prop(self, "useMeshCats")
             if self.useMeshCats:
                 self.layout.prop(self, "category")
-        #self.layout.prop(self, "useUniqueNames")
+        self.layout.prop(self, "useUniqueNames")
         self.layout.prop(self, "bodypart")
         self.layout.prop(self, "treatHD")
 
@@ -2681,12 +2681,18 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
     bl_label = "Load Favorite Morphs"
     bl_description = "Load favorite morphs"
 
+    useUniqueNames : BoolProperty(
+        name = "Unique Morph Names",
+        description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
+        default = True)
+
     ignoreFinger : BoolProperty(
         name = "Ignore Fingerprint",
         description = "Ignore the mesh fingerprint which describes the mesh topology",
         default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "useUniqueNames")
         self.layout.prop(self, "ignoreFinger")
 
     def invoke(self, context, event):
@@ -2726,6 +2732,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
             if finger != ustruct["finger_print"]:
                 print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
+        useUnique = self.useUniqueNames
         self.useUniqueNames = False
         for morphset in theStandardMorphSets:
             self.adjuster = theAdjusters[morphset]
@@ -2733,7 +2740,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
         for morphset in theJCMMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", False)
-        self.useUniqueNames = True
+        self.useUniqueNames = useUnique
         for key in ustruct["morphs"].keys():
             if key[0:7] == "Custom/":
                 rig.DazCustomMorphs = True
