@@ -404,7 +404,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
     useUniqueNames : BoolProperty(
         name = "Unique Morph Names",
         description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
-        default = True)
+        default = False)
 
     useConvertHair : BoolProperty(
         name = "Convert Hair",

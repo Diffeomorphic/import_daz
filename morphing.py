@@ -850,8 +850,8 @@ class MorphLoader(LoadMorph):
         else:
             item = pgs.add()
             item.name = prop
-        if asset and asset.name == prop:
-            label = asset.label
+        if asset and self.getUniqueName(asset.name) == prop:
+            label = self.getUniqueName(asset.label)
             visible = asset.visible
         else:
             label = getCanonicalKey(prop)
@@ -1228,7 +1228,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
     useUniqueNames : BoolProperty(
         name = "Unique Morph Names",
         description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
-        default = True)
+        default = False)
 
     treatHD : EnumProperty(
         items = [('ERROR', "Error", "Raise error"),
@@ -2684,7 +2684,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
     useUniqueNames : BoolProperty(
         name = "Unique Morph Names",
         description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
-        default = True)
+        default = False)
 
     ignoreFinger : BoolProperty(
         name = "Ignore Fingerprint",
