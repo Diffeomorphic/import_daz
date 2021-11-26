@@ -1098,9 +1098,13 @@ class LayeredGroup(CyclesGroup):
 
     def addTextureNodes(self, assets, maps, colorSpace, isMask):
         texnodes = []
-        for idx,asset in enumerate(assets):
-            innode,outnode,isnew = self.addSingleTexture(3, asset, None, colorSpace)
-            if isnew:
+        for asset,map in zip(assets, maps):
+            if asset:
+                innode,outnode,isnew = self.addSingleTexture(3, asset, map, colorSpace)
+            else:
+                outnode = self.addNode("ShaderNodeRGB", 3)
+                outnode.outputs["Color"].default_value[0:3] = map.color
+            if False and isnew:
                 mapping = self.mapTexture(asset, maps[idx])
                 if mapping:
                     innode.extension = 'CLIP'

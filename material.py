@@ -521,7 +521,8 @@ class Material(Asset, Channels):
             if channel["image"] is None:
                 return [],[]
             else:
-                maps = self.getAsset(channel["image"]).maps
+                asset = self.getAsset(channel["image"])
+                maps = asset.maps
                 if maps is None:
                     maps = []
         elif "image_file" in channel.keys():
@@ -548,7 +549,6 @@ class Material(Asset, Channels):
             return [],[]
 
         texs = []
-        nmaps = []
         for map in maps:
             if map.url:
                 tex = map.getTexture()
@@ -557,10 +557,8 @@ class Material(Asset, Channels):
                 tex.image = map.literal_image
             else:
                 tex = None
-            if tex:
-                texs.append(tex)
-                nmaps.append(map)
-        return texs,nmaps
+            texs.append(tex)
+        return texs,maps
 
 
     def hasTextures(self, channel):

@@ -1409,11 +1409,7 @@ class CyclesTree:
     def addTexImageNode(self, channel, colorSpace, isMask):
         col = self.column-2
         assets,maps = self.material.getTextures(channel)
-        if len(assets) != len(maps):
-            print(assets)
-            print(maps)
-            raise DazError("Bug: Num assets != num maps")
-        elif len(assets) == 0:
+        if len(assets) == 0:
             return None
         elif len(assets) == 1:
             innode,outnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
@@ -1423,7 +1419,7 @@ class CyclesTree:
 
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
-            name = channel["image"]
+            name = unquote(channel["image"])
         else:
             name = "Layered"
         if name in self.layeredGroups.keys() and name != "Layered":
