@@ -819,6 +819,9 @@ class Texture:
         # mapping location x = udim place + lie x position * (lie y scale / 100) / lie document size x
         # mapping location y = (lie document size y - texture height * (lie y scale / 100) - lie y position) / lie document size y
 
+        if img is None:
+            return (0,0,1,1,0)
+
         tx,ty = img.size
         mx,my = map.size
         kx,ky = tx/mx,ty/my

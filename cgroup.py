@@ -1107,7 +1107,7 @@ class LayeredGroup(CyclesGroup):
             else:
                 self.mixColor(map, texnode, outnode)
         mix = self.addNode("ShaderNodeMixRGB", 5)
-        mix.blend_type = 'MIX'
+        mix.blend_type = 'MULTIPLY'
         mix.inputs[0].default_value = 1.0
         self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
         self.links.new(firstnode.outputs[0], mix.inputs[1])
@@ -1116,53 +1116,35 @@ class LayeredGroup(CyclesGroup):
 
 
     def mixColor(self, map, texnode, outnode):
-        if (map.operation == "alpha_blend" and
-            "Alpha" in texnode.outputs.keys()):
-            slot = "Alpha"
-        else:
-            slot = "Color"
-
-        if map.ismask:
-            mix = self.addNode("ShaderNodeMixRGB", 4)    # ShaderNodeMixRGB
-            mix.blend_type = 'MULTIPLY'
-            mix.use_alpha = False
-            self.setColorSpace(outnode, 'NONE')
-            self.links.new(outnode.outputs["Color"], mix.inputs[0])
-            self.links.new(self.outnode.outputs["Color"], mix.inputs[1])
-            self.mask = mix
-        elif self.mask:
-            self.links.new(outnode.outputs["Color"], self.mask.inputs[2])
-            self.outnode = self.mask
-            self.mask = None
-        else:
-            mix = self.addNode("ShaderNodeMixRGB", 4)
-            alpha = self.setMixOperation(mix, map)
-            mix.inputs[0].default_value = alpha
+        def setFactor(alpha, node, slot, mix):
             if alpha != 1:
-                node = self.multiplyScalarTex(alpha, texnode, slot, 3)
+                node = self.multiplyScalarTex(alpha, node, slot, 3)
                 self.links.new(node.outputs[0], mix.inputs[0])
             else:
-                self.links.new(texnode.outputs[slot], mix.inputs[0])
-            mix.use_alpha = True
+                self.links.new(node.outputs[slot], mix.inputs[0])
+
+        if map.ismask:
+            self.mask = outnode
+        else:
+            mix = self.addNode("ShaderNodeMixRGB", 4)
+            blendType = {
+                "multiply" : 'MULTIPLY',
+                "add" : 'ADD',
+                "subtract" : 'SUBTRACT',
+                "alpha_blend" : 'MIX',
+            }
+            mix.blend_type = blendType[map.operation]
+            mix.inputs[0].default_value = map.transparency
+            if self.mask:
+                setFactor(map.transparency, self.mask, "Color", mix)
+                self.mask = None
+                mix.use_alpha = False
+            else:
+                setFactor(map.transparency, texnode, "Alpha", mix)
+                mix.use_alpha = False
             self.links.new(self.outnode.outputs["Color"], mix.inputs[1])
             self.links.new(outnode.outputs["Color"], mix.inputs[2])
             self.outnode = mix
-
-
-    def setMixOperation(self, mix, map):
-        alpha = map.transparency
-        if map.operation == "multiply":
-            mix.blend_type = 'MULTIPLY'
-        elif map.operation == "add":
-            mix.blend_type = 'ADD'
-        elif map.operation == "subtract":
-            mix.blend_type = 'SUBTRACT'
-        elif map.operation == "alpha_blend":
-            mix.blend_type = 'MIX'
-            return alpha
-        else:
-            print("MIX", asset, map.operation)
-        return alpha
 
 #----------------------------------------------------------
 #   Make shader group
