@@ -98,7 +98,8 @@ class WorldMaterial(CyclesMaterial):
         self.channels = render.channels
         self.background = None
         if render.background:
-            self.background = self.srgbToLinearGamma22(render.background)
+            from .material import srgbToLinearGamma22
+            self.background = srgbToLinearGamma22(render.background)
         self.backdrop = render.backdrop
         self.envmap = None
 

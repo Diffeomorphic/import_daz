@@ -474,33 +474,9 @@ class Material(Asset, Channels):
         if isinstance(color, int) or isinstance(color, float):
             color = (color, color, color)
         if channel and channel["type"] == "color":
-            return self.srgbToLinearCorrect(color)
+            return srgbToLinearCorrect(color)
         else:
-            return self.srgbToLinearGamma22(color)
-
-
-    def srgbToLinearCorrect(self, srgb):
-        lin = []
-        for s in srgb:
-            if s < 0:
-                l = 0
-            elif s < 0.04045:
-                l = s/12.92
-            else:
-                l = ((s+0.055)/1.055)**2.4
-            lin.append(l)
-        return Vector(lin)
-
-
-    def srgbToLinearGamma22(self, srgb):
-        lin = []
-        for s in srgb:
-            if s < 0:
-                l = 0
-            else:
-                l = round(s**2.2, 6)
-            lin.append(l)
-        return Vector(lin)
+            return srgbToLinearGamma22(color)
 
 
     def getImageMod(self, attr, key):
@@ -906,7 +882,7 @@ class Texture:
         return (dx,dy,sx,sy,rz)
 
 #-------------------------------------------------------------z
-#
+#   Utilities
 #-------------------------------------------------------------
 
 def isWhite(color):
@@ -914,6 +890,29 @@ def isWhite(color):
 
 def isBlack(color):
     return (tuple(color[0:3]) == (0.0,0.0,0.0))
+
+def srgbToLinearCorrect(srgb):
+    lin = []
+    for s in srgb:
+        if s < 0:
+            l = 0
+        elif s < 0.04045:
+            l = s/12.92
+        else:
+            l = ((s+0.055)/1.055)**2.4
+        lin.append(l)
+    return Vector(lin)
+
+
+def srgbToLinearGamma22(srgb):
+    lin = []
+    for s in srgb:
+        if s < 0:
+            l = 0
+        else:
+            l = round(s**2.2, 6)
+        lin.append(l)
+    return Vector(lin)
 
 #-------------------------------------------------------------
 #   Save local textures

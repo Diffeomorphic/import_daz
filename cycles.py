@@ -1330,6 +1330,16 @@ class CyclesTree:
 
 
     def addSingleTexture(self, col, asset, map, colorSpace):
+        if asset is None:
+            from .material import srgbToLinearCorrect
+            texnode = self.addNode("ShaderNodeRGB", col)
+            if colorSpace == "COLOR":
+                color = srgbToLinearCorrect(map.color)
+            else:
+                color = map.color
+            texnode.outputs["Color"].default_value[0:3] = color
+            return None, texnode, texnode, False
+
         isnew = False
         img = asset.buildCycles(colorSpace)
         if img:
@@ -1338,7 +1348,7 @@ class CyclesTree:
             imgname = asset.getName()
         texnode = self.getTexNode(imgname, colorSpace)
         if asset.hasMapping(map):
-            innode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
+            innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.material, map)
             mapping = self.addMappingNode(data, None)
             if mapping:
@@ -1347,13 +1357,13 @@ class CyclesTree:
                 innode = mapping
             if map.invert:
                 color,outnode = self.invertColor(map.color, outnode, col+1)
-            return innode, outnode, True
+            return innode, texnode, outnode, True
         elif texnode:
-            return texnode, texnode, False
+            return texnode, texnode, texnode, False
         else:
             texnode = self.addTextureNode(col, img, imgname, colorSpace)
             self.setTexNode(imgname, texnode, colorSpace)
-            return texnode, texnode, True
+            return texnode, texnode, texnode, True
 
 
     def addTextureNode(self, col, img, imgname, colorSpace):
@@ -1412,7 +1422,7 @@ class CyclesTree:
         if len(assets) == 0:
             return None
         elif len(assets) == 1:
-            innode,outnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
+            innode,texnode,outnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
             if isnew:
                 self.linkVector(self.texco, innode)
             return outnode
