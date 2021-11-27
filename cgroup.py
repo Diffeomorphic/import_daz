@@ -1103,13 +1103,14 @@ class LayeredGroup(CyclesGroup):
             if innode:
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
             if self.outnode is None:
-                self.outnode = outnode
+                self.outnode = firstnode = outnode
             else:
                 self.mixColor(map, texnode, outnode)
         mix = self.addNode("ShaderNodeMixRGB", 5)
-        mix.blend_type = 'MULTIPLY'
+        mix.blend_type = 'MIX'
         mix.inputs[0].default_value = 1.0
-        self.links.new(self.inputs.outputs["Influence"], mix.inputs[1])
+        self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
+        self.links.new(firstnode.outputs[0], mix.inputs[1])
         self.links.new(self.outnode.outputs[0], mix.inputs[2])
         self.links.new(mix.outputs[0], self.outputs.inputs["Color"])
 
