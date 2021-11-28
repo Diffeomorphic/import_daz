@@ -509,10 +509,6 @@ class Material(Asset, Channels):
             maps = Maps(self.fileref)
             maps.parse(channel["map"])
             halt
-        elif "literal_image" in channel.keys():
-            map = Map(channel, False)
-            map.image = channel["literal_image"]
-            maps = [map]
         elif "literal_maps" in channel.keys():
             maps = []
             for struct in channel["literal_maps"]["map"]:
@@ -528,9 +524,6 @@ class Material(Asset, Channels):
         for map in maps:
             if map.url:
                 tex = map.getTexture()
-            elif map.literal_image:
-                tex = Texture(map)
-                tex.image = map.literal_image
             else:
                 tex = None
             texs.append(tex)
@@ -602,7 +595,6 @@ class Map:
             ("color", BLACK),
             ("label", None),
             ("operation", None),
-            ("literal_image", None),
             ("invert", False),
             ("transparency", 1),
             ("rotation", 0),

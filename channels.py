@@ -140,18 +140,14 @@ class Channels:
     def getValueImage(self, attr, default):
         channel = self.getChannel(attr)
         value = self.getChannelValue(channel, default)
-        if channel and "image_file" in channel.keys():
-            return value,channel["image_file"]
-        else:
-            return value,None
+        return value,channel.get("image_file")
 
 
     def getChannelValue(self, channel, default, warn=True):
         if channel is None:
             return default
-        if (not self.getImageFile(channel) and
-            "invalid_without_map" in channel.keys() and
-            channel["invalid_without_map"]):
+        if (channel.get("invalid_without_map") and
+            not self.getImageFile(channel)):
             return default
         for key in ["color", "strength", "current_value", "value"]:
             if key in channel.keys():
@@ -173,12 +169,7 @@ class Channels:
 
 
     def getImageFile(self, channel):
-        if "image_file" in channel.keys():
-            return channel["image_file"]
-        elif "literal_image" in channel.keys():
-            return channel["literal_image"]
-        else:
-            return None
+        return (channel.get("image_file") or channel.get("image"))
 
 
 
