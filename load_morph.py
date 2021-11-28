@@ -222,12 +222,14 @@ class LoadMorph(DriverUser):
 
     def buildShape(self, asset, bodypart, useBuild=True):
         from .modifier import Morph
-        from .driver import makePropDriver
-        from .hdmorphs import addSkeyToUrls
         if not (isinstance(asset, Morph) and
                 self.mesh and
-                asset.deltas):
+                asset.deltas and
+                GS.useShapekeys):
             return None,True
+
+        from .driver import makePropDriver
+        from .hdmorphs import addSkeyToUrls
         useBuild = True
         nverts = len(self.mesh.data.vertices)
 

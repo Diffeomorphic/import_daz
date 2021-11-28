@@ -91,6 +91,7 @@ class GlobalSettings:
         self.finalLimits = 'DAZ'
         self.sliderLimits = 'DAZ'
         self.showFinalProps = False
+        self.useShapekeys = True
         self.useERC = False
         self.useStripCategory = False
         self.useModifiedMesh = False
@@ -160,6 +161,7 @@ class GlobalSettings:
         "DazFinalLimits" : "finalLimits",
         "DazSliderLimits" : "sliderLimits",
         "DazShowFinalProps" : "showFinalProps",
+        "DazUseShapekeys" : "useShapekeys",
         "DazUseERC" : "useERC",
         "DazStripCategory" : "useStripCategory",
         "DazUseModifiedMesh" : "useModifiedMesh",
