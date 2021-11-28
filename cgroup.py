@@ -1099,7 +1099,7 @@ class LayeredGroup(CyclesGroup):
         self.outnode = None
         self.mask = None
         for asset,map in zip(assets, maps):
-            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, colorSpace)
+            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, "COLOR")
             if innode:
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
             if self.outnode is None:
@@ -1112,7 +1112,13 @@ class LayeredGroup(CyclesGroup):
         self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
         self.links.new(firstnode.outputs[0], mix.inputs[1])
         self.links.new(self.outnode.outputs[0], mix.inputs[2])
-        self.links.new(mix.outputs[0], self.outputs.inputs["Color"])
+        if colorSpace == "NONE":
+            gamma = self.addNode("ShaderNodeGamma", 5)
+            self.links.new(mix.outputs["Color"], gamma.inputs["Color"])
+            gamma.inputs["Gamma"].default_value = 2.2
+            self.links.new(gamma.outputs[0], self.outputs.inputs["Color"])
+        else:
+            self.links.new(mix.outputs[0], self.outputs.inputs["Color"])
 
 
     def mixColor(self, map, texnode, outnode):
