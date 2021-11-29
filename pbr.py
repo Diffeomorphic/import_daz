@@ -72,7 +72,7 @@ class PbrTree(CyclesTree):
             self.replaceSlot(self.pbr, "Specular", 0)
             self.postPBR = True
         if self.material.refractive:
-            self.buildRefraction()
+            self.buildRefraction(True)
         else:
             self.buildEmission()
 
@@ -253,11 +253,11 @@ class PbrTree(CyclesTree):
         return 1,None
 
 
-    def buildRefraction(self):
+    def buildRefraction(self, useWeight):
         if GS.refractiveMethod == 'BSDF':
-            weight,wttex = CyclesTree.buildRefraction(self)
+            data = CyclesTree.buildRefraction(self, useWeight)
             self.postPBR = True
-            return weight,wttex
+            return data
 
         weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
         if weight == 0:
@@ -288,13 +288,18 @@ class PbrTree(CyclesTree):
                 clip = pbr
 
             if pbr2:
-                self.column += 1
-                mix = self.mixShaders(weight, wttex, self.pbr, clip)
-                self.cycles = self.eevee = mix
+                if useWeight:
+                    self.column += 1
+                    mix = self.mixShaders(weight, wttex, self.pbr, clip)
+                    self.cycles = self.eevee = mix
+                else:
+                    self.replaceSlot(pbr, "Transmission", 1.0)
+                    self.cycles = self.eevee = clip
             self.postPBR = True
         else:
             pbr = self.pbr
             self.replaceSlot(pbr, "Transmission", weight)
+            socket = pbr.inputs["Transmission"]
 
         if self.material.thinWall:
             # if thin walled is on then there's no volume

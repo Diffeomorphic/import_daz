@@ -393,7 +393,7 @@ class CyclesTree:
             self.buildDualLobe()
         self.buildTopCoat()
         if self.material.refractive:
-            self.buildRefraction()
+            self.buildRefraction(True)
         else:
             self.buildEmission()
         return self.cycles
@@ -1069,7 +1069,7 @@ class CyclesTree:
         return roughness
 
 
-    def buildRefraction(self):
+    def buildRefraction(self, useWeight):
         weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0)
         if weight == 0:
             return weight,wttex
@@ -1476,31 +1476,27 @@ class CyclesTree:
     def mixWithActive(self, fac, tex, shader, useAlpha=False, keep=False):
         if shader.type != 'GROUP':
             raise RuntimeError("BUG: mixWithActive", shader.type)
-        if fac == 0 and tex is None and not keep:
-            return
-        elif fac == 1 and tex is None and not keep:
-            shader.inputs["Fac"].default_value = fac
-            self.cycles = shader
-            self.eevee = shader
-            return
-        if True or self.eevee:
-            self.makeActiveMix("Eevee", self.getEeveeSocket(), fac, tex, shader, useAlpha)
-        self.eevee = shader
-        if True or self.cycles:
-            self.makeActiveMix("Cycles", self.getCyclesSocket(), fac, tex, shader, useAlpha)
-        self.cycles = shader
-
-
-    def makeActiveMix(self, slot, socket, fac, tex, shader, useAlpha):
-        if socket:
-            self.links.new(socket, shader.inputs[slot])
-        shader.inputs["Fac"].default_value = fac
+        shader.inputs["Fac"].default_value = 1.0
         if tex:
             if useAlpha and "Alpha" in tex.outputs.keys():
                 texsocket = tex.outputs["Alpha"]
             else:
                 texsocket = tex.outputs[0]
             self.links.new(texsocket, shader.inputs["Fac"])
+        elif fac == 0 and not keep:
+            return
+        elif fac == 1 and not keep:
+            self.cycles = shader
+            self.eevee = shader
+            return
+        if self.eevee:
+            self.links.new(self.getEeveeSocket(), shader.inputs["Eevee"])
+            shader.inputs["Fac"].default_value = fac
+        self.eevee = shader
+        if self.cycles:
+            self.links.new(self.getCyclesSocket(), shader.inputs["Cycles"])
+            shader.inputs["Fac"].default_value = fac
+        self.cycles = shader
 
 
     def linkColor(self, tex, node, color, slot=0):

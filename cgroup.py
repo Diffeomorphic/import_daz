@@ -104,7 +104,7 @@ class ShellGroup(MaterialGroup):
     def addNodes(self, args):
         shmat,uvname = args
         shmat.rna = self.parent.material.rna
-        shmat.thinWall = True
+        #shmat.thinWall = True
         self.material = shmat
         self.cyclesOpaque = None
         self.eeveeOpaque = None
@@ -171,8 +171,8 @@ class RefractiveShellGroup(ShellGroup):
         self.links.new(socket, mix.inputs[2])
 
         add = self.addNode("ShaderNodeAddShader", 8)
-        self.links.new(mix.outputs[0], add.inputs[0])
-        self.links.new(self.inputs.outputs[slot], add.inputs[1])
+        self.links.new(self.inputs.outputs[slot], add.inputs[0])
+        self.links.new(mix.outputs[0], add.inputs[1])
         self.links.new(add.outputs[0], self.outputs.inputs[slot])
         return add
 
@@ -220,9 +220,9 @@ class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesTree):
         CyclesTree.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
-    def buildRefraction(self):
+    def buildRefraction(self, useWeight):
         self.storeOpaque()
-        self.weight, self.wttex = CyclesTree.buildRefraction(self)
+        self.weight, self.wttex = CyclesTree.buildRefraction(self, False)
 
 
 class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
@@ -230,10 +230,10 @@ class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
         PbrTree.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
-    def buildRefraction(self):
+    def buildRefraction(self, useWeight):
         if GS.refractiveMethod != 'REUSE':
             self.storeOpaque()
-        self.weight, self.wttex = PbrTree.buildRefraction(self)
+        self.weight, self.wttex = PbrTree.buildRefraction(self, False)
 
 # ---------------------------------------------------------------------
 #   Fresnel Group
