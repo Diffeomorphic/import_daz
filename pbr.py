@@ -72,7 +72,7 @@ class PbrTree(CyclesTree):
             self.replaceSlot(self.pbr, "Specular", 0)
             self.postPBR = True
         if self.material.refractive:
-            self.buildRefraction(True)
+            self.buildRefraction()
         else:
             self.buildEmission()
 
@@ -253,9 +253,9 @@ class PbrTree(CyclesTree):
         return 1,None
 
 
-    def buildRefraction(self, useWeight):
+    def buildRefraction(self):
         if GS.refractiveMethod == 'BSDF':
-            data = CyclesTree.buildRefraction(self, useWeight)
+            data = CyclesTree.buildRefraction(self)
             self.postPBR = True
             return data
 
@@ -266,7 +266,7 @@ class PbrTree(CyclesTree):
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
 
         if GS.refractiveMethod == 'SECOND':
-            if weight < 1 or wttex:
+            if weight < 1 or wttex or self.inShell:
                 self.column += 1
                 pbr = pbr2 = self.addNode("ShaderNodeBsdfPrincipled")
                 self.ycoords[self.column] -= 500
@@ -288,18 +288,17 @@ class PbrTree(CyclesTree):
                 clip = pbr
 
             if pbr2:
-                if useWeight:
+                if self.inShell:
+                    self.replaceSlot(pbr, "Transmission", 1.0)
+                    self.cycles = self.eevee = clip
+                else:
                     self.column += 1
                     mix = self.mixShaders(weight, wttex, self.pbr, clip)
                     self.cycles = self.eevee = mix
-                else:
-                    self.replaceSlot(pbr, "Transmission", 1.0)
-                    self.cycles = self.eevee = clip
             self.postPBR = True
         else:
             pbr = self.pbr
             self.replaceSlot(pbr, "Transmission", weight)
-            socket = pbr.inputs["Transmission"]
 
         if self.material.thinWall:
             # if thin walled is on then there's no volume
@@ -343,6 +342,7 @@ class PbrTree(CyclesTree):
         pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
         if self.material.shareGlossy:
             self.replaceSlot(pbr, "Specular Tint", 1.0)
+        self.pbr = pbr
         return weight,wttex
 
 

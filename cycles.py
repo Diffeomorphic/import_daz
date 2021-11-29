@@ -393,7 +393,7 @@ class CyclesTree:
             self.buildDualLobe()
         self.buildTopCoat()
         if self.material.refractive:
-            self.buildRefraction(True)
+            self.buildRefraction()
         else:
             self.buildEmission()
         return self.cycles
@@ -1069,7 +1069,7 @@ class CyclesTree:
         return roughness
 
 
-    def buildRefraction(self, useWeight):
+    def buildRefraction(self):
         weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0)
         if weight == 0:
             return weight,wttex

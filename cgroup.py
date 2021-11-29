@@ -104,10 +104,11 @@ class ShellGroup(MaterialGroup):
     def addNodes(self, args):
         shmat,uvname = args
         shmat.rna = self.parent.material.rna
-        #shmat.thinWall = True
         self.material = shmat
         self.cyclesOpaque = None
         self.eeveeOpaque = None
+        self.pbrOpaque = None
+        self.inShell = True
         self.texco = self.inputs.outputs["UV"]
         self.buildLayer(uvname)
         alpha,tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
@@ -156,7 +157,7 @@ class RefractiveShellGroup(ShellGroup):
             if node.type == 'GROUP' and "Refraction Color" in node.inputs.keys():
                 node.inputs["Refraction Color"].default_value[0:3] = BLACK
                 self.removeLink(node, "Refraction Color")
-            elif node.type == 'BSDF_PRINCIPLED':
+            elif node.type == 'BSDF_PRINCIPLED' and node != self.pbrOpaque:
                 node.inputs["Base Color"].default_value[0:3] = BLACK
                 self.removeLink(node, "Base Color")
                 node.inputs["Transmission"].default_value = 0
@@ -220,9 +221,9 @@ class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesTree):
         CyclesTree.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
-    def buildRefraction(self, useWeight):
+    def buildRefraction(self):
         self.storeOpaque()
-        self.weight, self.wttex = CyclesTree.buildRefraction(self, False)
+        self.weight, self.wttex = CyclesTree.buildRefraction(self)
 
 
 class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
@@ -230,10 +231,11 @@ class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
         PbrTree.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
-    def buildRefraction(self, useWeight):
+    def buildRefraction(self):
         if GS.refractiveMethod != 'REUSE':
             self.storeOpaque()
-        self.weight, self.wttex = PbrTree.buildRefraction(self, False)
+            self.pbrOpaque = self.pbr
+        self.weight, self.wttex = PbrTree.buildRefraction(self)
 
 # ---------------------------------------------------------------------
 #   Fresnel Group
