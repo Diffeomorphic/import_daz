@@ -217,6 +217,7 @@ class CyclesTree:
         self.links = None
         self.groups = {}
         self.layeredGroups = {}
+        self.inShell = False
 
         self.diffuseTex = None
         self.fresnel = None
@@ -271,14 +272,18 @@ class CyclesTree:
 
 
     def getCyclesSocket(self):
-        if "Cycles" in self.cycles.outputs.keys():
+        if self.cycles is None:
+            return None
+        elif "Cycles" in self.cycles.outputs.keys():
             return self.cycles.outputs["Cycles"]
         else:
             return self.cycles.outputs[0]
 
 
     def getEeveeSocket(self):
-        if "Eevee" in self.eevee.outputs.keys():
+        if self.eevee is None:
+            return None
+        elif "Eevee" in self.eevee.outputs.keys():
             return self.eevee.outputs["Eevee"]
         else:
             return self.eevee.outputs[0]
@@ -320,26 +325,21 @@ class CyclesTree:
             node.node_tree = shell.tree = shell.match.tree
             node.inputs["Influence"].default_value = 1.0
             return node
-        if self.type == 'CYCLES':
-            from .cgroup import OpaqueShellCyclesGroup, RefractiveShellCyclesGroup
-            if shmat.refractive:
-                group = RefractiveShellCyclesGroup(push)
-            else:
-                group = OpaqueShellCyclesGroup(push)
-        elif self.type == 'PBR':
-            from .cgroup import OpaqueShellPbrGroup, RefractiveShellPbrGroup
-            if shmat.refractive:
-                group = RefractiveShellPbrGroup(push)
-            else:
-                group = OpaqueShellPbrGroup(push)
-        else:
-            raise RuntimeError("Bug Cycles type %s" % self.type)
+        group = self.getShellGroup(shmat, push)
         group.create(node, nname, self)
         group.addNodes((shmat, shell.uv))
         node.inputs["Influence"].default_value = 1.0
         shell.tree = shmat.tree = node.node_tree
         shmat.geometry = self.material.geometry
         return node
+
+
+    def getShellGroup(self, shmat, push):
+        from .cgroup import OpaqueShellCyclesGroup, RefractiveShellCyclesGroup
+        if shmat.refractive:
+            return RefractiveShellCyclesGroup(push)
+        else:
+            return OpaqueShellCyclesGroup(push)
 
 
     def build(self):
@@ -391,10 +391,11 @@ class CyclesTree:
         else:
             self.buildGlossy()
             self.buildDualLobe()
+        self.buildTopCoat()
         if self.material.refractive:
             self.buildRefraction()
-        self.buildTopCoat()
-        self.buildEmission()
+        else:
+            self.buildEmission()
         return self.cycles
 
 
@@ -1071,7 +1072,7 @@ class CyclesTree:
     def buildRefraction(self):
         weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0)
         if weight == 0:
-            return
+            return weight,wttex
         node,color = self.buildRefractionNode()
         self.mixWithActive(weight, wttex, node)
         if GS.useFakeCaustics and not self.material.thinWall:
@@ -1079,6 +1080,7 @@ class CyclesTree:
             self.column += 1
             node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[color], force=True)
             self.mixWithActive(weight, wttex, node, keep=True)
+        return weight,wttex
 
 
     def buildRefractionNode(self):
@@ -1481,16 +1483,17 @@ class CyclesTree:
             self.cycles = shader
             self.eevee = shader
             return
-        if self.eevee:
-            self.makeActiveMix("Eevee", self.eevee, self.getEeveeSocket(), fac, tex, shader, useAlpha)
+        if True or self.eevee:
+            self.makeActiveMix("Eevee", self.getEeveeSocket(), fac, tex, shader, useAlpha)
         self.eevee = shader
-        if self.cycles:
-            self.makeActiveMix("Cycles", self.cycles, self.getCyclesSocket(), fac, tex, shader, useAlpha)
+        if True or self.cycles:
+            self.makeActiveMix("Cycles", self.getCyclesSocket(), fac, tex, shader, useAlpha)
         self.cycles = shader
 
 
-    def makeActiveMix(self, slot, active, socket, fac, tex, shader, useAlpha):
-        self.links.new(socket, shader.inputs[slot])
+    def makeActiveMix(self, slot, socket, fac, tex, shader, useAlpha):
+        if socket:
+            self.links.new(socket, shader.inputs[slot])
         shader.inputs["Fac"].default_value = fac
         if tex:
             if useAlpha and "Alpha" in tex.outputs.keys():

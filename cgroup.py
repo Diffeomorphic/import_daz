@@ -104,7 +104,10 @@ class ShellGroup(MaterialGroup):
     def addNodes(self, args):
         shmat,uvname = args
         shmat.rna = self.parent.material.rna
+        shmat.thinWall = True
         self.material = shmat
+        self.cyclesOpaque = None
+        self.eeveeOpaque = None
         self.texco = self.inputs.outputs["UV"]
         self.buildLayer(uvname)
         alpha,tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
@@ -112,9 +115,7 @@ class ShellGroup(MaterialGroup):
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
         self.linkScalar(tex, mult, alpha, 1)
-        transp = self.blacken()
-        self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
-        self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
+        self.addOutputs(mult)
         self.buildDisplacementNodes()
         if self.displacement:
             mult2 = self.addNode("ShaderNodeMath", 9)
@@ -128,11 +129,7 @@ class ShellGroup(MaterialGroup):
 
 
 class OpaqueShellGroup(ShellGroup):
-    def blacken(self):
-        return None
-
-
-    def addOutput(self, mult, _transp, socket, slot):
+    def addOutput(self, mult, socket, slot):
         mix = self.addNode("ShaderNodeMixShader", 8)
         mix.inputs[0].default_value = 1
         self.links.new(mult.outputs[0], mix.inputs[0])
@@ -140,8 +137,18 @@ class OpaqueShellGroup(ShellGroup):
         self.links.new(socket, mix.inputs[2])
         self.links.new(mix.outputs[0], self.outputs.inputs[slot])
 
+    def addOutputs(self, mult):
+        self.addOutput(mult, self.getCyclesSocket(), "Cycles")
+        self.addOutput(mult, self.getEeveeSocket(), "Eevee")
+
 
 class RefractiveShellGroup(ShellGroup):
+    def storeOpaque(self):
+        self.cyclesOpaque = self.getCyclesSocket()
+        self.eeveeOpaque = self.getEeveeSocket()
+        self.cycles = None
+        self.eevee = None
+
     def blacken(self):
         transp = self.addNode("ShaderNodeBsdfTransparent", 7)
         transp.inputs[0].default_value[0:3] = BLACK
@@ -156,17 +163,44 @@ class RefractiveShellGroup(ShellGroup):
                 self.removeLink(node, "Transmission")
         return transp
 
-
     def addOutput(self, mult, transp, socket, slot):
         mix = self.addNode("ShaderNodeMixShader", 8)
         mix.inputs[0].default_value = 1
         self.links.new(mult.outputs[0], mix.inputs[0])
         self.links.new(transp.outputs[0], mix.inputs[1])
         self.links.new(socket, mix.inputs[2])
-        add = self.addNode("ShaderNodeAddShader", 9)
+
+        add = self.addNode("ShaderNodeAddShader", 8)
         self.links.new(mix.outputs[0], add.inputs[0])
         self.links.new(self.inputs.outputs[slot], add.inputs[1])
         self.links.new(add.outputs[0], self.outputs.inputs[slot])
+        return add
+
+    def mixOutputs(self, mult, add, socket, slot):
+        mix = self.addNode("ShaderNodeMixShader", 9)
+        mix.inputs[0].default_value = 1
+        self.links.new(mult.outputs[0], mix.inputs[0])
+        self.links.new(add.outputs[0], mix.inputs[1])
+        self.links.new(socket, mix.inputs[2])
+
+        mix2 = self.addNode("ShaderNodeMixShader", 9)
+        mix2.inputs[0].default_value = self.weight
+        if self.wttex:
+            self.links.new(self.wttex.outputs[0], mix2.inputs[0])
+        self.links.new(mix.outputs[0], mix2.inputs[1])
+        self.links.new(add.outputs[0], mix2.inputs[2])
+        self.links.new(mix2.outputs[0], self.outputs.inputs[slot])
+
+    def addOutputs(self, mult):
+        transp = self.blacken()
+        if self.cyclesOpaque:
+            add = self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
+            self.mixOutputs(mult, add, self.cyclesOpaque, "Cycles")
+            add = self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
+            self.mixOutputs(mult, add, self.eeveeOpaque, "Eevee")
+        else:
+            self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
+            self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
 
 
 class OpaqueShellCyclesGroup(OpaqueShellGroup, CyclesTree):
@@ -186,12 +220,20 @@ class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesTree):
         CyclesTree.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
+    def buildRefraction(self):
+        self.storeOpaque()
+        self.weight, self.wttex = CyclesTree.buildRefraction(self)
+
 
 class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
     def create(self, node, name, parent):
         PbrTree.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
+    def buildRefraction(self):
+        if GS.refractiveMethod != 'REUSE':
+            self.storeOpaque()
+        self.weight, self.wttex = PbrTree.buildRefraction(self)
 
 # ---------------------------------------------------------------------
 #   Fresnel Group

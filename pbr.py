@@ -72,11 +72,7 @@ class PbrTree(CyclesTree):
             self.replaceSlot(self.pbr, "Specular", 0)
             self.postPBR = True
         if self.material.refractive:
-            if GS.refractiveMethod == 'BSDF':
-                self.buildRefraction()
-                self.postPBR = True
-            else:
-                self.buildPBRRefraction()
+            self.buildRefraction()
         else:
             self.buildEmission()
 
@@ -88,6 +84,14 @@ class PbrTree(CyclesTree):
         elif self.normal:
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Normal"])
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
+
+
+    def getShellGroup(self, shmat, push):
+        from .cgroup import OpaqueShellPbrGroup, RefractiveShellPbrGroup
+        if shmat.refractive:
+            return RefractiveShellPbrGroup(push)
+        else:
+            return OpaqueShellPbrGroup(push)
 
 
     def buildCutout(self):
@@ -249,10 +253,15 @@ class PbrTree(CyclesTree):
         return 1,None
 
 
-    def buildPBRRefraction(self):
+    def buildRefraction(self):
+        if GS.refractiveMethod == 'BSDF':
+            weight,wttex = CyclesTree.buildRefraction(self)
+            self.postPBR = True
+            return weight,wttex
+
         weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
         if weight == 0:
-            return
+            return weight,wttex
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
 
@@ -329,6 +338,7 @@ class PbrTree(CyclesTree):
         pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
         if self.material.shareGlossy:
             self.replaceSlot(pbr, "Specular Tint", 1.0)
+        return weight,wttex
 
 
     def mixShaders(self, weight, wttex, node1, node2):
