@@ -31,6 +31,7 @@ import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
+from .morphing import MorphSuffix
 
 #------------------------------------------------------------------
 #   DAZ options
@@ -318,7 +319,7 @@ class MorphTypeOptions:
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
+class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -401,11 +402,6 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
         name = "Favorite Morphs",
         description = "Path to favorite morphs")
 
-    useUniqueNames : BoolProperty(
-        name = "Unique Morph Names",
-        description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
-        default = False)
-
     useConvertHair : BoolProperty(
         name = "Convert Hair",
         description = "Convert strand-based hair to particle hair",
@@ -434,7 +430,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
             self.subprop("favoPath")
-            self.subprop("useUniqueNames")
+            self.subprop("useMorphSuffix")
+            if self.useMorphSuffix == 'ALL':
+                self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
@@ -595,7 +593,8 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MultiFile):
                 if activateObject(context, mainRig) and self.favoPath:
                     bpy.ops.daz.load_favo_morphs(
                         filepath = self.favoPath,
-                        useUniqueNames = self.useUniqueNames)
+                        useMorphSuffix = self.useMorphSuffix,
+                        morphSuffix = self.morphSuffix)
             if (self.units or
                   self.expressions or
                   self.visemes or

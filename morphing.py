@@ -745,25 +745,34 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
 #   Load typed morphs base class
 #------------------------------------------------------------------
 
-class MorphLoader(LoadMorph):
-    loadMissing = True
-    category = ""
-    adjuster = None
-    useUniqueNames = False
+class MorphSuffix:
+    useMorphSuffix : EnumProperty(
+        items = [('NEVER', "Never", "Never add morph suffixes"),
+                 ('GEOGRAFT', "Geografts", "Add suffixes to geograft morphs based on the geograft name"),
+                 ('ALL', "All", "Add custom morph suffixes to all morphs")],
+        name = "Use Suffix",
+        description = "Add morph suffixes",
+        default = 'NEVER')
 
-    def __init__(self, rig=None, mesh=None):
-        from .finger import getFingeredCharacter
-        self.rig, self.mesh, self.char, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
-        if mesh:
-            self.mesh = mesh
+    morphSuffix : StringProperty(
+        name = "Morph Suffix",
+        description = "Morph suffix",
+        default = "")
 
+    def draw(self, context):
+        self.layout.prop(self, "useMorphSuffix")
+        if self.useMorphSuffix == 'ALL':
+            self.layout.prop(self, "morphSuffix")
 
     def setupUniqueSuffix(self, path):
-        if self.useUniqueNames and self.mesh and self.mesh.data.DazGraftGroup:
+        if self.useMorphSuffix == 'NEVER' or self.mesh is None:
+            self.uniqueSuffix = ""
+        elif self.useMorphSuffix == 'GEOGRAFT' and self.mesh.data.DazGraftGroup:
             self.uniqueSuffix = ":%s" % self.mesh.name
+        elif self.useMorphSuffix == 'ALL':
+            self.uniqueSuffix = ":%s" % self.morphSuffix
         else:
             self.uniqueSuffix = ""
-
 
     def getUniqueName(self, string):
         if self.uniqueSuffix:
@@ -775,6 +784,17 @@ class MorphLoader(LoadMorph):
         else:
             return string
 
+
+class MorphLoader(LoadMorph, MorphSuffix):
+    loadMissing = True
+    category = ""
+    adjuster = None
+
+    def __init__(self, rig=None, mesh=None):
+        from .finger import getFingeredCharacter
+        self.rig, self.mesh, self.char, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
+        if mesh:
+            self.mesh = mesh
 
     def getMorphSet(self, asset):
         return self.morphset
@@ -932,6 +952,12 @@ class StandardMorphLoader(MorphLoader):
 class StandardMorphSelector(Selector):
     def draw(self, context):
         Selector.draw(self, context)
+        row = self.layout.row()
+        row.prop(self, "useMorphSuffix")
+        if self.useMorphSuffix == 'ALL':
+            row.prop(self, "morphSuffix")
+        else:
+            row.label(text="")
 
     def getActiveMorphFiles(self, context):
         namepaths = []
@@ -1114,6 +1140,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
     morphset = "Standard"
 
+    def draw(self, context):
+        MorphTypeOptions.draw(self, context)
+        MorphSuffix.draw(self, context)
+
     def run(self, context):
         if not self.setupCharacter(context):
             return
@@ -1225,11 +1255,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         description = "Part of character that the morphs affect",
         default = "Custom")
 
-    useUniqueNames : BoolProperty(
-        name = "Unique Morph Names",
-        description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
-        default = False)
-
     treatHD : EnumProperty(
         items = [('ERROR', "Error", "Raise error"),
                  ('CREATE', "Create Shapekey", "Create empty shapekeys"),
@@ -1247,7 +1272,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             self.layout.prop(self, "useMeshCats")
             if self.useMeshCats:
                 self.layout.prop(self, "category")
-        self.layout.prop(self, "useUniqueNames")
+        MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
         self.layout.prop(self, "treatHD")
 
@@ -2676,15 +2701,10 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
             mstruct[key].append((quote(item.name), item.text, item.bodypart))
 
 
-class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMeshArmature):
+class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, JsonFile, IsMeshArmature):
     bl_idname = "daz.load_favo_morphs"
     bl_label = "Load Favorite Morphs"
     bl_description = "Load favorite morphs"
-
-    useUniqueNames : BoolProperty(
-        name = "Unique Morph Names",
-        description = "Use unique morph names for geografts,\nto distinguish different morphs with the same name",
-        default = False)
 
     ignoreFinger : BoolProperty(
         name = "Ignore Fingerprint",
@@ -2692,7 +2712,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "useUniqueNames")
+        MorphSuffix.draw(self, context)
         self.layout.prop(self, "ignoreFinger")
 
     def invoke(self, context, event):
@@ -2732,15 +2752,15 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, SingleFile, JsonFile, IsMe
             if finger != ustruct["finger_print"]:
                 print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
-        useUnique = self.useUniqueNames
-        self.useUniqueNames = False
+        useSuffix = self.useMorphSuffix
+        self.useMorphSuffix = 'NEVER'
         for morphset in theStandardMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", True)
         for morphset in theJCMMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", False)
-        self.useUniqueNames = useUnique
+        self.useMorphSuffix = useSuffix
         for key in ustruct["morphs"].keys():
             if key[0:7] == "Custom/":
                 rig.DazCustomMorphs = True
