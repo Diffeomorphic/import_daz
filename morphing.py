@@ -747,15 +747,15 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
 
 class MorphSuffix:
     useMorphSuffix : EnumProperty(
-        items = [('NEVER', "Never", "Never add morph suffixes"),
+        items = [('NONE', "None", "Don't add morph suffixes"),
                  ('GEOGRAFT', "Geografts", "Add suffixes to geograft morphs based on the geograft name"),
                  ('ALL', "All", "Add custom morph suffixes to all morphs")],
         name = "Use Suffix",
         description = "Add morph suffixes",
-        default = 'NEVER')
+        default = 'NONE')
 
     morphSuffix : StringProperty(
-        name = "Morph Suffix",
+        name = "Suffix",
         description = "Morph suffix",
         default = "")
 
@@ -765,7 +765,7 @@ class MorphSuffix:
             self.layout.prop(self, "morphSuffix")
 
     def setupUniqueSuffix(self, path):
-        if self.useMorphSuffix == 'NEVER' or self.mesh is None:
+        if self.useMorphSuffix == 'NONE' or self.mesh is None:
             self.uniqueSuffix = ""
         elif self.useMorphSuffix == 'GEOGRAFT' and self.mesh.data.DazGraftGroup:
             self.uniqueSuffix = ":%s" % self.mesh.name
@@ -2753,7 +2753,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
                 print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
         useSuffix = self.useMorphSuffix
-        self.useMorphSuffix = 'NEVER'
+        self.useMorphSuffix = 'NONE'
         for morphset in theStandardMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", True)
