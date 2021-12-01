@@ -97,7 +97,7 @@ class FastMatcher:
     def findTriangles(self, ob):
         self.verts = np.array([list(v.co) for v in ob.data.vertices])
         tris = [f.vertices for f in ob.data.polygons]
-        self.tris = np.array(tris)
+        self.tris = np.array(tris, dtype=np.uint32)
 
 
     def findMatchNearest(self, src, trg):
