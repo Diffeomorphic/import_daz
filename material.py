@@ -73,7 +73,6 @@ class Material(Asset, Channels):
         self.thinWall = False
         self.refractive = False
         self.shareGlossy = False
-        self.metallic = False
         self.dualLobeWeight = 0
         self.translucent = False
         self.isHair = False
@@ -224,7 +223,6 @@ class Material(Asset, Channels):
         self.refractive = (self.getValue("getChannelRefractionWeight", 0) > 0.01 or
                            self.getValue("getChannelOpacity", 1) < 0.99)
         self.shareGlossy = self.getValue(["Share Glossy Inputs"], False)
-        self.metallic = (self.getValue(["Metallic Weight"], 0) > 0.5 and self.enabled["Metallicity"])
         self.dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
         self.translucent = (self.enabled["Translucency"] and self.getValue("getChannelTranslucencyWeight", 0) > 0.01)
         self.isHair = ("Root Transmission Color" in self.channels.keys())

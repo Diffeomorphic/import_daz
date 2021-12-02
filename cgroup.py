@@ -471,6 +471,33 @@ class GlossyGroup(MixGroup):
         self.links.new(glossy.outputs[0], self.mix2.inputs[2])
 
 # ---------------------------------------------------------------------
+#   Metal Group
+# ---------------------------------------------------------------------
+
+class MetalGroup(MixGroup):
+
+    def __init__(self):
+        MixGroup.__init__(self)
+        self.insockets += ["Color", "Roughness", "Normal"]
+
+
+    def create(self, node, name, parent):
+        MixGroup.create(self, node, name, parent, 3)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.group.inputs.new("NodeSocketVector", "Normal")
+
+
+    def addNodes(self, args=None):
+        MixGroup.addNodes(self, args)
+        glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
+        self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
+        self.links.new(glossy.outputs[0], self.mix1.inputs[2])
+        self.links.new(glossy.outputs[0], self.mix2.inputs[2])
+
+# ---------------------------------------------------------------------
 #   Top Coat Group
 # ---------------------------------------------------------------------
 

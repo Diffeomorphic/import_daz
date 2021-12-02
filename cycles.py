@@ -89,8 +89,6 @@ class CyclesMaterial(Material):
             if geo and geo.isStrandHair:
                 geo.hairMaterials.append(self)
             return getHairTree(self)
-        elif self.metallic:
-            return PbrTree(self)
         elif GS.materialMethod == 'PRINCIPLED':
             return PbrTree(self)
         else:
@@ -219,7 +217,11 @@ class CyclesTree:
         self.layeredGroups = {}
         self.inShell = False
 
+        self.diffuseColor = WHITE
         self.diffuseTex = None
+        self.glossyRoughness = 0
+        self.glossyRoughTex = None
+
         self.fresnel = None
         self.normal = None
         self.bump = None
@@ -391,6 +393,7 @@ class CyclesTree:
         else:
             self.buildGlossy()
             self.buildDualLobe()
+        self.buildMetal()
         self.buildTopCoat()
         if self.material.refractive:
             self.buildRefraction()
@@ -626,7 +629,6 @@ class CyclesTree:
         if not self.isEnabled("Diffuse"):
             return
         color,tex = self.getDiffuseColor()
-        self.diffuseTex = tex
         node = self.addNode("ShaderNodeBsdfDiffuse")
         self.cycles = self.eevee = node
         self.linkColor(tex, node, color, "Color")
@@ -638,6 +640,8 @@ class CyclesTree:
         self.setRoughness(node, "Roughness", roughness, roughtex)
         self.linkBumpNormal(node)
         LS.usedFeatures["Diffuse"] = True
+        self.diffuseColor = color
+        self.diffuseTex = tex
 
 
     def buildOverlay(self):
@@ -811,9 +815,6 @@ class CyclesTree:
         else:
             roughness = value
         fnroughness = roughness**2
-        if bpy.app.version < (2,80):
-            roughness = roughness**2
-            value = value**2
 
         from .cgroup import GlossyGroup
         self.column += 1
@@ -823,6 +824,8 @@ class CyclesTree:
         roughtex = self.addSlot(channel, glossy, "Roughness", roughness, value, invert)
         self.linkBumpNormal(glossy)
         self.linkScalar(roughtex, fresnel, fnroughness, "Roughness")
+        self.glossyRoughness = roughness
+        self.glossyRoughTex = roughtex
 
         LS.usedFeatures["Glossy"] = True
         self.mixWithActive(1.0, self.fresnel, glossy)
@@ -844,6 +847,24 @@ class CyclesTree:
             if tex:
                 iortex = self.multiplyAddScalarTex(factor, 1.1, tex)
         return ior, iortex
+
+#-------------------------------------------------------------
+#   Top Coat
+#-------------------------------------------------------------
+
+    def buildMetal(self):
+        if self.getValue(["Metallic Weight"], 0) == 0:
+            return
+        from .cgroup import MetalGroup
+        self.column += 1
+        node = self.addGroup(MetalGroup, "DAZ Metal", size=100)
+        self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
+        self.setRoughness(node, "Roughness", self.glossyRoughness, self.glossyRoughTex)
+        self.linkBumpNormal(node)
+        weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
+        if wttex:
+            wttex = self.raiseToPower(wttex, 2, 0)
+        self.mixWithActive(weight**2, wttex, node)
 
 #-------------------------------------------------------------
 #   Top Coat
