@@ -219,8 +219,6 @@ class CyclesTree:
 
         self.diffuseColor = WHITE
         self.diffuseTex = None
-        self.glossyRoughness = 0
-        self.glossyRoughTex = None
         self.dualRough1 = 0
         self.dualRough2 = 0
         self.dualRoughTex = None
@@ -802,13 +800,12 @@ class CyclesTree:
             node.inputs["Dual Ratio"].default_value = self.dualRatio
         else:
             node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
-            self.setRoughness(node, "Roughness", self.glossyRoughness, self.glossyRoughTex)
+            roughness,roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0)
+            self.setRoughness(node, "Roughness", roughness, roughtex)
         self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
         self.linkBumpNormal(node)
         weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
-        if wttex:
-            wttex = self.raiseToPower(wttex, 2, 0)
-        self.mixWithActive(weight**2, wttex, node)
+        self.mixWithActive(weight, wttex, node)
 
 #-------------------------------------------------------------
 #   Glossy
@@ -859,8 +856,6 @@ class CyclesTree:
         roughtex = self.addSlot(channel, glossy, "Roughness", roughness, value, invert)
         self.linkBumpNormal(glossy)
         self.linkScalar(roughtex, fresnel, fnroughness, "Roughness")
-        self.glossyRoughness = roughness
-        self.glossyRoughTex = roughtex
 
         LS.usedFeatures["Glossy"] = True
         self.mixWithActive(1.0, self.fresnel, glossy)
