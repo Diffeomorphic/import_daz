@@ -251,8 +251,11 @@ TweakableChannels = OrderedDict([
     ("Overlay Roughness", ("DAZ Overlay", "Roughness", 1)),
     ("Overlay Strength", ("DAZ Overlay", "Fac", 1)),
 
-    ("Metal", None),
-    ("Metallicity", ("DAZ Metal", "Fac", 1)),
+    ("Metal Uber", None),
+    ("Metallicity", ("DAZ Metal Uber", "Fac", 1)),
+
+    ("Metal PBR", None),
+    ("Metallicity", ("DAZ Metal PBR", "Fac", 1)),
 
     ("Refraction", None),
     ("Refraction Color", ("DAZ Refraction", "Refraction Color", 4)),

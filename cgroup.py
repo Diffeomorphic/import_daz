@@ -299,7 +299,7 @@ class UberFresnelGroup(FresnelGroup):
     exponent = 2
 
 
-class PBRSkinFresnelGroup(FresnelGroup):
+class PbrSkinFresnelGroup(FresnelGroup):
     exponent = 4
 
 # ---------------------------------------------------------------------
@@ -474,7 +474,7 @@ class GlossyGroup(MixGroup):
 #   Metal Group
 # ---------------------------------------------------------------------
 
-class MetalGroup(MixGroup):
+class MetalGroupUber(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
@@ -496,6 +496,42 @@ class MetalGroup(MixGroup):
         self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
         self.links.new(glossy.outputs[0], self.mix1.inputs[2])
         self.links.new(glossy.outputs[0], self.mix2.inputs[2])
+
+
+class MetalGroupPbrSkin(MixGroup):
+
+    def __init__(self):
+        MixGroup.__init__(self)
+        self.insockets += ["Color", "Roughness1",  "Roughness2", "Dual Ratio", "Normal"]
+
+
+    def create(self, node, name, parent):
+        MixGroup.create(self, node, name, parent, 4)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketFloat", "Roughness1")
+        self.group.inputs.new("NodeSocketFloat", "Roughness2")
+        self.group.inputs.new("NodeSocketFloat", "Dual Ratio")
+        self.group.inputs.new("NodeSocketVector", "Normal")
+
+
+    def addNodes(self, args=None):
+        MixGroup.addNodes(self, args)
+        glossy1 = self.addGlossy("Roughness1")
+        glossy2 = self.addGlossy("Roughness2")
+        mix = self.addNode("ShaderNodeMixShader", 2)
+        self.links.new(self.inputs.outputs["Dual Ratio"], mix.inputs[0])
+        self.links.new(glossy1.outputs[0], mix.inputs[1])
+        self.links.new(glossy2.outputs[0], mix.inputs[2])
+        self.links.new(mix.outputs[0], self.mix1.inputs[2])
+        self.links.new(mix.outputs[0], self.mix2.inputs[2])
+
+
+    def addGlossy(self, slot):
+        glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
+        self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
+        self.links.new(self.inputs.outputs[slot], glossy.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
+        return glossy
 
 # ---------------------------------------------------------------------
 #   Top Coat Group
@@ -858,12 +894,12 @@ class DualLobeGroupUberIray(DualLobeGroup):
         return fresnel
 
 
-class DualLobeGroupPBRSkin(DualLobeGroup):
+class DualLobeGroupPbrSkin(DualLobeGroup):
     lobe1Normal = True
     lobe2Normal = True
 
     def addFresnel(self, useNormal, roughness):
-        fresnel = self.addGroup(PBRSkinFresnelGroup, "DAZ Fresnel PBR", 1)
+        fresnel = self.addGroup(PbrSkinFresnelGroup, "DAZ Fresnel PBR", 1)
         self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs[roughness], fresnel.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
@@ -1246,7 +1282,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
         "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe Uber", []),
-        "useDualLobePBR" : (DualLobeGroupPBRSkin, "DAZ Dual Lobe PBR", []),
+        "useDualLobePBR" : (DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", []),
         "useVolume" : (VolumeGroup, "DAZ Volume", []),
         "useNormal" : (NormalGroup, "DAZ Normal", ["uvname"]),
         "useDisplacement" : (DisplacementGroup, "DAZ Displacement", []),

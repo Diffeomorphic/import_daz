@@ -221,6 +221,10 @@ class CyclesTree:
         self.diffuseTex = None
         self.glossyRoughness = 0
         self.glossyRoughTex = None
+        self.dualRough1 = 0
+        self.dualRough2 = 0
+        self.dualRoughTex = None
+        self.dualRatio = 1.0
 
         self.fresnel = None
         self.normal = None
@@ -738,13 +742,13 @@ class CyclesTree:
 #-------------------------------------------------------------
 
     def buildDualLobe(self):
-        from .cgroup import DualLobeGroupUberIray, DualLobeGroupPBRSkin
+        from .cgroup import DualLobeGroupUberIray, DualLobeGroupPbrSkin
         if not self.isEnabled("Dual Lobe Specular"):
             return
 
         self.column += 1
         if self.material.shader == 'PBRSKIN':
-            node = self.addGroup(DualLobeGroupPBRSkin, "DAZ Dual Lobe PBR", size=100)
+            node = self.addGroup(DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", size=100)
         else:
             node = self.addGroup(DualLobeGroupUberIray, "DAZ Dual Lobe Uber", size=100)
         value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 0.5, False, isMask=True)
@@ -760,24 +764,55 @@ class CyclesTree:
             iortex = self.multiplyAddScalarTex(0.7*value, 1.1, tex)
             self.links.new(iortex.outputs[0], node.inputs["IOR"])
 
-        ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
+        ratio = self.dualRatio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
         if self.material.shader == 'PBRSKIN':
             roughness,roughtex = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
             lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
             duallobemult = self.getValue(["Dual Lobe Specular Roughness Mult"], 1.0)
-            self.setRoughness(node, "Roughness 1", roughness*duallobemult, roughtex)
-            self.setRoughness(node, "Roughness 2", roughness*duallobemult*lobe2mult, roughtex)
+            self.dualRough1 = roughness*duallobemult
+            self.dualRough2 = roughness*duallobemult*lobe2mult
+            self.dualRoughTex = roughtex
+            self.setRoughness(node, "Roughness 1", self.dualRough1, self.dualRoughTex)
+            self.setRoughness(node, "Roughness 2", self.dualRough2, self.dualRoughTex)
             ratio = 1 - ratio
         else:
-            roughness1,roughtex1 = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
-            self.setRoughness(node, "Roughness 1", roughness1, roughtex1)
-            roughness2,roughtex2 = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
-            self.setRoughness(node, "Roughness 2", roughness2, roughtex2)
+            self.dualRough1,roughtex1 = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
+            self.setRoughness(node, "Roughness 1", self.dualRough1, roughtex1)
+            self.dualRough2,roughtex2 = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
+            self.setRoughness(node, "Roughness 2", self.dualRough2, roughtex2)
+            self.dualRoughTex = roughtex1
 
         self.linkBumpNormal(node)
         self.mixWithActive(ratio, None, node, keep=True)
         LS.usedFeatures["Glossy"] = True
 
+#-------------------------------------------------------------
+#   Metal
+#-------------------------------------------------------------
+
+    def buildMetal(self):
+        if self.getValue(["Metallic Weight"], 0) == 0:
+            return
+        from .cgroup import MetalGroupUber, MetalGroupPbrSkin
+        self.column += 1
+        if self.material.shader == 'PBRSKIN':
+            node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
+            self.setRoughness(node, "Roughness1", self.dualRough1, self.dualRoughTex)
+            self.setRoughness(node, "Roughness2", self.dualRough2, self.dualRoughTex)
+            node.inputs["Dual Ratio"].default_value = self.dualRatio
+        else:
+            node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
+            self.setRoughness(node, "Roughness", self.glossyRoughness, self.glossyRoughTex)
+        self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
+        self.linkBumpNormal(node)
+        weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
+        if wttex:
+            wttex = self.raiseToPower(wttex, 2, 0)
+        self.mixWithActive(weight**2, wttex, node)
+
+#-------------------------------------------------------------
+#   Glossy
+#-------------------------------------------------------------
 
     def getGlossyColor(self):
         #   glossy bsdf color = iray glossy color * iray glossy layered weight
@@ -847,24 +882,6 @@ class CyclesTree:
             if tex:
                 iortex = self.multiplyAddScalarTex(factor, 1.1, tex)
         return ior, iortex
-
-#-------------------------------------------------------------
-#   Top Coat
-#-------------------------------------------------------------
-
-    def buildMetal(self):
-        if self.getValue(["Metallic Weight"], 0) == 0:
-            return
-        from .cgroup import MetalGroup
-        self.column += 1
-        node = self.addGroup(MetalGroup, "DAZ Metal", size=100)
-        self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
-        self.setRoughness(node, "Roughness", self.glossyRoughness, self.glossyRoughTex)
-        self.linkBumpNormal(node)
-        weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
-        if wttex:
-            wttex = self.raiseToPower(wttex, 2, 0)
-        self.mixWithActive(weight**2, wttex, node)
 
 #-------------------------------------------------------------
 #   Top Coat
