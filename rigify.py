@@ -630,7 +630,7 @@ class Rigify:
         bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Y')
 
 
-    def setupExtras(self, rig, rigifySkel, spineBones):
+    def setupExtras(self, context, rig, rigifySkel, spineBones):
         extras = OrderedDict()
         taken = []
         for dbone,_rbone,_pbone in spineBones:
@@ -641,7 +641,7 @@ class Rigify:
                 if isinstance(dbone, tuple):
                     dbone = dbone[0]
             taken.append(dbone)
-        for ob in rig.children:
+        for ob in getArmatureChildren(context, rig):
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
@@ -905,7 +905,7 @@ class Rigify:
         dazBones = self.getDazBones(rig)
 
         print("  Setup extras")
-        extras = self.setupExtras(rig, rigifySkel, spineBones)
+        extras = self.setupExtras(context, rig, rigifySkel, spineBones)
         print("  Get driven bones")
         driven = {}
         for pb in rig.pose.bones:
@@ -1008,7 +1008,7 @@ class Rigify:
         # Handle bone parents
         print("  Handle bone parents")
         boneParents = []
-        for ob in rig.children:
+        for ob in getArmatureChildren(context, rig):
             if ob.parent_type == 'BONE':
                 boneParents.append((ob, ob.parent_bone))
                 clearParent(ob)
@@ -1026,7 +1026,7 @@ class Rigify:
         # Change vertex groups
         print("  Change vertex groups")
         activateObject(context, gen)
-        for ob in rig.children:
+        for ob in getArmatureChildren(context, rig):
             if ob.type == 'MESH':
                 ob.parent = gen
 
