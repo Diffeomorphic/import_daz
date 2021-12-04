@@ -766,12 +766,12 @@ class RigInfo:
                 prop[0:3] != "Daz" and
                 prop not in trg.keys()):
                 if isinstance(value,float):
-                    min,max = getPropMinMax(src, prop)
-                    setFloatProp(trg, prop, value, min, max)
+                    min,max,default = getPropMinMax(src, prop)
+                    setFloatProp(trg, prop, default, min, max)
                 elif isinstance(value,int):
-                    min,max = getPropMinMax(src, prop)
+                    min,max,default = getPropMinMax(src, prop)
                     trg[prop] = value
-                    setPropMinMax(trg, prop, min, max)
+                    setPropMinMax(trg, prop, default, min, max)
                 elif isinstance(value,bool):
                     setBoolProp(trg, prop, value)
                 elif isinstance(value,str):

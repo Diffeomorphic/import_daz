@@ -2472,14 +2472,14 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
         from .driver import getPropMinMax, setPropMinMax
         for moho in self.openVowels:
             prop = self.getMohoKey(moho, rig)
-            min,max = getPropMinMax(rig, prop)
+            min,max,default = getPropMinMax(rig, prop)
             if max < self.emphasis:
-                setPropMinMax(rig, prop, min, self.emphasis)
+                setPropMinMax(rig, prop, default, min, self.emphasis)
             final = finalProp(prop)
             if final in rig.data.keys():
-                min,max = getPropMinMax(rig.data, final)
+                min,max,default = getPropMinMax(rig.data, final)
                 if max < self.emphasis:
-                    setPropMinMax(rig.data, final, min, self.emphasis)
+                    setPropMinMax(rig.data, final, default, min, self.emphasis)
 
 
     def readMoho(self):
