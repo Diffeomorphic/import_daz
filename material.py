@@ -337,30 +337,26 @@ class Material(Asset, Channels):
     def getChannelDiffuseStrength(self):
         return self.getChannel(["diffuse_strength", "Diffuse Strength"])
 
-    def getChannelDiffuseRoughness(self):
-        return self.getChannel(["Diffuse Roughness"])
-
     def getChannelGlossyColor(self):
         return self.getTexChannel(["Glossy Color", "specular", "Specular Color"])
 
     def getChannelGlossyLayeredWeight(self):
         return self.getTexChannel(["Glossy Layered Weight", "Glossy Weight", "specular_strength", "Specular Strength"])
 
-    def getChannelGlossyReflectivity(self):
-        return self.getChannel(["Glossy Reflectivity"])
 
-    def getChannelGlossyRoughness(self):
-        return self.getChannel(["Glossy Roughness"])
-
-    def getChannelGlossySpecular(self):
-        return self.getChannel(["Glossy Specular"])
-
-    def getChannelGlossiness(self):
-        channel = self.getChannel(["glossiness", "Glossiness"])
-        if channel:
-            return channel, False
+    def getGlossyRoughness(self, default):
+        invert = False
+        channel = self.getChannel(["Glossy Roughness"])
+        if channel is None:
+            channel = self.getChannel(["glossiness", "Glossiness"])
+            if channel:
+                invert = True
+        value = clamp( self.getChannelValue(channel, default) )
+        if invert:
+            return channel, value, (1-value), True
         else:
-            return self.getChannel(["Glossy Roughness"]), True
+            return channel, value, value, False
+
 
     def getChannelOpacity(self):
         return self.getChannel(["opacity", "Opacity Strength"])
@@ -403,15 +399,6 @@ class Material(Asset, Channels):
 
     def getChannelSSSScale(self):
         return self.getChannel(["SSS Scale", "Subsurface Scale"])
-
-    def getChannelScatterDist(self):
-        return self.getChannel(["Scattering Measurement Distance"])
-
-    def getChannelSSSIOR(self):
-        return self.getChannel(["Subsurface Refraction"])
-
-    def getChannelTopCoatRoughness(self):
-        return self.getChannel(["Top Coat Roughness"])
 
     def getChannelNormal(self):
         return self.getChannel(["normal", "Normal Map"])

@@ -759,7 +759,7 @@ class CyclesTree:
 
         ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
         if self.material.shader == 'PBRSKIN':
-            rough1,rough2,roughtex = self.getDualRoughness()
+            rough1,rough2,roughtex = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
             ratio = 1 - ratio
@@ -774,8 +774,8 @@ class CyclesTree:
         LS.usedFeatures["Glossy"] = True
 
 
-    def getDualRoughness(self):
-        roughness,roughtex = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
+    def getDualRoughness(self, default):
+        roughness,roughtex = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", default, False)
         lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
         duallobemult = self.getValue(["Dual Lobe Specular Roughness Mult"], 1.0)
         rough1 = roughness*duallobemult
@@ -796,7 +796,7 @@ class CyclesTree:
         self.column += 1
         if self.material.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
-            rough1,rough2,roughtex = self.getDualRoughness()
+            rough1,rough2,roughtex = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness1", rough1, roughtex)
             self.setRoughness(node, "Roughness2", rough2, roughtex)
             ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
@@ -842,13 +842,7 @@ class CyclesTree:
         self.fresnel = fresnel
 
         #   glossy bsdf roughness = iray glossy roughness ^ 2
-        channel,invert = self.material.getChannelGlossiness()
-        invert = not invert             # roughness = invert glossiness
-        value = clamp( self.material.getChannelValue(channel, 0.0) )
-        if invert:
-            roughness = (1-value)
-        else:
-            roughness = value
+        channel,value,roughness,invert = self.material.getGlossyRoughness(0.0)
         fnroughness = roughness**2
 
         from .cgroup import GlossyGroup
@@ -871,10 +865,10 @@ class CyclesTree:
         iortex = None
         if self.material.shader == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
-                value,tex = self.getColorTex("getChannelGlossyReflectivity", "NONE", 0, False)
+                value,tex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0, False)
                 factor = 0.7 * value
             elif self.material.basemix == 1:  # Specular/Glossiness
-                color,tex = self.getColorTex("getChannelGlossySpecular", "COLOR", WHITE, False)
+                color,tex = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, False)
                 factor = 0.7 * averageColor(color) / 0.078
             ior = 1.1 + factor
             if tex:
@@ -1078,7 +1072,7 @@ class CyclesTree:
     def getRefractionColor(self):
         if self.material.shareGlossy:
             color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
-            roughness, roughtex = self.getColorTex("getChannelGlossyRoughness", "NONE", 0, False, maxval=1)
+            roughness, roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0, False, maxval=1)
         else:
             color,tex = self.getColorTex("getChannelRefractionColor", "COLOR", WHITE)
             roughness,roughtex = self.getColorTex(["Refraction Roughness"], "NONE", 0, False, maxval=1)
@@ -1126,7 +1120,7 @@ class CyclesTree:
         node.width = 240
 
         color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
-        roughness, roughtex = self.getColorTex("getChannelGlossyRoughness", "NONE", 0, False, maxval=1)
+        roughness, roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0, False, maxval=1)
         roughness = roughness**2
         self.linkColor(tex, node, color, "Glossy Color")
         self.linkScalar(roughtex, node, roughness, "Glossy Roughness")
@@ -1294,7 +1288,7 @@ class CyclesTree:
             factor = 25
 
         sss = self.getValue(["SSS Amount"], 0.0)
-        dist = self.getValue("getChannelScatterDist", 0.0)
+        dist = self.getValue(["Scattering Measurement Distance"], 0.0)
         if not (sssmode == 0 or isBlack(ssscolor) or isWhite(ssscolor) or dist == 0.0):
             color,tex = self.invertColor(ssscolor, ssstex, 6)
             if self.volume is None:

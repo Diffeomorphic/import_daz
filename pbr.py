@@ -154,16 +154,20 @@ class PbrTree(CyclesTree):
             self.linkScalar(tex, self.pbr, value, "Anisotropic Rotation")
 
         # Roughness
-        channel,invert,value,roughness = self.getGlossyRoughness()
-        roughness *= (1 + anisotropy)
-        self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)
+        if self.material.shader == 'PBRSKIN':
+            roughness,roughtex = self.getColorTex(["Diffuse Roughness"], "NONE", 0.5)
+            self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
+        else:
+            channel,value,roughness,invert = self.material.getGlossyRoughness(0.5)
+            roughness *= (1 + anisotropy)
+            self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)
 
         # Specular
         strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
         if self.material.shader == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
-                refl,reftex = self.getColorTex("getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
+                refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
                 if reftex and coltex:
                     reftex = self.mixTexs('MULTIPLY', coltex, reftex)
@@ -174,7 +178,7 @@ class PbrTree(CyclesTree):
                 value = factor * averageColor(color)
             elif self.material.basemix == 1:  # Specular/Glossiness
                 # principled specular = iray glossy specular * iray glossy layered weight * 16
-                color,reftex = self.getColorTex("getChannelGlossySpecular", "COLOR", WHITE, True, useTex)
+                color,reftex = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
                 tex = self.mixTexs('MULTIPLY', strtex, reftex)
                 factor = 16 * strength
                 value = factor * averageColor(color)
@@ -193,7 +197,7 @@ class PbrTree(CyclesTree):
         top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
         if self.material.shader == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
-                refl,reftex = self.getColorTex("getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
+                refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 tex = self.mixTexs('MULTIPLY', toptex, reftex)
                 value = 1.25 * refl * top
             else:
@@ -354,18 +358,6 @@ class PbrTree(CyclesTree):
         self.links.new(node1.outputs[0], mix.inputs[1])
         self.links.new(node2.outputs[0], mix.inputs[2])
         return mix
-
-
-    def getGlossyRoughness(self):
-        # principled roughness = iray glossy roughness = 1 - iray glossiness
-        channel,invert = self.material.getChannelGlossiness()
-        invert = not invert
-        value = clamp(self.material.getChannelValue(channel, 0.5))
-        if invert:
-            roughness = 1 - value
-        else:
-            roughness = value
-        return channel,invert,value,roughness
 
 
     def setPBRValue(self, slot, value, default, maxval=0):
