@@ -219,11 +219,6 @@ class CyclesTree:
 
         self.diffuseColor = WHITE
         self.diffuseTex = None
-        self.dualRough1 = 0
-        self.dualRough2 = 0
-        self.dualRoughTex = None
-        self.dualRatio = 1.0
-
         self.fresnel = None
         self.normal = None
         self.bump = None
@@ -762,42 +757,50 @@ class CyclesTree:
             iortex = self.multiplyAddScalarTex(0.7*value, 1.1, tex)
             self.links.new(iortex.outputs[0], node.inputs["IOR"])
 
-        ratio = self.dualRatio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
+        ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
         if self.material.shader == 'PBRSKIN':
-            roughness,roughtex = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
-            lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
-            duallobemult = self.getValue(["Dual Lobe Specular Roughness Mult"], 1.0)
-            self.dualRough1 = roughness*duallobemult
-            self.dualRough2 = roughness*duallobemult*lobe2mult
-            self.dualRoughTex = roughtex
-            self.setRoughness(node, "Roughness 1", self.dualRough1, self.dualRoughTex)
-            self.setRoughness(node, "Roughness 2", self.dualRough2, self.dualRoughTex)
+            rough1,rough2,roughtex = self.getDualRoughness()
+            self.setRoughness(node, "Roughness 1", rough1, roughtex)
+            self.setRoughness(node, "Roughness 2", rough2, roughtex)
             ratio = 1 - ratio
         else:
-            self.dualRough1,roughtex1 = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
-            self.setRoughness(node, "Roughness 1", self.dualRough1, roughtex1)
-            self.dualRough2,roughtex2 = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
-            self.setRoughness(node, "Roughness 2", self.dualRough2, roughtex2)
-            self.dualRoughTex = roughtex1
+            rough1,roughtex1 = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
+            self.setRoughness(node, "Roughness 1", rough1, roughtex1)
+            rough2,roughtex2 = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
+            self.setRoughness(node, "Roughness 2", rough2, roughtex2)
 
         self.linkBumpNormal(node)
         self.mixWithActive(ratio, None, node, keep=True)
         LS.usedFeatures["Glossy"] = True
+
+
+    def getDualRoughness(self):
+        roughness,roughtex = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
+        lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
+        duallobemult = self.getValue(["Dual Lobe Specular Roughness Mult"], 1.0)
+        rough1 = roughness*duallobemult
+        rough2 = roughness*duallobemult*lobe2mult
+        roughTex = roughtex
+        return rough1, rough2, roughtex
 
 #-------------------------------------------------------------
 #   Metal
 #-------------------------------------------------------------
 
     def buildMetal(self):
+        if not self.isEnabled("Metallicity"):
+            return
         if self.getValue(["Metallic Weight"], 0) == 0:
             return
         from .cgroup import MetalGroupUber, MetalGroupPbrSkin
         self.column += 1
         if self.material.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
-            self.setRoughness(node, "Roughness1", self.dualRough1, self.dualRoughTex)
-            self.setRoughness(node, "Roughness2", self.dualRough2, self.dualRoughTex)
-            node.inputs["Dual Ratio"].default_value = self.dualRatio
+            rough1,rough2,roughtex = self.getDualRoughness()
+            self.setRoughness(node, "Roughness1", rough1, roughtex)
+            self.setRoughness(node, "Roughness2", rough2, roughtex)
+            ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
+            node.inputs["Dual Ratio"].default_value = ratio
         else:
             node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
             roughness,roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0)
