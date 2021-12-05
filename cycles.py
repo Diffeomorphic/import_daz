@@ -757,13 +757,13 @@ class CyclesTree:
             iortex = self.multiplyAddScalarTex(0.7*value, 1.1, tex)
             self.links.new(iortex.outputs[0], node.inputs["IOR"])
 
-        ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
         if self.material.shader == 'PBRSKIN':
-            rough1,rough2,roughtex = self.getDualRoughness(0.0)
+            rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
             ratio = 1 - ratio
         else:
+            ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
             rough1,roughtex1 = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
             self.setRoughness(node, "Roughness 1", rough1, roughtex1)
             rough2,roughtex2 = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
@@ -781,7 +781,8 @@ class CyclesTree:
         rough1 = roughness*duallobemult
         rough2 = roughness*duallobemult*lobe2mult
         roughTex = roughtex
-        return rough1, rough2, roughtex
+        ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
+        return rough1, rough2, roughtex, ratio
 
 #-------------------------------------------------------------
 #   Metal
@@ -796,10 +797,9 @@ class CyclesTree:
         self.column += 1
         if self.material.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
-            rough1,rough2,roughtex = self.getDualRoughness(0.0)
+            rough1,rough2,roughtex, ratio = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness1", rough1, roughtex)
             self.setRoughness(node, "Roughness2", rough2, roughtex)
-            ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
             node.inputs["Dual Ratio"].default_value = ratio
         else:
             node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
