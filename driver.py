@@ -435,7 +435,7 @@ def removeModifiers(fcu):
 #   Overridable properties
 #-------------------------------------------------------------
 
-def setPropMinMax(rna, prop, default, min, max):
+def setPropMinMax(rna, prop, default, min, max, ovr):
     if bpy.app.version < (3,0,0):
         rna_ui = rna.get('_RNA_UI')
         if rna_ui is None:
@@ -444,7 +444,7 @@ def setPropMinMax(rna, prop, default, min, max):
         rna_ui[prop] = struct
     else:
         from rna_prop_ui import rna_idprop_ui_create
-        rna_idprop_ui_create(rna, prop, default=default, min=min, max=max, soft_min=min, soft_max=max, description=None, overridable=True)
+        rna_idprop_ui_create(rna, prop, default=default, min=min, max=max, soft_min=min, soft_max=max, description=None, overridable=ovr)
 
 
 def getPropMinMax(rna, prop):
@@ -460,6 +460,7 @@ def getPropMinMax(rna, prop):
     min = GS.customMin
     max = GS.customMax
     default = 0.0
+    ovr = True
     if struct:
         if "min" in struct.keys():
             min = struct["min"]
@@ -467,7 +468,9 @@ def getPropMinMax(rna, prop):
             max = struct["max"]
         if "default" in struct.keys():
             max = struct["default"]
-    return min,max,default
+        if "overridable" in struct.keys():
+            ovr = struct["overridable"]
+    return min,max,default,ovr
 
 
 def truncateProp(prop):
@@ -478,28 +481,28 @@ def truncateProp(prop):
         return prop
 
 
-def setFloatProp(rna, prop, value, min=None, max=None):
+def setFloatProp(rna, prop, value, min, max, ovr):
     value = float(value)
     prop = truncateProp(prop)
     rna[prop] = value
     if min is not None:
         min = float(min)
         max = float(max)
-        setPropMinMax(rna, prop, value, min, max)
-        if bpy.app.version < (3,0,0):
+        setPropMinMax(rna, prop, value, min, max, ovr)
+        if ovr and bpy.app.version < (3,0,0):
             setOverridable(rna, prop)
-            setPropMinMax(rna, prop, value, min, max)
-    else:
+            setPropMinMax(rna, prop, value, min, max, ovr)
+    elif ovr:
         setOverridable(rna, prop)
 
 
-def setBoolProp(rna, prop, value, desc=""):
+def setBoolProp(rna, prop, value, ovr, desc=""):
     prop = truncateProp(prop)
     rna[prop] = value
-    setPropMinMax(rna, prop, value, 0, 1)
-    if bpy.app.version < (3,0,0):
+    setPropMinMax(rna, prop, value, 0, 1, ovr)
+    if ovr and bpy.app.version < (3,0,0):
         setOverridable(rna, prop)
-        setPropMinMax(rna, prop, value, 0, 1)
+        setPropMinMax(rna, prop, value, 0, 1, ovr)
 
 #-------------------------------------------------------------
 #

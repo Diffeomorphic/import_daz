@@ -250,9 +250,9 @@ def childOf(pb, target, rig, prop=None, expr="x"):
 def setMhxProp(rig, prop, value):
     from .driver import setFloatProp, setBoolProp
     if isinstance(value, float):
-        setFloatProp(rig.data, prop, value, 0.0, 1.0)
+        setFloatProp(rig.data, prop, value, 0.0, 1.0, True)
     else:
-        setBoolProp(rig.data, prop, value)
+        setBoolProp(rig.data, prop, value, True)
     rig.data[prop] = value
     #setattrOVR(rig.data, prop, value)
 

@@ -130,7 +130,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
     def createObjectVisibility(self, rig, ob, obname):
         from .driver import setBoolProp, makePropDriver
         prop = getHidePropName(obname)
-        setBoolProp(rig, prop, True, "Show %s" % prop)
+        setBoolProp(rig, prop, True, True, "Show %s" % prop)
         makePropDriver(propRef(prop), ob, "hide_viewport", rig, expr="not(x)")
         makePropDriver(propRef(prop), ob, "hide_render", rig, expr="not(x)")
 

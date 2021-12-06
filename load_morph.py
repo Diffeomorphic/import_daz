@@ -323,7 +323,7 @@ class LoadMorph(DriverUser):
         from .driver import setFloatProp, removeModifiers
         if adj not in self.rig.keys():
             self.addNewProp(adj)
-            setFloatProp(self.rig, adj, 1.0, 0.0, 1000.0)
+            setFloatProp(self.rig, adj, 1.0, 0.0, 1000.0, True)
         adjprop = ("%s(adj)" % prop)
         self.amt[adjprop] = 0.0
         channel = propRef(adjprop)
@@ -355,8 +355,8 @@ class LoadMorph(DriverUser):
         from .driver import setFloatProp, makePropDriver
         if adj and adj not in self.rig.keys():
             final = finalProp(adj)
-            setFloatProp(self.rig, adj, 1.0, 0.0, 1000.0)
-            setFloatProp(self.amt, final, 1.0, 0.0, 1000.0)
+            setFloatProp(self.rig, adj, 1.0, 0.0, 1000.0, True)
+            setFloatProp(self.amt, final, 1.0, 0.0, 1000.0, False)
             makePropDriver(propRef(adj), self.amt, propRef(final), self.rig, "x")
         return adj
 
@@ -431,17 +431,17 @@ class LoadMorph(DriverUser):
             if skey and not visible:
                 return final
             elif asset.type == "bool":
-                setBoolProp(self.rig, raw, asset.value)
-                setBoolProp(self.amt, final, asset.value)
+                setBoolProp(self.rig, raw, asset.value, True)
+                setBoolProp(self.amt, final, asset.value, False)
             elif asset.type == "float":
-                self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, skey)
-                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey)
+                self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, skey, True)
+                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
             elif asset.type == "int":
                 self.rig[raw] = 0
                 self.amt[final] = 0
             else:
-                self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, skey)
-                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey)
+                self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, skey, True)
+                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset), trigger=(2,3))
             if visible:
                 setActivated(self.rig, raw, True)
@@ -449,22 +449,22 @@ class LoadMorph(DriverUser):
         return final
 
 
-    def setFloatLimits(self, rna, prop, limits, asset, skey):
+    def setFloatLimits(self, rna, prop, limits, asset, skey, ovr):
         from .driver import setFloatProp
         if limits == 'DAZ' or "jcm" in prop.lower():
             min = GS.morphMultiplier * asset.min
             max = GS.morphMultiplier * asset.max
-            setFloatProp(rna, prop, 0.0, min, max)
+            setFloatProp(rna, prop, 0.0, min, max, ovr)
             if skey:
                 skey.slider_min = min
                 skey.slider_max = max
         elif limits == 'CUSTOM':
-            setFloatProp(rna, prop, 0.0, GS.customMin, GS.customMax)
+            setFloatProp(rna, prop, 0.0, GS.customMin, GS.customMax, ovr)
             if skey:
                 skey.slider_min = GS.customMin
                 skey.slider_max = GS.customMax
         else:
-            setFloatProp(rna, prop, 0.0, None, None)
+            setFloatProp(rna, prop, 0.0, None, None, ovr)
             if skey:
                 skey.slider_min = 0.0
                 skey.slider_max = 1.0

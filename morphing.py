@@ -826,7 +826,6 @@ class MorphLoader(LoadMorph, MorphSuffix):
 
     def getAllMorphs(self, namepaths, context):
         from time import perf_counter
-        from .driver import setBoolProp
 
         if self.mesh:
             ob = self.mesh
@@ -1288,7 +1287,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def run(self, context):
-        from .driver import setBoolProp
         from .uilist import updateScrollbars
         self.findIked()
         namepaths = self.getNamePaths()
@@ -1335,7 +1333,7 @@ def addToCategories(ob, props, category):
             cat.name = category
         else:
             cat = cats[category]
-        setBoolProp(cat, "active", True)
+        setBoolProp(cat, "active", True, True)
         for prop in props:
             if prop not in cat.morphs.keys():
                 morph = cat.morphs.add()
@@ -1343,7 +1341,7 @@ def addToCategories(ob, props, category):
                 morph = cat.morphs[prop]
             morph.name = prop
             morph.text = getCanonicalKey(prop)
-            setBoolProp(morph, "active", True)
+            setBoolProp(morph, "active", True, True)
 
 #------------------------------------------------------------------------
 #   Rename category
@@ -1598,7 +1596,7 @@ def setActivated(ob, key, value):
     if ob is None:
         return
     pg = getActivateGroup(ob, key)
-    setBoolProp(pg, "active", value)
+    setBoolProp(pg, "active", value, True)
 
 
 def getActivated(ob, rna, key, force=False):
@@ -1658,16 +1656,16 @@ def prettifyAll(context):
     for ob in getSelectedObjects(context):
         for prop in ob.keys():
             if prop[0:7] == "DazShow":
-                setBoolProp(ob, prop, True)
+                setBoolProp(ob, prop, True, True)
             elif prop[0:3] in ["Mhh", "DzM"]:
-                setBoolProp(ob, prop, True)
+                setBoolProp(ob, prop, True, True)
         for cat in ob.DazMorphCats:
-            setBoolProp(cat, "active", True)
+            setBoolProp(cat, "active", True, True)
             for morph in cat.morphs:
                 if morph.name in ob.keys():
                     setOverridable(ob, morph.name)
         for pg in ob.DazActivated:
-            setBoolProp(pg, "active", True)
+            setBoolProp(pg, "active", True, True)
 
 
 class DAZ_OT_Prettify(DazOperator):
@@ -1937,10 +1935,10 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
         for raw in rig.keys():
             if raw.lower() in self.props:
                 if self.useSliders:
-                    setFloatProp(rig, raw, rig[raw], self.min, self.max)
+                    setFloatProp(rig, raw, rig[raw], self.min, self.max, True)
                 if self.useFinal:
                     final = finalProp(raw)
-                    setFloatProp(amt, final, amt[final], self.min, self.max)
+                    setFloatProp(amt, final, amt[final], self.min, self.max, False)
         updateRigDrivers(context, rig)
         print("Slider limits updated")
 
@@ -2103,8 +2101,8 @@ class AddRemoveDriver:
     def createRawFinPair(self, rig, raw, rna, channel, value, min, max):
         from .driver import addDriverVar, setFloatProp, removeModifiers
         final = finalProp(raw)
-        setFloatProp(rig, raw, value, min, max)
-        setFloatProp(rig.data, final, value, min, max)
+        setFloatProp(rig, raw, value, min, max, True)
+        setFloatProp(rig.data, final, value, min, max, False)
         fcu = rig.data.driver_add(propRef(final))
         removeModifiers(fcu)
         fcu.driver.type = 'SCRIPTED'
@@ -2472,14 +2470,14 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
         from .driver import getPropMinMax, setPropMinMax
         for moho in self.openVowels:
             prop = self.getMohoKey(moho, rig)
-            min,max,default = getPropMinMax(rig, prop)
+            min,max,default,ovr = getPropMinMax(rig, prop)
             if max < self.emphasis:
-                setPropMinMax(rig, prop, default, min, self.emphasis)
+                setPropMinMax(rig, prop, default, min, self.emphasis, True)
             final = finalProp(prop)
             if final in rig.data.keys():
-                min,max,default = getPropMinMax(rig.data, final)
+                min,max,default,ovr = getPropMinMax(rig.data, final)
                 if max < self.emphasis:
-                    setPropMinMax(rig.data, final, default, min, self.emphasis)
+                    setPropMinMax(rig.data, final, default, min, self.emphasis, False)
 
 
     def readMoho(self):
