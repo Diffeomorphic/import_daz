@@ -426,6 +426,9 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             base_coords_relative_to_base_center_coords = base_coords - base_center_coords
             # Singular value decomposition
             S1= np.linalg.svd(base_coords_relative_to_base_center_coords, compute_uv=False)
+            if len(S1) < 3:
+                continue
+
             # Transfrom Shapekey Coordinate to be relative to its center
             shapekey_coords_relative_to_shapekey_center_coords = shapekey_coords - shapekey_center_coords
             # Singular value decomposition
