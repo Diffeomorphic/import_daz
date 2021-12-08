@@ -1324,7 +1324,7 @@ class LoadMorph(DriverUser):
         adj = None
         pb = None
         bname = prefix[:-6]
-        if prefix[-6:-1] == ":Loc:" and bname in self.rig.pose.bones.keys():
+        if prefix[-6:-1] in [":Loc:", ":Hdo:"] and bname in self.rig.pose.bones.keys():
             adj = self.getGlobalAdjuster()
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():
