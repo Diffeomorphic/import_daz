@@ -467,9 +467,6 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
         layout.operator("daz.save_pose_preset")
 
         layout.separator()
-        prop = "Adjust Morph Strength"
-        if prop in rig.keys():
-            layout.prop(rig, propRef(prop))
         split = layout.split(factor=0.6)
         layout.prop(rig, "DazLocLocks")
         layout.prop(rig, "DazRotLocks")
@@ -606,8 +603,12 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         else:
             self.layout.operator("daz.disable_drivers")
         self.preamble(self.layout, rig)
-        self.layout.operator("daz.morph_armature")
-        self.layout.prop(context.scene, "DazAutoMorphArmatures")
+        row = self.layout.row()
+        row.operator("daz.morph_armature")
+        row.prop(context.scene, "DazAutoMorphArmatures")
+        prop = "Adjust Morph Strength"
+        if prop in rig.keys():
+            self.layout.prop(rig, propRef(prop))
 
 
 class DAZ_UL_Standard(DAZ_UL_StandardMorphs):

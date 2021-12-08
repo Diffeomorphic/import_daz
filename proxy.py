@@ -1355,7 +1355,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
     useNormals : BoolProperty(
         name = "Transfer Normals",
         description = "Transfer custom normals to mannequin meshes",
-        default = True)
+        default = False)
 
     useVertexGroups : BoolProperty(
         name = "Transfer Vertex Groups",
@@ -1382,7 +1382,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
     useUvLayers : BoolProperty(
         name = "Transfer UV Layers",
         description = "Transfer UV layers to mannequin meshes",
-        default = True)
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "headType")

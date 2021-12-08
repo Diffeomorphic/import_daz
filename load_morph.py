@@ -51,6 +51,7 @@ class LoadMorph(DriverUser):
         self.initAmt()
         self.mult = []
         self.mults = {}
+        self.adjustable = {}
 
 
     def getAdjustProp(self):
@@ -84,15 +85,21 @@ class LoadMorph(DriverUser):
         self.iked = []
         self.origRestored = []
         self.initAmt()
-        self.getAdjustedBones()
+        self.adjustable = {}
+        self.useAdjusters = (GS.useAdjusters in ['STRENGTH', 'BOTH'])
+        if self.useAdjusters:
+            self.getAdjustedBones()
 
         print("Making morphs")
         self.makeAllMorphs(namepaths, True)
+        adjustable = self.adjustable
+        self.adjustable = {}
         if self.loadMissing:
             bodypart = namepaths[0][2]
             self.makeMissingMorphs(bodypart, 0)
         else:
             print("Cannot make missing morphs for this type")
+        self.adjustable = adjustable
         if self.rig:
             self.createTmp()
             try:
@@ -292,6 +299,7 @@ class LoadMorph(DriverUser):
         if prop != asset.name:
             self.setAlias(asset.name, prop)
         self.addNewProp(prop, asset, skey)
+        self.adjustable[prop] = True
         if not isinstance(asset, Formula):
             return
         exprs = asset.evalFormulas(self.rig, self.mesh)
@@ -337,18 +345,21 @@ class LoadMorph(DriverUser):
         return adjprop
 
 
-    def getLocalAdjuster(self):
-        if GS.useAdjusters not in ['TYPE', 'BOTH']:
+    def getLocalAdjuster(self, raw):
+        if (raw in self.adjustable.keys() and
+            GS.useAdjusters in ['TYPE', 'BOTH']):
+            adj = self.getAdjustProp()
+            return self.getAdjuster(adj)
+        else:
             return None
-        adj = self.getAdjustProp()
-        return self.getAdjuster(adj)
 
 
     def getGlobalAdjuster(self):
-        if GS.useAdjusters not in ['STRENGTH', 'BOTH']:
+        if self.useAdjusters:
+            adj = "Adjust Morph Strength"
+            return self.getAdjuster(adj)
+        else:
             return None
-        adj = "Adjust Morph Strength"
-        return self.getAdjuster(adj)
 
 
     def getAdjuster(self, adj):
@@ -376,8 +387,6 @@ class LoadMorph(DriverUser):
 
 
     def getAdjustedBones(self):
-        if GS.useAdjusters not in ['STRENGTH', 'BOTH']:
-            return
         self.adjustedBones = {}
         if self.rig and self.rig.animation_data:
             for fcu in self.rig.animation_data.drivers:
@@ -388,7 +397,7 @@ class LoadMorph(DriverUser):
 
 
     def adjustTranslation(self, adj, pb, string, vars):
-        if pb is None or GS.useAdjusters not in ['STRENGTH', 'BOTH']:
+        if pb is None or adj is None:
             return string
         from .driver import makePropDriver
         string = "L*(%s)" % string
@@ -887,7 +896,7 @@ class LoadMorph(DriverUser):
 
 
     def getMultipliers(self, raw):
-        adj = self.getLocalAdjuster()
+        adj = self.getLocalAdjuster(raw)
         if adj:
             self.mult = [adj]
         else:
@@ -1088,7 +1097,7 @@ class LoadMorph(DriverUser):
                 self.rig[raw] = 0.0
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
                 self.addToMorphSet(raw, None, True)
-        adj = self.getLocalAdjuster()
+        adj = self.getLocalAdjuster(None)
         if adj:
             string = "K*(%s)" % string
             self.addPathVar(fcu, "K", self.rig, propRef(adj))
