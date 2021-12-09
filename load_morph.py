@@ -44,6 +44,7 @@ class LoadMorph(DriverUser):
     morphset = None
     usePropDrivers = True
     treatHD = 'ERROR'
+    useAdjusters = False
 
     def __init__(self, rig, mesh):
         self.rig = rig
@@ -86,8 +87,7 @@ class LoadMorph(DriverUser):
         self.origRestored = []
         self.initAmt()
         self.adjustable = {}
-        self.useAdjusters = (GS.useAdjusters in ['STRENGTH', 'BOTH'])
-        if self.useAdjusters:
+        if GS.useStrengthAdjusters:
             self.getAdjustedBones()
 
         print("Making morphs")
@@ -277,7 +277,7 @@ class LoadMorph(DriverUser):
             addSkeyToUrls(self.mesh, asset, skey)
             if self.rig:
                 final = self.addNewProp(prop)
-                adj = self.getGlobalAdjuster()
+                adj = self.getStrengthAdjuster()
                 self.adjustShapekey(skey, adj, final)
                 if adj:
                     makePropDriver(propRef(adj), skey, "slider_max", self.rig, "x")
@@ -345,17 +345,16 @@ class LoadMorph(DriverUser):
         return adjprop
 
 
-    def getLocalAdjuster(self, raw):
-        if (raw in self.adjustable.keys() and
-            GS.useAdjusters in ['TYPE', 'BOTH']):
+    def getTypeAdjuster(self, raw):
+        if self.useAdjusters and raw in self.adjustable.keys():
             adj = self.getAdjustProp()
             return self.getAdjuster(adj)
         else:
             return None
 
 
-    def getGlobalAdjuster(self):
-        if self.useAdjusters:
+    def getStrengthAdjuster(self):
+        if GS.useStrengthAdjusters:
             adj = "Adjust Morph Strength"
             return self.getAdjuster(adj)
         else:
@@ -896,7 +895,7 @@ class LoadMorph(DriverUser):
 
 
     def getMultipliers(self, raw):
-        adj = self.getLocalAdjuster(raw)
+        adj = self.getTypeAdjuster(raw)
         if adj:
             self.mult = [adj]
         else:
@@ -1097,7 +1096,7 @@ class LoadMorph(DriverUser):
                 self.rig[raw] = 0.0
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
                 self.addToMorphSet(raw, None, True)
-        adj = self.getLocalAdjuster(None)
+        adj = self.getTypeAdjuster(None)
         if adj:
             string = "K*(%s)" % string
             self.addPathVar(fcu, "K", self.rig, propRef(adj))
@@ -1325,7 +1324,7 @@ class LoadMorph(DriverUser):
         pb = None
         bname = prefix[:-6]
         if prefix[-6:-1] in [":Loc:", ":Hdo:"] and bname in self.rig.pose.bones.keys():
-            adj = self.getGlobalAdjuster()
+            adj = self.getStrengthAdjuster()
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():
             string += "%+.4g*%s" % (factor, varname)

@@ -1246,6 +1246,11 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         description = "Mesh categories",
         default = False)
 
+    useAdjusters : BoolProperty(
+        name = "Use Adjusters",
+        description = "Add an adjuster for the category type.\nUseful for mixed characters",
+        default = False)
+
     bodypart : EnumProperty(
         items = [("Face", "Face", "Face"),
                  ("Body", "Body", "Body"),
@@ -1273,6 +1278,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
                 self.layout.prop(self, "category")
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
+        self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "treatHD")
 
 

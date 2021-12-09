@@ -250,7 +250,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
 
         box = col.box()
         box.label(text = "Morphs")
-        box.prop(scn, "DazUseAdjusters")
+        box.prop(scn, "DazStrengthAdjusters")
         box.prop(scn, "DazMakeHiddenSliders")
         box.prop(scn, "DazSliderLimits")
         box.prop(scn, "DazFinalLimits")
@@ -354,13 +354,12 @@ def register():
         description = "Controls the number of warning messages when loading files",
         min=1, max = 5)
 
-    bpy.types.Scene.DazUseAdjusters = EnumProperty(
-        items = [('NONE', "None", "Don't add adjusters"),
-                 ('TYPE', "Morph Type", "Add adjusters for morph type"),
-                 ('STRENGTH', "Morph Strength", "Add adjusters for morph strength"),
-                 ('BOTH', "Both Type And Strength", "Add adjusters for both morph type and strength")],
-        name = "Adjust",
-        description = "Add extra sliders to adjust the overall strength\nof translation channels (shapekeys and locations)")
+    bpy.types.Scene.DazStrengthAdjusters = BoolProperty(
+        name = "Adjust Strength",
+        description = (
+            "Add extra sliders to adjust the overall strength of translation channels (shapekeys and locations).\n" +
+            "May be useful if the character size or proportions deviate far from the default"),
+        default = False)
 
     bpy.types.Scene.DazCustomMin = FloatProperty(
         name = "Custom Min",
