@@ -214,7 +214,7 @@ class DAZ_OT_RemoveVisibility(DazOperator):
                     mod.driver_remove("show_render")
                     mod.show_viewport = True
                     mod.show_render = True
-        for prop in rig.keys():
+        for prop in list(rig.keys()):
             if isHideProp(prop):
                 del rig[prop]
         updateDrivers(rig)

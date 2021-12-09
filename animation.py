@@ -379,6 +379,8 @@ class AffectOptions:
         description = "Animate morph properties",
         default = True)
 
+    useMorphSuffix = False
+
     clearMorphs : BoolProperty(
         name = "Clear Morphs",
         description = "Clear all morph properties before loading new ones",

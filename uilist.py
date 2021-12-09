@@ -136,6 +136,7 @@ class DAZ_OT_UpdateScrollbars(bpy.types.Operator):
     bl_description = "Update all scrollbars"
 
     def execute(self, context):
+        print("Update Scrollbars:", [ob.name for ob in context.scene.objects])
         updateScrollbars(context.scene)
         return{'FINISHED'}
 
@@ -159,7 +160,6 @@ def updateScrollbars(scn):
                 bpy.utils.register_class(new_type)
                 theShapeScrollbars[cat.name] = new_type
 
-    print("Update Scrollbars:", [ob.name for ob in scn.objects])
     for ob in scn.objects:
         if ob.type == 'ARMATURE':
             updateRigScrollbars(scn, ob)

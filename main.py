@@ -540,7 +540,12 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         if mainChar:
             print("Main character:", mainChar)
         elif mainMesh:
-            print("Did not recognize main character", mainMesh.name)
+            try:
+                msg = ("Did not recognize main character", mainMesh.name)
+            except ReferenceError:
+                msg = ("Main mesh has been deleted")
+                mainMesh = None
+            print(msg)
 
         geografts = {}
         lashes = []

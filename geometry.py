@@ -346,6 +346,8 @@ class GeoNode(Node, SimNode):
 
 
     def hideVertexGroups(self, hidden):
+        if self.data is None:
+            return
         fnums = self.data.getPolyGroup(hidden)
         self.data.hidePolyGroup(self.rna, fnums)
         if self.hdobject and self.hdobject != self.rna:
