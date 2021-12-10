@@ -93,7 +93,7 @@ class MaterialSelector:
         for mat in ob.data.materials:
             item = self.umats.add()
             item.name = mat.name
-            item.bool = self.isDefaultActive(mat)
+            item.bool = self.isDefaultActive(mat, ob)
         setMaterialSelector(self)
 
 
@@ -533,7 +533,7 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
         return wm.invoke_popup(self, width=300)
 
 
-    def isDefaultActive(self, mat):
+    def isDefaultActive(self, mat, ob):
         return self.isSkinRedMaterial(mat)
 
 
@@ -609,7 +609,7 @@ class DAZ_OT_UpdateMaterials(bpy.types.Operator):
 #   Make Decal
 # ---------------------------------------------------------------------
 
-class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh):
+class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, LaunchEditor, IsMesh):
     bl_idname = "daz.make_decal"
     bl_label = "Make Decal"
     bl_description = "Add a decal to the active material"
@@ -633,9 +633,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         default = 'MIX')
 
     def draw(self, context):
-        ob = context.object
-        mat = ob.data.materials[ob.active_material_index]
-        self.layout.label(text="Material: %s" % mat.name)
+        MaterialSelector.draw(self, context)
+        self.layout.label(text = "Channels")
         for item in self.shows:
             row = self.layout.row()
             row.prop(item, "show", text="")
@@ -645,6 +644,11 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
 
 
     def invoke(self, context, event):
+        global theMaterialEditor
+        theMaterialEditor = self
+        ob = context.object
+        self.setupMaterials(ob)
+        self.shows.clear()
         if len(self.shows) == 0:
             for key in self.channels.keys():
                 item = self.shows.add()
@@ -653,7 +657,29 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         return SingleFile.invoke(self, context, event)
 
 
+    def isDefaultActive(self, mat, ob):
+        return (ob.active_material == mat)
+
+
     def run(self, context):
+        img = bpy.data.images.load(self.filepath)
+        if img is None:
+            raise DazError("Unable to load file %s" % self.filepath)
+        img.colorspace_settings.name = "Non-Color"
+        img.colorspace_settings.name = "sRGB"
+
+        ob = context.object
+        fname = os.path.splitext(os.path.basename(self.filepath))[0]
+        empty = bpy.data.objects.new(fname, None)
+        empty.rotation_euler = (90*D, 0, 0)
+        coll = getCollection(ob)
+        coll.objects.link(empty)
+        for mat in ob.data.materials:
+            if mat and self.useMaterial(mat):
+                self.loadDecal(mat, img, empty, fname)
+
+
+    def loadDecal(self, mat, img, empty, fname):
         def getFromToSockets(tree, nodeType, slot):
             from .cycles import findNodes
             for link in tree.links.values():
@@ -670,22 +696,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
 
         from .cgroup import DecalGroup
         from .cycles import findTree
-
-        img = bpy.data.images.load(self.filepath)
-        if img is None:
-            raise DazError("Unable to load file %s" % self.filepath)
-        img.colorspace_settings.name = "Non-Color"
-        img.colorspace_settings.name = "sRGB"
-
-        fname = os.path.splitext(os.path.basename(self.filepath))[0]
-        ob = context.object
-        mat = ob.data.materials[ob.active_material_index]
         tree = findTree(mat)
-        empty = bpy.data.objects.new(fname, None)
-        empty.rotation_euler = (90*D, 0, 0)
-        coll = getCollection(ob)
-        coll.objects.link(empty)
-
         for item in self.shows:
             if item.show:
                 nodeType,slot,cname = self.channels[item.name]
