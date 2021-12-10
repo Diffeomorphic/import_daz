@@ -1152,7 +1152,7 @@ class DecalGroup(CyclesGroup):
 
 
     def addNodes(self, args):
-        empty,img = args
+        empty,img,blendType = args
 
         texco = self.addNode("ShaderNodeTexCoord", 0)
         texco.object = empty
@@ -1174,7 +1174,7 @@ class DecalGroup(CyclesGroup):
         self.links.new(tex.outputs["Alpha"], mult.inputs[1])
 
         mix = self.addNode("ShaderNodeMixRGB", 4)
-        mix.blend_type = 'MULTIPLY'
+        mix.blend_type = blendType
         self.links.new(mult.outputs[0], mix.inputs[0])
         self.links.new(self.inputs.outputs["Color"], mix.inputs[1])
         self.links.new(tex.outputs["Color"], mix.inputs[2])

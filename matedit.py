@@ -625,6 +625,13 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         "Bump" : ("BUMP", "Height", "Bump"),
     }
 
+    blendType : EnumProperty(
+        items = [('MIX', "Mix", "Mix"),
+                 ('MULTIPLY', "Multiply", "Multiply")],
+        name = "Blend Type",
+        description = "Type of blending decal with skin",
+        default = 'MIX')
+
     def draw(self, context):
         ob = context.object
         mat = ob.data.materials[ob.active_material_index]
@@ -633,6 +640,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
             row = self.layout.row()
             row.prop(item, "show", text="")
             row.label(text=item.name)
+        self.layout.separator()
+        self.layout.prop(self, "blendType")
 
 
     def invoke(self, context, event):
@@ -673,6 +682,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         mat = ob.data.materials[ob.active_material_index]
         tree = findTree(mat)
         empty = bpy.data.objects.new(fname, None)
+        empty.rotation_euler = (90*D, 0, 0)
         coll = getCollection(ob)
         coll.objects.link(empty)
 
@@ -684,7 +694,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
                     print("Channel %s not found" % item.name)
                     continue
                 nname = fname + "_" + cname
-                node = tree.addGroup(DecalGroup, nname, col=3, args=[empty, img], force=True)
+                node = tree.addGroup(DecalGroup, nname, col=3, args=[empty, img, self.blendType], force=True)
                 node.inputs["Influence"].default_value = 1.0
                 if fromSocket:
                     tree.links.new(fromSocket, node.inputs["Color"])
