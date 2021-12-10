@@ -616,7 +616,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
     bl_options = {'UNDO'}
 
     channels = {
-        "Diffuse Color" : ("DIFFUSE", "Color", "Diffuse"),
+        "Diffuse Color" : ("BSDF_DIFFUSE", "Color", "Diffuse"),
         "Glossy Color" : ("DAZ Glossy", "Color", "Glossy"),
         "Translucency Color" : ("DAZ Translucent", "Color", "Translucency"),
         "Subsurface Color" : ("DAZ SSS", "Color", "SSS"),
@@ -645,6 +645,20 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
 
 
     def run(self, context):
+        def getFromToSockets(tree, nodeType, slot):
+            from .cycles import findNodes
+            for link in tree.links.values():
+                node = link.to_node
+                if node:
+                    if (node.type == nodeType or
+                        (node.type == 'GROUP' and node.node_tree.name == nodeType)):
+                        if link.to_socket == node.inputs[slot]:
+                            return link.from_socket, link.to_socket
+            nodes = findNodes(tree, nodeType)
+            if nodes:
+                return None, nodes[0].inputs[slot]
+            return None, None
+
         from .cgroup import DecalGroup
         from .cycles import findTree
 
@@ -677,21 +691,6 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
                     tree.links.new(node.outputs["Combined"], toSocket)
                 else:
                     tree.links.new(node.outputs["Color"], toSocket)
-
-# ---------------------------------------------------------------------
-#   Utilities
-# ---------------------------------------------------------------------
-
-def getFromToSockets(tree, nodeType, slot):
-    from .cycles import findNodes
-    for link in tree.links.values():
-        if link.to_node and link.to_node.type == nodeType:
-            if link.to_socket == link.to_node.inputs[slot]:
-                return link.from_socket, link.to_socket
-    nodes = findNodes(tree, nodeType)
-    if nodes:
-        return None, nodes[0].inputs[slot]
-    return None, None
 
 # ---------------------------------------------------------------------
 #   Reset button
