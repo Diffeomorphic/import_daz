@@ -634,7 +634,7 @@ def loadImage(url):
         img = None
     else:
         img = bpy.data.images.load(filepath)
-        img.name = os.path.splitext(os.path.basename(filepath))[0]
+        img.name = bpy.path.clean_name(os.path.splitext(os.path.basename(filepath))[0])
         LS.images[url] = img
     return img
 
