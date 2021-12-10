@@ -584,7 +584,10 @@ class BoneInstance(Instance):
             vec /= vec.length
             vec0 /= vec0.length
             sprod = vec.dot(vec0)
-            if sprod < 0.99:
+            if sprod < -0.99:
+                bone.DazAngle = math.pi
+                bone.DazNormal = vec.cross(vec0)
+            elif sprod < 0.99:
                 bone.DazAngle = math.acos(sprod)
                 bone.DazNormal = vec.cross(vec0)
 
