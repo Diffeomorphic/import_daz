@@ -40,7 +40,7 @@ from .morphing import MorphSuffix
 class DazOptions(DazImageFile):
 
     skinColor : FloatVectorProperty(
-        name = "Skin",
+        name = 'SKIN',
         subtype = "COLOR",
         size = 4,
         min = 0.0,

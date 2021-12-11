@@ -31,51 +31,54 @@ from random import random
 from .utils import *
 from .error import *
 
-def getSkinMaterial(mat):
+def getMaterialType(mat, defaultType='CLOTHES'):
+    if mat.DazMaterialType != 'UNKNOWN':
+        return mat.DazMaterialType
+
     SkinMaterials = {
-        "eyelash" : "Black",
-        "eyelashes" : "Black",
-        "eyemoisture" : "Invis",
-        "lacrimal" : "Invis",
-        "lacrimals" : "Invis",
-        "cornea" : "Invis",
-        "tear" : "Invis",
-        "eyereflection" : "Invis",
+        "eyelash" : 'BLACK',
+        "eyelashes" : 'BLACK',
+        "eyemoisture" : 'INVIS',
+        "lacrimal" : 'INVIS',
+        "lacrimals" : 'INVIS',
+        "cornea" : 'INVIS',
+        "tear" : 'INVIS',
+        "eyereflection" : 'INVIS',
 
-        "fingernail" : "Red",
-        "fingernails" : "Red",
-        "toenail" : "Red",
-        "toenails" : "Red",
-        "lip" : "Red",
-        "lips" : "Red",
-        "mouth" : "Mouth",
-        "tongue" : "Mouth",
-        "innermouth" : "Mouth",
-        "gums" : "Mouth",
-        "teeth" : "Teeth",
-        "pupil" : "Black",
-        "pupils" : "Black",
-        "sclera" : "White",
-        "iris" : "Blue",
-        "irises" : "Blue",
+        "fingernail" : 'RED',
+        "fingernails" : 'RED',
+        "toenail" : 'RED',
+        "toenails" : 'RED',
+        "lip" : 'RED',
+        "lips" : 'RED',
+        "mouth" : 'MOUTH',
+        "tongue" : 'MOUTH',
+        "innermouth" : 'MOUTH',
+        "gums" : 'MOUTH',
+        "teeth" : 'WHITE',
+        "pupil" : 'BLACK',
+        "pupils" : 'BLACK',
+        "sclera" : 'WHITE',
+        "iris" : 'BLUE',
+        "irises" : 'BLUE',
 
-        "skinface" : "Skin",
-        "face" : "Skin",
-        "head" : "Skin",
-        "ears" : "Skin",
-        "skinleg" : "Skin",
-        "legs" : "Skin",
-        "skintorso" : "Skin",
-        "torso" : "Skin",
-        "body" : "Skin",
-        "skinarm" : "Skin",
-        "arms" : "Skin",
-        "feet" : "Skin",
-        "skinhip" : "Skin",
-        "hips" : "Skin",
-        "shoulders" : "Skin",
-        "skinhand" : "Skin",
-        "hands" : "Skin",
+        "skinface" : 'SKIN',
+        "face" : 'SKIN',
+        "head" : 'SKIN',
+        "ears" : 'SKIN',
+        "skinleg" : 'SKIN',
+        "legs" : 'SKIN',
+        "skintorso" : 'SKIN',
+        "torso" : 'SKIN',
+        "body" : 'SKIN',
+        "skinarm" : 'SKIN',
+        "arms" : 'SKIN',
+        "feet" : 'SKIN',
+        "skinhip" : 'SKIN',
+        "hips" : 'SKIN',
+        "shoulders" : 'SKIN',
+        "skinhand" : 'SKIN',
+        "hands" : 'SKIN',
     }
 
     mname = mat.name.lower().split("-")[0].split(".")[0].split(" ")[0].split("&")[0]
@@ -84,43 +87,44 @@ def getSkinMaterial(mat):
     mname2 = mname.rsplit("_", 2)[-1]
     if mname2 in SkinMaterials.keys():
         return SkinMaterials[mname2]
-    return None
+    return defaultType
 
 
 def setDiffuse(mat, color):
     mat.diffuse_color[0:3] = color[0:3]
 
 
-def guessMaterialColor(mat, choose, enforce, default):
-    from random import random
-    if (mat is None or
-        not hasDiffuseTexture(mat, enforce)):
+def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
+    if mat is None:
+        return
+    mtype = mat.DazMaterialType = getMaterialType(mat, defaultType)
+    if not hasDiffuseTexture(mat, enforce):
         return
 
     elif choose == 'RANDOM':
+        from random import random
         color = (random(), random(), random(), 1)
         setDiffuse(mat, color)
 
     elif choose == 'GUESS':
-        color = getSkinMaterial(mat)
         if mat.diffuse_color[3] < 1.0:
             pass
-        elif color is not None:
-            if color == "Skin":
+        elif mtype != 'UNKNOWN':
+            if mtype == 'SKIN':
                 setDiffuse(mat, default)
-            elif color == "Red":
+            elif mtype == 'RED':
                 setDiffuse(mat, (1,0,0,1))
-            elif color == "Mouth":
+            elif mtype == 'MOUTH':
                 setDiffuse(mat, (0.8,0,0,1))
-            elif color == "Blue":
+            elif mtype == 'BLUE':
                 setDiffuse(mat, (0,0,1,1))
-            elif color == "Teeth":
+            elif mtype == 'WHITE':
                 setDiffuse(mat, (1,1,1,1))
-            elif color == "White":
+            elif mtype == 'WHITE':
                 setDiffuse(mat, (1,1,1,1))
-            elif color == "Black":
+            elif mtype == 'BLACK':
                 setDiffuse(mat, (0,0,0,1))
-            elif color == "Invis":
+            elif mtype == 'INVIS':
                 setDiffuse(mat, (0.5,0.5,0.5,0))
         else:
             setDiffuse(mat, default)
@@ -208,6 +212,19 @@ classes = [
 ]
 
 def register():
+    bpy.types.Material.DazMaterialType = EnumProperty(
+        items = [('UNKNOWN', "Unknown", "Unknown"),
+                 ('SKIN', "Skin", "Skin"),
+                 ('RED', "Red", "Red"),
+                 ('MOUTH', "Mouth", "Mouth"),
+                 ('BLUE', "Blue", "Blue"),
+                 ('WHITE', "White", "White"),
+                 ('BLACK', "Black", "Black"),
+                 ('INVIS', "Invis", "Invis"),
+                 ('CLOTHES', "Clothes", "Clothes and stuff")],
+        name = "Material Type",
+        default = 'UNKNOWN'
+    )
     for cls in classes:
         bpy.utils.register_class(cls)
 

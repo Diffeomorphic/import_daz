@@ -84,10 +84,10 @@ class MaterialSelector:
 
 
     def setupMaterials(self, ob):
-        from .guess import getSkinMaterial
+        from .guess import getMaterialType
         self.skinColor = WHITE
         for mat in ob.data.materials:
-            if getSkinMaterial(mat) == "Skin":
+            if getMaterialType(mat) == 'SKIN':
                 self.skinColor = mat.diffuse_color[0:3]
                 break
         self.umats.clear()
@@ -117,7 +117,10 @@ class MaterialSelector:
     def selectSkin(self, context):
         ob = context.object
         for mat,item in zip(ob.data.materials, self.umats.values()):
-            item.bool = (mat.diffuse_color[0:3] == self.skinColor)
+            if mat.DazMaterialType != 'UNKNOWN':
+                item.bool = (mat.DazMaterialType == 'SKIN')
+            else:
+                item.bool = (mat.diffuse_color[0:3] == self.skinColor)
 
     def selectSkinRed(self, context):
         ob = context.object
@@ -125,10 +128,12 @@ class MaterialSelector:
             item.bool = self.isSkinRedMaterial(mat)
 
     def isSkinRedMaterial(self, mat):
-        if mat.diffuse_color[0:3] == self.skinColor:
+        if mat.DazMaterialType != 'UNKNOWN':
+            return (mat.DazMaterialType in ['SKIN', 'RED'])
+        elif mat.diffuse_color[0:3] == self.skinColor:
             return True
-        from .guess import getSkinMaterial
-        return (getSkinMaterial(mat) == "Red")
+        from .guess import getMaterialType
+        return (getMaterialType(mat) == 'RED')
 
 #-------------------------------------------------------------
 #   Select all and none

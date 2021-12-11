@@ -62,6 +62,8 @@ class CyclesMaterial(Material):
         from .geometry import GeoNode
         from .finger import isCharacter
         color = LS.clothesColor
+        mat = self.rna
+        mtype = 'CLOTHES'
         if isinstance(self.geometry, GeoNode):
             ob = self.geometry.rna
             if ob is None:
@@ -70,7 +72,8 @@ class CyclesMaterial(Material):
                 color = LS.skinColor
             elif ob.data and ob.data.DazGraftGroup:
                 color = LS.skinColor
-        guessMaterialColor(self.rna, GS.viewportColors, False, color)
+                mtype = 'SKIN'
+        guessMaterialColor(mat, GS.viewportColors, False, color, mtype)
 
 
     def build(self, context):

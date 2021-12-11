@@ -1548,14 +1548,14 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
 
     def getDefaultMaterial(self, ob):
         from random import random
-        from .guess import getSkinMaterial
+        from .guess import getMaterialType
         if self.defaultMaterial is None:
             mat = bpy.data.materials.new("%s_Mannequin" % ob.name)
             self.defaultMaterial = mat
             mat.diffuse_color[0:3] = (random(), random(), random())
             for omat in ob.data.materials:
                 mat.diffuse_color = omat.diffuse_color
-                if getSkinMaterial(omat) == 'Skin':
+                if getMaterialType(omat) == 'SKIN':
                     break
         return self.defaultMaterial
 
