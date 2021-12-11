@@ -719,6 +719,9 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
             empty = bpy.data.objects.new(fname, None)
             empty.parent = ob
             empty.rotation_euler = (90*D, 0, 0)
+            empty.scale = (0.5, 0.5, 0.2)
+            empty.empty_display_type = 'CUBE'
+            empty.empty_display_size = 0.5
             coll = getCollection(ob)
             coll.objects.link(empty)
         for mat in ob.data.materials:

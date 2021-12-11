@@ -1160,7 +1160,7 @@ class DecalGroup(CyclesGroup):
 
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
-        mapping1.inputs["Location"].default_value = (0, 0, 0)
+        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
         self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
 
         grad = self.addNode("ShaderNodeTexGradient", 2)
@@ -1212,6 +1212,7 @@ class DecalGroup(CyclesGroup):
         self.links.new(tex.outputs["Color"], self.outputs.inputs["Color"])
         self.links.new(mult.outputs[0], self.outputs.inputs["Alpha"])
         self.links.new(mix2.outputs[0], self.outputs.inputs["Combined"])
+        self.links.new(gate.outputs[0], self.outputs.inputs["Depth Mask"])
 
 # ---------------------------------------------------------------------
 #   Layered Group
