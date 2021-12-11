@@ -1139,7 +1139,7 @@ class DecalGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Color", "Influence"]
-        self.outsockets += ["Color", "Alpha", "Combined"]
+        self.outsockets += ["Color", "Alpha", "Combined", "Depth Mask"]
 
 
     def create(self, node, name, parent):
@@ -1149,6 +1149,7 @@ class DecalGroup(CyclesGroup):
         self.group.outputs.new("NodeSocketColor", "Color")
         self.group.outputs.new("NodeSocketFloat", "Alpha")
         self.group.outputs.new("NodeSocketColor", "Combined")
+        self.group.outputs.new("NodeSocketFloat", "Depth Mask")
 
 
     def addNodes(self, args):
@@ -1157,31 +1158,51 @@ class DecalGroup(CyclesGroup):
         texco = self.addNode("ShaderNodeTexCoord", 0)
         texco.object = empty
 
-        mapping = self.addNode("ShaderNodeMapping", 1)
-        mapping.vector_type = 'POINT'
-        mapping.inputs["Location"].default_value = (0.5, 0.5, 0)
-        self.links.new(texco.outputs["Object"], mapping.inputs["Vector"])
+        mapping1 = self.addNode("ShaderNodeMapping", 1)
+        mapping1.vector_type = 'POINT'
+        mapping1.inputs["Location"].default_value = (0, 0, 0)
+        self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
+
+        grad = self.addNode("ShaderNodeTexGradient", 2)
+        grad.gradient_type = 'SPHERICAL'
+        self.links.new(mapping1.outputs["Vector"], grad.inputs["Vector"])
+
+        gate = self.addNode("ShaderNodeMath", 3)
+        gate.operation = 'GREATER_THAN'
+        self.links.new(grad.outputs["Color"], gate.inputs[0])
+        gate.inputs[1].default_value = 0.5
+
+        mapping2 = self.addNode("ShaderNodeMapping", 1)
+        mapping2.vector_type = 'POINT'
+        mapping2.inputs["Location"].default_value = (0.5, 0.5, 0)
+        self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img
         tex.interpolation = GS.imageInterpolation
         tex.extension = 'CLIP'
-        self.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
+        self.links.new(mapping2.outputs["Vector"], tex.inputs["Vector"])
 
         mult = self.addNode("ShaderNodeMath", 3)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
         self.links.new(tex.outputs["Alpha"], mult.inputs[1])
 
-        mix = self.addNode("ShaderNodeMixRGB", 4)
-        mix.blend_type = blendType
-        self.links.new(mult.outputs[0], mix.inputs[0])
-        self.links.new(self.inputs.outputs["Color"], mix.inputs[1])
-        self.links.new(tex.outputs["Color"], mix.inputs[2])
+        mix2 = self.addNode("ShaderNodeMixRGB", 4)
+        mix2.blend_type = 'MIX'
+        self.links.new(gate.outputs[0], mix2.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], mix2.inputs[1])
+
+        mix1 = self.addNode("ShaderNodeMixRGB", 4)
+        mix1.blend_type = blendType
+        self.links.new(mult.outputs[0], mix1.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], mix1.inputs[1])
+        self.links.new(tex.outputs["Color"], mix1.inputs[2])
+        self.links.new(mix1.outputs["Color"], mix2.inputs[2])
 
         self.links.new(tex.outputs["Color"], self.outputs.inputs["Color"])
         self.links.new(mult.outputs[0], self.outputs.inputs["Alpha"])
-        self.links.new(mix.outputs[0], self.outputs.inputs["Combined"])
+        self.links.new(mix2.outputs[0], self.outputs.inputs["Combined"])
 
 # ---------------------------------------------------------------------
 #   Layered Group
