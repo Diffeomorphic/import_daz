@@ -33,6 +33,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .material import WHITE, isWhite
+from .cycles import XSIZE, YSIZE
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
 
@@ -574,7 +575,6 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
 
 
     def multiplyTex(self, node, fromsocket, tosocket, tree, item):
-        from .cycles import XSIZE, YSIZE
         x,y = node.location
         if item.ncomps == 4 and not isWhite(item.color):
             mix = tree.nodes.new(type = "ShaderNodeMixRGB")
@@ -616,13 +616,13 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
     bl_options = {'UNDO'}
 
     channels = {
-        "Diffuse Color" : ("BSDF_DIFFUSE", "Color", "Diffuse"),
-        "Glossy Color" : ("DAZ Glossy", "Color", "Glossy"),
-        "Translucency Color" : ("DAZ Translucent", "Color", "Translucency"),
-        "Subsurface Color" : ("DAZ SSS", "Color", "SSS"),
-        "Principled Base Color" : ("BSDF_PRINCIPLED", "Base Color", "Base"),
-        "Principled Subsurface Color" : ("BSDF_PRINCIPLED", "Subsurface Color", "SSS"),
-        "Bump" : ("BUMP", "Height", "Bump"),
+        "Diffuse Color" : ("BSDF_DIFFUSE", "Color", "Diffuse", True),
+        "Glossy Color" : ("DAZ Glossy", "Color", "Glossy", False),
+        "Translucency Color" : ("DAZ Translucent", "Color", "Translucency", False),
+        "Subsurface Color" : ("DAZ SSS", "Color", "SSS", False),
+        "Principled Base Color" : ("BSDF_PRINCIPLED", "Base Color", "Base", True),
+        "Principled Subsurface Color" : ("BSDF_PRINCIPLED", "Subsurface Color", "SSS", False),
+        "Bump" : ("BUMP", "Height", "Bump", False),
     }
 
     blendType : EnumProperty(
@@ -650,10 +650,10 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         self.setupMaterials(ob)
         self.shows.clear()
         if len(self.shows) == 0:
-            for key in self.channels.keys():
+            for key,data in self.channels.items():
                 item = self.shows.add()
                 item.name = key
-                item.show = False
+                item.show = data[3]
         return SingleFile.invoke(self, context, event)
 
 
@@ -669,6 +669,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         img.colorspace_settings.name = "sRGB"
 
         ob = context.object
+        ob.DazVisibilityDrivers = True
         fname = os.path.splitext(os.path.basename(self.filepath))[0]
         empty = bpy.data.objects.new(fname, None)
         empty.rotation_euler = (90*D, 0, 0)
@@ -699,13 +700,14 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         tree = findTree(mat)
         for item in self.shows:
             if item.show:
-                nodeType,slot,cname = self.channels[item.name]
+                nodeType,slot,cname,_ = self.channels[item.name]
                 fromSocket, toSocket = getFromToSockets(tree, nodeType, slot)
                 if toSocket is None:
                     print("Channel %s not found" % item.name)
                     continue
-                nname = fname + "_" + cname
-                node = tree.addGroup(DecalGroup, nname, col=3, args=[empty, img, self.blendType], force=True)
+                nname = "%s_%s" % (fname, cname)
+                node = tree.addGroup(DecalGroup, nname, args=[empty, img, self.blendType], force=False)
+                node.location = (XSIZE, 3*YSIZE)
                 node.inputs["Influence"].default_value = 1.0
                 if fromSocket:
                     tree.links.new(fromSocket, node.inputs["Color"])

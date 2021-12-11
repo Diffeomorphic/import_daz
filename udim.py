@@ -77,7 +77,7 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
         return DazPropsOperator.invoke(self, context, event)
 
 
-    def isDefaultActive(self, mat):
+    def isDefaultActive(self, mat, ob):
         return self.isSkinRedMaterial(mat)
 
 
@@ -271,7 +271,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
         return DazPropsOperator.invoke(self, context, event)
 
 
-    def isDefaultActive(self, mat):
+    def isDefaultActive(self, mat, ob):
         return False
 
 

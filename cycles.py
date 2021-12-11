@@ -292,6 +292,7 @@ class CyclesTree:
         if col is None:
             col = self.column
         node = self.addNode("ShaderNodeGroup", col, size=size)
+        node.name = node.label = name
         group = classdef()
         if name in bpy.data.node_groups.keys() and not force:
             tree = bpy.data.node_groups[name]
