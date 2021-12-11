@@ -733,6 +733,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
             empty.empty_display_size = 0.5
             coll = getCollection(ob)
             coll.objects.link(empty)
+        self.force = True
         for mat in ob.data.materials:
             if mat and self.useMaterial(mat):
                 self.loadDecal(mat, img, empty, mask, fname)
@@ -765,9 +766,11 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
                     print("Channel %s not found" % item.name)
                     continue
                 nname = "%s_%s" % (fname, cname)
-                node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=False)
+                node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=self.force)
+                self.force = False
                 node.location = (loc[0]-XSIZE, 3*YSIZE)
                 node.inputs["Influence"].default_value = 1.0
+                node.inputs["Mask Scale"].default_value = (0.1, 0.1, 1.0)
                 if fromSocket:
                     tree.links.new(fromSocket, node.inputs["Color"])
                     tree.links.new(node.outputs["Combined"], toSocket)

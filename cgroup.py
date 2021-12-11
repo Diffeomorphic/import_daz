@@ -1138,7 +1138,7 @@ class DecalGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Color", "Influence"]
+        self.insockets += ["Color", "Influence", "Mask Scale"]
         self.outsockets += ["Color", "Alpha", "Combined", "Depth Mask"]
 
 
@@ -1146,6 +1146,7 @@ class DecalGroup(CyclesGroup):
         CyclesGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Influence")
+        self.group.inputs.new("NodeSocketVector", "Mask Scale")
         self.group.outputs.new("NodeSocketColor", "Color")
         self.group.outputs.new("NodeSocketFloat", "Alpha")
         self.group.outputs.new("NodeSocketColor", "Combined")
@@ -1160,7 +1161,7 @@ class DecalGroup(CyclesGroup):
 
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
-        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
+        self.links.new(self.inputs.outputs["Mask Scale"], mapping1.inputs["Scale"])
         self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
 
         grad = self.addNode("ShaderNodeTexGradient", 2)

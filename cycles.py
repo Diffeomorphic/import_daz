@@ -304,6 +304,7 @@ class CyclesTree:
                 return node
         group.create(node, name, self)
         group.addNodes(args)
+        node.node_tree.name = name
         return node
 
 
