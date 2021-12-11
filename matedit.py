@@ -609,6 +609,15 @@ class DAZ_OT_UpdateMaterials(bpy.types.Operator):
 #   Make Decal
 # ---------------------------------------------------------------------
 
+def getEmptyName(scn, context):
+    ob = context.object
+    enums = [('NONE', "None", "None")]
+    for child in ob.children:
+        if child.type == 'EMPTY':
+            enums.append((child.name, child.name, child.name))
+    return enums
+
+
 class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, LaunchEditor, IsMesh):
     bl_idname = "daz.make_decal"
     bl_label = "Make Decal"
@@ -625,6 +634,16 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         "Bump" : ("BUMP", "Height", "Bump", False),
     }
 
+    reuseEmpty : BoolProperty(
+        name = "Reuse Empty",
+        description = "Reuse an existing empty instead of creating a new one",
+        default = False)
+
+    emptyName : EnumProperty(
+        items = getEmptyName,
+        name = "Empty",
+        description = "Empty to reuse")
+
     blendType : EnumProperty(
         items = [('MIX', "Mix", "Mix"),
                  ('MULTIPLY', "Multiply", "Multiply")],
@@ -640,6 +659,9 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
             row.prop(item, "show", text="")
             row.label(text=item.name)
         self.layout.separator()
+        self.layout.prop(self, "reuseEmpty")
+        if self.reuseEmpty:
+            self.layout.prop(self, "emptyName")
         self.layout.prop(self, "blendType")
 
 
@@ -671,10 +693,14 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         ob = context.object
         ob.DazVisibilityDrivers = True
         fname = os.path.splitext(os.path.basename(self.filepath))[0]
-        empty = bpy.data.objects.new(fname, None)
-        empty.rotation_euler = (90*D, 0, 0)
-        coll = getCollection(ob)
-        coll.objects.link(empty)
+        if self.reuseEmpty and self.emptyName != 'NONE':
+            empty = bpy.data.objects[self.emptyName]
+        else:
+            empty = bpy.data.objects.new(fname, None)
+            empty.parent = ob
+            empty.rotation_euler = (90*D, 0, 0)
+            coll = getCollection(ob)
+            coll.objects.link(empty)
         for mat in ob.data.materials:
             if mat and self.useMaterial(mat):
                 self.loadDecal(mat, img, empty, fname)
