@@ -705,7 +705,11 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
 
         mask = None
         if self.useMask:
-            mask = bpy.data.images.load(self.decalMask)
+            maskname = os.path.basename(self.decalMask)
+            if maskname in bpy.data.images.keys():
+                mask = bpy.data.images[maskname]
+            else:
+                mask = bpy.data.images.load(self.decalMask)
             if mask is None:
                 raise DazError("Unable to load mask file %s" % self.decalMask)
             mask.colorspace_settings.name = "Non-Color"
