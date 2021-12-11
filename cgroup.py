@@ -1153,7 +1153,7 @@ class DecalGroup(CyclesGroup):
 
 
     def addNodes(self, args):
-        empty,img,blendType = args
+        empty,img,mask,blendType = args
 
         texco = self.addNode("ShaderNodeTexCoord", 0)
         texco.object = empty
@@ -1182,11 +1182,20 @@ class DecalGroup(CyclesGroup):
         tex.interpolation = GS.imageInterpolation
         tex.extension = 'CLIP'
         self.links.new(mapping2.outputs["Vector"], tex.inputs["Vector"])
+        alpha = tex.outputs["Alpha"]
+
+        if mask:
+            masktex = self.addNode("ShaderNodeTexImage", 2)
+            masktex.image = mask
+            masktex.interpolation = GS.imageInterpolation
+            masktex.extension = 'CLIP'
+            self.links.new(mapping2.outputs["Vector"], masktex.inputs["Vector"])
+            alpha = masktex.outputs["Color"]
 
         mult = self.addNode("ShaderNodeMath", 3)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
-        self.links.new(tex.outputs["Alpha"], mult.inputs[1])
+        self.links.new(alpha, mult.inputs[1])
 
         mix2 = self.addNode("ShaderNodeMixRGB", 4)
         mix2.blend_type = 'MIX'

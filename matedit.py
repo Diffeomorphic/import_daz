@@ -644,6 +644,16 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         name = "Empty",
         description = "Empty to reuse")
 
+    useMask : BoolProperty(
+        name = "Use Mask",
+        description = "Use a separate texture to mask the decal",
+        default = False)
+
+    decalMask : StringProperty(
+        name = "Decal Mask",
+        description = "Path to decal mask texture",
+        default = "")
+
     blendType : EnumProperty(
         items = [('MIX', "Mix", "Mix"),
                  ('MULTIPLY', "Multiply", "Multiply")],
@@ -662,6 +672,9 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         self.layout.prop(self, "reuseEmpty")
         if self.reuseEmpty:
             self.layout.prop(self, "emptyName")
+        self.layout.prop(self, "useMask")
+        if self.useMask:
+            self.layout.prop(self, "decalMask")
         self.layout.prop(self, "blendType")
 
 
@@ -676,6 +689,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
                 item = self.shows.add()
                 item.name = key
                 item.show = data[3]
+        self.decalMask = context.scene.DazDecalMask
         return SingleFile.invoke(self, context, event)
 
 
@@ -687,8 +701,14 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         img = bpy.data.images.load(self.filepath)
         if img is None:
             raise DazError("Unable to load file %s" % self.filepath)
-        img.colorspace_settings.name = "Non-Color"
         img.colorspace_settings.name = "sRGB"
+
+        mask = None
+        if self.useMask:
+            mask = bpy.data.images.load(self.decalMask)
+            if mask is None:
+                raise DazError("Unable to load mask file %s" % self.decalMask)
+            mask.colorspace_settings.name = "Non-Color"
 
         ob = context.object
         ob.DazVisibilityDrivers = True
@@ -703,10 +723,10 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
             coll.objects.link(empty)
         for mat in ob.data.materials:
             if mat and self.useMaterial(mat):
-                self.loadDecal(mat, img, empty, fname)
+                self.loadDecal(mat, img, empty, mask, fname)
 
 
-    def loadDecal(self, mat, img, empty, fname):
+    def loadDecal(self, mat, img, empty, mask, fname):
         def getFromToSockets(tree, nodeType, slot):
             from .cycles import findNodes
             for link in tree.links.values():
@@ -715,11 +735,12 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
                     if (node.type == nodeType or
                         (node.type == 'GROUP' and node.node_tree.name == nodeType)):
                         if link.to_socket == node.inputs[slot]:
-                            return link.from_socket, link.to_socket
+                            return link.from_socket, link.to_socket, node.location
             nodes = findNodes(tree, nodeType)
             if nodes:
-                return None, nodes[0].inputs[slot]
-            return None, None
+                node = nodes[0]
+                return None, node.inputs[slot], node.location
+            return None, None, None
 
         from .cgroup import DecalGroup
         from .cycles import findTree
@@ -727,13 +748,13 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         for item in self.shows:
             if item.show:
                 nodeType,slot,cname,_ = self.channels[item.name]
-                fromSocket, toSocket = getFromToSockets(tree, nodeType, slot)
+                fromSocket, toSocket, loc = getFromToSockets(tree, nodeType, slot)
                 if toSocket is None:
                     print("Channel %s not found" % item.name)
                     continue
                 nname = "%s_%s" % (fname, cname)
-                node = tree.addGroup(DecalGroup, nname, args=[empty, img, self.blendType], force=False)
-                node.location = (XSIZE, 3*YSIZE)
+                node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=False)
+                node.location = (loc[0]-XSIZE, 3*YSIZE)
                 node.inputs["Influence"].default_value = 1.0
                 if fromSocket:
                     tree.links.new(fromSocket, node.inputs["Color"])
@@ -1054,6 +1075,12 @@ def register():
 
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    bpy.types.Scene.DazDecalMask = StringProperty(
+        name = "Decal Mask",
+        description = "Path to decal mask texture",
+        subtype = 'FILE_PATH',
+        default = "")
 
     bpy.types.Material.DazSlots = CollectionProperty(type = EditSlotGroup)
     bpy.types.Object.DazSlots = CollectionProperty(type = EditSlotGroup)
