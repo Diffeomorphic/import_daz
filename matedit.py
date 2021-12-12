@@ -117,7 +117,7 @@ class MaterialSelector:
     def selectSkin(self, context):
         ob = context.object
         for mat,item in zip(ob.data.materials, self.umats.values()):
-            if mat.DazMaterialType != 'UNKNOWN':
+            if mat.DazMaterialType:
                 item.bool = (mat.DazMaterialType == 'SKIN')
             else:
                 item.bool = (mat.diffuse_color[0:3] == self.skinColor)
@@ -128,7 +128,7 @@ class MaterialSelector:
             item.bool = self.isSkinRedMaterial(mat)
 
     def isSkinRedMaterial(self, mat):
-        if mat.DazMaterialType != 'UNKNOWN':
+        if mat.DazMaterialType:
             return (mat.DazMaterialType in ['SKIN', 'RED'])
         elif mat.diffuse_color[0:3] == self.skinColor:
             return True

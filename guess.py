@@ -32,7 +32,7 @@ from .utils import *
 from .error import *
 
 def getMaterialType(mat, defaultType='CLOTHES'):
-    if mat.DazMaterialType != 'UNKNOWN':
+    if mat.DazMaterialType:
         return mat.DazMaterialType
 
     SkinMaterials = {
@@ -109,23 +109,20 @@ def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
     elif choose == 'GUESS':
         if mat.diffuse_color[3] < 1.0:
             pass
-        elif mtype != 'UNKNOWN':
-            if mtype == 'SKIN':
-                setDiffuse(mat, default)
-            elif mtype == 'RED':
-                setDiffuse(mat, (1,0,0,1))
-            elif mtype == 'MOUTH':
-                setDiffuse(mat, (0.8,0,0,1))
-            elif mtype == 'BLUE':
-                setDiffuse(mat, (0,0,1,1))
-            elif mtype == 'WHITE':
-                setDiffuse(mat, (1,1,1,1))
-            elif mtype == 'WHITE':
-                setDiffuse(mat, (1,1,1,1))
-            elif mtype == 'BLACK':
-                setDiffuse(mat, (0,0,0,1))
-            elif mtype == 'INVIS':
-                setDiffuse(mat, (0.5,0.5,0.5,0))
+        elif mtype == 'SKIN':
+            setDiffuse(mat, default)
+        elif mtype == 'RED':
+            setDiffuse(mat, (1,0,0,1))
+        elif mtype == 'MOUTH':
+            setDiffuse(mat, (0.8,0,0,1))
+        elif mtype == 'BLUE':
+            setDiffuse(mat, (0,0,1,1))
+        elif mtype == 'WHITE':
+            setDiffuse(mat, (1,1,1,1))
+        elif mtype == 'BLACK':
+            setDiffuse(mat, (0,0,0,1))
+        elif mtype == 'INVIS':
+            setDiffuse(mat, (0.5,0.5,0.5,0))
         else:
             setDiffuse(mat, default)
 
@@ -212,18 +209,9 @@ classes = [
 ]
 
 def register():
-    bpy.types.Material.DazMaterialType = EnumProperty(
-        items = [('UNKNOWN', "Unknown", "Unknown"),
-                 ('SKIN', "Skin", "Skin"),
-                 ('RED', "Red", "Red"),
-                 ('MOUTH', "Mouth", "Mouth"),
-                 ('BLUE', "Blue", "Blue"),
-                 ('WHITE', "White", "White"),
-                 ('BLACK', "Black", "Black"),
-                 ('INVIS', "Invis", "Invis"),
-                 ('CLOTHES', "Clothes", "Clothes and stuff")],
+    bpy.types.Material.DazMaterialType = StringProperty(
         name = "Material Type",
-        default = 'UNKNOWN'
+        default = ""
     )
     for cls in classes:
         bpy.utils.register_class(cls)
