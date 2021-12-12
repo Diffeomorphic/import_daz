@@ -230,7 +230,6 @@ class SetAllVisibility:
 
     def run(self, context):
         from .morphing import autoKeyProp, getRigFromObject
-        from .driver import updateAll
         rig = getRigFromObject(context.object)
         scn = context.scene
         if rig is None:
