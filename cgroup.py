@@ -1176,6 +1176,7 @@ class DecalGroup(CyclesGroup):
         mapping2 = self.addNode("ShaderNodeMapping", 1)
         mapping2.vector_type = 'POINT'
         mapping2.inputs["Location"].default_value = (0.5, 0.5, 0)
+        mapping2.inputs["Rotation"].default_value = (90*D, 0, 0)
         self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
 
         tex = self.addNode("ShaderNodeTexImage", 2)
