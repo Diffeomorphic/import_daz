@@ -623,20 +623,33 @@ def getEmptyName(scn, context):
     return enums
 
 
-class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, LaunchEditor, IsMesh):
+class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsMesh):
     bl_idname = "daz.make_decal"
     bl_label = "Make Decal"
     bl_description = "Add a decal to the active material"
     bl_options = {'UNDO'}
 
-    channels = {
-        "Diffuse Color" : ("BSDF_DIFFUSE", "Color", "Diffuse", True),
-        "Glossy Color" : ("DAZ Glossy", "Color", "Glossy", False),
-        "Translucency Color" : ("DAZ Translucent", "Color", "Translucency", False),
-        "Subsurface Color" : ("DAZ SSS", "Color", "SSS", False),
-        "Principled Base Color" : ("BSDF_PRINCIPLED", "Base Color", "Base", True),
-        "Principled Subsurface Color" : ("BSDF_PRINCIPLED", "Subsurface Color", "SSS", False),
-        "Bump" : ("BUMP", "Height", "Bump", False),
+    channel : EnumProperty(
+        items = [("Diffuse", "Diffuse Color", "Diffuse Color"),
+                 ("Glossy", "Glossy Color", "Glossy Color"),
+                 ("Translucency", "Translucency Color", "Translucency Color"),
+                 ("SSS", "Subsurface Color", "Subsurface Color"),
+                 ("PBase", "Principled Base Color", "Principled Base Color"),
+                 ("PSSS", "Principled Subsurface Color", "Principled Subsurface Color"),
+                 ("Bump", "Bump", "Bump"),
+                ],
+        name = "Channel",
+        description = "Add decal to this channel",
+        default = "Diffuse")
+
+    slots = {
+        "Diffuse" : ("BSDF_DIFFUSE", "Color"),
+        "Glossy" : ("DAZ Glossy", "Color"),
+        "Translucency" : ("DAZ Translucent", "Color"),
+        "SSS" : ("DAZ SSS", "Color"),
+        "PBase" : ("BSDF_PRINCIPLED", "Base Color"),
+        "PSSS" : ("BSDF_PRINCIPLED", "Subsurface Color"),
+        "Bump" : ("BUMP", "Height"),
     }
 
     reuseEmpty : BoolProperty(
@@ -668,12 +681,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
 
     def draw(self, context):
         MaterialSelector.draw(self, context)
-        self.layout.label(text = "Channels")
-        for item in self.shows:
-            row = self.layout.row()
-            row.prop(item, "show", text="")
-            row.label(text=item.name)
         self.layout.separator()
+        self.layout.prop(self, "channel")
         self.layout.prop(self, "reuseEmpty")
         if self.reuseEmpty:
             self.layout.prop(self, "emptyName")
@@ -686,14 +695,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
     def invoke(self, context, event):
         global theMaterialEditor
         theMaterialEditor = self
-        ob = context.object
-        self.setupMaterials(ob)
-        self.shows.clear()
-        if len(self.shows) == 0:
-            for key,data in self.channels.items():
-                item = self.shows.add()
-                item.name = key
-                item.show = data[3]
+        self.setupMaterials(context.object)
         self.decalMask = context.scene.DazDecalMask
         return SingleFile.invoke(self, context, event)
 
@@ -758,24 +760,22 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, Lau
         from .cgroup import DecalGroup
         from .cycles import findTree
         tree = findTree(mat)
-        for item in self.shows:
-            if item.show:
-                nodeType,slot,cname,_ = self.channels[item.name]
-                fromSocket, toSocket, loc = getFromToSockets(tree, nodeType, slot)
-                if toSocket is None:
-                    print("Channel %s not found" % item.name)
-                    continue
-                nname = "%s_%s" % (fname, cname)
-                node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=self.force)
-                self.force = False
-                node.location = (loc[0]-XSIZE, 3*YSIZE)
-                node.inputs["Influence"].default_value = 1.0
-                node.inputs["Mask Scale"].default_value = (0.1, 0.1, 1.0)
-                if fromSocket:
-                    tree.links.new(fromSocket, node.inputs["Color"])
-                    tree.links.new(node.outputs["Combined"], toSocket)
-                else:
-                    tree.links.new(node.outputs["Color"], toSocket)
+        nodeType,slot = self.slots[self.channel]
+        fromSocket, toSocket, loc = getFromToSockets(tree, nodeType, slot)
+        if toSocket is None:
+            print("Channel %s not found" % item.name)
+            return
+        nname = "%s_%s" % (fname, self.channel)
+        node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=self.force)
+        self.force = False
+        node.location = (loc[0]-XSIZE, 3*YSIZE+100)
+        node.inputs["Influence"].default_value = 1.0
+        node.inputs["Mask Scale"].default_value = (0.1, 0.1, 1.0)
+        if fromSocket:
+            tree.links.new(fromSocket, node.inputs["Color"])
+            tree.links.new(node.outputs["Combined"], toSocket)
+        else:
+            tree.links.new(node.outputs["Color"], toSocket)
 
 # ---------------------------------------------------------------------
 #   Reset button
