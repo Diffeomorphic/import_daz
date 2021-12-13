@@ -729,9 +729,9 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
         else:
             empty = bpy.data.objects.new(fname, None)
             empty.parent = ob
-            empty.rotation_euler = (180*D, 0, 0)
-            empty.scale = (0.5, 0.2, 0.5)
-            empty.empty_display_type = 'CONE'
+            empty.rotation_euler = (90*D, 0, 0)
+            empty.scale = (0.5, 0.5, 0.2)
+            empty.empty_display_type = 'CUBE'
             empty.empty_display_size = 0.5
             coll = getCollection(ob)
             coll.objects.link(empty)
@@ -768,9 +768,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
         nname = "%s_%s" % (fname, self.channel)
         node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=self.force)
         self.force = False
-        node.location = (loc[0]-XSIZE, 3*YSIZE+100)
+        node.location = (loc[0]-XSIZE, 3*YSIZE)
         node.inputs["Influence"].default_value = 1.0
-        node.inputs["Mask Scale"].default_value = (0.1, 1.0, 0.1)
         if fromSocket:
             tree.links.new(fromSocket, node.inputs["Color"])
             tree.links.new(node.outputs["Combined"], toSocket)
@@ -848,7 +847,8 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
                     for node in mat.node_tree.nodes:
                         if (node.type == 'GROUP' and
                             "Influence" in node.inputs.keys()):
-                            key = node.label
+                            #key = node.label
+                            key = node.node_tree.name
                             if key not in self.shells.keys():
                                self.shells[key] = []
                                item = scn.DazFloats.add()
