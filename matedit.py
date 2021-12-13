@@ -767,6 +767,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
             return
         nname = "%s_%s" % (fname, self.channel)
         node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=self.force)
+        node.label = empty.name
         self.force = False
         node.location = (loc[0]-XSIZE, 3*YSIZE)
         node.inputs["Influence"].default_value = 1.0
@@ -847,8 +848,7 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
                     for node in mat.node_tree.nodes:
                         if (node.type == 'GROUP' and
                             "Influence" in node.inputs.keys()):
-                            #key = node.label
-                            key = node.node_tree.name
+                            key = node.label
                             if key not in self.shells.keys():
                                self.shells[key] = []
                                item = scn.DazFloats.add()
