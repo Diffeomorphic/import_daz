@@ -588,11 +588,16 @@ def copyVertexGroups(ob, hdob):
 class LegacySkinBinding(SkinBinding):
 
     def __repr__(self):
-        return ("<LegacySkinBinding %s>" % (self.id))
+        return ("<LegacySkinBinding %s %s>" % (self.id, self.getLabel()))
 
     def parse(self, struct):
         struct["skin"] = struct["legacy_skin"]
         SkinBinding.parse(self, struct)
+
+    def build(self, context, inst):
+        ob,rig,geonode = self.getGeoRig(context, inst)
+        LS.legacySkin.append((ob, rig))
+        SkinBinding.build(self, context, inst)
 
 #-------------------------------------------------------------
 #   Formula

@@ -131,7 +131,13 @@ class ImportDAZ(DazOperator, DazOptions, MultiFile):
             print("Total load time: %.3f seconds" % (t2-t1))
 
         msg = ""
-        if LS.missingAssets:
+        if LS.legacySkin:
+            msg = ("Objects with legacy skin binding found:\n" +
+                   "Vertex groups are missing.\n" +
+                   "Consider converting the figures to props in DAZ Studio.   \n")
+            for ob,rig in LS.legacySkin:
+                msg += '  Mesh: "%s", Rig: "%s"\n' % (ob.name, rig.name)
+        elif LS.missingAssets:
             msg = ("Some assets were not found.\n" +
                    "Check that all Daz paths have been set up correctly.        \n" +
                    "For details see\n'%s'" % getErrorPath())

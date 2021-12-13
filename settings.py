@@ -414,6 +414,7 @@ class LocalSettings:
         self.hdFailures = []
         self.hdWeights = []
         self.hdUvMissing = []
+        self.legacySkin = []
         self.deflectors = {}
         self.materials = {}
         self.images = {}
