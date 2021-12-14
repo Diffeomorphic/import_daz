@@ -384,6 +384,103 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
         self.saveSettings()
 
 #-------------------------------------------------------------
+#   Breast bounce
+#-------------------------------------------------------------
+
+from mathutils import Matrix
+
+class DAZ_OT_AddBounce(DazOperator, IsMesh):
+    bl_idname = "daz.add_bounce"
+    bl_label = "Add Breast Bounce"
+    bl_description = "Add breast bounce (G8F only)"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from .load_json import loadJson
+        ob = context.object
+        rig = ob.parent
+        if ob.DazMesh != "Genesis8-female":
+            raise DazError("Only G8F")
+        folder = os.path.dirname(__file__)
+        path = os.path.join(folder, "data", "breasts", "%s.json" % ob.DazMesh.lower())
+        struct = loadJson(path)
+        self.addVertexGroups(ob, struct["vertex_groups"])
+        self.objects = []
+        self.addCollisionObjects(context, ob, rig, struct["collision"])
+        self.addLattices(context, ob, rig, struct["lattices"])
+        self.applyTransforms()
+
+
+    def addVertexGroups(self, ob, struct):
+        for vname,verts in struct.items():
+            vgrp = ob.vertex_groups.get(vname)
+            if vgrp:
+                ob.vertex_groups.remove(vgrp)
+            vgrp = ob.vertex_groups.new(name=vname)
+            for vn,w in verts:
+                vgrp.add([vn], w, 'REPLACE')
+
+
+    def addCollisionObjects(self, context, ob, rig, struct):
+        RX = Matrix.Rotation(90*D, 4, 'X')
+        for cname,data in struct.items():
+            bname, mtype, bname1, bname2, rad = data
+            pb1 = rig.pose.bones[bname1]
+            pb2 = rig.pose.bones[bname2]
+            head = pb1.bone.head_local
+            tail = pb2.bone.tail_local
+            length = (tail - head).length
+            rot = pb1.matrix.to_3x3().to_4x4()
+            if mtype == "Cylinder":
+                rot = rot @ RX
+                trans = Matrix.Translation((head+tail)/2)
+                bpy.ops.mesh.primitive_cylinder_add(radius=rad*length, depth=length)
+                innerThick = 1.0
+            elif mtype == "Icosphere":
+                trans = Matrix.Translation(0.2*head + 0.8*tail)
+                bpy.ops.mesh.primitive_ico_sphere_add(radius=rad*length)
+                innerThick = 5.0
+            wmat = trans @ rot
+            col = context.object
+            self.parentBone(col, cname, rig, bname, wmat)
+            mod = col.modifiers.new("Collision", 'COLLISION')
+            col.collision.thickness_outer = 0.1*ob.DazScale
+            col.collision.thickness_inner = innerThick*ob.DazScale
+
+
+    def addLattices(self, context, ob, rig, struct):
+        for lname,data in struct.items():
+            bname, size = data
+            pb = rig.pose.bones[bname]
+            head = pb.bone.head_local
+            tail = pb.bone.tail_local
+            rot = pb.matrix.to_3x3().to_4x4()
+            trans = Matrix.Translation(0.2*head + 0.8*tail)
+            scale = Matrix.Diagonal(size).to_4x4()
+            wmat = trans @ rot @ scale.inverted()
+            bpy.ops.object.add(type='LATTICE')
+            lob = context.object
+            lat = lob.data
+            (lat.points_u, lat.points_v, lat.points_w) = size
+            self.parentBone(lob, lname, rig, bname, wmat)
+
+
+    def parentBone(self, ob, cname, rig, bname, wmat):
+        ob.name = cname
+        ob.parent = rig
+        ob.parent_type = 'BONE'
+        ob.parent_bone = bname
+        setWorldMatrix(ob, wmat)
+        self.objects.append(ob)
+
+
+    def applyTransforms(self):
+        bpy.ops.object.select_all(action='DESELECT')
+        for ob in self.objects:
+            ob.select_set(True)
+        bpy.ops.object.transform_apply()
+
+#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -391,6 +488,7 @@ classes = [
     DAZ_OT_MakeCollision,
     DAZ_OT_MakeCloth,
     DAZ_OT_MakeSimulation,
+    DAZ_OT_AddBounce,
 ]
 
 def register():
