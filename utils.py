@@ -84,6 +84,20 @@ def inCollection(layer, ob):
             return True
     return False
 
+
+def getLayerCollection(context, coll):
+    def getColl(layer, coll):
+        if layer.collection == coll:
+            return layer
+        for child in layer.children:
+            clayer = getColl(child, coll)
+            if clayer:
+                return clayer
+        return None
+
+    return getColl(context.view_layer.layer_collection, coll)
+
+
 def getCollection(ob):
     for coll in bpy.data.collections:
         if ob.name in coll.objects.keys():
