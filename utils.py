@@ -74,16 +74,6 @@ def setActiveObject(context, ob):
     except:
         return False
 
-def inCollection(layer, ob):
-    if layer.hide_viewport:
-        return False
-    elif not layer.exclude and ob in layer.collection.objects.values():
-        return True
-    for child in layer.children:
-        if inCollection(child, ob):
-            return True
-    return False
-
 
 def getLayerCollection(context, coll):
     def getColl(layer, coll):

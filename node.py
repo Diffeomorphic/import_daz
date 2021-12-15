@@ -339,11 +339,11 @@ class Instance(Accessor, Channels, SimNode):
         ob = self.rna
         obname = ob.name
 
-        if LS.refColls is None:
-            LS.refColls = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
-            LS.collection.children.link(LS.refColls)
+        if LS.refColl is None:
+            LS.refColl = bpy.data.collections.new(name = "%s REFS" % LS.collection.name)
+            LS.collection.children.link(LS.refColl)
         self.refcoll = bpy.data.collections.new(name = obname)
-        LS.refColls.children.link(self.refcoll)
+        LS.refColl.children.link(self.refcoll)
         ob.name = "%s REF" % obname
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
@@ -599,16 +599,6 @@ def addToCollection(ob, coll):
         #    print("Cannot link '%s' to '%s'" % (ob.name, coll.name))
 
 
-def findLayerCollection(layer, coll):
-    if layer.collection == coll:
-        return layer
-    for child in layer.children:
-        clayer = findLayerCollection(child, coll)
-        if clayer:
-            return clayer
-    return None
-
-
 def createHiddenCollection(context, ob):
     parcoll = getCollection(ob)
     for coll in parcoll.children:
@@ -616,7 +606,7 @@ def createHiddenCollection(context, ob):
             return coll
     coll = bpy.data.collections.new(name="Hidden")
     parcoll.children.link(coll)
-    layer = findLayerCollection(context.view_layer.layer_collection, coll)
+    layer = getLayerCollection(context, coll)
     if layer:
         layer.exclude = True
     return coll
@@ -651,9 +641,8 @@ def finishNodeInstances(context):
                 child.name in wmats.keys()):
                 setWorldMatrix(child, wmats[child.name])
 
-    if LS.refColls:
-        toplayer = context.view_layer.layer_collection
-        layer = findLayerCollection(toplayer, LS.refColls)
+    if LS.refColl:
+        layer = getLayerCollection(context, LS.refColl)
         layer.exclude = True
         for child in layer.children:
             child.exclude = True

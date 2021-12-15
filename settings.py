@@ -405,7 +405,7 @@ class LocalSettings:
 
         self.collection = None
         self.hdcollection = None
-        self.refColls = None
+        self.refColl = None
         self.refObjects = {}
         self.fps = 30
         self.integerFrames = True
