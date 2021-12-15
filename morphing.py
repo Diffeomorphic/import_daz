@@ -1248,7 +1248,9 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
-        description = "Add an adjuster for the category type.\nUseful for mixed characters",
+        description = ("Add an adjuster for the category type.\n" +
+                       "Dependence on FBM and FHM morphs is ignored.\n" +
+                       "Useful if the character is baked"),
         default = False)
 
     bodypart : EnumProperty(

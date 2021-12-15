@@ -738,22 +738,20 @@ class LoadMorph(DriverUser):
 
     def buildPropDriver(self, raw, drivers):
         from .driver import getRnaDriver, Variable, removeModifiers
-        isJcm = ("jcm" in raw.lower() and
-                 "ejcm" not in raw.lower() and
-                 raw[0:6] != "JCMs O")
         rna,channel = self.getDrivenChannel(raw)
         bvars = []
         vvars = {}
         string = ""
-        fcu0 = getRnaDriver(rna, channel, None)
+        if "jcm" in raw.lower():
+            fcu0 = None
+        else:
+            fcu0 = getRnaDriver(rna, channel, None)
         if fcu0 and fcu0.driver.type == 'SCRIPTED':
             if not self.primary[raw]:
                 self.extendPropDriver(fcu0, raw, drivers)
                 return
             vtargets,btargets = self.getVarBoneTargets(fcu0)
-            if isJcm:
-                string = fcu0.driver.expression
-            elif btargets:
+            if btargets:
                 varname = btargets[-1][0]
                 string = self.extractBoneExpression(fcu0.driver.expression, varname)
             for _,_,var0 in btargets:
@@ -767,12 +765,9 @@ class LoadMorph(DriverUser):
         for bvar in bvars:
             var = fcu.driver.variables.new()
             bvar.create(var)
-        if isJcm and string:
-            fcu.driver.expression = string
-        else:
-            ok = self.buildNewPropDriver(fcu, rna, channel, string, raw, drivers)
-            if not ok:
-                return
+        ok = self.buildNewPropDriver(fcu, rna, channel, string, raw, drivers)
+        if not ok:
+            return
         self.addMissingVars(fcu, vvars)
         self.removeUnusedVars(fcu)
 
@@ -895,13 +890,14 @@ class LoadMorph(DriverUser):
 
 
     def getMultipliers(self, raw):
+        props = []
+        if raw and raw in self.mults.keys():
+            props = self.mults[raw]
         adj = self.getTypeAdjuster(raw)
         if adj:
-            self.mult = [adj]
+            self.mult = [adj] + [prop for prop in props if prop[0:3].lower() not in ["fbm", "fhm"]]
         else:
-            self.mult = []
-        if raw and raw in self.mults.keys():
-            self.mult += self.mults[raw]
+            self.mult = props
         return self.mult
 
 
@@ -970,16 +966,13 @@ class LoadMorph(DriverUser):
                 xys.append((x, y))
             return uvec, xys
 
-        self.mult = []
-        if raw in self.mults.keys():
-            self.mult = self.mults[raw]
-
         pb = self.rig.pose.bones[bname]
         rna,channel = self.getDrivenChannel(raw)
         #rna.driver_remove(channel)
         path = expr["path"]
         comp = expr["comp"]
         unit = getUnit(path, self.rig)
+        self.getMultipliers(raw)
         if "points" in expr.keys():
             uvec,xys = getSplinePoints(expr, pb, comp)
             self.makeSplineBoneDriver(path, uvec, xys, rna, channel, -1, bname, keep)
@@ -1096,10 +1089,7 @@ class LoadMorph(DriverUser):
                 self.rig[raw] = 0.0
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
                 self.addToMorphSet(raw, None, True)
-        adj = self.getTypeAdjuster(None)
-        if adj:
-            string = "K*(%s)" % string
-            self.addPathVar(fcu, "K", self.rig, propRef(adj))
+        string = self.multiplyMults(fcu, string)
         fcu.driver.expression = string
         if channel == "rotation":
             ttypes = ["ROT_X", "ROT_Y", "ROT_Z"]
