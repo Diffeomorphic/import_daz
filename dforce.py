@@ -397,33 +397,32 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
 
     def run(self, context):
         from .load_json import loadJson
-        from .finger import getFingerPrint
         ob = context.object
         rig = ob.parent
         if ob.DazMesh != "Genesis8-female":
             raise DazError("Only G8F")
-        folder = os.path.dirname(__file__)
-        path = os.path.join(folder, "data", "breasts", "%s.json" % ob.DazMesh.lower())
+        folder = os.path.join(os.path.dirname(__file__), "data", "breasts")
+        path = os.path.join(folder, "%s.json" % ob.DazMesh.lower())
         struct = loadJson(path)
-        finger = getFingerPrint(ob)
-        if finger != struct["finger_print"]:
-            msg = ("Fingerprint mismatch:\n  %s != %s\n" % (finger, struct["finger_print"]) +
-                   '"%s" is not a mesh of type %s\n' % (ob.name, struct["name"]))
-            raise DazError(msg)
-        self.addVertexGroups(ob, struct["vertex_groups"])
+        path = os.path.join(folder, "%s.json" % rig.DazRig.lower())
+        bstruct = loadJson(path)
+        bones = bstruct["bones"]
+        lPect = bones["lPectoral"]
+        rPect = bones["rPectoral"]
+        self.addVertexGroups(ob, struct)
         self.objects = []
-        self.addCollisionObjects(context, ob, rig)
-        self.applyTransforms()
+        self.addCollisionObjects(context, ob, rig, bones)
+        #self.applyTransforms()
         subsurf = self.removeSubsurf(ob)
-        llat = self.addLattice(context, ob, rig, "Lat_L", "lPectoral", [6, 6, 6])
-        rlat = self.addLattice(context, ob, rig, "Lat_R", "rPectoral", [6, 6, 6])
-        lempty,lico,lgoal = self.addHelpers(context, ob, rig, struct["vertices"]["lNipple"], "lPectoral", "L")
-        rempty,rico,rgoal = self.addHelpers(context, ob, rig, struct["vertices"]["rNipple"], "rPectoral", "R")
+        llat = self.addLattice(context, ob, rig, "Lat_L", lPect, [6, 6, 6])
+        rlat = self.addLattice(context, ob, rig, "Lat_R", rPect, [6, 6, 6])
+        lempty,lico,lgoal = self.addHelpers(context, ob, rig, struct["vertices"]["lNipple"], lPect, "L")
+        rempty,rico,rgoal = self.addHelpers(context, ob, rig, struct["vertices"]["rNipple"], rPect, "R")
         ribo = self.addToCollections(context, ob, rig)
         activateObject(context, rig)
         bpy.ops.object.mode_set(mode='POSE')
-        self.dampedTrack(rig, "lPectoral", lgoal)
-        self.dampedTrack(rig, "rPectoral", rgoal)
+        self.dampedTrack(rig, lPect, lgoal)
+        self.dampedTrack(rig, rPect, rgoal)
         self.addCorrSmooth(ob)
         if subsurf:
             ob.modifiers.new("Subsurf", 'SUBSURF')
@@ -432,18 +431,36 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         self.addRigidBodyConstraint(context, rempty, rico, rgoal)
 
 
-
     def addVertexGroups(self, ob, struct):
-        for vname,verts in struct.items():
+        from .finger import getFingerPrint
+        finger = getFingerPrint(ob)
+        if GS.useModifiedMesh:
+            from .geometry import restoreOrigVerts
+            hasOrig, restored = restoreOrigVerts(ob, -1)
+            if hasOrig:
+                finger = ob.data.DazFingerPrint
+        if finger != struct["finger_print"]:
+            msg = ("Fingerprint mismatch:\n  %s != %s\n" % (finger, struct["finger_print"]) +
+                   '"%s" is not a mesh of type %s\n' % (ob.name, struct["name"]))
+            raise DazError(msg)
+
+        for vname,verts in struct["vertex_groups"].items():
             vgrp = ob.vertex_groups.get(vname)
             if vgrp:
                 ob.vertex_groups.remove(vgrp)
             vgrp = ob.vertex_groups.new(name=vname)
-            for vn,w in verts:
-                vgrp.add([vn], w, 'REPLACE')
+            if isModifiedMesh(ob):
+                pgs = ob.data.DazOrigVerts
+                for vn0,w in verts:
+                    vn = pgs[str(vn0)].a
+                    if vn >= 0:
+                        vgrp.add([vn], w, 'REPLACE')
+            else:
+                for vn,w in verts:
+                    vgrp.add([vn], w, 'REPLACE')
 
 
-    def addCollisionObjects(self, context, ob, rig):
+    def addCollisionObjects(self, context, ob, rig, bones):
         collisionObjects = {
             "Col1_L" : ["lShldrBend", "Cylinder", "lShldrBend", "lShldrTwist", 0.15],
             "Col2_L" : ["lForearmBend", "Cylinder", "lForearmBend", "lForearmTwist", 0.15],
@@ -457,8 +474,8 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         RX = Matrix.Rotation(90*D, 4, 'X')
         for cname,data in collisionObjects.items():
             bname, mtype, bname1, bname2, rad = data
-            pb1 = rig.pose.bones[bname1]
-            pb2 = rig.pose.bones[bname2]
+            pb1 = rig.pose.bones[bones[bname1]]
+            pb2 = rig.pose.bones[bones[bname2]]
             head = pb1.bone.head_local
             tail = pb2.bone.tail_local
             length = (tail - head).length
@@ -475,13 +492,15 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
             wmat = trans @ rot
             col = context.object
             unlinkAll(col)
-            self.parentBone(col, cname, rig, bname, wmat)
+            self.parentBone(col, cname, rig, bones[bname], wmat)
             mod = col.modifiers.new("Collision", 'COLLISION')
             col.collision.thickness_outer = 0.1*ob.DazScale
             col.collision.thickness_inner = innerThick*ob.DazScale
 
 
     def addHelpers(self, context, ob, rig, vnum, bname, suffix):
+        if isModifiedMesh(ob):
+            vnum = ob.data.DazOrigVerts[str(vnum)].a
         nip = ob.data.vertices[vnum].co
         bone = rig.data.bones[bname]
         x = 0.0

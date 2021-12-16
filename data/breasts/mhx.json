@@ -1,0 +1,18 @@
+{
+    "name" : "mhx",
+    "bones" : {
+        "lPectoral" : "pectoral.L",
+        "lShldrBend" : "upper_arm.L",
+        "lShldrTwist" : "upper_arm.L",
+        "lForearmBend" : "forearm.L",
+        "lForearmTwist" : "forearm.L",
+        "lHand" : "hand.L",
+        "rPectoral" : "pectoral.R",
+        "rShldrBend" : "upper_arm.R",
+        "rShldrTwist" : "upper_arm.R",
+        "rForearmBend" : "forearm.R",
+        "rForearmTwist" : "forearm.R",
+        "rHand" : "hand.R"
+    }
+}
+        

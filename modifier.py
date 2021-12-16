@@ -814,10 +814,6 @@ class Morph(FormulaAsset):
             buildShapeKey(ob, skey, strength)
 
 
-def isModifiedMesh(ob):
-    return (len(ob.data.DazOrigVerts) > 0)
-
-
 def addShapekey(ob, sname):
     if not ob.data.shape_keys:
         basic = ob.shape_key_add(name="Basic")

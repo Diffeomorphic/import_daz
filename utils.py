@@ -216,6 +216,10 @@ def getMeshChildren(rig):
             meshes += getMeshChildren(ob)
     return meshes
 
+
+def isModifiedMesh(ob):
+    return (len(ob.data.DazOrigVerts) > 0)
+
 #-------------------------------------------------------------
 #   Updating
 #-------------------------------------------------------------

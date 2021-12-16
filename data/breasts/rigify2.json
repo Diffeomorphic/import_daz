@@ -1,0 +1,18 @@
+{
+    "name" : "rigify2",
+    "bones" : {
+        "lPectoral" : "pectoral.L",
+        "lShldrBend" : "ORG-upper_arm.L",
+        "lShldrTwist" : "ORG-upper_arm.L",
+        "lForearmBend" : "ORG-forearm.L",
+        "lForearmTwist" : "ORG-forearm.L",
+        "lHand" : "ORG-hand.L",
+        "rPectoral" : "pectoral.R",
+        "rShldrBend" : "ORG-upper_arm.R",
+        "rShldrTwist" : "ORG-upper_arm.R",
+        "rForearmBend" : "ORG-forearm.R",
+        "rForearmTwist" : "ORG-forearm.R",
+        "rHand" : "ORG-hand.R"
+    }
+}
+        
