@@ -999,6 +999,7 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
             self.fixMesh(ob)
         for rig in self.rigs:
             self.applyScale(context, rig)
+            self.fixRig(rig)
         for rig in self.rigs:
             self.restoreParent(context, rig)
         for ob in self.meshes:
@@ -1025,6 +1026,14 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
             ob.lock_scale = (False,False,False)
             ob.scale *= scale
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+
+    def fixRig(self, rig):
+        scale = self.unit / rig.DazScale
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                if cns.type == 'STRETCH_TO':
+                    cns.rest_length *= scale
 
 
     def fixMesh(self, ob):
