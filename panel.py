@@ -458,8 +458,6 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
         layout.separator()
         layout.operator("daz.clear_pose")
         op = layout.operator("daz.clear_morphs")
-        op.morphset = "All"
-        op.category = ""
         if rig.DazDriversDisabled:
             layout.operator("daz.enable_drivers")
         else:
@@ -469,6 +467,10 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
         layout.operator("daz.impose_locks_limits")
         layout.operator("daz.bake_pose_to_fk_rig")
         layout.operator("daz.save_pose_preset")
+        layout.separator()
+        layout.operator("daz.save_poses_to_actions")
+        layout.operator("daz.load_poses_from_actions")
+
 
         layout.separator()
         split = layout.split(factor=0.6)
@@ -478,9 +480,6 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
         layout.prop(rig, "DazRotLimits")
 
         return
-        layout.separator()
-        layout.operator("daz.save_poses")
-        layout.operator("daz.load_poses")
         layout.separator()
         layout.operator("daz.rotate_bones")
 
