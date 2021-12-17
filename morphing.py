@@ -1448,16 +1448,14 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
                 raw = pg.name
                 final = finalProp(raw)
                 rest = restProp(raw)
-                if raw in rig.keys():
-                    rig[raw] = 0.0
                 if self.useDeleteDrivers:
-                    self.removePropDrivers(rig, propRef(raw), rig)
-                    self.removePropDrivers(amt, propRef(final), amt)
-                    self.removePropDrivers(amt, propRef(rest), amt)
+                    self.removePropDrivers(rig, raw, rig)
+                    self.removePropDrivers(amt, final, amt)
+                    self.removePropDrivers(amt, rest, amt)
                 for ob in rig.children:
                     if ob.type == 'MESH':
-                        self.removePropDrivers(ob.data.shape_keys, propRef(raw), rig)
-                        self.removePropDrivers(ob.data.shape_keys, propRef(final), amt)
+                        self.removePropDrivers(ob.data.shape_keys, raw, rig)
+                        self.removePropDrivers(ob.data.shape_keys, final, amt)
                         if self.useDeleteShapekeys and ob.data.shape_keys:
                             if raw in ob.data.shape_keys.key_blocks.keys():
                                 skey = ob.data.shape_keys.key_blocks[raw]
@@ -1479,7 +1477,7 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
             rig.DazCustomMorphs = False
 
 
-    def removePropDrivers(self, rna, path, rig):
+    def removePropDrivers(self, rna, prop, rig):
         def matchesPath(var, path, rig):
             if var.type == 'SINGLE_PROP':
                 trg = var.targets[0]
@@ -1489,26 +1487,21 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
         def removeVar(vname, string):
             string = string.replace("+%s" % vname, "").replace("-%s" % vname, "")
             words = string.split("*%s" % vname)
-            islast = string.endswith("*%s" % vname)
-            if islast:
-                last = len(words)
-            else:
-                last = len(words) - 1
             nwords = []
-            for word in words[:last]:
+            for word in words:
                 n = len(word)-1
-                while word[n].isdigit() or word[n] == ".":
+                while n >= 0 and (word[n].isdigit() or word[n] == "."):
                     n -= 1
-                if word[n] in ["+", "-"]:
+                if n >= 0 and word[n] in ["+", "-"]:
                     n -= 1
-                nwords.append(word[:n+1])
-            if not islast:
-                nwords.append(words[last])
-            return "".join(nwords)
-            string = string.replace("*%s" % vname, "*0")
+                if n >= 0:
+                    nwords.append(word[:n+1])
+            string = "".join(nwords)
+            return string.replace("()", "0")
 
         if rna is None or rna.animation_data is None:
             return
+        path = propRef(prop)
         fcus = []
         for fcu in rna.animation_data.drivers:
             if fcu.data_path == path:
@@ -1525,19 +1518,25 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
                 if fcu.driver.type == 'SCRIPTED':
                     string = fcu.driver.expression
                     for var in vars:
-                        print("RR", var.name, string)
                         string = removeVar(var.name, string)
-                        print("SS", string)
                     fcu.driver.expression = string
                 for var in vars:
                     fcu.driver.variables.remove(var)
             else:
                 fcus.append(fcu)
+        props = {}
+        props[prop] = True
         for fcu in fcus:
+            prop = getProp(fcu.data_path)
+            if prop:
+                props[prop] = True
             try:
                 rna.driver_remove(fcu.data_path, fcu.array_index)
             except TypeError:
                 pass
+        for prop in props.keys():
+            if prop in rna.keys():
+                rna[prop] = 0.0
 
 
     def removeFromPropGroups(self, rig, prop):

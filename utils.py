@@ -268,6 +268,13 @@ def isVector(value):
 def propRef(prop):
     return '["%s"]' % prop
 
+def getProp(path):
+    if path[0:2] == '["' and path[-2:] == '"]':
+        return path[2:-2]
+    else:
+        return None
+
+
 def finalProp(prop):
     return "%s(fin)" % prop
 
