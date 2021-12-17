@@ -795,6 +795,8 @@ class LoadMorph(DriverUser):
     def extractBoneExpression(self, string, varname):
         string = string.split("(", 1)[-1]
         mult = string.split(varname, 1)[0]
+        if mult == "0" or mult == "0*":
+            return ""
         if mult == "0":
             mult = "0*"
         return "%s%s+" % (mult, varname)
@@ -811,7 +813,7 @@ class LoadMorph(DriverUser):
 
         channels = [var.targets[0].data_path for var in fcu.driver.variables]
         for dtype,subraw,factor in drivers[0:MAX_TERMS2]:
-            if dtype != 'PROP':
+            if dtype != 'PROP' or factor == 0.0:
                 continue
             subfinal = finalProp(subraw)
             channel = propRef(subfinal)
@@ -1317,6 +1319,8 @@ class LoadMorph(DriverUser):
             adj = self.getStrengthAdjuster()
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():
+            if factor == 0.0:
+                continue
             string += "%+.4g*%s" % (factor, varname)
             nterms += 1
             vars.append((varname, final))

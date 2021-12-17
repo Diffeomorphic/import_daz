@@ -1486,6 +1486,27 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
                 return (trg.id == rig and trg.data_path == path)
             return False
 
+        def removeVar(vname, string):
+            string = string.replace("+%s" % vname, "").replace("-%s" % vname, "")
+            words = string.split("*%s" % vname)
+            islast = string.endswith("*%s" % vname)
+            if islast:
+                last = len(words)
+            else:
+                last = len(words) - 1
+            nwords = []
+            for word in words[:last]:
+                n = len(word)-1
+                while word[n].isdigit() or word[n] == ".":
+                    n -= 1
+                if word[n] in ["+", "-"]:
+                    n -= 1
+                nwords.append(word[:n+1])
+            if not islast:
+                nwords.append(words[last])
+            return "".join(nwords)
+            string = string.replace("*%s" % vname, "*0")
+
         if rna is None or rna.animation_data is None:
             return
         fcus = []
@@ -1504,7 +1525,9 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
                 if fcu.driver.type == 'SCRIPTED':
                     string = fcu.driver.expression
                     for var in vars:
-                        string = string.replace(var.name, "0")
+                        print("RR", var.name, string)
+                        string = removeVar(var.name, string)
+                        print("SS", string)
                     fcu.driver.expression = string
                 for var in vars:
                     fcu.driver.variables.remove(var)
