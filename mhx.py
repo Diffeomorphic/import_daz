@@ -691,6 +691,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreAllConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         self.fixConstraints(rig)
+        self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
         showProgress(22, 25, "  Collect deform bones")
@@ -1415,6 +1416,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def fixConstraints(self, rig):
+        self.flips = {}
         for suffix in [".L", ".R"]:
             self.unlockYrot(rig, "upper_arm.fk" + suffix)
             self.unlockYrot(rig, "forearm.fk" + suffix)
@@ -1452,6 +1454,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         oldroll = self.rolls[oldname]
         flip = round(2*(roll-oldroll)/math.pi)
         if flip:
+            self.flips[bname.replace(".fk", "")] = flip
             print("FLIP", bname, flip)
             pb = rig.pose.bones[bname]
             cns = getConstraint(pb, 'LIMIT_ROTATION')
@@ -1527,6 +1530,38 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns.use_rotation = True
             addDriver(cns, "mute", rig, prop, "not(x)")
             n0 = 0
+
+    #-------------------------------------------------------------
+    #   Fix drivers
+    #-------------------------------------------------------------
+
+    def fixDrivers(self, rna):
+        table = {
+            "hand0.L" : "hand.L",
+            "hand0.R" : "hand.R",
+        }
+        def getBaseBone(bname):
+            if ".twk" in bname:
+                return bname.replace(".twk", "")
+            else:
+                return table.get(bname)
+
+        for fcu in rna.animation_data.drivers:
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    bname = getBaseBone(trg.bone_target)
+                    if bname is not None:
+                        trg.bone_target = bname
+                        if bname in self.flips.keys():
+                            flip = self.flips[bname]
+                            if trg.transform_type == "ROT_X":
+                                trg.transform_type = "ROT_Z"
+                                if flip == -1:
+                                    fcu.driver.expression = "-(%s)" % fcu.driver.expression
+                            elif trg.transform_type == "ROT_Z":
+                                trg.transform_type = "ROT_X"
+                                if flip == 1:
+                                    fcu.driver.expression = "-(%s)" % fcu.driver.expression
 
     #-------------------------------------------------------------
     #   Markers
