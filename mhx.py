@@ -1546,6 +1546,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 return table.get(bname)
 
+        if rna.animation_data is None:
+            return
         for fcu in rna.animation_data.drivers:
             for var in fcu.driver.variables:
                 for trg in var.targets:
