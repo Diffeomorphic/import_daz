@@ -327,24 +327,6 @@ class LoadMorph(DriverUser):
                         self.erc = True
 
 
-    def adjustProp(self, adj, prop, final):
-        from .driver import setFloatProp, removeModifiers
-        if adj not in self.rig.keys():
-            self.addNewProp(adj)
-            setFloatProp(self.rig, adj, 1.0, 0.0, 1000.0, True)
-        adjprop = ("%s(adj)" % prop)
-        self.amt[adjprop] = 0.0
-        channel = propRef(adjprop)
-        self.amt.driver_remove(channel)
-        fcu = self.amt.driver_add(channel)
-        fcu.driver.type = 'SCRIPTED'
-        removeModifiers(fcu)
-        fcu.driver.expression = "a*b"
-        self.addPathVar(fcu, "a", self.amt, propRef(final))
-        self.addPathVar(fcu, "b", self.rig, propRef(adj))
-        return adjprop
-
-
     def getTypeAdjuster(self, raw):
         if self.useAdjusters and raw in self.adjustable.keys():
             adj = self.getAdjustProp()

@@ -1875,6 +1875,11 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup, IsArmature):
         description = "Action prefix",
         default = "Scene")
 
+    useOverwrite : BoolProperty(
+        name = "Overwrite",
+        description = "Overwrite existing action with the same name",
+        default = True)
+
     useArmature : BoolProperty(
         name = "Armatures",
         description = "Save action for armatures",
@@ -1897,6 +1902,7 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup, IsArmature):
 
     def draw(self, context):
         self.layout.prop(self, "prefix")
+        self.layout.prop(self, "useOverwrite")
         self.layout.prop(self, "useArmature")
         self.layout.prop(self, "useMesh")
         self.layout.prop(self, "useCamera")
@@ -1930,7 +1936,12 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup, IsArmature):
             if ob.animation_data:
                 act = ob.animation_data.action
                 if act:
-                    act.name = "%s:%s" % (self.prefix, ob.name)
+                    aname = "%s:%s" % (self.prefix, ob.name)
+                    if self.useOverwrite and aname in bpy.data.actions.keys():
+                        for act2 in list(bpy.data.actions):
+                            if act2.name.startswith(aname):
+                                bpy.data.actions.remove(act2)
+                    act.name = aname
                     act.use_fake_user = True
                     ob.animation_data.action = None
                     print("Saved %s" % act.name)
