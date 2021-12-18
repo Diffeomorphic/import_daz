@@ -240,7 +240,8 @@ def trackTo(pb, target, rig, prop=None, expr="x"):
 def childOf(pb, target, rig):
     cns = pb.constraints.new('CHILD_OF')
     cns.target = rig
-    cns.subtarget = target.name
+    if target:
+        cns.subtarget = target.name
     return cns
 
 
@@ -685,14 +686,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addTweaks(rig)
         showProgress(14, 25, "  Add backbone")
         self.addBack(rig)
-        showProgress(15, 25, "  Setup FK-IK")
-        self.setupFkIk(rig)
-        showProgress(16, 25, "  Add layers")
-        self.addLayers(rig)
-        showProgress(17, 25, "  Add markers")
-        self.addMarkers(rig)
-        showProgress(18, 25, "  Add master bone")
+        showProgress(15, 25, "  Add master bone")
         self.addMaster(rig)
+        showProgress(16, 25, "  Setup FK-IK")
+        self.setupFkIk(rig)
+        showProgress(17, 25, "  Add layers")
+        self.addLayers(rig)
+        showProgress(18, 25, "  Add markers")
+        self.addMarkers(rig)
         showProgress(19, 25, "  Add gizmos")
         self.addGizmos(rig, context)
         showProgress(11, 25, "  Constrain bend and twist bones")
@@ -1107,7 +1108,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def setupFkIk(self, rig):
         setMode('EDIT')
         self.rolls = {}
-        self.noparents = []
         hip = rig.data.edit_bones["hip"]
         for suffix,dlayer in [(".L",0), (".R",16)]:
             upper_arm = self.setLayer("upper_arm"+suffix, rig, L_HELP)
@@ -1141,7 +1141,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = deriveBone("upper_arm.ik"+suffix, upper_arm, rig, L_HELP2, armParent)
             forearmIk = deriveBone("forearm.ik"+suffix, forearm, rig, L_HELP2, upper_armIk)
             forearmIk.use_connect = forearm.use_connect
-            handIk = deriveBone("hand.ik"+suffix, hand, rig, L_LARMIK+dlayer, None)
+            handIk = deriveBone("hand.ik"+suffix, hand, rig, L_LARMIK+dlayer, self.master)
             hand0Ik = deriveBone("hand0.ik"+suffix, hand, rig, L_HELP2, forearmIk)
             upper_armIkTwist = deriveBone("upper_arm.ik.twist"+suffix, upper_arm, rig, L_LARMIK+dlayer, upper_armIk)
             forearmIkTwist = deriveBone("forearm.ik.twist"+suffix, forearm, rig, L_LARMIK+dlayer, forearmIk)
@@ -1196,13 +1196,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 vec = foot.tail - foot.head
                 locFootIk = (foot.head[0], foot.head[1] - 0.5*vec[1], toe.tail[2])
-            footIk = makeBone("foot.ik"+suffix, rig, locFootIk, toe.tail, 180*D, L_LLEGIK+dlayer, None)
+            footIk = makeBone("foot.ik"+suffix, rig, locFootIk, toe.tail, 180*D, L_LLEGIK+dlayer, self.master)
             toeRev = makeBone("toe.rev"+suffix, rig, toe.tail, toe.head, 0, L_LLEGIK+dlayer, footIk)
             toeRev.use_connect = True
             footRev = makeBone("foot.rev"+suffix, rig, toe.head, foot.head, 0, L_LLEGIK+dlayer, toeRev)
             footRev.use_connect = True
             locAnkle = foot.head + (shin.tail-shin.head)/4
-            ankle = makeBone("ankle"+suffix, rig, foot.head, locAnkle, shin.roll, L_LEXTRA+dlayer, None)
+            ankle = makeBone("ankle"+suffix, rig, foot.head, locAnkle, shin.roll, L_LEXTRA+dlayer, self.master)
             ankleIk = deriveBone("ankle.ik"+suffix, ankle, rig, L_HELP2, footRev)
             #ankle0Ik = deriveBone("ankle0.ik"+suffix, ankle, rig, L_HELP, shinIkTwist)
 
@@ -1239,6 +1239,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('OBJECT')
         setMode('POSE')
         rpbs = rig.pose.bones
+        master = rpbs["master"]
         for suffix in [".L", ".R"]:
             for bname in ["upper_arm", "forearm", "hand",
                           "thigh", "shin", "foot", "toe"]:
@@ -1310,10 +1311,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             parent = {
                 'HAND' : elbowPoleP,
                 'SHOULDER': armParent,
-                'MASTER' : None
+                'MASTER' : master
             }
             childOf(elbowPt, parent[self.elbowParent], rig)
-            self.noparents.append(elbowPt.name)
+            setMhxProp(rig, "MhaElbowParent_%s" % suffix[1], self.elbowParent)
 
             #hintRotation(forearmIk, rig)
             ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
@@ -1381,10 +1382,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             parent = {
                 'FOOT' : kneePoleP,
                 'HIP': hip,
-                'MASTER' : None
+                'MASTER' : master
             }
             childOf(kneePt, parent[self.kneeParent], rig)
-            self.noparents.append(kneePt.name)
+            setMhxProp(rig, "MhaKneeParent_%s" % suffix[1], self.kneeParent)
 
             fixIk(rig, [shinIk.name])
             ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
@@ -1604,7 +1605,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def addMaster(self, rig):
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
-        master = makeBone("master", rig, (0,0,0), (0,hip.head[2]/5,0), 0, L_MAIN, None)
+        self.master = makeBone("master", rig, (0,0,0), (0,hip.head[2]/5,0), 0, L_MAIN, None)
+        hip.parent = self.master
+        return
         for eb in rig.data.edit_bones:
             if (eb.parent is None and
                 eb != master and
