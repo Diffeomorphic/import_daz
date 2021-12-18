@@ -396,6 +396,51 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
         if self.useApply and not ob.data.shape_keys:
             bpy.ops.object.modifier_apply(modifier=mod.name)
 
+#------------------------------------------------------------------------
+#   Add invisible material
+#------------------------------------------------------------------------
+
+class DAZ_OT_MakeInvisible(DazOperator, IsMesh):
+    bl_idname = "daz.make_invisible"
+    bl_label = "Make Invisible"
+    bl_description = "Hide selected faces by assigning an invisible material to them"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        bpy.ops.object.mode_set(mode='OBJECT')
+        ob = context.object
+        invis = self.getInvisibleMaterial()
+        mnum = -1
+        for mn,mat in enumerate(ob.data.materials):
+            if mat == invis:
+                mnum = mn
+                break
+        if mnum == -1:
+            mnum = len(ob.data.materials)
+            ob.data.materials.append(invis)
+        for f in ob.data.polygons:
+            if f.select:
+                f.material_index = mnum
+
+
+    def getInvisibleMaterial(self):
+        if "DazInvisible" in bpy.data.materials.keys():
+            return bpy.data.materials["DazInvisible"]
+        mat = bpy.data.materials.new("DazInvisible")
+        mat.blend_method = 'CLIP'
+        mat.shadow_method = 'NONE'
+        mat.diffuse_color[3] = 0
+        mat.use_nodes = True
+        tree = mat.node_tree
+        tree.nodes.clear()
+        trans = tree.nodes.new(type = "ShaderNodeBsdfTransparent")
+        trans.location = (0, 0)
+        output = tree.nodes.new(type = "ShaderNodeOutputMaterial")
+        output.location = (200, 0)
+        output.target = 'ALL'
+        tree.links.new(trans.outputs["BSDF"], output.inputs["Surface"])
+        return mat
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -408,6 +453,7 @@ classes = [
     DAZ_OT_CreateMasks,
     DAZ_OT_AddShrinkwrap,
     DAZ_OT_ToggleVis,
+    DAZ_OT_MakeInvisible,
 ]
 
 def register():
