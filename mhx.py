@@ -245,6 +245,8 @@ def childOf(pb, target, rig):
 
 
 def setMhxProp(rig, prop, value):
+    setattr(rig.data, prop, value)
+    return
     from .driver import setFloatProp, setBoolProp
     if isinstance(value, float):
         setFloatProp(rig.data, prop, value, 0.0, 1.0, True)
@@ -469,9 +471,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 bg.colors.active = (1.0, 1.0, 0.8)
 
 
+    def checkMhxEnabled(self, rig):
+        try:
+            getattr(rig.data, "MhaGazeFollowsHead")
+            return True
+        except AttributeError:
+            return False
+
+
     def run(self, context):
         from time import perf_counter
         rig = context.object
+        if not self.checkMhxEnabled(rig):
+            msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
+            raise DazError(msg)
         startProgress("Convert %s to MHX" % rig.name)
         t1 = perf_counter()
         self.createTmp()
@@ -1399,8 +1412,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             ])
             handFk.lock_location = footFk.lock_location = (False,False,False)
 
-        prop = "MhaHintsOn"
-        setMhxProp(rig, prop, True)
         self.addGazeFollowsHead(rig)
         for prop in ["MhaArmStretch_L", "MhaArmStretch_R", "MhaLegStretch_L", "MhaLegStretch_R"]:
             setMhxProp(rig, prop, True)
@@ -1437,8 +1448,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.addFingerIk(rig, suffix)
             if "toe"+suffix in rig.pose.bones.keys():
                 toe = rig.pose.bones["toe"+suffix]
-                prop = "MhaToeTarsal_%s" % suffix[1]
-                setMhxProp(rig, prop, False)
+                #prop = "MhaToeTarsal_%s" % suffix[1]
+                #setMhxProp(rig, prop, False)
                 for toename in ["big_toe", "small_toe_1", "small_toe_2", "small_toe_3", "small_toe_4"]:
                     bname = "%s.01%s" % (toename, suffix)
                     if bname in rig.pose.bones.keys():
@@ -1801,90 +1812,16 @@ def fixIk(rig, bnames):
             pb.ik_max_x = 160*D
 
 #-------------------------------------------------------------
-#   Update MHX rig for armature properties
+#   Register
 #-------------------------------------------------------------
-
-def getMhxProps(amt):
-    floats = ["MhaGazeFollowsHead"]
-    bools = ["MhaHintsOn"]
-    for prop in ["MhaArmIk", "MhaGaze", "MhaLegIk"]:
-        floats.append(prop+"_L")
-        floats.append(prop+"_R")
-    for prop in ["MhaArmHinge", "MhaFingerControl", "MhaLegHinge", "MhaLegIkToAnkle"]:
-        bools.append(prop+"_L")
-        bools.append(prop+"_R")
-    return floats, bools
-
-
-class DAZ_OT_UpdateMhx(DazOperator):
-    bl_idname = "daz.update_mhx"
-    bl_label = "Update MHX"
-    bl_description = "Update MHX rig for driving armature properties"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        rig = context.object
-        initMhxProps()
-        floats,bools = getMhxProps(rig)
-        for prop in floats+bools:
-            if prop in rig.keys():
-                del rig[prop]
-        for prop in bools:
-            setMhxProp(rig, prop, False)
-        for prop in floats:
-            setMhxProp(rig, prop, 1.0)
-        self.updateDrivers(rig)
-
-    def updateDrivers(self, rig):
-        if rig.animation_data:
-            for fcu in rig.animation_data.drivers:
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        if trg.data_path[0:5] == '["Mha':
-                            trg.id_type = 'ARMATURE'
-                            trg.id = rig.data
-                        elif trg.data_path == propRef("DazGazeFollowsHead"):
-                            trg.id_type = 'ARMATURE'
-                            trg.id = rig.data
-                            trg.data_path = propRef("MhaGazeFollowsHead")
-
-
-
-def initMhxProps():
-    # MHX Control properties
-    bpy.types.Armature.MhaGazeFollowsHead = FloatPropOVR(0.0, min=0.0, max=1.0)
-    bpy.types.Armature.MhaHintsOn = BoolPropOVR(True)
-
-    bpy.types.Armature.MhaArmHinge_L = BoolPropOVR(False)
-    bpy.types.Armature.MhaArmIk_L = FloatPropOVR(0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.MhaFingerControl_L = BoolPropOVR(False)
-    bpy.types.Armature.MhaFingerIk_L = BoolPropOVR(False)
-    bpy.types.Armature.MhaGaze_L = FloatPropOVR(0.0, min=0.0, max=1.0)
-    bpy.types.Armature.MhaLegHinge_L = BoolPropOVR(False)
-    bpy.types.Armature.MhaLegIkToAnkle_L = BoolPropOVR(False)
-    bpy.types.Armature.MhaLegIk_L = FloatPropOVR(0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.MhaDazShin_L = BoolPropOVR(False)
-
-    bpy.types.Armature.MhaArmHinge_R = BoolPropOVR(False)
-    bpy.types.Armature.MhaArmIk_R = FloatPropOVR(0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.MhaFingerControl_R = BoolPropOVR(False)
-    bpy.types.Armature.MhaFingerIk_R = BoolPropOVR(False)
-    bpy.types.Armature.MhaGaze_R = FloatPropOVR(0.0, min=0.0, max=1.0)
-    bpy.types.Armature.MhaLegHinge_R = BoolPropOVR(False)
-    bpy.types.Armature.MhaLegIkToAnkle_R = BoolPropOVR(False)
-    bpy.types.Armature.MhaLegIk_R = FloatPropOVR(0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.MhaDazShin_R = BoolPropOVR(False)
-
 
 classes = [
     DAZ_OT_ConvertToMhx,
-    DAZ_OT_UpdateMhx,
 ]
 
 def register():
     bpy.types.Object.DazMhxLegacy = BoolProperty(default = True)
     bpy.types.Object.MhxRig = BoolProperty(default = False)
-    initMhxProps()
     for cls in classes:
         bpy.utils.register_class(cls)
 
