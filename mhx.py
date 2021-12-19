@@ -246,15 +246,12 @@ def childOf(pb, target, rig):
 
 
 def setMhxProp(rig, prop, value):
-    setattr(rig.data, prop, value)
-    return
     from .driver import setFloatProp, setBoolProp
     if isinstance(value, float):
         setFloatProp(rig.data, prop, value, 0.0, 1.0, True)
-    else:
+    elif isinstance(value, bool):
         setBoolProp(rig.data, prop, value, True)
     rig.data[prop] = value
-    #setattrOVR(rig.data, prop, value)
 
 
 def addDriver(rna, channel, rig, prop, expr):
@@ -1050,9 +1047,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for suffix,dlayer in [(".L",0), (".R",16)]:
             prop1 = "MhaFingerControl_%s" % suffix[1]
             setMhxProp(rig, prop1, True)
+            prop2 = "MhaFingerIk_%s" % suffix[1]
+            setMhxProp(rig, prop2, False)
             if self.useFingerIk:
-                prop2 = "MhaFingerIk_%s" % suffix[1]
-                setMhxProp(rig, prop2, False)
                 props = (prop1,prop2)
                 expr = "(x2 or not(x1))"
             else:
@@ -1286,6 +1283,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowPt = rpbs["elbow.pt.ik"+suffix]
             elbowLink = rpbs["elbow.link"+suffix]
 
+            prop = "MhaForearmFollow_" + suffix[1]
+            setMhxProp(rig, prop, True)
             prop = "MhaArmHinge_" + suffix[1]
             setMhxProp(rig, prop, False)
             cns = copyTransform(armParent, armSocket, rig)
@@ -1414,8 +1413,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             handFk.lock_location = footFk.lock_location = (False,False,False)
 
         self.addGazeFollowsHead(rig)
-        for prop in ["MhaArmStretch_L", "MhaArmStretch_R", "MhaLegStretch_L", "MhaLegStretch_R"]:
+        for prop in ["MhaArmStretch_L", "MhaArmStretch_R", "MhaLegStretch_L", "MhaLegStretch_R", "MhaLimitsOn"]:
             setMhxProp(rig, prop, True)
+        for prop in ["MhaToeTarsal_L", "MhaToeTarsal_R"]:
+            setMhxProp(rig, prop, False)
 
 
     def lockLocations(self, bones):
