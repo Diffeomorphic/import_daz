@@ -389,9 +389,25 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         description = "Merge selected geografts to active object.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
         default = False)
 
-    useMergeLashes : BoolProperty(
-        name = "Merge Lashes",
-        description = "Merge separate eyelash mesh to character.\nIneffective if there are unmerged geografts.\nShapekeys are always transferred first",
+    useMergeFaceMeshes : BoolProperty(
+        name = "Merge Face Meshes",
+        description = "Merge separate face meshes (eyelash, brow, tear, beard) to character.\nIneffective if there are unmerged geografts.\nShapekeys are always transferred first",
+        default = False)
+
+    useLashes : BoolProperty(
+        name = "Lashes",
+        default = True)
+
+    useTear : BoolProperty(
+        name = "Tear",
+        default = True)
+
+    useBrows : BoolProperty(
+        name = "Brows",
+        default = False)
+
+    useBeard : BoolProperty(
+        name = "Beard",
         default = False)
 
     useConvertWidgets : BoolProperty(
@@ -449,7 +465,12 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
         self.layout.prop(self, "useMergeGeografts")
-        self.layout.prop(self, "useMergeLashes")
+        self.layout.prop(self, "useMergeFaceMeshes")
+        if self.useMergeFaceMeshes:
+            self.subprop("useLashes")
+            self.subprop("useTear")
+            self.subprop("useBrows")
+            self.subprop("useBeard")
         self.layout.prop(self, "useConvertWidgets")
         self.layout.prop(self, "useMakeAllBonesPoseable")
         self.layout.prop(self, "useConvertHair")
@@ -636,9 +657,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
 
 
         # Merge geografts
-        useLashes = self.useMergeLashes
+        useLashes = self.useMergeFaceMeshes
         if geografts:
-            useLashes = (self.useMergeLashes and self.useMergeGeografts)
+            useLashes = (self.useMergeFaceMeshes and self.useMergeGeografts)
             if self.useTransferShapes or self.useMergeGeografts:
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
@@ -784,19 +805,36 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
 
 
     def getLashes(self, rig, ob):
-        meshes = []
+        head = rig.data.bones.get("head")
+        if head is None:
+            return []
+        keys = []
+        if self.useLashes:
+            keys.append("eyelash")
+        if self.useTear:
+            keys.append("tear")
+        if self.useBrows:
+            keys.append("brow")
+        if self.useBeard:
+            keys.append("beard")
+        lashes = []
         for mesh in getMeshChildren(rig):
             if mesh != ob:
-                isLash = False
-                for vgname in mesh.vertex_groups.keys():
-                    if vgname[1:7] == "Eyelid":
-                        isLash = True
-                    elif vgname in ["lEye", "head"]:
-                        isLash = False
-                        break
-                if isLash:
-                    meshes.append(mesh)
-        return meshes
+                for key in keys:
+                    if key in mesh.name.lower():
+                        if self.inHead(rig, mesh, head):
+                            lashes.append(mesh)
+        return lashes
+
+
+    def inHead(self, rig, ob, bone):
+        if bone.name in ob.vertex_groups.keys():
+            return True
+        else:
+            for child in bone.children:
+                if self.inHead(rig, ob, child):
+                    return True
+        return False
 
 #------------------------------------------------------------------
 #   Utilities
