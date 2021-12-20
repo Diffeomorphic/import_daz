@@ -724,7 +724,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 pb.bone.show_wire = True
 
         self.restoreBoneChildren(bchildren, context, rig)
-        from .driver import updateAll
         updateAll(context)
 
 

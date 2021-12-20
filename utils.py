@@ -246,6 +246,11 @@ def updateRigDrivers(context, rig):
         updateDrivers(rig.data)
         updateDrivers(rig)
 
+def updateAll(context):
+    updateScene(context)
+    for ob in context.scene.collection.all_objects:
+        updateDrivers(ob)
+
 #-------------------------------------------------------------
 #   More utility functions
 #-------------------------------------------------------------

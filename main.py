@@ -350,11 +350,6 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         description = "Add mannequin to meshes of this type",
         default = 'NONE')
 
-    applyObjectTransforms : BoolProperty(
-        name = "Apply Object Transforms",
-        description = "Apply transforms for all imported objects",
-        default = True)
-
     useEliminateEmpties : BoolProperty(
         name = "Eliminate Empties",
         description = "Delete non-hidden empties, parenting its children to its parent instead",
@@ -445,7 +440,6 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         DazOptions.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "useMergeMaterials")
-        self.layout.prop(self, "applyObjectTransforms")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -526,13 +520,11 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         self.hdmeshes = self.getTypedObjects(visibles, LS.hdmeshes)
         self.hairs = self.getTypedObjects(visibles, LS.hairs)
 
-        bpy.ops.object.select_all(action='DESELECT')
-        for objects in LS.objects.values():
-            for ob in objects:
-                selectSet(ob, True)
-        if self.applyObjectTransforms:
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         if self.useEliminateEmpties:
+            bpy.ops.object.select_all(action='DESELECT')
+            for objects in LS.objects.values():
+                for ob in objects:
+                    selectSet(ob, True)
             bpy.ops.daz.eliminate_empties()
 
         for rigname in self.rigs.keys():
@@ -609,8 +601,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
             if self.useMergeRigs and len(rigs) > 1:
                 print("Merge rigs")
                 bpy.ops.daz.merge_rigs(
-                    useCreateDuplicates=self.useCreateDuplicates,
-                    useMergeNonConforming=self.useMergeNonConforming)
+                    useSubrigsOnly = True,
+                    useCreateDuplicates = self.useCreateDuplicates,
+                    useMergeNonConforming = self.useMergeNonConforming)
                 mainRig = context.object
                 rigs = [mainRig]
 
@@ -747,6 +740,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         if mainRig:
             mainRig.update_tag()
             activateObject(context, mainRig)
+        updateAll(context)
 
 
     def getGraftParent(self, ob, meshes):
