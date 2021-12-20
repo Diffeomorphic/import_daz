@@ -349,6 +349,11 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         description = "Add mannequin to meshes of this type",
         default = 'NONE')
 
+    applyObjectTransforms : BoolProperty(
+        name = "Apply Object Transforms",
+        description = "Apply transforms for all imported objects",
+        default = True)
+
     useEliminateEmpties : BoolProperty(
         name = "Eliminate Empties",
         description = "Delete non-hidden empties, parenting its children to its parent instead",
@@ -428,6 +433,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         DazOptions.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "useMergeMaterials")
+        self.layout.prop(self, "applyObjectTransforms")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -502,11 +508,13 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         self.hdmeshes = self.getTypedObjects(visibles, LS.hdmeshes)
         self.hairs = self.getTypedObjects(visibles, LS.hairs)
 
+        bpy.ops.object.select_all(action='DESELECT')
+        for objects in LS.objects.values():
+            for ob in objects:
+                selectSet(ob, True)
+        if self.applyObjectTransforms:
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         if self.useEliminateEmpties:
-            bpy.ops.object.select_all(action='DESELECT')
-            for objects in LS.objects.values():
-                for ob in objects:
-                    selectSet(ob, True)
             bpy.ops.daz.eliminate_empties()
 
         for rigname in self.rigs.keys():

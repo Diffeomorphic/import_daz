@@ -521,8 +521,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
                     shapekey_scalefactor.shapekey_center_coord = shapekey_center_vector
                     shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
-
-                    print("Save scale factor for"," ".join(affectedbones))
+                    #print("Save scale factor for"," ".join(affectedbones))
 
 
     def ignoreMorph(self, src, trg, hskey):

@@ -67,6 +67,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
 
 
     def run(self, context):
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         from .finger import isCharacter
         cob = context.object
         ncverts = len(cob.data.vertices)
