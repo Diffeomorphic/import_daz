@@ -29,6 +29,7 @@
 import os
 import json
 import bpy
+from mathutils import Matrix
 
 from .utils import *
 from .error import *
@@ -802,32 +803,34 @@ class RigInfo:
                 vgrp.name = key
 
 
-class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
+class MergeRigsOptions:
+    useCreateDuplicates : BoolProperty(
+        name = "Create Duplicate Bones",
+        description = "Create separate bones if several bones with the same name are found",
+        default = True)
+
+    useMergeNonConforming : BoolProperty(
+        name = "Merge Non-conforming Rigs",
+        description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
+        default = False)
+
+
+class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
     bl_idname = "daz.merge_rigs"
     bl_label = "Merge Rigs"
     bl_description = "Merge selected rigs to active rig"
     bl_options = {'UNDO'}
-
-    clothesLayer : IntProperty(
-        name = "Clothes Layer",
-        description = "Bone layer used for extra bones when merging clothes",
-        min = 1, max = 32,
-        default = 3)
 
     separateCharacters : BoolProperty(
         name = "Separate Characters",
         description = "Don't merge armature that belong to different characters",
         default = False)
 
-    useCreateDuplicates : BoolProperty(
-        name = "Create Duplicate Bones",
-        description = "Create separate bones if several bones with the same name are found",
-        default = False)
-
-    useMergeNonConforming : BoolProperty(
-        name = "Merge Non-conforming Rigs",
-        description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
-        default = True)
+    clothesLayer : IntProperty(
+        name = "Clothes Layer",
+        description = "Bone layer used for extra bones when merging clothes",
+        min = 1, max = 32,
+        default = 3)
 
     createMeshCollection : BoolProperty(
         name = "Create Mesh Collection",
@@ -847,32 +850,52 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
     def run(self, context):
         if not self.separateCharacters:
             rig,subrigs = getSelectedRigs(context)
-            info,subinfos = self.getRigInfos(rig, subrigs)
-            self.mergeRigs(context, info, subinfos)
+            info,subinfos,repars = self.getRigInfos(context, rig, subrigs)
+            self.mergeRigs(context, info, subinfos, repars)
         else:
             rigs = []
             for rig in getSelectedArmatures(context):
                 if rig.parent is None:
                     rigs.append(rig)
-            rpairs = []
+            rgroups = []
             for rig in rigs:
                 subrigs = self.getSubRigs(context, rig)
-                rpairs.append((rig,subrigs))
-            ipairs = []
-            for rig,subrigs in rpairs:
-                info,subinfos = self.getRigInfos(rig, subrigs)
-                ipairs.append((info,subinfos))
-            for info,subinfos in ipairs:
+                rgroups.append((rig,subrigs))
+            igroups = []
+            for rig,subrigs in rgroups:
+                igroup = self.getRigInfos(context, rig, subrigs)
+                igroups.append(igroup)
+            for info,subinfos,repars in igroups:
                 activateObject(context, info.rig)
-                self.mergeRigs(context, info, subinfos)
+                self.mergeRigs(context, info, subinfos, repars)
 
 
-    def getRigInfos(self, rig, subrigs):
+    def getRigInfos(self, context, rig, subrigs):
+        def findSubObjects(rig, subobs):
+            for child in rig.children:
+                subobs.append(child)
+                findSubObjects(child, subobs)
+
+        subobs = []
+        findSubObjects(rig, subobs)
+        repars = []
+        for ob in subobs:
+            if ob.parent and ob.parent_type == 'BONE':
+                if (ob.parent in subrigs or
+                    (ob.parent == rig and ob not in subrigs)):
+                    wmat = ob.matrix_world.copy()
+                    repars.append((ob, wmat))
+
         subinfos = []
         info = RigInfo(rig, True, self)
         for subrig in subrigs:
             if subrig.parent and subrig.parent_type == 'BONE':
-                conforms = self.isConforming(subrig, rig)
+                if subrig.parent == rig:
+                    conforms = self.isConforming(subrig, rig)
+                else:
+                    continue
+            elif subrig.parent in repars:
+                continue
             else:
                 conforms = True
             subinfo = RigInfo(subrig, conforms, self)
@@ -885,8 +908,10 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
             selectSet(subinfo.rig, True)
             for ob,_ in subinfo.objects:
                 selectSet(ob, True)
+        for ob in repars:
+            selectSet(ob, True)
         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-        return info, subinfos
+        return info, subinfos, repars
 
 
     def isConforming(self, subrig, rig):
@@ -920,7 +945,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         return subrigs
 
 
-    def mergeRigs(self, context, info, subinfos):
+    def mergeRigs(self, context, info, subinfos, repars):
         rig = info.rig
         LS.forAnimation(None, rig)
         if rig is None:
@@ -929,7 +954,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         rig.data.layers = 32*[True]
         success = False
         try:
-            self.mergeRigs1(info, subinfos, context)
+            self.mergeRigs1(context, info, subinfos, repars)
             success = True
         finally:
             rig.data.layers = oldvis
@@ -940,7 +965,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
             updateDrivers(rig.data)
 
 
-    def mergeRigs1(self, info, subinfos, context):
+    def mergeRigs1(self, context, info, subinfos, repars):
         from .node import clearParent
         scn = context.scene
         rig = info.rig
@@ -985,6 +1010,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, DriverUser, IsArmature):
         rig.matrix_local = lmat.inverted()
         self.applyTransforms([info])
         rig.matrix_local = lmat
+        for ob,wmat in repars:
+            ob.parent = rig
+            setWorldMatrix(ob, Matrix())
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):

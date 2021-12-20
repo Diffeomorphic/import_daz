@@ -60,8 +60,8 @@ def importModules():
                     "transform", "node", "figure", "bone", "geometry", "objfile",
                     "fix", "modifier", "animation", "load_morph", "morphing", "panel",
                     "material", "cycles", "cgroup", "pbr", "render", "camera", "light",
-                    "guess", "convert", "files", "main", "finger",
-                    "matedit", "tables", "proxy", "rigify", "merge", "hide",
+                    "guess", "convert", "files", "merge", "main", "finger",
+                    "matedit", "tables", "proxy", "rigify", "hide",
                     "mhx", "layers", "hair", "transfer", "dforce",
                     "hdmorphs", "facecap", "api",
                     "runtime.morph_armature"]

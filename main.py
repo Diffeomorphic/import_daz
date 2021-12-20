@@ -32,6 +32,7 @@ from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix
+from .merge import MergeRigsOptions
 
 #------------------------------------------------------------------
 #   DAZ options
@@ -325,7 +326,7 @@ class MorphTypeOptions:
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, MultiFile):
+class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -363,11 +364,6 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         name = "Merge Rigs",
         description = "Merge all rigs to the main character rig",
         default = True)
-
-    useCreateDuplicates : BoolProperty(
-        name = "Create Duplicate Bones",
-        description = "Create separate bones if several bones with the same name are found",
-        default = False)
 
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
@@ -454,6 +450,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
             self.subprop("useCreateDuplicates")
+            self.subprop("useMergeNonConforming")
         self.layout.prop(self, "useMergeToes")
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
@@ -611,7 +608,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MorphTypeOptions, MorphSuffix, Mult
                 selectSet(rig, True)
             if self.useMergeRigs and len(rigs) > 1:
                 print("Merge rigs")
-                bpy.ops.daz.merge_rigs(useCreateDuplicates=self.useCreateDuplicates)
+                bpy.ops.daz.merge_rigs(
+                    useCreateDuplicates=self.useCreateDuplicates,
+                    useMergeNonConforming=self.useMergeNonConforming)
                 mainRig = context.object
                 rigs = [mainRig]
 
