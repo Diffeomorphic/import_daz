@@ -62,6 +62,11 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
         description = "Save action for meshes",
         default = False)
 
+    useEmpty : BoolProperty(
+        name = "Empties",
+        description = "Save action for empties",
+        default = True)
+
     useCamera : BoolProperty(
         name = "Cameras",
         description = "Save action for cameras",
@@ -77,11 +82,13 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
         self.layout.prop(self, "useOverwrite")
         self.layout.prop(self, "useArmature")
         self.layout.prop(self, "useMesh")
+        self.layout.prop(self, "useEmpty")
         self.layout.prop(self, "useCamera")
         self.layout.prop(self, "useLight")
 
 
     def run(self, context):
+        from .morphing import getActivated, keyProp
         scn = context.scene
         self.exclude = []
         for rig in getVisibleArmatures(context):
@@ -91,6 +98,7 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
                 continue
             if not ((ob.type == 'ARMATURE' and self.useArmature) or
                     (ob.type == 'MESH' and self.useMesh) or
+                    (ob.type == 'EMPTY' and self.useEmpty) or
                     (ob.type == 'CAMERA' and self.useCamera) or
                     (ob.type == 'LIGHT' and self.useLight)):
                 continue
@@ -105,18 +113,31 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
                     if getActivated(rig, rig, morph):
                         keyProp(rig, morph, scn.frame_current)
                 updateRigDrivers(context, rig)
-            if ob.animation_data:
-                act = ob.animation_data.action
-                if act:
-                    aname = "%s:%s" % (self.prefix, ob.name)
-                    if self.useOverwrite and aname in bpy.data.actions.keys():
-                        for act2 in list(bpy.data.actions):
-                            if act2.name.startswith(aname):
-                                bpy.data.actions.remove(act2)
-                    act.name = aname
-                    act.use_fake_user = True
-                    ob.animation_data.action = None
-                    print("Saved %s" % act.name)
+            self.saveAction(ob, "")
+
+            if False and ob.type in ['CAMERA', 'LIGHT']:
+                for key in dir(ob.data):
+                    if key[0] != '_':
+                        try:
+                            ob.data.keyframe_insert(key, frame=scn.frame_current)
+                        except TypeError:
+                            pass
+                self.saveAction(ob.data, ":%s" % ob.type[0:3])
+
+
+    def saveAction(self, rna, infix):
+        if rna.animation_data:
+            act = rna.animation_data.action
+            if act:
+                aname = "%s%s:%s" % (self.prefix, infix, rna.name)
+                if self.useOverwrite and aname in bpy.data.actions.keys():
+                    for act2 in list(bpy.data.actions):
+                        if act2.name.startswith(aname):
+                            bpy.data.actions.remove(act2)
+                act.name = aname
+                act.use_fake_user = True
+                rna.animation_data.action = None
+                print("Saved %s" % act.name)
 
 
     def excludeChildren(self, ob):
@@ -204,11 +225,13 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
 def getActionPrefix(scn, context):
     ob = context.object
     enums = []
+    taken = []
     for act in bpy.data.actions:
         words = act.name.split(":")
-        if len(words) == 2 and words[1] == ob.name:
-            prefix = words[0]
+        prefix = words[0]
+        if len(words) == 2 and prefix not in taken:
             enums.append((prefix, prefix, prefix))
+            taken.append(prefix)
     enums.sort()
     if len(enums) == 0:
         enums = [("-", "No action found", "No action found")]
@@ -232,17 +255,24 @@ class DAZ_OT_LoadPosesFromActions(DazPropsOperator):
     def run(self, context):
         if self.prefix == "-":
             return
-        objects = []
+        self.objects = []
         for ob in getVisibleObjects(context):
             aname = "%s:%s" % (self.prefix, ob.name)
-            act = bpy.data.actions.get(aname)
-            if act:
-                print("Loaded %s" % act.name)
-                ob.animation_data.action = act
-                objects.append(ob)
+            self.loadAction(ob, aname)
+            if ob.type in ['CAMERA', 'LIGHT']:
+                aname = "%s:%s:%s" % (self.prefix, ob.type[0:3], ob.name)
+                self.loadAction(ob.data, aname)
         updateScene(context)
-        for ob in objects:
-            ob.animation_data.action = None
+        for rna in self.objects:
+            rna.animation_data.action = None
+
+
+    def loadAction(self, rna, aname):
+        act = bpy.data.actions.get(aname)
+        if act:
+            print("Loaded %s" % act.name)
+            rna.animation_data.action = act
+            self.objects.append(rna)
 
 #-------------------------------------------------------------
 #   Register

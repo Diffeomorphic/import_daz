@@ -969,10 +969,9 @@ class DAZ_PT_Visibility(DAZ_PT_Base, bpy.types.Panel):
                 rig = ob.parent
             else:
                 return
-        split = self.layout.split(factor=0.3333)
-        split.operator("daz.prettify")
-        split.operator("daz.show_all_vis")
-        split.operator("daz.hide_all_vis")
+        row = self.layout.row()
+        row.operator("daz.show_all_vis")
+        row.operator("daz.hide_all_vis")
         props = list(rig.keys())
         props.sort()
         self.drawProps(rig, props, "Mhh")

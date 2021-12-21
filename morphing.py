@@ -1676,40 +1676,6 @@ class DAZ_OT_DeactivateAll(DazOperator, Activator):
 
     activate = False
 
-#------------------------------------------------------------------------
-#   Prettifying
-#------------------------------------------------------------------------
-
-def prettifyAll(context):
-    from .driver import setBoolProp
-    scn = context.scene
-    for ob in getSelectedObjects(context):
-        for prop in ob.keys():
-            if prop[0:7] == "DazShow":
-                setBoolProp(ob, prop, True, True)
-            elif prop[0:3] in ["Mhh", "DzM"]:
-                setBoolProp(ob, prop, True, True)
-        for cat in ob.DazMorphCats:
-            setBoolProp(cat, "active", True, True)
-            for morph in cat.morphs:
-                if morph.name in ob.keys():
-                    setOverridable(ob, morph.name)
-        for pg in ob.DazActivated:
-            setBoolProp(pg, "active", True, True)
-
-
-class DAZ_OT_Prettify(DazOperator):
-    bl_idname = "daz.prettify"
-    bl_label = "Prettify Panels"
-    bl_description = (
-        "Change sliders to checkboxes\n" +
-        "(If boolean options appear as sliders, use this button to refresh them)"
-        )
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        prettifyAll(context)
-
 #------------------------------------------------------------------
 #   Clear morphs
 #------------------------------------------------------------------
@@ -2851,7 +2817,6 @@ classes = [
     DAZ_OT_RemoveShapeFromCategory,
     DAZ_OT_RenameCategory,
     DAZ_OT_RemoveCategories,
-    DAZ_OT_Prettify,
     DAZ_OT_ActivateAll,
     DAZ_OT_DeactivateAll,
     DAZ_OT_ClearMorphs,
