@@ -185,13 +185,20 @@ class PbrTree(CyclesTree):
                 self.links.new(tex.outputs[0], self.pbr.inputs["Specular"])
 
         # Roughness
-        if self.material.shader == 'PBRSKIN' and metallicity == 1:
+        if metallicity == 1:
             self.replaceSlot(self.pbr, "Specular", 0.5)
-            self.replaceSlot(self.pbr, "Specular Tint", 0.0)
+            self.replaceSlot(self.pbr, "Subsurface", 0.0)
+            self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
+            self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
+        if self.material.shader == 'PBRSKIN':
+            if metallicity == 1:
+                self.replaceSlot(self.pbr, "Specular Tint", 0.0)
             rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
             roughness = rough1*(1-ratio) + rough2*ratio
             self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
         else:
+            if metallicity == 1:
+                self.replaceSlot(self.pbr, "Specular Tint", 1.0)
             channel,value,roughness,invert = self.material.getGlossyRoughness(0.5)
             roughness *= (1 + anisotropy)
             self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)

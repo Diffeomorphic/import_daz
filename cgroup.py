@@ -566,6 +566,7 @@ class MetalGroupPbrSkin(MixGroup):
         mix.inputs[2].default_value[0:3] = WHITE
 
         glossy = self.addNode("ShaderNodeBsdfGlossy", 3)
+        glossy.distribution = 'ASHIKHMIN_SHIRLEY'
         self.links.new(mix.outputs["Color"], glossy.inputs["Color"])
         self.links.new(self.inputs.outputs[slot], glossy.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])

@@ -233,6 +233,7 @@ class CyclesTree:
         self.volume = None
         self.useCutout = False
         self.useTranslucency = False
+        self.metallic = 0
 
 
     def __repr__(self):
@@ -795,7 +796,8 @@ class CyclesTree:
     def buildMetal(self):
         if not self.isEnabled("Metallicity"):
             return
-        if self.getValue(["Metallic Weight"], 0) == 0:
+        self.metallic = self.getValue(["Metallic Weight"], 0)
+        if self.metallic == 0:
             return
         from .cgroup import MetalGroupUber, MetalGroupPbrSkin
         self.column += 1
@@ -1257,7 +1259,7 @@ class CyclesTree:
 
     def buildVolume(self):
         if (self.material.thinWall or
-            GS.materialMethod != "BSDF" or
+            self.metallic == 1.0 or
             not GS.useVolume):
             return
         self.volume = None
