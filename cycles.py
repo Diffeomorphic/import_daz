@@ -785,7 +785,6 @@ class CyclesTree:
         duallobemult = self.getValue(["Dual Lobe Specular Roughness Mult"], 1.0)
         rough1 = roughness*duallobemult
         rough2 = roughness*duallobemult*lobe2mult
-        roughTex = roughtex
         ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
         return rough1, rough2, roughtex, ratio
 
@@ -810,6 +809,11 @@ class CyclesTree:
             node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
             roughness,roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0)
             self.setRoughness(node, "Roughness", roughness, roughtex)
+            anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
+            self.linkScalar(tex, node, anisotropy, "Anisotropy")
+            anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
+            self.linkScalar(tex, node, 1 - anirot, "Rotation")
+
         self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
         self.linkBumpNormal(node)
         weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
@@ -839,8 +843,9 @@ class CyclesTree:
         if isBlack(color) or strength == 0:
             return
 
-        from .cgroup import FresnelGroup
-        fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel")
+        from .cgroup import Fresnel2Group
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2")
+        fresnel.inputs["Power"].default_value = 1
         ior,iortex = self.getFresnelIOR()
         self.linkScalar(iortex, fresnel, ior, "IOR")
         self.linkBumpNormal(fresnel)
@@ -856,6 +861,12 @@ class CyclesTree:
         color,tex = self.getGlossyColor()
         self.linkColor(tex, glossy, color, "Color")
         roughtex = self.addSlot(channel, glossy, "Roughness", roughness, value, invert)
+        anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
+        self.linkScalar(tex, glossy, anisotropy, "Anisotropy")
+        if anisotropy > 0:
+            anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
+            value = 1 - anirot
+            self.linkScalar(tex, glossy, value, "Rotation")
         self.linkBumpNormal(glossy)
         self.linkScalar(roughtex, fresnel, fnroughness, "Roughness")
 
@@ -896,9 +907,10 @@ class CyclesTree:
         lmode = self.getValue(["Top Coat Layering Mode"], 0)
         fresnel = refltex = None
         if lmode == 2:  # Fresnel
-            from .cgroup import FresnelGroup
+            from .cgroup import Fresnel2Group
             weight = 0.5
-            fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel")
+            fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2")
+            fresnel.inputs["Power"].default_value = 1
             ior,iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
 
@@ -945,7 +957,7 @@ class CyclesTree:
         if fresnel:
             self.linkScalar(roughtex, fresnel, roughness, "Roughness")
             self.linkBumpNormal(fresnel)
-            self.links.new(fresnel.outputs[0], top.inputs["Fac"])
+            self.links.new(fresnel.outputs["Dielectric"], top.inputs["Fac"])
 
 #-------------------------------------------------------------
 #   Translucency

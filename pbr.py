@@ -186,8 +186,8 @@ class PbrTree(CyclesTree):
 
         # Roughness
         if self.material.shader == 'PBRSKIN' and metallicity == 1:
-            self.replaceSlot(self.pbr, "Specular", 1.0)
-            self.replaceSlot(self.pbr, "Specular Tint", 1.0)
+            self.replaceSlot(self.pbr, "Specular", 0.5)
+            self.replaceSlot(self.pbr, "Specular Tint", 0.0)
             rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
             roughness = rough1*(1-ratio) + rough2*ratio
             self.linkScalar(roughtex, self.pbr, roughness, "Roughness")

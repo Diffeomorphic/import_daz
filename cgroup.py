@@ -241,21 +241,21 @@ class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
 #   Fresnel Group
 # ---------------------------------------------------------------------
 
-class FresnelGroup(CyclesGroup):
-    exponent = 0
-
+class Fresnel2Group(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["IOR", "Roughness", "Normal"]
-        self.outsockets += ["Fac"]
+        self.insockets += ["IOR", "Roughness", "Power", "Normal"]
+        self.outsockets += ["Dielectric", "Metal"]
 
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
+        CyclesGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.group.inputs.new("NodeSocketFloat", "Power")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.outputs.new("NodeSocketFloat", "Fac")
+        self.group.outputs.new("NodeSocketFloat", "Dielectric")
+        self.group.outputs.new("NodeSocketFloat", "Metal")
 
 
     def addNodes(self, args=None):
@@ -266,11 +266,10 @@ class FresnelGroup(CyclesGroup):
         divide.inputs[0].default_value = 1.0
         self.links.new(self.inputs.outputs["IOR"], divide.inputs[1])
 
-        if self.exponent:
-            power = self.addNode("ShaderNodeMath", 1)
-            power.operation = 'POWER'
-            self.links.new(self.inputs.outputs["Roughness"], power.inputs[0])
-            power.inputs[1].default_value = self.exponent
+        power = self.addNode("ShaderNodeMath", 1)
+        power.operation = 'POWER'
+        self.links.new(self.inputs.outputs["Roughness"], power.inputs[0])
+        self.links.new(self.inputs.outputs["Power"], power.inputs[1])
 
         bump = self.addNode("ShaderNodeBump", 1)
         self.links.new(self.inputs.outputs["Normal"], bump.inputs["Normal"])
@@ -282,25 +281,24 @@ class FresnelGroup(CyclesGroup):
         self.links.new(divide.outputs["Value"], mix1.inputs[2])
 
         mix2 = self.addNode("ShaderNodeMixRGB", 2)
-        if self.exponent:
-            self.links.new(power.outputs[0], mix2.inputs["Fac"])
-        else:
-            self.links.new(self.inputs.outputs["Roughness"], mix2.inputs["Fac"])
+        self.links.new(power.outputs[0], mix2.inputs["Fac"])
         self.links.new(bump.outputs[0], mix2.inputs[1])
         self.links.new(geo.outputs["Incoming"], mix2.inputs[2])
 
-        fresnel = self.addNode("ShaderNodeFresnel", 3)
-        self.links.new(mix1.outputs[0], fresnel.inputs["IOR"])
-        self.links.new(mix2.outputs[0], fresnel.inputs["Normal"])
-        self.links.new(fresnel.outputs["Fac"], self.outputs.inputs["Fac"])
+        fresnel1 = self.addNode("ShaderNodeFresnel", 3)
+        self.links.new(mix1.outputs[0], fresnel1.inputs["IOR"])
+        self.links.new(mix2.outputs[0], fresnel1.inputs["Normal"])
+        self.links.new(fresnel1.outputs["Fac"], self.outputs.inputs["Dielectric"])
 
+        fresnel2 = self.addNode("ShaderNodeFresnel", 3)
+        self.links.new(mix1.outputs[0], fresnel2.inputs["IOR"])
+        self.links.new(geo.outputs["Incoming"], fresnel2.inputs["Normal"])
 
-class UberFresnelGroup(FresnelGroup):
-    exponent = 2
-
-
-class PbrSkinFresnelGroup(FresnelGroup):
-    exponent = 4
+        sub = self.addNode("ShaderNodeMath", 4)
+        sub.operation = 'SUBTRACT'
+        self.links.new(fresnel1.outputs["Fac"], sub.inputs[0])
+        self.links.new(fresnel2.outputs["Fac"], sub.inputs[1])
+        self.links.new(sub.outputs[0], self.outputs.inputs["Metal"])
 
 # ---------------------------------------------------------------------
 #   Mix Group. Mixes Cycles and Eevee
@@ -451,24 +449,29 @@ class GlossyGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Normal"]
+        self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.group.inputs.new("NodeSocketVector", "Normal")
 
 
     def addNodes(self, args=None):
         MixGroup.addNodes(self, args)
-        glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
-        self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
-        self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
-        self.links.new(glossy.outputs[0], self.mix1.inputs[2])
-        self.links.new(glossy.outputs[0], self.mix2.inputs[2])
+        node = self.addNode("ShaderNodeBsdfAnisotropic", 1)
+        node.distribution = 'ASHIKHMIN_SHIRLEY'
+        self.links.new(self.inputs.outputs["Color"], node.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], node.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Anisotropy"], node.inputs["Anisotropy"])
+        self.links.new(self.inputs.outputs["Rotation"], node.inputs["Rotation"])
+        self.links.new(self.inputs.outputs["Normal"], node.inputs["Normal"])
+        self.links.new(node.outputs[0], self.mix1.inputs[2])
+        self.links.new(node.outputs[0], self.mix2.inputs[2])
 
 # ---------------------------------------------------------------------
 #   Metal Group
@@ -478,24 +481,48 @@ class MetalGroupUber(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Normal"]
+        self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 3)
+        MixGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.group.inputs.new("NodeSocketVector", "Normal")
 
 
     def addNodes(self, args=None):
         MixGroup.addNodes(self, args)
-        glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
-        self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
-        self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
-        self.links.new(glossy.outputs[0], self.mix1.inputs[2])
-        self.links.new(glossy.outputs[0], self.mix2.inputs[2])
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
+        fresnel.inputs["IOR"].default_value = 1.5
+        self.links.new(self.inputs.outputs["Roughness"], fresnel.inputs["Roughness"])
+        fresnel.inputs["Power"].default_value = 2
+        self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
+
+        hsv = self.addNode("ShaderNodeHueSaturation", 1)
+        hsv.inputs["Hue"].default_value = 0.5
+        hsv.inputs["Saturation"].default_value = 0.0
+        hsv.inputs["Value"].default_value = 1.0
+        hsv.inputs["Fac"].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], hsv.inputs["Color"])
+
+        mix = self.addNode("ShaderNodeMixRGB", 2)
+        self.links.new(fresnel.outputs["Metal"], mix.inputs["Fac"])
+        self.links.new(self.inputs.outputs["Color"], mix.inputs[1])
+        self.links.new(hsv.outputs["Color"], mix.inputs[2])
+
+        node = self.addNode("ShaderNodeBsdfAnisotropic", 3)
+        node.distribution = 'ASHIKHMIN_SHIRLEY'
+        self.links.new(mix.outputs["Color"], node.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], node.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Anisotropy"], node.inputs["Anisotropy"])
+        self.links.new(self.inputs.outputs["Rotation"], node.inputs["Rotation"])
+        self.links.new(self.inputs.outputs["Normal"], node.inputs["Normal"])
+
+        self.links.new(node.outputs[0], self.mix1.inputs[2])
+        self.links.new(node.outputs[0], self.mix2.inputs[2])
 
 
 class MetalGroupPbrSkin(MixGroup):
@@ -506,7 +533,7 @@ class MetalGroupPbrSkin(MixGroup):
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 4)
+        MixGroup.create(self, node, name, parent, 6)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness1")
         self.group.inputs.new("NodeSocketFloat", "Roughness2")
@@ -518,7 +545,7 @@ class MetalGroupPbrSkin(MixGroup):
         MixGroup.addNodes(self, args)
         glossy1 = self.addGlossy("Roughness1")
         glossy2 = self.addGlossy("Roughness2")
-        mix = self.addNode("ShaderNodeMixShader", 2)
+        mix = self.addNode("ShaderNodeMixShader", 4)
         self.links.new(self.inputs.outputs["Dual Ratio"], mix.inputs[0])
         self.links.new(glossy1.outputs[0], mix.inputs[1])
         self.links.new(glossy2.outputs[0], mix.inputs[2])
@@ -527,8 +554,19 @@ class MetalGroupPbrSkin(MixGroup):
 
 
     def addGlossy(self, slot):
-        glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
-        self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
+        fresnel.inputs["IOR"].default_value = 1.5
+        self.links.new(self.inputs.outputs[slot], fresnel.inputs["Roughness"])
+        fresnel.inputs["Power"].default_value = 2
+        self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
+
+        mix = self.addNode("ShaderNodeMixRGB", 2)
+        self.links.new(fresnel.outputs["Metal"], mix.inputs["Fac"])
+        self.links.new(self.inputs.outputs["Color"], mix.inputs[1])
+        mix.inputs[2].default_value[0:3] = WHITE
+
+        glossy = self.addNode("ShaderNodeBsdfGlossy", 3)
+        self.links.new(mix.outputs["Color"], glossy.inputs["Color"])
         self.links.new(self.inputs.outputs[slot], glossy.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
         return glossy
@@ -612,7 +650,8 @@ class RefractionGroup(MixGroup):
         self.links.new(refr.outputs[0], thin.inputs[1])
         self.links.new(trans.outputs[0], thin.inputs[2])
 
-        fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel", 2)
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 2)
+        fresnel.inputs["Power"].default_value = 1
         self.links.new(self.inputs.outputs["Fresnel IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs["Glossy Roughness"], fresnel.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
@@ -623,7 +662,7 @@ class RefractionGroup(MixGroup):
         self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
 
         mix = self.addNode("ShaderNodeMixShader", 3)
-        self.links.new(fresnel.outputs[0], mix.inputs[0])
+        self.links.new(fresnel.outputs["Dielectric"], mix.inputs[0])
         self.links.new(thin.outputs[0], mix.inputs[1])
         self.links.new(glossy.outputs[0], mix.inputs[2])
 
@@ -867,7 +906,7 @@ class DualLobeGroup(CyclesGroup):
 
     def mixGlossy(self, fresnel, glossy, slot):
         mix = self.addNode("ShaderNodeMixShader", 2)
-        self.links.new(fresnel.outputs[0], mix.inputs[0])
+        self.links.new(fresnel.outputs["Dielectric"], mix.inputs[0])
         self.links.new(self.inputs.outputs[slot], mix.inputs[1])
         self.links.new(glossy.outputs[0], mix.inputs[2])
         return mix
@@ -886,7 +925,8 @@ class DualLobeGroupUberIray(DualLobeGroup):
     lobe2Normal = False
 
     def addFresnel(self, useNormal, roughness):
-        fresnel = self.addGroup(UberFresnelGroup, "DAZ Fresnel Uber", 1)
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
+        fresnel.inputs["Power"].default_value = 2
         self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs[roughness], fresnel.inputs["Roughness"])
         if useNormal:
@@ -899,7 +939,8 @@ class DualLobeGroupPbrSkin(DualLobeGroup):
     lobe2Normal = True
 
     def addFresnel(self, useNormal, roughness):
-        fresnel = self.addGroup(PbrSkinFresnelGroup, "DAZ Fresnel PBR", 1)
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
+        fresnel.inputs["Power"].default_value = 4
         self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs[roughness], fresnel.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
@@ -1301,7 +1342,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     groups = {
-        "useFresnel" : (FresnelGroup, "DAZ Fresnel", []),
+        "useFresnel" : (Fresnel2Group, "DAZ Fresnel 2", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
         "useOneSided" : (OneSidedGroup, "DAZ One-Sided", []),
         "useOverlay" : (DiffuseGroup, "DAZ Overlay", []),
@@ -1314,10 +1355,12 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
         "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe Uber", []),
         "useDualLobePBR" : (DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", []),
+        "useMetalUber" : (MetalGroupUber, "DAZ Metal Uber", []),
+        "useMetalPBR" : (MetalGroupPbrSkin, "DAZ Metal PBR", []),
         "useVolume" : (VolumeGroup, "DAZ Volume", []),
         "useNormal" : (NormalGroup, "DAZ Normal", ["uvname"]),
         "useDisplacement" : (DisplacementGroup, "DAZ Displacement", []),
-        "useDecal" : (DecalGroup, "DAZ Decal", [None, None]),
+        "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
     }
 
     useFresnel : BoolProperty(name="Fresnel", default=False)
@@ -1334,6 +1377,8 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useRayClip : BoolProperty(name="Ray Clip", default=False)
     useDualLobeUber : BoolProperty(name="Dual Lobe (Uber Shader)", default=False)
     useDualLobePBR : BoolProperty(name="Dual Lobe (PBR Skin)", default=False)
+    useMetalUber : BoolProperty(name="Metal (Uber Shader)", default=False)
+    useMetalPBR : BoolProperty(name="Metal (PBR Skin)", default=False)
     useVolume : BoolProperty(name="Volume", default=False)
     useNormal : BoolProperty(name="Normal", default=False)
     useDisplacement : BoolProperty(name="Displacement", default=False)
@@ -1347,6 +1392,8 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     def run(self, context):
         from .cycles import CyclesMaterial, CyclesTree
         ob = context.object
+        if ob.active_material_index >= len(ob.data.materials):
+            raise DazError("No material found")
         mat = ob.data.materials[ob.active_material_index]
         if mat is None:
             raise DazError("No active material")
