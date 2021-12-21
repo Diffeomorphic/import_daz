@@ -465,8 +465,8 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
             layout.operator("daz.save_pose_preset")
             layout.separator()
 
-        layout.operator("daz.save_poses_to_actions")
-        layout.operator("daz.load_poses_from_actions")
+        layout.operator("daz.save_poses_to_file")
+        layout.operator("daz.load_poses_from_file")
 
         if rig:
             layout.separator()

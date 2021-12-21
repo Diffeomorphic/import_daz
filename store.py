@@ -36,16 +36,16 @@ from .morphing import MorphGroup
 #   Save and Load pose to action
 #------------------------------------------------------------------
 
-class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
-    bl_idname = "daz.save_poses_to_actions"
-    bl_label = "Save Poses To Actions"
-    bl_description = "Save the current scene poses as named actions"
+class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
+    bl_idname = "daz.save_poses_to_file"
+    bl_label = "Save Poses To File"
+    bl_description = "Save the current scene poses as a json file"
     bl_options = {'UNDO'}
 
-    prefix : StringProperty(
-        name = "Action Prefix",
-        description = "Action prefix",
-        default = "Scene")
+    name : StringProperty(
+        name = "Scene Name",
+        description = "Name of the file to save the scene in",
+        default = "scene")
 
     useOverwrite : BoolProperty(
         name = "Overwrite",
@@ -77,8 +77,12 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
         description = "Save action for lights",
         default = True)
 
+    @classmethod
+    def poll(self, context):
+        return bpy.data.filepath
+
     def draw(self, context):
-        self.layout.prop(self, "prefix")
+        self.layout.prop(self, "name")
         self.layout.prop(self, "useOverwrite")
         self.layout.prop(self, "useArmature")
         self.layout.prop(self, "useMesh")
@@ -89,6 +93,7 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
 
     def run(self, context):
         from .morphing import getActivated, keyProp
+        struct = {}
         scn = context.scene
         self.exclude = []
         for rig in getVisibleArmatures(context):
@@ -103,41 +108,38 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
                     (ob.type == 'LIGHT' and self.useLight)):
                 continue
             self.setupDriven(ob)
-            self.insertKeys(ob, scn.frame_current)
+            ostruct = self.saveTransform(ob, struct)
+            dstruct = ostruct["data"] = {}
             if ob.type == 'ARMATURE':
                 rig = ob
+                amt = ob.data
+                ostruct["layers"] = amt.layers
+                ostruct["layers_protected"] = amt.layers_protected
+                pstruct = ostruct["pose"] = {}
                 for pb in rig.pose.bones:
-                    self.insertKeys(pb, scn.frame_current)
+                    self.saveTransform(pb, pstruct)
                 morphs = self.getRelevantMorphs(scn, rig)
+                mstruct = ostruct["morphs"] = {}
                 for morph in morphs:
                     if getActivated(rig, rig, morph):
-                        keyProp(rig, morph, scn.frame_current)
-                updateRigDrivers(context, rig)
-            self.saveAction(ob, "")
+                        mstruct[morph] = rig[morph]
+                for key,value in amt.items():
+                    if (key[0:3] in ["Mha"] and
+                        key[3:9] not in ["ToeTar", "ArmStr", "LegStr"]):
+                        self.addValue(dstruct, key, value)
 
-            if False and ob.type in ['CAMERA', 'LIGHT']:
+            if ob.type in ['CAMERA', 'LIGHT']:
                 for key in dir(ob.data):
                     if key[0] != '_':
-                        try:
-                            ob.data.keyframe_insert(key, frame=scn.frame_current)
-                        except TypeError:
-                            pass
-                self.saveAction(ob.data, ":%s" % ob.type[0:3])
+                        value = getattr(ob.data, key)
+                        self.addValue(dstruct, key, value)
 
-
-    def saveAction(self, rna, infix):
-        if rna.animation_data:
-            act = rna.animation_data.action
-            if act:
-                aname = "%s%s:%s" % (self.prefix, infix, rna.name)
-                if self.useOverwrite and aname in bpy.data.actions.keys():
-                    for act2 in list(bpy.data.actions):
-                        if act2.name.startswith(aname):
-                            bpy.data.actions.remove(act2)
-                act.name = aname
-                act.use_fake_user = True
-                rna.animation_data.action = None
-                print("Saved %s" % act.name)
+        from .load_json import saveJson
+        folder = os.path.join(os.path.dirname(bpy.data.filepath), "scenes")
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        path = os.path.join(folder, "%s.json" % self.name)
+        saveJson(struct, path)
 
 
     def excludeChildren(self, ob):
@@ -172,17 +174,21 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
         self.driven[bname][channel][idx] = True
 
 
-    def insertKeys(self, pb, frame):
+    def saveTransform(self, pb, struct):
         if isDrvBone(pb.name) or isFinal(pb.name):
             return
+        ostruct = struct[pb.name] = {}
         if self.isFreeLoc(pb, "location"):
-            pb.keyframe_insert("location", frame=frame, group=pb.name)
+            ostruct["location"] = tuple(pb.location)
         if pb.rotation_mode == 'QUATERNION':
-            if self.isFreeRot(pb, "rotation_quaternion"):
-                pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
+            if self.isFree(pb, pb.lock_rotation, "rotation_quaternion"):
+                ostruct["rotation_quaternion"] = tuple(pb.rotation_quaternion)
         else:
-            if self.isFreeRot(pb, "rotation_euler"):
-                pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
+            if self.isFree(pb, pb.lock_rotation, "rotation_euler"):
+                ostruct["rotation_euler"] = tuple(pb.rotation_euler)
+        if self.isFree(pb, pb.lock_scale, "scale"):
+            ostruct["scale"] = tuple(pb.scale)
+        return ostruct
 
 
     def isFree(self, pb, locks, channel):
@@ -199,88 +205,94 @@ class DAZ_OT_SavePosesToActions(DazPropsOperator, MorphGroup):
     def isFreeLoc(self, pb, channel):
         if isinstance(pb, bpy.types.PoseBone) and pb.bone.use_connect:
             return False
-        elif not self.isFree(pb, pb.lock_location, channel):
-            return False
-        for cns in pb.constraints:
-            if cns.mute or cns.type[0:5] == 'LIMIT':
-                pass
-            else:
-                return False
-        return True
+        else:
+            return self.isFree(pb, pb.lock_location, channel)
 
 
-    def isFreeRot(self, pb, channel):
-        if not self.isFree(pb, pb.lock_rotation, channel):
-            return False
-        for cns in pb.constraints:
-            if cns.mute or cns.type[0:5] == 'LIMIT':
-                pass
-            elif cns.type == 'COPY_ROTATION' and cns.mix_mode == 'OFFSET':
-                pass
-            else:
-                return False
-        return True
+    def addValue(self, struct, key, value):
+        if (isinstance(value, int) or
+            isinstance(value, float) or
+            isinstance(value, bool) or
+            isinstance(value, str)):
+            struct[key] = value
 
 
-def getActionPrefix(scn, context):
-    ob = context.object
+def getSceneFile(scn, context):
+    folder = os.path.join(os.path.dirname(bpy.data.filepath), "scenes")
     enums = []
-    taken = []
-    for act in bpy.data.actions:
-        words = act.name.split(":")
-        prefix = words[0]
-        if len(words) == 2 and prefix not in taken:
-            enums.append((prefix, prefix, prefix))
-            taken.append(prefix)
-    enums.sort()
+    if os.path.exists(folder):
+        for file in os.listdir(folder):
+            words = os.path.splitext(file)
+            if words[-1] == ".json":
+                path = os.path.join(folder, file)
+                enums.append((path, words[0], "Path to file"))
+        enums.sort()
     if len(enums) == 0:
         enums = [("-", "No action found", "No action found")]
     return enums
 
 
-class DAZ_OT_LoadPosesFromActions(DazPropsOperator):
-    bl_idname = "daz.load_poses_from_actions"
-    bl_label = "Load Poses From Actions"
-    bl_description = "Load poses for all objects from named actions"
+class DAZ_OT_LoadPosesFromFile(DazPropsOperator):
+    bl_idname = "daz.load_poses_from_file"
+    bl_label = "Load Poses From File"
+    bl_description = "Load poses for all objects from json file"
     bl_options = {'UNDO'}
 
-    prefix : EnumProperty(
-        items = getActionPrefix,
-        name = "Action Prefix",
-        description = "Action prefix")
+    file : EnumProperty(
+        items = getSceneFile,
+        name = "File",
+        description = "Name of the file containing the scene")
 
     def draw(self, context):
-        self.layout.prop(self, "prefix")
+        self.layout.prop(self, "file")
 
     def run(self, context):
-        if self.prefix == "-":
+        if self.file == "-":
             return
-        self.objects = []
-        for ob in getVisibleObjects(context):
-            aname = "%s:%s" % (self.prefix, ob.name)
-            self.loadAction(ob, aname)
-            if ob.type in ['CAMERA', 'LIGHT']:
-                aname = "%s:%s:%s" % (self.prefix, ob.type[0:3], ob.name)
-                self.loadAction(ob.data, aname)
-        updateScene(context)
-        for rna in self.objects:
-            rna.animation_data.action = None
+        from .load_json import loadJson
+        struct = loadJson(self.file)
+        for oname,ostruct in struct.items():
+            ob = bpy.data.objects.get(oname)
+            if ob is None:
+                print("Missing object", oname)
+                continue
+            print("Load", ob.name)
+            self.setTransform(ob, ostruct)
+            data = ostruct.get("data")
+            if data:
+                for key,value in data.items():
+                    try:
+                        setattr(ob.data, key, value)
+                    except AttributeError:
+                        pass
+            if ob.type == 'ARMATURE':
+                rig = ob
+                rig.data.layers = ostruct["layers"]
+                rig.data.layers_protected = ostruct["layers_protected"]
+                pose = ostruct.get("pose")
+                if pose:
+                    for bname,bstruct in pose.items():
+                        pb = rig.pose.bones.get(bname)
+                        self.setTransform(pb, bstruct)
+                morphs = ostruct.get("morphs")
+                if morphs:
+                    for prop,value in morphs.items():
+                        rig[prop] = value
 
 
-    def loadAction(self, rna, aname):
-        act = bpy.data.actions.get(aname)
-        if act:
-            print("Loaded %s" % act.name)
-            rna.animation_data.action = act
-            self.objects.append(rna)
+    def setTransform(self, pb, struct):
+        for key in ["location", "rotation_quaternion", "rotation_euler", "scale"]:
+            value = struct.get(key)
+            if value is not None:
+                setattr(pb, key, value)
 
 #-------------------------------------------------------------
 #   Register
 #-------------------------------------------------------------
 
 classes = [
-    DAZ_OT_SavePosesToActions,
-    DAZ_OT_LoadPosesFromActions,
+    DAZ_OT_SavePosesToFile,
+    DAZ_OT_LoadPosesFromFile,
 ]
 
 def register():
