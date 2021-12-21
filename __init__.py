@@ -61,7 +61,7 @@ def importModules():
                     "fix", "modifier", "animation", "load_morph", "morphing", "panel",
                     "material", "cycles", "cgroup", "pbr", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "main", "finger",
-                    "matedit", "tables", "proxy", "rigify", "hide",
+                    "matedit", "tables", "proxy", "rigify", "hide", "store",
                     "mhx", "layers", "hair", "transfer", "dforce",
                     "hdmorphs", "facecap", "api",
                     "runtime.morph_armature"]
@@ -87,7 +87,7 @@ regnames = ["propgroups", "daz", "uilist", "driver",
             "fix", "animation", "morphing", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
-            "matedit", "proxy", "rigify", "merge", "hide",
+            "matedit", "proxy", "rigify", "merge", "hide", "store",
             "mhx", "layers", "hair", "transfer", "dforce",
             "hdmorphs", "facecap", "udim"]
 

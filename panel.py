@@ -436,53 +436,48 @@ class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
 class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Posing"
 
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type in ['ARMATURE', 'MESH'])
-
-
     def draw(self, context):
         from .morphing import getRigFromObject
         ob = context.object
-        rig = getRigFromObject(ob)
-        if rig is None:
-            return
+        rig = None
+        if ob:
+            rig = getRigFromObject(ob)
         scn = context.scene
         layout = self.layout
 
-        layout.operator("daz.import_pose")
-        layout.operator("daz.import_poselib")
-        layout.operator("daz.import_action")
-        layout.separator()
-        layout.operator("daz.import_node_pose")
-        layout.separator()
-        layout.operator("daz.clear_pose")
-        op = layout.operator("daz.clear_morphs")
-        if rig.DazDriversDisabled:
-            layout.operator("daz.enable_drivers")
-        else:
-            layout.operator("daz.disable_drivers")
-        layout.operator("daz.prune_action")
-        layout.separator()
-        layout.operator("daz.impose_locks_limits")
-        layout.operator("daz.bake_pose_to_fk_rig")
-        layout.operator("daz.save_pose_preset")
-        layout.separator()
+        if rig:
+            layout.operator("daz.import_pose")
+            layout.operator("daz.import_poselib")
+            layout.operator("daz.import_action")
+            layout.separator()
+            layout.operator("daz.import_node_pose")
+            layout.separator()
+            layout.operator("daz.clear_pose")
+            op = layout.operator("daz.clear_morphs")
+            if rig.DazDriversDisabled:
+                layout.operator("daz.enable_drivers")
+            else:
+                layout.operator("daz.disable_drivers")
+            layout.operator("daz.prune_action")
+            layout.separator()
+            layout.operator("daz.impose_locks_limits")
+            layout.operator("daz.bake_pose_to_fk_rig")
+            layout.operator("daz.save_pose_preset")
+            layout.separator()
+
         layout.operator("daz.save_poses_to_actions")
         layout.operator("daz.load_poses_from_actions")
 
-
-        layout.separator()
-        split = layout.split(factor=0.6)
-        layout.prop(rig, "DazLocLocks")
-        layout.prop(rig, "DazRotLocks")
-        layout.prop(rig, "DazLocLimits")
-        layout.prop(rig, "DazRotLimits")
-
-        return
-        layout.separator()
-        layout.operator("daz.rotate_bones")
+        if rig:
+            layout.separator()
+            split = layout.split(factor=0.6)
+            layout.prop(rig, "DazLocLocks")
+            layout.prop(rig, "DazRotLocks")
+            layout.prop(rig, "DazLocLimits")
+            layout.prop(rig, "DazRotLimits")
+            return
+            layout.separator()
+            layout.operator("daz.rotate_bones")
 
 #----------------------------------------------------------
 #   Morphs panel
