@@ -511,7 +511,6 @@ class DAZ_PT_Morphs:
 
 
     def hasAdjustProp(self, rig):
-        return False
         from .morphing import theAdjusters
         adj = theAdjusters[self.morphset]
         return (adj in rig.keys())
@@ -520,10 +519,10 @@ class DAZ_PT_Morphs:
     def draw(self, context):
         scn = context.scene
         rig = self.getCurrentRig(context)
-        #from .morphing import theAdjusters
-        #adj = theAdjusters[self.morphset]
-        #if adj in rig.keys():
-        #    self.layout.prop(rig, propRef(adj))
+        from .morphing import theAdjusters
+        adj = theAdjusters[self.morphset]
+        if adj in rig.keys():
+            self.layout.prop(rig, propRef(adj))
         if not self.hasTheseMorphs(rig):
             return
         self.preamble(self.layout, rig)

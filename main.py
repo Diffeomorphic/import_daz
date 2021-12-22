@@ -420,6 +420,13 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         name = "Favorite Morphs",
         description = "Path to favorite morphs")
 
+    useAdjusters : BoolProperty(
+        name = "Use Adjusters",
+        description = ("Add an adjuster for the morph type.\n" +
+                       "Dependence on FBM and FHM morphs is ignored.\n" +
+                       "Useful if the character is baked"),
+        default = False)
+
     useConvertHair : BoolProperty(
         name = "Convert Hair",
         description = "Convert strand-based hair to particle hair",
@@ -453,6 +460,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
             if self.useMorphSuffix == 'ALL':
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
+        self.subprop("useAdjusters")
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
         self.layout.prop(self, "useMergeGeografts")
@@ -626,7 +634,8 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
                     bpy.ops.daz.load_favo_morphs(
                         filepath = self.favoPath,
                         useMorphSuffix = self.useMorphSuffix,
-                        morphSuffix = self.morphSuffix)
+                        morphSuffix = self.morphSuffix,
+                        useAdjusters = self.useAdjusters)
             if (self.units or
                   self.expressions or
                   self.visemes or
@@ -645,7 +654,8 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
                         body = self.body,
                         useMhxOnly = self.useMhxOnly,
                         jcms = self.jcms,
-                        flexions = self.flexions)
+                        flexions = self.flexions,
+                        useAdjusters = self.useAdjusters)
 
 
         # Merge geografts

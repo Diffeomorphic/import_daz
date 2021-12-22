@@ -790,6 +790,13 @@ class MorphLoader(LoadMorph, MorphSuffix):
     category = ""
     adjuster = None
 
+    useAdjusters : BoolProperty(
+        name = "Use Adjusters",
+        description = ("Add an adjuster for the morph type.\n" +
+                       "Dependence on FBM and FHM morphs is ignored.\n" +
+                       "Useful if the character is baked"),
+        default = False)
+
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacter
         self.rig, self.mesh, self.char, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
@@ -952,6 +959,7 @@ class StandardMorphSelector(Selector):
     def draw(self, context):
         Selector.draw(self, context)
         row = self.layout.row()
+        row.prop(self, "useAdjusters")
         row.prop(self, "useMorphSuffix")
         if self.useMorphSuffix == 'ALL':
             row.prop(self, "morphSuffix")
@@ -1142,6 +1150,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     def draw(self, context):
         MorphTypeOptions.draw(self, context)
         MorphSuffix.draw(self, context)
+        self.layout.prop(self, "useAdjusters")
 
     def run(self, context):
         if not self.setupCharacter(context):
@@ -1246,13 +1255,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         description = "Mesh categories",
         default = False)
 
-    useAdjusters : BoolProperty(
-        name = "Use Adjusters",
-        description = ("Add an adjuster for the category type.\n" +
-                       "Dependence on FBM and FHM morphs is ignored.\n" +
-                       "Useful if the character is baked"),
-        default = False)
-
     bodypart : EnumProperty(
         items = [("Face", "Face", "Face"),
                  ("Body", "Body", "Body"),
@@ -1274,13 +1276,13 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         self.layout.prop(self, "usePropDrivers")
         if self.usePropDrivers:
             self.layout.prop(self, "category")
+            self.layout.prop(self, "useAdjusters")
         else:
             self.layout.prop(self, "useMeshCats")
             if self.useMeshCats:
                 self.layout.prop(self, "category")
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
-        self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "treatHD")
 
 
@@ -2708,6 +2710,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
     def draw(self, context):
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "ignoreFinger")
+        self.layout.prop(self, "useAdjusters")
 
     def invoke(self, context, event):
         return SingleFile.invoke(self, context, event)
