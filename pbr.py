@@ -138,9 +138,10 @@ class PbrTree(CyclesTree):
         if self.isEnabled("Metallicity"):
             metallicity,tex = self.getColorTex(["Metallic Weight"], "NONE", 0.0)
             self.linkScalar(tex, self.pbr, metallicity, "Metallic")
+            self.pureMetal = (metallicity == 1 and tex is None)
         else:
             metallicity = 0
-        useTex = not (self.material.basemix == 0 and metallicity > 0.5)
+        useTex = not (self.material.basemix == 0 and self.pureMetal)
 
         # Subsurface scattering
         self.buildSSS()
@@ -185,19 +186,19 @@ class PbrTree(CyclesTree):
                 self.links.new(tex.outputs[0], self.pbr.inputs["Specular"])
 
         # Roughness
-        if metallicity == 1:
+        if self.pureMetal:
             self.replaceSlot(self.pbr, "Specular", 0.5)
             self.replaceSlot(self.pbr, "Subsurface", 0.0)
             self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
             self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
         if self.material.shader == 'PBRSKIN':
-            if metallicity == 1:
+            if self.pureMetal:
                 self.replaceSlot(self.pbr, "Specular Tint", 0.0)
             rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
             roughness = rough1*(1-ratio) + rough2*ratio
             self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
         else:
-            if metallicity == 1:
+            if self.pureMetal:
                 self.replaceSlot(self.pbr, "Specular Tint", 1.0)
             channel,value,roughness,invert = self.material.getGlossyRoughness(0.5)
             roughness *= (1 + anisotropy)

@@ -233,7 +233,7 @@ class CyclesTree:
         self.volume = None
         self.useCutout = False
         self.useTranslucency = False
-        self.metallic = 0
+        self.pureMetal = False
 
 
     def __repr__(self):
@@ -796,8 +796,7 @@ class CyclesTree:
     def buildMetal(self):
         if not self.isEnabled("Metallicity"):
             return
-        self.metallic = self.getValue(["Metallic Weight"], 0)
-        if self.metallic == 0:
+        if self.getValue(["Metallic Weight"], 0) == 0:
             return
         from .cgroup import MetalGroupUber, MetalGroupPbrSkin
         self.column += 1
@@ -820,6 +819,8 @@ class CyclesTree:
         self.linkBumpNormal(node)
         weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
         self.mixWithActive(weight, wttex, node)
+        if weight == 1 and wttex is None:
+            self.pureMetal = True
 
 #-------------------------------------------------------------
 #   Glossy
@@ -1259,7 +1260,7 @@ class CyclesTree:
 
     def buildVolume(self):
         if (self.material.thinWall or
-            self.metallic == 1.0 or
+            self.pureMetal or
             not GS.useVolume):
             return
         self.volume = None
