@@ -794,7 +794,8 @@ class CyclesTree:
 #-------------------------------------------------------------
 
     def buildMetal(self):
-        if not self.isEnabled("Metallicity"):
+        if not (self.isEnabled("Metallicity") and
+                self.material.basemix == 0):
             return
         if self.getValue(["Metallic Weight"], 0) == 0:
             return
