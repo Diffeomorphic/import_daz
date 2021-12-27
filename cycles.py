@@ -1001,6 +1001,7 @@ class CyclesTree:
         node.inputs["Scale"].default_value = 1.0
         ssscolor,ssstex,sssmode = self.getSSSColor()
         radius,radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
+        radius = self.fixSSSRadius(radius)
         self.linkColor(radtex, node, radius, "Radius")
         node.inputs["Cycles Mix Factor"].default_value = (not GS.useVolume)
         node.inputs["Eevee Mix Factor"].default_value = 1.0
@@ -1067,6 +1068,17 @@ class CyclesTree:
         rad,radtex = self.sumColors(ssscolor, ssstex, trans, transtex)
         radius = rad * 2.0 * LS.scale
         return radius,radtex
+
+
+    def fixSSSRadius(self, radius):
+        if bpy.app.version < (3,0,0):
+            return radius
+        elif GS.sssMethod == 'BURLEY':
+            return 0.25*radius
+        elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
+            return 0.5*radius
+        elif GS.sssMethod == 'RANDOM_WALK':
+            return 0.1*radius
 
 #-------------------------------------------------------------
 #   Transparency
