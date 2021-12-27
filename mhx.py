@@ -1148,7 +1148,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             locElbowPt = forearm.head - 1.2*dist*vec
             elbowPoleA = makeBone("elbowPoleA"+suffix, rig, armSocket.head, armSocket.head-ez, 0, L_LARMIK+dlayer, armSocket)
             elbowPoleP = makeBone("elbowPoleP"+suffix, rig, forearm.head, forearm.head-ez, 0, L_HELP2, armParent)
-            elbowPt = makeBone("elbow.pt.ik"+suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, None)
+            parent = {
+                'HAND' : elbowPoleP,
+                'SHOULDER': armParent,
+                'MASTER' : self.master
+            }
+            elbowPt = makeBone("elbow.pt.ik"+suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, parent[self.elbowParent])
             elbowLink = makeBone("elbow.link"+suffix, rig, forearm.head, locElbowPt, 0, L_LARMIK+dlayer, upper_armIk)
             if self.showLinks:
                 elbowLink.hide_select = True
@@ -1209,7 +1214,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             kneePoleA = makeBone("kneePoleA"+suffix, rig, legSocket.head, legSocket.head-ez, 0, L_LLEGIK+dlayer, legSocket)
             kneePoleP = makeBone("kneePoleP"+suffix, rig, shin.head, shin.head-ez, 0, L_HELP2, hip)
             kneePoleA.layers[L_LEXTRA+dlayer] = True
-            kneePt = makeBone("knee.pt.ik"+suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, None)
+            parent = {
+                'FOOT' : kneePoleP,
+                'HIP': hip,
+                'MASTER' : self.master
+            }
+            kneePt = makeBone("knee.pt.ik"+suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent[self.kneeParent])
             kneePt.layers[L_LEXTRA+dlayer] = True
             kneeLink = makeBone("knee.link"+suffix, rig, shin.head, locKneePt, 0, L_LLEGIK+dlayer, thighIk)
             if self.showLinks:
@@ -1306,12 +1316,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = copyLocation(elbowPoleA, handIk, rig)
             cns.influence = upper_arm.bone.length/(upper_arm.bone.length + forearm.bone.length)
             copyTransform(elbowPoleP, elbowPoleA, rig)
-            parent = {
-                'HAND' : elbowPoleP,
-                'SHOULDER': armParent,
-                'MASTER' : master
-            }
-            childOf(elbowPt, parent[self.elbowParent], rig)
             setMhxProp(rig, "MhaElbowParent_%s" % suffix[1], self.elbowParent)
 
             #hintRotation(forearmIk, rig)
@@ -1377,12 +1381,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = copyLocation(kneePoleA, ankleIk, rig)
             cns.influence = thigh.bone.length/(thigh.bone.length + shin.bone.length)
             copyTransform(kneePoleP, kneePoleA, rig)
-            parent = {
-                'FOOT' : kneePoleP,
-                'HIP': hip,
-                'MASTER' : master
-            }
-            childOf(kneePt, parent[self.kneeParent], rig)
             setMhxProp(rig, "MhaKneeParent_%s" % suffix[1], self.kneeParent)
 
             fixIk(rig, [shinIk.name])

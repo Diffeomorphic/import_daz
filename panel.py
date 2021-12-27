@@ -140,9 +140,8 @@ class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.merge_geografts")
         self.layout.operator("daz.merge_uv_layers")
-        if bpy.app.version >= (2,82,0):
-            self.layout.operator("daz.set_udims")
-            self.layout.operator("daz.make_udim_materials")
+        self.layout.operator("daz.set_udims")
+        self.layout.operator("daz.make_udim_materials")
         self.layout.operator("daz.convert_widgets")
         self.layout.operator("daz.finalize_meshes")
         self.layout.separator()
@@ -220,10 +219,9 @@ class DAZ_PT_AdvancedHDMesh(DAZ_PT_Base, bpy.types.Panel):
         if bpy.app.version >= (2,90,0):
             self.layout.operator("daz.make_multires")
             self.layout.separator()
-        if bpy.app.version >= (2,82,0):
-            self.layout.operator("daz.bake_maps")
-            self.layout.operator("daz.load_baked_maps")
-            self.layout.separator()
+        self.layout.operator("daz.bake_maps")
+        self.layout.operator("daz.load_baked_maps")
+        self.layout.separator()
         self.layout.operator("daz.load_normal_map")
         self.layout.operator("daz.load_scalar_disp")
         self.layout.operator("daz.load_vector_disp")

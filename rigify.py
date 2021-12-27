@@ -989,8 +989,7 @@ class Rigify:
         # Rescale custom shapes
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(gen, ["head", "spine_fk.007"], 4)
-        if bpy.app.version >= (2,82,0):
-            self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*rig.DazScale,0)))
+        self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*rig.DazScale,0)))
 
         # Add DAZ properties
         print("  Add DAZ properties")
