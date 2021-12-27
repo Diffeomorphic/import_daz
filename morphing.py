@@ -1456,12 +1456,18 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
                     self.removePropDrivers(amt, rest, amt)
                 for ob in rig.children:
                     if ob.type == 'MESH':
-                        self.removePropDrivers(ob.data.shape_keys, raw, rig)
-                        self.removePropDrivers(ob.data.shape_keys, final, amt)
-                        if self.useDeleteShapekeys and ob.data.shape_keys:
-                            if raw in ob.data.shape_keys.key_blocks.keys():
-                                skey = ob.data.shape_keys.key_blocks[raw]
-                                ob.shape_key_remove(skey)
+                        skeys = ob.data.shape_keys
+                        self.removePropDrivers(skeys, raw, rig)
+                        self.removePropDrivers(skeys, final, amt)
+                        if ob.data.shape_keys:
+                            if raw in skeys.key_blocks.keys():
+                                skey = skeys.key_blocks[raw]
+                                if self.useDeleteShapekeys or self.useDeleteDrivers:
+                                    skey.driver_remove("value")
+                                    skey.driver_remove("slider_min")
+                                    skey.driver_remove("slider_max")
+                                if self.useDeleteShapekeys:
+                                    ob.shape_key_remove(skey)
                 if raw in rig.keys():
                     self.removeFromPropGroups(rig, raw)
                 if self.useDeleteProps and self.useDeleteDrivers:
@@ -2239,6 +2245,8 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
     def handleShapekey(self, sname, rig, ob):
         skey = ob.data.shape_keys.key_blocks[sname]
         skey.driver_remove("value")
+        skey.driver_remove("slider_min")
+        skey.driver_remove("slider_max")
         removeShapeDriversAndProps(ob.parent, sname)
 
     def includeShapekey(self, skeys, sname):
