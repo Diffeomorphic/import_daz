@@ -248,12 +248,15 @@ class PbrTree(CyclesTree):
         gamma.inputs["Gamma"].default_value = 3.5
         ssscolor,ssstex,sssmode = self.getSSSColor()
         radius,radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
-        radius = self.fixSSSRadius(radius)
+        radius,ior,aniso = self.fixSSSRadius(radius)
         self.linkColor(coltex, gamma, color, "Color")
         self.pbr.subsurface_method = GS.getSSSMethod()
         self.links.new(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
         self.linkScalar(wttex, self.pbr, wt, "Subsurface")
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
+        if bpy.app.version >= (3,0,0):
+            self.pbr.inputs["Subsurface IOR"].default_value = ior
+            self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
         self.endSSS()
 
 

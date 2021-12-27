@@ -745,7 +745,7 @@ class TranslucentGroup(MixGroup):
     def __init__(self):
         MixGroup.__init__(self)
         self.insockets += [
-            "Color", "Gamma", "Scale", "Radius",
+            "Color", "Gamma", "Scale", "Radius", "IOR", "Anisotropy",
             "Cycles Mix Factor", "Eevee Mix Factor", "Normal"]
 
 
@@ -755,6 +755,8 @@ class TranslucentGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Gamma")
         self.group.inputs.new("NodeSocketFloat", "Scale")
         self.group.inputs.new("NodeSocketVector", "Radius")
+        self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
         self.group.inputs.new("NodeSocketFloat", "Cycles Mix Factor")
         self.group.inputs.new("NodeSocketFloat", "Eevee Mix Factor")
         self.group.inputs.new("NodeSocketVector", "Normal")
@@ -775,6 +777,9 @@ class TranslucentGroup(MixGroup):
         self.links.new(gamma.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])
+        if bpy.app.version >= (3,0,0):
+            self.links.new(self.inputs.outputs["IOR"], sss.inputs["IOR"])
+            self.links.new(self.inputs.outputs["Anisotropy"], sss.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Normal"], sss.inputs["Normal"])
 
         cmix = self.addNode("ShaderNodeMixShader", 2)
