@@ -452,13 +452,7 @@ def copyBoneInfo(srcpb, trgpb):
 
 
 class ExtraBones(DriverUser):
-    keepLimits : BoolProperty(
-        name = "Keep Limits",
-        description = "Keep limit rotation and location constraints",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "keepLimits")
+    keepLimits = False
 
     def run(self, context):
         from time import perf_counter
@@ -670,6 +664,7 @@ class ExtraBones(DriverUser):
 
         print("  Rename bones")
         self.bnames = self.getBoneNames(rig)
+        self.removeLimits(rig)
         boneDrivers, sumDrivers = self.storeRemoveBoneSumDrivers(rig)
         setMode('EDIT')
         for bname in self.bnames:
@@ -762,7 +757,16 @@ class ExtraBones(DriverUser):
             updateDrivers(ob)
 
 
-class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
+    def removeLimits(self, rig):
+        for bname in self.bnames:
+            pb = rig.pose.bones[bname]
+            for cns in list(pb.constraints):
+                if cns.type in ['LIMIT_LOCATION', 'LIMIT_ROTATION', 'LIMIT_SCALE']:
+                    for channel in ["min_x", "min_y", "min_z", "max_x", "max_y", "max_z"]:
+                        cns.driver_remove(channel)
+
+
+class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
     bl_idname = "daz.add_extra_face_bones"
     bl_label = "Add Extra Face Bones"
     bl_description = "Add an extra layer of face bones, which can be both driven and posed"
@@ -809,7 +813,7 @@ def getAnchoredBoneNames(rig, anchors):
     return bnames
 
 
-class DAZ_OT_MakeAllBonesPoseable(DazPropsOperator, ExtraBones, IsArmature):
+class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
     bl_idname = "daz.make_all_bones_poseable"
     bl_label = "Make All Bones Poseable"
     bl_description = "Add an extra layer of driven bones, to make them poseable"
