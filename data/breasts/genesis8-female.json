@@ -8,6 +8,14 @@
     },
     "vertices" : {
         "lNipple" : 6569,
-        "rNipple" : 12949
+        "rNipple" : 12949,
+        "lTop" : 1915,
+        "rTop" : 8425,
+        "xmin" : 134,
+        "xmax" : 1926,
+        "ymin" : 4519,
+        "ymax" : 6569,
+        "zmin" : 828,
+        "zmax" : 1639
     }
 }

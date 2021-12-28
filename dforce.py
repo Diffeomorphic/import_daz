@@ -389,68 +389,98 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
 
 from mathutils import Matrix
 
-class DAZ_OT_AddBounce(DazOperator, IsMesh):
+class DAZ_OT_AddBounce(DazPropsOperator, IsMesh):
     bl_idname = "daz.add_bounce"
     bl_label = "Add Breast Bounce"
     bl_description = "Add breast bounce (G8F only)"
     bl_options = {'UNDO'}
 
+    latsize : IntProperty(
+        name = "Lattice Size",
+        description = "Number of lattice points in each direction",
+        min = 2, max = 10,
+        default = 6)
+
+    useSoftBody : BoolProperty(
+        name = "Softbody Simulation",
+        description = "Add softbody simulation",
+        default = True)
+
+    useRigidBody : BoolProperty(
+        name = "Rigid Body Simulation",
+        description = "Add rigid body simulation",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "latsize")
+        self.layout.prop(self, "useSoftBody")
+        self.layout.prop(self, "useRigidBody")
+
     def run(self, context):
         from .load_json import loadJson
-        ob = context.object
-        rig = ob.parent
-        if ob.DazMesh != "Genesis8-female":
+        hum = context.object
+        rig = hum.parent
+        if hum.DazMesh != "Genesis8-female":
             raise DazError("Only G8F")
         folder = os.path.join(os.path.dirname(__file__), "data", "breasts")
-        path = os.path.join(folder, "%s.json" % ob.DazMesh.lower())
+        path = os.path.join(folder, "%s.json" % hum.DazMesh.lower())
         struct = loadJson(path)
         path = os.path.join(folder, "%s.json" % rig.DazRig.lower())
         bstruct = loadJson(path)
         bones = bstruct["bones"]
         lPect = bones["lPectoral"]
         rPect = bones["rPectoral"]
-        self.addVertexGroups(ob, struct)
+        subsurf = self.removeSubsurf(hum)
         self.objects = []
-        self.addCollisionObjects(context, ob, rig, bones)
-        #self.applyTransforms()
-        subsurf = self.removeSubsurf(ob)
-        llat = self.addLattice(context, ob, rig, "Lat_L", lPect, [6, 6, 6])
-        rlat = self.addLattice(context, ob, rig, "Lat_R", rPect, [6, 6, 6])
-        lempty,lico,lgoal = self.addHelpers(context, ob, rig, struct["vertices"]["lNipple"], lPect, "L")
-        rempty,rico,rgoal = self.addHelpers(context, ob, rig, struct["vertices"]["rNipple"], rPect, "R")
-        ribo = self.addToCollections(context, ob, rig)
+        if self.useSoftBody:
+            self.addVertexGroups(hum, struct)
+            self.addCollisionObjects(context, hum, rig, bones)
+            #self.applyTransforms()
+            scale = self.readScale(hum, struct)
+            llat = self.addLattice(context, hum, rig, "Lat_L", lPect, scale)
+            rlat = self.addLattice(context, hum, rig, "Lat_R", rPect, scale)
+        verts = struct["vertices"]
+        if self.useRigidBody:
+            lico1,lico2,lempty,lgoal = self.addHelpers(context, hum, rig, verts["lNipple"], verts["lTop"], lPect, "L")
+            rico1,rico2,rempty,rgoal = self.addHelpers(context, hum, rig, verts["rNipple"], verts["rTop"], rPect, "R")
+        colls = self.addToCollections(context, rig)
         activateObject(context, rig)
         bpy.ops.object.mode_set(mode='POSE')
-        self.dampedTrack(rig, lPect, lgoal)
-        self.dampedTrack(rig, rPect, rgoal)
-        self.addCorrSmooth(ob)
+        if self.useRigidBody:
+            self.dampedTrack(rig, lPect, lico2)
+            self.dampedTrack(rig, rPect, rico2)
+        self.addCorrSmooth(hum)
         if subsurf:
-            ob.modifiers.new("Subsurf", 'SUBSURF')
-        self.addRigidBodyWorld(context, ribo)
-        self.addRigidBodyConstraint(context, lempty, lico, lgoal)
-        self.addRigidBodyConstraint(context, rempty, rico, rgoal)
+            hum.modifiers.new("Subsurf", 'SUBSURF')
+        if self.useRigidBody:
+            world = self.addRigidBodyWorld(context)
+            self.addRigidBodyConstraint(context, world, lico1, lico2, lempty, lgoal)
+            self.addRigidBodyConstraint(context, world, rico1, rico2, rempty, rgoal)
+        if self.useSoftBody:
+            self.addSoftBody(llat, colls["Col_L"])
+            self.addSoftBody(rlat, colls["Col_R"])
 
 
-    def addVertexGroups(self, ob, struct):
+    def addVertexGroups(self, hum, struct):
         from .finger import getFingerPrint
-        finger = getFingerPrint(ob)
+        finger = getFingerPrint(hum)
         if GS.useModifiedMesh:
             from .geometry import restoreOrigVerts
-            hasOrig, restored = restoreOrigVerts(ob, -1)
+            hasOrig, restored = restoreOrigVerts(hum, -1)
             if hasOrig:
-                finger = ob.data.DazFingerPrint
+                finger = hum.data.DazFingerPrint
         if finger != struct["finger_print"]:
             msg = ("Fingerprint mismatch:\n  %s != %s\n" % (finger, struct["finger_print"]) +
-                   '"%s" is not a mesh of type %s\n' % (ob.name, struct["name"]))
+                   '"%s" is not a mesh of type %s\n' % (hum.name, struct["name"]))
             raise DazError(msg)
 
         for vname,verts in struct["vertex_groups"].items():
-            vgrp = ob.vertex_groups.get(vname)
+            vgrp = hum.vertex_groups.get(vname)
             if vgrp:
-                ob.vertex_groups.remove(vgrp)
-            vgrp = ob.vertex_groups.new(name=vname)
-            if isModifiedMesh(ob):
-                pgs = ob.data.DazOrigVerts
+                hum.vertex_groups.remove(vgrp)
+            vgrp = hum.vertex_groups.new(name=vname)
+            if isModifiedMesh(hum):
+                pgs = hum.data.DazOrigVerts
                 for vn0,w in verts:
                     vn = pgs[str(vn0)].a
                     if vn >= 0:
@@ -460,7 +490,7 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
                     vgrp.add([vn], w, 'REPLACE')
 
 
-    def addCollisionObjects(self, context, ob, rig, bones):
+    def addCollisionObjects(self, context, hum, rig, bones):
         collisionObjects = {
             "Col1_L" : ["lShldrBend", "Cylinder", "lShldrBend", "lShldrTwist", 0.15],
             "Col2_L" : ["lForearmBend", "Cylinder", "lForearmBend", "lForearmTwist", 0.15],
@@ -468,8 +498,8 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
             "Col1_R" : ["rShldrBend", "Cylinder", "rShldrBend", "rShldrTwist", 0.15],
             "Col2_R" : ["rForearmBend", "Cylinder", "rForearmBend", "rForearmTwist", 0.15],
             "Col3_R" : ["rHand", "Cylinder", "rHand", "rHand", 0.45],
-            "Ico_L" : ["lPectoral", "Icosphere", "lPectoral", "lPectoral", 0.2],
-            "Ico_R" : ["rPectoral", "Icosphere", "rPectoral", "rPectoral", 0.2],
+            "Ico_L" : ["lPectoral", "Icosphere", "lPectoral", "lPectoral", 0.3],
+            "Ico_R" : ["rPectoral", "Icosphere", "rPectoral", "rPectoral", 0.3],
         }
         RX = Matrix.Rotation(90*D, 4, 'X')
         for cname,data in collisionObjects.items():
@@ -489,64 +519,78 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
                 trans = Matrix.Translation(0.2*head + 0.8*tail)
                 bpy.ops.mesh.primitive_ico_sphere_add(radius=rad*length)
                 innerThick = 5.0
-            wmat = trans @ rot
+            lmat = trans @ rot
             col = context.object
             unlinkAll(col)
-            self.parentBone(col, cname, rig, bones[bname], wmat)
+            self.parentBone(col, cname, rig, bones[bname], hum, lmat)
             mod = col.modifiers.new("Collision", 'COLLISION')
-            col.collision.thickness_outer = 0.1*ob.DazScale
-            col.collision.thickness_inner = innerThick*ob.DazScale
+            col.collision.thickness_outer = 0.1*hum.DazScale
+            col.collision.thickness_inner = innerThick*hum.DazScale
 
 
-    def addHelpers(self, context, ob, rig, vnum, bname, suffix):
-        if isModifiedMesh(ob):
-            vnum = ob.data.DazOrigVerts[str(vnum)].a
-        nip = ob.data.vertices[vnum].co
+    def addHelpers(self, context, hum, rig, vnip, vtop, bname, suffix):
+        if isModifiedMesh(hum):
+            vnum = hum.data.DazOrigVerts[str(vnum)].a
+        nip = hum.data.vertices[vnip].co
+        top = hum.data.vertices[vtop].co
         bone = rig.data.bones[bname]
         x = 0.0
         loc = (1-x)*bone.head_local + x*bone.tail_local
 
-        bpy.ops.object.empty_add(location=loc)
+        bpy.ops.object.empty_add()
         empty1 = context.object
         empty1.empty_display_size = 0.1
-        wmat = empty1.matrix_world.copy()
-        self.parentBone(empty1, "RiBoEmpty_%s" % suffix, rig, bone.parent.name, wmat)
+        lmat = Matrix.Translation(loc).to_4x4()
+        self.parentBone(empty1, "RiBoEmpty_%s" % suffix, rig, bone.parent.name, hum, lmat)
 
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=ob.DazScale)
-        ico = context.object
-        loc[2] = nip[2]
-        wmat = Matrix.Translation(loc).to_4x4()
-        self.parentBone(ico, "RiBoIco_%s" % suffix, empty1, None, wmat)
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=2*hum.DazScale)
+        ico1 = context.object
+        loc[2] = top[2]
+        lmat = Matrix.Translation(loc).to_4x4()
+        self.parentBone(ico1, "RiBoIco1_%s" % suffix, empty1, None, hum, lmat)
 
         bpy.ops.object.empty_add()
         empty2 = context.object
         empty2.empty_display_size = 0.1
-        self.parentBone(empty2, "RiBoCns_%s" % suffix, ico, None, wmat)
+        self.parentBone(empty2, "RiBoCns_%s" % suffix, ico1, None, hum, lmat)
 
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=2*ob.DazScale)
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=4*hum.DazScale)
+        ico2 = context.object
+        lmat = Matrix.Translation(nip).to_4x4()
+        self.parentBone(ico2, "RiBoIco2_%s" % suffix, None, None, hum, lmat)
+
+        bpy.ops.object.empty_add()
         goal = context.object
-        wmat = Matrix.Translation(nip).to_4x4()
-        self.parentBone(goal, "RiBoGoal_%s" % suffix, rig, bone.parent.name, wmat)
-        return empty2, ico, goal
+        goal.empty_display_size = 0.1
+        self.parentBone(goal, "RiBoGoal_%s" % suffix, rig, bone.parent.name, hum, lmat)
+
+        return ico1, ico2, empty2, goal
 
 
-    def addRigidBodyWorld(self, context, ribo):
-        bpy.ops.rigidbody.world_add()
-        world = context.scene.rigidbody_world
-        world.collection = ribo
+    def addRigidBodyWorld(self, context):
+        scn = context.scene
+        if scn.rigidbody_world is None:
+            bpy.ops.rigidbody.world_add()
+        world = scn.rigidbody_world
+        if world.collection is None:
+            rbcoll = bpy.data.collections.new(name="RigidBodyCollection")
+            world.collection = rbcoll
+        return world
 
 
-    def addRigidBodyConstraint(self, context, empty, ico, goal):
-        ico.rigid_body.type = 'PASSIVE'
-        goal.rigid_body.type = 'ACTIVE'
+    def addRigidBodyConstraint(self, context, world, ico1, ico2, empty, goal):
+        world.collection.objects.link(ico1)
+        world.collection.objects.link(ico2)
+        ico1.rigid_body.type = 'PASSIVE'
+        ico2.rigid_body.type = 'ACTIVE'
         activateObject(context, empty)
         bpy.ops.rigidbody.constraint_add()
         rbc = empty.rigid_body_constraint
         rbc.type = 'GENERIC_SPRING'
         rbc.enabled = True
         rbc.disable_collisions = True
-        rbc.object1 = ico
-        rbc.object2 = goal
+        rbc.object1 = ico1
+        rbc.object2 = ico2
         for x,stiff,damp in [("x", 80, 1), ("y", 100, 5), ("z", 80, 1)]:
             setattr(rbc, "use_spring_ang_%s" % x, True)
             setattr(rbc, "spring_stiffness_ang_%s" % x, stiff)
@@ -557,34 +601,109 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
             setattr(rbc, "spring_damping_%s" % x, damp)
 
 
-    def addLattice(self, context, ob, rig, lname, bname, size):
+    def readScale(self, hum, struct):
+        def getCo(name, idx):
+            return hum.data.vertices[struct["vertices"][name]].co[idx]
+
+        xmin = getCo("xmin", 0)
+        xmax = getCo("xmax", 0)
+        ymin = getCo("ymin", 1)
+        ymax = getCo("ymax", 1)
+        zmin = getCo("zmin", 2)
+        zmax = getCo("zmax", 2)
+        scale = Vector((abs(xmax-xmin), abs(ymax-ymin), abs(zmax-zmin)))
+        print("SCAL", scale)
+        return scale
+
+
+    def addLattice(self, context, hum, rig, lname, bname, scale):
         pb = rig.pose.bones[bname]
         head = pb.bone.head_local
         tail = pb.bone.tail_local
         rot = pb.matrix.to_3x3().to_4x4()
-        trans = Matrix.Translation(0.2*head + 0.8*tail)
-        scale = Matrix.Diagonal(size).to_4x4()
-        wmat = trans @ rot @ scale.inverted()
+        trans = Matrix.Translation(1.0*tail + 0.0*head)
+        smat = Matrix.Diagonal(scale).to_4x4()
+        lmat = trans @ rot @ smat
         bpy.ops.object.add(type='LATTICE')
         lat = context.object
         unlinkAll(lat)
-        ldata = lat.data
-        (ldata.points_u, ldata.points_v, ldata.points_w) = size
-        self.parentBone(lat, lname, rig, bname, wmat)
-        mod = ob.modifiers.new(lat.name, 'LATTICE')
+        (lat.data.points_u, lat.data.points_v, lat.data.points_w) = 3*[self.latsize]
+        self.parentBone(lat, lname, rig, bname, hum, lmat)
+        # Vertex group
+        vgrp = lat.vertex_groups.new(name="Pin")
+        x0s = Vector((0,0,0))
+        ks = Vector((1,1,1))
+        dxs = Vector((0,0,0))
+        for n in range(3):
+            coords = [v.co[n] for v in lat.data.points]
+            xmin = min(coords)
+            xmax = max(coords)
+            x0s[n] = xmin
+            ks[n] = 1/(xmax-xmin)
+        for vn,v in enumerate(lat.data.points):
+            for n in range(3):
+                dx = ks[n]*(v.co[n] - x0s[n])
+                dxs[n] = dx
+            x,y,z = dxs
+            # x, 1-y, 1-z
+            w = 3*(1-y)*(0.25 + abs(x-0.5))
+            w = max(0, min(1, w))
+            vgrp.add([vn], w, 'REPLACE')
+
+        mod = hum.modifiers.new(lat.name, 'LATTICE')
         mod.object = lat
         mod.vertex_group = "%s_copy" % bname
         mod.strength = 1.0
         return lat
 
 
-    def parentBone(self, ob, cname, rig, bname, wmat):
+    def addSoftBody(self, lat, coll):
+        mod = lat.modifiers.new("Softbody", 'SOFT_BODY')
+        mset = mod.settings
+        mset.collision_collection = coll
+        mset.friction = 0.5
+        mset.mass = 1.0
+
+        mset.use_goal = True
+        mset.vertex_group_goal = "Pin"
+        mset.goal_spring = 0.8
+        mset.goal_friction = 10
+        mset.goal_default = 1.0
+        mset.goal_min = 0.6
+        mset.goal_max = 1.0
+
+        mset.use_edges = True
+        mset.pull = 0.2
+        mset.push = 0.2
+        mset.damping = 40
+        mset.bend = 2.0
+        mset.use_edge_collision = True
+        mset.use_face_collision = True
+
+        mset.use_stiff_quads = True
+        mset.shear = 0.1
+        mset.use_self_collision = True
+        mset.ball_size = 0.7
+        mset.ball_stiff = 10.0
+        mset.ball_damp = 0.5
+        mset.choke = 0
+        mset.fuzzy = 50
+
+        effwts = mset.effector_weights
+        effwts.collection = coll
+        if self.useRigidBody:
+            effwts.gravity = 0.0
+
+
+    def parentBone(self, ob, cname, rig, bname, hum, lmat):
         ob.name = cname
         ob.parent = rig
         if bname:
             ob.parent_type = 'BONE'
             ob.parent_bone = bname
-        setWorldMatrix(ob, wmat)
+        setWorldMatrix(ob, hum.matrix_world @ lmat)
+        #ob.select_set(True)
+        #bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         self.objects.append(ob)
 
 
@@ -595,32 +714,40 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         bpy.ops.object.transform_apply()
 
 
-    def addToCollections(self, context, ob, rig):
-        collections = {
-            "L" : ["Col1_L", "Col2_L", "Col3_L", "Col2_R", "Col3_R", "Ico_R", "Lat_L"],
-            "R" : ["Col2_L", "Col3_L", "Col1_R", "Col2_R", "Col3_R", "Ico_L", "Lat_R"],
-            "RiBo" : ["RiBoEmpty_L", "RiBoIco_L", "RiBoCns_L", "RiBoGoal_L",
-                      "RiBoEmpty_R", "RiBoIco_R", "RiBoCns_R", "RiBoGoal_R"],
-        }
-        scncoll = rigcoll = context.scene.collection
+    def addToCollections(self, context, rig):
+        collections = {}
+        if self.useSoftBody:
+            collections["Col_L"] = ["Col1_L", "Col2_L", "Col3_L", "Col2_R", "Col3_R", "Ico_R", "Lat_L"]
+            collections["Col_R"] = ["Col2_L", "Col3_L", "Col1_R", "Col2_R", "Col3_R", "Ico_L", "Lat_R"]
+        if self.useRigidBody:
+            collections["RiBo"] = [
+                "RiBoEmpty_L", "RiBoIco1_L", "RiBoCns_L", "RiBoIco2_L", "RiBoGoal_L",
+                "RiBoEmpty_R", "RiBoIco1_R", "RiBoCns_R", "RiBoIco2_R", "RiBoGoal_R"]
+        scn = context.scene
+        scncoll = rigcoll = scn.collection
         for coll in bpy.data.collections:
             if rig.name in coll.objects:
                 rigcoll = coll
                 break
+        dyncoll = bpy.data.collections.new(name="Dynamics")
+        scncoll.children.link(dyncoll)
+        layer = getLayerCollection(context, dyncoll)
+        layer.hide_viewport = True
+        dyncoll.hide_render = True
+        #rigcoll.children.link(dyncoll)
+
         colls = {}
         for cname,obnames in collections.items():
             coll = bpy.data.collections.new(name=cname)
             colls[cname] = coll
-            rigcoll.children.link(coll)
-            layer = getLayerCollection(context, coll)
-            layer.hide_viewport = True
             coll.hide_render = True
+            dyncoll.children.link(coll)
             for obname in obnames:
                 ob = bpy.data.objects[obname]
                 if ob.name in scncoll.objects:
                     scncoll.objects.unlink(ob)
                 coll.objects.link(ob)
-        return colls["RiBo"]
+        return colls
 
 
     def dampedTrack(self, rig, bname, goal):
@@ -632,16 +759,16 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         return cns
 
 
-    def removeSubsurf(self, ob):
-        mod = getModifier(ob, 'SUBSURF')
+    def removeSubsurf(self, hum):
+        mod = getModifier(hum, 'SUBSURF')
         if mod:
-            ob.modifiers.remove(mod)
+            hum.modifiers.remove(mod)
             return True
         return False
 
 
-    def addCorrSmooth(self, ob):
-        mod = ob.modifiers.new("Corr Smooth", 'CORRECTIVE_SMOOTH')
+    def addCorrSmooth(self, hum):
+        mod = hum.modifiers.new("Corr Smooth", 'CORRECTIVE_SMOOTH')
         mod.factor = 0.5
         mod.iterations = 3
         mod.scale = 1.0
