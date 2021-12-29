@@ -661,7 +661,6 @@ class Images(Asset):
                     self.maps.append(Map(mstruct, False))
             elif key == "map_size":
                 mapSize = data
-        print("IM", self, mapSize)
         if mapSize is not None:
             for map in self.maps:
                 map.size = mapSize
@@ -670,6 +669,7 @@ class Images(Asset):
 
     def update(self, struct):
         self.parseGamma(struct)
+        print("UO", self)
 
 
     def parseGamma(self, struct):

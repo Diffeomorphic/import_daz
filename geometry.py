@@ -56,14 +56,12 @@ class GeoNode(Node, SimNode):
         if isinstance(geo, Geometry):
             geo.caller = self
             geo.nodes[self.id] = self
-            self.data = geo
-        elif etype:
-            print("Geometry type: %s" % etype)
-            self.data = None
+        elif isinstance(geo, UnGeometry):
+            print("UnGeometry: %s" % etype)
         else:
             msg = ("Not a geometry:\n%s" % geo)
             reportError(msg, trigger=(2,3))
-            self.data = None
+        self.data = geo
         self.figure = figure
         self.figureInst = None
         self.verts = None
@@ -130,6 +128,8 @@ class GeoNode(Node, SimNode):
 
 
     def subdivideObject(self, ob, inst, context):
+        if isinstance(self.data, UnGeometry):
+            return
         if self.highdef:
             me = self.buildHDMesh(ob)
             hdob = bpy.data.objects.new(ob.name + "_HD", me)
@@ -481,6 +481,21 @@ def copyUvLayers(ob, hdob):
 #-------------------------------------------------------------
 #   Geometry Asset
 #-------------------------------------------------------------
+
+class UnGeometry(Asset, Channels):
+    def __init__(self, fileref):
+        Asset.__init__(self, fileref)
+        Channels.__init__(self)
+        self.polygon_material_groups = []
+
+    def parse(self, struct):
+        Asset.parse(self, struct)
+        Channels.parse(self, struct)
+        self.polygon_material_groups = struct["polygon_material_groups"]["values"]
+
+    def preprocess(self, context, inst):
+        pass
+
 
 class Geometry(Asset, Channels):
 

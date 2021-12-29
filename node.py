@@ -338,11 +338,11 @@ class Instance(Accessor, Channels, SimNode):
             geonode.postbuild(context, self)
         if GS.useInstancing:
             self.buildNodeInstance(context)
-        for node in self.texcoNodes:
+        for node,scale in self.texcoNodes:
             texco = findTexco(node.node_tree)
             empty = texco.object = self.rna
             empty.empty_display_type = 'CUBE'
-            empty.empty_display_size = 0.5
+            empty.empty_display_size = (scale[0] + scale[1] + scale[2])/3
 
 
     def getRefColl(self, context):
@@ -776,7 +776,7 @@ class Node(Asset, Formula, Channels):
 
 
     def update(self, struct):
-        from .geometry import GeoNode, Geometry
+        from .geometry import GeoNode, Geometry, UnGeometry
         Asset.update(self, struct)
         Channels.update(self, struct)
         for channel,data in struct.items():
@@ -790,11 +790,15 @@ class Node(Asset, Formula, Channels):
                         extra = geostruct.get("extra")
                         if extra:
                             etype = extra[0].get("type")
-                        if etype not in ["studio_geometry_channels"]:
+                        if etype in ["studio_geometry_channels"]:
+                            geo = UnGeometry(self.fileref)
+                            geo.parse(geostruct)
+                        else:
                             print("No geometry URL")
-                        geonode = GeoNode(self, None, geostruct["id"], etype)
+                            geo = None
+                        geonode = GeoNode(self, geo, geostruct["id"], etype)
                         self.saveAsset(geostruct, geonode)
-                    geonode.parse(geostruct)
+                        geonode.parse(geostruct)
                     geonode.update(geostruct)
                     geonode.extra = self.extra
                     self.geometries.append(geonode)
@@ -826,8 +830,11 @@ class Node(Asset, Formula, Channels):
 
 
     def buildObject(self, context, inst, center):
+        from .geometry import UnGeometry
         scn = context.scene
-        if isinstance(self.data, Asset):
+        if isinstance(self.data, UnGeometry):
+            ob = bpy.data.objects.new(inst.name, None)
+        elif isinstance(self.data, Asset):
             if self.data.shstruct and GS.mergeShells:
                 return
             ob = self.data.buildData(context, self, inst, center)

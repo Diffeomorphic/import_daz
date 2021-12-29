@@ -25,7 +25,6 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
 import bpy
 
 from .cycles import CyclesTree
@@ -1189,24 +1188,24 @@ class DisplacementGroup(CyclesGroup):
 class MappingGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.outsockets += ["Influence", "Vector"]
+        self.outsockets += ["Depth Mask", "Vector"]
         self.texcoNode = None
 
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
-        self.group.outputs.new("NodeSocketFloat", "Influence")
+        self.group.outputs.new("NodeSocketFloat", "Depth Mask")
         self.group.outputs.new("NodeSocketVector", "Vector")
 
 
     def addNodes(self, args):
-        empty, loc, rot, scale = args
+        empty, loc, rot, scale, gscale = args
         texco = self.addNode("ShaderNodeTexCoord", 0)
         texco.object = empty
 
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
-        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
+        mapping1.inputs["Scale"].default_value = gscale
         self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
 
         grad = self.addNode("ShaderNodeTexGradient", 2)
@@ -1217,7 +1216,7 @@ class MappingGroup(CyclesGroup):
         gate.operation = 'GREATER_THAN'
         self.links.new(grad.outputs["Color"], gate.inputs[0])
         gate.inputs[1].default_value = 0.5
-        self.links.new(gate.outputs[0], self.outputs.inputs["Influence"])
+        self.links.new(gate.outputs[0], self.outputs.inputs["Depth Mask"])
 
         mapping2 = self.addNode("ShaderNodeMapping", 1)
         mapping2.vector_type = 'POINT'
@@ -1254,7 +1253,9 @@ class DecalGroup(CyclesGroup):
         loc = (0.5, 0.5, 0)
         rot = (0,0,0)
         scale = (1,1,1)
-        mapping = self.addGroup(MappingGroup, empty.name, args=[empty,loc,rot,scale])
+        gscale = (0.1, 0.1, 1.0)
+        args = [empty, loc, rot, scale, gscale]
+        mapping = self.addGroup(MappingGroup, empty.name, args=args, col=1)
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img
@@ -1278,7 +1279,7 @@ class DecalGroup(CyclesGroup):
 
         mix2 = self.addNode("ShaderNodeMixRGB", 4)
         mix2.blend_type = 'MIX'
-        self.links.new(mapping.outputs["Influence"], mix2.inputs[0])
+        self.links.new(mapping.outputs["Depth Mask"], mix2.inputs[0])
         self.links.new(self.inputs.outputs["Color"], mix2.inputs[1])
 
         mix1 = self.addNode("ShaderNodeMixRGB", 4)
@@ -1291,7 +1292,7 @@ class DecalGroup(CyclesGroup):
         self.links.new(tex.outputs["Color"], self.outputs.inputs["Color"])
         self.links.new(mult.outputs[0], self.outputs.inputs["Alpha"])
         self.links.new(mix2.outputs[0], self.outputs.inputs["Combined"])
-        self.links.new(gate.outputs[0], self.outputs.inputs["Depth Mask"])
+        self.links.new(mapping.outputs["Depth Mask"], self.outputs.inputs["Depth Mask"])
 
 # ---------------------------------------------------------------------
 #   Layered Group

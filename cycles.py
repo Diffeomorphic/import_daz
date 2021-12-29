@@ -364,43 +364,43 @@ class CyclesTree:
         if not self.material.decals:
             return
         if self.material.isShellMat:
-            print("This cannot happen", self)
-            return
+            raise RuntimeError("BUG buildDecals: %s" % self)
         from .cgroup import MappingGroup
         decals = [(inst.getValue(["Priority"],0), n, inst) for n,inst in enumerate(self.material.decals)]
         decals.sort()
         for _,_,inst in decals:
-            x = inst.getValue(["ClippingWidth"], 1.0)
-            y = inst.getValue(["ClippingDepth"], 1.0)
-            z = inst.getValue(["ClippingHeight"], 1.0)
             fmode = inst.getValue(["Face Mode"], 2)
             # [ "Front", "Back", "Front And Back" ]
-            scale = 2*LS.scale*Vector((x,y,z))
             csys = self.getValue(["Texture Coordinate System"], 2)
             # [ "UVW", "World", "Object" ]
+            x = inst.getValue(["ClippingWidth"], 50)
+            y = inst.getValue(["ClippingDepth"], 50)
+            z = inst.getValue(["ClippingHeight"], 50)
+            escale = LS.scale*Vector((x,y,z))
             if csys == 0:
                 mapping = texco
             elif csys == 2:
                 loc = (0.5, 0.5, 0)
                 rot = (90*D, 0, 0)
-                scale = (2,2,2)
-                mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna,loc,rot,scale])
-                inst.texcoNodes.append(mapping)
+                scale = [1/s for s in escale]
+                args = [inst.rna, loc, rot, scale, (1,1,1)]
+                mapping = self.addGroup(MappingGroup, inst.name, args=args)
+                inst.texcoNodes.append((mapping, escale))
             self.column += 1
             for geonode in inst.geometries:
-                for dmat in geonode.materials.values():
+                for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
                     dmat.isShellMat = True
-                    if dmat.name.startswith("Front"):
+                    if grp == "Front":
                         pass
-                    elif dmat.name.startswith("Reverse"):
+                    elif grp == "Reverse":
                         continue
                     else:
-                        raise RuntimeError("Decal material name should start with Front or Reverse, not %s" % dmat.name)
+                        raise RuntimeError("Unknown decal material group: %s" % grp)
                     node = self.addDecalGroup(dmat)
                     self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
                     self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
                     if csys == 2:
-                        self.links.new(mapping.outputs["Influence"], node.inputs["Influence"])
+                        self.links.new(mapping.outputs["Depth Mask"], node.inputs["Influence"])
                     self.links.new(mapping.outputs["Vector"], node.inputs["UV"])
                     self.cycles = self.eevee = node
                     self.ycoords[self.column] -= 50
@@ -1476,7 +1476,6 @@ class CyclesTree:
         else:
             imgname = asset.getName()
         texnode = self.getTexNode(imgname, colorSpace)
-        print("ASS", asset, map, map.size)
         if asset.hasMapping(map):
             innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.material, map)
@@ -1493,9 +1492,6 @@ class CyclesTree:
         else:
             texnode = self.addTextureNode(col, img, imgname, colorSpace)
             self.setTexNode(imgname, texnode, colorSpace)
-            if self.isDecal:
-                texnode.extension = 'CLIP'
-                self.clipsocket = texnode.outputs["Alpha"]
             return texnode, texnode, texnode, True
 
 
@@ -1556,6 +1552,9 @@ class CyclesTree:
             return None
         elif len(assets) == 1:
             innode,texnode,outnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
+            if self.isDecal:
+                texnode.extension = 'CLIP'
+                self.clipsocket = texnode.outputs["Alpha"]
             if isnew:
                 self.linkVector(self.texco, innode)
             return outnode
