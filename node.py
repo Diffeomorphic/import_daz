@@ -798,7 +798,7 @@ class Node(Asset, Formula, Channels):
                             geo = None
                         geonode = GeoNode(self, geo, geostruct["id"], etype)
                         self.saveAsset(geostruct, geonode)
-                        geonode.parse(geostruct)
+                    geonode.parse(geostruct)
                     geonode.update(geostruct)
                     geonode.extra = self.extra
                     self.geometries.append(geonode)
