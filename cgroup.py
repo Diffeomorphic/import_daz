@@ -110,12 +110,19 @@ class ShellGroup(MaterialGroup):
         self.inShell = True
         self.texco = self.inputs.outputs["UV"]
         self.buildLayer(uvname)
-        alpha,tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
+        alpha,atex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
         mult = self.addNode("ShaderNodeMath", 6)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
-        if tex:
-            self.linkScalar(tex, mult, alpha, 1)
+        if atex and self.clipsocket:
+            self.linkScalar(atex, mult, alpha, 1)
+            mult2 = self.addNode("ShaderNodeMath", 6)
+            mult2.operation = 'MULTIPLY'
+            self.links.new(mult.outputs[0], mult2.inputs[0])
+            self.links.new(self.clipsocket, mult2.inputs[1])
+            mult = mult2
+        elif atex:
+            self.linkScalar(atex, mult, alpha, 1)
         elif self.clipsocket:
             self.links.new(self.clipsocket, mult.inputs[1])
         else:
@@ -1199,15 +1206,14 @@ class MappingGroup(CyclesGroup):
 
 
     def addNodes(self, args):
-        empty, loc, rot, scale, gscale = args
+        empty, loc, rot = args
         texco = self.addNode("ShaderNodeTexCoord", 0)
         texco.object = empty
 
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
-        mapping1.inputs["Scale"].default_value = gscale
+        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
         self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
-
         grad = self.addNode("ShaderNodeTexGradient", 2)
         grad.gradient_type = 'SPHERICAL'
         self.links.new(mapping1.outputs["Vector"], grad.inputs["Vector"])
@@ -1222,7 +1228,7 @@ class MappingGroup(CyclesGroup):
         mapping2.vector_type = 'POINT'
         mapping2.inputs["Location"].default_value = loc
         mapping2.inputs["Rotation"].default_value = rot
-        mapping2.inputs["Scale"].default_value = scale
+        mapping2.inputs["Scale"].default_value = (1,1,1)
         self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
         self.links.new(mapping2.outputs["Vector"], self.outputs.inputs["Vector"])
 
@@ -1252,10 +1258,7 @@ class DecalGroup(CyclesGroup):
         empty,img,mask,blendType = args
         loc = (0.5, 0.5, 0)
         rot = (0,0,0)
-        scale = (1,1,1)
-        gscale = (0.1, 0.1, 1.0)
-        args = [empty, loc, rot, scale, gscale]
-        mapping = self.addGroup(MappingGroup, empty.name, args=args, col=1)
+        mapping = self.addGroup(MappingGroup, empty.name, args=[empty, loc, rot], col=1)
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img

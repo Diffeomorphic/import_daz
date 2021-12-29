@@ -338,11 +338,12 @@ class Instance(Accessor, Channels, SimNode):
             geonode.postbuild(context, self)
         if GS.useInstancing:
             self.buildNodeInstance(context)
-        for node,scale in self.texcoNodes:
+        for node,diag in self.texcoNodes:
             texco = findTexco(node.node_tree)
             empty = texco.object = self.rna
             empty.empty_display_type = 'CUBE'
-            empty.empty_display_size = (scale[0] + scale[1] + scale[2])/3
+            empty.empty_display_size = 0.5
+            empty.scale = diag@empty.scale
 
 
     def getRefColl(self, context):

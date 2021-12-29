@@ -376,16 +376,14 @@ class CyclesTree:
             x = inst.getValue(["ClippingWidth"], 50)
             y = inst.getValue(["ClippingDepth"], 50)
             z = inst.getValue(["ClippingHeight"], 50)
-            escale = LS.scale*Vector((x,y,z))
+            diag = LS.scale*Matrix.Diagonal((x,y,z))
             if csys == 0:
                 mapping = texco
             elif csys == 2:
                 loc = (0.5, 0.5, 0)
-                rot = (90*D, 0, 0)
-                scale = [1/s for s in escale]
-                args = [inst.rna, loc, rot, scale, (1,1,1)]
-                mapping = self.addGroup(MappingGroup, inst.name, args=args)
-                inst.texcoNodes.append((mapping, escale))
+                rot = (-90*D, 0, 0)
+                mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna, loc, rot])
+                inst.texcoNodes.append((mapping, diag))
             self.column += 1
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
