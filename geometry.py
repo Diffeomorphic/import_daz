@@ -43,7 +43,7 @@ from .fileutils import SingleFile, DazFile
 #-------------------------------------------------------------
 
 class GeoNode(Node, SimNode):
-    def __init__(self, figure, geo, ref):
+    def __init__(self, figure, geo, ref, etype):
         from .asset import normalizeRef
         if figure.caller:
             fileref = figure.caller.fileref
@@ -52,10 +52,14 @@ class GeoNode(Node, SimNode):
         Node.__init__(self, fileref)
         self.classType = GeoNode
         self.id = normalizeRef(ref)
+        self.etype = etype
         if isinstance(geo, Geometry):
             geo.caller = self
             geo.nodes[self.id] = self
             self.data = geo
+        elif etype:
+            print("Geometry type: %s" % etype)
+            self.data = None
         else:
             msg = ("Not a geometry:\n%s" % geo)
             reportError(msg, trigger=(2,3))

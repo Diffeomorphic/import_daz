@@ -115,7 +115,12 @@ class ShellGroup(MaterialGroup):
         mult = self.addNode("ShaderNodeMath", 6)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
-        self.linkScalar(tex, mult, alpha, 1)
+        if tex:
+            self.linkScalar(tex, mult, alpha, 1)
+        elif self.clipsocket:
+            self.links.new(self.clipsocket, mult.inputs[1])
+        else:
+            mult.inputs[1].default_value = 1.0
         self.addOutputs(mult)
         self.buildDisplacementNodes()
         if self.displacement:
@@ -1178,6 +1183,51 @@ class DisplacementGroup(CyclesGroup):
         self.links.new(disp.outputs[0], self.outputs.inputs["Displacement"])
 
 # ---------------------------------------------------------------------
+#   Mapping Group
+# ---------------------------------------------------------------------
+
+class MappingGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.outsockets += ["Influence", "Vector"]
+        self.texcoNode = None
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 3)
+        self.group.outputs.new("NodeSocketFloat", "Influence")
+        self.group.outputs.new("NodeSocketVector", "Vector")
+
+
+    def addNodes(self, args):
+        empty, loc, rot, scale = args
+        texco = self.addNode("ShaderNodeTexCoord", 0)
+        texco.object = empty
+
+        mapping1 = self.addNode("ShaderNodeMapping", 1)
+        mapping1.vector_type = 'POINT'
+        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
+        self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
+
+        grad = self.addNode("ShaderNodeTexGradient", 2)
+        grad.gradient_type = 'SPHERICAL'
+        self.links.new(mapping1.outputs["Vector"], grad.inputs["Vector"])
+
+        gate = self.addNode("ShaderNodeMath", 2)
+        gate.operation = 'GREATER_THAN'
+        self.links.new(grad.outputs["Color"], gate.inputs[0])
+        gate.inputs[1].default_value = 0.5
+        self.links.new(gate.outputs[0], self.outputs.inputs["Influence"])
+
+        mapping2 = self.addNode("ShaderNodeMapping", 1)
+        mapping2.vector_type = 'POINT'
+        mapping2.inputs["Location"].default_value = loc
+        mapping2.inputs["Rotation"].default_value = rot
+        mapping2.inputs["Scale"].default_value = scale
+        self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
+        self.links.new(mapping2.outputs["Vector"], self.outputs.inputs["Vector"])
+
+# ---------------------------------------------------------------------
 #   Decal Group
 # ---------------------------------------------------------------------
 
@@ -1201,34 +1251,16 @@ class DecalGroup(CyclesGroup):
 
     def addNodes(self, args):
         empty,img,mask,blendType = args
-
-        texco = self.addNode("ShaderNodeTexCoord", 0)
-        texco.object = empty
-
-        mapping1 = self.addNode("ShaderNodeMapping", 1)
-        mapping1.vector_type = 'POINT'
-        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
-        self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
-
-        grad = self.addNode("ShaderNodeTexGradient", 2)
-        grad.gradient_type = 'SPHERICAL'
-        self.links.new(mapping1.outputs["Vector"], grad.inputs["Vector"])
-
-        gate = self.addNode("ShaderNodeMath", 3)
-        gate.operation = 'GREATER_THAN'
-        self.links.new(grad.outputs["Color"], gate.inputs[0])
-        gate.inputs[1].default_value = 0.5
-
-        mapping2 = self.addNode("ShaderNodeMapping", 1)
-        mapping2.vector_type = 'POINT'
-        mapping2.inputs["Location"].default_value = (0.5, 0.5, 0)
-        self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
+        loc = (0.5, 0.5, 0)
+        rot = (0,0,0)
+        scale = (1,1,1)
+        mapping = self.addGroup(MappingGroup, empty.name, args=[empty,loc,rot,scale])
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img
         tex.interpolation = GS.imageInterpolation
         tex.extension = 'CLIP'
-        self.links.new(mapping2.outputs["Vector"], tex.inputs["Vector"])
+        self.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
         alpha = tex.outputs["Alpha"]
 
         if mask:
@@ -1236,7 +1268,7 @@ class DecalGroup(CyclesGroup):
             masktex.image = mask
             masktex.interpolation = GS.imageInterpolation
             masktex.extension = 'CLIP'
-            self.links.new(mapping2.outputs["Vector"], masktex.inputs["Vector"])
+            self.links.new(mapping.outputs["Vector"], masktex.inputs["Vector"])
             alpha = masktex.outputs["Color"]
 
         mult = self.addNode("ShaderNodeMath", 3)
@@ -1246,7 +1278,7 @@ class DecalGroup(CyclesGroup):
 
         mix2 = self.addNode("ShaderNodeMixRGB", 4)
         mix2.blend_type = 'MIX'
-        self.links.new(gate.outputs[0], mix2.inputs[0])
+        self.links.new(mapping.outputs["Influence"], mix2.inputs[0])
         self.links.new(self.inputs.outputs["Color"], mix2.inputs[1])
 
         mix1 = self.addNode("ShaderNodeMixRGB", 4)

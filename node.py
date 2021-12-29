@@ -164,6 +164,7 @@ class Instance(Accessor, Channels, SimNode):
         self.modifiers = {}
         self.attributes = copyElements(node.attributes)
         self.restdata = None
+        self.texcoNodes = []
         self.wsmat = self.U3
         self.lsmat = None
         self.rigtype = node.rigtype
@@ -239,6 +240,11 @@ class Instance(Accessor, Channels, SimNode):
                 self.ignore = True
             elif etype == "studio/node/tone_mapper":
                 self.ignore = True
+            elif etype == "studio/scene_data/iray_decal":
+                if self.parent:
+                    for geo in self.parent.geometries:
+                        for dmat in geo.materials.values():
+                            dmat.decals.append(self)
 
         for geonode in self.geometries:
             geonode.preprocess(context, self)
@@ -326,11 +332,17 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def postbuild(self, context):
+        from .cycles import findTexco
         self.parentObject(context, self.rna)
         for geonode in self.geometries:
             geonode.postbuild(context, self)
         if GS.useInstancing:
             self.buildNodeInstance(context)
+        for node in self.texcoNodes:
+            texco = findTexco(node.node_tree)
+            empty = texco.object = self.rna
+            empty.empty_display_type = 'CUBE'
+            empty.empty_display_size = 0.5
 
 
     def getRefColl(self, context):
@@ -770,12 +782,17 @@ class Node(Asset, Formula, Channels):
         for channel,data in struct.items():
             if channel == "geometries":
                 for geostruct in data:
+                    etype = None
                     if "url" in geostruct.keys():
                         geo = self.parseUrlAsset(geostruct, Geometry)
-                        geonode = GeoNode(self, geo, geostruct["id"])
+                        geonode = GeoNode(self, geo, geostruct["id"], etype)
                     else:
-                        print("No geometry URL")
-                        geonode = GeoNode(self, None, geostruct["id"])
+                        extra = geostruct.get("extra")
+                        if extra:
+                            etype = extra[0].get("type")
+                        if etype not in ["studio_geometry_channels"]:
+                            print("No geometry URL")
+                        geonode = GeoNode(self, None, geostruct["id"], etype)
                         self.saveAsset(geostruct, geonode)
                     geonode.parse(geostruct)
                     geonode.update(geostruct)

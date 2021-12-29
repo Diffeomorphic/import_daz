@@ -219,6 +219,7 @@ class CyclesTree:
         self.groups = {}
         self.layeredGroups = {}
         self.inShell = False
+        self.isDecal = False
 
         self.diffuseColor = WHITE
         self.diffuseTex = None
@@ -231,6 +232,7 @@ class CyclesTree:
         self.texcos = {}
         self.displacement = None
         self.volume = None
+        self.clipsocket = None
         self.useCutout = False
         self.useTranslucency = False
         self.pureMetal = False
@@ -353,8 +355,68 @@ class CyclesTree:
         self.buildCutout()
         self.buildVolume()
         self.buildDisplacementNodes()
+        self.buildDecals()
         self.buildShells()
         self.buildOutput()
+
+
+    def buildDecals(self):
+        if not self.material.decals:
+            return
+        if self.material.isShellMat:
+            print("This cannot happen", self)
+            return
+        from .cgroup import MappingGroup
+        decals = [(inst.getValue(["Priority"],0), n, inst) for n,inst in enumerate(self.material.decals)]
+        decals.sort()
+        for _,_,inst in decals:
+            x = inst.getValue(["ClippingWidth"], 1.0)
+            y = inst.getValue(["ClippingDepth"], 1.0)
+            z = inst.getValue(["ClippingHeight"], 1.0)
+            fmode = inst.getValue(["Face Mode"], 2)
+            # [ "Front", "Back", "Front And Back" ]
+            scale = 2*LS.scale*Vector((x,y,z))
+            csys = self.getValue(["Texture Coordinate System"], 2)
+            # [ "UVW", "World", "Object" ]
+            if csys == 0:
+                mapping = texco
+            elif csys == 2:
+                loc = (0.5, 0.5, 0)
+                rot = (90*D, 0, 0)
+                scale = (2,2,2)
+                mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna,loc,rot,scale])
+                inst.texcoNodes.append(mapping)
+            self.column += 1
+            for geonode in inst.geometries:
+                for dmat in geonode.materials.values():
+                    dmat.isShellMat = True
+                    if dmat.name.startswith("Front"):
+                        pass
+                    elif dmat.name.startswith("Reverse"):
+                        continue
+                    else:
+                        raise RuntimeError("Decal material name should start with Front or Reverse, not %s" % dmat.name)
+                    node = self.addDecalGroup(dmat)
+                    self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
+                    self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
+                    if csys == 2:
+                        self.links.new(mapping.outputs["Influence"], node.inputs["Influence"])
+                    self.links.new(mapping.outputs["Vector"], node.inputs["UV"])
+                    self.cycles = self.eevee = node
+                    self.ycoords[self.column] -= 50
+
+
+    def addDecalGroup(self, dmat):
+        node = self.addNode("ShaderNodeGroup")
+        node.width = 240
+        node.name = dmat.name
+        node.label = dmat.name
+        group = self.getShellGroup(dmat, 0)
+        group.create(node, dmat.name, self)
+        group.isDecal = True
+        group.addNodes((dmat, ""))
+        node.inputs["Influence"].default_value = 1.0
+        return node
 
 
     def buildShells(self):
@@ -1414,6 +1476,7 @@ class CyclesTree:
         else:
             imgname = asset.getName()
         texnode = self.getTexNode(imgname, colorSpace)
+        print("ASS", asset, map, map.size)
         if asset.hasMapping(map):
             innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.material, map)
@@ -1430,6 +1493,9 @@ class CyclesTree:
         else:
             texnode = self.addTextureNode(col, img, imgname, colorSpace)
             self.setTexNode(imgname, texnode, colorSpace)
+            if self.isDecal:
+                texnode.extension = 'CLIP'
+                self.clipsocket = texnode.outputs["Alpha"]
             return texnode, texnode, texnode, True
 
 
@@ -1724,11 +1790,11 @@ def findTree(mat):
     return tree
 
 
-def findTexco(tree, col):
+def findTexco(tree, col=None):
     nodes = findNodes(tree, "TEX_COORD")
     if nodes:
         return nodes[0]
-    else:
+    elif col is not None:
         return tree.addNode("ShaderNodeTexCoord", col)
 
 

@@ -65,6 +65,7 @@ class Material(Asset, Channels):
         self.geometry = None
         self.geoemit = []
         self.geobump = {}
+        self.decals = []
         self.uv_set = None
         self.uv_sets = {}
         self.useDefaultUvs = True
@@ -265,7 +266,7 @@ class Material(Asset, Channels):
 
 
     def dontBuild(self):
-        if self.ignore:
+        if (self.ignore or self.isShellMat):
             return True
         elif self.force:
             return False
@@ -652,14 +653,15 @@ class Images(Asset):
     def parse(self, struct):
         Asset.parse(self, struct)
         mapSize = None
-        for key in struct.keys():
+        for key,data in struct.items():
             if key == "map":
-                for mstruct in struct["map"]:
+                for mstruct in data:
                     if "mask" in mstruct.keys():
                         self.maps.append(Map(mstruct["mask"], True))
                     self.maps.append(Map(mstruct, False))
             elif key == "map_size":
-                mapSize = struct[key]
+                mapSize = data
+        print("IM", self, mapSize)
         if mapSize is not None:
             for map in self.maps:
                 map.size = mapSize
@@ -722,28 +724,6 @@ class Texture:
             return self.map.image.name
         else:
             return ""
-
-
-    def buildInternal(self):
-        if self.built["COLOR"]:
-            return self
-        key = self.getName()
-        if key:
-            img = self.images["COLOR"] = self.map.build()
-            if img:
-                tex = self.rna = bpy.data.textures.new(img.name, 'IMAGE')
-                tex.image = img
-            else:
-                tex = None
-            LS.textures[key] = self
-        else:
-            tex = self.rna = bpy.data.textures.new(self.map.label, 'BLEND')
-            tex.use_color_ramp = True
-            r,g,b = self.map.color
-            for elt in tex.color_ramp.elements:
-                elt.color = (r,g,b,1)
-        self.built["COLOR"] = True
-        return self
 
 
     def buildCycles(self, colorSpace):
