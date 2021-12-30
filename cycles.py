@@ -373,15 +373,15 @@ class CyclesTree:
             # [ "Front", "Back", "Front And Back" ]
             csys = self.getValue(["Texture Coordinate System"], 2)
             # [ "UVW", "World", "Object" ]
-            x = inst.getValue(["ClippingWidth"], 50)
-            y = inst.getValue(["ClippingDepth"], 50)
-            z = inst.getValue(["ClippingHeight"], 50)
-            diag = 2*LS.scale*Matrix.Diagonal((x,y,z))
             if csys == 0:
                 mapping = texco
             elif csys == 2:
-                mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna])
-                inst.texcoNodes.append((mapping, diag))
+                if inst.mappingNode:
+                    mapping = self.addNode("ShaderNodeGroup")
+                    mapping.name = mapping.label = inst.name
+                    mapping.node_tree = inst.mappingNode.node_tree
+                else:
+                    mapping = inst.mappingNode = self.addGroup(MappingGroup, inst.name, args=[inst.rna], force=True)
             self.column += 1
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
@@ -407,10 +407,14 @@ class CyclesTree:
         node.width = 240
         node.name = dmat.name
         node.label = dmat.name
-        group = self.getShellGroup(dmat, 0)
-        group.create(node, dmat.name, self)
-        group.isDecal = True
-        group.addNodes((dmat, ""))
+        if dmat.decalNode:
+            node.node_tree = dmat.decalNode.node_tree
+        else:
+            group = self.getShellGroup(dmat, 0)
+            group.create(node, dmat.name, self)
+            group.isDecal = True
+            group.addNodes((dmat, ""))
+            dmat.decalNode = node
         node.inputs["Influence"].default_value = 1.0
         return node
 

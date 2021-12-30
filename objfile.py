@@ -271,7 +271,7 @@ def fitToFile(filepath, nodes):
 
         for geonode in inst.geometries:
             geo = geonode.data
-            if geo is None:
+            if not isinstance(geo, Geometry):
                 continue
             nname = dbz.tryGetName(node.name)
             if (nname is None and

@@ -164,7 +164,7 @@ class Instance(Accessor, Channels, SimNode):
         self.modifiers = {}
         self.attributes = copyElements(node.attributes)
         self.restdata = None
-        self.texcoNodes = []
+        self.mappingNode = None
         self.wsmat = self.U3
         self.lsmat = None
         self.rigtype = node.rigtype
@@ -338,8 +338,12 @@ class Instance(Accessor, Channels, SimNode):
             geonode.postbuild(context, self)
         if GS.useInstancing:
             self.buildNodeInstance(context)
-        for node,diag in self.texcoNodes:
-            texco = findTexco(node.node_tree)
+        if self.mappingNode:
+            x = self.getValue(["ClippingWidth"], 50)
+            y = self.getValue(["ClippingDepth"], 50)
+            z = self.getValue(["ClippingHeight"], 50)
+            diag = 2*LS.scale*Matrix.Diagonal((x,y,z))
+            texco = findTexco(self.mappingNode.node_tree)
             empty = texco.object = self.rna
             empty.empty_display_type = 'CUBE'
             empty.empty_display_size = 0.25
@@ -792,7 +796,7 @@ class Node(Asset, Formula, Channels):
                         if extra:
                             etype = extra[0].get("type")
                         if etype in ["studio_geometry_channels"]:
-                            geo = UnGeometry(self.fileref)
+                            geo = UnGeometry(etype, self.fileref)
                             geo.parse(geostruct)
                         else:
                             print("No geometry URL")
@@ -835,6 +839,7 @@ class Node(Asset, Formula, Channels):
         scn = context.scene
         if isinstance(self.data, UnGeometry):
             ob = bpy.data.objects.new(inst.name, None)
+            self.data.fixMappingNodes(inst)
         elif isinstance(self.data, Asset):
             if self.data.shstruct and GS.mergeShells:
                 return
@@ -843,6 +848,7 @@ class Node(Asset, Formula, Channels):
                 ob = bpy.data.objects.new(inst.name, self.data.rna)
         else:
             ob = bpy.data.objects.new(inst.name, self.data)
+        ob.name = inst.name
         self.rna = inst.rna = ob
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)

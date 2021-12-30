@@ -1207,7 +1207,6 @@ class MappingGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.outsockets += ["Depth Mask", "Vector"]
-        self.texcoNode = None
 
 
     def create(self, node, name, parent):
@@ -1223,6 +1222,8 @@ class MappingGroup(CyclesGroup):
 
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
+        mapping1.inputs["Location"].default_value = (0, 0, 0)
+        mapping1.inputs["Rotation"].default_value = (0, 0, 0)
         mapping1.inputs["Scale"].default_value = (0.1, 1.0, 0.1)
         self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
 

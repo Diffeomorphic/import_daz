@@ -479,23 +479,42 @@ def copyUvLayers(ob, hdob):
         copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
 
 #-------------------------------------------------------------
-#   Geometry Asset
+#   UnGeometry
+#   Where DS wants a geometry and Blender an empty
 #-------------------------------------------------------------
 
 class UnGeometry(Asset, Channels):
-    def __init__(self, fileref):
+    def __init__(self, etype, fileref):
         Asset.__init__(self, fileref)
         Channels.__init__(self)
-        self.polygon_material_groups = []
+        self.etype = etype
+        if self.etype == "studio_geometry_channels":
+            self.polygon_material_groups = []
 
     def parse(self, struct):
         Asset.parse(self, struct)
         Channels.parse(self, struct)
-        self.polygon_material_groups = struct["polygon_material_groups"]["values"]
+        if self.etype == "studio_geometry_channels":
+            self.polygon_material_groups = struct["polygon_material_groups"]["values"]
 
     def preprocess(self, context, inst):
         pass
 
+    def fixMappingNodes(self, inst):
+        # Lost the correct location somewhere
+        if self.etype == "studio_geometry_channels" and inst.mappingNode:
+            mtree = inst.mappingNode.node_tree
+            map1,map2 = [mnode for mnode in mtree.nodes if mnode.type == 'MAPPING']
+            map1.inputs["Location"].default_value = (0, 0, 0)
+            map1.inputs["Rotation"].default_value = (0, 0, 0)
+            map1.inputs["Scale"].default_value = (0.1, 1.0, 0.1)
+            map2.inputs["Location"].default_value = (0.5, 0.5, 0)
+            map2.inputs["Rotation"].default_value = (-90*D, 0, 0)
+            map2.inputs["Scale"].default_value = (2, 2 ,2)
+
+#-------------------------------------------------------------
+#   Geometry
+#-------------------------------------------------------------
 
 class Geometry(Asset, Channels):
 

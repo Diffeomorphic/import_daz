@@ -79,6 +79,7 @@ class Material(Asset, Channels):
         self.isHair = False
         self.isShellMat = False
         self.enabled = {}
+        self.decalNode = None
 
 
     def __repr__(self):
