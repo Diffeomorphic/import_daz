@@ -1040,7 +1040,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     continue
                 makeBone(self.longName(m, suffix), rig, fing1.head, fing3.tail, fing1.roll, L_LHAND+dlayer, palm)
                 vec = fing3.tail - fing3.head
-                makeBone("ik_" + self.longName(m, suffix), rig, fing3.tail, fing3.tail+vec, fing3.roll, L_LFINGER+dlayer, hand)
+                makeBone("ik_" + self.longName(m, suffix), rig, fing3.tail, fing3.tail+vec, fing3.roll, L_LHAND+dlayer, hand)
 
         setMode('POSE')
         for suffix,dlayer in [(".L",0), (".R",16)]:
@@ -1075,6 +1075,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 cns = copyRotation(fing, long, rig)
                 cns.use_offset = True
                 addDriver(cns, "mute", rig, props, expr)
+                addDriver(long.bone, "hide", rig, props, expr)
                 for n in range(n0+1,3):
                     fing = rig.pose.bones[self.linkName(m, n, suffix)]
                     fing.lock_rotation = (False,True,True)
@@ -1539,6 +1540,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = ikConstraint(pb, target, None, 0, 3-n0, rig)
             cns.use_rotation = True
             addDriver(cns, "mute", rig, prop, "not(x)")
+            addDriver(target.bone, "hide", rig, prop, "not(x)")
             n0 = 0
 
     #-------------------------------------------------------------
