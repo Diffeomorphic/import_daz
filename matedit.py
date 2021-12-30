@@ -729,10 +729,10 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
         else:
             empty = bpy.data.objects.new(fname, None)
             empty.parent = ob
-            empty.rotation_euler = (90*D, 0, 0)
-            empty.scale = (0.5, 0.5, 0.2)
+            empty.rotation_euler = (0, 0, 0)
+            empty.scale = (1, 0.2, 1)
             empty.empty_display_type = 'CUBE'
-            empty.empty_display_size = 0.5
+            empty.empty_display_size = 0.25
             coll = getCollection(ob)
             coll.objects.link(empty)
         self.force = True
@@ -763,8 +763,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
         nodeType,slot = self.slots[self.channel]
         fromSocket, toSocket, loc = getFromToSockets(tree, nodeType, slot)
         if toSocket is None:
-            print("Channel %s not found" % item.name)
-            return
+            raise DazError("Channel %s not found (%s)" % (self.channel, nodeType))
         nname = "%s_%s" % (fname, self.channel)
         node = tree.addGroup(DecalGroup, nname, args=[empty, img, mask, self.blendType], force=self.force)
         node.label = empty.name
@@ -773,9 +772,12 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
         node.inputs["Influence"].default_value = 1.0
         if fromSocket:
             tree.links.new(fromSocket, node.inputs["Color"])
-            tree.links.new(node.outputs["Combined"], toSocket)
         else:
-            tree.links.new(node.outputs["Color"], toSocket)
+            rgb = tree.addNode("ShaderNodeRGB")
+            rgb.location = (loc[0]-2*XSIZE, 3*YSIZE)
+            rgb.outputs["Color"].default_value = toSocket.default_value
+            tree.links.new(rgb.outputs["Color"], node.inputs["Color"])
+        tree.links.new(node.outputs["Combined"], toSocket)
 
 # ---------------------------------------------------------------------
 #   Reset button

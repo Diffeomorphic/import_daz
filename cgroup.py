@@ -1211,35 +1211,36 @@ class MappingGroup(CyclesGroup):
 
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 3)
+        CyclesGroup.create(self, node, name, parent, 4)
         self.group.outputs.new("NodeSocketFloat", "Depth Mask")
         self.group.outputs.new("NodeSocketVector", "Vector")
 
 
     def addNodes(self, args):
-        empty, loc, rot = args
+        empty = args[0]
         texco = self.addNode("ShaderNodeTexCoord", 0)
         texco.object = empty
 
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
-        mapping1.inputs["Scale"].default_value = (0.1, 0.1, 1.0)
+        mapping1.inputs["Scale"].default_value = (0.1, 1.0, 0.1)
         self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
+
         grad = self.addNode("ShaderNodeTexGradient", 2)
         grad.gradient_type = 'SPHERICAL'
         self.links.new(mapping1.outputs["Vector"], grad.inputs["Vector"])
 
-        gate = self.addNode("ShaderNodeMath", 2)
+        gate = self.addNode("ShaderNodeMath", 3)
         gate.operation = 'GREATER_THAN'
         self.links.new(grad.outputs["Color"], gate.inputs[0])
-        gate.inputs[1].default_value = 0.5
+        gate.inputs[1].default_value = 0.75
         self.links.new(gate.outputs[0], self.outputs.inputs["Depth Mask"])
 
-        mapping2 = self.addNode("ShaderNodeMapping", 1)
+        mapping2 = self.addNode("ShaderNodeMapping", 2)
         mapping2.vector_type = 'POINT'
-        mapping2.inputs["Location"].default_value = loc
-        mapping2.inputs["Rotation"].default_value = rot
-        mapping2.inputs["Scale"].default_value = (1,1,1)
+        mapping2.inputs["Location"].default_value = (0.5, 0.5, 0)
+        mapping2.inputs["Rotation"].default_value = (-90*D, 0, 0)
+        mapping2.inputs["Scale"].default_value = (2, 2 ,2)
         self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
         self.links.new(mapping2.outputs["Vector"], self.outputs.inputs["Vector"])
 
@@ -1267,9 +1268,7 @@ class DecalGroup(CyclesGroup):
 
     def addNodes(self, args):
         empty,img,mask,blendType = args
-        loc = (0.5, 0.5, 0)
-        rot = (0,0,0)
-        mapping = self.addGroup(MappingGroup, empty.name, args=[empty, loc, rot], col=1)
+        mapping = self.addGroup(MappingGroup, empty.name, args=[empty], col=1)
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img

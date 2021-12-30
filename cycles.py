@@ -376,13 +376,11 @@ class CyclesTree:
             x = inst.getValue(["ClippingWidth"], 50)
             y = inst.getValue(["ClippingDepth"], 50)
             z = inst.getValue(["ClippingHeight"], 50)
-            diag = LS.scale*Matrix.Diagonal((x,y,z))
+            diag = 2*LS.scale*Matrix.Diagonal((x,y,z))
             if csys == 0:
                 mapping = texco
             elif csys == 2:
-                loc = (0.5, 0.5, 0)
-                rot = (-90*D, 0, 0)
-                mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna, loc, rot])
+                mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna])
                 inst.texcoNodes.append((mapping, diag))
             self.column += 1
             for geonode in inst.geometries:

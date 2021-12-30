@@ -342,7 +342,7 @@ class Instance(Accessor, Channels, SimNode):
             texco = findTexco(node.node_tree)
             empty = texco.object = self.rna
             empty.empty_display_type = 'CUBE'
-            empty.empty_display_size = 0.5
+            empty.empty_display_size = 0.25
             empty.scale = diag@empty.scale
 
 
