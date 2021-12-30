@@ -379,9 +379,10 @@ class CyclesTree:
                 if inst.mappingNode:
                     mapping = self.addNode("ShaderNodeGroup")
                     mapping.name = mapping.label = inst.name
-                    mapping.node_tree = inst.mappingNode.node_tree
+                    mapping.node_tree = inst.mappingNode
                 else:
-                    mapping = inst.mappingNode = self.addGroup(MappingGroup, inst.name, args=[inst.rna], force=True)
+                    mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna], force=True)
+                    inst.mappingNode = mapping.node_tree
             self.column += 1
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):

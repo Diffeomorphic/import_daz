@@ -343,7 +343,7 @@ class Instance(Accessor, Channels, SimNode):
             y = self.getValue(["ClippingDepth"], 50)
             z = self.getValue(["ClippingHeight"], 50)
             diag = 2*LS.scale*Matrix.Diagonal((x,y,z))
-            texco = findTexco(self.mappingNode.node_tree)
+            texco = findTexco(self.mappingNode)
             empty = texco.object = self.rna
             empty.empty_display_type = 'CUBE'
             empty.empty_display_size = 0.25
