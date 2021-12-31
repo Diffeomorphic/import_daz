@@ -49,7 +49,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
     useMergeUvLayers : BoolProperty(
         name = "Merge UV Layers",
         description = "Merge active render UV layers to a single layer",
-        default = True)
+        default = False)
 
     useVertexTable : BoolProperty(
         name = "Add Vertex Table",
