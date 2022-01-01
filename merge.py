@@ -46,11 +46,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
     bl_description = "Merge selected geografts to active object"
     bl_options = {'UNDO'}
 
-    useMergeUvLayers : BoolProperty(
-        name = "Merge UV Layers",
-        description = "Merge active render UV layers to a single layer",
-        default = False)
-
     useVertexTable : BoolProperty(
         name = "Add Vertex Table",
         description = (
@@ -60,7 +55,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useMergeUvLayers")
         self.layout.prop(self, "useVertexTable")
 
     def __init__(self):
@@ -277,10 +271,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         else:
             cob.data.DazFingerPrint = ""
 
-
-        # Merge UV layers
-        if self.useMergeUvLayers:
-            self.mergeUvLayers(cob, auvnames)
         self.copyShapeKeyDrivers(cob, drivers)
         updateDrivers(cob)
 
@@ -290,24 +280,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             if uvlayer.active_render:
                 return idx, uvlayer.name
         return 0, None
-
-
-    def mergeUvLayers(self, cob, auvnames):
-        idx0 = self.getActiveUvLayer(cob)[0]
-        idxs = []
-        for idx,uvlayer in enumerate(cob.data.uv_layers):
-            if idx != idx0:
-                uvname = uvlayer.name
-                if uvname in auvnames:
-                    idxs.append(idx)
-                elif len(uvname) > 4 and uvname[-3] == "." and uvname[-3:].isdigit():
-                    uvname = uvname[:-4]
-                    if uvname in auvnames:
-                        idxs.append(idx)
-        if idxs:
-            idxs.reverse()
-        for idx in idxs:
-            mergeUvLayers(cob.data, idx0, idx)
 
 
     def replaceTexco(self, ob):
