@@ -33,41 +33,64 @@ from .error import reportError
 
 
 def loadJson(filepath, mustOpen=False):
+    def loadFromString(string):
+        struct = {}
+        jsonerr = None
+        try:
+            struct = json.loads(string)
+            msg = None
+        except json.decoder.JSONDecodeError as err:
+            msg = ('JSON error while reading %s file\n"%s"\n%s' % (filetype, filepath, err))
+            jsonerr = str(err)
+        except UnicodeDecodeError as err:
+            msg = ('Unicode error while reading %s file\n"%s"\n%s' % (filetype, filepath, err))
+        return struct, msg, jsonerr
+
+    def smashString(string, jsonerr):
+        # Expecting value: line 14472 column 630 (char 619107)
+        words = jsonerr.split("(char ")
+        if len(words) == 2:
+            nstring = words[1].split(")")[0]
+            if nstring.isdigit():
+                n = int(nstring)
+                c = string[n]
+                n -= 1
+                while string[n].isspace() and n > 0:
+                    c = string[n]
+                    n -= 1
+                c = string[n]
+                if c == ",":
+                    print("Smashing character %d" % n)
+                    return string[:n] + " " + string[n+1:]
+        return None
+
     try:
         with gzip.open(filepath, 'rb') as fp:
             bytes = fp.read()
     except IOError:
         bytes = None
 
-    struct = {}
-    msg = ("Could not load %s" % filepath)
-    trigger=(2,3)
     if bytes:
-        try:
-            string = bytes.decode("utf_8_sig")
-            struct = json.loads(string)
-            msg = None
-        except json.decoder.JSONDecodeError as err:
-            msg = ('JSON error while reading zipped file\n"%s"\n%s' % (filepath, err))
-            trigger=(1,2)
-        except UnicodeDecodeError as err:
-            msg = ('Unicode error while reading zipped file\n"%s"\n%s' % (filepath, err))
-            trigger=(1,2)
+        string = bytes.decode("utf_8_sig")
+        filetype = "zipped"
     else:
-        from .fileutils import safeOpen
-        fp = safeOpen(filepath, "r", mustOpen=mustOpen)
-        if fp:
-            try:
-                struct = json.load(fp)
-                msg = None
-            except json.decoder.JSONDecodeError as err:
-                msg = ('JSON error while reading ascii file\n"%s"\n%s' % (filepath, err))
-                trigger=(1,2)
-            except UnicodeDecodeError as err:
-                msg = ('Unicode error while reading ascii file\n"%s"\n%s' % (filepath, err))
-                trigger=(1,2)
+        try:
+            with open(filepath, 'r') as fp:
+                string = fp.read()
+            filetype = "ascii"
+        except IOError:
+            string = None
+    if string is None:
+        reportError('Could not open file\n"%s"\n' % (filepath), trigger=(1,2))
+        return {}
+
+    struct,msg,jsonerr = loadFromString(string)
+    if jsonerr:
+        string = smashString(string, jsonerr)
+        if string:
+            struct,msg,jsonerr = loadFromString(string)
     if msg:
-        reportError(msg, trigger=trigger)
+        reportError(msg, trigger=(1,2))
     return struct
 
 

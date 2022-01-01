@@ -82,7 +82,6 @@ class FigureInstance(Instance):
             if (mesh.name == self.name or
                 (mesh.name[:-4] == self.name and mesh.name[-4:] == ".001")):
                 mesh.name = "%s Mesh" % self.name
-            print("FF", rig.name, mesh.name, self.name)
             rig.DazMesh = mesh.DazMesh = char
             self.poseChildren(rig, rig)
         elif mesh:
