@@ -52,16 +52,13 @@ def loadJson(filepath, mustOpen=False):
         if len(words) == 2:
             nstring = words[1].split(")")[0]
             if nstring.isdigit():
-                n = int(nstring)
-                c = string[n]
-                n -= 1
+                n1 = int(nstring)
+                n = n1-1
                 while string[n].isspace() and n > 0:
-                    c = string[n]
                     n -= 1
-                c = string[n]
-                if c == ",":
+                if string[n] == ",":
                     print("Smashing character %d" % n)
-                    return string[:n] + " " + string[n+1:]
+                    return "%s %s" % (string[:n], string[n1:])
         return None
 
     try:
