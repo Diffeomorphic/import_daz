@@ -230,15 +230,19 @@ class GeoNode(Node, SimNode):
         ob = self.rna
         if ob is None:
             return
+        hdob = self.hdobject
         if self.hairMaterials:
             for dmat in self.hairMaterials:
                 if dmat.rna:
                     ob.data.materials.append(dmat.rna)
         if self.hdobject:
-            self.finishHD(context, self.rna, self.hdobject, inst)
+            self.finishHD(context, self.rna, hdob, inst)
+        if ob.type == 'MESH':
+            scaleEyeMoisture(ob)
+            if hdob and hdob != ob:
+                scaleEyeMoisture(hdob)
         if LS.fitFile and ob.type == 'MESH':
             shiftMesh(ob, inst.worldmat.inverted())
-            hdob = self.hdobject
             if hdob and hdob != ob:
                 shiftMesh(hdob, inst.worldmat.inverted())
 
@@ -364,6 +368,45 @@ def shiftMesh(ob, mat):
         return
     for v in ob.data.vertices:
         v.co = mat @ v.co
+
+
+def scaleEyeMoisture(ob):
+    if GS.useScaleEyeMoisture and ob.DazMesh:
+        mdict = {}
+        for mn,mat in enumerate(ob.data.materials):
+            if mat.name.lower().startswith(("eyemoisture", "eyereflection")):
+                for f in ob.data.polygons:
+                    if f.material_index == mn:
+                        for vn in f.vertices:
+                            mdict[vn] = True
+                break
+        if mdict:
+            if "lEye" in ob.vertex_groups.keys():
+                lgn = ob.vertex_groups["lEye"].index
+            else:
+                return
+            if "rEye" in ob.vertex_groups.keys():
+                rgn = ob.vertex_groups["rEye"].index
+            else:
+                return
+            lmoist = []
+            rmoist = []
+            for vn in mdict.keys():
+                v = ob.data.vertices[vn]
+                for g in v.groups:
+                    if g.group == lgn:
+                        lmoist.append(v)
+                    elif g.group == rgn:
+                        rmoist.append(v)
+            lcenter = sum([v.co for v in lmoist], Vector((0,0,0))) / len(lmoist)
+            rcenter = sum([v.co for v in rmoist], Vector((0,0,0))) / len(rmoist)
+            print('Scale eye moisture vertices for %s mesh "%s"' % (ob.DazMesh, ob.name))
+            print("Centers:", lcenter, rcenter)
+            for v in lmoist:
+                v.co = lcenter + 1.01*(v.co - lcenter)
+            for v in rmoist:
+                v.co = rcenter + 1.01*(v.co - rcenter)
+
 
 
 def isEmpty(vgrp, ob):

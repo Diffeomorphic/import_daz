@@ -110,6 +110,7 @@ class GlobalSettings:
         self.useMultiShapes = True
         self.useAutoSmooth = False
         self.useSimulation = True
+        self.useScaleEyeMoisture = True
 
 
     def getSSSMethod(self):
@@ -183,6 +184,7 @@ class GlobalSettings:
         "DazMultiUvLayers" : "useMultiUvLayers",
         "DazUseAutoSmooth" : "useAutoSmooth",
         "DazSimulation" : "useSimulation",
+        "DazScaleEyeMoisture" : "useScaleEyeMoisture",
     }
 
     def fixPath(self, path):

@@ -235,6 +235,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazMultiUvLayers")
         box.prop(scn, "DazUseAutoSmooth")
         box.prop(scn, "DazUseInstancing")
+        box.prop(scn, "DazScaleEyeMoisture")
         box.prop(scn, "DazSimulation")
 
         col = split.column()
@@ -617,6 +618,10 @@ def register():
             "Use auto smooth if this is done in DAZ Studio.\n" +
             "This can be useful for objects with hard edges,\n" +
             "but leads to poor performance and artifacts for organic meshes"))
+
+    bpy.types.Scene.DazScaleEyeMoisture = BoolProperty(
+        name = "Scale Eye Moisture",
+        description = "Scale eye moisture vertices to avoid dark rings when rendering eyes")
 
     bpy.types.Scene.DazSimulation = BoolProperty(
         name = "Simulation",
