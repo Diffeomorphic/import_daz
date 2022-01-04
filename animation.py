@@ -983,7 +983,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
             for fcu in rig.animation_data.drivers:
                 words = fcu.data_path.split('"')
                 if (words[0] == "pose.bones[" and
-                    words[2] != "].constraints["):
+                    words[2] not in ["].constraints[", "].HdOffset"]):
                     driven[words[1]] = True
         self.driven = list(driven.keys())
 
