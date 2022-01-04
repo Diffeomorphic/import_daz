@@ -148,7 +148,7 @@ class HairOptions:
 
     strandShape : EnumProperty(
         items = [('STANDARD', "Standard", "Standard strand shape"),
-                 ('ROOTS', "Fading Roots", "Root transparency (standard shape with fading roots)"),
+                 ('ROOTS', "Fading Roots", "Root transparency (standard shape with fading roots)\nCan cause performance problems in scenes with volume effects"),
                  ('SHRINK', "Root And Tip Shrink", "Root and tip shrink.\n(Root and tip radii interchanged)")],
         name = "Strand Shape",
         description = "Strand shape",
@@ -549,12 +549,9 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
         box = col.box()
         box.label(text="Create")
         box.prop(self, "strandType", expand=True)
-        multimat = True
         if self.strandType == 'SHEET':
             box.prop(self, "strandOrientation")
             box.prop(self, "useSeparateLoose")
-        elif self.strandType == 'TUBE':
-            multimat = False
         box.prop(self, "keepMesh")
         box.prop(self, "removeOldHairs")
         box.separator()
@@ -566,15 +563,20 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
         col = row.column()
         box = col.box()
         box.label(text="Material")
-        if multimat:
+        keepmat = False
+        multimat = False
+        if self.strandType != 'TUBE':
             box.prop(self, "multiMaterials")
-        box.prop(self, "keepMaterial")
-        if self.keepMaterial:
-            if not (multimat and self.multiMaterials):
+            multimat = self.multiMaterials
+        if self.strandType != 'SHEET':
+            box.prop(self, "keepMaterial")
+            keepmat = self.keepMaterial
+        if keepmat:
+            if not multimat:
                 box.prop(self, "activeMaterial")
         else:
             box.prop(self, "hairMaterialMethod")
-            if (multimat and self.multiMaterials):
+            if multimat:
                 for item in self.colors:
                     row2 = box.row()
                     row2.label(text=item.name)
@@ -1046,8 +1048,9 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
     def buildHairMaterials(self, hum, hair, context):
         self.materials = []
         fade = (self.strandShape == 'ROOTS')
+        keepmat = (self.keepMaterial and self.strandType != 'SHEET')
         if self.multiMaterials:
-            if self.keepMaterial:
+            if keepmat:
                 mats = hair.data.materials
             else:
                 mats = []
@@ -1062,7 +1065,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
                 self.materials.append(mat)
         else:
             mname = self.activeMaterial
-            if self.keepMaterial:
+            if keepmat:
                 mat = hair.data.materials[mname]
             else:
                 mat = buildHairMaterial("Hair", self.color, context, force=True)

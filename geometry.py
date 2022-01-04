@@ -92,13 +92,13 @@ class GeoNode(Node, SimNode):
 
 
     def isVisibleMaterial(self, dmat):
-        if self.data:
+        if isinstance(self.data, Geometry):
             return self.data.isVisibleMaterial(dmat)
         return True
 
 
     def preprocess(self, context, inst):
-        if self.data:
+        if isinstance(self.data, Geometry):
             self.data.preprocess(context, inst)
         elif inst.isStrandHair:
             geo = self.data = Geometry(self.fileref)
@@ -496,9 +496,6 @@ class UnGeometry(Asset, Channels):
         Channels.parse(self, struct)
         if self.etype == "studio_geometry_channels":
             self.polygon_material_groups = struct["polygon_material_groups"]["values"]
-
-    def preprocess(self, context, inst):
-        pass
 
     def fixMappingNodes(self, inst):
         # Lost the correct location somewhere

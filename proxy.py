@@ -1673,7 +1673,7 @@ def separateLoose(ob):
         vn = f.vertices[0]
         cn = deref(clusters[vn])
         if cn not in fclusters.keys():
-            fclusters[cn] = ({}, [], [], [])
+            fclusters[cn] = ({}, [], [], [], f.material_index)
         assoc = fclusters[cn][0]
         vcoord = fclusters[cn][1]
         fcluster = fclusters[cn][2]
@@ -1716,7 +1716,7 @@ class DAZ_OT_SeparateLooseParts(DazOperator, IsMesh):
             return
         fclusters = separateLoose(ob)
         idx = -1
-        for _assoc,verts,faces,uvcoord in fclusters:
+        for _assoc,verts,faces,uvcoord,mnum in fclusters:
             idx += 1
             me = bpy.data.meshes.new(ob.name)
             me.from_pydata(verts, [], faces)
@@ -1725,6 +1725,8 @@ class DAZ_OT_SeparateLooseParts(DazOperator, IsMesh):
                 uvlayer.data[n].uv = uv
             for mat in ob.data.materials:
                 me.materials.append(mat)
+            for f in me.polygons:
+                f.material_index = mnum
             if idx == 0:
                 nob = ob
                 ob.data = me
