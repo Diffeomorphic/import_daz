@@ -638,6 +638,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         bchildren = applyBoneChildren(context, rig)
         for pb in rig.pose.bones:
             pb.driver_remove("HdOffset")
+            pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig)

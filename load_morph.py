@@ -322,7 +322,11 @@ class LoadMorph(DriverUser):
                     elif key == "center_point":
                         self.erc = True
                         if GS.useERC:
-                            self.makeCenterFormula(output, idx, expr)
+                            self.makeOffsetFormula("HdOffset", output, idx, expr)
+                    elif key == "end_point":
+                        self.erc = True
+                        if GS.useERC:
+                            self.makeOffsetFormula("TlOffset", output, idx, expr)
                     elif key == "end_point":
                         self.erc = True
 
@@ -549,16 +553,16 @@ class LoadMorph(DriverUser):
         self.addPoseboneDriver(pb, tfm)
 
 
-    def makeCenterFormula(self, bname, idx, expr):
+    def makeOffsetFormula(self, attr, bname, idx, expr):
         _tfm,pb,prop,factor = self.getBoneData(bname, expr)
-        if "HdOffset" not in pb.keys():
-            pb.HdOffset = Zero
+        if attr not in pb.keys():
+            setattr(pb, attr, Zero)
         vec = Vector((0,0,0))
         vec[idx] = factor
-        self.setFcurves(pb, vec, prop, "HdOffset", "pose")
+        self.setFcurves(pb, vec, prop, attr, "pose")
         # Keyframes for "lCarpal4" missing for G8F
         if bname == "lCarpal3":
-            self.makeCenterFormula("lCarpal4", idx, expr)
+            self.makeOffsetFormula(attr, "lCarpal4", idx, expr)
 
     #-------------------------------------------------------------
     #   Add posebone driver
@@ -1297,7 +1301,7 @@ class LoadMorph(DriverUser):
         adj = None
         pb = None
         bname = prefix[:-6]
-        if prefix[-6:-1] in [":Loc:", ":Hdo:"] and bname in self.rig.pose.bones.keys():
+        if prefix[-6:-1] in [":Loc:", ":Hdo:", ":Tlo:"] and bname in self.rig.pose.bones.keys():
             adj = self.getStrengthAdjuster()
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():

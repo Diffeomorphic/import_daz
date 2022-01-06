@@ -1808,9 +1808,9 @@ class DAZ_OT_MorphArmature(DazOperator, IsArmature):
         from .runtime.morph_armature import getEditBones, morphArmature
         rig = context.object
         mode = rig.mode
-        heads, tails, offsets = getEditBones(rig)
+        data = getEditBones(rig)
         bpy.ops.object.mode_set(mode='EDIT')
-        morphArmature(rig, heads, tails, offsets)
+        morphArmature(data)
         bpy.ops.object.mode_set(mode=mode)
 
 #-------------------------------------------------------------

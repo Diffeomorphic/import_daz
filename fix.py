@@ -695,7 +695,7 @@ class BendTwists:
     def deleteBoneDrivers(self, rig, bname):
         if bname in rig.data.bones.keys():
             path = 'pose.bones["%s"]' % bname
-            for channel in ["location", "rotation_euler", "rotation_quaternion", "scale", "HdOffset"]:
+            for channel in ["location", "rotation_euler", "rotation_quaternion", "scale", "HdOffset", "TlOffset"]:
                 rig.driver_remove("%s.%s" % (path, channel))
 
 
