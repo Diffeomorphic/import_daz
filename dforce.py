@@ -384,6 +384,271 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
         self.saveSettings()
 
 #-------------------------------------------------------------
+#   Breast bounce
+#-------------------------------------------------------------
+
+from mathutils import Matrix
+
+class DAZ_OT_AddBounce(DazOperator, IsMesh):
+    bl_idname = "daz.add_bounce"
+    bl_label = "Add Breast Bounce"
+    bl_description = "Add breast bounce (G8F only)"
+    bl_options = {'UNDO'}
+
+    def storeState(self, context):
+        scn = context.scene
+        self.simplify = scn.render.use_simplify
+        scn.render.use_simplify = False
+
+    def restoreState(self, context):
+        context.scene.render.use_simplify = self.simplify
+
+    def run(self, context):
+        from .load_json import loadJson
+        hum = self.human = context.object
+        self.rig = hum.parent
+        if hum.DazMesh != "Genesis8-female":
+            raise DazError("Only G8F")
+        folder = os.path.join(os.path.dirname(__file__), "data", "breasts")
+        path = os.path.join(folder, "%s.json" % hum.DazMesh.lower())
+        struct = loadJson(path)
+        path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
+        bstruct = loadJson(path)
+        self.bones = bstruct["bones"]
+        self.corners = self.readCorners(hum, struct["vertices"])
+        subsurf = self.removeSubsurf(hum)
+        self.addVertexGroups(hum, struct)
+        coll = self.addCollection(context)
+
+        collisionObjects = {
+            "Col1_L" : ["lShldrBend", "lShldrBend", "lShldrTwist", 0.15],
+            "Col2_L" : ["lForearmBend", "lForearmBend", "lForearmTwist", 0.15],
+            "Col3_L" : ["lHand", "lHand", "lHand", 0.45],
+            "Col1_R" : ["rShldrBend", "rShldrBend", "rShldrTwist", 0.15],
+            "Col2_R" : ["rForearmBend", "rForearmBend", "rForearmTwist", 0.15],
+            "Col3_R" : ["rHand", "rHand", "rHand", 0.45],
+        }
+        col = self.addObject("COLLISION", collisionObjects, "Cube", context)
+        coll.objects.link(col)
+        self.addArmature(col)
+        self.addCollision(col)
+
+        softbodyObjects = {
+            "Breast_L" : ["lPectoral", "lPectoral", "lPectoral", 0.3],
+            "Breast_R" : ["rPectoral", "rPectoral", "rPectoral", 0.3],
+        }
+        softbody = self.addObject("SOFTBODY", softbodyObjects, "Icosphere", context)
+        coll.objects.link(softbody)
+        self.addArmature(softbody)
+        self.addSoftBody(softbody)
+        self.addCorrSmooth(softbody, "", 2)
+
+        activateObject(context, hum)
+        self.addSurfaceDeform(hum, softbody)
+        self.addCorrSmooth(hum, "CHEST", 4)
+        if False and subsurf:
+            hum.modifiers.new("Subsurf", 'SUBSURF')
+        activateObject(context, self.rig)
+        bpy.ops.object.mode_set(mode='POSE')
+
+
+    def addVertexGroups(self, hum, struct):
+        from .finger import getFingerPrint
+        finger = getFingerPrint(hum)
+        if GS.useModifiedMesh:
+            from .geometry import restoreOrigVerts
+            hasOrig, restored = restoreOrigVerts(hum, -1)
+            if hasOrig:
+                finger = hum.data.DazFingerPrint
+        if finger != struct["finger_print"]:
+            msg = ("Fingerprint mismatch:\n  %s != %s\n" % (finger, struct["finger_print"]) +
+                   '"%s" is not a mesh of type %s\n' % (hum.name, struct["name"]))
+            raise DazError(msg)
+
+        for vname,verts in struct["vertex_groups"].items():
+            vgrp = hum.vertex_groups.get(vname)
+            if vgrp:
+                hum.vertex_groups.remove(vgrp)
+            vgrp = hum.vertex_groups.new(name=vname)
+            if isModifiedMesh(hum):
+                pgs = hum.data.DazOrigVerts
+                for vn0,w in verts:
+                    vn = pgs[str(vn0)].a
+                    if vn >= 0:
+                        vgrp.add([vn], w, 'REPLACE')
+            else:
+                for vn,w in verts:
+                    vgrp.add([vn], w, 'REPLACE')
+
+
+    def addCollection(self, context):
+        coll = bpy.data.collections.new("Simulation")
+        rigcoll = getCollection(self.rig)
+        rigcoll.children.link(coll)
+        layer = getLayerCollection(context, coll)
+        layer.hide_viewport = True
+        coll.hide_render = True
+        return coll
+
+
+    def addObject(self, name, objects, mtype, context):
+        objs = []
+        for cname,data in objects.items():
+            ob = self.addSubObject(cname, data, mtype, context)
+            objs.append(ob)
+        for ob in objs:
+            ob.select_set(True)
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+        bpy.ops.object.transform_apply()
+        bpy.ops.object.join()
+        ob.name = name
+        ob.DazScale = self.human.DazScale
+        ob.parent_type = 'OBJECT'
+        ob.parent = self.rig
+        unlinkAll(ob)
+        return ob
+
+
+    def addSubObject(self, cname, data, mtype, context):
+        RX = Matrix.Rotation(90*D, 4, 'X')
+        bname, bname1, bname2, rad = data
+        pb1 = self.rig.pose.bones[self.bones[bname1]]
+        pb2 = self.rig.pose.bones[self.bones[bname2]]
+        head = pb1.bone.head_local
+        tail = pb2.bone.tail_local
+        length = (tail - head).length
+        rot = pb1.matrix.to_3x3().to_4x4()
+        if mtype == "Cube":
+            rot = rot @ RX
+            trans = Matrix.Translation((head+tail)/2)
+            scale = Vector((rad,rad,0.5))*length
+            bpy.ops.mesh.primitive_cube_add(size=2, scale=scale)
+            lmat = trans @ rot
+            ob = context.object
+            self.parentBone(ob, cname, self.bones[bname], lmat)
+        elif mtype == "Icosphere":
+            bpy.ops.mesh.primitive_cube_add(size=2)
+            ob = context.object
+            verts = ob.data.vertices
+            sign = (+1 if bname1 == "lPectoral" else -1)
+            xmin,xmax,ymin,ymax,zmin,zmax = self.corners
+            verts[0].co = (sign*xmin,ymin,zmin)
+            verts[1].co = (sign*xmin,ymin,zmax)
+            verts[2].co = (sign*xmin,ymax,zmin)
+            verts[3].co = (sign*xmin,ymax,zmax)
+            verts[4].co = (sign*xmax,ymin,zmin)
+            verts[5].co = (sign*xmax,ymin,zmax)
+            verts[6].co = (sign*xmax,ymax,zmin)
+            verts[7].co = (sign*xmax,ymax,zmax)
+            vgrp = ob.vertex_groups.new(name="Pin")
+            for vn in [0,1,4,5]:
+                vgrp.add([vn], 1.0, 'REPLACE')
+            mod = ob.modifiers.new("Subsurf", 'SUBSURF')
+            mod.levels = 1
+            bpy.ops.object.modifier_apply(modifier="Subsurf")
+
+        vgrp = ob.vertex_groups.new(name=bname1)
+        for vn in range(len(ob.data.vertices)):
+            vgrp.add([vn], 1.0, 'REPLACE')
+        return ob
+
+
+    def parentBone(self, ob, cname, bname, lmat):
+        ob.name = cname
+        ob.parent = self.rig
+        if bname:
+            ob.parent_type = 'BONE'
+            ob.parent_bone = bname
+        setWorldMatrix(ob, self.human.matrix_world @ lmat)
+
+
+    def readCorners(self, hum, struct):
+        def getCo(name, idx):
+            return hum.data.vertices[struct[name]].co[idx]
+
+        xmin = getCo("xmin", 0)
+        xmax = getCo("xmax", 0)
+        ymin = getCo("ymin", 1)
+        ymax = getCo("ymax", 1)
+        zmin = getCo("zmin", 2)
+        zmax = getCo("zmax", 2)
+        return (xmin,xmax,ymin,ymax,zmin,zmax)
+
+
+    def addArmature(self, ob):
+        mod = ob.modifiers.new("Armature", 'ARMATURE')
+        mod.object = self.rig
+
+
+    def addCollision(self, ob):
+        mod = ob.modifiers.new("Collision", 'COLLISION')
+        cset = ob.collision
+        cset.damping = 1.0
+        cset.thickness_outer = 0.1*ob.DazScale
+        cset.thickness_inner = 0.1*ob.DazScale
+        cset.use_culling = True
+
+
+    def addSoftBody(self, ob, coll=None):
+        mod = ob.modifiers.new("Softbody", 'SOFT_BODY')
+        mset = mod.settings
+        mset.collision_collection = coll
+        mset.friction = 0.5
+        mset.mass = 3.0
+
+        mset.use_goal = True
+        mset.vertex_group_goal = "Pin"
+        mset.goal_spring = 1.0
+        mset.goal_friction = 0
+        mset.goal_default = 1.0
+        mset.goal_min = 0.0
+        mset.goal_max = 1.0
+
+        mset.use_edges = True
+        mset.pull = 0.3
+        mset.push = 0.3
+        mset.damping = 30
+        mset.bend = 0.15
+        mset.use_edge_collision = True
+        mset.use_face_collision = True
+        mset.use_stiff_quads = True
+        mset.shear = 1.0
+
+        mset.use_self_collision = False
+        mset.ball_size = 0.7
+        mset.ball_stiff = 10.0
+        mset.ball_damp = 0.5
+        mset.choke = 0
+        mset.fuzzy = 50
+
+
+    def removeSubsurf(self, hum):
+        mod = getModifier(hum, 'SUBSURF')
+        if mod:
+            hum.modifiers.remove(mod)
+            return True
+        return False
+
+
+    def addCorrSmooth(self, hum, vgrp, iters):
+        mod = hum.modifiers.new("Corr Smooth", 'CORRECTIVE_SMOOTH')
+        mod.factor = 0.5
+        mod.iterations = iters
+        mod.scale = 1.0
+        mod.smooth_type = 'SIMPLE'
+        mod.vertex_group = vgrp
+
+
+    def addSurfaceDeform(self, hum, softbody):
+        mod = hum.modifiers.new("Surface Deform", 'SURFACE_DEFORM')
+        mod.target = softbody
+        mod.falloff = 4.0
+        mod.strength = 1.0
+        mod.vertex_group = 'SOFTBODY'
+        mod.use_sparse_bind = True
+        bpy.ops.object.surfacedeform_bind(modifier="Surface Deform")
+
+#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -391,6 +656,7 @@ classes = [
     DAZ_OT_MakeCollision,
     DAZ_OT_MakeCloth,
     DAZ_OT_MakeSimulation,
+    DAZ_OT_AddBounce,
 ]
 
 def register():

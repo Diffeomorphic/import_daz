@@ -278,6 +278,8 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_deflection")
         self.layout.operator("daz.make_collision")
         self.layout.operator("daz.make_cloth")
+        self.layout.separator()
+        self.layout.operator("daz.add_bounce")
 
 
 class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):

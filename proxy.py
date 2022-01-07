@@ -1767,19 +1767,16 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, IsMesh):
         description = "Shrinkwrap the deflection mesh to the original mesh",
         default = True)
 
-
     def draw(self, context):
         self.layout.prop(self, "offset")
         self.layout.prop(self, "useQuads")
         self.layout.prop(self, "useSubsurf")
         self.layout.prop(self, "useShrinkwrap")
 
-
     def storeState(self, context):
         scn = context.scene
         self.simplify = scn.render.use_simplify
         scn.render.use_simplify = False
-
 
     def restoreState(self, context):
         context.scene.render.use_simplify = self.simplify

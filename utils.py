@@ -137,6 +137,9 @@ def unlinkAll(ob):
     for coll in bpy.data.collections:
         if ob in coll.objects.values():
             coll.objects.unlink(ob)
+    coll = bpy.context.scene.collection
+    if ob in coll.objects.values():
+        coll.objects.unlink(ob)
 
 #-------------------------------------------------------------
 #   Overridable properties
