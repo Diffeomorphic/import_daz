@@ -150,6 +150,8 @@ class DriverUser:
 
 
     def getVarBoneTargets(self, fcu):
+        if not fcu.driver:
+            return [], []
         vstruct = {}
         bstruct = {}
         for var in fcu.driver.variables:
