@@ -405,6 +405,7 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
 
     def run(self, context):
         from .load_json import loadJson
+        from .hide import makePermanentMaterial
         hum = self.human = context.object
         self.rig = hum.parent
         if hum.DazMesh != "Genesis8-female":
@@ -415,29 +416,18 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
         bstruct = loadJson(path)
         self.bones = bstruct["bones"]
-        self.corners = self.readCorners(hum, struct["vertices"])
         subsurf = self.removeSubsurf(hum)
         self.addVertexGroups(hum, struct)
         coll = self.addCollection(context)
 
-        collisionObjects = {
-            "Col1_L" : ["lShldrBend", "lShldrBend", "lShldrTwist", 0.15],
-            "Col2_L" : ["lForearmBend", "lForearmBend", "lForearmTwist", 0.15],
-            "Col3_L" : ["lHand", "lHand", "lHand", 0.45],
-            "Col1_R" : ["rShldrBend", "rShldrBend", "rShldrTwist", 0.15],
-            "Col2_R" : ["rForearmBend", "rForearmBend", "rForearmTwist", 0.15],
-            "Col3_R" : ["rHand", "rHand", "rHand", 0.45],
-        }
-        col = self.addObject("COLLISION", collisionObjects, "Cube", context)
+        col = self.addObject(struct["collision"], 0.0*hum.DazScale)
+        makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
         coll.objects.link(col)
         self.addArmature(col)
         self.addCollision(col)
 
-        softbodyObjects = {
-            "Breast_L" : ["lPectoral", "lPectoral", "lPectoral", 0.3],
-            "Breast_R" : ["rPectoral", "rPectoral", "rPectoral", 0.3],
-        }
-        softbody = self.addObject("SOFTBODY", softbodyObjects, "Icosphere", context)
+        softbody = self.addObject(struct["softbody"], 0.0*hum.DazScale)
+        makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
         coll.objects.link(softbody)
         self.addArmature(softbody)
         self.addSoftBody(softbody)
@@ -445,11 +435,9 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
 
         activateObject(context, hum)
         self.addSurfaceDeform(hum, softbody)
-        self.addCorrSmooth(hum, "CHEST", 4)
+        self.addCorrSmooth(hum, "SMOOTH", 4)
         if False and subsurf:
             hum.modifiers.new("Subsurf", 'SUBSURF')
-        activateObject(context, self.rig)
-        bpy.ops.object.mode_set(mode='POSE')
 
 
     def addVertexGroups(self, hum, struct):
@@ -491,65 +479,21 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         return coll
 
 
-    def addObject(self, name, objects, mtype, context):
-        objs = []
-        for cname,data in objects.items():
-            ob = self.addSubObject(cname, data, mtype, context)
-            objs.append(ob)
-        for ob in objs:
-            ob.select_set(True)
-        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-        bpy.ops.object.transform_apply()
-        bpy.ops.object.join()
-        ob.name = name
-        ob.DazScale = self.human.DazScale
-        ob.parent_type = 'OBJECT'
-        ob.parent = self.rig
-        unlinkAll(ob)
-        return ob
-
-
-    def addSubObject(self, cname, data, mtype, context):
-        RX = Matrix.Rotation(90*D, 4, 'X')
-        bname, bname1, bname2, rad = data
-        pb1 = self.rig.pose.bones[self.bones[bname1]]
-        pb2 = self.rig.pose.bones[self.bones[bname2]]
-        head = pb1.bone.head_local
-        tail = pb2.bone.tail_local
-        length = (tail - head).length
-        rot = pb1.matrix.to_3x3().to_4x4()
-        if mtype == "Cube":
-            rot = rot @ RX
-            trans = Matrix.Translation((head+tail)/2)
-            scale = Vector((rad,rad,0.5))*length
-            bpy.ops.mesh.primitive_cube_add(size=2, scale=scale)
-            lmat = trans @ rot
-            ob = context.object
-            self.parentBone(ob, cname, self.bones[bname], lmat)
-        elif mtype == "Icosphere":
-            bpy.ops.mesh.primitive_cube_add(size=2)
-            ob = context.object
-            verts = ob.data.vertices
-            sign = (+1 if bname1 == "lPectoral" else -1)
-            xmin,xmax,ymin,ymax,zmin,zmax = self.corners
-            verts[0].co = (sign*xmin,ymin,zmin)
-            verts[1].co = (sign*xmin,ymin,zmax)
-            verts[2].co = (sign*xmin,ymax,zmin)
-            verts[3].co = (sign*xmin,ymax,zmax)
-            verts[4].co = (sign*xmax,ymin,zmin)
-            verts[5].co = (sign*xmax,ymin,zmax)
-            verts[6].co = (sign*xmax,ymax,zmin)
-            verts[7].co = (sign*xmax,ymax,zmax)
-            vgrp = ob.vertex_groups.new(name="Pin")
-            for vn in [0,1,4,5]:
-                vgrp.add([vn], 1.0, 'REPLACE')
-            mod = ob.modifiers.new("Subsurf", 'SUBSURF')
-            mod.levels = 1
-            bpy.ops.object.modifier_apply(modifier="Subsurf")
-
-        vgrp = ob.vertex_groups.new(name=bname1)
-        for vn in range(len(ob.data.vertices)):
-            vgrp.add([vn], 1.0, 'REPLACE')
+    def addObject(self, struct, fac):
+        vnums = struct["vertices"]
+        verts = self.human.data.vertices
+        coords = [(verts[vn].co + fac*verts[vn].normal) for vn in vnums]
+        faces = struct["faces"]
+        me = bpy.data.meshes.new(struct["name"])
+        me.from_pydata(coords, [], faces)
+        ob = bpy.data.objects.new(struct["name"], me)
+        ob.hide_render = True
+        for vgname,weights in struct["vertex_groups"].items():
+            if vgname in self.bones.keys():
+                vgname = self.bones[vgname]
+            vgrp = ob.vertex_groups.new(name=vgname)
+            for vn,w in weights:
+                vgrp.add([vn], w, 'REPLACE')
         return ob
 
 
@@ -562,19 +506,6 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         setWorldMatrix(ob, self.human.matrix_world @ lmat)
 
 
-    def readCorners(self, hum, struct):
-        def getCo(name, idx):
-            return hum.data.vertices[struct[name]].co[idx]
-
-        xmin = getCo("xmin", 0)
-        xmax = getCo("xmax", 0)
-        ymin = getCo("ymin", 1)
-        ymax = getCo("ymax", 1)
-        zmin = getCo("zmin", 2)
-        zmax = getCo("zmax", 2)
-        return (xmin,xmax,ymin,ymax,zmin,zmax)
-
-
     def addArmature(self, ob):
         mod = ob.modifiers.new("Armature", 'ARMATURE')
         mod.object = self.rig
@@ -584,8 +515,8 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         mod = ob.modifiers.new("Collision", 'COLLISION')
         cset = ob.collision
         cset.damping = 1.0
-        cset.thickness_outer = 0.1*ob.DazScale
-        cset.thickness_inner = 0.1*ob.DazScale
+        cset.thickness_outer = 1.0*ob.DazScale
+        cset.thickness_inner = 1.0*ob.DazScale
         cset.use_culling = True
 
 
@@ -598,7 +529,7 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
 
         mset.use_goal = True
         mset.vertex_group_goal = "Pin"
-        mset.goal_spring = 1.0
+        mset.goal_spring = 0.7
         mset.goal_friction = 0
         mset.goal_default = 1.0
         mset.goal_min = 0.0
@@ -620,6 +551,11 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         mset.ball_damp = 0.5
         mset.choke = 0
         mset.fuzzy = 50
+
+        mset.step_min = 16
+        mset.step_max = 256
+        mset.use_auto_step = False
+        mset.error_threshold = 0.001
 
 
     def removeSubsurf(self, hum):

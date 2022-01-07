@@ -409,27 +409,17 @@ class DAZ_OT_MakeInvisible(DazOperator, IsMesh):
     def run(self, context):
         bpy.ops.object.mode_set(mode='OBJECT')
         ob = context.object
-        invis = self.getInvisibleMaterial()
-        mnum = -1
-        for mn,mat in enumerate(ob.data.materials):
-            if mat == invis:
-                mnum = mn
-                break
-        if mnum == -1:
-            mnum = len(ob.data.materials)
-            ob.data.materials.append(invis)
-        for f in ob.data.polygons:
-            if f.select:
-                f.material_index = mnum
+        makePermanentMaterial(ob, "DazInvisible", (0.8,0.8,0.8,0))
 
 
-    def getInvisibleMaterial(self):
-        if "DazInvisible" in bpy.data.materials.keys():
-            return bpy.data.materials["DazInvisible"]
-        mat = bpy.data.materials.new("DazInvisible")
+def makePermanentMaterial(ob, mname, color):
+    def getMaterial(mname):
+        if mname in bpy.data.materials.keys():
+            return bpy.data.materials[mname]
+        mat = bpy.data.materials.new(mname)
         mat.blend_method = 'CLIP'
         mat.shadow_method = 'NONE'
-        mat.diffuse_color[3] = 0
+        mat.diffuse_color = color
         mat.use_nodes = True
         tree = mat.node_tree
         tree.nodes.clear()
@@ -440,6 +430,19 @@ class DAZ_OT_MakeInvisible(DazOperator, IsMesh):
         output.target = 'ALL'
         tree.links.new(trans.outputs["BSDF"], output.inputs["Surface"])
         return mat
+
+    perm = getMaterial(mname)
+    mnum = -1
+    for mn,mat in enumerate(ob.data.materials):
+        if mat == perm:
+            mnum = mn
+            break
+    if mnum == -1:
+        mnum = len(ob.data.materials)
+        ob.data.materials.append(perm)
+    for f in ob.data.polygons:
+        if f.select:
+            f.material_index = mnum
 
 #----------------------------------------------------------
 #   Initialize
