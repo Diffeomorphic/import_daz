@@ -536,12 +536,12 @@ class SoftBody:
             else:
                 center = centers["r"]
             v.co = center + Vector((0,4.0*self.human.DazScale,0))
-            print("FF", center, v.co)
 
 
     def addArmature(self, ob):
         mod = ob.modifiers.new("Armature", 'ARMATURE')
         mod.object = self.rig
+        ob.parent = self.rig
 
 
     def addCollision(self, ob):
