@@ -389,12 +389,7 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
 
 from mathutils import Matrix
 
-class DAZ_OT_AddBounce(DazOperator, IsMesh):
-    bl_idname = "daz.add_bounce"
-    bl_label = "Add Breast Bounce"
-    bl_description = "Add breast bounce (G8F only)"
-    bl_options = {'UNDO'}
-
+class SoftBody:
     def storeState(self, context):
         scn = context.scene
         self.simplify = scn.render.use_simplify
@@ -408,10 +403,11 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         from .hide import makePermanentMaterial
         hum = self.human = context.object
         self.rig = hum.parent
-        if hum.DazMesh != "Genesis8-female":
-            raise DazError("Only G8F")
-        folder = os.path.join(os.path.dirname(__file__), "data", "breasts")
-        path = os.path.join(folder, "%s.json" % hum.DazMesh.lower())
+        folder = os.path.join(os.path.dirname(__file__), "data", "softbody")
+        path = os.path.join(folder, "%s-%s.json" % (self.softbodyType, hum.DazMesh.lower()))
+        if not os.path.exists(path):
+            msg = ("Cannot make %s softbody simultation\nfor this type of mesh:\n%s" % (self.softbodyType, hum.DazMesh))
+            raise DazError(msg)
         struct = loadJson(path)
         path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
         bstruct = loadJson(path)
@@ -583,6 +579,15 @@ class DAZ_OT_AddBounce(DazOperator, IsMesh):
         mod.vertex_group = 'SOFTBODY'
         mod.use_sparse_bind = True
         bpy.ops.object.surfacedeform_bind(modifier="Surface Deform")
+
+
+class DAZ_OT_AddBounce(DazOperator, SoftBody, IsMesh):
+    bl_idname = "daz.add_bounce"
+    bl_label = "Add Breast Bounce"
+    bl_description = "Add breast bounce (G8F only)"
+    bl_options = {'UNDO'}
+
+    softbodyType = "breasts"
 
 #-------------------------------------------------------------
 #   Initialize
