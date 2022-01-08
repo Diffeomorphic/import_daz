@@ -390,6 +390,15 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
 from mathutils import Matrix
 
 class SoftBody:
+    backShrink : FloatProperty(
+        name = "Back Side Shrink Factor",
+        description = "Factor the shrink the planar back side of the softbody mesh",
+        min = 0.1, max = 1.0,
+        default = 0.5)
+
+    def draw(self, context):
+        self.layout.prop(self, "backShrink")
+
     def storeState(self, context):
         scn = context.scene
         self.simplify = scn.render.use_simplify
@@ -406,7 +415,7 @@ class SoftBody:
         folder = os.path.join(os.path.dirname(__file__), "data", "softbody")
         path = os.path.join(folder, "%s-%s.json" % (self.softbodyType, hum.DazMesh.lower()))
         if not os.path.exists(path):
-            msg = ("Cannot make %s softbody simultation\nfor this type of mesh:\n%s" % (self.softbodyType, hum.DazMesh))
+            msg = ("Cannot make %s softbody\nsimulation for this type of mesh:\n%s" % (self.softbodyType, hum.DazMesh))
             raise DazError(msg)
         struct = loadJson(path)
         path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
@@ -484,13 +493,35 @@ class SoftBody:
         me.from_pydata(coords, [], faces)
         ob = bpy.data.objects.new(struct["name"], me)
         ob.hide_render = True
-        for vgname,weights in struct["vertex_groups"].items():
-            if vgname in self.bones.keys():
-                vgname = self.bones[vgname]
-            vgrp = ob.vertex_groups.new(name=vgname)
+        ob.show_in_front = True
+        vgroups = struct["vertex_groups"]
+        for vgname,weights in vgroups.items():
+            if "Shrink" in vgname:
+                self.shrink(me, vgname, weights)
+            else:
+                if vgname in self.bones.keys():
+                    vgname = self.bones[vgname]
+                vgrp = ob.vertex_groups.new(name=vgname)
+                for vn,w in weights:
+                    vgrp.add([vn], w, 'REPLACE')
+        weights = vgroups.get("Pin")
+        if weights:
+            vgrp = ob.vertex_groups.new(name="Influence")
+            for vn in range(len(ob.data.vertices)):
+                vgrp.add([vn], 1, 'REPLACE')
             for vn,w in weights:
-                vgrp.add([vn], w, 'REPLACE')
+                vgrp.add([vn], 1-w, 'REPLACE')
         return ob
+
+
+    def shrink(self, me, vgname, weights):
+        if self.backShrink == 1:
+            return
+        coords = [me.vertices[vn].co for vn,w in weights if w == 1]
+        center = sum(coords, Vector((0,0,0))) / len(coords)
+        for vn,w in weights:
+            v = me.vertices[vn]
+            v.co = (1-w)*v.co + w*(center + self.backShrink*(v.co - center))
 
 
     def parentBone(self, ob, cname, bname, lmat):
@@ -521,7 +552,8 @@ class SoftBody:
         mset = mod.settings
         mset.collision_collection = coll
         mset.friction = 0.5
-        mset.mass = 3.0
+        mset.mass = 1.0
+        mset.vertex_group_mass = "Influence"
 
         mset.use_goal = True
         mset.vertex_group_goal = "Pin"
@@ -581,7 +613,7 @@ class SoftBody:
         bpy.ops.object.surfacedeform_bind(modifier="Surface Deform")
 
 
-class DAZ_OT_AddBounce(DazOperator, SoftBody, IsMesh):
+class DAZ_OT_AddBounce(DazPropsOperator, SoftBody, IsMesh):
     bl_idname = "daz.add_bounce"
     bl_label = "Add Breast Bounce"
     bl_description = "Add breast bounce (G8F only)"
