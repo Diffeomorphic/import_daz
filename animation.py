@@ -401,10 +401,10 @@ class AffectOptions:
         default = 'OBJECT')
 
     onMissingMorphs : EnumProperty(
-        items = [('IGNORE', "Ignore", "Ignore"),
-                 ('REPORT', "Report", "Report"),
-                 ('LOAD', "Load", "Load morphs except body morphs"),
-                 ('LOAD_ALL', "Load All", "Load All")],
+        items = [('IGNORE', "Ignore", "Ignore missing morphs"),
+                 ('REPORT', "Report", "Report missing morphs"),
+                 ('LOAD_FACE', "Load Face", "Load missing face morphs but not body morphs"),
+                 ('LOAD_ALL', "Load All", "Load all missing morphs")],
         name = "Missing Morphs",
         description = "What to do with missing morphs",
         default = 'IGNORE')
@@ -923,7 +923,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                 return prop
         if prop not in self.missing.keys():
             self.missing[prop] = float(value)
-            if self.onMissingMorphs in ['LOAD', 'LOAD_ALL']:
+            if self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
                 rig[prop] = float(value)
                 return prop
         return None
@@ -1064,7 +1064,7 @@ class StandardAnimation:
                     "Animation loaded but some morphs were missing.     \n"+
                     "See list in terminal window.\n" +
                     "Check results carefully.", warning=True)
-            elif self.onMissingMorphs in ['LOAD', 'LOAD_ALL']:
+            elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
                 self.loadMissingMorphs(context, rig)
 
 
@@ -1112,7 +1112,7 @@ class StandardAnimation:
 
         from .morphing import CustomMorphLoader, StandardMorphLoader
         for morphset in namepathTable.keys():
-            if ((self.onMissingMorphs == 'LOAD' and morphset not in ["Body","Custom"]) or
+            if ((self.onMissingMorphs == 'LOAD_FACE' and morphset not in ["Body","Custom"]) or
                 (self.onMissingMorphs == 'LOAD_ALL' and morphset != "Custom")):
                 mloader = StandardMorphLoader()
                 mloader.morphset = morphset
