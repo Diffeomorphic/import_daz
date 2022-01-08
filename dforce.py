@@ -394,7 +394,7 @@ class SoftBody:
         name = "Back Side Shrink Factor",
         description = "Factor the shrink the planar back side of the softbody mesh",
         min = 0.1, max = 1.0,
-        default = 0.5)
+        default = 0.7)
 
     def draw(self, context):
         self.layout.prop(self, "backShrink")
@@ -495,15 +495,19 @@ class SoftBody:
         ob.hide_render = True
         ob.show_in_front = True
         vgroups = struct["vertex_groups"]
+        centers = {}
         for vgname,weights in vgroups.items():
             if "Shrink" in vgname:
-                self.shrink(me, vgname, weights)
-            else:
+                centers[vgname[0]] = self.shrink(me, vgname, weights)
+            elif vgname != "Unfit":
                 if vgname in self.bones.keys():
                     vgname = self.bones[vgname]
                 vgrp = ob.vertex_groups.new(name=vgname)
                 for vn,w in weights:
                     vgrp.add([vn], w, 'REPLACE')
+        weights = vgroups.get("Unfit")
+        if weights:
+            self.fitUnfit(me, weights, centers)
         weights = vgroups.get("Pin")
         if weights:
             vgrp = ob.vertex_groups.new(name="Influence")
@@ -515,22 +519,24 @@ class SoftBody:
 
 
     def shrink(self, me, vgname, weights):
-        if self.backShrink == 1:
-            return
         coords = [me.vertices[vn].co for vn,w in weights if w == 1]
         center = sum(coords, Vector((0,0,0))) / len(coords)
+        if self.backShrink < 1:
+            for vn,w in weights:
+                v = me.vertices[vn]
+                v.co = (1-w)*v.co + w*(center + self.backShrink*(v.co - center))
+        return center
+
+
+    def fitUnfit(self, me, weights, centers):
         for vn,w in weights:
             v = me.vertices[vn]
-            v.co = (1-w)*v.co + w*(center + self.backShrink*(v.co - center))
-
-
-    def parentBone(self, ob, cname, bname, lmat):
-        ob.name = cname
-        ob.parent = self.rig
-        if bname:
-            ob.parent_type = 'BONE'
-            ob.parent_bone = bname
-        setWorldMatrix(ob, self.human.matrix_world @ lmat)
+            if v.co[0] > 0:
+                center = centers["l"]
+            else:
+                center = centers["r"]
+            v.co = center + Vector((0,4.0*self.human.DazScale,0))
+            print("FF", center, v.co)
 
 
     def addArmature(self, ob):
@@ -552,7 +558,7 @@ class SoftBody:
         mset = mod.settings
         mset.collision_collection = coll
         mset.friction = 0.5
-        mset.mass = 1.0
+        mset.mass = 2.0
         mset.vertex_group_mass = "Influence"
 
         mset.use_goal = True
