@@ -379,7 +379,7 @@ class AffectOptions:
         description = "Animate morph properties",
         default = True)
 
-    useMorphSuffix = False
+    onMorphSuffix = 'NONE'
 
     clearMorphs : BoolProperty(
         name = "Clear Morphs",

@@ -746,7 +746,7 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
 #------------------------------------------------------------------
 
 class MorphSuffix:
-    useMorphSuffix : EnumProperty(
+    onMorphSuffix : EnumProperty(
         items = [('NONE', "None", "Don't add morph suffixes"),
                  ('GEOGRAFT', "Geografts", "Add suffixes to geograft morphs based on the geograft name"),
                  ('ALL', "All", "Add custom morph suffixes to all morphs")],
@@ -760,16 +760,16 @@ class MorphSuffix:
         default = "")
 
     def draw(self, context):
-        self.layout.prop(self, "useMorphSuffix")
-        if self.useMorphSuffix == 'ALL':
+        self.layout.prop(self, "onMorphSuffix")
+        if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
 
     def setupUniqueSuffix(self, path):
-        if self.useMorphSuffix == 'NONE' or self.mesh is None:
+        if self.onMorphSuffix == 'NONE' or self.mesh is None:
             self.uniqueSuffix = ""
-        elif self.useMorphSuffix == 'GEOGRAFT' and self.mesh.data.DazGraftGroup:
+        elif self.onMorphSuffix == 'GEOGRAFT' and self.mesh.data.DazGraftGroup:
             self.uniqueSuffix = ":%s" % self.mesh.name
-        elif self.useMorphSuffix == 'ALL':
+        elif self.onMorphSuffix == 'ALL':
             self.uniqueSuffix = ":%s" % self.morphSuffix
         else:
             self.uniqueSuffix = ""
@@ -785,7 +785,7 @@ class MorphSuffix:
             return string
 
 
-class MorphLoader(LoadMorph, MorphSuffix):
+class MorphLoader(LoadMorph):
     loadMissing = True
     category = ""
     adjuster = None
@@ -909,7 +909,7 @@ class MorphLoader(LoadMorph, MorphSuffix):
 #   Load standard morphs
 #------------------------------------------------------------------
 
-class StandardMorphLoader(MorphLoader):
+class StandardMorphLoader(MorphLoader, MorphSuffix):
     suppressError = True
     ignoreHD = False
     hideable = True
@@ -960,8 +960,8 @@ class StandardMorphSelector(Selector):
         Selector.draw(self, context)
         row = self.layout.row()
         row.prop(self, "useAdjusters")
-        row.prop(self, "useMorphSuffix")
-        if self.useMorphSuffix == 'ALL':
+        row.prop(self, "onMorphSuffix")
+        if self.onMorphSuffix == 'ALL':
             row.prop(self, "morphSuffix")
         else:
             row.label(text="")
@@ -1216,7 +1216,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 #   Import general morph or driven pose
 #------------------------------------------------------------------------
 
-class CustomMorphLoader(MorphLoader):
+class CustomMorphLoader(MorphLoader, MorphSuffix):
     morphset = "Custom"
     hideable = True
     category = ""
@@ -2757,15 +2757,15 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
             if finger != ustruct["finger_print"]:
                 print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
-        useSuffix = self.useMorphSuffix
-        self.useMorphSuffix = 'NONE'
+        useSuffix = self.onMorphSuffix
+        self.onMorphSuffix = 'NONE'
         for morphset in theStandardMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", True)
         for morphset in theJCMMorphSets:
             self.adjuster = theAdjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", False)
-        self.useMorphSuffix = useSuffix
+        self.onMorphSuffix = useSuffix
         for key in ustruct["morphs"].keys():
             if key[0:7] == "Custom/":
                 rig.DazCustomMorphs = True

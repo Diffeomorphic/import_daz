@@ -456,8 +456,8 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
             self.subprop("favoPath")
-            self.subprop("useMorphSuffix")
-            if self.useMorphSuffix == 'ALL':
+            self.subprop("onMorphSuffix")
+            if self.onMorphSuffix == 'ALL':
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         self.subprop("useAdjusters")
@@ -633,7 +633,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
                 if activateObject(context, mainRig) and self.favoPath:
                     bpy.ops.daz.load_favo_morphs(
                         filepath = self.favoPath,
-                        useMorphSuffix = self.useMorphSuffix,
+                        onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters)
             if (self.units or

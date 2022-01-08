@@ -45,6 +45,7 @@ class LoadMorph(DriverUser):
     usePropDrivers = True
     treatHD = 'ERROR'
     useAdjusters = False
+    onMorphSuffix = 'NONE'
 
     def __init__(self, rig, mesh):
         self.rig = rig
