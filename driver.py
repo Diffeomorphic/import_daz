@@ -378,6 +378,7 @@ class Target:
         self.id = trg.id
         self.bone_target = trg.bone_target
         self.transform_type = trg.transform_type
+        self.rotation_mode = trg.rotation_mode
         self.transform_space = trg.transform_space
         self.data_path = trg.data_path
         words = trg.data_path.split('"')
@@ -392,6 +393,7 @@ class Target:
         trg.id = self.id
         trg.bone_target = self.bone_target
         trg.transform_type = self.transform_type
+        trg.rotation_mode = self.rotation_mode
         trg.transform_space = self.transform_space
         if fixDrv:
             words = self.data_path.split('"')
@@ -412,7 +414,10 @@ def addTransformVar(fcu, vname, ttype, rig, bname):
     trg = var.targets[0]
     trg.id = rig
     trg.bone_target = bname
-    trg.rotation_mode = pb.rotation_mode
+    if pb.rotation_mode == 'QUATERNION':
+        trg.rotation_mode = 'AUTO'
+    else:
+        trg.rotation_mode = pb.rotation_mode
     trg.transform_type = ttype
     trg.transform_space = 'LOCAL_SPACE'
 
