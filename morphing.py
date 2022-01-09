@@ -1230,6 +1230,7 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
     morphset = "Custom"
     hideable = True
     category = ""
+    useMakePoseable = False
 
     def findPropGroup(self, prop):
         if self.rig is None:

@@ -835,7 +835,9 @@ class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
 
     def checkAllowed(self, rig):
         if rig.DazRig[0:3] in ["mhx", "rig"]:
-            raise DazError("Cannot make %s bones poseable.     " % rig.DazRig)
+            msg = "Cannot make %s bones poseable.     " % rig.DazRig
+            print(msg)
+            raise DazError(msg)
 
     def changeLayer(self, eb, rig):
         pass

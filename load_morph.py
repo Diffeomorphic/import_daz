@@ -210,12 +210,14 @@ class LoadMorph(DriverUser):
         if alias in pgs.keys():
             pg = pgs[alias]
             print(" == %s %s %s" % (prop, alias, pg.s))
-            return
         else:
-            pg = pgs.add()
+            try:
+                pg = pgs.add()
+            except TypeError:
+                return
             pg.name = alias
             print(" = %s %s" % (prop, alias))
-        pg.s = prop
+            pg.s = prop
 
 
     def setLabel(self, prop, label):
