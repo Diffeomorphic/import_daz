@@ -409,6 +409,11 @@ class AffectOptions:
         description = "What to do with missing morphs",
         default = 'IGNORE')
 
+    useMakePoseable : BoolProperty(
+        name = "Make All Bones Poseable",
+        description = "Make all bones poseable after the morphs have been loaded",
+        default = False)
+
     affectSelectedOnly : BoolProperty(
         name = "Selected Bones Only",
         description = "Only animate selected bones",
@@ -521,6 +526,8 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
             layout.prop(self, "clearMorphs")
             layout.prop(self, "affectGeograft")
             layout.prop(self, "onMissingMorphs")
+            if self.onMissingMorphs == 'LOAD_ALL':
+                layout.prop(self, "useMakePoseable")
         layout.prop(self, "convertPoses")
         if self.convertPoses:
             layout.prop(self, "srcCharacter")
@@ -1016,15 +1023,43 @@ class StandardAnimation:
 
     def run(self, context):
         from time import perf_counter
+        scn = context.scene
+        rig = context.object
+        if scn.tool_settings.use_keyframe_insert_auto:
+            self.useInsertKeys = True
+        else:
+            self.useInsertKeys = self.useAction
+        self.loadAnimation(context)
+        hasError = False
+        if self.missing:
+            if self.onMissingMorphs == 'REPORT':
+                missing = list(self.missing.keys())
+                missing.sort()
+                print("Missing morphs:\n  %s" % missing)
+                hasError = True
+            elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+                self.unfound = []
+                self.loadMissingMorphs(context, rig)
+                if self.unfound:
+                    print("Missing morphs not found:\n  %s" % self.unfound)
+                    hasError = True
+            if self.useMakePoseable and self.onMissingMorphs == 'LOAD_ALL':
+                print("Make all bones poseable")
+                bpy.ops.daz.make_all_bones_poseable()
+                print("Reloading animation")
+                self.loadAnimation(context)
+        if hasError:
+            raise DazError(
+                "Animation loaded but some morphs were missing.     \n"+
+                "See list in terminal window.", warning=True)
+
+
+    def loadAnimation(self, context):
         rig = context.object
         scn = context.scene
         if not self.affectSelectedOnly:
             selected = self.selectAll(rig, True)
         LS.forAnimation(self, rig)
-        if scn.tool_settings.use_keyframe_insert_auto:
-            self.useInsertKeys = True
-        else:
-            self.useInsertKeys = self.useAction
         self.findDrivers(rig)
         self.clearAnimation(rig)
         self.missing = {}
@@ -1054,23 +1089,6 @@ class StandardAnimation:
         self.nameAnimation(rig)
         if not self.affectSelectedOnly:
             self.selectAll(rig, selected)
-
-        if self.missing:
-            if self.onMissingMorphs == 'REPORT':
-                missing = list(self.missing.keys())
-                missing.sort()
-                print("Missing morphs:\n  %s" % missing)
-                raise DazError(
-                    "Animation loaded but some morphs were missing.     \n"+
-                    "See list in terminal window.", warning=True)
-            elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
-                self.unfound = []
-                self.loadMissingMorphs(context, rig)
-                if self.unfound:
-                    print("Missing morphs not found:\n  %s" % self.unfound)
-                    raise DazError(
-                        "Animation loaded but some morphs were missing.     \n"+
-                        "See list in terminal window.", warning=True)
 
 
     def selectAll(self, rig, select):

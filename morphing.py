@@ -920,6 +920,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     suppressError = True
     ignoreHD = False
     hideable = True
+    useMakePoseable = False
 
     def setupCharacter(self, context):
         ob = context.object
