@@ -252,6 +252,7 @@ class LoadMorph(DriverUser):
         if asset.vertex_count < 0:
             print("Vertex count == %d" % asset.vertex_count)
         elif asset.vertex_count != nverts:
+            from .finger import VertexCounts
             msg = ("Vertex count mismatch: %d != %d" % (asset.vertex_count, len(self.mesh.data.vertices)))
             if GS.verbosity > 2:
                 print(msg)
@@ -261,10 +262,12 @@ class LoadMorph(DriverUser):
                 elif self.treatHD == 'ACTIVE':
                     skey = self.getActiveShape(asset)
                 else:
-                    reportError(msg, trigger=(2,3))
+                    reportError(msg, trigger=(2,4))
                     return None,False
             else:
-                reportError(msg, trigger=(2,3))
+                reportError(msg, trigger=(2,4))
+                if asset.vertex_count in VertexCounts.keys():
+                    LS.targetCharacter = VertexCounts[asset.vertex_count]
                 return None,False
         if not asset.rna:
             asset.buildMorph(self.mesh, useBuild=useBuild)

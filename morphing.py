@@ -858,7 +858,9 @@ class MorphLoader(LoadMorph):
         self.loadAllMorphs(namepaths)
         t2 = perf_counter()
         print("Folder %s loaded in %.3f seconds" % (folder, t2-t1))
-        if self.errors:
+        if LS.targetCharacter:
+            msg = "Morphs made for %s" % LS.targetCharacter
+        elif self.errors and GS.verbosity >= 3:
             msg = "Morphs loaded with errors."
             for err,props in self.errors.items():
                 msg += "\n%s:    \n" % err
@@ -871,6 +873,9 @@ class MorphLoader(LoadMorph):
         if self.useMakePoseable and self.rig and activateObject(context, self.rig):
             print("Make all bones poseable")
             bpy.ops.daz.make_all_bones_poseable()
+        if msg:
+            print(msg)
+        return msg
 
 
     def addToMorphSet(self, prop, asset, hidden):

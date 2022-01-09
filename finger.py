@@ -44,6 +44,15 @@ FingerPrints = {
     "16384-32538-16196" : "Genesis8-male",
 }
 
+VertexCounts = {
+    19296 : "Genesis (male or female)",
+    21556 : "Genesis 2 (male or female)",
+    17418 : "Genesis 3 female",
+    17246 : "Genesis 3 male",
+    16556 : "Genesis 8 female",
+    16384 : "Genesis 8 male",
+}
+
 FingerPrintsHD = {
     "19296-38115-18872" : ("Genesis", 0),
     "76283-151718-75488" : ("Genesis", 1),

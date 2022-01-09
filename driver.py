@@ -456,7 +456,10 @@ def getPropMinMax(rna, prop):
         if rna_ui:
             struct = rna_ui.get(prop)
     else:
-        prop_ui = rna.id_properties_ui(prop)
+        try:
+            prop_ui = rna.id_properties_ui(prop)
+        except KeyError:
+            prop_ui = None
         if prop_ui:
             struct = prop_ui.as_dict()
     min = GS.customMin
