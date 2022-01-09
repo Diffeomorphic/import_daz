@@ -95,11 +95,8 @@ class LoadMorph(DriverUser):
         self.makeAllMorphs(namepaths, True)
         adjustable = self.adjustable
         self.adjustable = {}
-        if self.loadMissing:
-            bodypart = namepaths[0][2]
-            self.makeMissingMorphs(bodypart, 0)
-        else:
-            print("Cannot make missing morphs for this type")
+        bodypart = namepaths[0][2]
+        self.makeMissingMorphs(bodypart, 0)
         self.adjustable = adjustable
         if self.rig:
             self.createTmp()

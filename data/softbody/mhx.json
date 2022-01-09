@@ -2,16 +2,16 @@
     "name" : "mhx",
     "bones" : {
         "lPectoral" : "pectoral.L",
-        "lShldrBend" : "upper_arm.L",
-        "lShldrTwist" : "upper_arm.L",
-        "lForearmBend" : "forearm.L",
-        "lForearmTwist" : "forearm.L",
+        "lShldrBend" : "upper_arm.bend.L",
+        "lShldrTwist" : "upper_arm.twist.L",
+        "lForearmBend" : "forearm.bend.L",
+        "lForearmTwist" : "forearm.twist.L",
         "lHand" : "hand.L",
         "rPectoral" : "pectoral.R",
-        "rShldrBend" : "upper_arm.R",
-        "rShldrTwist" : "upper_arm.R",
-        "rForearmBend" : "forearm.R",
-        "rForearmTwist" : "forearm.R",
+        "rShldrBend" : "upper_arm.bend.R",
+        "rShldrTwist" : "upper_arm.twist.R",
+        "rForearmBend" : "forearm.bend.R",
+        "rForearmTwist" : "forearm.twist.R",
         "rHand" : "hand.R"
     }
 }

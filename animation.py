@@ -1062,10 +1062,15 @@ class StandardAnimation:
                 print("Missing morphs:\n  %s" % missing)
                 raise DazError(
                     "Animation loaded but some morphs were missing.     \n"+
-                    "See list in terminal window.\n" +
-                    "Check results carefully.", warning=True)
+                    "See list in terminal window.", warning=True)
             elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+                self.unfound = []
                 self.loadMissingMorphs(context, rig)
+                if self.unfound:
+                    print("Missing morphs not found:\n  %s" % self.unfound)
+                    raise DazError(
+                        "Animation loaded but some morphs were missing.     \n"+
+                        "See list in terminal window.", warning=True)
 
 
     def selectAll(self, rig, select):
@@ -1104,11 +1109,14 @@ class StandardAnimation:
             table = theMorphTables[rig.DazId] = self.setupMorphTable(rig)
         namepathTable = {}
         for mname in self.missing.keys():
-            if mname in table.keys():
-                path,morphset = table[mname]
+            lname = mname.lower()
+            if lname in table.keys():
+                path,morphset = table[lname]
                 if morphset not in namepathTable.keys():
                     namepathTable[morphset] = []
                 namepathTable[morphset].append((mname, path, morphset))
+            else:
+                self.unfound.append(mname)
 
         from .morphing import CustomMorphLoader, StandardMorphLoader
         for morphset in namepathTable.keys():
@@ -1150,12 +1158,16 @@ class StandardAnimation:
                 elif file[0:5] != "alias":
                     words = os.path.splitext(file)
                     if words[-1] in [".dsf", ".duf"]:
-                        mname = words[0]
+                        mname = words[0].lower()
                         if file in mtypes.keys():
                             morphset = mtypes[file]
                         else:
                             morphset = "Custom"
                         table[mname] = (path, morphset)
+                        if mname[0:5] == "pctrl":
+                            table[mname[1:]] = (path, morphset)
+                        elif mname[0:4] == "ctrl":
+                            table["p%s" % mname] = (path, morphset)
 
         from .fileutils import getFolders
         from .morphing import getMorphPaths

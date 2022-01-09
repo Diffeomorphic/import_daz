@@ -786,7 +786,6 @@ class MorphSuffix:
 
 
 class MorphLoader(LoadMorph):
-    loadMissing = True
     category = ""
     adjuster = None
 
@@ -1054,7 +1053,6 @@ class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardM
 
     morphset = "Facsexpr"
     bodypart = "Face"
-    #loadMissing = False
 
 
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):

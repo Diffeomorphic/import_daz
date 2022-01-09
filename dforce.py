@@ -421,6 +421,7 @@ class SoftBody:
         path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
         bstruct = loadJson(path)
         self.bones = bstruct["bones"]
+        self.fixDeformBones()
         subsurf = self.removeSubsurf(hum)
         self.addVertexGroups(hum, struct)
         coll = self.addCollection(context)
@@ -443,6 +444,13 @@ class SoftBody:
         self.addCorrSmooth(hum, "SMOOTH", 4)
         if False and subsurf:
             hum.modifiers.new("Subsurf", 'SUBSURF')
+
+
+    def fixDeformBones(self):
+        for bname in self.bones.values():
+            bone = self.rig.data.bones.get(bname)
+            if bone:
+                bone.use_deform = True
 
 
     def addVertexGroups(self, hum, struct):

@@ -478,7 +478,7 @@ class SkinBinding(Modifier):
             elif "scale_weights" in joint.keys():
                 weights = joint["scale_weights"]
             else:
-                reportError("No weights for %s in %s" % (bname, ob.name), trigger=(2,5))
+                reportError("No weights for %s in %s" % (bname, ob.name), trigger=(3,5))
                 continue
 
             buildVertexGroup(ob, vgname, weights["values"])
