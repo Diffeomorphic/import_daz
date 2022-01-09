@@ -796,6 +796,11 @@ class MorphLoader(LoadMorph):
                        "Useful if the character is baked"),
         default = False)
 
+    useMakePoseable : BoolProperty(
+        name = "Make All Bones Poseable",
+        description = "Make all bones poseable after the morphs have been loaded",
+        default = False)
+
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacter
         self.rig, self.mesh, self.char, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
@@ -863,6 +868,9 @@ class MorphLoader(LoadMorph):
             msg = "Found morphs that want to\nchange the rest pose"
         else:
             msg = None
+        if self.useMakePoseable and self.rig and activateObject(context, self.rig):
+            print("Make all bones poseable")
+            bpy.ops.daz.make_all_bones_poseable()
 
 
     def addToMorphSet(self, prop, asset, hidden):
@@ -958,6 +966,7 @@ class StandardMorphSelector(Selector):
     def draw(self, context):
         Selector.draw(self, context)
         row = self.layout.row()
+        row.prop(self, "useMakePoseable")
         row.prop(self, "useAdjusters")
         row.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
@@ -1147,8 +1156,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
     def draw(self, context):
         MorphTypeOptions.draw(self, context)
+        self.layout.separator()
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "useAdjusters")
+        self.layout.prop(self, "useMakePoseable")
 
     def run(self, context):
         if not self.setupCharacter(context):
@@ -1282,6 +1293,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
         self.layout.prop(self, "treatHD")
+        self.layout.prop(self, "useMakePoseable")
 
 
     def invoke(self, context, event):
@@ -2717,6 +2729,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "ignoreFinger")
         self.layout.prop(self, "useAdjusters")
+        self.layout.prop(self, "useMakePoseable")
 
     def invoke(self, context, event):
         return SingleFile.invoke(self, context, event)
