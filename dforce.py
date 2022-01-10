@@ -384,20 +384,38 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
         self.saveSettings()
 
 #-------------------------------------------------------------
-#   Breast bounce
+#   Softbody
 #-------------------------------------------------------------
 
 from mathutils import Matrix
 
-class SoftBody:
+class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
+    bl_idname = "daz.add_softbody"
+    bl_label = "Add Softbody"
+    bl_description = "Add softbody simulation to selected meshes"
+    bl_options = {'UNDO'}
+
+    useBreasts : BoolProperty(
+        name = "Breasts (G8F Only)",
+        description = "Add softbody simulation for breast bounce. Currently only for G8F",
+        default = True)
+
     backShrink : FloatProperty(
         name = "Back Side Shrink Factor",
         description = "Factor the shrink the planar back side of the softbody mesh",
         min = 0.1, max = 1.0,
         default = 0.7)
 
+    useSmooth : BoolProperty(
+        name = "Smooth",
+        description = "Add a corrective smooth modifier to the meshes",
+        default = True)
+
     def draw(self, context):
+        self.layout.prop(self, "useBreasts")
+        self.layout.separator()
         self.layout.prop(self, "backShrink")
+        self.layout.prop(self, "useSmooth")
 
     def storeState(self, context):
         scn = context.scene
@@ -414,19 +432,28 @@ class SoftBody:
         selected = getSelectedMeshes(context)
         self.rig = hum.parent
         folder = os.path.join(os.path.dirname(__file__), "data", "softbody")
-        path = os.path.join(folder, "%s-%s.json" % (self.softbodyType, hum.DazMesh.lower()))
+        path = os.path.join(folder, "softbody-%s.json" % hum.DazMesh.lower())
         if not os.path.exists(path):
-            msg = ("Cannot make %s softbody\nsimulation for this type of mesh:\n%s" % (self.softbodyType, hum.DazMesh))
+            msg = ("No softbody simulation exists for this type of mesh:\n%s" % hum.DazMesh)
             raise DazError(msg)
         struct = loadJson(path)
+        tstruct = None
+        if self.useBreasts:
+            tstruct = struct["breast"]
+        if tstruct is None:
+            raise DazError("Cannot make this type of softbody\nsimulation for this type of mesh:\n%s" % hum.DazMesh)
+
         path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
         bstruct = loadJson(path)
         self.bones = bstruct["bones"]
         self.fixDeformBones()
         subsurfs = {}
+        warnings = {}
         for ob in selected:
             subsurfs[ob.name] = self.removeSubsurf(ob)
-            self.copyVertexGroups(ob, struct)
+            success = self.copyVertexGroups(ob, tstruct)
+            if not success.get("SOFTBODY"):
+                warnings[ob.name] = "Could not add softbody simulation to %s" % ob.name
         coll = self.addCollection(context)
 
         col = self.addObject(struct["collision"], 0.0*hum.DazScale)
@@ -435,20 +462,27 @@ class SoftBody:
         self.addArmature(col)
         self.addCollision(col)
 
-        softbody = self.addObject(struct["softbody"], 0.0*hum.DazScale)
+        softbody = self.addObject(tstruct["softbody"], 0.0*hum.DazScale)
         makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
         coll.objects.link(softbody)
         self.addArmature(softbody)
         self.addSoftBody(softbody)
         self.addCorrSmooth(softbody, "", 2)
-
+        msg = ""
         for ob in selected:
-            activateObject(context, ob)
-            self.addSurfaceDeform(ob, softbody)
-            self.addCorrSmooth(ob, "SMOOTH", 4)
+            warning = warnings.get(ob.name)
+            if warning:
+                msg += "%s\n" % warning
+                print(warning)
+            else:
+                activateObject(context, ob)
+                self.addSurfaceDeform(ob, softbody)
+                self.addCorrSmooth(ob, "SMOOTH", 4)
         activateObject(context, hum)
         for ob in selected:
             self.restoreSubsurf(ob, subsurfs[ob.name])
+        if msg:
+            raise DazError(msg, warning=True)
 
 
     def fixDeformBones(self):
@@ -459,7 +493,9 @@ class SoftBody:
 
 
     def copyVertexGroups(self, ob, struct):
+        success = {}
         for vname,vgnames in struct["copy_vertex_groups"].items():
+            success[vname] = True
             weights = dict([(vn,0.0) for vn in range(len(ob.data.vertices))])
             for vgname in vgnames:
                 vgrp = ob.vertex_groups.get(vgname)
@@ -468,13 +504,17 @@ class SoftBody:
                         for g in v.groups:
                             if g.group == vgrp.index:
                                 weights[v.index] += g.weight
+            wlist = [(vn,w) for vn,w in weights.items() if w > 0]
+            if not wlist:
+                success[vname] = False
+                continue
             vgrp = ob.vertex_groups.get(vname)
             if vgrp:
                 ob.data.vertex_groups.remove(vgrp)
             vgrp = ob.vertex_groups.new(name=vname)
-            wlist = [(vn,w) for vn,w in weights.items() if w > 0]
             for vn,w in wlist:
                 vgrp.add([vn], w, 'REPLACE')
+        return success
 
 
     def addCollection(self, context):
@@ -611,6 +651,8 @@ class SoftBody:
 
 
     def addCorrSmooth(self, hum, vgrp, iters):
+        if not self.useSmooth:
+            return
         mod = hum.modifiers.new("Corr Smooth", 'CORRECTIVE_SMOOTH')
         mod.factor = 0.5
         mod.iterations = iters
@@ -628,15 +670,6 @@ class SoftBody:
         mod.use_sparse_bind = True
         bpy.ops.object.surfacedeform_bind(modifier="Surface Deform")
 
-
-class DAZ_OT_AddBounce(DazPropsOperator, SoftBody, IsMesh):
-    bl_idname = "daz.add_bounce"
-    bl_label = "Add Breast Bounce"
-    bl_description = "Add breast bounce to selected meshes.\nActive mesh must be G8F"
-    bl_options = {'UNDO'}
-
-    softbodyType = "breasts"
-
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
@@ -645,7 +678,7 @@ classes = [
     DAZ_OT_MakeCollision,
     DAZ_OT_MakeCloth,
     DAZ_OT_MakeSimulation,
-    DAZ_OT_AddBounce,
+    DAZ_OT_AddSoftbody,
 ]
 
 def register():

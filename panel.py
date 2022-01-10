@@ -279,7 +279,7 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_collision")
         self.layout.operator("daz.make_cloth")
         self.layout.separator()
-        self.layout.operator("daz.add_bounce")
+        self.layout.operator("daz.add_softbody")
 
 
 class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
