@@ -411,6 +411,7 @@ class SoftBody:
         from .load_json import loadJson
         from .hide import makePermanentMaterial
         hum = self.human = context.object
+        selected = getSelectedMeshes(context)
         self.rig = hum.parent
         folder = os.path.join(os.path.dirname(__file__), "data", "softbody")
         path = os.path.join(folder, "%s-%s.json" % (self.softbodyType, hum.DazMesh.lower()))
@@ -422,8 +423,10 @@ class SoftBody:
         bstruct = loadJson(path)
         self.bones = bstruct["bones"]
         self.fixDeformBones()
-        subsurf = self.removeSubsurf(hum)
-        self.addVertexGroups(hum, struct)
+        subsurfs = {}
+        for ob in selected:
+            subsurfs[ob.name] = self.removeSubsurf(ob)
+            self.copyVertexGroups(ob, struct)
         coll = self.addCollection(context)
 
         col = self.addObject(struct["collision"], 0.0*hum.DazScale)
@@ -439,11 +442,13 @@ class SoftBody:
         self.addSoftBody(softbody)
         self.addCorrSmooth(softbody, "", 2)
 
+        for ob in selected:
+            activateObject(context, ob)
+            self.addSurfaceDeform(ob, softbody)
+            self.addCorrSmooth(ob, "SMOOTH", 4)
         activateObject(context, hum)
-        self.addSurfaceDeform(hum, softbody)
-        self.addCorrSmooth(hum, "SMOOTH", 4)
-        if False and subsurf:
-            hum.modifiers.new("Subsurf", 'SUBSURF')
+        for ob in selected:
+            self.restoreSubsurf(ob, subsurfs[ob.name])
 
 
     def fixDeformBones(self):
@@ -453,33 +458,23 @@ class SoftBody:
                 bone.use_deform = True
 
 
-    def addVertexGroups(self, hum, struct):
-        from .finger import getFingerPrint
-        finger = getFingerPrint(hum)
-        if GS.useModifiedMesh:
-            from .geometry import restoreOrigVerts
-            hasOrig, restored = restoreOrigVerts(hum, -1)
-            if hasOrig:
-                finger = hum.data.DazFingerPrint
-        if finger != struct["finger_print"]:
-            msg = ("Fingerprint mismatch:\n  %s != %s\n" % (finger, struct["finger_print"]) +
-                   '"%s" is not a mesh of type %s\n' % (hum.name, struct["name"]))
-            raise DazError(msg)
-
-        for vname,verts in struct["vertex_groups"].items():
-            vgrp = hum.vertex_groups.get(vname)
+    def copyVertexGroups(self, ob, struct):
+        for vname,vgnames in struct["copy_vertex_groups"].items():
+            weights = dict([(vn,0.0) for vn in range(len(ob.data.vertices))])
+            for vgname in vgnames:
+                vgrp = ob.vertex_groups.get(vgname)
+                if vgrp:
+                    for v in ob.data.vertices:
+                        for g in v.groups:
+                            if g.group == vgrp.index:
+                                weights[v.index] += g.weight
+            vgrp = ob.vertex_groups.get(vname)
             if vgrp:
-                hum.vertex_groups.remove(vgrp)
-            vgrp = hum.vertex_groups.new(name=vname)
-            if isModifiedMesh(hum):
-                pgs = hum.data.DazOrigVerts
-                for vn0,w in verts:
-                    vn = pgs[str(vn0)].a
-                    if vn >= 0:
-                        vgrp.add([vn], w, 'REPLACE')
-            else:
-                for vn,w in verts:
-                    vgrp.add([vn], w, 'REPLACE')
+                ob.data.vertex_groups.remove(vgrp)
+            vgrp = ob.vertex_groups.new(name=vname)
+            wlist = [(vn,w) for vn,w in weights.items() if w > 0]
+            for vn,w in wlist:
+                vgrp.add([vn], w, 'REPLACE')
 
 
     def addCollection(self, context):
@@ -600,12 +595,19 @@ class SoftBody:
         mset.error_threshold = 0.001
 
 
-    def removeSubsurf(self, hum):
-        mod = getModifier(hum, 'SUBSURF')
+    def removeSubsurf(self, ob):
+        mod = getModifier(ob, 'SUBSURF')
         if mod:
-            hum.modifiers.remove(mod)
-            return True
-        return False
+            subsurf = (mod.levels, mod.render_levels)
+            ob.modifiers.remove(mod)
+            return subsurf
+        return None
+
+
+    def restoreSubsurf(self, ob, subsurf):
+        ob.modifiers.new("Subsurf", 'SUBSURF')
+        mod = ob.modifiers[-1]
+        (mod.levels, mod.render_levels) = subsurf
 
 
     def addCorrSmooth(self, hum, vgrp, iters):
@@ -630,7 +632,7 @@ class SoftBody:
 class DAZ_OT_AddBounce(DazPropsOperator, SoftBody, IsMesh):
     bl_idname = "daz.add_bounce"
     bl_label = "Add Breast Bounce"
-    bl_description = "Add breast bounce (G8F only)"
+    bl_description = "Add breast bounce to selected meshes.\nActive mesh must be G8F"
     bl_options = {'UNDO'}
 
     softbodyType = "breasts"
