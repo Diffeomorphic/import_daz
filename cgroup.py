@@ -67,6 +67,11 @@ class MaterialGroup:
         return True
 
 
+    def hideNormal(self):
+        if bpy.app.version >= (2,90,0):
+            self.group.inputs["Normal"].hide_value = True
+
+
 class CyclesGroup(MaterialGroup, CyclesTree):
     def create(self, node, name, parent, ncols):
         CyclesTree.__init__(self, parent.material)
@@ -265,7 +270,7 @@ class Fresnel2Group(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.group.inputs.new("NodeSocketFloat", "Power")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
         self.group.outputs.new("NodeSocketFloat", "Dielectric")
         self.group.outputs.new("NodeSocketFloat", "Metal")
 
@@ -442,7 +447,7 @@ class DiffuseGroup(MixGroup):
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -472,7 +477,7 @@ class GlossyGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
         self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -505,7 +510,7 @@ class MetalGroupUber(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
         self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -554,7 +559,7 @@ class MetalGroupPbrSkin(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Roughness2")
         self.group.inputs.new("NodeSocketFloat", "Dual Ratio")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -607,7 +612,7 @@ class TopCoatGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Distance")
         self.group.inputs.new("NodeSocketFloat", "Height")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -649,7 +654,7 @@ class RefractionGroup(MixGroup):
         self.group.inputs.new("NodeSocketColor", "Glossy Color")
         self.group.inputs.new("NodeSocketFloat", "Glossy Roughness")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -778,7 +783,7 @@ class TranslucentGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Cycles Mix Factor")
         self.group.inputs.new("NodeSocketFloat", "Eevee Mix Factor")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -830,7 +835,7 @@ class MakeupGroup(MixGroup):
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
 
 
     def addNodes(self, args=None):
@@ -903,7 +908,7 @@ class DualLobeGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Roughness 1")
         self.group.inputs.new("NodeSocketFloat", "Roughness 2")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
         self.group.outputs.new("NodeSocketShader", "Cycles")
         self.group.outputs.new("NodeSocketShader", "Eevee")
 
@@ -1168,7 +1173,7 @@ class DisplacementGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Max")
         self.group.inputs.new("NodeSocketFloat", "Min")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.inputs["Normal"].hide_value = True
+        self.hideNormal()
         self.group.outputs.new("NodeSocketVector", "Displacement")
 
 
