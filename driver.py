@@ -137,7 +137,14 @@ class DriverUser:
                 elif trg.id_type == 'ARMATURE' and trg.id == old.data:
                     trg.id = new.data
                 if assoc and var.type == 'TRANSFORMS':
-                    trg.bone_target = assoc[trg.bone_target]
+                    if trg.bone_target in assoc.keys():
+                        trg.bone_target = assoc[trg.bone_target]
+                    else:
+                        basebone = baseBone(trg.bone_target)
+                        if basebone in assoc.keys():
+                            trg.bone_target = assoc[basebone]
+                        else:
+                            print("Miss Id", trg.bone_target)
 
 
     def getTargetBones(self, fcu):
