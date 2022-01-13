@@ -396,15 +396,29 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     useBreasts : BoolProperty(
-        name = "Breasts (G8F Only)",
-        description = "Add softbody simulation for breast bounce. Currently only for G8F",
+        name = "Breasts",
+        description = "Add softbody simulation for breasts",
         default = True)
 
-    backShrink : FloatProperty(
-        name = "Back Side Shrink Factor",
-        description = "Factor the shrink the planar back side of the softbody mesh",
-        min = 0.1, max = 1.0,
-        default = 0.7)
+    useBelly : BoolProperty(
+        name = "Belly",
+        description = "Add softbody simulation for belly",
+        default = True)
+
+    useGlutes : BoolProperty(
+        name = "Glutes",
+        description = "Add softbody simulation for glutes",
+        default = True)
+
+    useArms : BoolProperty(
+        name = "Arm Collision",
+        description = "Add collision to arms",
+        default = True)
+
+    useLegs : BoolProperty(
+        name = "Leg Collision",
+        description = "Add collision to legs",
+        default = True)
 
     useSmooth : BoolProperty(
         name = "Smooth",
@@ -413,8 +427,12 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
     def draw(self, context):
         self.layout.prop(self, "useBreasts")
+        self.layout.prop(self, "useBelly")
+        self.layout.prop(self, "useGlutes")
         self.layout.separator()
-        self.layout.prop(self, "backShrink")
+        self.layout.prop(self, "useArms")
+        self.layout.prop(self, "useLegs")
+        self.layout.separator()
         self.layout.prop(self, "useSmooth")
 
     def storeState(self, context):
@@ -437,11 +455,6 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             msg = ("No softbody simulation exists for this type of mesh:\n%s" % hum.DazMesh)
             raise DazError(msg)
         struct = loadJson(path)
-        tstruct = None
-        if self.useBreasts:
-            tstruct = struct["breast"]
-        if tstruct is None:
-            raise DazError("Cannot make this type of softbody\nsimulation for this type of mesh:\n%s" % hum.DazMesh)
 
         path = os.path.join(folder, "%s.json" % self.rig.DazRig.lower())
         bstruct = loadJson(path)
@@ -451,23 +464,24 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         warnings = {}
         for ob in selected:
             subsurfs[ob.name] = self.removeSubsurf(ob)
-            success = self.copyVertexGroups(ob, tstruct)
-            if not success.get("SOFTBODY"):
-                warnings[ob.name] = "Could not add softbody simulation to %s" % ob.name
+
         coll = self.addCollection(context)
 
-        col = self.addObject(struct["collision"], 0.0*hum.DazScale)
+        col = self.addObject("COLLISION", struct["collision"])
         makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
         coll.objects.link(col)
         self.addArmature(col)
         self.addCollision(col)
 
-        softbody = self.addObject(tstruct["softbody"], 0.0*hum.DazScale)
+        softbody = self.addObject("SOFTBODY", struct["softbody"])
         makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
         coll.objects.link(softbody)
         self.addArmature(softbody)
         self.addSoftBody(softbody)
         self.addCorrSmooth(softbody, "", 2)
+
+        self.addVertexGroups(ob, struct["vertex_groups"])
+
         msg = ""
         for ob in selected:
             warning = warnings.get(ob.name)
@@ -492,29 +506,14 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                 bone.use_deform = True
 
 
-    def copyVertexGroups(self, ob, struct):
-        success = {}
-        for vname,vgnames in struct["copy_vertex_groups"].items():
-            success[vname] = True
-            weights = dict([(vn,0.0) for vn in range(len(ob.data.vertices))])
-            for vgname in vgnames:
-                vgrp = ob.vertex_groups.get(vgname)
-                if vgrp:
-                    for v in ob.data.vertices:
-                        for g in v.groups:
-                            if g.group == vgrp.index:
-                                weights[v.index] += g.weight
-            wlist = [(vn,w) for vn,w in weights.items() if w > 0]
-            if not wlist:
-                success[vname] = False
-                continue
+    def addVertexGroups(self, ob, struct):
+        for vname,weights in struct.items():
             vgrp = ob.vertex_groups.get(vname)
             if vgrp:
                 ob.data.vertex_groups.remove(vgrp)
             vgrp = ob.vertex_groups.new(name=vname)
-            for vn,w in wlist:
+            for vn,w in weights:
                 vgrp.add([vn], w, 'REPLACE')
-        return success
 
 
     def addCollection(self, context):
@@ -527,58 +526,35 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         return coll
 
 
-    def addObject(self, struct, fac):
-        vnums = struct["vertices"]
-        verts = self.human.data.vertices
-        coords = [(verts[vn].co + fac*verts[vn].normal) for vn in vnums]
-        faces = struct["faces"]
-        me = bpy.data.meshes.new(struct["name"])
-        me.from_pydata(coords, [], faces)
-        ob = bpy.data.objects.new(struct["name"], me)
+    def addObject(self, name, struct):
+        vn0 = 0
+        verts = []
+        faces = []
+        vgroups = {}
+        for key,data in struct.items():
+            if getattr(self, "use%s" % key):
+                verts += data["vertices"]
+                faces += [[vn0+vn for vn in f] for f in data["faces"]]
+                for vgname,weights in data["vertex_groups"].items():
+                    if vgname not in vgroups.keys():
+                        vgroups[vgname] = []
+                    vgroup = vgroups[vgname]
+                    vgroup += [(vn0+vn,w) for vn,w in weights]
+                vn0 += len(data["vertices"])
+        if not verts:
+            return None
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(verts, [], faces)
+        ob = bpy.data.objects.new(name, me)
         ob.hide_render = True
         ob.show_in_front = True
-        vgroups = struct["vertex_groups"]
-        centers = {}
         for vgname,weights in vgroups.items():
-            if "Shrink" in vgname:
-                centers[vgname[0]] = self.shrink(me, vgname, weights)
-            elif vgname != "Unfit":
-                if vgname in self.bones.keys():
-                    vgname = self.bones[vgname]
-                vgrp = ob.vertex_groups.new(name=vgname)
-                for vn,w in weights:
-                    vgrp.add([vn], w, 'REPLACE')
-        weights = vgroups.get("Unfit")
-        if weights:
-            self.fitUnfit(me, weights, centers)
-        weights = vgroups.get("Pin")
-        if weights:
-            vgrp = ob.vertex_groups.new(name="Influence")
-            for vn in range(len(ob.data.vertices)):
-                vgrp.add([vn], 1, 'REPLACE')
+            if not weights:
+                continue
+            vgrp = ob.vertex_groups.new(name=vgname)
             for vn,w in weights:
-                vgrp.add([vn], 1-w, 'REPLACE')
+                vgrp.add([vn], w, 'REPLACE')
         return ob
-
-
-    def shrink(self, me, vgname, weights):
-        coords = [me.vertices[vn].co for vn,w in weights if w == 1]
-        center = sum(coords, Vector((0,0,0))) / len(coords)
-        if self.backShrink < 1:
-            for vn,w in weights:
-                v = me.vertices[vn]
-                v.co = (1-w)*v.co + w*(center + self.backShrink*(v.co - center))
-        return center
-
-
-    def fitUnfit(self, me, weights, centers):
-        for vn,w in weights:
-            v = me.vertices[vn]
-            if v.co[0] > 0:
-                center = centers["l"]
-            else:
-                center = centers["r"]
-            v.co = center + Vector((0,4.0*self.human.DazScale,0))
 
 
     def addArmature(self, ob):
