@@ -27,6 +27,7 @@
 
 import bpy
 import os
+import numpy as np
 from .utils import *
 from .error import *
 
@@ -465,22 +466,24 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         for ob in selected:
             subsurfs[ob.name] = self.removeSubsurf(ob)
 
+        hstruct = struct["mesh"]
+        self.addVertexGroups(hum, hstruct["vertex_groups"])
         coll = self.addCollection(context)
 
-        col = self.addObject("COLLISION", struct["collision"])
-        makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
-        coll.objects.link(col)
-        self.addArmature(col)
-        self.addCollision(col)
+        col = self.addObject("COLLISION", struct["collision"], hum, hstruct)
+        if col:
+            makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
+            coll.objects.link(col)
+            self.addArmature(col)
+            self.addCollision(col)
 
-        softbody = self.addObject("SOFTBODY", struct["softbody"])
-        makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
-        coll.objects.link(softbody)
-        self.addArmature(softbody)
-        self.addSoftBody(softbody)
-        self.addCorrSmooth(softbody, "", 2)
-
-        self.addVertexGroups(ob, struct["vertex_groups"])
+        softbody = self.addObject("SOFTBODY", struct["softbody"], hum, hstruct)
+        if softbody:
+            makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
+            coll.objects.link(softbody)
+            self.addArmature(softbody)
+            self.addSoftBody(softbody)
+            self.addCorrSmooth(softbody, "", 2)
 
         msg = ""
         for ob in selected:
@@ -526,7 +529,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         return coll
 
 
-    def addObject(self, name, struct):
+    def addObject(self, name, struct, hum, hstruct):
+        # Collect data
         vn0 = 0
         verts = []
         faces = []
@@ -543,6 +547,11 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                 vn0 += len(data["vertices"])
         if not verts:
             return None
+
+        # Transfer shape
+        verts = self.transferShape(verts, hum, hstruct)
+
+        # Create mesh and vertex groups
         me = bpy.data.meshes.new(name)
         me.from_pydata(verts, [], faces)
         ob = bpy.data.objects.new(name, me)
@@ -555,6 +564,22 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             for vn,w in weights:
                 vgrp.add([vn], w, 'REPLACE')
         return ob
+
+
+    def transferShape(self, verts, hum, hstruct):
+        basecoords = np.array(hstruct["vertices"], dtype=float)
+        actcoords = np.array([list(v.co) for v in hum.data.vertices], dtype=float)
+        coords = np.array(verts, dtype=float)
+        print("TRA", basecoords.shape, actcoords.shape, coords.shape)
+        if basecoords.shape != actcoords.shape:
+            print("Shape mismatch", basecoords.shape, actcoords.shape)
+            return verts
+        diff = coords[:,np.newaxis,:] - basecoords[np.newaxis,:,:]
+        dists = np.sum(np.abs(diff), axis=2)
+        match = np.argmin(dists, axis=1)
+        offsets = actcoords - basecoords
+        coords = coords + offsets[match]
+        return list(coords)
 
 
     def addArmature(self, ob):
@@ -578,10 +603,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         mset.collision_collection = coll
         mset.friction = 0.5
         mset.mass = 2.0
-        mset.vertex_group_mass = "Influence"
+        #mset.vertex_group_mass = "Influence"
 
         mset.use_goal = True
-        mset.vertex_group_goal = "Pin"
+        mset.vertex_group_goal = "PIN"
         mset.goal_spring = 0.7
         mset.goal_friction = 0
         mset.goal_default = 1.0
