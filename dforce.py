@@ -426,6 +426,11 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         description = "Add a corrective smooth modifier to the meshes",
         default = True)
 
+    useCombinedSoftbody : BoolProperty(
+        name = "Combined Softbody",
+        description = "Only use a combined softbody",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useBreasts")
         self.layout.prop(self, "useBelly")
@@ -435,14 +440,18 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useLegs")
         self.layout.separator()
         self.layout.prop(self, "useSmooth")
+        self.layout.prop(self, "useCombinedSoftbody")
+
 
     def storeState(self, context):
         scn = context.scene
         self.simplify = scn.render.use_simplify
         scn.render.use_simplify = False
 
+
     def restoreState(self, context):
         context.scene.render.use_simplify = self.simplify
+
 
     def run(self, context):
         from .load_json import loadJson
@@ -477,14 +486,17 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             self.addArmature(col)
             self.addCollision(col)
 
-        softbody = self.addObject("SOFTBODY", struct["softbody"], hum, hstruct)
-        if softbody:
-            makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
-            coll.objects.link(softbody)
-            self.addArmature(softbody)
-            self.addSoftBody(softbody)
-            self.addCorrSmooth(softbody, "", 2)
-
+        softbodies = []
+        if self.useCombinedSoftbody:
+            softbody = self.makeSoftbody("SOFTBODY", struct["softbody"], hum, hstruct, coll)
+            softbodies.append(softbody)
+        else:
+            for key,data in struct["softbody"].items():
+                if getattr(self, "use%s" % key):
+                    sstruct = {key:data}
+                    softbody = self.makeSoftbody(key.upper(), sstruct, hum, hstruct, coll)
+                    if softbody:
+                        softbodies.append(softbody)
 
         msg = ""
         for ob in selected:
@@ -494,7 +506,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                 print(warning)
             else:
                 activateObject(context, ob)
-                self.addSurfaceDeform(ob, softbody)
+                for softbody in softbodies:
+                    self.addSurfaceDeform(ob, softbody)
                 self.addCorrSmooth(ob, "SMOOTH", 4)
         activateObject(context, hum)
         for ob in selected:
@@ -511,19 +524,42 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
 
     def addVertexGroups(self, hum, selected, struct):
-        for vname,weights in struct.items():
-            for ob in selected:
-                vgrp = ob.vertex_groups.get(vname)
-                if vgrp:
-                    ob.vertex_groups.remove(vgrp)
-            vgrp = hum.vertex_groups.new(name=vname)
-            for vn,w in weights:
-                vgrp.add([vn], w, 'REPLACE')
-            bpy.ops.object.data_transfer(
-                data_type = "VGROUP_WEIGHTS",
-                vert_mapping = 'POLYINTERP_NEAREST',
-                layers_select_src = vname,
-                layers_select_dst = 'NAME')
+        if self.useCombinedSoftbody:
+            cweights = []
+            for vname,weights in struct.items():
+                if getattr(self, "use%s" % vname.capitalize()):
+                    cweights += weights
+            self.addVertexGroup(hum, selected, "SOFTBODY", cweights)
+        else:
+            for vname,weights in struct.items():
+                if getattr(self, "use%s" % vname.capitalize()):
+                    self.addVertexGroup(hum, selected, vname, weights)
+
+
+    def addVertexGroup(self, hum, selected, vname, weights):
+        for ob in selected:
+            vgrp = ob.vertex_groups.get(vname)
+            if vgrp:
+                ob.vertex_groups.remove(vgrp)
+        vgrp = hum.vertex_groups.new(name=vname)
+        for vn,w in weights:
+            vgrp.add([vn], w, 'REPLACE')
+        bpy.ops.object.data_transfer(
+            data_type = "VGROUP_WEIGHTS",
+            vert_mapping = 'POLYINTERP_NEAREST',
+            layers_select_src = vname,
+            layers_select_dst = 'NAME')
+        for ob in selected:
+            vgrp = ob.vertex_groups.get(vname)
+            ok = False
+            for v in ob.data.vertices:
+                for g in v.groups:
+                    if g.group == vgrp.index:
+                        ok = True
+                        break
+            if not ok:
+                print("Remove %s from %s" % (vname, ob.name))
+                ob.vertex_groups.remove(vgrp)
 
 
     def addCollection(self, context):
@@ -586,6 +622,18 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         offsets = actcoords - basecoords
         coords = coords + offsets[match]
         return list(coords)
+
+
+    def makeSoftbody(self, name, sstruct, hum, hstruct, coll):
+        from .hide import makePermanentMaterial
+        softbody = self.addObject(name, sstruct, hum, hstruct)
+        if softbody:
+            makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
+            coll.objects.link(softbody)
+            self.addArmature(softbody)
+            self.addSoftBody(softbody)
+            self.addCorrSmooth(softbody, "", 2)
+        return softbody
 
 
     def addArmature(self, ob):
@@ -664,10 +712,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                     pass
 
 
-    def addCorrSmooth(self, hum, vgrp, iters):
+    def addCorrSmooth(self, ob, vgrp, iters):
         if not self.useSmooth:
             return
-        mod = hum.modifiers.new("Corr Smooth", 'CORRECTIVE_SMOOTH')
+        mod = ob.modifiers.new("Corr Smooth", 'CORRECTIVE_SMOOTH')
         mod.factor = 0.5
         mod.iterations = iters
         mod.scale = 1.0
@@ -675,14 +723,16 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         mod.vertex_group = vgrp
 
 
-    def addSurfaceDeform(self, hum, softbody):
-        mod = hum.modifiers.new("Surface Deform", 'SURFACE_DEFORM')
+    def addSurfaceDeform(self, ob, softbody):
+        if softbody.name not in ob.vertex_groups.keys():
+            return
+        mod = ob.modifiers.new(softbody.name, 'SURFACE_DEFORM')
         mod.target = softbody
         mod.falloff = 4.0
         mod.strength = 1.0
-        mod.vertex_group = 'SOFTBODY'
+        mod.vertex_group = softbody.name
         mod.use_sparse_bind = True
-        bpy.ops.object.surfacedeform_bind(modifier="Surface Deform")
+        bpy.ops.object.surfacedeform_bind(modifier=softbody.name)
 
 #-------------------------------------------------------------
 #   Initialize
