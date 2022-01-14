@@ -289,7 +289,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def transferMorphs(self, src, trg, context):
-        from .driver import getShapekeyDriver, addDriverVar
         from .asset import setDazPaths
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
@@ -318,10 +317,13 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 continue
             hskey = hskeys.key_blocks[sname]
 
+            fcus = []
             if self.useDrivers:
-                fcu = getShapekeyDriver(hskeys, sname)
-            else:
-                fcu = None
+                from .driver import getRnaDriver
+                for channel in ["value", "slider_min", "slider_max"]:
+                    fcu = getRnaDriver(hskeys, 'key_blocks["%s"].%s' % (sname, channel), None)
+                    if fcu:
+                        fcus.append(fcu)
 
             if self.ignoreMorph(src, trg, hskey):
                 print(" 0", sname)
@@ -350,8 +352,9 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 cskey.slider_min = hskey.slider_min
                 cskey.slider_max = hskey.slider_max
                 cskey.value = self.svalues[sname]
-                if fcu is not None:
-                    fcu = self.copyDriver(fcu, cskeys)
+                if fcus:
+                    for fcu in fcus:
+                        fcu = self.copyDriver(fcu, cskeys)
                     if self.useStrength:
                         from .driver import addDriverVar, setFloatProp, getPropMinMax
                         prop = cskey.name
