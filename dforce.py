@@ -467,7 +467,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             subsurfs[ob.name] = self.removeSubsurf(ob)
 
         hstruct = struct["mesh"]
-        self.addVertexGroups(hum, hstruct["vertex_groups"])
+        self.addVertexGroups(hum, selected, hstruct["vertex_groups"])
         coll = self.addCollection(context)
 
         col = self.addObject("COLLISION", struct["collision"], hum, hstruct)
@@ -484,6 +484,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             self.addArmature(softbody)
             self.addSoftBody(softbody)
             self.addCorrSmooth(softbody, "", 2)
+
 
         msg = ""
         for ob in selected:
@@ -509,14 +510,20 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                 bone.use_deform = True
 
 
-    def addVertexGroups(self, ob, struct):
+    def addVertexGroups(self, hum, selected, struct):
         for vname,weights in struct.items():
-            vgrp = ob.vertex_groups.get(vname)
-            if vgrp:
-                ob.data.vertex_groups.remove(vgrp)
-            vgrp = ob.vertex_groups.new(name=vname)
+            for ob in selected:
+                vgrp = ob.vertex_groups.get(vname)
+                if vgrp:
+                    ob.vertex_groups.remove(vgrp)
+            vgrp = hum.vertex_groups.new(name=vname)
             for vn,w in weights:
                 vgrp.add([vn], w, 'REPLACE')
+            bpy.ops.object.data_transfer(
+                data_type = "VGROUP_WEIGHTS",
+                vert_mapping = 'POLYINTERP_NEAREST',
+                layers_select_src = vname,
+                layers_select_dst = 'NAME')
 
 
     def addCollection(self, context):
@@ -570,7 +577,6 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         basecoords = np.array(hstruct["vertices"], dtype=float)
         actcoords = np.array([list(v.co) for v in hum.data.vertices], dtype=float)
         coords = np.array(verts, dtype=float)
-        print("TRA", basecoords.shape, actcoords.shape, coords.shape)
         if basecoords.shape != actcoords.shape:
             print("Shape mismatch", basecoords.shape, actcoords.shape)
             return verts
@@ -638,17 +644,24 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
     def removeSubsurf(self, ob):
         mod = getModifier(ob, 'SUBSURF')
+        subsurf = {}
         if mod:
-            subsurf = (mod.levels, mod.render_levels)
+            for key in dir(mod):
+                if key[0] != "_":
+                    subsurf[key] = getattr(mod, key)
             ob.modifiers.remove(mod)
-            return subsurf
-        return None
+        return subsurf
 
 
     def restoreSubsurf(self, ob, subsurf):
-        ob.modifiers.new("Subsurf", 'SUBSURF')
-        mod = ob.modifiers[-1]
-        (mod.levels, mod.render_levels) = subsurf
+        if subsurf:
+            ob.modifiers.new("Subsurf", 'SUBSURF')
+            mod = ob.modifiers[-1]
+            for key,value in subsurf.items():
+                try:
+                    setattr(mod, key, value)
+                except AttributeError:
+                    pass
 
 
     def addCorrSmooth(self, hum, vgrp, iters):
@@ -658,7 +671,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         mod.factor = 0.5
         mod.iterations = iters
         mod.scale = 1.0
-        mod.smooth_type = 'SIMPLE'
+        mod.smooth_type = 'LENGTH_WEIGHTED'
         mod.vertex_group = vgrp
 
 
