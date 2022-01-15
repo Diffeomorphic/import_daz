@@ -576,7 +576,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                 for v in ob.data.vertices:
                     for g in v.groups:
                         if g.group == vgrp.index:
-                            wstruct[v.index] = g.weight
+                            wstruct[v.index] += g.weight
         wmax = max(list(wstruct.values()))
         if wmax > 0.1:
             return [(vn,w/wmax) for vn,w in wstruct.items() if w > 0.001]

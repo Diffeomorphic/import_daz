@@ -375,6 +375,11 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         description = "Transfer shapekeys from character to clothes",
         default = True)
 
+    useSoftbody : BoolProperty(
+        name = "Add Softbody",
+        description = "Add softbody simultation",
+        default = False)
+
     useMergeGeografts : BoolProperty(
         name = "Merge Geografts",
         description = "Merge selected geografts to active object.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
@@ -463,6 +468,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         self.subprop("useAdjusters")
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
+        self.layout.prop(self, "useSoftbody")
         self.layout.prop(self, "useMergeGeografts")
         self.layout.prop(self, "useMergeFaceMeshes")
         if self.useMergeFaceMeshes:
@@ -657,6 +663,13 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
                         flexions = self.flexions,
                         useAdjusters = self.useAdjusters)
 
+        # Add softbody simulation
+        if self.useSoftbody and mainMesh and activateObject(context, mainMesh):
+            # Merge materials
+            for ob in meshes[1:]:
+                selectSet(ob, True)
+            print("Add softbody")
+            bpy.ops.daz.add_softbody()
 
         # Merge geografts
         useLashes = self.useMergeFaceMeshes
@@ -795,6 +808,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
 
     def mergeLashes(self, ob):
         from .merge import mergeUvLayers
+        for mod in ob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
         nlayers = len(ob.data.uv_layers)
         bpy.ops.object.join()
         idxs = list(range(nlayers, len(ob.data.uv_layers)))
@@ -804,6 +820,9 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
+        for mod in ob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
         print("Lashes merged")
 
 

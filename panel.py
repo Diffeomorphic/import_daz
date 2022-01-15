@@ -138,6 +138,7 @@ class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Finishing"
 
     def draw(self, context):
+        self.layout.operator("daz.add_softbody")
         self.layout.operator("daz.merge_geografts")
         self.layout.operator("daz.merge_uv_layers")
         self.layout.operator("daz.set_udims")
@@ -278,8 +279,6 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_deflection")
         self.layout.operator("daz.make_collision")
         self.layout.operator("daz.make_cloth")
-        self.layout.separator()
-        self.layout.operator("daz.add_softbody")
 
 
 class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):

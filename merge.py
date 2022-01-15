@@ -118,6 +118,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             uvname = self.getActiveUvLayer(aob)[1]
             auvnames.append(uvname)
             self.copyBodyPart(aob, cob)
+            for mod in list(aob.modifiers):
+                if mod.type == 'SURFACE_DEFORM':
+                    aob.modifiers.remove(mod)
         cname = self.getUvName(cob.data)
         drivers = {}
 
@@ -130,6 +133,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
 
         # For the body, setup mask groups
         activateObject(context, cob)
+        for mod in cob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
         nverts = len(cob.data.vertices)
         vfaces = dict([(vn,[]) for vn in range(nverts)])
         for f in cob.data.polygons:
@@ -273,6 +279,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
 
         self.copyShapeKeyDrivers(cob, drivers)
         updateDrivers(cob)
+        for mod in cob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
 
 
     def getActiveUvLayer(self, ob):
