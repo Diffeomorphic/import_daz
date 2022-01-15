@@ -1040,8 +1040,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     self.raiseError(fing3Name)
                     continue
                 makeBone(self.longName(m, suffix), rig, fing1.head, fing3.tail, fing1.roll, L_LHAND+dlayer, palm)
-                vec = fing3.tail - fing3.head
-                makeBone("ik_" + self.longName(m, suffix), rig, fing3.tail, fing3.tail+vec, fing3.roll, L_LHAND+dlayer, hand)
+                if self.useFingerIk:
+                    vec = fing3.tail - fing3.head
+                    makeBone("ik_" + self.longName(m, suffix), rig, fing3.tail, fing3.tail+vec, fing3.roll, L_LHAND+dlayer, hand)
 
         setMode('POSE')
         for suffix,dlayer in [(".L",0), (".R",16)]:
