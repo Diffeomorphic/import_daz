@@ -409,7 +409,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
     useMakeAllBonesPoseable : BoolProperty(
         name = "Make All Bones Poseable",
         description = "Add an extra layer of driven bones, to make them poseable",
-        default = False)
+        default = True)
 
     useFavoMorphs : BoolProperty(
         name = "Use Favorite Morphs",

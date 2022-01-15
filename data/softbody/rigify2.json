@@ -1,6 +1,7 @@
 {
     "name" : "rigify2",
     "bones" : {
+    	"pelvis" : "ORG-spine",
         "lPectoral" : "pectoral.L",
         "lShldrBend" : "ORG-upper_arm.L",
         "lShldrTwist" : "ORG-upper_arm.L",
@@ -12,7 +13,15 @@
         "rShldrTwist" : "ORG-upper_arm.R",
         "rForearmBend" : "ORG-forearm.R",
         "rForearmTwist" : "ORG-forearm.R",
-        "rHand" : "ORG-hand.R"
+        "rHand" : "ORG-hand.R",
+        "lThighBend" : "ORG-thigh.L",
+        "lThighTwist" : "ORG-thigh.L",
+        "lShin" : "ORG-shin.L",
+        "lFoot" : "ORG-foot.L",
+        "rThighBend" : "ORG-thigh.R",
+        "rThighTwist" : "ORG-thigh.R",
+        "rShin" : "ORG-shin.R",
+        "rFoot" : "ORG-foot.R"
     }
 }
         

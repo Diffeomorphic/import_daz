@@ -1,18 +1,7 @@
 {
     "name" : "genesis8",
     "bones" : {
-        "lPectoral" : "lPectoral",
-        "lShldrBend" : "lShldrBend",
-        "lShldrTwist" : "lShldrTwist",
-        "lForearmBend" : "lForearmBend",
-        "lForearmTwist" : "lForearmTwist",
-        "lHand" : "lHand",
-        "rPectoral" : "rPectoral",
-        "rShldrBend" : "rShldrBend",
-        "rShldrTwist" : "rShldrTwist",
-        "rForearmBend" : "rForearmBend",
-        "rForearmTwist" : "rForearmTwist",
-        "rHand" : "rHand"
+    	"pelvis" : "pelvis"
     }
 }
         

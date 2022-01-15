@@ -1,6 +1,7 @@
 {
     "name" : "mhx",
     "bones" : {
+    	"pelvis" : "pelvis",
         "lPectoral" : "pectoral.L",
         "lShldrBend" : "upper_arm.bend.L",
         "lShldrTwist" : "upper_arm.twist.L",
@@ -12,7 +13,15 @@
         "rShldrTwist" : "upper_arm.twist.R",
         "rForearmBend" : "forearm.bend.R",
         "rForearmTwist" : "forearm.twist.R",
-        "rHand" : "hand.R"
+        "rHand" : "hand.R",
+        "lThighBend" : "thigh.bend.L",
+        "lThighTwist" : "thigh.twist.L",
+        "lShin" : "shin.bend.L",
+        "lFoot" : "foot.L",
+        "rThighBend" : "thigh.bend.R",
+        "rThighTwist" : "thigh.twist.R",
+        "rShin" : "shin.bend.R",
+        "rFoot" : "foot.R"
     }
 }
         

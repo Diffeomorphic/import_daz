@@ -523,6 +523,13 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                 bone.use_deform = True
 
 
+    def getBoneName(self, bname):
+        if bname in self.bones.keys():
+            return self.bones[bname]
+        else:
+            return bname
+
+
     def addVertexGroups(self, hum, selected, struct):
         if self.useCombinedSoftbody:
             weights = []
@@ -552,9 +559,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
     def addVertexGroupFromNames(self, selected, vname, data):
         for ob in selected:
-            weights = self.getWeightsFromName(ob, vname, data)
+            bname = self.getBoneName(vname)
+            weights = self.getWeightsFromName(ob, bname, data)
             if weights:
-                vgrp = ob.vertex_groups.new(name=vname)
+                vgrp = ob.vertex_groups.new(name=bname)
                 for vn,w in weights:
                     vgrp.add([vn], w, 'REPLACE')
 
@@ -562,17 +570,16 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
     def getWeightsFromName(self, ob, vname, data):
         wstruct = dict([(vn,0.0) for vn in range(len(ob.data.vertices))])
         for wname in data:
-            vgrp = ob.vertex_groups.get(wname)
+            bname = self.getBoneName(wname)
+            vgrp = ob.vertex_groups.get(bname)
             if vgrp:
                 for v in ob.data.vertices:
                     for g in v.groups:
                         if g.group == vgrp.index:
                             wstruct[v.index] = g.weight
-        wlist = [(w,vn) for vn,w in wstruct.items() if w > 0.001]
-        if wlist:
-            wlist.sort()
-            wmax,_ = wlist[-1]
-            return [(vn,w/wmax) for w,vn in wlist]
+        wmax = max(list(wstruct.values()))
+        if wmax > 0.1:
+            return [(vn,w/wmax) for vn,w in wstruct.items() if w > 0.001]
         else:
             return []
 
@@ -646,10 +653,11 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         ob.name = name
         ob.hide_render = True
         ob.show_in_front = True
-        for vgname,weights in vgroups.items():
+        for vname,weights in vgroups.items():
             if not weights:
                 continue
-            vgrp = ob.vertex_groups.new(name=vgname)
+            bname = self.getBoneName(vname)
+            vgrp = ob.vertex_groups.new(name=bname)
             for vn,w in weights:
                 vgrp.add([vn], w, 'REPLACE')
         return ob

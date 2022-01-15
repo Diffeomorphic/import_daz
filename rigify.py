@@ -1342,7 +1342,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
     useDeleteMeta : BoolProperty(
         name = "Delete Metarig",
         description = "Delete intermediate rig after Rigify",
-        default = False
+        default = True
     )
 
     @classmethod
