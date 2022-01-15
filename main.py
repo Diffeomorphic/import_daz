@@ -702,7 +702,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
                 for ob in lashes:
                     selectSet(ob, True)
                 print("Merge lashes")
-                self.mergeLashes(mainMesh)
+                bpy.ops.daz.merge_meshes(useMergeUvs=True)
 
         # Transfer shapekeys to clothes
         if self.useTransferShapes:
@@ -808,22 +808,6 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
 
     def mergeLashes(self, ob):
         from .merge import mergeUvLayers
-        for mod in ob.modifiers:
-            if mod.type == 'SURFACE_DEFORM':
-                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-        nlayers = len(ob.data.uv_layers)
-        bpy.ops.object.join()
-        idxs = list(range(nlayers, len(ob.data.uv_layers)))
-        idxs.reverse()
-        for idx in idxs:
-            mergeUvLayers(ob.data, 0, idx)
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
-        for mod in ob.modifiers:
-            if mod.type == 'SURFACE_DEFORM':
-                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-        print("Lashes merged")
 
 
     def getLashes(self, rig, ob):

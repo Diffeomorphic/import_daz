@@ -504,6 +504,41 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
         setMode('OBJECT')
 
 
+class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
+    bl_idname = "daz.merge_meshes"
+    bl_label = "Merge Meshes"
+    bl_description = ("Merge selected meshes to active mesh")
+    bl_options = {'UNDO'}
+
+    useMergeUvs : BoolProperty(
+        name = "Merge UVs",
+        description = "Merge UV layers of merged meshes with first UV layer",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useMergeUvs")
+
+    def run(self, context):
+        ob = context.object
+        for mod in ob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
+        nlayers = len(ob.data.uv_layers)
+        bpy.ops.object.join()
+        if self.useMergeUvs:
+            idxs = list(range(nlayers, len(ob.data.uv_layers)))
+            idxs.reverse()
+            for idx in idxs:
+                mergeUvLayers(ob.data, 0, idx)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
+        for mod in ob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
+        print("Meshes merged")
+
+
 def mergeUvLayers(me, keepIdx, mergeIdx):
     def replaceUVMapNodes(me, mergeLayer):
         for mat in me.materials:
@@ -1381,6 +1416,7 @@ classes = [
     DAZ_OT_MergeGeografts,
     DAZ_OT_CreateGraftGroups,
     DAZ_OT_MergeUvLayers,
+    DAZ_OT_MergeMeshes,
     DAZ_OT_MergeRigs,
     DAZ_OT_EliminateEmpties,
     DAZ_OT_CopyPose,
