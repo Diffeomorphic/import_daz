@@ -457,6 +457,7 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         if self.useMergeRigs:
             self.subprop("useCreateDuplicates")
             self.subprop("useMergeNonConforming")
+        self.layout.prop(self, "useMakeAllBonesPoseable")
         self.layout.prop(self, "useMergeToes")
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
@@ -477,7 +478,6 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
             self.subprop("useBrows")
             self.subprop("useBeard")
         self.layout.prop(self, "useConvertWidgets")
-        self.layout.prop(self, "useMakeAllBonesPoseable")
         self.layout.prop(self, "useConvertHair")
         self.layout.prop(self, "rigType")
         if self.rigType == 'MHX':

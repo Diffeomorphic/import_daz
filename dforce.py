@@ -396,9 +396,9 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
     bl_description = "Add softbody simulation to selected meshes"
     bl_options = {'UNDO'}
 
-    useBreasts : BoolProperty(
-        name = "Breasts",
-        description = "Add softbody simulation for breasts",
+    useChest : BoolProperty(
+        name = "Chest",
+        description = "Add softbody simulation for chest",
         default = True)
 
     useBelly : BoolProperty(
@@ -437,7 +437,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useBreasts")
+        self.layout.prop(self, "useChest")
         self.layout.prop(self, "useBelly")
         self.layout.prop(self, "useGlutes")
         self.layout.separator()
