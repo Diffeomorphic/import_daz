@@ -437,15 +437,16 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         default = True)
 
     def draw(self, context):
+        self.layout.label(text="Softbody Objects")
         self.layout.prop(self, "useChest")
         self.layout.prop(self, "useBelly")
         self.layout.prop(self, "useGlutes")
-        self.layout.separator()
+        self.layout.prop(self, "useCombinedSoftbody")
+        self.layout.label(text="Collision Objects")
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.separator()
         self.layout.prop(self, "useSmooth")
-        self.layout.prop(self, "useCombinedSoftbody")
         self.layout.prop(self, "useRemoveOld")
 
 
