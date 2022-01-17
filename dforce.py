@@ -535,12 +535,22 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         if self.useCombinedSoftbody:
             weights = []
             for vname,data in struct.items():
-                if getattr(self, "use%s" % vname.capitalize()):
-                    if isinstance(data[0], str):
-                        weights += self.getWeightsFromName(hum, vname, data)
-                    else:
-                        weights += data
+                if (getattr(self, "use%s" % vname.capitalize()) and
+                    not isinstance(data[0], str)):
+                    weights += data
             self.addVertexGroup(hum, selected, "SOFTBODY", weights)
+            for ob in selected:
+                weights = []
+                for vname,data in struct.items():
+                    if (getattr(self, "use%s" % vname.capitalize()) and
+                        isinstance(data[0], str)):
+                        weights += self.getWeightsFromName(ob, vname, data)
+                if weights:
+                    vgrp = ob.vertex_groups.get("SOFTBODY")
+                    if vgrp is None:
+                        vgrp = ob.vertex_groups.new(name="SOFTBODY")
+                    for vn,w in weights:
+                        vgrp.add([vn], w, 'REPLACE')
         else:
             for vname,data in struct.items():
                 if getattr(self, "use%s" % vname.capitalize()):
@@ -556,6 +566,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             self.addVertexGroupFromNames(selected, vname, data)
         else:
             self.addVertexGroupFromWeights(hum, selected, vname, data)
+        return vgrp
 
 
     def addVertexGroupFromNames(self, selected, vname, data):
@@ -580,7 +591,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
                             wstruct[v.index] += g.weight
         wmax = max(list(wstruct.values()))
         if wmax > 0.1:
-            return [(vn,w/wmax) for vn,w in wstruct.items() if w > 0.001]
+            return [(vn, max(0, min(1, 1.5*w))) for vn,w in wstruct.items() if w > 0.001]
         else:
             return []
 
@@ -713,7 +724,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         mset.collision_collection = coll
         mset.friction = 0.5
         mset.mass = 2.0
-        #mset.vertex_group_mass = "Influence"
+        mset.vertex_group_mass = "MASS"
 
         mset.use_goal = True
         mset.vertex_group_goal = "PIN"
