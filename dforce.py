@@ -485,7 +485,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         self.addVertexGroups(hum, selected, hstruct["vertex_groups"])
         coll = self.addCollection(context)
 
-        col = self.addObject("COLLISION", struct["collision"], hum, hstruct, context)
+        col = self.addObject("COLLISION", struct["collision"], hum, hstruct, coll)
         if col:
             makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
             coll.objects.link(col)
@@ -607,6 +607,9 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             layers_select_dst = 'NAME')
         for ob in selected:
             vgrp = ob.vertex_groups.get(vname)
+            if vgrp is None:
+                print("No vertex group", ob.name, vname)
+                continue
             ok = False
             for v in ob.data.vertices:
                 for g in v.groups:
@@ -619,10 +622,11 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
 
     def addCollection(self, context):
-        if "Simulation" in bpy.data.collections:
-            return bpy.data.collections["Simulation"]
-        coll = bpy.data.collections.new("Simulation")
         rigcoll = getCollection(self.rig)
+        for coll in rigcoll.children.values():
+            if coll.name.startswith("Simulation"):
+                return coll
+        coll = bpy.data.collections.new("Simulation")
         rigcoll.children.link(coll)
         layer = getLayerCollection(context, coll)
         layer.hide_viewport = True
@@ -630,7 +634,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         return coll
 
 
-    def addObject(self, name, struct, hum, hstruct, context):
+    def addObject(self, name, struct, hum, hstruct, coll):
         # Collect data
         vn0 = 0
         verts = []
@@ -654,9 +658,9 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
         # Remove previous objects
         if self.useRemoveOld:
-            ob = bpy.data.objects.get(name)
-            if ob:
-                unlinkAll(ob)
+            for ob in coll.objects.values():
+                if ob.name.startswith(name):
+                    unlinkAll(ob)
 
         # Create mesh and vertex groups
         me = bpy.data.meshes.new(name)
@@ -692,12 +696,12 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
 
     def makeSoftbody(self, name, sstruct, hum, hstruct, coll, context):
         from .hide import makePermanentMaterial
-        softbody = self.addObject(name, sstruct, hum, hstruct, context)
+        softbody = self.addObject(name, sstruct, hum, hstruct, coll)
         if softbody:
             makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
             coll.objects.link(softbody)
             self.addArmature(softbody)
-            self.addSoftBody(softbody)
+            self.addSoftBody(softbody, context)
             self.addCorrSmooth(softbody, "", 2, 'SIMPLE')
         return softbody
 
@@ -718,13 +722,14 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         cset.use_culling = True
 
 
-    def addSoftBody(self, ob, coll=None):
+    def addSoftBody(self, ob, context, coll=None):
         mod = ob.modifiers.new("Softbody", 'SOFT_BODY')
         mset = mod.settings
         mset.collision_collection = coll
         mset.friction = 0.5
         mset.mass = 2.0
         mset.vertex_group_mass = "MASS"
+        mset.speed = 1.56 / context.scene.render.fps * 30
 
         mset.use_goal = True
         mset.vertex_group_goal = "PIN"
