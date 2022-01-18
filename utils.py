@@ -283,6 +283,12 @@ def getProp(path):
         return None
 
 
+def baseName(name):
+    if len(name) > 4 and name[-4] == "." and name[-3:].isdigit():
+        return name[:-4]
+    else:
+        return name
+
 def finalProp(prop):
     return "%s(fin)" % prop
 

@@ -624,7 +624,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
     def addCollection(self, context):
         rigcoll = getCollection(self.rig)
         for coll in rigcoll.children.values():
-            if coll.name.startswith("Simulation"):
+            if baseName(coll.name) == "Simulation":
                 return coll
         coll = bpy.data.collections.new("Simulation")
         rigcoll.children.link(coll)
@@ -659,7 +659,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         # Remove previous objects
         if self.useRemoveOld:
             for ob in coll.objects.values():
-                if ob.name.startswith(name):
+                if baseName(ob.name) == name:
                     unlinkAll(ob)
 
         # Create mesh and vertex groups

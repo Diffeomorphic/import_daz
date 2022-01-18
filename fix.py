@@ -238,12 +238,6 @@ class Fixer(DriverUser):
         def dazName(string):
             return (string + "_DAZ")
 
-        def dazifyName(ob):
-            if ob.name[-4] == "." and ob.name[-3:].isdigit():
-                return dazName(ob.name[:-4])
-            else:
-                return dazName(ob.name)
-
         def findChildrenRecursive(ob, objects):
             objects.append(ob)
             for child in ob.children:
@@ -266,8 +260,8 @@ class Fixer(DriverUser):
         newObjects = getSelectedObjects(context)
         nrig = None
         for ob in newObjects:
-            ob.name = dazifyName(ob)
-            if ob.name == dazifyName(rig):
+            ob.name = dazName(baseName(ob.name))
+            if ob.name == dazName(baseName(rig.name)):
                 nrig = ob
             unlinkAll(ob)
             if ob.type == 'MESH':
@@ -384,7 +378,7 @@ class GizmoUser:
 
     def getOldGizmo(self, gname):
         for gname1 in self.hidden.objects.keys():
-            if gname1.startswith(gname):
+            if baseName(gname1) == gname:
                 ob = self.hidden.objects[gname1]
                 self.gizmos[gname] = ob
                 return ob

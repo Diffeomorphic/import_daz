@@ -655,12 +655,10 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
                 bpy.ops.daz.separate_loose_parts()
                 print("Loose parts separated")
             setMode('OBJECT')
-            hname = hair.name
-            if (len(hname) >= 4 and hname[-4] == "." and hname[-3:].isdigit()):
-                hname = hname[:-4]
+            hname = baseName(hair.name)
             haircount = 0
             hairs = [hair for hair in getSelectedMeshes(context)
-                     if (hair.name.startswith(hname) and
+                     if (baseName(hair.name) == hname and
                          hair != hum)]
             count = 0
             for hair in hairs:

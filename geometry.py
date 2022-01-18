@@ -284,7 +284,7 @@ class GeoNode(Node, SimNode):
         def getDataMaterial(mname):
             while True:
                 for mat in LS.materials.values():
-                    if mat.name.startswith(mname):
+                    if baseName(mat.name):
                         return mat
                 words = mname.split("_",1)
                 if len(words) == 1:
