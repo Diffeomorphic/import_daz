@@ -1821,6 +1821,14 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
 
     def getAnimations(self, rig):
         from collections import OrderedDict
+        globalFlip = {
+            'XYZ' : 'XZY',
+            'XZY' : 'XYZ',
+            'YXZ' : 'ZXY',
+            'YZX' : 'ZYX',
+            'ZXY' : 'YXZ',
+            'ZYX' : 'YZX',
+        }
         anims = []
         if self.useBones:
             for pb in rig.pose.bones:
@@ -1838,7 +1846,8 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
             Ls = [self.Ls[frame][""] for frame in range(self.first, self.last+1)]
             locs = [L.to_translation() for L in Ls]
             self.getTrans("", rig, locs, 1/rig.DazScale, anims)
-            rots = [L.to_euler('XYZ') for L in Ls]
+
+            rots = [L.to_euler(globalFlip[rig.rotation_mode]) for L in Ls]
             self.getRot("", rig, rots, 1/D, anims)
             if self.useScale:
                 scales = [L.to_scale() for L in Ls]
