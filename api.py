@@ -125,14 +125,32 @@ def set_selection(files):
 def update_drivers(ob):
     """update_drivers(ob)
 
-    Update drivers of the active armature
+    Update drivers of the specified object
 
     Arguments:
-    ?ob: Active object
+    ?ob: Object
     """
     from .utils import updateDrivers
     updateDrivers(ob)
     updateDrivers(ob.data)
+
+
+def set_slider(ob, prop, value):
+    """ set_slider(ob, prop, value)
+
+    Set slider value, like
+    ob[prop] = value
+    but taking aliases into account.
+
+    Arguments:
+    ?ob: Object that owns slider
+    ?prop: Property name
+    ?value: Property value
+    """
+    ob[prop] = value
+    if prop in ob.DazAlias.keys():
+        alias = ob.DazAlias[prop].s
+        ob[alias] = value
 
 #-------------------------------------------------------------
 #   Access to paths relative to root directories
