@@ -116,7 +116,6 @@ class LoadMorph(DriverUser):
                 clearMeshProps(ob.data)
             self.origRestored = []
 
-
     #------------------------------------------------------------------
     #   Make all morphs
     #------------------------------------------------------------------
@@ -161,6 +160,8 @@ class LoadMorph(DriverUser):
         if aliaspath is not None:
             aliases = self.loadAlias(aliaspath)
         self.addUrl(asset, aliases, filepath, bodypart)
+        if force:
+            LS.returnValue[fileref] = name
         return " *"
 
 

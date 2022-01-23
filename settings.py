@@ -450,6 +450,7 @@ class LocalSettings:
         self.hairs = { None : [] }
         self.hdmeshes = { None : [] }
         self.warning = False
+        self.returnValue = {}
 
 
     def __repr__(self):

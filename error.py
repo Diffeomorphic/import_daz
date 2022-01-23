@@ -218,6 +218,7 @@ class DazOperator(bpy.types.Operator):
 
     def prequel(self, context):
         self.storeState(context)
+        LS.returnValue = {}
         clearErrorMessage()
 
 

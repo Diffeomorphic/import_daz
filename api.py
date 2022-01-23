@@ -27,7 +27,7 @@
 
 from . import globvars as G
 from .error import DazError
-from .settings import GS
+from .settings import GS, LS
 
 #----------------------------------------------------------
 #   Api functions available for external scripting
@@ -80,6 +80,18 @@ def get_morphs(ob, morphset, category=None, activeOnly=False):
     """
     from .morphing import getMorphsExternal
     return getMorphsExternal(ob, morphset, category, activeOnly)
+
+
+def get_return_value():
+    """get_return_value()
+    Get value returned by previous operator.
+
+    Returns:
+    A dictonary of return values.
+    For operators that import morphs, this dictionary is of that form
+    Lower-case filepath : property name
+    """
+    return LS.returnValue
 
 #-------------------------------------------------------------
 #   Active file paths used from python
@@ -136,10 +148,9 @@ def update_drivers(ob):
 
 
 def set_slider(ob, prop, value):
-    """ set_slider(ob, prop, value)
+    """set_slider(ob, prop, value)
 
-    Set slider value, like
-    ob[prop] = value
+    Set slider value, like ob[prop] = value,
     but taking aliases into account.
 
     Arguments:
@@ -173,7 +184,7 @@ def get_absolute_paths(paths):
     Get the absolute filepaths corresponding to the given relative filepaths.
 
     Arguments:
-    Paths or references relative to the DAZ root paths.
+    ?paths: Paths or references relative to the DAZ root paths.
 
     Returns:
     The corresponding absolute paths if they exist.
