@@ -87,9 +87,7 @@ def get_return_value():
     Get value returned by previous operator.
 
     Returns:
-    A dictonary of return values.
-    For operators that import morphs, this dictionary is of that form
-    Lower-case filepath : property name
+    A dictonary of return values. For operators that import morphs, this dictionary is of the form {Lowercase filepath : Property name}.
     """
     return LS.returnValue
 

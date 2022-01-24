@@ -1184,7 +1184,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.jcms, "Jcms", "Body")
         self.loadMorphType(context, self.flexions, "Flexions", "Body")
         if self.message:
-            raise DazError(msg, warning=True)
+            raise DazError(self.message, warning=True)
 
 
     def loadMorphType(self, context, use, morphset, bodypart):
