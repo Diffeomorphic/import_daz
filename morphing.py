@@ -1959,7 +1959,8 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
                     setFloatProp(rig, raw, rig[raw], self.min, self.max, True)
                 if self.useFinal:
                     final = finalProp(raw)
-                    setFloatProp(amt, final, amt[final], self.min, self.max, False)
+                    if final in amt.keys():
+                        setFloatProp(amt, final, amt[final], self.min, self.max, False)
         updateRigDrivers(context, rig)
         print("Slider limits updated")
 
