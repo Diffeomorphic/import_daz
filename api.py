@@ -25,6 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
+from urllib.parse import unquote
 from . import globvars as G
 from .error import DazError
 from .settings import GS, LS
@@ -90,6 +91,20 @@ def get_return_value():
     A dictonary of return values. For operators that import morphs, this dictionary is of the form {Lowercase filepath : Property name}.
     """
     return LS.returnValue
+
+
+def get_canonical_filepath(filepath):
+    """get_canonical_filepath(filepath)
+    Return a canonical form of the filepath, which can be used to index the return value dict.
+
+    Returns:
+    The canonical filepath, or None if this can not be constructed.
+
+    Arguments:
+    ?filepath: String which represents a filepath
+    """
+    from .load_morph import getCanonicalFilePath
+    return getCanonicalFilePath(unquote(filepath))
 
 #-------------------------------------------------------------
 #   Active file paths used from python
