@@ -631,6 +631,14 @@ class Rigify:
 
 
     def setupExtras(self, context, rig, rigifySkel, spineBones):
+        def addRecursive(pb, extras):
+            if isDrvBone(pb.name) or isFinal(pb.name):
+                return
+            if pb.name not in extras.keys():
+                extras[pb.name] = pb.name
+            for child in pb.children:
+                addRecursive(child, extras)
+
         extras = OrderedDict()
         taken = []
         for dbone,_rbone,_pbone in spineBones:
@@ -646,6 +654,10 @@ class Rigify:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
                     extras[vgrp.name] = vgrp.name
+        for bname in ["Face_Controls_XYZ"]:
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                addRecursive(pb, extras)
         for dbone in list(extras.keys()):
             bone = rig.data.bones[dbone]
             while bone.parent:
@@ -1171,6 +1183,13 @@ class Rigify:
             srcpb = rig.pose.bones[srcname]
             trgpb = gen.pose.bones[trgname]
             copyBoneInfo(srcpb, trgpb)
+            if srcpb.custom_shape:
+                trgpb.custom_shape = srcpb.custom_shape
+                if hasattr(trgpb, "custom_shape_scale"):
+                    trgpb.custom_shape_scale = srcpb.custom_shape_scale
+                else:
+                    trgpb.custom_shape_scale_xyz = srcpb.custom_shape_scale_xyz
+                trgpb.bone.layers = R_CUSTOM*[False] + [True] + (31-R_CUSTOM)*[False]
 
 
     def copyProp(self, prop, src, trg):
