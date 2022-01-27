@@ -509,8 +509,8 @@ def copyProp(prop, src, trg, ovr):
         setFloatProp(trg, prop, default, min, max, ovr)
     elif isinstance(value,int):
         min,max,default,ovr = getPropMinMax(src, prop, ovr)
-        trg[prop] = value
         setPropMinMax(trg, prop, default, min, max, ovr)
+        trg[prop] = value
     elif isinstance(value,bool):
         setBoolProp(trg, prop, value, ovr)
     elif isinstance(value,str):
@@ -528,7 +528,6 @@ def truncateProp(prop):
 def setFloatProp(rna, prop, value, min, max, ovr):
     value = float(value)
     prop = truncateProp(prop)
-    rna[prop] = value
     if min is not None:
         min = float(min)
         max = float(max)
@@ -538,15 +537,16 @@ def setFloatProp(rna, prop, value, min, max, ovr):
             setPropMinMax(rna, prop, value, min, max, ovr)
     elif ovr:
         setOverridable(rna, prop)
+    rna[prop] = value
 
 
 def setBoolProp(rna, prop, value, ovr, desc=""):
     prop = truncateProp(prop)
-    rna[prop] = value
     setPropMinMax(rna, prop, value, 0, 1, ovr)
     if ovr and bpy.app.version < (3,0,0):
         setOverridable(rna, prop)
         setPropMinMax(rna, prop, value, 0, 1, ovr)
+    rna[prop] = value
 
 #-------------------------------------------------------------
 #
