@@ -48,7 +48,8 @@ R_DETAIL = 2
 R_CUSTOM = 19
 R_DEFORM = 29
 R_HELP = 30
-R_FIN = 31
+R_LAST = 31
+R_FIN = 27
 
 def setupTables(meta):
     def deleteChildren(eb, meta):
@@ -74,7 +75,7 @@ def setupTables(meta):
         L_FACE : R_DETAIL,
         L_HEAD : R_FACE,
         L_CUSTOM : R_CUSTOM,
-        L_FIN : R_FIN,
+        L_FIN : R_LAST,
     }
 
     if meta.DazPre278:
@@ -632,8 +633,6 @@ class Rigify:
 
     def setupExtras(self, context, rig, rigifySkel, spineBones):
         def addRecursive(pb, extras):
-            if isDrvBone(pb.name) or isFinal(pb.name):
-                return
             if pb.name not in extras.keys():
                 extras[pb.name] = pb.name
             for child in pb.children:
@@ -997,6 +996,9 @@ class Rigify:
                 if unlock:
                     pb.lock_location = (False, False, False)
                 self.copyBoneInfo(dname, rname, rig, gen)
+                if isFinal(dname):
+                    pb.bone.layers = R_FIN*[False] + [True] + (31-R_FIN)*[False]
+
 
         # Rescale custom shapes
         if rig.DazRig in ["genesis3", "genesis8"]:
