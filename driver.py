@@ -496,7 +496,11 @@ def copyProp(prop, src, trg, ovr):
     if hasattr(src, prop):
         try:
             setattr(trg, prop, getattr(src, prop))
+            ok = True
         except AttributeError:
+            ok = False
+        if not ok:
+            trg[prop] = src[prop]
             pass
         return
     value = src[prop]
