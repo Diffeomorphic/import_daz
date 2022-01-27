@@ -461,7 +461,7 @@ def setPropMinMax(rna, prop, default, min, max, ovr):
         rna_idprop_ui_create(rna, prop, default=default, min=min, max=max, soft_min=min, soft_max=max, description=None, overridable=ovr)
 
 
-def getPropMinMax(rna, prop):
+def getPropMinMax(rna, prop, ovr):
     struct = None
     if bpy.app.version < (3,0,0):
         rna_ui = rna.get('_RNA_UI')
@@ -477,17 +477,40 @@ def getPropMinMax(rna, prop):
     min = GS.customMin
     max = GS.customMax
     default = 0.0
-    ovr = True
     if struct:
         if "min" in struct.keys():
             min = struct["min"]
         if "max" in struct.keys():
             max = struct["max"]
         if "default" in struct.keys():
-            max = struct["default"]
+            default = struct["default"]
         if "overridable" in struct.keys():
             ovr = struct["overridable"]
     return min,max,default,ovr
+
+
+def copyProp(prop, src, trg, ovr):
+    if (prop[0] == "_" or
+        prop in trg.keys()):
+        return
+    if hasattr(src, prop):
+        try:
+            setattr(trg, prop, getattr(src, prop))
+        except AttributeError:
+            pass
+        return
+    value = src[prop]
+    if isinstance(value,float):
+        min,max,default,ovr = getPropMinMax(src, prop, ovr)
+        setFloatProp(trg, prop, default, min, max, ovr)
+    elif isinstance(value,int):
+        min,max,default,ovr = getPropMinMax(src, prop, ovr)
+        trg[prop] = value
+        setPropMinMax(trg, prop, default, min, max, ovr)
+    elif isinstance(value,bool):
+        setBoolProp(trg, prop, value, ovr)
+    elif isinstance(value,str):
+        trg[prop] = value
 
 
 def truncateProp(prop):

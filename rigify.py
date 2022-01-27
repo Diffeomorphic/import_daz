@@ -874,7 +874,7 @@ class Rigify:
 
 
     def rigifyMeta1(self, context):
-        from .driver import getBoneDrivers, getPropDrivers
+        from .driver import getBoneDrivers, getPropDrivers, copyProp
         from .node import setParent, clearParent
         from .mhx import unhideAllObjects, getBoneLayer
 
@@ -1006,9 +1006,9 @@ class Rigify:
         # Add DAZ properties
         print("  Add DAZ properties")
         for key in rig.keys():
-            self.copyProp(key, rig, gen)
+            copyProp(key, rig, gen, True)
         for key in rig.data.keys():
-            self.copyProp(key, rig.data, gen.data)
+            copyProp(key, rig.data, gen.data, False)
 
         # Some more bones
         from .convert import getConverterEntry
@@ -1167,13 +1167,14 @@ class Rigify:
 
 
     def copyBoneProp(self, fcu, rig, gen, pb):
+        from .driver import copyProp
         bname = prop = None
         words = fcu.data_path.split('"')
         if words[0] == "pose.bones[" and words[2] == "][":
             bname = words[1]
             prop = words[3]
             if bname in rig.pose.bones.keys():
-                self.copyProp(prop, rig.pose.bones[bname], pb)
+                copyProp(prop, rig.pose.bones[bname], pb, False)
 
 
     def copyBoneInfo(self, srcname, trgname, rig, gen):
@@ -1190,12 +1191,6 @@ class Rigify:
                 else:
                     trgpb.custom_shape_scale_xyz = srcpb.custom_shape_scale_xyz
                 trgpb.bone.layers = R_CUSTOM*[False] + [True] + (31-R_CUSTOM)*[False]
-
-
-    def copyProp(self, prop, src, trg):
-        trg[prop] = src[prop]
-        if prop[0:3] not in ["Daz", "_RN"]:
-            setOverridable(trg, prop)
 
 
     def getOrgDefBone(self, bname, rig):

@@ -764,8 +764,8 @@ class RigInfo:
         from .fix import copyConstraints
         for key in self.rig.data.keys():
             rig.data[key] = self.rig.data[key]
-        self.copyProps(self.rig, rig)
-        self.copyProps(self.rig.data, rig.data)
+        self.copyProps(self.rig, rig, True)
+        self.copyProps(self.rig.data, rig.data, False)
         self.button.copyDrivers(self.rig.data, rig.data, self.rig, rig)
         self.button.copyDrivers(self.rig, rig, self.rig, rig)
         setActiveObject(context, rig)
@@ -777,23 +777,11 @@ class RigInfo:
             copyConstraints(subpb, pb, rig)
 
 
-    def copyProps(self, src, trg):
-        from .driver import getPropMinMax, setPropMinMax, setFloatProp, setBoolProp
+    def copyProps(self, src, trg, ovr):
+        from .driver import copyProp
         for prop,value in src.items():
-            if (prop[0] != "_" and
-                prop[0:3] != "Daz" and
-                prop not in trg.keys()):
-                if isinstance(value,float):
-                    min,max,default,ovr = getPropMinMax(src, prop)
-                    setFloatProp(trg, prop, default, min, max, ovr)
-                elif isinstance(value,int):
-                    min,max,default,ovr = getPropMinMax(src, prop)
-                    trg[prop] = value
-                    setPropMinMax(trg, prop, default, min, max, ovr)
-                elif isinstance(value,bool):
-                    setBoolProp(trg, prop, value, ovr)
-                elif isinstance(value,str):
-                    trg[prop] = value
+            if prop[0:3] != "Daz":
+                copyProp(prop, src, trg, ovr)
 
 
     def reParent(self, rig):
