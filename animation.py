@@ -1901,7 +1901,9 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
                 anims.append(anim)
         else:
             for idx,x in enumerate(["x","y","z"]):
-                if not self.includeLocks and self.loclocks[pb.name][idx]:
+                if (not self.includeLocks and
+                    pb.name in self.loclocks.keys() and
+                    self.loclocks[pb.name][idx]):
                     continue
                 anim = {}
                 anim["url"] = "name://@selection/%s:?translation/%s/value" % (bname, x)
@@ -1922,7 +1924,9 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
         else:
             twname,twidx = self.getTwistBone(pb.name)
             for idx,x in enumerate(["x","y","z"]):
-                if ((not self.includeLocks and self.rotlocks[pb.name][idx]) or
+                if ((not self.includeLocks and
+                     pb.name in self.rotlocks.keys() and
+                     self.rotlocks[pb.name][idx]) or
                     (twname and idx == twidx)):
                     continue
                 anim = {}
