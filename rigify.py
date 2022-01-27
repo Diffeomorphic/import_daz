@@ -1069,22 +1069,24 @@ class Rigify:
                 self.changeAllTargets(ob, rig, gen)
 
         # Fix drivers
+        def setAssoc(dname, rname):
+            assoc[dname] = rname
+            assoc[finBone(dname)] = finBone(rname)
+
         print("  Fix drivers")
         assoc = {}
         for bname in rig.data.bones.keys():
             rname = bname
             if isDrvBone(bname) or isFinal(bname):
                 continue
-            assoc[bname] = bname
-            assoc[finBone(bname)] = bname
+            setAssoc(bname, bname)
         for dname,rname,_ in Genesis3Spine:
-            assoc[dname] = rname
-            assoc[finBone(dname)] = rname
+            setAssoc(dname, rname)
         for rname,dname in RigifySkeleton.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
-            assoc[dname] = rname
-            assoc[finBone(dname)] = rname
+            setAssoc(dname, rname)
+
         for fcu in getPropDrivers(rig):
             fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen)
         for fcu in getPropDrivers(rig.data):
