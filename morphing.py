@@ -835,7 +835,7 @@ class MorphLoader(LoadMorph):
             item.bodypart = bodypart
 
 
-    def getAllMorphs(self, namepaths, context):
+    def getAllMorphs(self, namepaths, context, usePoseable):
         from time import perf_counter
 
         if self.mesh:
@@ -870,7 +870,7 @@ class MorphLoader(LoadMorph):
             msg = "Found morphs that want to\nchange the rest pose"
         else:
             msg = None
-        if self.useMakePoseable and self.rig and activateObject(context, self.rig):
+        if usePoseable and self.useMakePoseable and self.rig and activateObject(context, self.rig):
             print("Make all bones poseable")
             bpy.ops.daz.make_all_bones_poseable()
         if msg:
@@ -960,7 +960,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             self.rig.DazMorphPrefixes = False
             self.findIked()
         namepaths = self.getActiveMorphFiles(context)
-        msg = self.getAllMorphs(namepaths, context)
+        msg = self.getAllMorphs(namepaths, context, True)
         if msg:
             raise DazError(msg, warning=True)
 
@@ -1183,6 +1183,9 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.body, "Body", "Body")
         self.loadMorphType(context, self.jcms, "Jcms", "Body")
         self.loadMorphType(context, self.flexions, "Flexions", "Body")
+        if self.useMakePoseable and self.rig and activateObject(context, self.rig):
+            print("Make all bones poseable")
+            bpy.ops.daz.make_all_bones_poseable()
         if self.message:
             raise DazError(self.message, warning=True)
 
@@ -1205,7 +1208,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         for key,filepath in struct.items():
             fileref = self.getFileRef(filepath)
             self.namepaths.append((key, filepath, bodypart))
-        msg = self.getAllMorphs(self.namepaths, context)
+        msg = self.getAllMorphs(self.namepaths, context, False)
         if msg:
             self.message = msg
 
@@ -1317,7 +1320,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         from .uilist import updateScrollbars
         self.findIked()
         namepaths = self.getNamePaths()
-        msg = self.getAllMorphs(namepaths, context)
+        msg = self.getAllMorphs(namepaths, context, True)
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True
         elif self.useMeshCats and self.shapekeys:
@@ -2790,6 +2793,9 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
                 rig.DazCustomMorphs = True
                 self.adjuster = "Adjust %s" % key
                 self.loadMorphSet(context, key, ustruct, "Custom", key[7:], True)
+        if self.useMakePoseable and rig and activateObject(context, rig):
+            print("Make all bones poseable")
+            bpy.ops.daz.make_all_bones_poseable()
 
 
     def loadMorphSet(self, context, key, ustruct, morphset, cat, hide):
@@ -2801,7 +2807,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
             self.category = cat
             self.hideable = hide
             namepaths = [(name, unquote(ref), bodypart) for ref,name,bodypart in infos]
-            self.getAllMorphs(namepaths, context)
+            self.getAllMorphs(namepaths, context, False)
 
 
     def findPropGroup(self, prop):

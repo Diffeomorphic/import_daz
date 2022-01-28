@@ -1145,7 +1145,7 @@ class StandardAnimation:
                 mloader.category = ""
                 mloader.hideable = True
                 print("\nLoading missing %s morphs" % morphset)
-                mloader.getAllMorphs(namepathTable[morphset], context)
+                mloader.getAllMorphs(namepathTable[morphset], context, True)
         if "Custom" in namepathTable.keys():
             customs = {}
             for namepath in namepathTable["Custom"]:
@@ -1162,7 +1162,7 @@ class StandardAnimation:
                 mloader.category = cat
                 mloader.hideable = True
                 print("\nLoading morphs in category %s" % cat)
-                mloader.getAllMorphs(namepaths, context)
+                mloader.getAllMorphs(namepaths, context, True)
         for mname,value in self.missing.items():
             rig[mname] = value
 

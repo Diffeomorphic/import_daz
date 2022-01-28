@@ -489,7 +489,7 @@ class ExtraBones(DriverUser):
             if var.name == "parscale":
                 for trg in var.targets:
                     bname = trg.bone_target
-                    if bname in self.bnames and not isFinal(bname):
+                    if bname in self.bnames:
                         trg.bone_target = drvBone(bname)
 
 
@@ -500,6 +500,7 @@ class ExtraBones(DriverUser):
             if isDrvBone(bname):
                 return string
             elif bname in self.bnames:
+                print("REP", bname)
                 return string.replace(propRef(bname), propRef(drvBone(bname)))
         return string
 
@@ -690,7 +691,8 @@ class ExtraBones(DriverUser):
         for bname in self.bnames:
             if (bname not in rig.pose.bones.keys() or
                 drvBone(bname) not in rig.pose.bones.keys()):
-                del self.bnames[bname]
+                pass
+                #del self.bnames[bname]
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
@@ -786,7 +788,9 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
         ]
         keys = rig.pose.bones.keys()
         bnames = [bname for bname in inface
-                  if bname in keys and drvBone(bname) not in keys]
+                  if bname in keys and
+                    not isFinal(bname) and
+                    drvBone(bname) not in keys]
         bnames += getAnchoredBoneNames(rig, ["upperFaceRig", "lowerFaceRig"])
         return bnames
 
@@ -829,9 +833,10 @@ class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
         exclude = ["lMetatarsals", "rMetatarsals"]
         return [pb.name for pb in rig.pose.bones
                 if not isDrvBone(pb.name) and
-                isBoneDriven(rig, pb) and
-                drvBone(pb.name) not in rig.pose.bones.keys() and
-                pb.name not in exclude]
+                    not isFinal(pb.name) and
+                    isBoneDriven(rig, pb) and
+                    drvBone(pb.name) not in rig.pose.bones.keys() and
+                    pb.name not in exclude]
 
     def checkAllowed(self, rig):
         if rig.DazRig[0:3] in ["mhx", "rig"]:
