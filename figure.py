@@ -500,7 +500,6 @@ class ExtraBones(DriverUser):
             if isDrvBone(bname):
                 return string
             elif bname in self.bnames:
-                print("REP", bname)
                 return string.replace(propRef(bname), propRef(drvBone(bname)))
         return string
 

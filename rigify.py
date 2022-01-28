@@ -1085,7 +1085,8 @@ class Rigify:
         for rname,dname in RigifySkeleton.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
-            setAssoc(dname, rname)
+            orgname = self.getOrgDefBone(rname, gen)
+            setAssoc(dname, orgname)
 
         for fcu in getPropDrivers(rig):
             fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen)
