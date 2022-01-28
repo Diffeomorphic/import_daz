@@ -1100,11 +1100,8 @@ class Rigify:
                 for fcu in fcus:
                     fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen, assoc=assoc)
 
-        # Fix correctives
-        print("  Fix correctives")
-        correctives = {}
-        for dname,rname in assoc.items():
-            correctives[dname] = self.getOrgDefBone(rname, gen)
+        # Fix bend and twist drivers
+        print("Fix bend and twist drivers")
         specials = {
             "lShldr" : "upper_arm.L",
             "lForearm" : "forearm.L",
@@ -1115,11 +1112,11 @@ class Rigify:
         }
         for dname,rname in specials.items():
             bname = self.getOrgDefBone(rname, gen)
-            correctives[dname] = bname
-            correctives["%sBend" % dname] = bname
-            correctives[finBone(dname)] = bname
-            correctives[finBone("%sBend" % dname)] = bname
-        self.fixBoneDrivers(gen, correctives)
+            assoc[dname] = bname
+            assoc["%sBend" % dname] = bname
+            assoc[finBone(dname)] = bname
+            assoc[finBone("%sBend" % dname)] = bname
+        self.fixBoneDrivers(gen, assoc)
 
         # Gaze bones
         for suffix in [".L", ".R"]:
