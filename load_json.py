@@ -77,6 +77,8 @@ def loadJson(filepath, mustOpen=False):
             filetype = "ascii"
         except IOError:
             string = None
+        except UnicodeDecodeError:
+            string = None
     if string is None:
         reportError('Could not open file\n"%s"\n' % (filepath), trigger=(1,2))
         return {}

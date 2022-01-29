@@ -150,7 +150,7 @@ class FileAsset(Asset):
                         par = inst = None
                     self.modifiers.append((asset,inst))
 
-            if self.toplevel:
+            if self.toplevel and LS.useNodes:
                 self.parseRender(scene)
 
         msg = ("-FILE %s" % self.fileref)

@@ -236,6 +236,8 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Materials"
 
     def draw(self, context):
+        self.layout.operator("daz.import_daz_materials")
+        self.layout.separator()
         self.layout.operator("daz.load_uv")
         self.layout.operator("daz.prune_uv_maps")
         self.layout.separator()

@@ -118,7 +118,7 @@ class Material(Asset, Channels):
         Asset.update(self, struct)
         Channels.update(self, struct)
         geo = geonode = None
-        if "geometry" in struct.keys():
+        if LS.useGeometries and "geometry" in struct.keys():
             ref = struct["geometry"]
             geo = self.getAsset(ref, True)
             if isinstance(geo, GeoNode):
@@ -131,7 +131,7 @@ class Material(Asset, Channels):
             if geonode:
                 key = self.getMatName(self.id)
                 self.addToGeoNode(geonode, key)
-        if "uv_set" in struct.keys():
+        if LS.useGeometries and "uv_set" in struct.keys():
             from .geometry import Uvset
             uvset = self.getTypedAsset(struct["uv_set"], Uvset)
             if uvset:

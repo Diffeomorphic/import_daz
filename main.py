@@ -35,11 +35,10 @@ from .morphing import MorphSuffix
 from .merge import MergeRigsOptions
 
 #------------------------------------------------------------------
-#   DAZ options
+#   Color options
 #------------------------------------------------------------------
 
-class DazOptions(DazImageFile):
-
+class ColorOptions:
     skinColor : FloatVectorProperty(
         name = 'SKIN',
         subtype = "COLOR",
@@ -58,6 +57,21 @@ class DazOptions(DazImageFile):
         default = (0.09, 0.01, 0.015, 1.0)
     )
 
+    def draw(self, context):
+        box = self.layout.box()
+        box.label(text = "Viewport Color")
+        if GS.viewportColors == 'GUESS':
+            row = box.row()
+            row.prop(self, "skinColor")
+            row.prop(self, "clothesColor")
+        else:
+            box.label(text = GS.viewportColors)
+
+#------------------------------------------------------------------
+#   Fit options
+#------------------------------------------------------------------
+
+class FitOptions:
     fitMeshes : EnumProperty(
         items = [('SHARED', "Unmorphed Shared (Environments)", "Don't fit meshes. All objects share the same mesh.\nFor environments with identical objects like leaves"),
                  ('UNIQUE', "Unmorped Unique (Environments)", "Don't fit meshes. Each object has unique mesh instance.\nFor environments with objects with same mesh but different materials, like paintings"),
@@ -80,20 +94,97 @@ class DazOptions(DazImageFile):
         if self.fitMeshes == 'MORPHED':
             box.prop(self, "morphStrength")
         self.layout.separator()
-        box = self.layout.box()
-        box.label(text = "Viewport Color")
-        if GS.viewportColors == 'GUESS':
-            row = box.row()
-            row.prop(self, "skinColor")
-            row.prop(self, "clothesColor")
-        else:
-            box.label(text = GS.viewportColors)
+
+#------------------------------------------------------------------
+#   DAZ Loader
+#------------------------------------------------------------------
+
+class DazLoader:
+    def loadDazFile(self, filepath, context):
+        from time import perf_counter
+        from .objfile import getFitFile, fitToFile
+
+        LS.scene = filepath
+        t1 = perf_counter()
+        startProgress("\nLoading %s" % filepath)
+        if LS.fitFile:
+            getFitFile(filepath)
+
+        from .load_json import loadJson
+        struct = loadJson(filepath)
+        showProgress(10, 100)
+
+        if LS.useNodes:
+            grpname = os.path.splitext(os.path.basename(filepath))[0].capitalize()
+            LS.collection = makeRootCollection(grpname, context)
+
+        print("Parsing data")
+        from .files import parseAssetFile
+        main = parseAssetFile(struct, toplevel=True)
+        if main is None:
+            msg = ("File not found:  \n%s      " % filepath)
+            raise DazError(msg)
+        showProgress(20, 100)
+
+        print("Preprocessing...")
+        for asset,inst in main.nodes:
+            inst.preprocess(context)
+
+        if LS.fitFile:
+            fitToFile(filepath, main.nodes)
+        showProgress(30, 100)
+
+        for asset,inst in main.modifiers:
+            asset.preprocess(inst)
+
+        print("Building objects...")
+        for asset in main.materials:
+            asset.build(context)
+        showProgress(50, 100)
+
+        nnodes = len(main.nodes)
+        idx = 0
+        for asset,inst in main.nodes:
+            showProgress(50 + int(idx*30/nnodes), 100)
+            idx += 1
+            asset.build(context, inst)      # Builds armature
+        showProgress(80, 100)
+
+        nmods = len(main.modifiers)
+        idx = 0
+        for asset,inst in main.modifiers:
+            showProgress(80 + int(idx*10/nmods), 100)
+            idx += 1
+            asset.build(context, inst)      # Builds morphs 1
+        showProgress(90, 100)
+
+        for _,inst in main.nodes:
+            inst.poseRig(context)
+        for asset,inst in main.nodes:
+            inst.postbuild(context)
+
+        # Need to update scene before calculating object areas
+        updateScene(context)
+        for asset in main.materials:
+            asset.postbuild()
+
+        for asset,inst in main.modifiers:
+            asset.postbuild(context, inst)
+        for _,inst in main.nodes:
+            inst.finalize(context)
+
+        from .node import finishNodeInstances
+        finishNodeInstances(context)
+
+        t2 = perf_counter()
+        print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
+        return main
 
 #------------------------------------------------------------------
 #   Import DAZ
 #------------------------------------------------------------------
 
-class ImportDAZ(DazOperator, DazOptions, MultiFile):
+class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, MultiFile):
     """Load a DAZ File"""
     bl_idname = "daz.import_daz"
     bl_label = "Import DAZ"
@@ -101,7 +192,8 @@ class ImportDAZ(DazOperator, DazOptions, MultiFile):
     bl_options = {'PRESET', 'UNDO'}
 
     def draw(self, context):
-        DazOptions.draw(self, context)
+        FitOptions.draw(self, context)
+        ColorOptions.draw(self, context)
         self.layout.separator()
         box = self.layout.box()
         box.label(text = "For more options, see Global Settings.")
@@ -175,84 +267,36 @@ class ImportDAZ(DazOperator, DazOptions, MultiFile):
             raise DazError(msg, warning=True)
         LS.reset()
 
+#------------------------------------------------------------------
+#   Import DAZ Materials
+#------------------------------------------------------------------
 
-    def loadDazFile(self, filepath, context):
-        from time import perf_counter
-        from .objfile import getFitFile, fitToFile
+class ImportDAZMaterials(DazOperator, DazLoader, ColorOptions, DazImageFile, MultiFile, IsMesh):
+    bl_idname = "daz.import_daz_materials"
+    bl_label = "Import DAZ Materials"
+    bl_description = "Load materials from a native DAZ file to the active mesh"
+    bl_options = {'UNDO'}
 
-        LS.scene = filepath
-        t1 = perf_counter()
-        startProgress("\nLoading %s" % filepath)
-        if LS.fitFile:
-            getFitFile(filepath)
+    def draw(self, context):
+        ColorOptions.draw(self, context)
 
-        from .load_json import loadJson
-        struct = loadJson(filepath)
-        showProgress(10, 100)
-
-        grpname = os.path.splitext(os.path.basename(filepath))[0].capitalize()
-        LS.collection = makeRootCollection(grpname, context)
-
-        print("Parsing data")
-        from .files import parseAssetFile
-        main = parseAssetFile(struct, toplevel=True)
-        if main is None:
-            msg = ("File not found:  \n%s      " % filepath)
-            raise DazError(msg)
-        showProgress(20, 100)
-
-        print("Preprocessing...")
-        for asset,inst in main.nodes:
-            inst.preprocess(context)
-
-        if LS.fitFile:
-            fitToFile(filepath, main.nodes)
-        showProgress(30, 100)
-
-        for asset,inst in main.modifiers:
-            asset.preprocess(inst)
-
-        print("Building objects...")
-        for asset in main.materials:
-            asset.build(context)
-        showProgress(50, 100)
-
-        nnodes = len(main.nodes)
-        idx = 0
-        for asset,inst in main.nodes:
-            showProgress(50 + int(idx*30/nnodes), 100)
-            idx += 1
-            asset.build(context, inst)      # Builds armature
-        showProgress(80, 100)
-
-        nmods = len(main.modifiers)
-        idx = 0
-        for asset,inst in main.modifiers:
-            showProgress(80 + int(idx*10/nmods), 100)
-            idx += 1
-            asset.build(context, inst)      # Builds morphs 1
-        showProgress(90, 100)
-
-        for _,inst in main.nodes:
-            inst.poseRig(context)
-        for asset,inst in main.nodes:
-            inst.postbuild(context)
-
-        # Need to update scene before calculating object areas
-        updateScene(context)
-        for asset in main.materials:
-            asset.postbuild()
-
-        for asset,inst in main.modifiers:
-            asset.postbuild(context, inst)
-        for _,inst in main.nodes:
-            inst.finalize(context)
-
-        from .node import finishNodeInstances
-        finishNodeInstances(context)
-
-        t2 = perf_counter()
-        print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
+    def run(self, context):
+        filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
+        if len(filepaths) == 0:
+            raise DazError("No valid files selected")
+        ob = context.object
+        LS.forMaterial(self, ob)
+        dmats = []
+        for filepath in filepaths:
+            main = self.loadDazFile(filepath, context)
+            dmats += main.materials
+        nmats = len(ob.data.materials)
+        for n,dmat in enumerate(dmats[0:nmats]):
+            ob.data.materials[n] = dmat.rna
+        for dmat in dmats[nmats:]:
+            ob.data.materials.append(dmat.rna)
+        if LS.render:
+            LS.render.build(context)
 
 #------------------------------------------------------------------
 #   MorphTypeOptions
@@ -326,7 +370,7 @@ class MorphTypeOptions:
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -449,7 +493,8 @@ class EasyImportDAZ(DazOperator, DazOptions, MergeRigsOptions, MorphTypeOptions,
         default = False)
 
     def draw(self, context):
-        DazOptions.draw(self, context)
+        FitOptions.draw(self, context)
+        ColorOptions.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useEliminateEmpties")
@@ -950,6 +995,7 @@ def menu_func_import(self, context):
 
 classes = [
     ImportDAZ,
+    ImportDAZMaterials,
     EasyImportDAZ,
     DAZ_OT_DecodeFile,
     DAZ_OT_Quote,

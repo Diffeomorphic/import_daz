@@ -1101,7 +1101,7 @@ class Rigify:
                     fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen, assoc=assoc)
 
         # Fix bend and twist drivers
-        print("Fix bend and twist drivers")
+        print("  Fix bend and twist drivers")
         specials = {
             "lShldr" : "upper_arm.L",
             "lForearm" : "forearm.L",

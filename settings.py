@@ -530,13 +530,14 @@ class LocalSettings:
         self.useUV = True
 
 
-    def forMaterial(self, ob):
+    def forMaterial(self, btn, ob):
         self.__init__()
         self.reset()
         self.scale = ob.DazScale
         self.useImages = True
         self.useMaterials = True
-        self.verbosity = 1
+        self.skinColor = btn.skinColor
+        self.clothesColor = btn.clothesColor
 
 
     def forEngine(self):
