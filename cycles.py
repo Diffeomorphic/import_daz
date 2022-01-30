@@ -1038,12 +1038,13 @@ class CyclesTree:
             self.volume or
             self.getValue("getChannelTranslucencyWeight", 0) > 0.01):
             return True
+        else:
+            return False
 
 
     def buildTranslucency(self):
         if (GS.materialMethod != 'BSDF' or
             not self.checkTranslucency()):
-            channel = self.material.getChannelTranslucencyWeight()
             return
         fac = self.getValue("getChannelTranslucencyWeight", 0)
         effect = self.getValue(["Base Color Effect"], 0)

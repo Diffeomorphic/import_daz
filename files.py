@@ -128,26 +128,31 @@ class FileAsset(Asset):
                         base = self.getAsset(mstruct["url"])
                     else:
                         base = None
-                    asset = CyclesMaterial(self.fileref)
-                    asset.parse(mstruct)
-                    if base:
-                        asset.channels = deepcopy(base.channels)
-                    asset.update(mstruct)
-                    self.materials.append(asset)
+                    if "id" in mstruct.keys():
+                        asset = CyclesMaterial(self.fileref)
+                        asset.parse(mstruct)
+                        if base:
+                            asset.channels = deepcopy(base.channels)
+                    else:
+                        asset = base
+                    if asset:
+                        asset.update(mstruct)
+                        self.materials.append(asset)
 
             if LS.useModifiers and "modifiers" in scene.keys():
                 for mstruct in scene["modifiers"]:
                     asset = self.parseUrlAsset(mstruct)
                     if asset is None:
                         continue
-                    if "parent" in mstruct.keys():
-                        par = self.getAsset(mstruct["parent"])
-                        if par:
-                            inst = par.getInstance(mstruct["parent"], self)
+                    parurl = mstruct.get("parent")
+                    if parurl:
+                        parent = self.getAsset(parurl)
+                        if parent:
+                            inst = parent.getInstance(parurl, self)
                         else:
                             inst = None
                     else:
-                        par = inst = None
+                        inst = None
                     self.modifiers.append((asset,inst))
 
             if LS.useAnimations and "animations" in scene.keys():

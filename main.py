@@ -277,8 +277,20 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
     bl_description = "Load materials from a native DAZ file to the active mesh"
     bl_options = {'UNDO'}
 
+    useReplaceSlots : BoolProperty(
+        name = "Replace Slots",
+        description = "Replace existing material slots with first materials",
+        default = True)
+
+    useAddSlots : BoolProperty(
+        name = "Add Slots",
+        description = "Add extra materials after existing material slots",
+        default = False)
+
     def draw(self, context):
         ColorOptions.draw(self, context)
+        self.layout.prop(self, "useReplaceSlots")
+        self.layout.prop(self, "useAddSlots")
 
     def run(self, context):
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
@@ -305,11 +317,15 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 asset.build(context)
                 dmats.append(asset)
 
-        nmats = len(ob.data.materials)
-        for n,dmat in enumerate(dmats[0:nmats]):
-            ob.data.materials[n] = dmat.rna
-        for dmat in dmats[nmats:]:
-            ob.data.materials.append(dmat.rna)
+        if self.useReplaceSlots:
+            nmats = len(ob.data.materials)
+            for n,dmat in enumerate(dmats[0:nmats]):
+                ob.data.materials[n] = dmat.rna
+        else:
+            nmats = 0
+        if self.useAddSlots:
+            for dmat in dmats[nmats:]:
+                ob.data.materials.append(dmat.rna)
         if LS.render:
             LS.render.build(context)
 
@@ -338,9 +354,10 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         words = url.split(":?extra/studio_material_channels/channels/")
         if len(words) != 2:
             words = url.split(":?")
-        if len(words) != 2:
+        words2 = words[0].split("#materials/")
+        if len(words) != 2 or len(words2) != 2:
             return None, None, None, None
-        mname = words[0].split("#materials/")[1]
+        mname = words2[1]
         mod = None
         if words[1].endswith("value"):
             channel = words[1][:-6]
@@ -357,8 +374,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         elif words[1] in ["uv_set"]:
             return None, None, None, None
         else:
-            print("WW", words[1])
-            halt
+            raise RuntimeError("Unexpected URL: %s" % url)
         return mname, unquote(channel), type, mod
 
 
