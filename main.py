@@ -271,7 +271,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
 #   Import DAZ Materials
 #------------------------------------------------------------------
 
-class ImportDAZMaterials(DazOperator, DazLoader, ColorOptions, DazImageFile, MultiFile, IsMesh):
+class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsMesh):
     bl_idname = "daz.import_daz_materials"
     bl_label = "Import DAZ Materials"
     bl_description = "Load materials from a native DAZ file to the active mesh"
@@ -289,7 +289,22 @@ class ImportDAZMaterials(DazOperator, DazLoader, ColorOptions, DazImageFile, Mul
         dmats = []
         for filepath in filepaths:
             main = self.loadDazFile(filepath, context)
-            dmats += main.materials
+            anims = {}
+            for url,frames in main.animations.items():
+                mname,key,type,mod = self.splitUrl(url)
+                if mname is None:
+                    continue
+                if mname not in anims.keys():
+                    anims[mname] = []
+                anims[mname].append((key, type, mod, frames))
+            for dmat in main.materials:
+                basename = self.getMatName(dmat.name)
+                if basename in anims.keys():
+                    self.fixMaterial(dmat, anims[basename])
+            for asset in main.materials:
+                asset.build(context)
+                dmats.append(asset)
+
         nmats = len(ob.data.materials)
         for n,dmat in enumerate(dmats[0:nmats]):
             ob.data.materials[n] = dmat.rna
@@ -297,6 +312,87 @@ class ImportDAZMaterials(DazOperator, DazLoader, ColorOptions, DazImageFile, Mul
             ob.data.materials.append(dmat.rna)
         if LS.render:
             LS.render.build(context)
+
+
+    def loadDazFile(self, filepath, context):
+        from .load_json import loadJson
+        LS.scene = filepath
+        struct = loadJson(filepath)
+        print("Parsing data")
+        from .files import parseAssetFile
+        main = parseAssetFile(struct, toplevel=True)
+        if main is None:
+            msg = ("File not found:  \n%s      " % filepath)
+            raise DazError(msg)
+        return main
+
+
+    def getMatName(self, mname):
+        if len(mname) > 2 and mname[-2] == "-" and mname[-1].isdigit():
+            return mname[:-2]
+        else:
+            return mname
+
+
+    def splitUrl(self, url):
+        words = url.split(":?extra/studio_material_channels/channels/")
+        if len(words) != 2:
+            words = url.split(":?")
+        if len(words) != 2:
+            return None, None, None, None
+        mname = words[0].split("#materials/")[1]
+        mod = None
+        if words[1].endswith("value"):
+            channel = words[1][:-6]
+            type = "value"
+        elif words[1].endswith("image"):
+            channel = words[1][:-6]
+            type = "image"
+        elif words[1].endswith("image_file"):
+            channel = words[1][:-11]
+            type = "image_file"
+        elif "image_modification" in words[1]:
+            channel,mod = words[1].split("/image_modification/")
+            type = "image_modification"
+        elif words[1] in ["uv_set"]:
+            return None, None, None, None
+        else:
+            print("WW", words[1])
+            halt
+        return mname, unquote(channel), type, mod
+
+
+    def fixMaterial(self, dmat, anim):
+        table = {
+            "Diffuse Color" : "diffuse",
+        }
+        for key,type,mod,frames in anim:
+            value = frames[0][1]
+            channel = dmat.channels.get(key)
+            if channel is None and key in table.keys():
+                channel = dmat.channels.get(table[key])
+            if channel is None:
+                channel = dmat.channels[key] = {"id" : key, "type" : None}
+            if type == "value":
+                channel["current_value"] = channel["value"] = value
+                if channel["type"] is None:
+                    if isinstance(value, float):
+                        channel["type"] = "float"
+                    elif isinstance(value, int):
+                        channel["type"] = "integer"
+                    elif isinstance(value, list):
+                        channel["type"] = "color"
+                    elif isinstance(value, str):
+                        channel["type"] = "string"
+                    else:
+                        print("UV '%s'" % value)
+                        halt
+            elif type == "image":
+                channel["image"] = value
+            elif type == "image_file":
+                channel["image_file"] = value
+            elif type == "image_modification":
+                continue
 
 #------------------------------------------------------------------
 #   MorphTypeOptions

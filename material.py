@@ -71,12 +71,6 @@ class Material(Asset, Channels):
         self.useDefaultUvs = True
         self.udim = 0
         self.basemix = 0
-        self.thinWall = False
-        self.refractive = False
-        self.shareGlossy = False
-        self.dualLobeWeight = 0
-        self.translucent = False
-        self.isHair = False
         self.isShellMat = False
         self.enabled = {}
         self.decalNode = None
@@ -221,13 +215,18 @@ class Material(Asset, Channels):
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
-        self.thinWall = self.getValue(["Thin Walled"], False)
-        self.refractive = (self.getValue("getChannelRefractionWeight", 0) > 0.01 or
-                           self.getValue("getChannelOpacity", 1) < 0.99)
-        self.shareGlossy = self.getValue(["Share Glossy Inputs"], False)
-        self.dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
-        self.translucent = (self.enabled["Translucency"] and self.getValue("getChannelTranslucencyWeight", 0) > 0.01)
-        self.isHair = ("Root Transmission Color" in self.channels.keys())
+
+    def isThinWall(self):
+        return self.getValue(["Thin Walled"], False)
+
+
+    def isRefractive(self):
+        return (self.getValue("getChannelRefractionWeight", 0) > 0.01 or
+                self.getValue("getChannelOpacity", 1) < 0.99)
+
+
+    def isHair(self):
+        return ("Root Transmission Color" in self.channels.keys())
 
 
     def setExtra(self, struct):
@@ -331,13 +330,13 @@ class Material(Asset, Channels):
 #-------------------------------------------------------------
 
     def getChannelDiffuse(self):
-        return self.getChannel(["diffuse", "Diffuse Color"])
+        return self.getChannel(["Diffuse Color", "diffuse"])
 
     def getDiffuse(self):
         return self.getColor("getChannelDiffuse", BLACK)
 
     def getChannelDiffuseStrength(self):
-        return self.getChannel(["diffuse_strength", "Diffuse Strength"])
+        return self.getChannel(["Diffuse Strength", "diffuse_strength"])
 
     def getChannelGlossyColor(self):
         return self.getTexChannel(["Glossy Color", "specular", "Specular Color"])
@@ -361,16 +360,16 @@ class Material(Asset, Channels):
 
 
     def getChannelOpacity(self):
-        return self.getChannel(["opacity", "Opacity Strength"])
+        return self.getChannel(["Opacity Strength", "opacity"])
 
     def getChannelCutoutOpacity(self):
         return self.getChannel(["Cutout Opacity", "transparency"])
 
     def getChannelAmbientColor(self):
-        return self.getChannel(["ambient", "Ambient Color"])
+        return self.getChannel(["Ambient Color", "ambient"])
 
     def getChannelAmbientStrength(self):
-        return self.getChannel(["ambient_strength", "Ambient Strength"])
+        return self.getChannel(["Ambient Strength", "ambient_strength"])
 
     def getChannelEmissionColor(self):
         return self.getChannel(["emission", "Emission Color"])
@@ -532,7 +531,7 @@ class Material(Asset, Channels):
     def sssActive(self):
         if not self.enabled["Subsurface"]:
             return False
-        if self.refractive or self.thinWall:
+        if self.isRefractive() or self.isThinWall():
             return False
         return True
 

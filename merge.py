@@ -962,7 +962,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
     def mergeRigs(self, context, info, subinfos, repars):
         rig = info.rig
-        LS.forAnimation(None, rig)
+        LS.forMerge(None, rig)
         if rig is None:
             raise DazError("No rigs to merge")
         oldvis = list(rig.data.layers)
@@ -1205,7 +1205,7 @@ def applyRestPoses(context, rig, subrigs):
                 xmin = 0
             setattr(cns, min, xmin)
 
-    LS.forAnimation(None, rig)
+    LS.forMerge(None, rig)
     rigs = [rig] + subrigs
     applyAllObjectTransforms(rigs)
     for subrig in rigs:

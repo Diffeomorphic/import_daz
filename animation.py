@@ -1059,7 +1059,6 @@ class StandardAnimation:
         scn = context.scene
         if not self.affectSelectedOnly:
             selected = self.selectAll(rig, True)
-        LS.forAnimation(self, rig)
         self.findDrivers(rig)
         self.clearAnimation(rig)
         self.missing = {}

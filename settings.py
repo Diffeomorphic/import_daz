@@ -501,12 +501,11 @@ class LocalSettings:
             self.fitFile = True
 
 
-    def forAnimation(self, btn, ob):
+    def forMerge(self, btn, ob):
         self.__init__()
         self.reset()
         self.scale = ob.DazScale
         self.useNodes = True
-        self.useAnimations = True
         if hasattr(btn, "fps"):
             self.fps = btn.fps
             self.integerFrames = btn.integerFrames
@@ -536,6 +535,7 @@ class LocalSettings:
         self.scale = ob.DazScale
         self.useImages = True
         self.useMaterials = True
+        self.useAnimations = True
         self.skinColor = btn.skinColor
         self.clothesColor = btn.clothesColor
 

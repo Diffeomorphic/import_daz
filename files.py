@@ -41,7 +41,7 @@ class FileAsset(Asset):
         self.modifiers = []
         self.uvs = []
         self.materials = []
-        self.animations = []
+        self.animations = {}
         self.instances = {}
         self.extras = []
         self.sources = []
@@ -149,6 +149,12 @@ class FileAsset(Asset):
                     else:
                         par = inst = None
                     self.modifiers.append((asset,inst))
+
+            if LS.useAnimations and "animations" in scene.keys():
+                for astruct in scene["animations"]:
+                    url = astruct.get("url")
+                    if url:
+                        self.animations[url] = astruct.get("keys")
 
             if self.toplevel and LS.useNodes:
                 self.parseRender(scene)

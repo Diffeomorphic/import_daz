@@ -67,11 +67,12 @@ class PbrTree(CyclesTree):
             self.postPBR = True
         if self.buildOverlay():
             self.postPBR = True
-        if self.material.dualLobeWeight > 0:
+        dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
+        if dualLobeWeight > 0:
             self.buildDualLobe()
             self.replaceSlot(self.pbr, "Specular", 0)
             self.postPBR = True
-        if self.material.refractive:
+        if self.material.isRefractive():
             self.buildRefraction()
         else:
             self.buildEmission()
@@ -88,7 +89,7 @@ class PbrTree(CyclesTree):
 
     def getShellGroup(self, shmat, push):
         from .cgroup import OpaqueShellPbrGroup, RefractiveShellPbrGroup
-        if shmat.refractive:
+        if shmat.isRefractive():
             return RefractiveShellPbrGroup(push)
         else:
             return OpaqueShellPbrGroup(push)
@@ -296,7 +297,7 @@ class PbrTree(CyclesTree):
                 pbr2 = None
                 self.replaceSlot(pbr, "Transmission", weight)
 
-            if self.material.thinWall:
+            if self.material.isThinWall():
                 from .cgroup import RayClipGroup
                 self.column += 1
                 clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
@@ -319,7 +320,7 @@ class PbrTree(CyclesTree):
             pbr = self.pbr
             self.replaceSlot(pbr, "Transmission", weight)
 
-        if self.material.thinWall:
+        if self.material.isThinWall():
             # if thin walled is on then there's no volume
             # and we use the clearcoat channel for reflections
             #  principled ior = 1
@@ -359,7 +360,7 @@ class PbrTree(CyclesTree):
         self.replaceSlot(pbr, "Subsurface", 0)
         self.removeLink(pbr, "Subsurface Color")
         pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
-        if self.material.shareGlossy:
+        if self.getValue(["Share Glossy Inputs"], False):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
         self.pbr = pbr
         return weight,wttex

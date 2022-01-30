@@ -86,7 +86,7 @@ class CyclesMaterial(Material):
 
     def setupTree(self):
         from .pbr import PbrTree
-        if self.isHair:
+        if self.isHair():
             from .hair import getHairTree
             geo = self.geometry
             if geo and geo.isStrandHair:
@@ -343,7 +343,7 @@ class CyclesTree:
 
     def getShellGroup(self, shmat, push):
         from .cgroup import OpaqueShellCyclesGroup, RefractiveShellCyclesGroup
-        if shmat.refractive:
+        if shmat.isRefractive():
             return RefractiveShellCyclesGroup(push)
         else:
             return OpaqueShellCyclesGroup(push)
@@ -452,16 +452,17 @@ class CyclesTree:
         self.buildTranslucency()
         self.buildMakeup()
         self.buildOverlay()
-        if self.material.dualLobeWeight == 1:
+        dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
+        if dualLobeWeight == 1:
             self.buildDualLobe()
-        elif self.material.dualLobeWeight == 0:
+        elif dualLobeWeight == 0:
             self.buildGlossy()
         else:
             self.buildGlossy()
             self.buildDualLobe()
         self.buildMetal()
         self.buildTopCoat()
-        if self.material.refractive:
+        if self.material.isRefractive():
             self.buildRefraction()
         else:
             self.buildEmission()
@@ -1033,18 +1034,16 @@ class CyclesTree:
     def checkTranslucency(self):
         if not self.isEnabled("Translucency"):
             return False
-        if (self.material.thinWall or
+        if (self.material.isThinWall() or
             self.volume or
-            self.material.translucent):
+            self.getValue("getChannelTranslucencyWeight", 0) > 0.01):
             return True
-        if (self.material.refractive or
-            not self.material.translucent):
-            return False
 
 
     def buildTranslucency(self):
         if (GS.materialMethod != 'BSDF' or
             not self.checkTranslucency()):
+            channel = self.material.getChannelTranslucencyWeight()
             return
         fac = self.getValue("getChannelTranslucencyWeight", 0)
         effect = self.getValue(["Base Color Effect"], 0)
@@ -1116,7 +1115,7 @@ class CyclesTree:
         # if there's no volume we use the sss to make translucency
         # please note that here we only use the iray base translucency color with no textures
         # as for blender 2.8x eevee doesn't support nodes in the radius channel so we deal with it
-        if self.material.thinWall:
+        if self.material.isThinWall():
             return color,None
 
         if sssmode == 1 and isWhite(ssscolor):
@@ -1168,7 +1167,7 @@ class CyclesTree:
 
 
     def getRefractionColor(self):
-        if self.material.shareGlossy:
+        if self.getValue(["Share Glossy Inputs"], False):
             color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
             roughness, roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0, False, maxval=1)
         else:
@@ -1203,7 +1202,7 @@ class CyclesTree:
             return weight,wttex
         node,color = self.buildRefractionNode()
         self.mixWithActive(weight, wttex, node)
-        if GS.useFakeCaustics and not self.material.thinWall:
+        if GS.useFakeCaustics and not self.material.isThinWall():
             from .cgroup import FakeCausticsGroup
             self.column += 1
             node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[color], force=True)
@@ -1228,7 +1227,7 @@ class CyclesTree:
         roughness = roughness**2
         self.linkColor(coltex, node, color, "Refraction Color")
         self.linkScalar(iortex, node, ior, "Fresnel IOR")
-        if self.material.thinWall:
+        if self.material.isThinWall():
             node.inputs["Thin Wall"].default_value = 1
             node.inputs["Refraction IOR"].default_value = 1.0
             node.inputs["Refraction Roughness"].default_value = 0.0
@@ -1337,7 +1336,7 @@ class CyclesTree:
 
 
     def buildVolume(self):
-        if (self.material.thinWall or
+        if (self.material.isThinWall() or
             self.pureMetal or
             not GS.useVolume):
             return
