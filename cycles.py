@@ -66,13 +66,15 @@ class CyclesMaterial(Material):
         mtype = 'CLOTHES'
         if isinstance(self.geometry, GeoNode):
             ob = self.geometry.rna
-            if ob is None:
-                pass
-            elif isCharacter(ob):
-                color = LS.skinColor
-            elif ob.data and ob.data.DazGraftGroup:
-                color = LS.skinColor
-                mtype = 'SKIN'
+        else:
+            ob = self.mesh
+        if ob is None:
+            pass
+        elif isCharacter(ob):
+            color = LS.skinColor
+        elif ob.data and ob.data.DazGraftGroup:
+            color = LS.skinColor
+            mtype = 'SKIN'
         guessMaterialColor(mat, GS.viewportColors, False, color, mtype)
 
 

@@ -63,6 +63,7 @@ class Material(Asset, Channels):
         self.force = False
         self.shells = {}
         self.geometry = None
+        self.mesh = None
         self.geoemit = []
         self.geobump = {}
         self.decals = []

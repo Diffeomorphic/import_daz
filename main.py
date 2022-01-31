@@ -314,7 +314,9 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 if basename in anims.keys():
                     self.fixMaterial(dmat, anims[basename])
             for asset in main.materials:
+                asset.mesh = ob
                 asset.build(context)
+                asset.postbuild()
                 dmats.append(asset)
 
         if self.useReplaceSlots:
@@ -784,7 +786,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
 
-        if mainMesh and activateObject(context, mainMesh):
+        if self.useMergeMaterials and mainMesh and activateObject(context, mainMesh):
             # Merge materials
             for ob in meshes[1:]:
                 selectSet(ob, True)
