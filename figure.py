@@ -839,7 +839,13 @@ class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
 
     def checkAllowed(self, rig):
         if rig.DazRig[0:3] in ["mhx", "rig"]:
-            msg = "Cannot make %s bones poseable.     " % rig.DazRig
+            msg = "Rig type = %s" % rig.DazRig
+        elif rig.data.DazSimpleIK:
+            msg = "Rig has simple IK"
+        else:
+            msg = ""
+        if msg:
+            msg = "Cannot make bones poseable.     \n%s" % msg
             print(msg)
             raise DazError(msg)
 
