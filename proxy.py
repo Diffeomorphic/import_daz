@@ -2088,6 +2088,8 @@ class DAZ_OT_ConvertWidgets(DazPropsOperator, IsMesh):
             self.replaceDriverTarget(bname, bname[:-2], rig)
         self.unused[bname] = True
         pb.bone.layers = self.unusedLayers
+        if bname not in self.drivers.keys():
+            return
         for fcu in self.drivers[bname]:
             words = fcu.data_path.split('"')
             if words[0] == "pose.bones[":
