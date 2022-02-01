@@ -768,6 +768,8 @@ class CyclesTree:
             pass
         elif channel["type"] in ["color", "float_color"]:
             value = self.material.getChannelColor(channel, default)
+        elif channel["type"] in ["image"]:
+            value = 1.0
         else:
             value = self.material.getChannelValue(channel, default)
             if value < 0:
