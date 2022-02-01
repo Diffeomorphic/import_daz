@@ -1118,6 +1118,17 @@ class Rigify:
             assoc[finBone("%sBend" % dname)] = bname
         self.fixBoneDrivers(gen, assoc)
 
+        # Unlock bend locks
+        for rname in ["upper_arm", "forearm", "thigh"]:
+            for suffix in ["L", "R"]:
+                bname = "%s_fk.%s" % (rname, suffix)
+                pb = gen.pose.bones.get(bname)
+                if pb is None:
+                    bname = "%s.fk.%s" % (rname, suffix)
+                    pb = gen.pose.bones.get(bname)
+                if pb:
+                    pb.lock_rotation = (False, False, False)
+
         # Gaze bones
         for suffix in [".L", ".R"]:
             self.addGazeConstraint(gen, suffix)
