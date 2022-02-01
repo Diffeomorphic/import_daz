@@ -501,7 +501,7 @@ class LocalSettings:
             self.fitFile = True
 
 
-    def forMerge(self, btn, ob):
+    def forAnimation(self, btn, ob):
         self.__init__()
         self.reset()
         self.scale = ob.DazScale
