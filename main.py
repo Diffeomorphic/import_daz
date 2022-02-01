@@ -287,9 +287,16 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         description = "Add extra materials after existing material slots",
         default = False)
 
+    useMatchNames : BoolProperty(
+        name = "Match Names",
+        description = "Match material names",
+        default = True)
+
     def draw(self, context):
         ColorOptions.draw(self, context)
         self.layout.prop(self, "useReplaceSlots")
+        if self.useReplaceSlots:
+            self.layout.prop(self, "useMatchNames")
         self.layout.prop(self, "useAddSlots")
 
     def run(self, context):
@@ -320,16 +327,36 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 dmats.append(asset)
 
         if self.useReplaceSlots:
-            nmats = len(ob.data.materials)
-            for n,dmat in enumerate(dmats[0:nmats]):
-                ob.data.materials[n] = dmat.rna
+            if self.useMatchNames:
+                unmatched = self.addMatched(ob.data.materials, dmats)
+            else:
+                nmats = len(ob.data.materials)
+                for n,dmat in enumerate(dmats[0:nmats]):
+                    ob.data.materials[n] = dmat.rna
+                unmatched = dmats[nmats:]
         else:
-            nmats = 0
+            unmatched = dmats
         if self.useAddSlots:
-            for dmat in dmats[nmats:]:
+            for dmat in unmatched:
                 ob.data.materials.append(dmat.rna)
         if LS.render:
             LS.render.build(context)
+
+
+    def addMatched(self, mats, dmats):
+        taken = dict([(n,False) for n in range(len(dmats))])
+        for m,mat in enumerate(list(mats)):
+            mname = self.getMatName(mat.name)
+            matched = False
+            for n,dmat in enumerate(dmats):
+                if (not taken[n] and
+                    self.getMatName(dmat.name) == mname):
+                    print("Match %s %s" % (mat.name, dmat.name))
+                    mats[m] = dmat.rna
+                    taken[n] = True
+                    matched = True
+                    break
+        return [dmat for n,dmat in enumerate(dmats) if not taken[n]]
 
 
     def loadDazFile(self, filepath, context):
@@ -346,6 +373,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 
 
     def getMatName(self, mname):
+        mname = baseName(mname)
         if len(mname) > 2 and mname[-2] == "-" and mname[-1].isdigit():
             return mname[:-2]
         else:
