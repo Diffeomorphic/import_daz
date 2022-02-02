@@ -438,7 +438,9 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
             elif type == "image_file":
                 channel["image_file"] = value
             elif type == "image_modification":
-                continue
+                if "image_modification" not in channel.keys():
+                    channel["image_modification"] = {}
+                channel["image_modification"][mod] = value
 
 #------------------------------------------------------------------
 #   MorphTypeOptions
