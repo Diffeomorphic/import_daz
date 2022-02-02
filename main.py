@@ -239,6 +239,10 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
                    "The result may be incorrect.\n")
             for obname in LS.hasInstanceChildren.keys():
                 msg += ("  %s\n" % obname)
+        elif LS.partialMaterials:
+            msg = "The following materials are only partial:\n"
+            for mname in LS.partialMaterials:
+                msg += ("  %s\n" % mname)
         else:
             if LS.hdFailures:
                 msg += "Could not rebuild subdivisions for the following HD objects:       \n"
@@ -300,6 +304,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         self.layout.prop(self, "useAddSlots")
 
     def run(self, context):
+        from .cycles import CyclesMaterial
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
@@ -316,15 +321,39 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 if mname not in anims.keys():
                     anims[mname] = []
                 anims[mname].append((key, type, mod, frames))
+            if not main.materials:
+                def getKey(anim, keys):
+                    for key,_,_,_ in anim:
+                        if key in keys:
+                            return True
+                    return False
+
+                for mname,anim in anims.items():
+                    dmat = CyclesMaterial(main.fileref)
+                    mstruct = {"id" : mname}
+                    dmat.parse(mstruct)
+                    if getKey(anim, ["Makeup Weight"]):
+                        dmat.shader = 'PBRSKIN'
+                        if not getKey(anim, ["Diffuse Color"]):
+                            dmat.partial = True
+                    elif getKey(anim, ["Diffuse Roughness"]):
+                        shader = 'UBER_IRAY'
+                        if not getKey(anim, ["Diffuse Color"]):
+                            dmat.partial = True
+                    dmat.update(mstruct)
+                    print("NN", mname, dmat.shader, dmat.partial)
+                    self.fixMaterial(dmat, anim)
+                    main.materials.append(dmat)
+            else:
+                for dmat in main.materials:
+                    basename = self.getMatName(dmat.name)
+                    if basename in anims.keys():
+                        self.fixMaterial(dmat, anims[basename])
             for dmat in main.materials:
-                basename = self.getMatName(dmat.name)
-                if basename in anims.keys():
-                    self.fixMaterial(dmat, anims[basename])
-            for asset in main.materials:
-                asset.mesh = ob
-                asset.build(context)
-                asset.postbuild()
-                dmats.append(asset)
+                dmat.mesh = ob
+                dmat.build(context)
+                dmat.postbuild()
+                dmats.append(dmat)
 
         if self.useReplaceSlots:
             if self.useMatchNames:

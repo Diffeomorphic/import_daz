@@ -56,11 +56,12 @@ class Material(Asset, Channels):
         self.classType = Material
         self.scene = None
         self.shader = 'UBER_IRAY'
-        self.channels = OrderedDict()
+        #self.channels = OrderedDict()
         self.textures = OrderedDict()
         self.groups = []
         self.ignore = False
         self.force = False
+        self.partial = False
         self.shells = {}
         self.geometry = None
         self.mesh = None
@@ -240,7 +241,6 @@ class Material(Asset, Channels):
                 self.shader = '3DELIGHT'
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
-
 
     def build(self, context):
         from .geometry import Geometry, GeoNode
