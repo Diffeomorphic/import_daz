@@ -67,48 +67,6 @@ def vectorsToFrames(vectors):
     return frames
 
 #-------------------------------------------------------------
-#   Combine bend and twist. Unused
-#-------------------------------------------------------------
-
-def combineBendTwistAnimations(anim, twists):
-    for (bend,twist) in twists:
-        if twist in anim.keys():
-            if bend in anim.keys():
-                addTwistFrames(anim[bend], anim[twist])
-            else:
-                anim[bend] = {"rotation" : halfRotation(anim[twist]["rotation"])}
-
-
-def addTwistFrames(bframes, tframes):
-    if "rotation" not in bframes:
-        if "rotation" not in tframes:
-            return bframes
-        else:
-            bframes["rotation"] = halfRotation(tframes["rotation"])
-            return bframes
-    elif "rotation" not in tframes:
-        return bframes
-    for idx in bframes["rotation"].keys():
-        bkpts = dict(bframes["rotation"][idx])
-        if idx in tframes["rotation"].keys():
-            tkpts = tframes["rotation"][idx]
-            for n,y in tkpts:
-                if n in bkpts.keys():
-                    bkpts[n] += y/2
-                else:
-                    bkpts[n] = y/2
-        kpts = list(bkpts.items())
-        kpts.sort()
-        bframes["rotation"][idx] = kpts
-
-
-def halfRotation(frames):
-    nframes = {}
-    for idx in frames.keys():
-        nframes[idx] = [(n,y/2) for n,y in frames[idx]]
-    return nframes
-
-#-------------------------------------------------------------
 #   Animations
 #-------------------------------------------------------------
 
@@ -209,7 +167,6 @@ class FrameConverter:
 
         nanims = []
         for banim,vanim in anims:
-            #combineBendTwistAnimations(banim, twists)
             nbanim = {}
             for bname,frames in banim.items():
                 nbanim[bonemap[bname]] = frames
@@ -936,7 +893,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         return None
 
 
-    def transformBone(self, rig, bname, tfm, value, n, offset, twist):
+    def transformBone(self, rig, bname, tfm, value, n, offset, useTwist):
         from .node import setBoneTransform, setBoneTwist
         from .driver import isFaceBoneDriven
 
@@ -944,7 +901,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
             return
         pb = rig.pose.bones[bname]
         if self.isAvailable(pb, rig):
-            if twist:
+            if useTwist:
                 setBoneTwist(tfm, pb)
             else:
                 if not self.affectScale:
