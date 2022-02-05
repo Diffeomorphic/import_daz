@@ -778,8 +778,11 @@ class CyclesTree:
             value,tex = self.multiplySomeTex(value, tex, slot)
         if isVector(value) and not isVector(default):
             value = (value[0] + value[1] + value[2])/3
-        if not isVector(value) and maxval and value > maxval:
-            value = maxval
+        if not isVector(value):
+            if maxval and value > maxval:
+                value = maxval
+            if isVector(default):
+                value = (value, value, value)
         return value,tex
 
 #-------------------------------------------------------------
