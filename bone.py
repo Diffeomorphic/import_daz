@@ -75,7 +75,14 @@ SocketBones = [
 ]
 
 RotationModes = {
+    "lShldr" : "XYZ",
+    "lShldrBend" : "XYZ",
+    "lShldrTwist" : "XYZ",
     "lHand" : "YXZ",
+
+    "rShldr" : "XYZ",
+    "rShldrBend" : "XYZ",
+    "rShldrTwist" : "XYZ",
     "rHand" : "YXZ",
 }
 
