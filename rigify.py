@@ -1207,15 +1207,29 @@ class Rigify:
 
 
     def getOrgDefBone(self, bname, rig):
-        def isCopyTransformed(bname, rig):
+        def isCopyTransformed(bname, rig, rotmode):
             if bname not in rig.pose.bones.keys():
                 return False
             pb = rig.pose.bones[bname]
-            return getConstraint(pb, 'COPY_TRANSFORMS')
+            if getConstraint(pb, 'COPY_TRANSFORMS'):
+                if rotmode:
+                    pb.rotation_mode = rotmode
+                return True
+            return False
 
-        if isCopyTransformed("ORG-"+bname, rig):
+        pb = rig.pose.bones.get(bname)
+        if pb is None:
+            pb = rig.pose.bones.get("%s_fk.%s" % (bname[:-2], bname[-1]))
+        if pb is None:
+            pb = rig.pose.bones.get("%s_fk_%s" % (bname[:-2], bname[-1]))
+        if pb:
+            rotmode = pb.rotation_mode
+        else:
+            rotmode = None
+            #print("Could not find FK bone", bname)
+        if isCopyTransformed("ORG-"+bname, rig, rotmode):
             return "ORG-"+bname
-        elif isCopyTransformed("DEF-"+bname, rig):
+        elif isCopyTransformed("DEF-"+bname, rig, rotmode):
             return "DEF-"+bname
         else:
             return bname
