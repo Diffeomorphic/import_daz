@@ -837,6 +837,7 @@ class BendTwists:
             pb = rig.pose.bones[bname]
             bend = rig.pose.bones[bendname]
             twist = rig.pose.bones[twistname]
+            bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             pb2 = rig.pose.bones[trgname]
             cns1 = dampedTrack(bend, pb2, rig)
             cns2 = copyRotation(twist, pb, rig, space='WORLD')
