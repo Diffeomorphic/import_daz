@@ -628,92 +628,21 @@ class BoneInstance(Instance):
         return False
 
 
-    def findRoll(self, eb, figure, isFace):
-        from .merge import GenesisToes
-        if (self.getRollFromPlane(eb, figure)):
-            return
-
-        if self.name in RotateRoll.keys():
-            rr = RotateRoll[self.name]
-        elif isFace or self.name in ["lEye", "rEye"]:
-            self.fixEye(eb)
-            rr = -90
-        elif self.name in GenesisToes["lToe"]:
-            rr = -90
-        elif self.name in GenesisToes["rToe"]:
-            rr = 90
-        elif self.name in FingerBones:
-            if figure.rigtype == "genesis8":
-                if self.name[0] == "l":
-                    rr = 90
-                else:
-                    rr = -90
-            else:
-                rr = 180
-        else:
-            rr = 0
-
-        nz = -1
-        if self.name in ArmBones:
-            nz = 2
-        elif self.name in LegBones+ToeBones+FingerBones:
-            nz = 0
-
-        eb.roll = rr*D
-        if nz >= 0:
-            mat = eb.matrix.copy()
-            mat[nz][2] = 0
-            mat.normalize()
-            eb.matrix = mat
-
-
-    def fixEye(self, eb):
-        vec = eb.tail - eb.head
-        y = Vector((0,-1,0))
-        if vec.dot(y) > 0.99*eb.length:
-            eb.tail = eb.head + eb.length*y
-
-
-    def getRollFromPlane(self, eb, figure):
-        try:
-            xplane,zplane = Planes[eb.name]
-        except KeyError:
-            return False
-        if (zplane and
-            zplane in self.figure.planes.keys() and
-            (figure.rigtype in ["genesis3", "genesis8"] or
-             not xplane)):
-            zaxis = self.figure.planes[zplane]
-            setRoll(eb, zaxis)
-            eb.roll += pi/2
-            if eb.roll > pi:
-                eb.roll -= 2*pi
-            return True
-        elif (xplane and
-              xplane in self.figure.planes.keys()):
-            xaxis = self.figure.planes[xplane]
-            setRoll(eb, xaxis)
-            return True
-        else:
-            return False
-
-
     def getRotationMode(self, pb, useEulers):
+        def getDefaultMode(pb):
+            if pb.name in RotationModes.keys():
+                return RotationModes[pb.name]
+            else:
+                return 'YZX'
+
         if GS.unflipped:
             return self.rotation_order
         elif useEulers:
-            return self.getDefaultMode(pb)
+            return getDefaultMode(pb)
         elif GS.useQuaternions and pb.name in SocketBones:
             return 'QUATERNION'
         else:
-            return self.getDefaultMode(pb)
-
-
-    def getDefaultMode(self, pb):
-        if pb.name in RotationModes.keys():
-            return RotationModes[pb.name]
-        else:
-            return 'YZX'
+            return getDefaultMode(pb)
 
 
     def buildPose(self, figure, inFace, targets, missing):
