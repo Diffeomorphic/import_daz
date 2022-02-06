@@ -528,6 +528,7 @@ def truncateProp(prop):
 def setFloatProp(rna, prop, value, min, max, ovr):
     value = float(value)
     prop = truncateProp(prop)
+    rna[prop] = value
     if min is not None:
         min = float(min)
         max = float(max)

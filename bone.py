@@ -348,7 +348,7 @@ class BoneInstance(Instance):
         self.flopped = [False,False,False]
         self.isPosed = False
         self.isBuilt = False
-        self.test = (self.name in [])
+        self.test = ("Forearm" in self.name or "Shldr" in self.name)
 
 
     def testPrint(self, hdr):
