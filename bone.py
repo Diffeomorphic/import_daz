@@ -78,12 +78,14 @@ RotationModes = {
     "lShldr" : ("YXZ", False),
     "lShldrBend" : ("YXZ", False),
     "lShldrTwist" : ("YXZ", False),
+    "lForearmTwist" : ("YZX", False),
     "lHand" : ("YXZ", False),
 
     "rShldr" : ("YXZ", True),
     "rShldrBend" : ("YXZ", True),
     "rShldrTwist" : ("YXZ", True),
-    "rHand" : ("YXZ", False),
+    "rForearmTwist" : ("YZX", True),
+    "rHand" : ("YXZ", True),
 }
 
 #-------------------------------------------------------------
@@ -197,7 +199,7 @@ class BoneInstance(Instance):
         self.flopped = [False,False,False]
         self.isPosed = False
         self.isBuilt = False
-        self.test = ("Forearm" in self.name or "Shldr" in self.name or "Hand" in self.name)
+        self.test = False
 
 
     def __repr__(self):
@@ -278,6 +280,8 @@ class BoneInstance(Instance):
             eb.matrix = omat
         else:
             omat = self.flipBone(omat, head, tail, flip)
+            if self.name in RotationModes.keys():
+                self.flipped[0] = RotationModes[self.name][1]
             if self.test:
                 print("FBONE", self.name, self.rotation_order, self.axes, self.flipped)
             omat.col[3][0:3] = head
