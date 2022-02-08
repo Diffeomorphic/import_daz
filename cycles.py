@@ -931,7 +931,7 @@ class CyclesTree:
 
         from .cgroup import Fresnel2Group
         fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2")
-        fresnel.inputs["Power"].default_value = 1
+        fresnel.inputs["Power"].default_value = 2
         ior,iortex = self.getFresnelIOR()
         self.linkScalar(iortex, fresnel, ior, "IOR")
         self.linkBumpNormal(fresnel)
@@ -1224,9 +1224,6 @@ class CyclesTree:
         else:
             color,tex = self.getColorTex("getChannelRefractionColor", "COLOR", WHITE)
             roughness,roughtex = self.getColorTex(["Refraction Roughness"], "NONE", 0, False, maxval=1)
-        aniso = self.getValue(["Glossy Anisotropy"], 0)
-        if aniso > 0:
-            roughness = roughness ** (1/(1+aniso))
         return color, tex, roughness, roughtex
 
 
@@ -1277,19 +1274,25 @@ class CyclesTree:
         self.linkScalar(roughtex, node, roughness, "Glossy Roughness")
 
         color,coltex,roughness,roughtex = self.getRefractionColor()
-        ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
-        roughness = roughness**2
         self.linkColor(coltex, node, color, "Refraction Color")
-        self.linkScalar(iortex, node, ior, "Fresnel IOR")
         if self.material.isThinWall():
             node.inputs["Thin Wall"].default_value = 1
-            node.inputs["Refraction IOR"].default_value = 1.0
             node.inputs["Refraction Roughness"].default_value = 0.0
+            node.inputs["IOR"].default_value = 1.0
+            node.inputs["Anisotropy"].default_value = 0.0
+            node.inputs["Rotation"].default_value = 0.0
             self.material.setTransSettings(False, True, color, 0.1)
         else:
             node.inputs["Thin Wall"].default_value = 0
+            aniso,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
+            self.linkScalar(tex, node, aniso, "Anisotropy")
+            anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
+            self.linkScalar(tex, node, 1 - anirot, "Rotation")
+            if aniso > 0:
+                roughness = roughness ** (1/(1+aniso))
             self.linkScalar(roughtex, node, roughness, "Refraction Roughness")
-            self.linkScalar(iortex, node, ior, "Refraction IOR")
+            ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
+            self.linkScalar(iortex, node, ior, "IOR")
             self.material.setTransSettings(True, False, color, 0.2)
         self.linkBumpNormal(node)
         return node, color

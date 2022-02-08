@@ -669,13 +669,12 @@ class TopCoatGroup(MixGroup):
 # ---------------------------------------------------------------------
 
 class RefractionGroup(MixGroup):
-
     def __init__(self):
         MixGroup.__init__(self)
         self.insockets += [
             "Thin Wall",
-            "Refraction Color", "Refraction Roughness", "Refraction IOR",
-            "Glossy Color", "Glossy Roughness", "Fresnel IOR", "Normal"]
+            "Refraction Color", "Refraction Roughness", "IOR",
+            "Glossy Color", "Glossy Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
@@ -683,10 +682,11 @@ class RefractionGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Thin Wall")
         self.group.inputs.new("NodeSocketColor", "Refraction Color")
         self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
-        self.group.inputs.new("NodeSocketFloat", "Refraction IOR")
-        self.group.inputs.new("NodeSocketFloat", "Fresnel IOR")
+        self.group.inputs.new("NodeSocketFloat", "IOR")
         self.group.inputs.new("NodeSocketColor", "Glossy Color")
         self.group.inputs.new("NodeSocketFloat", "Glossy Roughness")
+        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
@@ -696,7 +696,7 @@ class RefractionGroup(MixGroup):
         refr = self.addNode("ShaderNodeBsdfRefraction", 1)
         self.links.new(self.inputs.outputs["Refraction Color"], refr.inputs["Color"])
         self.links.new(self.inputs.outputs["Refraction Roughness"], refr.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["Refraction IOR"], refr.inputs["IOR"])
+        self.links.new(self.inputs.outputs["IOR"], refr.inputs["IOR"])
         self.links.new(self.inputs.outputs["Normal"], refr.inputs["Normal"])
 
         trans = self.addNode("ShaderNodeBsdfTransparent", 1)
@@ -710,19 +710,22 @@ class RefractionGroup(MixGroup):
 
         fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 2)
         fresnel.inputs["Power"].default_value = 2
-        self.links.new(self.inputs.outputs["Fresnel IOR"], fresnel.inputs["IOR"])
+        self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs["Glossy Roughness"], fresnel.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
 
-        glossy = self.addNode("ShaderNodeBsdfGlossy", 2)
-        self.links.new(self.inputs.outputs["Glossy Color"], glossy.inputs["Color"])
-        self.links.new(self.inputs.outputs["Glossy Roughness"], glossy.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
+        aniso = self.addNode("ShaderNodeBsdfAnisotropic", 2)
+        aniso.distribution = 'ASHIKHMIN_SHIRLEY'
+        self.links.new(self.inputs.outputs["Glossy Color"], aniso.inputs["Color"])
+        self.links.new(self.inputs.outputs["Glossy Roughness"], aniso.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Anisotropy"], aniso.inputs["Anisotropy"])
+        self.links.new(self.inputs.outputs["Rotation"], aniso.inputs["Rotation"])
+        self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
 
         mix = self.addNode("ShaderNodeMixShader", 3)
         self.links.new(fresnel.outputs["Dielectric"], mix.inputs[0])
         self.links.new(thin.outputs[0], mix.inputs[1])
-        self.links.new(glossy.outputs[0], mix.inputs[2])
+        self.links.new(aniso.outputs[0], mix.inputs[2])
 
         self.links.new(mix.outputs[0], self.mix1.inputs[2])
         self.links.new(mix.outputs[0], self.mix2.inputs[2])
