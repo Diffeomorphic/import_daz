@@ -377,6 +377,40 @@ class AddGroup(CyclesGroup):
         self.links.new(self.add2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
+#   Weighted Group. For weighted mode
+# ---------------------------------------------------------------------
+
+class WeightedGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Fac", "Diffuse Cycles", "Diffuse Eevee", "Glossy Cycles", "Glossy Eevee"]
+        self.outsockets += ["Cycles", "Eevee"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 3)
+        self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.group.inputs.new("NodeSocketShader", "Diffuse Cycles")
+        self.group.inputs.new("NodeSocketShader", "Diffuse Eevee")
+        self.group.inputs.new("NodeSocketShader", "Glossy Cycles")
+        self.group.inputs.new("NodeSocketShader", "Glossy Eevee")
+        self.group.outputs.new("NodeSocketShader", "Cycles")
+        self.group.outputs.new("NodeSocketShader", "Eevee")
+
+
+    def addNodes(self, args=None):
+        self.mix1 = self.addNode("ShaderNodeMixShader", 1)
+        self.mix2 = self.addNode("ShaderNodeMixShader", 1)
+        self.links.new(self.inputs.outputs["Fac"], self.mix1.inputs[0])
+        self.links.new(self.inputs.outputs["Fac"], self.mix2.inputs[0])
+        self.links.new(self.inputs.outputs["Diffuse Cycles"], self.mix1.inputs[1])
+        self.links.new(self.inputs.outputs["Glossy Cycles"], self.mix1.inputs[2])
+        self.links.new(self.inputs.outputs["Diffuse Eevee"], self.mix2.inputs[1])
+        self.links.new(self.inputs.outputs["Glossy Eevee"], self.mix2.inputs[2])
+        self.links.new(self.mix1.outputs[0], self.outputs.inputs["Cycles"])
+        self.links.new(self.mix2.outputs[0], self.outputs.inputs["Eevee"])
+
+# ---------------------------------------------------------------------
 #   Emission Group
 # ---------------------------------------------------------------------
 
@@ -675,7 +709,7 @@ class RefractionGroup(MixGroup):
         self.links.new(trans.outputs[0], thin.inputs[2])
 
         fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 2)
-        fresnel.inputs["Power"].default_value = 1
+        fresnel.inputs["Power"].default_value = 2
         self.links.new(self.inputs.outputs["Fresnel IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs["Glossy Roughness"], fresnel.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])

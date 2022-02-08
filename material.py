@@ -137,9 +137,8 @@ class Material(Asset, Channels):
                     self.useDefaultUvs = False
                 self.uv_set = uvset
         self.basemix = self.getValue(["Base Mixing"], 0)
-        if self.basemix == 2:
+        if self.basemix > 2:
             self.basemix = 0
-        elif self.basemix not in [0,1]:
             raise DazError("Unknown Base Mixing: %s             " % self.material.basemix)
 
         if self.shader == 'UBER_IRAY':

@@ -278,22 +278,26 @@ class CyclesTree:
         return self.texcos[key]
 
 
-    def getCyclesSocket(self):
-        if self.cycles is None:
+    def getCyclesSocket(self, node=None):
+        if node is None:
+            node = self.cycles
+        if node is None:
             return None
-        elif "Cycles" in self.cycles.outputs.keys():
-            return self.cycles.outputs["Cycles"]
+        elif "Cycles" in node.outputs.keys():
+            return node.outputs["Cycles"]
         else:
-            return self.cycles.outputs[0]
+            return node.outputs[0]
 
 
-    def getEeveeSocket(self):
-        if self.eevee is None:
+    def getEeveeSocket(self, node=None):
+        if node is None:
+            node = self.eevee
+        if node is None:
             return None
-        elif "Eevee" in self.eevee.outputs.keys():
-            return self.eevee.outputs["Eevee"]
+        elif "Eevee" in node.outputs.keys():
+            return node.outputs["Eevee"]
         else:
-            return self.eevee.outputs[0]
+            return node.outputs[0]
 
 
     def addGroup(self, classdef, name, col=None, size=0, args=[], force=False):
@@ -450,10 +454,13 @@ class CyclesTree:
         self.buildBump()
         self.buildDetail(uvname)
         self.buildDiffuse()
-
         self.buildTranslucency()
         self.buildMakeup()
         self.buildOverlay()
+        if self.material.basemix == 2:  # Weighted
+            self.diffuseCycles = self.cycles
+            self.diffuseEevee = self.eevee
+            self.cycles = self.eevee = None
         dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
         if dualLobeWeight == 1:
             self.buildDualLobe()
@@ -468,7 +475,8 @@ class CyclesTree:
             self.buildRefraction()
         else:
             self.buildEmission()
-        return self.cycles
+        if self.material.basemix == 2:  # Weighted
+            self.buildWeighted()
 
 
     def makeTree(self, slot="UV"):
@@ -961,13 +969,45 @@ class CyclesTree:
             if self.material.basemix == 0:    # Metallic/Roughness
                 value,tex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0, False)
                 factor = 0.7 * value
+                ior = 1.1 + factor
             elif self.material.basemix == 1:  # Specular/Glossiness
                 color,tex = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, False)
                 factor = 0.7 * averageColor(color) / 0.078
-            ior = 1.1 + factor
+                ior = 1.1 + factor
+            elif self.material.basemix == 2:  # Weighted
+                ior = 10
+                tex = None
             if tex:
                 iortex = self.multiplyAddScalarTex(factor, 1.1, tex)
         return ior, iortex
+
+#-------------------------------------------------------------
+#   Weigthed
+#-------------------------------------------------------------
+
+    def buildWeighted(self):
+        diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
+        glossweight,glosstex = self.getColorTex(["Glossy Weight"], "NONE", 0)
+        fac = glossweight / (glossweight + diffweight)
+        if fac == 0:
+            self.cycles = self.diffuseCycles
+            self.eevee = self.diffuseEevee
+        elif fac == 1 and difftex is None and glosstex is None:
+            pass
+        else:
+            from .cgroup import WeightedGroup
+            self.column += 1
+            node = self.addGroup(WeightedGroup, "DAZ Weighted", size=100)
+            self.linkScalar(glosstex, node, fac, "Fac")
+            if self.diffuseCycles:
+                self.links.new(self.getCyclesSocket(self.diffuseCycles), node.inputs["Diffuse Cycles"])
+            if self.diffuseEevee:
+                self.links.new(self.getEeveeSocket(self.diffuseEevee), node.inputs["Diffuse Eevee"])
+            if self.cycles:
+                self.links.new(self.getCyclesSocket(), node.inputs["Glossy Cycles"])
+            if self.eevee:
+                self.links.new(self.getEeveeSocket(), node.inputs["Glossy Eevee"])
+            self.cycles = self.eevee = node
 
 #-------------------------------------------------------------
 #   Top Coat
@@ -1184,6 +1224,9 @@ class CyclesTree:
         else:
             color,tex = self.getColorTex("getChannelRefractionColor", "COLOR", WHITE)
             roughness,roughtex = self.getColorTex(["Refraction Roughness"], "NONE", 0, False, maxval=1)
+        aniso = self.getValue(["Glossy Anisotropy"], 0)
+        if aniso > 0:
+            roughness = roughness ** (1/(1+aniso))
         return color, tex, roughness, roughtex
 
 
