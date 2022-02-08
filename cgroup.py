@@ -71,6 +71,11 @@ class MaterialGroup:
         if bpy.app.version >= (2,90,0):
             self.group.inputs["Normal"].hide_value = True
 
+    def setMinMax(self, slot, default, min, max):
+        self.group.inputs[slot].default_value = default
+        self.group.inputs[slot].min_value = min
+        self.group.inputs[slot].max_value = max
+
 
 class CyclesGroup(MaterialGroup, CyclesTree):
     def create(self, node, name, parent, ncols):
@@ -267,6 +272,7 @@ class Fresnel2Group(CyclesGroup):
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.group.inputs.new("NodeSocketFloat", "Power")
         self.group.inputs.new("NodeSocketVector", "Normal")
@@ -683,6 +689,7 @@ class RefractionGroup(MixGroup):
         self.group.inputs.new("NodeSocketColor", "Refraction Color")
         self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
         self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketColor", "Glossy Color")
         self.group.inputs.new("NodeSocketFloat", "Glossy Roughness")
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
@@ -816,6 +823,7 @@ class TranslucentGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Scale")
         self.group.inputs.new("NodeSocketVector", "Radius")
         self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
         self.group.inputs.new("NodeSocketFloat", "Cycles Mix Factor")
         self.group.inputs.new("NodeSocketFloat", "Eevee Mix Factor")
@@ -942,6 +950,7 @@ class DualLobeGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.inputs.new("NodeSocketFloat", "Weight")
         self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness 1")
         self.group.inputs.new("NodeSocketFloat", "Roughness 2")
         self.group.inputs.new("NodeSocketVector", "Normal")
