@@ -48,7 +48,7 @@ class CyclesMaterial(Material):
 
 
     def __repr__(self):
-        treetype = None
+        treetype = "Unbuilt"
         if self.tree:
             treetype = self.tree.type
         geoname = None
@@ -88,16 +88,20 @@ class CyclesMaterial(Material):
 
     def setupTree(self):
         from .pbr import PbrTree
+        from .brick import BrickTree
         if self.isHair():
             from .hair import getHairTree
             geo = self.geometry
             if geo and geo.isStrandHair:
                 geo.hairMaterials.append(self)
             return getHairTree(self)
-        elif GS.materialMethod == 'PRINCIPLED':
-            return PbrTree(self)
+        elif self.shader == 'BRICK':
+            return BrickTree(self)
         else:
-            return CyclesTree(self)
+            if GS.materialMethod == 'PRINCIPLED':
+                return PbrTree(self)
+            else:
+                return CyclesTree(self)
 
 
     def postbuild(self):

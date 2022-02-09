@@ -195,7 +195,7 @@ class Material(Asset, Channels):
                 "Metallic Flakes" : False,
                 "Velvet" : not self.getValue(["Velvet Active"], False),
             }
-        elif self.shader == '3DELIGHT':
+        elif self.shader == 'BRICK':
             self.enabled = {
                 "Diffuse" : True,
                 "Subsurface" : True,
@@ -237,7 +237,7 @@ class Material(Asset, Channels):
             if self.url.split("#")[-1] == "PBRSkin":
                 self.shader = 'PBRSKIN'
             else:
-                self.shader = '3DELIGHT'
+                self.shader = 'BRICK'
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
 
