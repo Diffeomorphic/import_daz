@@ -407,6 +407,30 @@ class AddGroup(CyclesGroup):
         self.links.new(self.add2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
+#   BrickLayerGroup
+# ---------------------------------------------------------------------
+
+class BrickLayerGroup(FacMixGroup):
+
+    def __init__(self):
+        FacMixGroup.__init__(self)
+        self.insockets += ["UV"]
+
+
+    def create(self, node, name, parent):
+        FacMixGroup.create(self, node, name, parent, 10)
+        self.group.inputs.new("NodeSocketVector", "UV")
+
+
+    def addNodes(self, args):
+        FacMixGroup.addNodes(self, args)
+        self.inShell = True
+        self.texco = self.inputs.outputs["UV"]
+        self.buildLayer("")
+        self.links.new(self.getCyclesSocket(), self.mix1.inputs[2])
+        self.links.new(self.getEeveeSocket(), self.mix2.inputs[2])
+
+# ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode
 # ---------------------------------------------------------------------
 

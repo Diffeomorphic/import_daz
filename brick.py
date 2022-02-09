@@ -39,4 +39,31 @@ class BrickTree(CyclesTree):
 
     def build(self):
         print("BUILD", self)
-        CyclesTree.build(self)
+        self.makeTree()
+        node = self.addBrickLayer("Base")
+        self.cycles = self.eevee = node
+        for layer in ["Layer 1", "Layer 2", "Layer 3"]:
+            node = self.addBrickLayer(layer)
+            channels = ["%s Weight" % layer, "%s Layer Weight" % layer]
+            weight,wttex = self.getColorTex(channels, "NONE", 1.0)
+            self.mixWithActive(weight, wttex, node)
+        self.buildCutout()
+        self.buildVolume()
+        self.buildDisplacementNodes()
+        self.buildDecals()
+        self.buildShells()
+        self.buildOutput()
+
+
+    def addBrickLayer(self, layer):
+        from .cgroup import BrickLayerGroup
+        self.material.layer = layer
+        node = self.addNode("ShaderNodeGroup")
+        node.name = layer
+        node.label = layer
+        group = BrickLayerGroup()
+        group.create(node, layer, self)
+        group.addNodes([])
+        self.links.new(self.texco, node.inputs["UV"])
+        self.material.layer = None
+        return node

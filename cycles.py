@@ -766,7 +766,7 @@ class CyclesTree:
 
 
     def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, slot=0, isMask=False):
-        channel = self.material.getChannel(attr)
+        channel = self.material.getLayeredChannel(attr)
         if channel is None:
             return default,None
         if isinstance(channel, tuple):

@@ -76,6 +76,7 @@ class Material(Asset, Channels):
         self.isShellMat = False
         self.enabled = {}
         self.decalNode = None
+        self.layer = None
 
 
     def __repr__(self):
@@ -329,14 +330,19 @@ class Material(Asset, Channels):
 #   Get channels
 #-------------------------------------------------------------
 
+    def getLayeredChannel(self, channels):
+        if self.layer is not None and isinstance(channels, list):
+            channels = ["%s %s" % (self.layer, channel) for channel in channels]
+            channel = self.getChannel(channels)
+            return channel
+        return self.getChannel(channels)
+
+
     def getChannelDiffuse(self):
-        return self.getChannel(["Diffuse Color", "diffuse"])
+        return self.getLayeredChannel(["Diffuse Color", "diffuse"])
 
     def getDiffuse(self):
         return self.getColor("getChannelDiffuse", BLACK)
-
-    def getChannelDiffuseStrength(self):
-        return self.getChannel(["Diffuse Strength", "diffuse_strength"])
 
     def getChannelGlossyColor(self):
         return self.getTexChannel(["Glossy Color", "specular", "Specular Color"])
@@ -347,9 +353,9 @@ class Material(Asset, Channels):
 
     def getGlossyRoughness(self, default):
         invert = False
-        channel = self.getChannel(["Glossy Roughness"])
+        channel = self.getLayeredChannel(["Glossy Roughness"])
         if channel is None:
-            channel = self.getChannel(["glossiness", "Glossiness"])
+            channel = self.getLayeredChannel(["glossiness", "Glossiness"])
             if channel:
                 invert = True
         value = clamp( self.getChannelValue(channel, default) )
@@ -360,96 +366,90 @@ class Material(Asset, Channels):
 
 
     def getChannelOpacity(self):
-        return self.getChannel(["Opacity Strength", "opacity"])
+        return self.getLayeredChannel(["Opacity Strength", "opacity"])
 
     def getChannelCutoutOpacity(self):
-        return self.getChannel(["Cutout Opacity", "transparency"])
-
-    def getChannelAmbientColor(self):
-        return self.getChannel(["Ambient Color", "ambient"])
-
-    def getChannelAmbientStrength(self):
-        return self.getChannel(["Ambient Strength", "ambient_strength"])
+        return self.getLayeredChannel(["Cutout Opacity", "transparency"])
 
     def getChannelEmissionColor(self):
-        return self.getChannel(["emission", "Emission Color"])
+        return self.getLayeredChannel(["emission", "Emission Color"])
 
     def getChannelReflectionColor(self):
-        return self.getChannel(["reflection", "Reflection Color"])
+        return self.getLayeredChannel(["reflection", "Reflection Color"])
 
     def getChannelReflectionStrength(self):
-        return self.getChannel(["reflection_strength", "Reflection Strength"])
+        return self.getLayeredChannel(["reflection_strength", "Reflection Strength"])
 
     def getChannelRefractionColor(self):
-        return self.getChannel(["refraction", "Refraction Color"])
+        return self.getLayeredChannel(["refraction", "Refraction Color"])
 
     def getChannelRefractionWeight(self):
-        return self.getChannel(["Refraction Weight", "refraction_strength"])
+        return self.getLayeredChannel(["Refraction Weight", "refraction_strength"])
 
     def getChannelIOR(self):
-        return self.getChannel(["ior", "Refraction Index"])
+        return self.getLayeredChannel(["ior", "Refraction Index"])
 
     def getChannelTranslucencyWeight(self):
-        return self.getChannel(["translucency", "Translucency Weight"])
+        return self.getLayeredChannel(["translucency", "Translucency Weight"])
 
     def getChannelSSSColor(self):
-        return self.getChannel(["SSS Color", "Subsurface Color"])
+        return self.getLayeredChannel(["SSS Color", "Subsurface Color"])
 
     def getChannelSSSAmount(self):
-        return self.getChannel(["SSS Amount", "Subsurface Strength"])
+        return self.getLayeredChannel(["SSS Amount", "Subsurface Strength"])
 
     def getChannelSSSScale(self):
-        return self.getChannel(["SSS Scale", "Subsurface Scale"])
+        return self.getLayeredChannel(["SSS Scale", "Subsurface Scale"])
 
     def getChannelNormal(self):
-        return self.getChannel(["normal", "Normal Map"])
+        return self.getLayeredChannel(["normal", "Normal Map"])
 
     def getChannelBump(self):
-        return self.getChannel(["bump", "Bump Strength"])
+        return self.getLayeredChannel(["bump", "Bump Strength"])
 
     def getChannelBumpMin(self):
-        return self.getChannel(["bump_min", "Bump Minimum", "Negative Bump"])
+        return self.getLayeredChannel(["bump_min", "Bump Minimum", "Negative Bump"])
 
     def getChannelBumpMax(self):
         return self.getChannel(["bump_max", "Bump Maximum", "Positive Bump"])
 
     def getChannelDisplacement(self):
-        return self.getChannel(["displacement", "Displacement Strength"])
+        return self.getLayeredChannel(["displacement", "Displacement Strength"])
 
     def getChannelDispMin(self):
-        return self.getChannel(["displacement_min", "Displacement Minimum", "Minimum Displacement"])
+        return self.getLayeredChannel(["displacement_min", "Displacement Minimum", "Minimum Displacement"])
 
     def getChannelDispMax(self):
-        return self.getChannel(["displacement_max", "Displacement Maximum", "Maximum Displacement"])
+        return self.getLayeredChannel(["displacement_max", "Displacement Maximum", "Maximum Displacement"])
 
     def getChannelHorizontalTiles(self):
-        return self.getChannel(["u_scale", "Horizontal Tiles"])
+        return self.getLayeredChannel(["u_scale", "Horizontal Tiles"])
 
     def getChannelHorizontalOffset(self):
-        return self.getChannel(["u_offset", "Horizontal Offset"])
+        return self.getLayeredChannel(["u_offset", "Horizontal Offset"])
 
     def getChannelVerticalTiles(self):
-        return self.getChannel(["v_scale", "Vertical Tiles"])
+        return self.getLayeredChannel(["v_scale", "Vertical Tiles"])
 
     def getChannelVerticalOffset(self):
-        return self.getChannel(["v_offset", "Vertical Offset"])
+        return self.getLayeredChannel(["v_offset", "Vertical Offset"])
 
 
     def getColor(self, attr, default):
-        return self.getChannelColor(self.getChannel(attr), default)
+        return self.getChannelColor(self.getLayeredChannel(attr), default)
 
 
     def getTexChannel(self, channels):
         for key in channels:
-            channel = self.getChannel([key])
+            channel = self.getLayeredChannel([key])
             if channel and self.hasTextures(channel):
                 return channel
-        return self.getChannel(channels)
+        return self.getLayeredChannel(channels)
 
 
     def hasTexChannel(self, channels):
         for key in channels:
-            channel = self.getChannel([key])
+            channel = self.getLayeredChannel([key])
             if channel and self.hasTextures(channel):
                 return True
         return False
@@ -466,7 +466,7 @@ class Material(Asset, Channels):
 
 
     def getImageMod(self, attr, key):
-        channel = self.getChannel(attr)
+        channel = self.getLayeredChannel(attr)
         if channel and "image_modification" in channel.keys():
             mod = channel["image_modification"]
             if key in mod.keys():
@@ -522,7 +522,7 @@ class Material(Asset, Channels):
 
     def hasAnyTexture(self):
         for key in self.channels:
-            channel = self.getChannel([key])
+            channel = self.getLayeredChannel([key])
             if self.getTextures(channel)[0]:
                 return True
         return False
