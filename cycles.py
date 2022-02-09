@@ -225,7 +225,6 @@ class CyclesTree:
 
         self.diffuseColor = WHITE
         self.diffuseTex = None
-        self.fresnel = None
         self.normal = None
         self.bump = None
         self.bumpval = 0
@@ -886,8 +885,8 @@ class CyclesTree:
         if self.material.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
             rough1,rough2,roughtex, ratio = self.getDualRoughness(0.0)
-            self.setRoughness(node, "Roughness1", rough1, roughtex)
-            self.setRoughness(node, "Roughness2", rough2, roughtex)
+            self.setRoughness(node, "Roughness 1", rough1, roughtex)
+            self.setRoughness(node, "Roughness 2", rough2, roughtex)
             node.inputs["Dual Ratio"].default_value = ratio
         else:
             node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
@@ -929,22 +928,14 @@ class CyclesTree:
         if isBlack(color) or strength == 0:
             return
 
-        from .cgroup import Fresnel2Group
-        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2")
-        fresnel.inputs["Power"].default_value = 2
-        ior,iortex = self.getFresnelIOR()
-        self.linkScalar(iortex, fresnel, ior, "IOR")
-        self.linkBumpNormal(fresnel)
-        self.fresnel = fresnel
-
-        #   glossy bsdf roughness = iray glossy roughness ^ 2
-        channel,value,roughness,invert = self.material.getGlossyRoughness(0.0)
-
         from .cgroup import GlossyGroup
         self.column += 1
         glossy = self.addGroup(GlossyGroup, "DAZ Glossy", size=100)
         color,tex = self.getGlossyColor()
         self.linkColor(tex, glossy, color, "Color")
+        ior,iortex = self.getFresnelIOR()
+        self.linkScalar(iortex, glossy, ior, "IOR")
+        channel,value,roughness,invert = self.material.getGlossyRoughness(0.0)
         roughtex = self.addSlot(channel, glossy, "Roughness", roughness, value, invert)
         anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
         self.linkScalar(tex, glossy, anisotropy, "Anisotropy")
@@ -953,10 +944,13 @@ class CyclesTree:
             value = 1 - anirot
             self.linkScalar(tex, glossy, value, "Rotation")
         self.linkBumpNormal(glossy)
-        self.linkScalar(roughtex, fresnel, roughness, "Roughness")
 
         LS.usedFeatures["Glossy"] = True
-        self.mixWithActive(1.0, fresnel, glossy)
+        if self.cycles:
+            self.links.new(self.getCyclesSocket(), glossy.inputs["Cycles"])
+        if self.eevee:
+            self.links.new(self.getEeveeSocket(), glossy.inputs["Eevee"])
+        self.eevee = self.cycles = glossy
 
 
     def getFresnelIOR(self):
@@ -1052,7 +1046,7 @@ class CyclesTree:
         roughness,roughtex = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
         if roughness == 0:
             glossiness,glosstex = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
-            roughness = 1 - glossiness**2
+            roughness = 1 - glossiness
             roughtex = self.invertTex(glosstex, 5)
 
         from .cgroup import TopCoatGroup

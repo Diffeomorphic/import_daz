@@ -274,7 +274,9 @@ class Fresnel2Group(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Power")
+        self.setMinMax("Power", 1, 1, 4)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
         self.group.outputs.new("NodeSocketFloat", "Dielectric")
@@ -330,17 +332,21 @@ class Fresnel2Group(CyclesGroup):
 class MixGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Cycles", "Eevee"]
+        self.insockets += ["Cycles", "Eevee"]
         self.outsockets += ["Cycles", "Eevee"]
 
 
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.preCreate()
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.outputs.new("NodeSocketShader", "Cycles")
         self.group.outputs.new("NodeSocketShader", "Eevee")
+
+
+    def preCreate(self):
+        pass
 
 
     def addNodes(self, args=None):
@@ -348,12 +354,30 @@ class MixGroup(CyclesGroup):
         self.mix1.label = "Cycles"
         self.mix2 = self.addNode("ShaderNodeMixShader", self.ncols-1)
         self.mix2.label = "Eevee"
-        self.links.new(self.inputs.outputs["Fac"], self.mix1.inputs[0])
-        self.links.new(self.inputs.outputs["Fac"], self.mix2.inputs[0])
         self.links.new(self.inputs.outputs["Cycles"], self.mix1.inputs[1])
         self.links.new(self.inputs.outputs["Eevee"], self.mix2.inputs[1])
         self.links.new(self.mix1.outputs[0], self.outputs.inputs["Cycles"])
         self.links.new(self.mix2.outputs[0], self.outputs.inputs["Eevee"])
+
+# ---------------------------------------------------------------------
+#   Fac Mix Group.
+# ---------------------------------------------------------------------
+
+class FacMixGroup(MixGroup):
+    def __init__(self):
+        MixGroup.__init__(self)
+        self.insockets += ["Fac"]
+
+
+    def preCreate(self):
+        self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.setMinMax("Fac", 0.5, 0.0, 1.0)
+
+
+    def addNodes(self, args=None):
+        MixGroup.addNodes(self, args)
+        self.links.new(self.inputs.outputs["Fac"], self.mix1.inputs[0])
+        self.links.new(self.inputs.outputs["Fac"], self.mix2.inputs[0])
 
 # ---------------------------------------------------------------------
 #   Add Group. Adds to Cycles and Eevee
@@ -396,6 +420,7 @@ class WeightedGroup(CyclesGroup):
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketShader", "Diffuse Cycles")
         self.group.inputs.new("NodeSocketShader", "Diffuse Eevee")
         self.group.inputs.new("NodeSocketShader", "Glossy Cycles")
@@ -475,23 +500,24 @@ class OneSidedGroup(CyclesGroup):
 #   Diffuse Group
 # ---------------------------------------------------------------------
 
-class DiffuseGroup(MixGroup):
+class DiffuseGroup(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 3)
+        FacMixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         diffuse = self.addNode("ShaderNodeBsdfDiffuse", 1)
         self.links.new(self.inputs.outputs["Color"], diffuse.inputs["Color"])
         self.links.new(self.inputs.outputs["Roughness"], diffuse.inputs["Roughness"])
@@ -507,54 +533,72 @@ class GlossyGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
+        self.insockets += ["Color", "IOR", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Rotation")
+        self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
 
     def addNodes(self, args=None):
         MixGroup.addNodes(self, args)
-        node = self.addNode("ShaderNodeBsdfAnisotropic", 1)
-        node.distribution = 'ASHIKHMIN_SHIRLEY'
-        self.links.new(self.inputs.outputs["Color"], node.inputs["Color"])
-        self.links.new(self.inputs.outputs["Roughness"], node.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["Anisotropy"], node.inputs["Anisotropy"])
-        self.links.new(self.inputs.outputs["Rotation"], node.inputs["Rotation"])
-        self.links.new(self.inputs.outputs["Normal"], node.inputs["Normal"])
-        self.links.new(node.outputs[0], self.mix1.inputs[2])
-        self.links.new(node.outputs[0], self.mix2.inputs[2])
+
+        fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
+        self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
+        self.links.new(self.inputs.outputs["Roughness"], fresnel.inputs["Roughness"])
+        fresnel.inputs["Power"].default_value = 2
+        self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
+
+        aniso = self.addNode("ShaderNodeBsdfAnisotropic", 1)
+        aniso.distribution = 'ASHIKHMIN_SHIRLEY'
+        self.links.new(self.inputs.outputs["Color"], aniso.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], aniso.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Anisotropy"], aniso.inputs["Anisotropy"])
+        self.links.new(self.inputs.outputs["Rotation"], aniso.inputs["Rotation"])
+        self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
+
+        self.links.new(fresnel.outputs[0], self.mix1.inputs[0])
+        self.links.new(fresnel.outputs[0], self.mix2.inputs[0])
+        self.links.new(aniso.outputs[0], self.mix1.inputs[2])
+        self.links.new(aniso.outputs[0], self.mix2.inputs[2])
 
 # ---------------------------------------------------------------------
 #   Metal Group
 # ---------------------------------------------------------------------
 
-class MetalGroupUber(MixGroup):
+class MetalGroupUber(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 5)
+        FacMixGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Rotation")
+        self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
         fresnel.inputs["IOR"].default_value = 1.5
         self.links.new(self.inputs.outputs["Roughness"], fresnel.inputs["Roughness"])
@@ -585,27 +629,29 @@ class MetalGroupUber(MixGroup):
         self.links.new(node.outputs[0], self.mix2.inputs[2])
 
 
-class MetalGroupPbrSkin(MixGroup):
+class MetalGroupPbrSkin(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness1",  "Roughness2", "Dual Ratio", "Normal"]
+        FacMixGroup.__init__(self)
+        self.insockets += ["Color", "Roughness 1",  "Roughness 2", "Dual Ratio", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 6)
+        FacMixGroup.create(self, node, name, parent, 6)
         self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness1")
-        self.group.inputs.new("NodeSocketFloat", "Roughness2")
+        self.group.inputs.new("NodeSocketFloat", "Roughness 1")
+        self.setMinMax("Roughness 1", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Roughness 2")
+        self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Dual Ratio")
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
-        glossy1 = self.addGlossy("Roughness1")
-        glossy2 = self.addGlossy("Roughness2")
+        FacMixGroup.addNodes(self, args)
+        glossy1 = self.addGlossy("Roughness 1")
+        glossy2 = self.addGlossy("Roughness 2")
         mix = self.addNode("ShaderNodeMixShader", 4)
         self.links.new(self.inputs.outputs["Dual Ratio"], mix.inputs[0])
         self.links.new(glossy1.outputs[0], mix.inputs[1])
@@ -637,17 +683,18 @@ class MetalGroupPbrSkin(MixGroup):
 #   Top Coat Group
 # ---------------------------------------------------------------------
 
-class TopCoatGroup(MixGroup):
+class TopCoatGroup(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Bump", "Height", "Distance", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 4)
+        FacMixGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Bump")
         self.group.inputs.new("NodeSocketFloat", "Distance")
         self.group.inputs.new("NodeSocketFloat", "Height")
@@ -656,7 +703,7 @@ class TopCoatGroup(MixGroup):
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         bump = self.addNode("ShaderNodeBump", 1)
         self.links.new(self.inputs.outputs["Bump"], bump.inputs["Strength"])
         self.links.new(self.inputs.outputs["Height"], bump.inputs["Height"])
@@ -674,9 +721,9 @@ class TopCoatGroup(MixGroup):
 #   Refraction Group
 # ---------------------------------------------------------------------
 
-class RefractionGroup(MixGroup):
+class RefractionGroup(FacMixGroup):
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += [
             "Thin Wall",
             "Refraction Color", "Refraction Roughness", "IOR",
@@ -684,22 +731,27 @@ class RefractionGroup(MixGroup):
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 5)
+        FacMixGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketFloat", "Thin Wall")
+        self.setMinMax("Thin Wall", 0, 0, 1)
         self.group.inputs.new("NodeSocketColor", "Refraction Color")
         self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
+        self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketColor", "Glossy Color")
         self.group.inputs.new("NodeSocketFloat", "Glossy Roughness")
+        self.setMinMax("Glossy Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Rotation")
+        self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         refr = self.addNode("ShaderNodeBsdfRefraction", 1)
         self.links.new(self.inputs.outputs["Refraction Color"], refr.inputs["Color"])
         self.links.new(self.inputs.outputs["Refraction Roughness"], refr.inputs["Roughness"])
@@ -741,14 +793,14 @@ class RefractionGroup(MixGroup):
 #   Fake Caustics Group
 # ---------------------------------------------------------------------
 
-class FakeCausticsGroup(MixGroup):
+class FakeCausticsGroup(FacMixGroup):
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 6)
+        FacMixGroup.create(self, node, name, parent, 6)
 
 
     def addNodes(self, args):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         normal = self.addNode("ShaderNodeNewGeometry", 1)
         incoming = self.addNode("ShaderNodeNewGeometry", 1)
 
@@ -781,20 +833,20 @@ class FakeCausticsGroup(MixGroup):
 #   Transparent Group
 # ---------------------------------------------------------------------
 
-class TransparentGroup(MixGroup):
+class TransparentGroup(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += ["Color"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 3)
+        FacMixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         trans = self.addNode("ShaderNodeBsdfTransparent", 1)
         self.links.new(self.inputs.outputs["Color"], trans.inputs["Color"])
         # Flip
@@ -807,17 +859,17 @@ class TransparentGroup(MixGroup):
 #   Translucent Group
 # ---------------------------------------------------------------------
 
-class TranslucentGroup(MixGroup):
+class TranslucentGroup(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += [
             "Color", "Gamma", "Scale", "Radius", "IOR", "Anisotropy",
             "Cycles Mix Factor", "Eevee Mix Factor", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 4)
+        FacMixGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Gamma")
         self.group.inputs.new("NodeSocketFloat", "Scale")
@@ -825,6 +877,7 @@ class TranslucentGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Cycles Mix Factor")
         self.group.inputs.new("NodeSocketFloat", "Eevee Mix Factor")
         self.group.inputs.new("NodeSocketVector", "Normal")
@@ -832,7 +885,7 @@ class TranslucentGroup(MixGroup):
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         trans = self.addNode("ShaderNodeBsdfTranslucent", 1)
         self.links.new(self.inputs.outputs["Color"], trans.inputs["Color"])
         self.links.new(self.inputs.outputs["Normal"], trans.inputs["Normal"])
@@ -868,23 +921,24 @@ class TranslucentGroup(MixGroup):
 #   Makeup Group
 # ---------------------------------------------------------------------
 
-class MakeupGroup(MixGroup):
+class MakeupGroup(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 3)
+        FacMixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
         diffuse = self.addNode("ShaderNodeBsdfDiffuse", 1)
         self.links.new(self.inputs.outputs["Color"], diffuse.inputs["Color"])
         self.links.new(self.inputs.outputs["Roughness"], diffuse.inputs["Roughness"])
@@ -946,13 +1000,16 @@ class DualLobeGroup(CyclesGroup):
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.inputs.new("NodeSocketFloat", "Weight")
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness 1")
+        self.setMinMax("Roughness 1", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness 2")
+        self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideNormal()
         self.group.outputs.new("NodeSocketShader", "Cycles")
