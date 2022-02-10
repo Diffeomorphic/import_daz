@@ -37,22 +37,34 @@ class BrickTree(CyclesTree):
         self.type = 'BRICK'
 
 
-    def build(self):
+    def buildLayers(self):
         print("BUILD", self)
-        self.makeTree()
-        node = self.addBrickLayer("Base")
-        self.cycles = self.eevee = node
-        for layer in ["Layer 1", "Layer 2", "Layer 3"]:
-            node = self.addBrickLayer(layer)
-            channels = ["%s Weight" % layer, "%s Layer Weight" % layer]
-            weight,wttex = self.getColorTex(channels, "NONE", 1.0)
-            self.mixWithActive(weight, wttex, node)
-        self.buildCutout()
-        self.buildVolume()
-        self.buildDisplacementNodes()
-        self.buildDecals()
-        self.buildShells()
-        self.buildOutput()
+        layers = self.findBrickLayers()
+        if layers:
+            print("Building brick layers:", layers)
+            #node = self.addBrickLayer("Base")
+            #self.cycles = self.eevee = node
+            for layer in layers:
+                node = self.addBrickLayer(layer)
+                channels = ["%s Weight" % layer, "%s Layer Weight" % layer]
+                weight,wttex = self.getColorTex(channels, "NONE", 1)
+                print("  Brick layer", layer, weight)
+                self.mixWithActive(weight, wttex, node)
+        else:
+            self.buildLayer("")
+
+
+    def findBrickLayers(self):
+        layers = {}
+        for channel in self.material.channels.keys():
+            if (channel[0:5] == "Base " and
+                channel not in ["Base Color Effect"]):
+                layers["Base"] = True
+            elif channel[0:6] == "Layer " and channel[6].isdigit():
+                layers[channel[0:7]] = True
+        layers = list(layers.keys())
+        layers.sort()
+        return layers
 
 
     def addBrickLayer(self, layer):

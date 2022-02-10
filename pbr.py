@@ -47,15 +47,8 @@ class PbrTree(CyclesTree):
 
     def buildLayer(self, uvname):
         self.column = 4
-        try:
-            self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
-            self.ycoords[self.column] -= 500
-        except RuntimeError:
-            self.pbr = None
-            self.type = 'CYCLES'
-        if self.pbr is None:
-            CyclesTree.buildLayer(self, uvname)
-            return
+        self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
+        self.ycoords[self.column] -= 500
         self.cycles = self.eevee = self.pbr
         self.buildNormal(uvname)
         self.buildBump()

@@ -360,13 +360,17 @@ class CyclesTree:
 
     def build(self):
         self.makeTree()
-        self.buildLayer("")
+        self.buildLayers()
         self.buildCutout()
         self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
         self.buildShells()
         self.buildOutput()
+
+
+    def buildLayers(self):
+        self.buildLayer("")
 
 
     def buildDecals(self):
