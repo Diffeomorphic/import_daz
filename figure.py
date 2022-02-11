@@ -263,7 +263,6 @@ class Figure(Node):
 
     def __init__(self, fileref):
         Node.__init__(self, fileref)
-        self.classType = Figure
         self.restPose = False
         self.bones = {}
         self.presentation = None

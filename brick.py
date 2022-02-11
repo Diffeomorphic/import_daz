@@ -31,14 +31,8 @@ from .pbr import PbrTree
 from .utils import *
 
 
-class BrickTree(CyclesTree):
-    def __init__(self, cmat):
-        CyclesTree.__init__(self, cmat)
-        self.type = 'BRICK'
-
-
+class BrickTree:
     def buildLayers(self):
-        print("BUILD", self)
         layers = self.findBrickLayers()
         if layers:
             print("Building brick layers:", layers)
@@ -79,3 +73,17 @@ class BrickTree(CyclesTree):
         self.links.new(self.texco, node.inputs["UV"])
         self.material.layer = None
         return node
+
+
+class CyclesBrickTree(BrickTree, CyclesTree):
+    def __init__(self, cmat):
+        CyclesTree.__init__(self, cmat)
+        self.type = 'CBRICK'
+
+
+class PbrBrickTree(BrickTree, PbrTree):
+    def __init__(self, cmat):
+        PbrTree.__init__(self, cmat)
+        self.type = 'PBRICK'
+
+

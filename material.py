@@ -53,7 +53,6 @@ class Material(Asset, Channels):
     def __init__(self, fileref):
         Asset.__init__(self, fileref)
         Channels.__init__(self)
-        self.classType = Material
         self.scene = None
         self.shader = 'UBER_IRAY'
         #self.channels = OrderedDict()

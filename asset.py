@@ -226,7 +226,6 @@ class Asset(Accessor):
         self.name = None
         self.label = None
         self.type = None
-        self.classType = Asset
         self.visible = True
         self.parent = None
         self.children = []

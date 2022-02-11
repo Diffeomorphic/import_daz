@@ -35,7 +35,6 @@ class Camera(Node):
 
     def __init__(self, fileref):
         Node.__init__(self, fileref)
-        self.classType = Camera
         self.perspective = {}
         self.orthographic = {}
         self.aspectRatio = 1.0

@@ -42,7 +42,6 @@ class CyclesMaterial(Material):
 
     def __init__(self, fileref):
         Material.__init__(self, fileref)
-        self.classType = CyclesMaterial
         self.tree = None
         self.useEevee = False
 
@@ -88,7 +87,7 @@ class CyclesMaterial(Material):
 
     def setupTree(self):
         from .pbr import PbrTree
-        from .brick import BrickTree
+        from .brick import CyclesBrickTree, PbrBrickTree
         if self.isHair():
             from .hair import getHairTree
             geo = self.geometry
@@ -96,7 +95,10 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
-            return BrickTree(self)
+            if GS.materialMethod == 'PRINCIPLED':
+                return PbrBrickTree(self)
+            else:
+                return CyclesBrickTree(self)
         else:
             if GS.materialMethod == 'PRINCIPLED':
                 return PbrTree(self)

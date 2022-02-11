@@ -686,7 +686,6 @@ class Bone(Node):
 
     def __init__(self, fileref):
         Node.__init__(self, fileref)
-        self.classType = Bone
         self.translation = []
         self.rotation = []
         self.scale = []

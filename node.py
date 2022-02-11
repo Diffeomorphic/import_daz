@@ -674,7 +674,6 @@ class Node(Asset, Formula, Channels):
         Asset.__init__(self, fileref)
         Formula.__init__(self)
         Channels.__init__(self)
-        self.classType = Node
         self.instances = {}
         self.ninstances = 0
         self.count = 0
