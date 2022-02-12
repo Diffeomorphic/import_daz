@@ -385,20 +385,10 @@ class Rigify:
         description = "Display layers for face and custom bones.\nNot for Rigify legacy",
         default = True)
 
-    useFingerIk : BoolProperty(
-        name = "Finger IK",
-        description = "Generate IK controls for fingers",
-        default = False)
-
     useIkFix : BoolProperty(
         name = "IK Fix",
         description = "Add limits to IK bones, to prevent poor bending",
         default = True)
-
-    useKeepRig : BoolProperty(
-        name = "Keep DAZ Rig",
-        description = "Keep existing armature and meshes in a new collection",
-        default = False)
 
     useRenameBones : BoolProperty(
         name = "Rename Left-Right Bones",
@@ -1398,9 +1388,8 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         self.layout.prop(self, "useAutoAlign")
         self.layout.prop(self, "useDeleteMeta")
         self.layout.prop(self, "useIkFix")
-        self.layout.prop(self, "useFingerIk")
+        Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
-        self.layout.prop(self, "useKeepRig")
         self.layout.prop(self, "useRenameBones")
 
 
@@ -1446,9 +1435,8 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists):
         Fixer.__init__(self)
 
     def draw(self, context):
-        self.layout.prop(self, "useFingerIk")
+        Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
-        self.layout.prop(self, "useKeepRig")
 
     @classmethod
     def poll(self, context):

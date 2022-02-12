@@ -40,6 +40,26 @@ from .driver import DriverUser
 
 class Fixer(DriverUser):
 
+    useFingerIk : BoolProperty(
+        name = "Finger IK",
+        description = "Generate IK controls for fingers",
+        default = False)
+
+    useTongueIk : BoolProperty(
+        name = "Tongue IK",
+        description = "Generate IK controls for tongue",
+        default = False)
+
+    useKeepRig : BoolProperty(
+        name = "Keep DAZ Rig",
+        description = "Keep existing armature and meshes in a new collection",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useFingerIk")
+        self.layout.prop(self, "useTongueIk")
+        self.layout.prop(self, "useKeepRig")
+
     def fixPelvis(self, rig):
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
@@ -291,6 +311,48 @@ class Fixer(DriverUser):
 
     def isEyeLid(self, pb):
         return ("eyelid" in pb.name.lower())
+
+    #-------------------------------------------------------------
+    #   Tongue IK
+    #-------------------------------------------------------------
+
+    def addTongueIkBone(self, rig, layer):
+        if not self.useTongueIk:
+            return
+        from .mhx import makeBone
+        self.tongueBones = [bone.name for bone in rig.data.bones if bone.name.startswith("tongue")]
+        if len(self.tongueBones) < 3:
+            print("Did not find tongue")
+            return
+        self.tongueBones.sort()
+        print("TONGUE", self.tongueBones, layer)
+        root = rig.data.edit_bones[self.tongueBones[0]]
+        tip = rig.data.edit_bones[self.tongueBones[-1]]
+        vec = tip.tail - tip.head
+        eb = makeBone("ik_tongue", rig, tip.tail, tip.tail+vec, tip.roll, layer, root.parent)
+
+
+    def addTongueIk(self, rig, prop):
+        if not self.useTongueIk:
+            return
+        n = len(self.tongueBones)
+        if n < 3:
+            return
+        from .mhx import addDriver, ikConstraint
+        for bname in self.tongueBones:
+            pb = rig.pose.bones[bname]
+            pb.ik_stretch = 0.1
+            cns = getConstraint(pb, 'LIMIT_ROTATION')
+            if cns:
+                self.setIkLimits(cns, pb, pb)
+                addDriver(cns, "mute", rig, prop, "x")
+        bname = self.tongueBones[-1]
+        pb = rig.pose.bones[bname]
+        target = rig.pose.bones["ik_tongue"]
+        cns = ikConstraint(pb, target, None, 0, n, rig)
+        cns.use_rotation = True
+        addDriver(cns, "mute", rig, prop, "not(x)")
+        addDriver(target.bone, "hide", rig, prop, "not(x)")
 
     #-------------------------------------------------------------
     #   Gaze Bones

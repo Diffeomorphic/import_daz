@@ -317,17 +317,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         default = True
     )
 
-    useFingerIk : BoolProperty(
-        name = "Finger IK",
-        description = "Generate IK controls for fingers",
-        default = False)
-
-    useKeepRig : BoolProperty(
-        name = "Keep DAZ Rig",
-        description = "Keep existing armature and meshes in a new collection",
-        default = False
-    )
-
     elbowParent : EnumProperty(
         items = [('HAND', "Hand", "Parent elbow pole target to IK hand"),
                  ('SHOULDER', "Shoulder", "Parent elbow pole target to shoulder"),
@@ -432,8 +421,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def draw(self, context):
         self.layout.prop(self, "addTweakBones")
         self.layout.prop(self, "showLinks")
-        self.layout.prop(self, "useFingerIk")
-        self.layout.prop(self, "useKeepRig")
+        Fixer.draw(self, context)
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useRenameBones")
@@ -700,6 +688,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreAllConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         self.fixConstraints(rig)
+        if self.useTongueIk:
+            prop = "MhaTongueIk"
+            setMhxProp(rig, prop, False)
+            self.addTongueIk(rig, prop)
         self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
@@ -1243,6 +1235,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.rolls[bname+suffix] = rig.data.edit_bones[bname+suffix].roll
 
         self.addCombinedGazeBone(rig, L_HEAD, L_HELP)
+        self.addTongueIkBone(rig, L_HEAD)
 
         from .figure import copyBoneInfo
         setMode('OBJECT')
@@ -1707,7 +1700,8 @@ def connectToParent(rig):
 Gizmos = {
     "master" :          ("GZM_Master", 1),
     "back" :            ("GZM_Knuckle", 1),
-    "neckhead" :            ("GZM_Knuckle", 1),
+    "neckhead" :        ("GZM_Knuckle", 1),
+    "ik_tongue" :       ("GZM_Cone", 0.4),
 
     #Spine
     "root" :            ("GZM_CrownHips", 1),
@@ -1736,7 +1730,6 @@ LRGizmos = {
     # Head
 
     "gaze" :            ("GZM_Circle025", 1),
-
     "uplid" :           ("GZM_UpLid", 1),
     "lolid" :           ("GZM_LoLid", 1),
 
