@@ -320,25 +320,28 @@ class Fixer(DriverUser):
         if not self.useTongueIk:
             return
         from .mhx import makeBone
-        self.tongueBones = [bone.name for bone in rig.data.bones if bone.name.startswith("tongue")]
+        self.tongueBones = [bone.name for bone in rig.data.bones if "tongue" in bone.name]
         if len(self.tongueBones) < 3:
             print("Did not find tongue")
+            print("Tongue bones:", self.tongueBones)
+            #print("All bones:", list(rig.data.bones.keys()))
             return
         self.tongueBones.sort()
-        print("TONGUE", self.tongueBones, layer)
         root = rig.data.edit_bones[self.tongueBones[0]]
         tip = rig.data.edit_bones[self.tongueBones[-1]]
         vec = tip.tail - tip.head
         eb = makeBone("ik_tongue", rig, tip.tail, tip.tail+vec, tip.roll, layer, root.parent)
 
 
-    def addTongueIk(self, rig, prop):
+    def addTongueIk(self, rig):
         if not self.useTongueIk:
             return
+        from .mhx import addDriver, ikConstraint, setMhxProp
+        prop = "MhaTongueIk"
+        setMhxProp(rig, prop, False)
         n = len(self.tongueBones)
         if n < 3:
             return
-        from .mhx import addDriver, ikConstraint
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
             pb.ik_stretch = 0.1
@@ -353,6 +356,16 @@ class Fixer(DriverUser):
         cns.use_rotation = True
         addDriver(cns, "mute", rig, prop, "not(x)")
         addDriver(target.bone, "hide", rig, prop, "not(x)")
+
+
+    def setIkLimits(self, cns, fkbone, ikbone):
+        for n,x in enumerate(["x", "y", "z"]):
+            setattr(ikbone, "use_ik_limit_%s" % x, getattr(cns, "use_limit_%s" % x))
+            setattr(ikbone, "ik_min_%s" % x, getattr(cns, "min_%s" % x))
+            setattr(ikbone, "ik_max_%s" % x, getattr(cns, "max_%s" % x))
+            setattr(ikbone, "lock_ik_%s" % x, fkbone.lock_rotation[n])
+            #if fkbone.lock_rotation[n]:
+            #    setattr(ikbone, "ik_stiffness_%s" % x, 0.99)
 
     #-------------------------------------------------------------
     #   Gaze Bones

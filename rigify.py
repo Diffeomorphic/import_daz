@@ -969,6 +969,10 @@ class Rigify:
         for suffix in [".L", ".R"]:
             self.addSingleGazeBone(gen, suffix, R_FACE, R_HELP)
         self.addCombinedGazeBone(gen, R_FACE, R_HELP)
+        print(" Create tongue IK")
+        setMode('OBJECT')
+        setMode('EDIT')
+        self.addTongueIkBone(gen, R_FACE)
 
         setMode('POSE')
 
@@ -1123,6 +1127,7 @@ class Rigify:
         for suffix in [".L", ".R"]:
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
+        self.addTongueIk(gen)
 
         # Face bone gizmos
         rename = ["Pectoral", "Eye", "Ear"]
@@ -1302,6 +1307,7 @@ class Rigify:
             "gaze" :            ("GZM_Gaze", 1),
             "gaze.L" :          ("GZM_Circle025", 1),
             "gaze.R" :          ("GZM_Circle025", 1),
+            "ik_tongue" :       ("GZM_Cone", 0.4),
         }
         self.makeGizmos(["GZM_Jaw", "GZM_Circle025", "GZM_Gaze", "GZM_Pectoral", "GZM_Tongue"])
         bgrp = gen.pose.bone_groups.new(name="DAZ")
@@ -1502,28 +1508,6 @@ def setFkIk2(rig, fk, layers):
         layers[n] = (not fk)
     return layers
 
-#-------------------------------------------------------------
-#   List bones
-#-------------------------------------------------------------
-
-def listBones(context):
-    rig = context.object
-    if not (rig and rig.type == 'ARMATURE'):
-        msg = ("Not an armature:   \n'%s'       " % rig)
-        raise DazError(msg)
-    print("Bones in %s:" % rig.name)
-    for pb in rig.pose.bones:
-        print('    "%s" : ("", "%s"),' % (pb.name, pb.rotation_mode))
-
-
-class DAZ_OT_ListBones(DazOperator, IsArmature):
-    bl_idname = "daz.list_bones"
-    bl_label = "List Bones"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        listBones(context)
-
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1532,7 +1516,6 @@ classes = [
     DAZ_OT_ConvertToRigify,
     DAZ_OT_CreateMeta,
     DAZ_OT_RigifyMetaRig,
-    DAZ_OT_ListBones,
 ]
 
 def register():

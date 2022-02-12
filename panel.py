@@ -1006,6 +1006,7 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
         self.layout.prop(amt, propRef("MhaGazeFollowsHead"), text="Gaze Follows Head")
         self.layout.prop(amt, propRef("MhaGaze_L"), text="Left Gaze")
         self.layout.prop(amt, propRef("MhaGaze_R"), text="Right Gaze")
+        self.layout.prop(amt, propRef("MhaTongueIk"), text="Tongue IK")
 
 #-------------------------------------------------------------
 #   Initialize

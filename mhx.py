@@ -688,10 +688,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreAllConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         self.fixConstraints(rig)
-        if self.useTongueIk:
-            prop = "MhaTongueIk"
-            setMhxProp(rig, prop, False)
-            self.addTongueIk(rig, prop)
+        self.addTongueIk(rig)
         self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
@@ -1507,16 +1504,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             ikcns.use_limit_y = True
             ikcns.min_y = cns.min_y
             ikcns.max_y = cns.max_y
-
-
-    def setIkLimits(self, cns, fkbone, ikbone):
-        for n,x in enumerate(["x", "y", "z"]):
-            setattr(ikbone, "use_ik_limit_%s" % x, getattr(cns, "use_limit_%s" % x))
-            setattr(ikbone, "ik_min_%s" % x, getattr(cns, "min_%s" % x))
-            setattr(ikbone, "ik_max_%s" % x, getattr(cns, "max_%s" % x))
-            setattr(ikbone, "lock_ik_%s" % x, fkbone.lock_rotation[n])
-            #if fkbone.lock_rotation[n]:
-            #    setattr(ikbone, "ik_stiffness_%s" % x, 0.99)
 
 
     def addFingerIk(self, rig, suffix):
