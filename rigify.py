@@ -1297,7 +1297,7 @@ class Rigify:
 
     def addGizmos(self, gen):
         gizmos = {
-            "lowerJaw" :        ("GZM_Jaw", 1),
+            "lowerJaw" :        ("GZM_MJaw", 1),
             "eye.L" :           ("GZM_Circle025", 1),
             "eye.R" :           ("GZM_Circle025", 1),
             "ear.L" :           ("GZM_Circle025", 1.5),
@@ -1309,7 +1309,7 @@ class Rigify:
             "gaze.R" :          ("GZM_Circle025", 1),
             "ik_tongue" :       ("GZM_Cone", 0.4),
         }
-        self.makeGizmos(["GZM_Jaw", "GZM_Circle025", "GZM_Gaze", "GZM_Pectoral", "GZM_Tongue"])
+        self.makeGizmos(["GZM_MJaw", "GZM_Circle025", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
         bgrp = gen.pose.bone_groups.new(name="DAZ")
         bgrp.color_set = 'CUSTOM'
         bgrp.colors.normal = (1.0, 0.5, 0)
@@ -1321,7 +1321,7 @@ class Rigify:
                     self.addGizmo(pb, "GZM_Circle", 0.2)
                 pb.bone_group = bgrp
             elif pb.name[0:6] == "tongue":
-                self.addGizmo(pb, "GZM_Tongue", 1)
+                self.addGizmo(pb, "GZM_MTongue", 1)
                 pb.bone_group = bgrp
             elif pb.name.startswith(("bigToe", "smallToe")):
                 self.addGizmo(pb, "GZM_Circle", 0.4)

@@ -822,7 +822,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elif pb.name[0:4] == "palm":
                 self.addGizmo(pb, "GZM_Ellipse", 1)
             elif pb.name[0:6] == "tongue":
-                self.addGizmo(pb, "GZM_Tongue", 1)
+                self.addGizmo(pb, "GZM_MTongue", 1)
             elif self.isFaceBone(pb) and not self.isEyeLid(pb):
                 self.addGizmo(pb, "GZM_Circle", 0.2)
             else:
@@ -1699,10 +1699,10 @@ Gizmos = {
     "spine-1" :         ("GZM_CircleSpine", 1),
     "chest" :           ("GZM_CircleChest", 1),
     "chest-1" :         ("GZM_CircleChest", 1),
-    "neck" :            ("GZM_Neck", 1),
-    "neck-1" :          ("GZM_Neck", 1),
-    "head" :            ("GZM_Head", 1),
-    "lowerJaw" :        ("GZM_Jaw", 1),
+    "neck" :            ("GZM_MNeck", 1),
+    "neck-1" :          ("GZM_MNeck", 1),
+    "head" :            ("GZM_MHead", 1),
+    "lowerJaw" :        ("GZM_MJaw", 1),
     "rEye" :            ("GZM_Circle025", 1),
     "lEye" :            ("GZM_Circle025", 1),
     "rEar" :            ("GZM_Circle025", 1.5),
