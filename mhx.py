@@ -1641,7 +1641,7 @@ def getBoneLayer(pb, rig):
         return L_HELP, False
     elif isFinal(pb.name) or pb.bone.layers[L_FIN]:
         return L_FIN, False
-    elif lname[0:6] == "tongue":
+    elif pb.name[0:6] == "tongue":
         return L_HEAD, False
     elif pb.parent:
         par = pb.parent
