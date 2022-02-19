@@ -36,9 +36,6 @@ from .fileutils import SingleFile, JsonFile, JsonExportFile
 #   Classes
 #------------------------------------------------------------------
 
-EnumsMaterials = [('BSDF', "BSDF", "BSDF (Cycles, full IRAY materials)"),
-                  ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles)")]
-
 EnumsHair = [('HAIR_BSDF', "Hair BSDF", "Hair BSDF (Cycles)"),
              ('HAIR_PRINCIPLED', "Hair Principled", "Hair Principled (Cycles)"),
              ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles)")]
@@ -268,7 +265,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.label(text = "Materials")
         box.prop(scn, "DazMaterialMethod")
         box.prop(scn, "DazSSSMethod")
-        box.prop(scn, "DazRefractiveMethod")
         box.prop(scn, "DazHairMaterialMethod")
         box.separator()
         box.prop(scn, "DazViewportColor")
@@ -497,7 +493,11 @@ def register():
 
 
     bpy.types.Scene.DazMaterialMethod = EnumProperty(
-        items = EnumsMaterials,
+        items = [('BSDF', "BSDF", "BSDF (Cycles, full IRAY materials)"),
+                 ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles)"),
+                 ('MIXED', "Mixed", "Principled for opaque materials.\nBSDF for refractive materials"),
+                 ('MIXED 2', "Mixed 2", "Principled for opaque materials and purely refractive materials,\nBSDF for other refractive materials"),
+                 ],
         name = "Method",
         description = "Material Method",
         default = 'BSDF')
@@ -511,17 +511,6 @@ def register():
         name = "SSS Method",
         description = "Method for subsurface scattering",
         default = 'RANDOM_WALK')
-
-    bpy.types.Scene.DazRefractiveMethod = EnumProperty(
-        items = [('BSDF', "BSDF", "Add BSDF refractive node group"),
-                 ('SECOND', "Second Principled", "Add second principled node for refractive part"),
-                 ('REUSE', "Reuse Principled",
-                    ("Don't add extra nodes for refractive parts, but reuse the\n" +
-                     "principled node for both opaque and refractive components.\n" +
-                     "Introduces artifacts sometimes"))],
-        name = "Refractive Method",
-        description = "Method for refractive part of principled materials",
-        default = 'BSDF')
 
     bpy.types.Scene.DazHairMaterialMethod = EnumProperty(
         items = EnumsHair,

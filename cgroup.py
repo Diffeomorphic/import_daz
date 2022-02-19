@@ -259,9 +259,8 @@ class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
         RefractiveShellGroup.create(self, node, name, parent)
 
     def buildRefraction(self):
-        if GS.refractiveMethod != 'REUSE':
-            self.storeOpaque()
-            self.pbrOpaque = self.pbr
+        self.storeOpaque()
+        self.pbrOpaque = self.pbr
         self.weight, self.wttex = PbrTree.buildRefraction(self)
 
 # ---------------------------------------------------------------------

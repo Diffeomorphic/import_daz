@@ -226,6 +226,18 @@ class Material(Asset, Channels):
                 self.getValue("getChannelOpacity", 1) < 0.99)
 
 
+    def isPureRefractive(self):
+        channel = self.getChannelRefractionWeight()
+        if channel:
+            return (self.getChannelValue(channel, 0) == 1 and
+                    not self.hasTextures(channel))
+        channel = self.getChannelOpacity()
+        if channel:
+            return (self.getChannelValue(channel, 1) == 0 and
+                    not self.hasTextures(channel))
+        return False
+
+
     def isHair(self):
         return ("Root Transmission Color" in self.channels.keys())
 

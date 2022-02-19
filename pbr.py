@@ -52,9 +52,12 @@ class PbrTree(CyclesTree):
         self.cycles = self.eevee = self.pbr
         self.buildNormal(uvname)
         self.buildBump()
+        self.linkPBRNormal(self.pbr)
+        if self.material.isPureRefractive() and GS.materialMethod == 'MIXED 2':
+            self.buildPureRefractive()
+            return
         self.buildDetail(uvname)
         self.buildPBRNode()
-        self.linkPBRNormal(self.pbr)
         self.postPBR = False
         if self.buildMakeup():
             self.postPBR = True
@@ -285,7 +288,7 @@ class PbrTree(CyclesTree):
 
 
     def buildRefraction(self):
-        if GS.refractiveMethod == 'BSDF':
+        if GS.materialMethod == 'MIXED':
             data = CyclesTree.buildRefraction(self)
             self.postPBR = True
             return data
@@ -293,48 +296,52 @@ class PbrTree(CyclesTree):
         weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
         if weight == 0:
             return weight,wttex
-        color,coltex,roughness,roughtex = self.getRefractionColor()
-        ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
-
-        if GS.refractiveMethod == 'SECOND':
-            if (weight < 1 or
-                wttex or
-                self.inShell or
-                self.material.basemix == 2):
-                self.column += 1
-                pbr = pbr2 = self.addNode("ShaderNodeBsdfPrincipled")
-                self.ycoords[self.column] -= 500
-                self.linkPBRNormal(pbr2)
-                pbr2.inputs["Transmission"].default_value = 1.0
-            else:
-                pbr = self.pbr
-                pbr2 = None
-                self.replaceSlot(pbr, "Transmission", weight)
-
-            if self.material.isThinWall():
-                from .cgroup import RayClipGroup
-                self.column += 1
-                clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
-                self.links.new(pbr.outputs[0], clip.inputs["Shader"])
-                self.linkColor(coltex, clip, color, "Color")
-                self.cycles = self.eevee = clip
-            else:
-                clip = pbr
-
-            if pbr2:
-                if self.inShell:
-                    self.replaceSlot(pbr, "Transmission", 1.0)
-                    self.cycles = self.eevee = clip
-                elif self.material.basemix == 2:
-                    self.cycles = self.eevee = clip
-                else:
-                    self.column += 1
-                    mix = self.mixShaders(weight, wttex, self.pbr, clip)
-                    self.cycles = self.eevee = mix
-            self.postPBR = True
+        elif (weight < 1 or
+            wttex or
+            self.inShell or
+            self.material.basemix == 2):
+            self.column += 1
+            pbr = pbr2 = self.addNode("ShaderNodeBsdfPrincipled")
+            self.ycoords[self.column] -= 500
+            self.linkPBRNormal(pbr2)
+            pbr2.inputs["Transmission"].default_value = 1.0
         else:
             pbr = self.pbr
+            pbr2 = None
             self.replaceSlot(pbr, "Transmission", weight)
+        self.setRefractivePrincipled(pbr, pbr2)
+        return weight,wttex
+
+
+    def buildPureRefractive(self):
+        self.pbr.inputs["Transmission"].default_value = 1.0
+        self.setRefractivePrincipled(self.pbr, None)
+
+
+    def setRefractivePrincipled(self, pbr, pbr2):
+        color,coltex,roughness,roughtex = self.getRefractionColor()
+        ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
+        if self.material.isThinWall():
+            from .cgroup import RayClipGroup
+            self.column += 1
+            clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
+            self.links.new(pbr.outputs[0], clip.inputs["Shader"])
+            self.linkColor(coltex, clip, color, "Color")
+            self.cycles = self.eevee = clip
+        else:
+            clip = pbr
+
+        if pbr2:
+            if self.inShell:
+                self.replaceSlot(pbr, "Transmission", 1.0)
+                self.cycles = self.eevee = clip
+            elif self.material.basemix == 2:
+                self.cycles = self.eevee = clip
+            else:
+                self.column += 1
+                mix = self.mixShaders(weight, wttex, self.pbr, clip)
+                self.cycles = self.eevee = mix
+        self.postPBR = True
 
         if self.material.isThinWall():
             # if thin walled is on then there's no volume
@@ -379,7 +386,6 @@ class PbrTree(CyclesTree):
         if self.getValue(["Share Glossy Inputs"], False):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
         self.pbr = pbr
-        return weight,wttex
 
 
     def mixShaders(self, weight, wttex, node1, node2):

@@ -95,15 +95,15 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
-            if GS.materialMethod == 'PRINCIPLED':
-                return PbrBrickTree(self)
-            else:
+            if GS.materialMethod == 'BSDF':
                 return CyclesBrickTree(self)
-        else:
-            if GS.materialMethod == 'PRINCIPLED':
-                return PbrTree(self)
             else:
+                return PbrBrickTree(self)
+        else:
+            if GS.materialMethod == 'BSDF':
                 return CyclesTree(self)
+            else:
+                return PbrTree(self)
 
 
     def postbuild(self):

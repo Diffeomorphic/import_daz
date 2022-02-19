@@ -59,7 +59,6 @@ class GlobalSettings:
         self.showHiddenObjects = False
 
         self.materialMethod = 'BSDF'
-        self.refractiveMethod = 'BSDF'
         if bpy.app.version < (3,0,0):
             self.sssMethod = 'RANDOM_WALK'
         else:
@@ -138,7 +137,6 @@ class GlobalSettings:
         # Materials
         "DazMaterialMethod" : "materialMethod",
         "DazSSSMethod" : "sssMethod",
-        "DazRefractiveMethod" : "refractiveMethod",
         "DazHairMaterialMethod" : "hairMaterialMethod",
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
