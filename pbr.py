@@ -53,8 +53,7 @@ class PbrTree(CyclesTree):
         self.buildNormal(uvname)
         self.buildBump()
         self.linkPBRNormal(self.pbr)
-        if self.material.isPureRefractive() and GS.materialMethod == 'MIXED 2':
-            self.buildPureRefractive()
+        if self.buildPureRefractive():
             return
         self.buildDetail(uvname)
         self.buildPBRNode()
@@ -288,7 +287,7 @@ class PbrTree(CyclesTree):
 
 
     def buildRefraction(self):
-        if GS.materialMethod == 'MIXED':
+        if GS.materialMethod == 'MIXED' or self.material.basemix == 2:
             data = CyclesTree.buildRefraction(self)
             self.postPBR = True
             return data
@@ -314,8 +313,13 @@ class PbrTree(CyclesTree):
 
 
     def buildPureRefractive(self):
-        self.pbr.inputs["Transmission"].default_value = 1.0
-        self.setRefractivePrincipled(self.pbr, None)
+        if (GS.materialMethod == 'MIXED 2' and
+            self.material.isPureRefractive() and
+            self.material.basemix != 2):
+            self.pbr.inputs["Transmission"].default_value = 1.0
+            self.setRefractivePrincipled(self.pbr, None)
+            return True
+        return False
 
 
     def setRefractivePrincipled(self, pbr, pbr2):
