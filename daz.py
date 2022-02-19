@@ -495,6 +495,7 @@ def register():
     bpy.types.Scene.DazMaterialMethod = EnumProperty(
         items = [('BSDF', "BSDF", "BSDF (Cycles, full IRAY materials)"),
                  ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles)"),
+                 ('SINGLE', "Single Principled", "Approximate materials using\na single principled node (game engines).\nSome feature may be missing"),
                  ('MIXED', "Mixed", "Principled for opaque materials.\nBSDF for refractive materials"),
                  ('MIXED 2', "Mixed 2", "Principled for opaque materials and purely refractive materials,\nBSDF for other refractive materials"),
                  ],

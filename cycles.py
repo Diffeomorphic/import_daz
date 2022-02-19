@@ -374,10 +374,12 @@ class CyclesTree:
         self.makeTree()
         self.buildLayers()
         self.buildCutout()
-        self.buildVolume()
+        if GS.materialMethod != 'SINGLE':
+            self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
-        self.buildShells()
+        if GS.materialMethod != 'SINGLE':
+            self.buildShells()
         self.buildOutput()
 
 
@@ -729,7 +731,8 @@ class CyclesTree:
 
 
     def buildOverlay(self):
-        if self.getValue(["Diffuse Overlay Weight"], 0):
+        if (self.getValue(["Diffuse Overlay Weight"], 0) and
+            GS.materialMethod != 'SINGLE'):
             self.column += 1
             slot = self.getImageSlot(["Diffuse Overlay Weight"])
             weight,wttex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
@@ -808,7 +811,8 @@ class CyclesTree:
 #-------------------------------------------------------------
 
     def buildMakeup(self):
-        if not self.getValue(["Makeup Enable"], False):
+        if (not self.getValue(["Makeup Enable"], False) or
+            GS.materialMethod == 'SINGLE'):
             return False
         wt = self.getValue(["Makeup Weight"], 0)
         if wt == 0:
@@ -995,7 +999,8 @@ class CyclesTree:
 #-------------------------------------------------------------
 
     def prepareWeighted(self):
-        if self.material.basemix == 2:  # Weighted
+        if (self.material.basemix == 2 and
+            GS.materialMethod != 'SINGLE'):
             self.diffuseCycles = self.cycles
             self.diffuseEevee = self.eevee
             self.cycles = self.eevee = None
@@ -1005,7 +1010,8 @@ class CyclesTree:
 
 
     def buildWeighted(self):
-        if self.material.basemix != 2:  # Weighted
+        if (self.material.basemix != 2 or
+            GS.materialMethod == 'SINGLE'):
             return False
         diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex = self.getColorTex(["Glossy Weight"], "NONE", 0)
