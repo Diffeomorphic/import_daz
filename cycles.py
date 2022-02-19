@@ -466,26 +466,15 @@ class CyclesTree:
         self.buildTranslucency()
         self.buildMakeup()
         self.buildOverlay()
-        if self.material.basemix == 2:  # Weighted
-            self.diffuseCycles = self.cycles
-            self.diffuseEevee = self.eevee
-            self.cycles = self.eevee = None
-        dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
-        if dualLobeWeight == 1:
-            self.buildDualLobe()
-        elif dualLobeWeight == 0:
-            self.buildGlossy()
-        else:
-            self.buildGlossy()
-            self.buildDualLobe()
+        self.prepareWeighted()
+        self.buildGlossyOrDualLobe()
         self.buildMetal()
         self.buildTopCoat()
         if self.material.isRefractive():
             self.buildRefraction()
         else:
             self.buildEmission()
-        if self.material.basemix == 2:  # Weighted
-            self.buildWeighted()
+        self.buildWeighted()
 
 
     def makeTree(self, slot="UV"):
@@ -831,6 +820,16 @@ class CyclesTree:
 #  Dual Lobe
 #-------------------------------------------------------------
 
+    def buildGlossyOrDualLobe(self):
+        dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
+        if dualLobeWeight == 1:
+            self.buildDualLobe()
+        elif dualLobeWeight == 0:
+            self.buildGlossy()
+        else:
+            self.buildGlossy()
+            self.buildDualLobe()
+
     def buildDualLobe(self):
         from .cgroup import DualLobeGroupUberIray, DualLobeGroupPbrSkin
         if not self.isEnabled("Dual Lobe Specular"):
@@ -988,15 +987,28 @@ class CyclesTree:
 #   Weigthed
 #-------------------------------------------------------------
 
+    def prepareWeighted(self):
+        if self.material.basemix == 2:  # Weighted
+            self.diffuseCycles = self.cycles
+            self.diffuseEevee = self.eevee
+            self.cycles = self.eevee = None
+            return True
+        else:
+            return False
+
+
     def buildWeighted(self):
+        if self.material.basemix != 2:  # Weighted
+            return False
         diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex = self.getColorTex(["Glossy Weight"], "NONE", 0)
         fac = glossweight / (glossweight + diffweight)
         if fac == 0:
             self.cycles = self.diffuseCycles
             self.eevee = self.diffuseEevee
+            return False
         elif fac == 1 and difftex is None and glosstex is None:
-            pass
+            return False
         else:
             from .cgroup import WeightedGroup
             self.column += 1
@@ -1011,6 +1023,7 @@ class CyclesTree:
             if self.eevee:
                 self.links.new(self.getEeveeSocket(), node.inputs["Glossy Eevee"])
             self.cycles = self.eevee = node
+            return True
 
 #-------------------------------------------------------------
 #   Top Coat

@@ -60,15 +60,17 @@ class PbrTree(CyclesTree):
             self.postPBR = True
         if self.buildOverlay():
             self.postPBR = True
-        dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
-        if dualLobeWeight > 0:
-            self.buildDualLobe()
-            self.replaceSlot(self.pbr, "Specular", 0)
+        if self.prepareWeighted():
             self.postPBR = True
+            CyclesTree.buildGlossyOrDualLobe(self)
+            self.buildTopCoat()
+        else:
+            self.buildGlossyOrDualLobe()
         if self.material.isRefractive():
             self.buildRefraction()
         else:
             self.buildEmission()
+        self.buildWeighted()
 
 
     def linkPBRNormal(self, pbr):
@@ -168,6 +170,9 @@ class PbrTree(CyclesTree):
                 tex = self.mixTexs('MULTIPLY', strtex, reftex)
                 factor = 16 * strength
                 value = factor * averageColor(color)
+            elif self.material.basemix == 2:  # Weighted
+                value = 0.0
+                tex = None
         else:
             color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
             tex = self.mixTexs('MULTIPLY', strtex, coltex)
@@ -205,9 +210,12 @@ class PbrTree(CyclesTree):
                 refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 tex = self.mixTexs('MULTIPLY', toptex, reftex)
                 value = 1.25 * refl * top
-            else:
+            elif self.material.basemix == 1:  # Specular/Glossiness
                 tex = toptex
                 value = top
+            elif self.material.basemix == 2:  # Weighted
+                tex = None
+                value = 0.0
         else:
             tex = toptex
             value = top
@@ -266,6 +274,17 @@ class PbrTree(CyclesTree):
         return 1,None
 
 
+    def buildGlossyOrDualLobe(self):
+        if self.material.basemix == 2:
+            CyclesTree.buildGlossyOrDualLobe(self)
+        else:
+            dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
+            if dualLobeWeight > 0:
+                self.buildDualLobe()
+                self.replaceSlot(self.pbr, "Specular", 0)
+                self.postPBR = True
+
+
     def buildRefraction(self):
         if GS.refractiveMethod == 'BSDF':
             data = CyclesTree.buildRefraction(self)
@@ -279,7 +298,10 @@ class PbrTree(CyclesTree):
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
 
         if GS.refractiveMethod == 'SECOND':
-            if weight < 1 or wttex or self.inShell:
+            if (weight < 1 or
+                wttex or
+                self.inShell or
+                self.material.basemix == 2):
                 self.column += 1
                 pbr = pbr2 = self.addNode("ShaderNodeBsdfPrincipled")
                 self.ycoords[self.column] -= 500
@@ -303,6 +325,8 @@ class PbrTree(CyclesTree):
             if pbr2:
                 if self.inShell:
                     self.replaceSlot(pbr, "Transmission", 1.0)
+                    self.cycles = self.eevee = clip
+                elif self.material.basemix == 2:
                     self.cycles = self.eevee = clip
                 else:
                     self.column += 1
