@@ -305,6 +305,16 @@ class CyclesTree:
             return node.outputs[0]
 
 
+    def linkCycles(self, node, slot):
+        if self.cycles:
+            self.links.new(self.getCyclesSocket(), node.inputs[slot])
+
+
+    def linkEevee(self, node, slot):
+        if self.eevee:
+            self.links.new(self.getEeveeSocket(), node.inputs[slot])
+
+
     def addGroup(self, classdef, name, col=None, size=0, args=[], force=False):
         if col is None:
             col = self.column
@@ -409,8 +419,8 @@ class CyclesTree:
                     else:
                         raise RuntimeError("Unknown decal material group: %s" % grp)
                     node = self.addDecalGroup(dmat)
-                    self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
-                    self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
+                    self.linkCycles(node, "Cycles")
+                    self.linkEevee(node, "Eevee")
                     if csys == 2:
                         self.links.new(mapping.outputs["Depth Mask"], node.inputs["Influence"])
                     self.links.new(mapping.outputs["Vector"], node.inputs["UV"])
@@ -448,8 +458,8 @@ class CyclesTree:
         for push,n,shell in shells:
             node = self.addShellGroup(shell, push)
             if node:
-                self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
-                self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
+                self.linkCycles(node, "Cycles")
+                self.linkEevee(node, "Eevee")
                 self.links.new(self.getTexco(shell.uv), node.inputs["UV"])
                 if self.displacement:
                     self.links.new(self.displacement, node.inputs["Displacement"])
@@ -472,9 +482,8 @@ class CyclesTree:
         self.buildTopCoat()
         if self.material.isRefractive():
             self.buildRefraction()
-        else:
-            self.buildEmission()
         self.buildWeighted()
+        self.buildEmission()
 
 
     def makeTree(self, slot="UV"):
@@ -955,10 +964,8 @@ class CyclesTree:
         self.linkBumpNormal(glossy)
 
         LS.usedFeatures["Glossy"] = True
-        if self.cycles:
-            self.links.new(self.getCyclesSocket(), glossy.inputs["Cycles"])
-        if self.eevee:
-            self.links.new(self.getEeveeSocket(), glossy.inputs["Eevee"])
+        self.linkCycles(glossy, "Cycles")
+        self.linkEevee(glossy, "Eevee")
         self.eevee = self.cycles = glossy
 
 
@@ -1018,10 +1025,8 @@ class CyclesTree:
                 self.links.new(self.getCyclesSocket(self.diffuseCycles), node.inputs["Diffuse Cycles"])
             if self.diffuseEevee:
                 self.links.new(self.getEeveeSocket(self.diffuseEevee), node.inputs["Diffuse Eevee"])
-            if self.cycles:
-                self.links.new(self.getCyclesSocket(), node.inputs["Glossy Cycles"])
-            if self.eevee:
-                self.links.new(self.getEeveeSocket(), node.inputs["Glossy Eevee"])
+            self.linkCycles(node, "Glossy Cycles")
+            self.linkEevee(node, "Glossy Eevee")
             self.cycles = self.eevee = node
             return True
 
@@ -1345,14 +1350,15 @@ class CyclesTree:
             self.addEmitColor(emit, "Color")
             strength = self.getLuminance(emit)
             emit.inputs["Strength"].default_value = strength
-            self.links.new(self.getCyclesSocket(), emit.inputs["Cycles"])
-            self.links.new(self.getEeveeSocket(), emit.inputs["Eevee"])
+            self.linkCycles(emit, "Cycles")
+            self.linkEevee(emit, "Eevee")
             self.cycles = self.eevee = emit
             self.addOneSided()
 
 
     def addEmitColor(self, emit, slot):
         color,tex = self.getColorTex("getChannelEmissionColor", "COLOR", BLACK)
+        print("EE", slot, color, tex)
         if tex is None:
             _,tex = self.getColorTex(["Luminance"], "COLOR", BLACK)
         temp = self.getValue(["Emission Temperature"], None)
@@ -1392,8 +1398,8 @@ class CyclesTree:
         if not twosided:
             from .cgroup import OneSidedGroup
             node = self.addGroup(OneSidedGroup, "DAZ One-Sided")
-            self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
-            self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
+            self.linkCycles(node, "Cycles")
+            self.linkEevee(node, "Eevee")
             self.cycles = self.eevee = node
 
     #-------------------------------------------------------------

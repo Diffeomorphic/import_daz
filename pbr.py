@@ -68,9 +68,8 @@ class PbrTree(CyclesTree):
             self.buildGlossyOrDualLobe()
         if self.material.isRefractive():
             self.buildRefraction()
-        else:
-            self.buildEmission()
         self.buildWeighted()
+        self.buildEmission()
 
 
     def linkPBRNormal(self, pbr):
@@ -110,7 +109,7 @@ class PbrTree(CyclesTree):
     def buildEmission(self):
         if not GS.useEmission:
             return
-        elif self.pbr and "Emission" in self.pbr.inputs.keys():
+        elif self.pbr and "Emission" in self.pbr.inputs.keys() and not self.postPBR:
             color = self.getColor("getChannelEmissionColor", BLACK)
             if not isBlack(color):
                 self.addEmitColor(self.pbr, "Emission")

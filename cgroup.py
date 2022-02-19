@@ -160,8 +160,10 @@ class OpaqueShellGroup(ShellGroup):
         self.links.new(mix.outputs[0], self.outputs.inputs[slot])
 
     def addOutputs(self, mult):
-        self.addOutput(mult, self.getCyclesSocket(), "Cycles")
-        self.addOutput(mult, self.getEeveeSocket(), "Eevee")
+        if self.cycles:
+            self.addOutput(mult, self.getCyclesSocket(), "Cycles")
+        if self.eevee:
+            self.addOutput(mult, self.getEeveeSocket(), "Eevee")
 
 
 class RefractiveShellGroup(ShellGroup):
@@ -215,12 +217,16 @@ class RefractiveShellGroup(ShellGroup):
 
     def addOutputs(self, mult):
         transp = self.blacken()
-        if self.cyclesOpaque:
+        if self.cyclesOpaque and self.cycles:
             add = self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
             self.mixOutputs(mult, add, self.cyclesOpaque, "Cycles")
             add = self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
             self.mixOutputs(mult, add, self.eeveeOpaque, "Eevee")
-        else:
+            return
+        if self.cyclesOpaque:
+            self.cycles = self.cyclesOpaque
+            self.eevee = self.eeveeOpaque
+        if self.cycles:
             self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
             self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
 
@@ -427,8 +433,8 @@ class BrickLayerGroup(FacMixGroup):
         self.inShell = True
         self.texco = self.inputs.outputs["UV"]
         self.buildLayer("")
-        self.links.new(self.getCyclesSocket(), self.mix1.inputs[2])
-        self.links.new(self.getEeveeSocket(), self.mix2.inputs[2])
+        self.linkCycles(self.mix1, 2)
+        self.linkEevee(self.mix2, 2)
 
 # ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode
