@@ -289,39 +289,20 @@ class PbrTree(CyclesTree):
 
 
     def buildRefraction(self):
-        if (GS.materialMethod == 'MIXED' or
-            (self.material.basemix == 2 and GS.materialMethod != 'SINGLE')):
+        if GS.materialMethod == 'SINGLE':
+            weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
+            if weight > 0:
+                self.replaceSlot(pbr, "Transmission", weight)
+                self.setRefractivePrincipled(self.pbr, None)
+            return weight,wttex
+        else:
             data = CyclesTree.buildRefraction(self)
             self.postPBR = True
             return data
 
-        weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
-        if weight == 0:
-            return weight,wttex
-        elif GS.materialMethod == 'SINGLE':
-            pbr = self.pbr
-            pbr2 = None
-            self.replaceSlot(pbr, "Transmission", weight)
-        elif (weight < 1 or
-            wttex or
-            self.inShell or
-            self.material.basemix == 2):
-            self.column += 1
-            pbr = pbr2 = self.addNode("ShaderNodeBsdfPrincipled")
-            self.ycoords[self.column] -= 500
-            self.linkPBRNormal(pbr2)
-            pbr2.inputs["Transmission"].default_value = 1.0
-        else:
-            pbr = self.pbr
-            pbr2 = None
-            self.replaceSlot(pbr, "Transmission", weight)
-        self.setRefractivePrincipled(pbr, pbr2)
-        return weight,wttex
-
 
     def buildPureRefractive(self):
-        if (GS.materialMethod == 'MIXED 2' and
-            self.material.isPureRefractive() and
+        if (self.material.isPureRefractive() and
             self.material.basemix != 2):
             self.pbr.inputs["Transmission"].default_value = 1.0
             self.setRefractivePrincipled(self.pbr, None)
