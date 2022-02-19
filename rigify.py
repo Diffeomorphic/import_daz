@@ -894,6 +894,9 @@ class Rigify:
 
         scn = context.scene
         gen = context.object
+        if gen.name in scn.collection.objects:
+            scn.collection.objects.unlink(gen)
+        coll.objects.link(gen)
         self.startGizmos(context, gen)
         print("Fix generated rig", gen.name)
         if self.useIkFix:
@@ -1154,6 +1157,15 @@ class Rigify:
                 coll.objects.link(gen)
             if meta.name not in coll.objects:
                 coll.objects.link(meta)
+            for wname in ["WGTS_rig"]:
+                wcoll = scn.collection.children.get(wname)
+                if wcoll:
+                    scn.collection.children.unlink(wcoll)
+                    coll.children.link(wcoll)
+                    layer = getLayerCollection(context, wcoll)
+                    if layer:
+                        layer.exclude = True
+                    break
 
         if meta.DazPre278:
             setFkIk1(gen, True, gen.data.layers)

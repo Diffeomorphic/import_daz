@@ -622,6 +622,7 @@ def createHiddenCollection(context, ob):
         if baseName(coll.name) == "Hidden":
             return coll
     coll = bpy.data.collections.new(name="Hidden")
+    coll.hide_viewport = coll.hide_render = True
     parcoll.children.link(coll)
     layer = getLayerCollection(context, coll)
     if layer:

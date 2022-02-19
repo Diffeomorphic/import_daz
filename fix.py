@@ -334,11 +334,11 @@ class Fixer(DriverUser):
 
 
     def addTongueIk(self, rig):
-        if not self.useTongueIk:
-            return
         from .mhx import addDriver, ikConstraint, setMhxProp
         prop = "MhaTongueIk"
         setMhxProp(rig, prop, False)
+        if not self.useTongueIk:
+            return
         n = len(self.tongueBones)
         if n < 3:
             return
@@ -468,8 +468,7 @@ class GizmoUser:
         self.hidden.objects.link(ob)
         ob.parent = parent
         self.gizmos[gname] = ob
-        ob.hide_render = True
-        ob.hide_viewport = True
+        #ob.hide_render = ob.hide_viewport = True
         return ob
 
 

@@ -1206,7 +1206,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         hidden = createHiddenCollection(context, rig)
         for ob in LS.customShapes:
             hidden.objects.link(ob)
-            ob.hide_viewport = ob.hide_render = True
+            #ob.hide_viewport = ob.hide_render = True
         T = True
         F = False
         rig.data.layers = 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F]
@@ -1589,7 +1589,7 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
         hidden = createHiddenCollection(context, rig)
         for ob in LS.customShapes:
             hidden.objects.link(ob)
-            ob.hide_viewport = ob.hide_render = True
+            #ob.hide_viewport = ob.hide_render = True
         rig.DazCustomShapes = True
         rig.data.layers = 16*[False] + 14*[True] + 2*[False]
 
