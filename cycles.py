@@ -534,9 +534,10 @@ class CyclesTree:
                 self.eevee = getFromNode(self, node, "Eevee")
                 tonode,cycles = getToSocket(self, node, "Cycles")
                 _,eevee = getToSocket(self, node, "Eevee")
-                if tonode:
-                    self.column = int(tonode.location[0] // XSIZE)
-                return cycles, eevee
+                if cycles and eevee:
+                    if tonode:
+                        self.column = int(tonode.location[0] // XSIZE)
+                    return cycles, eevee
 
         cycles = eevee = None
         nodes = findNodes(self, 'OUTPUT_MATERIAL')
