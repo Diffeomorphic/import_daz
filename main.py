@@ -304,13 +304,18 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         self.layout.prop(self, "useAddSlots")
 
     def run(self, context):
+        def getKey(anim, keys):
+            for key,_,_,_ in anim:
+                if key in keys:
+                   return True
+            return False
+
         from .cycles import CyclesMaterial
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
         ob = context.object
         LS.forMaterial(self, ob)
-        dmats = []
         for filepath in filepaths:
             main = self.loadDazFile(filepath, context)
             anims = {}
@@ -321,13 +326,12 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 if mname not in anims.keys():
                     anims[mname] = []
                 anims[mname].append((key, type, mod, frames))
-            if not main.materials:
-                def getKey(anim, keys):
-                    for key,_,_,_ in anim:
-                        if key in keys:
-                            return True
-                    return False
-
+            if main.materials:
+                for dmat in main.materials:
+                    basename = self.getMatName(dmat.name)
+                    if basename in anims.keys():
+                        self.fixMaterial(dmat, anims[basename])
+            else:
                 for mname,anim in anims.items():
                     dmat = CyclesMaterial(main.fileref)
                     mstruct = {"id" : mname}
@@ -341,51 +345,52 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                         if not getKey(anim, ["Diffuse Color"]):
                             dmat.partial = True
                     dmat.update(mstruct)
-                    print("NN", mname, dmat.shader, dmat.partial)
                     self.fixMaterial(dmat, anim)
                     main.materials.append(dmat)
-            else:
-                for dmat in main.materials:
-                    basename = self.getMatName(dmat.name)
-                    if basename in anims.keys():
-                        self.fixMaterial(dmat, anims[basename])
-            for dmat in main.materials:
-                dmat.mesh = ob
-                dmat.build(context)
-                dmat.postbuild()
-                dmats.append(dmat)
 
-        if self.useReplaceSlots:
-            if self.useMatchNames:
-                unmatched = self.addMatched(ob.data.materials, dmats)
+            matches = []
+            if self.useReplaceSlots:
+                unmatched = []
+                for n,dmat in enumerate(main.materials):
+                    if self.useMatchNames:
+                        idx,mat = self.getMatch(dmat, ob.data.materials)
+                        if mat:
+                            matches.append((idx, mat, dmat))
+                        else:
+                            unmatched.append(dmat)
+                    else:
+                        idx = n
             else:
-                nmats = len(ob.data.materials)
-                for n,dmat in enumerate(dmats[0:nmats]):
-                    ob.data.materials[n] = dmat.rna
-                unmatched = dmats[nmats:]
-        else:
-            unmatched = dmats
-        if self.useAddSlots:
-            for dmat in unmatched:
-                ob.data.materials.append(dmat.rna)
+                unmatched = main.materials
+
+            for idx,mat,dmat in matches:
+                dmat.mesh = ob
+                if dmat.partial:
+                    self.updateMaterial(context, idx, mat, dmat)
+                else:
+                    dmat.build(context)
+                    dmat.postbuild()
+                    ob.data.materials[idx] = dmat.rna
+            if self.useAddSlots:
+                for dmat in unmatched:
+                    dmat.build(context)
+                    dmat.postbuild()
+                    ob.data.materials.append(dmat.rna)
+
         if LS.render:
             LS.render.build(context)
 
 
-    def addMatched(self, mats, dmats):
-        taken = dict([(n,False) for n in range(len(dmats))])
-        for m,mat in enumerate(list(mats)):
-            mname = self.getMatName(mat.name)
-            matched = False
-            for n,dmat in enumerate(dmats):
-                if (not taken[n] and
-                    self.getMatName(dmat.name) == mname):
-                    print("Match %s %s" % (mat.name, dmat.name))
-                    mats[m] = dmat.rna
-                    taken[n] = True
-                    matched = True
-                    break
-        return [dmat for n,dmat in enumerate(dmats) if not taken[n]]
+    def updateMaterial(self, context, idx, mat, dmat):
+        from .cycles import pruneNodeTree
+        dmat.getFromMaterial(context, mat)
+        tree = dmat.tree
+        if tree.getValue(["Makeup Enable"], False):
+            cycles,eevee = tree.getOutputs("DAZ Makeup")
+            tree.buildMakeup()
+            tree.linkToOutputs(cycles, eevee)
+        if GS.pruneNodes:
+            pruneNodeTree(mat.node_tree)
 
 
     def loadDazFile(self, filepath, context):
@@ -399,6 +404,15 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
             msg = ("File not found:  \n%s      " % filepath)
             raise DazError(msg)
         return main
+
+
+    def getMatch(self, dmat, mats):
+        dmname = self.getMatName(dmat.name)
+        for n,mat in enumerate(list(mats)):
+            mname = self.getMatName(mat.name)
+            if dmname == mname:
+                return n,mat
+        return 0,None
 
 
     def getMatName(self, mname):

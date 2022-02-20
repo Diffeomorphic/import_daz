@@ -85,6 +85,13 @@ class CyclesMaterial(Material):
         self.tree.build()
 
 
+    def getFromMaterial(self, context, mat):
+        Material.build(self, context)
+        self.rna = mat
+        self.tree = self.setupTree()
+        self.tree.getFromMaterial(mat)
+
+
     def setupTree(self):
         from .pbr import PbrTree
         from .brick import CyclesBrickTree, PbrBrickTree
@@ -495,6 +502,66 @@ class CyclesTree:
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
         return self.addTexco(slot)
+
+
+    def getFromMaterial(self, mat):
+        self.nodes = mat.node_tree.nodes
+        self.links = mat.node_tree.links
+        self.texco = findTexco(self)
+        self.normal = findNode(self, 'NORMAL_MAP')
+        self.bump = findNode(self, 'BUMP')
+
+
+    def getOutputs(self, grpname):
+        def getFromNode(self, node, slot):
+            link = getLinkTo(self, node, slot)
+            if link:
+                return link.from_node
+            else:
+                return None
+
+        def getToSocket(self, node, slot):
+            link = getLinkFrom(self, node, slot)
+            if link:
+                return link.to_node, link.to_socket
+            else:
+                return None, None
+
+        nodes = findNodes(self, 'GROUP')
+        for node in nodes:
+            if node.node_tree.name == grpname:
+                self.cycles = getFromNode(self, node, "Cycles")
+                self.eevee = getFromNode(self, node, "Eevee")
+                tonode,cycles = getToSocket(self, node, "Cycles")
+                _,eevee = getToSocket(self, node, "Eevee")
+                print("DD", cycles, tonode)
+                if tonode:
+                    self.column = int(tonode.location[0] // XSIZE)
+                return cycles, eevee
+
+        cycles = eevee = None
+        nodes = findNodes(self, 'OUTPUT_MATERIAL')
+        for node in nodes:
+            node.location[0] += 3*XSIZE
+            self.column = int(node.location[0] // XSIZE)
+            if node.target == 'CYCLES':
+                self.cycles = getFromNode(self, node, "Surface")
+                cycles = node.inputs["Surface"]
+            elif node.target == 'EEVEE':
+                self.eevee = getFromNode(self, node, "Surface")
+                eevee = node.inputs["Surface"]
+            else:
+                self.cycles = self.eevee = getFromNode(self, node, "Surface")
+                cycles = eevee = node.inputs["Surface"]
+        print("OO", cycles)
+        return cycles, eevee
+
+
+    def linkToOutputs(self, cycles, eevee):
+        if self.cycles:
+            self.links.new(self.getCyclesSocket(), cycles)
+        if self.eevee:
+            self.links.new(self.getEeveeSocket(), eevee)
 
 
     def addTexco(self, slot):
@@ -1913,6 +1980,14 @@ def findLinksTo(tree, ntype):
         if link.to_node.type == ntype:
             links.append(link)
     return links
+
+
+def getLinkFrom(tree, node, slot):
+    for link in tree.links:
+        if (link.from_node == node and
+            link.from_socket.name == slot):
+            return link
+    return None
 
 
 def getLinkTo(tree, node, slot):
