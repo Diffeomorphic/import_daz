@@ -1100,19 +1100,21 @@ class Rigify:
         # Fix bend and twist drivers
         print("  Fix bend and twist drivers")
         specials = {
-            "lShldr" : "upper_arm.L",
-            "lForearm" : "forearm.L",
-            "lThigh" : "thigh.L",
-            "rShldr" : "upper_arm.R",
-            "rForearm" : "forearm.R",
-            "rThigh" : "thigh.R",
+            "Shldr" : "upper_arm",
+            "ForeArm" : "forearm",
+            "Thigh" : "thigh",
+            "Shin" : "shin",
         }
-        for dname,rname in specials.items():
-            bname = self.getOrgDefBone(rname, gen)
-            assoc[dname] = bname
-            assoc["%sBend" % dname] = bname
-            assoc[finBone(dname)] = bname
-            assoc[finBone("%sBend" % dname)] = bname
+        for dname0,rname0 in specials.items():
+            for prefix,suffix in [("l","L"), ("r","R")]:
+                dname = "%s%s" % (prefix, dname0)
+                rname = "%s.%s" % (rname0, suffix)
+                bname = self.getOrgDefBone(rname, gen)
+                assoc[dname] = bname
+                assoc["%sBend" % dname] = bname
+                assoc[finBone(dname)] = bname
+                assoc[finBone("%sBend" % dname)] = bname
+                self.fixIkBone(dname, rig, (rname0, suffix), gen)
         self.fixBoneDrivers(gen, assoc)
 
         # Unlock bend locks
@@ -1214,13 +1216,13 @@ class Rigify:
 
 
     def getOrgDefBone(self, bname, rig):
-        def isCopyTransformed(bname, rig, rotmode):
+        def isCopyTransformed(bname, rig, pb0):
             if bname not in rig.pose.bones.keys():
                 return False
             pb = rig.pose.bones[bname]
             if getConstraint(pb, 'COPY_TRANSFORMS'):
-                if rotmode:
-                    pb.rotation_mode = rotmode
+                if pb0:
+                    pb.rotation_mode = pb0.rotation_mode
                 return True
             return False
 
@@ -1229,17 +1231,38 @@ class Rigify:
             pb = rig.pose.bones.get("%s_fk.%s" % (bname[:-2], bname[-1]))
         if pb is None:
             pb = rig.pose.bones.get("%s_fk_%s" % (bname[:-2], bname[-1]))
-        if pb:
-            rotmode = pb.rotation_mode
-        else:
-            rotmode = None
+        if pb is None:
+            pass
             #print("Could not find FK bone", bname)
-        if isCopyTransformed("ORG-"+bname, rig, rotmode):
+        if isCopyTransformed("ORG-"+bname, rig, pb):
             return "ORG-"+bname
-        elif isCopyTransformed("DEF-"+bname, rig, rotmode):
+        elif isCopyTransformed("DEF-"+bname, rig, pb):
             return "DEF-"+bname
         else:
             return bname
+
+
+    def fixIkBone(self, dname, rig, rname, gen):
+        pb = rig.pose.bones.get(dname)
+        if pb:
+            rotmode = pb.rotation_mode
+            locks = list(pb.lock_rotation)
+            locks[1] = False
+        else:
+            print("Missing DAZ bone", dname)
+            return
+        pb = gen.pose.bones.get("%s_ik.%s" % rname)
+        if pb is None:
+            pb = gen.pose.bones.get("MCH-%s_ik.%s" % rname)
+        if pb is None:
+            pb = gen.pose.bones.get("%s.ik.%s" % rname)
+        if pb is None:
+            pb = gen.pose.bones.get("MCH-%s.ik.%s" % rname)
+        if pb is None:
+            print("Missing IK bone: %s_ik.%s" % rname)
+        pb.rotation_mode = rotmode
+        for n,x in enumerate(["x", "y", "z"]):
+            setattr(pb, "lock_ik_%s" % x, locks[n])
 
 
     def getChildren(self, pb):

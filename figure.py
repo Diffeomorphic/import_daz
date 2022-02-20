@@ -197,7 +197,7 @@ class FigureInstance(Instance):
             LS.hdmeshes[LS.rigname] = []
         LS.rigs[LS.rigname].append(rig)
 
-
+'''
     def setupPlanes(self):
         if self.node.rigtype not in PlanesUsed.keys():
             return
@@ -254,6 +254,7 @@ PlanePoints = {
     "rPinky" : ["rPinky1", "rPinky2", "rPinky3"],
     "rHand" : ["rMid1", "rIndex3", "rPinky2"],
 }
+'''
 
 #-------------------------------------------------------------
 #   Figure
@@ -306,7 +307,7 @@ class Figure(Node):
             geonode.addLSMesh(geonode.rna, inst, LS.rigname)
 
         center = inst.attributes["center_point"]
-        inst.setupPlanes()
+        #inst.setupPlanes()
         activateObject(context, rig)
 
         setMode('EDIT')
