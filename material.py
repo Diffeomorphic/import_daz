@@ -253,6 +253,7 @@ class Material(Asset, Channels):
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
 
+
     def build(self, context):
         from .geometry import Geometry, GeoNode
         if self.dontBuild():

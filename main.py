@@ -304,12 +304,6 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         self.layout.prop(self, "useAddSlots")
 
     def run(self, context):
-        def getKey(anim, keys):
-            for key,_,_,_ in anim:
-                if key in keys:
-                   return True
-            return False
-
         from .cycles import CyclesMaterial
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
@@ -329,21 +323,16 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
             if main.materials:
                 for dmat in main.materials:
                     basename = self.getMatName(dmat.name)
-                    if basename in anims.keys():
+                    anim = anims.get(basename)
+                    if anim:
+                        self.setPartial(dmat, anim)
                         self.fixMaterial(dmat, anims[basename])
             else:
                 for mname,anim in anims.items():
                     dmat = CyclesMaterial(main.fileref)
                     mstruct = {"id" : mname}
                     dmat.parse(mstruct)
-                    if getKey(anim, ["Makeup Weight"]):
-                        dmat.shader = 'PBRSKIN'
-                        if not getKey(anim, ["Diffuse Color"]):
-                            dmat.partial = True
-                    elif getKey(anim, ["Diffuse Roughness"]):
-                        shader = 'UBER_IRAY'
-                        if not getKey(anim, ["Diffuse Color"]):
-                            dmat.partial = True
+                    self.setPartial(dmat, anim)
                     dmat.update(mstruct)
                     self.fixMaterial(dmat, anim)
                     main.materials.append(dmat)
@@ -388,6 +377,10 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         if tree.getValue(["Makeup Enable"], False):
             cycles,eevee = tree.getOutputs("DAZ Makeup")
             tree.buildMakeup()
+            tree.linkToOutputs(cycles, eevee)
+        if tree.getValue(["Diffuse Overlay Weight"], 0):
+            cycles,eevee = tree.getOutputs("DAZ Overlay")
+            tree.buildOverlay()
             tree.linkToOutputs(cycles, eevee)
         if GS.pruneNodes:
             pruneNodeTree(mat.node_tree)
@@ -449,6 +442,24 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         else:
             raise RuntimeError("Unexpected URL: %s" % url)
         return mname, unquote(channel), type, mod
+
+
+    def setPartial(self, dmat, anim):
+        def getKey(anim, keys):
+            for key,_,_,_ in anim:
+                if key in keys:
+                   return True
+            return False
+
+        dmat.partial = False
+        if getKey(anim, ["Makeup Weight"]):
+            dmat.shader = 'PBRSKIN'
+            if not getKey(anim, ["Diffuse Color"]):
+                dmat.partial = True
+        elif getKey(anim, ["Diffuse Overlay Weight"]):
+            dmat.shader = 'UBER_IRAY'
+            if not getKey(anim, ["diffuse", "Diffuse Color"]):
+                dmat.partial = True
 
 
     def fixMaterial(self, dmat, anim):
