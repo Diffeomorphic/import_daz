@@ -320,6 +320,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 if mname not in anims.keys():
                     anims[mname] = []
                 anims[mname].append((key, type, mod, frames))
+            taken = {}
             if main.materials:
                 for dmat in main.materials:
                     basename = self.getMatName(dmat.name)
@@ -327,8 +328,10 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                     if anim:
                         self.setPartial(dmat, anim)
                         self.fixMaterial(dmat, anims[basename])
-            else:
-                for mname,anim in anims.items():
+                        taken[basename] = True
+            for mname,anim in anims.items():
+                basename = self.getMatName(mname)
+                if basename not in taken.keys():
                     dmat = CyclesMaterial(main.fileref)
                     mstruct = {"id" : mname}
                     dmat.parse(mstruct)
@@ -345,7 +348,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                         idx,mat = self.getMatch(dmat, ob.data.materials)
                         if mat:
                             matches.append((idx, mat, dmat))
-                        else:
+                        elif dmat.name not in ["PBRSkin"]:
                             unmatched.append(dmat)
                     else:
                         matches.append((n, mat, dmat))
@@ -375,11 +378,18 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         dmat.getFromMaterial(context, mat)
         tree = dmat.tree
         if tree.getValue(["Makeup Enable"], False):
-            cycles,eevee = tree.getOutputs("DAZ Makeup")
+            cycles,eevee = tree.getOutputs(["DAZ Makeup", "DAZ Dual Lobe PBR", "DAZ Top Coat"])
             tree.buildMakeup()
             tree.linkToOutputs(cycles, eevee)
+        if tree.getValue(["Metallicity Enable"], False):
+            if dmat.shader == 'UBER_IRAY':
+                cycles,eevee = tree.getOutputs(["DAZ Metal Uber", "DAZ Top Coat"])
+            elif dmat.shader == 'PBRSKIN':
+                cycles,eevee = tree.getOutputs(["DAZ Metal PBR", "DAZ Top Coat"])
+            tree.buildMetal()
+            tree.linkToOutputs(cycles, eevee)
         if tree.getValue(["Diffuse Overlay Weight"], 0):
-            cycles,eevee = tree.getOutputs("DAZ Overlay")
+            cycles,eevee = tree.getOutputs(["DAZ Overlay"])
             tree.buildOverlay()
             tree.linkToOutputs(cycles, eevee)
         if GS.pruneNodes:

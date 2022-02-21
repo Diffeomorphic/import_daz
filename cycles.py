@@ -512,7 +512,7 @@ class CyclesTree:
         self.bump = findNode(self, 'BUMP')
 
 
-    def getOutputs(self, grpname):
+    def getOutputs(self, grpnames):
         def getFromNode(self, node, slot):
             link = getLinkTo(self, node, slot)
             if link:
@@ -528,21 +528,30 @@ class CyclesTree:
                 return None, None
 
         nodes = findNodes(self, 'GROUP')
-        for node in nodes:
-            if node.node_tree.name == grpname:
-                self.cycles = getFromNode(self, node, "Cycles")
-                self.eevee = getFromNode(self, node, "Eevee")
-                tonode,cycles = getToSocket(self, node, "Cycles")
-                _,eevee = getToSocket(self, node, "Eevee")
-                if cycles and eevee:
-                    if tonode:
-                        self.column = int(tonode.location[0] // XSIZE)
-                    return cycles, eevee
+        for idx,grpname in enumerate(grpnames):
+            for node in nodes:
+                if node.node_tree.name == grpname:
+                    self.cycles = getFromNode(self, node, "Cycles")
+                    self.eevee = getFromNode(self, node, "Eevee")
+                    if idx == 0:
+                        tonode,cycles = getToSocket(self, node, "Cycles")
+                        _,eevee = getToSocket(self, node, "Eevee")
+                    else:
+                        cycles = node.inputs["Cycles"]
+                        eevee = node.inputs["Eevee"]
+                        tonode = node
+                    if cycles and eevee:
+                        print("FOUND", grpname, idx)
+                        if tonode:
+                            self.column = int(tonode.location[0] // XSIZE)
+                        if idx != 0:
+                            self.ycoords = NCOLUMNS*[6*YSIZE]
+                        return cycles, eevee
 
         cycles = eevee = None
         nodes = findNodes(self, 'OUTPUT_MATERIAL')
         for node in nodes:
-            node.location[0] += 3*XSIZE
+            #node.location[0] += 3*XSIZE
             self.column = int(node.location[0] // XSIZE)
             if node.target == 'CYCLES':
                 self.cycles = getFromNode(self, node, "Surface")
@@ -553,6 +562,7 @@ class CyclesTree:
             else:
                 self.cycles = self.eevee = getFromNode(self, node, "Surface")
                 cycles = eevee = node.inputs["Surface"]
+        self.ycoords = NCOLUMNS*[6*YSIZE]
         return cycles, eevee
 
 
