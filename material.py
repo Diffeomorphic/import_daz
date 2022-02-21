@@ -136,6 +136,9 @@ class Material(Asset, Channels):
                     geo.uv_sets[uvset.name] = uvset
                     self.useDefaultUvs = False
                 self.uv_set = uvset
+
+
+    def setupBasics(self):
         self.basemix = self.getValue(["Base Mixing"], 0)
         if self.basemix > 2:
             self.basemix = 0
@@ -258,6 +261,7 @@ class Material(Asset, Channels):
         from .geometry import Geometry, GeoNode
         if self.dontBuild():
             return
+        self.setupBasics()
         mat = self.rna
         if mat is None:
             mat = self.rna = bpy.data.materials.new(self.name)

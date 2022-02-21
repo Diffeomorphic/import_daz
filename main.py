@@ -348,7 +348,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                         else:
                             unmatched.append(dmat)
                     else:
-                        idx = n
+                        matches.append((n, mat, dmat))
             else:
                 unmatched = main.materials
 
@@ -401,7 +401,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 
     def getMatch(self, dmat, mats):
         dmname = self.getMatName(dmat.name)
-        for n,mat in enumerate(list(mats)):
+        for n,mat in enumerate(mats):
             mname = self.getMatName(mat.name)
             if dmname == mname:
                 return n,mat
@@ -454,7 +454,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         dmat.partial = False
         if getKey(anim, ["Makeup Weight"]):
             dmat.shader = 'PBRSKIN'
-            if not getKey(anim, ["Diffuse Color"]):
+            if not getKey(anim, ["diffuse", "Diffuse Color"]):
                 dmat.partial = True
         elif getKey(anim, ["Diffuse Overlay Weight"]):
             dmat.shader = 'UBER_IRAY'
