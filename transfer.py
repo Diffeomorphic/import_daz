@@ -63,6 +63,7 @@ class FastMatcher:
             context.scene.collection.objects.link(ob)
             activateObject(context, ob)
             setMode('EDIT')
+            bpy.ops.mesh.reveal()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
             setMode('OBJECT')
