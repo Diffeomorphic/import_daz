@@ -381,8 +381,7 @@ class CyclesTree:
         self.makeTree()
         self.buildLayers()
         self.buildCutout()
-        if GS.materialMethod != 'SINGLE':
-            self.buildVolume()
+        self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
         if GS.materialMethod != 'SINGLE':
@@ -1496,7 +1495,8 @@ class CyclesTree:
     def buildVolume(self):
         if (self.material.isThinWall() or
             self.pureMetal or
-            not GS.useVolume):
+            not GS.useVolume or
+            GS.materialMethod == 'SINGLE'):
             return
         self.volume = None
         if self.isEnabled("Translucency"):
@@ -1537,11 +1537,6 @@ class CyclesTree:
 
     def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
         from .cgroup import VolumeGroup
-        if self.material.shader == 'UBER_IRAY':
-            factor = 50
-        else:
-            factor = 25
-
         sss = self.getValue(["SSS Amount"], 0.0)
         dist = self.getValue(["Scattering Measurement Distance"], 0.0)
         if not (sssmode == 0 or isBlack(ssscolor) or isWhite(ssscolor) or dist == 0.0):
@@ -1549,7 +1544,7 @@ class CyclesTree:
             if self.volume is None:
                 self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
             self.linkColor(tex, self.volume, color, "Scatter Color")
-            self.volume.inputs["Scatter Density"].default_value = factor/dist
+            self.volume.inputs["Scatter Density"].default_value = 200/dist
             self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
         elif sss > 0 and dist > 0.0:
             if self.volume is None:
@@ -1557,7 +1552,7 @@ class CyclesTree:
             sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
             color = (sss,sss,sss)
             self.linkColor(tex, self.volume, color, "Scatter Color")
-            self.volume.inputs["Scatter Density"].default_value = factor/dist
+            self.volume.inputs["Scatter Density"].default_value = 200/dist
             self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
 
     #-------------------------------------------------------------
