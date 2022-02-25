@@ -450,6 +450,11 @@ def copyBoneInfo(srcpb, trgpb):
     trgpb.DazRotMode = srcpb.DazRotMode
     if "DazAltName" in srcpb.keys():
         trgpb.DazAltName = srcpb.DazAltName
+    for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
+        for x in ["x", "y", "z"]:
+            attr = "%s_%s" % (key, x)
+            if hasattr(srcpb, attr):
+                setattr(trgpb, attr, getattr(srcpb, attr))
 
 
 class ExtraBones(DriverUser):
