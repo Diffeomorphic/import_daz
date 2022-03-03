@@ -987,10 +987,7 @@ class LoadMorph(DriverUser):
         vals = [(abs(x), n, x) for n,x in enumerate(uvec)]
         vals.sort()
         _,n,umax = vals[-1]
-        if drvBone(bname) in self.rig.pose.bones.keys():
-            vars = [(n, vname, finBone(bname))]
-        else:
-            vars = [(n, vname, bname)]
+        vars = [(n, vname, bname)]
         return vname, vars, umax
 
 

@@ -458,7 +458,7 @@ def copyBoneInfo(srcpb, trgpb):
 
 
 class ExtraBones(DriverUser):
-    keepLimits = False
+    keepLimits = True
 
     def run(self, context):
         from time import perf_counter
@@ -512,9 +512,9 @@ class ExtraBones(DriverUser):
     def combineDrvFinBone(self, fcu, rig, var, trg, varnames):
         if trg.transform_type[0:3] == "ROT":
             bname = baseBone(trg.bone_target)
-            if finBone(bname) in rig.pose.bones.keys():
-                trg.bone_target = finBone(bname)
-            elif drvBone(bname) in rig.pose.bones.keys():
+            #if finBone(bname) in rig.pose.bones.keys():
+            #    trg.bone_target = finBone(bname)
+            if drvBone(bname) in rig.pose.bones.keys():
                 trg.bone_target = drvBone(bname)
         else:
             self.combineDrvSimple(fcu, var, trg, varnames)
@@ -541,12 +541,12 @@ class ExtraBones(DriverUser):
         fcu.driver.expression = expr
 
 
-    def addFinBone(self, rig, bname, boneDrivers, sumDrivers):
+    def addCopyConstraint(self, rig, bname, boneDrivers, sumDrivers):
         def addFields(cns, rig, bname):
             cns.target = rig
-            cns.subtarget = bname
-            cns.target_space = 'POSE'
-            cns.owner_space = 'POSE'
+            cns.subtarget = drvBone(bname)
+            cns.target_space = 'LOCAL'
+            cns.owner_space = 'LOCAL'
             cns.influence = 1.0
 
         def isSuchDriver(bname, drivers):
@@ -563,20 +563,23 @@ class ExtraBones(DriverUser):
             return isLoc, isRot, isScale
 
         pb = rig.pose.bones[bname]
-        fb = rig.pose.bones[finBone(bname)]
+        #fb = rig.pose.bones[finBone(bname)]
         isLoc1,isRot1,isScale1 = isSuchDriver(bname, boneDrivers)
         isLoc2,isRot2,isScale2 = isSuchDriver(bname, sumDrivers)
         if isLoc1 or isLoc2:
-            cns = fb.constraints.new('COPY_LOCATION')
+            cns = pb.constraints.new('COPY_LOCATION')
             addFields(cns, rig, bname)
+            cns.use_offset = True
         if isRot1 or isRot2:
-            cns = fb.constraints.new('COPY_ROTATION')
-            if pb.parent.rotation_mode != 'QUATERNION':
+            cns = pb.constraints.new('COPY_ROTATION')
+            if pb.parent and pb.parent.rotation_mode != 'QUATERNION':
                 cns.euler_order = pb.parent.rotation_mode
             addFields(cns, rig, bname)
+            cns.mix_mode = 'ADD'
         if isScale1 or isScale2:
-            cns = fb.constraints.new('COPY_SCALE')
+            cns = pb.constraints.new('COPY_SCALE')
             addFields(cns, rig, bname)
+            cns.use_offset = True
 
 
     def updateScriptedDrivers(self, rna):
@@ -666,7 +669,7 @@ class ExtraBones(DriverUser):
             #raise DazError(msg)
 
         drivenLayers = 31*[False] + [True]
-        finalLayers = 30*[False] + [True,False]
+        #finalLayers = 30*[False] + [True,False]
 
         print("  Rename bones")
         self.bnames = self.getBoneNames(rig)
@@ -682,11 +685,11 @@ class ExtraBones(DriverUser):
         for bname in self.bnames:
             db = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(db, rig, bname)
-            eb.parent = db
-            fb = copyEditBone(db, rig, finBone(bname))
-            fb.parent = db.parent
-            fb.layers = finalLayers
-            fb.use_deform = False
+            eb.parent = db.parent
+            #fb = copyEditBone(db, rig, finBone(bname))
+            #fb.parent = db.parent
+            #fb.layers = finalLayers
+            #fb.use_deform = False
             db.layers = drivenLayers
             db.use_deform = False
             self.changeLayer(eb, rig)
@@ -700,8 +703,9 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                fb = rig.data.bones[finBone(bname)]
-                bone.DazExtraBone = fb.DazExtraBone = db.DazExtraBone
+                #fb = rig.data.bones[finBone(bname)]
+                bone.DazExtraBone = db.DazExtraBone
+                #fb.DazExtraBone = db.DazExtraBone
 
         setMode('EDIT')
         for bname in self.bnames:
@@ -716,28 +720,26 @@ class ExtraBones(DriverUser):
         for bname in self.bnames:
             pb = rig.pose.bones[bname]
             db = rig.pose.bones[drvBone(bname)]
-            fb = rig.pose.bones[finBone(bname)]
+            #fb = rig.pose.bones[finBone(bname)]
             copyPoseBone(db, pb)
-            copyPoseBone(db, fb)
+            #copyPoseBone(db, fb)
             db.custom_shape = None
             copyBoneInfo(db, pb)
             if self.keepLimits:
                 store.storeConstraints(db.name, db)
                 store.removeConstraints(db)
+                self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
                 store.restoreConstraints(db.name, pb)
             else:
                 store.removeConstraints(db)
                 pb.use_ik_limit_x = pb.use_ik_limit_y = pb.use_ik_limit_z = False
 
-        print("  Add fin bone drivers")
-        for bname in self.bnames:
-            self.addFinBone(rig, bname, boneDrivers, sumDrivers)
         print("  Restore bone drivers")
         self.restoreBoneSumDrivers(rig, boneDrivers)
         print("  Restore sum drivers")
         self.restoreBoneSumDrivers(rig, sumDrivers)
         print("  Update scripted drivers")
-        self.updateScriptedDrivers(rig.data)
+        #self.updateScriptedDrivers(rig.data)
         print("  Update drivers")
         setattr(rig.data, self.attr, True)
         updateDrivers(rig)

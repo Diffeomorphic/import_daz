@@ -319,8 +319,8 @@ def drvBone(string):
         return string
     return string + "(drv)"
 
-def finBone(string):
-    return string + "(fin)"
+#def finBone(string):
+#    return string + "(fin)"
 
 def baseBone(string):
     if (string[-3:] in ["Drv","Fin"]):
