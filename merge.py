@@ -1339,7 +1339,7 @@ def mergeBonesAndVgroups(rig, mergers, parents, context):
 
     deletes = []
     for bones in mergers.values():
-        deletes += bones + [drvBone(bone) for bone in bones] # + [finBone(bone) for bone in bones]
+        deletes += bones + [drvBone(bone) for bone in bones]
     activateObject(context, rig)
     removeBoneSumDrivers(rig, deletes)
 

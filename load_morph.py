@@ -495,6 +495,7 @@ class LoadMorph(DriverUser):
 
     def getDrivenBone(self, bname):
         bname = self.getRealBone(bname)
+        return bname
         if bname:
             dname = drvBone(bname)
             if dname in self.rig.pose.bones.keys():

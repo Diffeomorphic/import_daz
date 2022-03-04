@@ -654,10 +654,6 @@ class Rigify:
                 if pname in extras.keys() or pname in taken:
                     break
                 extras[pname] = pname
-                #if isDrvBone(pname):
-                #    fname = finBone(bone.name)
-                #    if fname in rig.data.bones.keys():
-                #        extras[fname] = fname
                 bone = bone.parent
         for pb in rig.data.bones:
             if isDrvBone(pb.name):
@@ -1073,7 +1069,6 @@ class Rigify:
         # Fix drivers
         def setAssoc(dname, rname):
             assoc[dname] = rname
-            #assoc[finBone(dname)] = finBone(rname)
 
         print("  Fix drivers")
         assoc = {}
@@ -1117,8 +1112,6 @@ class Rigify:
                 bname = self.getOrgDefBone(rname, gen)
                 assoc[dname] = bname
                 assoc["%sBend" % dname] = bname
-                #assoc[finBone(dname)] = bname
-                #assoc[finBone("%sBend" % dname)] = bname
                 self.fixIkBone(dname, rig, (rname0, suffix), gen)
         self.fixBoneDrivers(gen, assoc)
 

@@ -493,29 +493,22 @@ class ExtraBones(DriverUser):
         for var in fcu.driver.variables:
             if var.name == "parscale":
                 for trg in var.targets:
-                    bname = trg.bone_target
+                    bname = baseBone(trg.bone_target)
                     if bname in self.bnames:
-                        trg.bone_target = drvBone(bname)
+                        trg.bone_target = bname
 
 
     def replaceDataPathDrv(self, string):
         words = string.split('"')
         if words[0] == "pose.bones[":
             bname = words[1]
-            if isDrvBone(bname):
-                return string
-            elif bname in self.bnames:
-                return string.replace(propRef(bname), propRef(drvBone(bname)))
+            return string.replace(propRef(bname), propRef(baseBone(bname)))
         return string
 
 
     def combineDrvFinBone(self, fcu, rig, var, trg, varnames):
         if trg.transform_type[0:3] == "ROT":
-            bname = baseBone(trg.bone_target)
-            #if finBone(bname) in rig.pose.bones.keys():
-            #    trg.bone_target = finBone(bname)
-            if drvBone(bname) in rig.pose.bones.keys():
-                trg.bone_target = drvBone(bname)
+            trg.bone_target = baseBone(trg.bone_target)
         else:
             self.combineDrvSimple(fcu, var, trg, varnames)
 
@@ -563,7 +556,6 @@ class ExtraBones(DriverUser):
             return isLoc, isRot, isScale
 
         pb = rig.pose.bones[bname]
-        #fb = rig.pose.bones[finBone(bname)]
         isLoc1,isRot1,isScale1 = isSuchDriver(bname, boneDrivers)
         isLoc2,isRot2,isScale2 = isSuchDriver(bname, sumDrivers)
         if isLoc1 or isLoc2:
@@ -595,7 +587,7 @@ class ExtraBones(DriverUser):
                         fcu2 = self.getTmpDriver(0)
                         self.copyFcurve(fcu, fcu2)
                         rna.driver_remove(channel)
-                        self.setBoneTarget(fcu2, finBone(bname))
+                        self.setBoneTarget(fcu2, bname)
                         fcu3 = rna.animation_data.drivers.from_existing(src_driver=fcu2)
                         fcu3.data_path = channel
                         self.clearTmpDriver(0)
@@ -686,10 +678,6 @@ class ExtraBones(DriverUser):
             db = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(db, rig, bname)
             eb.parent = db.parent
-            #fb = copyEditBone(db, rig, finBone(bname))
-            #fb.parent = db.parent
-            #fb.layers = finalLayers
-            #fb.use_deform = False
             db.layers = drivenLayers
             db.use_deform = False
             self.changeLayer(eb, rig)
@@ -699,13 +687,10 @@ class ExtraBones(DriverUser):
             if (bname not in rig.pose.bones.keys() or
                 drvBone(bname) not in rig.pose.bones.keys()):
                 pass
-                #del self.bnames[bname]
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                #fb = rig.data.bones[finBone(bname)]
                 bone.DazExtraBone = db.DazExtraBone
-                #fb.DazExtraBone = db.DazExtraBone
 
         setMode('EDIT')
         for bname in self.bnames:
@@ -720,9 +705,7 @@ class ExtraBones(DriverUser):
         for bname in self.bnames:
             pb = rig.pose.bones[bname]
             db = rig.pose.bones[drvBone(bname)]
-            #fb = rig.pose.bones[finBone(bname)]
             copyPoseBone(db, pb)
-            #copyPoseBone(db, fb)
             db.custom_shape = None
             copyBoneInfo(db, pb)
             if self.keepLimits:
@@ -739,7 +722,7 @@ class ExtraBones(DriverUser):
         print("  Restore sum drivers")
         self.restoreBoneSumDrivers(rig, sumDrivers)
         print("  Update scripted drivers")
-        #self.updateScriptedDrivers(rig.data)
+        self.updateScriptedDrivers(rig.data)
         print("  Update drivers")
         setattr(rig.data, self.attr, True)
         updateDrivers(rig)
