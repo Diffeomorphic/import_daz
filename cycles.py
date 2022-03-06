@@ -1439,7 +1439,6 @@ class CyclesTree:
 
     def addEmitColor(self, emit, slot):
         color,tex = self.getColorTex("getChannelEmissionColor", "COLOR", BLACK)
-        print("EE", slot, color, tex)
         if tex is None:
             _,tex = self.getColorTex(["Luminance"], "COLOR", BLACK)
         temp = self.getValue(["Emission Temperature"], None)

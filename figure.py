@@ -458,7 +458,14 @@ def copyBoneInfo(srcpb, trgpb):
 
 
 class ExtraBones(DriverUser):
-    keepLimits = True
+
+    useEnableLimits : BoolProperty(
+        name = "Enable Limits",
+        description = "Enable Limit Location and Limit Rotation constraints for the free bone",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useEnableLimits")
 
     def run(self, context):
         from time import perf_counter
@@ -708,14 +715,14 @@ class ExtraBones(DriverUser):
             copyPoseBone(db, pb)
             db.custom_shape = None
             copyBoneInfo(db, pb)
-            if self.keepLimits:
-                store.storeConstraints(db.name, db)
-                store.removeConstraints(db)
-                self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
-                store.restoreConstraints(db.name, pb)
-            else:
-                store.removeConstraints(db)
-                pb.use_ik_limit_x = pb.use_ik_limit_y = pb.use_ik_limit_z = False
+            store.storeConstraints(db.name, db)
+            store.removeConstraints(db)
+            self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
+            store.restoreConstraints(db.name, pb)
+            if not self.useEnableLimits:
+                for cns in pb.constraints:
+                    if cns.type[0:5] == "LIMIT":
+                        cns.mute = True
 
         print("  Restore bone drivers")
         self.restoreBoneSumDrivers(rig, boneDrivers)
@@ -758,7 +765,7 @@ class ExtraBones(DriverUser):
                         cns.driver_remove(channel)
 
 
-class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
+class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
     bl_idname = "daz.add_extra_face_bones"
     bl_label = "Add Extra Face Bones"
     bl_description = "Add an extra layer of face bones, which can be both driven and posed"
@@ -807,7 +814,7 @@ def getAnchoredBoneNames(rig, anchors):
     return bnames
 
 
-class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
+class DAZ_OT_MakeAllBonesPoseable(DazPropsOperator, ExtraBones, IsArmature):
     bl_idname = "daz.make_all_bones_poseable"
     bl_label = "Make All Bones Poseable"
     bl_description = "Add an extra layer of driven bones, to make them poseable"

@@ -648,7 +648,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
 
     useTear : BoolProperty(
         name = "Tear",
-        default = True)
+        default = False)
 
     useBrows : BoolProperty(
         name = "Brows",
