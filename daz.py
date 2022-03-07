@@ -546,7 +546,7 @@ def register():
 
     bpy.types.Scene.DazUseLimitLoc = BoolProperty(
         name = "Location Limits",
-        description = "Use location limits")
+        description = "Enable location limits")
 
     bpy.types.Scene.DazUseLockRot = BoolProperty(
         name = "Rotation Locks",
@@ -554,7 +554,7 @@ def register():
 
     bpy.types.Scene.DazUseLimitRot = BoolProperty(
         name = "Rotation Limits",
-        description = "Use rotation limits")
+        description = "Enable rotation limits")
 
     bpy.types.Scene.DazDisplayLimitRot = BoolProperty(
         name = "Display Rotation Limits",
