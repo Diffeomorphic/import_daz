@@ -628,12 +628,17 @@ class ConstraintStore:
 
 
     def restoreConstraint(self, struct, pb, target=None):
-        cns = pb.constraints.new(struct["type"])
+        ctype = struct["type"]
+        cns = pb.constraints.new(ctype)
         for attr,value in struct.items():
             if attr != "type":
                 setattr(cns, attr, value)
         if target and hasattr(cns, "target"):
             cns.target = target
+        if ((ctype == 'LIMIT_LOCATION' and not GS.useLimitLoc) or
+            (ctype == 'LIMIT_ROTATION' and not GS.useLimitRot) or
+            (ctype == 'LIMIT_SCALE' and not GS.useLimitRot)):
+            cns.mute = True
 
 
     def removeConstraints(self, pb):
