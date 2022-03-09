@@ -54,8 +54,16 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             "but affects viewport performance"),
         default = True)
 
+    useMergeUvs : BoolProperty(
+        name = "Merge UV Layers",
+        description = (
+            "Merge first UV layers of all meshes.\n" +
+            "Only works for geografts where the first layer is the base layer"),
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useVertexTable")
+        self.layout.prop(self, "useMergeUvs")
 
     def __init__(self):
         DriverUser.__init__(self)
@@ -276,6 +284,16 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
                     vn += 1
         else:
             cob.data.DazFingerPrint = ""
+
+        # Merge UV layers
+        if self.useMergeUvs:
+            idxs = []
+            for idx,uvlayer in enumerate(cob.data.uv_layers):
+                if uvlayer.name in auvnames:
+                    idxs.append(idx)
+            idxs.reverse()
+            for idx in idxs:
+                mergeUvLayers(cob.data, 0, idx)
 
         self.copyShapeKeyDrivers(cob, drivers)
         updateDrivers(cob)
