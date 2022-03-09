@@ -637,6 +637,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
         description = "Merge selected geografts to active object.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
         default = False)
 
+    useMergeUvs : BoolProperty(
+        name = "Merge UV Layers",
+        description = (
+            "Merge first UV layers of all meshes.\n" +
+            "Only works for geografts where the first layer is the base layer"),
+        default = False)
+
     useMergeFaceMeshes : BoolProperty(
         name = "Merge Face Meshes",
         description = "Merge separate face meshes (eyelash, brow, tear, beard) to character.\nIneffective if there are unmerged geografts.\nShapekeys are always transferred first",
@@ -724,6 +731,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
             self.layout.prop(self, "useTransferShapes")
         self.layout.prop(self, "useSoftbody")
         self.layout.prop(self, "useMergeGeografts")
+        if self.useMergeGeografts:
+            self.subprop("useMergeUvs")
         self.layout.prop(self, "useMergeFaceMeshes")
         if self.useMergeFaceMeshes:
             self.subprop("useLashes")
@@ -940,7 +949,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
                     for aob in aobs:
                         selectSet(aob, True)
                 print("Merge geografts")
-                bpy.ops.daz.merge_geografts()
+                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs)
                 if GS.viewportColors == 'GUESS':
                     from .guess import guessMaterialColor
                     LS.skinColor = self.skinColor
