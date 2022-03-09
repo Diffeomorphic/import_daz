@@ -638,11 +638,19 @@ class CyclesTree:
 #-------------------------------------------------------------
 
     def buildNormal(self, uvname):
-        if not self.isEnabled("Normal"):
-            return
-        strength,tex = self.getColorTex("getChannelNormal", "NONE", 1.0, useFactor=False)
-        if strength>0 and tex:
-            self.buildNormalMap(strength, tex, uvname)
+        if self.isEnabled("Normal"):
+            strength,tex = self.getColorTex("getChannelNormal", "NONE", 1.0, useFactor=False)
+            if strength>0 and tex:
+                self.buildNormalMap(strength, tex, uvname)
+
+        if GS.useAutoSmooth and self.getValue(["Smooth On"], False):
+            rad = self.getValue(["Round Corners Radius"], 0)
+            if rad != 0:
+                node = self.addNode("ShaderNodeBevel", col=3)
+                node.samples = 32
+                node.inputs["Radius"].default_value = rad
+                self.linkNormal(node)
+                self.normal = node
 
 
     def buildNormalMap(self, strength, tex, uvname):
