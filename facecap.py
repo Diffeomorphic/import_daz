@@ -219,7 +219,7 @@ class FACSImporter(SingleFile, ActionOptions):
         if bname not in rig.pose.bones.keys():
             return None
         pb = rig.pose.bones[bname]
-        msg = ("Bone %s is driven.\nMake extra face bones first" % bname)
+        msg = ("Bone %s is driven.\nMake bones poseable first first" % bname)
         if rig.animation_data:
             datapath = 'pose.bones["%s"].rotation_euler' % bname
             for fcu in rig.animation_data.drivers:
