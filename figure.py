@@ -541,22 +541,9 @@ class ExtraBones(DriverUser):
             cns.owner_space = 'LOCAL'
             cns.influence = 1.0
 
-        def isSuchDriver(bname, drivers):
-            isLoc = isRot = isScale = False
-            if bname in drivers.keys():
-                for drv in drivers[bname]:
-                    channel = drv.data_path.rsplit(".",1)[-1]
-                    if channel == "location":
-                        isLoc = True
-                    elif channel in ["rotation_euler", "rotation_quaternion"]:
-                        isRot = True
-                    elif channel == "scale":
-                        isScale = True
-            return isLoc, isRot, isScale
-
         pb = rig.pose.bones[bname]
-        isLoc1,isRot1,isScale1 = isSuchDriver(bname, boneDrivers)
-        isLoc2,isRot2,isScale2 = isSuchDriver(bname, sumDrivers)
+        isLoc1,isRot1,isScale1 = self.isSuchDriver(bname, boneDrivers)
+        isLoc2,isRot2,isScale2 = self.isSuchDriver(bname, sumDrivers)
         if isLoc1 or isLoc2:
             cns = pb.constraints.new('COPY_LOCATION')
             addFields(cns, rig, bname)
@@ -787,6 +774,9 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
         elif rig.DazRig[0:6] == "rigify":
             eb.layers = 2*[False] + [True] + 29*[False]
 
+    def isSuchDriver(self, bname, drivers):
+        return True, True, False
+
 
 def getAnchoredBoneNames(rig, anchors):
     bnames = []
@@ -836,6 +826,19 @@ class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
 
     def changeLayer(self, eb, rig):
         pass
+
+    def isSuchDriver(self, bname, drivers):
+        isLoc = isRot = isScale = False
+        if bname in drivers.keys():
+            for drv in drivers[bname]:
+                channel = drv.data_path.rsplit(".",1)[-1]
+                if channel == "location":
+                    isLoc = True
+                elif channel in ["rotation_euler", "rotation_quaternion"]:
+                    isRot = True
+                elif channel == "scale":
+                    isScale = True
+        return isLoc, isRot, isScale
 
 #-------------------------------------------------------------
 #   Toggle locks and constraints

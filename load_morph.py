@@ -608,6 +608,8 @@ class LoadMorph(DriverUser):
                         fcurves[fcu.array_index] = fcu
             return fcurves
 
+        if drvBone(pb.name) in self.rig.pose.bones.keys():
+            pb = self.rig.pose.bones[drvBone(pb.name)]
         fcurves = getBoneFcurves(pb, channel)
         for idx,factor in self.getFactors(vec):
             if idx in fcurves.keys():
@@ -625,8 +627,8 @@ class LoadMorph(DriverUser):
 
     def findSumDriver(self, pb, channel, idx, data):
         bname = pb.name
-        if drvBone(bname) in self.rig.data.bones.keys():
-            bname = drvBone(bname)
+        #if drvBone(bname) in self.rig.data.bones.keys():
+        #    bname = drvBone(bname)
         if bname not in self.sumdrivers.keys():
             self.sumdrivers[bname] = {}
         if channel not in self.sumdrivers[bname].keys():
@@ -1249,6 +1251,7 @@ class LoadMorph(DriverUser):
 
     def addScaleDriver(self, pb, idx):
         from .driver import removeModifiers
+        print("SCA", pb, idx)
         fcu = pb.driver_add("scale", idx)
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
