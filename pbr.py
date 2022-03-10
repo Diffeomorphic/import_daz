@@ -276,7 +276,7 @@ class PbrTree(CyclesTree):
 
 
     def buildGlossyOrDualLobe(self):
-        if GS.materialMethod == 'SINGLE':
+        if LS.materialMethod == 'SINGLE':
             return
         elif self.material.basemix == 2:
             CyclesTree.buildGlossyOrDualLobe(self)
@@ -289,7 +289,7 @@ class PbrTree(CyclesTree):
 
 
     def buildRefraction(self):
-        if GS.materialMethod == 'SINGLE':
+        if LS.materialMethod == 'SINGLE':
             weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
                 self.replaceSlot(pbr, "Transmission", weight)
@@ -314,7 +314,7 @@ class PbrTree(CyclesTree):
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
         if (self.material.isThinWall() and
-            GS.materialMethod != 'SINGLE'):
+            LS.materialMethod != 'SINGLE'):
             from .cgroup import RayClipGroup
             self.column += 1
             clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")

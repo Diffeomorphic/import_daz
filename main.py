@@ -57,7 +57,19 @@ class ColorOptions:
         default = (0.09, 0.01, 0.015, 1.0)
     )
 
+    materialMethod : EnumProperty(
+        items = [('BSDF', "BSDF", "BSDF (Cycles, full IRAY materials)"),
+                 ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles).\nSome BSDF nodes used"),
+                 ('SINGLE', "Single Principled", "Approximate materials using\na single principled node (game engines).\nSome feature may be missing"),
+                 ],
+        name = "Material Method",
+        description = "Material Method",
+        default = 'BSDF')
+
     def draw(self, context):
+        box = self.layout.box()
+        box.label(text = "Material Method")
+        box.prop(self, "materialMethod", expand=True)
         box = self.layout.box()
         box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':
@@ -189,7 +201,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
     bl_idname = "daz.import_daz"
     bl_label = "Import DAZ"
     bl_description = "Load a native DAZ file"
-    bl_options = {'PRESET', 'UNDO'}
+    bl_options = {'UNDO'}
 
     def draw(self, context):
         FitOptions.draw(self, context)

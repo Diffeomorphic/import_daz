@@ -58,7 +58,6 @@ class GlobalSettings:
         self.useMakeHiddenSliders = False
         self.showHiddenObjects = False
 
-        self.materialMethod = 'BSDF'
         if bpy.app.version < (3,0,0):
             self.sssMethod = 'RANDOM_WALK'
         else:
@@ -107,7 +106,7 @@ class GlobalSettings:
         self.useMultires = True
         self.useMultiUvLayers = True
         self.useMultiShapes = True
-        self.useAutoSmooth = False
+        self.useAutoSmooth = True
         self.useSimulation = True
         self.useScaleEyeMoisture = True
 
@@ -135,7 +134,7 @@ class GlobalSettings:
         "DazPruneNodes" : "pruneNodes",
 
         # Materials
-        "DazMaterialMethod" : "materialMethod",
+        # "DazMaterialMethod" : "materialMethod",
         "DazSSSMethod" : "sssMethod",
         "DazHairMaterialMethod" : "hairMaterialMethod",
         "DazViewportColor" : "viewportColors",
@@ -383,6 +382,7 @@ class GlobalSettings:
 class LocalSettings:
     def __init__(self):
         self.scale = 0.1
+        self.materialMethod = 'BSDF'
         self.skinColor = None
         self.clothesColor = None
         self.fitFile = False
@@ -484,6 +484,7 @@ class LocalSettings:
         self.useUV = True
         self.useWorld = GS.useWorld
 
+        self.materialMethod = btn.materialMethod
         self.skinColor = btn.skinColor
         self.clothesColor = btn.clothesColor
 
@@ -535,6 +536,7 @@ class LocalSettings:
         self.useImages = True
         self.useMaterials = True
         self.useAnimations = True
+        self.materialMethod = btn.materialMethod
         self.skinColor = btn.skinColor
         self.clothesColor = btn.clothesColor
 

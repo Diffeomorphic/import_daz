@@ -102,12 +102,12 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
-            if GS.materialMethod == 'BSDF':
+            if LS.materialMethod == 'BSDF':
                 return CyclesBrickTree(self)
             else:
                 return PbrBrickTree(self)
         else:
-            if GS.materialMethod == 'BSDF':
+            if LS.materialMethod == 'BSDF':
                 return CyclesTree(self)
             else:
                 return PbrTree(self)
@@ -384,7 +384,7 @@ class CyclesTree:
         self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
-        if GS.materialMethod != 'SINGLE':
+        if LS.materialMethod != 'SINGLE':
             self.buildShells()
         self.buildOutput()
 
@@ -644,7 +644,7 @@ class CyclesTree:
                 self.buildNormalMap(strength, tex, uvname)
 
         if GS.useAutoSmooth and self.getValue(["Smooth On"], False):
-            rad = self.getValue(["Round Corners Radius"], 0)
+            rad = self.getValue(["Round Corners Radius"], 0) * 100 * LS.scale
             if rad != 0:
                 node = self.addNode("ShaderNodeBevel", col=3)
                 node.samples = 32
@@ -815,7 +815,7 @@ class CyclesTree:
 
     def buildOverlay(self):
         if (self.getValue(["Diffuse Overlay Weight"], 0) and
-            GS.materialMethod != 'SINGLE'):
+            LS.materialMethod != 'SINGLE'):
             self.column += 1
             slot = self.getImageSlot(["Diffuse Overlay Weight"])
             weight,wttex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
@@ -895,7 +895,7 @@ class CyclesTree:
 
     def buildMakeup(self):
         if (not self.getValue(["Makeup Enable"], False) or
-            GS.materialMethod == 'SINGLE'):
+            LS.materialMethod == 'SINGLE'):
             return False
         wt = self.getValue(["Makeup Weight"], 0)
         if wt == 0:
@@ -1083,7 +1083,7 @@ class CyclesTree:
 
     def prepareWeighted(self):
         if (self.material.basemix == 2 and
-            GS.materialMethod != 'SINGLE'):
+            LS.materialMethod != 'SINGLE'):
             self.diffuseCycles = self.cycles
             self.diffuseEevee = self.eevee
             self.cycles = self.eevee = None
@@ -1094,7 +1094,7 @@ class CyclesTree:
 
     def buildWeighted(self):
         if (self.material.basemix != 2 or
-            GS.materialMethod == 'SINGLE'):
+            LS.materialMethod == 'SINGLE'):
             return False
         diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex = self.getColorTex(["Glossy Weight"], "NONE", 0)
@@ -1203,7 +1203,7 @@ class CyclesTree:
 
 
     def buildTranslucency(self):
-        if (GS.materialMethod != 'BSDF' or
+        if (LS.materialMethod != 'BSDF' or
             not self.checkTranslucency()):
             return
         fac = self.getValue("getChannelTranslucencyWeight", 0)
@@ -1503,7 +1503,7 @@ class CyclesTree:
         if (self.material.isThinWall() or
             self.pureMetal or
             not GS.useVolume or
-            GS.materialMethod == 'SINGLE'):
+            LS.materialMethod == 'SINGLE'):
             return
         self.volume = None
         if self.isEnabled("Translucency"):

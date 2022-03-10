@@ -263,10 +263,8 @@ class DAZ_OT_GlobalSettings(DazOperator):
 
         box = split.box()
         box.label(text = "Materials")
-        box.prop(scn, "DazMaterialMethod")
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazHairMaterialMethod")
-        box.separator()
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazReuseMaterials")
@@ -492,22 +490,13 @@ def register():
     bpy.types.Scene.DazShowCloudDirs = BoolProperty(name = "Cloud Directories", default = False)
 
 
-    bpy.types.Scene.DazMaterialMethod = EnumProperty(
-        items = [('BSDF', "BSDF", "BSDF (Cycles, full IRAY materials)"),
-                 ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles).\nSome BSDF nodes used"),
-                 ('SINGLE', "Single Principled", "Approximate materials using\na single principled node (game engines).\nSome feature may be missing"),
-                 ],
-        name = "Method",
-        description = "Material Method",
-        default = 'BSDF')
-
     enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
              ('RANDOM_WALK', "Random Walk", "Random walk")]
     if bpy.app.version >= (3,0,0):
         enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
     bpy.types.Scene.DazSSSMethod = EnumProperty(
         items = enums,
-        name = "SSS Method",
+        name = "SSS",
         description = "Method for subsurface scattering",
         default = 'RANDOM_WALK')
 
@@ -522,7 +511,7 @@ def register():
                  ('RANDOM', "Random", "Random colors for each material"),
                  ('GUESS', "Guess", "Guess colors based on name"),
                  ],
-        name = "Viewport Color",
+        name = "Viewport",
         description = "Method to display object in viewport")
 
     bpy.types.Scene.DazUseWorld = EnumProperty(
@@ -605,8 +594,8 @@ def register():
         name = "Auto Smooth",
         description = (
             "Use auto smooth if this is done in DAZ Studio.\n" +
-            "This can be useful for objects with hard edges,\n" +
-            "but leads to poor performance and artifacts for organic meshes"))
+            "This is useful for objects with hard edges,\n" +
+            "but may lead to poor performance for organic meshes"))
 
     bpy.types.Scene.DazScaleEyeMoisture = BoolProperty(
         name = "Scale Eye Moisture",
