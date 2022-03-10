@@ -79,7 +79,6 @@ class GlobalSettings:
         self.useVolume = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
-        self.hairMaterialMethod = 'HAIR_BSDF'
         self.imageInterpolation = 'Cubic'
 
         self.useStrengthAdjusters = False
@@ -134,9 +133,7 @@ class GlobalSettings:
         "DazPruneNodes" : "pruneNodes",
 
         # Materials
-        # "DazMaterialMethod" : "materialMethod",
         "DazSSSMethod" : "sssMethod",
-        "DazHairMaterialMethod" : "hairMaterialMethod",
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
         "DazReuseMaterials" : "reuseMaterials",
@@ -430,7 +427,7 @@ class LocalSettings:
 
         self.nViewChildren = 0
         self.nRenderChildren = 0
-        self.hairMaterialMethod = GS.hairMaterialMethod
+        self.hairMaterialMethod = 'HAIR_BSDF'
         self.useSkullGroup = False
 
         self.usedFeatures = {
@@ -472,6 +469,16 @@ class LocalSettings:
         self.scene = ""
 
 
+    def getMaterialSettings(self, btn):
+        self.materialMethod = btn.materialMethod
+        if btn.materialMethod == 'BSDF':
+            self.hairMaterialMethod = 'HAIR_BSDF'
+        else:
+            self.hairMaterialMethod = 'PRINCIPLED'
+        self.skinColor = btn.skinColor
+        self.clothesColor = btn.clothesColor
+
+
     def forImport(self, btn):
         self.__init__()
         self.reset()
@@ -484,10 +491,7 @@ class LocalSettings:
         self.useUV = True
         self.useWorld = GS.useWorld
 
-        self.materialMethod = btn.materialMethod
-        self.skinColor = btn.skinColor
-        self.clothesColor = btn.clothesColor
-
+        self.getMaterialSettings(btn)
         self.useStrict = True
         self.singleUser = True
         if btn.fitMeshes == 'SHARED':
@@ -536,9 +540,7 @@ class LocalSettings:
         self.useImages = True
         self.useMaterials = True
         self.useAnimations = True
-        self.materialMethod = btn.materialMethod
-        self.skinColor = btn.skinColor
-        self.clothesColor = btn.clothesColor
+        self.getMaterialSettings(btn)
 
 
     def forEngine(self):

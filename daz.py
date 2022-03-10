@@ -32,14 +32,6 @@ from .error import *
 from .utils import *
 from .fileutils import SingleFile, JsonFile, JsonExportFile
 
-#------------------------------------------------------------------
-#   Classes
-#------------------------------------------------------------------
-
-EnumsHair = [('HAIR_BSDF', "Hair BSDF", "Hair BSDF (Cycles)"),
-             ('HAIR_PRINCIPLED', "Hair Principled", "Hair Principled (Cycles)"),
-             ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles)")]
-
 #-------------------------------------------------------------
 #   Silent mode
 #-------------------------------------------------------------
@@ -264,7 +256,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box = split.box()
         box.label(text = "Materials")
         box.prop(scn, "DazSSSMethod")
-        box.prop(scn, "DazHairMaterialMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazReuseMaterials")
@@ -499,12 +490,6 @@ def register():
         name = "SSS",
         description = "Method for subsurface scattering",
         default = 'RANDOM_WALK')
-
-    bpy.types.Scene.DazHairMaterialMethod = EnumProperty(
-        items = EnumsHair,
-        name = "Hair",
-        description = "Method for hair materials",
-        default = 'HAIR_BSDF')
 
     bpy.types.Scene.DazViewportColor = EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),

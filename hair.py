@@ -36,7 +36,6 @@ from .material import WHITE, GREY, BLACK, isWhite, isBlack
 from .cycles import CyclesMaterial, CyclesTree
 from .morphing import Selector
 from .guess import ColorProp
-from .daz import EnumsHair
 
 #-------------------------------------------------------------
 #   Classes
@@ -201,7 +200,9 @@ class HairOptions:
     colors : CollectionProperty(type = ColorGroup)
 
     hairMaterialMethod : EnumProperty(
-        items = EnumsHair,
+        items = [('HAIR_BSDF', "Hair BSDF", "Hair BSDF (Cycles)"),
+                 ('HAIR_PRINCIPLED', "Hair Principled", "Hair Principled (Cycles)"),
+                 ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles)")],
         name = "Hair Material Method",
         description = "Type of hair material node tree",
         default = 'HAIR_BSDF')
