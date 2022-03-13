@@ -616,7 +616,7 @@ def getSelectedRigs(context):
 class DAZ_OT_EliminateEmpties(DazPropsOperator):
     bl_idname = "daz.eliminate_empties"
     bl_label = "Eliminate Empties"
-    bl_description = "Delete non-hidden empties, parenting its children to its parent instead"
+    bl_description = "Delete empties, parenting its children to its parent instead"
     bl_options = {'UNDO'}
 
     useCollections : BoolProperty(
@@ -624,8 +624,14 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
         description = "Replace empties with collections",
         default = True)
 
+    useHidden : BoolProperty(
+        name = "Delete Hidden Empties",
+        description = "Also delete empties that are hidden",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useCollections")
+        self.layout.prop(self, "useHidden")
 
 
     def run(self, context):
@@ -676,9 +682,17 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 
 
     def doEliminate(self, ob):
-        if ob.type != 'EMPTY' or getHideViewport(ob):
+        if (ob.type != 'EMPTY' or
+            ob.instance_type != 'NONE'):
             return False
-        return (ob.instance_type == 'NONE')
+        if getHideViewport(ob):
+            if self.useHidden:
+                ob.hide_set(False)
+                ob.hide_viewport = ob.hide_render = False
+                return True
+            else:
+                return False
+        return True
 
 
     def getCollection(self, ob):
