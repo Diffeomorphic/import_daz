@@ -118,7 +118,7 @@ def encodeJsonData(data, pad=""):
             return "false"
     elif isinstance(data, (float)):
         if abs(data) < 1e-6:
-            return "0"
+            return "0.0"
         else:
             return "%.5g" % data
     elif isinstance(data, (int)):

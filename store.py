@@ -50,7 +50,7 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
     useOverwrite : BoolProperty(
         name = "Overwrite",
         description = "Overwrite existing action with the same name",
-        default = True)
+        default = False)
 
     useArmature : BoolProperty(
         name = "Armatures",
@@ -77,10 +77,6 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
         description = "Save action for lights",
         default = True)
 
-    @classmethod
-    def poll(self, context):
-        return bpy.data.filepath
-
     def draw(self, context):
         self.layout.prop(self, "name")
         self.layout.prop(self, "useOverwrite")
@@ -93,6 +89,8 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
 
     def run(self, context):
         from .morphing import getActivated, keyProp
+        if not bpy.data.filepath:
+            raise DazError("Save the blend file first")
         struct = {}
         scn = context.scene
         self.exclude = []
@@ -139,6 +137,8 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
         if not os.path.exists(folder):
             os.makedirs(folder)
         path = os.path.join(folder, "%s.json" % self.name)
+        if os.path.exists(path) and not self.useOverwrite:
+            raise DazError("File already exists:\n%s" % path)
         saveJson(struct, path)
 
 
@@ -265,6 +265,8 @@ class DAZ_OT_LoadPosesFromFile(DazPropsOperator):
                         setattr(ob.data, key, value)
                     except AttributeError:
                         pass
+                    except TypeError:
+                        pass
             if ob.type == 'ARMATURE':
                 rig = ob
                 rig.data.layers = ostruct["layers"]
@@ -277,6 +279,12 @@ class DAZ_OT_LoadPosesFromFile(DazPropsOperator):
                 morphs = ostruct.get("morphs")
                 if morphs:
                     for prop,value in morphs.items():
+                        if prop in rig.keys():
+                            value0 = rig[prop]
+                            if isinstance(value0, float):
+                                value = float(value)
+                            elif isinstance(value0, int):
+                                value = int(value)
                         rig[prop] = value
 
 
