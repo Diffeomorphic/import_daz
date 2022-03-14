@@ -185,7 +185,8 @@ class DAZ_OT_ChangeColors(DazPropsOperator, ColorProp, IsMesh):
     def run(self, context):
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
-                setDiffuse(mat, self.color)
+                if mat:
+                    setDiffuse(mat, self.color)
 
 
 class DAZ_OT_ChangeSkinColor(DazPropsOperator, ColorProp, IsMesh):

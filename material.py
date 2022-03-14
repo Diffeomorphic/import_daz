@@ -1352,10 +1352,8 @@ class ChangeResolution():
         paths = {}
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
-                if mat.node_tree:
+                if mat:
                     self.getTreeTextures(mat.node_tree, paths)
-                else:
-                    self.getSlotTextures(mat, paths)
             for psys in ob.particle_systems:
                 self.getSlotTextures(psys.settings, paths)
         return paths
@@ -1395,10 +1393,8 @@ class ChangeResolution():
     def replaceTextures(self, context):
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
-                if mat.node_tree:
+                if mat:
                     self.resizeTree(mat.node_tree)
-                else:
-                    self.resizeSlots(mat)
             for psys in ob.particle_systems:
                 self.resizeSlots(psys.settings)
 
@@ -1594,7 +1590,7 @@ class DAZ_OT_PruneNodeTrees(DazOperator, IsMesh):
         from .cycles import pruneNodeTree
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
-                if mat.node_tree:
+                if mat:
                     pruneNodeTree(mat.node_tree)
 
 #----------------------------------------------------------

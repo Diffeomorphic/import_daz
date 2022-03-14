@@ -1252,7 +1252,9 @@ def pruneUvMaps(ob):
     for uvtex in ob.data.uv_layers:
         uvtexs[uvtex.name] = [uvtex, uvtex.active_render]
     for mat in ob.data.materials:
-        if mat.node_tree:
+        if mat is None:
+            continue
+        elif mat.node_tree:
             for node in mat.node_tree.nodes:
                 if (node.type == "ATTRIBUTE" and
                     node.attribute_name in uvtexs.keys()):

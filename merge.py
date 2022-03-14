@@ -314,6 +314,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             if uvtex.active_render:
                 uvrender = uvtex
         for mat in ob.data.materials:
+            if mat is None:
+                continue
             texco = None
             for node in mat.node_tree.nodes:
                 if node.type == 'TEX_COORD':
@@ -560,6 +562,8 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
 def mergeUvLayers(me, keepIdx, mergeIdx):
     def replaceUVMapNodes(me, mergeLayer):
         for mat in me.materials:
+            if mat is None:
+                continue
             texco = None
             for node in mat.node_tree.nodes:
                 if node.type == 'TEX_COORD':
@@ -589,7 +593,7 @@ def mergeUvLayers(me, keepIdx, mergeIdx):
         if data.uv.length > 1e-6:
             keepLayer.data[n].uv = data.uv
     for mat in me.materials:
-        if mat.use_nodes:
+        if mat and mat.use_nodes:
             replaceNodeNames(mat, mergeLayer.name, keepLayer.name)
     me.uv_layers.active_index = keepIdx
     me.uv_layers.remove(mergeLayer)

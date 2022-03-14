@@ -87,14 +87,15 @@ class MaterialSelector:
         from .guess import getMaterialType
         self.skinColor = WHITE
         for mat in ob.data.materials:
-            if getMaterialType(mat) == 'SKIN':
+            if mat and getMaterialType(mat) == 'SKIN':
                 self.skinColor = mat.diffuse_color[0:3]
                 break
         self.umats.clear()
         for mat in ob.data.materials:
-            item = self.umats.add()
-            item.name = mat.name
-            item.bool = self.isDefaultActive(mat, ob)
+            if mat:
+                item = self.umats.add()
+                item.name = mat.name
+                item.bool = self.isDefaultActive(mat, ob)
         setMaterialSelector(self)
 
 
@@ -846,7 +847,7 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
         scn.DazFloats.clear()
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
-                if mat.node_tree:
+                if mat:
                     for node in mat.node_tree.nodes:
                         if (node.type == 'GROUP' and
                             "Influence" in node.inputs.keys()):
@@ -870,7 +871,7 @@ class ShellRemover:
         ob = context.object
         self.shells = {}
         for mat in ob.data.materials:
-            if mat.node_tree:
+            if mat:
                 for node in mat.node_tree.nodes:
                     if (node.type == 'GROUP' and
                         "Influence" in node.inputs.keys()):
@@ -1041,7 +1042,7 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
     def fixMesh(self, ob):
         scale = self.unit / ob.DazScale
         for mat in ob.data.materials:
-            if mat.node_tree:
+            if mat:
                 for node in mat.node_tree.nodes:
                     if node.type == 'GROUP':
                         self.fixNode(node, node.node_tree.name, scale)

@@ -603,9 +603,10 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
         self.strandType = ob.data.DazHairType
         self.colors.clear()
         for mat in ob.data.materials:
-            item = self.colors.add()
-            item.name = mat.name
-            item.color = mat.diffuse_color
+            if mat:
+                item = self.colors.add()
+                item.name = mat.name
+                item.color = mat.diffuse_color
         return DazPropsOperator.invoke(self, context, event)
 
 
