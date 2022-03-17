@@ -164,7 +164,9 @@ class CyclesMaterial(Material):
             link = getLinkTo(self.tree, tex, "Vector")
             if link and link.from_node.type == 'MAPPING':
                 scale = link.from_node.inputs["Scale"]
-                density *= scale.default_value[0] * scale.default_value[1]
+                x,y,z = scale.default_value
+                if x != 0 and y != 0:
+                    density /= x*y
                 if density == 0.0:
                     continue
             if density > 0:
