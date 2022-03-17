@@ -1489,7 +1489,17 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
             if not pb.bone.layers[0]:
                 pass
             elif pb.parent and pb.parent.name in ["lowerFaceRig", "upperFaceRig"]:
-                pb.custom_shape = csFace
+                if pb.name[1:7] == "Eyelid":
+                    if hasattr(pb, "custom_shape_translation"):
+                        pb.custom_shape = csFace
+                        self.translateY(pb, 1.0)
+                        setCustomShapeScale(pb, 0.3)
+                else:
+                    pb.custom_shape = csFace
+                addToLayer(pb, "Face", rig, "Spine")
+            elif pb.name[1:4] in ["Eye", "Ear"]:
+                pb.custom_shape = circleY2
+                self.translateY(pb, 1.0)
                 addToLayer(pb, "Face", rig, "Spine")
             elif pb.name == "lowerJaw":
                 pb.custom_shape = csCollar
@@ -1559,9 +1569,6 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
             elif pb.name[1:4] in ["Thu", "Ind", "Mid", "Rin", "Pin"]:
                 pb.custom_shape = circleY2
                 addToLayer(pb, "Hand", rig, "Limb")
-            elif pb.name[1:4] in ["Eye", "Ear"]:
-                pb.custom_shape = circleY2
-                addToLayer(pb, "Face", rig, "Spine")
             elif "Elbow" in pb.name:
                 if not pb.name.endswith("STR"):
                     pb.custom_shape = csCube
@@ -1570,8 +1577,13 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
                 if not pb.name.endswith("STR"):
                     pb.custom_shape = csCube
                 addToLayer(pb, "IK Leg", rig, "IK")
+            elif "Pectoral" in pb.name:
+                pb.custom_shape = circleY2
+                setCustomShapeScale(pb, 0.3)
+                self.translateY(pb, 1.0)
             else:
                 pb.custom_shape = circleY2
+                self.translateY(pb, 1.0)
                 print("Unknown bone:", pb.name)
 
         from .node import createHiddenCollection
@@ -1588,6 +1600,11 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
         circle = makeCustomShape("CS_" + pb.name, "CircleY", (0,tail/s,0))
         pb.custom_shape = circle
         setCustomShapeScale(pb, s)
+
+
+    def translateY(self, pb, fraction):
+        if hasattr(pb, "custom_shape_translation"):
+            pb.custom_shape_translation.y = pb.bone.length * fraction
 
 
 class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
