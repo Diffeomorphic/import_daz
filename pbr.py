@@ -292,7 +292,7 @@ class PbrTree(CyclesTree):
         if LS.materialMethod == 'SINGLE':
             weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
-                self.replaceSlot(pbr, "Transmission", weight)
+                self.replaceSlot(self.pbr, "Transmission", weight)
                 self.setRefractivePrincipled(self.pbr, None)
             return weight,wttex
         else:
