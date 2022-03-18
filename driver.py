@@ -544,7 +544,7 @@ def setFloatProp(rna, prop, value, min, max, ovr):
 def setBoolProp(rna, prop, value, ovr, desc=""):
     prop = truncateProp(prop)
     setPropMinMax(rna, prop, value, 0, 1, ovr)
-    if ovr and bpy.app.version < (3,0,0):
+    if False and ovr and bpy.app.version < (3,0,0):
         setOverridable(rna, prop)
         setPropMinMax(rna, prop, value, 0, 1, ovr)
     rna[prop] = value
