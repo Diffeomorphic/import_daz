@@ -1638,12 +1638,17 @@ class CyclesTree:
         else:
             imgname = asset.getName()
         texnode = self.getTexNode(imgname, colorSpace)
-        if asset.hasMapping(map):
-            innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
+        if asset.hasMapping(map) or self.material.hasTiles():
+            if map.label:
+                imgname = map.label
+            innode = texnode = outnode = self.addTextureNode(col, img, imgname, colorSpace)
             data = asset.getImageMapping(img, self.material, map)
             mapping = self.addMappingNode(data, None)
             if mapping:
-                innode.extension = 'CLIP'
+                if asset.hasMapping(map):
+                    innode.extension = 'CLIP'
+                else:
+                    innode.extension = 'REPEAT'
                 self.linkVector(mapping, innode)
                 innode = mapping
             if map.invert:

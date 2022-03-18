@@ -342,6 +342,13 @@ class Material(Asset, Channels):
             gamma = channel["default_image_gamma"]
         return gamma
 
+
+    def hasTiles(self):
+        return (self.getValue("getChannelHorizontalOffset", 0) != 0 or
+                self.getValue("getChannelVerticalOffset", 0) != 0 or
+                self.getValue("getChannelHorizontalTiles", 1) != 1 or
+                self.getValue("getChannelVerticalTiles", 1) != 1)
+
 #-------------------------------------------------------------
 #   Get channels
 #-------------------------------------------------------------
@@ -795,17 +802,23 @@ class Texture:
         if img is None:
             return (0,0,1,1,0)
 
+        if map.size is None:
+            dx = mat.getValue("getChannelHorizontalOffset", 0)
+            dy = mat.getValue("getChannelVerticalOffset", 0)
+            sx = 1.0/mat.getValue("getChannelHorizontalTiles", 1)
+            sy = 1.0/mat.getValue("getChannelVerticalTiles", 1)
+            rz = 0.0
+            return (dx,dy,sx,sy,rz)
+
         tx,ty = img.size
         mx,my = map.size
         kx,ky = tx/mx,ty/my
         ox,oy = map.xoffset/mx, map.yoffset/my
         rz = map.rotation
-
         ox += mat.getValue("getChannelHorizontalOffset", 0)
         oy += mat.getValue("getChannelVerticalOffset", 0)
         kx *= mat.getValue("getChannelHorizontalTiles", 1)
         ky *= mat.getValue("getChannelVerticalTiles", 1)
-
         sx = map.xscale*kx
         sy = map.yscale*ky
 
