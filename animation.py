@@ -429,11 +429,11 @@ class ActionOptions:
         self.layout.prop(self, "firstFrame")
         self.layout.prop(self, "lastFrame")
 
-    def clearAction(self, ob):
+    def clearAnimation(self, ob):
         if self.makeNewAction and ob.animation_data:
             ob.animation_data.action = None
 
-    def nameAction(self, ob):
+    def nameAnimation(self, ob):
         if self.makeNewAction and ob.animation_data:
             act = ob.animation_data.action
             if act:
@@ -451,14 +451,10 @@ class PoseLibOptions:
         description = "Name of loaded pose library",
         default = "PoseLib")
 
-    def clearPoseLib(self, ob):
-        if self.makeNewPoseLib and ob.pose_library:
-            ob.pose_library = None
-
-    def namePoseLib(self, ob):
-        if self.makeNewPoseLib and ob.pose_library:
-            if ob.pose_library:
-                ob.pose_library.name = self.poseLibName
+    useAssetBrowser : BoolProperty(
+        name = "Asset Browser",
+        description = "Create asset browser library",
+        default = True)
 
 
 class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsMeshArmature):
@@ -517,6 +513,11 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         self.mergeHipObject(rig)
         return result
 
+    def clearAnimation(self, ob):
+        pass
+
+    def nameAnimation(self, ob):
+        pass
 
     def prepareRig(self, rig):
         if not self.affectBones:
@@ -795,11 +796,13 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                 self.saveScales(rig, n+offset)
 
             self.fixScales(rig)
-            if self.usePoseLib:
-                name = os.path.splitext(os.path.basename(filepath))[0]
-                self.addToPoseLib(rig, name)
+            self.addToPoseLib(rig, filepath)
             offset += n + 1
         return offset,prop
+
+
+    def addToPoseLib(self, rig, filepath):
+        pass
 
 
     def fixForearmFollow(self, prop, rig, hand, forearm):
@@ -951,22 +954,6 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                     driven[words[1]] = True
         self.driven = list(driven.keys())
 
-
-    def addToPoseLib(self, rig, name):
-        if rig.pose_library:
-            pmarkers = rig.pose_library.pose_markers
-            frame = 0
-            for pmarker in pmarkers:
-                if pmarker.frame >= frame:
-                    frame = pmarker.frame + 1
-        else:
-            frame = 0
-        bpy.ops.poselib.pose_add(frame=frame)
-        pmarker = rig.pose_library.pose_markers.active
-        pmarker.name = name
-        #for pmarker in rig.pose_library.pose_markers:
-        #    print("  ", pmarker.name, pmarker.frame)
-
 #-------------------------------------------------------------
 #
 #-------------------------------------------------------------
@@ -1060,20 +1047,6 @@ class StandardAnimation:
             else:
                 bone.select = (bone.name in select)
         return selected
-
-
-    def clearAnimation(self, ob):
-        if self.useAction:
-            self.clearAction(ob)
-        elif self.usePoseLib:
-            self.clearPoseLib(ob)
-
-
-    def nameAnimation(self, ob):
-        if self.useAction:
-            self.nameAction(ob)
-        elif self.usePoseLib:
-            self.namePoseLib(ob)
 
 
     def loadMissingMorphs(self, context, rig):
@@ -1240,6 +1213,49 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
         self.layout.prop(self, "makeNewPoseLib")
         if self.makeNewPoseLib:
             self.layout.prop(self, "poseLibName")
+        if bpy.app.version >= (3,0,0):
+            self.layout.prop(self, "useAssetBrowser")
+
+
+    def clearAnimation(self, ob):
+        if self.makeNewPoseLib:
+            if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
+                pass
+                #bpy.ops.asset.catalog_new(parent_path='')
+            elif ob.pose_library:
+                ob.pose_library = None
+
+
+    def nameAnimation(self, ob):
+        if self.makeNewPoseLib:
+            if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
+                pass
+            elif ob.pose_library:
+                ob.pose_library.name = self.poseLibName
+
+
+    def addToPoseLib(self, rig, filepath):
+        name = os.path.splitext(os.path.basename(filepath))[0]
+        if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
+            bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
+            act = rig.animation_data.action
+            act.asset_generate_preview()
+            #name = rig.animation_data.action.name
+            #bpy.data.actions[name].asset_generate_preview()
+        else:
+            if rig.pose_library:
+                pmarkers = rig.pose_library.pose_markers
+                frame = 0
+                for pmarker in pmarkers:
+                    if pmarker.frame >= frame:
+                        frame = pmarker.frame + 1
+            else:
+                frame = 0
+            bpy.ops.poselib.pose_add(frame=frame)
+            pmarker = rig.pose_library.pose_markers.active
+            pmarker.name = name
+            #for pmarker in rig.pose_library.pose_markers:
+            #    print("  ", pmarker.name, pmarker.frame)
 
 
 class DAZ_OT_ImportPoseLib(HideOperator, PoselibBase, StandardAnimation):
