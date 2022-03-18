@@ -85,12 +85,12 @@ class Fixer(DriverUser):
 
 
     def fixCustomShape(self, rig, bnames, factor, offset=0):
-        from .figure import setCustomShapeScale
+        from .figure import setCustomShape
         for bname in bnames:
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
                 if pb.custom_shape:
-                    setCustomShapeScale(pb, factor)
+                    setCustomShape(pb, pb.custom_shape, factor)
                     if offset:
                         for v in pb.custom_shape.data.vertices:
                             v.co += offset
@@ -482,14 +482,12 @@ class GizmoUser:
 
 
     def addGizmo(self, pb, gname, scale, blen=None):
-        from .figure import setCustomShapeScale
+        from .figure import setCustomShape
         gizmo = self.gizmos[gname]
-        pb.custom_shape = gizmo
         pb.bone.show_wire = True
         if blen:
-            setCustomShapeScale(pb, blen/pb.bone.length)
-        else:
-            setCustomShapeScale(pb, scale)
+            scale = blen/pb.bone.length
+        setCustomShape(pb, gizmo, scale)
 
 
     def renameFaceBones(self, rig, extra=[]):

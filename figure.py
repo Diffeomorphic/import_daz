@@ -197,65 +197,6 @@ class FigureInstance(Instance):
             LS.hdmeshes[LS.rigname] = []
         LS.rigs[LS.rigname].append(rig)
 
-'''
-    def setupPlanes(self):
-        if self.node.rigtype not in PlanesUsed.keys():
-            return
-        for pname in PlanesUsed[self.node.rigtype]:
-            bone1,bone2,bone3 = PlanePoints[pname]
-            try:
-                pt1 = d2b(self.bones[bone1].attributes["center_point"])
-                pt2 = d2b(self.bones[bone2].attributes["center_point"])
-                pt3 = d2b(self.bones[bone3].attributes["end_point"])
-            except KeyError:
-                continue
-            e1 = pt2-pt1
-            e2 = pt3-pt1
-            n = e1.cross(e2)
-            n.normalize()
-            self.planes[pname] = n
-
-
-PlanesUsed = {
-    "genesis1" : [
-        "lArm", "lHand", "lThumb", "lIndex", "lMid", "lRing", "lPinky",
-        "rArm", "rHand", "rThumb", "rIndex", "rMid", "rRing", "rPinky",
-    ],
-    "genesis2" : [
-        "lArm", "lHand", "lThumb", "lIndex", "lMid", "lRing", "lPinky",
-        "rArm", "rHand", "rThumb", "rIndex", "rMid", "rRing", "rPinky",
-    ],
-    "genesis3" : [
-        "lArm", "lThumb", "lHand",
-        "rArm", "rThumb", "rHand",
-    ],
-    "genesis8" : [
-        "lArm", "lLeg", "lThumb", "lHand",
-        "rArm", "rLeg", "rThumb", "rHand",
-    ],
-}
-
-PlanePoints = {
-    "lArm" : ["lShldr", "lForeArm", "lForeArm"],
-    "lLeg" : ["lThigh", "lShin", "lShin"],
-    "lThumb" : ["lThumb1", "lThumb2", "lThumb2"],
-    "lIndex" : ["lIndex1", "lIndex2", "lIndex3"],
-    "lMid" : ["lMid1", "lMid2", "lMid3"],
-    "lRing" : ["lRing1", "lRing2", "lRing3"],
-    "lPinky" : ["lPinky1", "lPinky2", "lPinky3"],
-    "lHand" : ["lIndex3", "lMid1", "lPinky2"],
-
-    "rArm" : ["rShldr", "rForeArm", "rForeArm"],
-    "rLeg" : ["rThigh", "rShin", "rShin"],
-    "rThumb" : ["rThumb1", "rThumb2", "rThumb2"],
-    "rIndex" : ["rIndex1", "rIndex2", "rIndex3"],
-    "rMid" : ["rMid1", "rMid2", "rMid3"],
-    "rRing" : ["rRing1", "rRing2", "rRing3"],
-    "rPinky" : ["rPinky1", "rPinky2", "rPinky3"],
-    "rHand" : ["rMid1", "rIndex3", "rPinky2"],
-}
-'''
-
 #-------------------------------------------------------------
 #   Figure
 #-------------------------------------------------------------
@@ -1111,7 +1052,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp, "1-x")
                 handIK = getBoneCopy(prefix+"HandIK", hand, rpbs)
                 copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
-                handIK.custom_shape = csHandIk
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_" + suffix
@@ -1119,12 +1059,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp, "1-x")
                 footIK = getBoneCopy(prefix+"FootIK", foot, rpbs)
                 copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
-                footIK.custom_shape = csFootIk
                 addToLayer(footIK, "IK Leg", rig, "IK")
 
             if genesis == "G38":
                 if self.useArms:
-                    setCustomShapeScale(handIK, 1.5)
+                    setCustomShape(handIK, csHandIk, 1.5)
                     shldrBend = rpbs[prefix+"ShldrBend"]
                     IK.limitBone(shldrBend, False, rig, armProp)
                     shldrTwist = rpbs[prefix+"ShldrTwist"]
@@ -1134,7 +1073,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     forearmTwist = rpbs[prefix+"ForearmTwist"]
                     IK.limitBone(forearmTwist, True, rig, armProp)
                 if self.useLegs:
-                    setCustomShapeScale(footIK, 3.0)
+                    setCustomShape(footIK, csFootIk, 3.0)
                     thighBend = rpbs[prefix+"ThighBend"]
                     IK.limitBone(thighBend, False, rig, legProp, stiffness=(0,0,0.326))
                     thighTwist = rpbs[prefix+"ThighTwist"]
@@ -1145,13 +1084,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
             elif genesis == "G12":
                 if self.useArms:
-                    setCustomShapeScale(handIK, 3.0)
+                    setCustomShape(handIK, csHandIk, 3.0)
                     shldr = rpbs[prefix+"Shldr"]
                     IK.limitBone(shldr, False, rig, armProp)
                     forearm = rpbs[prefix+"ForeArm"]
                     IK.limitBone(forearm, False, rig, armProp)
                 if self.useLegs:
-                    setCustomShapeScale(footIK, 1.5)
+                    setCustomShape(footIK, csFootIk, 1.5)
                     thigh = rpbs[prefix+"Thigh"]
                     IK.limitBone(thigh, False, rig, legProp)
                     shin = rpbs[prefix+"Shin"]
@@ -1490,62 +1429,56 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
                 pass
             elif pb.parent and pb.parent.name in ["lowerFaceRig", "upperFaceRig"]:
                 if pb.name[1:7] == "Eyelid":
-                    if hasattr(pb, "custom_shape_translation"):
-                        pb.custom_shape = csFace
-                        self.translateY(pb, 1.0)
-                        setCustomShapeScale(pb, 0.3)
+                    setCustomShape(pb, csFace, 0.3, 1.0)
                 else:
-                    pb.custom_shape = csFace
+                    setCustomShape(pb, csFace)
                 addToLayer(pb, "Face", rig, "Spine")
             elif pb.name[1:4] in ["Eye", "Ear"]:
-                pb.custom_shape = circleY2
-                self.translateY(pb, 1.0)
+                setCustomShape(pb, circleY2, None, 1.0)
                 addToLayer(pb, "Face", rig, "Spine")
             elif pb.name == "lowerJaw":
-                pb.custom_shape = csCollar
+                setCustomShape(pb, csCollar)
                 addToLayer(pb, "Spine", rig, "Spine")
             elif pb.name.startswith("tongue"):
-                pb.custom_shape = csTongue
+                setCustomShape(pb, csTongue)
                 addToLayer(pb, "Face", rig, "Spine")
             elif pb.name.endswith("Hand"):
-                pb.custom_shape = csHandFk
+                setCustomShape(pb, csHandFk)
                 addToLayer(pb, "FK Arm", rig, "FK")
             elif pb.name.endswith("HandIK"):
-                pb.custom_shape = csHandIk
-                setCustomShapeScale(pb, 1.8)
+                setCustomShape(pb, csHandIk, 1.8)
                 addToLayer(pb, "IK Arm", rig, "IK")
             elif pb.name[1:7] == "Carpal":
-                pb.custom_shape = csCarpal
+                setCustomShape(pb, csCarpal)
                 addToLayer(pb, "Hand", rig, "Limb")
             elif pb.name.endswith("Collar"):
-                pb.custom_shape = csCollar
+                setCustomShape(pb, csCollar)
                 addToLayer(pb, "Spine", rig, "Spine")
             elif pb.name.endswith("Foot"):
-                pb.custom_shape = csFoot
+                setCustomShape(pb, csFoot)
                 addToLayer(pb, "FK Leg", rig, "FK")
             elif pb.name.endswith("FootIK"):
-                pb.custom_shape = csFoot
-                setCustomShapeScale(pb, 1.8)
+                setCustomShape(pb, csFoot, 1.8)
                 addToLayer(pb, "IK Leg", rig, "IK")
             elif pb.name[1:4] == "Toe":
-                pb.custom_shape = csToe
+                setCustomShape(pb, csToe)
                 addToLayer(pb, "FK Leg", rig, "Limb")
                 addToLayer(pb, "IK Leg")
                 addToLayer(pb, "Foot")
             elif pb.name[1:] in IK.G12Arm:
-                pb.custom_shape = csLimb
+                setCustomShape(pb, csLimb)
                 addToLayer(pb, "FK Arm", rig, "FK")
             elif pb.name[1:] in IK.G12Leg:
-                pb.custom_shape = csLimb
+                setCustomShape(pb, csLimb)
                 addToLayer(pb, "FK Leg", rig, "FK")
             elif pb.name[1:] in IK.G38Arm:
-                pb.custom_shape = csBend
+                setCustomShape(pb, csBend)
                 addToLayer(pb, "FK Arm", rig, "FK")
             elif pb.name[1:] in IK.G38Leg:
-                pb.custom_shape = csBend
+                setCustomShape(pb, csBend)
                 addToLayer(pb, "FK Leg", rig, "FK")
             elif pb.name[1:] in ["Thumb1", "Index1", "Mid1", "Ring1", "Pinky1"]:
-                pb.custom_shape = csLimb
+                setCustomShape(pb, csLimb)
                 addToLayer(pb, "Hand", rig, "Limb")
             elif pb.name == "hip":
                 self.makeSpine(pb, 2*spineWidth)
@@ -1564,26 +1497,23 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
                 addToLayer(pb, "Spine", rig, "Spine")
                 addToLayer(pb, "Face")
             elif "Toe" in pb.name:
-                pb.custom_shape = circleY2
+                setCustomShape(pb, circleY2)
                 addToLayer(pb, "Foot", rig, "Limb")
             elif pb.name[1:4] in ["Thu", "Ind", "Mid", "Rin", "Pin"]:
-                pb.custom_shape = circleY2
+                setCustomShape(pb, circleY2)
                 addToLayer(pb, "Hand", rig, "Limb")
             elif "Elbow" in pb.name:
                 if not pb.name.endswith("STR"):
-                    pb.custom_shape = csCube
+                    setCustomShape(pb, csCube)
                 addToLayer(pb, "IK Arm", rig, "IK")
             elif "Knee" in pb.name:
                 if not pb.name.endswith("STR"):
-                    pb.custom_shape = csCube
+                    setCustomShape(pb, csCube)
                 addToLayer(pb, "IK Leg", rig, "IK")
             elif "Pectoral" in pb.name:
-                pb.custom_shape = circleY2
-                setCustomShapeScale(pb, 0.3)
-                self.translateY(pb, 1.0)
+                setCustomShape(pb, circleY2, 0.3, 1.0)
             else:
-                pb.custom_shape = circleY2
-                self.translateY(pb, 1.0)
+                setCustomShape(pb, circleY2)
                 print("Unknown bone:", pb.name)
 
         from .node import createHiddenCollection
@@ -1598,13 +1528,7 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
     def makeSpine(self, pb, width, tail=0.5):
         s = width/pb.bone.length
         circle = makeCustomShape("CS_" + pb.name, "CircleY", (0,tail/s,0))
-        pb.custom_shape = circle
-        setCustomShapeScale(pb, s)
-
-
-    def translateY(self, pb, fraction):
-        if hasattr(pb, "custom_shape_translation"):
-            pb.custom_shape_translation.y = pb.bone.length * fraction
+        setCustomShape(pb, circle, s)
 
 
 class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
@@ -1777,11 +1701,18 @@ class DAZ_OT_CopyDazProps(DazOperator, IsObject):
                 trg[key] = value
 
 
-def setCustomShapeScale(pb, scale):
-    if hasattr(pb, "custom_shape_scale"):
+def setCustomShape(pb, shape, scale=None, offset=None):
+    if offset and not hasattr(pb, "custom_shape_translation"):
+        return
+    pb.custom_shape = shape
+    if scale is None:
+        pass
+    elif hasattr(pb, "custom_shape_scale"):
         pb.custom_shape_scale = scale
     else:
         pb.custom_shape_scale_xyz = (scale, scale, scale)
+    if offset is not None:
+        pb.custom_shape_translation.y = offset*pb.bone.length
 
 #-------------------------------------------------------------
 #   Categorize
