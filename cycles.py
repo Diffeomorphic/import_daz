@@ -582,14 +582,18 @@ class CyclesTree:
             node = self.addNode("ShaderNodeUVMap", 1)
             node.uv_map = self.material.uv_set.name
             self.texco = node.outputs["UV"]
+        self.tileTexco()
+        for key,uvset in self.material.uv_sets.items():
+            self.addUvNode(key, uvset.name)
+        return node
+
+
+    def tileTexco(self):
         ox = self.getValue("getChannelHorizontalOffset", 0)
         oy = self.getValue("getChannelVerticalOffset", 0)
         kx = self.getValue("getChannelHorizontalTiles", 1)
         ky = self.getValue("getChannelVerticalTiles", 1)
         self.mapTexco(ox, oy, kx, ky)
-        for key,uvset in self.material.uv_sets.items():
-            self.addUvNode(key, uvset.name)
-        return node
 
 
     def addUvNode(self, key, uvname):
@@ -1638,17 +1642,12 @@ class CyclesTree:
         else:
             imgname = asset.getName()
         texnode = self.getTexNode(imgname, colorSpace)
-        if asset.hasMapping(map) or self.material.hasTiles():
-            if map.label:
-                imgname = map.label
-            innode = texnode = outnode = self.addTextureNode(col, img, imgname, colorSpace)
+        if asset.hasMapping(map):
+            innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.material, map)
             mapping = self.addMappingNode(data, None)
             if mapping:
-                if asset.hasMapping(map):
-                    innode.extension = 'CLIP'
-                else:
-                    innode.extension = 'REPEAT'
+                innode.extension = 'CLIP'
                 self.linkVector(mapping, innode)
                 innode = mapping
             if map.invert:

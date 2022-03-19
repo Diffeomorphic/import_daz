@@ -120,6 +120,7 @@ class ShellGroup(MaterialGroup):
         self.pbrOpaque = None
         self.inShell = True
         self.texco = self.inputs.outputs["UV"]
+        self.tileTexco()
         self.buildLayer(uvname)
         alpha,atex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
         mult = self.addNode("ShaderNodeMath", 6)

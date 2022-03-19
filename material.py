@@ -342,13 +342,6 @@ class Material(Asset, Channels):
             gamma = channel["default_image_gamma"]
         return gamma
 
-
-    def hasTiles(self):
-        return (self.getValue("getChannelHorizontalOffset", 0) != 0 or
-                self.getValue("getChannelVerticalOffset", 0) != 0 or
-                self.getValue("getChannelHorizontalTiles", 1) != 1 or
-                self.getValue("getChannelVerticalTiles", 1) != 1)
-
 #-------------------------------------------------------------
 #   Get channels
 #-------------------------------------------------------------
