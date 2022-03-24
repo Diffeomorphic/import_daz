@@ -150,6 +150,8 @@ class GeoNode(Node, SimNode):
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
+            elif GS.useMultires:
+                self.addHDUvs(ob, hdob)
         elif LS.useHDObjects:
             self.hdobject = inst.hdobject = ob
 
