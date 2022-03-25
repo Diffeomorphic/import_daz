@@ -165,11 +165,21 @@ class GeoNode(Node, SimNode):
             self.data and
             (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0)):
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
-            mod.render_levels = self.data.SubDIALevel + self.data.SubDRenderLevel
+            mod.render_levels = subDLevels = self.data.SubDIALevel + self.data.SubDRenderLevel
             mod.levels = self.data.SubDIALevel
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
             self.data.creaseEdges(context, ob)
+        else:
+            subDLevels = 0
+
+        for dmat in self.materials.values():
+            level = dmat.getSubDLevel(0)
+            if level > subDLevels:
+                mod2 = ob.modifiers.new("SubD Displacement", 'SUBSURF')
+                mod2.subdivision_type = 'SIMPLE'
+                mod2.render_levels = level - subDLevels
+                mod2.levels = 0
 
 
     def addMappings(self, selmap):

@@ -1595,16 +1595,12 @@ class CyclesTree:
 
 
     def buildDisplacementNodes(self):
-        channel = self.material.getChannelDisplacement()
-        if not( channel and
-                self.isEnabled("Displacement") and
-                GS.useDisplacement):
+        strength = self.material.getDisplacementStrength()
+        if strength == 0:
             return
+        channel = self.material.getChannelDisplacement()
         tex = self.addTexImageNode(channel, "NONE", False)
         if tex:
-            strength = self.material.getChannelValue(channel, 1)
-            if strength == 0:
-                return
             dmin = self.getValue("getChannelDispMin", -0.05)
             dmax = self.getValue("getChannelDispMax", 0.05)
             if dmin > dmax:
@@ -1621,7 +1617,7 @@ class CyclesTree:
             self.linkNormal(node)
             self.displacement = node.outputs["Displacement"]
             mat = self.material.rna
-            mat.cycles.displacement_method = 'BOTH'
+            mat.cycles.displacement_method = 'DISPLACEMENT'
 
 
     def addSingleTexture(self, col, asset, map, colorSpace):

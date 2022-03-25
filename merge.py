@@ -122,6 +122,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             return
 
         auvnames = []
+        subDLevels = 0
         for aob in anatomies:
             uvname = self.getActiveUvLayer(aob)[1]
             auvnames.append(uvname)
@@ -129,6 +130,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':
                     aob.modifiers.remove(mod)
+                elif mod.type == 'SUBSURF' and mod.name == "SubD Displacement":
+                    if mod.render_levels > subDLevels:
+                        subDLevels = mod.render_levels
         cname = self.getUvName(cob.data)
         drivers = {}
 
@@ -300,7 +304,15 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-
+            elif mod.type == 'SUBSURF' and mod.name == "SubD Displacement":
+                if subDLevels > mod.render_levels:
+                    mod.render_levels = subDLevels
+                subDLevels = 0
+        if subDLevels > 0:
+            mod = cob.modifiers.new("SubD Displacement", 'SUBSURF')
+            mod.subdivision_type = 'SIMPLE'
+            mod.render_levels = subDLevels
+            mod.levels = 0
 
     def getActiveUvLayer(self, ob):
         for idx,uvlayer in enumerate(ob.data.uv_layers):

@@ -342,6 +342,24 @@ class Material(Asset, Channels):
             gamma = channel["default_image_gamma"]
         return gamma
 
+
+    def getDisplacementStrength(self):
+        if (self.enabled["Displacement"] and
+            GS.useDisplacement):
+            return self.getValue("getChannelDisplacement", 0)
+        else:
+            return 0
+
+
+    def getSubDLevel(self, level):
+        if self.getDisplacementStrength():
+            subd = self.getValue(["SubD Displacement Level"], 0)
+            if subd > level:
+                level = subd
+        for shell in self.shells.values():
+            level = shell.material.getSubDLevel(level)
+        return level
+
 #-------------------------------------------------------------
 #   Get channels
 #-------------------------------------------------------------

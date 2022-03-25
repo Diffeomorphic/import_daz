@@ -67,9 +67,10 @@ class MaterialGroup:
         return True
 
 
-    def hideNormal(self):
+    def hideSlot(self, slot):
         if bpy.app.version >= (2,90,0):
-            self.group.inputs["Normal"].hide_value = True
+            self.group.inputs[slot].hide_value = True
+
 
     def setMinMax(self, slot, default, min, max):
         self.group.inputs[slot].default_value = default
@@ -104,10 +105,12 @@ class ShellGroup(MaterialGroup):
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.inputs.new("NodeSocketVector", "UV")
-        self.group.inputs.new("NodeSocketFloat", "Displacement")
+        self.hideSlot("UV")
+        self.group.inputs.new("NodeSocketVector", "Displacement")
+        self.hideSlot("Displacement")
         self.group.outputs.new("NodeSocketShader", "Cycles")
         self.group.outputs.new("NodeSocketShader", "Eevee")
-        self.group.outputs.new("NodeSocketFloat", "Displacement")
+        self.group.outputs.new("NodeSocketVector", "Displacement")
 
 
     def addNodes(self, args):
@@ -142,7 +145,7 @@ class ShellGroup(MaterialGroup):
         self.addOutputs(mult)
         self.buildDisplacementNodes()
         if self.displacement:
-            mult2 = self.addNode("ShaderNodeMath", 9)
+            mult2 = self.addNode("ShaderNodeVectorMath", 9)
             mult2.label = "Multiply Displacement"
             mult2.operation = 'MULTIPLY'
             self.links.new(mult.outputs[0], mult2.inputs[0])
@@ -285,7 +288,7 @@ class Fresnel2Group(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Power")
         self.setMinMax("Power", 1, 1, 4)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
         self.group.outputs.new("NodeSocketFloat", "Dielectric")
         self.group.outputs.new("NodeSocketFloat", "Metal")
 
@@ -427,6 +430,7 @@ class BrickLayerGroup(FacMixGroup):
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 10)
         self.group.inputs.new("NodeSocketVector", "UV")
+        self.hideSlot("UV")
 
 
     def addNodes(self, args):
@@ -544,7 +548,7 @@ class DiffuseGroup(FacMixGroup):
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -579,7 +583,7 @@ class GlossyGroup(MixGroup):
         self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -625,7 +629,7 @@ class MetalGroupUber(FacMixGroup):
         self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -676,7 +680,7 @@ class MetalGroupPbrSkin(FacMixGroup):
         self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Dual Ratio")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -730,7 +734,7 @@ class TopCoatGroup(FacMixGroup):
         self.group.inputs.new("NodeSocketFloat", "Distance")
         self.group.inputs.new("NodeSocketFloat", "Height")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -778,7 +782,7 @@ class RefractionGroup(FacMixGroup):
         self.group.inputs.new("NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -912,7 +916,7 @@ class TranslucentGroup(FacMixGroup):
         self.group.inputs.new("NodeSocketFloat", "Cycles Mix Factor")
         self.group.inputs.new("NodeSocketFloat", "Eevee Mix Factor")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -965,7 +969,7 @@ class MakeupGroup(FacMixGroup):
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
@@ -1042,7 +1046,7 @@ class DualLobeGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Roughness 2")
         self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
         self.group.outputs.new("NodeSocketShader", "Cycles")
         self.group.outputs.new("NodeSocketShader", "Eevee")
 
@@ -1307,7 +1311,7 @@ class DisplacementGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Max")
         self.group.inputs.new("NodeSocketFloat", "Min")
         self.group.inputs.new("NodeSocketVector", "Normal")
-        self.hideNormal()
+        self.hideSlot("Normal")
         self.group.outputs.new("NodeSocketVector", "Displacement")
 
 
