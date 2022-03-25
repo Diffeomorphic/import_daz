@@ -100,7 +100,7 @@ class ShellGroup(MaterialGroup):
 
 
     def create(self, node, name, parent):
-        MaterialGroup.create(self, node, name, parent, 10)
+        MaterialGroup.create(self, node, name, parent, 9)
         self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
@@ -145,12 +145,12 @@ class ShellGroup(MaterialGroup):
         self.addOutputs(mult)
         self.buildDisplacementNodes()
         if self.displacement:
-            mult2 = self.addNode("ShaderNodeVectorMath", 9)
-            mult2.label = "Multiply Displacement"
-            mult2.operation = 'MULTIPLY'
-            self.links.new(mult.outputs[0], mult2.inputs[0])
-            self.links.new(self.displacement, mult2.inputs[1])
-            self.links.new(mult2.outputs[0], self.outputs.inputs["Displacement"])
+            scale = self.addNode("ShaderNodeVectorMath", 8)
+            scale.label = "Scale"
+            scale.operation = 'SCALE'
+            self.links.new(self.displacement, scale.inputs[0])
+            self.links.new(mult.outputs[0], scale.inputs["Scale"])
+            self.links.new(scale.outputs[0], self.outputs.inputs["Displacement"])
         else:
             self.links.new(self.inputs.outputs["Displacement"], self.outputs.inputs["Displacement"])
 
