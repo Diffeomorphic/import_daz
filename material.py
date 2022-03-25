@@ -721,24 +721,6 @@ class Images(Asset):
         return images
 
 
-def setImageColorSpace(img, colorspace):
-    try:
-        img.colorspace_settings.name = colorspace
-        return
-    except TypeError:
-        pass
-    alternatives = {
-        "sRGB" : ["sRGB OETF"],
-        "Non-Color" : ["Non-Colour Data"],
-    }
-    for alt in alternatives[colorspace]:
-        try:
-            img.colorspace_settings.name = alt
-            return
-        except TypeError:
-            pass
-
-
 class Texture:
 
     def __init__(self, map):
@@ -761,6 +743,16 @@ class Texture:
 
 
     def buildCycles(self, colorSpace):
+        def setColorSpace(img, alts):
+            for alt in alts:
+                try:
+                    img.colorspace_settings.name = alt
+                    return
+                except TypeError:
+                    pass
+            msg = "No matching color space in %s" % alts
+            reportError(msg, trigger=(2,3))
+
         if self.built[colorSpace]:
             return self.images[colorSpace]
         elif colorSpace == "COLOR" and self.images["NONE"]:
@@ -775,14 +767,9 @@ class Texture:
             img = None
         if img:
             if colorSpace == "COLOR":
-                img.colorspace_settings.name = "sRGB"
+                setColorSpace(img, ["sRGB", "sRGB OETF"])
             elif colorSpace == "NONE":
-                try:
-                    img.colorspace_settings.name = "Non-Color"
-                except TypeError:
-                    img.colorspace_settings.name = "Linear"
-            else:
-                img.colorspace_settings.name = colorSpace
+                setColorSpace(img, ["Non-Color", "Linear", "Non-Colour Data"])
         self.images[colorSpace] = img
         self.built[colorSpace] = True
         return img
