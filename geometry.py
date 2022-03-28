@@ -66,7 +66,7 @@ class GeoNode(Node, SimNode):
         self.verts = None
         self.edges = []
         self.faces = []
-        self.materials = {}
+        self.materials = OrderedDict()
         self.hairMaterials = []
         self.isStrandHair = False
         self.properties = {}
@@ -791,8 +791,8 @@ class Geometry(Asset, Channels):
                 if (shmat.getValue("getChannelCutoutOpacity", 1) == 0 or
                     shmat.getValue("getChannelOpacity", 1) == 0):
                     continue
-                uv = self.uvs[mname]
-                if mname in geonode.materials.keys():
+                uv = self.uvs.get(mname)
+                if uv and mname in geonode.materials.keys():
                     dmat = geonode.materials[mname]
                     if shname not in dmat.shells.keys():
                         dmat.shells[shname] = self.makeShell(shname, shmat, uv)
@@ -988,6 +988,13 @@ class Geometry(Asset, Channels):
 
     def addMaterials(self, me, geonode, context):
         hasShells = False
+        if GS.materialsByNumbers:
+            for dmat in geonode.materials.values():
+                self.addMaterial(dmat, me, geonode)
+                if dmat.shells:
+                    hasShells = True
+            return hasShells
+
         for mn,mname in enumerate(self.polygon_material_groups):
             dmat = None
             if mname in geonode.materials.keys():
@@ -996,19 +1003,9 @@ class Geometry(Asset, Channels):
                 ref = self.fileref + "#" + mname
                 dmat = self.getAsset(ref)
             if dmat:
-                if dmat.rna is None:
-                    msg = ("Material without rna:\n  %s\n  %s\n  %s" % (dmat, geonode, self))
-                    reportError(msg, trigger=(2,3))
-                    #return False
-                me.materials.append(dmat.rna)
-                self.dmaterials.append(dmat)
+                self.addMaterial(dmat, me, geonode)
                 if dmat.shells:
                     hasShells = True
-                if dmat.uv_set and dmat.uv_set.checkSize(me):
-                    self.uv_set = dmat.uv_set
-                if GS.useAutoSmooth:
-                    me.use_auto_smooth = dmat.getValue(["Smooth On"], False)
-                    me.auto_smooth_angle = dmat.getValue(["Smooth Angle"], 89.9)*D
             else:
                 if GS.verbosity > 3:
                     mats = list(geonode.materials.keys())
@@ -1017,6 +1014,19 @@ class Geometry(Asset, Channels):
                 reportError("Material \"%s\" not found in geometry %s" % (mname, geonode.name), trigger=(2,4))
                 return False
         return hasShells
+
+
+    def addMaterial(self, dmat, me, geonode):
+        if dmat.rna is None:
+            msg = ("Material without rna:\n  %s\n  %s\n  %s" % (dmat, geonode, self))
+            reportError(msg, trigger=(2,3))
+        me.materials.append(dmat.rna)
+        self.dmaterials.append(dmat)
+        if dmat.uv_set and dmat.uv_set.checkSize(me):
+            self.uv_set = dmat.uv_set
+        if GS.useAutoSmooth:
+            me.use_auto_smooth = dmat.getValue(["Smooth On"], False)
+            me.auto_smooth_angle = dmat.getValue(["Smooth Angle"], 89.9)*D
 
 
     def addAllMaterials(self, me, geonode):
@@ -1228,7 +1238,7 @@ class Uvset(Asset):
                 dmat = geonode.materials[key]
                 dmat.fixUdim(context, udim)
                 fixed = True
-        if not fixed:
+        if not (fixed or GS.materialsByNumbers):
             print("Material \"%s\" not found" % key)
 
 

@@ -259,6 +259,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazReuseMaterials")
+        box.prop(scn, "DazMaterialsByNumbers")
         box.prop(scn, "DazBumpFactor")
         box.prop(scn, "DazFakeCaustics")
         box.prop(scn, "DazFakeTranslucencyTexture")
@@ -509,6 +510,10 @@ def register():
     bpy.types.Scene.DazReuseMaterials = BoolProperty(
         name = "Reuse Materials",
         description = "Use existing materials if such exists.\nMay lead to incorrect materials")
+
+    bpy.types.Scene.DazMaterialsByNumbers = BoolProperty(
+        name = "Materials By Numbers",
+        description = "Use index rather than name to identify materials")
 
     bpy.types.Scene.DazConnectClose = BoolProperty(
         name = "Connect Close",
