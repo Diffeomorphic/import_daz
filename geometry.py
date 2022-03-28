@@ -988,7 +988,7 @@ class Geometry(Asset, Channels):
 
     def addMaterials(self, me, geonode, context):
         hasShells = False
-        if GS.materialsByNumbers:
+        if GS.materialsByIndex:
             for dmat in geonode.materials.values():
                 self.addMaterial(dmat, me, geonode)
                 if dmat.shells:
@@ -1238,7 +1238,7 @@ class Uvset(Asset):
                 dmat = geonode.materials[key]
                 dmat.fixUdim(context, udim)
                 fixed = True
-        if not (fixed or GS.materialsByNumbers):
+        if not (fixed or GS.materialsByIndex):
             print("Material \"%s\" not found" % key)
 
 

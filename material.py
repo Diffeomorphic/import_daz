@@ -90,7 +90,7 @@ class Material(Asset, Channels):
     def getMatName(self, id):
         id = unquote(id)
         key = id.split("#")[-1]
-        if GS.materialsByNumbers:
+        if GS.materialsByIndex:
             return key
         words = key.rsplit("-",1)
         if (len(words) == 2 and

@@ -79,7 +79,7 @@ class GlobalSettings:
         self.useVolume = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
-        self.materialsByNumbers = False
+        self.materialsByIndex = False
         self.imageInterpolation = 'Cubic'
 
         self.useStrengthAdjusters = False
@@ -138,7 +138,7 @@ class GlobalSettings:
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
         "DazReuseMaterials" : "reuseMaterials",
-        "DazMaterialsByNumbers" : "materialsByNumbers",
+        "DazMaterialsByIndex" : "materialsByIndex",
         "DazBumpFactor" : "bumpFactor",
         "DazFakeCaustics" : "useFakeCaustics",
         "DazFakeTranslucencyTexture" : "useFakeTranslucencyTexture",

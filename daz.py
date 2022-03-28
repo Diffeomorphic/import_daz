@@ -259,7 +259,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazReuseMaterials")
-        box.prop(scn, "DazMaterialsByNumbers")
+        box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazBumpFactor")
         box.prop(scn, "DazFakeCaustics")
         box.prop(scn, "DazFakeTranslucencyTexture")
@@ -511,9 +511,9 @@ def register():
         name = "Reuse Materials",
         description = "Use existing materials if such exists.\nMay lead to incorrect materials")
 
-    bpy.types.Scene.DazMaterialsByNumbers = BoolProperty(
-        name = "Materials By Numbers",
-        description = "Use index rather than name to identify materials")
+    bpy.types.Scene.DazMaterialsByIndex = BoolProperty(
+        name = "Materials By Index",
+        description = "Use index rather than name to identify materials.\nNeeded to import MikuMikuDance files correctly")
 
     bpy.types.Scene.DazConnectClose = BoolProperty(
         name = "Connect Close",
