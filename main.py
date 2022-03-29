@@ -31,8 +31,9 @@ import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
-from .morphing import MorphSuffix
+from .morphing import MorphSuffix, MorphTypeOptions
 from .merge import MergeRigsOptions
+from .dforce import SoftbodyOptions
 
 #------------------------------------------------------------------
 #   Color options
@@ -519,78 +520,10 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                 channel["image_modification"][mod] = value
 
 #------------------------------------------------------------------
-#   MorphTypeOptions
-#   Also used in morphing.py
-#------------------------------------------------------------------
-
-class MorphTypeOptions:
-    units : BoolProperty(
-        name = "Face Units",
-        description = "Import all face units",
-        default = False)
-
-    expressions : BoolProperty(
-        name = "Expressions",
-        description = "Import all expressions",
-        default = False)
-
-    visemes : BoolProperty(
-        name = "Visemes",
-        description = "Import all visemes",
-        default = False)
-
-    facs : BoolProperty(
-        name = "FACS",
-        description = "Import all FACS units",
-        default = False)
-
-    facsexpr : BoolProperty(
-        name = "FACS Expressions",
-        description = "Import all FACS expressions",
-        default = False)
-
-    body : BoolProperty(
-        name = "Body",
-        description = "Import all body morphs",
-        default = False)
-
-    useMhxOnly : BoolProperty(
-        name = "MHX Compatible Only",
-        description = "Only import MHX compatible body morphs",
-        default = False)
-
-    jcms : BoolProperty(
-        name = "JCMs",
-        description = "Import all JCMs",
-        default = False)
-
-    flexions : BoolProperty(
-        name = "Flexions",
-        description = "Import all flexions",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "units")
-        self.layout.prop(self, "expressions")
-        self.layout.prop(self, "visemes")
-        self.layout.prop(self, "facs")
-        self.layout.prop(self, "facsexpr")
-        self.layout.prop(self, "body")
-        if self.body:
-            self.subprop("useMhxOnly")
-        self.layout.prop(self, "jcms")
-        self.layout.prop(self, "flexions")
-
-    def subprop(self, prop):
-        split = self.layout.split(factor=0.05)
-        split.label(text="")
-        split.prop(self, prop)
-
-#------------------------------------------------------------------
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, SoftbodyOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -742,6 +675,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
         self.layout.prop(self, "useSoftbody")
+        if self.useSoftbody:
+            self.subprop("useChest")
+            self.subprop("useBelly")
+            self.subprop("useGlutes")
+            self.subprop("useArms")
+            self.subprop("useLegs")
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
@@ -943,7 +882,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
             for ob in meshes[1:]:
                 selectSet(ob, True)
             print("Add softbody")
-            bpy.ops.daz.add_softbody()
+            bpy.ops.daz.add_softbody(
+                useChest = self.useChest,
+                useBelly = self.useBelly,
+                useGlutes = self.useGlutes,
+                useArms = self.useArms,
+                useLegs = self.useLegs
+                )
 
         # Merge geografts
         useLashes = self.useMergeFaceMeshes

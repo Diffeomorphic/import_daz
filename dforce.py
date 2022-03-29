@@ -390,12 +390,7 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
 
 from mathutils import Matrix
 
-class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
-    bl_idname = "daz.add_softbody"
-    bl_label = "Add Softbody"
-    bl_description = "Add softbody simulation to selected meshes"
-    bl_options = {'UNDO'}
-
+class SoftbodyOptions:
     useChest : BoolProperty(
         name = "Chest",
         description = "Add softbody simulation for chest",
@@ -420,6 +415,13 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
         name = "Leg Collision",
         description = "Add collision to legs",
         default = True)
+
+
+class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
+    bl_idname = "daz.add_softbody"
+    bl_label = "Add Softbody"
+    bl_description = "Add softbody simulation to selected meshes"
+    bl_options = {'UNDO'}
 
     useSmooth : BoolProperty(
         name = "Smooth",
@@ -562,7 +564,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, IsMesh):
             vgrp = ob.vertex_groups.get(vname)
             if vgrp:
                 ob.vertex_groups.remove(vgrp)
-        if isinstance(data[0], str):
+        if data and isinstance(data[0], str):
             self.addVertexGroupFromNames(selected, vname, data)
         else:
             self.addVertexGroupFromWeights(hum, selected, vname, data)

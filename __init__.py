@@ -60,9 +60,9 @@ def importModules():
                     "transform", "node", "figure", "bone", "geometry", "objfile",
                     "fix", "modifier", "animation", "load_morph", "morphing", "panel",
                     "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
-                    "guess", "convert", "files", "merge", "main", "finger",
+                    "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "rigify", "hide", "store",
-                    "mhx", "layers", "hair", "transfer", "dforce",
+                    "mhx", "layers", "hair", "transfer", "dforce", "main",
                     "udim", "hdmorphs", "facecap", "api",
                     "runtime.morph_armature"]
         anchor = os.path.basename(__file__[0:-12])
