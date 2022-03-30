@@ -142,7 +142,12 @@ class ShellGroup(MaterialGroup):
             self.links.new(self.clipsocket, mult.inputs[1])
         else:
             mult.inputs[1].default_value = 1.0
-        self.addOutputs(mult)
+
+        inv = self.addNode("ShaderNodeInvert", 7)
+        inv.inputs[0].default_value = 1.0
+        self.links.new(mult.outputs[0], inv.inputs[1])
+        self.addOutputs(inv)
+
         self.buildDisplacementNodes()
         if self.displacement:
             scale = self.addNode("ShaderNodeVectorMath", 8)
@@ -160,8 +165,8 @@ class OpaqueShellGroup(ShellGroup):
         mix = self.addNode("ShaderNodeMixShader", 8)
         mix.inputs[0].default_value = 1
         self.links.new(mult.outputs[0], mix.inputs[0])
-        self.links.new(self.inputs.outputs[slot], mix.inputs[1])
-        self.links.new(socket, mix.inputs[2])
+        self.links.new(self.inputs.outputs[slot], mix.inputs[2])
+        self.links.new(socket, mix.inputs[1])
         self.links.new(mix.outputs[0], self.outputs.inputs[slot])
 
     def addOutputs(self, mult):
@@ -196,8 +201,8 @@ class RefractiveShellGroup(ShellGroup):
         mix = self.addNode("ShaderNodeMixShader", 8)
         mix.inputs[0].default_value = 1
         self.links.new(mult.outputs[0], mix.inputs[0])
-        self.links.new(transp.outputs[0], mix.inputs[1])
-        self.links.new(socket, mix.inputs[2])
+        self.links.new(transp.outputs[0], mix.inputs[2])
+        self.links.new(socket, mix.inputs[1])
 
         add = self.addNode("ShaderNodeAddShader", 8)
         self.links.new(self.inputs.outputs[slot], add.inputs[0])
