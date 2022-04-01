@@ -197,9 +197,11 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     // Write HD data
     //obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
+    var geom0 = shape.getGeometry();
     var nv = geom.getNumVertices();
+    var nv0 = geom0.getNumVertices();
     fp.writeLine("        \"lod\": " + lodvalue + ",");
-    if (true || lodvalue > 0)
+    if (nv != nv0)
     {
         fp.writeLine("        \"subd level\": " + level + ",");
         doVertices(fp, geom, "hd ");
