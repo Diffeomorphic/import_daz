@@ -106,6 +106,7 @@ class GlobalSettings:
         self.useMultires = True
         self.useMultiUvLayers = True
         self.useMultiShapes = True
+        self.useHDArmature = True
         self.useAutoSmooth = True
         self.useSimulation = True
         self.useScaleEyeMoisture = True
@@ -176,6 +177,7 @@ class GlobalSettings:
         # Meshes
         "DazUseInstancing" : "useInstancing",
         "DazHighdef" : "useHighDef",
+        "DazHDArmature" : "useHDArmature",
         "DazMultires" : "useMultires",
         "DazMultiUvLayers" : "useMultiUvLayers",
         "DazUseAutoSmooth" : "useAutoSmooth",

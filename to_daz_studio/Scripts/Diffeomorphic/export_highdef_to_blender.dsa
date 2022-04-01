@@ -183,6 +183,7 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     var shape = obj.getCurrentShape();
     if (shape == null)
         return false;
+    var name = obj.getName();
     var clname = node.className();
     if (clname == "DzGeometryShellNode")
         return false;
@@ -196,8 +197,9 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     // Write HD data
     //obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
+    var nv = geom.getNumVertices();
     fp.writeLine("        \"lod\": " + lodvalue + ",");
-    if (lodvalue > 0)
+    if (true || lodvalue > 0)
     {
         fp.writeLine("        \"subd level\": " + level + ",");
         doVertices(fp, geom, "hd ");

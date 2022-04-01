@@ -222,6 +222,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazHighdef")
         box.prop(scn, "DazMultires")
         box.prop(scn, "DazMultiUvLayers")
+        box.prop(scn, "DazHDArmature")
         box.prop(scn, "DazUseAutoSmooth")
         box.prop(scn, "DazUseInstancing")
         box.prop(scn, "DazScaleEyeMoisture")
@@ -571,6 +572,10 @@ def register():
     bpy.types.Scene.DazHighdef = BoolProperty(
         name = "Build HD Meshes",
         description = "Build HD meshes if included in .dbz file")
+
+    bpy.types.Scene.DazHDArmature = BoolProperty(
+        name = "Add Armature To HD Meshes",
+        description = "Add armature modifier and vertex groups to true HD meshes")
 
     bpy.types.Scene.DazMultires = BoolProperty(
         name = "Add Multires",

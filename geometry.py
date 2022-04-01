@@ -241,12 +241,12 @@ class GeoNode(Node, SimNode):
         ob = self.rna
         if ob is None:
             return
-        hdob = self.hdobject
         if self.hairMaterials:
             for dmat in self.hairMaterials:
                 if dmat.rna:
                     ob.data.materials.append(dmat.rna)
-        if self.hdobject:
+        hdob = self.hdobject
+        if hdob:
             self.finishHD(context, self.rna, hdob, inst)
         if ob.type == 'MESH':
             scaleEyeMoisture(ob)
