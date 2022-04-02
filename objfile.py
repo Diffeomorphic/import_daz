@@ -164,7 +164,7 @@ def loadDbzFile(filepath):
             if "faces" in figure.keys():
                 faces = figure["faces"]
             if "polylines" in figure.keys():
-                faces = figure["polylines"]
+                polylines = figure["polylines"]
             if "uvs" in figure.keys():
                 uvs = figure["uvs"]
             if "material groups" in figure.keys():
