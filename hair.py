@@ -55,9 +55,9 @@ class HairOptions:
     # Create
 
     strandType : EnumProperty(
-        items = [('SHEET', "Sheet", "Sheets"),
-                 ('LINE', "Line", "Polylines"),
-                 ('TUBE', "Tube", "Tubes")],
+        items = [('SHEET', "Sheet", "For transmapped hair (mesh hair)"),
+                 ('LINE', "Line", "For polyline hair (dForce guides and line tesselation = 1)"),
+                 ('TUBE', "Tube", "For dForce and SBH strands (line tesselation >= 2)")],
         name = "Strand Type",
         description = "Mesh hair strand type",
         default = 'SHEET')

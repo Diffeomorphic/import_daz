@@ -141,12 +141,14 @@ class GeoNode(Node, SimNode):
             multi = False
             if not (GS.useMultires and GS.useMultiUvLayers):
                 self.addHDUvs(ob, hdob)
-            if GS.useMultires:
+            if GS.useMultires and hdob.data.polygons:
                 multi = addMultires(context, ob, hdob, False)
             if multi:
                 if GS.useMultiUvLayers:
                     copyUvLayers(ob, hdob)
-            elif len(hdob.data.vertices) == len(ob.data.vertices):
+            elif (len(hdob.data.vertices) == len(ob.data.vertices) and
+                  len(hdob.data.edges) == len(ob.data.edges) and
+                  len(hdob.data.polygons) == len(ob.data.polygons)):
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
@@ -191,14 +193,21 @@ class GeoNode(Node, SimNode):
         hdfaces = self.highdef.faces
         faces = self.stripNegatives([f[0] for f in hdfaces])
         mnums = [f[4] for f in hdfaces]
+        edges = []
+        for pline in self.highdef.polylines:
+            edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
         nverts = len(verts)
         me = bpy.data.meshes.new(ob.data.name + "_HD")
-        print("Build HD mesh for %s: %d verts, %d faces" % (ob.name, nverts, len(faces)))
-        me.from_pydata(verts, [], faces)
+        print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
+        me.from_pydata(verts, edges, faces)
         print("HD mesh %s built" % me.name)
         for f in me.polygons:
             f.material_index = mnums[f.index]
             f.use_smooth = True
+        if me.polygons:
+            me.DazHairType = 'SHEET'
+        else:
+            me.DazHairType = 'LINE'
         return me
 
 

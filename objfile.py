@@ -112,15 +112,19 @@ class DBZInfo:
 
 
 class DBZObject:
-    def __init__(self, verts, uvs, edges, faces, matgroups, props, lod, center):
+    def __init__(self, verts, uvs, edges, faces, polylines, matgroups, props, lod, center):
         self.verts = verts
         self.uvs = uvs
         self.edges = edges
         self.faces = faces
+        self.polylines = polylines
         self.matgroups = matgroups
         self.properties = props
         self.lod = lod
         self.center = center
+
+    def __repr__(self):
+        return "<DBZ v:%d f:%d p:%d>" % (len(self.verts), len(self.faces), len(self.polylines))
 
 #------------------------------------------------------------------
 #   Load DBZ file
@@ -153,25 +157,28 @@ def loadDbzFile(filepath):
 
         if "vertices" in figure.keys():
             verts = d2bList(figure["vertices"])
-            edges = faces = uvs = matgroups = []
+            edges = faces = polylines = uvs = matgroups = []
             props = {}
             if "edges" in figure.keys():
                 edges = figure["edges"]
             if "faces" in figure.keys():
                 faces = figure["faces"]
+            if "polylines" in figure.keys():
+                faces = figure["polylines"]
             if "uvs" in figure.keys():
                 uvs = figure["uvs"]
             if "material groups" in figure.keys():
                 matgroups = figure["material groups"]
             if "node" in figure.keys():
                 props = figure["node"]["properties"]
-            dbz.objects[name].append(DBZObject(verts, uvs, edges, faces, matgroups, props, 0, center))
+            dbz.objects[name].append(DBZObject(verts, uvs, edges, faces, polylines, matgroups, props, 0, center))
 
         if GS.useHighDef and "hd vertices" in figure.keys():
             LS.useHDObjects = True
             if name not in dbz.hdobjects.keys():
                 dbz.hdobjects[name] = []
             verts = []
+            polylines = []
             faces = []
             lod = 0
             uvs = []
@@ -184,11 +191,13 @@ def loadDbzFile(filepath):
                     lod = value
                 elif key == "hd uvs":
                     uvs = value
+                elif key == "hd polylines":
+                    polylines = value
                 elif key == "hd faces":
                     faces = value
-                elif key == "hd material groups":
+                elif key == "material groups":
                     matgroups = value
-            dbz.hdobjects[name].append(DBZObject(verts, uvs, [], faces, matgroups, props, lod, center))
+            dbz.hdobjects[name].append(DBZObject(verts, uvs, [], faces, polylines, matgroups, props, lod, center))
 
         if "bones" not in figure.keys():
             continue

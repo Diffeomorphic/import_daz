@@ -208,7 +208,9 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         fp.writeLine("        ],");
         if (useHdUvs)
             doUVs(fp, geom, "hd ");
-        doFaces(fp, geom, "hd ");
+        var nf = doFaces(fp, geom, "hd ");
+        if (nf == 0)
+            doPolylines(fp, geom, "hd ");
         doMaterialGroups(fp, geom, "hd ");
     }
 
@@ -226,7 +228,9 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         fp.writeLine("        \"node\": {");
         doProperties(fp, node, "        ");
         fp.writeLine("        },");
-        doFaces(fp, geom, "");
+        var nf = doFaces(fp, geom, "");
+        if (nf == 0)
+            doPolylines(fp, geom, "");
     }
 
     doMaterialGroups(fp, geom, "");
@@ -281,7 +285,6 @@ function doMaterialGroups(fp, geom, hd)
 function doVertices(fp, geom, hd)
 {
     var nv = geom.getNumVertices();
-    var ne = geom.getNumEdges();
     var nf = geom.getNumFacets();
     var buf = ("        \"num " + hd + "verts\": " + nv + ",\n");
     buf += ("        \"" + hd + "vertices\": [\n" );
@@ -314,6 +317,22 @@ function doUVs(fp, geom, hd)
     fp.writeLine(buf);
 }
 
+function doPolylines(fp, geom, hd)
+{
+    var npl = geom.getNumPolylines();
+    var buf = ("        \"" + hd + "polylines\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < npl; i++)
+    {
+        var vlist = geom.getPolylineVertexIndices(i);
+        if (i == npl-1) c = "\n";
+        buf += ("            [" + vlist + "]" + c)
+    }
+    buf += ("        ],");
+    var uvlist = geom.getPolylineUVIndices(i);
+    fp.writeLine(buf);
+}
+
 function doFaces(fp, geom, hd)
 {
     var nf = geom.getNumFacets();
@@ -327,6 +346,7 @@ function doFaces(fp, geom, hd)
     }
     buf += ("        ],");
     fp.writeLine(buf);
+    return nf;
 }
 
 //==============================================================================
