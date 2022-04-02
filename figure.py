@@ -1821,25 +1821,25 @@ def register():
     bpy.types.Armature.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
     bpy.types.Armature.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
 
-    bpy.types.Object.DazRotLocks = BoolProperty(
+    bpy.types.Object.DazRotLocks = BoolPropOVR(
         name = "Rotation Locks",
         description = "Rotation Locks",
         default = True,
         update = toggleRotLocks)
 
-    bpy.types.Object.DazLocLocks = BoolProperty(
+    bpy.types.Object.DazLocLocks = BoolPropOVR(
         name = "Location Locks",
         description = "Location Locks",
         default = True,
         update = toggleLocLocks)
 
-    bpy.types.Object.DazRotLimits = BoolProperty(
+    bpy.types.Object.DazRotLimits = BoolPropOVR(
         name = "Rotation Limits",
         description = "Rotation Limits",
         default = True,
         update = toggleRotLimits)
 
-    bpy.types.Object.DazLocLimits = BoolProperty(
+    bpy.types.Object.DazLocLimits = BoolPropOVR(
         name = "Location Limits",
         description = "Location Limits",
         default = True,

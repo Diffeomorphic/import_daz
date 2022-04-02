@@ -146,8 +146,8 @@ def unlinkAll(ob):
 #-------------------------------------------------------------
 
 if bpy.app.version < (2,90,0):
-    def BoolPropOVR(default, description=""):
-        return bpy.props.BoolProperty(default=default, description=description)
+    def BoolPropOVR(name="", default=False, description="", update=None):
+        return bpy.props.BoolProperty(name=name, default=default, description=description, update=update)
 
     def FloatPropOVR(default, description="", precision=2, min=0, max=1):
         return bpy.props.FloatProperty(default=default, description=description, precision=precision, min=min, max=max)
@@ -155,8 +155,8 @@ if bpy.app.version < (2,90,0):
     def setOverridable(rna, attr):
         pass
 else:
-    def BoolPropOVR(default, description=""):
-        return bpy.props.BoolProperty(default=default, description=description, override={'LIBRARY_OVERRIDABLE'})
+    def BoolPropOVR(name="", default=False, description="", update=None):
+        return bpy.props.BoolProperty(name=name, default=default, description=description, update=update, override={'LIBRARY_OVERRIDABLE'})
 
     def FloatPropOVR(default, description="", precision=2, min=0, max=1):
         return bpy.props.FloatProperty(default=default, description=description, precision=precision, min=min, max=max, override={'LIBRARY_OVERRIDABLE'})
