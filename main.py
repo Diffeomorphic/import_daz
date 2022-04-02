@@ -733,6 +733,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
         from time import perf_counter
         time1 = perf_counter()
         bpy.ops.daz.import_daz(
+            materialMethod = self.materialMethod,
             skinColor = self.skinColor,
             clothesColor = self.clothesColor,
             fitMeshes = self.fitMeshes)
