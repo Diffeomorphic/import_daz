@@ -462,6 +462,8 @@ class GeneralMorphSelector(Selector):
         items = getCatEnums,
         name = "Category")
 
+    invoked = False
+
     def selectCondition(self, item):
         if self.morphset == "Custom":
             return (item.name in self.catnames[self.category])
@@ -483,10 +485,18 @@ class GeneralMorphSelector(Selector):
         return keys
 
 
+    def specialKey(self, key):
+        if (key[0:3] == "Daz" or
+            key[0:6] == "Adjust"):
+            return True
+        return False
+
+
     def invoke(self, context, event):
         global theMorphEnums, theCatEnums
         ob = context.object
         rig = self.rig = getRigFromObject(ob)
+        self.invoked = True
         theMorphEnums = [("All", "All", "All")]
         theCatEnums = [("All", "All", "All")]
         self.morphset = "All"
@@ -1960,7 +1970,7 @@ class DAZ_OT_UnkeyShapes(DazOperator, MorphGroup, IsMesh):
 class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmature):
     bl_idname = "daz.update_slider_limits"
     bl_label = "Update Slider Limits"
-    bl_description = "Update slider min and max values"
+    bl_description = "Update selected slider min and max values.\nAll slider limits are selected when called from script"
     bl_options = {'UNDO'}
 
     min : FloatProperty(
@@ -2002,8 +2012,11 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
     def run(self, context):
         ob = context.object
         rig = getRigFromObject(ob)
-        self.props = [item.name.lower() for item in self.getSelectedItems()]
+        if self.invoked:
+            self.props = [item.name.lower() for item in self.getSelectedItems()]
         if rig:
+            if not self.invoked:
+                self.props = [key.lower() for key in rig.keys() if not self.specialKey(key)]
             self.updatePropLimits(rig, context)
         if ob != rig:
             self.updatePropLimits(ob, context)
@@ -2659,7 +2672,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
 class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     bl_idname = "daz.convert_morphs_to_shapekeys"
     bl_label = "Convert Morphs To Shapekeys"
-    bl_description = "Convert face rig morphs to shapekeys"
+    bl_description = "Convert selected morphs to shapekeys.\nAll morphs are converted when called from script"
     bl_options = {'UNDO'}
 
     def run(self, context):
@@ -2667,13 +2680,15 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         rig = ob.parent
         if rig is None or rig.type != 'ARMATURE':
             return
-        items = self.getSelectedItems()
+        if self.invoked:
+            items = [(item.name, item.text) for item in self.getSelectedItems()]
+        else:
+            items = [(key, key) for key in rig.keys() if not self.specialKey(self, key)]
         nitems = len(items)
         startProgress("Convert morphs to shapekeys")
         for n,item in enumerate(items):
+            key,mname = item
             showProgress(n, nitems)
-            key = item.name
-            mname = item.text
             rig[key] = 0.0
             if (ob.data.shape_keys and
                 mname in ob.data.shape_keys.key_blocks.keys()):
@@ -2682,11 +2697,13 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             if mname:
                 mod = getModifier(ob, 'ARMATURE')
                 if mod:
+                    print("Convert", mname)
                     rig[key] = 1.0
                     updateRigDrivers(context, rig)
                     self.applyArmature(ob, rig, mod, mname)
                     rig[key] = 0.0
         updateRigDrivers(context, rig)
+
 
 
     def applyArmature(self, ob, rig, mod, mname):
