@@ -283,7 +283,7 @@ class CyclesTree:
 
 
     def getTexco(self, uv):
-        key = self.material.getUvKey(uv, self.texcos)
+        key = self.material.getUvSet(uv, self.texcos)
         if key is None:
             return self.texco
         elif key not in self.texcos.keys():

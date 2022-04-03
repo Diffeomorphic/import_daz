@@ -314,21 +314,23 @@ class Material(Asset, Channels):
         return
 
 
-    def getUvKey(self, key, struct):
+    def getUvSet(self, key, struct):
         if key not in struct.keys():
-            print("Missing UV for '%s', '%s' not in %s" % (self.getLabel(), key, list(struct.keys())))
+            uvset = None
+            print("Looking for UV set '%s'" % key)
+            if self.geometry and self.geometry.data:
+                geo = self.geometry.data
+                url = geo.id
+                uvset = geo.findUvSet(key, url)
+                if not uvset:
+                    path = url.replace("male%208_1/genesis8_1", "male/genesis8")
+                    if path == url:
+                        path = url.replace("male/genesis8", "male%208_1/genesis8_1")
+                    uvset = geo.findUvSet(key, path)
+            if not uvset:
+                msg = ("Missing UV for '%s': '%s' not in %s" % (self.getLabel(), key, list(struct.keys())))
+                reportError(msg, trigger=(2,3))
         return key
-
-
-    def getUvSet(self, uv):
-        key = self.getUvKey(uv, self.uv_sets)
-        if key is None:
-            return self.uv_set
-        elif key not in self.uv_sets.keys():
-            uvset = Asset(None)
-            uvset.name = key
-            self.uv_sets[key] = uvset
-        return self.uv_sets[key]
 
 
     def fixUdim(self, context, udim):
