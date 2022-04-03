@@ -140,6 +140,13 @@ class Material(Asset, Channels):
                 self.uv_set = uvset
 
 
+    def copyBasics(self, dmat):
+        self.basemix = dmat.basemix
+        self.shader = dmat.shader
+        self.enabled = dmat.enabled
+        self.rna = dmat.rna
+
+
     def setupBasics(self):
         self.basemix = self.getValue(["Base Mixing"], 0)
         if self.basemix > 2:
@@ -261,9 +268,9 @@ class Material(Asset, Channels):
 
     def build(self, context):
         from .geometry import Geometry, GeoNode
-        if self.dontBuild():
-            return
         self.setupBasics()
+        if self.dontBuild():
+            return False
         mat = self.rna
         if mat is None:
             mat = self.rna = bpy.data.materials.new(self.name)
@@ -282,6 +289,7 @@ class Material(Asset, Channels):
                     self.uv_sets[uv] = self.uv_sets[uvset.name] = uvset
         for shell in self.shells.values():
             shell.material.shader = self.shader
+        return True
 
 
     def dontBuild(self):

@@ -78,9 +78,8 @@ class CyclesMaterial(Material):
 
 
     def build(self, context):
-        if self.dontBuild():
+        if not Material.build(self, context):
             return
-        Material.build(self, context)
         self.tree = self.setupTree()
         self.tree.build()
 

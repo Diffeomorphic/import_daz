@@ -1434,9 +1434,8 @@ class HairMaterial(CyclesMaterial):
 
     def build(self, context, color):
         from .material import Material
-        if self.dontBuild():
+        if not Material.build(self, context):
             return
-        Material.build(self, context)
         self.tree = getHairTree(self, color)
         self.tree.build()
         self.rna.diffuse_color[0:3] = self.color

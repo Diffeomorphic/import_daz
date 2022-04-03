@@ -206,9 +206,8 @@ class CyclesLightMaterial(CyclesMaterial):
         return
 
     def build(self, context):
-        if self.dontBuild():
+        if not Material.build(self, context):
             return
-        Material.build(self, context)
         self.tree = LightTree(self)
         self.tree.build()
 

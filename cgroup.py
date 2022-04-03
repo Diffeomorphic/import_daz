@@ -115,8 +115,7 @@ class ShellGroup(MaterialGroup):
 
     def addNodes(self, args):
         shmat,uvname = args
-        shmat.setupBasics()
-        shmat.rna = self.parent.material.rna
+        shmat.copyBasics(self.parent.material)
         self.material = shmat
         self.cyclesOpaque = None
         self.eeveeOpaque = None

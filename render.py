@@ -110,6 +110,7 @@ class WorldMaterial(CyclesMaterial):
 
     def build(self, context):
         if self.dontBuild():
+            self.setupBasics()
             return
         mode = self.getValue(["Environment Mode"], 3)
         # [Dome and Scene, Dome Only, Sun-Skies Only, Scene Only]
