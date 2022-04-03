@@ -194,7 +194,13 @@ class GeoNode(Node, SimNode):
         faces = self.stripNegatives([f[0] for f in hdfaces])
         mnums = [f[4] for f in hdfaces]
         edges = []
-        for pline in self.highdef.polylines:
+        polylines = self.highdef.polylines
+        if polylines and not faces:
+            vnmin = min([min(pline) for pline in polylines])
+            if vnmin > 0:
+                verts = verts[vnmin:]
+                polylines = [[vn-vnmin for vn in pline] for pline in polylines]
+        for pline in polylines:
             edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
         nverts = len(verts)
         me = bpy.data.meshes.new(ob.data.name + "_HD")
@@ -911,6 +917,8 @@ class Geometry(Asset, Channels):
             for pline in self.polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
         elif polylines:
+            vnmin = min([min(pline) for pline in polylines])
+            print("VMIN", vnmin)
             for pline in polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
 
