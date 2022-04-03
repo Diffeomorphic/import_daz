@@ -326,7 +326,8 @@ class Material(Asset, Channels):
                     path = url.replace("male%208_1/genesis8_1", "male/genesis8")
                     if path == url:
                         path = url.replace("male/genesis8", "male%208_1/genesis8_1")
-                    uvset = geo.findUvSet(key, path)
+                    if path != url:
+                        uvset = geo.findUvSet(key, path)
             if not uvset:
                 msg = ("Missing UV for '%s': '%s' not in %s" % (self.getLabel(), key, list(struct.keys())))
                 reportError(msg, trigger=(2,3))

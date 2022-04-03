@@ -128,21 +128,22 @@ class ShellGroup(MaterialGroup):
         mult = self.addNode("ShaderNodeMath", 6)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
-        if atex and self.clipsocket:
+        if (alpha < 1 or atex) and self.clipsocket:
             self.linkScalar(atex, mult, alpha, 1)
             mult2 = self.addNode("ShaderNodeMath", 6)
             mult2.operation = 'MULTIPLY'
             self.links.new(mult.outputs[0], mult2.inputs[0])
             self.links.new(self.clipsocket, mult2.inputs[1])
             mult = mult2
-        elif atex:
+        elif (alpha < 1 or atex):
             self.linkScalar(atex, mult, alpha, 1)
         elif self.clipsocket:
             self.links.new(self.clipsocket, mult.inputs[1])
         else:
             mult.inputs[1].default_value = 1.0
 
-        inv = self.addNode("ShaderNodeInvert", 7)
+        inv = self.addNode("ShaderNodeMath", 7)
+        inv.operation = 'SUBTRACT'
         inv.inputs[0].default_value = 1.0
         self.links.new(mult.outputs[0], inv.inputs[1])
         self.addOutputs(inv)
