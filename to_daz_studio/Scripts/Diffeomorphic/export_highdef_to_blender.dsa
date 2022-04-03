@@ -329,7 +329,6 @@ function doPolylines(fp, geom, hd)
         buf += ("            [" + vlist + "]" + c)
     }
     buf += ("        ],");
-    var uvlist = geom.getPolylineUVIndices(i);
     fp.writeLine(buf);
 }
 

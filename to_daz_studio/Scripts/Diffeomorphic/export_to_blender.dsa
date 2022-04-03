@@ -165,7 +165,9 @@ function doMesh (fp, obj, start, node, str1, str2)
     	fp.writeLine("        \"node\": {");
     	doProperties(fp, node, "        ");
     	fp.writeLine("        },");
-    	doFaces(fp, geom);
+    	var nf = doFaces(fp, geom);
+        if (nf == 0)
+            doPolylines(fp, geom);
     }
     doVerts(fp, geom);
     fp.writeLine(str1);
@@ -190,6 +192,21 @@ function doVerts(fp, geom)
     fp.writeLine(buf);
 }
 
+function doPolylines(fp, geom)
+{
+    var npl = geom.getNumPolylines();
+    var buf = ("        \"" + "polylines\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < npl; i++)
+    {
+        var vlist = geom.getPolylineVertexIndices(i);
+        if (i == npl-1) c = "\n";
+        buf += ("            [" + vlist + "]" + c)
+    }
+    buf += ("        ],");
+    fp.writeLine(buf);
+}
+
 function doFaces(fp, geom)
 {
     var nf = geom.getNumFacets();
@@ -203,6 +220,7 @@ function doFaces(fp, geom)
     }   
     buf += "        ],";
     fp.writeLine(buf);
+    return nf;
 }
 
 function doEdges(fp, geom)

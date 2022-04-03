@@ -204,10 +204,7 @@ class GeoNode(Node, SimNode):
         for f in me.polygons:
             f.material_index = mnums[f.index]
             f.use_smooth = True
-        if me.polygons:
-            me.DazHairType = 'SHEET'
-        else:
-            me.DazHairType = 'LINE'
+        self.data.setHairType(me)
         return me
 
 
@@ -587,7 +584,6 @@ class Geometry(Asset, Channels):
         self.verts = []
         self.faces = []
         self.polylines = []
-        self.strands = []
         self.polygon_indices = []
         self.material_indices = []
         self.polygon_material_groups = []
@@ -891,6 +887,7 @@ class Geometry(Asset, Channels):
         verts = self.verts
         edges = []
         faces = self.faces
+        polylines = None
         if isinstance(geonode, GeoNode) and geonode.verts:
             if geonode.edges:
                 verts = geonode.verts
@@ -898,6 +895,9 @@ class Geometry(Asset, Channels):
             elif geonode.faces:
                 verts = geonode.verts
                 faces = geonode.faces
+            elif geonode.polylines:
+                verts = geonode.verts
+                polylines = geonode.polylines
             elif self.polylines:
                 verts = geonode.verts
             elif len(geonode.verts) == len(verts):
@@ -910,10 +910,9 @@ class Geometry(Asset, Channels):
         if self.polylines:
             for pline in self.polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
-                pn = pline[0]
-                mn = pline[1]
-                lverts = [verts[vn] for vn in pline[2:]]
-                self.strands.append((pn,mn,lverts))
+        elif polylines:
+            for pline in polylines:
+                edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
 
         if LS.fitFile:
             me.from_pydata(verts, edges, faces)
@@ -935,15 +934,14 @@ class Geometry(Asset, Channels):
 
         if self.polylines:
             me.DazMatNums.clear()
-            if me.polygons:
-                me.DazHairType = 'SHEET'
-            else:
-                me.DazHairType = 'LINE'
+            self.setHairType(me)
             for pline in self.polylines:
                 mnum = pline[1]
                 for n in range(len(pline)-3):
                     item = me.DazMatNums.add()
                     item.a = mnum
+        elif polylines:
+            self.setHairType(me)
         elif self.isStrandHair:
             me.DazHairType = 'TUBE'
 
@@ -970,6 +968,13 @@ class Geometry(Asset, Channels):
         if hasShells:
             ob.DazVisibilityDrivers = True
         return ob
+
+
+    def setHairType(self, me):
+        if me.polygons:
+            me.DazHairType = 'SHEET'
+        else:
+            me.DazHairType = 'LINE'
 
 
     def creaseEdges(self, context, ob):

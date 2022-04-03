@@ -159,18 +159,19 @@ def loadDbzFile(filepath):
             verts = d2bList(figure["vertices"])
             edges = faces = polylines = uvs = matgroups = []
             props = {}
-            if "edges" in figure.keys():
-                edges = figure["edges"]
-            if "faces" in figure.keys():
-                faces = figure["faces"]
-            if "polylines" in figure.keys():
-                polylines = figure["polylines"]
-            if "uvs" in figure.keys():
-                uvs = figure["uvs"]
-            if "material groups" in figure.keys():
-                matgroups = figure["material groups"]
-            if "node" in figure.keys():
-                props = figure["node"]["properties"]
+            for key,value in figure.items():
+                if key == "edges":
+                    edges = value
+                elif key == "faces":
+                    faces = value
+                elif key == "polylines":
+                    polylines = value
+                elif key == "uvs":
+                    uvs = value
+                elif key == "material groups":
+                    matgroups = value
+                elif key == "node":
+                    props = value["properties"]
             dbz.objects[name].append(DBZObject(verts, uvs, edges, faces, polylines, matgroups, props, 0, center))
 
         if GS.useHighDef and "hd vertices" in figure.keys():
@@ -331,6 +332,7 @@ def fitToFile(filepath, nodes):
                             geonode.verts = base.verts
                             geonode.edges = [e[0:2] for e in base.edges]
                             geonode.faces = [f[0] for f in base.faces]
+                            geonode.polylines = base.polylines
                             geonode.properties = base.properties
                             geonode.center = base.center
                             geonode.highdef = highdef
