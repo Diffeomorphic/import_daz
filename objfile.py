@@ -326,13 +326,17 @@ def fitToFile(filepath, nodes):
                                 ok = True
                                 break
                         if not ok:
-                            msg = ("Mismatch %s, %s: %d != %d. " % (node.name, geo.name, len(base.verts), len(geo.verts)) +
-                                   "(OK for hair)")
-                            print(msg)
-                            geonode.verts = base.verts
                             geonode.edges = [e[0:2] for e in base.edges]
                             geonode.faces = [f[0] for f in base.faces]
                             geonode.polylines = base.polylines
+                            if len(base.verts) > len(geo.verts) and len(base.faces) == 0:
+                                geonode.verts = geo.verts
+                                msg = ("Corrected vertex number for %s: %d => %d" % (node.name, len(base.verts), len(geo.verts)))
+                            else:
+                                geonode.verts = base.verts
+                                msg = ("Mismatch %s, %s: %d != %d. " % (node.name, geo.name, len(base.verts), len(geo.verts)) +
+                                       "(OK for hair)")
+                            print(msg)
                             geonode.properties = base.properties
                             geonode.center = base.center
                             geonode.highdef = highdef
