@@ -329,13 +329,15 @@ def fitToFile(filepath, nodes):
                             geonode.edges = [e[0:2] for e in base.edges]
                             geonode.faces = [f[0] for f in base.faces]
                             geonode.polylines = base.polylines
-                            if len(base.verts) > len(geo.verts) and len(base.faces) == 0:
-                                geonode.verts = geo.verts
-                                msg = ("Corrected vertex number for %s: %d => %d" % (node.name, len(base.verts), len(geo.verts)))
+                            if len(base.polylines) > 0:
+                                geonode.verts = base.verts
+                                msg = "Polylines %s" % node.name
+                            elif len(base.verts) > len(geo.verts) and len(base.faces) == 0:
+                                geonode.verts = base.verts[0:len(geo.verts)]
+                                msg = "Corrected vertex number for %s: %d => %d" % (node.name, len(base.verts), len(geo.verts))
                             else:
                                 geonode.verts = base.verts
-                                msg = ("Mismatch %s, %s: %d != %d. " % (node.name, geo.name, len(base.verts), len(geo.verts)) +
-                                       "(OK for hair)")
+                                msg = "Mismatch %s, %s: %d != %d. " % (node.name, geo.name, len(base.verts), len(geo.verts))
                             print(msg)
                             geonode.properties = base.properties
                             geonode.center = base.center

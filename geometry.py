@@ -189,19 +189,10 @@ class GeoNode(Node, SimNode):
 
 
     def buildHDMesh(self, ob):
-        verts = self.highdef.verts
         hdfaces = self.highdef.faces
         faces = self.stripNegatives([f[0] for f in hdfaces])
         mnums = [f[4] for f in hdfaces]
-        edges = []
-        polylines = self.highdef.polylines
-        if polylines and not faces:
-            vnmin = min([min(pline) for pline in polylines])
-            if vnmin > 0:
-                verts = verts[vnmin:]
-                polylines = [[vn-vnmin for vn in pline] for pline in polylines]
-        for pline in polylines:
-            edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
+        verts,edges = self.data.getEdges(self.highdef.verts, self.highdef.polylines, faces)
         nverts = len(verts)
         me = bpy.data.meshes.new(ob.data.name + "_HD")
         print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
@@ -913,14 +904,11 @@ class Geometry(Asset, Channels):
             self.addAllMaterials(me, geonode)
             return None
 
-        if self.polylines:
+        if polylines:
+            verts,edges = self.getEdges(verts, polylines, faces)
+        elif self.polylines:
             for pline in self.polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
-        elif polylines:
-            vnmin = min([min(pline) for pline in polylines])
-            print("VMIN", vnmin)
-            for pline in polylines:
-                edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
 
         if LS.fitFile:
             me.from_pydata(verts, edges, faces)
@@ -976,6 +964,18 @@ class Geometry(Asset, Channels):
         if hasShells:
             ob.DazVisibilityDrivers = True
         return ob
+
+
+    def getEdges(self, verts, polylines, faces):
+        edges = []
+        if polylines and not faces:
+            vnmin = min([min(pline) for pline in polylines])
+            if vnmin > 0:
+                verts = verts[vnmin:]
+                polylines = [[vn-vnmin for vn in pline] for pline in polylines]
+        for pline in polylines:
+            edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
+        return verts, edges
 
 
     def setHairType(self, me):

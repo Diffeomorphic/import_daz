@@ -165,10 +165,11 @@ function doMesh (fp, obj, start, node, str1, str2)
     	fp.writeLine("        \"node\": {");
     	doProperties(fp, node, "        ");
     	fp.writeLine("        },");
-    	var nf = doFaces(fp, geom);
-        if (nf == 0)
-            doPolylines(fp, geom);
+    	doFaces(fp, geom);
     }
+    var nf = geom.getNumFacets();
+    if (nf == 0)
+        doPolylines(fp, geom);
     doVerts(fp, geom);
     fp.writeLine(str1);
     fp.writeLine(str2);
@@ -220,7 +221,6 @@ function doFaces(fp, geom)
     }   
     buf += "        ],";
     fp.writeLine(buf);
-    return nf;
 }
 
 function doEdges(fp, geom)
