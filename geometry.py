@@ -904,7 +904,7 @@ class Geometry(Asset, Channels):
             self.addAllMaterials(me, geonode)
             return None
 
-        if polylines:
+        if polylines and GS.useHairStrands:
             verts,edges = self.getEdges(verts, polylines, faces)
         elif self.polylines:
             for pline in self.polylines:
