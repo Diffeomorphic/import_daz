@@ -223,7 +223,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazMultires")
         box.prop(scn, "DazMultiUvLayers")
         box.prop(scn, "DazHDArmature")
-        box.prop(scn, "DazHairStrands")
+        box.prop(scn, "DazHairGuides")
         box.prop(scn, "DazUseAutoSmooth")
         box.prop(scn, "DazUseInstancing")
         box.prop(scn, "DazScaleEyeMoisture")
@@ -570,9 +570,9 @@ def register():
         name = "Use Instancing",
         description = "Use instancing for DAZ instances")
 
-    bpy.types.Scene.DazHairStrands = BoolProperty(
-        name = "Hair Strands",
-        description = "Import hair strands instead of hair guides")
+    bpy.types.Scene.DazHairGuides = BoolProperty(
+        name = "Hair Guides",
+        description = "Import hair guides as well as hair strands")
 
     bpy.types.Scene.DazHighdef = BoolProperty(
         name = "Build HD Meshes",

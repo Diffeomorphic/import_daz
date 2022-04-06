@@ -208,9 +208,7 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         fp.writeLine("        ],");
         if (useHdUvs)
             doUVs(fp, geom, "hd ");
-        var nf = doFaces(fp, geom, "hd ");
-        if (nf == 0)
-            doPolylines(fp, geom, "hd ");
+        doFaces(fp, geom, "hd ");
         doMaterialGroups(fp, geom, "hd ");
     }
 
@@ -228,11 +226,11 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         fp.writeLine("        \"node\": {");
         doProperties(fp, node, "        ");
         fp.writeLine("        },");
-        var nf = doFaces(fp, geom, "");
-        if (nf == 0)
-            doPolylines(fp, geom, "");
+        doFaces(fp, geom, "");
     }
-
+    var nf = geom.getNumFacets();
+    if (nf == 0)
+        doPolylines(fp, geom, "");
     doMaterialGroups(fp, geom, "");
     doVertices(fp, geom, "");
     fp.writeLine(str1);
@@ -345,7 +343,6 @@ function doFaces(fp, geom, hd)
     }
     buf += ("        ],");
     fp.writeLine(buf);
-    return nf;
 }
 
 //==============================================================================

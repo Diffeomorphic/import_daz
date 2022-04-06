@@ -1255,6 +1255,8 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, MaterialMerger, IsMesh):
 
 
     def removeUnusedMaterials(self, ob):
+        if not ob.data.polygons:
+            return
         nmats = len(ob.data.materials)
         used = dict([(mn,False) for mn in range(nmats)])
         for f in ob.data.polygons:

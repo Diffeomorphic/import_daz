@@ -402,6 +402,7 @@ class Asset(Accessor):
         print("BDATA", self)
         if self.rna is None:
             self.build(context)
+        return None, None
 
 
     def connect(self, struct):

@@ -837,13 +837,14 @@ class Node(Asset, Formula, Channels):
     def buildObject(self, context, inst, center):
         from .geometry import UnGeometry
         scn = context.scene
+        ob2 = None
         if isinstance(self.data, UnGeometry):
             ob = bpy.data.objects.new(inst.name, None)
             self.data.fixMappingNodes(inst)
         elif isinstance(self.data, Asset):
             if self.data.shstruct and GS.mergeShells:
                 return
-            ob = self.data.buildData(context, self, inst, center)
+            ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
                 ob = bpy.data.objects.new(inst.name, self.data.rna)
         else:
@@ -853,6 +854,10 @@ class Node(Asset, Formula, Channels):
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)
         self.subdivideObject(ob, inst, context)
+        if ob2:
+            LS.objects[LS.rigname].append(ob2)
+            self.arrangeObject(ob2, inst, context, center)
+            ob2.parent = ob
 
 
     def arrangeObject(self, ob, inst, context, center):

@@ -102,7 +102,7 @@ class GlobalSettings:
         self.useConnectClose = False
 
         self.useInstancing = True
-        self.useHairStrands = True
+        self.useHairGuides = False
         self.useHighDef = True
         self.useMultires = True
         self.useMultiUvLayers = True
@@ -177,7 +177,7 @@ class GlobalSettings:
 
         # Meshes
         "DazUseInstancing" : "useInstancing",
-        "DazHairStrands" : "useHairStrands",
+        "DazHairGuides" : "useHairGuides",
         "DazHighdef" : "useHighDef",
         "DazHDArmature" : "useHDArmature",
         "DazMultires" : "useMultires",

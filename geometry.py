@@ -189,10 +189,10 @@ class GeoNode(Node, SimNode):
 
 
     def buildHDMesh(self, ob):
-        hdfaces = self.highdef.faces
-        faces = self.stripNegatives([f[0] for f in hdfaces])
-        mnums = [f[4] for f in hdfaces]
-        verts,edges = self.data.getEdges(self.highdef.verts, self.highdef.polylines, faces)
+        verts = self.highdef.verts
+        edges = []
+        faces = self.stripNegatives([f[0] for f in self.highdef.faces])
+        mnums = [f[4] for f in self.highdef.faces]
         nverts = len(verts)
         me = bpy.data.meshes.new(ob.data.name + "_HD")
         print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
@@ -210,8 +210,7 @@ class GeoNode(Node, SimNode):
             if hdob.name not in LS.hdUvMissing:
                 LS.hdUvMissing.append(hdob.name)
             return
-        hdfaces = self.highdef.faces
-        uvfaces = self.stripNegatives([f[1] for f in hdfaces])
+        uvfaces = self.stripNegatives([f[1] for f in self.highdef.faces])
         if len(ob.data.uv_layers) > 0:
             uvname = ob.data.uv_layers[0].name
         else:
@@ -868,7 +867,7 @@ class Geometry(Asset, Channels):
         if not isinstance(geonode, GeoNode):
             raise DazError("BUG buildData: Should be Geonode:\n  %s" % geonode)
         if (self.rna and not LS.singleUser):
-            return
+            return None, None
 
         if self.sourcing:
             asset = self.sourcing
@@ -883,8 +882,8 @@ class Geometry(Asset, Channels):
 
         verts = self.verts
         edges = []
+        guideVerts = guideEdges = []
         faces = self.faces
-        polylines = None
         if isinstance(geonode, GeoNode) and geonode.verts:
             if geonode.edges:
                 verts = geonode.verts
@@ -893,8 +892,7 @@ class Geometry(Asset, Channels):
                 verts = geonode.verts
                 faces = geonode.faces
             elif geonode.polylines:
-                verts = geonode.verts
-                polylines = geonode.polylines
+                verts,edges,guideVerts,guideEdges = self.getEdges(geonode.verts, geonode.polylines, faces)
             elif self.polylines:
                 verts = geonode.verts
             elif len(geonode.verts) == len(verts):
@@ -902,11 +900,9 @@ class Geometry(Asset, Channels):
 
         if not verts:
             self.addAllMaterials(me, geonode)
-            return None
+            return None, None
 
-        if polylines and GS.useHairStrands:
-            verts,edges = self.getEdges(verts, polylines, faces)
-        elif self.polylines:
+        if self.polylines and not guideVerts:
             for pline in self.polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
 
@@ -928,17 +924,8 @@ class Geometry(Asset, Channels):
                 f.material_index = mn
                 f.use_smooth = True
 
-        if self.polylines:
-            me.DazMatNums.clear()
-            self.setHairType(me)
-            for pline in self.polylines:
-                mnum = pline[1]
-                for n in range(len(pline)-3):
-                    item = me.DazMatNums.add()
-                    item.a = mnum
-        elif polylines:
-            self.setHairType(me)
-        elif self.isStrandHair:
+        self.setHairMatNums(me)
+        if self.isStrandHair and not edges:
             me.DazHairType = 'TUBE'
 
         hasShells = self.addMaterials(me, geonode, context)
@@ -963,19 +950,48 @@ class Geometry(Asset, Channels):
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
             ob.DazVisibilityDrivers = True
-        return ob
+
+        guideOb = None
+        if guideVerts:
+            guideMe = bpy.data.meshes.new("%s_GUIDE" % geonode.getName())
+            guideMe.from_pydata(guideVerts, guideEdges, [])
+            guideOb = bpy.data.objects.new("%s_GUIDE" % inst.name, guideMe)
+            guideMe.DazFingerPrint = getFingerPrint(guideOb)
+            self.setHairMatNums(guideMe)
+            for mat in me.materials:
+                guideMe.materials.append(mat)
+
+        return ob, guideOb
 
 
     def getEdges(self, verts, polylines, faces):
         edges = []
+        guideEdges = []
+        guideVerts = []
+        if self.polylines and GS.useHairGuides:
+            for pline in self.polylines:
+                guideEdges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
         if polylines and not faces:
             vnmin = min([min(pline) for pline in polylines])
             if vnmin > 0:
+                if GS.useHairGuides:
+                    guideVerts = verts[:vnmin]
                 verts = verts[vnmin:]
                 polylines = [[vn-vnmin for vn in pline] for pline in polylines]
         for pline in polylines:
             edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
-        return verts, edges
+        return verts, edges, guideVerts, guideEdges
+
+
+    def setHairMatNums(self, me):
+        if self.polylines:
+            me.DazMatNums.clear()
+            self.setHairType(me)
+            for pline in self.polylines:
+                mnum = pline[1]
+                for n in range(len(pline)-3):
+                    item = me.DazMatNums.add()
+                    item.a = mnum
 
 
     def setHairType(self, me):

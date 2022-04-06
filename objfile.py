@@ -174,7 +174,7 @@ def loadDbzFile(filepath):
                     props = value["properties"]
             dbz.objects[name].append(DBZObject(verts, uvs, edges, faces, polylines, matgroups, props, 0, center))
 
-        if GS.useHighDef and "hd vertices" in figure.keys():
+        if GS.useHighDef and "hd vertices" in figure.keys() and "hd faces" in figure.keys():
             LS.useHDObjects = True
             if name not in dbz.hdobjects.keys():
                 dbz.hdobjects[name] = []
@@ -304,6 +304,8 @@ def fitToFile(filepath, nodes):
                             pass
                     taken[nname] += 1
                     ok = True
+                if highdef and not highdef.faces:
+                    highdef = None
                 if not ok:
                     print(msg)
                     unfitted.append(node)
@@ -329,7 +331,7 @@ def fitToFile(filepath, nodes):
                             geonode.edges = [e[0:2] for e in base.edges]
                             geonode.faces = [f[0] for f in base.faces]
                             geonode.polylines = base.polylines
-                            if len(base.polylines) > 0 and GS.useHairStrands:
+                            if len(base.polylines) > 0 and len(base.faces) == 0:
                                 geonode.verts = base.verts
                                 msg = "Polylines %s" % node.name
                             elif len(base.verts) > len(geo.verts) and len(base.faces) == 0:
