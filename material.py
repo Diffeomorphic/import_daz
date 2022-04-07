@@ -1374,12 +1374,12 @@ class ChangeResolution():
             self.filenames.append(fname)
 
 
-    def getAllTextures(self, context):
+    def getAllTextures(self, context, resolveUDIM):
         paths = {}
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
                 if mat:
-                    self.getTreeTextures(mat.node_tree, paths)
+                    self.getTreeTextures(mat.node_tree, paths, resolveUDIM)
             for psys in ob.particle_systems:
                 self.getSlotTextures(psys.settings, paths)
         return paths
@@ -1391,7 +1391,7 @@ class ChangeResolution():
                 paths[mtex.texture.image.filepath] = True
 
 
-    def getTreeTextures(self, tree, paths):
+    def getTreeTextures(self, tree, paths, resolveUDIM):
         for node in tree.nodes.values():
             if node.type == 'TEX_IMAGE' and node.image:
                 img = node.image
@@ -1400,12 +1400,15 @@ class ChangeResolution():
                     for file1 in os.listdir(folder):
                         fname1,ext1 = os.path.splitext(file1)
                         if fname1[:-4] == basename and ext1 == ext:
-                            path = os.path.join(folder, "%s%s" % (fname1, ext1))
+                            if bpy.app.version >= (3,1,0) and resolveUDIM:
+                                path = os.path.join(folder, "%s%s%s" % (fname1[:-4], "<UDIM>", ext1))
+                            else:
+                                path = os.path.join(folder, "%s%s" % (fname1, ext1))
                             paths[path] = True
                 else:
                     paths[img.filepath] = True
             elif node.type == 'GROUP':
-                self.getTreeTextures(node.node_tree, paths)
+                self.getTreeTextures(node.node_tree, paths, resolveUDIM)
 
 
     def getTiledPath(self, filepath):
@@ -1413,7 +1416,10 @@ class ChangeResolution():
         path = bpy.path.reduce_dirs([path])[0]
         folder = os.path.dirname(path)
         fname,ext = os.path.splitext(bpy.path.basename(path))
-        return folder, fname[:-4], ext
+        if fname[-6:] == "<UDIM>":
+            return folder, fname[:-6], ext
+        else:
+            return folder, fname[:-4], ext
 
 
     def replaceTextures(self, context):
@@ -1454,6 +1460,10 @@ class ChangeResolution():
               fname[-5] == "_" and
               fname[-4:].isdigit()):
             return "%s%s%s" % (fname[:-10], fname[-5:], ext)
+        elif (fname[-12:-8] == "-res" and
+              fname[-8].isdigit() and
+              fname[-7:] == "_<UDIM>"):
+            return "%s%s%s" % (fname[:-12], fname[-7:], ext)
         else:
             return path
 
@@ -1473,7 +1483,10 @@ class ChangeResolution():
 
         newname,newpath = self.getNewPath(path)
         if img.source == 'TILED':
-            newname = newname[:-5]
+            if newname[-6:] == "<UDIM>":
+                newname = newname[:-7]
+            else:
+                newname = newname[:-5]
         if newpath == img.filepath:
             return img
         elif newpath in images.keys():
@@ -1513,6 +1526,10 @@ class ChangeResolution():
                         newimg.source = 'TILED'
                         tile = img.tiles[0]
                         tile.number = udim
+                        if bpy.app.version >= (3,1,0):
+                            path2,ext2 = os.path.splitext(newimg.filepath)
+                            newimg.filepath = "%s%s%s" % (path2[:-4],"<UDIM>",ext2)
+                            newimg.name=basename[:-1]
                     else:
                         newimg.tiles.new(tile_number = udim)
                     print('  "%s"' % file1)
@@ -1527,6 +1544,8 @@ class ChangeResolution():
             newbase = base
         elif len(base) > 5 and base[-5] == "_" and base[-4:].isdigit():
             newbase = ("%s-res%d%s" % (base[:-5], self.steps, base[-5:]))
+        elif len(base) > 7 and base[-7:] == "_<UDIM>":
+            newbase = ("%s-res%d%s" % (base[:-7], self.steps, base[-7:]))
         else:
             newbase = ("%s-res%d" % (base, self.steps))
         newname = bpy.path.basename(newbase)
@@ -1555,7 +1574,7 @@ class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
 
     def run(self, context):
         self.overwrite = False
-        paths = self.getAllTextures(context)
+        paths = self.getAllTextures(context, True)
         self.getFileNames(paths.keys())
         self.replaceTextures(context)
 
@@ -1583,7 +1602,7 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
 
     def run(self, context):
         if self.resizeAll:
-            paths = self.getAllTextures(context)
+            paths = self.getAllTextures(context, False)
         else:
             paths = self.getMultiFiles(G.theImageExtensions)
         self.getFileNames(paths)
