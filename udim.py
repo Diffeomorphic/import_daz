@@ -136,6 +136,9 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
                         node.name = basename
 
             img = anode.image
+            if bpy.app.version >= (3, 1, 0):
+                path2,ext2 = os.path.splitext(img.filepath)
+                img.filepath = "%s%s%s" % (path2[:-4],'<UDIM>',ext2)
             tile0 = img.tiles[0]
             for udim,mname in udims.items():
                 if udim == 0:
@@ -226,6 +229,8 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
         src = bpy.path.reduce_dirs([src])[0]
         folder = os.path.dirname(src)
         fname,ext = os.path.splitext(bpy.path.basename(src))
+        if fname[-6:] == '<UDIM>':
+            src = os.path.join(folder, "%s_%d%s" % (fname[-6], 1001+udim, ext))
         trg = os.path.join(folder, "%s_%d%s" % (basename, 1001+udim, ext))
         if src != trg and not os.path.exists(trg):
             print("Copy %s\n => %s" % (src, trg))
