@@ -36,7 +36,7 @@ YSIZE = 250
 
 class Tree:
     def __init__(self, cmat):
-        self.type = 'CYCLES'
+        self.type = 'TREE'
         self.material = cmat
         self.column = 1
         self.ycoords = NCOLUMNS*[2*YSIZE]
@@ -46,7 +46,7 @@ class Tree:
 
 
     def __repr__(self):
-        return ("<%s %s %s %s>" % (self.tree, self.material.rna, self.nodes, self.links))
+        return ("<%s %s %s %s>" % (self.type, self.material.rna, self.nodes, self.links))
 
 
     def makeTree(self):
@@ -85,6 +85,49 @@ class Tree:
         group.addNodes(args)
         node.node_tree.name = name
         return node
+
+# ---------------------------------------------------------------------
+#   NodeGroup
+# ---------------------------------------------------------------------
+
+class NodeGroup:
+    def __init__(self):
+        self.insockets = []
+        self.outsockets = []
+
+    def __repr__(self):
+        return ("<Group %s %s>" % (self.nodeTreeType, self.nodeGroupType))
+
+    def create(self, node, name, parent, ncols):
+        self.group = bpy.data.node_groups.new(name, self.nodeTreeType)
+        node.name = name
+        node.node_tree = self.group
+        self.nodes = self.group.nodes
+        self.links = self.group.links
+        self.inputs = self.addNode("NodeGroupInput", 0)
+        self.outputs = self.addNode("NodeGroupOutput", ncols)
+        self.parent = parent
+        self.ncols = ncols
+
+    def checkSockets(self, tree):
+        for socket in self.insockets:
+            if socket not in tree.inputs.keys():
+                print("Missing insocket: %s" % socket)
+                return False
+        for socket in self.outsockets:
+            if socket not in tree.outputs.keys():
+                print("Missing outsocket: %s" % socket)
+                return False
+        return True
+
+    def hideSlot(self, slot):
+        if bpy.app.version >= (2,90,0):
+            self.group.inputs[slot].hide_value = True
+
+    def setMinMax(self, slot, default, min, max):
+        self.group.inputs[slot].default_value = default
+        self.group.inputs[slot].min_value = min
+        self.group.inputs[slot].max_value = max
 
 #-------------------------------------------------------------
 #   Utilities

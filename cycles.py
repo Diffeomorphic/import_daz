@@ -221,6 +221,7 @@ class CyclesMaterial(Material):
 class CyclesTree(Tree):
     def __init__(self, cmat):
         Tree.__init__(self, cmat)
+        self.nodeTreeType = "ShaderNodeTree"
         self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
         self.eevee = None
@@ -1871,9 +1872,12 @@ class CyclesTree(Tree):
 
 
     def selectDiffuse(self, marked):
-        if self.diffuseTex and marked[self.diffuseTex.name]:
-            self.diffuseTex.select = True
-            self.nodes.active = self.diffuseTex
+        try:
+            if self.diffuseTex and marked[self.diffuseTex.name]:
+                self.diffuseTex.select = True
+                self.nodes.active = self.diffuseTex
+        except UnicodeDecodeError:
+            print("Illegal diffuse texture in %s:\n %s" % (self.material.name, self.diffuseTex))
 
 
     def getLink(self, node, slot):

@@ -1653,18 +1653,18 @@ class HairBSDFTree(HairTree):
 #   Hair tree for adding root transparency to existing material
 #-------------------------------------------------------------
 
-from .cgroup import MaterialGroup
+from .tree import NodeGroup
 
-class FadeGroup(MaterialGroup, HairTree):
+class FadeGroup(NodeGroup, HairTree):
     def __init__(self):
-        MaterialGroup.__init__(self)
+        NodeGroup.__init__(self)
         self.insockets += ["Shader", "Intercept", "Random"]
         self.outsockets += ["Shader"]
 
 
     def create(self, node, name, parent):
         HairTree.__init__(self, parent.material, BLACK)
-        MaterialGroup.create(self, node, name, parent, 4)
+        NodeGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketShader", "Shader")
         self.group.inputs.new("NodeSocketFloat", "Intercept")
         self.group.inputs.new("NodeSocketFloat", "Random")
