@@ -624,7 +624,7 @@ def getMorphPaths(char):
 def setupMorphPaths(force):
     global theMorphFiles, theMorphNames
     from collections import OrderedDict
-    from .asset import fixBrokenPath
+    #from .asset import fixBrokenPath
     from .load_json import loadJson
     from .modifier import getCanonicalKey
 
@@ -672,8 +672,9 @@ def setupMorphPaths(force):
 
             for dazpath in GS.getDazPaths():
                 folderpath = "%s/%s" % (dazpath, folder)
-                if not os.path.exists(folderpath) and GS.caseSensitivePaths:
-                    folderpath = fixBrokenPath(folderpath)
+                folderpath = bpy.path.resolve_ncase(folderpath)
+                #if not os.path.exists(folderpath) and GS.caseSensitivePaths:
+                #    folderpath = fixBrokenPath(folderpath)
                 if os.path.exists(folderpath):
                     files = list(os.listdir(folderpath))
                     files.sort()

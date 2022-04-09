@@ -36,6 +36,7 @@ from .utils import *
 #-------------------------------------------------------------
 
 def safeOpen(filepath, rw, dirMustExist=False, fileMustExist=False, mustOpen=False):
+    filepath = bpy.path.resolve_ncase(filepath)
     if dirMustExist:
         folder = os.path.dirname(filepath)
         if not os.path.exists(folder):
@@ -86,6 +87,7 @@ def getFolders(ob, subdirs):
         for subdir in subdirs:
             folder = "%s/%s/%s" % (basedir, reldir, subdir)
             folder = folder.replace("//", "/")
+            folder = bpy.path.resolve_ncase(folder)
             if os.path.exists(folder):
                 folders.append(folder)
     return folders
@@ -155,6 +157,7 @@ class CsvFile:
 def getExistingFilePath(filepath, ext):
     filepath = bpy.path.ensure_ext(bpy.path.abspath(filepath), ext)
     filepath = os.path.expanduser(filepath).replace("\\", "/")
+    filepath = bpy.path.resolve_ncase(filepath)
     if os.path.exists(filepath):
         return filepath
     else:
@@ -189,6 +192,7 @@ class MultiFile(ImportHelper):
 
     def getMultiFiles(self, extensions):
         def getTypedFilePath(filepath, exts):
+            filepath = bpy.path.resolve_ncase(filepath)
             words = os.path.splitext(filepath)
             if len(words) == 2:
                 fname,ext = words
@@ -234,6 +238,7 @@ class MultiFile(ImportHelper):
 
 def openSettingsFile(filepath):
     filepath = os.path.expanduser(filepath)
+    filepath = bpy.path.resolve_ncase(filepath)
     try:
         fp = open(filepath, "r", encoding="utf-8-sig")
     except:

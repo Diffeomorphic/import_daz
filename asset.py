@@ -486,6 +486,7 @@ def setDazPaths():
     filepaths = []
     for path in GS.getDazPaths():
         if path:
+            path = bpy.path.resolve_ncase(path)
             if not os.path.exists(path):
                 msg = ("The DAZ library path\n" +
                        "%s          \n" % path +
@@ -557,9 +558,10 @@ def getRelativeRef(ref):
 
 def getDazPath(ref, strict=True):
     def getExistingPath(filepath):
+        filepath = bpy.path.resolve_ncase(filepath)
         if os.path.exists(filepath):
             return filepath
-        elif GS.caseSensitivePaths:
+        elif False and GS.caseSensitivePaths:
             filepath = fixBrokenPath(filepath)
             if os.path.exists(filepath):
                 return filepath
