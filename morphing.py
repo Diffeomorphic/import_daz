@@ -2547,7 +2547,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
         rig = getRigFromObject(context.object)
         if rig is None:
             raise DazError("No armature found")
-        self.clearAction(rig)
+        self.clearAnimation(rig)
         if self.atFrameOne:
             frame0 = 0
         else:
@@ -2565,7 +2565,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
             else:
                 prop = self.getMohoKey(moho, rig)
                 pinProp(rig, scn, prop, mgrp, frame+frame0, value=value)
-        self.nameAction(rig)
+        self.nameAnimation(rig)
         print("Moho file %s loaded" % self.filepath)
 
 
