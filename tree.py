@@ -35,26 +35,20 @@ YSIZE = 250
 
 
 class Tree:
-    def __init__(self, cmat):
+    def __init__(self, owner):
         self.type = 'TREE'
-        self.material = cmat
+        self.owner = owner
         self.column = 1
         self.ycoords = NCOLUMNS*[2*YSIZE]
         self.nodes = None
         self.links = None
         self.groups = {}
 
-
     def __repr__(self):
-        return ("<%s %s %s %s>" % (self.type, self.material.rna, self.nodes, self.links))
+        return ("<%s %s %s %s>" % (self.type, self.owner.rna, self.nodes, self.links))
 
-
-    def makeTree(self):
-        mat = self.material.rna
-        mat.use_nodes = True
-        mat.node_tree.nodes.clear()
-        self.nodes = mat.node_tree.nodes
-        self.links = mat.node_tree.links
+    def getValue(self, channel, default):
+        return self.owner.getValue(channel, default)
 
 
     def addNode(self, stype, col=None, size=0, label=None, parent=None):

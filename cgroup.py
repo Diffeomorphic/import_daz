@@ -69,8 +69,8 @@ class ShellGroup(NodeGroup):
 
     def addNodes(self, args):
         shmat,uvname = args
-        shmat.copyBasics(self.parent.material)
-        self.material = shmat
+        shmat.copyBasics(self.parent.owner)
+        self.owner = shmat
         self.cyclesOpaque = None
         self.eeveeOpaque = None
         self.pbrOpaque = None

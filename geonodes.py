@@ -1,0 +1,103 @@
+# Copyright (c) 2016-2022, Thomas Larsson
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# The views and conclusions contained in the software and documentation are those
+# of the authors and should not be interpreted as representing official policies,
+# either expressed or implied, of the FreeBSD Project.
+
+import bpy
+from .tree import Tree, XSIZE, YSIZE
+
+# ---------------------------------------------------------------------
+#   Geograft tree
+# ---------------------------------------------------------------------
+
+class GeograftTree(Tree):
+    def __init__(self, owner):
+        Tree.__init__(self, owner)
+        self.type = 'GEO'
+        self.nodeTreeType = "GeometryNodeTree"
+        self.nodeGroupType = "GeometryNodeGroup"
+        self.nodes = owner.nodes
+        self.links = owner.links
+
+
+    def build(self, btn, anatomies):
+        for node in self.nodes:
+            print("NN", node, node.type)
+            if node.type == 'GROUP_INPUT':
+                ginput = node
+            elif node.type == 'GROUP_OUTPUT':
+                goutput = node
+
+        ginput.location = (-XSIZE, 1.5*YSIZE)
+        #ginput.inputs.new("NodeSocketFloat", "Geograft Area")
+        #ginput.inputs.new("NodeSocketFloat", "Geograft Edge")
+        goutput.location = (4*XSIZE, 2*YSIZE)
+
+        index = self.addNode("GeometryNodeInputIndex", 1)
+        captureIndex = self.addNode("GeometryNodeCaptureAttribute", 2)
+        captureIndex.data_type = 'INT'
+        captureIndex.domain = 'POINT'
+        self.links.new(ginput.outputs["Geometry"], captureIndex.inputs["Geometry"])
+        self.links.new(index.outputs[0], captureIndex.inputs["Value"])
+
+        captureEdge = self.addNode("GeometryNodeCaptureAttribute", 2)
+        captureEdge.data_type = 'FLOAT'
+        captureEdge.domain = 'POINT'
+        self.links.new(captureIndex.outputs["Geometry"], captureEdge.inputs["Geometry"])
+        #self.links.new(ginfo.outputs["Geograft Edge"], captureEdge.inputs["Value"])
+        union = captureEdge.outputs["Attribute"]
+        print("UU", union)
+
+        deleteMask = self.addNode("GeometryNodeDeleteGeometry", 3)
+        self.links.new(captureEdge.outputs["Geometry"], deleteMask.inputs["Geometry"])
+        #self.links.new(ginfo.outputs["Geograft Area"], deleteMask.inputs["Selection"])
+
+        joinGeo = self.addNode("GeometryNodeJoinGeometry", 4)
+        self.links.new(deleteMask.outputs["Geometry"], joinGeo.inputs["Geometry"])
+
+        for aob in anatomies:
+            objinfo = self.addNode("GeometryNodeObjectInfo", 1)
+            objinfo.inputs[0].default_value = aob
+
+            captureAnatomy = self.addNode("GeometryNodeCaptureAttribute", 2)
+            captureAnatomy.data_type = 'FLOAT'
+            captureAnatomy.domain = 'POINT'
+            self.links.new(objinfo.outputs["Geometry"], captureAnatomy.inputs["Geometry"])
+            #self.links.new(ginput.outputs["Geograft Edge"], captureAnatomy.inputs["Value"])
+            self.links.new(captureAnatomy.outputs["Geometry"], joinGeo.inputs["Geometry"])
+
+            node = self.addNode("FunctionNodeBooleanMath", 3)
+            node.operation = 'OR'
+            self.links.new(union, node.inputs[0])
+            self.links.new(captureAnatomy.outputs["Attribute"], node.inputs[1])
+            union = node.outputs[0]
+
+        mergeDist = self.addNode("GeometryNodeMergeByDistance", 5)
+        mergeDist.inputs["Distance"].default_value = 1e-4
+        self.links.new(joinGeo.outputs["Geometry"], mergeDist.inputs["Geometry"])
+        self.links.new(union, mergeDist.inputs["Selection"])
+
+        self.links.new(mergeDist.outputs["Geometry"], goutput.inputs["Geometry"])
+

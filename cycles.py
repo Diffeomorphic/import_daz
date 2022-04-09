@@ -247,20 +247,16 @@ class CyclesTree(Tree):
         self.pureMetal = False
 
 
-    def getValue(self, channel, default):
-        return self.material.getValue(channel, default)
-
-
     def isEnabled(self, channel):
-        return self.material.enabled[channel]
+        return self.owner.enabled[channel]
 
 
     def getColor(self, channel, default):
-        return self.material.getColor(channel, default)
+        return self.owner.getColor(channel, default)
 
 
     def getTexco(self, uv):
-        key = self.material.getUvSet(uv, self.texcos)
+        key = self.owner.getUvSet(uv, self.texcos)
         if key is None:
             return self.texco
         elif key not in self.texcos.keys():
@@ -306,11 +302,11 @@ class CyclesTree(Tree):
         shname = shell.name
         if (shmat.getValue("getChannelCutoutOpacity", 1) == 0 or
             shmat.getValue("getChannelOpacity", 1) == 0):
-            print("Invisible shell %s for %s" % (shname, self.material.name))
+            print("Invisible shell %s for %s" % (shname, self.owner.name))
             return None
         node = self.addNode("ShaderNodeGroup")
         node.width = 240
-        nname = ("%s_%s" % (shname, self.material.name))
+        nname = ("%s_%s" % (shname, self.owner.name))
         node.name = nname
         node.label = shname
         if shell.tree:
@@ -326,7 +322,7 @@ class CyclesTree(Tree):
         group.addNodes((shmat, shell.uv))
         node.inputs["Influence"].default_value = 1.0
         shell.tree = shmat.tree = node.node_tree
-        shmat.geometry = self.material.geometry
+        shmat.geometry = self.owner.geometry
         return node
 
 
@@ -355,12 +351,12 @@ class CyclesTree(Tree):
 
 
     def buildDecals(self):
-        if not self.material.decals:
+        if not self.owner.decals:
             return
-        if self.material.isShellMat:
+        if self.owner.isShellMat:
             raise RuntimeError("BUG buildDecals: %s" % self)
         from .cgroup import MappingGroup
-        decals = [(inst.getValue(["Priority"],0), n, inst) for n,inst in enumerate(self.material.decals)]
+        decals = [(inst.getValue(["Priority"],0), n, inst) for n,inst in enumerate(self.owner.decals)]
         decals.sort()
         for _,_,inst in decals:
             fmode = inst.getValue(["Face Mode"], 2)
@@ -417,7 +413,7 @@ class CyclesTree(Tree):
     def buildShells(self):
         shells = []
         n = 0
-        for shell in self.material.shells.values():
+        for shell in self.owner.shells.values():
             for geonode in shell.geometry.nodes.values():
                 shells.append((geonode.push, n, shell))
                 n += 1
@@ -449,14 +445,18 @@ class CyclesTree(Tree):
         self.buildGlossyOrDualLobe()
         self.buildMetal()
         self.buildTopCoat()
-        if self.material.isRefractive():
+        if self.owner.isRefractive():
             self.buildRefraction()
         self.buildWeighted()
         self.buildEmission()
 
 
     def makeTree(self):
-        Tree.makeTree(self)
+        mat = self.owner.rna
+        mat.use_nodes = True
+        mat.node_tree.nodes.clear()
+        self.nodes = mat.node_tree.nodes
+        self.links = mat.node_tree.links
         return self.addTexco("UV")
 
 
@@ -530,15 +530,15 @@ class CyclesTree(Tree):
 
 
     def addTexco(self, slot):
-        if self.material.useDefaultUvs:
+        if self.owner.useDefaultUvs:
             node = self.addNode("ShaderNodeTexCoord", 1)
             self.texco = node.outputs[slot]
         else:
             node = self.addNode("ShaderNodeUVMap", 1)
-            node.uv_map = self.material.uv_set.name
+            node.uv_map = self.owner.uv_set.name
             self.texco = node.outputs["UV"]
         self.tileTexco()
-        for key,uvset in self.material.uv_sets.items():
+        for key,uvset in self.owner.uv_sets.items():
             self.addUvNode(key, uvset.name)
         return node
 
@@ -619,8 +619,8 @@ class CyclesTree(Tree):
         self.normal.space = "TANGENT"
         if uvname:
             self.normal.uv_map = uvname
-        elif self.material.uv_set:
-            self.normal.uv_map = self.material.uv_set.name
+        elif self.owner.uv_set:
+            self.normal.uv_map = self.owner.uv_set.name
         self.normal.inputs["Strength"].default_value = strength
         self.links.new(tex.outputs[0], self.normal.inputs["Color"])
 
@@ -651,7 +651,7 @@ class CyclesTree(Tree):
         node = self.addNode("ShaderNodeBump", col=col)
         node.inputs["Strength"].default_value = bump * GS.bumpFactor
         self.links.new(bumptex.outputs[0], node.inputs["Height"])
-        self.material.addGeoBump(bumptex, node.inputs["Distance"])
+        self.owner.addGeoBump(bumptex, node.inputs["Distance"])
         return node
 
 
@@ -800,7 +800,7 @@ class CyclesTree(Tree):
 
 
     def getImageSlot(self, attr):
-        if self.material.getImageMod(attr, "grayscale_mode") == "alpha":
+        if self.owner.getImageMod(attr, "grayscale_mode") == "alpha":
             return "Alpha"
         else:
             return 0
@@ -817,7 +817,7 @@ class CyclesTree(Tree):
 
 
     def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, slot=0, isMask=False):
-        channel = self.material.getLayeredChannel(attr)
+        channel = self.owner.getLayeredChannel(attr)
         if channel is None:
             return default,None
         if isinstance(channel, tuple):
@@ -829,14 +829,14 @@ class CyclesTree(Tree):
         if value is not None:
             pass
         elif channel["type"] in ["color", "float_color"]:
-            value = self.material.getChannelColor(channel, default)
+            value = self.owner.getChannelColor(channel, default)
         elif channel["type"] in ["image"]:
             if isVector(default):
                 value = WHITE
             else:
                 value = 1.0
         else:
-            value = self.material.getChannelValue(channel, default)
+            value = self.owner.getChannelValue(channel, default)
             if value < 0:
                 return 0,None
         if useFactor:
@@ -893,7 +893,7 @@ class CyclesTree(Tree):
             return
 
         self.column += 1
-        if self.material.shader == 'PBRSKIN':
+        if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", size=100)
         else:
             node = self.addGroup(DualLobeGroupUberIray, "DAZ Dual Lobe Uber", size=100)
@@ -910,7 +910,7 @@ class CyclesTree(Tree):
             iortex = self.multiplyAddScalarTex(0.7*value, 1.1, tex)
             self.links.new(iortex.outputs[0], node.inputs["IOR"])
 
-        if self.material.shader == 'PBRSKIN':
+        if self.owner.shader == 'PBRSKIN':
             rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
@@ -942,13 +942,13 @@ class CyclesTree(Tree):
 
     def buildMetal(self):
         if not (self.isEnabled("Metallicity") and
-                self.material.basemix == 0):
+                self.owner.basemix == 0):
             return
         if self.getValue(["Metallic Weight"], 0) == 0:
             return
         from .cgroup import MetalGroupUber, MetalGroupPbrSkin
         self.column += 1
-        if self.material.shader == 'PBRSKIN':
+        if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
             rough1,rough2,roughtex, ratio = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
@@ -1001,7 +1001,7 @@ class CyclesTree(Tree):
         self.linkColor(tex, glossy, color, "Color")
         ior,iortex = self.getFresnelIOR()
         self.linkScalar(iortex, glossy, ior, "IOR")
-        channel,value,roughness,invert = self.material.getGlossyRoughness(0.0)
+        channel,value,roughness,invert = self.owner.getGlossyRoughness(0.0)
         roughtex = self.addSlot(channel, glossy, "Roughness", roughness, value, invert)
         anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
         self.linkScalar(tex, glossy, anisotropy, "Anisotropy")
@@ -1022,16 +1022,16 @@ class CyclesTree(Tree):
         #   fresnel ior = 1.1 + iray glossy specular / 0.078
         ior = 1.45
         iortex = None
-        if self.material.shader == 'UBER_IRAY':
-            if self.material.basemix == 0:    # Metallic/Roughness
+        if self.owner.shader == 'UBER_IRAY':
+            if self.owner.basemix == 0:    # Metallic/Roughness
                 value,tex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0, False)
                 factor = 0.7 * value
                 ior = 1.1 + factor
-            elif self.material.basemix == 1:  # Specular/Glossiness
+            elif self.owner.basemix == 1:  # Specular/Glossiness
                 color,tex = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, False)
                 factor = 0.7 * averageColor(color) / 0.078
                 ior = 1.1 + factor
-            elif self.material.basemix == 2:  # Weighted
+            elif self.owner.basemix == 2:  # Weighted
                 ior = 10
                 tex = None
             if tex:
@@ -1043,7 +1043,7 @@ class CyclesTree(Tree):
 #-------------------------------------------------------------
 
     def prepareWeighted(self):
-        if (self.material.basemix == 2 and
+        if (self.owner.basemix == 2 and
             LS.materialMethod != 'SINGLE'):
             self.diffuseCycles = self.cycles
             self.diffuseEevee = self.eevee
@@ -1054,7 +1054,7 @@ class CyclesTree(Tree):
 
 
     def buildWeighted(self):
-        if (self.material.basemix != 2 or
+        if (self.owner.basemix != 2 or
             LS.materialMethod == 'SINGLE'):
             return False
         diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
@@ -1103,7 +1103,7 @@ class CyclesTree(Tree):
             ior,iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
 
-        if self.material.shader == 'UBER_IRAY':
+        if self.owner.shader == 'UBER_IRAY':
             # Top Coat Bump Mode
             #   [ "Height Map", "Normal Map" ]
             if not fresnel:
@@ -1132,14 +1132,14 @@ class CyclesTree(Tree):
         top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=100)
         self.linkColor(coltex, top, color, "Color")
         self.linkScalar(roughtex, top, roughness, "Roughness")
-        if self.material.shader == 'PBRSKIN':
+        if self.owner.shader == 'PBRSKIN':
             if self.bumptex:
                 self.links.new(self.bumptex.outputs[0], top.inputs["Height"])
-                self.material.addGeoBump(self.bumptex, top.inputs["Distance"])
+                self.owner.addGeoBump(self.bumptex, top.inputs["Distance"])
             self.linkNormal(top)
         elif bumptex:
             self.links.new(bumptex.outputs[0], top.inputs["Height"])
-            self.material.addGeoBump(bumptex, top.inputs["Distance"])
+            self.owner.addGeoBump(bumptex, top.inputs["Distance"])
             self.linkBumpNormal(top)
         top.inputs["Bump"].default_value = bump * GS.bumpFactor
         self.mixWithActive(weight, weighttex, top)
@@ -1155,7 +1155,7 @@ class CyclesTree(Tree):
     def checkTranslucency(self):
         if not self.isEnabled("Translucency"):
             return False
-        if (self.material.isThinWall() or
+        if (self.owner.isThinWall() or
             self.volume or
             self.getValue("getChannelTranslucencyWeight", 0) > 0.01):
             return True
@@ -1172,7 +1172,7 @@ class CyclesTree(Tree):
         if fac == 0 and effect != 1:
             return
         self.column += 1
-        mat = self.material.rna
+        mat = self.owner.rna
         color,tex = self.getTranslucentColor()
         if isBlack(color):
             return
@@ -1228,7 +1228,7 @@ class CyclesTree(Tree):
 
     def endSSS(self):
         LS.usedFeatures["SSS"] = True
-        mat = self.material.rna
+        mat = self.owner.rna
         if hasattr(mat, "use_sss_translucency"):
             mat.use_sss_translucency = True
 
@@ -1237,7 +1237,7 @@ class CyclesTree(Tree):
         # if there's no volume we use the sss to make translucency
         # please note that here we only use the iray base translucency color with no textures
         # as for blender 2.8x eevee doesn't support nodes in the radius channel so we deal with it
-        if self.material.isThinWall():
+        if self.owner.isThinWall():
             return color,None
 
         if sssmode == 1 and isWhite(ssscolor):
@@ -1324,7 +1324,7 @@ class CyclesTree(Tree):
             return weight,wttex
         node,color = self.buildRefractionNode()
         self.mixWithActive(weight, wttex, node)
-        if GS.useFakeCaustics and not self.material.isThinWall():
+        if GS.useFakeCaustics and not self.owner.isThinWall():
             from .cgroup import FakeCausticsGroup
             self.column += 1
             node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[color], force=True)
@@ -1355,13 +1355,13 @@ class CyclesTree(Tree):
         self.linkScalar(iortex, node, ior, "IOR")
         self.linkScalar(anisotex, node, aniso, "Anisotropy")
         self.linkScalar(rottex, node, 1 - anirot, "Rotation")
-        if (self.material.isThinWall() or
+        if (self.owner.isThinWall() or
             (ior == 1 and iortex is None)):
             node.inputs["Thin Wall"].default_value = 1
-            self.material.setTransSettings(False, True, color, 0.1)
+            self.owner.setTransSettings(False, True, color, 0.1)
         else:
             node.inputs["Thin Wall"].default_value = 0
-            self.material.setTransSettings(True, False, color, 0.2)
+            self.owner.setTransSettings(True, False, color, 0.2)
         self.linkBumpNormal(node)
         return node, color
 
@@ -1382,7 +1382,7 @@ class CyclesTree(Tree):
                 self.mixWithActive(alpha, tex, node)
             node.inputs["Color"].default_value[0:3] = WHITE
             if alpha < 1 or tex:
-                self.material.setTransSettings(False, False, WHITE, alpha)
+                self.owner.setTransSettings(False, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
 
     #-------------------------------------------------------------
@@ -1436,7 +1436,7 @@ class CyclesTree(Tree):
         factors = [1, 1000, 10.764, 10000, 1, 1]
         strength = lum/2 * factors[units] / 15000
         if units >= 4:
-            self.material.geoemit.append(emit.inputs["Strength"])
+            self.owner.geoemit.append(emit.inputs["Strength"])
             if units == 5:
                 strength *= self.getValue(["Luminous Efficacy"], 1)
         return strength
@@ -1461,7 +1461,7 @@ class CyclesTree(Tree):
 
 
     def buildVolume(self):
-        if (self.material.isThinWall() or
+        if (self.owner.isThinWall() or
             self.pureMetal or
             not GS.useVolume or
             LS.materialMethod == 'SINGLE'):
@@ -1480,9 +1480,9 @@ class CyclesTree(Tree):
 
 
     def getSSSInfo(self, transcolor):
-        if self.material.shader == 'UBER_IRAY':
+        if self.owner.shader == 'UBER_IRAY':
             sssmode = self.getValue(["SSS Mode"], 0)
-        elif self.material.shader == 'PBRSKIN':
+        elif self.owner.shader == 'PBRSKIN':
             sssmode = 1
         else:
             sssmode = 0
@@ -1550,10 +1550,10 @@ class CyclesTree(Tree):
 
 
     def buildDisplacementNodes(self):
-        strength = self.material.getDisplacementStrength()
+        strength = self.owner.getDisplacementStrength()
         if strength == 0:
             return
-        channel = self.material.getChannelDisplacement()
+        channel = self.owner.getChannelDisplacement()
         tex = self.addTexImageNode(channel, "NONE", False)
         if tex:
             dmin = self.getValue("getChannelDispMin", -0.05)
@@ -1571,7 +1571,7 @@ class CyclesTree(Tree):
             node.inputs["Min"].default_value = LS.scale * dmin
             self.linkNormal(node)
             self.displacement = node.outputs["Displacement"]
-            mat = self.material.rna
+            mat = self.owner.rna
             mat.cycles.displacement_method = 'DISPLACEMENT'
 
 
@@ -1595,7 +1595,7 @@ class CyclesTree(Tree):
         texnode = self.getTexNode(imgname, colorSpace)
         if asset.hasMapping(map):
             innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
-            data = asset.getImageMapping(img, self.material, map)
+            data = asset.getImageMapping(img, self.owner, map)
             mapping = self.addMappingNode(data, None)
             if mapping:
                 innode.extension = 'CLIP'
@@ -1664,7 +1664,7 @@ class CyclesTree(Tree):
 
     def addTexImageNode(self, channel, colorSpace, isMask):
         col = self.column-2
-        assets,maps = self.material.getTextures(channel)
+        assets,maps = self.owner.getTextures(channel)
         if len(assets) == 0:
             return None
         elif len(assets) == 1:
@@ -1877,7 +1877,7 @@ class CyclesTree(Tree):
                 self.diffuseTex.select = True
                 self.nodes.active = self.diffuseTex
         except UnicodeDecodeError:
-            print("Illegal diffuse texture in %s:\n %s" % (self.material.name, self.diffuseTex))
+            print("Illegal diffuse texture in %s:\n %s" % (self.owner.name, self.diffuseTex))
 
 
     def getLink(self, node, slot):

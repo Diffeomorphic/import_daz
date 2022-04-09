@@ -183,9 +183,9 @@ class WorldTree(CyclesTree):
 
     def build(self):
         from .tree import pruneNodeTree
-        backdrop = self.material.backdrop
-        background = self.material.background
-        envmap = self.material.envmap
+        backdrop = self.owner.backdrop
+        background = self.owner.background
+        envmap = self.owner.envmap
         self.texco = self.makeTree()
         self.column = 5
         envnode = bgnode = socket = None
@@ -227,7 +227,7 @@ class WorldTree(CyclesTree):
             scale = (1,1,1)
             texco = self.addMapping(mat.to_euler(), scale, texco, 2)
 
-        value = self.material.getChannelValue(envmap, 1)
+        value = self.owner.getChannelValue(envmap, 1)
         img = self.getImage(envmap, "NONE")
         tex = None
         if img:
@@ -295,7 +295,7 @@ class WorldTree(CyclesTree):
 
 
     def getImage(self, channel, colorSpace):
-        assets,maps = self.material.getTextures(channel)
+        assets,maps = self.owner.getTextures(channel)
         if not assets:
             return None
         asset = assets[0]

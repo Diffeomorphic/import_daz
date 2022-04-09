@@ -61,9 +61,16 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             "Only works for geografts where the first layer is the base layer"),
         default = False)
 
+    useGeoNodes: BoolProperty(
+        name = "Geometry Nodes",
+        description = "Merge geografts using geometry nodes",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useMergeUvs")
+        if bpy.app.version >= (3,1,0):
+            self.layout.prop(self, "useGeoNodes")
 
     def __init__(self):
         DriverUser.__init__(self)
@@ -149,22 +156,46 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
         nverts = len(cob.data.vertices)
-        vfaces = dict([(vn,[]) for vn in range(nverts)])
+        self.vfaces = dict([(vn,[]) for vn in range(nverts)])
         for f in cob.data.polygons:
             for vn in f.vertices:
-                vfaces[vn].append(f.index)
+                self.vfaces[vn].append(f.index)
 
         nfaces = len(cob.data.polygons)
-        fmasked = dict([(fn,False) for fn in range(nfaces)])
+        self.fmasked = dict([(fn,False) for fn in range(nfaces)])
         for aob in anatomies:
             for face in aob.data.DazMaskGroup:
-                fmasked[face.a] = True
+                self.fmasked[face.a] = True
 
         # If cob is itself a geograft, make sure to keep tbe boundary
         if cob.data.DazGraftGroup:
             cgrafts = [pair.a for pair in cob.data.DazGraftGroup]
         else:
             cgrafts = []
+
+        if self.useGeoNodes and bpy.app.version >= (3,1,0):
+            self.mergeWithGeoNodes(context, cob, anatomies, cgrafts)
+        else:
+            self.mergeDestructively(context, cob, anatomies, cgrafts)
+
+        self.copyShapeKeyDrivers(cob, drivers)
+        updateDrivers(cob)
+        for mod in cob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
+            elif mod.type == 'SUBSURF' and mod.name == "SubD Displacement":
+                if subDLevels > mod.render_levels:
+                    mod.render_levels = subDLevels
+                subDLevels = 0
+        if subDLevels > 0:
+            mod = cob.modifiers.new("SubD Displacement", 'SUBSURF')
+            mod.subdivision_type = 'SIMPLE'
+            mod.render_levels = subDLevels
+            mod.levels = 0
+
+
+    def mergeDestructively(self, context, cob, anatomies, cgrafts):
+        nverts = len(cob.data.vertices)
 
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
@@ -183,8 +214,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
                     elif vn not in paired:
                         vdelete.append(vn)
                     else:
-                        mfaces = [fn for fn in vfaces[vn] if fmasked[fn]]
-                        if len(mfaces) == len(vfaces[vn]):
+                        mfaces = [fn for fn in self.vfaces[vn] if self.fmasked[fn]]
+                        if len(mfaces) == len(self.vfaces[vn]):
                             vdelete.append(vn)
                 for vn in vdelete:
                     cob.data.vertices[vn].select = True
@@ -299,20 +330,20 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             for idx in idxs:
                 mergeUvLayers(cob.data, 0, idx)
 
-        self.copyShapeKeyDrivers(cob, drivers)
-        updateDrivers(cob)
-        for mod in cob.modifiers:
-            if mod.type == 'SURFACE_DEFORM':
-                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-            elif mod.type == 'SUBSURF' and mod.name == "SubD Displacement":
-                if subDLevels > mod.render_levels:
-                    mod.render_levels = subDLevels
-                subDLevels = 0
-        if subDLevels > 0:
-            mod = cob.modifiers.new("SubD Displacement", 'SUBSURF')
-            mod.subdivision_type = 'SIMPLE'
-            mod.render_levels = subDLevels
-            mod.levels = 0
+
+    def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
+        from .geonodes import GeograftTree
+        mod = getModifier(cob, 'NODES')
+        if mod is None:
+            mod = cob.modifiers.new("Geografts", 'NODES')
+        else:
+            mod.node_group.clear()
+        nmods = len(cob.modifiers)
+        for n in range(nmods-1):
+            bpy.ops.object.modifier_move_up(modifier=mod.name)
+        tree = GeograftTree(mod.node_group)
+        tree.build(self, anatomies)
+
 
     def getActiveUvLayer(self, ob):
         for idx,uvlayer in enumerate(ob.data.uv_layers):

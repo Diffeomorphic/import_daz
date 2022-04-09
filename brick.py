@@ -50,7 +50,7 @@ class BrickTree:
 
     def findBrickLayers(self):
         layers = {}
-        for channel in self.material.channels.keys():
+        for channel in self.owner.channels.keys():
             if (channel[0:5] == "Base " and
                 channel not in ["Base Color Effect"]):
                 layers["Base"] = True
@@ -63,7 +63,7 @@ class BrickTree:
 
     def addBrickLayer(self, layer):
         from .cgroup import BrickLayerGroup
-        self.material.layer = layer
+        self.owner.layer = layer
         node = self.addNode("ShaderNodeGroup")
         node.name = layer
         node.label = layer
@@ -71,7 +71,7 @@ class BrickTree:
         group.create(node, layer, self)
         group.addNodes([])
         self.links.new(self.texco, node.inputs["UV"])
-        self.material.layer = None
+        self.owner.layer = None
         return node
 
 

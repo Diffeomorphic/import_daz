@@ -65,6 +65,8 @@ def importModules():
                     "mhx", "layers", "hair", "transfer", "dforce", "main",
                     "udim", "hdmorphs", "facecap", "api",
                     "runtime.morph_armature"]
+        if bpy.app.version >= (3,1,0):
+            modnames.append("geonodes")
         anchor = os.path.basename(__file__[0:-12])
         theModules = []
         for modname in modnames:
