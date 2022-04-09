@@ -744,7 +744,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 
     def loadDecal(self, mat, img, empty, mask, fname):
         def getFromToSockets(tree, nodeType, slot):
-            from .cycles import findNodes
+            from .tree import findNodes
             for link in tree.links.values():
                 node = link.to_node
                 if node:

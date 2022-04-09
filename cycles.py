@@ -31,6 +31,8 @@ import math
 import os
 from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
+from .tree import Tree, NCOLUMNS, XSIZE, YSIZE
+from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree
 from .error import DazError
 from .utils import *
 
@@ -216,23 +218,14 @@ class CyclesMaterial(Material):
 #   Cycles node tree
 #-------------------------------------------------------------
 
-NCOLUMNS = 20
-XSIZE = 300
-YSIZE = 250
-
-
-class CyclesTree:
+class CyclesTree(Tree):
     def __init__(self, cmat):
-        self.type = 'CYCLES'
-        self.material = cmat
+        Tree.__init__(self, cmat)
+        self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
         self.eevee = None
         self.column = 4
-        self.ycoords = NCOLUMNS*[2*YSIZE]
         self.texnodes = {}
-        self.nodes = None
-        self.links = None
-        self.groups = {}
         self.layeredGroups = {}
         self.inShell = False
         self.isDecal = False
@@ -253,10 +246,6 @@ class CyclesTree:
         self.pureMetal = False
 
 
-    def __repr__(self):
-        return ("<Cycles %s %s %s>" % (self.material.rna, self.nodes, self.links))
-
-
     def getValue(self, channel, default):
         return self.material.getValue(channel, default)
 
@@ -267,19 +256,6 @@ class CyclesTree:
 
     def getColor(self, channel, default):
         return self.material.getColor(channel, default)
-
-
-    def addNode(self, stype, col=None, size=0, label=None, parent=None):
-        if col is None:
-            col = self.column
-        node = self.nodes.new(type = stype)
-        node.location = ((col-2)*XSIZE, self.ycoords[col])
-        self.ycoords[col] -= (YSIZE + size)
-        if label:
-            node.label = label
-        if parent:
-            node.parent = parent
-        return node
 
 
     def getTexco(self, uv):
@@ -321,23 +297,6 @@ class CyclesTree:
     def linkEevee(self, node, slot):
         if self.eevee:
             self.links.new(self.getEeveeSocket(), node.inputs[slot])
-
-
-    def addGroup(self, classdef, name, col=None, size=0, args=[], force=False):
-        if col is None:
-            col = self.column
-        node = self.addNode("ShaderNodeGroup", col, size=size)
-        node.name = node.label = name
-        group = classdef()
-        if name in bpy.data.node_groups.keys() and not force:
-            tree = bpy.data.node_groups[name]
-            if group.checkSockets(tree):
-                node.node_tree = tree
-                return node
-        group.create(node, name, self)
-        group.addNodes(args)
-        node.node_tree.name = name
-        return node
 
 
     def addShellGroup(self, shell, push):
@@ -495,13 +454,9 @@ class CyclesTree:
         self.buildEmission()
 
 
-    def makeTree(self, slot="UV"):
-        mat = self.material.rna
-        mat.use_nodes = True
-        mat.node_tree.nodes.clear()
-        self.nodes = mat.node_tree.nodes
-        self.links = mat.node_tree.links
-        return self.addTexco(slot)
+    def makeTree(self):
+        Tree.makeTree(self)
+        return self.addTexco("UV")
 
 
     def getFromMaterial(self, mat):
@@ -1956,85 +1911,5 @@ def findTexco(tree, col=None):
         return nodes[0]
     elif col is not None:
         return tree.addNode("ShaderNodeTexCoord", col)
-
-
-def findNodes(tree, nodeType):
-    nodes = []
-    for node in tree.nodes.values():
-        if node.type == nodeType:
-            nodes.append(node)
-    return nodes
-
-
-def findNode(tree, ntypes):
-    if isinstance(ntypes, list):
-        for ntype in ntypes:
-            node = findNode(tree, ntype)
-            if node:
-                return node
-    for node in tree.nodes:
-        if node.type == ntypes:
-            return node
-    return None
-
-
-def findLinksFrom(tree, ntype):
-    links = []
-    for link in tree.links:
-        if link.from_node.type == ntype:
-            links.append(link)
-    return links
-
-
-def findLinksTo(tree, ntype):
-    links = []
-    for link in tree.links:
-        if link.to_node.type == ntype:
-            links.append(link)
-    return links
-
-
-def getLinkFrom(tree, node, slot):
-    for link in tree.links:
-        if (link.from_node == node and
-            link.from_socket.name == slot):
-            return link
-    return None
-
-
-def getLinkTo(tree, node, slot):
-    for link in tree.links:
-        if (link.to_node == node and
-            link.to_socket.name == slot):
-            return link
-    return None
-
-
-def pruneNodeTree(tree):
-    marked = {}
-    output = False
-    for node in tree.nodes:
-        marked[node.name] = False
-        if "Output" in node.name:
-            marked[node.name] = True
-            output = True
-    if not output:
-        print("No output node")
-        return marked
-    nmarked = 0
-    n = 1
-    while n > nmarked:
-        nmarked = n
-        n = 1
-        for link in tree.links:
-            if marked[link.to_node.name]:
-                marked[link.from_node.name] = True
-                n += 1
-
-    for node in tree.nodes:
-        node.select = False
-        if not marked[node.name]:
-            tree.nodes.remove(node)
-    return marked
 
 

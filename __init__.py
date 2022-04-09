@@ -59,7 +59,7 @@ def importModules():
                     "propgroups", "daz", "fileutils", "load_json", "driver", "asset", "channels", "formula",
                     "transform", "node", "figure", "bone", "geometry", "objfile",
                     "fix", "modifier", "animation", "load_morph", "morphing", "panel",
-                    "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
+                    "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "rigify", "hide", "store",
                     "mhx", "layers", "hair", "transfer", "dforce", "main",

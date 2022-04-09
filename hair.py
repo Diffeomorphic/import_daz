@@ -1705,7 +1705,7 @@ def addFade(mat):
 class FadeHairTree(HairTree):
 
     def build(self, mat):
-        from .cycles import findNode, findLinksTo
+        from .tree import findNode, findLinksTo
         if mat.node_tree is None:
             print("Material %s has no nodes" % mat.name)
             return
@@ -1725,7 +1725,7 @@ class FadeHairTree(HairTree):
 
 
     def recoverTree(self, mat):
-        from .cycles import findNode, YSIZE, NCOLUMNS
+        from .tree import findNode, YSIZE, NCOLUMNS
         self.tree = mat.node_tree
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links

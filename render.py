@@ -182,7 +182,7 @@ class WorldTree(CyclesTree):
 
 
     def build(self):
-        from .cycles import pruneNodeTree
+        from .tree import pruneNodeTree
         backdrop = self.material.backdrop
         background = self.material.background
         envmap = self.material.envmap

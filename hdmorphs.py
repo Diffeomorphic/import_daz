@@ -222,7 +222,8 @@ class DispAdder:
         self.layout.prop(self, "midlevel")
 
     def loadDispMaps(self, mat, args):
-        from .cycles import findNodes, findTree, findTexco, pruneNodeTree
+        from .tree import findNodes, pruneNodeTree
+        from .cycles import findTree, findTexco
         tree = findTree(mat)
         texco = findTexco(tree, 5)
         disp = self.addDispGroup(tree, args)
@@ -419,7 +420,8 @@ class MixNormalTextureGroup(CyclesGroup):
 class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from .driver import makePropDriver
-        from .cycles import findTree, findTexco, findNode, findLinksTo, YSIZE, pruneNodeTree
+        from .tree import findNode, findLinksTo, YSIZE, pruneNodeTree
+        from .cycles import findTree, findTexco
         tree = findTree(mat)
         texco = findTexco(tree, 1)
         tree.ycoords[-1] = tree.ycoords[0] = YSIZE*(2-row)

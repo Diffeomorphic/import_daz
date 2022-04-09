@@ -1632,7 +1632,7 @@ class DAZ_OT_PruneNodeTrees(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        from .cycles import pruneNodeTree
+        from .tree import pruneNodeTree
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
                 if mat:

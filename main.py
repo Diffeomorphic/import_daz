@@ -387,7 +387,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 
 
     def updateMaterial(self, context, idx, mat, dmat):
-        from .cycles import pruneNodeTree
+        from .tree import pruneNodeTree
         dmat.getFromMaterial(context, mat)
         tree = dmat.tree
         if tree.getValue(["Makeup Enable"], False):
