@@ -54,6 +54,7 @@ class LoadMorph(DriverUser):
         self.mult = []
         self.mults = {}
         self.adjustable = {}
+        self.currentAsset = None
 
 
     def getAdjustProp(self):
@@ -139,7 +140,7 @@ class LoadMorph(DriverUser):
         from .files import parseAssetFile
         from .modifier import Alias, ChannelAsset
         struct = loadJson(filepath)
-        asset = parseAssetFile(struct)
+        asset = self.currentAsset = parseAssetFile(struct)
         fileref = self.getFileRef(filepath)
         self.loaded.append(fileref)
         self.setupUniqueSuffix(filepath)
@@ -1067,6 +1068,8 @@ class LoadMorph(DriverUser):
         for bvar in bvars:
             var = fcu.driver.variables.new()
             bvar.create(var)
+        if string[0:5] != "clamp" and self.currentAsset:
+            string = "clamp(%s,%g,%g)" % (string, self.currentAsset.min, self.currentAsset.max)
         if GS.useMakeHiddenSliders and isPath(path) and "u" not in vvars.keys():
             final = unPath(path)
             if isFinal(final):
