@@ -36,7 +36,7 @@ from .error import *
 
 class CyclesGroup(NodeGroup, CyclesTree):
     def create(self, node, name, parent, ncols):
-        CyclesTree.__init__(self, parent.material)
+        CyclesTree.__init__(self, parent.owner)
         NodeGroup.create(self, node, name, parent, ncols)
 
 # ---------------------------------------------------------------------
@@ -197,19 +197,19 @@ class RefractiveShellGroup(ShellGroup):
 
 class OpaqueShellCyclesGroup(OpaqueShellGroup, CyclesTree):
     def create(self, node, name, parent):
-        CyclesTree.__init__(self, parent.material)
+        CyclesTree.__init__(self, parent.owner)
         OpaqueShellGroup.create(self, node, name, parent)
 
 
 class OpaqueShellPbrGroup(OpaqueShellGroup, PbrTree):
     def create(self, node, name, parent):
-        PbrTree.__init__(self, parent.material)
+        PbrTree.__init__(self, parent.owner)
         OpaqueShellGroup.create(self, node, name, parent)
 
 
 class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesTree):
     def create(self, node, name, parent):
-        CyclesTree.__init__(self, parent.material)
+        CyclesTree.__init__(self, parent.owner)
         RefractiveShellGroup.create(self, node, name, parent)
 
     def buildRefraction(self):
@@ -219,7 +219,7 @@ class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesTree):
 
 class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
     def create(self, node, name, parent):
-        PbrTree.__init__(self, parent.material)
+        PbrTree.__init__(self, parent.owner)
         RefractiveShellGroup.create(self, node, name, parent)
 
     def buildRefraction(self):
