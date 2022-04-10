@@ -64,6 +64,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
     useGeoNodes: BoolProperty(
         name = "Geometry Nodes",
         description = "Merge geografts using geometry nodes",
+        default = False)
+
+    useUnlinkGrafts : BoolProperty(
+        name = "Unlink Geografts",
+        description = "Unlink the geografts from the scene when they have been merged",
         default = True)
 
     def draw(self, context):
@@ -71,6 +76,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         self.layout.prop(self, "useMergeUvs")
         if bpy.app.version >= (3,1,0):
             self.layout.prop(self, "useGeoNodes")
+            if self.useGeoNodes:
+                self.layout.prop(self, "useUnlinkGrafts")
 
     def __init__(self):
         DriverUser.__init__(self)
@@ -128,11 +135,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             print("No ref")
             return
 
-        auvnames = []
+        self.auvnames = []
         subDLevels = 0
         for aob in anatomies:
             uvname = self.getActiveUvLayer(aob)[1]
-            auvnames.append(uvname)
+            self.auvnames.append(uvname)
             self.copyBodyPart(aob, cob)
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':
@@ -329,7 +336,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         if self.useMergeUvs:
             idxs = []
             for idx,uvlayer in enumerate(cob.data.uv_layers):
-                if uvlayer.name in auvnames:
+                if uvlayer.name in self.auvnames:
                     idxs.append(idx)
             idxs.reverse()
             for idx in idxs:
@@ -349,12 +356,26 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         mod = getModifier(cob, 'NODES')
         if mod is None:
             mod = cob.modifiers.new("Geografts", 'NODES')
-        nmods = len(cob.modifiers)
-        for n in range(nmods-1):
-            bpy.ops.object.modifier_move_up(modifier=mod.name)
-        node = mod.node_group = makeGeograftGroup(anatomies)
-        #node.inputs["Geograft Mask"] = maskverts
-        #node.inputs["Geograft Edge"] = edgeverts
+            n0 = 0
+            for n,mod1 in enumerate(cob.modifiers):
+                if mod1.type == 'ARMATURE':
+                    n0 = n
+                    break
+            nmods = len(cob.modifiers)
+            for n in range(nmods-n0-2):
+                bpy.ops.object.modifier_move_up(modifier=mod.name)
+        mod.node_group = makeGeograftGroup(anatomies)
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
+        mod["Input_1_attribute_name"] = "Geograft Edge"
+        mod["Input_2_attribute_name"] = "Geograft Mask"
+        if self.useUnlinkGrafts:
+            for aob in anatomies:
+                unlinkAll(aob)
+        else:
+            for aob in anatomies:
+                aob.hide_set(True)
+                aob.hide_render = True
 
 
     def getActiveUvLayer(self, ob):
