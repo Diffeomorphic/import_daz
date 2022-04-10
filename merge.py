@@ -173,6 +173,80 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         else:
             cgrafts = []
 
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
+
+        # Select body verts to delete
+        self.vdeleted = dict([(vn,False) for vn in range(nverts)])
+        for aob in anatomies:
+            paired = [pair.b for pair in aob.data.DazGraftGroup]
+            for face in aob.data.DazMaskGroup:
+                fverts = cob.data.polygons[face.a].vertices
+                vdelete = []
+                for vn in fverts:
+                    if vn in cgrafts:
+                        pass
+                    elif vn not in paired:
+                        vdelete.append(vn)
+                    else:
+                        mfaces = [fn for fn in self.vfaces[vn] if self.fmasked[fn]]
+                        if len(mfaces) == len(self.vfaces[vn]):
+                            vdelete.append(vn)
+                for vn in vdelete:
+                    cob.data.vertices[vn].select = True
+                    self.vdeleted[vn] = True
+
+        # Build association tables between new and old vertex numbers
+        assoc = {}
+        vn2 = 0
+        for vn in range(nverts):
+            if not self.vdeleted[vn]:
+                assoc[vn] = vn2
+                vn2 += 1
+
+        # Original vertex locations
+        if self.useVertexTable:
+            self.origlocs = [v.co.copy() for v in cob.data.vertices]
+
+        # If cob is itself a geograft, store locations
+        if cob.data.DazGraftGroup:
+            verts = cob.data.vertices
+            locations = dict([(pair.a, verts[pair.a].co.copy()) for pair in cob.data.DazGraftGroup])
+
+        # Delete the masked verts
+        self.deleteSelectedVerts()
+
+        # Select nothing
+        for aob in anatomies:
+            activateObject(context, aob)
+            setMode('EDIT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            setMode('OBJECT')
+        activateObject(context, cob)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
+
+        # Select verts on common boundary
+        self.boundary = dict([(vn,False) for vn in range(nverts)])
+        for aob in anatomies:
+            selectSet(aob, True)
+            pg = cob.data.DazMergedGeografts.add()
+            pg.name = aob.name
+            for pair in aob.data.DazGraftGroup:
+                aob.data.vertices[pair.a].select = True
+                if pair.b in assoc.keys():
+                    cvn = assoc[pair.b]
+                    cob.data.vertices[cvn].select = True
+                    self.boundary[pair.b] = True
+
+        # Also select cob graft group. These will not be removed.
+        if cob.data.DazGraftGroup:
+            for pair in cob.data.DazGraftGroup:
+                cvn = assoc[pair.a]
+                cob.data.vertices[cvn].select = True
+
         if self.useGeoNodes and bpy.app.version >= (3,1,0):
             self.mergeWithGeoNodes(context, cob, anatomies, cgrafts)
         else:
@@ -194,86 +268,17 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             mod.levels = 0
 
 
-    def mergeDestructively(self, context, cob, anatomies, cgrafts):
-        nverts = len(cob.data.vertices)
-
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
-
-        # Select body verts to delete
-        vdeleted = dict([(vn,False) for vn in range(nverts)])
-        for aob in anatomies:
-            paired = [pair.b for pair in aob.data.DazGraftGroup]
-            for face in aob.data.DazMaskGroup:
-                fverts = cob.data.polygons[face.a].vertices
-                vdelete = []
-                for vn in fverts:
-                    if vn in cgrafts:
-                        pass
-                    elif vn not in paired:
-                        vdelete.append(vn)
-                    else:
-                        mfaces = [fn for fn in self.vfaces[vn] if self.fmasked[fn]]
-                        if len(mfaces) == len(self.vfaces[vn]):
-                            vdelete.append(vn)
-                for vn in vdelete:
-                    cob.data.vertices[vn].select = True
-                    vdeleted[vn] = True
-
-        # Build association tables between new and old vertex numbers
-        assoc = {}
-        vn2 = 0
-        for vn in range(nverts):
-            if not vdeleted[vn]:
-                assoc[vn] = vn2
-                vn2 += 1
-
-        # Original vertex locations
-        if self.useVertexTable:
-            origlocs = [v.co.copy() for v in cob.data.vertices]
-
-        # If cob is itself a geograft, store locations
-        if cob.data.DazGraftGroup:
-            verts = cob.data.vertices
-            locations = dict([(pair.a, verts[pair.a].co.copy()) for pair in cob.data.DazGraftGroup])
-
-        # Delete the masked verts
+    def deleteSelectedVerts(self):
+        if self.useGeoNodes and bpy.app.version >= (3,1,0):
+            return
         setMode('EDIT')
         bpy.ops.mesh.delete(type='VERT')
         setMode('OBJECT')
 
-        # Select nothing
-        for aob in anatomies:
-            activateObject(context, aob)
-            setMode('EDIT')
-            bpy.ops.mesh.select_all(action='DESELECT')
-            setMode('OBJECT')
-        activateObject(context, cob)
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
 
-        # Select verts on common boundary
-        names = []
-        for aob in anatomies:
-            selectSet(aob, True)
-            names.append(aob.name)
-            pg = cob.data.DazMergedGeografts.add()
-            pg.name = aob.name
-            for pair in aob.data.DazGraftGroup:
-                aob.data.vertices[pair.a].select = True
-                if pair.b in assoc.keys():
-                    cvn = assoc[pair.b]
-                    cob.data.vertices[cvn].select = True
-
-        # Also select cob graft group. These will not be removed.
-        if cob.data.DazGraftGroup:
-            for pair in cob.data.DazGraftGroup:
-                cvn = assoc[pair.a]
-                cob.data.vertices[cvn].select = True
-
+    def mergeDestructively(self, context, cob, anatomies, cgrafts):
         # Join meshes and remove doubles
+        names = [aob.name for aob in anatomies]
         print("Merge %s to %s" % (names, cob.name))
         threshold = 0.001*cob.DazScale
         bpy.ops.object.join()
@@ -308,7 +313,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         if self.useVertexTable:
             vn = 0
             eps = 1e-3*cob.DazScale
-            for vn0,r in enumerate(origlocs):
+            for vn0,r in enumerate(self.origlocs):
                 item = cob.data.DazOrigVerts.add()
                 item.name = str(vn0)
                 v = cob.data.vertices[vn]
@@ -332,17 +337,24 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
-        from .geonodes import GeograftTree
+        from .geonodes import makeGeograftGroup
+        mask = cob.vertex_groups.new(name="Geograft Mask")
+        maskverts = [vn for vn,ok in self.vdeleted.items() if ok]
+        for vn in maskverts:
+            mask.add([vn], 1, 'REPLACE')
+        edge = cob.vertex_groups.new(name="Geograft Edge")
+        edgeverts = [vn for vn,ok in self.boundary.items() if ok]
+        for vn in edgeverts:
+            edge.add([vn], 1, 'REPLACE')
         mod = getModifier(cob, 'NODES')
         if mod is None:
             mod = cob.modifiers.new("Geografts", 'NODES')
-        else:
-            mod.node_group.clear()
         nmods = len(cob.modifiers)
         for n in range(nmods-1):
             bpy.ops.object.modifier_move_up(modifier=mod.name)
-        tree = GeograftTree(mod.node_group)
-        tree.build(self, anatomies)
+        node = mod.node_group = makeGeograftGroup(anatomies)
+        #node.inputs["Geograft Mask"] = maskverts
+        #node.inputs["Geograft Edge"] = edgeverts
 
 
     def getActiveUvLayer(self, ob):

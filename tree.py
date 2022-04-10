@@ -92,16 +92,19 @@ class NodeGroup:
     def __repr__(self):
         return ("<Group %s %s>" % (self.nodeTreeType, self.nodeGroupType))
 
-    def create(self, node, name, parent, ncols):
+    def make(self, name, ncols):
         self.group = bpy.data.node_groups.new(name, self.nodeTreeType)
-        node.name = name
-        node.node_tree = self.group
         self.nodes = self.group.nodes
         self.links = self.group.links
         self.inputs = self.addNode("NodeGroupInput", 0)
         self.outputs = self.addNode("NodeGroupOutput", ncols)
-        self.parent = parent
         self.ncols = ncols
+
+    def create(self, node, name, parent, ncols):
+        self.make(name, ncols)
+        node.name = name
+        node.node_tree = self.group
+        self.parent = parent
 
     def checkSockets(self, tree):
         for socket in self.insockets:
