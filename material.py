@@ -151,7 +151,7 @@ class Material(Asset, Channels):
         self.basemix = self.getValue(["Base Mixing"], 0)
         if self.basemix > 2:
             self.basemix = 0
-            raise DazError("Unknown Base Mixing: %s             " % self.material.basemix)
+            raise DazError("Unknown Base Mixing: %s             " % self.basemix)
 
         if self.shader == 'UBER_IRAY':
             self.enabled = {

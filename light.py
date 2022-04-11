@@ -221,7 +221,7 @@ class LightTree(CyclesTree):
 
         emit = self.addNode("ShaderNodeEmission", 1)
         emit.inputs["Color"].default_value[0:3] = color
-        emit.inputs["Strength"].default_value = self.material.instance.fluxFactor
+        emit.inputs["Strength"].default_value = self.owner.instance.fluxFactor
         output = self.addNode("ShaderNodeOutputLight", 2)
         self.links.new(emit.outputs[0], output.inputs["Surface"])
 

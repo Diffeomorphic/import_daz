@@ -1532,7 +1532,7 @@ class HairTree(CyclesTree):
     def readColor(self, factor):
         root, self.roottex = self.getColorTex(["Hair Root Color"], "COLOR", self.color, useFactor=False)
         tip, self.tiptex = self.getColorTex(["Hair Tip Color"], "COLOR", self.color, useFactor=False)
-        self.material.rna.diffuse_color[0:3] = root
+        self.owner.rna.diffuse_color[0:3] = root
         self.root = factor * Vector(root)
         self.tip = factor * Vector(tip)
 
@@ -1647,7 +1647,7 @@ class HairBSDFTree(HairTree):
             transp.inputs["Color"].default_value[0:3] = WHITE
             self.column += 1
             self.active = self.mixShaders(transp, self.active, alpha)
-            self.material.setTransSettings(False, False, WHITE, alpha)
+            self.owner.setTransSettings(False, False, WHITE, alpha)
 
 #-------------------------------------------------------------
 #   Hair tree for adding root transparency to existing material
