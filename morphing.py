@@ -899,8 +899,15 @@ class MorphLoader(LoadMorph):
         else:
             item = pgs.add()
             item.name = prop
-        if asset and self.getUniqueName(asset.name) == prop:
-            label = self.getUniqueName(asset.label)
+        if asset:
+            #if self.getUniqueName(asset.name) == prop:
+            #    label = self.getUniqueName(asset.label)
+            if asset.label:
+                label = asset.label
+            elif asset.name:
+                label = asset.name
+            else:
+                label = getCanonicalKey(prop)
             visible = asset.visible
         else:
             label = getCanonicalKey(prop)
