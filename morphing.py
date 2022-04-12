@@ -685,11 +685,9 @@ def setupMorphPaths(force):
                         isright,name = isRightType(fname, prefixes, strips, includes, excludes)
                         if isright:
                             fname = fname.lower()
-                            #fpath = os.path.join(folder, file)
                             string = "%s/%s" % (folderpath, file)
-                            typeFiles[name] = string.replace("//", "/")
-                            #prop = BoolProperty(name=name, default=True)
-                            #setattr(bpy.types.Scene, "Daz"+name, prop)
+                            string = string.replace("//", "/")
+                            typeFiles[name] = bpy.path.resolve_ncase(string)
                             typeNames[fname] = name
 
 
