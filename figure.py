@@ -587,9 +587,6 @@ class ExtraBones(DriverUser):
             print(msg)
             #raise DazError(msg)
 
-        if rig.animation_data:
-            rig.animation_data.action = None
-
         drivenLayers = 31*[False] + [True]
         #finalLayers = 30*[False] + [True,False]
 
@@ -673,6 +670,18 @@ class ExtraBones(DriverUser):
                         if fcu:
                             self.correctDriver(fcu, rig)
             updateDrivers(ob)
+
+        if rig.animation_data and rig.animation_data.action:
+            for fcu in rig.animation_data.action.fcurves:
+                if "(drv)" in fcu.group.name:
+                    fcu.group.name = fcu.group.name.replace("(drv)", "")
+                if (fcu.data_path.startswith("pose.bones[") and
+                    "(drv)" in fcu.data_path):
+                    fcu.data_path = fcu.data_path.replace("(drv)", "")
+
+        for pb in rig.pose.bones:
+            if isDrvBone(pb.name):
+                pb.matrix_basis = Matrix()
 
 
     def removeLimits(self, rig):
