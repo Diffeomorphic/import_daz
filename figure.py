@@ -587,6 +587,9 @@ class ExtraBones(DriverUser):
             print(msg)
             #raise DazError(msg)
 
+        if rig.animation_data:
+            rig.animation_data.action = None
+
         drivenLayers = 31*[False] + [True]
         #finalLayers = 30*[False] + [True,False]
 
