@@ -261,6 +261,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazReuseMaterials")
+        box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazBumpFactor")
         box.prop(scn, "DazFakeCaustics")
@@ -512,6 +513,10 @@ def register():
     bpy.types.Scene.DazReuseMaterials = BoolProperty(
         name = "Reuse Materials",
         description = "Use existing materials if such exists.\nMay lead to incorrect materials")
+
+    bpy.types.Scene.DazLowerResFolders = BoolProperty(
+        name = "Lower Resolution Folders",
+        description = "Store lower resolution textures in separate folders.\nTexture names are also modified")
 
     bpy.types.Scene.DazMaterialsByIndex = BoolProperty(
         name = "Materials By Index",

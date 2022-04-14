@@ -938,8 +938,13 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
 
     def run(self, context):
         from shutil import copyfile
-        texpath = os.path.join(os.path.dirname(bpy.data.filepath), "textures")
-        print("Save textures to '%s'" % texpath)
+        folder = os.path.dirname(bpy.data.filepath).replace("\\", "/")
+        if GS.useLowerResFolders:
+            self.subdir = "/textures/original"
+        else:
+            self.subdir = "/textures"
+        texpath = "%s%s" % (folder, self.subdir)
+        print('Save textures to "%s"' % texpath)
         if not os.path.exists(texpath):
             os.makedirs(texpath)
 
@@ -958,15 +963,15 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
             src = bpy.path.reduce_dirs([src])[0]
             file = bpy.path.basename(src)
             srclower = src.lower().replace("\\", "/")
-            if self.keepdirs and "/textures/" in srclower:
-                subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
-                folder = os.path.join(texpath, subpath)
+            if self.keepdirs and self.subdir in srclower:
+                subpath = os.path.dirname(srclower.rsplit(self.subdir,1)[1])
+                folder = "%s%s" % (texpath, subpath)
                 if not os.path.exists(folder):
                     print("Make %s" % folder)
                     os.makedirs(folder)
-                trg = os.path.join(folder, file)
+                trg = "%s/%s" % (folder, file)
             else:
-                trg = os.path.join(texpath, file)
+                trg = "%s/%s" % (texpath, file)
             if src != trg and not os.path.exists(trg):
                 print("Copy %s\n => %s" % (src, trg))
                 copyfile(src, trg)
@@ -1450,6 +1455,16 @@ class ChangeResolution():
 
 
     def getBasePath(self, path):
+        path = path.replace("\\", "/")
+        path = self.getBasePathNames(path)
+        if GS.useLowerResFolders:
+            words = path.split("/textures/res", 1)
+            if len(words) == 2:
+                path = "%s/textures/original%s" % (words[0], words[1][1:])
+        return path
+
+
+    def getBasePathNames(self, path):
         fname,ext = os.path.splitext(path)
         if fname[-5:] == "-res0":
             return "%s%s" % (fname[:-5], ext)
@@ -1538,7 +1553,25 @@ class ChangeResolution():
             return bpy.data.images.load(newpath)
 
 
+    def getNewPathFolders(self, path):
+        if self.steps == 0:
+            return path
+        words = path.split("/textures/original/", 1)
+        if len(words) != 2:
+            words = path.split("/textures/", 1)
+        if len(words) == 2:
+            newpath = "%s/textures/res%d/%s" % (words[0], self.steps, words[1])
+            folder = getProperPath(os.path.dirname(newpath))
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            return newpath
+        else:
+            raise DazError('Illegal path: %s' % path)
+
+
     def getNewPath(self, path):
+        if GS.useLowerResFolders:
+            path = self.getNewPathFolders(path)
         base,ext = os.path.splitext(path)
         if self.steps == 0:
             newbase = base
@@ -1549,7 +1582,7 @@ class ChangeResolution():
         else:
             newbase = ("%s-res%d" % (base, self.steps))
         newname = bpy.path.basename(newbase)
-        newpath = newbase + ext
+        newpath = "%s%s" % (newbase, ext)
         return newname, newpath
 
 
@@ -1608,13 +1641,12 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
         self.getFileNames(paths)
 
         program = os.path.join(os.path.dirname(__file__), "standalone/resize.py")
-        folder = os.path.dirname(bpy.data.filepath)
         for path in paths:
-            if path[0:2] == "//":
-                path = os.path.join(folder, path[2:])
-            _,newpath = self.getNewPath(self.getBasePath(path))
+            path = getProperPath(path)
+            base = self.getBasePath(path)
+            _,newpath = self.getNewPath(base)
             if not os.path.exists(newpath):
-                cmd = ('python "%s" "%s" "%s" %d' % (program, path, newpath, self.steps))
+                cmd = ('python "%s" "%s" "%s" %d' % (program, base, newpath, self.steps))
                 os.system(cmd)
             else:
                 print("Skip", os.path.basename(newpath))
@@ -1637,6 +1669,14 @@ class DAZ_OT_PruneNodeTrees(DazOperator, IsMesh):
             for mat in ob.data.materials:
                 if mat:
                     pruneNodeTree(mat.node_tree)
+#----------------------------------------------------------
+#   Utility
+#----------------------------------------------------------
+
+def getProperPath(path):
+    if path[0:2] == "//":
+        return os.path.join(os.path.dirname(bpy.data.filepath), path[2:])
+    return path
 
 #----------------------------------------------------------
 #   Render settings

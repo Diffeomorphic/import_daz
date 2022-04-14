@@ -79,6 +79,7 @@ class GlobalSettings:
         self.useVolume = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
+        self.useLowerResFolders = False
         self.materialsByIndex = False
         self.imageInterpolation = 'Cubic'
 
@@ -140,6 +141,7 @@ class GlobalSettings:
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
         "DazReuseMaterials" : "reuseMaterials",
+        "DazLowerResFolders" : "useLowerResFolders",
         "DazMaterialsByIndex" : "materialsByIndex",
         "DazBumpFactor" : "bumpFactor",
         "DazFakeCaustics" : "useFakeCaustics",
