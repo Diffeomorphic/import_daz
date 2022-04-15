@@ -62,21 +62,21 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         default = False)
 
     useGeoNodes: BoolProperty(
-        name = "Geometry Nodes",
+        name = "Geometry Nodes (Experimental)",
         description = "Merge geografts using geometry nodes",
         default = False)
 
     useUnlinkGrafts : BoolProperty(
         name = "Unlink Geografts",
         description = "Unlink the geografts from the scene when they have been merged",
-        default = True)
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useMergeUvs")
         if bpy.app.version >= (3,1,0):
             self.layout.prop(self, "useGeoNodes")
-            if self.useGeoNodes:
+            if False and self.useGeoNodes:
                 self.layout.prop(self, "useUnlinkGrafts")
 
     def __init__(self):
@@ -236,17 +236,21 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         setMode('OBJECT')
 
         # Select verts on common boundary
-        self.boundary = dict([(vn,False) for vn in range(nverts)])
+        self.cedge = dict([(vn,False) for vn in range(nverts)])
+        self.aedges = {}
         for aob in anatomies:
             selectSet(aob, True)
+            naverts = len(aob.data.vertices)
+            aedge = self.aedges[aob.name] = dict([(vn,False) for vn in range(naverts)])
             pg = cob.data.DazMergedGeografts.add()
             pg.name = aob.name
             for pair in aob.data.DazGraftGroup:
                 aob.data.vertices[pair.a].select = True
                 if pair.b in assoc.keys():
+                    aedge[pair.a] = True
                     cvn = assoc[pair.b]
                     cob.data.vertices[cvn].select = True
-                    self.boundary[pair.b] = True
+                    self.cedge[pair.b] = True
 
         # Also select cob graft group. These will not be removed.
         if cob.data.DazGraftGroup:
@@ -344,15 +348,19 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
+        def addVertexGroup(ob, vgname, struct):
+            vgrp = ob.vertex_groups.new(name=vgname)
+            verts = [vn for vn,ok in struct.items() if ok]
+            for vn in verts:
+                vgrp.add([vn], 1, 'REPLACE')
+
         from .geonodes import makeGeograftGroup
-        mask = cob.vertex_groups.new(name="Geograft Mask")
-        maskverts = [vn for vn,ok in self.vdeleted.items() if ok]
-        for vn in maskverts:
-            mask.add([vn], 1, 'REPLACE')
-        edge = cob.vertex_groups.new(name="Geograft Edge")
-        edgeverts = [vn for vn,ok in self.boundary.items() if ok]
-        for vn in edgeverts:
-            edge.add([vn], 1, 'REPLACE')
+        addVertexGroup(cob, "Geograft Mask", self.vdeleted)
+        addVertexGroup(cob, "Geograft Edge", self.cedge)
+        for aob in anatomies:
+            addVertexGroup(aob, "Geograft Edge", self.aedges[aob.name])
+        self.replaceTexco(cob)
+
         mod = getModifier(cob, 'NODES')
         if mod is None:
             mod = cob.modifiers.new("Geografts", 'NODES')
@@ -364,6 +372,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
             nmods = len(cob.modifiers)
             for n in range(nmods-n0-2):
                 bpy.ops.object.modifier_move_up(modifier=mod.name)
+
         mod.node_group = makeGeograftGroup(anatomies)
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)

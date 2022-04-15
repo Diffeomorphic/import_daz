@@ -76,8 +76,7 @@ class GeograftGroup(Tree, NodeGroup):
         self.links.new(self.inputs.outputs["Geograft Area"], deleteMask.inputs["Selection"])
 
         joinGeo = self.addNode("GeometryNodeJoinGeometry", 3)
-        self.links.new(deleteMask.outputs["Geometry"], joinGeo.inputs["Geometry"])
-
+        joins = [deleteMask]
         for aob in anatomies:
             objinfo = self.addNode("GeometryNodeObjectInfo", 0)
             objinfo.inputs[0].default_value = aob
@@ -87,13 +86,16 @@ class GeograftGroup(Tree, NodeGroup):
             captureAnatomy.domain = 'POINT'
             self.links.new(objinfo.outputs["Geometry"], captureAnatomy.inputs["Geometry"])
             self.links.new(self.inputs.outputs["Geograft Edge"], captureAnatomy.inputs[VALUE])
-            self.links.new(captureAnatomy.outputs["Geometry"], joinGeo.inputs["Geometry"])
+            joins.append(captureAnatomy)
 
             node = self.addNode("FunctionNodeBooleanMath", 2)
             node.operation = 'OR'
             self.links.new(union, node.inputs[0])
             self.links.new(captureAnatomy.outputs[VALUE], node.inputs[1])
             union = node.outputs[0]
+        joins.reverse()
+        for node in joins:
+            self.links.new(node.outputs["Geometry"], joinGeo.inputs["Geometry"])
 
         mergeDist = self.addNode("GeometryNodeMergeByDistance", 4)
         mergeDist.inputs["Distance"].default_value = 1e-4
