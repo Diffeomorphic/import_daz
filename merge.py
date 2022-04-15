@@ -363,8 +363,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
                 if vgrp.name not in list(cob.vertex_groups.keys()):
                     cob.vertex_groups.new(name=vgrp.name)
             for mod in list(aob.modifiers):
-                if mod.type == 'ARMATURE':
-                    aob.modifiers.remove(mod)
+                mod.show_viewport = False
+                mod.show_render = False
         self.replaceTexco(cob)
 
         mod = getModifier(cob, 'NODES')
