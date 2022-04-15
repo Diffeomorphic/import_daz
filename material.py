@@ -1409,9 +1409,9 @@ class ChangeResolution():
                                 path = os.path.join(folder, "%s%s%s" % (fname1[:-4], "<UDIM>", ext1))
                             else:
                                 path = os.path.join(folder, "%s%s" % (fname1, ext1))
-                            paths[path] = img
+                            paths[path] = True
                 else:
-                    paths[img.filepath] = img
+                    paths[img.filepath] = True
             elif node.type == 'GROUP':
                 self.getTreeTextures(node.node_tree, paths, resolveUDIM)
 
