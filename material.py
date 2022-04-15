@@ -1409,9 +1409,9 @@ class ChangeResolution():
                                 path = os.path.join(folder, "%s%s%s" % (fname1[:-4], "<UDIM>", ext1))
                             else:
                                 path = os.path.join(folder, "%s%s" % (fname1, ext1))
-                            paths[path] = True
+                            paths[path] = img
                 else:
-                    paths[img.filepath] = True
+                    paths[img.filepath] = img
             elif node.type == 'GROUP':
                 self.getTreeTextures(node.node_tree, paths, resolveUDIM)
 
@@ -1640,14 +1640,18 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
             paths = self.getMultiFiles(G.theImageExtensions)
         self.getFileNames(paths)
 
-        program = os.path.join(os.path.dirname(__file__), "standalone/resize.py")
+        scale = int(2**self.steps)
         for path in paths:
             path = getProperPath(path)
             base = self.getBasePath(path)
             _,newpath = self.getNewPath(base)
             if not os.path.exists(newpath):
-                cmd = ('python "%s" "%s" "%s" %d' % (program, base, newpath, self.steps))
-                os.system(cmd)
+                img = bpy.data.images.load(base)
+                x,y = img.size
+                img.scale(int(x/scale), int(y/scale))
+                img.filepath_raw = newpath
+                img.save()
+                img.buffers_free()
             else:
                 print("Skip", os.path.basename(newpath))
 
