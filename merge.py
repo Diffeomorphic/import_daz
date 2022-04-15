@@ -359,18 +359,19 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         addVertexGroup(cob, "Geograft Edge", self.cedge)
         for aob in anatomies:
             addVertexGroup(aob, "Geograft Edge", self.aedges[aob.name])
+            for vgrp in aob.vertex_groups:
+                if vgrp.name not in list(cob.vertex_groups.keys()):
+                    cob.vertex_groups.new(name=vgrp.name)
+            for mod in list(aob.modifiers):
+                if mod.type == 'ARMATURE':
+                    aob.modifiers.remove(mod)
         self.replaceTexco(cob)
 
         mod = getModifier(cob, 'NODES')
         if mod is None:
             mod = cob.modifiers.new("Geografts", 'NODES')
-            n0 = 0
-            for n,mod1 in enumerate(cob.modifiers):
-                if mod1.type == 'ARMATURE':
-                    n0 = n
-                    break
             nmods = len(cob.modifiers)
-            for n in range(nmods-n0-2):
+            for n in range(nmods-1):
                 bpy.ops.object.modifier_move_up(modifier=mod.name)
 
         mod.node_group = makeGeograftGroup(anatomies)
