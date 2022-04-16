@@ -924,7 +924,7 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
     bl_options = {'UNDO'}
 
-    keepdirs : BoolProperty(
+    useKeepDirs : BoolProperty(
         name = "Keep Directories",
         description = "Keep the directory tree from Daz Studio, otherwise flatten the directory structure",
         default = True)
@@ -934,7 +934,7 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
         return bpy.data.filepath
 
     def draw(self, context):
-        self.layout.prop(self, "keepdirs")
+        self.layout.prop(self, "useKeepDirs")
 
     def run(self, context):
         from shutil import copyfile
@@ -943,10 +943,10 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
             self.subdir = "/textures/original"
         else:
             self.subdir = "/textures"
-        texpath = "%s%s" % (folder, self.subdir)
-        print('Save textures to "%s"' % texpath)
-        if not os.path.exists(texpath):
-            os.makedirs(texpath)
+        self.texpath = "%s%s" % (folder, self.subdir)
+        print('Save textures to "%s"' % self.texpath)
+        if not os.path.exists(self.texpath):
+            os.makedirs(self.texpath)
 
         self.images = []
         for ob in getVisibleMeshes(context):
@@ -958,30 +958,36 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
                 self.saveTextureSlots(psys.settings)
             ob.DazLocalTextures = True
 
-        for img in self.images:
-            src = bpy.path.abspath(img.filepath)
-            src = bpy.path.reduce_dirs([src])[0]
+        for src,img in self.images:
             file = bpy.path.basename(src)
             srclower = src.lower().replace("\\", "/")
-            if self.keepdirs and self.subdir in srclower:
-                subpath = os.path.dirname(srclower.rsplit(self.subdir,1)[1])
-                folder = "%s%s" % (texpath, subpath)
+            if (self.useKeepDirs and
+                "/textures/" in srclower and
+                "/textures/original/" not in srclower):
+                subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
+                folder = "%s/%s" % (self.texpath, subpath)
                 if not os.path.exists(folder):
                     print("Make %s" % folder)
                     os.makedirs(folder)
                 trg = "%s/%s" % (folder, file)
             else:
-                trg = "%s/%s" % (texpath, file)
+                trg = "%s/%s" % (self.texpath, file)
             if src != trg and not os.path.exists(trg):
                 print("Copy %s\n => %s" % (src, trg))
                 copyfile(src, trg)
             img.filepath = bpy.path.relpath(trg)
 
 
+    def saveImage(self, img):
+        path = bpy.path.abspath(img.filepath)
+        path = bpy.path.reduce_dirs([path])[0]
+        self.images.append((path, img))
+
+
     def saveNodesInTree(self, tree):
         for node in tree.nodes.values():
             if node.type == 'TEX_IMAGE':
-                self.images.append(node.image)
+                self.saveImage(node.image)
             elif node.type == 'GROUP':
                 self.saveNodesInTree(node.node_tree)
 
@@ -991,7 +997,7 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
             if mtex:
                 tex = mtex.texture
                 if hasattr(tex, "image") and tex.image:
-                    self.images.append(tex.image)
+                    self.saveImage(tex.image)
 
 #-------------------------------------------------------------
 #   Merge identical materials
@@ -1506,14 +1512,15 @@ class ChangeResolution():
             return img
         elif newpath in images.keys():
             return images[newpath][1]
-        elif newname in bpy.data.images.keys():
-            return bpy.data.images[newname]
-        else:
-            try:
-                newimg = self.loadNewImage(img, newpath)
-            except RuntimeError:
-                newimg = None
+        oldimg = bpy.data.images.get(newname)
+        if oldimg and oldimg.filepath == newpath:
+            return oldimg
+        try:
+            newimg = self.loadNewImage(img, newpath)
+        except RuntimeError:
+            newimg = None
         if newimg:
+            newimg.name = newname
             newimg.name = newname
             newimg.colorspace_settings.name = colorSpace
             newimg.source = img.source
@@ -1566,7 +1573,9 @@ class ChangeResolution():
                 os.makedirs(folder)
             return newpath
         else:
-            raise DazError('Illegal path: %s' % path)
+            msg = 'Illegal path: %s' % path
+            print(msg)
+            raise DazError(msg)
 
 
     def getNewPath(self, path):
@@ -1650,10 +1659,11 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
                 x,y = img.size
                 img.scale(int(x/scale), int(y/scale))
                 img.filepath_raw = newpath
+                print("%s => %s: %s => %s" % (os.path.basename(path), os.path.basename(newpath), (x,y), tuple(img.size)))
                 img.save()
                 img.buffers_free()
             else:
-                print("Skip", os.path.basename(newpath))
+                print("Skip", newpath)
 
         self.replaceTextures(context)
 
