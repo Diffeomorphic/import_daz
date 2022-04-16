@@ -79,7 +79,7 @@ class GlobalSettings:
         self.useVolume = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
-        self.useLowerResFolders = False
+        self.useLowerResFolders = True
         self.materialsByIndex = False
         self.imageInterpolation = 'Cubic'
 

@@ -1624,9 +1624,7 @@ class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
 class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution):
     bl_idname = "daz.resize_textures"
     bl_label = "Resize Textures"
-    bl_description = (
-        "Replace all textures of selected meshes with resized versions.\n" +
-        "Python and OpenCV must be installed on your system.")
+    bl_description = "Replace all textures of selected meshes with resized versions"
     bl_options = {'UNDO'}
 
     @classmethod

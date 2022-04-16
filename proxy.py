@@ -1396,6 +1396,26 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useVertexColors")
         self.layout.prop(self, "useUvLayers")
 
+
+    def storeState(self, context):
+        DazPropsOperator.storeState(self, context)
+        self.meshes = []
+        for ob in getSelectedMeshes(context):
+            mod = getModifier(ob, 'NODES')
+            if mod:
+                self.meshes.append((ob, mod.show_viewport, mod.show_render))
+                mod.show_viewport = mod.show_render = False
+
+
+    def restoreState(self, context):
+        DazPropsOperator.restoreState(self, context)
+        for ob,viewport,render in self.meshes:
+            mod = getModifier(ob, 'NODES')
+            if mod:
+                mod.show_viewport = viewport
+                mod.show_render = render
+
+
     def run(self, context):
         obs,nobs,rig = self.addMannequins(context)
         if self.ignoreBoneGroups:
@@ -1477,7 +1497,12 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             for rnd in range(3, 8):
                 face_mats[rnd] = dict()
                 for f in mob.data.polygons:
-                    face_mats[rnd][tuple(round(x, rnd) for x in f.normal)] = ob.material_slots[f.material_index].material
+                    try:
+                        mat = ob.material_slots[f.material_index].material
+                    except IndexError:
+                        continue
+                    nn = tuple(round(x, rnd) for x in f.normal)
+                    face_mats[rnd][nn] = mat
 
         obverts = mob.data.vertices
         nobinfos = []
