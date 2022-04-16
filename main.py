@@ -32,7 +32,7 @@ from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions
-from .merge import MergeRigsOptions
+from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
 
 #------------------------------------------------------------------
@@ -523,7 +523,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, SoftbodyOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, SoftbodyOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -580,13 +580,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
     useMergeGeografts : BoolProperty(
         name = "Merge Geografts",
         description = "Merge selected geografts to active object.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
-        default = False)
-
-    useMergeUvs : BoolProperty(
-        name = "Merge UV Layers",
-        description = (
-            "Merge first UV layers of all meshes.\n" +
-            "Only works for geografts where the first layer is the base layer"),
         default = False)
 
     useMergeFaceMeshes : BoolProperty(
@@ -664,6 +657,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
             self.subprop("useMergeNonConforming")
         self.layout.prop(self, "useMakeAllBonesPoseable")
         self.layout.prop(self, "useMergeToes")
+        self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
             self.subprop("favoPath")
@@ -671,7 +665,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
             if self.onMorphSuffix == 'ALL':
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
-        self.subprop("useAdjusters")
+        self.layout.prop(self, "useAdjusters")
+        self.layout.separator()
         if self.useFavoMorphs or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
         self.layout.prop(self, "useSoftbody")
@@ -684,6 +679,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
+            self.subprop("useGeoNodes")
         self.layout.prop(self, "useMergeFaceMeshes")
         if self.useMergeFaceMeshes:
             self.subprop("useLashes")
@@ -907,7 +903,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeRigsOptions, Mor
                     for aob in aobs:
                         selectSet(aob, True)
                 print("Merge geografts")
-                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs)
+                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs, useGeoNodes = self.useGeoNodes)
                 if GS.viewportColors == 'GUESS':
                     from .guess import guessMaterialColor
                     LS.skinColor = self.skinColor

@@ -40,12 +40,7 @@ from .driver import DriverUser
 #   Merge geografts
 #-------------------------------------------------------------
 
-class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh):
-    bl_idname = "daz.merge_geografts"
-    bl_label = "Merge Geografts"
-    bl_description = "Merge selected geografts to active object"
-    bl_options = {'UNDO'}
-
+class MergeGeograftOptions:
     useVertexTable : BoolProperty(
         name = "Add Vertex Table",
         description = (
@@ -66,22 +61,21 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         description = "Merge geografts using geometry nodes",
         default = False)
 
-    useUnlinkGrafts : BoolProperty(
-        name = "Unlink Geografts",
-        description = "Unlink the geografts from the scene when they have been merged",
-        default = False)
+
+class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerger, DriverUser, IsMesh):
+    bl_idname = "daz.merge_geografts"
+    bl_label = "Merge Geografts"
+    bl_description = "Merge selected geografts to active object"
+    bl_options = {'UNDO'}
 
     def draw(self, context):
         self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useMergeUvs")
         if bpy.app.version >= (3,1,0):
             self.layout.prop(self, "useGeoNodes")
-            if False and self.useGeoNodes:
-                self.layout.prop(self, "useUnlinkGrafts")
 
     def __init__(self):
         DriverUser.__init__(self)
-
 
     def run(self, context):
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
@@ -379,13 +373,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser, IsMesh
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
         mod["Input_1_attribute_name"] = "Geograft Edge"
         mod["Input_2_attribute_name"] = "Geograft Mask"
-        if self.useUnlinkGrafts:
-            for aob in anatomies:
-                unlinkAll(aob)
-        else:
-            for aob in anatomies:
-                aob.hide_set(True)
-                aob.hide_render = True
+        for aob in anatomies:
+            aob.hide_set(True)
+            aob.hide_render = True
 
 
     def getActiveUvLayer(self, ob):
@@ -935,10 +925,13 @@ class MergeRigsOptions:
         description = "Create separate bones if several bones with the same name are found",
         default = True)
 
-    useMergeNonConforming : BoolProperty(
-        name = "Merge Non-conforming Rigs",
+    useMergeNonConforming : EnumProperty(
+        items = [('NEVER', "Never", "Don't merge non-conforming bones"),
+                 ('CONTROLS', "Face Controls", "Only merge face controls"),
+                 ('ALWAYS', "Always", "Always merge non-conforming bones")],
+        name = "Non-conforming Rigs",
         description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
-        default = False)
+        default = 'CONTROLS')
 
 
 class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
@@ -1049,10 +1042,13 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
 
     def isConforming(self, subrig, rig):
-        if self.useMergeNonConforming:
+        if self.useMergeNonConforming == 'ALWAYS':
             return True
         for bname in subrig.data.bones.keys():
             if bname in rig.data.bones.keys():
+                return True
+            elif (self.useMergeNonConforming == 'CONTROLS' and
+                  "control" in bname.lower()):
                 return True
         return False
 
