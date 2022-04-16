@@ -46,6 +46,7 @@ class GeograftGroup(Tree, NodeGroup):
         self.group.inputs.new("NodeSocketGeometry", "Geometry")
         self.group.inputs.new("NodeSocketFloat", "Geograft Edge")
         self.group.inputs.new("NodeSocketFloat", "Geograft Area")
+        self.group.inputs.new("NodeSocketFloat", "Merge Distance")
         self.group.outputs.new("NodeSocketGeometry", "Geometry")
         self.group.outputs.new("NodeSocketInt", "Vertex Table")
 
@@ -99,6 +100,7 @@ class GeograftGroup(Tree, NodeGroup):
 
         mergeDist = self.addNode("GeometryNodeMergeByDistance", 4)
         mergeDist.inputs["Distance"].default_value = 1e-4
+        self.links.new(self.inputs.outputs["Merge Distance"], mergeDist.inputs["Distance"])
         self.links.new(joinGeo.outputs["Geometry"], mergeDist.inputs["Geometry"])
         self.links.new(union, mergeDist.inputs["Selection"])
 

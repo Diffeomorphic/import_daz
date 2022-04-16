@@ -373,6 +373,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
         mod["Input_1_attribute_name"] = "Geograft Edge"
         mod["Input_2_attribute_name"] = "Geograft Mask"
+        mod["Input_3"] = 0.01*cob.DazScale
         for aob in anatomies:
             aob.hide_set(True)
             aob.hide_render = True
