@@ -1878,6 +1878,7 @@ class CyclesTree(Tree):
                 self.nodes.active = self.diffuseTex
         except UnicodeDecodeError:
             print("Illegal diffuse texture in %s:\n %s" % (self.owner.name, self.diffuseTex))
+            self.diffuseTex = None
 
 
     def getLink(self, node, slot):

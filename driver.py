@@ -203,9 +203,9 @@ class DriverUser:
 
 
     def copyShapeKeyDrivers(self, ob, drivers):
-        if not drivers:
-            return
         skeys = ob.data.shape_keys
+        if (skeys is None or not drivers):
+            return
         self.createTmp()
         try:
             for sname,fcu in drivers.items():

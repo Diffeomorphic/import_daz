@@ -163,25 +163,26 @@ class GeoNode(Node, SimNode):
             if hdob and hdob != ob:
                 self.data.buildRigidity(hdob)
 
+        if self.materials:
+            subDLevel = max([dmat.getSubDLevel(0) for dmat in self.materials.values()])
+        else:
+            subDLevel = 0
         if (self.type == "subdivision_surface" and
             self.data and
             (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0)):
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
-            mod.render_levels = subDLevels = self.data.SubDIALevel + self.data.SubDRenderLevel
+            mod.render_levels = self.data.SubDIALevel + self.data.SubDRenderLevel
+            if subDLevel > mod.render_levels:
+                mod.render_levels = subDLevel
             mod.levels = self.data.SubDIALevel
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
             self.data.creaseEdges(context, ob)
-        else:
-            subDLevels = 0
-
-        for dmat in self.materials.values():
-            level = dmat.getSubDLevel(0)
-            if level > subDLevels:
-                mod2 = ob.modifiers.new("SubD Displacement", 'SUBSURF')
-                mod2.subdivision_type = 'SIMPLE'
-                mod2.render_levels = level - subDLevels
-                mod2.levels = 0
+        elif subDLevel > 0:
+            mod = ob.modifiers.new("SubD Displacement", 'SUBSURF')
+            mod.subdivision_type = 'SIMPLE'
+            mod.levels = 0
+            mod.render_levels = subDLevels
 
 
     def addMappings(self, selmap):
