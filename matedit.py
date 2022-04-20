@@ -58,6 +58,7 @@ class DazMaterialGroup(bpy.types.PropertyGroup):
 
 class MaterialSelector:
     umats : CollectionProperty(type = DazMaterialGroup)
+    useAllMaterials = False
 
     @classmethod
     def poll(self, context):
@@ -100,7 +101,9 @@ class MaterialSelector:
 
 
     def useMaterial(self, mat):
-        if mat.name in self.umats.keys():
+        if self.useAllMaterials:
+            return True
+        elif mat.name in self.umats.keys():
             item = self.umats[mat.name]
             return item.bool
         else:
@@ -379,7 +382,6 @@ class ChannelSetter:
         elif item.ncomps == 4:
             socket.default_value = self.getValue(item.color, ncomps)
 
-
     def addSlots(self, context):
         ob = context.object
         ob.DazSlots.clear()
@@ -488,8 +490,15 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
     bl_description = "Edit materials of selected meshes"
     bl_options = {'UNDO'}
 
+    useAllMaterials : BoolProperty(
+        name = "All Materials",
+        description = "Affect all materials of all selected meshes",
+        default = False)
+
     def draw(self, context):
-        MaterialSelector.draw(self, context)
+        self.layout.prop(self, "useAllMaterials")
+        if not self.useAllMaterials:
+            MaterialSelector.draw(self, context)
         ob = context.object
         self.layout.label(text="Active Material: %s" % ob.active_material.name)
         self.layout.separator()
@@ -545,9 +554,10 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
 
 
     def run(self, context):
-        for ob in getSelectedMeshes(context):
+        ob = context.object
+        for ob1 in getSelectedMeshes(context):
             for item in ob.DazSlots:
-                self.setChannel(ob, item)
+                self.setChannel(ob1, item)
 
 
     def setChannel(self, ob, item):
