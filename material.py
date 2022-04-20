@@ -1701,7 +1701,7 @@ def checkRenderSettings(context, force):
         "Bounces" : [("max_bounces", ">", 8)],
         "Diffuse" : [("diffuse_bounces", ">", 1)],
         "Glossy" : [("glossy_bounces", ">", 4)],
-        "Transparent" : [("transparent_max_bounces", ">", 16),
+        "Transparent" : [("transparent_max_bounces", ">", 32),
                          ("transmission_bounces", ">", 8),
                          ("caustics_refractive", "=", True)],
         "Volume" : [("volume_bounces", ">", 4)],
