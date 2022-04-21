@@ -346,23 +346,33 @@ def getTweakableChannel(cname):
 
 
 class ChannelSetter:
+    useChangedOnly = False
+    origSlots : CollectionProperty(type = EditSlotGroup)
+    matSlots : CollectionProperty(type = EditSlotGroup)
+
     def setChannelCycles(self, mat, item):
         nodeType, slot, useAttr, factorAttr, ncomps, fromType = getTweakableChannel(item.name)
+        if self.useChangedOnly:
+            value = self.getItemValue(ncomps, item)
+            origItem = self.origSlots[item.name]
+            origValue = self.getItemValue(ncomps, origItem)
+            if value == origValue:
+                return
 
         for node in mat.node_tree.nodes.values():
             if self.matchingNode(node, nodeType, mat, fromType):
                 socket = node.inputs[slot]
                 self.setOriginal(socket, ncomps, mat, item.name)
-                self.setSocket(socket, ncomps, item)
+                socket.default_value = self.getItemValue(ncomps, item)
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
                 if fromnode:
                     if fromnode.type in "MIX_RGB":
                         self.ensureColor(ncomps, item)
-                        self.setSocket(fromnode.inputs[1], 4, item)
+                        fromnode.inputs[1].default_value = self.getItemValue(4, item)
                     elif fromnode.type == "MATH" and fromnode.operation == 'MULTIPLY':
-                        self.setSocket(fromnode.inputs[0], 1, item)
+                        fromnode.inputs[0].default_value = self.getItemValue(1, item)
                     elif fromnode.type == "MATH" and fromnode.operation == 'MULTIPLY_ADD':
-                        self.setSocket(fromnode.inputs[1], 1, item)
+                        fromnode.inputs[1].default_value = self.getItemValue(1, item)
                     elif fromnode.type in ["TEX_IMAGE", "GAMMA"]:
                         self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
 
@@ -374,44 +384,49 @@ class ChannelSetter:
             item.color = (num,num,num,1)
 
 
-    def setSocket(self, socket, ncomps, item):
-        if item.ncomps == 1:
-            socket.default_value = self.getValue(item.number, ncomps)
-        elif item.ncomps == 3:
-            socket.default_value = self.getValue(item.vector, ncomps)
-        elif item.ncomps == 4:
-            socket.default_value = self.getValue(item.color, ncomps)
-
     def addSlots(self, context):
         ob = context.object
-        ob.DazSlots.clear()
+        self.matSlots.clear()
+        self.origSlots.clear()
         for key in TweakableChannels.keys():
             if TweakableChannels[key] is None:
                 continue
-            value,ncomps = self.getChannel(ob, key)
+            value,ncomps = self.getEditChannel(ob, key)
             if ncomps == 0:
                 continue
-            item = ob.DazSlots.add()
+            item = self.matSlots.add()
             item.name = key
             item.ncomps = ncomps
-            if ncomps == 1:
-                item.number = self.getValue(value, 1)
-            elif ncomps == 3:
-                item.vector = self.getValue(value, 3)
-            elif ncomps == 4:
-                item.color = self.getValue(value, 4)
+            self.setItemValue(ncomps, item, value)
+            item = self.origSlots.add()
+            item.name = key
+            item.ncomps = ncomps
+            self.setItemValue(ncomps, item, value)
 
 
-    def getChannel(self, ob, key):
+    def getItemValue(self, ncomps, item):
+        if item.ncomps == 1:
+            return self.getValue(item.number, ncomps)
+        elif item.ncomps == 3:
+            return self.getValue(item.vector, ncomps)
+        elif item.ncomps == 4:
+            return list(self.getValue(item.color, ncomps))
+
+
+    def setItemValue(self, ncomps, item, value):
+        if ncomps == 1:
+            item.number = self.getValue(value, 1)
+        elif ncomps == 3:
+            item.vector = self.getValue(value, 3)
+        elif ncomps == 4:
+            item.color = self.getValue(value, 4)
+
+
+    def getEditChannel(self, ob, key):
         nodeType, slot, useAttr, factorAttr, ncomps, fromType = getTweakableChannel(key)
         mat = ob.active_material
-        if mat.use_nodes:
-            return self.getChannelCycles(mat, nodeType, slot, ncomps, fromType)
-        else:
+        if not mat.use_nodes:
             return None,0
-
-
-    def getChannelCycles(self, mat, nodeType, slot, ncomps, fromType):
         for node in mat.node_tree.nodes.values():
             if (self.matchingNode(node, nodeType, mat, fromType) and
                 slot in node.inputs.keys()):
@@ -495,41 +510,59 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
         description = "Affect all materials of all selected meshes",
         default = False)
 
+    useChangedOnly : BoolProperty(
+        name = "Only Modified Channels",
+        description = "Only update channels that have been modified by the material editor",
+        default = True)
+
     def draw(self, context):
-        self.layout.prop(self, "useAllMaterials")
+        row = self.layout.row()
+        row.prop(self, "useAllMaterials")
+        row.prop(self, "useChangedOnly")
         if not self.useAllMaterials:
             MaterialSelector.draw(self, context)
         ob = context.object
         self.layout.label(text="Active Material: %s" % ob.active_material.name)
         self.layout.separator()
-        showing = False
-        section = ""
+        group = None
+        items = []
         for key in TweakableChannels.keys():
             if TweakableChannels[key] is None:
-                section = key
-                nchars = len(section)
-                if self.shows[key].show:
-                    self.layout.prop(self.shows[key], "show", icon="DOWNARROW_HLT", emboss=False, text=key)
-                else:
-                    self.layout.prop(self.shows[key], "show", icon="RIGHTARROW", emboss=False, text=key)
-                showing = self.shows[key].show
-            elif showing and key in ob.DazSlots.keys():
-                item = ob.DazSlots[key]
-                row = self.layout.row()
-                if key[0:nchars] == section:
-                    text = item.name[nchars+1:]
-                else:
-                    text = item.name
-                row.label(text=text)
-                if item.ncomps == 4:
-                    row.prop(item, "color", text="")
-                elif item.ncomps == 1:
-                    row.prop(item, "number", text="")
-                elif item.ncomps == 3:
-                    row.prop(item, "vector", text="")
-                else:
-                    print("WAHT")
+                if group:
+                    self.drawGroup(group)
+                items = []
+                group = (key, items)
+            elif key in self.matSlots.keys():
+                items.append( (key, self.matSlots[key]) )
+        if group:
+            self.drawGroup(group)
         self.layout.operator("daz.update_materials")
+
+
+    def drawGroup(self, group):
+        section,items = group
+        if not items:
+            return
+        elif not self.shows[section].show:
+            self.layout.prop(self.shows[section], "show", icon="RIGHTARROW", emboss=False, text=section)
+            return
+        self.layout.prop(self.shows[section], "show", icon="DOWNARROW_HLT", emboss=False, text=section)
+        nchars = len(section)
+        for key,item in items:
+            row = self.layout.row()
+            if key[0:nchars] == section:
+                text = item.name[nchars+1:]
+            else:
+                text = item.name
+            row.label(text=text)
+            if item.ncomps == 4:
+                row.prop(item, "color", text="")
+            elif item.ncomps == 1:
+                row.prop(item, "number", text="")
+            elif item.ncomps == 3:
+                row.prop(item, "vector", text="")
+            else:
+                print("WAHT")
 
 
     def invoke(self, context, event):
@@ -556,11 +589,11 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
     def run(self, context):
         ob = context.object
         for ob1 in getSelectedMeshes(context):
-            for item in ob.DazSlots:
-                self.setChannel(ob1, item)
+            for item in self.matSlots:
+                self.setEditChannel(ob1, item)
 
 
-    def setChannel(self, ob, item):
+    def setEditChannel(self, ob, item):
         for mat in ob.data.materials:
             if mat and self.useMaterial(mat):
                 self.setChannelCycles(mat, item)
@@ -1120,7 +1153,7 @@ def register():
         default = "")
 
     bpy.types.Material.DazSlots = CollectionProperty(type = EditSlotGroup)
-    bpy.types.Object.DazSlots = CollectionProperty(type = EditSlotGroup)
+    #bpy.types.Object.DazSlots = CollectionProperty(type = EditSlotGroup)
     bpy.types.Scene.DazFloats = CollectionProperty(type = DazFloatGroup)
 
 
