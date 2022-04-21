@@ -2504,6 +2504,15 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
     bl_description = "Load Moho (.dat) file"
     bl_options = {'UNDO'}
 
+    phonemeSet : EnumProperty(
+        items = [("Preston-Blair", "Preston-Blair", "Preston-Blair"),
+                 ("Fleming-Dobbs", "Fleming-Dobbs",  "Fleming-Dobbs"),
+                 ("Rhubarb", "Rhubarb", "Rhubarb"),
+                 ("CMU_39", "CMU_39", "CMU_39")],
+        name = "Phoneme Set",
+        description = "Phoneme Set",
+        default = "Preston-Blair")
+
     emphasis: FloatProperty(
         name = "Emphasis",
         description = "Speech strength",
@@ -2521,6 +2530,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "phonemeSet")
         self.layout.prop(self, "useRelax")
         if self.useRelax:
             self.layout.prop(self, "emphasis")
@@ -2547,11 +2557,95 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
     openVowels = ["AI", "E", "O"]
     silentVowels = ["FV", "MBP", "WQ"]
 
+    phonemeConverters = {
+        "Preston-Blair" : {
+            "AI": "AA",
+            "E": "EH",
+            "etc": "K",
+            "FV": "F",
+            "L": "L",
+            "MBP": "M",
+            "O": "OW",
+            "rest": "Rest",
+            "U": "UW",
+            "WQ": "W"
+        },
+        "Fleming-Dobbs" : {
+            "AA": "AA",
+            "EHSZ": "W",
+            "FV": "F",
+            "GK": "W",
+            "IY": "OW",
+            "MBP": "K",
+            "NLTDR": "EH",
+            "O": "Rest",
+            "rest": "L",
+            "SH": "F",
+            "TH": "EH"
+        },
+        "Rhubarb" : {
+            "A": "K",
+            "B": "OW",
+            "C": "W",
+            "D": "AA",
+            "E": "W",
+            "F": "Rest",
+            "G": "F",
+            "H": "EH",
+            "rest": "L"
+        },
+        "CMU_39" : {
+            "AA": "AA",
+            "AE": "AA",
+            "AH": "EH",
+            "AO": "OW",
+            "AW": "M",
+            "AY": "AA",
+            "B": "K",
+            "CH": "F",
+            "D": "W",
+            "DH": "EH",
+            "EH": "W",
+            "ER": "M",
+            "EY": "W",
+            "F": "F",
+            "G": "W",
+            "H": "W",
+            "HH": "W",
+            "IH": "W",
+            "IY": "W",
+            "JH": "M",
+            "K": "W",
+            "L": "EH",
+            "M": "K",
+            "N": "K",
+            "NG": "W",
+            "OW": "Rest",
+            "OY": "Rest",
+            "P": "K",
+            "R": "EH",
+            "rest": "L",
+            "S": "F",
+            "SH": "W",
+            "T": "AA",
+            "TH": "W",
+            "UH": "UW",
+            "UW": "UW",
+            "V": "F",
+            "W": "M",
+            "Y": "W",
+            "Z": "OW",
+            "ZH": "OW"
+        },
+    }
+
+
     def run(self, context):
         scn = context.scene
         rig = getRigFromObject(context.object)
         if rig is None:
             raise DazError("No armature found")
+        self.phonemes = self.phonemeConverters[self.phonemeSet]
         self.clearAnimation(rig)
         if self.atFrameOne:
             frame0 = 0
@@ -2651,25 +2745,18 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
 
 
     def getMohoKey(self, moho, rig):
-        Moho2Daz = {
-            "rest" : "Rest",
-            "etc" : "K",
-            "AI" : "AA",
-            "O" : "OW",
-            "U" : "UW",
-            "WQ" : "W",
-            "L" : "L",
-            "E" : "EH",
-            "MBP" : "M",
-            "FV" : "F"
-        }
-        daz = Moho2Daz[moho]
-        for item in rig.DazVisemes:
-            if item.text == daz:
-                prop = item.name
-                if prop in rig.keys():
-                    return prop
-        raise DazError("Missing viseme: %s (%s)" % (daz, moho))
+        if moho in self.phonemes.keys():
+            daz = self.phonemes[moho]
+            for item in rig.DazVisemes:
+                if item.text == daz:
+                    prop = item.name
+                    if prop in rig.keys():
+                        return prop
+            msg = "Missing viseme: %s (%s)\n" % (daz, moho)
+        else:
+            msg = ("Missing viseme: %s\n" % moho +
+                   "Choose different phoneme set")
+        raise DazError(msg)
 
 #-------------------------------------------------------------
 #   Convert pose to shapekey
