@@ -950,6 +950,8 @@ class Geometry(Asset, Channels):
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
             ob.DazVisibilityDrivers = True
+        if me.validate():
+            reportError('Invalid mesh "%s". Correcting' % me.name, trigger=(2,5))
 
         guideOb = None
         if guideVerts:
@@ -960,6 +962,8 @@ class Geometry(Asset, Channels):
             self.setHairMatNums(guideMe)
             for mat in me.materials:
                 guideMe.materials.append(mat)
+            if guideMe.validate():
+                reportError('Invalid mesh "%s". Correcting' % guideMe.name, trigger=(2,5))
 
         return ob, guideOb
 
