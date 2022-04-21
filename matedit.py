@@ -249,6 +249,8 @@ TweakableChannels = OrderedDict([
     ("Principled Transmission", ("BSDF_PRINCIPLED", "Transmission", 1)),
     ("Principled Transmission Roughness", ("BSDF_PRINCIPLED", "Transmission Roughness", 1)),
     ("Principled Emission", ("BSDF_PRINCIPLED", "Emission", 4)),
+    ("Principled Emission Strength", ("BSDF_PRINCIPLED", "Emission Strength", 1)),
+    ("Principled Alpha", ("BSDF_PRINCIPLED", "Alpha", 1)),
 
     ("Top Coat", None),
     ("Top Coat Color", ("DAZ Top Coat", "Color", 4)),
@@ -323,10 +325,6 @@ class EditSlotGroup(bpy.types.PropertyGroup):
 
 class ShowGroup(bpy.types.PropertyGroup):
     show : BoolProperty(default = False)
-
-
-class LaunchEditor:
-    shows : CollectionProperty(type = ShowGroup)
 
 
 def printItem(string, item):
@@ -499,11 +497,13 @@ class ChannelSetter:
 #   Launch button
 # ---------------------------------------------------------------------
 
-class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, LaunchEditor, IsMesh):
+class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, IsMesh):
     bl_idname = "daz.launch_editor"
     bl_label = "Launch Material Editor"
     bl_description = "Edit materials of selected meshes"
     bl_options = {'UNDO'}
+
+    shows : CollectionProperty(type = ShowGroup)
 
     useAllMaterials : BoolProperty(
         name = "All Materials",
@@ -578,8 +578,7 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
                 item.show = False
                 continue
         self.addSlots(context)
-        wm = context.window_manager
-        return wm.invoke_popup(self, width=300)
+        return DazPropsOperator.invoke(self, context, event)
 
 
     def isDefaultActive(self, mat, ob):

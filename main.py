@@ -1154,7 +1154,7 @@ class DAZ_OT_QuoteUnquote(bpy.types.Operator):
         global theQuoter
         theQuoter = self
         wm = context.window_manager
-        return wm.invoke_popup(self, width=800)
+        return wm.invoke_props_dialog(self, width=800)
 
 #----------------------------------------------------------
 #   Initialize
