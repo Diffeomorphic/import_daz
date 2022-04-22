@@ -421,6 +421,7 @@ class LocalSettings:
         self.hdUvMissing = []
         self.partialMaterials = []
         self.legacySkin = []
+        self.invalidMeshes = []
         self.deflectors = {}
         self.materials = {}
         self.images = {}

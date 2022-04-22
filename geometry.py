@@ -202,6 +202,7 @@ class GeoNode(Node, SimNode):
             f.material_index = mnums[f.index]
             f.use_smooth = True
         self.data.setHairType(me)
+        self.data.validateMesh(me)
         return me
 
 
@@ -950,8 +951,7 @@ class Geometry(Asset, Channels):
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
             ob.DazVisibilityDrivers = True
-        if me.validate():
-            reportError('Invalid mesh "%s". Correcting' % me.name, trigger=(2,5))
+        self.validateMesh(me)
 
         guideOb = None
         if guideVerts:
@@ -962,8 +962,7 @@ class Geometry(Asset, Channels):
             self.setHairMatNums(guideMe)
             for mat in me.materials:
                 guideMe.materials.append(mat)
-            if guideMe.validate():
-                reportError('Invalid mesh "%s". Correcting' % guideMe.name, trigger=(2,5))
+            self.validateMesh(guideMe)
 
         return ob, guideOb
 
@@ -1076,6 +1075,12 @@ class Geometry(Asset, Channels):
             if dmat.rna:
                 me.materials.append(dmat.rna)
                 self.dmaterials.append(dmat)
+
+
+    def validateMesh(self, me):
+        if me.validate():
+            reportError('Invalid mesh "%s". Correcting.' % me.name, trigger=(2,5))
+            LS.invalidMeshes.append(me.name)
 
 
     def getBumpArea(self, me, bumps):

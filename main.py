@@ -247,6 +247,10 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             msg = ("Some assets were not found.\n" +
                    "Check that all Daz paths have been set up correctly.        \n" +
                    "For details see\n'%s'" % getErrorPath())
+        elif LS.invalidMeshes:
+            msg = "Invalid meshes found:\n"
+            for mename in LS.invalidMeshes:
+                msg += "  %s\n" % mename
         elif LS.hasInstanceChildren:
             msg = ("The following objects have instance children.\n" +
                    "The result may be incorrect.\n")
