@@ -41,7 +41,7 @@ class FastMatcher:
             raise DazError("Apply object transformations to %s first" % ob.name)
 
 
-    def prepare(self, context, src, triangulate):
+    def prepare(self, context, src):
         mod = getModifier(src, 'ARMATURE')
         if mod:
             rig = mod.object
@@ -59,12 +59,25 @@ class FastMatcher:
                 skey.value = 0
 
         ob = self.trihuman = None
-        if triangulate:
+        if (self.transferMethod in ['NEAREST', 'SELECTED']):
             ob = bpy.data.objects.new("_TRIHUMAN", src.data.copy())
             context.scene.collection.objects.link(ob)
             activateObject(context, ob)
             setMode('EDIT')
             bpy.ops.mesh.reveal()
+            if self.transferMethod == 'SELECTED':
+                from .tables import getVertFaces
+                _,vertFaces = getVertFaces(ob)
+                bpy.ops.mesh.select_all(action='DESELECT')
+                setMode('OBJECT')
+                for v in src.data.vertices:
+                    if v.select:
+                        ob.data.vertices[v.index].select = True
+                        for fn in vertFaces[v.index]:
+                            ob.data.polygons[fn].select = True
+                setMode('EDIT')
+                bpy.ops.mesh.select_all(action='INVERT')
+                bpy.ops.mesh.delete(type='VERT')
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
             setMode('OBJECT')
@@ -203,6 +216,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
     transferMethod : EnumProperty(
         items = [('NEAREST', "Nearest Face", "Transfer morphs from nearest source face.\nUse to transfer shapekeys to clothes"),
+                 ('SELECTED', "Selected", "One transfer morphs from selected vertices"),
                  ('BODY', "Body", "Only transfer vertices as long as they match exactly.\nUse to transfer shapekeys from body to merged mesh"),
                  ('GEOGRAFT', "Geograft", "Transfer morphs to nearest target vertex.\nUse to transfer shapekeys from geograft to merged mesh"),
                  ('LEGACY', "Legacy", "Transfer using Blender's data transfer modifier.\nVery slow but works in general")],
@@ -263,7 +277,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         if not self.useDrivers:
             self.useStrength = False
         targets = self.getTargets(src, context)
-        data = self.prepare(context, src, (self.transferMethod == 'NEAREST'))
+        data = self.prepare(context, src)
         self.createTmp()
         try:
             failed = self.transferAllMorphs(context, src, targets)
@@ -281,7 +295,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def transferAllMorphs(self, context, src, targets):
-        if self.transferMethod == 'NEAREST':
+        if self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findTriangles(self.trihuman)
         failed = []
         for trg in targets:
@@ -559,7 +573,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             return True
         elif self.transferMethod == 'BODY':
             self.findMatchExact(src, trg)
-        elif self.transferMethod == 'NEAREST':
+        elif self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findMatchNearest(self.trihuman, trg)
         elif self.transferMethod == 'GEOGRAFT':
             self.findMatchGeograft(src, trg)
@@ -573,7 +587,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             return self.autoTransferSlow(src, trg, hskey)
         elif self.transferMethod == 'BODY':
             return self.autoTransferExact(src, trg, hskey)
-        elif self.transferMethod == 'NEAREST':
+        elif self.transferMethod in ['NEAREST', 'SELECTED']:
             return self.autoTransferFace(src, trg, hskey)
         elif self.transferMethod == 'GEOGRAFT':
             return self.autoTransferExact(src, trg, hskey)
@@ -694,8 +708,13 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def autoTransferFace(self, src, trg, hskey):
+        if self.transferMethod == 'SELECTED':
+            src = self.trihuman
+            tskey = src.data.shape_keys.key_blocks[hskey.name]
+        else:
+            tskey = hskey
         cskey = trg.shape_key_add(name=hskey.name)
-        hcos = np.array([list(data.co) for data in hskey.data])
+        hcos = np.array([list(data.co) for data in tskey.data])
         tris, w, offsets = self.match
         tcos = hcos[tris]
         ccos = np.sum(tcos * w[:,:,None], axis=1) + offsets
