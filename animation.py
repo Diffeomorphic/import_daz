@@ -1207,6 +1207,26 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
     firstFrame = -1000
     lastFrame = 1000
 
+    usePreviewImages : BoolProperty(
+        name = "Import Previews",
+        description = "Import preview images for imported poses",
+        default = False)
+
+    assetTags : StringProperty(
+        name = "Tags",
+        description = "List of tags to add to the imported Poses",
+        default = "")
+
+    assetAuthor : StringProperty(
+        name = "Author",
+        description = "Name of the Author",
+        default = "")
+
+    assetDescription : StringProperty(
+        name = "Description",
+        description = "Description to add to all Poses",
+        default = "")
+
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
@@ -1215,6 +1235,10 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
             self.layout.prop(self, "poseLibName")
         if bpy.app.version >= (3,0,0):
             self.layout.prop(self, "useAssetBrowser")
+            self.layout.prop(self, "usePreviewImages")
+            self.layout.prop(self, "assetTags")
+            self.layout.prop(self, "assetAuthor")
+            self.layout.prop(self, "assetDescription")
 
 
     def clearAnimation(self, ob):
@@ -1239,9 +1263,22 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
         if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
             bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
             act = rig.animation_data.action
-            act.asset_generate_preview()
-            #name = rig.animation_data.action.name
-            #bpy.data.actions[name].asset_generate_preview()
+            if self.usePreviewImages:
+                previewFile = self.getPreviewFile(filepath, name)
+                if previewFile:
+                    bpy.ops.ed.lib_id_load_custom_preview({"id": act}, filepath=previewFile)
+                else:
+                    act.asset_generate_preview()
+            else:
+                act.asset_generate_preview()
+            if self.assetTags:
+                tagList=self.assetTags.split(",")
+                for newTag in tagList:
+                    act.id_data.asset_data.tags.new(newTag)
+            if self.assetAuthor:
+                act.id_data.asset_data.author=self.assetAuthor
+            if self.assetDescription:
+                act.id_data.asset_data.description=self.assetDescription
         else:
             if rig.pose_library:
                 pmarkers = rig.pose_library.pose_markers
@@ -1254,8 +1291,14 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
             bpy.ops.poselib.pose_add(frame=frame)
             pmarker = rig.pose_library.pose_markers.active
             pmarker.name = name
-            #for pmarker in rig.pose_library.pose_markers:
-            #    print("  ", pmarker.name, pmarker.frame)
+
+
+    def getPreviewFile(self, filepath, name):
+        basename3,ext3 = os.path.splitext(filepath)
+        for path in ["%s.tip.png" % basename3, "%s.png" % filepath, "%s.png" % basename3]:
+            if os.path.exists(path):
+                return path
+        print("No preview file found for %s" % name)
 
 
 class DAZ_OT_ImportPoseLib(HideOperator, PoselibBase, StandardAnimation):
