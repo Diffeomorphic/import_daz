@@ -83,14 +83,10 @@ class DAZ_PT_SetupMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.save_local_textures")
         self.layout.operator("daz.resize_textures")
         self.layout.operator("daz.change_resolution")
-
         self.layout.separator()
         self.layout.operator("daz.change_colors")
         self.layout.operator("daz.change_skin_color")
         self.layout.operator("daz.merge_materials")
-        self.layout.operator("daz.copy_materials")
-        self.layout.operator("daz.prune_node_trees")
-
         self.layout.separator()
         self.layout.operator("daz.launch_editor")
         self.layout.operator("daz.reset_material")
@@ -237,6 +233,10 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
+        self.layout.operator("daz.prune_node_trees")
+        self.layout.separator()
+        self.layout.operator("daz.make_material_set")
+        self.layout.operator("daz.copy_materials")
         self.layout.separator()
         self.layout.operator("daz.load_uv")
         self.layout.operator("daz.prune_uv_maps")

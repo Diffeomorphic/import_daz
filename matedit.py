@@ -1116,6 +1116,27 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
             (ob.parent, ob.parent_type, ob.parent_bone) = self.parents[ob.name]
             setWorldMatrix(ob, wmat)
 
+#-------------------------------------------------------------
+#   Make Material set
+#-------------------------------------------------------------
+
+class DAZ_OT_MakeMaterialSet(DazOperator, IsMesh):
+    bl_idname = "daz.make_material_set"
+    bl_label = "Make Material Set"
+    bl_description = "Create a palette for use with the asset browser"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        ob = context.object
+        nmat = len(ob.data.materials)
+        bpy.ops.mesh.primitive_cone_add(vertices=nmat, radius1=1, depth=0.2, end_fill_type='NOTHING')
+        cone = context.object
+        cone.name = "%s Palette" % ob.name
+        for mat,f in zip(ob.data.materials, cone.data.polygons):
+            cone.data.materials.append(mat)
+            f.material_index = f.index
+        bpy.ops.asset.mark()
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1136,6 +1157,7 @@ classes = [
     DAZ_OT_RemoveShells,
     DAZ_OT_ReplaceShells,
     DAZ_OT_ChangeUnitScale,
+    DAZ_OT_MakeMaterialSet,
 ]
 
 def register():
