@@ -488,7 +488,7 @@ class OneSidedGroup(CyclesGroup):
         self.links.new(trans.outputs[0], mix1.inputs[2])
         self.links.new(trans.outputs[0], mix2.inputs[2])
         self.links.new(mix1.outputs[0], self.outputs.inputs["Cycles"])
-        self.links.new(mix1.outputs[0], self.outputs.inputs["Eevee"])
+        self.links.new(mix2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
 #   Diffuse Group

@@ -1531,20 +1531,22 @@ class CyclesTree(Tree):
         self.column += 1
         output = self.addNode("ShaderNodeOutputMaterial")
         output.target = 'ALL'
+        cycles = self.getCyclesSocket()
+        eevee = self.getEeveeSocket()
         if self.cycles:
-            self.links.new(self.getCyclesSocket(), output.inputs["Surface"])
+            self.links.new(cycles, output.inputs["Surface"])
         if self.volume and not self.useCutout:
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
-        if self.volume or self.eevee:
+        if self.volume or (self.eevee and eevee != cycles):
             output.target = 'CYCLES'
             outputEevee = self.addNode("ShaderNodeOutputMaterial")
             outputEevee.target = 'EEVEE'
             if self.eevee:
-                self.links.new(self.getEeveeSocket(), outputEevee.inputs["Surface"])
+                self.links.new(eevee, outputEevee.inputs["Surface"])
             elif self.cycles:
-                self.links.new(self.getCyclesSocket(), outputEevee.inputs["Surface"])
+                self.links.new(cycles, outputEevee.inputs["Surface"])
             if self.displacement:
                 self.links.new(self.displacement, outputEevee.inputs["Displacement"])
 
