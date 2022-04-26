@@ -1041,7 +1041,8 @@ class Rigify:
             if ob.type == 'MESH':
                 ob.parent = gen
 
-                for dname,rname,_pname in spineBones:
+                xspineBones = [("pelvis", "spine", None)] + spineBones
+                for dname,rname,_pname in xspineBones:
                     if dname in ob.vertex_groups.keys():
                         vgrp = ob.vertex_groups[dname]
                         vgrp.name = "DEF-" + rname
