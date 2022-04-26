@@ -1129,12 +1129,18 @@ class DAZ_OT_MakeMaterialSet(DazOperator, IsMesh):
     def run(self, context):
         ob = context.object
         nmat = len(ob.data.materials)
-        bpy.ops.mesh.primitive_cone_add(vertices=nmat, radius1=1, depth=0.2, end_fill_type='NOTHING')
+        bpy.ops.mesh.primitive_cone_add(vertices=nmat, radius1=0.5, depth=0.1, end_fill_type='NOTHING')
         cone = context.object
         cone.name = "%s Palette" % ob.name
         for mat,f in zip(ob.data.materials, cone.data.polygons):
             cone.data.materials.append(mat)
             f.material_index = f.index
+        bpy.ops.file.make_paths_absolute()
+        bpy.ops.object.make_single_user(object=False, obdata=False, material=True, animation=False, obdata_animation=False)
+        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=False)
+        for mat in cone.data.materials:
+            if len(mat.name) > 4 and mat.name[-4] == "." and mat.name[-3:].isdigit():
+                mat.name = mat.name[:-4]
         bpy.ops.asset.mark()
 
 #----------------------------------------------------------
