@@ -213,7 +213,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         # If cob is itself a geograft, store locations
         if cob.data.DazGraftGroup:
             verts = cob.data.vertices
-            locations = dict([(pair.a, verts[pair.a].co.copy()) for pair in cob.data.DazGraftGroup])
+            self.locations = dict([(pair.a, verts[pair.a].co.copy()) for pair in cob.data.DazGraftGroup])
 
         # Delete the masked verts
         self.deleteSelectedVerts()
@@ -309,7 +309,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         # Update cob graft group
         if cob.data.DazGraftGroup and selected:
             for pair in cob.data.DazGraftGroup:
-                x = locations[pair.a]
+                x = self.locations[pair.a]
                 dists = [((x-y).length, vn) for vn,y in selected.items()]
                 dists.sort()
                 pair.a = dists[0][1]
@@ -348,6 +348,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             for vn in verts:
                 vgrp.add([vn], 1, 'REPLACE')
 
+        if cob.data.DazGraftGroup:
+            raise DazError("Geometry nodes not implemented for recursive geografts.")
         from .geonodes import makeGeograftGroup
         addVertexGroup(cob, "Geograft Mask", self.vdeleted)
         addVertexGroup(cob, "Geograft Edge", self.cedge)
