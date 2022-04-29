@@ -487,20 +487,15 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             if "Rigidity" in ob.vertex_groups.keys():
                 rigidity_map_vertex_group_index = ob.vertex_groups["Rigidity"].index
                 for n,vn in enumerate(maskverts): # Called Rigidity Participant Vertex in Daz3D
-                    if n%50 == 0:
-                        sys.stdout.write(".")
-                        sys.stdout.flush()
-                    for v in ob.data.vertices:
-                        if(v.index == vn):
-                            for g in v.groups:
-                                if g.group == rigidity_map_vertex_group_index:
-                                    # Max Rigidity (Rigidity=1) coordinate
-                                    max_rigidity_coordinate = (smat @ (ob.data.vertices[vn].co - base_center_vector)) + shapekey_center_vector
-                                    # Min Rigidity (Rigidity=0) coordinate
-                                    min_rididity_coordinate = skey.data[vn].co
-                                    # Mix both coordinate using Rigidity Weight Map
-                                    skey.data[vn].co = (max_rigidity_coordinate * g.weight) + ((1-g.weight)*min_rididity_coordinate)
-                print("")
+                    v = ob.data.vertices[vn]
+                    for g in v.groups:
+                       if g.group == rigidity_map_vertex_group_index:
+                            # Max Rigidity (Rigidity=1) coordinate
+                            max_rigidity_coordinate = (smat @ (ob.data.vertices[vn].co - base_center_vector)) + shapekey_center_vector
+                            # Min Rigidity (Rigidity=0) coordinate
+                            min_rididity_coordinate = skey.data[vn].co
+                            # Mix both coordinate using Rigidity Weight Map
+                            skey.data[vn].co = (max_rigidity_coordinate * g.weight) + ((1-g.weight)*min_rididity_coordinate)
                 # Save DazRigidityScaleFactor to Armature
                 parent = ob.parent
                 rig = None
@@ -548,6 +543,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                     shapekey_scalefactor.shapekey_center_coord = shapekey_center_vector
                     shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
                     #print("Save scale factor for"," ".join(affectedbones))
+
 
     def ignoreMorph(self, src, trg, hskey):
         eps = 0.01 * src.DazScale   # 0.1 mm
