@@ -82,6 +82,7 @@ class GlobalSettings:
         self.useLowerResFolders = True
         self.materialsByIndex = False
         self.imageInterpolation = 'Cubic'
+        self.useGhostLight = False
 
         self.useStrengthAdjusters = False
         self.customMin = -1.0
@@ -152,6 +153,7 @@ class GlobalSettings:
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
         "DazUseVolume" : "useVolume",
+        "DazGhostLights" : "useGhostLight",
         "DazImageInterpolation" : "imageInterpolation",
 
         # Properties

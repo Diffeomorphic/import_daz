@@ -241,6 +241,7 @@ class CyclesTree(Tree):
         self.texcos = {}
         self.displacement = None
         self.volume = None
+        self.emit = None
         self.clipsocket = None
         self.useCutout = False
         self.useTranslucency = False
@@ -1384,6 +1385,13 @@ class CyclesTree(Tree):
             if alpha < 1 or tex:
                 self.owner.setTransSettings(False, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
+            if self.emit and GS.useGhostLight:
+                from .cgroup import GhostLightGroup
+                ghost = self.addGroup(GhostLightGroup, "DAZ Ghost Light")
+                self.links.new(self.emit.outputs[0], ghost.inputs["Emission"])
+                self.links.new(node.outputs[0], ghost.inputs["Transparent"])
+                self.cycles = ghost
+
 
     #-------------------------------------------------------------
     #   Emission
@@ -1402,7 +1410,7 @@ class CyclesTree(Tree):
             emit.inputs["Strength"].default_value = strength
             self.linkCycles(emit, "Cycles")
             self.linkEevee(emit, "Eevee")
-            self.cycles = self.eevee = emit
+            self.cycles = self.eevee = self.emit = emit
             self.addOneSided()
 
 

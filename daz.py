@@ -272,6 +272,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.separator()
         box.prop(scn, "DazUseDisplacement")
         box.prop(scn, "DazUseEmission")
+        box.prop(scn, "DazGhostLights")
         box.prop(scn, "DazUseReflection")
         box.prop(scn, "DazUseVolume")
 
@@ -637,7 +638,11 @@ def register():
 
     bpy.types.Scene.DazUseEmission = BoolProperty(
         name = "Emission",
-        description = "Use emission.")
+        description = "Use emission")
+
+    bpy.types.Scene.DazGhostLights = BoolProperty(
+        name = "Ghost Lights",
+        description = "Mimics the iray ghost light bug, that is fixed in DS 4.20.\nDo not use to mimic DS 4.20")
 
     bpy.types.Scene.DazUseReflection = BoolProperty(
         name = "Reflection",

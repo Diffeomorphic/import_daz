@@ -941,6 +941,44 @@ class MakeupGroup(FacMixGroup):
         self.links.new(diffuse.outputs[0], self.mix2.inputs[2])
 
 # ---------------------------------------------------------------------
+#   Ghost Light Group
+# ---------------------------------------------------------------------
+
+class GhostLightGroup(CyclesGroup):
+
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Emission", "Transparent"]
+        self.outsockets += ["Shader"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 4)
+        self.group.inputs.new("NodeSocketShader", "Emission")
+        self.group.inputs.new("NodeSocketShader", "Transparent")
+        self.group.outputs.new("NodeSocketShader", "Shader")
+
+
+    def addNodes(self, args=None):
+        lpath = self.addNode("ShaderNodeLightPath", 1)
+
+        max1 = self.addNode("ShaderNodeMath", 2)
+        max1.operation = 'MAXIMUM'
+        self.links.new(lpath.outputs["Is Camera Ray"], max1.inputs[0])
+        self.links.new(lpath.outputs["Is Shadow Ray"], max1.inputs[1])
+
+        max2 = self.addNode("ShaderNodeMath", 2)
+        max2.operation = 'MAXIMUM'
+        self.links.new(max1.outputs[0], max2.inputs[0])
+        self.links.new(lpath.outputs["Is Reflection Ray"], max2.inputs[1])
+
+        mix = self.addNode("ShaderNodeMixShader", 3)
+        self.links.new(max2.outputs[0], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Emission"], mix.inputs[1])
+        self.links.new(self.inputs.outputs["Transparent"], mix.inputs[2])
+        self.links.new(mix.outputs[0], self.outputs.inputs["Shader"])
+
+# ---------------------------------------------------------------------
 #   Ray Clip Group
 # ---------------------------------------------------------------------
 
