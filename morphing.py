@@ -1831,8 +1831,24 @@ class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
         description = "Set all selected morphs to this value",
         default = 1.0)
 
+    useKeys : BoolProperty(
+        name = "Set Keys",
+        description = "Set keyframes even if auto keying is off",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "value")
+        self.layout.prop(self, "useKeys")
+
+    def storeState(self, context):
+        if self.useKeys:
+            scn = context.scene
+            self.useAuto = scn.tool_settings.use_keyframe_insert_auto
+            scn.tool_settings.use_keyframe_insert_auto = True
+
+    def restoreState(self, context):
+        if self.useKeys:
+            context.scene.tool_settings.use_keyframe_insert_auto = self.useAuto
 
     def run(self, context):
         rig = getRigFromObject(context.object)
