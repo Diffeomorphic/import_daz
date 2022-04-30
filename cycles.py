@@ -225,6 +225,7 @@ class CyclesTree(Tree):
         self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
         self.eevee = None
+        self.useEeveeBsdf = False
         self.column = 4
         self.texnodes = {}
         self.layeredGroups = {}
@@ -277,7 +278,7 @@ class CyclesTree(Tree):
 
 
     def getEeveeSocket(self, node=None):
-        if not GS.useEeveeBsdf:
+        if not self.useEeveeBsdf:
             return None
         elif node is None:
             node = self.eevee
@@ -295,7 +296,7 @@ class CyclesTree(Tree):
 
 
     def linkEevee(self, node, slot):
-        if self.eevee and GS.useEeveeBsdf:
+        if self.eevee and self.useEeveeBsdf:
             self.links.new(self.getEeveeSocket(), node.inputs[slot])
 
 
@@ -528,7 +529,7 @@ class CyclesTree(Tree):
     def linkToOutputs(self, cycles, eevee):
         if self.cycles:
             self.links.new(self.getCyclesSocket(), cycles)
-        if self.eevee and GS.useEeveeBsdf:
+        if self.eevee and self.useEeveeBsdf:
             self.links.new(self.getEeveeSocket(), eevee)
 
 
@@ -1201,6 +1202,7 @@ class CyclesTree(Tree):
             fac = 0.5 + fac/2
             if factex and factex.type == 'MATH':
                 factex.inputs[0].default_value = fac
+        self.useEeveeBsdf = GS.useEeveeBsdf
         self.mixWithActive(fac, factex, node)
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
@@ -1554,7 +1556,7 @@ class CyclesTree(Tree):
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
-        if (GS.useEeveeBsdf and
+        if (self.useEeveeBsdf and
             (self.volume or (self.eevee and eevee != cycles))):
             output.target = 'CYCLES'
             outputEevee = self.addNode("ShaderNodeOutputMaterial")
@@ -1754,7 +1756,7 @@ class CyclesTree(Tree):
             self.cycles = shader
             self.eevee = shader
             return
-        if GS.useEeveeBsdf and self.eevee:
+        if self.useEeveeBsdf and self.eevee:
             self.links.new(self.getEeveeSocket(), shader.inputs["Eevee"])
             shader.inputs["Fac"].default_value = fac
         self.eevee = shader
