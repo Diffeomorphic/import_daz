@@ -77,7 +77,7 @@ class Light(Node):
             self.info = struct["directional"]
         else:
             self.presentation = struct["presentation"]
-            print("Strange lamp", self)
+            print("Strange light", self)
 
 
     def makeInstance(self, fileref, struct):
@@ -93,50 +93,46 @@ class Light(Node):
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
         if lgeo == 1:
-            lamp = bpy.data.lights.new(self.name, "AREA")
-            lamp.shape = 'RECTANGLE'
-            lamp.size = width
-            lamp.size_y = height
+            light = bpy.data.lights.new(self.name, "AREA")
+            light.shape = 'RECTANGLE'
+            light.size = width
+            light.size_y = height
         elif lgeo == 2:
-            lamp = bpy.data.lights.new(self.name, "AREA")
-            lamp.shape = 'DISK'
-            lamp.size = height
+            light = bpy.data.lights.new(self.name, "AREA")
+            light.shape = 'DISK'
+            light.size = height
         elif lgeo > 1:
-            lamp = bpy.data.lights.new(self.name, "POINT")
-            lamp.shadow_soft_size = height/2
+            light = bpy.data.lights.new(self.name, "POINT")
+            light.shadow_soft_size = height/2
             self.twosided = False
         elif self.type == 'POINT':
-            lamp = bpy.data.lights.new(self.name, "POINT")
-            lamp.shadow_soft_size = 0
+            light = bpy.data.lights.new(self.name, "POINT")
+            light.shadow_soft_size = 0
             inst.fluxFactor = 3
             self.twosided = False
         elif self.type == 'SPOT':
-            lamp = bpy.data.lights.new(self.name, "SPOT")
-            lamp.shadow_soft_size = height/2
+            light = bpy.data.lights.new(self.name, "SPOT")
+            light.shadow_soft_size = height/2
             self.twosided = False
         elif self.type == 'DIRECTIONAL':
-            lamp = bpy.data.lights.new(self.name, "SUN")
-            lamp.shadow_soft_size = height/2
+            light = bpy.data.lights.new(self.name, "SUN")
+            light.shadow_soft_size = height/2
             self.twosided = False
         elif self.type == 'light':
-            lamp = bpy.data.lights.new(self.name, "AREA")
+            light = bpy.data.lights.new(self.name, "AREA")
         else:
             msg = ("Unknown light type: %s" % self.type)
             reportError(msg, trigger=(1,3))
-            lamp = bpy.data.lights.new(self.name, "SPOT")
-            lamp.shadow_soft_size = height/2
+            light = bpy.data.lights.new(self.name, "SPOT")
+            light.shadow_soft_size = height/2
             self.twosided = False
 
-        self.setCyclesProps(lamp)
-        self.data = lamp
+        for attr,op,value in getMinLightSettings():
+            if hasattr(light, attr):
+                setattr(light, attr, value)
+        self.data = inst.material.rna = light
         Node.build(self, context, inst)
         inst.material.build(context)
-
-
-    def setCyclesProps(self, lamp):
-        for attr,op,value in getMinLightSettings():
-            if hasattr(lamp, attr):
-                setattr(lamp, attr, value)
 
 
     def postTransform(self):
@@ -163,39 +159,38 @@ class Light(Node):
 class LightInstance(Instance):
     def __init__(self, fileref, node, struct):
         Instance.__init__(self, fileref, node, struct)
-        self.material = CyclesLightMaterial(fileref, self)
+        self.material = LightMaterial(fileref, self)
         self.fluxFactor = 1
 
 
     def buildChannels(self, context):
         Instance.buildChannels(self, context)
-        lamp = self.rna.data
+        light = self.rna.data
         if self.getValue(["Cast Shadows"], 0):
-            lamp.cycles.cast_shadow = True
+            light.cycles.cast_shadow = True
         else:
-            lamp.cycles.cast_shadow = False
+            light.cycles.cast_shadow = False
 
-        lamp.color = self.getValue(["Color"], WHITE)
+        light.color = self.getValue(["Color"], WHITE)
         flux = self.getValue(["Flux"], 15000)
-        lamp.energy = flux / 15000
-        lamp.shadow_color = self.getValue(["Shadow Color"], BLACK)
-        if hasattr(lamp, "shadow_buffer_soft"):
-            lamp.shadow_buffer_soft = self.getValue(["Shadow Softness"], False)
-        #if hasattr(lamp, "shadow_buffer_bias"):
+        light.energy = flux / 15000
+        light.shadow_color = self.getValue(["Shadow Color"], BLACK)
+        if hasattr(light, "shadow_buffer_soft"):
+            light.shadow_buffer_soft = self.getValue(["Shadow Softness"], False)
+        #if hasattr(light, "shadow_buffer_bias"):
         #    bias = self.getValue(["Shadow Bias"], None)
         #    if bias:
-        #        lamp.shadow_buffer_bias = bias
-        if hasattr(lamp, "falloff_type"):
+        #        light.shadow_buffer_bias = bias
+        if hasattr(light, "falloff_type"):
             value = self.getValue(["Decay"], 2)
             dtypes = ['CONSTANT', 'INVERSE_LINEAR', 'INVERSE_SQUARE']
-            lamp.falloff_type = dtypes[value]
+            light.falloff_type = dtypes[value]
 
 #-------------------------------------------------------------
 #   Cycles Light Material
 #-------------------------------------------------------------
 
-class CyclesLightMaterial(CyclesMaterial):
-
+class LightMaterial(CyclesMaterial):
     def __init__(self, fileref, inst):
         CyclesMaterial.__init__(self, fileref)
         self.name = inst.name
@@ -206,23 +201,30 @@ class CyclesLightMaterial(CyclesMaterial):
         return
 
     def build(self, context):
-        if not Material.build(self, context):
-            return
+        self.setupBasics()
+        if self.dontBuild():
+            return False
         self.tree = LightTree(self)
         self.tree.build()
 
 
 class LightTree(CyclesTree):
+    def __init__(self, owner):
+        CyclesTree.__init__(self, owner)
+        self.type = 'LIGHT'
+
 
     def build(self):
         self.makeTree()
-        color = self.getValue(["Color"], WHITE)
-        #flux = self.getValue(["Flux"], 15000)
 
-        emit = self.addNode("ShaderNodeEmission", 1)
-        emit.inputs["Color"].default_value[0:3] = color
-        emit.inputs["Strength"].default_value = self.owner.instance.fluxFactor
-        output = self.addNode("ShaderNodeOutputLight", 2)
+        blackbody = self.addNode("ShaderNodeBlackbody", 1)
+        blackbody.inputs["Temperature"].default_value = self.getValue(["Temperature"], 6500)
+
+        emit = self.addNode("ShaderNodeEmission", 2)
+        self.links.new(blackbody.outputs["Color"], emit.inputs["Color"])
+        emit.inputs["Strength"].default_value = self.owner.instance.fluxFactor * self.getValue(["Intensity"], 1.0)
+
+        output = self.addNode("ShaderNodeOutputLight", 3)
         self.links.new(emit.outputs[0], output.inputs["Surface"])
 
 

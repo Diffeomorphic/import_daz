@@ -486,10 +486,10 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 smat[n][n]= target_dimension[n][2]
             if "Rigidity" in ob.vertex_groups.keys():
                 rigidity_map_vertex_group_index = ob.vertex_groups["Rigidity"].index
-                for n,vn in enumerate(maskverts): # Called Rigidity Participant Vertex in Daz3D
+                for vn in maskverts: # Called Rigidity Participant Vertex in Daz3D
                     v = ob.data.vertices[vn]
                     for g in v.groups:
-                       if g.group == rigidity_map_vertex_group_index:
+                        if g.group == rigidity_map_vertex_group_index:
                             # Max Rigidity (Rigidity=1) coordinate
                             max_rigidity_coordinate = (smat @ (ob.data.vertices[vn].co - base_center_vector)) + shapekey_center_vector
                             # Min Rigidity (Rigidity=0) coordinate

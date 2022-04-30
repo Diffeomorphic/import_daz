@@ -1753,21 +1753,38 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
                         self.setupConvBones(pb)
                     else:
                         self.removeConvChildren(pb, list(self.conv.keys()))
+            if rig.DazRig == "mhx":
+                from .mhx import L_CUSTOM
+                customLayer = L_CUSTOM
+            elif rig.DazRig[0:6] == "rigify":
+                from .rigify import R_CUSTOM
+                customLayer = R_CUSTOM
+            else:
+                return
+            for pb in rig.pose.bones:
+                if pb.bone.layers[customLayer]:
+                    bname = self.getDazName(pb)
+                    if bname:
+                        self.conv[pb.name] = [bname]
         else:
             roots = [pb for pb in rig.pose.bones if pb.parent is None]
             for pb in roots:
                 self.setupConvBones(pb)
 
 
-    def setupConvBones(self, pb):
+    def getDazName(self, pb):
         if isDrvBone(pb.name) or isFinal(pb.name):
-            bname = None
+            return None
         elif pb.name[-2:] == ".L":
-            bname = "l%s%s" % (pb.name[0].upper(), pb.name[1:-2])
+            return "l%s%s" % (pb.name[0].upper(), pb.name[1:-2])
         elif pb.name[-2:] == ".R":
-            bname = "r%s%s" % (pb.name[0].upper(), pb.name[1:-2])
+            return "r%s%s" % (pb.name[0].upper(), pb.name[1:-2])
         else:
-            bname = pb.name
+            return pb.name
+
+
+    def setupConvBones(self, pb):
+        bname = self.getDazName(pb)
         if bname:
             self.conv[pb.name] = [bname]
         if bname != "head" or self.useFaceBones:
