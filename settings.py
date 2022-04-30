@@ -73,6 +73,7 @@ class GlobalSettings:
         self.useFakeTranslucencyTexture = False
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
+        self.useEeveeBsdf = True
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
@@ -149,6 +150,7 @@ class GlobalSettings:
         "DazFakeTranslucencyTexture" : "useFakeTranslucencyTexture",
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
+        "DazEeveeBsdf" : "useEeveeBsdf",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",

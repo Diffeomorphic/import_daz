@@ -277,7 +277,9 @@ class CyclesTree(Tree):
 
 
     def getEeveeSocket(self, node=None):
-        if node is None:
+        if not GS.useEeveeBsdf:
+            return None
+        elif node is None:
             node = self.eevee
         if node is None:
             return None
@@ -293,7 +295,7 @@ class CyclesTree(Tree):
 
 
     def linkEevee(self, node, slot):
-        if self.eevee:
+        if self.eevee and GS.useEeveeBsdf:
             self.links.new(self.getEeveeSocket(), node.inputs[slot])
 
 
@@ -526,7 +528,7 @@ class CyclesTree(Tree):
     def linkToOutputs(self, cycles, eevee):
         if self.cycles:
             self.links.new(self.getCyclesSocket(), cycles)
-        if self.eevee:
+        if self.eevee and GS.useEeveeBsdf:
             self.links.new(self.getEeveeSocket(), eevee)
 
 
@@ -1386,12 +1388,17 @@ class CyclesTree(Tree):
                 self.owner.setTransSettings(False, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
             if self.emit and GS.useGhostLight:
-                from .cgroup import GhostLightGroup
-                ghost = self.addGroup(GhostLightGroup, "DAZ Ghost Light")
-                self.links.new(self.emit.outputs[0], ghost.inputs["Emission"])
-                self.links.new(node.outputs[0], ghost.inputs["Transparent"])
-                self.cycles = ghost
+                self.column += 1
+                self.cycles = self.addGhost(node, "Cycles")
+                self.eevee = self.addGhost(node, "Eevee")
 
+
+    def addGhost(self, node, slot):
+        from .cgroup import GhostLightGroup
+        ghost = self.addGroup(GhostLightGroup, "DAZ Ghost Light")
+        self.links.new(self.emit.outputs[slot], ghost.inputs["Emission"])
+        self.links.new(node.outputs[slot], ghost.inputs["Transparent"])
+        return ghost
 
     #-------------------------------------------------------------
     #   Emission
@@ -1547,7 +1554,8 @@ class CyclesTree(Tree):
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
-        if self.volume or (self.eevee and eevee != cycles):
+        if (GS.useEeveeBsdf and
+            (self.volume or (self.eevee and eevee != cycles))):
             output.target = 'CYCLES'
             outputEevee = self.addNode("ShaderNodeOutputMaterial")
             outputEevee.target = 'EEVEE'
@@ -1746,7 +1754,7 @@ class CyclesTree(Tree):
             self.cycles = shader
             self.eevee = shader
             return
-        if self.eevee:
+        if GS.useEeveeBsdf and self.eevee:
             self.links.new(self.getEeveeSocket(), shader.inputs["Eevee"])
             shader.inputs["Fac"].default_value = fac
         self.eevee = shader
