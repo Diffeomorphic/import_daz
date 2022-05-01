@@ -1409,7 +1409,11 @@ class DecalGroup(CyclesGroup):
 
     def addNodes(self, args):
         empty,img,mask,blendType = args
-        mapping = self.addGroup(MappingGroup, empty.name, args=[empty], col=1)
+        if empty:
+            ename = empty.name
+        else:
+            ename = "NONE"
+        mapping = self.addGroup(MappingGroup, ename, args=[empty], col=1)
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img
