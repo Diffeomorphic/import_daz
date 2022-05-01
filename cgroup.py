@@ -75,6 +75,7 @@ class ShellGroup(NodeGroup):
         self.eeveeOpaque = None
         self.pbrOpaque = None
         self.inShell = True
+        self.useEeveeBsdf = True
         self.texco = self.inputs.outputs["UV"]
         self.tileTexco()
         self.buildLayer(uvname)
