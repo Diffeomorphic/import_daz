@@ -1182,6 +1182,7 @@ class CyclesTree(Tree):
             return
 
         from .cgroup import TranslucentGroup
+        self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
         node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
         node.width = 200
         self.linkColor(tex, node, color, "Color")
@@ -1194,7 +1195,8 @@ class CyclesTree(Tree):
         node.inputs["IOR"].default_value = ior
         node.inputs["Anisotropy"].default_value = aniso
         node.inputs["Cycles Mix Factor"].default_value = (not GS.useVolume)
-        node.inputs["Eevee Mix Factor"].default_value = 1.0
+        if self.useEeveeBsdf:
+            node.inputs["Eevee Mix Factor"].default_value = 1.0
         self.linkBumpNormal(node)
 
         fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
@@ -1202,7 +1204,6 @@ class CyclesTree(Tree):
             fac = 0.5 + fac/2
             if factex and factex.type == 'MATH':
                 factex.inputs[0].default_value = fac
-        self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
         self.mixWithActive(fac, factex, node)
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
