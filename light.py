@@ -86,7 +86,6 @@ class Light(Node):
 
     def build(self, context, inst):
         lgeo = inst.getValue(["Light Geometry"], -1)
-        usePhoto = inst.getValue(["Photometric Mode"], False)
         self.twosided = inst.getValue(["Two Sided"], False)
         height = inst.getValue(["Height"], 0) * LS.scale
         width = inst.getValue(["Width"], 0) * LS.scale
@@ -130,9 +129,12 @@ class Light(Node):
         for attr,op,value in getMinLightSettings():
             if hasattr(light, attr):
                 setattr(light, attr, value)
-        self.data = inst.material.rna = light
+        self.data = light
         Node.build(self, context, inst)
-        inst.material.build(context)
+        usePhoto = inst.getValue(["Photometric Mode"], False)
+        if usePhoto:
+            inst.material.rna = light
+            inst.material.build(context)
 
 
     def postTransform(self):
@@ -171,7 +173,9 @@ class LightInstance(Instance):
         else:
             light.cycles.cast_shadow = False
 
-        light.color = self.getValue(["Color"], WHITE)
+        from .material import srgbToLinearCorrect
+        color = self.getValue(["Color"], WHITE)
+        light.color = srgbToLinearCorrect(color)
         flux = self.getValue(["Flux"], 15000)
         light.energy = flux / 15000
         light.shadow_color = self.getValue(["Shadow Color"], BLACK)
