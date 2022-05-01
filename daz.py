@@ -260,7 +260,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
-        box.prop(scn, "DazEeveeBsdf")
+        box.prop(scn, "DazBsdfEevee")
         box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
@@ -512,9 +512,12 @@ def register():
         name = "World",
         description = "When to create a world material")
 
-    bpy.types.Scene.DazEeveeBsdf = BoolProperty(
+    bpy.types.Scene.DazBsdfEevee = EnumProperty(
+        items = [('ALWAYS', "Always", "Always. For debugging"),
+                 ('NEEDED', "Needed", "Only add separate Eevee paths when needed"),
+                 ('NEVER', "Never", "Never add separate Eevee path.\nBSDF materials may work very poorly with Eevee")],
         name = "Eevee BSDF",
-        description = "Create a separate Eevee path for BSDF materials.\nBSDF materials may work very poorly with Eevee if disabled")
+        description = "Create a separate Eevee path for BSDF materials")
 
     bpy.types.Scene.DazReuseMaterials = BoolProperty(
         name = "Reuse Materials",

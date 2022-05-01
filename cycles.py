@@ -225,7 +225,7 @@ class CyclesTree(Tree):
         self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
         self.eevee = None
-        self.useEeveeBsdf = False
+        self.useEeveeBsdf = (GS.bsdfEevee == 'ALWAYS')
         self.column = 4
         self.texnodes = {}
         self.layeredGroups = {}
@@ -1202,7 +1202,7 @@ class CyclesTree(Tree):
             fac = 0.5 + fac/2
             if factex and factex.type == 'MATH':
                 factex.inputs[0].default_value = fac
-        self.useEeveeBsdf = GS.useEeveeBsdf
+        self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
         self.mixWithActive(fac, factex, node)
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
