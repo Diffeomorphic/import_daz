@@ -89,6 +89,7 @@ class Light(Node):
         self.twosided = inst.getValue(["Two Sided"], False)
         height = inst.getValue(["Height"], 0) * LS.scale
         width = inst.getValue(["Width"], 0) * LS.scale
+        usePhoto = inst.getValue(["Photometric Mode"], False)
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
         if lgeo == 1:
@@ -131,7 +132,6 @@ class Light(Node):
                 setattr(light, attr, value)
         self.data = light
         Node.build(self, context, inst)
-        usePhoto = inst.getValue(["Photometric Mode"], False)
         if usePhoto:
             inst.material.rna = light
             inst.material.build(context)
@@ -176,8 +176,12 @@ class LightInstance(Instance):
         from .material import srgbToLinearCorrect
         color = self.getValue(["Color"], WHITE)
         light.color = srgbToLinearCorrect(color)
-        flux = self.getValue(["Flux"], 15000)
-        light.energy = flux / 15000
+        if self.getValue(["Photometric Mode"], False):
+            flux = self.getValue(["Flux"], 15000)
+            light.energy = flux / 15000
+        else:
+            light.energy = self.getValue(["Intensity"], 1.0)
+
         light.shadow_color = self.getValue(["Shadow Color"], BLACK)
         if hasattr(light, "shadow_buffer_soft"):
             light.shadow_buffer_soft = self.getValue(["Shadow Softness"], False)
