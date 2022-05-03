@@ -176,11 +176,7 @@ class LightInstance(Instance):
         from .material import srgbToLinearCorrect
         color = self.getValue(["Color"], WHITE)
         light.color = srgbToLinearCorrect(color)
-        if self.getValue(["Photometric Mode"], False):
-            flux = self.getValue(["Flux"], 15000)
-            light.energy = flux / 15000
-        else:
-            light.energy = self.getValue(["Intensity"], 1.0)
+        light.energy = self.getValue(["Intensity"], 1.0)
 
         light.shadow_color = self.getValue(["Shadow Color"], BLACK)
         if hasattr(light, "shadow_buffer_soft"):
@@ -230,8 +226,9 @@ class LightTree(CyclesTree):
 
         emit = self.addNode("ShaderNodeEmission", 2)
         self.links.new(blackbody.outputs["Color"], emit.inputs["Color"])
-        factor = self.owner.instance.fluxFactor
-        emit.inputs["Strength"].default_value = factor * self.getValue(["Intensity"], 1.0)
+        factor = self.owner.instance.fluxFactor / 15000
+        flux = self.getValue(["Flux"], 15000)
+        emit.inputs["Strength"].default_value = factor * self.getValue(["Flux"], 15000)
 
         output = self.addNode("ShaderNodeOutputLight", 3)
         self.links.new(emit.outputs[0], output.inputs["Surface"])
