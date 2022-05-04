@@ -2919,6 +2919,12 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
     bl_label = "Load Favorite Morphs"
     bl_description = "Load favorite morphs"
 
+    ignoreUrl : BoolProperty(
+        name = "Ignore URL",
+        description = ("Ignore the mesh URL and only use the fingerprint to identify the mesh.\n" +
+                       "Use this to load Genesis 8 morphs to Genesis 8.1 figures and vice versa"),
+        default = False)
+
     ignoreFinger : BoolProperty(
         name = "Ignore Fingerprint",
         description = "Ignore the mesh fingerprint which describes the mesh topology",
@@ -2926,6 +2932,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
 
     def draw(self, context):
         MorphSuffix.draw(self, context)
+        self.layout.prop(self, "ignoreUrl")
         self.layout.prop(self, "ignoreFinger")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useMakePoseable")
@@ -2952,20 +2959,33 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
     def loadPreset(self, ob, rig, struct, context):
         from urllib.parse import quote
         from .finger import getFingerPrint
-        url = quote(ob.DazUrl).lower()
-        lstruct = dict([(key.lower(),value) for key,value in struct.items()])
-        if url not in lstruct.keys():
+        if ob.type != 'MESH':
             return
-        ustruct = lstruct[url]
-        if (ob.type == 'MESH' and
-            "finger_print" in ustruct.keys() and
-            not self.ignoreFinger):
+        if self.ignoreUrl:
+            for ustruct in struct.values():
+                if isinstance(ustruct, dict):
+                    self.loadSinglePreset(ob, rig, ustruct, context)
+        else:
+            url = quote(ob.DazUrl).lower()
+            lstruct = dict([(key.lower(),value) for key,value in struct.items()])
+            if url not in lstruct.keys():
+                return
+            self.loadSinglePreset(ob, rig, lstruct[url], context)
+        if self.useMakePoseable and rig and activateObject(context, rig):
+            print("Make all bones poseable")
+            bpy.ops.daz.make_all_bones_poseable()
+
+
+    def loadSinglePreset(self, ob, rig, ustruct, context):
+        if ("finger_print" in ustruct.keys() and
+            (self.ignoreUrl or not self.ignoreFinger)):
             if ob.data.DazFingerPrint:
                 finger = ob.data.DazFingerPrint
             else:
                 finger = getFingerPrint(ob)
             if finger != ustruct["finger_print"]:
-                print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
+                if not self.ignoreUrl:
+                    print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
         useSuffix = self.onMorphSuffix
         self.onMorphSuffix = 'NONE'
@@ -2981,9 +3001,6 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
                 rig.DazCustomMorphs = True
                 self.adjuster = "Adjust %s" % key
                 self.loadMorphSet(context, key, ustruct, "Custom", key[7:], True)
-        if self.useMakePoseable and rig and activateObject(context, rig):
-            print("Make all bones poseable")
-            bpy.ops.daz.make_all_bones_poseable()
 
 
     def loadMorphSet(self, context, key, ustruct, morphset, cat, hide):
