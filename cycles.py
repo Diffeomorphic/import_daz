@@ -1077,7 +1077,7 @@ class CyclesTree(Tree):
             self.linkScalar(glosstex, node, fac, "Fac")
             if self.diffuseCycles:
                 self.links.new(self.getCyclesSocket(self.diffuseCycles), node.inputs["Diffuse Cycles"])
-            if self.diffuseEevee:
+            if self.diffuseEevee and self.useEeveeBsdf:
                 self.links.new(self.getEeveeSocket(self.diffuseEevee), node.inputs["Diffuse Eevee"])
             self.linkCycles(node, "Glossy Cycles")
             self.linkEevee(node, "Glossy Eevee")
