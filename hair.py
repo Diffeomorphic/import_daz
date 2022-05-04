@@ -78,6 +78,16 @@ class HairOptions:
         description = "Keep (reconstruct) mesh hair after making particle hair"
     )
 
+    usePolylineHair : BoolProperty(
+        name = "Make Polyline Hair",
+        description = "Output the result to a polyline mesh",
+        default = False)
+
+    useSinglePolyline : BoolProperty(
+        name = "Single Polyline",
+        description = "Make a single polyline mesh rather than separate ones for each length",
+        default = True)
+
     removeOldHairs : BoolProperty(
         name = "Remove Particle Hair",
         default = False,
@@ -390,6 +400,21 @@ class HairSystem:
         cset.mass = 0.05
         deflector = findDeflector(hum)
 
+
+    def buildMesh(self, context, hair):
+        verts = []
+        edges = []
+        m = 0
+        for strand in self.strands:
+            verts += strand
+            edges += [(m+n, m+n+1) for n in range(len(strand)-1)]
+            m += len(strand)
+        me = bpy.data.meshes.new("Mesh Hair")
+        me.from_pydata(verts, edges, [])
+        ob = bpy.data.objects.new("Mesh Hair", me)
+        scn = context.scene
+        scn.collection.objects.link(ob)
+
 #-------------------------------------------------------------
 #   Tesselator class
 #-------------------------------------------------------------
@@ -554,6 +579,9 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             box.prop(self, "strandOrientation")
             box.prop(self, "useSeparateLoose")
         box.prop(self, "keepMesh")
+        box.prop(self, "usePolylineHair")
+        if self.usePolylineHair:
+            box.prop(self, "useSinglePolyline")
         box.prop(self, "removeOldHairs")
         box.separator()
         box.prop(self, "resizeHair")
@@ -698,7 +726,10 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             hsystems = self.hairResize(self.size, hsystems, hum)
         t6 = perf_counter()
         self.clocks.append(("Resize", t6-t5))
-        self.makeHairs(context, hsystems, hum)
+        if self.usePolylineHair:
+            self.makePolylineHair(context, hsystems, hair)
+        else:
+            self.makeParticleHair(context, hsystems, hum)
         t7 = perf_counter()
         self.clocks.append(("Make Hair", t7-t6))
         if self.keepMesh:
@@ -725,13 +756,30 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             print("  %s: %2f s" % (hdr, t))
 
 
-    def makeHairs(self, context, hsystems, hum):
+    def makeParticleHair(self, context, hsystems, hum):
         print("Make particle hair")
         activateObject(context, hum)
         for hsys in hsystems.values():
             hsys.useEmitter = True
             hsys.vertexGroup = None
             hsys.build(context, hum)
+        print("Done")
+
+
+    def makePolylineHair(self, context, hsystems, hair):
+        print("Make polyline hair")
+        if not hsystems:
+            print("No hair system found")
+        elif self.useSinglePolyline:
+            strands = []
+            for hsys in hsystems.values():
+                strands += hsys.strands
+            hsys = list(hsystems.values())[0]
+            hsys.strands = strands
+            hsys.buildMesh(context, hair)
+        else:
+            for hsys in hsystems.values():
+                hsys.buildMesh(context, hair)
         print("Done")
 
 
