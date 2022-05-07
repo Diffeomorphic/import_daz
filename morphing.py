@@ -1167,6 +1167,8 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 #------------------------------------------------------------------------
 
 class MorphTypeOptions:
+    isMhxAware = True
+
     units : BoolProperty(
         name = "Face Units",
         description = "Import all face units",
@@ -1219,7 +1221,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "facs")
         self.layout.prop(self, "facsexpr")
         self.layout.prop(self, "body")
-        if self.body:
+        if self.body and self.isMhxAware:
             self.subprop("useMhxOnly")
         self.layout.prop(self, "jcms")
         self.layout.prop(self, "flexions")
@@ -1491,15 +1493,10 @@ def removeFromAllMorphsets(rig, prop):
         removeFromPropGroup(cat.morphs, prop)
 
 #------------------------------------------------------------------------
-#   Remove category
+#   Remove category or morph type
 #------------------------------------------------------------------------
 
-class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
-    bl_idname = "daz.remove_categories"
-    bl_label = "Remove Categories"
-    bl_description = "Remove selected categories and associated drivers"
-    bl_options = {'UNDO'}
-
+class MorphRemover:
     useDeleteShapekeys : BoolProperty(
         name = "Delete Shapekeys",
         description = "Delete both drivers and shapekeys",
@@ -1521,66 +1518,41 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
         if self.useDeleteDrivers:
             self.layout.prop(self, "useDeleteProps")
 
-    def run(self, context):
-        items = [(item.index, item.name) for item in self.getSelectedItems()]
-        items.sort()
-        items.reverse()
-        ob = context.object
-        if ob.type == 'ARMATURE':
-            self.runRig(context, ob, items)
-        elif ob.type == 'MESH':
-            self.runMesh(context, ob, items)
 
-
-    def runMesh(self, context, ob, items):
-        for idx,key in items:
-            cat = ob.DazMorphCats[key]
-            ob.DazMorphCats.remove(idx)
-        if len(ob.DazMorphCats) == 0:
-            ob.DazMeshMorphs = False
-
-
-    def runRig(self, context, rig, items):
+    def removeRigProp(self, rig, raw):
         amt = rig.data
-        for idx,key in items:
-            cat = rig.DazMorphCats[key]
-            for pg in cat.morphs:
-                raw = pg.name
-                final = finalProp(raw)
-                rest = restProp(raw)
-                if self.useDeleteDrivers:
-                    self.removePropDrivers(rig, raw, rig)
-                    self.removePropDrivers(amt, final, amt)
-                    self.removePropDrivers(amt, rest, amt)
-                for ob in rig.children:
-                    if ob.type == 'MESH':
-                        skeys = ob.data.shape_keys
-                        self.removePropDrivers(skeys, raw, rig)
-                        self.removePropDrivers(skeys, final, amt)
-                        if ob.data.shape_keys:
-                            if raw in skeys.key_blocks.keys():
-                                skey = skeys.key_blocks[raw]
-                                if self.useDeleteShapekeys or self.useDeleteDrivers:
-                                    skey.driver_remove("value")
-                                    skey.driver_remove("slider_min")
-                                    skey.driver_remove("slider_max")
-                                if self.useDeleteShapekeys:
-                                    ob.shape_key_remove(skey)
-                if raw in rig.keys():
-                    self.removeFromPropGroups(rig, raw)
-                if self.useDeleteProps and self.useDeleteDrivers:
-                    if raw in rig.keys():
-                        rig[raw] = 0.0
-                        del rig[raw]
-                    if final in amt.keys():
-                        amt[final] = 0.0
-                        del amt[final]
-                    if rest in amt.keys():
-                        amt[rest] = 0.0
-                        del amt[rest]
-            rig.DazMorphCats.remove(idx)
-        if len(rig.DazMorphCats) == 0:
-            rig.DazCustomMorphs = False
+        final = finalProp(raw)
+        rest = restProp(raw)
+        if self.useDeleteDrivers:
+            self.removePropDrivers(rig, raw, rig)
+            self.removePropDrivers(amt, final, amt)
+            self.removePropDrivers(amt, rest, amt)
+        for ob in rig.children:
+            if ob.type == 'MESH':
+                skeys = ob.data.shape_keys
+                self.removePropDrivers(skeys, raw, rig)
+                self.removePropDrivers(skeys, final, amt)
+                if ob.data.shape_keys:
+                    if raw in skeys.key_blocks.keys():
+                        skey = skeys.key_blocks[raw]
+                        if self.useDeleteShapekeys or self.useDeleteDrivers:
+                            skey.driver_remove("value")
+                            skey.driver_remove("slider_min")
+                            skey.driver_remove("slider_max")
+                        if self.useDeleteShapekeys:
+                            ob.shape_key_remove(skey)
+        if raw in rig.keys():
+            self.removeFromPropGroups(rig, raw)
+        if self.useDeleteProps and self.useDeleteDrivers:
+            if raw in rig.keys():
+                rig[raw] = 0.0
+                del rig[raw]
+            if final in amt.keys():
+                amt[final] = 0.0
+                del amt[final]
+            if rest in amt.keys():
+                amt[rest] = 0.0
+                del amt[rest]
 
 
     def removePropDrivers(self, rna, prop, rig):
@@ -1661,6 +1633,76 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, IsArmature):
             key = cat.name
             keys.append((key,key,key))
         return keys
+
+#------------------------------------------------------------------------
+#   Remove standard morphs
+#------------------------------------------------------------------------
+
+class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemover, IsArmature):
+    bl_idname = "daz.remove_standard_morphs"
+    bl_label = "Remove Standard Morphs"
+    bl_description = "Remove selected standard morphs and associated drivers"
+    bl_options = {'UNDO'}
+
+    isMhxAware = False
+
+    def run(self, context):
+        rig = context.object
+        self.removeMorphType(rig, self.units, "Units")
+        self.removeMorphType(rig, False, "Head")
+        self.removeMorphType(rig, self.expressions, "Expressions")
+        self.removeMorphType(rig, self.visemes, "Visemes")
+        self.removeMorphType(rig, self.facs, "Facs")
+        self.removeMorphType(rig, self.facsexpr, "Facsexpr")
+        self.removeMorphType(rig, self.body, "Body")
+        self.removeMorphType(rig, self.jcms, "Jcms")
+        self.removeMorphType(rig, self.flexions, "Flexions")
+
+    def removeMorphType(self, rig, use, morphset):
+        if not use:
+            return
+        pgs = getattr(rig, "Daz%s" % morphset)
+        props = [pg.name for pg in pgs]
+        for prop in props:
+            self.removeRigProp(rig, prop)
+
+#------------------------------------------------------------------------
+#   Remove category
+#------------------------------------------------------------------------
+
+class DAZ_OT_RemoveCategories(DazOperator, Selector, MorphRemover, IsArmature):
+    bl_idname = "daz.remove_categories"
+    bl_label = "Remove Categories"
+    bl_description = "Remove selected categories and associated drivers"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        items = [(item.index, item.name) for item in self.getSelectedItems()]
+        items.sort()
+        items.reverse()
+        ob = context.object
+        if ob.type == 'ARMATURE':
+            self.runRig(context, ob, items)
+        elif ob.type == 'MESH':
+            self.runMesh(context, ob, items)
+
+
+    def runRig(self, context, rig, items):
+        for idx,key in items:
+            cat = rig.DazMorphCats[key]
+            for pg in cat.morphs:
+                self.removeRigProp(rig, pg.name)
+            rig.DazMorphCats.remove(idx)
+        if len(rig.DazMorphCats) == 0:
+            rig.DazCustomMorphs = False
+
+
+    def runMesh(self, context, ob, items):
+        for idx,key in items:
+            cat = ob.DazMorphCats[key]
+            ob.DazMorphCats.remove(idx)
+        if len(ob.DazMorphCats) == 0:
+            ob.DazMeshMorphs = False
 
 #------------------------------------------------------------------------
 #   Apply morphs
@@ -3057,6 +3099,7 @@ classes = [
     DAZ_OT_AddShapeToCategory,
     DAZ_OT_RemoveShapeFromCategory,
     DAZ_OT_RenameCategory,
+    DAZ_OT_RemoveStandardMorphs,
     DAZ_OT_RemoveCategories,
     DAZ_OT_ActivateAll,
     DAZ_OT_DeactivateAll,

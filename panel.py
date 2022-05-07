@@ -314,6 +314,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.remove_shape_from_category")
         self.layout.operator("daz.rename_category")
         self.layout.operator("daz.remove_categories")
+        self.layout.operator("daz.remove_standard_morphs")
         self.layout.separator()
         self.layout.operator("daz.convert_morphs_to_shapekeys")
         self.layout.operator("daz.transfer_mesh_to_shape")
