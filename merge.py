@@ -348,13 +348,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             for vn in verts:
                 vgrp.add([vn], 1, 'REPLACE')
 
-        if cob.data.DazGraftGroup:
-            raise DazError("Geometry nodes not implemented for recursive geografts.")
-        from .geonodes import makeGeograftGroup
-        addVertexGroup(cob, "Geograft Mask", self.vdeleted)
-        addVertexGroup(cob, "Geograft Edge", self.cedge)
+        maskname = "%s Mask" % cob.name
+        edgename = "%s Edge" % cob.name
+        addVertexGroup(cob, maskname, self.vdeleted)
+        addVertexGroup(cob, edgename, self.cedge)
         for aob in anatomies:
-            addVertexGroup(aob, "Geograft Edge", self.aedges[aob.name])
+            addVertexGroup(aob, edgename, self.aedges[aob.name])
             for vgrp in aob.vertex_groups:
                 if vgrp.name not in list(cob.vertex_groups.keys()):
                     cob.vertex_groups.new(name=vgrp.name)
@@ -370,15 +369,29 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             for n in range(nmods-1):
                 bpy.ops.object.modifier_move_up(modifier=mod.name)
 
-        mod.node_group = makeGeograftGroup(anatomies)
+        mod.node_group = self.makeGeograftGroup(cob, anatomies)
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
         bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
-        mod["Input_1_attribute_name"] = "Geograft Edge"
-        mod["Input_2_attribute_name"] = "Geograft Mask"
+        mod["Input_1_attribute_name"] = edgename
+        mod["Input_2_attribute_name"] = maskname
         mod["Input_3"] = 0.01*cob.DazScale
         for aob in anatomies:
             aob.hide_set(True)
             aob.hide_render = True
+            mod = getModifier(aob, 'NODES')
+            if mod:
+                mod.show_viewport = mod.show_render = True
+
+
+    def makeGeograftGroup(self, cob, anatomies):
+        from .geonodes import GeograftGroup
+        name = "Geografts %s" % cob.name
+        #if name in bpy.data.node_groups.keys():
+        #    return bpy.data.node_groups[name]
+        group = GeograftGroup()
+        group.create(name)
+        group.addNodes(anatomies)
+        return group.group
 
 
     def getActiveUvLayer(self, ob):

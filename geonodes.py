@@ -106,13 +106,3 @@ class GeograftGroup(Tree, NodeGroup):
 
         self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
         self.links.new(captureIndex.outputs[INT], self.outputs.inputs["Vertex Table"])
-
-
-def makeGeograftGroup(anatomies):
-    name = "Daz Geograft"
-    if name in bpy.data.node_groups.keys():
-        return bpy.data.node_groups[name]
-    group = GeograftGroup()
-    group.create(name)
-    group.addNodes(anatomies)
-    return group.group
