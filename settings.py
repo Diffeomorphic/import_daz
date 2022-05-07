@@ -112,6 +112,7 @@ class GlobalSettings:
         self.useMultiShapes = True
         self.useHDArmature = True
         self.useAutoSmooth = True
+        self.maxSubdivs = 4
         self.useSimulation = True
         self.useScaleEyeMoisture = True
 
@@ -189,6 +190,7 @@ class GlobalSettings:
         "DazMultires" : "useMultires",
         "DazMultiUvLayers" : "useMultiUvLayers",
         "DazUseAutoSmooth" : "useAutoSmooth",
+        "DazMaxSubdivs" : "maxSubdivs",
         "DazSimulation" : "useSimulation",
         "DazScaleEyeMoisture" : "useScaleEyeMoisture",
     }

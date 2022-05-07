@@ -225,6 +225,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazHDArmature")
         box.prop(scn, "DazHairGuides")
         box.prop(scn, "DazUseAutoSmooth")
+        box.prop(scn, "DazMaxSubdivs")
         box.prop(scn, "DazUseInstancing")
         box.prop(scn, "DazScaleEyeMoisture")
         box.prop(scn, "DazSimulation")
@@ -610,6 +611,11 @@ def register():
             "Use auto smooth if this is done in DAZ Studio.\n" +
             "This is useful for objects with hard edges,\n" +
             "but may lead to poor performance for organic meshes"))
+
+    bpy.types.Scene.DazMaxSubdivs = IntProperty(
+        name = "Max Subdivision Level",
+        description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
+        min = 1, max = 11)
 
     bpy.types.Scene.DazScaleEyeMoisture = BoolProperty(
         name = "Scale Eye Moisture",

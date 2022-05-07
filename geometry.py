@@ -167,13 +167,15 @@ class GeoNode(Node, SimNode):
         subDLevel = 0
         if self.materials:
             subDLevel = max([dmat.getSubDLevel(0) for dmat in self.materials.values()])
+            subDLevel = min(subDLevel, GS.maxSubdivs)
         if (self.type == "subdivision_surface" and
             self.data and
             (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0)):
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
             renderLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
+            renderLevel = min(renderLevel, GS.maxSubdivs)
             mod.render_levels = renderLevel
-            mod.levels = self.data.SubDIALevel
+            mod.levels = min(self.data.SubDIALevel, GS.maxSubdivs)
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
             self.data.creaseEdges(context, ob)
