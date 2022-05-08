@@ -77,6 +77,7 @@ class GeoNode(Node, SimNode):
         self.modifiers = {}
         self.morphsValues = {}
         self.shstruct = {}
+        self.shellGeos = []
         self.push = 0
         self.assigned = False
         SimNode.__init__(self)
@@ -108,6 +109,35 @@ class GeoNode(Node, SimNode):
 
     def buildObject(self, context, inst, center):
         Node.buildObject(self, context, inst, center)
+
+
+    def buildShells(self, context):
+        if not self.shellGeos:
+            return
+        from .geonodes import GeoshellGroup
+        ob = self.rna
+        activateObject(context, ob)
+        print("SHELL", self.rna, bpy.context.object)
+        mats = [dmat.rna for dmat in self.materials.values()]
+        for shgeo in self.shellGeos:
+            print(shgeo)
+            print("MM", shgeo.materials)
+            shmats = [dmat.rna for dmat in shgeo.materials.values()]
+
+            mod = ob.modifiers.new(shgeo.name, 'NODES')
+            nmods = len(ob.modifiers)
+            for n in range(nmods-1):
+                bpy.ops.object.modifier_move_up(modifier=mod.name)
+
+            group = GeoshellGroup()
+            group.create(shgeo.name, mats)
+            group.addNodes(mats)
+            mod.node_group = group.group
+            #mod["Input_1"] = ob
+            mod["Input_2"] = 0.1 * ob.DazScale
+            shmat = shmats[0]
+            for n,mat in enumerate(mats):
+                mod["Input_%d" % (n+3)] = shmat
 
 
     def addLSMesh(self, ob, inst, rigname):
@@ -294,6 +324,8 @@ class GeoNode(Node, SimNode):
         if ob:
             pruneUvMaps(ob)
             self.addLSMesh(ob, inst, None)
+            if GS.shellMethod == 'GEONODES':
+                self.buildShells(context)
 
 
     def copyHDMaterials(self, ob, hdob, context, inst):
@@ -766,7 +798,7 @@ class Geometry(Asset, Channels):
             elif extra["type"] == "studio/node/shell":
                 if "material_uvs" in extra.keys():
                     self.uvs = dict(extra["material_uvs"])
-        if GS.mergeShells:
+        if GS.shellMethod != 'MESH':
             if inst.shellNode:
                 missing = self.addShells(inst.shellNode, inst, self.material_group_vis)
                 for mname,shmat,uv in missing:
@@ -786,6 +818,9 @@ class Geometry(Asset, Channels):
         if shinst.shstruct:
             shgeonode = shinst.geometries[0]
             shname = shinst.name
+            if GS.shellMethod == 'GEONODES':
+                geonode.shellGeos.append(shgeonode)
+                return []
             for mname,shmat in shgeonode.materials.items():
                 if mname in vis.keys():
                     if not vis[mname]:
@@ -1174,6 +1209,11 @@ class Shell:
     def __repr__(self):
         dmat = self.material
         return ("<Shell %s %s S:%s D:%s>" % (self.name, dmat.name, self.single, dmat.getDiffuse()))
+
+
+    def build(self, me):
+        print("BS", self)
+        print("ME", me)
 
 #-------------------------------------------------------------
 #   UV Asset

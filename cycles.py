@@ -345,8 +345,7 @@ class CyclesTree(Tree):
         self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
-        if LS.materialMethod != 'SINGLE':
-            self.buildShells()
+        self.buildShells()
         self.buildOutput()
 
 
@@ -415,6 +414,9 @@ class CyclesTree(Tree):
 
 
     def buildShells(self):
+        if (LS.materialMethod == 'SINGLE' or
+            GS.shellMethod != 'MATERIAL'):
+            return
         shells = []
         n = 0
         for shell in self.owner.shells.values():

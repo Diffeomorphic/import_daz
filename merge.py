@@ -386,8 +386,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
     def makeGeograftGroup(self, cob, anatomies):
         from .geonodes import GeograftGroup
         name = "Geografts %s" % cob.name
-        #if name in bpy.data.node_groups.keys():
-        #    return bpy.data.node_groups[name]
         group = GeograftGroup()
         group.create(name)
         group.addNodes(anatomies)

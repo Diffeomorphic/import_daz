@@ -28,6 +28,12 @@
 import bpy
 from .tree import Tree, NodeGroup, XSIZE, YSIZE
 
+VECTOR = 1
+VALUE = 2
+RGBA = 3
+BOOLEAN = 4
+INT = 5
+
 # ---------------------------------------------------------------------
 #   Geograft group
 # ---------------------------------------------------------------------
@@ -36,7 +42,7 @@ class GeograftGroup(Tree, NodeGroup):
     def __init__(self):
         Tree.__init__(self, None)
         NodeGroup.__init__(self)
-        self.type = 'GEO'
+        self.type = 'GEONODE'
         self.nodeTreeType = "GeometryNodeTree"
         self.nodeGroupType = "GeometryNodeGroup"
 
@@ -52,12 +58,6 @@ class GeograftGroup(Tree, NodeGroup):
 
 
     def addNodes(self, anatomies):
-        VECTOR = 1
-        VALUE = 2
-        RGBA = 3
-        BOOLEAN = 4
-        INT = 5
-
         index = self.addNode("GeometryNodeInputIndex", 0)
         captureIndex = self.addNode("GeometryNodeCaptureAttribute", 1)
         captureIndex.data_type = 'INT'
@@ -106,3 +106,52 @@ class GeograftGroup(Tree, NodeGroup):
 
         self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
         self.links.new(captureIndex.outputs[INT], self.outputs.inputs["Vertex Table"])
+
+# ---------------------------------------------------------------------
+#   Geoshell group
+# ---------------------------------------------------------------------
+
+class GeoshellGroup(Tree, NodeGroup):
+    def __init__(self):
+        Tree.__init__(self, None)
+        NodeGroup.__init__(self)
+        self.type = 'GEOSHELL'
+        self.nodeTreeType = "GeometryNodeTree"
+        self.nodeGroupType = "GeometryNodeGroup"
+
+
+    def create(self, name, mats):
+        NodeGroup.make(self, name, 5)
+        self.group.inputs.new("NodeSocketGeometry", "Geometry")
+        self.group.inputs.new("NodeSocketObject", "Figure")
+        self.group.inputs.new("NodeSocketFloat", "Shell Offset")
+        for mat in mats:
+            self.group.inputs.new("NodeSocketMaterial", mat.name)
+        self.group.outputs.new("NodeSocketGeometry", "Geometry")
+
+
+    def addNodes(self, mats):
+        # Geoshell
+        objinfo = self.addNode("GeometryNodeObjectInfo", 1)
+        self.links.new(self.inputs.outputs["Figure"], objinfo.inputs["Object"])
+        normal = self.addNode("GeometryNodeInputNormal", 1)
+        mult = self.addNode("ShaderNodeVectorMath", 2)
+        mult.operation = 'MULTIPLY'
+        self.links.new(normal.outputs["Normal"], mult.inputs[0])
+        self.links.new(self.inputs.outputs["Shell Offset"], mult.inputs[1])
+        setpos = self.addNode("GeometryNodeSetPosition", 2)
+        self.links.new(self.inputs.outputs["Geometry"], setpos.inputs["Geometry"])
+        self.links.new(mult.outputs[0], setpos.inputs["Offset"])
+
+        # Materials
+        for mat in mats:
+            matsel = self.addNode("GeometryNodeMaterialSelection", 3)
+            matsel.inputs["Material"].default_value = mat
+            setmat = self.addNode("GeometryNodeSetMaterial", 4)
+            self.links.new(setpos.outputs["Geometry"], setmat.inputs["Geometry"])
+            self.links.new(matsel.outputs["Selection"], setmat.inputs["Selection"])
+            self.links.new(self.inputs.outputs[mat.name], setmat.inputs["Material"])
+            setpos = setmat
+
+        self.links.new(setpos.outputs["Geometry"], self.outputs.inputs["Geometry"])
+

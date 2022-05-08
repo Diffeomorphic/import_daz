@@ -842,7 +842,7 @@ class Node(Asset, Formula, Channels):
             ob = bpy.data.objects.new(inst.name, None)
             self.data.fixMappingNodes(inst)
         elif isinstance(self.data, Asset):
-            if self.data.shstruct and GS.mergeShells:
+            if self.data.shstruct and GS.shellMethod != 'MESH':
                 return
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):

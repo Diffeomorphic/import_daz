@@ -65,7 +65,7 @@ class GlobalSettings:
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.caseSensitivePaths = (platform != 'win32')
-        self.mergeShells = True
+        self.shellMethod = 'MATERIAL'
         self.pruneNodes = True
 
         self.bumpFactor = 1.0
@@ -136,7 +136,7 @@ class GlobalSettings:
         "DazZup" : "zup",
         "DazMakeHiddenSliders" : "useMakeHiddenSliders",
         "DazShowHiddenObjects" : "showHiddenObjects",
-        "DazMergeShells" : "mergeShells",
+        "DazShellMethod" : "shellMethod",
         "DazPruneNodes" : "pruneNodes",
 
         # Materials

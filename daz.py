@@ -215,10 +215,10 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazDump")
         box.prop(scn, "DazShowHiddenObjects")
         box.prop(scn, "DazPruneNodes")
-        box.prop(scn, "DazMergeShells")
 
         box = col.box()
         box.label(text = "Meshes")
+        box.prop(scn, "DazShellMethod")
         box.prop(scn, "DazHighdef")
         box.prop(scn, "DazMultires")
         box.prop(scn, "DazMultiUvLayers")
@@ -625,9 +625,12 @@ def register():
         name = "Simulation",
         description = "Add influence (pinning) vertex groups for simulation")
 
-    bpy.types.Scene.DazMergeShells = BoolProperty(
-        name = "Merge Shell Materials",
-        description = "Merge shell materials with object materials.\nDisable for debugging only")
+    bpy.types.Scene.DazShellMethod = EnumProperty(
+        items = [('MATERIAL', "Material", "Create material node group"),
+                 ('GEONODES', "Geometry Nodes", "Create geometry node group"),
+                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")],
+        name = "Shell Method",
+        description = "Method for geometry shells")
 
     bpy.types.Scene.DazPruneNodes = BoolProperty(
         name = "Prune Node Tree",
