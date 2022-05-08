@@ -627,7 +627,7 @@ def register():
 
     bpy.types.Scene.DazShellMethod = EnumProperty(
         items = [('MATERIAL', "Material", "Create material node group"),
-                 ('GEONODES', "Geometry Nodes", "Create geometry node group"),
+                 ('GEONODES', "Geometry Nodes (Experimental)", "Create geometry node group"),
                  ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")],
         name = "Shell Method",
         description = "Method for geometry shells")

@@ -119,25 +119,28 @@ class GeoNode(Node, SimNode):
         activateObject(context, ob)
         print("SHELL", self.rna, bpy.context.object)
         mats = [dmat.rna for dmat in self.materials.values()]
-        for shgeo in self.shellGeos:
-            print(shgeo)
-            print("MM", shgeo.materials)
-            shmats = [dmat.rna for dmat in shgeo.materials.values()]
+        for shnode in self.shellGeos:
+            print(shnode)
+            mats = []
+            shmats = []
+            for mname,dmat in self.materials.items():
+                shmat = shnode.materials.get(mname)
+                if shmat.rna:
+                    mats.append(dmat.rna)
+                    shmats.append(shmat.rna)
 
-            mod = ob.modifiers.new(shgeo.name, 'NODES')
+            mod = ob.modifiers.new(shnode.name, 'NODES')
             nmods = len(ob.modifiers)
             for n in range(nmods-1):
                 bpy.ops.object.modifier_move_up(modifier=mod.name)
 
             group = GeoshellGroup()
-            group.create(shgeo.name, mats)
+            group.create(shnode.name, mats)
             group.addNodes(mats)
             mod.node_group = group.group
-            #mod["Input_1"] = ob
-            mod["Input_2"] = 0.1 * ob.DazScale
-            shmat = shmats[0]
-            for n,mat in enumerate(mats):
-                mod["Input_%d" % (n+3)] = shmat
+            mod["Input_1"] = 0.1 * ob.DazScale
+            for n,shmat in enumerate(shmats):
+                mod["Input_%d" % (n+2)] = shmat
 
 
     def addLSMesh(self, ob, inst, rigname):

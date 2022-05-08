@@ -123,7 +123,6 @@ class GeoshellGroup(Tree, NodeGroup):
     def create(self, name, mats):
         NodeGroup.make(self, name, 5)
         self.group.inputs.new("NodeSocketGeometry", "Geometry")
-        self.group.inputs.new("NodeSocketObject", "Figure")
         self.group.inputs.new("NodeSocketFloat", "Shell Offset")
         for mat in mats:
             self.group.inputs.new("NodeSocketMaterial", mat.name)
@@ -132,16 +131,14 @@ class GeoshellGroup(Tree, NodeGroup):
 
     def addNodes(self, mats):
         # Geoshell
-        objinfo = self.addNode("GeometryNodeObjectInfo", 1)
-        self.links.new(self.inputs.outputs["Figure"], objinfo.inputs["Object"])
-        normal = self.addNode("GeometryNodeInputNormal", 1)
-        mult = self.addNode("ShaderNodeVectorMath", 2)
+        normal = self.addNode("GeometryNodeInputNormal", 0)
+        mult = self.addNode("ShaderNodeVectorMath", 1)
         mult.operation = 'MULTIPLY'
-        self.links.new(normal.outputs["Normal"], mult.inputs[0])
-        self.links.new(self.inputs.outputs["Shell Offset"], mult.inputs[1])
+        self.links.new(self.inputs.outputs["Shell Offset"], mult.inputs[0])
+        self.links.new(normal.outputs["Normal"], mult.inputs[1])
         setpos = self.addNode("GeometryNodeSetPosition", 2)
-        self.links.new(self.inputs.outputs["Geometry"], setpos.inputs["Geometry"])
         self.links.new(mult.outputs[0], setpos.inputs["Offset"])
+        self.links.new(self.inputs.outputs["Geometry"], setpos.inputs["Geometry"])
 
         # Materials
         for mat in mats:
