@@ -78,6 +78,7 @@ class GeoNode(Node, SimNode):
         self.morphsValues = {}
         self.shstruct = {}
         self.shellGeos = []
+        self.shellPrefix = ""
         self.push = 0
         self.assigned = False
         SimNode.__init__(self)
@@ -117,16 +118,18 @@ class GeoNode(Node, SimNode):
         from .geonodes import GeoshellGroup
         ob = self.rna
         activateObject(context, ob)
-        print("SHELL", self.rna, bpy.context.object)
         mats = [dmat.rna for dmat in self.materials.values()]
+        print('Build %d shells for "%s" with prefix "%s"' % (len(self.shellGeos), ob.name, self.shellPrefix))
         for shnode in self.shellGeos:
-            print(shnode)
+            mnames = []
             mats = []
             shmats = []
             for mname,dmat in self.materials.items():
-                shmat = shnode.materials.get(mname)
-                if shmat.rna:
+                shname = "%s%s" % (self.shellPrefix, mname)
+                if shname in shnode.materials.keys():
+                    mnames.append(mname)
                     mats.append(dmat.rna)
+                    shmat = shnode.materials[shname]
                     shmats.append(shmat.rna)
 
             mod = ob.modifiers.new(shnode.name, 'NODES')
@@ -135,8 +138,8 @@ class GeoNode(Node, SimNode):
                 bpy.ops.object.modifier_move_up(modifier=mod.name)
 
             group = GeoshellGroup()
-            group.create(shnode.name, mats)
-            group.addNodes(mats)
+            group.create(shnode.name, mnames)
+            group.addNodes(mnames, mats)
             mod.node_group = group.group
             mod["Input_1"] = 0.1 * ob.DazScale
             for n,shmat in enumerate(shmats):
@@ -821,9 +824,7 @@ class Geometry(Asset, Channels):
         if shinst.shstruct:
             shgeonode = shinst.geometries[0]
             shname = shinst.name
-            if GS.shellMethod == 'GEONODES':
-                geonode.shellGeos.append(shgeonode)
-                return []
+            shmats = {}
             for mname,shmat in shgeonode.materials.items():
                 if mname in vis.keys():
                     if not vis[mname]:
@@ -833,6 +834,19 @@ class Geometry(Asset, Channels):
                 if (shmat.getValue("getChannelCutoutOpacity", 1) == 0 or
                     shmat.getValue("getChannelOpacity", 1) == 0):
                     continue
+                shmats[mname] = shmat
+
+            if GS.shellMethod == 'GEONODES':
+                for mname in geonode.materials.keys():
+                    if mname in shmats.keys():
+                        geonode.shellGeos.append(shgeonode)
+                        return []
+                for child in inst.children.values():
+                    if self.addShellGeo(child, shmats, shgeonode, ""):
+                        return []
+                return []
+
+            for mname,shmat in shmats.items():
                 uv = self.uvs.get(mname)
                 if uv and mname in geonode.materials.keys():
                     dmat = geonode.materials[mname]
@@ -849,6 +863,23 @@ class Geometry(Asset, Channels):
         return [miss for miss in missing if miss[0] not in self.matused]
 
 
+    def addShellGeo(self, inst, shmats, shgeonode, pprefix):
+        if not inst.geometries:
+            return False
+        geonode = inst.geometries[0]
+        prefix = "%s%s_" % (pprefix, inst.node.name)
+        for mname in shmats.keys():
+            mname1 = self.unprefixName(prefix, inst, mname)
+            if mname1 in geonode.materials.keys():
+                geonode.shellGeos.append(shgeonode)
+                geonode.shellPrefix = prefix
+                return True
+        for child in inst.children.values():
+            if self.addShellGeo(child, shmats, shgeonode, prefix):
+                return True
+        return False
+
+
     def addMoreShells(self, inst, mname, shname, shmat, uv, pprefix):
         from .figure import FigureInstance
         if not isinstance(inst, FigureInstance):
@@ -857,12 +888,8 @@ class Geometry(Asset, Channels):
             return
         geonode = inst.geometries[0]
         geo = geonode.data
-        prefix = pprefix + inst.node.name + "_"
-        n = len(prefix)
-        if mname[0:n] == prefix:
-            mname1 = mname[n:]
-        else:
-            mname1 = None
+        prefix = "%s%s_" % (pprefix, inst.node.name)
+        mname1 = self.unprefixName(prefix, inst, mname)
         if mname1 and mname1 in geonode.materials.keys():
             dmat = geonode.materials[mname1]
             mshells = dmat.shells
@@ -874,6 +901,14 @@ class Geometry(Asset, Channels):
         else:
             for key,child in inst.children.items():
                 self.addMoreShells(child, mname, shname, shmat, uv, prefix)
+
+
+    def unprefixName(self, prefix, inst, mname):
+        n = len(prefix)
+        if mname[0:n] == prefix:
+            return mname[n:]
+        else:
+            return None
 
 
     def addNewUvset(self, uv, geo, inst):
