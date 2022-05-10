@@ -986,11 +986,13 @@ def setBoneTransform(tfm, pb):
 def setBoneTwist(tfm, pb):
     mat = getBoneMatrix(tfm, pb)
     _,quat,_ = mat.decompose()
-    euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
-    euler.y += quat.to_euler(pb.rotation_mode).y
     if pb.rotation_mode == 'QUATERNION':
+        euler = pb.matrix_basis.to_3x3().to_euler('YXZ')
+        euler.y += quat.to_euler('YXZ').y
         pb.rotation_quaternion = euler.to_quaternion()
     else:
+        euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
+        euler.y += quat.to_euler(pb.rotation_mode).y
         pb.rotation_euler = euler
 
 
