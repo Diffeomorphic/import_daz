@@ -2936,16 +2936,22 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
     def addMorphUrls(self, ob, struct):
         if len(ob.DazMorphUrls) == 0:
             return
+        else:
+            print(ob.name)
         from urllib.parse import quote
         from .finger import getFingerPrint
         url = quote(ob.DazUrl)
-        ostruct = struct[url] = {}
+        if url not in struct.keys():
+            struct[url] = {}
+        ostruct = struct[url]
         if ob.type == 'MESH':
             if ob.data.DazFingerPrint:
                 ostruct["finger_print"] = ob.data.DazFingerPrint
             else:
                 ostruct["finger_print"] = getFingerPrint(ob)
-        mstruct = ostruct["morphs"] = {}
+        if "morphs" not in ostruct.keys():
+            ostruct["morphs"] = {}
+        mstruct = ostruct["morphs"]
         for item in ob.DazMorphUrls:
             if item.morphset == "Custom":
                 key = "Custom/%s" % item.category
@@ -2953,7 +2959,9 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
                 key = item.morphset
             if key not in mstruct.keys():
                 mstruct[key] = []
-            mstruct[key].append((quote(item.name), item.text, item.bodypart))
+            data = (quote(item.name), item.text, item.bodypart)
+            if data not in mstruct[key]:
+                mstruct[key].append(data)
 
 
 class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, JsonFile, IsMeshArmature):
