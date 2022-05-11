@@ -687,8 +687,10 @@ class Morph(FormulaAsset):
 
         if isinstance(parent, Geometry):
             ref = instRef(struct["parent"])
-            if ref in parent.nodes:
+            if ref in parent.nodes.keys():
                 geonode = parent.nodes[ref]
+            elif "geometry" in parent.nodes.keys():
+                geonode = parent.nodes["geometry"]
             else:
                 reportError("Missing geonode %s in\n %s" %(ref, parent), trigger=(2,4))
                 return
