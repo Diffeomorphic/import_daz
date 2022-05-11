@@ -120,7 +120,7 @@ class GeoNode(Node, SimNode):
         activateObject(context, ob)
         mats = [dmat.rna for dmat in self.materials.values()]
         print('Build %d shells for "%s" with prefix "%s"' % (len(self.shellGeos), ob.name, self.shellPrefix))
-        for shnode in self.shellGeos:
+        for shnode,uv in self.shellGeos:
             mnames = []
             mats = []
             shmats = []
@@ -838,8 +838,14 @@ class Geometry(Asset, Channels):
 
             if GS.shellMethod == 'GEONODES':
                 for mname in geonode.materials.keys():
+                    uv = self.uvs.get(mname)
                     if mname in shmats.keys():
-                        geonode.shellGeos.append(shgeonode)
+                        geonode.shellGeos.append((shgeonode, uv))
+                        if uv:
+                            uvset = self.addNewUvset(uv, geo, inst)
+                            for dmat in shgeonode.materials.values():
+                                dmat.useDefaultUvs = False
+                                dmat.uv_set = uvset
                         return []
                 for child in inst.children.values():
                     if self.addShellGeo(child, shmats, shgeonode, ""):
@@ -867,12 +873,18 @@ class Geometry(Asset, Channels):
         if not inst.geometries:
             return False
         geonode = inst.geometries[0]
+        geo = geonode.data
         prefix = "%s%s_" % (pprefix, inst.node.name)
         for mname in shmats.keys():
             mname1 = self.unprefixName(prefix, inst, mname)
             if mname1 in geonode.materials.keys():
-                geonode.shellGeos.append(shgeonode)
+                uv = self.uvs.get(mname)
+                uvset = self.addNewUvset(uv, geo, inst)
+                geonode.shellGeos.append((shgeonode, uv))
                 geonode.shellPrefix = prefix
+                for dmat in shgeonode.materials.values():
+                    dmat.useDefaultUvs = False
+                    dmat.uv_set = uvset
                 return True
         for child in inst.children.values():
             if self.addShellGeo(child, shmats, shgeonode, prefix):
@@ -916,6 +928,8 @@ class Geometry(Asset, Channels):
             uvset = self.findUvSet(uv, inst.node.id)
             if uvset:
                 geo.uv_sets[uv] = geo.uv_sets[uvset.name] = uvset
+            return uvset
+        return None
 
 
     def findUvSet(self, uv, url):
