@@ -121,8 +121,9 @@ class GeoshellGroup(Tree, NodeGroup):
 
 
     def create(self, name, mnames):
-        NodeGroup.make(self, name, 6)
+        NodeGroup.make(self, name, 4)
         self.group.inputs.new("NodeSocketGeometry", "Geometry")
+        self.group.inputs.new("NodeSocketObject", "Figure")
         self.group.inputs.new("NodeSocketFloat", "Shell Offset")
         for mname in mnames:
             self.group.inputs.new("NodeSocketMaterial", mname)
@@ -131,27 +132,31 @@ class GeoshellGroup(Tree, NodeGroup):
 
     def addNodes(self, mnames, mats):
         # Geoshell
+        objinfo = self.addNode("GeometryNodeObjectInfo", 1)
+        self.links.new(self.inputs.outputs["Figure"], objinfo.inputs["Object"])
         normal = self.addNode("GeometryNodeInputNormal", 1)
-        mult = self.addNode("ShaderNodeVectorMath", 1)
+
+        mult = self.addNode("ShaderNodeVectorMath", 2)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Shell Offset"], mult.inputs[0])
         self.links.new(normal.outputs["Normal"], mult.inputs[1])
-        setpos = self.addNode("GeometryNodeSetPosition", 2)
+
+        setpos = self.addNode("GeometryNodeSetPosition", 3)
         self.links.new(mult.outputs[0], setpos.inputs["Offset"])
-        self.links.new(self.inputs.outputs["Geometry"], setpos.inputs["Geometry"])
+        self.links.new(objinfo.outputs["Geometry"], setpos.inputs["Geometry"])
 
         # Materials
         for mname,mat in zip(mnames,mats):
-            matsel = self.addNode("GeometryNodeMaterialSelection", 3)
+            matsel = self.addNode("GeometryNodeMaterialSelection", 2)
             matsel.inputs["Material"].default_value = mat
-            setmat = self.addNode("GeometryNodeSetMaterial", 4)
+            setmat = self.addNode("GeometryNodeSetMaterial", 3)
             self.links.new(setpos.outputs["Geometry"], setmat.inputs["Geometry"])
             self.links.new(matsel.outputs["Selection"], setmat.inputs["Selection"])
             self.links.new(self.inputs.outputs[mname], setmat.inputs["Material"])
             setpos = setmat
 
-        joinGeo = self.addNode("GeometryNodeJoinGeometry", 5)
-        self.links.new(self.inputs.outputs["Geometry"], joinGeo.inputs["Geometry"])
-        self.links.new(setpos.outputs["Geometry"], joinGeo.inputs["Geometry"])
-        self.links.new(joinGeo.outputs["Geometry"], self.outputs.inputs["Geometry"])
+        #joinGeo = self.addNode("GeometryNodeJoinGeometry", 6)
+        #self.links.new(objinfo.outputs["Geometry"], joinGeo.inputs["Geometry"])
+        #self.links.new(setpos.outputs["Geometry"], joinGeo.inputs["Geometry"])
+        self.links.new(setpos.outputs["Geometry"], self.outputs.inputs["Geometry"])
 

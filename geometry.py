@@ -120,30 +120,39 @@ class GeoNode(Node, SimNode):
         activateObject(context, ob)
         mats = [dmat.rna for dmat in self.materials.values()]
         print('Build %d shells for "%s" with prefix "%s"' % (len(self.shellGeos), ob.name, self.shellPrefix))
-        for shnode in self.shellGeos:
+        for shgeonode in self.shellGeos:
             mnames = []
             mats = []
             shmats = []
             for mname,dmat in self.materials.items():
                 shname = "%s%s" % (self.shellPrefix, mname)
-                if shname in shnode.materials.keys():
+                if shname in shgeonode.materials.keys():
                     mnames.append(mname)
                     mats.append(dmat.rna)
-                    shmat = shnode.materials[shname]
+                    shmat = shgeonode.materials[shname]
                     shmats.append(shmat.rna)
 
-            mod = ob.modifiers.new(shnode.name, 'NODES')
-            nmods = len(ob.modifiers)
-            for n in range(nmods-1):
-                bpy.ops.object.modifier_move_up(modifier=mod.name)
+            me = bpy.data.meshes.new(shgeonode.name)
+            for shmat in shmats:
+                me.materials.append(shmat)
+            shell = bpy.data.objects.new(shgeonode.name, me)
+            LS.collection.objects.link(shell)
+            shell.parent = ob
+            shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
+
+            mod = shell.modifiers.new(shgeonode.name, 'NODES')
+            #nmods = len(ob.modifiers)
+            #for n in range(nmods-1):
+            #    bpy.ops.object.modifier_move_up(modifier=mod.name)
 
             group = GeoshellGroup()
-            group.create(shnode.name, mnames)
+            group.create(shgeonode.name, mnames)
             group.addNodes(mnames, mats)
             mod.node_group = group.group
-            mod["Input_1"] = 0.1 * ob.DazScale
+            mod["Input_1"] = ob
+            mod["Input_2"] = 0.1 * ob.DazScale
             for n,shmat in enumerate(shmats):
-                mod["Input_%d" % (n+2)] = shmat
+                mod["Input_%d" % (n+3)] = shmat
 
 
     def addLSMesh(self, ob, inst, rigname):
