@@ -449,11 +449,12 @@ class SkinBinding(Modifier):
 
 
     def addVertexGroups(self, ob, geonode, rig):
-        bones = geonode.figure.bones
+        for bone in rig.data.bones:
+            bone.use_deform = False
         for joint in self.skin["joints"]:
             bname = joint["id"]
-            if bname in bones.keys():
-                vgname = bones[bname]
+            if bname in geonode.figure.bones.keys():
+                vgname = geonode.figure.bones[bname]
             else:
                 vgname = bname
 
@@ -477,6 +478,9 @@ class SkinBinding(Modifier):
                 continue
 
             buildVertexGroup(ob, vgname, weights["values"])
+            if bname in rig.data.bones.keys() and len(weights["values"]) > 0:
+                rig.data.bones[bname].use_deform = True
+
 
 
     def calcLocalWeights(self, bname, joint, rig):
