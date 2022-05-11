@@ -120,7 +120,7 @@ class GeoNode(Node, SimNode):
         activateObject(context, ob)
         mats = [dmat.rna for dmat in self.materials.values()]
         print('Build %d shells for "%s" with prefix "%s"' % (len(self.shellGeos), ob.name, self.shellPrefix))
-        for shnode,uv in self.shellGeos:
+        for shnode in self.shellGeos:
             mnames = []
             mats = []
             shmats = []
@@ -838,11 +838,13 @@ class Geometry(Asset, Channels):
 
             if GS.shellMethod == 'GEONODES':
                 for mname in geonode.materials.keys():
-                    uv = self.uvs.get(mname)
                     if mname in shmats.keys():
-                        geonode.shellGeos.append((shgeonode, uv))
+                        geonode.shellGeos.append(shgeonode)
+                        uv = self.uvs.get(mname)
                         if uv:
                             uvset = self.addNewUvset(uv, geo, inst)
+                            for dmat in geonode.materials.values():
+                                dmat.useDefaultUvs = False
                             for dmat in shgeonode.materials.values():
                                 dmat.useDefaultUvs = False
                                 dmat.uv_set = uvset
@@ -878,10 +880,12 @@ class Geometry(Asset, Channels):
         for mname in shmats.keys():
             mname1 = self.unprefixName(prefix, inst, mname)
             if mname1 in geonode.materials.keys():
+                geonode.shellGeos.append(shgeonode)
+                geonode.shellPrefix = prefix
                 uv = self.uvs.get(mname)
                 uvset = self.addNewUvset(uv, geo, inst)
-                geonode.shellGeos.append((shgeonode, uv))
-                geonode.shellPrefix = prefix
+                for dmat in geonode.materials.values():
+                    dmat.useDefaultUvs = False
                 for dmat in shgeonode.materials.values():
                     dmat.useDefaultUvs = False
                     dmat.uv_set = uvset
@@ -928,8 +932,8 @@ class Geometry(Asset, Channels):
             uvset = self.findUvSet(uv, inst.node.id)
             if uvset:
                 geo.uv_sets[uv] = geo.uv_sets[uvset.name] = uvset
-            return uvset
-        return None
+                return uvset
+        return geo.default_uv_set
 
 
     def findUvSet(self, uv, url):
