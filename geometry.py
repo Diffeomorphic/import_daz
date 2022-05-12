@@ -136,17 +136,14 @@ class GeoNode(Node, SimNode):
             for shmat in shmats:
                 me.materials.append(shmat)
             shell = bpy.data.objects.new(shgeonode.name, me)
+            shgeonode.rna = shell
             LS.collection.objects.link(shell)
             shell.parent = ob
             shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
 
             mod = shell.modifiers.new(shgeonode.name, 'NODES')
-            #nmods = len(ob.modifiers)
-            #for n in range(nmods-1):
-            #    bpy.ops.object.modifier_move_up(modifier=mod.name)
-
             group = GeoshellGroup()
-            group.create(shgeonode.name, mnames)
+            group.create(ob.name, mnames)
             group.addNodes(mnames, mats)
             mod.node_group = group.group
             mod["Input_1"] = ob
@@ -853,9 +850,9 @@ class Geometry(Asset, Channels):
                         if uv:
                             uvset = self.addNewUvset(uv, geo, inst)
                             for dmat in geonode.materials.values():
-                                dmat.useDefaultUvs = False
+                                dmat.uvNodeType = 'ATTRIBUTE'
                             for dmat in shgeonode.materials.values():
-                                dmat.useDefaultUvs = False
+                                dmat.uvNodeType = 'ATTRIBUTE'
                                 dmat.uv_set = uvset
                         return []
                 for child in inst.children.values():
@@ -894,9 +891,9 @@ class Geometry(Asset, Channels):
                 uv = self.uvs.get(mname)
                 uvset = self.addNewUvset(uv, geo, inst)
                 for dmat in geonode.materials.values():
-                    dmat.useDefaultUvs = False
+                    dmat.uvNodeType = 'ATTRIBUTE'
                 for dmat in shgeonode.materials.values():
-                    dmat.useDefaultUvs = False
+                    dmat.uvNodeType = 'ATTRIBUTE'
                     dmat.uv_set = uvset
                 return True
         for child in inst.children.values():
@@ -1696,10 +1693,11 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
             struct = { "filetype" : "mesh_data", "meshes" : [] }
         else:
             struct = None
-        for ob1 in rig.children:
-            if ob1.type == 'MESH':
-                self.finalizeMesh(ob1, struct)
-        if ob.type == 'MESH' and ob not in rig.children:
+        if rig:
+            for ob1 in rig.children:
+                if ob1.type == 'MESH':
+                    self.finalizeMesh(ob1, struct)
+        if ob.type == 'MESH' and rig and ob not in rig.children:
             self.finalizeMesh(ob, struct)
         if self.nothing:
             print("Nothing to save.")

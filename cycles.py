@@ -73,7 +73,9 @@ class CyclesMaterial(Material):
             pass
         elif isCharacter(ob):
             color = LS.skinColor
-        elif ob.data and ob.data.DazGraftGroup:
+            mtype = 'SKIN'
+        elif (ob.data and
+              (ob.data.DazGraftGroup or not ob.data.vertices)):
             color = LS.skinColor
             mtype = 'SKIN'
         guessMaterialColor(mat, GS.viewportColors, False, color, mtype)
@@ -262,7 +264,7 @@ class CyclesTree(Tree):
         if key is None:
             return self.texco
         elif key not in self.texcos.keys():
-            self.addUvNode(key, key)
+            _node, self.texcos[key] = self.addUvNode(key)
         return self.texcos[key]
 
 
@@ -536,16 +538,14 @@ class CyclesTree(Tree):
 
 
     def addTexco(self, slot):
-        if self.owner.useDefaultUvs:
+        if self.owner.uvNodeType == 'TEXCO' or not self.owner.uv_set:
             node = self.addNode("ShaderNodeTexCoord", 1)
             self.texco = node.outputs[slot]
         else:
-            node = self.addNode("ShaderNodeUVMap", 1)
-            node.uv_map = self.owner.uv_set.name
-            self.texco = node.outputs["UV"]
+            node, self.texco = self.addUvNode(self.owner.uv_set.name)
         self.tileTexco()
         for key,uvset in self.owner.uv_sets.items():
-            self.addUvNode(key, uvset.name)
+            _node, self.texcos[key] = self.addUvNode(uvset.name)
         return node
 
 
@@ -557,11 +557,16 @@ class CyclesTree(Tree):
         self.mapTexco(ox, oy, kx, ky)
 
 
-    def addUvNode(self, key, uvname):
-        node = self.addNode("ShaderNodeUVMap", 1)
-        node.uv_map = uvname
-        slot = "UV"
-        self.texcos[key] = node.outputs[slot]
+    def addUvNode(self, uvname):
+        if self.owner.uvNodeType == 'ATTRIBUTE':
+            node = self.addNode("ShaderNodeAttribute", 1)
+            node.attribute_type == 'OBJECT'
+            node.attribute_name = uvname
+            return node, node.outputs["Vector"]
+        else:
+            node = self.addNode("ShaderNodeUVMap", 1)
+            node.uv_map = uvname
+            return node, node.outputs["UV"]
 
 
     def mapTexco(self, ox, oy, kx, ky):

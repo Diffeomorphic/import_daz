@@ -69,7 +69,7 @@ class Material(Asset, Channels):
         self.decals = []
         self.uv_set = None
         self.uv_sets = {}
-        self.useDefaultUvs = True
+        self.uvNodeType = 'TEXCO'
         self.udim = 0
         self.basemix = 0
         self.isShellMat = False
@@ -136,7 +136,7 @@ class Material(Asset, Channels):
                 uvset.material = self
                 if geo and uvset != geo.default_uv_set:
                     geo.uv_sets[uvset.name] = uvset
-                    self.useDefaultUvs = False
+                    self.uvNodeType = 'UVMAP'
                 self.uv_set = uvset
 
 
