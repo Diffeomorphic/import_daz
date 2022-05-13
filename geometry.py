@@ -120,13 +120,13 @@ class GeoNode(Node, SimNode):
         activateObject(context, ob)
         mats = [dmat.rna for dmat in self.materials.values()]
         print('Build %d shells for "%s" with prefix "%s"' % (len(self.shellGeos), ob.name, self.shellPrefix))
-        for shgeonode in self.shellGeos:
+        for shgeonode,visibles in self.shellGeos:
             mnames = []
             mats = []
             shmats = []
             for mname,dmat in self.materials.items():
                 shname = "%s%s" % (self.shellPrefix, mname)
-                if shname in shgeonode.materials.keys():
+                if visibles[mname] and shname in shgeonode.materials.keys():
                     mnames.append(mname)
                     mats.append(dmat.rna)
                     shmat = shgeonode.materials[shname]
@@ -143,7 +143,7 @@ class GeoNode(Node, SimNode):
                 LS.collection.objects.link(shell)
             shell.parent = ob
             shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
-            makeShellModifier(shell, ob, mnames, mats)
+            makeShellModifier(shell, ob, mnames, mats, shmats)
 
 
     def addLSMesh(self, ob, inst, rigname):
@@ -803,7 +803,7 @@ class Geometry(Asset, Channels):
                     self.uvs = dict(extra["material_uvs"])
         if GS.shellMethod != 'MESH':
             if inst.shellNode:
-                missing = self.addShells(inst.shellNode, inst, self.material_group_vis)
+                missing = self.addShells(inst.shellNode, inst)
                 for mname,shmat,uv in missing:
                     msg = ("Missing shell material\n" +
                            "Material: %s\n" % mname +
@@ -814,7 +814,7 @@ class Geometry(Asset, Channels):
                     reportError(msg, trigger=(2,4))
 
 
-    def addShells(self, inst, shinst, vis):
+    def addShells(self, inst, shinst):
         missing = []
         geonode = inst.geometries[0]
         geo = geonode.data
@@ -822,21 +822,21 @@ class Geometry(Asset, Channels):
             shgeonode = shinst.geometries[0]
             shname = shinst.name
             shmats = {}
+            visibles = {}
             for mname,shmat in shgeonode.materials.items():
-                if mname in vis.keys():
-                    if not vis[mname]:
-                        continue
-                else:
+                vis = self.material_group_vis.get(mname)
+                if vis is None:
                     print("Warning: no visibility for material %s" % mname)
                 if (shmat.getValue("getChannelCutoutOpacity", 1) == 0 or
                     shmat.getValue("getChannelOpacity", 1) == 0):
-                    continue
+                    vis = False
                 shmats[mname] = shmat
+                visibles[mname] = vis
 
             if GS.shellMethod == 'GEONODES':
                 for mname in geonode.materials.keys():
                     if mname in shmats.keys():
-                        geonode.shellGeos.append(shgeonode)
+                        geonode.shellGeos.append((shgeonode,visibles))
                         uv = self.uvs.get(mname)
                         if uv:
                             uvset = self.addNewUvset(uv, geo, inst)
@@ -847,11 +847,13 @@ class Geometry(Asset, Channels):
                                 dmat.uv_set = uvset
                         return []
                 for child in inst.children.values():
-                    if self.addShellGeo(child, shmats, shgeonode, ""):
+                    if self.addShellGeo(child, shmats, shgeonode, visibles, ""):
                         return []
                 return []
 
             for mname,shmat in shmats.items():
+                if not visibles[mname]:
+                    continue
                 uv = self.uvs.get(mname)
                 if uv and mname in geonode.materials.keys():
                     dmat = geonode.materials[mname]
@@ -868,16 +870,16 @@ class Geometry(Asset, Channels):
         return [miss for miss in missing if miss[0] not in self.matused]
 
 
-    def addShellGeo(self, inst, shmats, shgeonode, pprefix):
+    def addShellGeo(self, inst, shmats, shgeonode, visibles, pprefix):
         if not inst.geometries:
-            return False
+            return False,False
         geonode = inst.geometries[0]
         geo = geonode.data
         prefix = "%s%s_" % (pprefix, inst.node.name)
         for mname in shmats.keys():
             mname1 = self.unprefixName(prefix, inst, mname)
             if mname1 in geonode.materials.keys():
-                geonode.shellGeos.append(shgeonode)
+                geonode.shellGeos.append((shgeonode,visibles))
                 geonode.shellPrefix = prefix
                 uv = self.uvs.get(mname)
                 uvset = self.addNewUvset(uv, geo, inst)
@@ -888,7 +890,7 @@ class Geometry(Asset, Channels):
                     dmat.uv_set = uvset
                 return True
         for child in inst.children.values():
-            if self.addShellGeo(child, shmats, shgeonode, prefix):
+            if self.addShellGeo(child, shmats, shgeonode, visibles, prefix):
                 return True
         return False
 

@@ -179,12 +179,12 @@ class DAZ_OT_AddShell(DazOperator, IsMesh):
         for ob in getSelectedMeshes(context):
             if ob.data.vertices:
                 mnames = [mat.name for mat in ob.data.materials]
-                makeShellModifier(shell, ob, mnames, ob.data.materials)
+                makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
                 return
         raise DazError("No matching mesh selected")
 
 
-def makeShellModifier(shell, ob, mnames, mats):
+def makeShellModifier(shell, ob, mnames, mats, shmats):
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
     group.create(ob.name, mnames)
@@ -192,7 +192,7 @@ def makeShellModifier(shell, ob, mnames, mats):
     mod.node_group = group.group
     mod["Input_1"] = ob
     mod["Input_2"] = 0.1 * ob.DazScale
-    for n,shmat in enumerate(shell.data.materials):
+    for n,shmat in enumerate(shmats):
         mod["Input_%d" % (n+3)] = shmat
 
 #----------------------------------------------------------
