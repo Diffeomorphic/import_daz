@@ -115,7 +115,7 @@ class GeoNode(Node, SimNode):
     def buildShells(self, context):
         if not self.shellGeos:
             return
-        from .geonodes import GeoshellGroup
+        from .geonodes import makeShellModifier
         ob = self.rna
         activateObject(context, ob)
         mats = [dmat.rna for dmat in self.materials.values()]
@@ -132,24 +132,18 @@ class GeoNode(Node, SimNode):
                     shmat = shgeonode.materials[shname]
                     shmats.append(shmat.rna)
 
-            me = bpy.data.meshes.new(shgeonode.name)
-            for shmat in shmats:
-                me.materials.append(shmat)
-            shell = bpy.data.objects.new(shgeonode.name, me)
-            shgeonode.rna = shell
-            LS.collection.objects.link(shell)
+            if shgeonode.rna:
+                shell = shgeonode.rna
+            else:
+                me = bpy.data.meshes.new(shgeonode.name)
+                for shmat in shmats:
+                    me.materials.append(shmat)
+                shell = bpy.data.objects.new(shgeonode.name, me)
+                shgeonode.rna = shell
+                LS.collection.objects.link(shell)
             shell.parent = ob
             shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
-
-            mod = shell.modifiers.new(shgeonode.name, 'NODES')
-            group = GeoshellGroup()
-            group.create(ob.name, mnames)
-            group.addNodes(mnames, mats)
-            mod.node_group = group.group
-            mod["Input_1"] = ob
-            mod["Input_2"] = 0.1 * ob.DazScale
-            for n,shmat in enumerate(shmats):
-                mod["Input_%d" % (n+3)] = shmat
+            makeShellModifier(shell, ob, mnames, mats)
 
 
     def addLSMesh(self, ob, inst, rigname):
@@ -333,7 +327,11 @@ class GeoNode(Node, SimNode):
 
     def postbuild(self, context, inst):
         ob = self.rna
+        hdob = self.hdobject
         if ob:
+            self.setHideInfoMesh(ob)
+            if hdob and hdob != ob:
+                self.setHideInfoMesh(hdob)
             pruneUvMaps(ob)
             self.addLSMesh(ob, inst, None)
             if GS.shellMethod == 'GEONODES':
@@ -388,26 +386,19 @@ class GeoNode(Node, SimNode):
         inst.parentObject(context, self.hdobject)
 
 
-    def setHideInfo(self):
-        if self.data is None:
-            return
-        self.setHideInfoMesh(self.rna)
-        if self.hdobject and self.hdobject != self.rna:
-            self.setHideInfoMesh(self.hdobject)
-
-
     def setHideInfoMesh(self, ob):
+        geo = self.data
         if ob.data is None:
             return
-        ob.data.DazVertexCount = self.data.vertex_count
-        if self.data.hidden_polys:
+        ob.data.DazVertexCount = geo.vertex_count
+        if geo.hidden_polys:
             hgroup = ob.data.DazMaskGroup
-            for fn in self.data.hidden_polys:
+            for fn in geo.hidden_polys:
                 elt = hgroup.add()
                 elt.a = fn
-        if self.data.vertex_pairs:
+        if geo.vertex_pairs:
             ggroup = ob.data.DazGraftGroup
-            for vn,pvn in self.data.vertex_pairs:
+            for vn,pvn in geo.vertex_pairs:
                 pair = ggroup.add()
                 pair.a = vn
                 pair.b = pvn

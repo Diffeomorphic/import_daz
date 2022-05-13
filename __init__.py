@@ -89,7 +89,7 @@ regnames = ["propgroups", "daz", "uilist", "driver",
             "guess", "convert", "main", "finger",
             "matedit", "proxy", "rigify", "merge", "hide", "store",
             "mhx", "layers", "hair", "transfer", "dforce",
-            "hdmorphs", "facecap", "udim"]
+            "hdmorphs", "facecap", "udim", "geonodes"]
 
 def register():
     for mod in theModules:

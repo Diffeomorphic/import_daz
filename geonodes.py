@@ -26,6 +26,8 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import bpy
+from .error import *
+from .utils import *
 from .tree import Tree, NodeGroup, XSIZE, YSIZE
 
 VECTOR = 1
@@ -160,3 +162,52 @@ class GeoshellGroup(Tree, NodeGroup):
         #self.links.new(setpos.outputs["Geometry"], joinGeo.inputs["Geometry"])
         self.links.new(setpos.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
+#----------------------------------------------------------
+#   Add shells
+#----------------------------------------------------------
+
+class DAZ_OT_AddShell(DazOperator, IsMesh):
+    bl_idname = "daz.add_shell"
+    bl_label = "Add Shell"
+    bl_description = "Add active shell to selected mesh"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        shell = context.object
+        if len(shell.data.vertices) > 0:
+            raise DazError("Active mesh must be a shell with zero vertices")
+        for ob in getSelectedMeshes(context):
+            if ob.data.vertices:
+                mnames = [mat.name for mat in ob.data.materials]
+                makeShellModifier(shell, ob, mnames, ob.data.materials)
+                return
+        raise DazError("No matching mesh selected")
+
+
+def makeShellModifier(shell, ob, mnames, mats):
+    mod = shell.modifiers.new(shell.name, 'NODES')
+    group = GeoshellGroup()
+    group.create(ob.name, mnames)
+    group.addNodes(mnames, mats)
+    mod.node_group = group.group
+    mod["Input_1"] = ob
+    mod["Input_2"] = 0.1 * ob.DazScale
+    for n,shmat in enumerate(shell.data.materials):
+        mod["Input_%d" % (n+3)] = shmat
+
+#----------------------------------------------------------
+#   Initialize
+#----------------------------------------------------------
+
+classes = [
+    DAZ_OT_AddShell,
+]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)

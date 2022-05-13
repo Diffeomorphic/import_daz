@@ -562,8 +562,6 @@ class Instance(Accessor, Channels, SimNode):
             print("Warning: Trying to parent %s to itself" % ob)
             ob.parent = None
         elif isinstance(self.parent, FigureInstance):
-            for geonode in self.geometries:
-                geonode.setHideInfo()
             ob.parent = self.parent.rna
             ob.parent_type = 'OBJECT'
         elif isinstance(self.parent, BoneInstance):
@@ -842,7 +840,7 @@ class Node(Asset, Formula, Channels):
             ob = bpy.data.objects.new(inst.name, None)
             self.data.fixMappingNodes(inst)
         elif isinstance(self.data, Asset):
-            if self.data.shstruct and GS.shellMethod != 'MESH':
+            if self.data.shstruct and GS.shellMethod == 'MATERIAL':
                 return
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
