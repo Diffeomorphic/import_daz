@@ -246,6 +246,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                     cob.data.vertices[cvn].select = True
                     self.cedge[pair.b] = True
 
+        # Retarget shell modifiers
+        if bpy.app.version >= (3,1,0):
+            self.retargetShellModifiers(cob, anatomies)
+
         # Also select cob graft group. These will not be removed.
         if cob.data.DazGraftGroup:
             for pair in cob.data.DazGraftGroup:
@@ -390,6 +394,16 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         group.create(name)
         group.addNodes(anatomies)
         return group.group
+
+
+    def retargetShellModifiers(self, cob, anatomies):
+        for ob in bpy.data.objects:
+            if ob.type == 'MESH':
+                for mod in ob.modifiers:
+                    if mod.type == 'NODES':
+                        aob = mod.get("Input_1")
+                        if aob and aob in anatomies:
+                            mod["Input_1"] = cob
 
 
     def getActiveUvLayer(self, ob):

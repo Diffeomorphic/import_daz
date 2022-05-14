@@ -178,11 +178,14 @@ class DAZ_OT_AddShell(DazOperator):
         return (ob and ob.type == 'MESH' and len(ob.data.vertices) == 0)
 
     def run(self, context):
+        from .matedit import copyMaterialAttributes
         shell = context.object
         for ob in getSelectedMeshes(context):
             if ob.data.vertices:
                 mnames = [mat.name for mat in ob.data.materials]
                 makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
+                for src,trg in zip(ob.data.materials, shell.data.materials):
+                    copyMaterialAttributes(src, trg)
                 return
         raise DazError("No matching mesh selected")
 
