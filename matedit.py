@@ -1120,11 +1120,19 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
 #   Make Material set
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeMaterialSet(DazOperator, IsMesh):
-    bl_idname = "daz.make_material_set"
-    bl_label = "Make Material Set"
+class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
+    bl_idname = "daz.make_palette"
+    bl_label = "Make Palette"
     bl_description = "Create a palette for use with the asset browser"
     bl_options = {'UNDO'}
+
+    useMarkAsAsset : BoolProperty(
+        name = "Mark As Asset",
+        description = "Mark the palette for the asset browser and make all materials unique",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useMarkAsAsset")
 
     def run(self, context):
         ob = context.object
@@ -1135,6 +1143,8 @@ class DAZ_OT_MakeMaterialSet(DazOperator, IsMesh):
         for mat,f in zip(ob.data.materials, cone.data.polygons):
             cone.data.materials.append(mat)
             f.material_index = f.index
+        if not self.useMarkAsAsset:
+            return
         bpy.ops.file.make_paths_absolute()
         bpy.ops.object.make_single_user(object=False, obdata=False, material=True, animation=False, obdata_animation=False)
         bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=False)
@@ -1163,7 +1173,7 @@ classes = [
     DAZ_OT_RemoveShells,
     DAZ_OT_ReplaceShells,
     DAZ_OT_ChangeUnitScale,
-    DAZ_OT_MakeMaterialSet,
+    DAZ_OT_MakePalette,
 ]
 
 def register():

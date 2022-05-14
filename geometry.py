@@ -143,7 +143,10 @@ class GeoNode(Node, SimNode):
                 LS.collection.objects.link(shell)
             shell.parent = ob
             shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
-            makeShellModifier(shell, ob, mnames, mats, shmats)
+            for mname in mnames:
+                pg = shell.data.DazShellNames.add()
+                pg.name = mname
+            makeShellModifier(shell, ob, mats, shmats)
 
 
     def addLSMesh(self, ob, inst, rigname):
@@ -1798,6 +1801,7 @@ def register():
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
+    bpy.types.Mesh.DazShellNames = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Object.DazMultires = BoolProperty(default=False)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
 

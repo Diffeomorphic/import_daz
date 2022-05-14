@@ -166,25 +166,28 @@ class GeoshellGroup(Tree, NodeGroup):
 #   Add shells
 #----------------------------------------------------------
 
-class DAZ_OT_AddShell(DazOperator, IsMesh):
+class DAZ_OT_AddShell(DazOperator):
     bl_idname = "daz.add_shell"
     bl_label = "Add Shell"
     bl_description = "Add active shell to selected mesh"
     bl_options = {'UNDO'}
 
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and len(ob.DazShellNames) > 0)
+
     def run(self, context):
         shell = context.object
-        if len(shell.data.vertices) > 0:
-            raise DazError("Active mesh must be a shell with zero vertices")
         for ob in getSelectedMeshes(context):
             if ob.data.vertices:
-                mnames = [mat.name for mat in ob.data.materials]
-                makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
+                makeShellModifier(shell, ob, ob.data.materials, shell.data.materials)
                 return
         raise DazError("No matching mesh selected")
 
 
-def makeShellModifier(shell, ob, mnames, mats, shmats):
+def makeShellModifier(shell, ob, mats, shmats):
+    mnames = shell.data.DazShellNames.keys()
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
     group.create(ob.name, mnames)
