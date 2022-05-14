@@ -236,6 +236,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.prune_node_trees")
         self.layout.separator()
         self.layout.operator("daz.add_shell")
+        self.layout.operator("daz.replace_materials")
         self.layout.operator("daz.make_palette")
         self.layout.operator("daz.copy_materials")
         self.layout.separator()

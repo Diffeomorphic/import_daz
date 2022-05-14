@@ -1153,6 +1153,54 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
                 mat.name = mat.name[:-4]
         bpy.ops.asset.mark()
 
+#-------------------------------------------------------------
+#   Replace material node tree
+#-------------------------------------------------------------
+
+def getAllMaterials(scn, context):
+    return [(mat.name, mat.name, mat.name) for mat in bpy.data.materials]
+
+
+class DAZ_OT_ReplaceMaterials(DazPropsOperator, MaterialSelector, IsMesh):
+    bl_idname = "daz.replace_materials"
+    bl_label = "Replace Materials"
+    bl_description = "Replace the node trees of selected materials.\nFor copying geograft base materials"
+    bl_options = {'UNDO'}
+
+    material : EnumProperty(
+        items = getAllMaterials,
+        name = "Material",
+        description = "Use node tree from this material")
+
+    def draw(self, context):
+        MaterialSelector.draw(self, context)
+        self.layout.prop(self, "material")
+
+    def invoke(self, context, event):
+        global theMaterialEditor
+        theMaterialEditor = self
+        ob = context.object
+        self.setupMaterials(ob)
+        return DazPropsOperator.invoke(self, context, event)
+
+    def isDefaultActive(self, mat, ob):
+        return True
+
+    def run(self, context):
+        attributes = [
+            'blend_method', 'shadow_method', 'alpha_threshold', 'show_transparent_back', 'use_backface_culling',
+            'use_screen_refraction', 'use_sss_translucency', 'refraction_depth',
+            'diffuse_color', 'specular_color', 'roughness', 'specular_intensity', 'metallic',
+        ]
+        from .tree import copyNodeTree
+        ob = context.object
+        src = bpy.data.materials[self.material]
+        for mat in ob.data.materials:
+            if self.useMaterial(mat):
+                copyNodeTree(src.node_tree, mat.node_tree)
+                for attr in attributes:
+                    setattr(mat, attr, getattr(src, attr))
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1174,6 +1222,7 @@ classes = [
     DAZ_OT_ReplaceShells,
     DAZ_OT_ChangeUnitScale,
     DAZ_OT_MakePalette,
+    DAZ_OT_ReplaceMaterials,
 ]
 
 def register():

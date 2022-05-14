@@ -181,6 +181,9 @@ def getLinkTo(tree, node, slot):
             return link
     return None
 
+#-------------------------------------------------------------
+#   Prune node tree
+#-------------------------------------------------------------
 
 def pruneNodeTree(tree):
     marked = {}
@@ -208,4 +211,49 @@ def pruneNodeTree(tree):
         if not marked[node.name]:
             tree.nodes.remove(node)
     return marked
+
+#-------------------------------------------------------------
+#   Copy node tree
+#-------------------------------------------------------------
+
+def copyNodeTree(src, trg):
+    def copy_attributes(attributes, old_prop, new_prop):
+        for attr in attributes:
+            if hasattr( new_prop, attr ):
+                try:
+                    setattr( new_prop, attr, getattr( old_prop, attr ) )
+                except AttributeError:
+                    pass
+
+    def get_node_attributes(node):
+        ignore_attributes = ( "rna_type", "type", "dimensions", "inputs", "outputs", "internal_links", "select")
+        attributes = []
+        for attr in node.bl_rna.properties:
+            if not attr.identifier in ignore_attributes and not attr.identifier.split("_")[0] == "bl":
+                attributes.append(attr.identifier)
+        return attributes
+
+    def copy_nodes(src, trg):
+        input_attributes = ( "default_value", "name" )
+        output_attributes = ( "default_value", "name" )
+        for node in src.nodes:
+            new_node = trg.nodes.new( node.bl_idname )
+            node_attributes = get_node_attributes( node )
+            copy_attributes( node_attributes, node, new_node )
+            for i, inp in enumerate(node.inputs):
+                copy_attributes( input_attributes, inp, new_node.inputs[i] )
+            for i, out in enumerate(node.outputs):
+                copy_attributes( output_attributes, out, new_node.outputs[i] )
+
+    def copy_links(src, trg):
+        for node in src.nodes:
+            new_node = trg.nodes[ node.name ]
+            for i, inp in enumerate( node.inputs ):
+                for link in inp.links:
+                    connected_node = trg.nodes[ link.from_node.name ]
+                    trg.links.new( connected_node.outputs[ link.from_socket.name ], new_node.inputs[i] )
+
+    trg.nodes.clear()
+    copy_nodes( src, trg )
+    copy_links( src, trg )
 

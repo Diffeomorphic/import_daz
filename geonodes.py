@@ -175,19 +175,19 @@ class DAZ_OT_AddShell(DazOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'MESH' and len(ob.DazShellNames) > 0)
+        return (ob and ob.type == 'MESH' and len(ob.data.vertices) == 0)
 
     def run(self, context):
         shell = context.object
         for ob in getSelectedMeshes(context):
             if ob.data.vertices:
-                makeShellModifier(shell, ob, ob.data.materials, shell.data.materials)
+                mnames = [mat.name for mat in ob.data.materials]
+                makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
                 return
         raise DazError("No matching mesh selected")
 
 
-def makeShellModifier(shell, ob, mats, shmats):
-    mnames = shell.data.DazShellNames.keys()
+def makeShellModifier(shell, ob, mnames, mats, shmats):
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
     group.create(ob.name, mnames)

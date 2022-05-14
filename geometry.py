@@ -126,7 +126,7 @@ class GeoNode(Node, SimNode):
             shmats = []
             for mname,dmat in self.materials.items():
                 shname = "%s%s" % (self.shellPrefix, mname)
-                if visibles[mname] and shname in shgeonode.materials.keys():
+                if shname in shgeonode.materials.keys() and visibles[shname]:
                     mnames.append(mname)
                     mats.append(dmat.rna)
                     shmat = shgeonode.materials[shname]
@@ -143,10 +143,7 @@ class GeoNode(Node, SimNode):
                 LS.collection.objects.link(shell)
             shell.parent = ob
             shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
-            for mname in mnames:
-                pg = shell.data.DazShellNames.add()
-                pg.name = mname
-            makeShellModifier(shell, ob, mats, shmats)
+            makeShellModifier(shell, ob, mnames, mats, shmats)
 
 
     def addLSMesh(self, ob, inst, rigname):
@@ -838,7 +835,7 @@ class Geometry(Asset, Channels):
 
             if GS.shellMethod == 'GEONODES':
                 for mname in geonode.materials.keys():
-                    if mname in shmats.keys():
+                    if mname in shmats.keys() and visibles[mname]:
                         geonode.shellGeos.append((shgeonode,visibles))
                         uv = self.uvs.get(mname)
                         if uv:
@@ -875,13 +872,13 @@ class Geometry(Asset, Channels):
 
     def addShellGeo(self, inst, shmats, shgeonode, visibles, pprefix):
         if not inst.geometries:
-            return False,False
+            return False
         geonode = inst.geometries[0]
         geo = geonode.data
         prefix = "%s%s_" % (pprefix, inst.node.name)
         for mname in shmats.keys():
             mname1 = self.unprefixName(prefix, inst, mname)
-            if mname1 in geonode.materials.keys():
+            if mname1 in geonode.materials.keys() and visibles[mname]:
                 geonode.shellGeos.append((shgeonode,visibles))
                 geonode.shellPrefix = prefix
                 uv = self.uvs.get(mname)
@@ -1801,7 +1798,6 @@ def register():
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
-    bpy.types.Mesh.DazShellNames = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Object.DazMultires = BoolProperty(default=False)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
 
