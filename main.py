@@ -118,6 +118,8 @@ class DazLoader:
         from .objfile import getFitFile, fitToFile
 
         LS.scene = filepath
+        if bpy.app.version < (3,1,0) and GS.shellMethod == 'GEONODES':
+            GS.shellMethod = 'MATERIAL'
         t1 = perf_counter()
         startProgress("\nLoading %s" % filepath)
         if LS.fitFile:
