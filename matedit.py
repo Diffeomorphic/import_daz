@@ -28,6 +28,7 @@
 
 import bpy
 import os
+import math
 from mathutils import Vector
 
 from .error import *
@@ -1136,13 +1137,44 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
 
     def run(self, context):
         ob = context.object
-        nmat = len(ob.data.materials)
-        bpy.ops.mesh.primitive_cone_add(vertices=nmat, radius1=0.5, depth=0.1, end_fill_type='NOTHING')
-        cone = context.object
-        cone.name = "%s Palette" % ob.name
-        for mat,f in zip(ob.data.materials, cone.data.polygons):
-            cone.data.materials.append(mat)
+        scn = context.scene
+
+        # Make mesh
+        nmats = len(ob.data.materials)
+        n = int(math.floor(math.sqrt(nmats-1)))+2
+        verts = [(i,j,0) for j in range(n) for i in range(n)]
+        faces = [[(i+j*n), (i+1+j*n), (i+1+(j+1)*n), (i+(j+1)*n)]
+            for j in range(n-1) for i in range(n-1)]
+        name = "%s Palette" % ob.name
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(verts, [], faces)
+
+        # Add materials
+        for mat,f in zip(ob.data.materials, me.polygons):
+            me.materials.append(mat)
             f.material_index = f.index
+        nfaces = (n-1)*(n-1)
+        if nfaces > nmats:
+            dummy = bpy.data.materials.new("Dummy")
+            me.materials.append(dummy)
+            for fn in range(nfaces-nmats+1, nfaces):
+                me.polygons[fn].material_index = nmats
+
+        # Add UVs
+        self.uvlayers = {}
+        for mat in ob.data.materials:
+            self.findUvlayers(mat)
+        for uvname in self.uvlayers.keys():
+            uvlayer = me.uv_layers.new(name=uvname)
+            for fn in range(nfaces):
+                uvlayer.data[fn*4].uv = (0,0)
+                uvlayer.data[fn*4+1].uv = (1,0)
+                uvlayer.data[fn*4+2].uv = (1,1)
+                uvlayer.data[fn*4+3].uv = (0,1)
+
+        palette = bpy.data.objects.new(name, me)
+        scn.collection.objects.link(palette)
+        activateObject(context, palette)
         if not self.useMarkAsAsset:
             return
         bpy.ops.file.make_paths_absolute()
@@ -1152,6 +1184,16 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
             if len(mat.name) > 4 and mat.name[-4] == "." and mat.name[-3:].isdigit():
                 mat.name = mat.name[:-4]
         bpy.ops.asset.mark()
+
+
+    def findUvlayers(self, mat):
+        for node in mat.node_tree.nodes.values():
+            if node.type == 'ATTRIBUTE':
+                self.uvlayers[node.attribute_name] = True
+            elif node.type == 'UVMAP':
+                self.uvlayers[node.uv_map] = True
+            elif node.type == 'NORMAL_MAP':
+                self.uvlayers[node.uv_map] = True
 
 #-------------------------------------------------------------
 #   Replace material node tree
