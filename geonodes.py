@@ -166,28 +166,76 @@ class GeoshellGroup(Tree, NodeGroup):
 #   Add shells
 #----------------------------------------------------------
 
-class DAZ_OT_AddShell(DazOperator):
+def getUvset(scn, context):
+    return [(uvset,uvset,uvset) for uvset in theUvSets]
+
+
+class DAZ_OT_AddShell(DazPropsOperator):
     bl_idname = "daz.add_shell"
     bl_label = "Add Shell"
     bl_description = "Add active shell to selected mesh"
     bl_options = {'UNDO'}
+
+    uvset : EnumProperty(
+        items = getUvset,
+        name = "UV Set",
+        description = "Use this UV set for shell materials")
 
     @classmethod
     def poll(self, context):
         ob = context.object
         return (ob and ob.type == 'MESH' and len(ob.data.vertices) == 0)
 
+    def draw(self, context):
+        self.layout.prop(self, "uvset")
+
+
+    def invoke(self, context, event):
+        global theUvSets
+        self.object = None
+        objects = [ob for ob in getSelectedMeshes(context) if ob.data.vertices]
+        if objects:
+            self.object = objects[0]
+            theUvSets = [uvlayer.name for uvlayer in self.object.data.uv_layers]
+        return DazPropsOperator.invoke(self, context, event)
+
+
     def run(self, context):
         from .matedit import copyMaterialAttributes
         shell = context.object
-        for ob in getSelectedMeshes(context):
-            if ob.data.vertices:
-                mnames = [mat.name for mat in ob.data.materials]
-                makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
-                for src,trg in zip(ob.data.materials, shell.data.materials):
-                    copyMaterialAttributes(src, trg)
-                return
-        raise DazError("No matching mesh selected")
+        ob = self.object
+        if ob is None:
+            raise DazError("No matching mesh selected")
+        self.fixMaterials(shell.data.materials, self.uvset)
+        mnames = [mat.name for mat in ob.data.materials]
+        makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
+        for src,trg in zip(ob.data.materials, shell.data.materials):
+            copyMaterialAttributes(src, trg)
+
+
+    def fixMaterials(self, mats, uvset):
+        for mat in mats:
+            tree = mat.node_tree
+            if tree is None:
+                continue
+            texcos = []
+            for node in tree.nodes:
+                if node.type == 'NORMAL_MAP':
+                    node.uv_map = uvset
+                elif node.type == 'UVMAP':
+                    node.uv_map = uvset
+                elif node.type == 'ATTRIBUTE':
+                    node.attribute_name = uvset
+                elif node.type == 'TEX_COORD':
+                    texcos.append(node)
+                    attr = tree.nodes.new("ShaderNodeAttribute")
+                    attr.location = node.location
+                    attr.attribute_name = uvset
+                    for socket in node.outputs:
+                        for link in list(socket.links):
+                            tree.links.new(attr.outputs["Vector"], link.to_socket)
+            for texco in texcos:
+                tree.nodes.remove(texco)
 
 
 def makeShellModifier(shell, ob, mnames, mats, shmats):

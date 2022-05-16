@@ -352,7 +352,7 @@ class GeoNode(Node, SimNode):
         def fixHDMaterial(mat, uvmap):
             keep = True
             for node in mat.node_tree.nodes:
-                if node.type in ['UVMAP', 'NORMAL_MAP']:
+                if node.type in ['UVMAP', 'ATTRIBUTE', 'NORMAL_MAP']:
                     keep = False
                     break
             if keep:
@@ -360,7 +360,7 @@ class GeoNode(Node, SimNode):
             else:
                 nmat = mat.copy()
                 for node in nmat.node_tree.nodes:
-                    if node.type in ['UVMAP', 'NORMAL_MAP']:
+                    if node.type in ['UVMAP', 'ATTRIBUTE', 'NORMAL_MAP']:
                         node.uv_map = uvmap
                 return nmat
 
