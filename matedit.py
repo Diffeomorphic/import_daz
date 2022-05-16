@@ -1141,10 +1141,17 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
 
         # Make mesh
         nmats = len(ob.data.materials)
-        n = int(math.floor(math.sqrt(nmats-1)))+2
-        verts = [(i,j,0) for j in range(n) for i in range(n)]
-        faces = [[(i+j*n), (i+1+j*n), (i+1+(j+1)*n), (i+(j+1)*n)]
-            for j in range(n-1) for i in range(n-1)]
+        n = int(math.floor(math.sqrt(nmats-1)))+1
+        n1 = n+1
+        imax = nmats//(n+1) + 1
+        jmax = nmats - n*(imax-1)
+        verts = [(i,j,0) for j in range(jmax) for i in range(n+1)]
+        verts += [(i,jmax,0) for i in range(imax+1)]
+        faces = [[(i+j*n1), (i+1+j*n1), (i+1+(j+1)*n1), (i+(j+1)*n1)]
+            for j in range(jmax-1) for i in range(n)]
+        faces += [[(i+(jmax-1)*n1), (i+1+(jmax-1)*n1), (i+1+jmax*n1), (i+jmax*n1)]
+            for i in range(imax)]
+        nfaces = len(faces)
         name = "%s Palette" % ob.name
         me = bpy.data.meshes.new(name)
         me.from_pydata(verts, [], faces)
@@ -1153,18 +1160,14 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         for mat,f in zip(ob.data.materials, me.polygons):
             me.materials.append(mat)
             f.material_index = f.index
-        nfaces = (n-1)*(n-1)
-        if nfaces > nmats:
-            dummy = bpy.data.materials.new("Dummy")
-            me.materials.append(dummy)
-            for fn in range(nfaces-nmats+1, nfaces):
-                me.polygons[fn].material_index = nmats
 
         # Add UVs
-        self.uvlayers = {}
+        uvlayers = {}
         for mat in ob.data.materials:
-            self.findUvlayers(mat)
-        for uvname in self.uvlayers.keys():
+            self.findUvlayers(mat, uvlayers)
+        if not uvlayers:
+            uvlayers["UVMap"] = True
+        for uvname in uvlayers.keys():
             uvlayer = me.uv_layers.new(name=uvname)
             for fn in range(nfaces):
                 uvlayer.data[fn*4].uv = (0,0)
@@ -1186,14 +1189,14 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         bpy.ops.asset.mark()
 
 
-    def findUvlayers(self, mat):
+    def findUvlayers(self, mat, uvlayers):
         for node in mat.node_tree.nodes.values():
             if node.type == 'ATTRIBUTE':
-                self.uvlayers[node.attribute_name] = True
+                uvlayers[node.attribute_name] = True
             elif node.type == 'UVMAP':
-                self.uvlayers[node.uv_map] = True
+                uvlayers[node.uv_map] = True
             elif node.type == 'NORMAL_MAP':
-                self.uvlayers[node.uv_map] = True
+                uvlayers[node.uv_map] = True
 
 #-------------------------------------------------------------
 #   Replace material node tree
