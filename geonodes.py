@@ -201,41 +201,16 @@ class DAZ_OT_AddShell(DazPropsOperator):
 
 
     def run(self, context):
-        from .matedit import copyMaterialAttributes
+        from .matedit import copyMaterialAttributes, fixMaterialUvs
         shell = context.object
         ob = self.object
         if ob is None:
             raise DazError("No matching mesh selected")
-        self.fixMaterials(shell.data.materials, self.uvset)
+        fixMaterialUvs(shell.data.materials, self.uvset)
         mnames = [mat.name for mat in ob.data.materials]
         makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
         for src,trg in zip(ob.data.materials, shell.data.materials):
             copyMaterialAttributes(src, trg)
-
-
-    def fixMaterials(self, mats, uvset):
-        for mat in mats:
-            tree = mat.node_tree
-            if tree is None:
-                continue
-            texcos = []
-            for node in tree.nodes:
-                if node.type == 'NORMAL_MAP':
-                    node.uv_map = uvset
-                elif node.type == 'UVMAP':
-                    node.uv_map = uvset
-                elif node.type == 'ATTRIBUTE':
-                    node.attribute_name = uvset
-                elif node.type == 'TEX_COORD':
-                    texcos.append(node)
-                    attr = tree.nodes.new("ShaderNodeAttribute")
-                    attr.location = node.location
-                    attr.attribute_name = uvset
-                    for socket in node.outputs:
-                        for link in list(socket.links):
-                            tree.links.new(attr.outputs["Vector"], link.to_socket)
-            for texco in texcos:
-                tree.nodes.remove(texco)
 
 
 def makeShellModifier(shell, ob, mnames, mats, shmats):

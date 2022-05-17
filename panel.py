@@ -233,14 +233,16 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
-        self.layout.operator("daz.prune_node_trees")
-        self.layout.operator("daz.replace_node_trees")
+        self.layout.separator()
+        self.layout.operator("daz.replace_materials")
+        self.layout.operator("daz.load_uv")
         if bpy.app.version >= (3,1,0):
             self.layout.operator("daz.add_shell")
+        self.layout.separator()
         self.layout.operator("daz.make_palette")
         self.layout.operator("daz.copy_materials")
         self.layout.separator()
-        self.layout.operator("daz.load_uv")
+        self.layout.operator("daz.prune_node_trees")
         self.layout.operator("daz.prune_uv_maps")
         self.layout.separator()
         self.layout.operator("daz.collapse_udims")

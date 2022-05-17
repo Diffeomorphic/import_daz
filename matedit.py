@@ -1164,7 +1164,7 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         # Add UVs
         uvlayers = {}
         for mat in ob.data.materials:
-            self.findUvlayers(mat, uvlayers)
+            findUvlayers(mat, uvlayers)
         if not uvlayers:
             uvlayers["UVMap"] = True
         for uvname in uvlayers.keys():
@@ -1188,16 +1188,6 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
                 mat.name = mat.name[:-4]
         bpy.ops.asset.mark()
 
-
-    def findUvlayers(self, mat, uvlayers):
-        for node in mat.node_tree.nodes.values():
-            if node.type == 'ATTRIBUTE':
-                uvlayers[node.attribute_name] = True
-            elif node.type == 'UVMAP':
-                uvlayers[node.uv_map] = True
-            elif node.type == 'NORMAL_MAP':
-                uvlayers[node.uv_map] = True
-
 #-------------------------------------------------------------
 #   Replace material node tree
 #-------------------------------------------------------------
@@ -1206,10 +1196,10 @@ def getAllMaterials(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in bpy.data.materials]
 
 
-class DAZ_OT_ReplaceNodeTrees(DazPropsOperator, MaterialSelector, IsMesh):
-    bl_idname = "daz.replace_node_trees"
-    bl_label = "Replace Node Trees"
-    bl_description = "Replace the node trees of selected materials.\nFor copying geograft base materials"
+class DAZ_OT_ReplaceMaterials(DazPropsOperator, MaterialSelector, IsMesh):
+    bl_idname = "daz.replace_materials"
+    bl_label = "Replace Materials"
+    bl_description = "Replace selected materials with specified material.\nFor copying geograft base materials"
     bl_options = {'UNDO'}
 
     material : EnumProperty(
@@ -1235,6 +1225,11 @@ class DAZ_OT_ReplaceNodeTrees(DazPropsOperator, MaterialSelector, IsMesh):
         from .tree import copyNodeTree
         ob = context.object
         src = bpy.data.materials[self.material]
+        uvlayers = {}
+        findUvlayers(src, uvlayers)
+        for uvname in uvlayers.keys():
+            if uvname not in ob.data.uv_layers.keys():
+                raise DazError("Required UV layer %s missing.\nRename or load" % uvname)
         for mat in ob.data.materials:
             if self.useMaterial(mat):
                 copyNodeTree(src.node_tree, mat.node_tree)
@@ -1249,6 +1244,44 @@ def copyMaterialAttributes(src, trg):
     ]
     for attr in attributes:
         setattr(trg, attr, getattr(src, attr))
+
+#----------------------------------------------------------
+#   UV utilities
+#----------------------------------------------------------
+
+def findUvlayers(mat, uvlayers):
+    for node in mat.node_tree.nodes.values():
+        if node.type == 'ATTRIBUTE':
+            uvlayers[node.attribute_name] = True
+        elif node.type == 'UVMAP':
+            uvlayers[node.uv_map] = True
+        elif node.type == 'NORMAL_MAP':
+            uvlayers[node.uv_map] = True
+
+
+def fixMaterialUvs(mats, uvset):
+    for mat in mats:
+        tree = mat.node_tree
+        if tree is None:
+            continue
+        texcos = []
+        for node in tree.nodes:
+            if node.type == 'NORMAL_MAP':
+                node.uv_map = uvset
+            elif node.type == 'UVMAP':
+                node.uv_map = uvset
+            elif node.type == 'ATTRIBUTE':
+                node.attribute_name = uvset
+            elif node.type == 'TEX_COORD':
+                texcos.append(node)
+                attr = tree.nodes.new("ShaderNodeAttribute")
+                attr.location = node.location
+                attr.attribute_name = uvset
+                for socket in node.outputs:
+                    for link in list(socket.links):
+                        tree.links.new(attr.outputs["Vector"], link.to_socket)
+        for texco in texcos:
+            tree.nodes.remove(texco)
 
 #----------------------------------------------------------
 #   Initialize
@@ -1271,7 +1304,7 @@ classes = [
     DAZ_OT_ReplaceShells,
     DAZ_OT_ChangeUnitScale,
     DAZ_OT_MakePalette,
-    DAZ_OT_ReplaceNodeTrees,
+    DAZ_OT_ReplaceMaterials,
 ]
 
 def register():
