@@ -181,6 +181,13 @@ class DAZ_OT_AddShell(DazPropsOperator):
         name = "UV Set",
         description = "Use this UV set for shell materials")
 
+    offset : FloatProperty(
+        name = "Offset Distance (cm)",
+        description = "Shell offset (cm)",
+        min = 0.0,
+        precision = 4,
+        default = 0.1)
+
     @classmethod
     def poll(self, context):
         ob = context.object
@@ -188,6 +195,7 @@ class DAZ_OT_AddShell(DazPropsOperator):
 
     def draw(self, context):
         self.layout.prop(self, "uvset")
+        self.layout.prop(self, "offset")
 
 
     def invoke(self, context, event):
@@ -206,21 +214,23 @@ class DAZ_OT_AddShell(DazPropsOperator):
         ob = self.object
         if ob is None:
             raise DazError("No matching mesh selected")
+        shell.visible_shadow = False
         fixMaterialUvs(shell.data.materials, self.uvset)
         mnames = [mat.name for mat in ob.data.materials]
-        makeShellModifier(shell, ob, mnames, ob.data.materials, shell.data.materials)
+        offset = ob.DazScale * self.offset
+        makeShellModifier(shell, ob, offset, mnames, ob.data.materials, shell.data.materials)
         for src,trg in zip(ob.data.materials, shell.data.materials):
             copyMaterialAttributes(src, trg)
 
 
-def makeShellModifier(shell, ob, mnames, mats, shmats):
+def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
     group.create(ob.name, mnames)
     group.addNodes(mnames, mats)
     mod.node_group = group.group
     mod["Input_1"] = ob
-    mod["Input_2"] = 0.1 * ob.DazScale
+    mod["Input_2"] = offset
     for n,shmat in enumerate(shmats):
         mod["Input_%d" % (n+3)] = shmat
 

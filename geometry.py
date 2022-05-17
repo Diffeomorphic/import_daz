@@ -141,9 +141,11 @@ class GeoNode(Node, SimNode):
                 shell = bpy.data.objects.new(shgeonode.name, me)
                 shgeonode.rna = shell
                 LS.collection.objects.link(shell)
-            shell.parent = ob
+                shell.parent = ob
             shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
-            makeShellModifier(shell, ob, mnames, mats, shmats)
+            shell.visible_shadow = False
+            offset = LS.scale * shgeonode.push
+            makeShellModifier(shell, ob, offset, mnames, mats, shmats)
 
 
     def addLSMesh(self, ob, inst, rigname):
