@@ -188,6 +188,11 @@ class DAZ_OT_AddShell(DazPropsOperator):
         precision = 4,
         default = 0.1)
 
+    asMaterial : BoolProperty(
+        name = "As Material",
+        description = "Add the shell as a material node group,\nnot as a geometry nodes modifier",
+        default = True)
+
     @classmethod
     def poll(self, context):
         ob = context.object
@@ -195,7 +200,9 @@ class DAZ_OT_AddShell(DazPropsOperator):
 
     def draw(self, context):
         self.layout.prop(self, "uvset")
-        self.layout.prop(self, "offset")
+        self.layout.prop(self, "asMaterial")
+        if not self.asMaterial:
+            self.layout.prop(self, "offset")
 
 
     def invoke(self, context, event):
@@ -214,13 +221,27 @@ class DAZ_OT_AddShell(DazPropsOperator):
         ob = self.object
         if ob is None:
             raise DazError("No matching mesh selected")
-        shell.visible_shadow = False
         fixMaterialUvs(shell.data.materials, self.uvset)
-        mnames = [mat.name for mat in ob.data.materials]
+        mnames = []
+        mats = []
+        shmats = []
+        for mat in ob.data.materials:
+            mname = self.stripName(mat.name)
+            for shmat in shell.data.materials:
+                shname = self.stripName(shmat.name)
+                if mname == shname:
+                    mnames.append(mname)
+                    mats.append(mat)
+                    shmats.append(shmat)
         offset = ob.DazScale * self.offset
-        makeShellModifier(shell, ob, offset, mnames, ob.data.materials, shell.data.materials)
+        shell.visible_shadow = False
+        makeShellModifier(shell, ob, offset, mnames, mats, shmats)
         for src,trg in zip(ob.data.materials, shell.data.materials):
             copyMaterialAttributes(src, trg)
+
+
+    def stripName(self, mname):
+        return mname.rsplit(".", 1)[0].rsplit("-", 1)[0]
 
 
 def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
@@ -233,6 +254,8 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     mod["Input_2"] = offset
     for n,shmat in enumerate(shmats):
         mod["Input_%d" % (n+3)] = shmat
+
+
 
 #----------------------------------------------------------
 #   Initialize
