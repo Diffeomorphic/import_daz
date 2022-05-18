@@ -1132,14 +1132,55 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         description = "Mark the palette for the asset browser and make all materials unique",
         default = False)
 
+    paletteShape : EnumProperty(
+        items = [('PLANE', "Plane", "Plane"),
+                 ('CONE', "Cone", "Cone")],
+        name = "Palette Shape",
+        description = "Palette shape",
+        default = 'PLANE')
+
     def draw(self, context):
+        self.layout.prop(self, "paletteShape")
         self.layout.prop(self, "useMarkAsAsset")
 
     def run(self, context):
         ob = context.object
-        scn = context.scene
+        if self.paletteShape == 'PLANE':
+            palette = self.makePlane(context, ob)
+        elif self.paletteShape == 'CONE':
+            palette = self.makeCone(context, ob)
 
-        # Make mesh
+        # Add materials
+        me = palette.data
+        for mat,f in zip(ob.data.materials, me.polygons):
+            me.materials.append(mat)
+            f.material_index = f.index
+
+        # Add UVs
+        uvlayers = {}
+        for mat in ob.data.materials:
+            findUvlayers(mat, uvlayers)
+        if not uvlayers:
+            uvlayers["UVMap"] = True
+        if self.paletteShape == 'PLANE':
+            self.fixPlaneUvs(palette.data, uvlayers)
+        elif self.paletteShape == 'CONE':
+            self.fixConeUvs(palette.data, uvlayers)
+
+        activateObject(context, palette)
+        if not self.useMarkAsAsset:
+            return
+        bpy.ops.file.make_paths_absolute()
+        bpy.ops.object.make_single_user(object=False, obdata=False, material=True, animation=False, obdata_animation=False)
+        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=False)
+        for mat in cone.data.materials:
+            if len(mat.name) > 4 and mat.name[-4] == "." and mat.name[-3:].isdigit():
+                mat.name = mat.name[:-4]
+        bpy.ops.asset.mark()
+
+
+    def makePlane(self, context, ob):
+        scn = context.scene
         nmats = len(ob.data.materials)
         n = int(math.floor(math.sqrt(nmats-1)))+1
         n1 = n+1
@@ -1155,18 +1196,13 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         name = "%s Palette" % ob.name
         me = bpy.data.meshes.new(name)
         me.from_pydata(verts, [], faces)
+        plane = bpy.data.objects.new(name, me)
+        scn.collection.objects.link(plane)
+        return plane
 
-        # Add materials
-        for mat,f in zip(ob.data.materials, me.polygons):
-            me.materials.append(mat)
-            f.material_index = f.index
 
-        # Add UVs
-        uvlayers = {}
-        for mat in ob.data.materials:
-            findUvlayers(mat, uvlayers)
-        if not uvlayers:
-            uvlayers["UVMap"] = True
+    def fixPlaneUvs(self, me, uvlayers):
+        nfaces = len(me.polygons)
         for uvname in uvlayers.keys():
             uvlayer = me.uv_layers.new(name=uvname)
             for fn in range(nfaces):
@@ -1175,18 +1211,27 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
                 uvlayer.data[fn*4+2].uv = (1,1)
                 uvlayer.data[fn*4+3].uv = (0,1)
 
-        palette = bpy.data.objects.new(name, me)
-        scn.collection.objects.link(palette)
-        activateObject(context, palette)
-        if not self.useMarkAsAsset:
-            return
-        bpy.ops.file.make_paths_absolute()
-        bpy.ops.object.make_single_user(object=False, obdata=False, material=True, animation=False, obdata_animation=False)
-        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=False)
-        for mat in cone.data.materials:
-            if len(mat.name) > 4 and mat.name[-4] == "." and mat.name[-3:].isdigit():
-                mat.name = mat.name[:-4]
-        bpy.ops.asset.mark()
+
+    def makeCone(self, context, ob):
+        nmat = len(ob.data.materials)
+        bpy.ops.mesh.primitive_cone_add(vertices=nmat, radius1=0.5, depth=0.1, end_fill_type='NOTHING')
+        cone = context.object
+        cone.name = "%s Palette" % ob.name
+        for mat,f in zip(ob.data.materials, cone.data.polygons):
+            cone.data.materials.append(mat)
+        return cone
+
+
+    def fixConeUvs(self, me, uvlayers):
+        uvlayer = me.uv_layers[0]
+        me.uv_layers.remove(uvlayer)
+        nfaces = len(me.polygons)
+        for uvname in uvlayers.keys():
+            uvlayer = me.uv_layers.new(name=uvname)
+            for fn in range(nfaces):
+                uvlayer.data[fn*3].uv = (0,0)
+                uvlayer.data[fn*3+1].uv = (1,0)
+                uvlayer.data[fn*3+2].uv = (0.5,1)
 
 #-------------------------------------------------------------
 #   Replace material node tree
