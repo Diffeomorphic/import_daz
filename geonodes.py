@@ -185,8 +185,8 @@ class DAZ_OT_AddShell(DazPropsOperator):
         name = "Offset Distance (cm)",
         description = "Shell offset (cm)",
         min = 0.0,
-        precision = 4,
-        default = 0.1)
+        precision = 5,
+        default = 0.01)
 
     asMaterial : BoolProperty(
         name = "As Material",
@@ -200,9 +200,7 @@ class DAZ_OT_AddShell(DazPropsOperator):
 
     def draw(self, context):
         self.layout.prop(self, "uvset")
-        self.layout.prop(self, "asMaterial")
-        if not self.asMaterial:
-            self.layout.prop(self, "offset")
+        self.layout.prop(self, "offset")
 
 
     def invoke(self, context, event):
@@ -236,7 +234,7 @@ class DAZ_OT_AddShell(DazPropsOperator):
         offset = ob.DazScale * self.offset
         shell.visible_shadow = False
         makeShellModifier(shell, ob, offset, mnames, mats, shmats)
-        for src,trg in zip(ob.data.materials, shell.data.materials):
+        for src,trg in zip(mats, shmats):
             copyMaterialAttributes(src, trg)
 
 
