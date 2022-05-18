@@ -191,7 +191,7 @@ class DAZ_OT_AddShell(DazPropsOperator):
     asMaterial : BoolProperty(
         name = "As Material",
         description = "Add the shell as a material node group,\nnot as a geometry nodes modifier",
-        default = True)
+        default = False)
 
     @classmethod
     def poll(self, context):
@@ -201,6 +201,7 @@ class DAZ_OT_AddShell(DazPropsOperator):
     def draw(self, context):
         self.layout.prop(self, "uvset")
         self.layout.prop(self, "offset")
+        self.layout.prop(self, "asMaterial")
 
 
     def invoke(self, context, event):
@@ -232,14 +233,55 @@ class DAZ_OT_AddShell(DazPropsOperator):
                     mats.append(mat)
                     shmats.append(shmat)
         offset = ob.DazScale * self.offset
-        shell.visible_shadow = False
-        makeShellModifier(shell, ob, offset, mnames, mats, shmats)
-        for src,trg in zip(mats, shmats):
-            copyMaterialAttributes(src, trg)
+        if self.asMaterial:
+            for mat,shmat in zip(mats, shmats):
+                self.addMaterialShell(mat, shmat)
+            ob.DazVisibilityDrivers = True
+        else:
+            shell.visible_shadow = False
+            makeShellModifier(shell, ob, offset, mnames, mats, shmats)
+            for src,trg in zip(mats, shmats):
+                copyMaterialAttributes(src, trg)
 
 
     def stripName(self, mname):
         return mname.rsplit(".", 1)[0].rsplit("-", 1)[0]
+
+
+    def addMaterialShell(self, mat, shmat):
+        def replaceLink(output, node, slot):
+            links = output.inputs["Surface"].links
+            if links:
+                socket = links[0].from_socket
+                tree.links.new(socket, node.inputs[slot])
+                tree.links.new(node.outputs[slot], output.inputs["Surface"])
+
+        from .cycles import findMaterial, findTexco
+        from .tree import findNodes, XSIZE, YSIZE
+        dmat = findMaterial(mat)
+        shdmat = findMaterial(shmat)
+        tree = dmat.tree
+        texco = findTexco(tree, 1)
+        tree.column = 10
+        node = tree.addNode("ShaderNodeGroup")
+        node.width = 240
+        nname = ("%s_%s" % (shmat.name, mat.name))
+        node.name = nname
+        node.label = shmat.name
+        group = tree.getShellGroup(shdmat, self.offset)
+        group.create(node, nname, tree)
+        group.addNodes((shdmat, self.uvset))
+        node.inputs["Influence"].default_value = 1.0
+        tree.links.new(tree.getTexco(self.uvset), node.inputs["UV"])
+        outputs = findNodes(tree, 'OUTPUT_MATERIAL')
+        for output in outputs:
+            x,y = output.location
+            node.location = (x, 2*YSIZE)
+            output.location = (x+XSIZE, y)
+            if output.target == 'EEVEE':
+                replaceLink(output, node, "Eevee")
+            else:
+                replaceLink(output, node, "Cycles")
 
 
 def makeShellModifier(shell, ob, offset, mnames, mats, shmats):

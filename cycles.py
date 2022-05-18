@@ -1931,6 +1931,15 @@ class CyclesTree(Tree):
 #   Utilities
 #-------------------------------------------------------------
 
+def findMaterial(mat):
+    dmat = CyclesMaterial(None)
+    dmat.setupBasics()
+    dmat.rna = mat
+    dmat.tree = tree = findTree(mat)
+    tree.owner = dmat
+    return dmat
+
+
 def findTree(mat):
     tree = CyclesTree(None)
     tree.nodes = mat.node_tree.nodes

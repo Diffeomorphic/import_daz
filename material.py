@@ -317,7 +317,7 @@ class Material(Asset, Channels):
     def getUvSet(self, key, struct):
         if key not in struct.keys():
             uvset = None
-            print("Looking for UV set '%s'" % key)
+            #print("Looking for UV set '%s'" % key)
             if self.geometry and self.geometry.data:
                 geo = self.geometry.data
                 url = geo.id
@@ -328,7 +328,7 @@ class Material(Asset, Channels):
                         path = url.replace("male/genesis8", "male%208_1/genesis8_1")
                     if path != url:
                         uvset = geo.findUvSet(key, path)
-            if not uvset:
+            if False and not uvset:
                 msg = ("Missing UV for '%s': '%s' not in %s" % (self.getLabel(), key, list(struct.keys())))
                 reportError(msg, trigger=(2,3))
         return key
