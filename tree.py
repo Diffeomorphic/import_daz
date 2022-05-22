@@ -80,6 +80,15 @@ class Tree:
         node.node_tree.name = name
         return node
 
+
+def addNodeGroup(classdef, name):
+    if name in bpy.data.node_groups.keys():
+        return bpy.data.node_groups[name]
+    group = classdef()
+    group.create(name)
+    group.addNodes()
+    return group.group
+
 # ---------------------------------------------------------------------
 #   NodeGroup
 # ---------------------------------------------------------------------

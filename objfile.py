@@ -410,15 +410,12 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
         def match(rig, restdata):
             for bname in rig.data.bones.keys():
                 if baseBone(bname) not in restdata.keys():
-                    print("MISS", bname)
                     return False
             return True
 
         for name,dbzrig in dbz.rigs.items():
-            print("RR", name)
             for restdata, transforms, center in dbzrig:
                 if match(rig, restdata):
-                    print("MATCH", name)
                     for pb in rig.pose.bones:
                         bname = baseBone(pb.name)
                         (head, tail, orient, xyz, origin, wsmat) = restdata[bname]
