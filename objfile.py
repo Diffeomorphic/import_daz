@@ -38,7 +38,11 @@ from .fileutils import MultiFile, DbzFile
 #------------------------------------------------------------------
 
 class DBZInfo:
-    def __init__(self):
+    def __init__(self, filepath):
+        if filepath:
+            self.name = os.path.basename(os.path.splitext(filepath)[0])
+        else:
+            self.name = "None"
         self.objects = {}
         self.hdobjects = {}
         self.rigs = {}
@@ -133,7 +137,7 @@ class DBZObject:
 def loadDbzFile(filepath):
     from .load_json import loadJson
     from .geometry import d2bList
-    dbz = DBZInfo()
+    dbz = DBZInfo(filepath)
     struct = loadJson(filepath)
     if ("application" not in struct.keys() or
         struct["application"] not in ["export_basic_data", "export_to_blender", "export_highdef_to_blender"]):
@@ -364,45 +368,102 @@ def fitToFile(filepath, nodes):
             print('    "%s"' % oname)
 
 #----------------------------------------------------------
-#   Initialize
+#   Import DBZ as morph
 #----------------------------------------------------------
 
-class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMesh):
+class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_dbz"
     bl_label = "Import DBZ Morphs"
     bl_description = "Import DBZ or JSON file(s) (*.dbz, *.json) as morphs"
     bl_options = {'UNDO'}
 
+    useERC : BoolProperty(
+        name = "ERC Morphs",
+        description = "Load support for ERC morphs that change the rest pose",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useERC")
+
+
     def run(self, context):
-        objects = getSelectedMeshes(context)
-        if not objects:
-            return
-        LS.scale = objects[0].DazScale
+        from .driver import setFloatProp
+        rig = context.object
+        LS.scale = rig.DazScale
+        if rig.type == 'ARMATURE':
+            meshes = [ob for ob in rig.children if ob.type == 'MESH']
+        else:
+            meshes = getSelectedMeshes(context)
+            rig = None
         paths = self.getMultiFiles(["dbz", "json"])
         for path in paths:
-            for ob in objects:
-                self.buildDBZMorph(ob, path)
+            dbz = loadDbzFile(path)
+            if rig:
+                setFloatProp(rig, dbz.name, 0.0, GS.customMin, GS.customMax, True)
+                if self.useERC:
+                    self.buildRigMorph(rig, dbz)
+            for ob in meshes:
+                self.buildMeshMorph(ob, rig, dbz)
 
 
-    def buildDBZMorph(self, ob, filepath):
-        dbz = loadDbzFile(filepath)
-        if not ob.data.shape_keys:
+    def buildRigMorph(self, rig, dbz):
+        def match(rig, restdata):
+            for bname in rig.data.bones.keys():
+                if baseBone(bname) not in restdata.keys():
+                    print("MISS", bname)
+                    return False
+            return True
+
+        for name,dbzrig in dbz.rigs.items():
+            print("RR", name)
+            for restdata, transforms, center in dbzrig:
+                if match(rig, restdata):
+                    print("MATCH", name)
+                    for pb in rig.pose.bones:
+                        bname = baseBone(pb.name)
+                        (head, tail, orient, xyz, origin, wsmat) = restdata[bname]
+                        self.makeOffsetFormula("HdOffset", pb, rig, dbz.name, pb.bone.head_local, d2b(head))
+                        self.makeOffsetFormula("TlOffset", pb, rig, dbz.name, pb.bone.tail_local, d2b(tail))
+                    return
+
+
+    def makeOffsetFormula(self, attr, pb, rig, prop, vec0, vec1):
+        if attr not in pb.keys():
+            setattr(pb, attr, Zero)
+        pb.driver_remove(attr)
+        for idx in range(3):
+            fcu = pb.driver_add(attr, idx)
+            expr = "%g+%g*a" % (vec0[idx], vec1[idx]-vec0[idx])
+            self.setDriver(fcu, rig, prop, expr)
+
+
+    def setDriver(self, fcu, rig, prop, expr):
+        from .driver import addDriverVar, removeModifiers
+        fcu.driver.type = 'SCRIPTED'
+        fcu.driver.expression = expr
+        removeModifiers(fcu)
+        addDriverVar(fcu, "a", propRef(prop), rig)
+
+
+    def buildMeshMorph(self, ob, rig, dbz):
+        skeys = ob.data.shape_keys
+        if not skeys:
             basic = ob.shape_key_add(name="Basic")
         else:
-            basic = ob.data.shape_keys.key_blocks[0]
-        sname = os.path.basename(os.path.splitext(filepath)[0])
-        if sname in ob.data.shape_keys.key_blocks.keys():
-            skey = ob.data.shape_keys.key_blocks[sname]
+            basic = skeys.key_blocks[0]
+        sname = dbz.name
+        if sname in skeys.key_blocks.keys():
+            skey = skeys.key_blocks[sname]
             ob.shape_key_remove(skey)
-        if self.makeShape(ob, sname, dbz.objects):
+        if self.makeShape(ob, rig, sname, dbz.objects, dbz):
             return
-        elif self.makeShape(ob, sname, dbz.hdobjects):
+        elif self.makeShape(ob, rig, sname, dbz.hdobjects, dbz):
             return
         else:
             print("No matching morph found")
 
 
-    def makeShape(self, ob, sname, objects):
+    def makeShape(self, ob, rig, sname, objects, dbz):
         for name in objects.keys():
             verts = objects[name][0].verts
             print("Try %s (%d verts)" % (name, len(verts)))
@@ -411,6 +472,9 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMesh):
                 for vn,co in enumerate(verts):
                     skey.data[vn].co = co
                 print("Morph %s created" % sname)
+                if rig:
+                    fcu = skey.driver_add("value")
+                    self.setDriver(fcu, rig, dbz.name, "a")
                 return True
         return False
 
