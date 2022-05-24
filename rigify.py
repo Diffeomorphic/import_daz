@@ -565,6 +565,8 @@ class Rigify:
                 elif pb["rigify_type"] == "limbs.super_limb":
                     pb.rigify_parameters.rotation_axis = 'x'
                     pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+                elif pb["rigify_type"] == "limbs.leg":
+                    pb.rigify_parameters.extra_ik_toe = False
                 elif pb["rigify_type"] in [
                     "spines.super_spine",
                     "spines.basic_spine",
