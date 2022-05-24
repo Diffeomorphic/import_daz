@@ -395,6 +395,11 @@ class Rigify:
         description = "Rename bones from l/r prefix to .L/.R suffix",
         default = True)
 
+    useRecalcRoll : BoolProperty(
+        name = "Recalc Roll",
+        description = "Recalculate the roll angles of the thigh and shin bones,\nso they are aligned with the global Z axis.\nFor Genesis 1,2, and 3 characters",
+        default = False)
+
     GroupBones = [("Face ", R_FACE, 2, 6),
                   ("Face (detail) ", R_DETAIL, 2, 3),
                   ("Custom ", R_CUSTOM, 13, 6)]
@@ -611,7 +616,9 @@ class Rigify:
             eb.use_connect = True
 
 
-    def recalcRoll(self, meta):
+    def recalcRoll(self, dazrig, meta):
+        if not self.useRecalcRoll or dazrig == "genesis8":
+            return
         # https://bitbucket.org/Diffeomorphic/import_daz/issues/199/rigi-fy-thigh_ik_targetl-and
         for eb in meta.data.edit_bones:
             eb.select = False
@@ -846,7 +853,7 @@ class Rigify:
         print("  Set connected")
         setMode('EDIT')
         self.setConnected(meta, connect, disconnect)
-        self.recalcRoll(meta)
+        self.recalcRoll(rig.DazRig, meta)
         setMode('OBJECT')
 
         print("Metarig created")
@@ -1431,6 +1438,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
         self.layout.prop(self, "useRenameBones")
+        self.layout.prop(self, "useRecalcRoll")
 
 
     def storeState(self, context):
@@ -1477,6 +1485,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists):
     def draw(self, context):
         Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
+        self.layout.prop(self, "useRecalcRoll")
 
     @classmethod
     def poll(self, context):
