@@ -1535,6 +1535,11 @@ def setFkIk1(rig, ik, layers):
     if "head.001" in rig.pose.bones.keys():
         pb = rig.pose.bones["head.001"]
         pb["neck_follow"] = value
+    for pname in ["MhaTongueIk"]:
+        if pname in rig.keys():
+            rig[pname] = 0.0
+        if pname in rig.data.keys():
+            rig.data[pname] = 0.0
     return layers
 
 
@@ -1547,6 +1552,16 @@ def setFkIk2(rig, fk, layers):
         pb = rig.pose.bones["torso"]
         pb["neck_follow"] = 1.0-value
         pb["head_follow"] = 1.0-value
+    for suffix in ["L", "R"]:
+        for fing in ["thumb", "f_index", "f_middle", "f_ring", "f_pinky"]:
+            bname = "%s.01_ik.%s" % (fing, suffix)
+            if bname in rig.pose.bones.keys():
+                rig.pose.bones[bname]["FK_IK"] = 0.0
+    for pname in ["MhaTongueIk"]:
+        if pname in rig.keys():
+            rig[pname] = 0.0
+        if pname in rig.data.keys():
+            rig.data[pname] = 0.0
     for n in [8, 11, 14, 17]:
         layers[n] = fk
     for n in [7, 10, 13, 16]:

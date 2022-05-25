@@ -1773,7 +1773,9 @@ LRGizmos = {
 #-------------------------------------------------------------
 
 def setToFk(rig, layers):
-    for pname in ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]:
+    for pname in [
+        "MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R",
+        "MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R"]:
         if pname in rig.keys():
             rig[pname] = 0.0
         if pname in rig.data.keys():
