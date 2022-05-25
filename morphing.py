@@ -592,11 +592,15 @@ def classifyShapekeys(ob, skeys):
 
 ShortForms = {
     "phmunits" : ["phmbrow", "phmcheek", "phmeye", "phmjaw", "phmlip", "phmmouth", "phmnos", "phmteeth", "phmtongue"],
-
+    "ctrlunits" : ["ctrlbrow", "ctrlcheek", "ctrleye", "ctrljaw", "ctrllip", "ctrlmouth", "ctrlnos", "ctrlteeth", "ctrltongue"],
     "ectrlunits" : ["ectrlbrow", "ectrlcheek", "ectrleye", "ectrljaw", "ectrllip", "ectrlmouth", "ectrlnos", "ectrlteeth", "ectrltongue"],
+    "ctrlbody" : ["ctrlarm", "ctrlbreast", "ctrlhip", "ctrlleg", "ctrlneck", "ctrlshld", "ctrlshould", "ctrltoe", "ctrlwaist",
+                  "ctrllarm", "ctrllbreast", "ctrllfing", "ctrllfoot", "ctrllhand", "ctrllleg", "ctrllthumb", "ctrllindex", "ctrllmid", "ctrllring", "ctrllpinky", "ctrlltoe", "ctrllbigtoe",
+                  "ctrlrarm", "ctrlrbreast", "ctrlrfing", "ctrlrfoot", "ctrlrhand", "ctrlrleg", "ctrlrthumb", "ctrlrindex", "ctrlrmid", "ctrlrring", "ctrlrpinky", "ctrlrtoe", "ctrlrbigtoe",
+                  ],
 }
 
-ShortForms["units"] = ShortForms["ectrlunits"] + ShortForms["phmunits"]
+ShortForms["units"] = ShortForms["ctrlunits"] + ShortForms["ectrlunits"] + ShortForms["phmunits"]
 
 def getShortformList(item):
     if isinstance(item, list):
@@ -669,6 +673,8 @@ def setupMorphPaths(force):
             excludes = getShortformList(struct["exclude"])
             if "exclude2" in struct.keys():
                 excludes += getShortformList(struct["exclude2"])
+            if "exclude3" in struct.keys():
+                excludes += getShortformList(struct["exclude3"])
 
             for dazpath in GS.getDazPaths():
                 folderpath = "%s/%s" % (dazpath, folder)

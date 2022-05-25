@@ -2,15 +2,17 @@
 	"name" : "Genesis2-female",
 	"hd-morphs" : false,
 	"units" : {
-		"prefix" : "phm",
-		"include" : "phmunits",
-		"exclude" : [],
+		"prefix" : "ctrl",
+		"include" : "ctrlunits",
+		"exclude" : "ctrlbody",
 		"path" : "data/DAZ 3D/Genesis 2/Female/Morphs/DAZ 3D/Base/"
 	},
 	"expressions" : {
-		"prefix" : "phm",
-		"include" : ["phm"],
-		"exclude" : "phmunits",
+		"prefix" : "ctrl",
+		"include" : ["ctrl"],
+		"exclude" : "ctrlunits",
+		"exclude2" : "ctrlbody",
+		"exclude3" : ["ctrlvsm"],
 		"path" : "data/DAZ 3D/Genesis 2/Female/Morphs/DAZ 3D/Base/"
 	},
 	"visemes" : {
@@ -20,9 +22,9 @@
 		"path" : "data/DAZ 3D/Genesis 2/Female/Morphs/DAZ 3D/Base/"
 	},
 	"body" : {
-		"prefix" : ["ctrl", "pbm"],
-		"include" : ["ctrl", "pbm"],
-		"exclude" : [],
+		"prefix" : "ctrl",
+		"include" : "ctrlbody",
+		"exclude" : [],		
 		"path" : "data/DAZ 3D/Genesis 2/Female/Morphs/DAZ 3D/Base/"
 	}
 }	
