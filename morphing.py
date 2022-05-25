@@ -672,9 +672,9 @@ def setupMorphPaths(force):
             includes = getShortformList(struct["include"])
             excludes = getShortformList(struct["exclude"])
             if "exclude2" in struct.keys():
-                excludes += getShortformList(struct["exclude2"])
+                excludes = excludes + getShortformList(struct["exclude2"])
             if "exclude3" in struct.keys():
-                excludes += getShortformList(struct["exclude3"])
+                excludes = excludes + getShortformList(struct["exclude3"])
 
             for dazpath in GS.getDazPaths():
                 folderpath = "%s/%s" % (dazpath, folder)
@@ -952,7 +952,6 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     def setupCharacter(self, context):
         ob = context.object
         if not self.char:
-            from .error import invokeErrorMessage
             msg = ("Can not add morphs to this mesh:\n %s" % ob.name)
             invokeErrorMessage(msg)
             return False
@@ -1029,10 +1028,13 @@ class StandardMorphSelector(Selector):
         setupMorphPaths(False)
         try:
             pgs = theMorphFiles[self.char][self.morphset]
+            nosupport = False
         except KeyError:
+            nosupport = True
+        if nosupport:
             msg = ("Character %s does not support feature %s" % (self.char, self.morphset))
-            print(msg)
-            return {'FINISHED'}
+            invokeErrorMessage(msg)
+            return {'CANCELLED'}
         for key,path in pgs.items():
             item = self.selection.add()
             item.name = path

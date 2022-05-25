@@ -4,7 +4,7 @@
 	"units" : {
 		"prefix" : "ctrl",
 		"include" : "ctrlunits",
-		"exclude" : "ctrlbody",
+		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 2/Female/Morphs/DAZ 3D/Base/"
 	},
 	"expressions" : {
