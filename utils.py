@@ -244,7 +244,7 @@ def updateDrivers(rna):
                     fcu.driver.expression = str(fcu.driver.expression)
 
 def updateRigDrivers(context, rig):
-    updateScene(context)
+    #updateScene(context)
     if rig:
         updateDrivers(rig.data)
         updateDrivers(rig)

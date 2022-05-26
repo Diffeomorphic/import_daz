@@ -256,3 +256,42 @@ def openSettingsFile(filepath):
     else:
         print("Could not open %s" % filepath)
         return None
+
+#-------------------------------------------------------------
+#   Daz Exporter
+#-------------------------------------------------------------
+
+class DazExporter:
+    author : StringProperty(
+        name = "Author",
+        description = "Author info in pose preset file",
+        default = os.getlogin())
+
+    website : StringProperty(
+        name = "Website",
+        description = "Website info in pose preset file",
+        default = "")
+
+    def draw(self, context):
+        self.layout.prop(self, "author")
+        self.layout.prop(self, "website")
+
+    def makeDazStruct(self, type, filepath):
+        from collections import OrderedDict
+        from .asset import normalizeRef
+        from datetime import datetime
+        file,ext = os.path.splitext(filepath)
+        filepath = file + ".duf"
+        struct = OrderedDict()
+        struct["file_version"] = "0.6.0.0"
+        astruct = {}
+        astruct["id"] = normalizeRef(filepath)
+        astruct["type"] = type
+        astruct["contributor"] = {
+            "author" : self.author,
+            "website" : self.website,
+        }
+        astruct["modified"] = str(datetime.now())
+        struct["asset_info"] = astruct
+        return struct
+

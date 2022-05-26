@@ -34,7 +34,7 @@ from mathutils import *
 from .error import *
 from .utils import *
 from .transform import Transform
-from .fileutils import MultiFile, SingleFile, DufFile
+from .fileutils import MultiFile, SingleFile, DufFile, DazExporter
 
 #-------------------------------------------------------------
 #   Alias
@@ -1455,23 +1455,13 @@ class FakeCurve:
         return self.value
 
 
-class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, IsArmature):
+class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, FrameConverter, IsArmature):
     bl_idname = "daz.save_pose_preset"
     bl_label = "Save Pose Preset"
     bl_description = "Save the active action as a pose preset,\nto be used in DAZ Studio"
     bl_options = {'UNDO'}
 
     convertPoses = False
-
-    author : StringProperty(
-        name = "Author",
-        description = "Author info in pose preset file",
-        default = "")
-
-    website : StringProperty(
-        name = "Website",
-        description = "Website info in pose preset file",
-        default = "")
 
     useAction : BoolProperty(
         name = "Use Action",
@@ -1525,8 +1515,7 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
         default = 30)
 
     def draw(self, context):
-        self.layout.prop(self, "author")
-        self.layout.prop(self, "website")
+        DazExporter.draw(self, context)
         self.layout.prop(self, "useBones")
         if self.useBones:
             self.layout.prop(self, "includeLocks")
@@ -1823,33 +1812,12 @@ class DAZ_OT_SavePosePreset(HideOperator, SingleFile, DufFile, FrameConverter, I
 
 
     def saveFile(self, rig):
-        from collections import OrderedDict
         from .load_json import saveJson
-        file,ext = os.path.splitext(self.filepath)
-        filepath = file + ".duf"
-        struct = OrderedDict()
-        struct["file_version"] = "0.6.0.0"
-        struct["asset_info"] = self.getAssetInfo(filepath)
+        struct = self.makeDazStruct("preset_pose", self.filepath)
         struct["scene"] = {}
         struct["scene"]["animations"] = self.getAnimations(rig)
-        saveJson(struct, filepath, binary=False)
-        print("Pose preset %s saved" % filepath)
-
-
-    def getAssetInfo(self, filepath):
-        from .asset import normalizeRef
-        from datetime import datetime
-
-        now = datetime.now()
-        struct = {}
-        struct["id"] = normalizeRef(filepath)
-        struct["type"] = "preset_pose"
-        struct["contributor"] = {
-            "author" : self.author,
-            "website" : self.website,
-        }
-        struct["modified"] = str(now)
-        return struct
+        saveJson(struct, self.filepath, binary=False)
+        print("Pose preset %s saved" % self.filepath)
 
 
     def getAnimations(self, rig):

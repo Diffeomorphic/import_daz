@@ -48,9 +48,8 @@ class ErrorOperator(bpy.types.Operator):
         for line in G.theErrorLines:
             if len(line) > maxlen:
                 maxlen = len(line)
-        width = 20+5*maxlen
+        width = 40+5*maxlen
         height = 20+5*len(G.theErrorLines)
-        #self.report({'INFO'}, G.theMessage)
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=width)
 

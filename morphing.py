@@ -38,6 +38,7 @@ from .animation import ActionOptions
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup
 from .load_morph import LoadMorph
 from .driver import DriverUser
+from .fileutils import DazExporter
 
 #-------------------------------------------------------------
 #   Morph sets
@@ -3095,6 +3096,102 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
             return getattr(self.rig, "Daz"+self.morphset)
 
 #-------------------------------------------------------------
+#   Save morph presets
+#-------------------------------------------------------------
+
+class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
+    bl_idname = "daz.save_morph_preset"
+    bl_label = "Save Morph Preset"
+    bl_description = "Save selected shapekeys as a morph preset"
+
+    directory: StringProperty(
+        name = "Directory",
+        description = "Directory")
+
+    def draw(self, context):
+        Selector.draw(self, context)
+        DazExporter.draw(self, context)
+        self.layout.prop(self, "directory")
+
+    def getKeys(self, rig, ob):
+        keys = []
+        for skey in ob.data.shape_keys.key_blocks[1:]:
+            keys.append((skey.name, skey.name, "All"))
+        return keys
+
+    def invoke(self, context, event):
+        ob = context.object
+        if ob.data.shape_keys is None:
+            msg = "Object %s has no shapekeys" % ob.name
+            invokeErrorMessage(msg)
+            return {'CANCELLED'}
+        self.directory = context.scene.DazMorphPath
+        return Selector.invoke(self, context, event)
+
+    def run(self, context):
+        from .load_json import saveJson
+        from .asset import normalizeRef
+        ob = context.object
+        rig = ob.parent
+        parent = None
+        if rig:
+            parent = rig.DazUrl
+        for item in self.getSelectedItems():
+            filename = ("%s.duf" % item.name).replace(" ", "_")
+            filepath = os.path.join(self.directory, filename)
+            filepath = filepath.replace("\\", "/")
+            struct = self.makeDazStruct("modifier", filepath)
+            modlib = struct["modifier_library"] = []
+            skey = ob.data.shape_keys.key_blocks[item.name]
+            mstruct = self.addLibModifier(skey, ob, parent)
+            modlib.append(mstruct)
+            modlist = []
+            struct["scene"] = {"modifiers" : modlist}
+            mstruct = {"id" : "%s-1" % item.name, "url" : normalizeRef(item.name)}
+            modlist.append(mstruct)
+            saveJson(struct, filepath, binary=False)
+            print("Morph preset %s saved" % filepath)
+
+
+    def addLibModifier(self, skey, ob, parent):
+        from .asset import normalizeRef
+        from collections import OrderedDict
+        struct = OrderedDict()
+        struct["id"] = skey.name
+        struct["name"] = skey.name
+        if parent:
+            struct["parent"] = normalizeRef(parent)
+        struct["presentation"] = {
+            "type" : "Modifier/Shape",
+            "label" : skey.name,
+            "description" : "",
+        }
+        struct["channel"] = {
+            "id" : "value",
+            "type" : "float",
+            "name" : "Value",
+            "label" : skey.name,
+            "auto_follow" : True,
+            "value" : 0,
+            "min" : 0,
+            "max" : 1,
+            "clamped" : True,
+            "display_as_percent" : True,
+            "step_size" : 0.01
+        }
+        nverts = len(ob.data.vertices)
+        mstruct = struct["morph"] = OrderedDict()
+        mstruct["vertex_count"] = nverts
+        dstruct = mstruct["deltas"] = OrderedDict()
+        factor = 1/ob.DazScale
+        eps = 0.001 # 0.01 mm
+        diffs = [factor*(skey.data[vn].co - v.co) for vn,v in enumerate(ob.data.vertices)]
+        deltas = [[vn, delta[0], delta[2], -delta[1]] for vn,delta in enumerate(diffs) if delta.length > eps]
+        dstruct["count"] = len(deltas)
+        dstruct["values"] = deltas
+        return struct
+
+#-------------------------------------------------------------
 #   Register
 #-------------------------------------------------------------
 
@@ -3148,6 +3245,7 @@ classes = [
     DAZ_OT_MeshToShape,
     DAZ_OT_SaveFavoMorphs,
     DAZ_OT_LoadFavoMorphs,
+    DAZ_OT_SaveMorphPreset,
 ]
 
 def register():
@@ -3181,6 +3279,12 @@ def register():
     bpy.types.Scene.DazNewCatName = StringProperty(
         name = "New Name",
         default = "Name")
+
+    bpy.types.Scene.DazMorphPath = StringProperty(
+        name = "Morph Path",
+        description = "Path to morphs",
+        subtype = 'DIR_PATH',
+        default = os.path.expanduser("~/Documents").replace("\\","/"))
 
 
 def unregister():

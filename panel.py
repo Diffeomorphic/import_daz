@@ -315,6 +315,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Morphs"
 
     def draw(self, context):
+        scn = context.scene
         self.layout.operator("daz.add_shape_to_category")
         self.layout.operator("daz.remove_shape_from_category")
         self.layout.operator("daz.rename_category")
@@ -323,6 +324,8 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.convert_morphs_to_shapekeys")
         self.layout.operator("daz.transfer_mesh_to_shape")
+        self.layout.operator("daz.save_morph_preset")
+        self.layout.prop(scn, "DazMorphPath")
         self.layout.separator()
         self.layout.operator("daz.add_shapekey_drivers")
         self.layout.operator("daz.remove_shapekey_drivers")
