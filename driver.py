@@ -728,9 +728,9 @@ class DAZ_OT_CopyBoneDrivers(DazOperator, DriverUser, IsArmature):
 #   Disable and enable drivers
 #----------------------------------------------------------
 
-def muteDazFcurves(rig, mute):
+def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True):
     def isDazFcurve(path):
-        for string in ["(fin)", "(rst)", ":Loc:", ":Rot:", ":Sca:"]:
+        for string in ["(fin)", "(rst)", ":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo"]:
             if string in path:
                 return True
         return False
@@ -739,6 +739,18 @@ def muteDazFcurves(rig, mute):
         for fcu in rig.data.animation_data.drivers:
             if isDazFcurve(fcu.data_path):
                 fcu.mute = mute
+
+    if rig and rig.animation_data:
+        for fcu in rig.animation_data.drivers:
+            words = fcu.data_path.split('"')
+            if words[0] == "pose.bones[":
+                channel = words[-1].rsplit(".",1)[-1]
+                if ((channel in ["rotation_euler", "rotation_quaternion"] and useRotation) or
+                    (channel == "location" and useLocation) or
+                    (channel == "scale" and useScale) or
+                    channel in ["HdOffset", "TlOffset"]):
+                    fcu.mute = mute
+
     for ob in rig.children:
         if ob.type == 'MESH':
             skeys = ob.data.shape_keys
@@ -753,11 +765,31 @@ def muteDazFcurves(rig, mute):
                             skey.mute = mute
 
 
-class DAZ_OT_DisableDrivers(DazOperator):
+class DAZ_OT_DisableDrivers(DazPropsOperator):
     bl_idname = "daz.disable_drivers"
     bl_label = "Disable Drivers"
     bl_description = "Disable all drivers to improve performance"
     bl_options = {'UNDO'}
+
+    useLocation : BoolProperty(
+        name = "Location",
+        description = "Affect bone location drivers",
+        default = True)
+
+    useRotation : BoolProperty(
+        name = "Rotation",
+        description = "Affect bone rotation drivers",
+        default = True)
+
+    useScale : BoolProperty(
+        name = "Scale",
+        description = "Affect bone scale drivers",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useLocation")
+        self.layout.prop(self, "useRotation")
+        self.layout.prop(self, "useScale")
 
     @classmethod
     def poll(self, context):
@@ -767,7 +799,7 @@ class DAZ_OT_DisableDrivers(DazOperator):
     def run(self, context):
         setMode('OBJECT')
         for rig in getSelectedArmatures(context):
-            muteDazFcurves(rig, True)
+            muteDazFcurves(rig, True, self.useLocation, self.useRotation, self.useScale)
             rig.DazDriversDisabled = True
 
 
@@ -785,7 +817,7 @@ class DAZ_OT_EnableDrivers(DazOperator):
     def run(self, context):
         setMode('OBJECT')
         for rig in getSelectedArmatures(context):
-            muteDazFcurves(rig, False)
+            muteDazFcurves(rig, False, True, True, True)
             rig.DazDriversDisabled = False
 
 #----------------------------------------------------------
