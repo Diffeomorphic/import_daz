@@ -1813,11 +1813,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def saveFile(self, rig):
         from .load_json import saveJson
-        struct = self.makeDazStruct("preset_pose", self.filepath)
+        struct, filepath = self.makeDazStruct("preset_pose", self.filepath)
         struct["scene"] = {}
         struct["scene"]["animations"] = self.getAnimations(rig)
-        saveJson(struct, self.filepath, binary=False)
-        print("Pose preset %s saved" % self.filepath)
+        saveJson(struct, filepath, binary=self.useCompress)
+        print("Pose preset %s saved" % filepath)
 
 
     def getAnimations(self, rig):

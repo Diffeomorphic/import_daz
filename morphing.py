@@ -3147,8 +3147,7 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         for item in self.getSelectedItems():
             filename = ("%s.duf" % item.name).replace(" ", "_")
             filepath = os.path.join(self.directory, filename)
-            filepath = filepath.replace("\\", "/")
-            struct = self.makeDazStruct("modifier", filepath)
+            struct,filepath = self.makeDazStruct("modifier", filepath)
             modlib = struct["modifier_library"] = []
             skey = ob.data.shape_keys.key_blocks[item.name]
             mstruct = self.addLibModifier(skey, ob, parent)
