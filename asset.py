@@ -470,12 +470,27 @@ def lowerPath(path):
 
 def normalizeRef(id):
     from urllib.parse import quote
-    ref= lowerPath(undoQuote(quote(id)))
+    ref = lowerPath(undoQuote(quote(id)))
     return ref.replace("//", "/")
+
 
 def undoQuote(ref):
     ref = ref.replace("%23","#").replace("%25","%").replace("%2D", "-").replace("%2E", ".").replace("%2F", "/").replace("%3F", "?")
     return ref.replace("%5C", "/").replace("%5F", "_").replace("%7C", "|")
+
+
+def normalizeUrl(filepath):
+    from urllib.parse import quote
+    filepath = bpy.path.resolve_ncase(filepath)
+    for path in GS.getDazPaths():
+        if path:
+            path = bpy.path.resolve_ncase(path)
+            n = len(path)
+            if filepath.lower()[0:n] == path.lower():
+                filepath = filepath[n:]
+                break
+    url = undoQuote(quote(filepath))
+    return url.replace("//", "/")
 
 #-------------------------------------------------------------
 #   Paths

@@ -264,31 +264,44 @@ def openSettingsFile(filepath):
 class DazExporter:
     author : StringProperty(
         name = "Author",
-        description = "Author info in pose preset file",
+        description = "Author info in preset file",
         default = os.getlogin())
+
+    email : StringProperty(
+        name = "Email",
+        description = "Email info in preset file",
+        default = "")
 
     website : StringProperty(
         name = "Website",
-        description = "Website info in pose preset file",
+        description = "Website info in preset file",
         default = "")
+
+    useCompress: BoolProperty(
+        name = "Compress File",
+        description = "Gzip the output file",
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "author")
+        self.layout.prop(self, "email")
         self.layout.prop(self, "website")
+        self.layout.prop(self, "useCompress")
 
     def makeDazStruct(self, type, filepath):
         from collections import OrderedDict
-        from .asset import normalizeRef
+        from .asset import normalizeUrl
         from datetime import datetime
         file,ext = os.path.splitext(filepath)
-        filepath = file + ".duf"
+        filepath = "%s.duf" % file
         struct = OrderedDict()
         struct["file_version"] = "0.6.0.0"
         astruct = {}
-        astruct["id"] = normalizeRef(filepath)
+        astruct["id"] = normalizeUrl(filepath)
         astruct["type"] = type
         astruct["contributor"] = {
             "author" : self.author,
+            "email" : self.email,
             "website" : self.website,
         }
         astruct["modified"] = str(datetime.now())

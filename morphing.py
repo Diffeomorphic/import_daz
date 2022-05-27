@@ -3108,10 +3108,18 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         name = "Directory",
         description = "Directory")
 
+    presentation: EnumProperty(
+        items = [("Modifier/Pose", "Pose Control", "Pose control"),
+                 ("Modifier/Shape", "Shape", "Shape")],
+        name = "Presentation",
+        description = "Presentation",
+        default = "Modifier/Pose")
+
     def draw(self, context):
         Selector.draw(self, context)
         DazExporter.draw(self, context)
         self.layout.prop(self, "directory")
+        self.layout.prop(self, "presentation")
 
     def getKeys(self, rig, ob):
         keys = []
@@ -3130,12 +3138,12 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 
     def run(self, context):
         from .load_json import saveJson
-        from .asset import normalizeRef
+        from .asset import normalizeUrl
         ob = context.object
         rig = ob.parent
         parent = None
         if rig:
-            parent = rig.DazUrl
+            parent = normalizeUrl(rig.DazUrl)
         for item in self.getSelectedItems():
             filename = ("%s.duf" % item.name).replace(" ", "_")
             filepath = os.path.join(self.directory, filename)
@@ -3147,29 +3155,32 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
             modlib.append(mstruct)
             modlist = []
             struct["scene"] = {"modifiers" : modlist}
-            mstruct = {"id" : "%s-1" % item.name, "url" : normalizeRef(item.name)}
+            mname = item.name.replace(" ", "_")
+            mstruct = {"id" : "%s-1" % mname, "url" : normalizeUrl(mname)}
             modlist.append(mstruct)
-            saveJson(struct, filepath, binary=False)
+            saveJson(struct, filepath, binary=self.useCompress)
             print("Morph preset %s saved" % filepath)
 
 
     def addLibModifier(self, skey, ob, parent):
-        from .asset import normalizeRef
         from collections import OrderedDict
+        mname = skey.name.replace(" ", "_")
         struct = OrderedDict()
-        struct["id"] = skey.name
-        struct["name"] = skey.name
+        struct["id"] = mname
+        struct["name"] = mname
         if parent:
-            struct["parent"] = normalizeRef(parent)
+            struct["parent"] = parent
         struct["presentation"] = {
-            "type" : "Modifier/Shape",
+            "type" : self.presentation,
             "label" : skey.name,
             "description" : "",
+            "icon_large" : "",
+            "colors" : [ [ 0.1607843, 0.1607843, 0.1607843 ], [ 0.4980392, 0, 0 ] ]
         }
         struct["channel"] = {
             "id" : "value",
             "type" : "float",
-            "name" : "Value",
+            "name" : mname,
             "label" : skey.name,
             "auto_follow" : True,
             "value" : 0,
@@ -3179,6 +3190,11 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
             "display_as_percent" : True,
             "step_size" : 0.01
         }
+        if self.presentation == "Modifier/Pose":
+            struct["group"] = "/Pose Controls"
+        elif self.presentation == "Modifier/Shape":
+            struct["region"] = "Actor"
+            struct["group"] = "/Full Body/People"
         nverts = len(ob.data.vertices)
         mstruct = struct["morph"] = OrderedDict()
         mstruct["vertex_count"] = nverts
@@ -3280,11 +3296,14 @@ def register():
         name = "New Name",
         default = "Name")
 
+    folder = os.path.expanduser("~/Documents")
+    if not os.path.exists(folder):
+        folder = os.path.expanduser("~")
     bpy.types.Scene.DazMorphPath = StringProperty(
         name = "Morph Path",
         description = "Path to morphs",
         subtype = 'DIR_PATH',
-        default = os.path.expanduser("~/Documents").replace("\\","/"))
+        default = folder.replace("\\","/"))
 
 
 def unregister():

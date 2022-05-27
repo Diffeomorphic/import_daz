@@ -28,8 +28,9 @@
 
 import json
 import gzip
+import os
 from mathutils import Vector, Color
-from .error import reportError
+from .error import reportError, DazError
 
 
 def loadJson(filepath, mustOpen=False):
@@ -61,6 +62,8 @@ def loadJson(filepath, mustOpen=False):
                     return "%s %s" % (string[:n], string[n1:])
         return None
 
+    if not os.path.exists(filepath):
+        raise DazError('File does not exist:\n"%s"' % filepath)
     try:
         with gzip.open(filepath, 'rb') as fp:
             bytes = fp.read()
@@ -94,9 +97,12 @@ def loadJson(filepath, mustOpen=False):
 
 
 def saveJson(struct, filepath, binary=False):
+    folder = os.path.dirname(filepath)
+    if not os.path.exists(folder):
+        raise DazError('Output directory does not exist.\n"%s"' % folder)
     if binary:
-        bytes = encodeJsonData(struct, "")
-        #bytes = json.dumps(struct)
+        string = encodeJsonData(struct, "")
+        bytes = string.encode("utf_8_sig")
         with gzip.open(filepath, 'wb') as fp:
             fp.write(bytes)
     else:
