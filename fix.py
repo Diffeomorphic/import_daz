@@ -401,13 +401,13 @@ class Fixer(DriverUser):
 
 
     def addGazeConstraint(self, rig, suffix):
-        from .mhx import setMhxProp, trackTo
+        from .mhx import setMhxProp, dampedTrack
         prop = "MhaGaze_" + suffix[1]
         setMhxProp(rig, prop, 1.0)
         prefix = suffix[1].lower()
         eyegaze = rig.pose.bones[prefix+"EyeGaze"]
         gaze = rig.pose.bones["gaze"+suffix]
-        trackTo(eyegaze, gaze, rig, prop)
+        dampedTrack(eyegaze, gaze, rig, prop)
 
 
     def addGazeFollowsHead(self, rig):

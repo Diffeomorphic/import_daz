@@ -217,11 +217,14 @@ def stretchTo(pb, target, rig):
     return cns
 
 
-def dampedTrack(pb, target, rig):
+def dampedTrack(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('DAMPED_TRACK')
     cns.target = rig
     cns.subtarget = target.name
     cns.track_axis = 'TRACK_Y'
+    if prop is not None:
+        cns.influence = 0.0
+        addDriver(cns, "influence", rig, prop, expr)
     return cns
 
 
