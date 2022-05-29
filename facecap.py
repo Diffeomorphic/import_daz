@@ -88,6 +88,32 @@ class FACSImporter(SingleFile, ActionOptions):
         description = "Include eyes rotation animation",
         default = True)
 
+    useGazeBone : BoolProperty(
+        name = "Gaze Bones",
+        description = "Include gaze bones in the eye animations.\nWarning: this may slow down progress considerably",
+        default = True)
+
+    def storeState(self, context):
+        rig = context.object
+        self.gaze = None
+        if (self.useEyesRot and self.useGazeBone and
+            (rig.data.get("MhaGaze_L") or rig.data.get("MhaGaze_R")) and
+            "gaze" in rig.pose.bones.keys() and
+            "gaze.L" in rig.pose.bones.keys() and
+            "gaze.R" in rig.pose.bones.keys()):
+            self.gaze = rig.pose.bones["gaze"]
+            self.lgaze = rig.pose.bones["gaze.L"]
+            self.rgaze = rig.pose.bones["gaze.R"]
+            self.gazeprops = (rig.data["MhaGaze_L"], rig.data["MhaGaze_R"])
+            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = False
+            self.FZ = Matrix.Rotation(math.pi, 4, 'Z')
+
+
+    def restoreState(self, context):
+        if self.gaze:
+            rig = context.object
+            rig.data["MhaGaze_L"], rig.data["MhaGaze_R"] = self.gazeprops
+
 
     def draw(self, context):
         self.layout.prop(self, "makeNewAction")
@@ -102,6 +128,8 @@ class FACSImporter(SingleFile, ActionOptions):
             box.prop(self, "neckLowerDist")
             box.prop(self, "abdomenDist")
         self.layout.prop(self, "useEyesRot")
+        if self.useEyesRot:
+            self.layout.prop(self, "useGazeBone")
 
 
     def run(self, context):
@@ -121,14 +149,14 @@ class FACSImporter(SingleFile, ActionOptions):
         print("Blendshapes: %d\nKeys: %d" % (len(self.bshapes), len(first)))
         if self.makeNewAction and rig.animation_data:
             rig.animation_data.action = None
-        self.build(rig)
+        self.build(rig, context)
         if self.makeNewAction and rig.animation_data:
             act = rig.animation_data.action
             if act:
                 act.name = self.actionName
 
 
-    def build(self, rig):
+    def build(self, rig, context):
         missing = []
         for bshape in self.bshapes:
             if bshape not in self.facstable.keys():
@@ -139,12 +167,17 @@ class FACSImporter(SingleFile, ActionOptions):
                 msg += ("  %s\n" % bshape)
             raise DazError(msg)
 
+        from time import perf_counter
         self.setupBones(rig)
         self.scale = rig.DazScale
         warned = []
-        for t in self.bskeys.keys():
+        nframes = len(self.bskeys)
+        t1 = perf_counter()
+        startProgress("Converting %d frames" % nframes)
+        for n,t in enumerate(self.bskeys.keys()):
+            showProgress(n, nframes)
             frame = self.getFrame(t)
-            self.setBoneFrame(t, frame)
+            self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
                 prop = self.facstable[bshape]
                 if prop in rig.keys():
@@ -153,11 +186,16 @@ class FACSImporter(SingleFile, ActionOptions):
                 elif bshape not in warned:
                     print("MISS", bshape, prop)
                     warned.append(bshape)
+        endProgress()
+        t2 = perf_counter()
+        print("%d frames converted in %g seconds" % (nframes, t2-t1))
 
 
     def setupBones(self, rig):
         self.leye = self.getBones(["lEye", "eye.L"], rig)
         self.reye = self.getBones(["rEye", "eye.R"], rig)
+        if self.gaze:
+            self.gazedist = (self.lgaze.bone.head_local - self.leye.bone.head_local).length
         self.head = self.getBones(["head"], rig)
         self.neckUpper = self.getBones(["neckUpper", "neck-1"], rig)
         self.neckLower = self.getBones(["neckLower", "neck"], rig)
@@ -178,7 +216,7 @@ class FACSImporter(SingleFile, ActionOptions):
         self.abdomenDist /= distsum
 
 
-    def setBoneFrame(self, t, frame):
+    def setBoneFrame(self, t, frame, context):
         if self.useHeadLoc:
             self.hip.location = self.scale*self.hlockeys[t]
             self.hip.keyframe_insert("location", frame=frame, group="hip")
@@ -190,6 +228,15 @@ class FACSImporter(SingleFile, ActionOptions):
         if self.useEyesRot:
             self.setRotation(self.leye, self.leyekeys[t], frame)
             self.setRotation(self.reye, self.reyekeys[t], frame)
+            if self.gaze:
+                updateScene(context)
+                lmat = self.getGaze(self.leye, self.lgaze)
+                rmat = self.getGaze(self.reye, self.rgaze)
+                mat = 0.5*(lmat + rmat)
+                self.setMatrix(self.gaze, mat, frame)
+                updateScene(context)
+                self.setMatrix(self.lgaze, lmat, frame)
+                self.setMatrix(self.rgaze, rmat, frame)
 
 
     def setRotation(self, pb, euler, frame, fraction=None):
@@ -204,6 +251,21 @@ class FACSImporter(SingleFile, ActionOptions):
         else:
             pb.rotation_euler = mat.to_euler(pb.rotation_mode)
             pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
+
+
+    def setMatrix(self, pb, mat, frame):
+        pb.matrix = mat
+        pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
+        pb.keyframe_insert("location", frame=frame, group=pb.name)
+
+
+    def getGaze(self, eye, gaze):
+        loc = eye.matrix.to_translation()
+        vec = eye.matrix.to_3x3().col[1]
+        vec.normalize()
+        mat = eye.matrix @ self.FZ
+        mat.col[3][0:3] = loc + vec*self.gazedist
+        return mat
 
 
     def getBones(self, bnames, rig):
@@ -231,7 +293,7 @@ class FACSImporter(SingleFile, ActionOptions):
 #   FaceCap
 #------------------------------------------------------------------
 
-class ImportFaceCap(DazOperator, TextFile, IsMeshArmature, FACSImporter):
+class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
     bl_idname = "daz.import_facecap"
     bl_label = "Import FaceCap File"
     bl_description = "Import a text file with facecap data"
@@ -390,7 +452,7 @@ LiveLinkFacsTable = {
     "tongueOut" : "facs_bs_TongueOut",
 }
 
-class ImportLiveLink(DazOperator, CsvFile, IsMeshArmature, FACSImporter):
+class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
     bl_idname = "daz.import_livelink"
     bl_label = "Import Live Link File"
     bl_description = "Import a csv file with Unreal's Live Link data"
