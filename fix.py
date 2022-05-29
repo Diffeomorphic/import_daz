@@ -375,11 +375,9 @@ class Fixer(DriverUser):
         from .mhx import makeBone, deriveBone
         prefix = suffix[1].lower()
         eye = rig.data.edit_bones[prefix + "Eye"]
-        eyegaze = deriveBone(prefix + "EyeGaze", eye, rig, helpLayer, eye.parent)
-        if isDrvBone(eye.parent.name):
-            eyegaze.parent = eye.parent.parent
-            eye.parent.parent = eyegaze
-        else:
+        drvname = drvBone(eye.name)
+        if drvname not in rig.data.edit_bones.keys():
+            eyegaze = deriveBone(drvname, eye, rig, helpLayer, eye.parent)
             eye.parent = eyegaze
         vec = eye.tail-eye.head
         vec.normalize()
@@ -402,10 +400,10 @@ class Fixer(DriverUser):
 
     def addGazeConstraint(self, rig, suffix):
         from .mhx import setMhxProp, dampedTrack
-        prop = "MhaGaze_" + suffix[1]
+        prop = "MhaGaze_%s" % suffix[1]
         setMhxProp(rig, prop, 1.0)
         prefix = suffix[1].lower()
-        eyegaze = rig.pose.bones[prefix+"EyeGaze"]
+        eyegaze = rig.pose.bones[drvBone("%sEye" % prefix)]
         gaze = rig.pose.bones["gaze"+suffix]
         dampedTrack(eyegaze, gaze, rig, prop)
 

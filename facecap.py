@@ -88,32 +88,6 @@ class FACSImporter(SingleFile, ActionOptions):
         description = "Include eyes rotation animation",
         default = True)
 
-    useGazeBone : BoolProperty(
-        name = "Gaze Bones",
-        description = "Include gaze bones in the eye animations.\nWarning: this may slow down progress considerably",
-        default = True)
-
-    def storeState(self, context):
-        rig = context.object
-        self.gaze = None
-        if (self.useEyesRot and self.useGazeBone and
-            (rig.data.get("MhaGaze_L") or rig.data.get("MhaGaze_R")) and
-            "gaze" in rig.pose.bones.keys() and
-            "gaze.L" in rig.pose.bones.keys() and
-            "gaze.R" in rig.pose.bones.keys()):
-            self.gaze = rig.pose.bones["gaze"]
-            self.lgaze = rig.pose.bones["gaze.L"]
-            self.rgaze = rig.pose.bones["gaze.R"]
-            self.gazeprops = (rig.data["MhaGaze_L"], rig.data["MhaGaze_R"])
-            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = False
-            self.FZ = Matrix.Rotation(math.pi, 4, 'Z')
-
-
-    def restoreState(self, context):
-        if self.gaze:
-            rig = context.object
-            rig.data["MhaGaze_L"], rig.data["MhaGaze_R"] = self.gazeprops
-
 
     def draw(self, context):
         self.layout.prop(self, "makeNewAction")
@@ -128,8 +102,6 @@ class FACSImporter(SingleFile, ActionOptions):
             box.prop(self, "neckLowerDist")
             box.prop(self, "abdomenDist")
         self.layout.prop(self, "useEyesRot")
-        if self.useEyesRot:
-            self.layout.prop(self, "useGazeBone")
 
 
     def run(self, context):
@@ -137,6 +109,8 @@ class FACSImporter(SingleFile, ActionOptions):
         rig = getRigFromObject(context.object)
         if rig is None:
             raise DazError("No rig selected")
+        if "MhaGaze_L" in rig.data.keys():
+            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
         self.facstable = dict((key.lower(), value) for key,value in self.FacsTable.items())
         self.bshapes = []
         self.bskeys = {}
@@ -173,9 +147,7 @@ class FACSImporter(SingleFile, ActionOptions):
         warned = []
         nframes = len(self.bskeys)
         t1 = perf_counter()
-        startProgress("Converting %d frames" % nframes)
         for n,t in enumerate(self.bskeys.keys()):
-            showProgress(n, nframes)
             frame = self.getFrame(t)
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
@@ -186,21 +158,18 @@ class FACSImporter(SingleFile, ActionOptions):
                 elif bshape not in warned:
                     print("MISS", bshape, prop)
                     warned.append(bshape)
-        endProgress()
         t2 = perf_counter()
-        print("%d frames converted in %g seconds" % (nframes, t2-t1))
+        print("%d frames loaded in %g seconds" % (nframes, t2-t1))
 
 
     def setupBones(self, rig):
-        self.leye = self.getBones(["lEye", "eye.L"], rig)
-        self.reye = self.getBones(["rEye", "eye.R"], rig)
-        if self.gaze:
-            self.gazedist = (self.lgaze.bone.head_local - self.leye.bone.head_local).length
-        self.head = self.getBones(["head"], rig)
-        self.neckUpper = self.getBones(["neckUpper", "neck-1"], rig)
-        self.neckLower = self.getBones(["neckLower", "neck"], rig)
-        self.abdomen = self.getBones(["abdomenUpper", "spine-1", "spine_fk.002"], rig)
-        self.hip = self.getBones(["hip", "torso"], rig)
+        self.leye = getBones(["lEye", "eye.L"], rig)
+        self.reye = getBones(["rEye", "eye.R"], rig)
+        self.head = getBones(["head"], rig)
+        self.neckUpper = getBones(["neckUpper", "neck-1"], rig)
+        self.neckLower = getBones(["neckLower", "neck"], rig)
+        self.abdomen = getBones(["abdomenUpper", "spine-1", "spine_fk.002"], rig)
+        self.hip = getBones(["hip", "torso"], rig)
         if self.head is None:
             self.headDist = 0
         if self.neckUpper is None:
@@ -228,15 +197,6 @@ class FACSImporter(SingleFile, ActionOptions):
         if self.useEyesRot:
             self.setRotation(self.leye, self.leyekeys[t], frame)
             self.setRotation(self.reye, self.reyekeys[t], frame)
-            if self.gaze:
-                updateScene(context)
-                lmat = self.getGaze(self.leye, self.lgaze)
-                rmat = self.getGaze(self.reye, self.rgaze)
-                mat = 0.5*(lmat + rmat)
-                self.setMatrix(self.gaze, mat, frame)
-                updateScene(context)
-                self.setMatrix(self.lgaze, lmat, frame)
-                self.setMatrix(self.rgaze, rmat, frame)
 
 
     def setRotation(self, pb, euler, frame, fraction=None):
@@ -252,32 +212,12 @@ class FACSImporter(SingleFile, ActionOptions):
             pb.rotation_euler = mat.to_euler(pb.rotation_mode)
             pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
 
+#------------------------------------------------------------------
+#   Utility
+#------------------------------------------------------------------
 
-    def setMatrix(self, pb, mat, frame):
-        pb.matrix = mat
-        pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
-        pb.keyframe_insert("location", frame=frame, group=pb.name)
-
-
-    def getGaze(self, eye, gaze):
-        loc = eye.matrix.to_translation()
-        vec = eye.matrix.to_3x3().col[1]
-        vec.normalize()
-        mat = eye.matrix @ self.FZ
-        mat.col[3][0:3] = loc + vec*self.gazedist
-        return mat
-
-
-    def getBones(self, bnames, rig):
-        for bname in bnames:
-            pb = self.getBone(bname, rig)
-            if pb:
-                return pb
-        print("Did not find bones: %s" % bnames)
-        return None
-
-
-    def getBone(self, bname, rig):
+def getBones(bnames, rig):
+    def getBone(bname, rig):
         if bname not in rig.pose.bones.keys():
             return None
         pb = rig.pose.bones[bname]
@@ -288,6 +228,13 @@ class FACSImporter(SingleFile, ActionOptions):
                 if fcu.data_path == datapath:
                     raise DazError(msg)
         return pb
+
+    for bname in bnames:
+        pb = getBone(bname, rig)
+        if pb:
+            return pb
+    print("Did not find bones: %s" % bnames)
+    return None
 
 #------------------------------------------------------------------
 #   FaceCap
@@ -486,6 +433,157 @@ class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
             if key not in self.facstable.keys():
                 print(key)
 
+#------------------------------------------------------------------
+#   Gaze transfer
+#------------------------------------------------------------------
+
+class GazeTransferer:
+    @classmethod
+    def poll(self, context):
+        rig = context.object
+        return (rig and rig.type == 'ARMATURE' and
+                "gaze" in rig.pose.bones.keys() and
+                "gaze.L" in rig.pose.bones.keys() and
+                "gaze.R" in rig.pose.bones.keys())
+
+
+    def storeState(self, context):
+        rig = context.object
+        self.layers = list(rig.data.layers)
+        rig.data.layers = 32*[True]
+
+
+    def restoreState(self, context):
+        rig = context.object
+        rig.data.layers = self.layers
+
+
+    def setupBones(self, rig):
+        self.leye = getBones(["lEye", "eye.L"], rig)
+        self.reye = getBones(["rEye", "eye.R"], rig)
+        self.gaze = rig.pose.bones["gaze"]
+        self.lgaze = rig.pose.bones["gaze.L"]
+        self.rgaze = rig.pose.bones["gaze.R"]
+        self.FZ = Matrix.Rotation(math.pi, 4, 'Z')
+        self.gazedist = (self.lgaze.bone.head_local - self.leye.bone.head_local).length
+
+
+    def getFrames(self, rig, scn, bnames):
+        fstruct = {}
+        if rig.animation_data and rig.animation_data.action:
+            act = rig.animation_data.action
+            for fcu in act.fcurves:
+                words = fcu.data_path.split('"')
+                if words[0] == "pose.bones[" and words[1] in bnames:
+                    for kp in fcu.keyframe_points:
+                        t = kp.co[0]
+                        fstruct[t] = True
+        if len(fstruct) > 0:
+            try:
+                scn.frame_current = fstruct.keys()[0]
+                useInts = False
+            except TypeError:
+                useInts = True
+            if useInts:
+                fstruct = dict([(int(frame),True) for frame in fstruct.keys()])
+            frames = list(fstruct.keys())
+            frames.sort()
+            return frames
+        else:
+            return [None]
+
+
+class TransferToGaze(DazOperator, GazeTransferer):
+    bl_idname = "daz.transfer_to_gaze"
+    bl_label = "Transfer Eye To Gaze"
+    bl_description = "Transfer eye bone animation to gaze bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        t1 = perf_counter()
+        rig = context.object
+        scn = context.scene
+        self.setupBones(rig)
+        rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
+        frames = self.getFrames(rig, scn, ["eye.L", "eye.R", "lEye", "rEye"])
+        for frame in frames:
+            if frame is not None:
+                scn.frame_current = frame
+            updateScene(context)
+            lmat = self.getGaze(self.leye)
+            rmat = self.getGaze(self.reye)
+            mat = 0.5*(lmat + rmat)
+            self.setMatrix(self.gaze, mat, frame)
+            updateScene(context)
+            self.setMatrix(self.lgaze, lmat, frame)
+            self.setMatrix(self.rgaze, rmat, frame)
+        rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 1.0
+        updateScene(context)
+        t2 = perf_counter()
+        print("%d frames converted in %g seconds" % (len(frames), t2-t1))
+
+
+    def getGaze(self, eye):
+        loc = eye.matrix.to_translation()
+        vec = eye.matrix.to_quaternion().to_matrix().col[1]
+        vec.normalize()
+        mat = eye.matrix @ self.FZ
+        mat.col[3][0:3] = loc + vec*self.gazedist
+        eye.matrix_basis = Matrix()
+        return mat
+
+
+    def setMatrix(self, pb, mat, frame):
+        pb.matrix = mat
+        if frame is not None:
+            pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
+            pb.keyframe_insert("location", frame=frame, group=pb.name)
+
+
+class TransferFromGaze(DazOperator, GazeTransferer):
+    bl_idname = "daz.transfer_from_gaze"
+    bl_label = "Transfer Gaze To Eye"
+    bl_description = "Transfer gaze bone animation to eye bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        t1 = perf_counter()
+        rig = context.object
+        scn = context.scene
+        self.setupBones(rig)
+        unit = Matrix()
+        frames = self.getFrames(rig, scn, ["eye.L", "eye.R", "lEye", "rEye"])
+        for frame in frames:
+            if frame is not None:
+                scn.frame_current = frame
+            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 1.0
+            updateScene(context)
+            lmat = self.leye.matrix.copy()
+            rmat = self.reye.matrix.copy()
+            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
+            updateScene(context)
+            self.setEuler(self.leye, lmat, frame)
+            self.setEuler(self.reye, rmat, frame)
+            self.setQuat(self.lgaze, unit, frame)
+            self.setQuat(self.rgaze, unit, frame)
+            self.setQuat(self.gaze, unit, frame)
+        updateScene(context)
+        t2 = perf_counter()
+        print("%d frames converted in %g seconds" % (len(frames), t2-t1))
+
+
+    def setEuler(self, pb, mat, frame):
+        pb.matrix = mat
+        if frame is not None:
+            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
+
+
+    def setQuat(self, pb, mat, frame):
+        pb.matrix_basis = mat
+        if frame is not None:
+            pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
+            pb.keyframe_insert("location", frame=frame, group=pb.name)
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -493,6 +591,8 @@ class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
 classes = [
     ImportFaceCap,
     ImportLiveLink,
+    TransferToGaze,
+    TransferFromGaze,
 ]
 
 def register():
