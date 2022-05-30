@@ -254,6 +254,10 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         description = "Ignore rigidity groups when auto-transfer morphs.\nMorphs may differ from DAZ Studio.",
         default = False)
 
+    useOnlyVertexGroups : BoolProperty(
+        name = "Only Vertex Groups",
+        description = "Only transfer shapekeys driven by bones with vertex groups.\nMorphs driven by sliders are always transferred",
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "transferMethod", expand=True)
@@ -261,10 +265,12 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         row.prop(self, "useDrivers")
         row.prop(self, "useVendorMorphs")
         row.prop(self, "useOverwrite")
+        row.prop(self, "useOnlyVertexGroups")
         row = self.layout.row()
         row.prop(self, "useStrength")
         row.prop(self, "useSelectedOnly")
         row.prop(self, "ignoreRigidity")
+        row.label(text="")
         JCMSelector.draw(self, context)
 
 
@@ -333,6 +339,19 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 continue
             hskey = hskeys.key_blocks[sname]
 
+            if self.outsideBox(src, trg, hskey):
+                print(" 0", sname)
+                continue
+
+            if self.useOnlyVertexGroups and not self.hasVertexGroup(hskeys, sname, trg):
+                print(" V", sname)
+                continue
+
+            if sname in cskeys.key_blocks.keys():
+                if self.useOverwrite:
+                    cskey = cskeys.key_blocks[sname]
+                    trg.shape_key_remove(cskey)
+
             fcus = []
             if self.useDrivers:
                 from .driver import getRnaDriver
@@ -340,15 +359,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                     fcu = getRnaDriver(hskeys, 'key_blocks["%s"].%s' % (sname, channel), None)
                     if fcu:
                         fcus.append(fcu)
-
-            if self.ignoreMorph(src, trg, hskey):
-                print(" 0", sname)
-                continue
-
-            if sname in cskeys.key_blocks.keys():
-                if self.useOverwrite:
-                    cskey = cskeys.key_blocks[sname]
-                    trg.shape_key_remove(cskey)
 
             cskey = None
             filepath = None
@@ -545,7 +555,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                     #print("Save scale factor for"," ".join(affectedbones))
 
 
-    def ignoreMorph(self, src, trg, hskey):
+    def outsideBox(self, src, trg, hskey):
         eps = 0.01 * src.DazScale   # 0.1 mm
         hverts = [v.index for v in src.data.vertices if (hskey.data[v.index].co - v.co).length > eps]
         for j in range(3):
@@ -559,6 +569,32 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 maxkey = max(xkey)
                 if minclo > maxkey or maxclo < minkey:
                     return True
+        return False
+
+
+    def hasVertexGroup(self, hskeys, sname, ob):
+        def matchVertexGroup(drv, ob):
+            if drv.type == 'SCRIPTED' and len(drv.variables) == 1:
+                var = drv.variables[0]
+                for trg in var.targets:
+                    amt = trg.id
+                    if isinstance(amt, bpy.types.Armature) and amt.animation_data:
+                        for fcu1 in amt.animation_data.drivers:
+                            if fcu1.data_path == trg.data_path:
+                                for var1 in fcu1.driver.variables:
+                                    if var1.type != 'TRANSFORMS':
+                                        return True
+                                    for trg1 in var1.targets:
+                                        if trg1.bone_target in ob.vertex_groups.keys():
+                                            return True
+            return False
+
+        if hskeys.animation_data is None:
+            return False
+        for fcu in hskeys.animation_data.drivers:
+            words = fcu.data_path.split('"')
+            if words[0] == "key_blocks[" and words[1] == sname:
+                return matchVertexGroup(fcu.driver, ob)
         return False
 
 
