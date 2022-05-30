@@ -378,7 +378,7 @@ class Fixer(DriverUser):
         drvname = drvBone(eye.name)
         if drvname not in rig.data.edit_bones.keys():
             eyegaze = deriveBone(drvname, eye, rig, helpLayer, eye.parent)
-            eye.parent = eyegaze
+            #eye.parent = eyegaze
         vec = eye.tail-eye.head
         vec.normalize()
         loc = eye.head + vec*rig.DazScale*30
@@ -399,13 +399,25 @@ class Fixer(DriverUser):
 
 
     def addGazeConstraint(self, rig, suffix):
-        from .mhx import setMhxProp, dampedTrack
+        def constraintExists(pb, drv):
+            if pb.name in self.constraints.keys():
+                for struct in self.constraints[pb.name]:
+                    if (struct["type"] == 'COPY_ROTATION' and
+                        struct["subtarget"] == drv.name):
+                        return True
+            return False
+
+        from .mhx import setMhxProp, dampedTrack, copyRotation
         prop = "MhaGaze_%s" % suffix[1]
         setMhxProp(rig, prop, 1.0)
         prefix = suffix[1].lower()
-        eyegaze = rig.pose.bones[drvBone("%sEye" % prefix)]
+        eye = rig.pose.bones["%sEye" % prefix]
+        eyedrv = rig.pose.bones[drvBone("%sEye" % prefix)]
         gaze = rig.pose.bones["gaze"+suffix]
-        dampedTrack(eyegaze, gaze, rig, prop)
+        if not constraintExists(eye, eyedrv):
+            cns = copyRotation(eye, eyedrv, rig)
+            cns.mix_mode = 'ADD'
+        dampedTrack(eyedrv, gaze, rig, prop)
 
 
     def addGazeFollowsHead(self, rig):
@@ -548,7 +560,7 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
 #-------------------------------------------------------------
 
 ConstraintAttributes = [
-    "type", "name", "mute", "target", "subtarget",
+    "type", "name", "mute", "target", "subtarget", "mix_mode",
     "head_tail", "use_offset", "owner_space", "target_space",
     "use_x", "use_y", "use_z",
     "invert_x", "invert_y", "invert_z",
