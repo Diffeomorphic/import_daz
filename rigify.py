@@ -41,7 +41,7 @@ from mathutils import Vector
 
 from .error import *
 from .utils import *
-from .fix import Fixer, GizmoUser, BendTwists
+from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
 
 R_FACE = 1
 R_DETAIL = 2
@@ -336,7 +336,6 @@ def setupTables(meta):
 
 class DazBone:
     def __init__(self, eb):
-        from .fix import ConstraintStore
         self.name = eb.name
         self.head = eb.head.copy()
         self.tail = eb.tail.copy()
@@ -766,6 +765,10 @@ class Rigify:
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
 
         unhideAllObjects(context, rig)
+        for bname in ["lEye", "rEye"]:
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                self.storeConstraints(bname, pb)
 
         # Create metarig
         setMode('OBJECT')
@@ -1413,7 +1416,7 @@ class Rigify:
 #  Buttons
 #-------------------------------------------------------------
 
-class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists):
+class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists, ConstraintStore):
     bl_idname = "daz.convert_to_rigify"
     bl_label = "Convert To Rigify"
     bl_description = "Convert active rig to rigify"
@@ -1432,6 +1435,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
 
     def __init__(self):
         Fixer.__init__(self)
+        ConstraintStore.__init__(self)
 
     def draw(self, context):
         self.layout.prop(self, "useAutoAlign")
@@ -1472,7 +1476,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         print("DAZ rig %s successfully rigified in %.3f seconds" % (rname, t2-t1))
 
 
-class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists):
+class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintStore):
     bl_idname = "daz.create_meta"
     bl_label = "Create Metarig"
     bl_description = "Create a metarig from the active rig"
@@ -1483,6 +1487,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists):
 
     def __init__(self):
         Fixer.__init__(self)
+        ConstraintStore.__init__(self)
 
     def draw(self, context):
         Fixer.draw(self, context)
