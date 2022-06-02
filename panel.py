@@ -90,7 +90,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.launch_editor")
         self.layout.operator("daz.reset_material")
-        self.layout.operator("daz.group_skin_nodes")
+        self.layout.operator("daz.make_combo_material")
 
 
 class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):

@@ -659,10 +659,10 @@ class DAZ_OT_UpdateMaterials(bpy.types.Operator):
 #   Launch button
 # ---------------------------------------------------------------------
 
-class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
-    bl_idname = "daz.group_skin_nodes"
-    bl_label = "Group Skin Nodes"
-    bl_description = "Create a skin node group for selected materials"
+class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
+    bl_idname = "daz.make_combo_material"
+    bl_label = "Make Combo Material"
+    bl_description = "Create a combo node group for selected materials"
     bl_options = {'UNDO'}
 
     def draw(self, context):
@@ -686,11 +686,12 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
     def run(self, context):
         ob = context.object
         tree = ob.active_material.node_tree
+        self.useBump = False
         self.clearData()
         self.findOutputs(tree)
         for socket in self.outputs.values():
             self.selectNodes(socket, "")
-        group = self.makeGroup()
+        group = self.makeGroup(ob)
         mats = []
         for mat in ob.data.materials:
             if (mat and
@@ -717,17 +718,24 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
 
 
     def findOutputs(self, tree):
+        def skipShells(node, socket, slot):
+            for link in socket.links:
+                fromnode = link.from_node
+                if (fromnode.type == 'GROUP' and
+                    not fromnode.node_tree.name.startswith("DAZ") and
+                    slot in fromnode.inputs.keys()):
+                    return skipShells(fromnode, fromnode.inputs[slot], slot)
+            return socket,node
+
         from .tree import findNodes
         self.eevee = self.cycles = None
         for node in findNodes(tree, 'OUTPUT_MATERIAL'):
             if node.target == 'EEVEE':
-                self.outputs["Eevee"] = node.inputs["Surface"]
-                self.eevee = node
+                self.outputs["Eevee"], self.eevee = skipShells(node, node.inputs["Surface"], "Eevee")
             else:
-                self.outputs["Cycles"] = node.inputs["Surface"]
-                self.outputs["Volume"] = node.inputs["Volume"]
-                self.outputs["Displacement"] = node.inputs["Displacement"]
-                self.cycles = node
+                self.outputs["Cycles"], self.cycles = skipShells(node, node.inputs["Surface"], "Cycles")
+                self.outputs["Volume"],_ = skipShells(node, node.inputs["Volume"], "Volume")
+                self.outputs["Displacement"],_ = skipShells(node, node.inputs["Displacement"], "Displacement")
 
 
     def selectNodes(self, socket, slot):
@@ -753,10 +761,12 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
                     self.tnodes[node.name] = TNode(node)
                 for socket in node.inputs:
                     self.selectNodes(socket, slot)
+                if node.type == 'BUMP':
+                    self.useBump = True
 
 
-    def makeGroup(self):
-        group = bpy.data.node_groups.new("Skin", "ShaderNodeTree")
+    def makeGroup(self, ob):
+        group = bpy.data.node_groups.new("%s Combo" % ob.name, "ShaderNodeTree")
         innode = group.nodes.new("NodeGroupInput")
         innode.location = (0, 2*YSIZE)
         outnode = group.nodes.new("NodeGroupOutput")
@@ -766,6 +776,8 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
             group.inputs.new("NodeSocketColor", key)
         for key in self.alphas.keys():
             group.inputs.new("NodeSocketFloat", "%s Alpha" % key)
+        if self.useBump:
+            group.inputs.new("NodeSocketFloat", "Bump Distance")
         group.outputs.new("NodeSocketShader", "Cycles")
         group.outputs.new("NodeSocketShader", "Eevee")
         group.outputs.new("NodeSocketShader", "Volume")
@@ -773,6 +785,10 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
 
         for tnode in self.tnodes.values():
             tnode.make(group)
+        if self.useBump and "Bump" in self.tnodes.keys():
+            bump = self.tnodes["Bump"].node
+            group.links.new(innode.outputs["Bump Distance"], bump.inputs["Distance"])
+
         for link in self.links:
             if link.from_node.name in self.tnodes.keys():
                 fromnode = self.tnodes[link.from_node.name].node
@@ -816,6 +832,9 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
                     tree.links.new(link.from_socket, skin.inputs[slot])
             else:
                 print("Missing slot: %s" % slot)
+        if self.useBump and "Bump" in self.nodes.keys():
+            bump = self.nodes["Bump"]
+            skin.inputs["Bump Distance"].default_value = bump.inputs["Distance"].default_value
         for slot,socket in self.outputs.items():
             tree.links.new(skin.outputs[slot], socket)
         if self.eevee:
@@ -1512,7 +1531,7 @@ classes = [
     DAZ_OT_LaunchEditor,
     DAZ_OT_UpdateMaterials,
     DAZ_OT_ResetMaterial,
-    DAZ_OT_GroupSkinNodes,
+    DAZ_OT_MakeComboMaterials,
     DAZ_OT_MakeDecal,
     DAZ_OT_SetShellVisibility,
     DAZ_OT_RemoveShells,
