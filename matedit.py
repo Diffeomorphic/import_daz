@@ -690,7 +690,6 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
         self.findOutputs(tree)
         for socket in self.outputs.values():
             self.selectNodes(socket, "")
-        print("CC", self.colors.keys())
         group = self.makeGroup()
         mats = []
         for mat in ob.data.materials:
@@ -719,38 +718,41 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
 
     def findOutputs(self, tree):
         from .tree import findNodes
+        self.eevee = self.cycles = None
         for node in findNodes(tree, 'OUTPUT_MATERIAL'):
             if node.target == 'EEVEE':
                 self.outputs["Eevee"] = node.inputs["Surface"]
+                self.eevee = node
             else:
                 self.outputs["Cycles"] = node.inputs["Surface"]
                 self.outputs["Volume"] = node.inputs["Volume"]
                 self.outputs["Displacement"] = node.inputs["Displacement"]
+                self.cycles = node
 
 
-    def selectNodes(self, socket, channel):
+    def selectNodes(self, socket, slot):
         for link in socket.links:
-            self.links.append(link)
+            node = link.to_node
+            if node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
+                pass
+            elif node.type == 'GROUP':
+                if node.node_tree.name.startswith("DAZ"):
+                    slot = "%s:%s" % (node.node_tree.name, link.to_socket.name)
+            else:
+                slot = "%s:%s" % (node.type, link.to_socket.name)
             node = link.from_node
             if node.type == 'TEX_IMAGE':
-                if not channel:
-                    channel = link.to_socket.bl_label
-                if channel not in self.colors.keys():
-                    self.colors[channel] = []
-                self.colors[channel].append(link)
+                if slot:
+                    if slot not in self.colors.keys():
+                        self.colors[slot] = []
+                    self.colors[slot].append(link)
             else:
+                self.links.append(link)
                 if node.name not in self.nodes.keys():
                     self.nodes[node.name] = node
                     self.tnodes[node.name] = TNode(node)
-                if node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
-                    pass
-                elif node.type == 'GROUP' and node.name.startswith("DAZ"):
-                    channel = node.name
-                else:
-                    channel = "%s" % node.type
-
                 for socket in node.inputs:
-                    self.selectNodes(socket, channel)
+                    self.selectNodes(socket, slot)
 
 
     def makeGroup(self):
@@ -758,16 +760,16 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
         innode = group.nodes.new("NodeGroupInput")
         innode.location = (0, 2*YSIZE)
         outnode = group.nodes.new("NodeGroupOutput")
-        outnode.location = (8*XSIZE, 2*YSIZE)
+        xlocs = [node.location[0] for node in self.nodes.values()]
+        outnode.location = (max(xlocs) + XSIZE, 2*YSIZE)
         for key in self.colors.keys():
             group.inputs.new("NodeSocketColor", key)
         for key in self.alphas.keys():
             group.inputs.new("NodeSocketFloat", "%s Alpha" % key)
-        for key in self.outputs.keys():
-            if key == "Displacement":
-                group.outputs.new("NodeSocketVector", key)
-            else:
-                group.outputs.new("NodeSocketShader", key)
+        group.outputs.new("NodeSocketShader", "Cycles")
+        group.outputs.new("NodeSocketShader", "Eevee")
+        group.outputs.new("NodeSocketShader", "Volume")
+        group.outputs.new("NodeSocketVector", "Displacement")
 
         for tnode in self.tnodes.values():
             tnode.make(group)
@@ -781,25 +783,43 @@ class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
                     group.links.new(fromsocket, tosocket)
                 elif fromsocket.name in self.outputs.keys():
                     group.links.new(fromsocket, outnode.inputs[fromsocket.name])
-        for channel,links in self.colors.items():
-            for link in links:
-                if link.to_node.name in self.tnodes.keys():
-                    tonode = self.tnodes[link.to_node.name].node
-                    tosocket = getSocket(tonode.inputs, link.to_socket.identifier)
-                    group.links.new(innode.outputs[channel], tosocket)
+                elif fromsocket.name == "BSDF":
+                    group.links.new(fromsocket, outnode.inputs["Cycles"])
+                    group.links.new(fromsocket, outnode.inputs["Eevee"])
+                else:
+                    print("MISS", fromsocket.name, self.outputs.keys())
+        for slot,links in self.colors.items():
+            self.linkInputs(group, links, innode.outputs.get(slot))
+        for slot,links in self.alphas.items():
+            self.linkInputs(group, links, innode.outputs.get("%s Alpha" % slot))
         return group
+
+
+    def linkInputs(self, group, links, fromsocket):
+        if fromsocket is None:
+            return
+        for link in links:
+            if link.to_node.name in self.tnodes.keys():
+                tonode = self.tnodes[link.to_node.name].node
+                tosocket = getSocket(tonode.inputs, link.to_socket.identifier)
+                group.links.new(fromsocket, tosocket)
 
 
     def replaceNodes(self, tree, group):
         skin = tree.nodes.new("ShaderNodeGroup")
         skin.node_tree = group
-        skin.location = (3*XSIZE, 2*YSIZE)
-        skin.width = 400
+        skin.location = (self.cycles.location[0] - 1.5*XSIZE, 2*YSIZE)
+        skin.width = 1.5*XSIZE
         for slot,links in self.colors.items():
-            for link in links:
-                tree.links.new(link.from_socket, skin.inputs[slot])
+            if slot in skin.inputs.keys():
+                for link in links:
+                    tree.links.new(link.from_socket, skin.inputs[slot])
+            else:
+                print("Missing slot: %s" % slot)
         for slot,socket in self.outputs.items():
             tree.links.new(skin.outputs[slot], socket)
+        if self.eevee:
+            tree.links.new(skin.outputs["Displacement"], self.eevee.inputs["Displacement"])
         for node in self.nodes.values():
             tree.nodes.remove(node)
 
