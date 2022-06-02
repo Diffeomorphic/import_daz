@@ -37,6 +37,7 @@ from .material import WHITE, isWhite
 from .cycles import XSIZE, YSIZE
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
+from .tree import TNode, getSocket
 
 #-------------------------------------------------------------
 #   Material selector
@@ -653,6 +654,154 @@ class DAZ_OT_UpdateMaterials(bpy.types.Operator):
         global theMaterialEditor
         theMaterialEditor.run(context)
         return {'PASS_THROUGH'}
+
+# ---------------------------------------------------------------------
+#   Launch button
+# ---------------------------------------------------------------------
+
+class DAZ_OT_GroupSkinNodes(DazPropsOperator, MaterialSelector, IsMesh):
+    bl_idname = "daz.group_skin_nodes"
+    bl_label = "Group Skin Nodes"
+    bl_description = "Create a skin node group for selected materials"
+    bl_options = {'UNDO'}
+
+    def draw(self, context):
+        MaterialSelector.draw(self, context)
+        ob = context.object
+        self.layout.label(text="Active Material: %s" % ob.active_material.name)
+
+
+    def invoke(self, context, event):
+        global theMaterialEditor
+        theMaterialEditor = self
+        ob = context.object
+        self.setupMaterials(ob)
+        return DazPropsOperator.invoke(self, context, event)
+
+
+    def isDefaultActive(self, mat, ob):
+        return self.isSkinRedMaterial(mat)
+
+
+    def run(self, context):
+        ob = context.object
+        tree = ob.active_material.node_tree
+        self.clearData()
+        self.findOutputs(tree)
+        for socket in self.outputs.values():
+            self.selectNodes(socket, "")
+        print("CC", self.colors.keys())
+        group = self.makeGroup()
+        mats = []
+        for mat in ob.data.materials:
+            if (mat and
+                self.useMaterial(mat) and
+                mat.node_tree and
+                mat != ob.active_material):
+                mats.append(mat)
+        mats.append(ob.active_material)
+        for mat in mats:
+            self.clearData()
+            self.findOutputs(mat.node_tree)
+            for socket in self.outputs.values():
+                self.selectNodes(socket, "")
+            self.replaceNodes(mat.node_tree, group)
+
+
+    def clearData(self):
+        self.outputs = {}
+        self.colors = {}
+        self.alphas = {}
+        self.nodes = {}
+        self.tnodes = {}
+        self.links = []
+
+
+    def findOutputs(self, tree):
+        from .tree import findNodes
+        for node in findNodes(tree, 'OUTPUT_MATERIAL'):
+            if node.target == 'EEVEE':
+                self.outputs["Eevee"] = node.inputs["Surface"]
+            else:
+                self.outputs["Cycles"] = node.inputs["Surface"]
+                self.outputs["Volume"] = node.inputs["Volume"]
+                self.outputs["Displacement"] = node.inputs["Displacement"]
+
+
+    def selectNodes(self, socket, channel):
+        for link in socket.links:
+            self.links.append(link)
+            node = link.from_node
+            if node.type == 'TEX_IMAGE':
+                if not channel:
+                    channel = link.to_socket.bl_label
+                if channel not in self.colors.keys():
+                    self.colors[channel] = []
+                self.colors[channel].append(link)
+            else:
+                if node.name not in self.nodes.keys():
+                    self.nodes[node.name] = node
+                    self.tnodes[node.name] = TNode(node)
+                if node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
+                    pass
+                elif node.type == 'GROUP' and node.name.startswith("DAZ"):
+                    channel = node.name
+                else:
+                    channel = "%s" % node.type
+
+                for socket in node.inputs:
+                    self.selectNodes(socket, channel)
+
+
+    def makeGroup(self):
+        group = bpy.data.node_groups.new("Skin", "ShaderNodeTree")
+        innode = group.nodes.new("NodeGroupInput")
+        innode.location = (0, 2*YSIZE)
+        outnode = group.nodes.new("NodeGroupOutput")
+        outnode.location = (8*XSIZE, 2*YSIZE)
+        for key in self.colors.keys():
+            group.inputs.new("NodeSocketColor", key)
+        for key in self.alphas.keys():
+            group.inputs.new("NodeSocketFloat", "%s Alpha" % key)
+        for key in self.outputs.keys():
+            if key == "Displacement":
+                group.outputs.new("NodeSocketVector", key)
+            else:
+                group.outputs.new("NodeSocketShader", key)
+
+        for tnode in self.tnodes.values():
+            tnode.make(group)
+        for link in self.links:
+            if link.from_node.name in self.tnodes.keys():
+                fromnode = self.tnodes[link.from_node.name].node
+                fromsocket = getSocket(fromnode.outputs, link.from_socket.identifier)
+                if link.to_node.name in self.tnodes.keys():
+                    tonode = self.tnodes[link.to_node.name].node
+                    tosocket = getSocket(tonode.inputs, link.to_socket.identifier)
+                    group.links.new(fromsocket, tosocket)
+                elif fromsocket.name in self.outputs.keys():
+                    group.links.new(fromsocket, outnode.inputs[fromsocket.name])
+        for channel,links in self.colors.items():
+            for link in links:
+                if link.to_node.name in self.tnodes.keys():
+                    tonode = self.tnodes[link.to_node.name].node
+                    tosocket = getSocket(tonode.inputs, link.to_socket.identifier)
+                    group.links.new(innode.outputs[channel], tosocket)
+        return group
+
+
+    def replaceNodes(self, tree, group):
+        skin = tree.nodes.new("ShaderNodeGroup")
+        skin.node_tree = group
+        skin.location = (3*XSIZE, 2*YSIZE)
+        skin.width = 400
+        for slot,links in self.colors.items():
+            for link in links:
+                tree.links.new(link.from_socket, skin.inputs[slot])
+        for slot,socket in self.outputs.items():
+            tree.links.new(skin.outputs[slot], socket)
+        for node in self.nodes.values():
+            tree.nodes.remove(node)
 
 # ---------------------------------------------------------------------
 #   Make Decal
@@ -1343,6 +1492,7 @@ classes = [
     DAZ_OT_LaunchEditor,
     DAZ_OT_UpdateMaterials,
     DAZ_OT_ResetMaterial,
+    DAZ_OT_GroupSkinNodes,
     DAZ_OT_MakeDecal,
     DAZ_OT_SetShellVisibility,
     DAZ_OT_RemoveShells,

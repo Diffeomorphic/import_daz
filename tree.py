@@ -190,6 +190,13 @@ def getLinkTo(tree, node, slot):
             return link
     return None
 
+
+def getSocket(sockets, id):
+    for socket in sockets:
+        if socket.identifier == id:
+            return socket
+    return None
+
 #-------------------------------------------------------------
 #   Prune node tree
 #-------------------------------------------------------------
@@ -220,6 +227,44 @@ def pruneNodeTree(tree):
         if not marked[node.name]:
             tree.nodes.remove(node)
     return marked
+
+# ---------------------------------------------------------------------
+#   TNode and TLink
+# ---------------------------------------------------------------------
+
+class TNode:
+    def __init__(self, node):
+        self.orig = node
+        self.node = None
+        ignore = ( "rna_type", "type", "dimensions", "inputs", "outputs", "internal_links", "select")
+        self.attributes = {}
+        for attr in node.bl_rna.properties:
+            if not attr.identifier in ignore and not attr.identifier.split("_")[0] == "bl":
+                self.attributes[attr.identifier] = getattr(node, attr.identifier)
+
+
+    def make(self, tree):
+        self.node = tree.nodes.new(self.orig.bl_idname)
+        self.node.name = self.orig.name
+        self.node.location = self.orig.location
+        self.node.width = self.orig.width
+        if self.orig.type == 'GROUP':
+            self.node.node_tree = bpy.data.node_groups[self.orig.name]
+        for attr,value in self.attributes.items():
+            try:
+                setattr(self.node, attr.identifier, value)
+            except AttributeError:
+                pass
+        self.setValues(self.node.inputs, self.orig.inputs)
+        self.setValues(self.node.outputs, self.orig.outputs)
+
+
+    def setValues(self, sockets1, sockets2):
+        for socket1,socket2 in zip(sockets1, sockets2):
+            try:
+                socket1.default_value = socket2.default_value
+            except AttributeError:
+                pass
 
 #-------------------------------------------------------------
 #   Copy node tree
