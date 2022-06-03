@@ -739,6 +739,14 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
 
 
     def selectNodes(self, socket, slot):
+        def isMappingGroup(node):
+            if node.type != 'GROUP' or node.node_tree.name.startswith("DAZ"):
+                return False
+            for node1 in node.node_tree.nodes:
+                if node1.type == 'TEX_IMAGE':
+                    return True
+            return False
+
         for link in socket.links:
             node = link.to_node
             if node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
@@ -749,7 +757,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
             else:
                 slot = "%s:%s" % (node.type, link.to_socket.name)
             node = link.from_node
-            if node.type == 'TEX_IMAGE':
+            if node.type == 'TEX_IMAGE' or isMappingGroup(node):
                 if slot:
                     if slot not in self.colors.keys():
                         self.colors[slot] = []
