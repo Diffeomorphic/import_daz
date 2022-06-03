@@ -236,7 +236,7 @@ class TNode:
     def __init__(self, node):
         self.orig = node
         self.node = None
-        ignore = ( "rna_type", "type", "dimensions", "inputs", "outputs", "internal_links", "select")
+        ignore = ( "rna_type", "type", "dimensions", "inputs", "outputs", "internal_links", "select", "interface" )
         self.attributes = {}
         for attr in node.bl_rna.properties:
             if not attr.identifier in ignore and not attr.identifier.split("_")[0] == "bl":
@@ -250,10 +250,11 @@ class TNode:
         self.node.width = self.orig.width
         if self.orig.type == 'GROUP':
             self.node.node_tree = bpy.data.node_groups[self.orig.name]
-        for attr,value in self.attributes.items():
+        for key,value in self.attributes.items():
             try:
-                setattr(self.node, attr.identifier, value)
+                setattr(self.node, key, value)
             except AttributeError:
+                print("Cannot set attribute %s: %s = %s" % (self.node.name, key, value))
                 pass
         self.setValues(self.node.inputs, self.orig.inputs)
         self.setValues(self.node.outputs, self.orig.outputs)
