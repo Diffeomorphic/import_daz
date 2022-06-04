@@ -2843,7 +2843,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             raise DazError("No armature found")
         if rig.DazDriversDisabled:
             raise DazError("Drivers are disabled")
-        skeys = ob.data.shape_keys
         if self.invoked:
             items = [(item.name, item.text) for item in self.getSelectedItems()]
         else:
@@ -2856,13 +2855,14 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             key,mname = item
             showProgress(n, nitems)
             rig[key] = 0.0
-            if skeys and mname in skeys.key_blocks.keys():
+            if (ob.data.shape_keys and
+                mname in ob.data.shape_keys.key_blocks.keys()):
                 print("Skip", mname)
                 continue
             if mname:
                 rig[key] = 1.0
                 updateRigDrivers(context, rig)
-                mod = self.applyArmature(ob, skeys, rig, mod, mname)
+                mod = self.applyArmature(ob, rig, mod, mname)
                 rig[key] = 0.0
                 t = perf_counter()
                 print("Converted %s in %g seconds" % (mname, t-t0))
@@ -2872,12 +2872,13 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
 
 
 
-    def applyArmature(self, ob, skeys, rig, mod, mname):
+    def applyArmature(self, ob, rig, mod, mname):
         mod.name = mname
         if bpy.app.version < (2,90,0):
             bpy.ops.object.modifier_apply(apply_as='SHAPE', modifier=mname)
         else:
             bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
+        skeys = ob.data.shape_keys
         skey = skeys.key_blocks[mname]
         skey.value = 0.0
         offsets = [(skey.data[vn].co - v.co).length for vn,v in enumerate(ob.data.vertices)]
