@@ -248,7 +248,7 @@ class TNode:
         self.node.name = self.orig.name
         self.node.location = self.orig.location
         self.node.width = self.orig.width
-        if self.orig.type == 'GROUP':
+        if self.orig.type == 'GROUP' and self.orig.name in bpy.data.node_groups.keys():
             self.node.node_tree = bpy.data.node_groups[self.orig.name]
         for key,value in self.attributes.items():
             try:

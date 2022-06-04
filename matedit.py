@@ -710,8 +710,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
 
     def clearData(self):
         self.outputs = {}
-        self.colors = {}
-        self.alphas = {}
+        self.inputs = {}
         self.nodes = {}
         self.tnodes = {}
         self.links = []
@@ -722,7 +721,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
             for link in socket.links:
                 fromnode = link.from_node
                 if (fromnode.type == 'GROUP' and
-                    not fromnode.node_tree.name.startswith("DAZ") and
+                    not fromnode.node_tree.name[0:4] == "DAZ " and
                     slot in fromnode.inputs.keys()):
                     return skipShells(fromnode, fromnode.inputs[slot], slot)
             return socket,node
@@ -740,7 +739,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
 
     def selectNodes(self, socket, slot):
         def isMappingGroup(node):
-            if node.type != 'GROUP' or node.node_tree.name.startswith("DAZ"):
+            if node.type != 'GROUP' or node.node_tree.name[0:4] == "DAZ ":
                 return False
             for node1 in node.node_tree.nodes:
                 if node1.type == 'TEX_IMAGE':
@@ -752,16 +751,23 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
             if node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
                 pass
             elif node.type == 'GROUP':
-                if node.node_tree.name.startswith("DAZ"):
-                    slot = "%s:%s" % (node.node_tree.name, link.to_socket.name)
+                treename = node.node_tree.name
+                if treename[0:4] == "DAZ ":
+                    slot = "%s:%s" % (treename[4:], link.to_socket.name)
+                elif treename.endswith("Combo"):
+                    raise DazError("Combo group already exists")
             else:
-                slot = "%s:%s" % (node.type, link.to_socket.name)
+                if node.type[0:5] == "BSDF_":
+                    key = node.type[5:]
+                else:
+                    key = node.type
+                slot = "%s:%s" % (key.capitalize(), link.to_socket.name)
             node = link.from_node
             if node.type == 'TEX_IMAGE' or isMappingGroup(node):
                 if slot:
-                    if slot not in self.colors.keys():
-                        self.colors[slot] = []
-                    self.colors[slot].append(link)
+                    if slot not in self.inputs.keys():
+                        self.inputs[slot] = []
+                    self.inputs[slot].append(link)
             else:
                 self.links.append(link)
                 if node.name not in self.nodes.keys():
@@ -774,16 +780,18 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
 
 
     def makeGroup(self, ob):
-        group = bpy.data.node_groups.new("%s Combo" % ob.name, "ShaderNodeTree")
+        gname = "%s:%s Combo" % (ob.name, ob.active_material.name)
+        group = bpy.data.node_groups.new(gname, "ShaderNodeTree")
         innode = group.nodes.new("NodeGroupInput")
         innode.location = (0, 2*YSIZE)
         outnode = group.nodes.new("NodeGroupOutput")
         xlocs = [node.location[0] for node in self.nodes.values()]
         outnode.location = (max(xlocs) + XSIZE, 2*YSIZE)
-        for key in self.colors.keys():
-            group.inputs.new("NodeSocketColor", key)
-        for key in self.alphas.keys():
-            group.inputs.new("NodeSocketFloat", "%s Alpha" % key)
+        for key,links in self.inputs.items():
+            if links and links[0].from_socket.type == 'VALUE':
+                group.inputs.new("NodeSocketFloat", key)
+            else:
+                group.inputs.new("NodeSocketColor", key)
         if self.useBump:
             group.inputs.new("NodeSocketFloat", "Bump Distance")
         group.outputs.new("NodeSocketShader", "Cycles")
@@ -812,10 +820,8 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
                     group.links.new(fromsocket, outnode.inputs["Eevee"])
                 else:
                     print("MISS", fromsocket.name, self.outputs.keys())
-        for slot,links in self.colors.items():
+        for slot,links in self.inputs.items():
             self.linkInputs(group, links, innode.outputs.get(slot))
-        for slot,links in self.alphas.items():
-            self.linkInputs(group, links, innode.outputs.get("%s Alpha" % slot))
         return group
 
 
@@ -834,13 +840,15 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
         skin.node_tree = group
         skin.location = (self.cycles.location[0] - 1.5*XSIZE, 2*YSIZE)
         skin.width = 1.5*XSIZE
-        for slot,links in self.colors.items():
+        for slot,links in self.inputs.items():
             if slot in skin.inputs.keys():
                 for link in links:
                     tree.links.new(link.from_socket, skin.inputs[slot])
             else:
                 print("Missing slot: %s" % slot)
-        if self.useBump and "Bump" in self.nodes.keys():
+        if (self.useBump and
+            "Bump" in self.nodes.keys() and
+            "Bump Distance" in skin.inputs.keys()):
             bump = self.nodes["Bump"]
             skin.inputs["Bump Distance"].default_value = bump.inputs["Distance"].default_value
         for slot,socket in self.outputs.items():
