@@ -256,7 +256,7 @@ class GeoshellGroup(GeoTree):
     def create(self, name, mnames):
         NodeGroup.make(self, name, 4)
         self.group.inputs.new("NodeSocketGeometry", "Geometry")
-        self.group.inputs.new("NodeSocketObject", "Figure")
+        self.group.inputs.new("NodeSocketObject", "Shell Geometry")
         self.group.inputs.new("NodeSocketFloat", "Shell Offset")
         for mname in mnames:
             self.group.inputs.new("NodeSocketMaterial", mname)
@@ -266,7 +266,7 @@ class GeoshellGroup(GeoTree):
     def addNodes(self, mnames, mats):
         # Geoshell
         objinfo = self.addNode("GeometryNodeObjectInfo", 1)
-        self.links.new(self.inputs.outputs["Figure"], objinfo.inputs["Object"])
+        self.links.new(self.inputs.outputs["Shell Geometry"], objinfo.inputs["Object"])
         normal = self.addNode("GeometryNodeInputNormal", 1)
 
         mult = self.addNode("ShaderNodeVectorMath", 2)

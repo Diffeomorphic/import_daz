@@ -69,10 +69,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
     bl_options = {'UNDO'}
 
     def draw(self, context):
-        self.layout.prop(self, "useVertexTable")
-        self.layout.prop(self, "useMergeUvs")
         if bpy.app.version >= (3,1,0):
             self.layout.prop(self, "useGeoNodes")
+        if not self.useGeoNodes:
+            self.layout.prop(self, "useVertexTable")
+        self.layout.prop(self, "useMergeUvs")
 
     def __init__(self):
         DriverUser.__init__(self)
@@ -207,7 +208,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                 vn2 += 1
 
         # Original vertex locations
-        if self.useVertexTable:
+        if self.useVertexTable and not self.useGeoNodes:
             self.origlocs = [v.co.copy() for v in cob.data.vertices]
 
         # If cob is itself a geograft, store locations
@@ -319,7 +320,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                 pair.a = dists[0][1]
 
         # Create a vertex table
-        if self.useVertexTable:
+        if self.useVertexTable and not self.useGeoNodes:
             vn = 0
             eps = 1e-3*cob.DazScale
             for vn0,r in enumerate(self.origlocs):
@@ -382,9 +383,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         for aob in anatomies:
             aob.hide_set(True)
             aob.hide_render = True
-            mod = getModifier(aob, 'NODES')
-            if mod:
-                mod.show_viewport = mod.show_render = True
+            for mod in aob.modifiers:
+                if mod.type == 'NODES':
+                    print("MOD", aob.name, mod.name)
+                    mod.show_viewport = mod.show_render = True
 
 
     def makeGeograftGroup(self, cob, anatomies):
@@ -397,6 +399,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
 
 
     def retargetShellModifiers(self, cob, anatomies):
+        from .tree import findLinksFrom
         for ob in bpy.data.objects:
             if ob.type == 'MESH':
                 for mod in ob.modifiers:
@@ -404,6 +407,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                         aob = mod.get("Input_1")
                         if aob and aob in anatomies:
                             mod["Input_1"] = cob
+                            tree = mod.node_group
+                            links = findLinksFrom(tree, "MATERIAL_SELECTION")
+                            for link in links:
+                                tree.links.remove(link)
 
 
     def getActiveUvLayer(self, ob):
