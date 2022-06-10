@@ -39,6 +39,7 @@
 #
 # ---------------------------------------------------------------------------
 
+import math
 import bpy
 from bpy.app.handlers import persistent
 from mathutils import Vector, Matrix
@@ -129,10 +130,13 @@ def morphArmature(data):
     rig, heads, tails, hdoffsets, tloffsets = data
     for eb in rig.data.edit_bones:
         head = heads[eb.name] + hdoffsets[eb.name]
+        tail = tails[eb.name] + tloffsets[eb.name]
+        mat = eb.matrix.copy()
+        mat.col[3][0:3] = head
         if eb.use_connect and eb.parent:
             eb.parent.tail = head
-        eb.head = head
-        eb.tail = tails[eb.name] + tloffsets[eb.name]
+        eb.matrix = mat
+        eb.length = (tail-head).length
 
 #----------------------------------------------------------
 #   Render a sequence of frames, morphing armatures before rendering each frame
