@@ -850,7 +850,8 @@ class Geometry(Asset, Channels):
                         return []
                 for child in inst.children.values():
                     if self.addShellGeo(child, shmats, shgeonode, visibles, ""):
-                        return []
+                        pass
+                        #return []
                 return []
 
             for mname,shmat in shmats.items():

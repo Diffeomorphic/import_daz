@@ -408,30 +408,30 @@ class DAZ_OT_MakeInvisible(DazOperator, IsMesh):
 
     def run(self, context):
         bpy.ops.object.mode_set(mode='OBJECT')
-        ob = context.object
-        makePermanentMaterial(ob, "DazInvisible", (0.8,0.8,0.8,0))
+        makePermanentMaterial(ob, "Invisio", (0.8,0.8,0.8,0))
+
+
+def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
+    if mname in bpy.data.materials.keys():
+        return bpy.data.materials[mname]
+    mat = bpy.data.materials.new(mname)
+    mat.blend_method = 'CLIP'
+    mat.shadow_method = 'NONE'
+    mat.diffuse_color = color
+    mat.use_nodes = True
+    tree = mat.node_tree
+    tree.nodes.clear()
+    trans = tree.nodes.new(type = "ShaderNodeBsdfTransparent")
+    trans.location = (0, 0)
+    output = tree.nodes.new(type = "ShaderNodeOutputMaterial")
+    output.location = (200, 0)
+    output.target = 'ALL'
+    tree.links.new(trans.outputs["BSDF"], output.inputs["Surface"])
+    return mat
 
 
 def makePermanentMaterial(ob, mname, color):
-    def getMaterial(mname):
-        if mname in bpy.data.materials.keys():
-            return bpy.data.materials[mname]
-        mat = bpy.data.materials.new(mname)
-        mat.blend_method = 'CLIP'
-        mat.shadow_method = 'NONE'
-        mat.diffuse_color = color
-        mat.use_nodes = True
-        tree = mat.node_tree
-        tree.nodes.clear()
-        trans = tree.nodes.new(type = "ShaderNodeBsdfTransparent")
-        trans.location = (0, 0)
-        output = tree.nodes.new(type = "ShaderNodeOutputMaterial")
-        output.location = (200, 0)
-        output.target = 'ALL'
-        tree.links.new(trans.outputs["BSDF"], output.inputs["Surface"])
-        return mat
-
-    perm = getMaterial(mname)
+    perm = getInvisibleMaterial(mname, color)
     mnum = -1
     for mn,mat in enumerate(ob.data.materials):
         if mat == perm:
