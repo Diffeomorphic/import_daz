@@ -407,11 +407,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                         aob = mod.get("Input_1")
                         if aob and aob in anatomies:
                             mod["Input_1"] = cob
-                            tree = mod.node_group
-                            links = findLinksFrom(tree, "MATERIAL_SELECTION")
-                            for link in links:
-                                tree.links.remove(link)
-
 
     def getActiveUvLayer(self, ob):
         for idx,uvlayer in enumerate(ob.data.uv_layers):

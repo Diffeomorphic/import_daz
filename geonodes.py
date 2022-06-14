@@ -254,17 +254,14 @@ class GeograftGroup(GeoTree):
 
 class GeoshellGroup(GeoTree):
     def create(self, name, mnames):
-        NodeGroup.make(self, name, 5)
+        NodeGroup.make(self, name, 7)
         self.group.inputs.new("NodeSocketGeometry", "Geometry")
         self.group.inputs.new("NodeSocketObject", "Shell Geometry")
         self.group.inputs.new("NodeSocketFloat", "Shell Offset")
-        #for mname in mnames:
-        #    self.group.inputs.new("NodeSocketMaterial", mname)
-        #self.group.inputs.new("NodeSocketMaterial", "Invisio")
         self.group.outputs.new("NodeSocketGeometry", "Geometry")
 
 
-    def addNodes(self, mnames, mats, shmats, invis):
+    def addNodes(self, mnames, mats, shmats):
         # Geoshell
         objinfo = self.addNode("GeometryNodeObjectInfo", 1)
         self.links.new(self.inputs.outputs["Shell Geometry"], objinfo.inputs["Object"])
@@ -275,44 +272,54 @@ class GeoshellGroup(GeoTree):
         self.links.new(self.inputs.outputs["Shell Offset"], mult.inputs[0])
         self.links.new(normal.outputs["Normal"], mult.inputs[1])
 
+        delgeo = self.addNode("GeometryNodeDeleteGeometry", 2)
+        delgeo.domain = 'FACE'
+        delgeo.mode = 'ALL'
+        self.links.new(objinfo.outputs["Geometry"], delgeo.inputs["Geometry"])
+
         setpos = self.addNode("GeometryNodeSetPosition", 3)
         self.links.new(mult.outputs[0], setpos.inputs["Offset"])
-        self.links.new(objinfo.outputs["Geometry"], setpos.inputs["Geometry"])
+        self.links.new(delgeo.outputs["Geometry"], setpos.inputs["Geometry"])
+        active = setpos
 
         # Materials
         rest = None
         for mn,mname in enumerate(mnames):
             mat = mats[mn]
             shmat = shmats[mn]
-            matsel = self.addNode("GeometryNodeMaterialSelection", 2)
+            matsel = self.addNode("GeometryNodeMaterialSelection", 4)
             matsel.inputs["Material"].default_value = mat
-            setmat = self.addNode("GeometryNodeSetMaterial", 4)
-            self.links.new(setpos.outputs["Geometry"], setmat.inputs["Geometry"])
+            setmat = self.addNode("GeometryNodeSetMaterial", 6)
+            self.links.new(active.outputs["Geometry"], setmat.inputs["Geometry"])
             self.links.new(matsel.outputs["Selection"], setmat.inputs["Selection"])
             setmat.inputs["Material"].default_value = shmat
-            #self.links.new(self.inputs.outputs[mname], setmat.inputs["Material"])
             if rest is None:
                 rest = matsel
             else:
-                node = self.addNode("FunctionNodeBooleanMath", 3)
+                node = self.addNode("FunctionNodeBooleanMath", 5)
                 node.operation = 'OR'
                 self.links.new(rest.outputs[0], node.inputs[0])
                 self.links.new(matsel.outputs["Selection"], node.inputs[1])
                 rest = node
-            setpos = setmat
+            active = setmat
 
         if rest:
-            node = self.addNode("FunctionNodeBooleanMath", 3)
+            node = self.addNode("FunctionNodeBooleanMath", 1)
             node.operation = 'NOT'
             self.links.new(rest.outputs[0], node.inputs[0])
-            setmat = self.addNode("GeometryNodeSetMaterial", 4)
-            self.links.new(setpos.outputs["Geometry"], setmat.inputs["Geometry"])
-            self.links.new(node.outputs[0], setmat.inputs["Selection"])
-            setmat.inputs["Material"].default_value = invis
-            #self.links.new(self.inputs.outputs["Invisio"], setmat.inputs["Material"])
-            setpos = setmat
+            self.links.new(node.outputs[0], delgeo.inputs["Selection"])
 
-        self.links.new(setpos.outputs["Geometry"], self.outputs.inputs["Geometry"])
+        self.links.new(active.outputs["Geometry"], self.outputs.inputs["Geometry"])
+
+
+def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
+    mod = shell.modifiers.new(shell.name, 'NODES')
+    group = GeoshellGroup()
+    group.create(ob.name, mnames)
+    group.addNodes(mnames, mats, shmats)
+    mod.node_group = group.group
+    mod["Input_1"] = ob
+    mod["Input_2"] = offset
 
 #----------------------------------------------------------
 #   Add shells
@@ -434,23 +441,6 @@ class DAZ_OT_AddShell(DazPropsOperator):
                 replaceLink(output, node, "Eevee")
             else:
                 replaceLink(output, node, "Cycles")
-
-
-def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
-    from .hide import getInvisibleMaterial
-    invis = getInvisibleMaterial()
-    if invis.name not in shell.data.materials:
-        shell.data.materials.append(invis)
-    mod = shell.modifiers.new(shell.name, 'NODES')
-    group = GeoshellGroup()
-    group.create(ob.name, mnames)
-    group.addNodes(mnames, mats, shmats, invis)
-    mod.node_group = group.group
-    mod["Input_1"] = ob
-    mod["Input_2"] = offset
-    #for n,shmat in enumerate(shmats):
-    #    mod["Input_%d" % (n+3)] = shmat
-    #mod["Input_%d" % (len(mats)+3)] = invis
 
 #----------------------------------------------------------
 #   Initialize
