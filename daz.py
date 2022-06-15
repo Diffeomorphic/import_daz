@@ -259,6 +259,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         col = split.column()
         box = col.box()
         box.label(text = "Materials")
+        box.prop(scn, "DazMaterialMethod")
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
@@ -494,6 +495,15 @@ def register():
     bpy.types.Scene.DazShowMDLDirs = BoolProperty(name = "MDL Directories", default = False)
     bpy.types.Scene.DazShowCloudDirs = BoolProperty(name = "Cloud Directories", default = False)
 
+    bpy.types.Scene.DazMaterialMethod = EnumProperty(
+        items = [('SELECT', "Select On Load", "Select the material method when loading files"),
+                 ('BSDF', "BSDF", "Always use BSDF (Cycles, full IRAY materials)"),
+                 ('PRINCIPLED', "Principled", "Always use Principled (Eevee and Cycles).\nSome BSDF nodes used"),
+                 ('SINGLE', "Single Principled", "Always approximate materials using\na single principled node (game engines).\nSome feature may be missing"),
+                 ],
+        name = "Material Method",
+        description = "Material Method",
+        default = 'SELECT')
 
     enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
              ('RANDOM_WALK', "Random Walk", "Random walk")]

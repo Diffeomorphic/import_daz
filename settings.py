@@ -58,6 +58,7 @@ class GlobalSettings:
         self.useMakeHiddenSliders = False
         self.showHiddenObjects = False
 
+        self.materialMethod = 'SELECT'
         if bpy.app.version < (3,0,0):
             self.sssMethod = 'RANDOM_WALK'
         else:
@@ -144,6 +145,7 @@ class GlobalSettings:
         "DazPruneNodes" : "pruneNodes",
 
         # Materials
+        "DazMaterialMethod" : "materialMethod",
         "DazSSSMethod" : "sssMethod",
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
@@ -494,8 +496,11 @@ class LocalSettings:
 
 
     def getMaterialSettings(self, btn):
-        self.materialMethod = btn.materialMethod
-        if btn.materialMethod == 'BSDF':
+        if GS.materialMethod == 'SELECT':
+            self.materialMethod = btn.materialMethod
+        else:
+            self.materialMethod = GS.materialMethod
+        if self.materialMethod == 'BSDF':
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
             self.hairMaterialMethod = 'PRINCIPLED'

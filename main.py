@@ -68,9 +68,10 @@ class ColorOptions:
         default = 'BSDF')
 
     def draw(self, context):
-        box = self.layout.box()
-        box.label(text = "Material Method")
-        box.prop(self, "materialMethod", expand=True)
+        if GS.materialMethod == 'SELECT':
+            box = self.layout.box()
+            box.label(text = "Material Method")
+            box.prop(self, "materialMethod", expand=True)
         box = self.layout.box()
         box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':
