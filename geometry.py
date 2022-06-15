@@ -288,6 +288,8 @@ class GeoNode(Node, SimNode):
             scaleEyeMoisture(ob)
             if hdob and hdob != ob:
                 scaleEyeMoisture(hdob)
+            if GS.shellMethod == 'GEONODES':
+                self.buildShells(context)
         if LS.fitFile and ob.type == 'MESH':
             shiftMesh(ob, inst.worldmat.inverted())
             if hdob and hdob != ob:
@@ -329,8 +331,6 @@ class GeoNode(Node, SimNode):
                 self.setHideInfoMesh(hdob)
             pruneUvMaps(ob)
             self.addLSMesh(ob, inst, None)
-            if GS.shellMethod == 'GEONODES':
-                self.buildShells(context)
 
 
     def copyHDMaterials(self, ob, hdob, context, inst):

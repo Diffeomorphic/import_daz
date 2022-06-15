@@ -325,7 +325,7 @@ def makeShell(shname, shmats, ob):
 def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     mod = getModifier(shell, 'NODES')
     if mod:
-        shell = makeShell(shell.name, shmats, shell)
+        shell = makeShell(shell.name, shmats, shell.parent)
     else:
         shmatlist = list(enumerate(shell.data.materials))
         shmatlist.reverse()
