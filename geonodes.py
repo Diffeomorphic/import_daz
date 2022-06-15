@@ -312,7 +312,28 @@ class GeoshellGroup(GeoTree):
         self.links.new(active.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
 
+def makeShell(shname, shmats, ob):
+    me = bpy.data.meshes.new(shname)
+    for shmat in shmats:
+        me.materials.append(shmat)
+    shell = bpy.data.objects.new(shname, me)
+    LS.collection.objects.link(shell)
+    shell.parent = ob
+    return shell
+
+
 def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
+    mod = getModifier(shell, 'NODES')
+    if mod:
+        shell = makeShell(shell.name, shmats, shell)
+    else:
+        shmatlist = list(enumerate(shell.data.materials))
+        shmatlist.reverse()
+        for n,shmat in shmatlist:
+            if shmat not in shmats:
+                shell.data.materials.pop(index=n)
+    shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
+    shell.visible_shadow = False
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
     group.create(ob.name, mnames)

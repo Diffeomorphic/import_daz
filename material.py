@@ -1066,9 +1066,17 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, MaterialMerger, IsMesh):
 
 
     def run(self, context):
+        shelled = []
+        for shell in getVisibleMeshes(context):
+            mod = getModifier(shell, 'NODES')
+            if mod and "Input_1" in mod.keys() and isinstance(mod["Input_1"], bpy.types.Object):
+                shelled.append(mod["Input_1"])
         for ob in getSelectedMeshes(context):
-           self.mergeMaterials(ob)
-           self.removeUnusedMaterials(ob)
+            if ob in shelled:
+                print("Object with shell: %s" % ob.name)
+                continue
+            self.mergeMaterials(ob)
+            self.removeUnusedMaterials(ob)
 
 
     def keepMaterial(self, mn, mat, ob):

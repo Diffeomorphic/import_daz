@@ -115,7 +115,7 @@ class GeoNode(Node, SimNode):
     def buildShells(self, context):
         if not self.shellGeos:
             return
-        from .geonodes import makeShellModifier
+        from .geonodes import makeShell, makeShellModifier
         ob = self.rna
         activateObject(context, ob)
         mats = [dmat.rna for dmat in self.materials.values()]
@@ -135,15 +135,8 @@ class GeoNode(Node, SimNode):
             if shgeonode.rna:
                 shell = shgeonode.rna
             else:
-                me = bpy.data.meshes.new(shgeonode.name)
-                for shmat in shmats:
-                    me.materials.append(shmat)
-                shell = bpy.data.objects.new(shgeonode.name, me)
+                shell = makeShell(shgeonode.name, shmats, ob)
                 shgeonode.rna = shell
-                LS.collection.objects.link(shell)
-                shell.parent = ob
-            shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
-            shell.visible_shadow = False
             offset = LS.scale * shgeonode.push
             makeShellModifier(shell, ob, offset, mnames, mats, shmats)
 
