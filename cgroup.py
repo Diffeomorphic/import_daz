@@ -1526,8 +1526,10 @@ class LayeredGroup(CyclesGroup):
             if alpha != 1:
                 node = self.multiplyScalarTex(alpha, node, slot, 3)
                 self.links.new(node.outputs[0], mix.inputs[0])
-            else:
+            elif slot in node.outputs.keys():
                 self.links.new(node.outputs[slot], mix.inputs[0])
+            else:
+                mix.inputs[0].default_value = 1
 
         if map.ismask:
             self.mask = outnode
