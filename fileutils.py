@@ -262,12 +262,30 @@ def openSettingsFile(filepath):
 #-------------------------------------------------------------
 
 class DazExporter:
+    author : StringProperty(
+        name = "Author",
+        description = "Author info in preset file",
+        default = os.getlogin())
+
+    email : StringProperty(
+        name = "Email",
+        description = "Email info in preset file",
+        default = "")
+
+    website : StringProperty(
+        name = "Website",
+        description = "Website info in preset file",
+        default = "")
+
     useCompress: BoolProperty(
         name = "Compress File",
         description = "Gzip the output file",
         default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "author")
+        self.layout.prop(self, "email")
+        self.layout.prop(self, "website")
         self.layout.prop(self, "useCompress")
 
     def makeDazStruct(self, type, filepath):
@@ -283,9 +301,9 @@ class DazExporter:
         astruct["id"] = normalizeUrl(filepath)
         astruct["type"] = type
         astruct["contributor"] = {
-            "author" : GS.author,
-            "email" : GS.email,
-            "website" : GS.website,
+            "author" : self.author,
+            "email" : self.email,
+            "website" : self.website,
         }
         astruct["modified"] = str(datetime.now())
         struct["asset_info"] = astruct

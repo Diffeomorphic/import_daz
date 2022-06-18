@@ -117,10 +117,6 @@ class GlobalSettings:
         self.useSimulation = True
         self.useScaleEyeMoisture = True
 
-        self.author = os.getlogin()
-        self.email = ""
-        self.website = ""
-
 
     def getSSSMethod(self):
         if bpy.app.version < (3,0,0) and self.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
@@ -199,11 +195,6 @@ class GlobalSettings:
         "DazMaxSubdivs" : "maxSubdivs",
         "DazSimulation" : "useSimulation",
         "DazScaleEyeMoisture" : "useScaleEyeMoisture",
-
-        # User
-        "DazAuthor" : "author",
-        "DazEmail" : "email",
-        "DazWebsite" : "website",
     }
 
     def fixPath(self, path):

@@ -205,7 +205,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
     bl_idname = "daz.import_daz"
     bl_label = "Import DAZ"
     bl_description = "Load a native DAZ file"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     def draw(self, context):
         FitOptions.draw(self, context)
@@ -299,7 +299,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
     bl_idname = "daz.import_daz_materials"
     bl_label = "Import DAZ Materials"
     bl_description = "Load materials from a native DAZ file to the active mesh"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     useReplaceSlots : BoolProperty(
         name = "Replace Slots",
@@ -535,7 +535,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
     bl_description = "Load a native DAZ file and perform the most common operations"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     rigType : EnumProperty(
         items = [('DAZ', "DAZ", "Original DAZ rig"),

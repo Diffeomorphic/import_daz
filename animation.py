@@ -1190,7 +1190,7 @@ class DAZ_OT_ImportAction(HideOperator, ActionBase, StandardAnimation):
     bl_idname = "daz.import_action"
     bl_label = "Import Action"
     bl_description = "Import poses from DAZ pose preset file(s) to action"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     def run(self, context):
         StandardAnimation.run(self, context)
@@ -1305,7 +1305,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, PoselibBase, StandardAnimation):
     bl_idname = "daz.import_poselib"
     bl_label = "Import Pose Library"
     bl_description = "Import poses from DAZ pose preset file(s) to pose library"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     def run(self, context):
         StandardAnimation.run(self, context)
@@ -1327,7 +1327,7 @@ class DAZ_OT_ImportPose(HideOperator, PoseBase, StandardAnimation):
     bl_idname = "daz.import_pose"
     bl_label = "Import Pose"
     bl_description = "Import a pose from DAZ pose preset file(s)"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     def draw(self, context):
         PoseBase.draw(self, context)
@@ -1342,7 +1342,7 @@ class DAZ_OT_ImportNodePose(HideOperator, NodePose, PoseBase, StandardAnimation)
     bl_idname = "daz.import_node_pose"
     bl_label = "Import Pose From Scene"
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     def draw(self, context):
         PoseBase.draw(self, context)
@@ -1459,7 +1459,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     bl_idname = "daz.save_pose_preset"
     bl_label = "Save Pose Preset"
     bl_description = "Save the active action as a pose preset,\nto be used in DAZ Studio"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     convertPoses = False
 

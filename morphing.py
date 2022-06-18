@@ -1245,7 +1245,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     bl_idname = "daz.import_standard_morphs"
     bl_label = "Import Standard Morphs"
     bl_description = "Import all standard morphs of selected types.\nDoing this once is faster than loading individual types"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     morphset = "Standard"
 
@@ -1347,7 +1347,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
     bl_idname = "daz.import_custom_morphs"
     bl_label = "Import Custom Morphs"
     bl_description = "Import selected morphs from native DAZ files (*.duf, *.dsf)"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     category : StringProperty(
         name = "Category",
@@ -3117,10 +3117,10 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         default = "Modifier/Pose")
 
     def draw(self, context):
-        Selector.draw(self, context)
-        DazExporter.draw(self, context)
         self.layout.prop(self, "directory")
-        self.layout.prop(self, "presentation")
+        Selector.draw(self, context)
+        #DazExporter.draw(self, context)
+        #self.layout.prop(self, "presentation")
 
     def getKeys(self, rig, ob):
         keys = []

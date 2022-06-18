@@ -280,12 +280,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseReflection")
         box.prop(scn, "DazUseVolume")
 
-        box = col.box()
-        box.label(text = "User Info")
-        box.prop(scn, "DazAuthor")
-        box.prop(scn, "DazEmail")
-        box.prop(scn, "DazWebsite")
-
         row = self.layout.row()
         row.operator("daz.load_root_paths")
         row.operator("daz.load_factory_settings")
@@ -698,21 +692,6 @@ def register():
                  ('Smart', "Smart", "Smart")],
         name = "Interpolation",
         description = "Image interpolation")
-
-    bpy.types.Scene.DazAuthor = StringProperty(
-        name = "Author",
-        description = "Author info in preset file",
-        default = os.getlogin())
-
-    bpy.types.Scene.DazEmail = StringProperty(
-        name = "Email",
-        description = "Email info in preset file",
-        default = "")
-
-    bpy.types.Scene.DazWebsite = StringProperty(
-        name = "Website",
-        description = "Website info in preset file",
-        default = "")
 
 
     bpy.types.Material.DazRenderEngine = StringProperty(default='NONE')
