@@ -489,8 +489,9 @@ class LoadMorph(DriverUser):
 
 
     def getRealBone(self, bname):
-        from .bone import getTargetName
-        nname = getTargetName(bname, self.rig)
+        return bname
+        from .bone import getBoneId
+        nname = getBoneId(bname, self.rig)
         return nname
 
 

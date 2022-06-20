@@ -92,7 +92,7 @@ RotationModes = {
 #   Alternative bone names
 #-------------------------------------------------------------
 
-BoneAlternatives = {
+BoneIds = {
     "abdomen" : "abdomenLower",
     "abdomen2" : "abdomenUpper",
     "chest" : "chestLower",
@@ -156,20 +156,24 @@ BoneAlternatives = {
 }
 
 
-def getTargetName(bname, rig):
+def getBoneId(bname, rig):
     from .fix import getSuffixName
     bname = unquote(bname)
-    if bname in rig.pose.bones.keys():
+    boneid = BoneIds.get(bname)
+    if boneid and boneid in rig.pose.bones.keys():
+        return boneid
+    elif bname in rig.pose.bones.keys():
         return bname
     altnames = dict([(pb.DazAltName, pb.name) for pb in rig.pose.bones])
-    if bname in altnames.keys():
-        return altnames[bname]
-    elif (bname in BoneAlternatives.keys() and
-          BoneAlternatives[bname] in rig.pose.bones.keys()):
-        return BoneAlternatives[bname]
+    altname = altnames.get(bname)
+    if altname:
+        print("ALT NAME", bname, altname)
+        return altname
     sufname = getSuffixName(bname)
     if sufname and sufname in rig.pose.bones.keys():
+        print("SUF NAME", bname, sufname)
         return sufname
+    print("NO BONE FOUND", bname)
     return None
 
 #-------------------------------------------------------------
@@ -524,7 +528,7 @@ class BoneInstance(Instance):
         from .node import setBoneTransform
         if LS.fitFile:
             return {}
-        tname = getTargetName(node.name, rig)
+        tname = getBoneId(node.name, rig)
         if tname and tname in targets.keys():
             tinst = targets[tname]
             tfm = Transform(
@@ -715,7 +719,7 @@ class Bone(Node):
         if iref in self.instances.keys():
             return self.instances[iref]
         try:
-            return self.instances[BoneAlternatives[iref]]
+            return self.instances[BoneIds[iref]]
         except KeyError:
             pass
         trgfig = self.figure.sourcing
