@@ -128,7 +128,7 @@ class Formula:
 
 
     def evalFormula(self, formula, exprs, rig, mesh):
-        from .bone import getBoneId
+        from .bone import getBoneFromId
         from .modifier import ChannelAsset
 
         words = unquote(formula["output"]).split("#")
@@ -143,7 +143,7 @@ class Formula:
                 return False
             pb = None
         else:
-            output1 = getBoneId(output, rig)
+            output1 = getBoneFromId(output, rig)
             if output1 is None:
                 reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
                 return False

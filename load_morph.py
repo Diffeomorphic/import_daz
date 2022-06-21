@@ -479,24 +479,13 @@ class LoadMorph(DriverUser):
             self.mults[output].append(mult)
             self.addNewProp(mult)
         if expr["bone"]:
-            bname = self.getRealBone(expr["bone"])
-            if bname:
-                if output not in self.drivers.keys():
-                    self.drivers[output] = []
-                self.drivers[output].append(("BONE", bname, expr))
-            else:
-                print("Missing bone (makeValueFormula):", expr["bone"])
-
-
-    def getRealBone(self, bname):
-        return bname
-        from .bone import getBoneId
-        nname = getBoneId(bname, self.rig)
-        return nname
+            bname = expr["bone"]
+            if output not in self.drivers.keys():
+                self.drivers[output] = []
+            self.drivers[output].append(("BONE", bname, expr))
 
 
     def getDrivenBone(self, bname):
-        bname = self.getRealBone(bname)
         return bname
         if bname:
             dname = drvBone(bname)
@@ -960,7 +949,10 @@ class LoadMorph(DriverUser):
                 xys.append((x, y))
             return uvec, xys
 
-        pb = self.rig.pose.bones[bname]
+        pb = self.rig.pose.bones.get(bname)
+        if pb is None:
+            print("Cannot build driver for non-existing bone: %s" % bname)
+            return
         rna,channel = self.getDrivenChannel(raw)
         #rna.driver_remove(channel)
         path = expr["path"]
@@ -973,15 +965,13 @@ class LoadMorph(DriverUser):
         else:
             factor = expr["factor"]
             uvec = unit*getBoneVector(factor, comp, pb)
-            bname2 = None
+            bname2 = expr.get("bone2")
             uvec2 = None
-            if expr["bone2"]:
-                bname2 = self.getRealBone(expr["bone2"])
-                if bname2:
-                    pb2 = self.rig.pose.bones[bname2]
-                    factor2 = expr["factor2"]
-                    comp2 = expr["comp2"]
-                    uvec2 = unit*getBoneVector(factor2, comp2, pb2)
+            if bname2 and bname2 in self.rig.pose.bones.keys():
+                pb2 = self.rig.pose.bones[bname2]
+                factor2 = expr["factor2"]
+                comp2 = expr["comp2"]
+                uvec2 = unit*getBoneVector(factor2, comp2, pb2)
             self.makeSimpleBoneDriver(path, uvec, rna, channel, -1, bname, keep, bname2, uvec2)
 
     #-------------------------------------------------------------

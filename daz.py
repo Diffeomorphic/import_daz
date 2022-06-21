@@ -451,7 +451,7 @@ def register():
 
     bpy.types.Object.DazRotMode = StringProperty(default = 'XYZ')
     bpy.types.PoseBone.DazRotMode = StringProperty(default = 'XYZ')
-    bpy.types.PoseBone.DazAltName = StringProperty(default = "")
+    #bpy.types.PoseBone.DazAltName = StringProperty(default = "")
     bpy.types.Armature.DazUnflipped = BoolProperty(name = "Unflipped", default=False)
     bpy.types.Object.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))

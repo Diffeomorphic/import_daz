@@ -156,24 +156,29 @@ BoneIds = {
 }
 
 
-def getBoneId(bname, rig):
+def getBoneFromId(boneid, rig):
+    def getBoneName(boneid, rig):
+        pg = rig.data.DazBoneIds.get(boneid)
+        if pg:
+            return pg.s
+        bname = BoneIds.get(boneid)
+        if bname:
+            return bname
+        if boneid:
+            return boneid
+        return None
+
     from .fix import getSuffixName
-    bname = unquote(bname)
-    boneid = BoneIds.get(bname)
-    if boneid and boneid in rig.pose.bones.keys():
-        return boneid
-    elif bname in rig.pose.bones.keys():
-        return bname
-    altnames = dict([(pb.DazAltName, pb.name) for pb in rig.pose.bones])
-    altname = altnames.get(bname)
-    if altname:
-        print("ALT NAME", bname, altname)
-        return altname
-    sufname = getSuffixName(bname)
-    if sufname and sufname in rig.pose.bones.keys():
-        print("SUF NAME", bname, sufname)
-        return sufname
-    print("NO BONE FOUND", bname)
+    boneid = unquote(boneid)
+    bname = getBoneName(boneid, rig)
+    suffname = None
+    if bname:
+        if bname in rig.pose.bones.keys():
+            return bname
+        suffname = getSuffixName(bname)
+        if suffname in rig.pose.bones.keys():
+            return suffname
+    print("NO BONE FOUND", boneid, bname, suffname)
     return None
 
 #-------------------------------------------------------------
@@ -195,6 +200,7 @@ class BoneInstance(Instance):
         node.translation = []
         node.rotation = []
         node.scale = []
+        self.id = self.node.id.rsplit("#",1)[-1]
         self.name = self.node.name
         self.roll = 0.0
         self.useRoll = False
@@ -506,8 +512,10 @@ class BoneInstance(Instance):
             return
         pb = rig.pose.bones[node.name]
         self.rna = pb
-        if self.name != node.getName():
-            pb.DazAltName = node.getName()
+        if self.name != self.id:
+            pg = rig.data.DazBoneIds.add()
+            pg.name = self.id
+            pg.s = self.name
         if isBoneDriven(rig, pb):
             pb.rotation_mode = self.getRotationMode(pb, True)
             pb.bone.layers = [False,True] + 30*[False]
@@ -528,7 +536,7 @@ class BoneInstance(Instance):
         from .node import setBoneTransform
         if LS.fitFile:
             return {}
-        tname = getBoneId(node.name, rig)
+        tname = getBoneFromId(node.name, rig)
         if tname and tname in targets.keys():
             tinst = targets[tname]
             tfm = Transform(

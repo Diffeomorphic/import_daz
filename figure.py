@@ -389,8 +389,8 @@ def copyBoneInfo(srcpb, trgpb):
     trgpb.bone.DazAngle = srcpb.bone.DazAngle
     trgpb.bone.DazNormal = Vector(srcpb.bone.DazNormal)
     trgpb.DazRotMode = srcpb.DazRotMode
-    if "DazAltName" in srcpb.keys():
-        trgpb.DazAltName = srcpb.DazAltName
+    #if "DazAltName" in srcpb.keys():
+    #    trgpb.DazAltName = srcpb.DazAltName
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
         for x in ["x", "y", "z"]:
             attr = "%s_%s" % (key, x)
@@ -1826,6 +1826,8 @@ classes = [
 ]
 
 def register():
+    from .propgroups import DazStringGroup
+
     bpy.types.Object.DazCustomShapes = BoolProperty(default=False)
     bpy.types.Armature.DazSimpleIK = BoolProperty(default=False)
     bpy.types.Armature.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
@@ -1862,6 +1864,9 @@ def register():
         description = "Automatically morph armatures on frame change",
         default = False,
         update = toggleMorphArmatures)
+
+    bpy.types.Armature.DazBoneIds = CollectionProperty(type=DazStringGroup)
+
 
     for cls in classes:
         bpy.utils.register_class(cls)
