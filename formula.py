@@ -173,7 +173,7 @@ class Formula:
         if "stage" in formula.keys():
             self.evalStage(formula, expr)
         else:
-            self.evalOperations(formula, expr)
+            self.evalOperations(formula, expr, rig)
 
 
     def evalStage(self, formula, expr):
@@ -184,7 +184,8 @@ class Formula:
                 expr["mult"] = prop
 
 
-    def evalOperations(self, formula, expr):
+    def evalOperations(self, formula, expr, rig):
+        from .bone import getBoneFromId
         opers = formula["operations"]
         prop,type,path,comp = self.evalUrl(opers[0])
         factor = "factor"
@@ -192,10 +193,10 @@ class Formula:
             if expr["prop"] is None:
                 expr["prop"] = prop
         elif expr["bone"] is None:
-            expr["bone"] = prop
+            expr["bone"] = getBoneFromId(prop, rig)
             expr["comp"] = comp
         else:
-            expr["bone2"] = prop
+            expr["bone2"] = getBoneFromId(prop, rig)
             factor = "factor2"
             expr["comp2"] = comp
         expr["path"] = path
