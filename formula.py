@@ -154,22 +154,7 @@ class Formula:
             pb = rig.pose.bones[output]
 
         path,idx,default = self.parseChannel(channel)
-        if output not in exprs.keys():
-            exprs[output] = {"*fileref" : (fileref, channel)}
-        if path not in exprs[output].keys():
-            exprs[output][path] = {}
-        if idx not in exprs[output][path].keys():
-            exprs[output][path][idx] = {
-                "factor" : 0,
-                "factor2" : 0,
-                "prop" : None,
-                "bone" : None,
-                "bone2" : None,
-                "path" : None,
-                "comp" : -1,
-                "comp2" : -1,
-                "mult" : None}
-        expr = exprs[output][path][idx]
+        expr = setFormulaExpr(exprs, output, path, channel, idx, fileref)
         if "stage" in formula.keys():
             self.evalStage(formula, expr)
         else:
@@ -260,4 +245,24 @@ class Formula:
         base = string.split(":",1)[-1]
         return base.rsplit("?",1)
 
+#-------------------------------------------------------------
+#   Formula
+#-------------------------------------------------------------
 
+def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
+    if output not in exprs.keys():
+        exprs[output] = {"*fileref" : (fileref, channel)}
+    if path not in exprs[output].keys():
+        exprs[output][path] = {}
+    if idx not in exprs[output][path].keys():
+        exprs[output][path][idx] = {
+            "factor" : 0,
+            "factor2" : 0,
+            "prop" : None,
+            "bone" : None,
+            "bone2" : None,
+            "path" : None,
+            "comp" : -1,
+            "comp2" : -1,
+            "mult" : None}
+    return exprs[output][path][idx]

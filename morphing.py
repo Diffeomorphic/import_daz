@@ -1380,6 +1380,8 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         default = 'ERROR'
     )
 
+    useSearchAlias = False
+
     def draw(self, context):
         self.layout.prop(self, "usePropDrivers")
         if self.usePropDrivers:

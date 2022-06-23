@@ -359,28 +359,25 @@ class Alias(ChannelAsset):
 
     def __init__(self, fileref):
         ChannelAsset.__init__(self, fileref)
-        self.alias = None
+        self.target_channel = None
         self.parent = None
-        self.value = 0.0
+        self.min = 0.0
+        self.max = 1.0
 
     def __repr__(self):
-        return ("<Alias %s\n  %s>" % (self.id, self.alias))
+        return ("<Alias %s\n  %s\n  %s>" % (self.id, self.target_channel, self.parent))
 
     def parse(self, struct):
         ChannelAsset.parse(self, struct)
         channel = struct["channel"]
-        #self.parent = self.getAsset(struct["parent"])
-        self.alias = self.getAsset(channel["target_channel"])
+        self.parent = struct["parent"]
+        self.target_channel = channel["target_channel"]
 
     def update(self, struct):
-        if self.alias:
-            self.alias.update(struct)
-            if hasattr(self.alias, "value"):
-                self.value = self.alias.value
+        ChannelAsset.update(self, struct)
 
     def build(self, context, inst):
-        if self.alias:
-            self.alias.build(context)
+        pass
 
 #-------------------------------------------------------------
 #   Skin Binding

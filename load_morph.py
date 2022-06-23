@@ -46,6 +46,7 @@ class LoadMorph(DriverUser):
     treatHD = 'ERROR'
     useAdjusters = False
     onMorphSuffix = 'NONE'
+    useSearchAlias = True
 
     def __init__(self, rig, mesh):
         self.rig = rig
@@ -149,17 +150,18 @@ class LoadMorph(DriverUser):
                 return " ."
         if not isinstance(asset, ChannelAsset):
             return " -"
-        elif isinstance(asset, Alias):
+        elif isinstance(asset, Alias) and self.useSearchAlias:
             return " _"
         skey,ok = self.buildShape(asset, bodypart)
         if not ok:
             return " #"
         elif self.rig:
             self.makeFormulas(asset, skey)
-        aliaspath = self.getAliasFile(filepath)
         aliases = {}
-        if aliaspath is not None:
-            aliases = self.loadAlias(aliaspath)
+        if self.useSearchAlias:
+            aliaspath = self.getAliasFile(filepath)
+            if aliaspath is not None:
+                aliases = self.loadAlias(aliaspath)
         self.addUrl(asset, aliases, filepath, bodypart)
         if force:
             LS.returnValue[fileref] = name
@@ -299,15 +301,24 @@ class LoadMorph(DriverUser):
 
 
     def makeFormulas(self, asset, skey):
-        from .formula import Formula
+        from .formula import Formula, setFormulaExpr
+        from .modifier import Alias
         prop = self.getUniqueName(asset.getName())
         if prop != asset.name:
             self.setAlias(asset.name, prop)
         self.addNewProp(prop, asset, skey)
         self.adjustable[prop] = True
-        if not isinstance(asset, Formula):
+        if isinstance(asset, Formula):
+            exprs = asset.evalFormulas(self.rig, self.mesh)
+        elif isinstance(asset, Alias) and asset.target_channel:
+            exprs = {}
+            words = asset.target_channel.rsplit("#",1)
+            output = words[-1].split("?")[0]
+            expr = setFormulaExpr(exprs, output, "value", "value", 0)
+            expr["prop"] = prop
+            expr["factor"] = 1
+        else:
             return
-        exprs = asset.evalFormulas(self.rig, self.mesh)
         for output,data in exprs.items():
             for key,data1 in data.items():
                 if key == "*fileref":
@@ -413,7 +424,7 @@ class LoadMorph(DriverUser):
 
 
     def addNewProp(self, raw, asset=None, skey=None):
-        from .driver import setBoolProp
+        from .driver import setBoolProp, setFloatProp
         from .morphing import setActivated
         final = finalProp(raw)
         if raw not in self.drivers.keys():
@@ -429,7 +440,7 @@ class LoadMorph(DriverUser):
             elif asset.type == "bool":
                 setBoolProp(self.rig, raw, asset.value, True)
                 setBoolProp(self.amt, final, asset.value, False)
-            elif asset.type == "float":
+            elif asset.type == "float" or asset.type == "alias":
                 self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, None, True)
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
             elif asset.type == "int":
@@ -723,6 +734,7 @@ class LoadMorph(DriverUser):
         bvars = []
         vvars = {}
         string = ""
+        string0 = ""
         if "jcm" in raw.lower():
             fcu0 = None
         else:
@@ -732,9 +744,10 @@ class LoadMorph(DriverUser):
                 self.extendPropDriver(fcu0, raw, drivers)
                 return
             vtargets,btargets = self.getVarBoneTargets(fcu0)
+            string0 = fcu0.driver.expression
             if btargets:
                 varname = btargets[-1][0]
-                string = self.extractBoneExpression(fcu0.driver.expression, varname)
+                string = self.extractBoneExpression(string0, varname)
             for _,_,var0 in btargets:
                 bvars.append(Variable(var0))
             for vname,_,var0 in vtargets:
@@ -746,14 +759,14 @@ class LoadMorph(DriverUser):
         for bvar in bvars:
             var = fcu.driver.variables.new()
             bvar.create(var)
-        ok = self.buildNewPropDriver(fcu, rna, channel, string, raw, drivers)
+        ok = self.buildNewPropDriver(fcu, rna, channel, string, raw, drivers, string0, vvars)
         if not ok:
             return
         self.addMissingVars(fcu, vvars)
         self.removeUnusedVars(fcu)
 
 
-    def buildNewPropDriver(self, fcu, rna, channel, string, raw, drivers):
+    def buildNewPropDriver(self, fcu, rna, channel, string, raw, drivers, string0, vvars):
         varname = "a"
         if self.visible[raw] or not self.primary[raw]:
             string += varname
@@ -762,9 +775,14 @@ class LoadMorph(DriverUser):
                 self.rig[raw] = 0.0
         string,rdrivers = self.addDriverVars(fcu, string, varname, raw, drivers)
         if not string:
-            print("Empty string: %s" % raw)
-            rna.driver_remove(channel)
-            return False
+            if vvars:
+                fcu.driver.expression = string0
+                print("Keep old driver: %s" % raw)
+                return True
+            else:
+                print("Empty string: %s" % raw)
+                rna.driver_remove(channel)
+                return False
         if self.getMultipliers(raw):
             string = self.multiplyMults(fcu, string)
         fcu.driver.expression = string
