@@ -1226,16 +1226,23 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
             cns1.influence = infl
             pb.bone.layers = self.windedLayers
 
-
 #-------------------------------------------------------------
 #   Retarget armature
 #-------------------------------------------------------------
 
-class DAZ_OT_ChangeArmature(DazOperator, IsArmature):
+class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
     bl_idname = "daz.change_armature"
     bl_label = "Change Armature"
     bl_description = "Make the active armature the armature of selected meshes"
     bl_options = {'UNDO'}
+
+    useRetarget : BoolProperty(
+        name = "Retarget Drivers",
+        description = "Retarget shapekey drivers to the new armature.\nWarning: Will cause errors if the new armature lack drivers",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useRetarget")
 
     def run(self, context):
         rig = context.object
@@ -1247,6 +1254,8 @@ class DAZ_OT_ChangeArmature(DazOperator, IsArmature):
                 if subrig and subrig != rig:
                     subrigs[subrig.name] = subrig
                 mod.object = rig
+                if self.useRetarget:
+                    self.retargetDrivers(ob, subrig, rig)
             if ob.parent and ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()
                 bname = ob.parent_bone
@@ -1280,6 +1289,21 @@ class DAZ_OT_ChangeArmature(DazOperator, IsArmature):
                     eb.parent = rig.data.edit_bones[pname]
                 eb.matrix = mat
             setMode('OBJECT')
+
+
+    def retargetDrivers(self, ob, subrig, rig):
+        skeys = ob.data.shape_keys
+        if not (skeys and skeys.animation_data):
+            return
+        for fcu in skeys.animation_data.drivers:
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    if trg.id_type == 'OBJECT' and trg.id == subrig:
+                        trg.id = rig
+                    elif trg.id_type == 'ARMATURE' and trg.id == subrig.data:
+                        trg.id = rig.data
+                    else:
+                        print("Unexpected id: %s %s" % (trg.id_type, trg.id))
 
 #----------------------------------------------------------
 #   Initialize
