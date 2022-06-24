@@ -35,25 +35,8 @@ from .utils import *
 #   Open and check for case change
 #-------------------------------------------------------------
 
-def safeOpen(filepath, rw, dirMustExist=False, fileMustExist=False, mustOpen=False):
+def safeOpen(filepath, rw, encoding="utf-8-sig"):
     filepath = bpy.path.resolve_ncase(filepath)
-    if dirMustExist:
-        folder = os.path.dirname(filepath)
-        if not os.path.exists(folder):
-            msg = ("Directory does not exist:      \n" +
-                   "%s          " % folder)
-            raise DazError(msg)
-
-    if fileMustExist:
-        if not os.path.exists(filepath):
-            msg = ("File does not exist:      \n" +
-                   "%s          " % filepath)
-            raise DazError(msg)
-
-    if rw == "w":
-        encoding="utf_8"
-    else:
-        encoding="utf_8_sig"
     try:
         fp = open(filepath, rw, encoding=encoding)
     except FileNotFoundError:

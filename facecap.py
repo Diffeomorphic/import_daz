@@ -322,7 +322,7 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
     # right-eye eulerAngles xy,
     # blendshapes
     def parse(self):
-        with open(self.filepath, "r") as fp:
+        with open(self.filepath, "r", encoding="utf-8-sig") as fp:
             for line in fp:
                 line = line.strip()
                 if line[0:3] == "bs,":
@@ -412,7 +412,7 @@ class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
 
     def parse(self):
         from csv import reader
-        with open(self.filepath, newline='') as fp:
+        with open(self.filepath, newline='', encoding="utf-8-sig") as fp:
             lines = list(reader(fp))
         if len(lines) < 2:
             raise DazError("Found no keyframes")

@@ -1105,7 +1105,7 @@ class DAZ_OT_DecodeFile(DazOperator, DazFile, SingleFile):
             raise DazError(msg)
 
         try:
-            string = bytes.decode("utf_8_sig")
+            string = bytes.decode("utf-8-sig")
         except UnicodeDecodeError as err:
             msg = ('Unicode error while reading zipped file\n"%s"\n%s' % (self.filepath, err))
             print(msg)

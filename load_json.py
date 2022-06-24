@@ -71,11 +71,11 @@ def loadJson(filepath, mustOpen=False):
         bytes = None
 
     if bytes:
-        string = bytes.decode("utf_8_sig")
+        string = bytes.decode("utf-8-sig")
         filetype = "zipped"
     else:
         try:
-            with open(filepath, 'r') as fp:
+            with open(filepath, 'r', encoding="utf-8-sig") as fp:
                 string = fp.read()
             filetype = "ascii"
         except IOError:
@@ -102,13 +102,13 @@ def saveJson(struct, filepath, binary=False):
         raise DazError('Output directory does not exist.\n"%s"' % folder)
     if binary:
         string = encodeJsonData(struct, "")
-        bytes = string.encode("utf_8_sig")
+        bytes = string.encode("utf-8-sig")
         with gzip.open(filepath, 'wb') as fp:
             fp.write(bytes)
     else:
         import codecs
         string = encodeJsonData(struct, "")
-        with codecs.open(filepath, "w", encoding="utf_8") as fp:
+        with codecs.open(filepath, "w", encoding="utf-8-sig") as fp:
             fp.write(string)
             fp.write("\n")
 
