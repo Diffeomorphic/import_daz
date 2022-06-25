@@ -343,7 +343,7 @@ class Material(Asset, Channels):
         except ValueError:
             print("UDIM out of range: %d" % udim)
         mat.DazVDim = 0
-        addUdim(mat, udim, 0)
+        addUdimTree(mat.node_tree, udim, 0)
 
 
     def getGamma(self, channel):
@@ -586,16 +586,6 @@ class Material(Asset, Channels):
 #   UDims
 #-------------------------------------------------------------
 
-def addUdim(mat, udim, vdim):
-    if mat.node_tree:
-        addUdimTree(mat.node_tree, udim, vdim)
-    else:
-        for mtex in mat.texture_slots:
-            if mtex and mtex.texture and mtex.texture.extension == 'CLIP':
-                mtex.offset[0] += udim
-                mtex.offset[1] += vdim
-
-
 def addUdimTree(tree, udim, vdim):
     if tree is None:
         return
@@ -605,8 +595,8 @@ def addUdimTree(tree, udim, vdim):
                 slot = node.translation
             else:
                 slot = node.inputs["Location"].default_value
-            slot[0] += udim
-            slot[1] += vdim
+            slot[0] = udim
+            slot[1] = vdim
         elif node.type == 'GROUP':
             addUdimTree(node.node_tree, udim, vdim)
 

@@ -179,15 +179,15 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
             if node.image:
                 imgname = node.image.name
                 if imgname[-4:].isdigit():
-                    tile = int(imgname[-4:]) - 1001
+                    tile = int(imgname[-4:])
                 elif (imgname[-8:-4].isdigit() and
                       imgname[-4] == "." and
                       imgname[-3:].isdigit()):
-                    tile = int(imgname[-8:-4]) - 1001
+                    tile = int(imgname[-8:-4])
                 else:
                     continue
-                if mat.DazUDim != tile:
-                    shiftUVs(mat, mn, ob, tile)
+                udim,vdim = getUVDims(tile)
+                shiftUVs(mat, mn, ob, udim, vdim)
                 return
 
 
@@ -241,15 +241,27 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
 #   Shift UVs
 #----------------------------------------------------------
 
-def shiftUVs(mat, mn, ob, tile):
-    ushift = tile - mat.DazUDim
-    print(" Shift", mat.name, mn, ushift)
+def getUVDims(tile):
+    tile = tile - 1001
+    vdim = tile//10
+    udim = tile - 10*vdim
+    return udim,vdim
+
+
+def shiftUVs(mat, mn, ob, udim, vdim):
+    ushift = udim - mat.DazUDim
+    vshift = vdim - mat.DazVDim
+    print(" Shift", mat.name, mn, ushift, vshift)
+    if ushift == 0 and vshift == 0:
+        return
     uvloop = ob.data.uv_layers.active
     m = 0
     for fn,f in enumerate(ob.data.polygons):
         if f.material_index == mn:
             for n in range(len(f.vertices)):
-                uvloop.data[m].uv[0] += ushift
+                uv = uvloop.data[m].uv
+                uv[0] += ushift
+                uv[1] += vshift
                 m += 1
         else:
             m += len(f.vertices)
@@ -281,16 +293,14 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 
 
     def run(self, context):
-        from .material import addUdim
+        from .material import addUdimTree
         ob = context.object
-        vdim = (self.tile - 1001)//10
-        udim = self.tile - 10*vdim
-        tile = self.tile - 1001
+        udim,vdim = getUVDims(self.tile)
         for mn,umat in enumerate(self.umats):
             if umat.bool:
                 mat = ob.data.materials[umat.name]
-                shiftUVs(mat, mn, ob, tile)
-                addUdim(mat, udim - mat.DazUDim, vdim - mat.DazVDim)
+                shiftUVs(mat, mn, ob, udim, vdim)
+                addUdimTree(mat.node_tree, udim, vdim)
                 mat.DazUDim = udim
                 mat.DazVDim = vdim
 

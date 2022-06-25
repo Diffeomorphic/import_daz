@@ -1476,7 +1476,7 @@ class DAZ_OT_CollapseUDims(DazOperator):
             self.collapseUDims(ob)
 
     def collapseUDims(self, ob):
-        from .material import addUdim
+        from .material import addUdimTree
         if ob.DazUDimsCollapsed:
             return
         ob.DazUDimsCollapsed = True
@@ -1485,7 +1485,7 @@ class DAZ_OT_CollapseUDims(DazOperator):
             if mat.DazUDimsCollapsed:
                 continue
             mat.DazUDimsCollapsed = True
-            addUdim(mat, -mat.DazUDim, -mat.DazVDim)
+            addUdimTree(mat.node_tree, -mat.DazUDim, -mat.DazVDim)
 
 
 class DAZ_OT_RestoreUDims(DazOperator):
@@ -1504,7 +1504,7 @@ class DAZ_OT_RestoreUDims(DazOperator):
             self.restoreUDims(ob)
 
     def restoreUDims(self, ob):
-        from .material import addUdim
+        from .material import addUdimTree
         if not ob.DazUDimsCollapsed:
             return
         ob.DazUDimsCollapsed = False
@@ -1513,7 +1513,7 @@ class DAZ_OT_RestoreUDims(DazOperator):
             if not mat.DazUDimsCollapsed:
                 continue
             mat.DazUDimsCollapsed = False
-            addUdim(mat, mat.DazUDim, mat.DazVDim)
+            addUdimTree(mat.node_tree, mat.DazUDim, mat.DazVDim)
 
 
 class DAZ_OT_UDimsFromTextures(DazOperator, IsMesh):
