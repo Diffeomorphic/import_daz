@@ -619,7 +619,10 @@ class LoadMorph(DriverUser):
             else:
                 fcu = None
             bname,drivers = self.findSumDriver(pb, channel, idx, (pb, fcu, {}))
-            drivers[prop] = factor
+            if prop in drivers.keys():
+                drivers[prop] += factor
+            else:
+                drivers[prop] = factor
 
 
     def getFactors(self, vec):
