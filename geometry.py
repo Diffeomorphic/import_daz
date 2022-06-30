@@ -973,8 +973,7 @@ class Geometry(Asset, Channels):
 
         verts = self.verts
         edges = []
-        polymats = [pline[1] for pline in self.polylines]
-        guideVerts = guideEdges = guidePolymats = []
+        polymats = guideVerts = guideEdges = guidePolymats = []
         faces = self.faces
         if isinstance(geonode, GeoNode) and geonode.verts:
             if geonode.edges:
@@ -994,7 +993,8 @@ class Geometry(Asset, Channels):
             self.addAllMaterials(me, geonode)
             return None, None
 
-        if self.polylines and not guideVerts:
+        if self.polylines and not polymats:
+            polymats = [pline[1] for pline in self.polylines]
             for pline in self.polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
 
@@ -1060,38 +1060,30 @@ class Geometry(Asset, Channels):
 
     def getEdges(self, geonode, faces):
         verts = geonode.verts
-        polylines = geonode.polylines
-        polymats = geonode.polyline_materials
-        edges = []
         guideEdges = []
         guideVerts = []
         guidePolymats = []
         if self.polylines and GS.useHairGuides:
+            gverts = []
             for pline in self.polylines:
                 guideEdges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
+                gverts += [(pline[i],True) for i in range(2,len(pline))]
+            guideVerts = [verts[vn] for vn in dict(gverts).keys()]
             guidePolymats = [pline[1] for pline in self.polylines]
-        if False and polylines and not faces:
-            vnmin = min([min(pline) for pline in polylines])
-            if vnmin > 0:
-                if GS.useHairGuides:
-                    guideVerts = verts[:vnmin]
-                verts = verts[vnmin:]
-                polylines = [[vn-vnmin for vn in pline] for pline in polylines]
-        for pline in polylines:
+        edges = []
+        for pline in geonode.polylines:
             edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
-        return verts, edges, polymats, guideVerts, guideEdges, guidePolymats
+        return verts, edges, geonode.polyline_materials, guideVerts, guideEdges, guidePolymats
 
 
     def setHairMatNums(self, me, polymats):
         if self.polylines:
-            print("UU", me.name, len(self.polylines), len(polymats))
-            print("MMM", len(polymats), min(polymats), max(polymats))
             me.DazPolylineMaterials.clear()
             self.setHairType(me)
             for mnum in polymats:
                 item = me.DazPolylineMaterials.add()
                 item.a = mnum
-        print("KK", me.name, len(me.DazPolylineMaterials))
+
 
     def setHairType(self, me):
         if me.polygons:

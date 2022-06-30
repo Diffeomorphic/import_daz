@@ -483,7 +483,6 @@ class Tesselator:
 
     def findStrands(self, hair):
         edges = [(min(e.vertices),max(e.vertices)) for e in hair.data.edges]
-        edges.sort()
         pline = None
         plines = []
         v0 = -1
@@ -497,9 +496,7 @@ class Tesselator:
         strands = []
         verts = hair.data.vertices
         pgs = hair.data.DazPolylineMaterials
-        first = len(plines) - len(pgs)
-        print("FSS", hair.data.name, len(plines), len(pgs), first)
-        for item,pline in zip(pgs, plines[first:]):
+        for item,pline in zip(pgs, plines):
             strand = [verts[vn].co for vn in pline]
             strands.append((item.a,strand))
         return strands
