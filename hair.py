@@ -482,29 +482,26 @@ class Tesselator:
 
 
     def findStrands(self, hair):
-        def getEdge(pair, mnum):
-            return [min(pair), max(pair), mnum]
-
-        pgs = hair.data.DazMatNums
-        if len(pgs) >= len(hair.data.edges):
-            edges = [getEdge(e.vertices, pgs[e.index].a) for e in hair.data.edges]
-        else:
-            edges = [getEdge(e.vertices, 0) for e in hair.data.edges]
+        edges = [(min(e.vertices),max(e.vertices)) for e in hair.data.edges]
         edges.sort()
+        pline = None
         plines = []
         v0 = -1
-        for v1,v2,mnum in edges:
+        for v1,v2 in edges:
             if v1 == v0:
                 pline.append(v2)
             else:
                 pline = [v1,v2]
-                plines.append((mnum,pline))
+                plines.append(pline)
             v0 = v2
         strands = []
         verts = hair.data.vertices
-        for mnum,pline in plines:
+        pgs = hair.data.DazPolylineMaterials
+        first = len(plines) - len(pgs)
+        print("FSS", hair.data.name, len(plines), len(pgs), first)
+        for item,pline in zip(pgs, plines[first:]):
             strand = [verts[vn].co for vn in pline]
-            strands.append((mnum,strand))
+            strands.append((item.a,strand))
         return strands
 
 #-------------------------------------------------------------

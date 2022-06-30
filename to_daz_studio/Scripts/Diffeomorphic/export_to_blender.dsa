@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = 0.8;
+var version = "\"1.6.2.1041\"";
 
 function exportToBlender()
 {
@@ -206,6 +206,17 @@ function doPolylines(fp, geom)
     }
     buf += ("        ],");
     fp.writeLine(buf);
+    
+    buf = ("        \"" + "polyline_materials\": [" );
+    c = ","
+    for (var i = 0; i < npl; i++) 
+    {
+        var idx = geom.getPolylineMaterialGroupIndex(i);
+        if (i == npl-1) c = "";
+        buf += (idx + c)
+    }
+    buf += ("],");
+    fp.writeLine(buf);        
 }
 
 function doFaces(fp, geom)

@@ -70,7 +70,8 @@ class GeoNode(Node, SimNode):
         self.hairMaterials = []
         self.isStrandHair = False
         self.properties = {}
-        self.polylines = None
+        self.polylines = []
+        self.polyline_materials = []
         self.highdef = None
         self.hdobject = None
         self.index = figure.count
@@ -613,6 +614,7 @@ class Geometry(Asset, Channels):
         self.verts = []
         self.faces = []
         self.polylines = []
+        self.polyline_materials = []
         self.polygon_indices = []
         self.material_indices = []
         self.polygon_material_groups = []
@@ -971,7 +973,8 @@ class Geometry(Asset, Channels):
 
         verts = self.verts
         edges = []
-        guideVerts = guideEdges = []
+        polymats = [pline[1] for pline in self.polylines]
+        guideVerts = guideEdges = guidePolymats = []
         faces = self.faces
         if isinstance(geonode, GeoNode) and geonode.verts:
             if geonode.edges:
@@ -981,7 +984,7 @@ class Geometry(Asset, Channels):
                 verts = geonode.verts
                 faces = geonode.faces
             elif geonode.polylines:
-                verts,edges,guideVerts,guideEdges = self.getEdges(geonode.verts, geonode.polylines, faces)
+                verts,edges,polymats,guideVerts,guideEdges,guidePolymats = self.getEdges(geonode, faces)
             elif self.polylines:
                 verts = geonode.verts
             elif len(geonode.verts) == len(verts):
@@ -1013,7 +1016,7 @@ class Geometry(Asset, Channels):
                 f.material_index = mn
                 f.use_smooth = True
 
-        self.setHairMatNums(me)
+        self.setHairMatNums(me, polymats)
         if self.isStrandHair and not edges:
             me.DazHairType = 'TUBE'
 
@@ -1047,7 +1050,7 @@ class Geometry(Asset, Channels):
             guideMe.from_pydata(guideVerts, guideEdges, [])
             guideOb = bpy.data.objects.new("%s_GUIDE" % inst.name, guideMe)
             guideMe.DazFingerPrint = getFingerPrint(guideOb)
-            self.setHairMatNums(guideMe)
+            self.setHairMatNums(guideMe, guidePolymats)
             for mat in me.materials:
                 guideMe.materials.append(mat)
             self.validateMesh(guideMe)
@@ -1055,14 +1058,19 @@ class Geometry(Asset, Channels):
         return ob, guideOb
 
 
-    def getEdges(self, verts, polylines, faces):
+    def getEdges(self, geonode, faces):
+        verts = geonode.verts
+        polylines = geonode.polylines
+        polymats = geonode.polyline_materials
         edges = []
         guideEdges = []
         guideVerts = []
+        guidePolymats = []
         if self.polylines and GS.useHairGuides:
             for pline in self.polylines:
                 guideEdges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
-        if polylines and not faces:
+            guidePolymats = [pline[1] for pline in self.polylines]
+        if False and polylines and not faces:
             vnmin = min([min(pline) for pline in polylines])
             if vnmin > 0:
                 if GS.useHairGuides:
@@ -1071,19 +1079,19 @@ class Geometry(Asset, Channels):
                 polylines = [[vn-vnmin for vn in pline] for pline in polylines]
         for pline in polylines:
             edges += [(pline[i-1],pline[i]) for i in range(1,len(pline))]
-        return verts, edges, guideVerts, guideEdges
+        return verts, edges, polymats, guideVerts, guideEdges, guidePolymats
 
 
-    def setHairMatNums(self, me):
+    def setHairMatNums(self, me, polymats):
         if self.polylines:
-            me.DazMatNums.clear()
+            print("UU", me.name, len(self.polylines), len(polymats))
+            print("MMM", len(polymats), min(polymats), max(polymats))
+            me.DazPolylineMaterials.clear()
             self.setHairType(me)
-            for pline in self.polylines:
-                mnum = pline[1]
-                for n in range(len(pline)-3):
-                    item = me.DazMatNums.add()
-                    item.a = mnum
-
+            for mnum in polymats:
+                item = me.DazPolylineMaterials.add()
+                item.a = mnum
+        print("KK", me.name, len(me.DazPolylineMaterials))
 
     def setHairType(self, me):
         if me.polygons:
@@ -1723,7 +1731,7 @@ def clearMeshProps(me):
     #me.DazFingerPrint = getFingerPrint(ob)
     me.DazGraftGroup.clear()
     me.DazMaskGroup.clear()
-    me.DazMatNums.clear()
+    me.DazPolylineMaterials.clear()
     me.DazMaterialSets.clear()
     me.DazHDMaterials.clear()
 
@@ -1789,7 +1797,7 @@ def register():
     bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
     bpy.types.Mesh.DazGraftGroup = CollectionProperty(type = DazPairGroup)
     bpy.types.Mesh.DazMaskGroup = CollectionProperty(type = DazIntGroup)
-    bpy.types.Mesh.DazMatNums = CollectionProperty(type = DazIntGroup)
+    bpy.types.Mesh.DazPolylineMaterials = CollectionProperty(type = DazIntGroup)
     bpy.types.Mesh.DazVertexCount = IntProperty(default=0)
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)

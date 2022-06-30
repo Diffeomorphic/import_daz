@@ -42,13 +42,11 @@ class DForce:
         self.instance = inst
         self.modifier = mod
         self.extra = extra
-        #print("\nCREA", self)
 
     def __repr__(self):
         return "<DForce %s\ni: %s\nm: %s\ne: %s>" % (self.type, self.instance, self.modifier, self.instance.rna)
 
     def build(self, context):
-        print("Build", self)
         pass
 
 #-------------------------------------------------------------
