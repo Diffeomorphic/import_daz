@@ -481,8 +481,15 @@ class Tesselator:
         setMode('OBJECT')
 
 
-    def findStrands(self, hair):
-        edges = [(min(e.vertices),max(e.vertices)) for e in hair.data.edges]
+    def findStrands(self, hair, strandType):
+        def makeStrand(pline, verts):
+            return [verts[vn].co for vn in pline]
+
+        if strandType == 'TUBE':
+            edges = [(min(e.vertices),max(e.vertices)) for e in hair.data.edges]
+            edges.sort()
+        else:
+            edges = [e.vertices for e in hair.data.edges]
         pline = None
         plines = []
         v0 = -1
@@ -493,12 +500,12 @@ class Tesselator:
                 pline = [v1,v2]
                 plines.append(pline)
             v0 = v2
-        strands = []
         verts = hair.data.vertices
         pgs = hair.data.DazPolylineMaterials
-        for item,pline in zip(pgs, plines):
-            strand = [verts[vn].co for vn in pline]
-            strands.append((item.a,strand))
+        if len(pgs) == len(plines):
+            strands = [(item.a, makeStrand(pline, verts)) for item,pline in zip(pgs, plines)]
+        else:
+            strands = [(0, makeStrand(pline, verts)) for pline in plines]
         return strands
 
 #-------------------------------------------------------------
@@ -705,7 +712,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
                 pass
             elif self.strandType == 'TUBE':
                 tess.unTesselateFaces(context, hair, self)
-            strands = tess.findStrands(hair)
+            strands = tess.findStrands(hair, self.strandType)
             haircount = self.addStrands(hum, strands, hsystems, -1)
             t5 = perf_counter()
             self.clocks.append(("Make hair systems", t5-t2))
@@ -757,6 +764,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             hsys.useEmitter = True
             hsys.vertexGroup = None
             hsys.build(context, hum)
+            sys.stdout.write(".")
+            sys.stdout.flush()
         print("Done")
 
 
