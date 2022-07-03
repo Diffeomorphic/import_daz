@@ -86,7 +86,7 @@ class HairOptions:
     useSinglePolyline : BoolProperty(
         name = "Single Polyline",
         description = "Make a single polyline mesh rather than separate ones for each length",
-        default = True)
+        default = False)
 
     removeOldHairs : BoolProperty(
         name = "Remove Particle Hair",
@@ -415,6 +415,7 @@ class HairSystem:
             name = "Mesh Hair"
         me = bpy.data.meshes.new(name)
         me.from_pydata(verts, edges, [])
+        me.DazHairType = 'LINE'
         ob = bpy.data.objects.new(name, me)
         for mname in mnames:
             mat = bpy.data.materials.get(mname)
