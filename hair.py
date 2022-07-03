@@ -401,7 +401,7 @@ class HairSystem:
         deflector = findDeflector(hum)
 
 
-    def buildMesh(self, context, hair):
+    def buildMesh(self, context, hair, mnames):
         verts = []
         edges = []
         m = 0
@@ -409,9 +409,16 @@ class HairSystem:
             verts += strand
             edges += [(m+n, m+n+1) for n in range(len(strand)-1)]
             m += len(strand)
-        me = bpy.data.meshes.new("Mesh Hair")
+        if len(mnames) <= 1:
+            name = "Hair %s" % self.material
+        else:
+            name = "Mesh Hair"
+        me = bpy.data.meshes.new(name)
         me.from_pydata(verts, edges, [])
-        ob = bpy.data.objects.new("Mesh Hair", me)
+        ob = bpy.data.objects.new(name, me)
+        for mname in mnames:
+            mat = bpy.data.materials.get(mname)
+            me.materials.append(mat)
         scn = context.scene
         scn.collection.objects.link(ob)
 
@@ -775,14 +782,16 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             print("No hair system found")
         elif self.useSinglePolyline:
             strands = []
+            mnames = []
             for hsys in hsystems.values():
                 strands += hsys.strands
+                mnames.append(hsys.material)
             hsys = list(hsystems.values())[0]
             hsys.strands = strands
-            hsys.buildMesh(context, hair)
+            hsys.buildMesh(context, hair, mnames)
         else:
             for hsys in hsystems.values():
-                hsys.buildMesh(context, hair)
+                hsys.buildMesh(context, hair, [hsys.material])
         print("Done")
 
 
