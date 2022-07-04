@@ -1193,17 +1193,17 @@ class CyclesTree(Tree):
         node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
         node.width = 200
         self.linkColor(tex, node, color, "Color")
-        node.inputs["Gamma"].default_value = 3.5
-        node.inputs["Scale"].default_value = 1.0
+        node.inputs["SSS Gamma"].default_value = 3.5
+        node.inputs["SSS Scale"].default_value = 1.0
         ssscolor,ssstex,sssmode = self.getSSSColor()
         radius,radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
-        self.linkColor(radtex, node, radius, "Radius")
-        node.inputs["IOR"].default_value = ior
-        node.inputs["Anisotropy"].default_value = aniso
-        node.inputs["Cycles Mix Factor"].default_value = (not GS.useVolume)
+        self.linkColor(radtex, node, radius, "SSS Radius")
+        node.inputs["SSS IOR"].default_value = ior
+        node.inputs["SSS Anisotropy"].default_value = aniso
+        node.inputs["Cycles SSS Factor"].default_value = (not GS.useVolume)
         if self.useEeveeBsdf:
-            node.inputs["Eevee Mix Factor"].default_value = 1.0
+            node.inputs["Eevee SSS Factor"].default_value = 1.0
         self.linkBumpNormal(node)
 
         fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
