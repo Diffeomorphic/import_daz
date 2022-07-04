@@ -151,7 +151,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
 
 
     def addCollections(self, context, rig, selected):
-        rigcoll = getCollection(rig)
+        rigcoll = getCollection(context, rig)
         if rigcoll is None:
             raise DazError("No collection found")
         print("Create visibility collections for %s:" % rig.name)

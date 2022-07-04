@@ -1401,7 +1401,7 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        coll = getCollection(rig)
+        coll = getCollection(context, rig)
         LS.customShapes = []
         IK = SimpleIK()
         makeBoneGroups(rig)

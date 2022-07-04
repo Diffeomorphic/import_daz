@@ -417,11 +417,16 @@ class HairSystem:
         me.from_pydata(verts, edges, [])
         me.DazHairType = 'LINE'
         ob = bpy.data.objects.new(name, me)
+        wmat = ob.matrix_world.copy()
+        ob.parent = hair.parent
+        ob.parent_bone = hair.parent_bone
+        ob.parent_type = hair.parent_type
+        setWorldMatrix(ob, wmat)
         for mname in mnames:
             mat = bpy.data.materials.get(mname)
             me.materials.append(mat)
-        scn = context.scene
-        scn.collection.objects.link(ob)
+        coll = getCollection(context, hair)
+        coll.objects.link(ob)
 
 #-------------------------------------------------------------
 #   Tesselator class

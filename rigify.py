@@ -887,7 +887,7 @@ class Rigify:
 
         if rig is None:
             raise DazError("Original rig not found")
-        coll = getCollection(rig)
+        coll = getCollection(context, rig)
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)

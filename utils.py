@@ -88,11 +88,11 @@ def getLayerCollection(context, coll):
     return getColl(context.view_layer.layer_collection, coll)
 
 
-def getCollection(ob):
+def getCollection(context, ob):
     for coll in bpy.data.collections:
         if ob.name in coll.objects.keys():
             return coll
-    return bpy.context.scene.collection
+    return context.scene.collection
 
 def activateObject(context, ob):
     try:

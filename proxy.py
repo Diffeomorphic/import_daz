@@ -1443,7 +1443,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         # Create group/collection
         mangrp = None
         scn = context.scene
-        coll = rigcoll = getCollection(rig)
+        coll = rigcoll = getCollection(context, rig)
         obs = {}
         nobs = {}
         if self.useGroup:

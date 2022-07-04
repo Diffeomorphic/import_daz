@@ -622,7 +622,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
 
 
     def addCollection(self, context):
-        rigcoll = getCollection(self.rig)
+        rigcoll = getCollection(context, self.rig)
         for coll in rigcoll.children.values():
             if baseName(coll.name) == "Simulation":
                 return coll

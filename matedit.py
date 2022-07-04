@@ -981,7 +981,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
             empty.scale = (1, 0.2, 1)
             empty.empty_display_type = 'CUBE'
             empty.empty_display_size = 0.25
-            coll = getCollection(ob)
+            coll = getCollection(context, ob)
             coll.objects.link(empty)
         self.force = True
         for mat in ob.data.materials:

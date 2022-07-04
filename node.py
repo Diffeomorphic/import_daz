@@ -615,7 +615,7 @@ def addToCollection(ob, coll):
 
 
 def createHiddenCollection(context, ob):
-    parcoll = getCollection(ob)
+    parcoll = getCollection(context, ob)
     for coll in parcoll.children:
         if baseName(coll.name) == "Hidden":
             return coll

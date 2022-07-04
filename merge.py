@@ -751,7 +751,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                 roots.append(ob)
         for root in roots:
             if self.useCollections:
-                coll = self.getCollection(root)
+                coll = getCollection(context, root)
             else:
                 coll = None
             self.eliminateEmpties(root, context, False, coll)
@@ -803,13 +803,6 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
             else:
                 return False
         return True
-
-
-    def getCollection(self, ob):
-        for coll in bpy.data.collections:
-            if ob.name in coll.objects:
-                return coll
-        return None
 
 
     def unlinkAll(self, ob):
