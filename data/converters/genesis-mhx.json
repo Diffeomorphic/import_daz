@@ -24,7 +24,7 @@
     "lEar" : "", 
     "rEar" : "", 
     
-    "lPectoral" : "breast.L",
+    "lPectoral" : "pectoral.L",
     "lCollar" : "clavicle.L",
     "lShldr" : "upper_arm.fk.L", 
     "lShldrBend" : "upper_arm.fk.L", 
@@ -34,7 +34,7 @@
     "lForearmTwist" : "TWIST-forearm.fk.L", 
     "lHand" : "hand.fk.L", 
     
-    "rPectoral" : "breast.R",
+    "rPectoral" : "pectoral.R",
     "rCollar" : "clavicle.R",
     "rShldr" : "upper_arm.fk.R", 
     "rShldrBend" : "upper_arm.fk.R", 

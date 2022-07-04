@@ -1377,6 +1377,11 @@ class Rigify:
                 self.addGizmo(pb, gizmo, scale)
                 pb.bone_group = bgrp
 
+        for rname in ["pectoral.L", "pectoral.R"]:
+            if rname in gen.pose.bones.keys():
+                pb = gen.pose.bones[rname]
+                pb.bone.layers[4] = True
+
         # Hide some bones on a hidden layer
         for rname in [
             "upperTeeth", "lowerTeeth",

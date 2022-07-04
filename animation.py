@@ -1535,6 +1535,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         from math import pi
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = context.object
+        self.setupDriven(rig)
         self.setupConverter(rig)
         self.alias = dict([(prop, getAlias(prop, rig)) for prop in rig.keys()])
         act = None
@@ -1725,6 +1726,22 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     L[bname] = self.Finv[bname] @ mat @ self.F[bname]
 
 
+    def setupDriven(self, rig):
+        self.driven = {}
+        if rig.animation_data:
+            for fcu in rig.animation_data.drivers:
+                words = fcu.data_path.split('"')
+                if words[0] == "pose.bones[":
+                    bname = words[1]
+                    if bname not in self.driven.keys():
+                        self.driven[bname] = {}
+                    channel = words[2][2:]
+                    if channel in ["rotation_euler", "rotation_quaternion"]:
+                        self.driven[bname]["rotation"] = True
+                    elif channel in ["location", "scale"]:
+                        self.driven[bname][channel] = True
+
+
     def setupConverter(self, rig):
         conv,twists,bonemap = self.getConv(rig, rig)
         self.conv = {}
@@ -1893,6 +1910,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getTrans(self, bname, pb, vecs, factor, anims):
+        if self.driven.get(pb.name) and self.driven[pb.name].get("location"):
+            return
         if bname == "":
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
@@ -1914,6 +1933,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getRot(self, bname, pb, vecs, factor, anims):
+        if self.driven.get(pb.name) and self.driven[pb.name].get("rotation"):
+            return
         if bname == "":
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
@@ -1950,6 +1971,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getScale(self, bname, pb, vecs, anims):
+        if self.driven.get(pb.name) and self.driven[pb.name].get("scale"):
+            return
         general = True
         for vec in vecs:
             if (abs(vec[0]-vec[1]) > 1e-5 or

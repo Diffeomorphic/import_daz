@@ -22,7 +22,7 @@
     "lEar" : "", 
     "rEar" : "", 
     
-    "lPectoral" : "breast.L",
+    "lPectoral" : "pectoral.L",
     "lCollar" : "shoulder.L",
     "lShldr" : "upper_arm_fk.L", 
     "lShldrBend" : "upper_arm_fk.L", 
@@ -36,7 +36,7 @@
     "lCarpal3" : "", 
     "lCarpal4" : "palm.L", 
     
-    "rPectoral" : "breast.R",
+    "rPectoral" : "pectoral.R",
     "rCollar" : "shoulder.R",
     "rShldr" : "upper_arm_fk.R", 
     "rShldrBend" : "upper_arm_fk.R", 
