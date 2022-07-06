@@ -98,6 +98,17 @@ def findNeighbors(faces, faceverts, vertfaces):
 
     return neighbors
 
+
+def findEdgeNeighbors(ob):
+    neighbors = dict([(e.index,[]) for e in ob.data.edges])
+    vertEdges = getVertEdges(ob)
+    for vn,edges in vertEdges.items():
+        if len(edges) == 2:
+            e1,e2 = edges
+            neighbors[e1.index].append(e2.index)
+            neighbors[e2.index].append(e1.index)
+    return neighbors
+
 #-------------------------------------------------------------
 #
 #-------------------------------------------------------------
