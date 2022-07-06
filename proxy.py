@@ -849,15 +849,12 @@ def identifyVerts(hum, pxy):
 
 
 def deselectEverything(ob, context):
-    setActiveObject(context, ob)
-    setMode('EDIT')
-    bpy.ops.mesh.select_mode(type='FACE')
-    bpy.ops.mesh.select_all(action='DESELECT')
-    bpy.ops.mesh.select_mode(type='EDGE')
-    bpy.ops.mesh.select_all(action='DESELECT')
-    bpy.ops.mesh.select_mode(type='VERT')
-    bpy.ops.mesh.select_all(action='DESELECT')
-    setMode('OBJECT')
+    for f in ob.data.polygons:
+        f.select = False
+    for e in ob.data.edges:
+        e.select = False
+    for v in ob.data.vertices:
+        v.select = False
 
 #-------------------------------------------------------------
 #   Make Proxy
@@ -1082,8 +1079,12 @@ class DAZ_OT_SelectRandomStrands(DazPropsOperator, IsMesh):
 
 
     def run(self, context):
+        for ob in getSelectedMeshes(context):
+            self.selectRandom(context, ob)
+
+
+    def selectRandom(self, context, ob):
         import random
-        ob = context.object
         if ob.data.polygons:
             faces = ob.data.polygons
         elif ob.data.edges:
