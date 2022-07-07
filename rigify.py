@@ -66,7 +66,7 @@ def setupTables(meta):
     global MetaBones, MetaParents, MetaDisconnect, RigifyParams
     global RigifySkeleton, GenesisCarpals, GenesisSpine
     global Genesis3Spine, Genesis3Mergers, Genesis3Parents
-    global Genesis3Toes, Genesis3Renames
+    global Genesis3Renames
     global DeformBones, MhxRigifyLayer
 
     from .mhx import L_HELP, L_FACE, L_HEAD, L_CUSTOM, L_FIN
@@ -304,19 +304,6 @@ def setupTables(meta):
         Genesis3Parents["neckUpper"] = "neckLower"
     else:
         Genesis3Parents["head"] = "neckLower"
-
-    Genesis3Toes = {
-    "lBigToe" : "lToe",
-    "lSmallToe1" : "lToe",
-    "lSmallToe2" : "lToe",
-    "lSmallToe3" : "lToe",
-    "lSmallToe4" : "lToe",
-    "rBigToe" : "rToe",
-    "rSmallToe1" : "rToe",
-    "rSmallToe2" : "rToe",
-    "rSmallToe3" : "rToe",
-    "rSmallToe4" : "rToe",
-    }
 
     Genesis3Renames = {
     "abdomenLower" : "abdomen",
@@ -755,7 +742,7 @@ class Rigify:
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
         from .figure import getRigType
-        from .merge import mergeBonesAndVgroups
+        from .merge import mergeBonesAndVgroups, reparentToes
 
         print("Create metarig")
         rig = context.object
@@ -809,7 +796,7 @@ class Rigify:
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
             mergeBonesAndVgroups(rig, Genesis3Mergers, Genesis3Parents, context)
-            self.reparentBones(rig, Genesis3Toes)
+            reparentToes(rig, context, False)
             self.renameBones(rig, Genesis3Renames)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)

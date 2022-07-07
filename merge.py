@@ -1444,35 +1444,36 @@ NewParent = {
 }
 
 
-def reparentToes(rig, context):
-    from .driver import removeBoneSumDrivers
+def reparentToes(rig, context, useParent):
     setActiveObject(context, rig)
-    toenames = []
+    toenames = GenesisToes["lToe"] + GenesisToes["rToe"]
+    drvnames = [drvBone(toename) for toename in toenames]
+    for fcu in list(rig.animation_data.drivers):
+        words = fcu.data_path.split('"')
+        if words[0] == "pose.bones[" and words[1] in drvnames:
+            rig.animation_data.drivers.remove(fcu)
+    for bname in toenames:
+        pb = rig.pose.bones.get(bname)
+        if pb:
+            cns = getConstraint(pb, 'COPY_ROTATION')
+            if cns:
+                pb.constraints.remove(cns)
+
     setMode('EDIT')
+    for bname in drvnames:
+        eb = rig.data.edit_bones.get(bname)
+        if eb:
+            rig.data.edit_bones.remove(eb)
     for parname in ["lToe", "rToe"]:
-        if parname in rig.data.edit_bones.keys():
+        if useParent and parname in rig.data.edit_bones.keys():
             parb = rig.data.edit_bones[parname]
             for bname in GenesisToes[parname]:
                 if bname[-2:] == "_2":
                     continue
                 if bname in rig.data.edit_bones.keys():
                     eb = rig.data.edit_bones[bname]
-                    if isDrvBone(eb.parent.name):
-                        eb = eb.parent
                     eb.parent = parb
-                    toenames.append(eb.name)
     setMode('OBJECT')
-    #removeBoneSumDrivers(rig, toenames)
-
-
-class DAZ_OT_ReparentToes(DazOperator, IsArmature):
-    bl_idname = "daz.reparent_toes"
-    bl_label = "Reparent Toes"
-    bl_description = "Parent small toes to big toe bone"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        reparentToes(context.object, context)
 
 
 def mergeBonesAndVgroups(rig, mergers, parents, context):
@@ -1550,7 +1551,6 @@ classes = [
     DAZ_OT_EliminateEmpties,
     DAZ_OT_CopyPose,
     DAZ_OT_ApplyRestPoses,
-    DAZ_OT_ReparentToes,
     DAZ_OT_MergeToes,
 ]
 

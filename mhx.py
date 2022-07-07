@@ -634,7 +634,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig)
             showProgress(3, 25, "  Reparent toes")
-            reparentToes(rig, context)
+            reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
             self.rename2Mhx(rig)
@@ -654,7 +654,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             connectToParent(rig)
-            reparentToes(rig, context)
+            reparentToes(rig, context, False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
             self.fixKnees(rig)
@@ -697,7 +697,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixCustomShape(rig, ["head"], 4)
         showProgress(22, 25, "  Collect deform bones")
         self.collectDeformBones(rig)
-        self.deleteUnusedBones(rig, deletes)
         setMode('POSE')
         showProgress(23, 25, "  Rename face bones")
         self.renameFaceBones(rig, ["Eye", "Ear"])
@@ -1419,28 +1418,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.lock_location = (lock,lock,lock)
 
     #-------------------------------------------------------------
-    #   Delete unused bones
-    #-------------------------------------------------------------
-
-    def deleteUnusedBones(self, rig, deletes):
-        if deletes:
-            for fcu in list(rig.animation_data.drivers):
-                words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[" and words[1] in deletes:
-                    rig.animation_data.drivers.remove(fcu)
-            setMode('EDIT')
-            for bname in deletes:
-                eb = rig.data.edit_bones.get(bname)
-                if eb:
-                    rig.data.edit_bones.remove(eb)
-
-    #-------------------------------------------------------------
     #   Fix constraints -
     #-------------------------------------------------------------
 
     def fixConstraints(self, rig):
         self.flips = {}
-        deletes = []
         for suffix in [".L", ".R"]:
             self.unlockYrot(rig, "upper_arm.fk" + suffix)
             self.unlockYrot(rig, "forearm.fk" + suffix)
@@ -1465,16 +1447,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     bname = "%s.01%s" % (toename, suffix)
                     if bname in rig.pose.bones.keys():
                         pb = rig.pose.bones[bname]
-                        cns = getConstraint(pb, 'COPY_ROTATION')
-                        if cns is None:
-                            cns = copyRotation(pb, toe, rig)
-                        else:
-                            deletes.append(cns.subtarget)
-                            cns.subtarget = toe.name
+                        cns = copyRotation(pb, toe, rig)
+                        cns.subtarget = toe.name
                         cns.mute = True
                         cns.use_y = False
                         cns.mix_mode = 'BEFORE'
-        return deletes
 
 
     def flipLimits(self, rig, bname, oldname):
