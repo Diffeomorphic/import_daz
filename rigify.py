@@ -796,7 +796,7 @@ class Rigify:
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
             mergeBonesAndVgroups(rig, Genesis3Mergers, Genesis3Parents, context)
-            reparentToes(rig, context, False)
+            reparentToes(rig, context, True)
             self.renameBones(rig, Genesis3Renames)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
@@ -880,15 +880,6 @@ class Rigify:
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)
 
-        # Save important roll angles
-        rolls = {}
-        if "lBigToe" in rig.data.bones.keys():
-            setMode('EDIT')
-            for bname in ["toe.L", "toe.R"]:
-                eb = meta.data.edit_bones.get(bname)
-                if eb:
-                    rolls[bname] = eb.roll
-
         setMode('POSE')
         for pb in meta.pose.bones:
             if hasattr(pb, "rigify_parameters"):
@@ -931,11 +922,6 @@ class Rigify:
         helpLayers = R_HELP*[False] + [True] + (31-R_HELP)*[False]
         setActiveObject(context, gen)
         setMode('EDIT')
-        for bname,roll in rolls.items():
-            eb = gen.data.edit_bones.get(bname)
-            if eb:
-                eb.roll = roll
-
         for dname,rname in extras.items():
             if dname not in dazBones.keys():
                 continue
@@ -1157,10 +1143,6 @@ class Rigify:
         # Finger IK
         if self.useFingerIk:
             self.fixFingerIk(rig, gen)
-
-        # Toe rotation
-        for suffix in [".L", ".R"]:
-            self.copyToeRotation(gen, False, suffix, ["bigToe", "smallToe1", "smallToe2", "smallToe3", "smallToe4"])
 
         #Clean up
         print("  Clean up")
