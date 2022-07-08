@@ -271,7 +271,13 @@ class Proxifier(DriverUser):
         return comps
 
 
-    def selectComp(self, comp, faces):
+    def selectComp(self, comp, ob):
+        if ob.data.polygons:
+            faces = ob.data.polygons
+        elif ob.data.edges:
+            faces = ob.data.edges
+        else:
+            return
         for fn in comp:
             f = faces[fn]
             if not f.hide:
@@ -1085,18 +1091,14 @@ class DAZ_OT_SelectRandomStrands(DazPropsOperator, IsMesh):
 
     def selectRandom(self, context, ob):
         import random
-        if ob.data.polygons:
-            faces = ob.data.polygons
-        elif ob.data.edges:
-            faces = ob.data.edges
-        else:
+        if not (ob.data.polygons or ob.data.edges):
             return
         prox = Proxifier(ob)
         comps = prox.getComponents(ob, context)
         random.seed(self.seed)
         for comp in comps.values():
             if random.random() < self.fraction:
-                prox.selectComp(comp, faces)
+                prox.selectComp(comp, ob)
 
 
     def sequel(self, context):
@@ -1126,14 +1128,16 @@ class DAZ_OT_SelectStrandsByWidth(DazPropsOperator, IsMesh):
 
     def run(self, context):
         ob = context.object
+        if not ob.data.polygons:
+            raise DazError("Mesh has no polygons")
         prox = Proxifier(ob)
         comps = prox.getComponents(ob, context)
+        maxwidth = 0.1 * self.width * ob.DazScale
         verts = ob.data.vertices
         faces = ob.data.polygons
-        maxwidth = 0.1 * self.width * ob.DazScale
         for comp in comps.values():
             if self.withinWidth(verts, faces, comp, maxwidth):
-                prox.selectComp(comp, ob.data.polygons)
+                prox.selectComp(comp, ob)
 
 
     def withinWidth(self, verts, faces, comp, maxwidth):
@@ -1167,10 +1171,12 @@ class DAZ_OT_SelectStrandsBySize(DazOperator, IsMesh, Selector):
 
     def run(self, context):
         ob = context.object
+        if not (ob.data.polygons or ob.data.edges):
+            return
         prox = Proxifier(ob)
         for item in self.getSelectedItems():
             for comp in self.groups[int(item.name)]:
-                prox.selectComp(comp, ob.data.polygons)
+                prox.selectComp(comp, ob)
 
 
     def getKeys(self, rig, ob):
