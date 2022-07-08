@@ -1441,17 +1441,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.unlimitYrot(rig, "hand.fk" + suffix)
             if self.useFingerIk:
                 self.addFingerIk(rig, suffix)
-            if "toe"+suffix in rig.pose.bones.keys():
-                toe = rig.pose.bones["toe"+suffix]
-                for toename in ["big_toe", "small_toe_1", "small_toe_2", "small_toe_3", "small_toe_4"]:
-                    bname = "%s.01%s" % (toename, suffix)
-                    if bname in rig.pose.bones.keys():
-                        pb = rig.pose.bones[bname]
-                        cns = copyRotation(pb, toe, rig)
-                        cns.subtarget = toe.name
-                        cns.mute = True
-                        cns.use_y = False
-                        cns.mix_mode = 'BEFORE'
+            self.copyToeRotation(rig, True, suffix, ["big_toe.01", "small_toe_1.01", "small_toe_2.01", "small_toe_3.01", "small_toe_4.01"])
 
 
     def flipLimits(self, rig, bname, oldname):

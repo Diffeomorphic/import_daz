@@ -1430,8 +1430,8 @@ def applyArmatureModifier(ob):
 #-------------------------------------------------------------
 
 GenesisToes = {
-    "lFoot" : ["lMetatarsals"],
-    "rFoot" : ["rMetatarsals"],
+    #"lFoot" : ["lMetatarsals"],
+    #"rFoot" : ["rMetatarsals"],
     "lToe" : ["lBigToe", "lSmallToe1", "lSmallToe2", "lSmallToe3", "lSmallToe4",
               "lBigToe_2", "lSmallToe1_2", "lSmallToe2_2", "lSmallToe3_2", "lSmallToe4_2"],
     "rToe" : ["rBigToe", "rSmallToe1", "rSmallToe2", "rSmallToe3", "rSmallToe4",
@@ -1439,8 +1439,8 @@ GenesisToes = {
 }
 
 NewParent = {
-    "lToe" : "lFoot",
-    "rToe" : "rFoot",
+    #"lToe" : "lFoot",
+    #"rToe" : "rFoot",
 }
 
 
@@ -1499,6 +1499,10 @@ def mergeBonesAndVgroups(rig, mergers, parents, context):
         if eb.name in deletes:
             rig.data.edit_bones.remove(eb)
     setMode('OBJECT')
+    for toe in mergers.keys():
+        bone = rig.data.bones.get(toe)
+        if bone:
+            bone.use_deform = True
 
     for ob in rig.children:
         if ob.type == 'MESH':

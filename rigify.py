@@ -275,12 +275,12 @@ def setupTables(meta):
     "lShldrBend" : ["lShldrTwist"],
     "lForearmBend" : ["lForearmTwist"],
     "lThighBend" : ["lThighTwist"],
-    "lFoot" : ["lMetatarsals"],
+    #"lFoot" : ["lMetatarsals"],
 
     "rShldrBend" : ["rShldrTwist"],
     "rForearmBend" : ["rForearmTwist"],
     "rThighBend" : ["rThighTwist"],
-    "rFoot" : ["rMetatarsals"],
+    #"rFoot" : ["rMetatarsals"],
     }
     if not meta.DazUseSplitNeck:
         Genesis3Mergers["neckLower"] = ["neckUpper"]
@@ -867,6 +867,7 @@ class Rigify:
 
         print("Rigify metarig")
         meta = context.object
+        setMode('OBJECT')
         rig = None
         for cns in meta.constraints:
             if cns.type == 'COPY_SCALE' and cns.name == "Rigify Source":
@@ -878,6 +879,15 @@ class Rigify:
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)
+
+        # Save important roll angles
+        rolls = {}
+        if "lBigToe" in rig.data.bones.keys():
+            setMode('EDIT')
+            for bname in ["toe.L", "toe.R"]:
+                eb = meta.data.edit_bones.get(bname)
+                if eb:
+                    rolls[bname] = eb.roll
 
         setMode('POSE')
         for pb in meta.pose.bones:
@@ -921,6 +931,11 @@ class Rigify:
         helpLayers = R_HELP*[False] + [True] + (31-R_HELP)*[False]
         setActiveObject(context, gen)
         setMode('EDIT')
+        for bname,roll in rolls.items():
+            eb = gen.data.edit_bones.get(bname)
+            if eb:
+                eb.roll = roll
+
         for dname,rname in extras.items():
             if dname not in dazBones.keys():
                 continue
@@ -1133,7 +1148,7 @@ class Rigify:
         self.addTongueIk(gen)
 
         # Face bone gizmos
-        rename = ["Pectoral", "Eye", "Ear"]
+        rename = ["Pectoral", "Eye", "Ear", "Metatarsals"]
         rename += [bone.name[1:] for bone in gen.data.bones
             if bone.name[1:].startswith(("BigToe", "SmallToe"))]
         self.renameFaceBones(gen, rename)
@@ -1142,6 +1157,10 @@ class Rigify:
         # Finger IK
         if self.useFingerIk:
             self.fixFingerIk(rig, gen)
+
+        # Toe rotation
+        for suffix in [".L", ".R"]:
+            self.copyToeRotation(gen, False, suffix, ["bigToe", "smallToe1", "smallToe2", "smallToe3", "smallToe4"])
 
         #Clean up
         print("  Clean up")
@@ -1337,12 +1356,14 @@ class Rigify:
             "ear.R" :           ("GZM_Circle025", 1.5),
             "pectoral.L" :      ("GZM_Pectoral", 1),
             "pectoral.R" :      ("GZM_Pectoral", 1),
+            "metatarsals.L" :   ("GZM_Foot", 1),
+            "metatarsals.R" :   ("GZM_Foot", 1),
             "gaze" :            ("GZM_Gaze", 1),
             "gaze.L" :          ("GZM_Circle025", 1),
             "gaze.R" :          ("GZM_Circle025", 1),
             "ik_tongue" :       ("GZM_Cone", 0.4),
         }
-        self.makeGizmos(["GZM_MJaw", "GZM_Circle025", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
+        self.makeGizmos(["GZM_MJaw", "GZM_Circle025", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
         bgrp = gen.pose.bone_groups.new(name="DAZ")
         bgrp.color_set = 'CUSTOM'
         bgrp.colors.normal = (1.0, 0.5, 0)

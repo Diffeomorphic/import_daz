@@ -428,6 +428,24 @@ class Fixer(DriverUser):
         gaze1 = rig.pose.bones["gaze1"]
         copyTransform(gaze1, gaze0, rig, prop)
 
+    #-------------------------------------------------------------
+    #   Toe rotation
+    #-------------------------------------------------------------
+
+    def copyToeRotation(self, rig, mute, suffix, toenames):
+        from .mhx import copyRotation
+        toe = rig.pose.bones.get("toe%s" % suffix)
+        if toe:
+            for toename in toenames:
+                bname = "%s%s" % (toename, suffix)
+                pb = rig.pose.bones.get(bname)
+                if pb:
+                    cns = copyRotation(pb, toe, rig)
+                    cns.subtarget = toe.name
+                    cns.mute = mute
+                    cns.use_y = False
+                    cns.mix_mode = 'BEFORE'
+
 #-------------------------------------------------------------
 #   Gizmos (custom shapes)
 #-------------------------------------------------------------
