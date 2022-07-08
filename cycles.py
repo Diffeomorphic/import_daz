@@ -1113,16 +1113,19 @@ class CyclesTree(Tree):
             fresnel.inputs["Power"].default_value = 1
             ior,iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
+        elif lmode == 3: # Custom curve
+            refl = 0.5
+            weight = 0.5
 
         if self.owner.shader == 'UBER_IRAY':
             # Top Coat Bump Mode
             #   [ "Height Map", "Normal Map" ]
-            if not fresnel:
+            if lmode < 2:
                 refl,refltex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
                 weight = 0.05 * topweight * refl
             bump,bumptex = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
         else:
-            if not fresnel:
+            if lmode < 2:
                 refl,refltex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
             weight = 0.05 * topweight * refl
             bump = self.getValue(["Top Coat Bump Weight"], 0)
