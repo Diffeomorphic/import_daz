@@ -36,10 +36,11 @@ class BrickTree:
         layers = self.findBrickLayers()
         if layers:
             print("Building brick layers:", layers)
-            #node = self.addBrickLayer("Base")
-            #self.cycles = self.eevee = node
-            for layer in layers:
-                node = self.addBrickLayer(layer)
+            node = self.addBrickLayer("Base", False)
+            node.inputs["Fac"].default_value = 1
+            self.cycles = self.eevee = node
+            for layer in layers[1:]:
+                node = self.addBrickLayer(layer, True)
                 channels = ["%s Weight" % layer, "%s Layer Weight" % layer]
                 weight,wttex = self.getColorTex(channels, "NONE", 1)
                 print("  Brick layer", layer, weight)
@@ -61,7 +62,7 @@ class BrickTree:
         return layers
 
 
-    def addBrickLayer(self, layer):
+    def addBrickLayer(self, layer, flip):
         from .cgroup import BrickLayerGroup
         self.owner.layer = layer
         node = self.addNode("ShaderNodeGroup")
@@ -69,7 +70,7 @@ class BrickTree:
         node.label = layer
         group = BrickLayerGroup()
         group.create(node, layer, self)
-        group.addNodes([])
+        group.addNodes([], flip)
         self.links.new(self.texco, node.inputs["UV"])
         self.owner.layer = None
         return node

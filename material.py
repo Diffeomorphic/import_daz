@@ -379,8 +379,10 @@ class Material(Asset, Channels):
 
     def getLayeredChannel(self, channels):
         if self.layer is not None and isinstance(channels, list):
-            channels = ["%s %s" % (self.layer, channel) for channel in channels]
-            channel = self.getChannel(channels)
+            layerChannels = ["%s %s" % (self.layer, channel) for channel in channels]
+            if self.layer == "Base":
+                layerChannels = channels + layerChannels
+            channel = self.getChannel(layerChannels)
             return channel
         return self.getChannel(channels)
 

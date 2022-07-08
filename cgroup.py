@@ -410,14 +410,21 @@ class BrickLayerGroup(FacMixGroup):
         self.hideSlot("UV")
 
 
-    def addNodes(self, args):
+    def addNodes(self, args, flip):
         FacMixGroup.addNodes(self, args)
         self.inShell = True
         self.texco = self.inputs.outputs["UV"]
         self.buildLayer("")
-        self.linkCycles(self.mix1, 2)
-        if GS.bsdfEevee != 'NEVER':
-            self.linkEevee(self.mix2, 2)
+        if flip:
+            self.linkCycles(self.mix1, 1)
+            self.links.new(self.inputs.outputs["Cycles"], self.mix1.inputs[2])
+            if GS.bsdfEevee != 'NEVER':
+                self.linkEevee(self.mix2, 1)
+                self.links.new(self.inputs.outputs["Eevee"], self.mix2.inputs[2])
+        else:
+            self.linkCycles(self.mix1, 2)
+            if GS.bsdfEevee != 'NEVER':
+                self.linkEevee(self.mix2, 2)
 
 # ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode
