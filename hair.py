@@ -1539,7 +1539,7 @@ class HairTree(CyclesTree):
     def initLayer(self):
         self.column = 4
         self.active = None
-        self.buildBump()
+        self.buildBump("")
 
 
     def addTexco(self, slot):

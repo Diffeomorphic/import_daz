@@ -51,7 +51,7 @@ class PbrTree(CyclesTree):
         self.ycoords[self.column] -= 500
         self.cycles = self.eevee = self.pbr
         self.buildNormal(uvname)
-        self.buildBump()
+        self.buildBump(uvname)
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
             return

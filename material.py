@@ -387,6 +387,8 @@ class Material(Asset, Channels):
             return channel
         return self.getChannel(channels)
 
+    def getLayeredValue(self, channels, default):
+        return self.getChannelValue(self.getLayeredChannel(channels), default)
 
     def getChannelDiffuse(self):
         return self.getLayeredChannel(["Diffuse Color", "diffuse"])

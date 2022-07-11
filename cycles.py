@@ -443,7 +443,7 @@ class CyclesTree(Tree):
 
     def buildLayer(self, uvname):
         self.buildNormal(uvname)
-        self.buildBump()
+        self.buildBump(uvname)
         self.buildDetail(uvname)
         self.buildDiffuse()
         self.buildTranslucency()
@@ -649,13 +649,19 @@ class CyclesTree(Tree):
 #   Bump
 #-------------------------------------------------------------
 
-    def buildBump(self):
+    def buildBump(self, uvname):
         if not self.isEnabled("Bump"):
             return
-        self.bumpval,self.bumptex = self.getColorTex("getChannelBump", "NONE", 0, False)
-        if self.bumpval and self.bumptex:
-            self.bump = self.buildBumpMap(self.bumpval, self.bumptex, col=3)
-            self.linkNormal(self.bump)
+        bumpmode = self.owner.getLayeredValue(["Bump Mode"], 0)
+        if bumpmode == 0:
+            self.bumpval,self.bumptex = self.getColorTex("getChannelBump", "NONE", 0, False)
+            if self.bumpval and self.bumptex:
+                self.bump = self.buildBumpMap(self.bumpval, self.bumptex, col=3)
+                self.linkNormal(self.bump)
+        elif bumpmode == 1:
+            strength,tex = self.getColorTex("getChannelBump", "NONE", 0, False)
+            if strength>0 and tex:
+                self.buildNormalMap(strength, tex, uvname)
 
 
     def buildBumpMap(self, bump, bumptex, col=3):
