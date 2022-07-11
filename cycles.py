@@ -1124,12 +1124,12 @@ class CyclesTree(Tree):
         if self.owner.shader == 'UBER_IRAY':
             # Top Coat Bump Mode
             #   [ "Height Map", "Normal Map" ]
-            if lmode < 2:
+            if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
             weight = 0.05 * topweight * refl
             bump,bumptex = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
         else:
-            if lmode < 2:
+            if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
             weight = 0.05 * topweight * refl
             bump = self.getValue(["Top Coat Bump Weight"], 0)
