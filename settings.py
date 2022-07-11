@@ -116,6 +116,7 @@ class GlobalSettings:
         self.maxSubdivs = 4
         self.useSimulation = True
         self.useScaleEyeMoisture = True
+        self.onFaceMaps = 'NEVER'
 
 
     def getSSSMethod(self):
@@ -195,6 +196,7 @@ class GlobalSettings:
         "DazMaxSubdivs" : "maxSubdivs",
         "DazSimulation" : "useSimulation",
         "DazScaleEyeMoisture" : "useScaleEyeMoisture",
+        "DazOnFaceMaps" : "onFaceMaps",
     }
 
     def fixPath(self, path):

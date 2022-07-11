@@ -228,6 +228,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazMaxSubdivs")
         box.prop(scn, "DazUseInstancing")
         box.prop(scn, "DazScaleEyeMoisture")
+        box.prop(scn, "DazOnFaceMaps")
         box.prop(scn, "DazSimulation")
 
         col = split.column()
@@ -627,6 +628,14 @@ def register():
         name = "Max Subdivision Level",
         description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
         min = 1, max = 11)
+
+    bpy.types.Scene.DazOnFaceMaps = EnumProperty(
+        items = [('NEVER', "Never", "Don't create maps groups"),
+                 ('MATERIALS', "Materials", "Create face maps for materials"),
+                 ('POLYGON_GROUPS', "Polygon Groups", "Create face maps for polygon groups"),
+                ],
+        name = "Face Maps",
+        description = "Generate face maps on import")
 
     bpy.types.Scene.DazScaleEyeMoisture = BoolProperty(
         name = "Scale Eye Moisture",

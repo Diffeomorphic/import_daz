@@ -1044,6 +1044,11 @@ class Geometry(Asset, Channels):
             ob.DazVisibilityDrivers = True
         self.validateMesh(me)
 
+        if GS.onFaceMaps == 'POLYGON_GROUPS' and me.polygons:
+            self.addFaceMaps(ob, self.polygon_groups, self.polygon_indices)
+        elif GS.onFaceMaps == 'MATERIALS' and me.polygons:
+            self.addFaceMaps(ob, self.polygon_material_groups, self.material_indices)
+
         guideOb = None
         if guideVerts:
             guideMe = bpy.data.meshes.new("%s_GUIDE" % geonode.getName())
@@ -1090,6 +1095,15 @@ class Geometry(Asset, Channels):
             me.DazHairType = 'SHEET'
         else:
             me.DazHairType = 'LINE'
+
+
+    def addFaceMaps(self, ob, groups, indices):
+        facemaps = dict([(mn,[]) for mn in range(len(groups))])
+        for fn,mn in enumerate(indices):
+            facemaps[mn].append(fn)
+        for mn,mname in enumerate(groups):
+            facemap = ob.face_maps.new(name = mname)
+            facemap.add(facemaps[mn])
 
 
     def creaseEdges(self, context, ob):
