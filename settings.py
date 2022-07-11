@@ -440,6 +440,7 @@ class LocalSettings:
         self.scene = ""
         self.render = None
         self.hiddenMaterial = None
+        self.shaders = {}
         self.targetCharacter = None
 
         self.nViewChildren = 0

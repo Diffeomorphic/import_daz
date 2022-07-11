@@ -241,42 +241,45 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
 
         msg = ""
         if LS.legacySkin:
-            msg = ("Objects with legacy skin binding found:\n" +
+            msg += ("Objects with legacy skin binding found:\n" +
                    "Vertex groups are missing.\n" +
                    "Consider converting the figures to props in DAZ Studio.   \n")
             for ob,rig in LS.legacySkin:
                 msg += '  Mesh: "%s", Rig: "%s"\n' % (ob.name, rig.name)
-        elif LS.missingAssets:
-            msg = ("Some assets were not found.\n" +
+        if LS.missingAssets:
+            msg += ("Some assets were not found.\n" +
                    "Check that all Daz paths have been set up correctly.        \n" +
                    "For details see\n'%s'" % getErrorPath())
-        elif LS.invalidMeshes:
-            msg = "Invalid meshes found:\n"
+        if LS.invalidMeshes:
+            msg += "Invalid meshes found:\n"
             for mename in LS.invalidMeshes:
                 msg += "  %s\n" % mename
-        elif LS.hasInstanceChildren:
-            msg = ("The following objects have instance children.\n" +
+        if LS.hasInstanceChildren:
+            msg += ("The following objects have instance children.\n" +
                    "The result may be incorrect.\n")
             for obname in LS.hasInstanceChildren.keys():
                 msg += ("  %s\n" % obname)
-        elif LS.partialMaterials:
-            msg = "The following materials are only partial:\n"
+        if LS.partialMaterials:
+            msg += "The following materials are only partial:\n"
             for mname in LS.partialMaterials:
                 msg += ("  %s\n" % mname)
-        else:
-            if LS.hdFailures:
-                msg += "Could not rebuild subdivisions for the following HD objects:       \n"
-                for hdname in LS.hdFailures:
-                    msg += ("  %s\n" % hdname)
-            if LS.hdWeights:
-                msg += "Could not copy vertex weights to the following HD objects:         \n"
-                for hdname in LS.hdWeights:
-                    msg += ("  %s\n" % hdname)
-            if LS.hdUvMissing:
-                msg += "HD objects missing UV layers:\n"
-                for hdname in LS.hdUvMissing:
-                    msg += ("  %s\n" % hdname)
-                msg += "Export from DAZ Studio with Multires disabled.        \n"
+        if LS.shaders:
+            msg += "Unsupported shaders found:\n"
+            for shader in LS.shaders.keys():
+                msg += "  %s\n" % shader
+        if LS.hdFailures:
+            msg += "Could not rebuild subdivisions for the following HD objects:       \n"
+            for hdname in LS.hdFailures:
+                msg += ("  %s\n" % hdname)
+        if LS.hdWeights:
+            msg += "Could not copy vertex weights to the following HD objects:         \n"
+            for hdname in LS.hdWeights:
+                msg += ("  %s\n" % hdname)
+        if LS.hdUvMissing:
+            msg += "HD objects missing UV layers:\n"
+            for hdname in LS.hdUvMissing:
+                msg += ("  %s\n" % hdname)
+            msg += "Export from DAZ Studio with Multires disabled.        \n"
         if msg:
             clearErrorMessage()
             handleDazError(context, warning=True, dump=True)

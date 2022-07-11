@@ -264,6 +264,8 @@ class Material(Asset, Channels):
                 self.shader = 'BRICK'
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
+            if "definition" in struct.keys():
+                LS.shaders[struct["definition"]] = True
 
 
     def build(self, context):
