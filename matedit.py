@@ -349,6 +349,7 @@ class ChannelSetter:
     useChangedOnly = False
     origSlots : CollectionProperty(type = EditSlotGroup)
     matSlots : CollectionProperty(type = EditSlotGroup)
+    dirty = {}
 
     def setChannelCycles(self, mat, item):
         nodeType, slot, useAttr, factorAttr, ncomps, fromType = getTweakableChannel(item.name)
@@ -356,8 +357,9 @@ class ChannelSetter:
             value = self.getItemValue(ncomps, item)
             origItem = self.origSlots[item.name]
             origValue = self.getItemValue(ncomps, origItem)
-            if value == origValue:
+            if value == origValue and not self.dirty.get(item.name):
                 return
+            self.dirty[item.name] = True
 
         for node in mat.node_tree.nodes.values():
             if self.matchingNode(node, nodeType, mat, fromType):
