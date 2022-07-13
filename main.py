@@ -67,9 +67,9 @@ class ColorOptions:
         description = "Material Method",
         default = 'BSDF')
 
-    useBackground : BoolProperty(
-        name = "Background Environment",
-        description = "Add a default background environment",
+    useDefaultEnvironment : BoolProperty(
+        name = "Default Environment",
+        description = "Add a default environment to the scene",
         default = False)
 
     def draw(self, context):
@@ -77,7 +77,7 @@ class ColorOptions:
             box = self.layout.box()
             box.label(text = "Material Method")
             box.prop(self, "materialMethod", expand=True)
-        self.layout.prop(self, "useBackground")
+        self.layout.prop(self, "useDefaultEnvironment")
         box = self.layout.box()
         box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':
@@ -134,7 +134,7 @@ class DazLoader:
 
         from .load_json import loadJson
         struct = loadJson(filepath)
-        if LS.useBackground:
+        if LS.useDefaultEnvironment:
             self.addBackground(struct)
         showProgress(10, 100)
 
