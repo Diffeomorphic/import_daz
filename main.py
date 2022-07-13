@@ -67,17 +67,11 @@ class ColorOptions:
         description = "Material Method",
         default = 'BSDF')
 
-    useDefaultEnvironment : BoolProperty(
-        name = "Default Environment",
-        description = "Add a default environment to the scene",
-        default = False)
-
     def draw(self, context):
         if GS.materialMethod == 'SELECT':
             box = self.layout.box()
             box.label(text = "Material Method")
             box.prop(self, "materialMethod", expand=True)
-        self.layout.prop(self, "useDefaultEnvironment")
         box = self.layout.box()
         box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':
@@ -134,8 +128,6 @@ class DazLoader:
 
         from .load_json import loadJson
         struct = loadJson(filepath)
-        if LS.useDefaultEnvironment:
-            self.addBackground(struct)
         showProgress(10, 100)
 
         if LS.useNodes:
@@ -203,35 +195,6 @@ class DazLoader:
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
         return main
-
-
-    def addBackground(self, astruct):
-        def addToList(astruct, bstruct, lkey, keys):
-            if lkey not in astruct.keys():
-                astruct[lkey] = []
-            for key in keys:
-                taken = False
-                for elt in astruct[lkey]:
-                    if elt.get("id") == key:
-                        taken = True
-                        break
-                if not taken:
-                    for elt in bstruct[lkey]:
-                        if elt.get("id") == key:
-                            astruct[lkey].append(elt)
-                            break
-
-        from .load_json import loadJson
-        folder = os.path.dirname(__file__)
-        filepath = os.path.join(folder, "data/backgrounds/ruins.duf")
-        print("Adding background %s" % filepath)
-        bstruct = loadJson(filepath)
-        addToList(astruct, bstruct, "node_library", ["Tonemapper Options", "Environment Options"])
-        if "scene" in astruct.keys():
-            ascene = astruct["scene"]
-        else:
-            ascene = astruct["scene"] = {}
-        addToList(ascene, bstruct["scene"], "nodes", ["Tonemapper Options-1", "Environment Options-1"])
 
 #------------------------------------------------------------------
 #   Import DAZ
