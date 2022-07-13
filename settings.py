@@ -444,6 +444,7 @@ class LocalSettings:
         self.hiddenMaterial = None
         self.shaders = {}
         self.targetCharacter = None
+        self.useBackground = False
 
         self.nViewChildren = 0
         self.nRenderChildren = 0
@@ -500,6 +501,7 @@ class LocalSettings:
             self.hairMaterialMethod = 'PRINCIPLED'
         self.skinColor = btn.skinColor
         self.clothesColor = btn.clothesColor
+        self.useBackground = btn.useBackground
 
 
     def forImport(self, btn):
