@@ -93,6 +93,10 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
+def canonizeCat(catname):
+    return "".join([c for c in catname if c.isalnum()])
+
+
 class DAZ_UL_StandardMorphs(DAZ_UL_MorphList):
     def getMorphCat(self, data):
         return self.morphset, ""
@@ -145,20 +149,22 @@ def updateScrollbars(scn):
     def updateRigScrollbars(scn, rig):
         global theMorphScrollbars
         for cat in rig.DazMorphCats:
-            if cat.name not in theMorphScrollbars.keys():
-                classname = "DAZ_UL_Custom_%s" % cat.name
+            catname = canonizeCat(cat.name)
+            if catname not in theMorphScrollbars.keys():
+                classname = "DAZ_UL_Custom_%s" % catname
                 new_type = type(classname, (DAZ_UL_CustomMorphs,), {})
                 bpy.utils.register_class(new_type)
-                theMorphScrollbars[cat.name] = new_type
+                theMorphScrollbars[catname] = new_type
 
     def updateMeshScrollbars(scn, ob):
         global theShapeScrollbars
         for cat in ob.DazMorphCats:
-            if cat.name not in theShapeScrollbars.keys():
-                classname = "DAZ_UL_Shape_%s" % cat.name
+            catname = canonizeCat(cat.name)
+            if catname not in theShapeScrollbars.keys():
+                classname = "DAZ_UL_Shape_%s" % catname
                 new_type = type(classname, (DAZ_UL_Shapekeys,), {})
                 bpy.utils.register_class(new_type)
-                theShapeScrollbars[cat.name] = new_type
+                theShapeScrollbars[catname] = new_type
 
     for ob in scn.objects:
         if ob.type == 'ARMATURE':
@@ -172,16 +178,18 @@ def updateScrollbars(scn):
 
 def getCustomUIList(cat, scn):
     global theMorphScrollbars
-    if cat.name in theMorphScrollbars.keys():
-        return "DAZ_UL_Custom_%s" % cat.name
+    catname = canonizeCat(cat.name)
+    if catname in theMorphScrollbars.keys():
+        return "DAZ_UL_Custom_%s" % catname
     else:
         return "DAZ_UL_CustomMorphs"
 
 
 def getShapeUIList(cat, scn):
     global theShapeScrollbars
-    if cat.name in theShapeScrollbars.keys():
-        return "DAZ_UL_Shape_%s" % cat.name
+    catname = canonizeCat(cat.name)
+    if catname in theShapeScrollbars.keys():
+        return "DAZ_UL_Shape_%s" % catname
     else:
         return "DAZ_UL_Shapekeys"
 
