@@ -452,7 +452,7 @@ class CyclesTree(Tree):
         self.prepareWeighted()
         self.buildGlossyOrDualLobe()
         self.buildMetal()
-        self.buildTopCoat()
+        self.buildTopCoat(uvname)
         if self.owner.isRefractive():
             self.buildRefraction()
         self.buildWeighted()
@@ -613,7 +613,7 @@ class CyclesTree(Tree):
         if self.isEnabled("Normal"):
             strength,tex = self.getColorTex("getChannelNormal", "NONE", 1.0, useFactor=False)
             if strength>0 and tex:
-                self.buildNormalMap(strength, tex, uvname)
+                self.normal = self.buildNormalMap(strength, tex, uvname)
 
         if GS.useAutoSmooth and self.getValue(["Smooth On"], False):
             rad = self.getValue(["Round Corners Radius"], 0) * 100 * LS.scale
@@ -625,15 +625,16 @@ class CyclesTree(Tree):
                 self.normal = node
 
 
-    def buildNormalMap(self, strength, tex, uvname):
-        self.normal = self.addNode("ShaderNodeNormalMap", col=3)
-        self.normal.space = "TANGENT"
+    def buildNormalMap(self, strength, tex, uvname, col=3):
+        normal = self.addNode("ShaderNodeNormalMap", col)
+        normal.space = "TANGENT"
         if uvname:
-            self.normal.uv_map = uvname
+            normal.uv_map = uvname
         elif self.owner.uv_set:
-            self.normal.uv_map = self.owner.uv_set.name
-        self.normal.inputs["Strength"].default_value = strength
-        self.links.new(tex.outputs[0], self.normal.inputs["Color"])
+            normal.uv_map = self.owner.uv_set.name
+        normal.inputs["Strength"].default_value = strength
+        self.links.new(tex.outputs[0], normal.inputs["Color"])
+        return normal
 
 
     def addOverlay(self, fac, factex, col):
@@ -661,12 +662,12 @@ class CyclesTree(Tree):
         elif bumpmode == 1:
             strength,tex = self.getColorTex("getChannelBump", "NONE", 0, False)
             if strength>0 and tex:
-                self.buildNormalMap(strength, tex, uvname)
+                self.normal = self.buildNormalMap(strength, tex, uvname)
 
 
-    def buildBumpMap(self, bump, bumptex, col=3):
+    def buildBumpMap(self, bumpval, bumptex, col=3):
         node = self.addNode("ShaderNodeBump", col=col)
-        node.inputs["Strength"].default_value = bump * GS.bumpFactor
+        node.inputs["Strength"].default_value = bumpval * GS.bumpFactor
         self.links.new(bumptex.outputs[0], node.inputs["Height"])
         self.owner.addGeoBump(bumptex, node.inputs["Distance"])
         return node
@@ -746,7 +747,7 @@ class CyclesTree(Tree):
                 else:
                     self.links.new(tex.outputs[0], self.normal.inputs["Color"])
             else:
-                self.buildNormalMap(weight, tex, uvname)
+                self.normal = self.buildNormalMap(weight, tex, uvname)
                 if wttex:
                     self.links.new(wttex.outputs[0], self.normal.inputs["Strength"])
                 if self.bump:
@@ -1101,7 +1102,7 @@ class CyclesTree(Tree):
 #   Top Coat
 #-------------------------------------------------------------
 
-    def buildTopCoat(self):
+    def buildTopCoat(self, uvname):
         if not self.isEnabled("Top Coat"):
             return
         topweight = self.getValue(["Top Coat Weight"], 0)
@@ -1121,20 +1122,28 @@ class CyclesTree(Tree):
             ior,iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
 
+        bump = normal = None
         if self.owner.shader == 'UBER_IRAY':
-            # Top Coat Bump Mode
-            #   [ "Height Map", "Normal Map" ]
             if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
             weight = 0.05 * topweight * refl
-            bump,bumptex = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
+            bumpmode = self.getValue(["Top Coat Bump Mode"], 0)
+            bumpval,bumptex = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
+            if bumptex is None:
+                pass
+            elif bumpmode == 0:   # Height map
+                bump = self.buildBumpMap(bumpval, bumptex, col=self.column)
+                self.linkNormal(bump)
+            elif bumpmode == 1:   # Normal map
+                normal = self.buildNormalMap(1, bumptex, uvname, col=self.column)
         else:
             if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
             weight = 0.05 * topweight * refl
-            bump = self.getValue(["Top Coat Bump Weight"], 0)
-            bump *= self.bumpval
-            bumptex = None
+            bumpval = self.getValue(["Top Coat Bump Weight"], 0)
+            if self.bumptex:
+                bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex, col=self.column)
+                self.linkNormal(bump)
 
         _,tex = self.getColorTex(["Top Coat Weight"], "NONE", 0, value=weight, isMask=True)
         weighttex = self.multiplyTexs(tex, refltex)
@@ -1150,16 +1159,12 @@ class CyclesTree(Tree):
         top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=100)
         self.linkColor(coltex, top, color, "Color")
         self.linkScalar(roughtex, top, roughness, "Roughness")
-        if self.owner.shader == 'PBRSKIN':
-            if self.bumptex:
-                self.links.new(self.bumptex.outputs[0], top.inputs["Height"])
-                self.owner.addGeoBump(self.bumptex, top.inputs["Distance"])
-            self.linkNormal(top)
-        elif bumptex:
-            self.links.new(bumptex.outputs[0], top.inputs["Height"])
-            self.owner.addGeoBump(bumptex, top.inputs["Distance"])
+        if bump:
+            self.links.new(bump.outputs[0], top.inputs["Normal"])
+        elif normal:
+            self.links.new(normal.outputs[0], top.inputs["Normal"])
+        else:
             self.linkBumpNormal(top)
-        top.inputs["Bump"].default_value = bump * GS.bumpFactor
         self.mixWithActive(weight, weighttex, top)
         if fresnel:
             self.linkScalar(roughtex, fresnel, roughness, "Roughness")

@@ -65,7 +65,7 @@ class PbrTree(CyclesTree):
         if self.prepareWeighted():
             self.postPBR = True
             CyclesTree.buildGlossyOrDualLobe(self)
-            self.buildTopCoat()
+            self.buildTopCoat(uvname)
         else:
             self.buildGlossyOrDualLobe()
         if self.owner.isRefractive():

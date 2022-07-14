@@ -705,7 +705,7 @@ class TopCoatGroup(FacMixGroup):
 
     def __init__(self):
         FacMixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Bump", "Height", "Distance", "Normal"]
+        self.insockets += ["Color", "Roughness", "Normal"]
 
 
     def create(self, node, name, parent):
@@ -713,25 +713,16 @@ class TopCoatGroup(FacMixGroup):
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Bump")
-        self.group.inputs.new("NodeSocketFloat", "Distance")
-        self.group.inputs.new("NodeSocketFloat", "Height")
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
-        bump = self.addNode("ShaderNodeBump", 1)
-        self.links.new(self.inputs.outputs["Bump"], bump.inputs["Strength"])
-        self.links.new(self.inputs.outputs["Height"], bump.inputs["Height"])
-        self.links.new(self.inputs.outputs["Distance"], bump.inputs["Distance"])
-        self.links.new(self.inputs.outputs["Normal"], bump.inputs["Normal"])
-
         glossy = self.addNode("ShaderNodeBsdfGlossy", 2)
         self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
         self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
-        self.links.new(bump.outputs["Normal"], glossy.inputs["Normal"])
+        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
         self.mixCycles(glossy.outputs[0], 2)
         self.mixEevee(glossy.outputs[0], 2)
 
