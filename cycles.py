@@ -237,6 +237,8 @@ class CyclesTree(Tree):
         self.diffuseColor = WHITE
         self.diffuseTex = None
         self.normal = None
+        self.normalval = 0.0
+        self.normaltex = None
         self.bump = None
         self.bumpval = 0
         self.bumptex = None
@@ -614,6 +616,8 @@ class CyclesTree(Tree):
             strength,tex = self.getColorTex("getChannelNormal", "NONE", 1.0, useFactor=False)
             if strength>0 and tex:
                 self.normal = self.buildNormalMap(strength, tex, uvname)
+                self.normalval = strength
+                self.normaltex = tex
 
         if GS.useAutoSmooth and self.getValue(["Smooth On"], False):
             rad = self.getValue(["Round Corners Radius"], 0) * 100 * LS.scale
@@ -1132,10 +1136,9 @@ class CyclesTree(Tree):
             if bumptex is None:
                 pass
             elif bumpmode == 0:   # Height map
-                bump = self.buildBumpMap(bumpval, bumptex, col=self.column)
-                self.linkNormal(bump)
+                bump = self.mixBump(bumpmode, bumpval, bumptex)
             elif bumpmode == 1:   # Normal map
-                normal = self.buildNormalMap(1, bumptex, uvname, col=self.column)
+                normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
         else:
             if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
@@ -1170,6 +1173,30 @@ class CyclesTree(Tree):
             self.linkScalar(roughtex, fresnel, roughness, "Roughness")
             self.linkBumpNormal(fresnel)
             self.links.new(fresnel.outputs["Dielectric"], top.inputs["Fac"])
+
+
+    def mixBump(self, bumpmode, bumpval, bumptex):
+        bump = self.buildBumpMap(bumpval, bumptex, col=self.column)
+        self.linkBumpNormal(bump)
+        return bump
+
+
+    def mixNormal(self, bumpmode, bumpval, bumptex, uvname):
+        if self.normaltex:
+            maxval = max(bumpval, self.normalval)
+            if maxval > 1.0:
+                normalbase = self.addOverlay(self.normalval/maxval, None, self.column-1)
+                self.links.new(self.normaltex.outputs["Color"], normalbase.inputs["Color2"])
+                mixval = bumpval/maxval
+            else:
+                normalbase = self.normaltex
+                mixval = bumpval
+            mix = self.addOverlay(mixval, None, self.column-1)
+            mix.inputs["Fac"].default_value = mixval
+            self.links.new(normalbase.outputs["Color"], mix.inputs["Color1"])
+            self.links.new(bumptex.outputs["Color"], mix.inputs["Color2"])
+            bumptex = mix
+        return self.buildNormalMap(bumpval, bumptex, uvname, col=self.column)
 
 #-------------------------------------------------------------
 #   Translucency
