@@ -1379,7 +1379,7 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         bpy.ops.file.make_paths_absolute()
         bpy.ops.object.make_single_user(object=False, obdata=False, material=True, animation=False, obdata_animation=False)
         bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=False)
-        for mat in cone.data.materials:
+        for mat in palette.data.materials:
             if len(mat.name) > 4 and mat.name[-4] == "." and mat.name[-3:].isdigit():
                 mat.name = mat.name[:-4]
         bpy.ops.asset.mark()
@@ -1388,11 +1388,11 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
     def makePlane(self, context, ob):
         scn = context.scene
         nmats = len(ob.data.materials)
-        n = int(math.floor(math.sqrt(nmats-1)))+1
+        n = int(math.floor(math.sqrt(nmats-0.01)))+1
         n1 = n+1
-        imax = nmats//(n+1) + 1
-        jmax = nmats - n*(imax-1)
-        verts = [(i,j,0) for j in range(jmax) for i in range(n+1)]
+        jmax = nmats//n + 1
+        imax = nmats - n*(jmax-1)
+        verts = [(i,j,0) for j in range(jmax) for i in range(n1)]
         verts += [(i,jmax,0) for i in range(imax+1)]
         faces = [[(i+j*n1), (i+1+j*n1), (i+1+(j+1)*n1), (i+(j+1)*n1)]
             for j in range(jmax-1) for i in range(n)]
@@ -1423,8 +1423,6 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         bpy.ops.mesh.primitive_cone_add(vertices=nmat, radius1=0.5, depth=0.1, end_fill_type='NOTHING')
         cone = context.object
         cone.name = "%s Palette" % ob.name
-        for mat,f in zip(ob.data.materials, cone.data.polygons):
-            cone.data.materials.append(mat)
         return cone
 
 
