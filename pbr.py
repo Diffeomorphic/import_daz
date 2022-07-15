@@ -63,8 +63,11 @@ class PbrTree(CyclesTree):
             self.postPBR = True
         if self.buildOverlay():
             self.postPBR = True
-        self.prepareWeighted()
-        self.buildGlossyOrDualLobe()
+        if self.prepareWeighted():
+            CyclesTree.buildGlossyOrDualLobe(self)
+            self.postPBR = True
+        else:
+            self.buildGlossyOrDualLobe()
         if self.useTopCoat:
             self.postPBR = True
             self.buildTopCoat(uvname)
