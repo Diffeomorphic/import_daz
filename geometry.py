@@ -1613,7 +1613,7 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
 #   Save UVs
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter, IsMesh):
+class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter):
     bl_idname = "daz.save_uv"
     bl_label = "Save UV Set"
     bl_description = "Save the active UV set as a duf file"

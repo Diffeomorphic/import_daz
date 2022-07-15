@@ -50,6 +50,7 @@ class PbrTree(CyclesTree):
         self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         self.cycles = self.eevee = self.pbr
+        self.checkTopCoat()
         self.buildNormal(uvname)
         self.buildBump(uvname)
         self.linkPBRNormal(self.pbr)
@@ -62,12 +63,11 @@ class PbrTree(CyclesTree):
             self.postPBR = True
         if self.buildOverlay():
             self.postPBR = True
-        if self.prepareWeighted():
+        self.prepareWeighted()
+        self.buildGlossyOrDualLobe()
+        if self.useTopCoat:
             self.postPBR = True
-            CyclesTree.buildGlossyOrDualLobe(self)
             self.buildTopCoat(uvname)
-        else:
-            self.buildGlossyOrDualLobe()
         if self.owner.isRefractive():
             self.buildRefraction()
         self.buildWeighted()
@@ -118,6 +118,19 @@ class PbrTree(CyclesTree):
         else:
             CyclesTree.buildEmission(self)
             self.postPBR = True
+
+
+    def checkTopCoat(self):
+        self.useTopCoat = False
+        if LS.materialMethod == 'SINGLE' or self.owner.basemix == 1:
+            return
+        aniso = self.getValue(["Top Coat Anisotropy"], 0)
+        anirot = self.getValue(["Top Coat Rotations"], 0)
+        if (self.owner.basemix == 0 and
+            aniso == 0 and
+            anirot == 0):
+            return
+        self.useTopCoat = True
 
 
     def buildPBRNode(self):
@@ -204,30 +217,8 @@ class PbrTree(CyclesTree):
             roughness *= (1 + anisotropy)
             self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)
 
-        # Clearcoat
-        top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
-        if self.owner.shader == 'UBER_IRAY':
-            if self.owner.basemix == 0:    # Metallic/Roughness
-                refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
-                tex = self.mixTexs('MULTIPLY', toptex, reftex)
-                value = 1.25 * refl * top
-            elif self.owner.basemix == 1:  # Specular/Glossiness
-                tex = toptex
-                value = top
-            elif self.owner.basemix == 2:  # Weighted
-                tex = None
-                value = 0.0
-        else:
-            tex = toptex
-            value = top
-        self.pbr.inputs["Clearcoat"].default_value = clamp(value)
-        if tex and useTex:
-            tex = self.multiplyScalarTex(clamp(value), tex)
-            if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Clearcoat"])
-
-        rough,tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
-        self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
+        if not self.useTopCoat:
+            self.addClearCoat(useTex)
 
         # Sheen
         if self.isEnabled("Velvet"):
@@ -261,6 +252,32 @@ class PbrTree(CyclesTree):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
         self.endSSS()
+
+
+    def addClearCoat(self, useTex):
+        top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
+        if self.owner.shader == 'UBER_IRAY':
+            if self.owner.basemix == 0:    # Metallic/Roughness
+                refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
+                tex = self.mixTexs('MULTIPLY', toptex, reftex)
+                value = 1.25 * refl * top
+            elif self.owner.basemix == 1:  # Specular/Glossiness
+                tex = toptex
+                value = top
+            elif self.owner.basemix == 2:  # Weighted
+                tex = None
+                value = 0.0
+        else:
+            tex = toptex
+            value = top
+        self.pbr.inputs["Clearcoat"].default_value = clamp(value)
+        if tex and useTex:
+            tex = self.multiplyScalarTex(clamp(value), tex)
+            if tex:
+                self.links.new(tex.outputs[0], self.pbr.inputs["Clearcoat"])
+
+        rough,tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
+        self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
 
 
     def getRefractionWeight(self):
