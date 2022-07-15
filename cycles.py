@@ -1156,12 +1156,16 @@ class CyclesTree(Tree):
             glossiness,glosstex = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
             roughness = 1 - glossiness
             roughtex = self.invertTex(glosstex, 5)
+        aniso,anitex = self.getColorTex(["Top Coat Anisotropy"], "NONE", 0)
+        anirot,rottex = self.getColorTex(["Top Coat Rotations"], "NONE", 0)
 
         from .cgroup import TopCoatGroup
         self.column += 1
         top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=100)
         self.linkColor(coltex, top, color, "Color")
         self.linkScalar(roughtex, top, roughness, "Roughness")
+        self.linkScalar(anitex, top, aniso, "Anisotropy")
+        self.linkScalar(rottex, top, 1 - anirot, "Rotation")
         if bump:
             self.links.new(bump.outputs[0], top.inputs["Normal"])
         elif normal:

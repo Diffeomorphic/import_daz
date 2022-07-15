@@ -705,26 +705,35 @@ class TopCoatGroup(FacMixGroup):
 
     def __init__(self):
         FacMixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Normal"]
+        self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
-        FacMixGroup.create(self, node, name, parent, 4)
+        FacMixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Rotation")
+        self.setMinMax("Rotation", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
-        glossy = self.addNode("ShaderNodeBsdfGlossy", 2)
-        self.links.new(self.inputs.outputs["Color"], glossy.inputs["Color"])
-        self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
-        self.mixCycles(glossy.outputs[0], 2)
-        self.mixEevee(glossy.outputs[0], 2)
+
+        aniso = self.addNode("ShaderNodeBsdfAnisotropic", 1)
+        aniso.distribution = 'ASHIKHMIN_SHIRLEY'
+        self.links.new(self.inputs.outputs["Color"], aniso.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], aniso.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Anisotropy"], aniso.inputs["Anisotropy"])
+        self.links.new(self.inputs.outputs["Rotation"], aniso.inputs["Rotation"])
+        self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
+
+        self.mixCycles(aniso.outputs[0], 2)
+        self.mixEevee(aniso.outputs[0], 2)
 
 # ---------------------------------------------------------------------
 #   Refraction Group
