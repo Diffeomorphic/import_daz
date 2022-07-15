@@ -1304,8 +1304,8 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
 
     useMatchNames : BoolProperty(
         name = "Match Names",
-        description = "Match materials based on names rather than material number",
-        default = False)
+        description = "Match materials based on names rather than material slots",
+        default = True)
 
     errorMismatch : BoolProperty(
         name = "Error On Mismatch",
@@ -1314,7 +1314,8 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
 
     def draw(self, context):
         self.layout.prop(self, "useMatchNames")
-        self.layout.prop(self, "errorMismatch")
+        if not self.useMatchNames:
+            self.layout.prop(self, "errorMismatch")
 
 
     def run(self, context):
@@ -1323,8 +1324,11 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         found = False
         for trg in getSelectedMeshes(context):
            if trg != src:
-               self.copyMaterials(src, trg)
-               found = True
+                if self.useMatchNames:
+                    self.copyByName(src, trg)
+                else:
+                    self.copyByIndex(src, trg)
+                found = True
         if not found:
             raise DazError("No target mesh selected")
         if self.mismatch:
@@ -1332,7 +1336,32 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
             raise DazError(msg, warning=True)
 
 
-    def copyMaterials(self, src, trg):
+    def copyByName(self, src, trg):
+        for mat in src.data.materials:
+            mn = self.getMatch(mat.name, trg.data.materials)
+            if mn is not None:
+                trg.data.materials[mn] = mat
+            else:
+                print("No match for %s" % mat.name)
+
+
+    def getMatch(self, mname, mats):
+        def stripName(mname):
+            if len(mname) > 4 and mname[-4] == "." and mname[-3:].isdigit():
+                mname = mname[:-4]
+            if len(mname) > 2 and mname[-2] == "-" and mname[-1].isdigit():
+                mname = mname[:-2]
+            return mname.lower()
+
+        sname = stripName(mname)
+        for mn,mat in enumerate(mats):
+            tname = stripName(mat.name)
+            if sname == tname:
+                return mn
+        return None
+
+
+    def copyByIndex(self, src, trg):
         ntrgmats = len(trg.data.materials)
         nsrcmats = len(src.data.materials)
         if ntrgmats != nsrcmats:
@@ -1344,25 +1373,11 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         mnums = [(f,f.material_index) for f in trg.data.polygons]
         srclist = [(mat.name, mn, mat) for mn,mat in enumerate(src.data.materials)]
         trglist = [(mat.name, mn, mat) for mn,mat in enumerate(trg.data.materials)]
-
         trgrest = trglist[nsrcmats:ntrgmats]
         trglist = trglist[:nsrcmats]
         srcrest = srclist[ntrgmats:nsrcmats]
         srclist = srclist[:ntrgmats]
-        if self.useMatchNames:
-            srclist.sort()
-            trglist.sort()
-            trgmats = {}
-            for n,data in enumerate(srclist):
-                mat = data[2]
-                tname,mn,_tmat = trglist[n]
-                trgmats[mn] = mat
-                mat.name = tname
-            trgmats = list(trgmats.items())
-            trgmats.sort()
-        else:
-            trgmats = [data[1:3] for data in srclist]
-
+        trgmats = [data[1:3] for data in srclist]
         trg.data.materials.clear()
         for _mn,mat in trgmats:
             trg.data.materials.append(mat)
