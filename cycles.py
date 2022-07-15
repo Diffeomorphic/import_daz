@@ -1196,7 +1196,13 @@ class CyclesTree(Tree):
             self.links.new(normalbase.outputs["Color"], mix.inputs["Color1"])
             self.links.new(bumptex.outputs["Color"], mix.inputs["Color2"])
             bumptex = mix
-        return self.buildNormalMap(bumpval, bumptex, uvname, col=self.column)
+        normal = self.buildNormalMap(bumpval, bumptex, uvname, col=self.column)
+        if self.bumptex:
+            bump = self.buildBumpMap(self.bumpval, self.bumptex, col=self.column)
+            self.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
+            return bump
+        else:
+            return normal
 
 #-------------------------------------------------------------
 #   Translucency
