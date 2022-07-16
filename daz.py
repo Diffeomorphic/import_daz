@@ -265,6 +265,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazBsdfEevee")
+        box.prop(scn, "DazImprovedSSS")
         box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
@@ -531,6 +532,10 @@ def register():
                  ('NEVER', "Never", "Never add separate Eevee path.\nBSDF materials may work very poorly with Eevee")],
         name = "Eevee BSDF",
         description = "Create a separate Eevee path for BSDF materials")
+
+    bpy.types.Scene.DazImprovedSSS = BoolProperty(
+        name = "Improved SSS (Experimental)",
+        description = "Use improved handling of SSS and translucency suggested by Midnight Arrow")
 
     bpy.types.Scene.DazReuseMaterials = BoolProperty(
         name = "Reuse Materials",

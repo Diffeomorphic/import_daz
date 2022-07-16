@@ -427,6 +427,63 @@ class BrickLayerGroup(FacMixGroup):
                 self.linkEevee(self.mix2, 2)
 
 # ---------------------------------------------------------------------
+#   SSS Fix Group. Midnight's fix for translucent materials
+#   https://bitbucket.org/Diffeomorphic/import_daz/issues/1082/better-eevee-principled-materials
+# ---------------------------------------------------------------------
+
+class SSSFixGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Diffuse Color", "Translucent Color", "Translucency Weight"]
+        self.outsockets += ["Base Color", "Subsurface Color"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 4)
+        self.group.inputs.new("NodeSocketColor", "Diffuse Color")
+        self.group.inputs.new("NodeSocketColor", "Translucent Color")
+        self.group.inputs.new("NodeSocketFloat", "Translucency Weight")
+        self.setMinMax("Translucency Weight", 0.5, 0.0, 1.0)
+        self.group.outputs.new("NodeSocketColor", "Base Color")
+        self.group.outputs.new("NodeSocketColor", "Subsurface Color")
+
+
+    def addNodes(self, args=None):
+        inv = self.addNode("ShaderNodeMath", 1)
+        inv.operation = 'SUBTRACT'
+        inv.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Translucency Weight"], inv.inputs[1])
+
+        hsv1 = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv1.inputs["Hue"].default_value = 0.5
+        hsv1.inputs["Saturation"].default_value = 1.0
+        self.links.new(inv.outputs[0], hsv1.inputs["Value"])
+        hsv1.inputs["Fac"].default_value = 1.0
+        self.links.new(self.inputs.outputs["Diffuse Color"], hsv1.inputs["Color"])
+
+        hsv2 = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv2.inputs["Hue"].default_value = 0.5
+        hsv2.inputs["Saturation"].default_value = 1.0
+        self.links.new(inv.outputs[0], hsv2.inputs["Value"])
+        hsv2.inputs["Fac"].default_value = 1.0
+        self.links.new(self.inputs.outputs["Translucent Color"], hsv2.inputs["Color"])
+
+        dodge1 = self.addNode("ShaderNodeMixRGB", 3)
+        dodge1.blend_type = 'DODGE'
+        self.links.new(self.inputs.outputs["Translucency Weight"], dodge1.inputs["Fac"])
+        self.links.new(hsv1.outputs["Color"], dodge1.inputs["Color1"])
+        self.links.new(self.inputs.outputs["Diffuse Color"], dodge1.inputs["Color2"])
+
+        dodge2 = self.addNode("ShaderNodeMixRGB", 3)
+        dodge2.blend_type = 'DODGE'
+        self.links.new(self.inputs.outputs["Translucency Weight"], dodge2.inputs["Fac"])
+        self.links.new(hsv2.outputs["Color"], dodge2.inputs["Color1"])
+        self.links.new(self.inputs.outputs["Translucent Color"], dodge2.inputs["Color2"])
+
+        self.links.new(dodge1.outputs["Color"], self.outputs.inputs["Base Color"])
+        self.links.new(dodge2.outputs["Color"], self.outputs.inputs["Subsurface Color"])
+
+# ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode
 # ---------------------------------------------------------------------
 

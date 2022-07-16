@@ -75,6 +75,7 @@ class GlobalSettings:
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
         self.bsdfEevee = 'NEEDED'
+        self.useImprovedSSS = False
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
@@ -155,6 +156,7 @@ class GlobalSettings:
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
         "DazBsdfEevee" : "bsdfEevee",
+        "DazImprovedSSS" : "useImprovedSSS",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",

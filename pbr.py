@@ -50,12 +50,12 @@ class PbrTree(CyclesTree):
         self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         self.cycles = self.eevee = self.pbr
-        self.checkTopCoat()
         self.buildNormal(uvname)
         self.buildBump(uvname)
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
             return
+        self.checkTopCoat()
         self.buildDetail(uvname)
         self.buildPBRNode()
         self.postPBR = False
@@ -93,6 +93,9 @@ class PbrTree(CyclesTree):
         else:
             return OpaqueShellPbrGroup(push)
 
+    #-------------------------------------------------------------
+    #   Cutout
+    #-------------------------------------------------------------
 
     def buildCutout(self):
         if self.pbr and "Alpha" in self.pbr.inputs.keys() and not self.postPBR:
@@ -110,6 +113,9 @@ class PbrTree(CyclesTree):
     def buildVolume(self):
         pass
 
+    #-------------------------------------------------------------
+    #   Emission
+    #-------------------------------------------------------------
 
     def buildEmission(self):
         if not GS.useEmission:
@@ -122,51 +128,96 @@ class PbrTree(CyclesTree):
             CyclesTree.buildEmission(self)
             self.postPBR = True
 
-
-    def checkTopCoat(self):
-        self.useTopCoat = False
-        if LS.materialMethod == 'SINGLE' or self.owner.basemix == 1:
-            return
-        aniso = self.getValue(["Top Coat Anisotropy"], 0)
-        anirot = self.getValue(["Top Coat Rotations"], 0)
-        if (self.owner.basemix == 0 and
-            aniso == 0 and
-            anirot == 0):
-            return
-        self.useTopCoat = True
-
+    #-------------------------------------------------------------
+    #   PBR Node
+    #-------------------------------------------------------------
 
     def buildPBRNode(self):
-        # Basic
+        self.buildBaseSubsurface()
+        self.buildMetallic()
+        useTex = not (self.owner.basemix == 0 and self.pureMetal)
+        self.buildSpecular(useTex)
+        anisotropy = self.buildAnisotropy()
+        self.buildRoughness(anisotropy, useTex)
+        if not self.useTopCoat:
+            self.addClearCoat(useTex)
+        self.buildSheen()
+
+    #-------------------------------------------------------------
+    #   Base and Subsurface
+    #-------------------------------------------------------------
+
+    def buildBaseSubsurface(self):
         if self.isEnabled("Diffuse"):
-            color,tex = self.getDiffuseColor()
-            self.diffuseColor = color
-            self.diffuseTex = tex
-            self.linkColor(tex, self.pbr, color, "Base Color")
+            self.diffuseColor,self.diffuseTex = self.getDiffuseColor()
+            self.linkColor(self.diffuseTex, self.pbr, self.diffuseColor, "Base Color")
         else:
             self.diffuseColor = WHITE
             self.diffuseTex = None
 
-        # Metallic Weight
+        if not self.isEnabled("Subsurface"):
+            return
+        if not self.checkTranslucency():
+            return
+        transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+        if transwt == 0:
+            return
+        transcolor,transtex = self.getTranslucentColor()
+        if isBlack(transcolor):
+            return
+        self.pbr.subsurface_method = GS.getSSSMethod()
+        ssscolor,ssstex,sssmode = self.getSSSColor()
+
+        if GS.useImprovedSSS:
+            self.addSubsurfaceMidnight(transwt, wttex, ssscolor, ssstex, transcolor, transtex)
+        else:
+            self.addSubsurfaceColor(transwt, wttex, transcolor, transtex)
+
+        radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
+        radius,ior,aniso = self.fixSSSRadius(radius)
+        self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
+        if bpy.app.version >= (3,0,0):
+            self.pbr.inputs["Subsurface IOR"].default_value = ior
+            self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
+        self.endSSS()
+
+
+    def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex):
+        gamma = self.addNode("ShaderNodeGamma", col=3)
+        gamma.inputs["Gamma"].default_value = 3.5
+        self.linkColor(transtex, gamma, transcolor, "Color")
+        self.links.new(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
+        self.linkScalar(wttex, self.pbr, transwt, "Subsurface")
+
+
+    def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
+        from .cgroup import SSSFixGroup
+        fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix")
+        self.linkColor(self.diffuseTex, fix, self.diffuseColor, "Diffuse Color")
+        self.linkColor(transtex, fix, transcolor, "Translucent Color")
+        self.linkScalar(wttex, fix, transwt, "Translucency Weight")
+        self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
+        self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
+        amount = (sss[0]+sss[1]+sss[2])/3
+        self.linkScalar(ssstex, self.pbr, amount, "Subsurface")
+
+    #-------------------------------------------------------------
+    #   Metallic
+    #-------------------------------------------------------------
+
+    def buildMetallic(self):
         if self.isEnabled("Metallicity"):
             metallicity,tex = self.getColorTex(["Metallic Weight"], "NONE", 0.0)
             self.linkScalar(tex, self.pbr, metallicity, "Metallic")
             self.pureMetal = (metallicity == 1 and tex is None)
         else:
             metallicity = 0
-        useTex = not (self.owner.basemix == 0 and self.pureMetal)
 
-        # Subsurface scattering
-        self.buildSSS()
+    #-------------------------------------------------------------
+    #   Specular
+    #-------------------------------------------------------------
 
-        # Anisotropic
-        anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
-        if anisotropy > 0:
-            self.linkScalar(tex, self.pbr, anisotropy, "Anisotropic")
-            anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
-            value = 0.75 - anirot
-            self.linkScalar(tex, self.pbr, value, "Anisotropic Rotation")
-
+    def buildSpecular(self, useTex):
         # Specular
         strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
         if self.owner.shader == 'UBER_IRAY':
@@ -201,7 +252,24 @@ class PbrTree(CyclesTree):
             if tex:
                 self.links.new(tex.outputs[0], self.pbr.inputs["Specular"])
 
-        # Roughness
+    #-------------------------------------------------------------
+    #   Anisotropy
+    #-------------------------------------------------------------
+
+    def buildAnisotropy(self):
+        anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
+        if anisotropy > 0:
+            self.linkScalar(tex, self.pbr, anisotropy, "Anisotropic")
+            anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
+            value = 0.75 - anirot
+            self.linkScalar(tex, self.pbr, value, "Anisotropic Rotation")
+        return anisotropy
+
+    #-------------------------------------------------------------
+    #   Roughness
+    #-------------------------------------------------------------
+
+    def buildRoughness(self, anisotropy, useTex):
         if self.pureMetal:
             self.replaceSlot(self.pbr, "Specular", 0.5)
             self.replaceSlot(self.pbr, "Subsurface", 0.0)
@@ -220,41 +288,21 @@ class PbrTree(CyclesTree):
             roughness *= (1 + anisotropy)
             self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)
 
-        if not self.useTopCoat:
-            self.addClearCoat(useTex)
+    #-------------------------------------------------------------
+    #   Clearcoat
+    #-------------------------------------------------------------
 
-        # Sheen
-        if self.isEnabled("Velvet"):
-            velvet,tex = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
-            self.linkScalar(tex, self.pbr, velvet, "Sheen")
-
-
-    def buildSSS(self):
-        if not self.isEnabled("Subsurface"):
+    def checkTopCoat(self):
+        self.useTopCoat = False
+        if LS.materialMethod == 'SINGLE' or self.owner.basemix == 1:
             return
-        if not self.checkTranslucency():
+        aniso = self.getValue(["Top Coat Anisotropy"], 0)
+        anirot = self.getValue(["Top Coat Rotations"], 0)
+        if (self.owner.basemix == 0 and
+            aniso == 0 and
+            anirot == 0):
             return
-        wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        if wt == 0:
-            return
-        color,coltex = self.getTranslucentColor()
-        if isBlack(color):
-            return
-        # a 3.5 gamma for the translucency texture is used to avoid the "white skin" effect
-        gamma = self.addNode("ShaderNodeGamma", col=3)
-        gamma.inputs["Gamma"].default_value = 3.5
-        ssscolor,ssstex,sssmode = self.getSSSColor()
-        radius,radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
-        radius,ior,aniso = self.fixSSSRadius(radius)
-        self.linkColor(coltex, gamma, color, "Color")
-        self.pbr.subsurface_method = GS.getSSSMethod()
-        self.links.new(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
-        self.linkScalar(wttex, self.pbr, wt, "Subsurface")
-        self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
-        if bpy.app.version >= (3,0,0):
-            self.pbr.inputs["Subsurface IOR"].default_value = ior
-            self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
-        self.endSSS()
+        self.useTopCoat = True
 
 
     def addClearCoat(self, useTex):
@@ -282,18 +330,18 @@ class PbrTree(CyclesTree):
         rough,tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
         self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
 
+    #-------------------------------------------------------------
+    #   Sheen
+    #-------------------------------------------------------------
 
-    def getRefractionWeight(self):
-        channel = self.owner.getChannelRefractionWeight()
-        if channel:
-            return self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
-        channel = self.owner.getChannelOpacity()
-        if channel:
-            value,tex = self.getColorTex("getChannelOpacity", "NONE", 1.0)
-            invtex = self.fixTex(tex, value, True)
-            return 1-value, invtex
-        return 1,None
+    def buildSheen(self):
+        if self.isEnabled("Velvet"):
+            velvet,tex = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
+            self.linkScalar(tex, self.pbr, velvet, "Sheen")
 
+    #-------------------------------------------------------------
+    #   Glossy or Dual lobe
+    #-------------------------------------------------------------
 
     def buildGlossyOrDualLobe(self):
         if LS.materialMethod == 'SINGLE':
@@ -307,6 +355,9 @@ class PbrTree(CyclesTree):
                 self.replaceSlot(self.pbr, "Specular", 0)
                 self.postPBR = True
 
+    #-------------------------------------------------------------
+    #   Refraction
+    #-------------------------------------------------------------
 
     def buildRefraction(self):
         if LS.materialMethod == 'SINGLE':
@@ -400,6 +451,9 @@ class PbrTree(CyclesTree):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
         self.pbr = pbr
 
+    #-------------------------------------------------------------
+    #   Utilities
+    #-------------------------------------------------------------
 
     def mixShaders(self, weight, wttex, node1, node2):
         mix = self.addNode("ShaderNodeMixShader")
