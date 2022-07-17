@@ -156,6 +156,7 @@ class PbrTree(CyclesTree):
             color = WHITE
             tex = None
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
+        self.diffuseColor = color
         self.diffuseTex = tex
 
         if not self.isEnabled("Subsurface"):
@@ -197,7 +198,9 @@ class PbrTree(CyclesTree):
         from .cgroup import SSSFixGroup
         fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix")
         self.linkScalar(ssstex, fix, sss, "SSS Amount")
-        self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+        fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
+        if self.diffuseInput:
+            self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight")
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])

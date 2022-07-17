@@ -232,6 +232,7 @@ class CyclesTree(Tree):
         self.isDecal = False
 
         self.diffuseInput = None
+        self.diffuseColor = (1,1,1,1)
         self.diffuseTex = None
         self.normal = None
         self.normalval = 0.0
@@ -749,6 +750,8 @@ class CyclesTree(Tree):
         node = self.addNode("ShaderNodeBsdfDiffuse")
         self.diffuse = self.cycles = node
         self.diffuseInput = self.linkColor(tex, node, color, "Color")
+        self.diffuseColor = color
+        self.diffuseTex = tex
         roughness,roughtex = self.getColorTex(["Diffuse Roughness"], "NONE", 0, False)
         if self.isEnabled("Detail"):
             detrough,dettex = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 0, False)
@@ -757,7 +760,6 @@ class CyclesTree(Tree):
         self.setRoughness(node, "Roughness", roughness, roughtex)
         self.linkBumpNormal(node)
         LS.usedFeatures["Diffuse"] = True
-        self.diffuseTex = tex
 
 
     def buildOverlay(self):
@@ -949,7 +951,9 @@ class CyclesTree(Tree):
             anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
             self.linkScalar(tex, node, 1 - anirot, "Rotation")
 
-        self.links.new(self.diffuseInput.outputs[0], node.inputs["Color"])
+        node.inputs["Color"].default_value[0:3] = self.diffuseColor
+        if self.diffuseInput:
+            self.links.new(self.diffuseInput.outputs[0], node.inputs["Color"])
         self.linkBumpNormal(node)
         weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
         self.mixWithActive(weight, wttex, node)
@@ -1206,7 +1210,9 @@ class CyclesTree(Tree):
         if GS.useImprovedSSS:
             from .cgroup import SSSFixGroup, SubsurfaceGroup
             fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
-            self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+            fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
+            if self.diffuseInput:
+                self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
             self.linkScalar(ssstex, fix, sss, "SSS Amount")
             self.linkColor(transtex, fix, transcolor, "Translucent Color")
             self.linkScalar(wttex, fix, transwt, "Translucency Weight")
