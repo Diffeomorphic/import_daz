@@ -46,10 +46,11 @@ class PbrTree(CyclesTree):
 
 
     def buildLayer(self, uvname):
-        self.column = 4
+        self.column = 5
         self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         self.cycles = self.eevee = self.pbr
+        self.column = 4
         self.buildNormal(uvname)
         self.buildBump(uvname)
         self.linkPBRNormal(self.pbr)
@@ -58,6 +59,7 @@ class PbrTree(CyclesTree):
         self.checkTopCoat()
         self.buildDetail(uvname)
         self.buildPBRNode()
+        self.column = 5
         self.postPBR = False
         if self.buildMakeup():
             self.postPBR = True
@@ -149,11 +151,12 @@ class PbrTree(CyclesTree):
 
     def buildBaseSubsurface(self):
         if self.isEnabled("Diffuse"):
-            self.diffuseColor,self.diffuseTex = self.getDiffuseColor()
-            self.linkColor(self.diffuseTex, self.pbr, self.diffuseColor, "Base Color")
+            color,tex = self.getDiffuseColor()
         else:
-            self.diffuseColor = WHITE
-            self.diffuseTex = None
+            color = WHITE
+            tex = None
+        self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
+        self.diffuseTex = tex
 
         if not self.isEnabled("Subsurface"):
             return
@@ -162,14 +165,14 @@ class PbrTree(CyclesTree):
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         if transwt == 0:
             return
-        transcolor,transtex = self.getTranslucentColor()
+        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         if isBlack(transcolor):
             return
         self.pbr.subsurface_method = GS.getSSSMethod()
-        ssscolor,ssstex,sssmode = self.getSSSColor()
+        sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
         if GS.useImprovedSSS:
-            self.addSubsurfaceMidnight(transwt, wttex, ssscolor, ssstex, transcolor, transtex)
+            self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex)
         else:
             self.addSubsurfaceColor(transwt, wttex, transcolor, transtex)
 
@@ -193,13 +196,12 @@ class PbrTree(CyclesTree):
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
         from .cgroup import SSSFixGroup
         fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix")
-        self.linkColor(self.diffuseTex, fix, self.diffuseColor, "Diffuse Color")
+        self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight")
-        self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
+        self.links.new(fix.outputs["Diffuse Color"], self.pbr.inputs["Base Color"])
         self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
-        amount = (sss[0]+sss[1]+sss[2])/3
-        self.linkScalar(ssstex, self.pbr, amount, "Subsurface")
+        self.linkScalar(ssstex, self.pbr, sss, "Subsurface")
 
     #-------------------------------------------------------------
     #   Metallic

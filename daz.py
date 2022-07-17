@@ -271,7 +271,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazBumpFactor")
         box.prop(scn, "DazFakeCaustics")
-        box.prop(scn, "DazFakeTranslucencyTexture")
         box.prop(scn, "DazImageInterpolation")
         box.prop(scn, "DazHandleRenderSettings")
         box.prop(scn, "DazHandleLightSettings")
@@ -674,10 +673,6 @@ def register():
     bpy.types.Scene.DazFakeCaustics = BoolProperty(
         name = "Fake Caustics",
         description = "Use fake caustics")
-
-    bpy.types.Scene.DazFakeTranslucencyTexture = BoolProperty(
-        name = "Fake Translucency Textures",
-        description = "If there is no translucency texture, use diffuse texture instead.\nSometimes useful to avoid \"white skin\" effect")
 
     bpy.types.Scene.DazUseDisplacement = BoolProperty(
         name = "Displacement",

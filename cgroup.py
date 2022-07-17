@@ -435,7 +435,7 @@ class SSSFixGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Diffuse Color", "Translucent Color", "Translucency Weight"]
-        self.outsockets += ["Base Color", "Subsurface Color"]
+        self.outsockets += ["Diffuse Color", "Subsurface Color"]
 
 
     def create(self, node, name, parent):
@@ -444,7 +444,7 @@ class SSSFixGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketColor", "Translucent Color")
         self.group.inputs.new("NodeSocketFloat", "Translucency Weight")
         self.setMinMax("Translucency Weight", 0.5, 0.0, 1.0)
-        self.group.outputs.new("NodeSocketColor", "Base Color")
+        self.group.outputs.new("NodeSocketColor", "Diffuse Color")
         self.group.outputs.new("NodeSocketColor", "Subsurface Color")
 
 
@@ -480,7 +480,7 @@ class SSSFixGroup(CyclesGroup):
         self.links.new(hsv2.outputs["Color"], dodge2.inputs["Color1"])
         self.links.new(self.inputs.outputs["Translucent Color"], dodge2.inputs["Color2"])
 
-        self.links.new(dodge1.outputs["Color"], self.outputs.inputs["Base Color"])
+        self.links.new(dodge1.outputs["Color"], self.outputs.inputs["Diffuse Color"])
         self.links.new(dodge2.outputs["Color"], self.outputs.inputs["Subsurface Color"])
 
 # ---------------------------------------------------------------------
@@ -932,16 +932,14 @@ class TransparentGroup(FacMixGroup):
         self.mixEevee(trans.outputs[0], 1)
 
 # ---------------------------------------------------------------------
-#   Translucent Group
+#   Subsurface Group
 # ---------------------------------------------------------------------
 
-class TranslucentGroup(FacMixGroup):
-
+class SubsurfaceGroup(FacMixGroup):
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += [
-            "Color", "SSS Gamma", "SSS Scale", "SSS Radius", "SSS IOR", "SSS Anisotropy",
-            "Cycles SSS Factor", "Normal"]
+            "Color", "SSS Scale", "SSS Radius", "SSS IOR", "SSS Anisotropy","Normal"]
         if GS.bsdfEevee != 'NEVER':
             self.insockets += ["Eevee SSS Factor"]
 
@@ -949,40 +947,86 @@ class TranslucentGroup(FacMixGroup):
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "SSS Gamma")
+        self.createGamma()
         self.group.inputs.new("NodeSocketFloat", "SSS Scale")
         self.group.inputs.new("NodeSocketVector", "SSS Radius")
         self.group.inputs.new("NodeSocketFloat", "SSS IOR")
         self.setMinMax("SSS IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "SSS Anisotropy")
         self.setMinMax("SSS Anisotropy", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Cycles SSS Factor")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.inputs.new("NodeSocketFloat", "Eevee SSS Factor")
+        self.createFactors()
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
+
+    def createGamma(self):
+        pass
+
+    def createFactors(self):
+        pass
 
 
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
-        trans = self.addNode("ShaderNodeBsdfTranslucent", 1)
-        self.links.new(self.inputs.outputs["Color"], trans.inputs["Color"])
-        self.links.new(self.inputs.outputs["Normal"], trans.inputs["Normal"])
-
-        gamma = self.addNode("ShaderNodeGamma", 1)
-        self.links.new(self.inputs.outputs["Color"], gamma.inputs["Color"])
-        self.links.new(self.inputs.outputs["SSS Gamma"], gamma.inputs["Gamma"])
-
+        trans = self.addTranslucent()
         sss = self.addNode("ShaderNodeSubsurfaceScattering", 1)
         sss.falloff = GS.getSSSMethod()
-        self.links.new(gamma.outputs["Color"], sss.inputs["Color"])
+        self.addGamma(sss)
         self.links.new(self.inputs.outputs["SSS Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["SSS Radius"], sss.inputs["Radius"])
         if bpy.app.version >= (3,0,0):
             self.links.new(self.inputs.outputs["SSS IOR"], sss.inputs["IOR"])
             self.links.new(self.inputs.outputs["SSS Anisotropy"], sss.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Normal"], sss.inputs["Normal"])
+        self.addMixFactors(trans, sss)
 
+    def addTranslucent(self):
+        return None
+
+    def addGamma(self, sss):
+        self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
+
+    def addMixFactors(self, trans, sss):
+        self.mixCycles(sss.outputs[0], 2)
+        if GS.bsdfEevee != 'NEVER':
+            self.mixEevee(sss.outputs[0], 2)
+
+# ---------------------------------------------------------------------
+#   Translucent Group
+# ---------------------------------------------------------------------
+
+class TranslucentGroup(SubsurfaceGroup):
+    def __init__(self):
+        SubsurfaceGroup.__init__(self)
+        self.insockets += ["SSS Gamma", "Cycles SSS Factor", "Normal"]
+        if GS.bsdfEevee != 'NEVER':
+            self.insockets += ["Eevee SSS Factor"]
+
+
+    def createGamma(self):
+        self.group.inputs.new("NodeSocketFloat", "SSS Gamma")
+
+
+    def createFactors(self):
+        self.group.inputs.new("NodeSocketFloat", "Cycles SSS Factor")
+        if GS.bsdfEevee != 'NEVER':
+            self.group.inputs.new("NodeSocketFloat", "Eevee SSS Factor")
+
+
+    def addTranslucent(self):
+        trans = self.addNode("ShaderNodeBsdfTranslucent", 1)
+        self.links.new(self.inputs.outputs["Color"], trans.inputs["Color"])
+        self.links.new(self.inputs.outputs["Normal"], trans.inputs["Normal"])
+        return trans
+
+
+    def addGamma(self, sss):
+        gamma = self.addNode("ShaderNodeGamma", 1)
+        self.links.new(self.inputs.outputs["Color"], gamma.inputs["Color"])
+        self.links.new(self.inputs.outputs["SSS Gamma"], gamma.inputs["Gamma"])
+        self.links.new(gamma.outputs["Color"], sss.inputs["Color"])
+
+
+    def addMixFactors(self, trans, sss):
         cmix = self.addNode("ShaderNodeMixShader", 2)
         self.links.new(self.inputs.outputs["Cycles SSS Factor"], cmix.inputs[0])
         self.links.new(trans.outputs[0], cmix.inputs[1])

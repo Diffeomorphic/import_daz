@@ -71,7 +71,6 @@ class GlobalSettings:
 
         self.bumpFactor = 1.0
         self.useFakeCaustics = True
-        self.useFakeTranslucencyTexture = False
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
         self.bsdfEevee = 'NEEDED'
@@ -152,7 +151,6 @@ class GlobalSettings:
         "DazMaterialsByIndex" : "materialsByIndex",
         "DazBumpFactor" : "bumpFactor",
         "DazFakeCaustics" : "useFakeCaustics",
-        "DazFakeTranslucencyTexture" : "useFakeTranslucencyTexture",
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
         "DazBsdfEevee" : "bsdfEevee",

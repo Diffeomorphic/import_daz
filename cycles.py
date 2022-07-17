@@ -234,7 +234,7 @@ class CyclesTree(Tree):
         self.inShell = False
         self.isDecal = False
 
-        self.diffuseColor = WHITE
+        self.diffuseInput = None
         self.diffuseTex = None
         self.normal = None
         self.normalval = 0.0
@@ -782,8 +782,8 @@ class CyclesTree(Tree):
             return
         color,tex = self.getDiffuseColor()
         node = self.addNode("ShaderNodeBsdfDiffuse")
-        self.cycles = self.eevee = node
-        self.linkColor(tex, node, color, "Color")
+        self.diffuse = self.cycles = self.eevee = node
+        self.diffuseInput = self.linkColor(tex, node, color, "Color")
         roughness,roughtex = self.getColorTex(["Diffuse Roughness"], "NONE", 0, False)
         if self.isEnabled("Detail"):
             detrough,dettex = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 0, False)
@@ -792,7 +792,6 @@ class CyclesTree(Tree):
         self.setRoughness(node, "Roughness", roughness, roughtex)
         self.linkBumpNormal(node)
         LS.usedFeatures["Diffuse"] = True
-        self.diffuseColor = color
         self.diffuseTex = tex
 
 
@@ -985,7 +984,7 @@ class CyclesTree(Tree):
             anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
             self.linkScalar(tex, node, 1 - anirot, "Rotation")
 
-        self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
+        self.links.new(self.diffuseInput.outputs[0], node.inputs["Color"])
         self.linkBumpNormal(node)
         weight,wttex = self.getColorTex(["Metallic Weight"], "NONE", 0)
         self.mixWithActive(weight, wttex, node)
@@ -1225,52 +1224,58 @@ class CyclesTree(Tree):
 
     def buildTranslucency(self):
         if (LS.materialMethod != 'BSDF' or
+            self.diffuse is None or
             not self.checkTranslucency()):
             return
         fac = self.getValue("getChannelTranslucencyWeight", 0)
         effect = self.getValue(["Base Color Effect"], 0)
         if fac == 0 and effect != 1:
             return
-        self.column += 1
         mat = self.owner.rna
-        color,tex = self.getTranslucentColor()
-        if isBlack(color):
+        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
+        if isBlack(transcolor):
             return
 
-        from .cgroup import TranslucentGroup
-        self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
-        node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
+        self.column += 1
+        sss,ssscolor,ssstex,sssmode = self.getSSSColor()
+        transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+        if effect == 1: # Scatter and transmit
+            transwt = 0.5 + transwt/2
+            if wttex and wttex.type == 'MATH':
+                wttex.inputs[0].default_value = transwt
+
+        if GS.useImprovedSSS:
+            from .cgroup import SSSFixGroup, SubsurfaceGroup
+            fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
+            self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+            self.linkColor(transtex, fix, transcolor, "Translucent Color")
+            self.linkScalar(wttex, fix, transwt, "Translucency Weight")
+            node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
+            self.links.new(fix.outputs["Diffuse Color"], self.diffuse.inputs["Color"])
+            self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
+            self.mixWithActive(sss, ssstex, node)
+        else:
+            from .cgroup import TranslucentGroup
+            self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
+            node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
+            self.linkColor(transtex, node, transcolor, "Color")
+            node.inputs["SSS Gamma"].default_value = 3.5
+            node.inputs["Cycles SSS Factor"].default_value = (not GS.useVolume)
+            if self.useEeveeBsdf:
+                node.inputs["Eevee SSS Factor"].default_value = 1.0
+            self.mixWithActive(transwt, wttex, node)
+
         node.width = 200
-        self.linkColor(tex, node, color, "Color")
-        node.inputs["SSS Gamma"].default_value = 3.5
         node.inputs["SSS Scale"].default_value = 1.0
-        ssscolor,ssstex,sssmode = self.getSSSColor()
-        radius,radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
+        radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
         self.linkColor(radtex, node, radius, "SSS Radius")
         node.inputs["SSS IOR"].default_value = ior
         node.inputs["SSS Anisotropy"].default_value = aniso
-        node.inputs["Cycles SSS Factor"].default_value = (not GS.useVolume)
-        if self.useEeveeBsdf:
-            node.inputs["Eevee SSS Factor"].default_value = 1.0
         self.linkBumpNormal(node)
 
-        fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        if effect == 1: # Scatter and transmit
-            fac = 0.5 + fac/2
-            if factex and factex.type == 'MATH':
-                factex.inputs[0].default_value = fac
-        self.mixWithActive(fac, factex, node)
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
-
-
-    def getTranslucentColor(self):
-        color,tex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
-        if (tex is None and
-            (GS.useFakeTranslucencyTexture or not GS.useVolume)):
-            tex = self.diffuseTex
-        return color,tex
 
 
     def getSSSColor(self):
@@ -1278,6 +1283,7 @@ class CyclesTree(Tree):
         # [ "Mono", "Chromatic" ]
         if sssmode == 1:
             color,tex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
+            sss = (color[0] + color[1] + color[2])/3
         elif sssmode == 0:
             sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
             if sss > 1:
@@ -1285,7 +1291,7 @@ class CyclesTree(Tree):
             color = (sss,sss,sss)
         else:
             color,tex = WHITE,None
-        return color,tex,sssmode
+        return sss,color,tex,sssmode
 
 
     def endSSS(self):
@@ -1538,6 +1544,7 @@ class CyclesTree(Tree):
         if (self.owner.isThinWall() or
             self.pureMetal or
             not GS.useVolume or
+            GS.useImprovedSSS or
             LS.materialMethod == 'SINGLE'):
             return
         self.volume = None
