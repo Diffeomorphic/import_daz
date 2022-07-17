@@ -401,20 +401,20 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
         dmat.getFromMaterial(context, mat)
         tree = dmat.tree
         if tree.getValue(["Makeup Enable"], False):
-            cycles,eevee = tree.getOutputs(["DAZ Makeup", "DAZ Dual Lobe PBR", "DAZ Top Coat"])
+            cycles = tree.getOutputs(["DAZ Makeup", "DAZ Dual Lobe PBR", "DAZ Top Coat"])
             tree.buildMakeup()
-            tree.linkToOutputs(cycles, eevee)
+            tree.linkToOutputs(cycles)
         if tree.getValue(["Metallicity Enable"], False):
             if dmat.shader == 'UBER_IRAY':
-                cycles,eevee = tree.getOutputs(["DAZ Metal Uber", "DAZ Top Coat"])
+                cycles = tree.getOutputs(["DAZ Metal Uber", "DAZ Top Coat"])
             elif dmat.shader == 'PBRSKIN':
-                cycles,eevee = tree.getOutputs(["DAZ Metal PBR", "DAZ Top Coat"])
+                cycles = tree.getOutputs(["DAZ Metal PBR", "DAZ Top Coat"])
             tree.buildMetal()
-            tree.linkToOutputs(cycles, eevee)
+            tree.linkToOutputs(cycles)
         if tree.getValue(["Diffuse Overlay Weight"], 0):
-            cycles,eevee = tree.getOutputs(["DAZ Overlay"])
+            cycles = tree.getOutputs(["DAZ Overlay"])
             tree.buildOverlay()
-            tree.linkToOutputs(cycles, eevee)
+            tree.linkToOutputs(cycles)
         if GS.pruneNodes:
             pruneNodeTree(mat.node_tree)
 

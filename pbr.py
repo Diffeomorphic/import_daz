@@ -49,7 +49,7 @@ class PbrTree(CyclesTree):
         self.column = 5
         self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
-        self.cycles = self.eevee = self.pbr
+        self.cycles = self.pbr
         self.column = 4
         self.buildNormal(uvname)
         self.buildBump(uvname)
@@ -394,20 +394,20 @@ class PbrTree(CyclesTree):
             clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
             self.links.new(pbr.outputs[0], clip.inputs["Shader"])
             self.linkColor(coltex, clip, color, "Color")
-            self.cycles = self.eevee = clip
+            self.cycles = clip
         else:
             clip = pbr
 
         if pbr2:
             if self.inShell:
                 self.replaceSlot(pbr, "Transmission", 1.0)
-                self.cycles = self.eevee = clip
+                self.cycles = clip
             elif self.owner.basemix == 2:
-                self.cycles = self.eevee = clip
+                self.cycles = clip
             else:
                 self.column += 1
                 mix = self.mixShaders(weight, wttex, self.pbr, clip)
-                self.cycles = self.eevee = mix
+                self.cycles = mix
         self.postPBR = True
 
         if self.owner.isThinWall():

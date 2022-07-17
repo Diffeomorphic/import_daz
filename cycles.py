@@ -45,7 +45,6 @@ class CyclesMaterial(Material):
     def __init__(self, fileref):
         Material.__init__(self, fileref)
         self.tree = None
-        self.useEevee = False
 
 
     def __repr__(self):
@@ -226,7 +225,6 @@ class CyclesTree(Tree):
         self.nodeTreeType = "ShaderNodeTree"
         self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
-        self.eevee = None
         self.column = 4
         self.texnodes = {}
         self.layeredGroups = {}
@@ -274,23 +272,15 @@ class CyclesTree(Tree):
             node = self.cycles
         if node is None:
             return None
-        elif "Cycles" in node.outputs.keys():
-            return node.outputs["Cycles"]
+        elif "BSDF" in node.outputs.keys():
+            return node.outputs["BSDF"]
         else:
             return node.outputs[0]
-
-
-    def getEeveeSocket(self, node=None):
-        return None
 
 
     def linkCycles(self, node, slot):
         if self.cycles:
             self.links.new(self.getCyclesSocket(), node.inputs[slot])
-
-
-    def linkEevee(self, node, slot):
-        return
 
 
     def addShellGroup(self, shell, push):
@@ -380,12 +370,11 @@ class CyclesTree(Tree):
                     else:
                         raise RuntimeError("Unknown decal material group: %s" % grp)
                     node = self.addDecalGroup(dmat)
-                    self.linkCycles(node, "Cycles")
-                    self.linkEevee(node, "Eevee")
+                    self.linkCycles(node, "BSDF")
                     if csys == 2:
                         self.links.new(mapping.outputs["Depth Mask"], node.inputs["Influence"])
                     self.links.new(mapping.outputs["Vector"], node.inputs["UV"])
-                    self.cycles = self.eevee = node
+                    self.cycles = node
                     self.ycoords[self.column] -= 50
 
 
@@ -422,12 +411,11 @@ class CyclesTree(Tree):
         for push,n,shell in shells:
             node = self.addShellGroup(shell, push)
             if node:
-                self.linkCycles(node, "Cycles")
-                self.linkEevee(node, "Eevee")
+                self.linkCycles(node, "BSDF")
                 self.links.new(self.getTexco(shell.uv), node.inputs["UV"])
                 if self.displacement:
                     self.links.new(self.displacement, node.inputs["Displacement"])
-                self.cycles = self.eevee = node
+                self.cycles = node
                 self.displacement = node.outputs["Displacement"]
                 self.ycoords[self.column] -= 50
 
@@ -486,42 +474,32 @@ class CyclesTree(Tree):
         for idx,grpname in enumerate(grpnames):
             for node in nodes:
                 if node.node_tree.name == grpname:
-                    self.cycles = getFromNode(self, node, "Cycles")
-                    self.eevee = getFromNode(self, node, "Eevee")
+                    self.cycles = getFromNode(self, node, "BSDF")
                     if idx == 0:
-                        tonode,cycles = getToSocket(self, node, "Cycles")
-                        _,eevee = getToSocket(self, node, "Eevee")
+                        tonode,cycles = getToSocket(self, node, "BSDF")
                     else:
-                        cycles = node.inputs["Cycles"]
-                        eevee = node.inputs["Eevee"]
+                        cycles = node.inputs["BSDF"]
                         tonode = node
-                    if cycles and eevee:
+                    if cycles:
                         print("FOUND", grpname, idx)
                         if tonode:
                             self.column = int(tonode.location[0] // XSIZE)
                         if idx != 0:
                             self.ycoords = NCOLUMNS*[6*YSIZE]
-                        return cycles, eevee
+                        return cycles
 
-        cycles = eevee = None
+        cycles = None
         nodes = findNodes(self, 'OUTPUT_MATERIAL')
         for node in nodes:
             #node.location[0] += 3*XSIZE
             self.column = int(node.location[0] // XSIZE)
-            if node.target == 'CYCLES':
-                self.cycles = getFromNode(self, node, "Surface")
-                cycles = node.inputs["Surface"]
-            elif node.target == 'EEVEE':
-                self.eevee = getFromNode(self, node, "Surface")
-                eevee = node.inputs["Surface"]
-            else:
-                self.cycles = self.eevee = getFromNode(self, node, "Surface")
-                cycles = eevee = node.inputs["Surface"]
+            self.cycles = getFromNode(self, node, "Surface")
+            cycles = node.inputs["Surface"]
         self.ycoords = NCOLUMNS*[6*YSIZE]
-        return cycles, eevee
+        return cycles
 
 
-    def linkToOutputs(self, cycles, eevee):
+    def linkToOutputs(self, cycles):
         if self.cycles:
             self.links.new(self.getCyclesSocket(), cycles)
 
@@ -769,7 +747,7 @@ class CyclesTree(Tree):
             return
         color,tex = self.getDiffuseColor()
         node = self.addNode("ShaderNodeBsdfDiffuse")
-        self.diffuse = self.cycles = self.eevee = node
+        self.diffuse = self.cycles = node
         self.diffuseInput = self.linkColor(tex, node, color, "Color")
         roughness,roughtex = self.getColorTex(["Diffuse Roughness"], "NONE", 0, False)
         if self.isEnabled("Detail"):
@@ -1020,9 +998,8 @@ class CyclesTree(Tree):
         self.linkBumpNormal(glossy)
 
         LS.usedFeatures["Glossy"] = True
-        self.linkCycles(glossy, "Cycles")
-        self.linkEevee(glossy, "Eevee")
-        self.eevee = self.cycles = glossy
+        self.linkCycles(glossy, "BSDF")
+        self.cycles = glossy
 
 
     def getFresnelIOR(self):
@@ -1054,8 +1031,7 @@ class CyclesTree(Tree):
         if (self.owner.basemix == 2 and
             LS.materialMethod != 'SINGLE'):
             self.diffuseCycles = self.cycles
-            self.diffuseEevee = self.eevee
-            self.cycles = self.eevee = None
+            self.cycles = None
             return True
         else:
             return False
@@ -1070,7 +1046,6 @@ class CyclesTree(Tree):
         fac = glossweight / (glossweight + diffweight)
         if fac == 0:
             self.cycles = self.diffuseCycles
-            self.eevee = self.diffuseEevee
             return False
         elif fac == 1 and difftex is None and glosstex is None:
             return False
@@ -1082,8 +1057,7 @@ class CyclesTree(Tree):
             if self.diffuseCycles:
                 self.links.new(self.getCyclesSocket(self.diffuseCycles), node.inputs["Diffuse Cycles"])
             self.linkCycles(node, "Glossy Cycles")
-            self.linkEevee(node, "Glossy Eevee")
-            self.cycles = self.eevee = node
+            self.cycles = node
             return True
 
 #-------------------------------------------------------------
@@ -1239,8 +1213,14 @@ class CyclesTree(Tree):
             node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
             self.links.new(fix.outputs["Base Color"], self.diffuse.inputs["Color"])
             self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
+            node.inputs["SSS Scale"].default_value = 1.0
+            radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
+            radius,ior,aniso = self.fixSSSRadius(radius)
+            self.linkColor(radtex, node, radius, "SSS Radius")
+            node.inputs["SSS IOR"].default_value = ior
+            node.inputs["SSS Anisotropy"].default_value = aniso
             if self.cycles:
-                self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
+                self.links.new(self.getCyclesSocket(), node.inputs["BSDF"])
                 self.links.new(fix.outputs["Subsurface"], node.inputs["Fac"])
             self.cycles = node
         else:
@@ -1250,14 +1230,7 @@ class CyclesTree(Tree):
             self.mixWithActive(transwt, wttex, node)
 
         node.width = 200
-        node.inputs["SSS Scale"].default_value = 1.0
-        radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
-        radius,ior,aniso = self.fixSSSRadius(radius)
-        self.linkColor(radtex, node, radius, "SSS Radius")
-        node.inputs["SSS IOR"].default_value = ior
-        node.inputs["SSS Anisotropy"].default_value = aniso
         self.linkBumpNormal(node)
-
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
 
@@ -1426,7 +1399,6 @@ class CyclesTree(Tree):
             if alpha == 0:
                 node = self.addNode("ShaderNodeBsdfTransparent")
                 self.cycles = node
-                self.eevee = node
                 tex = None
             else:
                 from .cgroup import TransparentGroup
@@ -1438,8 +1410,7 @@ class CyclesTree(Tree):
             LS.usedFeatures["Transparent"] = True
             if self.emit and GS.useGhostLight:
                 self.column += 1
-                self.cycles = self.addGhost(node, "Cycles")
-                self.eevee = self.addGhost(node, "Eevee")
+                self.cycles = self.addGhost(node, "BSDF")
 
 
     def addGhost(self, node, slot):
@@ -1464,9 +1435,8 @@ class CyclesTree(Tree):
             self.addEmitColor(emit, "Color")
             strength = self.getLuminance(emit)
             emit.inputs["Strength"].default_value = strength
-            self.linkCycles(emit, "Cycles")
-            self.linkEevee(emit, "Eevee")
-            self.cycles = self.eevee = self.emit = emit
+            self.linkCycles(emit, "BSDF")
+            self.cycles = self.emit = emit
             self.addOneSided()
 
 
@@ -1511,9 +1481,8 @@ class CyclesTree(Tree):
         if not twosided:
             from .cgroup import OneSidedGroup
             node = self.addGroup(OneSidedGroup, "DAZ One-Sided")
-            self.linkCycles(node, "Cycles")
-            self.linkEevee(node, "Eevee")
-            self.cycles = self.eevee = node
+            self.linkCycles(node, "BSDF")
+            self.cycles = node
 
     #-------------------------------------------------------------
     #   Volume
@@ -1597,7 +1566,6 @@ class CyclesTree(Tree):
         output = self.addNode("ShaderNodeOutputMaterial")
         output.target = 'ALL'
         cycles = self.getCyclesSocket()
-        eevee = self.getEeveeSocket()
         if self.cycles:
             self.links.new(cycles, output.inputs["Surface"])
         if self.volume and not self.useCutout:
@@ -1791,11 +1759,9 @@ class CyclesTree(Tree):
             return
         elif fac == 1 and not keep:
             self.cycles = shader
-            self.eevee = shader
             return
-        self.eevee = shader
         if self.cycles:
-            self.links.new(self.getCyclesSocket(), shader.inputs["Cycles"])
+            self.links.new(self.getCyclesSocket(), shader.inputs["BSDF"])
             shader.inputs["Fac"].default_value = fac
         self.cycles = shader
 

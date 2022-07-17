@@ -38,7 +38,7 @@ class BrickTree:
             print("Building brick layers:", layers)
             node = self.addBrickLayer("Base", False)
             node.inputs["Fac"].default_value = 1
-            self.cycles = self.eevee = node
+            self.cycles = node
             for layer in layers[1:]:
                 node = self.addBrickLayer(layer, True)
                 channels = ["%s Weight" % layer, "%s Layer Weight" % layer]

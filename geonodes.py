@@ -458,10 +458,7 @@ class DAZ_OT_AddShell(DazPropsOperator):
             x,y = output.location
             node.location = (x, 2*YSIZE)
             output.location = (x+XSIZE, y)
-            if output.target == 'EEVEE':
-                replaceLink(output, node, "Eevee")
-            else:
-                replaceLink(output, node, "Cycles")
+            replaceLink(output, node, "BSDF")
 
 #----------------------------------------------------------
 #   Initialize

@@ -740,14 +740,11 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
             return socket,node
 
         from .tree import findNodes
-        self.eevee = self.cycles = None
+        self.cycles = None
         for node in findNodes(tree, 'OUTPUT_MATERIAL'):
-            if node.target == 'EEVEE':
-                self.outputs["Eevee"], self.eevee = skipShells(node, node.inputs["Surface"], "Eevee")
-            else:
-                self.outputs["Cycles"], self.cycles = skipShells(node, node.inputs["Surface"], "Cycles")
-                self.outputs["Volume"],_ = skipShells(node, node.inputs["Volume"], "Volume")
-                self.outputs["Displacement"],_ = skipShells(node, node.inputs["Displacement"], "Displacement")
+            self.outputs["BSDF"], self.cycles = skipShells(node, node.inputs["Surface"], "BSDF")
+            self.outputs["Volume"],_ = skipShells(node, node.inputs["Volume"], "Volume")
+            self.outputs["Displacement"],_ = skipShells(node, node.inputs["Displacement"], "Displacement")
 
 
     def selectNodes(self, socket, slot):
@@ -807,8 +804,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
                 group.inputs.new("NodeSocketColor", key)
         if self.useBump:
             group.inputs.new("NodeSocketFloat", "Bump Distance")
-        group.outputs.new("NodeSocketShader", "Cycles")
-        group.outputs.new("NodeSocketShader", "Eevee")
+        group.outputs.new("NodeSocketShader", "BSDF")
         group.outputs.new("NodeSocketShader", "Volume")
         group.outputs.new("NodeSocketVector", "Displacement")
 
@@ -829,8 +825,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
                 elif fromsocket.name in self.outputs.keys():
                     group.links.new(fromsocket, outnode.inputs[fromsocket.name])
                 elif fromsocket.name == "BSDF":
-                    group.links.new(fromsocket, outnode.inputs["Cycles"])
-                    group.links.new(fromsocket, outnode.inputs["Eevee"])
+                    group.links.new(fromsocket, outnode.inputs["BSDF"])
                 else:
                     print("MISS", fromsocket.name, self.outputs.keys())
         for slot,links in self.inputs.items():
@@ -866,8 +861,6 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
             skin.inputs["Bump Distance"].default_value = bump.inputs["Distance"].default_value
         for slot,socket in self.outputs.items():
             tree.links.new(skin.outputs[slot], socket)
-        if self.eevee:
-            tree.links.new(skin.outputs["Displacement"], self.eevee.inputs["Displacement"])
         for node in self.nodes.values():
             tree.nodes.remove(node)
 
