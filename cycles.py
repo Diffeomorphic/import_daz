@@ -227,7 +227,6 @@ class CyclesTree(Tree):
         self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
         self.eevee = None
-        self.useEeveeBsdf = (GS.bsdfEevee == 'ALWAYS')
         self.column = 4
         self.texnodes = {}
         self.layeredGroups = {}
@@ -282,16 +281,7 @@ class CyclesTree(Tree):
 
 
     def getEeveeSocket(self, node=None):
-        if not self.useEeveeBsdf:
-            return None
-        elif node is None:
-            node = self.eevee
-        if node is None:
-            return None
-        elif "Eevee" in node.outputs.keys():
-            return node.outputs["Eevee"]
-        else:
-            return node.outputs[0]
+        return None
 
 
     def linkCycles(self, node, slot):
@@ -300,8 +290,7 @@ class CyclesTree(Tree):
 
 
     def linkEevee(self, node, slot):
-        if self.eevee and self.useEeveeBsdf:
-            self.links.new(self.getEeveeSocket(), node.inputs[slot])
+        return
 
 
     def addShellGroup(self, shell, push):
@@ -535,8 +524,6 @@ class CyclesTree(Tree):
     def linkToOutputs(self, cycles, eevee):
         if self.cycles:
             self.links.new(self.getCyclesSocket(), cycles)
-        if self.eevee and self.useEeveeBsdf:
-            self.links.new(self.getEeveeSocket(), eevee)
 
 
     def addTexco(self, slot):
@@ -1094,8 +1081,6 @@ class CyclesTree(Tree):
             self.linkScalar(glosstex, node, fac, "Fac")
             if self.diffuseCycles:
                 self.links.new(self.getCyclesSocket(self.diffuseCycles), node.inputs["Diffuse Cycles"])
-            if self.diffuseEevee and self.useEeveeBsdf:
-                self.links.new(self.getEeveeSocket(self.diffuseEevee), node.inputs["Diffuse Eevee"])
             self.linkCycles(node, "Glossy Cycles")
             self.linkEevee(node, "Glossy Eevee")
             self.cycles = self.eevee = node
@@ -1260,13 +1245,8 @@ class CyclesTree(Tree):
             self.cycles = node
         else:
             from .cgroup import TranslucentGroup
-            self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
             node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
             self.linkColor(transtex, node, transcolor, "Color")
-            node.inputs["SSS Gamma"].default_value = 3.5
-            node.inputs["Cycles SSS Factor"].default_value = (not GS.useVolume)
-            if self.useEeveeBsdf:
-                node.inputs["Eevee SSS Factor"].default_value = 1.0
             self.mixWithActive(transwt, wttex, node)
 
         node.width = 200
@@ -1624,17 +1604,6 @@ class CyclesTree(Tree):
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
-        if (self.useEeveeBsdf and
-            (self.volume or (self.eevee and eevee != cycles))):
-            output.target = 'CYCLES'
-            outputEevee = self.addNode("ShaderNodeOutputMaterial")
-            outputEevee.target = 'EEVEE'
-            if self.eevee:
-                self.links.new(eevee, outputEevee.inputs["Surface"])
-            elif self.cycles:
-                self.links.new(cycles, outputEevee.inputs["Surface"])
-            if self.displacement:
-                self.links.new(self.displacement, outputEevee.inputs["Displacement"])
 
 
     def buildDisplacementNodes(self):
@@ -1824,9 +1793,6 @@ class CyclesTree(Tree):
             self.cycles = shader
             self.eevee = shader
             return
-        if self.useEeveeBsdf and self.eevee:
-            self.links.new(self.getEeveeSocket(), shader.inputs["Eevee"])
-            shader.inputs["Fac"].default_value = fac
         self.eevee = shader
         if self.cycles:
             self.links.new(self.getCyclesSocket(), shader.inputs["Cycles"])

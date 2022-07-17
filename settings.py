@@ -73,7 +73,6 @@ class GlobalSettings:
         self.useFakeCaustics = True
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
-        self.bsdfEevee = 'NEEDED'
         self.useImprovedSSS = False
         self.useDisplacement = True
         self.useEmission = True
@@ -153,7 +152,6 @@ class GlobalSettings:
         "DazFakeCaustics" : "useFakeCaustics",
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
-        "DazBsdfEevee" : "bsdfEevee",
         "DazImprovedSSS" : "useImprovedSSS",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",

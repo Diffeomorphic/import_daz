@@ -50,24 +50,17 @@ class ShellGroup(NodeGroup):
         self.push = push
         self.insockets += ["Influence", "Cycles", "UV", "Displacement"]
         self.outsockets += ["Cycles", "Displacement"]
-        if GS.bsdfEevee != 'NEVER':
-            self.insockets += ["Eevee"]
-            self.outsockets += ["Eevee"]
 
 
     def create(self, node, name, parent):
         NodeGroup.create(self, node, name, parent, 9)
         self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.inputs.new("NodeSocketShader", "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.inputs.new("NodeSocketVector", "UV")
         self.hideSlot("UV")
         self.group.inputs.new("NodeSocketVector", "Displacement")
         self.hideSlot("Displacement")
         self.group.outputs.new("NodeSocketShader", "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.outputs.new("NodeSocketShader", "Eevee")
         self.group.outputs.new("NodeSocketVector", "Displacement")
 
 
@@ -79,7 +72,6 @@ class ShellGroup(NodeGroup):
         self.eeveeOpaque = None
         self.pbrOpaque = None
         self.inShell = True
-        self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
         self.texco = self.inputs.outputs["UV"]
         self.tileTexco()
         self.buildLayer(uvname)
@@ -131,8 +123,6 @@ class OpaqueShellGroup(ShellGroup):
     def addOutputs(self, mult):
         if self.cycles:
             self.addOutput(mult, self.getCyclesSocket(), "Cycles")
-        if self.eevee and self.useEeveeBsdf:
-            self.addOutput(mult, self.getEeveeSocket(), "Eevee")
 
 
 class RefractiveShellGroup(ShellGroup):
@@ -189,17 +179,12 @@ class RefractiveShellGroup(ShellGroup):
         if self.cyclesOpaque and self.cycles:
             add = self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
             self.mixOutputs(mult, add, self.cyclesOpaque, "Cycles")
-            if self.useEeveeBsdf:
-                add = self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
-                self.mixOutputs(mult, add, self.eeveeOpaque, "Eevee")
             return
         if self.cyclesOpaque:
             self.cycles = self.cyclesOpaque
             self.eevee = self.eeveeOpaque
         if self.cycles:
             self.addOutput(mult, transp, self.getCyclesSocket(), "Cycles")
-            if self.useEeveeBsdf:
-                self.addOutput(mult, transp, self.getEeveeSocket(), "Eevee")
 
 
 class OpaqueShellCyclesGroup(OpaqueShellGroup, CyclesTree):
@@ -310,17 +295,11 @@ class CyclesEeveeGroup(CyclesGroup):
         CyclesGroup.__init__(self)
         self.insockets += ["Cycles"]
         self.outsockets += ["Cycles"]
-        if GS.bsdfEevee != 'NEVER':
-            self.insockets += ["Eevee"]
-            self.outsockets += ["Eevee"]
 
 
     def createShaderSlots(self):
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.outputs.new("NodeSocketShader", "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.inputs.new("NodeSocketShader", "Eevee")
-            self.group.outputs.new("NodeSocketShader", "Eevee")
 
 
     def mixCycles(self, socket, slot):
@@ -328,8 +307,7 @@ class CyclesEeveeGroup(CyclesGroup):
 
 
     def mixEevee(self, socket, slot):
-        if GS.bsdfEevee != 'NEVER':
-            self.links.new(socket, self.mix2.inputs[slot])
+        return
 
 
 
@@ -347,11 +325,6 @@ class MixGroup(CyclesEeveeGroup):
         self.mix1.label = "Cycles"
         self.links.new(self.inputs.outputs["Cycles"], self.mix1.inputs[1])
         self.links.new(self.mix1.outputs[0], self.outputs.inputs["Cycles"])
-        if GS.bsdfEevee != 'NEVER':
-            self.mix2 = self.addNode("ShaderNodeMixShader", self.ncols-1)
-            self.mix2.label = "Eevee"
-            self.links.new(self.inputs.outputs["Eevee"], self.mix2.inputs[1])
-            self.links.new(self.mix2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
 #   Fac Mix Group.
@@ -388,10 +361,6 @@ class AddGroup(CyclesEeveeGroup):
         self.add1 = self.addNode("ShaderNodeAddShader", 2)
         self.links.new(self.inputs.outputs["Cycles"], self.add1.inputs[0])
         self.links.new(self.add1.outputs[0], self.outputs.inputs["Cycles"])
-        if GS.bsdfEevee != 'NEVER':
-            self.add2 = self.addNode("ShaderNodeAddShader", 2)
-            self.links.new(self.inputs.outputs["Eevee"], self.add2.inputs[0])
-            self.links.new(self.add2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
 #   BrickLayerGroup
@@ -418,13 +387,8 @@ class BrickLayerGroup(FacMixGroup):
         if flip:
             self.linkCycles(self.mix1, 1)
             self.links.new(self.inputs.outputs["Cycles"], self.mix1.inputs[2])
-            if GS.bsdfEevee != 'NEVER':
-                self.linkEevee(self.mix2, 1)
-                self.links.new(self.inputs.outputs["Eevee"], self.mix2.inputs[2])
         else:
             self.linkCycles(self.mix1, 2)
-            if GS.bsdfEevee != 'NEVER':
-                self.linkEevee(self.mix2, 2)
 
 # ---------------------------------------------------------------------
 #   SSS Fix Group. Midnight's fix for translucent materials
@@ -504,9 +468,6 @@ class WeightedGroup(CyclesGroup):
         CyclesGroup.__init__(self)
         self.insockets += ["Fac", "Diffuse Cycles", "Glossy Cycles"]
         self.outsockets += ["Cycles"]
-        if GS.bsdfEevee != 'NEVER':
-            self.insockets += ["Diffuse Eevee", "Glossy Eevee"]
-            self.outsockets += ["Eevee"]
 
 
     def create(self, node, name, parent):
@@ -516,10 +477,6 @@ class WeightedGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketShader", "Diffuse Cycles")
         self.group.inputs.new("NodeSocketShader", "Glossy Cycles")
         self.group.outputs.new("NodeSocketShader", "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.inputs.new("NodeSocketShader", "Diffuse Eevee")
-            self.group.inputs.new("NodeSocketShader", "Glossy Eevee")
-            self.group.outputs.new("NodeSocketShader", "Eevee")
 
 
     def addNodes(self, args=None):
@@ -528,12 +485,6 @@ class WeightedGroup(CyclesGroup):
         self.links.new(self.inputs.outputs["Diffuse Cycles"], self.mix1.inputs[1])
         self.links.new(self.inputs.outputs["Glossy Cycles"], self.mix1.inputs[2])
         self.links.new(self.mix1.outputs[0], self.outputs.inputs["Cycles"])
-        if GS.bsdfEevee != 'NEVER':
-            self.mix2 = self.addNode("ShaderNodeMixShader", 1)
-            self.links.new(self.inputs.outputs["Fac"], self.mix2.inputs[0])
-            self.links.new(self.inputs.outputs["Diffuse Eevee"], self.mix2.inputs[1])
-            self.links.new(self.inputs.outputs["Glossy Eevee"], self.mix2.inputs[2])
-            self.links.new(self.mix2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
 #   Emission Group
@@ -558,8 +509,6 @@ class EmissionGroup(AddGroup):
         self.links.new(self.inputs.outputs["Color"], node.inputs["Color"])
         self.links.new(self.inputs.outputs["Strength"], node.inputs["Strength"])
         self.links.new(node.outputs[0], self.add1.inputs[1])
-        if GS.bsdfEevee != 'NEVER':
-            self.links.new(node.outputs[0], self.add2.inputs[1])
 
 
 class OneSidedGroup(CyclesEeveeGroup):
@@ -576,12 +525,6 @@ class OneSidedGroup(CyclesEeveeGroup):
         self.links.new(self.inputs.outputs["Cycles"], mix1.inputs[1])
         self.links.new(trans.outputs[0], mix1.inputs[2])
         self.links.new(mix1.outputs[0], self.outputs.inputs["Cycles"])
-        if GS.bsdfEevee != 'NEVER':
-            mix2 = self.addNode("ShaderNodeMixShader", 2)
-            self.links.new(geo.outputs["Backfacing"], mix2.inputs[0])
-            self.links.new(self.inputs.outputs["Eevee"], mix2.inputs[1])
-            self.links.new(trans.outputs[0], mix2.inputs[2])
-            self.links.new(mix2.outputs[0], self.outputs.inputs["Eevee"])
 
 # ---------------------------------------------------------------------
 #   Diffuse Group
@@ -938,8 +881,6 @@ class TransparentGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Color"], trans.inputs["Color"])
         # Flip
         self.mixCycles(self.inputs.outputs["Cycles"], 2)
-        if GS.bsdfEevee != 'NEVER':
-            self.mixEevee(self.inputs.outputs["Eevee"], 2)
         self.mixCycles(trans.outputs[0], 1)
         self.mixEevee(trans.outputs[0], 1)
 
@@ -952,103 +893,52 @@ class SubsurfaceGroup(FacMixGroup):
         FacMixGroup.__init__(self)
         self.insockets += ["Color", "SSS Scale", "SSS Radius", "SSS IOR", "SSS Anisotropy", "Normal"]
 
-
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketColor", "Color")
-        self.createGamma()
         self.group.inputs.new("NodeSocketFloat", "SSS Scale")
         self.group.inputs.new("NodeSocketVector", "SSS Radius")
         self.group.inputs.new("NodeSocketFloat", "SSS IOR")
         self.setMinMax("SSS IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "SSS Anisotropy")
         self.setMinMax("SSS Anisotropy", 0.0, 0.0, 1.0)
-        self.createFactors()
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
-    def createGamma(self):
-        pass
-
-    def createFactors(self):
-        pass
-
-
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
-        trans = self.addTranslucent()
-        gamma = self.addGamma()
         sss = self.addNode("ShaderNodeSubsurfaceScattering", 1)
         sss.falloff = GS.getSSSMethod()
-        self.links.new(gamma.outputs["Color"], sss.inputs["Color"])
+        self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["SSS Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["SSS Radius"], sss.inputs["Radius"])
         if bpy.app.version >= (3,0,0):
             self.links.new(self.inputs.outputs["SSS IOR"], sss.inputs["IOR"])
             self.links.new(self.inputs.outputs["SSS Anisotropy"], sss.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Normal"], sss.inputs["Normal"])
-        self.addMixFactors(trans, sss)
-
-    def addTranslucent(self):
-        return None
-
-    def addGamma(self):
-        return self.inputs
-
-    def addMixFactors(self, trans, sss):
         self.mixCycles(sss.outputs[0], 2)
-        if GS.bsdfEevee != 'NEVER':
-            self.mixEevee(sss.outputs[0], 2)
 
 # ---------------------------------------------------------------------
 #   Translucent Group
 # ---------------------------------------------------------------------
 
-class TranslucentGroup(SubsurfaceGroup):
+class TranslucentGroup(FacMixGroup):
     def __init__(self):
-        SubsurfaceGroup.__init__(self)
-        self.insockets += ["SSS Gamma", "Cycles SSS Factor", "Normal"]
-        if GS.bsdfEevee != 'NEVER':
-            self.insockets += ["Eevee SSS Factor"]
+        FacMixGroup.__init__(self)
+        self.insockets += ["Color", "Normal"]
 
+    def create(self, node, name, parent):
+        FacMixGroup.create(self, node, name, parent, 4)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.hideSlot("Normal")
 
-    def createGamma(self):
-        self.group.inputs.new("NodeSocketFloat", "SSS Gamma")
-
-
-    def createFactors(self):
-        self.group.inputs.new("NodeSocketFloat", "Cycles SSS Factor")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.inputs.new("NodeSocketFloat", "Eevee SSS Factor")
-
-
-    def addTranslucent(self):
+    def addNodes(self, args=None):
+        FacMixGroup.addNodes(self, args)
         trans = self.addNode("ShaderNodeBsdfTranslucent", 1)
         self.links.new(self.inputs.outputs["Color"], trans.inputs["Color"])
         self.links.new(self.inputs.outputs["Normal"], trans.inputs["Normal"])
-        return trans
-
-
-    def addGamma(self):
-        gamma = self.addNode("ShaderNodeGamma", 1)
-        self.links.new(self.inputs.outputs["Color"], gamma.inputs["Color"])
-        self.links.new(self.inputs.outputs["SSS Gamma"], gamma.inputs["Gamma"])
-        return gamma
-
-
-    def addMixFactors(self, trans, sss):
-        cmix = self.addNode("ShaderNodeMixShader", 2)
-        self.links.new(self.inputs.outputs["Cycles SSS Factor"], cmix.inputs[0])
-        self.links.new(trans.outputs[0], cmix.inputs[1])
-        self.links.new(sss.outputs[0], cmix.inputs[2])
-        self.mixCycles(cmix.outputs[0], 2)
-
-        if GS.bsdfEevee != 'NEVER':
-            emix = self.addNode("ShaderNodeMixShader", 2)
-            self.links.new(self.inputs.outputs["Eevee SSS Factor"], emix.inputs[0])
-            self.links.new(trans.outputs[0], emix.inputs[1])
-            self.links.new(sss.outputs[0], emix.inputs[2])
-            self.mixEevee(emix.outputs[0], 2)
+        self.mixCycles(trans.outputs[0], 2)
 
 # ---------------------------------------------------------------------
 #   Makeup Group
@@ -1163,9 +1053,6 @@ class DualLobeGroup(CyclesGroup):
         CyclesGroup.__init__(self)
         self.insockets += ["Fac", "Cycles", "Weight", "IOR", "Roughness 1", "Roughness 2"]
         self.outsockets += ["Cycles"]
-        if GS.bsdfEevee != 'NEVER':
-            self.insockets += ["Eevee"]
-            self.outsockets += ["Eevee"]
 
 
     def create(self, node, name, parent):
@@ -1173,8 +1060,6 @@ class DualLobeGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketShader", "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.inputs.new("NodeSocketFloat", "Weight")
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
@@ -1185,8 +1070,6 @@ class DualLobeGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
         self.group.outputs.new("NodeSocketShader", "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            self.group.outputs.new("NodeSocketShader", "Eevee")
 
 
 
@@ -1198,10 +1081,6 @@ class DualLobeGroup(CyclesGroup):
         glossy2 = self.addGlossy("Roughness 2", self.lobe2Normal)
         cycles2 = self.mixGlossy(fresnel2, glossy2, "Cycles")
         self.mixOutput(cycles1, cycles2, "Cycles")
-        if GS.bsdfEevee != 'NEVER':
-            eevee1 = self.mixGlossy(fresnel1, glossy1, "Eevee")
-            eevee2 = self.mixGlossy(fresnel2, glossy2, "Eevee")
-            self.mixOutput(eevee1, eevee2, "Eevee")
 
 
     def addGlossy(self, roughness, useNormal):
