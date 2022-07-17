@@ -196,12 +196,13 @@ class PbrTree(CyclesTree):
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
         from .cgroup import SSSFixGroup
         fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix")
+        self.linkScalar(ssstex, fix, sss, "SSS Amount")
         self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight")
-        self.links.new(fix.outputs["Diffuse Color"], self.pbr.inputs["Base Color"])
+        self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
         self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
-        self.linkScalar(ssstex, self.pbr, sss, "Subsurface")
+        self.links.new(fix.outputs["Subsurface"], self.pbr.inputs["Subsurface"])
 
     #-------------------------------------------------------------
     #   Metallic

@@ -1248,12 +1248,16 @@ class CyclesTree(Tree):
             from .cgroup import SSSFixGroup, SubsurfaceGroup
             fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
             self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+            self.linkScalar(ssstex, fix, sss, "SSS Amount")
             self.linkColor(transtex, fix, transcolor, "Translucent Color")
             self.linkScalar(wttex, fix, transwt, "Translucency Weight")
             node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
-            self.links.new(fix.outputs["Diffuse Color"], self.diffuse.inputs["Color"])
+            self.links.new(fix.outputs["Base Color"], self.diffuse.inputs["Color"])
             self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
-            self.mixWithActive(sss, ssstex, node)
+            if self.cycles:
+                self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
+                self.links.new(fix.outputs["Subsurface"], node.inputs["Fac"])
+            self.cycles = node
         else:
             from .cgroup import TranslucentGroup
             self.useEeveeBsdf = (GS.bsdfEevee != 'NEVER')
