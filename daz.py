@@ -264,6 +264,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
+        box.prop(scn, "DazVolumetric")
         box.prop(scn, "DazImprovedSSS")
         box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
@@ -278,7 +279,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseEmission")
         box.prop(scn, "DazGhostLights")
         box.prop(scn, "DazUseReflection")
-        box.prop(scn, "DazUseVolume")
 
         row = self.layout.row()
         row.operator("daz.load_root_paths")
@@ -524,10 +524,6 @@ def register():
         name = "World",
         description = "When to create a world material")
 
-    bpy.types.Scene.DazImprovedSSS = BoolProperty(
-        name = "Improved SSS (Experimental)",
-        description = "Use improved handling of SSS and translucency suggested by Midnight Arrow")
-
     bpy.types.Scene.DazReuseMaterials = BoolProperty(
         name = "Reuse Materials",
         description = "Use existing materials if such exists.\nMay lead to incorrect materials")
@@ -682,9 +678,21 @@ def register():
         name = "Reflection",
         description = "Use reflection maps")
 
-    bpy.types.Scene.DazUseVolume = BoolProperty(
-        name = "Volume",
-        description = "Use volume node in BSDF tree")
+    bpy.types.Scene.DazVolumetric = BoolProperty(
+        name = "Volumetric Skin (BSDF)",
+        description = (
+            "Use translucency/volume nodes in BSDF tree.\n" +
+            "Yields skin most faithful to IRAY, but only works with Cycles.\n" +
+            "If disabled a more conventional skin shader using subsurface scattering is generated.\n" +
+            "Less faithful but works with both Cycles and Eevee")
+        )
+
+    bpy.types.Scene.DazImprovedSSS = BoolProperty(
+        name = "Improved SSS (Principled)",
+        description = (
+            "Use improved handling of SSS and translucency suggested by Midnight Arrow.\n" +
+            "Only affects the principled and single principled methods")
+        )
 
     bpy.types.Scene.DazImageInterpolation = EnumProperty(
         items = [('Linear', "Linear", "Linear"),

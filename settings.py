@@ -77,7 +77,7 @@ class GlobalSettings:
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
-        self.useVolume = True
+        self.useVolumetric = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
         self.useLowerResFolders = True
@@ -156,7 +156,7 @@ class GlobalSettings:
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
-        "DazUseVolume" : "useVolume",
+        "DazVolumetric" : "useVolumetric",
         "DazGhostLights" : "useGhostLight",
         "DazImageInterpolation" : "imageInterpolation",
 

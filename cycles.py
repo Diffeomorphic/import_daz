@@ -1207,7 +1207,7 @@ class CyclesTree(Tree):
             if wttex and wttex.type == 'MATH':
                 wttex.inputs[0].default_value = transwt
 
-        if GS.useImprovedSSS:
+        if not GS.useVolumetric:
             from .cgroup import SSSFixGroup, SubsurfaceGroup
             fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
@@ -1502,8 +1502,7 @@ class CyclesTree(Tree):
     def buildVolume(self):
         if (self.owner.isThinWall() or
             self.pureMetal or
-            not GS.useVolume or
-            GS.useImprovedSSS or
+            not GS.useVolumetric or
             LS.materialMethod == 'SINGLE'):
             return
         self.volume = None

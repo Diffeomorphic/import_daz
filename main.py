@@ -65,7 +65,7 @@ class ColorOptions:
                  ],
         name = "Material Method",
         description = "Material Method",
-        default = 'BSDF')
+        default = 'PRINCIPLED')
 
     def draw(self, context):
         if GS.materialMethod == 'SELECT':
