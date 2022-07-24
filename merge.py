@@ -56,6 +56,11 @@ class MergeGeograftOptions:
             "Only works for geografts where the first layer is the base layer"),
         default = False)
 
+    allowOverlap : BoolProperty(
+        name = "Allow Overlap",
+        description = "Allow merging overlapping UV layers",
+        default = False)
+
     useGeoNodes: BoolProperty(
         name = "Geometry Nodes (Experimental)",
         description = "Merge geografts using geometry nodes",
@@ -74,6 +79,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         if not self.useGeoNodes:
             self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useMergeUvs")
+        if self.useMergeUvs:
+            self.layout.prop(self, "allowOverlap")
+
 
     def __init__(self):
         DriverUser.__init__(self)
@@ -343,7 +351,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                     idxs.append(idx)
             idxs.reverse()
             for idx in idxs:
-                mergeUvLayers(cob.data, 0, idx)
+                mergeUvLayers(cob.data, 0, idx, self.allowOverlap)
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
@@ -603,9 +611,15 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
         name = "Layer To Merge",
         description = "UV layer that is merged with the active render layer")
 
+    allowOverlap : BoolProperty(
+        name = "Allow Overlap",
+        description = "Allow merging overlapping UV layers",
+        default = False)
+
     def draw(self, context):
         self.layout.label(text="Active Layer: %s" % self.keepName)
         self.layout.prop(self, "layer")
+        self.layout.prop(self, "allowOverlap")
 
 
     def invoke(self, context, event):
@@ -624,7 +638,7 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
         if self.keepIdx < 0:
             raise DazError("No active UV layer found")
         mergeIdx = int(self.layer)
-        mergeUvLayers(context.object.data, self.keepIdx, mergeIdx)
+        mergeUvLayers(context.object.data, self.keepIdx, mergeIdx, self.allowOverlap)
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
@@ -641,8 +655,15 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
         description = "Merge UV layers of merged meshes with first UV layer",
         default = True)
 
+    allowOverlap : BoolProperty(
+        name = "Allow Overlap",
+        description = "Allow merging overlapping UV layers",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useMergeUvs")
+        if self.useMergeUvs:
+            self.layout.prop(self, "allowOverlap")
 
     def run(self, context):
         ob = context.object
@@ -655,7 +676,7 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
             idxs = list(range(nlayers, len(ob.data.uv_layers)))
             idxs.reverse()
             for idx in idxs:
-                mergeUvLayers(ob.data, 0, idx)
+                mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
@@ -665,7 +686,13 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
         print("Meshes merged")
 
 
-def mergeUvLayers(me, keepIdx, mergeIdx):
+def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
+    def checkLayersOverlap(keepLayer, mergeLayer):
+        for keepData,mergeData in zip(keepLayer.data, mergeLayer.data):
+            if (keepData.uv.length > 1e-6 and
+                mergeData.uv.length > 1e-6):
+                raise DazError("UV layers overlap")
+
     def replaceUVMapNodes(me, mergeLayer):
         for mat in me.materials:
             if mat is None:
@@ -687,14 +714,15 @@ def mergeUvLayers(me, keepIdx, mergeIdx):
             for node in deletes.values():
                 mat.node_tree.nodes.remove(node)
 
+    if keepIdx == mergeIdx:
+        raise DazError("UV layer is the same as the active render layer.")
     keepLayer = me.uv_layers[keepIdx]
     mergeLayer = me.uv_layers[mergeIdx]
     if not keepLayer.active_render:
         raise DazError("Only the active render layer may be the layer to keep")
+    if not allowOverlap:
+        checkLayersOverlap(keepLayer, mergeLayer)
     replaceUVMapNodes(me, mergeLayer)
-    if keepIdx == mergeIdx:
-        print("UV layer is the same as the active render layer.")
-        return
     for n,data in enumerate(mergeLayer.data):
         if data.uv.length > 1e-6:
             keepLayer.data[n].uv = data.uv

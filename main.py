@@ -1044,10 +1044,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         return not ishair
 
 
-    def mergeLashes(self, ob):
-        from .merge import mergeUvLayers
-
-
     def getLashes(self, rig, ob):
         head = rig.data.bones.get("head")
         if head is None:
