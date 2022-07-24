@@ -172,7 +172,7 @@ class PbrTree(CyclesTree):
         self.pbr.subsurface_method = GS.getSSSMethod()
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
-        if GS.useImprovedSSS:
+        if LS.useImprovedSSS:
             self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex)
         else:
             self.addSubsurfaceColor(transwt, wttex, transcolor, transtex)
@@ -300,7 +300,7 @@ class PbrTree(CyclesTree):
 
     def checkTopCoat(self):
         self.useTopCoat = False
-        if LS.materialMethod == 'SINGLE' or self.owner.basemix == 1:
+        if LS.materialMethod == 'SINGLE_PRINCIPLED' or self.owner.basemix == 1:
             return
         aniso = self.getValue(["Top Coat Anisotropy"], 0)
         anirot = self.getValue(["Top Coat Rotations"], 0)
@@ -350,7 +350,7 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildGlossyOrDualLobe(self):
-        if LS.materialMethod == 'SINGLE':
+        if LS.materialMethod == 'SINGLE_PRINCIPLED':
             return
         elif self.owner.basemix == 2:
             CyclesTree.buildGlossyOrDualLobe(self)
@@ -366,7 +366,7 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildRefraction(self):
-        if LS.materialMethod == 'SINGLE':
+        if LS.materialMethod == 'SINGLE_PRINCIPLED':
             weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
                 self.replaceSlot(self.pbr, "Transmission", weight)
@@ -391,7 +391,7 @@ class PbrTree(CyclesTree):
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
         if (self.owner.isThinWall() and
-            LS.materialMethod != 'SINGLE'):
+            LS.materialMethod != 'SINGLE_PRINCIPLED'):
             from .cgroup import RayClipGroup
             self.column += 1
             clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")

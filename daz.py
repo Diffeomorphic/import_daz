@@ -315,6 +315,22 @@ classes = [
     ErrorOperator
 ]
 
+MaterialMethodItems = [
+    ('BSDF', "BSDF (Cycles Only)", "Best iray materials, slow rendering, use bsdf nodes.\nVolumetric skin works with Cycles only"),
+    ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
+    ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
+]
+
+VolumetricDesc = (
+    "Use translucency/volume nodes in BSDF tree.\n" +
+    "Yields skin most faithful to IRAY, but only works with Cycles.\n" +
+    "If disabled a more conventional skin shader using subsurface scattering is generated.\n" +
+    "Less faithful but works with both Cycles and Eevee"
+)
+ImprovedSSSDesc = (
+    "Use improved handling of SSS and translucency suggested by Midnight Arrow.\n" +
+    "Only affects the principled and single principled methods"
+)
 
 def register():
 
@@ -490,11 +506,7 @@ def register():
     bpy.types.Scene.DazShowCloudDirs = BoolProperty(name = "Cloud Directories", default = False)
 
     bpy.types.Scene.DazMaterialMethod = EnumProperty(
-        items = [('SELECT', "Select On Load", "Select the material method when loading files"),
-                 ('BSDF', "BSDF", "Always use BSDF (Cycles, full IRAY materials)"),
-                 ('PRINCIPLED', "Principled", "Always use Principled (Eevee and Cycles).\nSome BSDF nodes used"),
-                 ('SINGLE', "Single Principled", "Always approximate materials using\na single principled node (game engines).\nSome feature may be missing"),
-                 ],
+        items = [('SELECT', "Select On Load", "Select the material method when loading files")] + MaterialMethodItems,
         name = "Material Method",
         description = "Material Method",
         default = 'SELECT')
@@ -680,19 +692,11 @@ def register():
 
     bpy.types.Scene.DazVolumetric = BoolProperty(
         name = "Volumetric Skin (BSDF)",
-        description = (
-            "Use translucency/volume nodes in BSDF tree.\n" +
-            "Yields skin most faithful to IRAY, but only works with Cycles.\n" +
-            "If disabled a more conventional skin shader using subsurface scattering is generated.\n" +
-            "Less faithful but works with both Cycles and Eevee")
-        )
+        description = VolumetricDesc)
 
     bpy.types.Scene.DazImprovedSSS = BoolProperty(
         name = "Improved SSS (Principled)",
-        description = (
-            "Use improved handling of SSS and translucency suggested by Midnight Arrow.\n" +
-            "Only affects the principled and single principled methods")
-        )
+        description = ImprovedSSSDesc)
 
     bpy.types.Scene.DazImageInterpolation = EnumProperty(
         items = [('Linear', "Linear", "Linear"),

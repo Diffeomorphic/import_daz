@@ -78,6 +78,7 @@ class GlobalSettings:
         self.useEmission = True
         self.useReflection = True
         self.useVolumetric = True
+        self.useImprovedSSS = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
         self.useLowerResFolders = True
@@ -395,11 +396,12 @@ class GlobalSettings:
 class LocalSettings:
     def __init__(self):
         self.scale = 0.1
-        self.materialMethod = 'BSDF'
+        self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None
         self.clothesColor = None
         self.fitFile = False
         self.autoMaterials = True
+        self.useVolumetric = True
         self.morphStrength = 1.0
 
         self.useNodes = False
@@ -490,8 +492,16 @@ class LocalSettings:
     def getMaterialSettings(self, btn):
         if GS.materialMethod == 'SELECT':
             self.materialMethod = btn.materialMethod
+            if btn.materialMethod == 'BSDF':
+                self.useVolumetric = btn.useVolumetric
+                self.useImprovedSSS = False
+            else:
+                self.useVolumetric = False
+                self.useImprovedSSS = btn.useImprovedSSS
         else:
             self.materialMethod = GS.materialMethod
+            self.useVolumetric = GS.useVolumetric
+            self.useImprovedSSS = GS.useImprovedSSS
         if self.materialMethod == 'BSDF':
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:

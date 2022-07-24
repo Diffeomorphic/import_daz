@@ -34,6 +34,7 @@ from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
+from .daz import MaterialMethodItems, VolumetricDesc, ImprovedSSSDesc
 
 #------------------------------------------------------------------
 #   Color options
@@ -59,19 +60,30 @@ class ColorOptions:
     )
 
     materialMethod : EnumProperty(
-        items = [('BSDF', "BSDF", "BSDF (Cycles, full IRAY materials)"),
-                 ('PRINCIPLED', "Principled", "Principled (Eevee and Cycles).\nSome BSDF nodes used"),
-                 ('SINGLE', "Single Principled", "Approximate materials using\na single principled node (game engines).\nSome feature may be missing"),
-                 ],
+        items = MaterialMethodItems,
         name = "Material Method",
         description = "Material Method",
-        default = 'PRINCIPLED')
+        default = 'EXTENDED_PRINCIPLED')
+
+    useVolumetric : BoolProperty(
+        name = "Volumetric Skin",
+        description = VolumetricDesc,
+        default = True)
+
+    useImprovedSSS : BoolProperty(
+        name = "Improved SSS",
+        description = ImprovedSSSDesc,
+        default = True)
 
     def draw(self, context):
         if GS.materialMethod == 'SELECT':
             box = self.layout.box()
             box.label(text = "Material Method")
             box.prop(self, "materialMethod", expand=True)
+            if self.materialMethod == 'BSDF':
+                box.prop(self, "useVolumetric")
+            else:
+                box.prop(self, "useImprovedSSS")
         box = self.layout.box()
         box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':

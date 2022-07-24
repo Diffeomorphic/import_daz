@@ -397,7 +397,7 @@ class CyclesTree(Tree):
 
 
     def buildShells(self):
-        if (LS.materialMethod == 'SINGLE' or
+        if (LS.materialMethod == 'SINGLE_PRINCIPLED' or
             GS.shellMethod != 'MATERIAL'):
             return
         shells = []
@@ -764,7 +764,7 @@ class CyclesTree(Tree):
 
     def buildOverlay(self):
         if (self.getValue(["Diffuse Overlay Weight"], 0) and
-            LS.materialMethod != 'SINGLE'):
+            LS.materialMethod != 'SINGLE_PRINCIPLED'):
             self.column += 1
             slot = self.getImageSlot(["Diffuse Overlay Weight"])
             weight,wttex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
@@ -844,7 +844,7 @@ class CyclesTree(Tree):
 
     def buildMakeup(self):
         if (not self.getValue(["Makeup Enable"], False) or
-            LS.materialMethod == 'SINGLE'):
+            LS.materialMethod == 'SINGLE_PRINCIPLED'):
             return False
         wt = self.getValue(["Makeup Weight"], 0)
         if wt == 0:
@@ -1033,7 +1033,7 @@ class CyclesTree(Tree):
 
     def prepareWeighted(self):
         if (self.owner.basemix == 2 and
-            LS.materialMethod != 'SINGLE'):
+            LS.materialMethod != 'SINGLE_PRINCIPLED'):
             self.diffuseCycles = self.cycles
             self.cycles = None
             return True
@@ -1043,7 +1043,7 @@ class CyclesTree(Tree):
 
     def buildWeighted(self):
         if (self.owner.basemix != 2 or
-            LS.materialMethod == 'SINGLE'):
+            LS.materialMethod == 'SINGLE_PRINCIPLED'):
             return False
         diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex = self.getColorTex(["Glossy Weight"], "NONE", 0)
@@ -1207,7 +1207,7 @@ class CyclesTree(Tree):
             if wttex and wttex.type == 'MATH':
                 wttex.inputs[0].default_value = transwt
 
-        if not GS.useVolumetric:
+        if not LS.useVolumetric:
             from .cgroup import SSSFixGroup, SubsurfaceGroup
             fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
@@ -1502,8 +1502,8 @@ class CyclesTree(Tree):
     def buildVolume(self):
         if (self.owner.isThinWall() or
             self.pureMetal or
-            not GS.useVolumetric or
-            LS.materialMethod == 'SINGLE'):
+            not LS.useVolumetric or
+            LS.materialMethod == 'SINGLE_PRINCIPLED'):
             return
         self.volume = None
         if self.isEnabled("Translucency"):
