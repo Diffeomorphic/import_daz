@@ -751,6 +751,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         tcos = hcos[tris]
         ccos = np.sum(tcos * w[:,:,None], axis=1) + offsets
         if self.useSelectedOnly:
+            cverts = trg.data.vertices
             for cvn,co in enumerate(ccos):
                 if cverts[cvn].select:
                     cskey.data[cvn].co = co
