@@ -73,11 +73,10 @@ class GlobalSettings:
         self.useFakeCaustics = True
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
-        self.useImprovedSSS = False
+        self.useSSSFix = False
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
-        self.useImprovedSSS = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
         self.useLowerResFolders = True
@@ -152,7 +151,7 @@ class GlobalSettings:
         "DazFakeCaustics" : "useFakeCaustics",
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
-        "DazImprovedSSS" : "useImprovedSSS",
+        "DazUseSSSFix" : "useSSSFix",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
@@ -489,13 +488,8 @@ class LocalSettings:
     def getMaterialSettings(self, btn):
         if GS.materialMethod == 'SELECT':
             self.materialMethod = btn.materialMethod
-            if btn.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
-                self.useImprovedSSS = False
-            else:
-                self.useImprovedSSS = btn.useImprovedSSS
         else:
             self.materialMethod = GS.materialMethod
-            self.useImprovedSSS = GS.useImprovedSSS
         if self.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:

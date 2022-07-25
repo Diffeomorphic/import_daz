@@ -283,10 +283,10 @@ class Fresnel2Group(CyclesGroup):
         self.links.new(sub.outputs[0], self.outputs.inputs["Metal"])
 
 # ---------------------------------------------------------------------
-#   Mix Group. Mixes Cycles and Eevee
+#   Mix Group.
 # ---------------------------------------------------------------------
 
-class CyclesEeveeGroup(CyclesGroup):
+class BSDFGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["BSDF"]
@@ -300,7 +300,7 @@ class CyclesEeveeGroup(CyclesGroup):
         self.links.new(socket, self.mix1.inputs[slot])
 
 
-class MixGroup(CyclesEeveeGroup):
+class MixGroup(BSDFGroup):
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
         self.preCreate()
@@ -311,7 +311,7 @@ class MixGroup(CyclesEeveeGroup):
 
     def addNodes(self, args=None):
         self.mix1 = self.addNode("ShaderNodeMixShader", self.ncols-1)
-        self.mix1.label = "BSDF"
+        self.mix1.label = "Mix"
         self.links.new(self.inputs.outputs["BSDF"], self.mix1.inputs[1])
         self.links.new(self.mix1.outputs[0], self.outputs.inputs["BSDF"])
 
@@ -336,7 +336,7 @@ class FacMixGroup(MixGroup):
 #   Add Group. Adds to Cycles and Eevee
 # ---------------------------------------------------------------------
 
-class AddGroup(CyclesEeveeGroup):
+class AddGroup(BSDFGroup):
 
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
@@ -497,7 +497,7 @@ class EmissionGroup(AddGroup):
         self.links.new(node.outputs[0], self.add1.inputs[1])
 
 
-class OneSidedGroup(CyclesEeveeGroup):
+class OneSidedGroup(BSDFGroup):
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
         self.createShaderSlots()
@@ -867,17 +867,17 @@ class TransparentGroup(FacMixGroup):
 class SubsurfaceGroup(FacMixGroup):
     def __init__(self):
         FacMixGroup.__init__(self)
-        self.insockets += ["Color", "SSS Scale", "SSS Radius", "SSS IOR", "SSS Anisotropy", "Normal"]
+        self.insockets += ["Color", "Scale", "Radius", "IOR", "Anisotropy", "Normal"]
 
     def create(self, node, name, parent):
-        FacMixGroup.create(self, node, name, parent, 4)
+        FacMixGroup.create(self, node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "SSS Scale")
-        self.group.inputs.new("NodeSocketVector", "SSS Radius")
-        self.group.inputs.new("NodeSocketFloat", "SSS IOR")
-        self.setMinMax("SSS IOR", 1.0, 1.0, 5.0)
-        self.group.inputs.new("NodeSocketFloat", "SSS Anisotropy")
-        self.setMinMax("SSS Anisotropy", 0.0, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Scale")
+        self.group.inputs.new("NodeSocketVector", "Radius")
+        self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
+        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
@@ -886,11 +886,11 @@ class SubsurfaceGroup(FacMixGroup):
         sss = self.addNode("ShaderNodeSubsurfaceScattering", 1)
         sss.falloff = GS.getSSSMethod()
         self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
-        self.links.new(self.inputs.outputs["SSS Scale"], sss.inputs["Scale"])
-        self.links.new(self.inputs.outputs["SSS Radius"], sss.inputs["Radius"])
+        self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
+        self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])
         if bpy.app.version >= (3,0,0):
-            self.links.new(self.inputs.outputs["SSS IOR"], sss.inputs["IOR"])
-            self.links.new(self.inputs.outputs["SSS Anisotropy"], sss.inputs["Anisotropy"])
+            self.links.new(self.inputs.outputs["IOR"], sss.inputs["IOR"])
+            self.links.new(self.inputs.outputs["Anisotropy"], sss.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Normal"], sss.inputs["Normal"])
         self.mixCycles(sss.outputs[0], 2)
 

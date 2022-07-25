@@ -264,7 +264,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
-        box.prop(scn, "DazImprovedSSS")
+        box.prop(scn, "DazUseSSSFix")
         box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
@@ -320,10 +320,6 @@ MaterialMethodItems = [
     ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]
-ImprovedSSSDesc = (
-    "Use improved handling of SSS and translucency suggested by Midnight Arrow.\n" +
-    "Only affects the principled methods"
-)
 
 def register():
 
@@ -683,9 +679,9 @@ def register():
         name = "Reflection",
         description = "Use reflection maps")
 
-    bpy.types.Scene.DazImprovedSSS = BoolProperty(
-        name = "Improved SSS (Principled)",
-        description = ImprovedSSSDesc)
+    bpy.types.Scene.DazUseSSSFix = BoolProperty(
+        name = "SSS Fix",
+        description = "Use alternative handling of SSS suggested by Midnight Arrow")
 
     bpy.types.Scene.DazImageInterpolation = EnumProperty(
         items = [('Linear', "Linear", "Linear"),

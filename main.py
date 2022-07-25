@@ -34,7 +34,7 @@ from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
-from .daz import MaterialMethodItems, ImprovedSSSDesc
+from .daz import MaterialMethodItems
 
 #------------------------------------------------------------------
 #   Color options
@@ -65,18 +65,11 @@ class ColorOptions:
         description = "Material Method",
         default = 'EXTENDED_PRINCIPLED')
 
-    useImprovedSSS : BoolProperty(
-        name = "Improved SSS",
-        description = ImprovedSSSDesc,
-        default = True)
-
     def draw(self, context):
         if GS.materialMethod == 'SELECT':
             box = self.layout.box()
             box.label(text = "Material Method")
             box.prop(self, "materialMethod", expand=True)
-            if self.materialMethod in ['EXTENDED_PRINCIPLED', 'SINGLE_PRINCIPLED']:
-                box.prop(self, "useImprovedSSS")
         box = self.layout.box()
         box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':

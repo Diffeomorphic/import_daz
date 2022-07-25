@@ -1208,27 +1208,36 @@ class CyclesTree(Tree):
                 wttex.inputs[0].default_value = transwt
 
         if LS.materialMethod == 'BSDF_SSS':
-            from .cgroup import SSSFixGroup, SubsurfaceGroup
-            fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
-            fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
-            if self.diffuseInput:
-                self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
-            self.linkScalar(ssstex, fix, sss, "SSS Amount")
-            self.linkColor(transtex, fix, transcolor, "Translucent Color")
-            self.linkScalar(wttex, fix, transwt, "Translucency Weight")
+            from .cgroup import SubsurfaceGroup
             node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
-            self.links.new(fix.outputs["Base Color"], self.diffuse.inputs["Color"])
-            self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
-            node.inputs["SSS Scale"].default_value = 1.0
+
+            if GS.useSSSFix:
+                from .cgroup import SSSFixGroup
+                fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
+                fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
+                if self.diffuseInput:
+                    self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+                self.linkScalar(ssstex, fix, sss, "SSS Amount")
+                self.linkColor(transtex, fix, transcolor, "Translucent Color")
+                self.linkScalar(wttex, fix, transwt, "Translucency Weight")
+                self.links.new(fix.outputs["Base Color"], self.diffuse.inputs["Color"])
+                self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
+                self.links.new(fix.outputs["Subsurface"], node.inputs["Fac"])
+                self.linkCycles(node, "BSDF")
+                self.cycles = node
+            else:
+                gamma = self.addNode("ShaderNodeGamma", col=3)
+                gamma.inputs["Gamma"].default_value = 3.5
+                self.linkColor(transtex, gamma, transcolor, "Color")
+                self.links.new(gamma.outputs["Color"], node.inputs["Color"])
+                self.mixWithActive(transwt, wttex, node)
+
+            node.inputs["Scale"].default_value = 1.0
             radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
             radius,ior,aniso = self.fixSSSRadius(radius)
-            self.linkColor(radtex, node, radius, "SSS Radius")
-            node.inputs["SSS IOR"].default_value = ior
-            node.inputs["SSS Anisotropy"].default_value = aniso
-            if self.cycles:
-                self.links.new(self.getCyclesSocket(), node.inputs["BSDF"])
-                self.links.new(fix.outputs["Subsurface"], node.inputs["Fac"])
-            self.cycles = node
+            self.linkColor(radtex, node, radius, "Radius")
+            node.inputs["IOR"].default_value = ior
+            node.inputs["Anisotropy"].default_value = aniso
         else:
             from .cgroup import TranslucentGroup
             node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)

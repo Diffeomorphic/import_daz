@@ -231,17 +231,15 @@ TweakableChannels = OrderedDict([
 
     ("Subsurface", None),
     ("Subsurface Strength", ("DAZ Subsurface", "Fac", 1)),
-    ("Subsurface SSS Scale", ("DAZ Subsurface", "SSS Scale", 1)),
-    ("Subsurface SSS Radius", ("DAZ Subsurface", "SSS Radius", 3)),
+    ("Subsurface Color", ("DAZ Subsurface", "Color", 4)),
+    ("Subsurface Scale", ("DAZ Subsurface", "Scale", 1)),
+    ("Subsurface Radius", ("DAZ Subsurface", "Radius", 3)),
+    ("Subsurface IOR", ("DAZ Subsurface", "IOR", 1)),
+    ("Subsurface Anisotropy", ("DAZ Subsurface", "Anisotropy", 1)),
 
     ("Translucency", None),
     ("Translucency Strength", ("DAZ Translucent", "Fac", 1)),
     ("Translucency Color", ("DAZ Translucent", "Color", 4)),
-    ("Translucency SSS Gamma", ("DAZ Translucent", "SSS Gamma", 1)),
-    ("Translucency SSS Scale", ("DAZ Translucent", "SSS Scale", 1)),
-    ("Translucency SSS Radius", ("DAZ Translucent", "SSS Radius", 3)),
-    ("Translucency Cycles SSS Factor", ("DAZ Translucent", "Cycles SSS Factor", 1)),
-    ("Translucency Eevee SSS Factor", ("DAZ Translucent", "Eevee SSS Factor", 1)),
 
     ("Principled", None),
     ("Principled Base Color", ("BSDF_PRINCIPLED", "Base Color", 4)),
