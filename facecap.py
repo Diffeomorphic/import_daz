@@ -83,9 +83,14 @@ class FACSImporter(SingleFile, ActionOptions):
         min = 0.0, max = 1.0,
         default = 0.05)
 
-    useEyesRot : BoolProperty(
-        name = "Eyes Rotation",
-        description = "Include eyes rotation animation",
+    useEyes : BoolProperty(
+        name = "Eyes",
+        description = "Include eyes animation",
+        default = True)
+
+    useTongue : BoolProperty(
+        name = "Tongue",
+        description = "Include tongue animation",
         default = True)
 
 
@@ -101,7 +106,8 @@ class FACSImporter(SingleFile, ActionOptions):
             box.prop(self, "neckUpperDist")
             box.prop(self, "neckLowerDist")
             box.prop(self, "abdomenDist")
-        self.layout.prop(self, "useEyesRot")
+        self.layout.prop(self, "useEyes")
+        self.layout.prop(self, "useTongue")
 
 
     def run(self, context):
@@ -152,7 +158,11 @@ class FACSImporter(SingleFile, ActionOptions):
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
                 prop = self.facstable[bshape]
-                if prop in rig.keys():
+                if not self.useEyes and "Eye" in prop:
+                    pass
+                elif not self.useTongue and "Tongue" in prop:
+                    pass
+                elif prop in rig.keys():
                     rig[prop] = value
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
                 elif bshape not in warned:
@@ -194,7 +204,7 @@ class FACSImporter(SingleFile, ActionOptions):
             self.setRotation(self.neckUpper, self.hrotkeys[t], frame, self.neckUpperDist)
             self.setRotation(self.neckLower, self.hrotkeys[t], frame, self.neckLowerDist)
             self.setRotation(self.abdomen, self.hrotkeys[t], frame, self.abdomenDist)
-        if self.useEyesRot:
+        if self.useEyes:
             self.setRotation(self.leye, self.leyekeys[t], frame)
             self.setRotation(self.reye, self.reyekeys[t], frame)
 
