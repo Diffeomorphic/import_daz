@@ -264,7 +264,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
-        box.prop(scn, "DazVolumetric")
         box.prop(scn, "DazImprovedSSS")
         box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
@@ -316,20 +315,14 @@ classes = [
 ]
 
 MaterialMethodItems = [
-    ('BSDF', "BSDF (Cycles Only)", "Best iray materials, slow rendering, use bsdf nodes.\nVolumetric skin works with Cycles only"),
+    ('BSDF_VOLUME', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only"),
+    ('BSDF_SSS', "BSDF (SSS Skin)", "Uses BSDF nodes but translucency is replaced with SSS.\nLimited IRAY conversion but faster rendering and more conventional skin materials.\nWorks with Cycles and Eevee but some screen effects may not work"),
     ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]
-
-VolumetricDesc = (
-    "Use translucency/volume nodes in BSDF tree.\n" +
-    "Yields skin most faithful to IRAY, but only works with Cycles.\n" +
-    "If disabled a more conventional skin shader using subsurface scattering is generated.\n" +
-    "Less faithful but works with both Cycles and Eevee"
-)
 ImprovedSSSDesc = (
     "Use improved handling of SSS and translucency suggested by Midnight Arrow.\n" +
-    "Only affects the principled and single principled methods"
+    "Only affects the principled methods"
 )
 
 def register():
@@ -689,10 +682,6 @@ def register():
     bpy.types.Scene.DazUseReflection = BoolProperty(
         name = "Reflection",
         description = "Use reflection maps")
-
-    bpy.types.Scene.DazVolumetric = BoolProperty(
-        name = "Volumetric Skin (BSDF)",
-        description = VolumetricDesc)
 
     bpy.types.Scene.DazImprovedSSS = BoolProperty(
         name = "Improved SSS (Principled)",

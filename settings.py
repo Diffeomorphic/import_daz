@@ -77,7 +77,6 @@ class GlobalSettings:
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
-        self.useVolumetric = True
         self.useImprovedSSS = True
         self.useWorld = 'DOME'
         self.reuseMaterials = False
@@ -157,7 +156,6 @@ class GlobalSettings:
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
-        "DazVolumetric" : "useVolumetric",
         "DazGhostLights" : "useGhostLight",
         "DazImageInterpolation" : "imageInterpolation",
 
@@ -401,7 +399,6 @@ class LocalSettings:
         self.clothesColor = None
         self.fitFile = False
         self.autoMaterials = True
-        self.useVolumetric = True
         self.morphStrength = 1.0
 
         self.useNodes = False
@@ -492,17 +489,14 @@ class LocalSettings:
     def getMaterialSettings(self, btn):
         if GS.materialMethod == 'SELECT':
             self.materialMethod = btn.materialMethod
-            if btn.materialMethod == 'BSDF':
-                self.useVolumetric = btn.useVolumetric
+            if btn.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
                 self.useImprovedSSS = False
             else:
-                self.useVolumetric = False
                 self.useImprovedSSS = btn.useImprovedSSS
         else:
             self.materialMethod = GS.materialMethod
-            self.useVolumetric = GS.useVolumetric
             self.useImprovedSSS = GS.useImprovedSSS
-        if self.materialMethod == 'BSDF':
+        if self.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
             self.hairMaterialMethod = 'PRINCIPLED'

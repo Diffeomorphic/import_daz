@@ -104,12 +104,12 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
-            if LS.materialMethod == 'BSDF':
+            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
                 return CyclesBrickTree(self)
             else:
                 return PbrBrickTree(self)
         else:
-            if LS.materialMethod == 'BSDF':
+            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
                 return CyclesTree(self)
             else:
                 return PbrTree(self)
@@ -1186,7 +1186,7 @@ class CyclesTree(Tree):
 
 
     def buildTranslucency(self):
-        if (LS.materialMethod != 'BSDF' or
+        if (LS.materialMethod not in ['BSDF_VOLUME', 'BSDF_SSS'] or
             self.diffuse is None or
             not self.checkTranslucency()):
             return
@@ -1207,7 +1207,7 @@ class CyclesTree(Tree):
             if wttex and wttex.type == 'MATH':
                 wttex.inputs[0].default_value = transwt
 
-        if not LS.useVolumetric:
+        if LS.materialMethod == 'BSDF_SSS':
             from .cgroup import SSSFixGroup, SubsurfaceGroup
             fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
@@ -1502,8 +1502,7 @@ class CyclesTree(Tree):
     def buildVolume(self):
         if (self.owner.isThinWall() or
             self.pureMetal or
-            not LS.useVolumetric or
-            LS.materialMethod == 'SINGLE_PRINCIPLED'):
+            LS.materialMethod != 'BSDF_VOLUME'):
             return
         self.volume = None
         if self.isEnabled("Translucency"):

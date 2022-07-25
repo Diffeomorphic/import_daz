@@ -34,7 +34,7 @@ from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
-from .daz import MaterialMethodItems, VolumetricDesc, ImprovedSSSDesc
+from .daz import MaterialMethodItems, ImprovedSSSDesc
 
 #------------------------------------------------------------------
 #   Color options
@@ -65,11 +65,6 @@ class ColorOptions:
         description = "Material Method",
         default = 'EXTENDED_PRINCIPLED')
 
-    useVolumetric : BoolProperty(
-        name = "Volumetric Skin",
-        description = VolumetricDesc,
-        default = True)
-
     useImprovedSSS : BoolProperty(
         name = "Improved SSS",
         description = ImprovedSSSDesc,
@@ -80,9 +75,7 @@ class ColorOptions:
             box = self.layout.box()
             box.label(text = "Material Method")
             box.prop(self, "materialMethod", expand=True)
-            if self.materialMethod == 'BSDF':
-                box.prop(self, "useVolumetric")
-            else:
+            if self.materialMethod in ['EXTENDED_PRINCIPLED', 'SINGLE_PRINCIPLED']:
                 box.prop(self, "useImprovedSSS")
         box = self.layout.box()
         box.label(text = "Viewport Color")
