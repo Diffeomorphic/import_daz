@@ -425,8 +425,11 @@ class CyclesTree(Tree):
         self.buildNormal(uvname)
         self.buildBump(uvname)
         self.buildDetail(uvname)
+        if LS.materialMethod == 'BSDF_VOLUME':
+            self.buildTranslucency()
         self.buildDiffuse()
-        self.buildTranslucency()
+        if LS.materialMethod == 'BSDF_SSS':
+            self.buildSubsurface()
         self.buildMakeup()
         self.buildOverlay()
         self.prepareWeighted()
@@ -729,13 +732,30 @@ class CyclesTree(Tree):
 #   Diffuse and Diffuse Overlay
 #-------------------------------------------------------------
 
-    def getDiffuseColor(self):
-        color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
-        effect = self.getValue(["Base Color Effect"], 0)
-        if effect > 0:  # Scatter Transmit, Scatter Transmit Intensity
-            tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-            color = self.compProd(color, tint)
-        return color,tex
+    def buildColorEffect(self, color, tex, tint, fac, factex, node):
+        value = self.getValue(["Base Color Effect"], 0)
+        # [ "Scatter Only", "Scatter & Transmit", "Scatter & Transmit Intensity" ]
+        if value > 0:
+            mix = self.addNode("ShaderNodeMixRGB", self.column-2)
+            mix.blend_type = 'MULTIPLY'
+            mix.inputs[0].default_value = 1.0
+            self.linkColor(tex, mix, color, 1)
+            mix.inputs[2].default_value[0:3] = tint
+            from .cgroup import ColorEffectGroup
+            effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
+            self.linkScalar(factex, effect, fac, "Fac")
+            self.links.new(mix.outputs["Color"], effect.inputs["Color"])
+        if value == 0:     # Scatter Only
+            self.linkScalar(factex, node, fac, "Fac")
+            return self.linkColor(tex, node, color, "Color")
+        elif value == 1:   # Scatter & Transmit
+            self.links.new(effect.outputs["Transmit Fac"], node.inputs["Fac"])
+            self.links.new(mix.outputs["Color"], node.inputs["Color"])
+            return mix
+        elif value == 2:   # Scatter & Transmit Intensity
+            self.links.new(effect.outputs["Intensity Fac"], node.inputs["Fac"])
+            self.links.new(effect.outputs["Color"], node.inputs["Color"])
+            return effect
 
 
     def compProd(self, x, y):
@@ -743,22 +763,29 @@ class CyclesTree(Tree):
 
 
     def buildDiffuse(self):
-        self.column = 4
         if not self.isEnabled("Diffuse"):
             return
-        color,tex = self.getDiffuseColor()
-        node = self.addNode("ShaderNodeBsdfDiffuse")
-        self.diffuse = self.cycles = node
-        self.diffuseInput = self.linkColor(tex, node, color, "Color")
+        from .cgroup import DiffuseGroup
+        color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
         self.diffuseColor = color
         self.diffuseTex = tex
+        self.column += 1
+        self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
+        tint = self.getColor(["SSS Reflectance Tint"], WHITE)
+        transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+        fac = 1-transwt
+        factex = wttex
+        self.diffuseInput = self.buildColorEffect(color, tex, tint, fac, factex, self.diffuse)
+        if self.cycles:
+            self.links.new(self.cycles.outputs["BSDF"], self.diffuse.inputs["BSDF"])
+        self.cycles = self.diffuse
         roughness,roughtex = self.getColorTex(["Diffuse Roughness"], "NONE", 0, False)
         if self.isEnabled("Detail"):
             detrough,dettex = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 0, False)
             roughness *= detrough
             roughtex = self.multiplyTexs(dettex, roughtex)
-        self.setRoughness(node, "Roughness", roughness, roughtex)
-        self.linkBumpNormal(node)
+        self.setRoughness(self.diffuse, "Roughness", roughness, roughtex)
+        self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True
 
 
@@ -1064,9 +1091,9 @@ class CyclesTree(Tree):
             self.cycles = node
             return True
 
-#-------------------------------------------------------------
-#   Top Coat
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Top Coat
+    #-------------------------------------------------------------
 
     def buildTopCoat(self, uvname):
         if not self.isEnabled("Top Coat"):
@@ -1170,9 +1197,9 @@ class CyclesTree(Tree):
         else:
             return normal
 
-#-------------------------------------------------------------
-#   Translucency
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Translucency
+    #-------------------------------------------------------------
 
     def checkTranslucency(self):
         if not self.isEnabled("Translucency"):
@@ -1186,65 +1213,63 @@ class CyclesTree(Tree):
 
 
     def buildTranslucency(self):
-        if (LS.materialMethod not in ['BSDF_VOLUME', 'BSDF_SSS'] or
-            self.diffuse is None or
-            not self.checkTranslucency()):
+        self.column = 4
+        if not self.checkTranslucency():
             return
+        from .cgroup import TranslucentGroup
         fac = self.getValue("getChannelTranslucencyWeight", 0)
-        effect = self.getValue(["Base Color Effect"], 0)
-        if fac == 0 and effect != 1:
+        if fac == 0:
             return
         mat = self.owner.rna
         transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         if isBlack(transcolor):
             return
+        node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
+        node.inputs["Fac"].default_value = 1.0
+        self.linkColor(transtex, node, transcolor, "Color")
+        node.width = 200
+        self.linkBumpNormal(node)
+        self.cycles = node
+        LS.usedFeatures["Transparent"] = True
+        self.endSSS()
 
-        self.column += 1
+    #-------------------------------------------------------------
+    #   Subsurface scattering
+    #-------------------------------------------------------------
+
+    def buildSubsurface(self):
+        from .cgroup import SubsurfaceGroup
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
-        transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        if effect == 1: # Scatter and transmit
-            transwt = 0.5 + transwt/2
-            if wttex and wttex.type == 'MATH':
-                wttex.inputs[0].default_value = transwt
+        node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
+        node.inputs["Scale"].default_value = 1.0
+        radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
+        radius,ior,aniso = self.fixSSSRadius(radius)
+        self.linkColor(radtex, node, radius, "Radius")
+        node.inputs["IOR"].default_value = ior
+        node.inputs["Anisotropy"].default_value = aniso
+        node.width = 200
 
-        if LS.materialMethod == 'BSDF_SSS':
-            from .cgroup import SubsurfaceGroup
-            node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
-
-            if GS.useSSSFix:
-                from .cgroup import SSSFixGroup
-                fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
-                fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
-                if self.diffuseInput:
-                    self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
-                self.linkScalar(ssstex, fix, sss, "SSS Amount")
-                self.linkColor(transtex, fix, transcolor, "Translucent Color")
-                self.linkScalar(wttex, fix, transwt, "Translucency Weight")
-                self.links.new(fix.outputs["Base Color"], self.diffuse.inputs["Color"])
-                self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
-                self.links.new(fix.outputs["Subsurface"], node.inputs["Fac"])
-                self.linkCycles(node, "BSDF")
-                self.cycles = node
-            else:
-                gamma = self.addNode("ShaderNodeGamma", col=3)
-                gamma.inputs["Gamma"].default_value = 3.5
-                self.linkColor(transtex, gamma, transcolor, "Color")
-                self.links.new(gamma.outputs["Color"], node.inputs["Color"])
-                self.mixWithActive(transwt, wttex, node)
-
-            node.inputs["Scale"].default_value = 1.0
-            radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
-            radius,ior,aniso = self.fixSSSRadius(radius)
-            self.linkColor(radtex, node, radius, "Radius")
-            node.inputs["IOR"].default_value = ior
-            node.inputs["Anisotropy"].default_value = aniso
+        if GS.useSSSFix:
+            from .cgroup import SSSFixGroup
+            fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
+            fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
+            if self.diffuseInput:
+                self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+            self.linkScalar(ssstex, fix, sss, "SSS Amount")
+            self.linkColor(transtex, fix, transcolor, "Translucent Color")
+            self.linkScalar(wttex, fix, transwt, "Translucency Weight")
+            self.links.new(fix.outputs["Base Color"], self.diffuse.inputs["Color"])
+            self.links.new(fix.outputs["Subsurface Color"], node.inputs["Color"])
+            self.links.new(fix.outputs["Subsurface"], node.inputs["Fac"])
+            self.linkCycles(node, "BSDF")
+            self.cycles = node
         else:
-            from .cgroup import TranslucentGroup
-            node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
-            self.linkColor(transtex, node, transcolor, "Color")
+            gamma = self.addNode("ShaderNodeGamma", col=3)
+            gamma.inputs["Gamma"].default_value = 3.5
+            self.linkColor(transtex, gamma, transcolor, "Color")
+            self.links.new(gamma.outputs["Color"], node.inputs["Color"])
             self.mixWithActive(transwt, wttex, node)
 
-        node.width = 200
         self.linkBumpNormal(node)
         LS.usedFeatures["Transparent"] = True
         self.endSSS()

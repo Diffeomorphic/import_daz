@@ -446,6 +446,56 @@ class SSSFixGroup(CyclesGroup):
         self.links.new(dodge2.outputs["Color"], self.outputs.inputs["Subsurface Color"])
 
 # ---------------------------------------------------------------------
+#   Color Effect Group
+# ---------------------------------------------------------------------
+
+class ColorEffectGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Fac", "Color"]
+        self.outsockets += ["Transmit Fac", "Intensity Fac", "Color"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 3)
+        self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.setMinMax("Fac", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
+        self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
+        self.group.outputs.new("NodeSocketColor", "Color")
+
+
+    def addNodes(self, args=None):
+        mult1 = self.addNode("ShaderNodeMath", 1)
+        mult1.operation = 'MULTIPLY'
+        self.links.new(self.inputs.outputs["Fac"], mult1.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], mult1.inputs[1])
+
+        mult2 = self.addNode("ShaderNodeMath", 1)
+        mult2.operation = 'MULTIPLY'
+        self.links.new(self.inputs.outputs["Fac"], mult2.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], mult2.inputs[1])
+
+        mix = self.addNode("ShaderNodeMixRGB", 2)
+        mix.blend_type = 'COLOR'
+        mix.inputs[0].default_value = 1.0
+        mix.inputs[1].default_value[0:3] = WHITE
+        self.links.new(self.inputs.outputs["Color"], mix.inputs[2])
+
+        hsv = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv.inputs["Hue"].default_value = 0.5
+        hsv.inputs["Saturation"].default_value = 0.0
+        hsv.inputs["Value"].default_value = 1.0
+        hsv.inputs["Fac"].default_value = 1.0
+        self.links.new(mult2.outputs[0], hsv.inputs["Fac"])
+        self.links.new(self.inputs.outputs["Color"], hsv.inputs["Color"])
+
+        self.links.new(mult1.outputs[0], self.outputs.inputs["Transmit Fac"])
+        self.links.new(hsv.outputs["Color"], self.outputs.inputs["Intensity Fac"])
+        self.links.new(mix.outputs["Color"], self.outputs.inputs["Color"])
+
+# ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode
 # ---------------------------------------------------------------------
 
