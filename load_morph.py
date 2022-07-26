@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import os
+import sys
 import bpy
 from .driver import DriverUser
 from .utils import *
@@ -130,7 +131,7 @@ class LoadMorph(DriverUser):
             showProgress(idx, npaths)
             idx += 1
             char = self.makeSingleMorph(name, path, bodypart, force)
-            print(char, name)
+            printName(char, name)
 
     #------------------------------------------------------------------
     #   First pass: collect data
@@ -213,14 +214,14 @@ class LoadMorph(DriverUser):
         pgs = self.rig.DazAlias
         if alias in pgs.keys():
             pg = pgs[alias]
-            print(" == %s %s %s" % (prop, alias, pg.s))
+            printName(" ==", "%s %s %s" % (prop, alias, pg.s))
         else:
             try:
                 pg = pgs.add()
             except TypeError:
                 return
             pg.name = alias
-            print(" = %s %s" % (prop, alias))
+            printName(" =", "%s %s" % (prop, alias))
             pg.s = prop
 
 
@@ -654,6 +655,7 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def makeMissingMorphs(self, bodypart, level):
+        newLine()
         print("Making missing morphs level %d" % level)
         from .asset import getDazPath
         for fileref in self.loaded:
@@ -1151,7 +1153,7 @@ class LoadMorph(DriverUser):
                         sumfcu.data_path = 'pose.bones["%s"].%s' % (pb.name, channel)
                         sumfcu.array_index = idx
                     self.clearTmpDriver(0)
-            print(" + %s" % bname)
+            printName(" +", bname)
 
 
     def ensureAnimData(self, rna):
@@ -1176,6 +1178,7 @@ class LoadMorph(DriverUser):
 
     def buildRestDrivers(self):
         from .driver import getRnaDriver
+        newLine()
         if self.restdrivers:
             print("Building rest drivers")
         else:
@@ -1439,6 +1442,18 @@ def buildBoneFormula(asset, rig, errors):
 #------------------------------------------------------------------
 #   Utilities
 #------------------------------------------------------------------
+
+def printName(char, name):
+    if GS.showInTerminal:
+        print(char, name)
+    else:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+
+def newLine():
+    if not GS.showInTerminal:
+        print("")
+
 
 def getCanonicalFilePath(filepath):
     filepath = filepath.replace("\\", "/").lower()

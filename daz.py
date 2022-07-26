@@ -252,6 +252,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazCustomMin")
         box.prop(scn, "DazCustomMax")
         box.prop(scn, "DazShowFinalProps")
+        box.prop(scn, "DazShowInTerminal")
         box.prop(scn, "DazUseShapekeys")
         box.prop(scn, "DazUseERC")
         box.prop(scn, "DazStripCategory")
@@ -393,6 +394,10 @@ def register():
     bpy.types.Scene.DazShowFinalProps = BoolProperty(
         name = "Show Final Morph Values",
         description = "Display the \"final\" values of morphs")
+
+    bpy.types.Scene.DazShowInTerminal = BoolProperty(
+        name = "Show In Terminal",
+        description = "Display full morph names when loading and transferring morphs")
 
     bpy.types.Scene.DazUseShapekeys = BoolProperty(
         name = "Shapekeys",

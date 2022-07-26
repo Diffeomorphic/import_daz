@@ -276,6 +276,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
     def run(self, context):
         from time import perf_counter
+        from .load_morph import newLine
         t1 = perf_counter()
         src = context.object
         if not src.data.shape_keys:
@@ -291,6 +292,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             self.deleteTmp()
             self.restore(context, src, data)
         t2 = perf_counter()
+        newLine()
         print("Morphs transferred in %.1f seconds" % (t2-t1))
         if failed:
             msg = ("Morph transfer to the following meshes\nfailed due to insufficient memory:")
@@ -312,6 +314,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
     def transferMorphs(self, src, trg, context):
         from .asset import setDazPaths
+        from .load_morph import printName
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
         scn = context.scene
@@ -335,16 +338,16 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         for idx,sname in enumerate(snames):
             showProgress(idx, nskeys)
             if sname not in hskeys.key_blocks.keys():
-                print(" ? ", sname)
+                printName(" ?", sname)
                 continue
             hskey = hskeys.key_blocks[sname]
 
             if self.outsideBox(src, trg, hskey):
-                print(" 0", sname)
+                printName(" 0", sname)
                 continue
 
             if self.useOnlyVertexGroups and not self.hasVertexGroup(hskeys, sname, trg):
-                print(" V", sname)
+                printName(" V", sname)
                 continue
 
             if sname in cskeys.key_blocks.keys():
@@ -367,10 +370,10 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             if filepath is not None:
                 cskey = self.loadMorph(filepath, src, trg, scn)
             if cskey:
-                print(" *", sname)
+                printName(" *", sname)
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
-                print(" +", sname)
+                printName(" +", sname)
                 if cskey and not self.ignoreRigidity:
                     self.correctForRigidity(trg, cskey)
 
@@ -393,7 +396,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                             #addToMorphSet(trg, "AutoFollow", prop, None)
                             trg.DazMorphAuto = True
             else:
-                print(" -", sname)
+                printName(" -", sname)
 
         if (basic and
             len(trg.data.shape_keys.key_blocks) == 1 and

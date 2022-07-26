@@ -674,9 +674,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useAdjusters")
-        self.layout.separator()
-        if self.useFavoMorphs or self.jcms or self.flexions:
+        if self.useFavoMorphs or self.facs or self.facsexpr or self.jcms or self.flexions:
             self.layout.prop(self, "useTransferShapes")
+        self.layout.separator()
         self.layout.prop(self, "useSoftbody")
         if self.useSoftbody:
             self.subprop("useChest")
@@ -896,9 +896,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 )
 
         # Merge geografts
-        useLashes = self.useMergeFaceMeshes
         if geografts:
-            useLashes = (self.useMergeFaceMeshes and self.useMergeGeografts)
             if self.useTransferShapes or self.useMergeGeografts:
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
@@ -920,9 +918,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Merge lashes
         if lashes:
-            if self.useTransferShapes or useLashes:
-                self.transferShapes(context, mainMesh, lashes, useLashes, "Face")
-            if useLashes and activateObject(context, mainMesh):
+            if self.useTransferShapes or self.useMergeFaceMeshes:
+                self.transferShapes(context, mainMesh, lashes, self.useMergeFaceMeshes, "Face")
+            if self.useMergeFaceMeshes and activateObject(context, mainMesh):
                 for ob in lashes:
                     selectSet(ob, True)
                 print("Merge lashes")
