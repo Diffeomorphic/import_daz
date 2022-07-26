@@ -292,7 +292,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             self.deleteTmp()
             self.restore(context, src, data)
         t2 = perf_counter()
-        newLine()
         print("Morphs transferred in %.1f seconds" % (t2-t1))
         if failed:
             msg = ("Morph transfer to the following meshes\nfailed due to insufficient memory:")
@@ -303,12 +302,14 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def transferAllMorphs(self, context, src, targets):
+        from .load_morph import newLine
         if self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findTriangles(self.trihuman)
         failed = []
         for trg in targets:
             if not self.transferMorphs(src, trg, context):
                 failed.append(trg)
+            newLine()
         return failed
 
 

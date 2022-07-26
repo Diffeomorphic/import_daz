@@ -900,10 +900,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useTransferShapes or self.useMergeGeografts:
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
-                        self.transferShapes(context, cob, aobs, self.useMergeGeografts, "Body")
+                        self.transferShapes(context, cob, aobs, self.useMergeGeografts, "Body", True)
                 for aobs,cob in geografts.values():
                     if cob != mainMesh:
-                        self.transferShapes(context, cob, aobs, self.useMergeGeografts, "All")
+                        self.transferShapes(context, cob, aobs, self.useMergeGeografts, "All", True)
             if self.useMergeGeografts and activateObject(context, mainMesh):
                 for aobs,cob in geografts.values():
                     for aob in aobs:
@@ -919,7 +919,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Merge lashes
         if lashes:
             if self.useTransferShapes or self.useMergeFaceMeshes:
-                self.transferShapes(context, mainMesh, lashes, self.useMergeFaceMeshes, "Face")
+                self.transferShapes(context, mainMesh, lashes, self.useMergeFaceMeshes, "Face", True)
             if self.useMergeFaceMeshes and activateObject(context, mainMesh):
                 for ob in lashes:
                     selectSet(ob, True)
@@ -928,7 +928,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Transfer shapekeys to clothes
         if self.useTransferShapes:
-            self.transferShapes(context, mainMesh, clothes, False, "Body")
+            self.transferShapes(context, mainMesh, clothes, False, "Body", False)
 
         # Convert widget mesh to widgets
         if widgetMesh and mainRig and activateObject(context, widgetMesh):
@@ -995,7 +995,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         return None
 
 
-    def transferShapes(self, context, ob, meshes, skipDrivers, bodypart):
+    def transferShapes(self, context, ob, meshes, skipDrivers, bodypart, force):
         if not (ob and meshes):
             return
         from .morphing import classifyShapekeys
@@ -1011,7 +1011,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             activateObject(context, ob)
             selected = False
             for mesh in meshes:
-                if self.useTransferTo(mesh):
+                if force or self.useTransferTo(mesh):
                     selectSet(mesh, True)
                     selected = True
             if not selected:
