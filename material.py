@@ -254,6 +254,30 @@ class Material(Asset, Channels):
         return ("Root Transmission Color" in self.channels.keys())
 
 
+    def isSkinMaterial(self):
+        if (self.getValue("getChannelTranslucencyWeight", 1) == 0 or
+            not self.enabled["Translucency"] or
+            self.getValue("getChannelCutoutOpacity", 1) != 1 or
+            self.getValue(["Thin Walled"], False)):
+            return False
+        color = self.getValue(["Transmitted Color"], BLACK)
+        dist = self.getValue(["Transmitted Measurement Distance"], 0)
+        if isBlack(color) or isWhite(color) or dist == 0:
+            return False
+        dist = self.getValue(["Scattering Measurement Distance"], 0)
+        if dist == 0:
+            return False
+        sssmode = self.getValue(["SSS Mode"], 0)
+        if sssmode == 0:    # Mono
+            if self.getValue(["SSS Amount"], 0) == 0:
+                return False
+        elif sssmode == 1:  # Chromatic
+            color = self.getValue("getChannelSSSColor", BLACK)
+            if isBlack(color) or isWhite(color):
+                return False
+        return True
+
+
     def setExtra(self, struct):
         if struct["type"] == "studio/material/uber_iray":
             self.shader = 'UBER_IRAY'

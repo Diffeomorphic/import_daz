@@ -326,7 +326,9 @@ class CyclesTree(Tree):
         self.makeTree()
         self.buildLayers()
         self.buildCutout()
-        self.buildVolume()
+        if (LS.materialMethod != 'SINGLE_PRINCIPLED' and
+            (LS.materialMethod == 'BSDF_VOLUME' or not self.owner.isSkinMaterial())):
+            self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
         self.buildShells()
@@ -1569,9 +1571,7 @@ class CyclesTree(Tree):
 
 
     def buildVolume(self):
-        if (self.owner.isThinWall() or
-            self.pureMetal or
-            LS.materialMethod != 'BSDF_VOLUME'):
+        if self.pureMetal:
             return
         self.volume = None
         if self.isEnabled("Translucency"):

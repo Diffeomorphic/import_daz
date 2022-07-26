@@ -111,10 +111,6 @@ class PbrTree(CyclesTree):
         else:
             CyclesTree.buildCutout(self)
 
-
-    def buildVolume(self):
-        pass
-
     #-------------------------------------------------------------
     #   Emission
     #-------------------------------------------------------------
@@ -456,6 +452,7 @@ class PbrTree(CyclesTree):
         if self.getValue(["Share Glossy Inputs"], False):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
         self.pbr = pbr
+        self.column += 1
 
     #-------------------------------------------------------------
     #   Utilities
