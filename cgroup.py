@@ -495,6 +495,39 @@ class ColorEffectGroup(CyclesGroup):
         self.links.new(hsv.outputs["Color"], self.outputs.inputs["Intensity Fac"])
         self.links.new(mix.outputs["Color"], self.outputs.inputs["Color"])
 
+
+# ---------------------------------------------------------------------
+#   Invert Normal Map Group
+# ---------------------------------------------------------------------
+
+class DazInvertNormalMapGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Color"]
+        self.outsockets += ["Color"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 4)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.outputs.new("NodeSocketColor", "Color")
+
+
+    def addNodes(self, args=None):
+        sep = self.addNode("ShaderNodeSeparateRGB", 1)
+        self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+        inv1 = self.addNode("ShaderNodeInvert", 2)
+        inv1.inputs["Fac"].default_value = 1.0
+        self.links.new(sep.outputs["R"], inv1.inputs["Color"])
+        inv2 = self.addNode("ShaderNodeInvert", 2)
+        inv2.inputs["Fac"].default_value = 1.0
+        self.links.new(sep.outputs["G"], inv2.inputs["Color"])
+        comb = self.addNode("ShaderNodeCombineRGB", 3)
+        self.links.new(inv1.outputs[0], comb.inputs["R"])
+        self.links.new(inv2.outputs[0], comb.inputs["G"])
+        self.links.new(sep.outputs["B"], comb.inputs["B"])
+        self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
+
 # ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode
 # ---------------------------------------------------------------------
@@ -594,7 +627,7 @@ class DiffuseGroup(FacMixGroup):
 #   Glossy Group
 # ---------------------------------------------------------------------
 
-class GlossyGroup(MixGroup):
+class GlossyGroup(FacMixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)

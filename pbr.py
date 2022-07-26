@@ -151,21 +151,21 @@ class PbrTree(CyclesTree):
 
     def buildBaseSubsurface(self):
         if self.isEnabled("Diffuse"):
-            color,tex = self.getDiffuseColor()
+            color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
+            effect = self.getValue(["Base Color Effect"], 0)
+            tint = self.getColor(["SSS Reflectance Tint"], WHITE)
+            self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, 1.0, None, self.pbr, None, "Base Color")
         else:
             color = WHITE
             tex = None
-        self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
+            self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
         self.diffuseColor = color
         self.diffuseTex = tex
 
-        if not self.isEnabled("Subsurface"):
-            return
-        if not self.checkTranslucency():
+        if (not self.isEnabled("Subsurface") or
+            not self.checkTranslucency()):
             return
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        if transwt == 0:
-            return
         transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         if isBlack(transcolor):
             return

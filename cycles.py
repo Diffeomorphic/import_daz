@@ -425,6 +425,7 @@ class CyclesTree(Tree):
         self.buildNormal(uvname)
         self.buildBump(uvname)
         self.buildDetail(uvname)
+        self.column = 4
         if LS.materialMethod == 'BSDF_VOLUME':
             self.buildTranslucency()
         self.buildDiffuse()
@@ -576,9 +577,9 @@ class CyclesTree(Tree):
             return mapping
         return None
 
-#-------------------------------------------------------------
-#   Normal
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Normal Map
+    #-------------------------------------------------------------
 
     def buildNormal(self, uvname):
         if self.isEnabled("Normal"):
@@ -606,7 +607,13 @@ class CyclesTree(Tree):
         elif self.owner.uv_set:
             normal.uv_map = self.owner.uv_set.name
         normal.inputs["Strength"].default_value = strength
-        self.links.new(tex.outputs[0], normal.inputs["Color"])
+        if self.getValue(["Invert Transmission Normal"], 0):
+            from .cgroup import DazInvertNormalMapGroup
+            inv = self.addGroup(DazInvertNormalMapGroup, "DAZ Invert NMap", col=self.column-1)
+            self.links.new(tex.outputs[0], inv.inputs["Color"])
+            self.links.new(inv.outputs[0], normal.inputs["Color"])
+        else:
+            self.links.new(tex.outputs[0], normal.inputs["Color"])
         return normal
 
 
@@ -619,9 +626,9 @@ class CyclesTree(Tree):
         mix.inputs["Color2"].default_value = NORMAL
         return mix
 
-#-------------------------------------------------------------
-#   Bump
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Bump
+    #-------------------------------------------------------------
 
     def buildBump(self, uvname):
         if not self.isEnabled("Bump"):
@@ -639,11 +646,16 @@ class CyclesTree(Tree):
 
 
     def buildBumpMap(self, bumpval, bumptex, col=3):
-        node = self.addNode("ShaderNodeBump", col=col)
-        node.inputs["Strength"].default_value = bumpval * GS.bumpFactor
-        self.links.new(bumptex.outputs[0], node.inputs["Height"])
-        self.owner.addGeoBump(bumptex, node.inputs["Distance"])
-        return node
+        if self.getValue(["Invert Transmission Normal"], 0):
+            inv = self.addNode("ShaderNodeInvert", col)
+            inv.inputs["Fac"].default_value = 1.0
+            self.links.new(bumptex.outputs[0], inv.inputs["Color"])
+            bumptex = inv
+        bump = self.addNode("ShaderNodeBump", col=col)
+        bump.inputs["Strength"].default_value = bumpval * GS.bumpFactor
+        self.links.new(bumptex.outputs[0], bump.inputs["Height"])
+        self.owner.addGeoBump(bumptex, bump.inputs["Distance"])
+        return bump
 
 
     def linkBumpNormal(self, node):
@@ -728,39 +740,47 @@ class CyclesTree(Tree):
 
         self.texco = texco
 
-#-------------------------------------------------------------
-#   Diffuse and Diffuse Overlay
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Color effect
+    #-------------------------------------------------------------
 
-    def buildColorEffect(self, color, tex, tint, fac, factex, node):
-        value = self.getValue(["Base Color Effect"], 0)
+    def buildColorEffect(self, value, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color"):
         # [ "Scatter Only", "Scatter & Transmit", "Scatter & Transmit Intensity" ]
         if value > 0:
-            mix = self.addNode("ShaderNodeMixRGB", self.column-2)
-            mix.blend_type = 'MULTIPLY'
-            mix.inputs[0].default_value = 1.0
-            self.linkColor(tex, mix, color, 1)
-            mix.inputs[2].default_value[0:3] = tint
             from .cgroup import ColorEffectGroup
             effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
             self.linkScalar(factex, effect, fac, "Fac")
-            self.links.new(mix.outputs["Color"], effect.inputs["Color"])
+            if tint == WHITE:
+                mix = effect
+            else:
+                mix = self.addNode("ShaderNodeMixRGB", self.column-2)
+                mix.blend_type = 'MULTIPLY'
+                mix.inputs[0].default_value = 1.0
+                self.linkColor(tex, mix, color, 1)
+                mix.inputs[2].default_value[0:3] = tint
+                self.links.new(mix.outputs["Color"], effect.inputs["Color"])
         if value == 0:     # Scatter Only
-            self.linkScalar(factex, node, fac, "Fac")
-            return self.linkColor(tex, node, color, "Color")
+            if facslot:
+                self.linkScalar(factex, node, fac, facslot)
+            return self.linkColor(tex, node, color, colorslot)
         elif value == 1:   # Scatter & Transmit
-            self.links.new(effect.outputs["Transmit Fac"], node.inputs["Fac"])
-            self.links.new(mix.outputs["Color"], node.inputs["Color"])
+            if facslot:
+                self.links.new(effect.outputs["Transmit Fac"], node.inputs[facslot])
+            self.links.new(mix.outputs["Color"], node.inputs[colorslot])
             return mix
         elif value == 2:   # Scatter & Transmit Intensity
-            self.links.new(effect.outputs["Intensity Fac"], node.inputs["Fac"])
-            self.links.new(effect.outputs["Color"], node.inputs["Color"])
+            if facslot:
+                self.links.new(effect.outputs["Intensity Fac"], node.inputs[facslot])
+            self.links.new(effect.outputs["Color"], node.inputs[colorslot])
             return effect
 
 
     def compProd(self, x, y):
         return [x[0]*y[0], x[1]*y[1], x[2]*y[2]]
 
+    #-------------------------------------------------------------
+    #   Diffuse
+    #-------------------------------------------------------------
 
     def buildDiffuse(self):
         if not self.isEnabled("Diffuse"):
@@ -773,9 +793,14 @@ class CyclesTree(Tree):
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        fac = 1-transwt
-        factex = wttex
-        self.diffuseInput = self.buildColorEffect(color, tex, tint, fac, factex, self.diffuse)
+        if LS.materialMethod == 'BSDF_VOLUME':
+            fac = 1-transwt
+            factex = wttex
+        else:
+            fac = 1.0
+            factex = None
+        effect = self.getValue(["Base Color Effect"], 0)
+        self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, fac, factex, self.diffuse)
         if self.cycles:
             self.links.new(self.cycles.outputs["BSDF"], self.diffuse.inputs["BSDF"])
         self.cycles = self.diffuse
@@ -788,27 +813,31 @@ class CyclesTree(Tree):
         self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True
 
+    #-------------------------------------------------------------
+    #   Diffuse Overlay
+    #-------------------------------------------------------------
 
     def buildOverlay(self):
         if (self.getValue(["Diffuse Overlay Weight"], 0) and
             LS.materialMethod != 'SINGLE_PRINCIPLED'):
             self.column += 1
             slot = self.getImageSlot(["Diffuse Overlay Weight"])
-            weight,wttex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
+            fac,factex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
             if self.getValue(["Diffuse Overlay Weight Squared"], False):
                 power = 4
             else:
                 power = 2
-            if wttex:
-                wttex = self.raiseToPower(wttex, power, slot)
+            if factex:
+                factex = self.raiseToPower(factex, power, slot)
             color,tex = self.getColorTex(["Diffuse Overlay Color"], "COLOR", WHITE)
             from .cgroup import DiffuseGroup
             node = self.addGroup(DiffuseGroup, "DAZ Overlay")
-            self.linkColor(tex, node, color, "Color")
+            effect = self.getValue(["Diffuse Overlay Color Effect"], 0)
+            self.buildColorEffect(effect, color, tex, WHITE, fac, factex, node)
             roughness,roughtex = self.getColorTex(["Diffuse Overlay Roughness"], "NONE", 0, False)
             self.setRoughness(node, "Roughness", roughness, roughtex)
             self.linkBumpNormal(node)
-            self.mixWithActive(weight**power, wttex, node)
+            self.mixWithActive(fac**power, factex, node)
             return True
         else:
             return False
@@ -865,9 +894,9 @@ class CyclesTree(Tree):
                 value = (value, value, value)
         return value,tex
 
-#-------------------------------------------------------------
-#  Makeup
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #  Makeup
+    #-------------------------------------------------------------
 
     def buildMakeup(self):
         if (not self.getValue(["Makeup Enable"], False) or
@@ -888,9 +917,9 @@ class CyclesTree(Tree):
         self.mixWithActive(wt, wttex, node)
         return True
 
-#-------------------------------------------------------------
-#  Dual Lobe
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #  Dual Lobe
+    #-------------------------------------------------------------
 
     def buildGlossyOrDualLobe(self):
         dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
@@ -951,9 +980,9 @@ class CyclesTree(Tree):
         ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
         return rough1, rough2, roughtex, ratio
 
-#-------------------------------------------------------------
-#   Metal
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Metal
+    #-------------------------------------------------------------
 
     def buildMetal(self):
         if not (self.isEnabled("Metallicity") and
@@ -987,9 +1016,9 @@ class CyclesTree(Tree):
         if weight == 1 and wttex is None:
             self.pureMetal = True
 
-#-------------------------------------------------------------
-#   Glossy
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Glossy
+    #-------------------------------------------------------------
 
     def getGlossyColor(self):
         #   glossy bsdf color = iray glossy color * iray glossy layered weight
@@ -1015,7 +1044,8 @@ class CyclesTree(Tree):
         self.column += 1
         glossy = self.addGroup(GlossyGroup, "DAZ Glossy", size=100)
         color,tex = self.getGlossyColor()
-        self.linkColor(tex, glossy, color, "Color")
+        effect = self.getValue(["Glossy Color Effect"], 0)
+        self.buildColorEffect(effect, color, tex, WHITE, strength, None, glossy)
         ior,iortex = self.getFresnelIOR()
         self.linkScalar(iortex, glossy, ior, "IOR")
         channel,value,roughness,invert = self.owner.getGlossyRoughness(0.0)
@@ -1054,9 +1084,9 @@ class CyclesTree(Tree):
                 iortex = self.multiplyAddScalarTex(factor, 1.1, tex)
         return ior, iortex
 
-#-------------------------------------------------------------
-#   Weigthed
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Weigthed
+    #-------------------------------------------------------------
 
     def prepareWeighted(self):
         if (self.owner.basemix == 2 and
@@ -1151,7 +1181,8 @@ class CyclesTree(Tree):
         from .cgroup import TopCoatGroup
         self.column += 1
         top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=100)
-        self.linkColor(coltex, top, color, "Color")
+        effect = self.getValue(["Top Color Color Effect"], 0)
+        self.buildColorEffect(effect, color, coltex, WHITE, weight, weighttex, top)
         self.linkScalar(roughtex, top, roughness, "Roughness")
         self.linkScalar(anitex, top, aniso, "Anisotropy")
         self.linkScalar(rottex, top, 1 - anirot, "Rotation")
@@ -1213,19 +1244,16 @@ class CyclesTree(Tree):
 
 
     def buildTranslucency(self):
-        self.column = 4
         if not self.checkTranslucency():
             return
         from .cgroup import TranslucentGroup
         fac = self.getValue("getChannelTranslucencyWeight", 0)
-        if fac == 0:
-            return
-        mat = self.owner.rna
-        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
-        if isBlack(transcolor):
+        transcolor = self.getColor(["Translucency Color"], BLACK)
+        if fac == 0 or isBlack(transcolor):
             return
         node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
         node.inputs["Fac"].default_value = 1.0
+        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         self.linkColor(transtex, node, transcolor, "Color")
         node.width = 200
         self.linkBumpNormal(node)
@@ -1239,7 +1267,14 @@ class CyclesTree(Tree):
 
     def buildSubsurface(self):
         from .cgroup import SubsurfaceGroup
+        fac = self.getValue("getChannelTranslucencyWeight", 0)
+        transcolor = self.getColor(["Translucency Color"], BLACK)
+        if fac == 0 or isBlack(transcolor):
+            return
+        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
+        transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
+        self.column += 1
         node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
         node.inputs["Scale"].default_value = 1.0
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
@@ -1251,7 +1286,7 @@ class CyclesTree(Tree):
 
         if GS.useSSSFix:
             from .cgroup import SSSFixGroup
-            fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
+            fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-2)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
             if self.diffuseInput:
                 self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
@@ -1264,7 +1299,7 @@ class CyclesTree(Tree):
             self.linkCycles(node, "BSDF")
             self.cycles = node
         else:
-            gamma = self.addNode("ShaderNodeGamma", col=3)
+            gamma = self.addNode("ShaderNodeGamma", col=self.column-2)
             gamma.inputs["Gamma"].default_value = 3.5
             self.linkColor(transtex, gamma, transcolor, "Color")
             self.links.new(gamma.outputs["Color"], node.inputs["Color"])
@@ -1331,9 +1366,9 @@ class CyclesTree(Tree):
         elif GS.sssMethod == 'RANDOM_WALK':
             return 0.1*radius, 1.4, 0.8
 
-#-------------------------------------------------------------
-#   Transparency
-#-------------------------------------------------------------
+    #-------------------------------------------------------------
+    #   Transparency
+    #-------------------------------------------------------------
 
     def sumColors(self, color, tex, color2, tex2):
         if tex and tex2:
@@ -1611,6 +1646,9 @@ class CyclesTree(Tree):
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
 
+    #-------------------------------------------------------------
+    #   Displacment
+    #-------------------------------------------------------------
 
     def buildDisplacementNodes(self):
         strength = self.owner.getDisplacementStrength()
@@ -1637,6 +1675,9 @@ class CyclesTree(Tree):
             mat = self.owner.rna
             mat.cycles.displacement_method = 'DISPLACEMENT'
 
+    #-------------------------------------------------------------
+    #   Textures
+    #-------------------------------------------------------------
 
     def addSingleTexture(self, col, asset, map, colorSpace):
         if asset is None:
