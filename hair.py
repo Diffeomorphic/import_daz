@@ -704,11 +704,11 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             hairs = [hair for hair in getSelectedMeshes(context)
                      if (baseName(hair.name) == hname and
                          hair != hum)]
+            if self.sparsity > 1:
+                hairs = [hair for n,hair in enumerate(hairs) if n % self.sparsity == 0]
             count = 0
             for hair in hairs:
                 count += 1
-                if count % self.sparsity != 0:
-                    continue
                 hsyss,hcount = self.makeHairSystems(context, hum, hair)
                 haircount += hcount
                 self.combineHairSystems(hsystems, hsyss)
@@ -726,6 +726,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             elif self.strandType == 'TUBE':
                 tess.unTesselateFaces(context, hair, self)
             strands = tess.findStrands(hair, self.strandType)
+            if self.sparsity > 1:
+                strands = [strand for n,strand in enumerate(strands) if n % self.sparsity == 0]
             haircount = self.addStrands(hum, strands, hsystems, -1)
             t5 = perf_counter()
             self.clocks.append(("Make hair systems", t5-t2))
