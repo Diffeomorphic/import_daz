@@ -104,12 +104,12 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
-            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
+            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SKIN']:
                 return CyclesBrickTree(self)
             else:
                 return PbrBrickTree(self)
         else:
-            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
+            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SKIN']:
                 return CyclesTree(self)
             else:
                 return PbrTree(self)
@@ -323,11 +323,14 @@ class CyclesTree(Tree):
 
 
     def build(self):
+        self.useVolume = (
+            LS.materialMethod == 'BSDF_VOLUME' or
+            (LS.materialMethod in ['BSDF_SKIN', 'EXTENDED_PRINCIPLED'] and not self.owner.isSkinMaterial()))
+        print("VOL", self.owner.name, LS.materialMethod, self.useVolume)
         self.makeTree()
         self.buildLayers()
         self.buildCutout()
-        if (LS.materialMethod != 'SINGLE_PRINCIPLED' and
-            (LS.materialMethod == 'BSDF_VOLUME' or not self.owner.isSkinMaterial())):
+        if self.useVolume:
             self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
@@ -428,10 +431,10 @@ class CyclesTree(Tree):
         self.buildBump(uvname)
         self.buildDetail(uvname)
         self.column = 4
-        if LS.materialMethod == 'BSDF_VOLUME':
+        if self.useVolume:
             self.buildTranslucency()
         self.buildDiffuse()
-        if LS.materialMethod == 'BSDF_SSS':
+        if not self.useVolume:
             self.buildSubsurface()
         self.buildMakeup()
         self.buildOverlay()
@@ -795,7 +798,7 @@ class CyclesTree(Tree):
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        if LS.materialMethod == 'BSDF_VOLUME':
+        if self.useVolume:
             fac = 1-transwt
             factex = wttex
         else:

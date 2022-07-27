@@ -317,7 +317,7 @@ classes = [
 
 MaterialMethodItems = [
     ('BSDF_VOLUME', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only"),
-    ('BSDF_SSS', "BSDF (SSS Skin)", "Uses BSDF nodes but translucency is replaced with SSS.\nLimited IRAY conversion but faster rendering and more conventional skin materials.\nWorks with Cycles and Eevee but some screen effects may not work"),
+    ('BSDF_SKIN', "BSDF (SSS Skin)", "Uses BSDF nodes but volumetric skin is replaced with SSS.\nLimited IRAY conversion but faster rendering and more conventional skin materials.\nWorks with Cycles and Eevee but some screen effects may not work"),
     ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]

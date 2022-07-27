@@ -492,7 +492,7 @@ class LocalSettings:
             self.materialMethod = btn.materialMethod
         else:
             self.materialMethod = GS.materialMethod
-        if self.materialMethod in ['BSDF_VOLUME', 'BSDF_SSS']:
+        if self.materialMethod in ['BSDF_VOLUME', 'BSDF_SKIN']:
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
             self.hairMaterialMethod = 'PRINCIPLED'
