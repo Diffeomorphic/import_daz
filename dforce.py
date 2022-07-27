@@ -68,7 +68,7 @@ class DynSim(DForce):
             return
         from .node import Instance
         from .geometry import GeoNode
-        if isinstance(self.instance, Instance):
+        if isinstance(self.instance, Instance) and self.instance.geometries:
             geonode = self.instance.geometries[0]
         elif isinstance(self.instance, GeoNode):
             geonode = self.instance

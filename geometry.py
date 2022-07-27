@@ -261,7 +261,10 @@ class GeoNode(Node, SimNode):
             # Geograft
             insts = []
             for inst in self.figure.instances.values():
-                if inst and inst.parent and inst not in insts:
+                if (inst and
+                    inst.parent and
+                    inst.parent.geometries and
+                    inst not in insts):
                     insts.append(inst)
                     par = inst.parent.geometries[0]
                     if par and par.hdobject and par.hdobject != par.rna:
@@ -811,6 +814,8 @@ class Geometry(Asset, Channels):
 
 
     def addShells(self, inst, shinst):
+        if not (inst.geometries and shinst.geometries):
+            return []
         missing = []
         geonode = inst.geometries[0]
         geo = geonode.data
@@ -894,7 +899,7 @@ class Geometry(Asset, Channels):
 
     def addMoreShells(self, inst, mname, shname, shmat, uv, pprefix):
         from .figure import FigureInstance
-        if not isinstance(inst, FigureInstance):
+        if not isinstance(inst, FigureInstance) or not inst.geometries:
             return
         if mname in self.matused:
             return

@@ -682,6 +682,7 @@ class Morph(FormulaAsset):
         if "parent" not in struct.keys():
             return
 
+        msg = None
         if isinstance(parent, Geometry):
             ref = instRef(struct["parent"])
             if ref in parent.nodes.keys():
@@ -696,11 +697,15 @@ class Morph(FormulaAsset):
         elif isinstance(parent, Figure) and parent.instances:
             ref = list(parent.instances.keys())[0]
             inst = parent.getInstance(ref, self.caller)
-            geonode = inst.geometries[0]
+            if inst.geometries:
+                geonode = inst.geometries[0]
+            else:
+                msg = "Parent has no geometries.\n  %s\n  %s" % (self, parent)
         elif isinstance(parent, FigureInstance):
             geonode = parent.geometries[0]
         else:
-            msg = ("Strange morph parent.\n  %s\n  %s" % (self, parent))
+            msg = "Strange morph parent.\n  %s\n  %s" % (self, parent)
+        if msg:
             return reportError(msg)
         geonode.morphsValues[self.name] = self.value
 

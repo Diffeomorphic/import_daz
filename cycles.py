@@ -323,14 +323,10 @@ class CyclesTree(Tree):
 
 
     def build(self):
-        self.useVolume = (
-            LS.materialMethod == 'BSDF_VOLUME' or
-            (LS.materialMethod in ['BSDF_SKIN', 'EXTENDED_PRINCIPLED'] and not self.owner.isSkinMaterial()))
-        print("VOL", self.owner.name, LS.materialMethod, self.useVolume)
         self.makeTree()
         self.buildLayers()
         self.buildCutout()
-        if self.useVolume:
+        if self.owner.useVolume:
             self.buildVolume()
         self.buildDisplacementNodes()
         self.buildDecals()
@@ -431,10 +427,10 @@ class CyclesTree(Tree):
         self.buildBump(uvname)
         self.buildDetail(uvname)
         self.column = 4
-        if self.useVolume:
+        if self.owner.useVolume:
             self.buildTranslucency()
         self.buildDiffuse()
-        if not self.useVolume:
+        if not self.owner.useVolume:
             self.buildSubsurface()
         self.buildMakeup()
         self.buildOverlay()
@@ -798,7 +794,7 @@ class CyclesTree(Tree):
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        if self.useVolume:
+        if self.owner.useVolume:
             fac = 1-transwt
             factex = wttex
         else:

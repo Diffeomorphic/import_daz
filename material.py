@@ -142,6 +142,7 @@ class Material(Asset, Channels):
 
     def copyBasics(self, dmat):
         self.basemix = dmat.basemix
+        self.useVolume = dmat.useVolume
         self.shader = dmat.shader
         self.enabled = dmat.enabled
         self.rna = dmat.rna
@@ -227,6 +228,10 @@ class Material(Asset, Channels):
         }
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
+
+        self.useVolume = (
+            LS.materialMethod == 'BSDF_VOLUME' or
+            (LS.materialMethod in ['BSDF_SKIN', 'EXTENDED_PRINCIPLED'] and not self.isSkinMaterial()))
 
 
     def isThinWall(self):
