@@ -752,9 +752,10 @@ class CyclesTree(Tree):
             effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
             self.linkScalar(factex, effect, fac, "Fac")
             if tint == WHITE:
+                colorInput = self.linkColor(tex, effect, color, "Color")
                 mix = effect
             else:
-                mix = self.addNode("ShaderNodeMixRGB", self.column-2)
+                mix = colorInput = self.addNode("ShaderNodeMixRGB", self.column-2)
                 mix.blend_type = 'MULTIPLY'
                 mix.inputs[0].default_value = 1.0
                 self.linkColor(tex, mix, color, 1)
@@ -766,13 +767,17 @@ class CyclesTree(Tree):
             return self.linkColor(tex, node, color, colorslot)
         elif value == 1:   # Scatter & Transmit
             if facslot:
+                node.inputs[facslot].default_value = fac
                 self.links.new(effect.outputs["Transmit Fac"], node.inputs[facslot])
-            self.links.new(mix.outputs["Color"], node.inputs[colorslot])
+            node.inputs[colorslot].default_value[0:3] = color
+            if colorInput:
+                self.links.new(colorInput.outputs["Color"], node.inputs[colorslot])
             return mix
         elif value == 2:   # Scatter & Transmit Intensity
             if facslot:
+                node.inputs[facslot].default_value = fac
                 self.links.new(effect.outputs["Intensity Fac"], node.inputs[facslot])
-            self.links.new(effect.outputs["Color"], node.inputs[colorslot])
+            self.links.new(effect.outputs["Intensity Color"], node.inputs[colorslot])
             return effect
 
 
@@ -931,6 +936,7 @@ class CyclesTree(Tree):
         else:
             self.buildGlossy()
             self.buildDualLobe()
+
 
     def buildDualLobe(self):
         from .cgroup import DualLobeGroupUberIray, DualLobeGroupPbrSkin

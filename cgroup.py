@@ -453,7 +453,7 @@ class ColorEffectGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Fac", "Color"]
-        self.outsockets += ["Transmit Fac", "Intensity Fac", "Color"]
+        self.outsockets += ["Transmit Fac", "Intensity Fac", "Intensity Color"]
 
 
     def create(self, node, name, parent):
@@ -463,38 +463,39 @@ class ColorEffectGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
         self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        self.group.outputs.new("NodeSocketColor", "Intensity Color")
 
 
     def addNodes(self, args=None):
-        mult1 = self.addNode("ShaderNodeMath", 1)
-        mult1.operation = 'MULTIPLY'
-        self.links.new(self.inputs.outputs["Fac"], mult1.inputs[0])
-        self.links.new(self.inputs.outputs["Color"], mult1.inputs[1])
-
-        mult2 = self.addNode("ShaderNodeMath", 1)
-        mult2.operation = 'MULTIPLY'
-        self.links.new(self.inputs.outputs["Fac"], mult2.inputs[0])
-        self.links.new(self.inputs.outputs["Color"], mult2.inputs[1])
-
-        mix = self.addNode("ShaderNodeMixRGB", 2)
-        mix.blend_type = 'COLOR'
-        mix.inputs[0].default_value = 1.0
-        mix.inputs[1].default_value[0:3] = WHITE
+        mix = self.addNode("ShaderNodeMixRGB", 1)
+        mix.blend_type = 'MIX'
+        self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
+        mix.inputs[1].default_value[0:3] = BLACK
         self.links.new(self.inputs.outputs["Color"], mix.inputs[2])
 
-        hsv = self.addNode("ShaderNodeHueSaturation", 2)
-        hsv.inputs["Hue"].default_value = 0.5
-        hsv.inputs["Saturation"].default_value = 0.0
-        hsv.inputs["Value"].default_value = 1.0
-        hsv.inputs["Fac"].default_value = 1.0
-        self.links.new(mult2.outputs[0], hsv.inputs["Fac"])
-        self.links.new(self.inputs.outputs["Color"], hsv.inputs["Color"])
+        hsv1 = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv1.inputs["Hue"].default_value = 0.5
+        hsv1.inputs["Saturation"].default_value = 0.0
+        hsv1.inputs["Value"].default_value = 2.0
+        hsv1.inputs["Fac"].default_value = 1.0
+        self.links.new(mix.outputs["Color"], hsv1.inputs["Color"])
 
-        self.links.new(mult1.outputs[0], self.outputs.inputs["Transmit Fac"])
-        self.links.new(hsv.outputs["Color"], self.outputs.inputs["Intensity Fac"])
-        self.links.new(mix.outputs["Color"], self.outputs.inputs["Color"])
+        hsv2 = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv2.inputs["Hue"].default_value = 0.5
+        hsv2.inputs["Saturation"].default_value = 0.0
+        hsv2.inputs["Value"].default_value = 1.0
+        hsv2.inputs["Fac"].default_value = 1.0
+        self.links.new(mix.outputs["Color"], hsv2.inputs["Color"])
 
+        rgb = self.addNode("ShaderNodeMixRGB", 2)
+        rgb.blend_type = 'COLOR'
+        rgb.inputs[0].default_value = 1.0
+        rgb.inputs[1].default_value[0:3] = WHITE
+        self.links.new(self.inputs.outputs["Color"], rgb.inputs[2])
+
+        self.links.new(hsv1.outputs[0], self.outputs.inputs["Transmit Fac"])
+        self.links.new(hsv2.outputs["Color"], self.outputs.inputs["Intensity Fac"])
+        self.links.new(rgb.outputs["Color"], self.outputs.inputs["Intensity Color"])
 
 # ---------------------------------------------------------------------
 #   Invert Normal Map Group
@@ -1620,6 +1621,8 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     groups = {
+        "useDiffuse" : (Fresnel2Group, "DAZ Diffuse", []),
+        "useColorEffect" : (Fresnel2Group, "DAZ Color Effect", []),
         "useFresnel" : (Fresnel2Group, "DAZ Fresnel 2", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
         "useOneSided" : (OneSidedGroup, "DAZ One-Sided", []),
@@ -1630,6 +1633,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useFakeCaustics" : (FakeCausticsGroup, "DAZ Fake Caustics", [WHITE]),
         "useTransparent" : (TransparentGroup, "DAZ Transparent", []),
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
+        "useSubsurface" : (TranslucentGroup, "DAZ Subsurface", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
         "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe Uber", []),
         "useDualLobePBR" : (DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", []),
@@ -1641,6 +1645,8 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
     }
 
+    useDiffuse : BoolProperty(name="Diffuse", default=False)
+    useColorEffect : BoolProperty(name="Color Effect", default=False)
     useFresnel : BoolProperty(name="Fresnel", default=False)
     useEmission : BoolProperty(name="Emission", default=False)
     useOneSided : BoolProperty(name="One Sided", default=False)
@@ -1651,6 +1657,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useFakeCaustics : BoolProperty(name="Fake Caustics", default=False)
     useTransparent : BoolProperty(name="Transparent", default=False)
     useTranslucent : BoolProperty(name="Translucent", default=False)
+    useSubsurface : BoolProperty(name="Subsurface", default=False)
     useSSS : BoolProperty(name="Subsurface Scattering", default=False)
     useRayClip : BoolProperty(name="Ray Clip", default=False)
     useDualLobeUber : BoolProperty(name="Dual Lobe (Uber Shader)", default=False)
