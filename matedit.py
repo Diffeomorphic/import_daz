@@ -209,15 +209,15 @@ TweakableChannels = OrderedDict([
     ("Fresnel IOR", ("DAZ Fresnel 2", "IOR", 1)),
     ("Fresnel Roughness", ("DAZ Fresnel 2", "Roughness", 1)),
 
-    ("Dual Lobe Uber", None),
-    ("Dual Lobe Uber Weight", ("DAZ Dual Lobe Uber", "Weight", 1)),
-    ("Dual Lobe Uber IOR", ("DAZ Dual Lobe Uber", "IOR", 1)),
-    ("Dual Lobe Uber Roughness 1", ("DAZ Dual Lobe Uber", "Roughness 1", 1)),
-    ("Dual Lobe Uber Roughness 2", ("DAZ Dual Lobe Uber", "Roughness 2", 1)),
-    ("Dual Lobe Uber Strength", ("DAZ Dual Lobe Uber", "Fac", 1)),
+    ("Dual Lobe", None),
+    ("Dual Lobe Ratio", ("DAZ Dual Lobe", "Ratio", 1)),
+    ("Dual Lobe IOR", ("DAZ Dual Lobe", "IOR", 1)),
+    ("Dual Lobe Roughness 1", ("DAZ Dual Lobe", "Roughness 1", 1)),
+    ("Dual Lobe Roughness 2", ("DAZ Dual Lobe", "Roughness 2", 1)),
+    ("Dual Lobe Strength", ("DAZ Dual Lobe", "Fac", 1)),
 
     ("Dual Lobe PBR", None),
-    ("Dual Lobe PBR Weight", ("DAZ Dual Lobe PBR", "Weight", 1)),
+    ("Dual Lobe PBR Ratio", ("DAZ Dual Lobe PBR", "Ratio", 1)),
     ("Dual Lobe PBR IOR", ("DAZ Dual Lobe PBR", "IOR", 1)),
     ("Dual Lobe PBR Roughness 1", ("DAZ Dual Lobe PBR", "Roughness 1", 1)),
     ("Dual Lobe PBR Roughness 2", ("DAZ Dual Lobe PBR", "Roughness 2", 1)),
@@ -275,7 +275,7 @@ TweakableChannels = OrderedDict([
     ("Overlay Strength", ("DAZ Overlay", "Fac", 1)),
 
     ("Metal Uber", None),
-    ("Metallicity", ("DAZ Metal Uber", "Fac", 1)),
+    ("Metallicity", ("DAZ Metal", "Fac", 1)),
 
     ("Metal PBR", None),
     ("Metallicity", ("DAZ Metal PBR", "Fac", 1)),

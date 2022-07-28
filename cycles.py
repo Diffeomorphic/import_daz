@@ -931,19 +931,13 @@ class CyclesTree(Tree):
         from .cgroup import DualLobeGroupUberIray, DualLobeGroupPbrSkin
         if not self.isEnabled("Dual Lobe Specular"):
             return
-
         self.column += 1
         if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", size=100)
         else:
-            node = self.addGroup(DualLobeGroupUberIray, "DAZ Dual Lobe Uber", size=100)
-        value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 0.5, False, isMask=True)
-        node.inputs["Weight"].default_value = value
-        if tex:
-            wttex = self.multiplyScalarTex(value, tex)
-            if wttex:
-                self.links.new(wttex.outputs[0], node.inputs["Weight"])
+            node = self.addGroup(DualLobeGroupUberIray, "DAZ Dual Lobe", size=100)
 
+        fac,factex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 0.5, False, isMask=True)
         value,tex = self.getColorTex(["Dual Lobe Specular Reflectivity"], "NONE", 0.5, False)
         node.inputs["IOR"].default_value = 1.1 + 0.7*value
         if tex:
@@ -962,8 +956,9 @@ class CyclesTree(Tree):
             rough2,roughtex2 = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
             self.setRoughness(node, "Roughness 2", rough2, roughtex2)
 
+        node.inputs["Ratio"].default_value = ratio
         self.linkBumpNormal(node)
-        self.mixWithActive(ratio, None, node, keep=True)
+        self.mixWithActive(fac, factex, node, keep=True)
         LS.usedFeatures["Glossy"] = True
 
 
@@ -995,7 +990,7 @@ class CyclesTree(Tree):
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
             node.inputs["Dual Ratio"].default_value = ratio
         else:
-            node = self.addGroup(MetalGroupUber, "DAZ Metal Uber", size=100)
+            node = self.addGroup(MetalGroupUber, "DAZ Metal", size=100)
             roughness,roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0)
             self.setRoughness(node, "Roughness", roughness, roughtex)
             anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)

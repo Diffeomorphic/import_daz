@@ -1107,19 +1107,16 @@ class RayClipGroup(CyclesGroup):
 #   Dual Lobe Group
 # ---------------------------------------------------------------------
 
-class DualLobeGroup(CyclesGroup):
+class DualLobeGroup(FacMixGroup):
     def __init__(self):
-        CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "BSDF", "Weight", "IOR", "Roughness 1", "Roughness 2"]
-        self.outsockets += ["BSDF"]
+        FacMixGroup.__init__(self)
+        self.insockets += ["Ratio", "IOR", "Roughness 1", "Roughness 2"]
 
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
-        self.setMinMax("Fac", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketShader", "BSDF")
-        self.group.inputs.new("NodeSocketFloat", "Weight")
+        FacMixGroup.create(self, node, name, parent, 4)
+        self.group.inputs.new("NodeSocketFloat", "Ratio")
+        self.setMinMax("Ratio", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketFloat", "Roughness 1")
@@ -1128,8 +1125,6 @@ class DualLobeGroup(CyclesGroup):
         self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketVector", "Normal")
         self.hideSlot("Normal")
-        self.group.outputs.new("NodeSocketShader", "BSDF")
-
 
 
     def addNodes(self, args=None):
@@ -1144,7 +1139,7 @@ class DualLobeGroup(CyclesGroup):
 
     def addGlossy(self, roughness, useNormal):
         glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
-        self.links.new(self.inputs.outputs["Weight"], glossy.inputs["Color"])
+        self.links.new(self.inputs.outputs["Fac"], glossy.inputs["Color"])
         self.links.new(self.inputs.outputs[roughness], glossy.inputs["Roughness"])
         if useNormal:
             self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
@@ -1161,7 +1156,7 @@ class DualLobeGroup(CyclesGroup):
 
     def mixOutput(self, node1, node2, slot):
         mix = self.addNode("ShaderNodeMixShader", 3)
-        self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Ratio"], mix.inputs[0])
         self.links.new(node1.outputs[0], mix.inputs[2])
         self.links.new(node2.outputs[0], mix.inputs[1])
         self.links.new(mix.outputs[0], self.outputs.inputs[slot])
@@ -1636,9 +1631,9 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
         "useSubsurface" : (SubsurfaceGroup, "DAZ Subsurface", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
-        "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe Uber", []),
+        "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe", []),
         "useDualLobePBR" : (DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", []),
-        "useMetalUber" : (MetalGroupUber, "DAZ Metal Uber", []),
+        "useMetalUber" : (MetalGroupUber, "DAZ Metal", []),
         "useMetalPBR" : (MetalGroupPbrSkin, "DAZ Metal PBR", []),
         "useVolume" : (VolumeGroup, "DAZ Volume", []),
         "useNormal" : (NormalGroup, "DAZ Normal", ["uvname"]),

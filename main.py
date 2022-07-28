@@ -404,7 +404,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
             tree.linkToOutputs(cycles)
         if tree.getValue(["Metallicity Enable"], False):
             if dmat.shader == 'UBER_IRAY':
-                cycles = tree.getOutputs(["DAZ Metal Uber", "DAZ Top Coat"])
+                cycles = tree.getOutputs(["DAZ Metal", "DAZ Top Coat"])
             elif dmat.shader == 'PBRSKIN':
                 cycles = tree.getOutputs(["DAZ Metal PBR", "DAZ Top Coat"])
             tree.buildMetal()
