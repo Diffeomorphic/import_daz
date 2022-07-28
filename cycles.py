@@ -428,7 +428,7 @@ class CyclesTree(Tree):
         self.buildDetail(uvname)
         self.column = 4
         if self.owner.useVolume:
-            self.buildTranslucency()
+            self.buildTranslucency(uvname)
         self.buildDiffuse()
         if not self.owner.useVolume:
             self.buildSubsurface()
@@ -608,13 +608,7 @@ class CyclesTree(Tree):
         elif self.owner.uv_set:
             normal.uv_map = self.owner.uv_set.name
         normal.inputs["Strength"].default_value = strength
-        if self.getValue(["Invert Transmission Normal"], 0):
-            from .cgroup import DazInvertNormalMapGroup
-            inv = self.addGroup(DazInvertNormalMapGroup, "DAZ Invert NMap", col=self.column-1)
-            self.links.new(tex.outputs[0], inv.inputs["Color"])
-            self.links.new(inv.outputs[0], normal.inputs["Color"])
-        else:
-            self.links.new(tex.outputs[0], normal.inputs["Color"])
+        self.links.new(tex.outputs[0], normal.inputs["Color"])
         return normal
 
 
@@ -647,11 +641,6 @@ class CyclesTree(Tree):
 
 
     def buildBumpMap(self, bumpval, bumptex, col=3):
-        if self.getValue(["Invert Transmission Normal"], 0):
-            inv = self.addNode("ShaderNodeInvert", col)
-            inv.inputs["Fac"].default_value = 1.0
-            self.links.new(bumptex.outputs[0], inv.inputs["Color"])
-            bumptex = inv
         bump = self.addNode("ShaderNodeBump", col=col)
         bump.inputs["Strength"].default_value = bumpval * GS.bumpFactor
         self.links.new(bumptex.outputs[0], bump.inputs["Height"])
@@ -1250,7 +1239,7 @@ class CyclesTree(Tree):
             return False
 
 
-    def buildTranslucency(self):
+    def buildTranslucency(self, uvname):
         if not self.checkTranslucency():
             return
         from .cgroup import TranslucentGroup
@@ -1263,7 +1252,27 @@ class CyclesTree(Tree):
         transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         self.linkColor(transtex, node, transcolor, "Color")
         node.width = 200
-        self.linkBumpNormal(node)
+        if self.getValue(["Invert Transmission Normal"], 0):
+            normal = bump = None
+            if self.normalval and self.normaltex:
+                from .cgroup import InvertNormalMapGroup
+                inv = self.addGroup(InvertNormalMapGroup, "DAZ Invert NMap", col=self.column-1)
+                self.links.new(self.normaltex.outputs["Color"], inv.inputs["Color"])
+                normal = self.buildNormalMap(self.normalval, inv, uvname, col=self.column-1)
+                self.links.new(inv.outputs[0], normal.inputs["Color"])
+            if self.bumpval and self.bumptex:
+                inv = self.addNode("ShaderNodeInvert", col=self.column-1)
+                inv.inputs["Fac"].default_value = 1.0
+                self.links.new(self.bumptex.outputs["Color"], inv.inputs["Color"])
+                bump = self.buildBumpMap(self.bumpval, inv, col=self.column-1)
+                if normal:
+                    self.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
+            if bump:
+                self.links.new(bump.outputs["Normal"], node.inputs["Normal"])
+            elif normal:
+                self.links.new(normal.outputs["Normal"], node.inputs["Normal"])
+        else:
+            self.linkBumpNormal(node)
         self.cycles = node
         LS.usedFeatures["Transparent"] = True
         self.endSSS()

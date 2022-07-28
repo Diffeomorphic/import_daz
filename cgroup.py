@@ -501,7 +501,7 @@ class ColorEffectGroup(CyclesGroup):
 #   Invert Normal Map Group
 # ---------------------------------------------------------------------
 
-class DazInvertNormalMapGroup(CyclesGroup):
+class InvertNormalMapGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Color"]
@@ -1621,8 +1621,8 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     groups = {
-        "useDiffuse" : (Fresnel2Group, "DAZ Diffuse", []),
-        "useColorEffect" : (Fresnel2Group, "DAZ Color Effect", []),
+        "useDiffuse" : (DiffuseGroup, "DAZ Diffuse", []),
+        "useColorEffect" : (ColorEffectGroup, "DAZ Color Effect", []),
         "useFresnel" : (Fresnel2Group, "DAZ Fresnel 2", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
         "useOneSided" : (OneSidedGroup, "DAZ One-Sided", []),
@@ -1632,8 +1632,9 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useRefraction" : (RefractionGroup, "DAZ Refraction", []),
         "useFakeCaustics" : (FakeCausticsGroup, "DAZ Fake Caustics", [WHITE]),
         "useTransparent" : (TransparentGroup, "DAZ Transparent", []),
+        "useInvertNormalMap" : (InvertNormalMapGroup, "DAZ Invert NMap", []),
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
-        "useSubsurface" : (TranslucentGroup, "DAZ Subsurface", []),
+        "useSubsurface" : (SubsurfaceGroup, "DAZ Subsurface", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
         "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe Uber", []),
         "useDualLobePBR" : (DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", []),
@@ -1656,6 +1657,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useRefraction : BoolProperty(name="Refraction", default=False)
     useFakeCaustics : BoolProperty(name="Fake Caustics", default=False)
     useTransparent : BoolProperty(name="Transparent", default=False)
+    useInvertNormalMap : BoolProperty(name="Invert Normal Map", default=False)
     useTranslucent : BoolProperty(name="Translucent", default=False)
     useSubsurface : BoolProperty(name="Subsurface", default=False)
     useSSS : BoolProperty(name="Subsurface Scattering", default=False)
