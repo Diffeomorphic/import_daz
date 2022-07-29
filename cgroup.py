@@ -299,37 +299,26 @@ class BSDFGroup(CyclesGroup):
     def mixCycles(self, socket, slot):
         self.links.new(socket, self.mix1.inputs[slot])
 
+# ---------------------------------------------------------------------
+#   Fac Mix Group.
+# ---------------------------------------------------------------------
 
-class MixGroup(BSDFGroup):
+class FacMixGroup(BSDFGroup):
+    def __init__(self):
+        BSDFGroup.__init__(self)
+        self.insockets += ["Fac"]
+
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
-        self.preCreate()
+        self.group.inputs.new("NodeSocketFloat", "Fac")
+        self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.createShaderSlots()
-
-    def preCreate(self):
-        pass
 
     def addNodes(self, args=None):
         self.mix1 = self.addNode("ShaderNodeMixShader", self.ncols-1)
         self.mix1.label = "Mix"
         self.links.new(self.inputs.outputs["BSDF"], self.mix1.inputs[1])
         self.links.new(self.mix1.outputs[0], self.outputs.inputs["BSDF"])
-
-# ---------------------------------------------------------------------
-#   Fac Mix Group.
-# ---------------------------------------------------------------------
-
-class FacMixGroup(MixGroup):
-    def __init__(self):
-        MixGroup.__init__(self)
-        self.insockets += ["Fac"]
-
-    def preCreate(self):
-        self.group.inputs.new("NodeSocketFloat", "Fac")
-        self.setMinMax("Fac", 0.5, 0.0, 1.0)
-
-    def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
         self.mixCycles(self.inputs.outputs["Fac"], 0)
 
 # ---------------------------------------------------------------------
@@ -631,12 +620,12 @@ class DiffuseGroup(FacMixGroup):
 class GlossyGroup(FacMixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        FacMixGroup.__init__(self)
         self.insockets += ["Color", "IOR", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
-        MixGroup.create(self, node, name, parent, 3)
+        FacMixGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
@@ -651,7 +640,7 @@ class GlossyGroup(FacMixGroup):
 
 
     def addNodes(self, args=None):
-        MixGroup.addNodes(self, args)
+        FacMixGroup.addNodes(self, args)
 
         fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", 1)
         self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
@@ -667,8 +656,13 @@ class GlossyGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Rotation"], aniso.inputs["Rotation"])
         self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
 
-        self.mixCycles(fresnel.outputs[0], 0)
-        self.mixCycles(aniso.outputs[0], 2)
+        mix = self.addNode("ShaderNodeMixShader", 2)
+        self.links.new(fresnel.outputs[0], mix.inputs[0])
+        self.links.new(self.inputs.outputs["BSDF"], mix.inputs[1])
+        self.links.new(aniso.outputs[0], mix.inputs[2])
+
+        self.mixCycles(mix.outputs[0], 2)
+
 
 # ---------------------------------------------------------------------
 #   Metal Group

@@ -1011,32 +1011,19 @@ class CyclesTree(Tree):
     #   Glossy
     #-------------------------------------------------------------
 
-    def getGlossyColor(self):
-        #   glossy bsdf color = iray glossy color * iray glossy layered weight
-        strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
-        color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, False)
-        if tex and strtex:
-            tex = self.mixTexs('MULTIPLY', tex, strtex)
-        elif strtex:
-            tex = strtex
-        color = strength*color
-        if tex:
-            tex = self.multiplyVectorTex(color, tex)
-        return color,tex
-
-
     def buildGlossy(self):
         color = self.getColor("getChannelGlossyColor", BLACK)
-        strength = self.getValue("getChannelGlossyLayeredWeight", 0)
-        if isBlack(color) or strength == 0:
+        fac = self.getValue("getChannelGlossyLayeredWeight", 0)
+        if isBlack(color) or fac == 0:
             return
 
         from .cgroup import GlossyGroup
         self.column += 1
         glossy = self.addGroup(GlossyGroup, "DAZ Glossy", size=100)
-        color,tex = self.getGlossyColor()
+        fac,factex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 0)
+        color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, False)
         effect = self.getValue(["Glossy Color Effect"], 0)
-        self.buildColorEffect(effect, color, tex, WHITE, strength, None, glossy)
+        self.buildColorEffect(effect, color, tex, WHITE, fac, factex, glossy)
         ior,iortex = self.getFresnelIOR()
         self.linkScalar(iortex, glossy, ior, "IOR")
         channel,value,roughness,invert = self.owner.getGlossyRoughness(0.0)
@@ -1048,10 +1035,8 @@ class CyclesTree(Tree):
             value = 1 - anirot
             self.linkScalar(tex, glossy, value, "Rotation")
         self.linkBumpNormal(glossy)
-
+        self.mixWithActive(fac, factex, glossy)
         LS.usedFeatures["Glossy"] = True
-        self.linkCycles(glossy, "BSDF")
-        self.cycles = glossy
 
 
     def getFresnelIOR(self):
