@@ -208,12 +208,14 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
     return cns
 
 
-def stretchTo(pb, target, rig):
+def stretchTo(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('STRETCH_TO')
     cns.target = rig
     cns.subtarget = target.name
-    #pb.bone.hide_select = True
     cns.volume = "NO_VOLUME"
+    if prop is not None:
+        cns.influence = 0.0
+        addDriver(cns, "influence", rig, prop, expr)
     return cns
 
 
@@ -377,15 +379,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         ('Custom',       (1,0.5,0), (L_CUSTOM,)),
     ]
 
-    BendTwists = [
-        ("shin.L", "foot.L", True, True),
-        ("thigh.L", "shin.L", False, False),
-        ("forearm.L", "hand.L", True, False),
-        ("upper_arm.L", "forearm.L", False, False),
-        ("shin.R", "foot.R", True, True),
-        ("thigh.R", "shin.R", False, False),
-        ("forearm.R", "hand.R", True, False),
-        ("upper_arm.R", "forearm.R", False, False),
+    BendTwistBones = [
+        ("shin.L", "foot.L", True, True, "MhaLegStretch_L"),
+        ("thigh.L", "shin.L", False, False, "MhaLegStretch_L"),
+        ("forearm.L", "hand.L", True, False, "MhaArmStretch_L"),
+        ("upper_arm.L", "forearm.L", False, False, "MhaArmStretch_L"),
+        ("shin.R", "foot.R", True, True, "MhaLegStretch_R"),
+        ("thigh.R", "shin.R", False, False, "MhaLegStretch_R"),
+        ("forearm.R", "hand.R", True, False, "MhaArmStretch_R"),
+        ("upper_arm.R", "forearm.R", False, False, "MhaArmStretch_R"),
         ]
 
     Knees = [
@@ -1285,11 +1287,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             prop = "MhaForearmFollow_" + suffix[1]
             setMhxProp(rig, prop, True)
             prop = "MhaArmHinge_" + suffix[1]
-            setMhxProp(rig, prop, False)
+            setMhxProp(rig, prop, 0.0)
             cns = copyTransform(armParent, armSocket, rig)
-            addDriver(cns, "mute", rig, prop, "x")
+            addDriver(cns, "influence", rig, prop, "1-x")
             cns = copyLocation(armParent, armSocket, rig)
-            addDriver(cns, "mute", rig, prop, "not(x)")
+            addDriver(cns, "influence", rig, prop, "x")
 
             prop = "MhaArmIk_"+suffix[1]
             setMhxProp(rig, prop, 1.0)
@@ -1345,11 +1347,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             toeInvIk = rpbs["toe.inv.ik"+suffix]
 
             prop = "MhaLegHinge_" + suffix[1]
-            setMhxProp(rig, prop, False)
+            setMhxProp(rig, prop, 0.0)
             cns = copyTransform(legParent, legSocket, rig)
-            addDriver(cns, "mute", rig, prop, "x")
+            addDriver(cns, "influence", rig, prop, "1-x")
             cns = copyLocation(legParent, legSocket, rig)
-            addDriver(cns, "mute", rig, prop, "not(x)")
+            addDriver(cns, "influence", rig, prop, "x")
 
             prop1 = "MhaLegIk_"+suffix[1]
             setMhxProp(rig, prop1, 1.0)
@@ -1400,8 +1402,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             handFk.lock_location = footFk.lock_location = (False,False,False)
 
         self.addGazeFollowsHead(rig)
-        for prop in ["MhaArmStretch_L", "MhaArmStretch_R", "MhaLegStretch_L", "MhaLegStretch_R", "MhaLimitsOn"]:
-            setMhxProp(rig, prop, True)
+        setMhxProp(rig, "MhaLimitsOn", True)
         for prop in ["MhaToeTarsal_L", "MhaToeTarsal_R"]:
             setMhxProp(rig, prop, False)
 
@@ -1417,11 +1418,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addCopyLocConstraints(self, rig):
         for suffix in ["L", "R"]:
-            for bname in ["hand", "hand.fk", "foot", "foot.fk"]:
+            for bname,part in [
+                ("hand", "Arm"),
+                ("hand.fk", "Arm"),
+                ("foot", "Leg"),
+                ("foot.fk", "Leg")]:
+                prop = "Mha%sStretch_%s" % (part, suffix)
+                setMhxProp(rig, prop, 1.0)
                 pb = rig.pose.bones["%s.%s" % (bname, suffix)]
-                cns = copyLocation(pb, pb.parent, rig)
+                cns = copyLocation(pb, pb.parent, rig, prop, "1-x")
                 cns.head_tail = 1.0
-                cns.mute = True
 
 
     def addChildOfConstraints(self, rig):
