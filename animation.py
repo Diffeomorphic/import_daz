@@ -676,6 +676,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                         pb.scale = scale
                     if self.useInsertKeys:
                         tfm.insertKeys(rig, pb, frame, pb.name, self)
+            setChildofInverses(rig)
         if self.affectMorphs and self.clearMorphs:
             from .morphing import getAllLowerMorphNames
             lprops = getAllLowerMorphNames(rig)
@@ -685,7 +686,6 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                     rig[prop] = 0.0
                     if self.useInsertKeys:
                         rig.keyframe_insert(propRef(prop), frame=frame, group=prop)
-
 
     KnownRigs = [
         "Genesis",
@@ -1387,6 +1387,17 @@ class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
         setWorldMatrix(rig, unit)
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
+        setChildofInverses(rig)
+
+
+def setChildofInverses(rig):
+    for pb in rig.pose.bones:
+        for cns in pb.constraints:
+            if cns.type == 'CHILD_OF':
+                rig.data.bones.active = pb.bone
+                print("SET INV", pb.name, cns.name)
+                bpy.ops.constraint.childof_set_inverse(constraint=cns.name, owner='BONE')
+                print("DONE")
 
 #----------------------------------------------------------
 #   Prune action

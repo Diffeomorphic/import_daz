@@ -99,9 +99,9 @@ class Fixer(DriverUser):
 
     def fixHands(self, rig):
         setMode('EDIT')
-        for suffix in [".L", ".R"]:
-            forearm = rig.data.edit_bones["forearm"+suffix]
-            hand = rig.data.edit_bones["hand"+suffix]
+        for suffix in ["L", "R"]:
+            forearm = rig.data.edit_bones["forearm.%s" % suffix]
+            hand = rig.data.edit_bones["hand.%s" % suffix]
             hand.head = forearm.tail
             flen = (forearm.tail - forearm.head).length
             vec = hand.tail - hand.head
@@ -373,7 +373,7 @@ class Fixer(DriverUser):
 
     def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
         from .mhx import makeBone, deriveBone
-        prefix = suffix[1].lower()
+        prefix = suffix.lower()
         eye = rig.data.edit_bones[prefix + "Eye"]
         drvname = drvBone(eye.name)
         if drvname not in rig.data.edit_bones.keys():
@@ -382,7 +382,7 @@ class Fixer(DriverUser):
         vec = eye.tail-eye.head
         vec.normalize()
         loc = eye.head + vec*rig.DazScale*30
-        gaze = makeBone("gaze"+suffix, rig, loc, loc+Vector((0,5*rig.DazScale,0)), 0, headLayer, None)
+        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*rig.DazScale,0)), 0, headLayer, None)
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
@@ -408,12 +408,12 @@ class Fixer(DriverUser):
             return False
 
         from .mhx import setMhxProp, dampedTrack, copyRotation
-        prop = "MhaGaze_%s" % suffix[1]
+        prop = "MhaGaze_%s" % suffix
         setMhxProp(rig, prop, 1.0)
-        prefix = suffix[1].lower()
+        prefix = suffix.lower()
         eye = rig.pose.bones["%sEye" % prefix]
         eyedrv = rig.pose.bones[drvBone("%sEye" % prefix)]
-        gaze = rig.pose.bones["gaze"+suffix]
+        gaze = rig.pose.bones["gaze.%s" % suffix]
         if not constraintExists(eye, eyedrv):
             cns = copyRotation(eye, eyedrv, rig)
             cns.mix_mode = 'ADD'
@@ -434,10 +434,10 @@ class Fixer(DriverUser):
 
     def copyToeRotation(self, rig, mute, suffix, toenames):
         from .mhx import copyRotation
-        toe = rig.pose.bones.get("toe%s" % suffix)
+        toe = rig.pose.bones.get("toe.%s" % suffix)
         if toe:
             for toename in toenames:
-                bname = "%s%s" % (toename, suffix)
+                bname = "%s.%s" % (toename, suffix)
                 pb = rig.pose.bones.get(bname)
                 if pb:
                     cns = copyRotation(pb, toe, rig)
@@ -625,10 +625,10 @@ class ConstraintStore:
     def getFkBone(self, key, rig):
         if len(key) > 2 and key[-2] == ".":
             base, suffix = key[:-2], key[-1]
-            bname = base + ".fk." + suffix
+            bname = "%s.fk.%s" % (base, suffix)
             if bname in rig.pose.bones.keys():
                 return rig.pose.bones[bname]
-            bname = base + "_fk." + suffix
+            bname = "%s_fk.%s" % (base, suffix)
             if bname in rig.pose.bones.keys():
                 return rig.pose.bones[bname]
         if key in rig.pose.bones.keys():
