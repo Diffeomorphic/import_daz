@@ -736,13 +736,16 @@ class CyclesTree(Tree):
 
     def buildColorEffect(self, value, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color"):
         # [ "Scatter Only", "Scatter & Transmit", "Scatter & Transmit Intensity" ]
-        if value > 0:
+        if value == 0:     # Scatter Only
+            if facslot:
+                self.linkScalar(factex, node, fac, facslot)
+            return self.linkColor(tex, node, color, colorslot)
+        else:
             from .cgroup import ColorEffectGroup
             effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
             self.linkScalar(factex, effect, fac, "Fac")
             if tint == WHITE:
                 colorInput = self.linkColor(tex, effect, color, "Color")
-                mix = effect
             else:
                 mix = colorInput = self.addNode("ShaderNodeMixRGB", self.column-2)
                 mix.blend_type = 'MULTIPLY'
@@ -750,23 +753,15 @@ class CyclesTree(Tree):
                 self.linkColor(tex, mix, color, 1)
                 mix.inputs[2].default_value[0:3] = tint
                 self.links.new(mix.outputs["Color"], effect.inputs["Color"])
-        if value == 0:     # Scatter Only
-            if facslot:
-                self.linkScalar(factex, node, fac, facslot)
-            return self.linkColor(tex, node, color, colorslot)
-        elif value == 1:   # Scatter & Transmit
+            outfac = {
+                1:  "Transmit Fac", # Scatter & Transmit
+                2:  "Intensity Fac" # Scatter & Transmit Intensity
+            }
             if facslot:
                 node.inputs[facslot].default_value = fac
-                self.links.new(effect.outputs["Transmit Fac"], node.inputs[facslot])
+                self.links.new(effect.outputs[outfac[value]], node.inputs[facslot])
             node.inputs[colorslot].default_value[0:3] = color
-            if colorInput:
-                self.links.new(colorInput.outputs["Color"], node.inputs[colorslot])
-            return mix
-        elif value == 2:   # Scatter & Transmit Intensity
-            if facslot:
-                node.inputs[facslot].default_value = fac
-                self.links.new(effect.outputs["Intensity Fac"], node.inputs[facslot])
-            self.links.new(effect.outputs["Intensity Color"], node.inputs[colorslot])
+            self.links.new(effect.outputs["Color"], node.inputs[colorslot])
             return effect
 
 
@@ -832,7 +827,7 @@ class CyclesTree(Tree):
             roughness,roughtex = self.getColorTex(["Diffuse Overlay Roughness"], "NONE", 0, False)
             self.setRoughness(node, "Roughness", roughness, roughtex)
             self.linkBumpNormal(node)
-            self.mixWithActive(fac**power, factex, node)
+            self.mixWithActive(fac**power, factex, node, effect=effect)
             return True
         else:
             return False
@@ -1035,7 +1030,7 @@ class CyclesTree(Tree):
             value = 1 - anirot
             self.linkScalar(tex, glossy, value, "Rotation")
         self.linkBumpNormal(glossy)
-        self.mixWithActive(fac, factex, glossy)
+        self.mixWithActive(fac, factex, glossy, effect=effect)
         LS.usedFeatures["Glossy"] = True
 
 
@@ -1168,7 +1163,7 @@ class CyclesTree(Tree):
             self.links.new(normal.outputs[0], top.inputs["Normal"])
         else:
             self.linkBumpNormal(top)
-        self.mixWithActive(weight, weighttex, top)
+        self.mixWithActive(weight, weighttex, top, effect=effect)
         if fresnel:
             self.linkScalar(roughtex, fresnel, roughness, "Roughness")
             self.linkBumpNormal(fresnel)
@@ -1818,7 +1813,7 @@ class CyclesTree(Tree):
         return mix
 
 
-    def mixWithActive(self, fac, tex, shader, useAlpha=False, keep=False):
+    def mixWithActive(self, fac, tex, shader, useAlpha=False, keep=False, effect=0):
         if shader.type != 'GROUP':
             raise RuntimeError("BUG: mixWithActive", shader.type)
         shader.inputs["Fac"].default_value = 1.0
@@ -1830,7 +1825,7 @@ class CyclesTree(Tree):
             self.links.new(texsocket, shader.inputs["Fac"])
         elif fac == 0 and not keep:
             return
-        elif fac == 1 and not keep:
+        elif fac == 1 and effect == 0 and not keep:
             self.cycles = shader
             return
         if self.cycles:

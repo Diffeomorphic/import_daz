@@ -442,7 +442,7 @@ class ColorEffectGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Fac", "Color"]
-        self.outsockets += ["Transmit Fac", "Intensity Fac", "Intensity Color"]
+        self.outsockets += ["Transmit Fac", "Intensity Fac", "Color"]
 
 
     def create(self, node, name, parent):
@@ -452,7 +452,7 @@ class ColorEffectGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
         self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
-        self.group.outputs.new("NodeSocketColor", "Intensity Color")
+        self.group.outputs.new("NodeSocketColor", "Color")
 
 
     def addNodes(self, args=None):
@@ -462,12 +462,16 @@ class ColorEffectGroup(CyclesGroup):
         mix.inputs[1].default_value[0:3] = BLACK
         self.links.new(self.inputs.outputs["Color"], mix.inputs[2])
 
-        hsv1 = self.addNode("ShaderNodeHueSaturation", 2)
-        hsv1.inputs["Hue"].default_value = 0.5
-        hsv1.inputs["Saturation"].default_value = 0.0
-        hsv1.inputs["Value"].default_value = 2.0
-        hsv1.inputs["Fac"].default_value = 1.0
-        self.links.new(mix.outputs["Color"], hsv1.inputs["Color"])
+        rgb = self.addNode("ShaderNodeMixRGB", 1)
+        rgb.blend_type = 'COLOR'
+        rgb.inputs[0].default_value = 1.0
+        rgb.inputs[1].default_value[0:3] = WHITE
+        self.links.new(self.inputs.outputs["Color"], rgb.inputs[2])
+
+        scale = self.addNode("ShaderNodeVectorMath", 2)
+        scale.operation = 'SCALE'
+        self.links.new(mix.outputs["Color"], scale.inputs["Vector"])
+        scale.inputs["Scale"].default_value = 1.0
 
         hsv2 = self.addNode("ShaderNodeHueSaturation", 2)
         hsv2.inputs["Hue"].default_value = 0.5
@@ -476,15 +480,9 @@ class ColorEffectGroup(CyclesGroup):
         hsv2.inputs["Fac"].default_value = 1.0
         self.links.new(mix.outputs["Color"], hsv2.inputs["Color"])
 
-        rgb = self.addNode("ShaderNodeMixRGB", 2)
-        rgb.blend_type = 'COLOR'
-        rgb.inputs[0].default_value = 1.0
-        rgb.inputs[1].default_value[0:3] = WHITE
-        self.links.new(self.inputs.outputs["Color"], rgb.inputs[2])
-
-        self.links.new(hsv1.outputs[0], self.outputs.inputs["Transmit Fac"])
+        self.links.new(scale.outputs[0], self.outputs.inputs["Transmit Fac"])
         self.links.new(hsv2.outputs["Color"], self.outputs.inputs["Intensity Fac"])
-        self.links.new(rgb.outputs["Color"], self.outputs.inputs["Intensity Color"])
+        self.links.new(rgb.outputs["Color"], self.outputs.inputs["Color"])
 
 # ---------------------------------------------------------------------
 #   Invert Normal Map Group
