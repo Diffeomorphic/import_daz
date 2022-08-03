@@ -1867,7 +1867,7 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, IsMesh):
 
         mod = getModifier(ob, 'ARMATURE')
         if mod:
-            nmod = nob.modifiers.new(mod.name, 'ARMATURE')
+            nmod = nob.modifiers.new("Armature %s" % mod.name, 'ARMATURE')
             nmod.object = mod.object
             nmod.use_deform_preserve_volume = mod.use_deform_preserve_volume
 

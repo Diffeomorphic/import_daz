@@ -120,6 +120,7 @@ def normalizeRoll(roll):
 
 def copyTransform(bone, target, rig, prop=None, expr="x"):
     cns = bone.constraints.new('COPY_TRANSFORMS')
+    cns.name = "Copy Transform %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     if prop is not None:
@@ -130,11 +131,9 @@ def copyTransform(bone, target, rig, prop=None, expr="x"):
 def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
     if boneFk is not None:
         cnsFk = copyTransform(bone, boneFk, rig)
-        cnsFk.name = "FK"
         cnsFk.influence = 1.0
     if boneIk is not None:
         cnsIk = copyTransform(bone, boneIk, rig, prop1)
-        cnsIk.name = "IK"
         cnsIk.influence = 0.0
         if prop2:
             addDriver(cnsIk, "mute", rig, prop2, "x")
@@ -142,6 +141,7 @@ def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
 
 def copyLocation(bone, target, rig, prop=None, expr="x"):
     cns = bone.constraints.new('COPY_LOCATION')
+    cns.name = "Copy Location %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     if prop is not None:
@@ -149,8 +149,9 @@ def copyLocation(bone, target, rig, prop=None, expr="x"):
     return cns
 
 
-def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
+def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', amt=None):
     cns = bone.constraints.new('COPY_ROTATION')
+    cns.name = "Copy Rotation %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     cns.owner_space = space
@@ -159,12 +160,15 @@ def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
         bone.rotation_mode == target.rotation_mode):
         cns.euler_order = bone.rotation_mode
     if prop is not None:
-        addDriver(cns, "influence", rig, prop, expr)
+        if amt is None:
+            amt = rig
+        addDriver(cns, "influence", amt, prop, expr)
     return cns
 
 
 def copyScale(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns = bone.constraints.new('COPY_SCALE')
+    cns.name = "Copy Scale %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     cns.owner_space = space
@@ -192,9 +196,9 @@ def limitRotation(bone, rig, prop=None, expr="x"):
     return cns
 
 
-def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
+def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x", amt=None):
     cns = last.constraints.new('IK')
-    cns.name = "IK"
+    cns.name = "IK %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     if pole:
@@ -204,12 +208,15 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
     cns.chain_count = count
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        if amt is None:
+            amt = rig
+        addDriver(cns, "influence", amt, prop, expr)
     return cns
 
 
 def stretchTo(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('STRETCH_TO')
+    cns.name = "StretchTo %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     cns.volume = "NO_VOLUME"
@@ -221,6 +228,7 @@ def stretchTo(pb, target, rig, prop=None, expr="x"):
 
 def dampedTrack(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('DAMPED_TRACK')
+    cns.name = "Damped Track %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     cns.track_axis = 'TRACK_Y'
@@ -232,6 +240,7 @@ def dampedTrack(pb, target, rig, prop=None, expr="x"):
 
 def trackTo(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('TRACK_TO')
+    cns.name = "TrackTo %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     cns.track_axis = 'TRACK_Y'
@@ -242,10 +251,11 @@ def trackTo(pb, target, rig, prop=None, expr="x"):
     return cns
 
 
-def childOf(pb, bname, rig, prop=None, expr="x"):
+def childOf(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('CHILD_OF')
+    cns.name = "ChildOf %s" % target
     cns.target = rig
-    cns.subtarget = bname
+    cns.subtarget = target
     if prop is not None:
         cns.influence = 0.0
         addDriver(cns, "influence", rig, prop, expr)
@@ -1454,7 +1464,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def getElbowParent(self, rig, suffix):
         if self.useChildOfConstraints:
-            bname = "master"
+            return None
         elif self.elbowParent == 'HAND':
             bname = "elbowPoleP.%s" % suffix
         elif self.elbowParent == 'SHOULDER':
@@ -1466,7 +1476,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def getKneeParent(self, rig, suffix):
         if self.useChildOfConstraints:
-            bname = "master"
+            return None
         elif self.kneeParent == 'FOOT':
             bname = "kneePoleP.%s" % suffix
         elif self.kneeParent == 'HIP':
@@ -1485,28 +1495,24 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             setMhxProp(rig, handprop, (float)(self.elbowParent=='HAND'))
             setMhxProp(rig, shoulderprop, (float)(self.elbowParent=='SHOULDER'))
             pb = rig.pose.bones["elbow.pt.ik.%s" % suffix]
-            cns = childOf(pb, "elbowPoleP.%s" % suffix, rig, handprop)
+            cns = childOf(pb, "master", rig, (handprop, shoulderprop), "1-min(1,x1+x2)")
+            cns.name = "ChildOf Master"
+            cns = childOf(pb, "elbowPoleP.%s" % suffix, rig, handprop, "x")
             cns.name = "ChildOf Hand"
-            cns = childOf(pb, "arm_parent.%s" % suffix, rig, shoulderprop)
+            cns = childOf(pb, "arm_parent.%s" % suffix, rig, shoulderprop, "x")
             cns.name = "ChildOf Shoulder"
-            drivers = [
-                ("master", (handprop, shoulderprop), "1-min(1,x1+x2)"),
-                ("elbowPoleP.%s" % suffix, handprop, "x"),
-                ("arm_parent.%s" % suffix, shoulderprop, "x")]
 
             footprop = "MhaKneeFoot_%s" % suffix
             hipprop = "MhaKneeHip_%s" % suffix
             setMhxProp(rig, footprop, (float)(self.kneeParent=='FOOT'))
             setMhxProp(rig, hipprop, (float)(self.kneeParent=='HIP'))
             pb = rig.pose.bones["knee.pt.ik.%s" % suffix]
-            cns = childOf(pb, "kneePoleP.%s" % suffix, rig, footprop)
+            cns = childOf(pb, "master", rig, (footprop, hipprop), "1-min(1,x1+x2)")
+            cns.name = "ChildOf Master"
+            cns = childOf(pb, "kneePoleP.%s" % suffix, rig, footprop, "x")
             cns.name = "ChildOf Foot"
-            cns = childOf(pb, "hip", rig, hipprop)
+            cns = childOf(pb, "hip", rig, hipprop, "x")
             cns.name = "ChildOf Hip"
-            drivers = [
-                ("master", (footprop, hipprop), "1-min(1,x1+x2)"),
-                ("kneePoleP.%s" % suffix, footprop, "x"),
-                ("hip", hipprop, "x")]
 
     #-------------------------------------------------------------
     #   Fix constraints -

@@ -314,7 +314,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             vgrp.add([vn], 1.0, 'REPLACE')
         mod = getModifier(cob, 'MULTIRES')
         if mod:
-            smod = cob.modifiers.new("Graft", 'SMOOTH')
+            smod = cob.modifiers.new("Smooth Graft", 'SMOOTH')
             smod.factor = 1.0
             smod.iterations = 10
             smod.vertex_group = vgrp.name
@@ -1270,13 +1270,13 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     def changeArmatureModifier(self, ob, rig):
         mod = getModifier(ob, 'ARMATURE')
         if mod:
-            mod.name = rig.name
+            mod.name = "Armature %s" % rig.name
             mod.object = rig
             return
         if len(ob.vertex_groups) == 0:
             print("Mesh with no vertex groups: %s" % ob.name)
         else:
-            mod = ob.modifiers.new(rig.name, "ARMATURE")
+            mod = ob.modifiers.new("Armature %s" % rig.name, "ARMATURE")
             mod.object = rig
             mod.use_deform_preserve_volume = True
 
@@ -1431,7 +1431,7 @@ def setRestPose(ob, rig, context):
             print("Could not apply armature to %s" % ob.name)
             ok = False
         if ok:
-            mod = ob.modifiers.new(rig.name, "ARMATURE")
+            mod = ob.modifiers.new("Armature %s" % rig.name, "ARMATURE")
             mod.object = rig
             mod.use_deform_preserve_volume = True
             nmods = len(ob.modifiers)

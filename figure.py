@@ -487,16 +487,19 @@ class ExtraBones(DriverUser):
         isLoc2,isRot2,isScale2 = self.isSuchDriver(bname, sumDrivers)
         if isLoc1 or isLoc2:
             cns = pb.constraints.new('COPY_LOCATION')
+            cns.name = "Copy Location %s" % bname
             addFields(cns, rig, bname)
             cns.use_offset = True
         if isRot1 or isRot2:
             cns = pb.constraints.new('COPY_ROTATION')
+            cns.name = "Copy Rotation %s" % bname
             if pb.parent and pb.parent.rotation_mode != 'QUATERNION':
                 cns.euler_order = pb.parent.rotation_mode
             addFields(cns, rig, bname)
             cns.mix_mode = 'ADD'
         if isScale1 or isScale2:
             cns = pb.constraints.new('COPY_SCALE')
+            cns.name = "Copy Scale %s" % bname
             addFields(cns, rig, bname)
             cns.use_offset = True
 
@@ -1063,14 +1066,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 hand = rpbs[prefix+"Hand"]
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp, "1-x")
                 handIK = getBoneCopy(prefix+"HandIK", hand, rpbs)
-                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
+                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD', amt=rig.data)
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_" + suffix
                 foot = rpbs[prefix+"Foot"]
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp, "1-x")
                 footIK = getBoneCopy(prefix+"FootIK", foot, rpbs)
-                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
+                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD', amt=rig.data)
                 addToLayer(footIK, "IK Leg", rig, "IK")
 
             if genesis == "G38":
@@ -1133,14 +1136,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
             if genesis == "G38":
                 if self.useArms:
-                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp)
+                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp, amt=rig.data)
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp)
+                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp, amt=rig.data)
             else:
                 if self.useArms:
-                    ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp)
+                    ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp, amt=rig.data)
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
+                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp, amt=rig.data)
 
         from .node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)

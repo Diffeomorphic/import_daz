@@ -556,7 +556,7 @@ def buildVertexGroup(ob, vgname, weights, default=None):
 
 
 def makeArmatureModifier(name, context, ob, rig):
-    mod = ob.modifiers.new(name, 'ARMATURE')
+    mod = ob.modifiers.new("Armature %s" % name, 'ARMATURE')
     mod.object = rig
     mod.use_deform_preserve_volume = True
     activateObject(context, ob)

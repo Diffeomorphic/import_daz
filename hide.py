@@ -316,7 +316,7 @@ class DAZ_OT_CreateMasks(DazOperator, MeshSelector, SingleGroup, IsMesh):
         else:
             vgrp = ob.vertex_groups.new(name=modname)
         if mod is None:
-            mod = ob.modifiers.new(modname, 'MASK')
+            mod = ob.modifiers.new("Mask %s" % modname, 'MASK')
         mod.vertex_group = modname
         mod.invert_vertex_group = True
 
@@ -376,7 +376,7 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
                 mod = mod1
                 break
         if mod is None:
-            mod = ob.modifiers.new(hum.name, 'SHRINKWRAP')
+            mod = ob.modifiers.new("Shrinkwrap %s" % hum.name, 'SHRINKWRAP')
         mod.target = hum
         mod.wrap_method = 'NEAREST_SURFACEPOINT'
         mod.wrap_mode = 'OUTSIDE'

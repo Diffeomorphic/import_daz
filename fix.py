@@ -1101,7 +1101,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
             if cns:
                 pb.constraints.remove(cns)
             cns = pb.constraints.new('IK')
-            cns.name = "IK"
+            cns.name = "IK %s" % goalname
             cns.target = rig
             cns.subtarget = goalname
             cns.chain_count = clen
