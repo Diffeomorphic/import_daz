@@ -945,7 +945,7 @@ class BendTwists:
         from .mhx import dampedTrack, copyRotation, stretchTo, addDriver, setMhxProp
         setMode('POSE')
         gizmo = "GZM_Ball025"
-        for bname,trgname,stretch,isShin,prop in self.BendTwistBones:
+        for bname,trgname,stretch,prop in self.BendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):
                 continue

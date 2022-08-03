@@ -411,14 +411,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     ]
 
     BendTwistBones = [
-        ("shin.L", "foot.L", True, True, "MhaLegStretch_L"),
-        ("thigh.L", "shin.L", False, False, "MhaLegStretch_L"),
-        ("forearm.L", "hand.L", True, False, "MhaArmStretch_L"),
-        ("upper_arm.L", "forearm.L", False, False, "MhaArmStretch_L"),
-        ("shin.R", "foot.R", True, True, "MhaLegStretch_R"),
-        ("thigh.R", "shin.R", False, False, "MhaLegStretch_R"),
-        ("forearm.R", "hand.R", True, False, "MhaArmStretch_R"),
-        ("upper_arm.R", "forearm.R", False, False, "MhaArmStretch_R"),
+        ("shin.L", "foot.L", True, "MhaLegStretch_L"),
+        ("thigh.L", "shin.L", False, "MhaLegStretch_L"),
+        ("forearm.L", "hand.L", True, "MhaArmStretch_L"),
+        ("upper_arm.L", "forearm.L", False, "MhaArmStretch_L"),
+        ("shin.R", "foot.R", True, "MhaLegStretch_R"),
+        ("thigh.R", "shin.R", False, "MhaLegStretch_R"),
+        ("forearm.R", "hand.R", True, "MhaArmStretch_R"),
+        ("upper_arm.R", "forearm.R", False, "MhaArmStretch_R"),
         ]
 
     Knees = [
@@ -1456,7 +1456,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ("foot", "Leg"),
                 ("foot.fk", "Leg")]:
                 prop = "Mha%sStretch_%s" % (part, suffix)
-                setMhxProp(rig, prop, 1.0)
+                setMhxProp(rig, prop, 0.0)
                 pb = rig.pose.bones["%s.%s" % (bname, suffix)]
                 cns = copyLocation(pb, pb.parent, rig, prop, "1-x")
                 cns.head_tail = 1.0
