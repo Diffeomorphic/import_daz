@@ -483,7 +483,10 @@ class LoadMorph(DriverUser):
         if expr["prop"]:
             self.addNewProp(output)
             prop = self.getUniqueName(expr["prop"])
-            self.drivers[output].append(("PROP", prop, expr["factor"]))
+            factor = expr["factor"]
+            if "points" in expr.keys():
+                factor = self.cheatSplineTCB(expr["points"], factor)
+            self.drivers[output].append(("PROP", prop, factor))
         if expr["mult"]:
             mult = self.getUniqueName(expr["mult"])
             if output not in self.mults.keys():
