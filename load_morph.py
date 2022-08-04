@@ -315,6 +315,9 @@ class LoadMorph(DriverUser):
             exprs = {}
             words = asset.target_channel.rsplit("#",1)
             output = words[-1].split("?")[0]
+            if output == prop:
+                print("Alias is same: %s" % prop)
+                return
             expr = setFormulaExpr(exprs, output, "value", "value", 0)
             expr["prop"] = prop
             expr["factor"] = 1
