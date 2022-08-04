@@ -1043,7 +1043,7 @@ class CyclesTree(Tree):
             value = 1 - anirot
             self.linkScalar(tex, glossy, value, "Rotation")
         self.linkBumpNormal(glossy)
-        self.mixWithActive(fac, factex, glossy, effect=effect)
+        self.mixWithActive(fac, factex, glossy, effect=True)
         LS.usedFeatures["Glossy"] = True
 
 
@@ -1826,11 +1826,11 @@ class CyclesTree(Tree):
         return mix
 
 
-    def mixWithActive(self, fac, tex, node, useAlpha=False, keep=False, effect=0):
+    def mixWithActive(self, fac, tex, node, useAlpha=False, keep=False, effect=False):
         if node.type != 'GROUP':
             raise RuntimeError("BUG: mixWithActive", node.type)
         node.inputs["Fac"].default_value = 1.0
-        if effect > 0:
+        if effect:
             pass
         elif tex:
             if useAlpha and "Alpha" in tex.outputs.keys():
