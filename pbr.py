@@ -39,6 +39,7 @@ class PbrTree(CyclesTree):
         CyclesTree.__init__(self, pbrmat)
         self.pbr = None
         self.type = 'PBR'
+        self.translucent = None
 
 
     def __repr__(self):
@@ -46,21 +47,26 @@ class PbrTree(CyclesTree):
 
 
     def buildLayer(self, uvname):
+        self.column = 4
+        self.buildNormal(uvname)
+        self.buildBump(uvname)
+        if self.owner.useVolume and LS.materialMethod != 'SINGLE_PRINCIPLED':
+            self.translucent = self.buildTranslucency(uvname)
         self.column = 5
         self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         self.cycles = self.pbr
-        self.column = 4
-        self.buildNormal(uvname)
-        self.buildBump(uvname)
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
             return
+
         self.checkTopCoat()
         self.buildDetail(uvname)
         self.buildPBRNode()
         self.column = 5
         self.postPBR = False
+        if self.translucent:
+            self.mixPbrTranslucency()
         if self.buildMakeup():
             self.postPBR = True
         if self.buildOverlay():
@@ -86,6 +92,22 @@ class PbrTree(CyclesTree):
         elif self.normal:
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Normal"])
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
+
+
+    def mixPbrTranslucency(self):
+        fac,factex = self.getFacFromTranslucency()
+        if fac == 0:
+            return
+        self.column += 1
+        effect = self.getValue(["Base Color Effect"], 0)
+        tint = self.getColor(["SSS Reflectance Tint"], WHITE)
+        mix = self.addNode("ShaderNodeMixShader")
+        node = self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, mix, colorslot=None)
+        self.links.new(self.translucent.outputs["BSDF"], mix.inputs[1])
+        self.links.new(self.pbr.outputs[0], mix.inputs[2])
+        if node:
+            self.links.new(node.outputs["Color"], self.pbr.inputs["Base Color"])
+        self.cycles = mix
 
 
     def getShellGroup(self, shmat, push):
@@ -148,9 +170,12 @@ class PbrTree(CyclesTree):
     def buildBaseSubsurface(self):
         if self.isEnabled("Diffuse"):
             color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
-            effect = self.getValue(["Base Color Effect"], 0)
-            tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-            self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, 1.0, None, self.pbr, None, "Base Color")
+            if self.translucent:
+                self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
+            else:
+                effect = self.getValue(["Base Color Effect"], 0)
+                tint = self.getColor(["SSS Reflectance Tint"], WHITE)
+                self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, 1.0, None, self.pbr, None, "Base Color")
         else:
             color = WHITE
             tex = None

@@ -762,8 +762,9 @@ class CyclesTree(Tree):
             if facslot:
                 node.inputs[facslot].default_value = fac
                 self.links.new(effect.outputs[outfac[value]], node.inputs[facslot])
-            node.inputs[colorslot].default_value[0:3] = color
-            self.links.new(effect.outputs["Color"], node.inputs[colorslot])
+            if colorslot:
+                node.inputs[colorslot].default_value[0:3] = color
+                self.links.new(effect.outputs["Color"], node.inputs[colorslot])
             return effect
 
 
@@ -779,24 +780,9 @@ class CyclesTree(Tree):
             return
         from .cgroup import DiffuseGroup
         self.column += 1
-        if self.owner.useVolume:
-            wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-            if wt == 1.0 and not wttex:
-                return
-            elif wttex:
-                inv = self.addNode("ShaderNodeMath", self.column-2)
-                inv.operation = 'SUBTRACT'
-                inv.inputs[0].default_value = 1.0
-                self.linkScalar(wttex, inv, wt, 1)
-                fac = 1
-                factex = inv
-            else:
-                fac = 1-wt
-                factex = None
-        else:
-            fac = 1.0
-            factex = None
-
+        fac,factex = self.getFacFromTranslucency()
+        if fac == 0:
+            return
         color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
         self.diffuseColor = color
         self.diffuseTex = tex
@@ -815,6 +801,23 @@ class CyclesTree(Tree):
         self.setRoughness(self.diffuse, "Roughness", roughness, roughtex)
         self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True
+
+
+    def getFacFromTranslucency(self):
+        if self.owner.useVolume:
+            wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+            if wt == 1.0 and not wttex:
+                return 0,None
+            elif wttex:
+                inv = self.addNode("ShaderNodeMath", self.column-2)
+                inv.operation = 'SUBTRACT'
+                inv.inputs[0].default_value = 1.0
+                self.linkScalar(wttex, inv, wt, 1)
+                return 1,inv
+            else:
+                return 1-wt,None
+        else:
+            return 1,None
 
     #-------------------------------------------------------------
     #   Diffuse Overlay
@@ -1229,12 +1232,12 @@ class CyclesTree(Tree):
 
     def buildTranslucency(self, uvname):
         if not self.checkTranslucency():
-            return
+            return None
         from .cgroup import TranslucentGroup
         fac = self.getValue("getChannelTranslucencyWeight", 0)
         color = self.getColor(["Translucency Color"], BLACK)
         if fac == 0 or isBlack(color):
-            return
+            return None
         node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
         node.inputs["Fac"].default_value = 1.0
         color,tex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
@@ -1264,6 +1267,7 @@ class CyclesTree(Tree):
         self.cycles = node
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
+        return node
 
     #-------------------------------------------------------------
     #   Subsurface scattering
