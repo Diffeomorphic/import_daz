@@ -780,14 +780,18 @@ class CyclesTree(Tree):
         from .cgroup import DiffuseGroup
         self.column += 1
         if self.owner.useVolume:
-            transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-            if transwt == 1.0 and not wttex:
+            wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+            if wt == 1.0 and not wttex:
                 return
             elif wttex:
-                factex = self.invertTex(wttex, self.column-2)
-                fac = transwt
+                inv = self.addNode("ShaderNodeMath", self.column-2)
+                inv.operation = 'SUBTRACT'
+                inv.inputs[0].default_value = 1.0
+                self.linkScalar(wttex, inv, wt, 1)
+                fac = 1
+                factex = inv
             else:
-                fac = 1-transwt
+                fac = 1-wt
                 factex = None
         else:
             fac = 1.0
@@ -1228,13 +1232,13 @@ class CyclesTree(Tree):
             return
         from .cgroup import TranslucentGroup
         fac = self.getValue("getChannelTranslucencyWeight", 0)
-        transcolor = self.getColor(["Translucency Color"], BLACK)
-        if fac == 0 or isBlack(transcolor):
+        color = self.getColor(["Translucency Color"], BLACK)
+        if fac == 0 or isBlack(color):
             return
         node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
         node.inputs["Fac"].default_value = 1.0
-        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
-        self.linkColor(transtex, node, transcolor, "Color")
+        color,tex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
+        self.linkColor(tex, node, color, "Color")
         node.width = 200
         if self.getValue(["Invert Transmission Normal"], 0):
             normal = bump = None
