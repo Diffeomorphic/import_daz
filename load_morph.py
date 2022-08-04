@@ -311,14 +311,13 @@ class LoadMorph(DriverUser):
         self.adjustable[prop] = True
         if isinstance(asset, Formula):
             exprs = asset.evalFormulas(self.rig, self.mesh)
-        elif isinstance(asset, Alias) and asset.target_channel:
+        elif isinstance(asset, Alias):
             exprs = {}
-            words = asset.target_channel.rsplit("#",1)
-            output = words[-1].split("?")[0]
-            if output == prop:
+            alias = asset.getAlias()
+            if alias == prop:
                 print("Alias is same: %s" % prop)
                 return
-            expr = setFormulaExpr(exprs, output, "value", "value", 0)
+            expr = setFormulaExpr(exprs, alias, "value", "value", 0)
             expr["prop"] = prop
             expr["factor"] = 1
         else:
@@ -428,8 +427,9 @@ class LoadMorph(DriverUser):
 
 
     def addNewProp(self, raw, asset=None, skey=None):
-        from .driver import setBoolProp, setFloatProp
+        from .driver import setBoolProp, setFloatProp, getPropMinMax
         from .morphing import setActivated
+        from .modifier import Alias
         final = finalProp(raw)
         if raw not in self.drivers.keys():
             self.drivers[raw] = []
@@ -439,6 +439,15 @@ class LoadMorph(DriverUser):
             visible = (asset.visible or GS.useMakeHiddenSliders)
             self.visible[raw] = visible
             self.primary[raw] = True
+            if isinstance(asset, Alias):
+                alias = asset.getAlias()
+                if not alias:
+                    return
+                finalias = finalProp(alias)
+                if finalias in self.amt.keys():
+                    if final == finalias:
+                        return
+                    asset.min,asset.max,default,ovr = getPropMinMax(self.amt, finalias, False)
             if skey and not visible:
                 return final
             elif asset.type == "bool":

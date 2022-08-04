@@ -379,6 +379,13 @@ class Alias(ChannelAsset):
     def build(self, context, inst):
         pass
 
+    def getAlias(self):
+        if self.target_channel:
+            words = self.target_channel.rsplit("#",1)
+            return words[-1].split("?")[0]
+        else:
+            return None
+
 #-------------------------------------------------------------
 #   Skin Binding
 #-------------------------------------------------------------
