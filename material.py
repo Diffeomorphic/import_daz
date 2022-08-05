@@ -262,6 +262,8 @@ class Material(Asset, Channels):
     def isVoluSkinMaterial(self):
         if (self.getValue("getChannelTranslucencyWeight", 1) == 0 or
             not self.enabled["Translucency"] or
+            not self.enabled["Transmission"] or
+            not self.enabled["Subsurface"] or
             self.getValue("getChannelCutoutOpacity", 1) != 1 or
             self.getValue(["Thin Walled"], False)):
             return False
@@ -274,7 +276,7 @@ class Material(Asset, Channels):
             return False
         sssmode = self.getValue(["SSS Mode"], 0)
         if sssmode == 0:    # Mono
-            if self.getValue(["SSS Amount"], 0) == 0:
+            if self.getValue(["SSS Amount"], 1) == 0:
                 return False
         elif sssmode == 1:  # Chromatic
             color = self.getValue("getChannelSSSColor", BLACK)
