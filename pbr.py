@@ -50,7 +50,7 @@ class PbrTree(CyclesTree):
         self.column = 4
         self.buildNormal(uvname)
         self.buildBump(uvname)
-        if self.owner.useVolume and LS.materialMethod != 'SINGLE_PRINCIPLED':
+        if self.owner.useVolume:
             self.translucent = self.buildTranslucency(uvname)
         self.column = 5
         self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
@@ -96,17 +96,21 @@ class PbrTree(CyclesTree):
 
     def mixPbrTranslucency(self):
         fac,factex = self.getFacFromTranslucency()
-        if fac == 0:
+        if fac == 1 and factex is None:
             return
-        self.column += 1
         effect = self.getValue(["Base Color Effect"], 0)
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-        mix = self.addNode("ShaderNodeMixShader")
+        mix = self.addNode("ShaderNodeMixShader", col=self.column+1)
         node = self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, mix, colorslot=None)
+        self.column += 1
+        self.linkScalar(factex, mix, fac, "Fac")
         self.links.new(self.translucent.outputs["BSDF"], mix.inputs[1])
         self.links.new(self.pbr.outputs[0], mix.inputs[2])
         if node:
             self.links.new(node.outputs["Color"], self.pbr.inputs["Base Color"])
+        self.replaceSlot(self.pbr, "Subsurface", 0.0)
+        self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
+        self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
         self.cycles = mix
 
 
@@ -170,16 +174,10 @@ class PbrTree(CyclesTree):
     def buildBaseSubsurface(self):
         if self.isEnabled("Diffuse"):
             color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
-            if self.translucent:
-                self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
-            else:
-                effect = self.getValue(["Base Color Effect"], 0)
-                tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-                self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, 1.0, None, self.pbr, None, "Base Color")
         else:
             color = WHITE
             tex = None
-            self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
+        self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
         self.diffuseColor = color
         self.diffuseTex = tex
 
@@ -208,7 +206,7 @@ class PbrTree(CyclesTree):
 
 
     def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex):
-        gamma = self.addNode("ShaderNodeGamma", col=3)
+        gamma = self.addNode("ShaderNodeGamma", col=self.column-1)
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
         self.links.new(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
@@ -217,7 +215,7 @@ class PbrTree(CyclesTree):
 
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
         from .cgroup import SSSFixGroup
-        fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix")
+        fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
         self.linkScalar(ssstex, fix, sss, "SSS Amount")
         fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
         if self.diffuseInput:

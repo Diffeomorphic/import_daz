@@ -231,7 +231,7 @@ class Material(Asset, Channels):
 
         self.useVolume = (
             LS.materialMethod == 'BSDF_VOLUME' or
-            (LS.materialMethod in ['BSDF_SKIN', 'EXTENDED_PRINCIPLED'] and not self.isSkinMaterial()))
+            (LS.materialMethod in ['BSDF_SKIN', 'EXTENDED_PRINCIPLED'] and not self.isVoluSkinMaterial()))
 
 
     def isThinWall(self):
@@ -259,7 +259,7 @@ class Material(Asset, Channels):
         return ("Root Transmission Color" in self.channels.keys())
 
 
-    def isSkinMaterial(self):
+    def isVoluSkinMaterial(self):
         if (self.getValue("getChannelTranslucencyWeight", 1) == 0 or
             not self.enabled["Translucency"] or
             self.getValue("getChannelCutoutOpacity", 1) != 1 or
