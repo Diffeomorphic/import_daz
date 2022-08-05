@@ -637,6 +637,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Useful if the character is baked"),
         default = False)
 
+    useTransferLashes : BoolProperty(
+        name = "Transfer To Face Meshes",
+        description = (
+            "Automatically transfer shapekeys to face meshes\n" +
+            "like eyelashes, tears, brows and beards.\n" +
+            "Can be disabled if face meshes will be converted to particle hair"),
+        default = True)
+
     useConvertHair : BoolProperty(
         name = "Convert Hair",
         description = "Convert strand-based hair to particle hair",
@@ -675,6 +683,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useAdjusters")
         if self.useFavoMorphs or self.facs or self.facsexpr or self.jcms or self.flexions:
+            self.layout.prop(self, "useTransferLashes")
             self.layout.prop(self, "useTransferShapes")
         self.layout.separator()
         self.layout.prop(self, "useSoftbody")
@@ -860,7 +869,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters,
-                        useTransferLashes = True)
+                        useTransferLashes = self.useTransferLashes)
             if (self.units or
                   self.expressions or
                   self.visemes or
@@ -881,7 +890,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         jcms = self.jcms,
                         flexions = self.flexions,
                         useAdjusters = self.useAdjusters,
-                        useTransferLashes = True)
+                        useTransferLashes = self.useTransferLashes)
 
         # Add softbody simulation
         if self.useSoftbody and mainMesh and activateObject(context, mainMesh):
