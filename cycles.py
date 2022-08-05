@@ -741,7 +741,8 @@ class CyclesTree(Tree):
         elif value == 0:     # Scatter Only
             if facslot:
                 self.linkScalar(factex, node, fac, facslot)
-            return self.linkColor(tex, node, color, colorslot)
+            if colorslot:
+                return self.linkColor(tex, node, color, colorslot)
         else:
             from .cgroup import ColorEffectGroup
             effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)

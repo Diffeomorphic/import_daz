@@ -859,7 +859,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         filepath = self.favoPath,
                         onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
-                        useAdjusters = self.useAdjusters)
+                        useAdjusters = self.useAdjusters,
+                        useTransferLashes = True)
             if (self.units or
                   self.expressions or
                   self.visemes or
@@ -879,7 +880,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useMhxOnly = self.useMhxOnly,
                         jcms = self.jcms,
                         flexions = self.flexions,
-                        useAdjusters = self.useAdjusters)
+                        useAdjusters = self.useAdjusters,
+                        useTransferLashes = True)
 
         # Add softbody simulation
         if self.useSoftbody and mainMesh and activateObject(context, mainMesh):
@@ -918,8 +920,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Merge lashes
         if lashes:
-            if self.useTransferShapes or self.useMergeFaceMeshes:
-                self.transferShapes(context, mainMesh, lashes, self.useMergeFaceMeshes, "Face", True)
+            #if self.useTransferShapes or self.useMergeFaceMeshes:
+            #    self.transferShapes(context, mainMesh, lashes, self.useMergeFaceMeshes, "Face", True)
             if self.useMergeFaceMeshes and activateObject(context, mainMesh):
                 for ob in lashes:
                     selectSet(ob, True)
@@ -1029,9 +1031,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def getLashes(self, rig, ob):
-        head = rig.data.bones.get("head")
-        if head is None:
-            return []
         keys = []
         if self.useLashes:
             keys.append("eyelash")
@@ -1041,24 +1040,30 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             keys.append("brow")
         if self.useBeard:
             keys.append("beard")
-        lashes = []
-        for mesh in getMeshChildren(rig):
-            if mesh != ob:
-                for key in keys:
-                    if key in mesh.name.lower():
-                        if self.inHead(rig, mesh, head):
-                            lashes.append(mesh)
-        return lashes
+        return getMatchingMeshes(rig, ob, "head", keys)
 
 
-    def inHead(self, rig, ob, bone):
-        if bone.name in ob.vertex_groups.keys():
+def getMatchingMeshes(rig, ob, bname, keys):
+    def isDeformBone(bone, mesh):
+        if bone.name in mesh.vertex_groups.keys():
             return True
         else:
             for child in bone.children:
-                if self.inHead(rig, ob, child):
+                if isDeformBone(child, mesh):
                     return True
         return False
+
+    bone = rig.data.bones.get(bname)
+    if bone is None:
+        return []
+    matches = []
+    for mesh in getMeshChildren(rig):
+        if mesh != ob:
+            for key in keys:
+                if key in mesh.name.lower():
+                    if isDeformBone(bone, mesh):
+                        matches.append(mesh)
+    return matches
 
 #------------------------------------------------------------------
 #   Utilities

@@ -804,6 +804,7 @@ class MorphSuffix:
 class MorphLoader(LoadMorph):
     category = ""
     adjuster = None
+    bodypart = None
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
@@ -816,6 +817,11 @@ class MorphLoader(LoadMorph):
         name = "Make All Bones Poseable",
         description = "Make all bones poseable after the morphs have been loaded",
         default = False)
+
+    useTransferLashes : BoolProperty(
+        name = "Transfer To Face Meshes",
+        description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
+        default = True)
 
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacter
@@ -889,6 +895,8 @@ class MorphLoader(LoadMorph):
         if usePoseable and self.useMakePoseable and self.rig and activateObject(context, self.rig):
             print("Make all bones poseable")
             bpy.ops.daz.make_all_bones_poseable()
+        if self.faceshapes and self.useTransferLashes and self.rig and self.mesh:
+            self.transferToLashes(context)
         if msg:
             print(msg)
         return msg
@@ -939,6 +947,19 @@ class MorphLoader(LoadMorph):
                             break
                         self.iked.append(par)
                         par = par.parent
+
+
+    def transferToLashes(self, context):
+        from .main import getMatchingMeshes
+        keys = ["eyelash", "tear", "brow", "beard"]
+        meshes = getMatchingMeshes(self.rig, self.mesh, "head", keys)
+        if meshes:
+            print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
+            activateObject(context, self.mesh)
+            for mesh in meshes:
+                selectSet(mesh, True)
+            G.theFilePaths = self.faceshapes.keys()
+            bpy.ops.daz.transfer_shapekeys()
 
 #------------------------------------------------------------------
 #   Load standard morphs
@@ -995,6 +1016,8 @@ class StandardMorphSelector(Selector):
         Selector.draw(self, context)
         row = self.layout.row()
         row.prop(self, "useMakePoseable")
+        if self.bodypart == "Face":
+            row.prop(self, "useTransferLashes")
         row.prop(self, "useAdjusters")
         row.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
@@ -1253,6 +1276,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         MorphTypeOptions.draw(self, context)
         self.layout.separator()
         MorphSuffix.draw(self, context)
+        self.layout.prop(self, "useTransferLashes")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useMakePoseable")
 
@@ -1393,6 +1417,8 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
                 self.layout.prop(self, "category")
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
+        if self.bodypart == "Face":
+            self.layout.prop(self, "useTransferLashes")
         self.layout.prop(self, "treatHD")
         self.layout.prop(self, "useMakePoseable")
 

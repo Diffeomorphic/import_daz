@@ -84,6 +84,7 @@ class LoadMorph(DriverUser):
         self.erc = False
         self.drivers = {}
         self.shapekeys = {}
+        self.faceshapes = {}
         self.mults = {}
         self.sumdrivers = {}
         self.restdrivers = {}
@@ -282,6 +283,8 @@ class LoadMorph(DriverUser):
             self.alias[prop] = skey.name
             skey.name = prop
             self.shapekeys[prop] = skey
+            if bodypart == "Face":
+                self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
             if self.rig:
                 final = self.addNewProp(prop)
