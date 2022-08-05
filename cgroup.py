@@ -1647,7 +1647,6 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useInvertNormalMap : BoolProperty(name="Invert Normal Map", default=False)
     useTranslucent : BoolProperty(name="Translucent", default=False)
     useSubsurface : BoolProperty(name="Subsurface", default=False)
-    useSSS : BoolProperty(name="Subsurface Scattering", default=False)
     useRayClip : BoolProperty(name="Ray Clip", default=False)
     useDualLobeUber : BoolProperty(name="Dual Lobe (Uber Shader)", default=False)
     useDualLobePBR : BoolProperty(name="Dual Lobe (PBR Skin)", default=False)

@@ -73,7 +73,8 @@ class GlobalSettings:
         self.useFakeCaustics = True
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
-        self.useSSSFix = False
+        self.useSssSkin = False
+        self.useSssFix = False
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
@@ -152,7 +153,8 @@ class GlobalSettings:
         "DazFakeCaustics" : "useFakeCaustics",
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
-        "DazUseSSSFix" : "useSSSFix",
+        "DazUseSssSkin" : "useSssSkin",
+        "DazUseSssFix" : "useSssFix",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
@@ -492,7 +494,7 @@ class LocalSettings:
             self.materialMethod = btn.materialMethod
         else:
             self.materialMethod = GS.materialMethod
-        if self.materialMethod in ['BSDF_VOLUME', 'BSDF_SKIN']:
+        if self.materialMethod  == 'BSDF':
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
             self.hairMaterialMethod = 'PRINCIPLED'

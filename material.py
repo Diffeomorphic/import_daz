@@ -230,8 +230,9 @@ class Material(Asset, Channels):
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
         self.useVolume = (
-            LS.materialMethod == 'BSDF_VOLUME' or
-            (LS.materialMethod in ['BSDF_SKIN', 'EXTENDED_PRINCIPLED'] and not self.isVoluSkinMaterial()))
+            (LS.materialMethod in 'BSDF' and not GS.useSssSkin) or
+            (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
+             not self.isVoluSkinMaterial()))
 
 
     def isThinWall(self):

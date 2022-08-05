@@ -104,12 +104,12 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
-            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SKIN']:
+            if LS.materialMethod == 'BSDF':
                 return CyclesBrickTree(self)
             else:
                 return PbrBrickTree(self)
         else:
-            if LS.materialMethod in ['BSDF_VOLUME', 'BSDF_SKIN']:
+            if LS.materialMethod == 'BSDF':
                 return CyclesTree(self)
             else:
                 return PbrTree(self)
@@ -1293,7 +1293,7 @@ class CyclesTree(Tree):
         node.inputs["Anisotropy"].default_value = aniso
         node.width = 200
 
-        if GS.useSSSFix:
+        if GS.useSssFix:
             from .cgroup import SSSFixGroup
             fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-2)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor

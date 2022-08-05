@@ -265,7 +265,8 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazSSSMethod")
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
-        box.prop(scn, "DazUseSSSFix")
+        box.prop(scn, "DazUseSssSkin")
+        box.prop(scn, "DazUseSssFix")
         box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
@@ -316,8 +317,7 @@ classes = [
 ]
 
 MaterialMethodItems = [
-    ('BSDF_VOLUME', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only"),
-    ('BSDF_SKIN', "BSDF (SSS Skin)", "Uses BSDF nodes but volumetric skin is replaced with SSS.\nLimited IRAY conversion but faster rendering and more conventional skin materials.\nWorks with Cycles and Eevee but some screen effects may not work"),
+    ('BSDF', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only unless SSS Skin is enabled"),
     ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]
@@ -684,7 +684,14 @@ def register():
         name = "Reflection",
         description = "Use reflection maps")
 
-    bpy.types.Scene.DazUseSSSFix = BoolProperty(
+    bpy.types.Scene.DazUseSssSkin = BoolProperty(
+        name = "SSS Skin (BSDF)",
+        description = (
+            "Replace translucency with SSS for volumetric skin materials.\n" +
+            "Limited IRAY conversion but faster rendering and more conventional skin materials.\n" +
+            "Works with both Cycles and Eevee but some screen effects may not work"))
+
+    bpy.types.Scene.DazUseSssFix = BoolProperty(
         name = "SSS Fix",
         description = "Use alternative handling of SSS suggested by Midnight Arrow")
 

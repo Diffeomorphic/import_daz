@@ -191,7 +191,7 @@ class PbrTree(CyclesTree):
         self.pbr.subsurface_method = GS.getSSSMethod()
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
-        if GS.useSSSFix:
+        if GS.useSssFix:
             self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex)
         else:
             self.addSubsurfaceColor(transwt, wttex, transcolor, transtex)
