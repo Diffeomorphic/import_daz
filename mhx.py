@@ -274,7 +274,8 @@ def armatureConstraint(pb, rig, drivers):
 
 def setMhxProp(rig, prop, value):
     setattr(rig, prop, value)
-    rig[prop] = value
+    if not isinstance(value, str):
+        rig[prop] = value
     return
     from .driver import setFloatProp, setBoolProp
     if isinstance(value, float):
@@ -1340,7 +1341,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = copyLocation(elbowPoleA, handIk, rig)
             cns.influence = upper_arm.bone.length/(upper_arm.bone.length + forearm.bone.length)
             copyTransform(elbowPoleP, elbowPoleA, rig)
-            #setMhxProp(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
+            if not self.useChildOfConstraints:
+                setMhxProp(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
 
             #hintRotation(forearmIk, rig)
             ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
@@ -1405,7 +1407,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = copyLocation(kneePoleA, ankleIk, rig)
             cns.influence = thigh.bone.length/(thigh.bone.length + shin.bone.length)
             copyTransform(kneePoleP, kneePoleA, rig)
-            #setMhxProp(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
+            if not self.useChildOfConstraints:
+                setMhxProp(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
 
             fixIk(rig, [shinIk.name])
             ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
