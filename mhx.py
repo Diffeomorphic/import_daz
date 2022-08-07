@@ -274,9 +274,9 @@ def armatureConstraint(pb, rig, drivers):
 
 def setMhxProp(rig, prop, value):
     setattr(rig, prop, value)
+    return
     if not isinstance(value, str):
         rig[prop] = value
-    return
     from .driver import setFloatProp, setBoolProp
     if isinstance(value, float):
         setFloatProp(rig, prop, value, 0.0, 1.0, True)
@@ -1492,6 +1492,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def addChildofConstraints(self, rig):
         if not self.useChildOfConstraints:
             return
+        rig.MhxChildOfConstraints = True
         for suffix in ["L", "R"]:
             handprop = "MhaElbowHand_%s" % suffix
             shoulderprop = "MhaElbowShoulder_%s" % suffix
