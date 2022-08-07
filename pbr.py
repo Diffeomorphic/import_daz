@@ -180,8 +180,10 @@ class PbrTree(CyclesTree):
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
         self.diffuseColor = color
         self.diffuseTex = tex
+        self.pbr.inputs["Subsurface"].default_value = 0
 
-        if (not self.isEnabled("Subsurface") or
+        if ((LS.materialMethod == 'SINGLE_PRINCIPLED' and not self.owner.isVoluSkinMaterial()) or
+            not self.isEnabled("Subsurface") or
             not self.checkTranslucency()):
             return
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
