@@ -458,20 +458,20 @@ class Rigify:
 
 
     def fitLimbs(self, meta, hip):
-        for suffix in [".L", ".R"]:
-            shoulder = meta.data.edit_bones["shoulder"+suffix]
-            upperarm = meta.data.edit_bones["upper_arm"+suffix]
-            shin = meta.data.edit_bones["shin"+suffix]
-            foot = meta.data.edit_bones["foot"+suffix]
-            toe = meta.data.edit_bones["toe"+suffix]
+        for suffix in ["L", "R"]:
+            shoulder = meta.data.edit_bones["shoulder.%s" % suffix]
+            upperarm = meta.data.edit_bones["upper_arm.%s" % suffix]
+            shin = meta.data.edit_bones["shin.%s" % suffix]
+            foot = meta.data.edit_bones["foot.%s" % suffix]
+            toe = meta.data.edit_bones["toe.%s" % suffix]
 
             vec = shoulder.tail - shoulder.head
             if (upperarm.head - shoulder.tail).length < 0.02*vec.length:
                 shoulder.tail -= 0.02*vec
 
-            if "pelvis"+suffix in meta.data.edit_bones.keys():
-                thigh = meta.data.edit_bones["thigh"+suffix]
-                pelvis = meta.data.edit_bones["pelvis"+suffix]
+            if "pelvis.%s" % suffix in meta.data.edit_bones.keys():
+                thigh = meta.data.edit_bones["thigh.%s" % suffix]
+                pelvis = meta.data.edit_bones["pelvis.%s" % suffix]
                 pelvis.head = hip.head
                 pelvis.tail = thigh.head
 
@@ -491,12 +491,12 @@ class Rigify:
             heel02head = mid + fac*r
             heel02tail = mid - fac*r
 
-            if "heel"+suffix in meta.data.edit_bones.keys():
-                heel = meta.data.edit_bones["heel"+suffix]
+            if "heel.%s" % suffix in meta.data.edit_bones.keys():
+                heel = meta.data.edit_bones["heel.%s" % suffix]
                 heel.head = heelhead
                 heel.tail = heeltail
-            if "heel.02"+suffix in meta.data.edit_bones.keys():
-                heel02 = meta.data.edit_bones["heel.02"+suffix]
+            if "heel.02.%s" % suffix in meta.data.edit_bones.keys():
+                heel02 = meta.data.edit_bones["heel.02.%s" % suffix]
                 heel02.head = heel02head
                 heel02.tail = heel02tail
 
@@ -970,7 +970,7 @@ class Rigify:
 
         # Gaze bones
         print("  Create gaze bones")
-        for suffix in [".L", ".R"]:
+        for suffix in ["L", "R"]:
             self.addSingleGazeBone(gen, suffix, R_FACE, R_HELP)
         self.addCombinedGazeBone(gen, R_FACE, R_HELP)
         print(" Create tongue IK")
@@ -1128,7 +1128,7 @@ class Rigify:
                     pb.lock_rotation = (False, False, False)
 
         # Gaze bones
-        for suffix in [".L", ".R"]:
+        for suffix in ["L", "R"]:
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
         self.addTongueIk(gen)
