@@ -33,7 +33,7 @@ from mathutils import Vector, Color
 from .error import reportError, DazError
 
 
-def loadJson(filepath, mustOpen=False):
+def loadJson(filepath, mustOpen=False, silent=False):
     def loadFromString(string):
         struct = {}
         jsonerr = None
@@ -63,6 +63,8 @@ def loadJson(filepath, mustOpen=False):
         return None
 
     if not os.path.exists(filepath):
+        if silent:
+            return {}
         raise DazError('File does not exist:\n"%s"' % filepath)
     try:
         with gzip.open(filepath, 'rb') as fp:
@@ -83,7 +85,8 @@ def loadJson(filepath, mustOpen=False):
         except UnicodeDecodeError:
             string = None
     if string is None:
-        reportError('Could not open file\n"%s"\n' % (filepath), trigger=(1,2))
+        if not silent:
+            reportError('Could not open file\n"%s"\n' % (filepath), trigger=(1,2))
         return {}
 
     struct,msg,jsonerr = loadFromString(string)
@@ -91,7 +94,7 @@ def loadJson(filepath, mustOpen=False):
         string = smashString(string, jsonerr)
         if string:
             struct,msg,jsonerr = loadFromString(string)
-    if msg:
+    if msg and not silent:
         reportError(msg, trigger=(1,2))
     return struct
 

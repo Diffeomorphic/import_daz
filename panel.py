@@ -318,6 +318,8 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
+        self.layout.operator("daz.scan_morph_database")
+        self.layout.separator()
         self.layout.operator("daz.add_shape_to_category")
         self.layout.operator("daz.remove_shape_from_category")
         self.layout.operator("daz.rename_category")
