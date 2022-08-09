@@ -460,6 +460,7 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
 
         if rig:
             layout.operator("daz.import_pose")
+            layout.operator("daz.import_scanned")
             layout.operator("daz.import_poselib")
             layout.operator("daz.import_action")
             layout.separator()

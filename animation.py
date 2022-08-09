@@ -338,7 +338,7 @@ class AffectOptions:
 
     onMorphSuffix = 'NONE'
 
-    clearMorphs : BoolProperty(
+    useClearMorphs : BoolProperty(
         name = "Clear Morphs",
         description = "Clear all morph properties before loading new ones",
         default = True)
@@ -476,7 +476,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         layout.prop(self, "affectObject", expand=True)
         layout.prop(self, "affectMorphs")
         if self.affectMorphs:
-            layout.prop(self, "clearMorphs")
+            layout.prop(self, "useClearMorphs")
             layout.prop(self, "affectGeograft")
             layout.prop(self, "onMissingMorphs")
             if self.onMissingMorphs == 'LOAD_ALL':
@@ -677,15 +677,9 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
                     if self.useInsertKeys:
                         tfm.insertKeys(rig, pb, frame, pb.name, self)
             setChildofInverses(rig)
-        if self.affectMorphs and self.clearMorphs:
-            from .morphing import getAllLowerMorphNames
-            lprops = getAllLowerMorphNames(rig)
-            for prop in rig.keys():
-                if (prop.lower() in lprops and
-                    isinstance(rig[prop], float)):
-                    rig[prop] = 0.0
-                    if self.useInsertKeys:
-                        rig.keyframe_insert(propRef(prop), frame=frame, group=prop)
+        if self.affectMorphs and self.useClearMorphs:
+            from .morphing import clearAllMorphs
+            clearAllMorphs(rig, frame, self.useInsertKeys)
 
     KnownRigs = [
         "Genesis",

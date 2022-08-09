@@ -113,6 +113,16 @@ def getAllLowerMorphNames(rig):
     return [prop for prop in props if "jcm" not in prop]
 
 
+def clearAllMorphs(rig, frame, useInsertKeys):
+    lprops = getAllLowerMorphNames(rig)
+    for prop in rig.keys():
+        if (prop.lower() in lprops and
+            isinstance(rig[prop], float)):
+            rig[prop] = 0.0
+            if useInsertKeys:
+                rig.keyframe_insert(propRef(prop), frame=frame, group=prop)
+
+
 def getMorphList(ob, morphset, sets=None):
     pgs = getMorphs0(ob, morphset, sets, None)
     mlist = []
