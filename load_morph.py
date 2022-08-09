@@ -313,7 +313,7 @@ class LoadMorph(DriverUser):
         self.addNewProp(prop, asset, skey)
         self.adjustable[prop] = True
         if isinstance(asset, Formula):
-            exprs = asset.evalFormulas(self.rig, self.mesh)
+            exprs = asset.evalFormulas(self.rig, self.mesh, True)
         elif isinstance(asset, Alias):
             exprs = {}
             alias = asset.getAlias()
@@ -1444,7 +1444,7 @@ def buildBoneFormula(asset, rig, errors):
                 rig.data[final] = 0.0
             lm.buildBoneDriver(raw, bname, expr, True)
 
-    exprs = asset.evalFormulas(rig, None)
+    exprs = asset.evalFormulas(rig, None, True)
     for driven,expr in exprs.items():
         if "rotation" in expr.keys():
             if driven in rig.pose.bones.keys():

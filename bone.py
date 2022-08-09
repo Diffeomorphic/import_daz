@@ -169,6 +169,8 @@ def getBoneFromId(boneid, rig):
         return None
 
     from .fix import getSuffixName
+    if rig is None:
+        return None
     boneid = unquote(boneid)
     bname = getBoneName(boneid, rig)
     suffname = None

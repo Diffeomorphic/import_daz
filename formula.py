@@ -117,17 +117,17 @@ class Formula:
             return None,None,0
 
 
-    def evalFormulas(self, rig, mesh):
+    def evalFormulas(self, rig, mesh, force):
         success = False
         exprs = {}
         for formula in self.formulas:
-            self.evalFormula(formula, exprs, rig, mesh)
-        if not exprs and GS.verbosity > 3:
+            self.evalFormula(formula, exprs, rig, mesh, force)
+        if not exprs and GS.verbosity > 3 and self.formulas:
             print("Could not parse formulas", self.formulas)
         return exprs
 
 
-    def evalFormula(self, formula, exprs, rig, mesh):
+    def evalFormula(self, formula, exprs, rig, mesh, force):
         from .bone import getBoneFromId
         from .modifier import ChannelAsset
 
@@ -135,14 +135,14 @@ class Formula:
         fileref = words[0].split(":",1)[-1]
         driven = words[-1]
         output,channel = driven.split("?")
+        pb = None
         if channel == "value":
-            if mesh is None and rig is None:
+            if mesh is None and rig is None and force:
                 if GS.verbosity > 2:
                     print("Cannot drive properties", output)
                     print("  ", unquote(formula["output"]))
                 return False
-            pb = None
-        else:
+        elif rig:
             output1 = getBoneFromId(output, rig)
             if output1 is None:
                 reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
@@ -221,7 +221,10 @@ class Formula:
             return channel, 0, 0.0
         elif channel  == "general_scale":
             return channel, 0, 1.0
-        attr,comp = channel.split("/")
+        data = channel.split("/")
+        if len(data) != 2:
+            return channel, 0, 0.0
+        attr,comp = data
         idx = getIndex(comp)
         if attr in ["rotation", "translation", "scale", "center_point", "end_point"]:
             default = Vector((0,0,0))

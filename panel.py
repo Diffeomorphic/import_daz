@@ -123,6 +123,8 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
+            self.layout.operator("daz.scan_morph_database")
+            self.layout.separator()
             self.layout.label(text="Create low-poly meshes before transfers.")
             self.layout.operator("daz.transfer_shapekeys")
             self.layout.operator("daz.apply_all_shapekeys")
@@ -318,8 +320,6 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        self.layout.operator("daz.scan_morph_database")
-        self.layout.separator()
         self.layout.operator("daz.add_shape_to_category")
         self.layout.operator("daz.remove_shape_from_category")
         self.layout.operator("daz.rename_category")

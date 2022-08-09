@@ -541,7 +541,8 @@ class LocalSettings:
     def forMorphLoad(self, ob):
         self.__init__()
         self.reset()
-        self.scale = ob.DazScale
+        if ob:
+            self.scale = ob.DazScale
         self.useMorph = True
         self.useMorphOnly = True
         self.useFormulas = True

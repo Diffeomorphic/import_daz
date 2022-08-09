@@ -334,7 +334,7 @@ class AffectOptions:
     affectMorphs : BoolProperty(
         name = "Affect Morphs",
         description = "Animate morph properties",
-        default = True)
+        default = False)
 
     onMorphSuffix = 'NONE'
 
