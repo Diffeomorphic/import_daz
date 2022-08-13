@@ -653,12 +653,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     addTweakBones : BoolProperty(
         name = "Tweak Bones",
         description = "Add tweak bones",
-        default = True
-    )
+        default = True)
 
     useFingerIk : BoolProperty(
         name = "Finger IK",
         description = "Generate IK controls for fingers",
+        default = False)
+
+    useOptimizePose : BoolProperty(
+        name = "Optimize Pose For IK",
+        description = "Optimize pose for IK.\nIncompatible with pose loading and body morphs",
         default = False)
 
     def draw(self, context):
@@ -705,6 +709,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("useBeard")
         self.layout.prop(self, "useConvertWidgets")
         self.layout.prop(self, "useConvertHair")
+        self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "rigType")
         if self.rigType == 'MHX':
             self.subprop("addTweakBones")
@@ -965,6 +970,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Change rig
         if mainRig and activateObject(context, mainRig):
+            if self.useOptimizePose:
+                bpy.ops.daz.optimize_pose(useApplyRestPose=True)
+
             if self.rigType == 'CUSTOM':
                 print("Add custom shapes")
                 bpy.ops.daz.add_custom_shapes()
