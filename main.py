@@ -616,9 +616,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Convert widget mesh to bone custom shapes",
         default = False)
 
-    useMakeAllBonesPoseable : BoolProperty(
-        name = "Make All Bones Poseable",
-        description = "Add an extra layer of driven bones, to make them poseable",
+    useMakeAllBonesPosable : BoolProperty(
+        name = "Make All Bones Posable",
+        description = "Add an extra layer of driven bones, to make them posable",
         default = True)
 
     useFavoMorphs : BoolProperty(
@@ -671,7 +671,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useMergeRigs:
             self.subprop("useCreateDuplicates")
             self.subprop("useMergeNonConforming")
-        self.layout.prop(self, "useMakeAllBonesPoseable")
+        self.layout.prop(self, "useMakeAllBonesPosable")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
@@ -947,10 +947,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             bpy.ops.daz.convert_widgets()
 
         if mainRig and activateObject(context, mainRig):
-            # Make all bones poseable
-            if self.useMakeAllBonesPoseable:
-                print("Make all bones poseable")
-                bpy.ops.daz.make_all_bones_poseable()
+            # Make all bones posable
+            if self.useMakeAllBonesPosable:
+                print("Make all bones posable")
+                bpy.ops.daz.make_all_bones_posable()
 
         # Convert hairs
         if (hairs and

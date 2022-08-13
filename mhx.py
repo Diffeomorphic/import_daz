@@ -523,10 +523,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def convertMhx(self, context):
         from .merge import reparentToes
+        from .figure import finalizeArmature
         if self.useKeepRig:
             self.saveExistingRig(context)
         rig = context.object
         rig.DazMhxLegacy = False
+        finalizeArmature(rig)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
 

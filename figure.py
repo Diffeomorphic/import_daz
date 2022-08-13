@@ -504,6 +504,20 @@ class ExtraBones(DriverUser):
             cns.use_offset = True
 
 
+    def isSuchDriver(self, bname, drivers):
+        isLoc = isRot = isScale = False
+        if bname in drivers.keys():
+            for drv in drivers[bname]:
+                channel = drv.data_path.rsplit(".",1)[-1]
+                if channel == "location":
+                    isLoc = True
+                elif channel in ["rotation_euler", "rotation_quaternion"]:
+                    isRot = True
+                elif channel == "scale":
+                    isScale = True
+        return isLoc, isRot, isScale
+
+
     def updateScriptedDrivers(self, rna):
         if rna.animation_data:
             fcus = [fcu for fcu in rna.animation_data.drivers
@@ -588,10 +602,6 @@ class ExtraBones(DriverUser):
         if getattr(rig.data, self.attr):
             msg = "Rig %s already has extra %s bones" % (rig.name, self.type)
             print(msg)
-            #raise DazError(msg)
-
-        drivenLayers = 31*[False] + [True]
-        #finalLayers = 30*[False] + [True,False]
 
         print("  Rename bones")
         self.bnames = self.getBoneNames(rig)
@@ -604,6 +614,7 @@ class ExtraBones(DriverUser):
         setMode('OBJECT')
 
         setMode('EDIT')
+        drivenLayers = 31*[False] + [True]
         for bname in self.bnames:
             db = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(db, rig, bname)
@@ -748,15 +759,15 @@ def getAnchoredBoneNames(rig, anchors):
     return bnames
 
 
-class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
-    bl_idname = "daz.make_all_bones_poseable"
-    bl_label = "Make All Bones Poseable"
-    bl_description = "Add an extra layer of driven bones, to make them poseable"
+class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
+    bl_idname = "daz.make_all_bones_posable"
+    bl_label = "Make All Bones Posable"
+    bl_description = "Add an extra layer of driven bones, to make them posable"
     bl_options = {'UNDO'}
 
     type =  "driven"
     attr = "DazExtraDrivenBones"
-    button = "Make All Bones Poseable"
+    button = "Make All Bones Posable"
 
     def getBoneNames(self, rig):
         from .driver import isBoneDriven
@@ -773,28 +784,53 @@ class DAZ_OT_MakeAllBonesPoseable(DazOperator, ExtraBones, IsArmature):
             msg = "Rig type = %s" % rig.DazRig
         elif rig.data.DazSimpleIK:
             msg = "Rig has simple IK"
+        elif rig.data.DazFinalized:
+            msg = "Rig has been finalized"
         else:
             msg = ""
         if msg:
-            msg = "Cannot make bones poseable.     \n%s" % msg
+            msg = "Cannot make bones posable.     \n%s" % msg
             print(msg)
             raise DazError(msg)
 
     def changeLayer(self, eb, rig):
         pass
 
-    def isSuchDriver(self, bname, drivers):
-        isLoc = isRot = isScale = False
-        if bname in drivers.keys():
-            for drv in drivers[bname]:
-                channel = drv.data_path.rsplit(".",1)[-1]
-                if channel == "location":
-                    isLoc = True
-                elif channel in ["rotation_euler", "rotation_quaternion"]:
-                    isRot = True
-                elif channel == "scale":
-                    isScale = True
-        return isLoc, isRot, isScale
+#-------------------------------------------------------------
+#   Finalize bones
+#-------------------------------------------------------------
+
+def finalizeArmature(rig):
+    from .driver import getBoneDrivers
+    extras = ExtraBones()
+    for pb in rig.pose.bones:
+        if not isDrvBone(pb.name) and not isFinal(pb.name):
+            drvname = drvBone(pb.name)
+            db = rig.pose.bones.get(drvname)
+            isLoc = isRot = isScale = False
+            if db:
+                drivers = {drvname : getBoneDrivers(rig, db)}
+                isLoc,isRot,isScale = extras.isSuchDriver(drvname, drivers)
+                for test,ctype,cname in [
+                    (isLoc, 'COPY_LOCATION', "Copy Location %s" % pb.name),
+                    (isRot, 'COPY_ROTATION', "Copy Rotation %s" % pb.name),
+                    (isScale, 'COPY_SCALE', "Copy Scale %s" % pb.name)]:
+                    if not test:
+                        for cns in pb.constraints:
+                            if cns.type == ctype and cns.name == cname:
+                                pb.constraints.remove(cns)
+                                break
+    rig.data.DazFinalized = True
+
+
+class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):
+    bl_idname = "daz.finalize_armature"
+    bl_label = "Finalize Armature"
+    bl_description = "Remove unused bone constraints"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        finalizeArmature(context.object)
 
 #-------------------------------------------------------------
 #   Toggle locks and constraints
@@ -968,7 +1004,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
     bl_description = (
         "Add Simple IK constraints to the active rig.\n" +
         "This will not work if the rig has body morphs affecting arms and legs,\n" +
-        "and the bones have been made poseable")
+        "and the bones have been made posable")
     bl_options = {'UNDO'}
 
     useArms : BoolProperty(
@@ -1811,7 +1847,8 @@ classes = [
     DAZ_OT_PrintMatrix,
     DAZ_OT_RotateBones,
     DAZ_OT_SetAddExtraFaceBones,
-    DAZ_OT_MakeAllBonesPoseable,
+    DAZ_OT_MakeAllBonesPosable,
+    DAZ_OT_FinalizeArmature,
     DAZ_OT_ConnectIKChains,
     DAZ_OT_SelectNamedLayers,
     DAZ_OT_UnSelectNamedLayers,
@@ -1832,6 +1869,7 @@ def register():
     from .propgroups import DazStringGroup
 
     bpy.types.Object.DazCustomShapes = BoolProperty(default=False)
+    bpy.types.Armature.DazFinalized = BoolProperty(default=False)
     bpy.types.Armature.DazSimpleIK = BoolProperty(default=False)
     bpy.types.Armature.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
     bpy.types.Armature.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)

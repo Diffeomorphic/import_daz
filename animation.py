@@ -366,9 +366,9 @@ class AffectOptions:
         description = "What to do with missing morphs",
         default = 'IGNORE')
 
-    useMakePoseable : BoolProperty(
-        name = "Make All Bones Poseable",
-        description = "Make all bones poseable after the morphs have been loaded",
+    useMakePosable : BoolProperty(
+        name = "Make All Bones Posable",
+        description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
     affectSelectedOnly : BoolProperty(
@@ -480,7 +480,7 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
             layout.prop(self, "affectGeograft")
             layout.prop(self, "onMissingMorphs")
             if self.onMissingMorphs == 'LOAD_ALL':
-                layout.prop(self, "useMakePoseable")
+                layout.prop(self, "useMakePosable")
         layout.prop(self, "convertPoses")
         if self.convertPoses:
             layout.prop(self, "srcCharacter")
@@ -981,9 +981,9 @@ class StandardAnimation:
                 if self.unfound:
                     print("Missing morphs not found:\n  %s" % self.unfound)
                     hasError = True
-            if self.useMakePoseable and self.onMissingMorphs == 'LOAD_ALL':
-                print("Make all bones poseable")
-                bpy.ops.daz.make_all_bones_poseable()
+            if self.useMakePosable and self.onMissingMorphs == 'LOAD_ALL':
+                print("Make all bones posable")
+                bpy.ops.daz.make_all_bones_posable()
                 print("Reloading animation")
                 self.loadAnimation(context)
         if hasError:

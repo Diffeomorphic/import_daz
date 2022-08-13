@@ -1460,12 +1460,14 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
 
     def run(self, context):
         from time import perf_counter
+        from .figure import finalizeArmature
         t1 = perf_counter()
         print("Modifying DAZ rig to Rigify")
         rig = context.object
         rname = rig.name
         if self.useKeepRig:
             self.saveExistingRig(context)
+        finalizeArmature(rig)
         self.createMeta(context)
         gen = self.rigifyMeta(context)
         t2 = perf_counter()

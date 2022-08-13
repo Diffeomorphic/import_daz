@@ -823,9 +823,9 @@ class MorphLoader(LoadMorph):
                        "Useful if the character is baked"),
         default = False)
 
-    useMakePoseable : BoolProperty(
-        name = "Make All Bones Poseable",
-        description = "Make all bones poseable after the morphs have been loaded",
+    useMakePosable : BoolProperty(
+        name = "Make All Bones Posable",
+        description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
     useTransferLashes : BoolProperty(
@@ -867,7 +867,7 @@ class MorphLoader(LoadMorph):
             item.bodypart = bodypart
 
 
-    def getAllMorphs(self, namepaths, context, usePoseable):
+    def getAllMorphs(self, namepaths, context, usePosable):
         from time import perf_counter
 
         if self.mesh:
@@ -902,9 +902,9 @@ class MorphLoader(LoadMorph):
             msg = "Found morphs that want to\nchange the rest pose"
         else:
             msg = None
-        if usePoseable and self.useMakePoseable and self.rig and activateObject(context, self.rig):
-            print("Make all bones poseable")
-            bpy.ops.daz.make_all_bones_poseable()
+        if usePosable and self.useMakePosable and self.rig and activateObject(context, self.rig):
+            print("Make all bones posable")
+            bpy.ops.daz.make_all_bones_posable()
         if self.faceshapes and self.useTransferLashes and self.rig and self.mesh:
             self.transferToLashes(context)
         if msg:
@@ -979,7 +979,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     suppressError = True
     ignoreHD = False
     hideable = True
-    useMakePoseable = False
+    useMakePosable = False
 
     def setupCharacter(self, context):
         ob = context.object
@@ -1025,7 +1025,7 @@ class StandardMorphSelector(Selector):
     def draw(self, context):
         Selector.draw(self, context)
         row = self.layout.row()
-        row.prop(self, "useMakePoseable")
+        row.prop(self, "useMakePosable")
         if self.bodypart == "Face":
             row.prop(self, "useTransferLashes")
         row.prop(self, "useAdjusters")
@@ -1288,7 +1288,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "useTransferLashes")
         self.layout.prop(self, "useAdjusters")
-        self.layout.prop(self, "useMakePoseable")
+        self.layout.prop(self, "useMakePosable")
 
     def run(self, context):
         if not self.setupCharacter(context):
@@ -1306,9 +1306,9 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.body, "Body", "Body")
         self.loadMorphType(context, self.jcms, "Jcms", "Body")
         self.loadMorphType(context, self.flexions, "Flexions", "Body")
-        if self.useMakePoseable and self.rig and activateObject(context, self.rig):
-            print("Make all bones poseable")
-            bpy.ops.daz.make_all_bones_poseable()
+        if self.useMakePosable and self.rig and activateObject(context, self.rig):
+            print("Make all bones posable")
+            bpy.ops.daz.make_all_bones_posable()
         if self.message:
             raise DazError(self.message, warning=True)
 
@@ -1361,7 +1361,7 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
     morphset = "Custom"
     hideable = True
     category = ""
-    useMakePoseable = False
+    useMakePosable = False
 
     def findPropGroup(self, prop):
         if self.rig is None:
@@ -1430,7 +1430,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         if self.bodypart == "Face":
             self.layout.prop(self, "useTransferLashes")
         self.layout.prop(self, "treatHD")
-        self.layout.prop(self, "useMakePoseable")
+        self.layout.prop(self, "useMakePosable")
 
 
     def invoke(self, context, event):
@@ -3040,7 +3040,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
         self.layout.prop(self, "ignoreUrl")
         self.layout.prop(self, "ignoreFinger")
         self.layout.prop(self, "useAdjusters")
-        self.layout.prop(self, "useMakePoseable")
+        self.layout.prop(self, "useMakePosable")
 
     def invoke(self, context, event):
         return SingleFile.invoke(self, context, event)
@@ -3076,9 +3076,9 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, J
             if url not in lstruct.keys():
                 return
             self.loadSinglePreset(ob, rig, lstruct[url], context)
-        if self.useMakePoseable and rig and activateObject(context, rig):
-            print("Make all bones poseable")
-            bpy.ops.daz.make_all_bones_poseable()
+        if self.useMakePosable and rig and activateObject(context, rig):
+            print("Make all bones posable")
+            bpy.ops.daz.make_all_bones_posable()
 
 
     def loadSinglePreset(self, ob, rig, ustruct, context):
