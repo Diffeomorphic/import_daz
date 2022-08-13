@@ -1195,7 +1195,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             shin.tail = foot.head
             foot.tail = toe.head
             foot.use_connect = False
-            #toe.use_connect = True
+            toe.use_connect = True
 
             legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, L_LEXTRA+dlayer, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)
@@ -1209,7 +1209,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             footFk.use_connect = False
             footFk.layers[L_LEXTRA+dlayer] = True
             toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, L_LLEGFK+dlayer, footFk)
-            #toeFk.use_connect = True
+            toeFk.use_connect = True
             toeFk.layers[L_LEXTRA+dlayer] = True
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, L_HELP2, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
