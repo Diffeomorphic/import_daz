@@ -469,6 +469,7 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
             layout.separator()
             layout.operator("daz.clear_pose")
             op = layout.operator("daz.clear_morphs")
+            op.morphset = "All"
             if rig.DazDriversDisabled:
                 layout.operator("daz.enable_drivers")
             else:
