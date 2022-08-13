@@ -246,8 +246,8 @@ class PbrTree(CyclesTree):
 
     def buildSpecular(self, useTex):
         # Specular
-        strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
         if self.owner.shader == 'UBER_IRAY':
+            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             if self.owner.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
                 refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
@@ -268,7 +268,10 @@ class PbrTree(CyclesTree):
             elif self.owner.basemix == 2:  # Weighted
                 value = 0.0
                 tex = None
+        elif self.owner.shader == 'PBRSKIN':
+            value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
         else:
+            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
             tex = self.mixTexs('MULTIPLY', strtex, coltex)
             value = factor = strength * averageColor(color)
