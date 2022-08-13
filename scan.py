@@ -156,10 +156,13 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
                  "/daz 3d/base correctives",
                  "/daz 3d/base flexions",
                  "/daz 3d/base pose",
+                 "/daz 3d/base pose head",
                  "/daz 3d/body",
                  "/daz 3d/control rig",
                  "/daz 3d/clones",
-                 "/daz 3d/expressions"
+                 "/daz 3d/expressions",
+                 "/daz 3d/facs",
+                 "/daz 3d/head",
                  ))
 
         if self.count > self.maxcount:

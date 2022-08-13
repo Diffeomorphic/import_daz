@@ -1153,9 +1153,10 @@ class Rigify:
         if coll:
             if gen.name in scn.collection.objects:
                 scn.collection.objects.unlink(gen)
-                scn.collection.objects.unlink(meta)
             if gen.name not in coll.objects:
                 coll.objects.link(gen)
+            if meta.name in scn.collection.objects:
+                scn.collection.objects.unlink(meta)
             if meta.name not in coll.objects:
                 coll.objects.link(meta)
             for wname in ["WGTS_rig"]:
@@ -1500,7 +1501,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintS
         self.createMeta(context)
 
 
-class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists):
+class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists, ConstraintStore):
     bl_idname = "daz.rigify_meta"
     bl_label = "Rigify Metarig"
     bl_description = "Convert metarig to rigify"
@@ -1511,6 +1512,7 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwist
 
     def __init__(self):
         Fixer.__init__(self)
+        ConstraintStore.__init__(self)
 
     def draw(self, context):
         self.layout.prop(self, "useAutoAlign")
