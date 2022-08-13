@@ -162,6 +162,12 @@ class FrameConverter:
                     bonemap[bname] = bname
                 elif bname in conv.keys():
                     bonemap[bname] = conv[bname]
+                elif bname[0] in ["l", "r"] and bname[1].isupper():
+                    rname = "%s%s.%s" % (bname[1].lower(), bname[2:], bname[0].upper())
+                    bonemap[bname] = rname
+                elif bname[0].isupper():
+                    rname = "%s%s" % (bname[0].lower(), bname[1:])
+                    bonemap[bname] = rname
                 else:
                     bonemap[bname] = bname
 
