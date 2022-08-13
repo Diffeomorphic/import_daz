@@ -246,6 +246,8 @@ class PbrTree(CyclesTree):
 
     def buildSpecular(self, useTex):
         # Specular
+        factor = value = 0.0
+        tex = None
         if self.owner.shader == 'UBER_IRAY':
             strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             if self.owner.basemix == 0:    # Metallic/Roughness
@@ -265,12 +267,10 @@ class PbrTree(CyclesTree):
                 tex = self.mixTexs('MULTIPLY', strtex, reftex)
                 factor = 16 * strength
                 value = factor * averageColor(color)
-            elif self.owner.basemix == 2:  # Weighted
-                value = 0.0
-                tex = None
         elif self.owner.shader == 'PBRSKIN':
-            value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
-            factor = value
+            if self.isEnabled("Dual Lobe Specular"):
+                value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
+                factor = value
         else:
             strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
@@ -325,7 +325,9 @@ class PbrTree(CyclesTree):
 
     def checkTopCoat(self):
         self.useTopCoat = False
-        if LS.materialMethod == 'SINGLE_PRINCIPLED' or self.owner.basemix == 1:
+        if (LS.materialMethod == 'SINGLE_PRINCIPLED' or
+            self.owner.basemix == 1 or
+            not self.isEnabled("Top Coat")):
             return
         aniso = self.getValue(["Top Coat Anisotropy"], 0)
         anirot = self.getValue(["Top Coat Rotations"], 0)
@@ -379,7 +381,7 @@ class PbrTree(CyclesTree):
             return
         elif self.owner.basemix == 2:
             CyclesTree.buildGlossyOrDualLobe(self)
-        else:
+        elif self.isEnabled("Dual Lobe Specular"):
             dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
             if dualLobeWeight > 0:
                 self.buildDualLobe()
@@ -391,6 +393,8 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildRefraction(self):
+        if not self.isEnabled("Transmission"):
+            return 0, None
         if LS.materialMethod == 'SINGLE_PRINCIPLED':
             weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
