@@ -270,6 +270,7 @@ class PbrTree(CyclesTree):
                 tex = None
         elif self.owner.shader == 'PBRSKIN':
             value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
+            factor = value
         else:
             strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
