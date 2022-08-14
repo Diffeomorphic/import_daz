@@ -358,16 +358,26 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
         n = len(suffix)
         keyframes = {}
         used = {}
+        pgs = rig.DazAlias
         for anim in anims:
             url = anim["url"]
             if url[0:m] == prefix and url[-n:] == suffix:
                 prop = url[m:-n]
-                if prop in rig.keys() or prop in self.shapekeys.keys():
+                alias = None
+                if prop in pgs.keys():
+                    alias = pgs[prop].s
+                if alias and alias in rig.keys() or alias in self.shapekeys.keys():
+                    morphs = {alias : 1.0}
+                elif prop in rig.keys() or prop in self.shapekeys.keys():
                     morphs = {prop : 1.0}
                 elif prop in self.morphs.keys():
                     morphs = self.morphs[prop]
                 elif prop in self.morphs2.keys():
                     morphs = self.morphs2[prop]
+                elif alias and alias in self.morphs.keys():
+                    morphs = self.morphs[alias]
+                elif alias and alias in self.morphs2.keys():
+                    morphs = self.morphs2[alias]
                 else:
                     used[prop] = True
                     continue

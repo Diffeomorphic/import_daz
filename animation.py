@@ -488,7 +488,7 @@ class MorphOptions:
 
         from .fileutils import getFolders
         from .morphing import getMorphPaths
-        folders = getFolders(rig, ["Morphs/", ""], match81=True)
+        folders = getFolders(rig, [""], match81=True)
         table = {}
         mpaths = getMorphPaths(rig.DazMesh)
         mtypes = {}
@@ -497,7 +497,6 @@ class MorphOptions:
                 for path in paths:
                     mtypes[os.path.basename(path)] = morphset
         print("Setting up morph table for %s" % rig.DazMesh)
-        print("FF", folders)
         for folder in folders:
             setupTable(folder, table, mtypes)
         return table
