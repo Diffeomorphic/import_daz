@@ -155,7 +155,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
         self.wm.progress_end()
         saveJson(struct, scanpath)
         t2 = perf_counter()
-        print("Database for %s scanned in %.3f seconds" % (name, t2-t1))
+        print("Database for %s scanned in %.3f seconds and saved in\n%s" % (name, t2-t1, scanpath))
 
 
     def scanMorphs(self, folderpath, nskip):
@@ -244,10 +244,9 @@ def getCharData(context):
 
 
 def getScanPath(name):
-    folder = os.path.join(os.path.dirname(__file__), "data", "scanned")
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    return os.path.join(folder, "%s.json" % name)
+    if not os.path.exists(GS.scanPath):
+        os.makedirs(GS.scanPath)
+    return os.path.join(GS.scanPath, "%s.json" % name)
 
 #-------------------------------------------------------------
 #   Import Scanned Morph

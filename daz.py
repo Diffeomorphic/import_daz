@@ -200,6 +200,8 @@ class DAZ_OT_GlobalSettings(DazOperator):
             box.operator("daz.add_cloud_dir")
         box.label(text = "Path To Output Errors:")
         box.prop(scn, "DazErrorPath", text="")
+        box.label(text = "Path To Scanned Database:")
+        box.prop(scn, "DazScanPath", text="")
 
         col = split.column()
         box = col.box()
@@ -342,6 +344,10 @@ def register():
     bpy.types.Scene.DazErrorPath = StringProperty(
         name = "Error Path",
         description = "Path to error report file")
+
+    bpy.types.Scene.DazScanPath = StringProperty(
+        name = "Scan Path",
+        description = "Path to scanned database")
 
     bpy.types.Scene.DazUnitScale = FloatProperty(
         name = "Unit Scale",
