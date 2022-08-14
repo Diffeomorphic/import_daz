@@ -457,13 +457,14 @@ def getRef(id, fileref):
 
 
 def lowerPath(path):
-    #return path
+    return path
+    path = path.lower()
     if len(path) > 0 and path[0] == "/":
         words = path.split("#",1)
         if len(words) == 1:
-            return tolower(words[0])
+            return words[0]
         else:
-            return tolower(words[0]) + "#" + words[1]
+            return "%s#%s" % (words[0], words[1])
     else:
         return path
 

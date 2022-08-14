@@ -771,7 +771,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 def getMorphPath(sname, ob):
     from .fileutils import getFolders
     file = sname + ".dsf"
-    folders = getFolders(ob, ["Morphs/"])
+    folders = getFolders(ob, ["Morphs/"], match81=True)
     for folder in folders:
         path = findFileRecursive(folder, file)
         if path:

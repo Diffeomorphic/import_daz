@@ -58,7 +58,23 @@ def safeOpen(filepath, rw, encoding="utf-8-sig"):
 #   Open and check for case change
 #-------------------------------------------------------------
 
-def getFolders(ob, subdirs):
+the81Folders = {
+    "/data/DAZ 3D/Genesis 8/Female" : "/data/DAZ 3D/Genesis 8/Female 8_1",
+    "/data/DAZ 3D/Genesis 8_1/Female" : "/data/DAZ 3D/Genesis 8/Female 8",
+    "/data/DAZ 3D/Genesis 8/Male" : "/data/DAZ 3D/Genesis 8/Male 8_1",
+    "/data/DAZ 3D/Genesis 8_1/Male" : "/data/DAZ 3D/Genesis 8/Male 8",
+}
+
+def getFolders(ob, subdirs, match81=False):
+    def addFolders(reldir):
+        for basedir in GS.getDazPaths():
+            for subdir in subdirs:
+                folder = "%s/%s/%s" % (basedir, reldir, subdir)
+                folder = folder.replace("//", "/")
+                folder = bpy.path.resolve_ncase(folder)
+                if os.path.exists(folder):
+                    folders.append(folder)
+
     if ob is None:
         return []
     fileref = ob.DazUrl.split("#")[0]
@@ -66,13 +82,11 @@ def getFolders(ob, subdirs):
         return []
     reldir = os.path.dirname(fileref)
     folders = []
-    for basedir in GS.getDazPaths():
-        for subdir in subdirs:
-            folder = "%s/%s/%s" % (basedir, reldir, subdir)
-            folder = folder.replace("//", "/")
-            folder = bpy.path.resolve_ncase(folder)
-            if os.path.exists(folder):
-                folders.append(folder)
+    addFolders(reldir)
+    if match81:
+        reldir2 = the81Folders.get(reldir)
+        if reldir2:
+            addFolders(reldir2)
     return folders
 
 #-------------------------------------------------------------

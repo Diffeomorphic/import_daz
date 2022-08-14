@@ -37,6 +37,11 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
     bl_label = "Scan Morph Database"
     bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
 
+    useStandardMorphs : BoolProperty(
+        name = "Include Standard Morphs",
+        description = "Include standard morphs bundled with DAZ Studio in scan.\nSlows down scanning but necessary to find missing standard morphs",
+        default = True)
+
     useActive : BoolProperty(
         name = "Scan Active Mesh",
         description = "Only scan morphs for active mesh",
@@ -88,6 +93,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
         default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "useStandardMorphs")
         self.layout.prop(self, "useActive")
         if not self.useActive:
             self.layout.separator()
@@ -128,13 +134,17 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
         from time import perf_counter
         t1 = perf_counter()
         self.morphs = {}
+        self.defs = {}
         struct = {
             "name" : name,
             "path" : relpath,
+            "version" : 2,
+            "definitions" : self.defs,
             "morphs" : self.morphs,
         }
         self.count = 0
         self.maxcount = 1000000
+        #self.maxcount = 10
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
         LS.forMorphLoad(self.mesh)
@@ -174,7 +184,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
             path = os.path.join(folderpath, file)
             if os.path.isdir(path):
                 self.scanMorphs(path, nskip)
-            elif isExcluded(folderpath):
+            elif not self.useStandardMorphs and isExcluded(folderpath):
                 pass
             elif file[0:5] != "alias":
                 ext = os.path.splitext(file)[-1]
@@ -193,16 +203,18 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
         asset = parseAssetFile(struct)
         if isinstance(asset, Formula):
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
-            infos = self.evalExprs(asset, exprs)
-            if infos:
+            info = self.evalExprs(asset, exprs)
+            if info:
                 self.count += 1
                 self.wm.progress_update(self.count)
-                key = asset.id.rsplit("#",1)[-1]
-                self.morphs[key.lower()] = infos
+                ref,key = asset.id.rsplit("#",1)
+                self.morphs[key.lower()] = info
+                filepath = bpy.path.resolve_ncase(unquote(ref))
+                self.defs[key.lower()] = filepath
 
 
     def evalExprs(self, asset, exprs):
-        infos = []
+        info = {}
         for output,data in exprs.items():
             ref = None
             channel = None
@@ -215,12 +227,8 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
                 prop = expr["prop"]
                 factor = expr["factor"]
             if prop and factor and channel=="value":
-                info = {
-                    "morph" : output,
-                    "factor" : factor,
-                }
-                infos.append(info)
-        return infos
+                info[output] = factor
+        return info
 
 
 def getCharData(context):
@@ -246,74 +254,133 @@ def getScanPath(name):
 #-------------------------------------------------------------
 
 from .fileutils import MultiFile, DazImageFile
+from .animation import MorphOptions
 
-class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, IsMeshArmature):
+class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, IsMeshArmature):
     bl_idname = "daz.import_scanned"
     bl_label = "Import Morph"
     bl_description = "Import morphs only from DAZ pose preset file(s),\nusing the scanned morph database for missing morphs"
     bl_options = {'UNDO'}
 
     def draw(self, context):
+        MorphOptions.draw(self, context)
         toolset = context.scene.tool_settings
         self.layout.prop(toolset, "use_keyframe_insert_auto")
 
+    altNames = {
+        "Genesis8Female" : "Genesis8_1Female",
+        "Genesis8_1Female" : "Genesis8Female",
+        "Genesis8Male" : "Genesis8_1Male",
+        "Genesis8_1Male" : "Genesis8Male",
+    }
 
     def run(self, context):
-        from .load_json import loadJson
         from .morphing import clearAllMorphs
-        self.rig, self.mesh, name, relpath, scanpath = getCharData(context)
+        rig, mesh, name, relpath, scanpath = getCharData(context)
+        self.shapekeys = {}
+        if mesh and mesh.data.shape_keys:
+            self.shapekeys = mesh.data.shape_keys.key_blocks
         scn = context.scene
         self.useInsertKeys = scn.tool_settings.use_keyframe_insert_auto
         if not os.path.exists(scanpath):
             raise DazError("Scanned morphs for %s do not exist" % name)
         filepaths = self.getMultiFiles(["duf", "dsf"])
         if filepaths:
-            struct = loadJson(scanpath)
-            self.scanned = struct["morphs"]
-            #clearAllMorphs(self.rig, scn.frame_current, self.useInsertKeys)
-            for n,filepath in enumerate(filepaths):
-                self.importFile(filepath, scn.frame_current + n)
-            updateDrivers(self.rig)
+            self.defs, self.morphs = self.loadScanned(name, scanpath, False)
+            name2 = self.altNames.get(name)
+            if name2:
+                scanpath2 = getScanPath(name2)
+                self.defs2, self.morphs2 = self.loadScanned(name2, scanpath2, True)
+            if self.useClearMorphs:
+                clearAllMorphs(rig, scn.frame_current, self.useInsertKeys)
+            frame = scn.frame_current
+            for filepath in filepaths:
+                frame += self.importFile(context, rig, filepath, frame)
+            updateDrivers(rig)
 
 
-    def importFile(self, filepath, frame):
+    def loadScanned(self, name, scanpath, silent):
         from .load_json import loadJson
+        struct = loadJson(scanpath, silent=silent)
+        if struct:
+            version = struct.get("version")
+            if version is None:
+                msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
+                if silent:
+                    print(msg)
+                    return {},{}
+                raise DazError(msg)
+            return struct["definitions"], struct["morphs"]
+        else:
+            return {}, {}
+
+
+    def importFile(self, context, rig, filepath, frame):
+        from .load_json import loadJson
+        from .asset import normalizeRef
         struct = loadJson(filepath, False)
         scene = struct.get("scene")
         if scene is None:
-            return
+            return 0
         anims = scene.get("animations")
         if anims is None:
-            return
+            return 0
+
+        keyframes,used = self.getKeyFrames(rig, anims)
+        missing = {}
+        for prop in used.keys():
+            if prop not in rig.keys() and prop not in self.shapekeys.keys():
+                missing[prop] = 0.0
+        hasError,again = self.handleMissingMorphs(context, rig, missing)
+        if again:
+            keyframes,used = self.getKeyFrames(rig, anims)
+
+        for t,data in keyframes.items():
+            for prop,value in data.items():
+                if prop in rig.keys():
+                    rig[prop] = value
+                    if self.useInsertKeys:
+                        rig.keyframe_insert(propRef(prop), frame=frame+t, group=prop)
+                elif prop in self.shapekeys.keys():
+                    self.shapekeys[prop].value = value
+                    if self.useInsertKeys:
+                        self.shapekeys[prop].keyframe_insert("value", frame=frame+t, group=prop)
+        if keyframes:
+            times = list(keyframes.keys())
+            return max(times)+1
+        return 0
+
+
+    def getKeyFrames(self, rig, anims):
         prefix = "name://@selection#"
         suffix = ":?value/value"
         m = len(prefix)
         n = len(suffix)
         keyframes = {}
+        used = {}
         for anim in anims:
             url = anim["url"]
             if url[0:m] == prefix and url[-n:] == suffix:
                 prop = url[m:-n]
-                if prop in self.rig.keys():
-                    morphs = [(prop, 1.0)]
-                elif prop in self.scanned.keys():
-                    morphs = [(data["morph"], data["factor"]) for data in self.scanned[prop]]
+                if prop in rig.keys() or prop in self.shapekeys.keys():
+                    morphs = {prop : 1.0}
+                elif prop in self.morphs.keys():
+                    morphs = self.morphs[prop]
+                elif prop in self.morphs2.keys():
+                    morphs = self.morphs2[prop]
                 else:
+                    used[prop] = True
                     continue
                 for t,value in anim["keys"]:
                     if t not in keyframes.keys():
                         keyframes[t] = {}
                     data = keyframes[t]
-                    for prop,factor in morphs:
+                    for prop,factor in morphs.items():
                         if prop not in data.keys():
                             data[prop] = 0.0
                         data[prop] += value*factor
-        for t,data in keyframes.items():
-            for prop,value in data.items():
-                if prop in self.rig.keys():
-                    self.rig[prop] = value
-                    if self.useInsertKeys:
-                        self.rig.keyframe_insert(propRef(prop), frame=frame+t, group=prop)
+                        used[prop] = True
+        return keyframes, used
 
 #----------------------------------------------------------
 #   Initialize

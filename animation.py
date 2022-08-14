@@ -300,7 +300,7 @@ class HideOperator(DazOperator, IsArmature):
         muteDazFcurves(rig, rig.DazDriversDisabled)
 
 #-------------------------------------------------------------
-#   AnimatorBase class
+#   ConvertOptions
 #-------------------------------------------------------------
 
 class ConvertOptions:
@@ -315,16 +315,14 @@ class ConvertOptions:
         description = "Character this file was made for",
         default = "genesis_3_female")
 
+    def draw(self, context):
+        self.layout.prop(self, "convertPoses")
+        if self.convertPoses:
+            self.layout.prop(self, "srcCharacter")
 
-def getGeograftItems(scn, context):
-    enums = [("-", "-", "-")]
-    rig = context.object
-    for ob in rig.children:
-        if ob.DazMesh and ob.type == 'MESH':
-            enums += [(key,key,key) for key in ob.data.DazMergedGeografts.keys()]
-            return enums
-    return enums
-
+#-------------------------------------------------------------
+#   AffectOptions
+#-------------------------------------------------------------
 
 class AffectOptions:
     affectBones : BoolProperty(
@@ -337,6 +335,50 @@ class AffectOptions:
         description = "Animate bones with a Drv parent",
         default = True)
 
+    affectObject : EnumProperty(
+        items = [('OBJECT', "Object", "Animate global object transformation"),
+                 ('MASTER', "Master Bone", "Object transformations affect master/root bone instead of object.\nOnly for MHX and Rigify"),
+                 ('NONE', "None", "Don't animate global object transformations"),
+                ],
+        name = "Affect Object",
+        description = "How to animate global object transformation",
+        default = 'OBJECT')
+
+    affectSelectedOnly : BoolProperty(
+        name = "Selected Bones Only",
+        description = "Only animate selected bones",
+        default = False)
+
+    affectScale : BoolProperty(
+        name = "Affect Scale",
+        description = "Include bone scale in animation",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "affectBones")
+        if self.affectBones:
+            self.layout.prop(self, "affectScale")
+            self.layout.prop(self, "affectSelectedOnly")
+            self.layout.prop(self, "affectDrivenBones")
+        self.layout.label(text="Object Transformations Affect:")
+        self.layout.prop(self, "affectObject", expand=True)
+        self.layout.prop(self, "affectMorphs")
+
+#-------------------------------------------------------------
+#   MorphOptions
+#-------------------------------------------------------------
+
+def getGeograftItems(scn, context):
+    enums = [("-", "-", "-")]
+    rig = context.object
+    for ob in rig.children:
+        if ob.DazMesh and ob.type == 'MESH':
+            enums += [(key,key,key) for key in ob.data.DazMergedGeografts.keys()]
+            return enums
+    return enums
+
+
+class MorphOptions:
     affectMorphs : BoolProperty(
         name = "Affect Morphs",
         description = "Animate morph properties",
@@ -349,20 +391,6 @@ class AffectOptions:
         description = "Clear all morph properties before loading new ones",
         default = True)
 
-    affectGeograft : EnumProperty(
-        items = getGeograftItems,
-        name = "Affect Geograft",
-        description = "Add morphs to this merged geograft")
-
-    affectObject : EnumProperty(
-        items = [('OBJECT', "Object", "Animate global object transformation"),
-                 ('MASTER', "Master Bone", "Object transformations affect master/root bone instead of object.\nOnly for MHX and Rigify"),
-                 ('NONE', "None", "Don't animate global object transformations"),
-                ],
-        name = "Affect Object",
-        description = "How to animate global object transformation",
-        default = 'OBJECT')
-
     onMissingMorphs : EnumProperty(
         items = [('IGNORE', "Ignore", "Ignore missing morphs"),
                  ('REPORT', "Report", "Report missing morphs"),
@@ -370,23 +398,131 @@ class AffectOptions:
                  ('LOAD_ALL', "Load All", "Load all missing morphs")],
         name = "Missing Morphs",
         description = "What to do with missing morphs",
-        default = 'IGNORE')
+        default = 'REPORT')
+
+    affectGeograft : EnumProperty(
+        items = getGeograftItems,
+        name = "Affect Geograft",
+        description = "Add morphs to this merged geograft")
 
     useMakePosable : BoolProperty(
         name = "Make All Bones Posable",
         description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
-    affectSelectedOnly : BoolProperty(
-        name = "Selected Bones Only",
-        description = "Only animate selected bones",
-        default = False)
+    def draw(self, context):
+        self.layout.prop(self, "useClearMorphs")
+        self.layout.prop(self, "affectGeograft")
+        self.layout.prop(self, "onMissingMorphs")
+        if self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+            self.layout.prop(self, "useMakePosable")
 
-    affectScale : BoolProperty(
-        name = "Affect Scale",
-        description = "Include bone scale in animation",
-        default = False)
 
+    def loadMissingMorphs(self, context, rig, missing):
+        global theMorphTables
+        if rig.DazId in theMorphTables.keys():
+            table = theMorphTables[rig.DazId]
+        else:
+            table = theMorphTables[rig.DazId] = self.setupMorphTable(rig)
+        namepathTable = {}
+        for mname in missing.keys():
+            lname = mname.lower()
+            if lname in table.keys():
+                path,morphset = table[lname]
+                if morphset not in namepathTable.keys():
+                    namepathTable[morphset] = []
+                namepathTable[morphset].append((mname, path, morphset))
+            else:
+                self.unfound.append(mname)
+
+        from .morphing import CustomMorphLoader, StandardMorphLoader
+        for morphset in namepathTable.keys():
+            if ((self.onMissingMorphs == 'LOAD_FACE' and morphset not in ["Body","Custom"]) or
+                (self.onMissingMorphs == 'LOAD_ALL' and morphset != "Custom")):
+                mloader = StandardMorphLoader()
+                mloader.morphset = morphset
+                mloader.category = ""
+                mloader.hideable = True
+                print("\nLoading missing %s morphs" % morphset)
+                mloader.getAllMorphs(namepathTable[morphset], context, True)
+        if (self.onMissingMorphs == 'LOAD_ALL' and "Custom" in namepathTable.keys()):
+            customs = {}
+            for namepath in namepathTable["Custom"]:
+                mname,path,morphset = namepath
+                folder = os.path.dirname(path)
+                cat = os.path.split(folder)[-1]
+                if cat not in customs.keys():
+                    customs[cat] = []
+                customs[cat].append(namepath)
+            for cat, namepaths in customs.items():
+                mloader = CustomMorphLoader()
+                rig.DazCustomMorphs = True
+                mloader.morphset = "Custom"
+                mloader.category = cat
+                mloader.hideable = True
+                print("\nLoading morphs in category %s" % cat)
+                mloader.getAllMorphs(namepaths, context, True)
+        for mname,value in missing.items():
+            rig[mname] = value
+
+
+    def setupMorphTable(self, rig):
+        def setupTable(folder, table, mtypes):
+            for file in os.listdir(folder):
+                path = os.path.join(folder, file)
+                if os.path.isdir(path):
+                    setupTable(path, table, mtypes)
+                elif file[0:5] != "alias":
+                    words = os.path.splitext(file)
+                    if words[-1] in [".dsf", ".duf"]:
+                        mname = words[0].lower()
+                        if file in mtypes.keys():
+                            morphset = mtypes[file]
+                        else:
+                            morphset = "Custom"
+                        table[mname] = (path, morphset)
+                        if mname[0:5] == "pctrl":
+                            table[mname[1:]] = (path, morphset)
+                        elif mname[0:4] == "ctrl":
+                            table["p%s" % mname] = (path, morphset)
+
+        from .fileutils import getFolders
+        from .morphing import getMorphPaths
+        folders = getFolders(rig, ["Morphs/", ""], match81=True)
+        table = {}
+        mpaths = getMorphPaths(rig.DazMesh)
+        mtypes = {}
+        if mpaths:
+            for morphset,paths in mpaths.items():
+                for path in paths:
+                    mtypes[os.path.basename(path)] = morphset
+        print("Setting up morph table for %s" % rig.DazMesh)
+        print("FF", folders)
+        for folder in folders:
+            setupTable(folder, table, mtypes)
+        return table
+
+
+    def handleMissingMorphs(self, context, rig, missing):
+        if self.onMissingMorphs == 'REPORT':
+            props = list(missing.keys())
+            props.sort()
+            print("Missing morphs:\n  %s" % props)
+            return True,False
+        elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+            self.unfound = []
+            self.loadMissingMorphs(context, rig, missing)
+            if self.unfound:
+                print("Missing morphs not found:\n  %s" % self.unfound)
+                return True,True
+            return False,True
+        return False,False
+
+theMorphTables = {}
+
+#-------------------------------------------------------------
+#   ActionOptions
+#-------------------------------------------------------------
 
 class ActionOptions:
     makeNewAction : BoolProperty(
@@ -445,6 +581,9 @@ class ActionOptions:
             if act:
                 act.name = self.actionName
 
+#-------------------------------------------------------------
+#   PoseLibOptions
+#-------------------------------------------------------------
 
 class PoseLibOptions:
     makeNewPoseLib : BoolProperty(
@@ -462,8 +601,42 @@ class PoseLibOptions:
         description = "Create asset browser library",
         default = True)
 
+    usePreviewImages : BoolProperty(
+        name = "Import Previews",
+        description = "Import preview images for imported poses",
+        default = False)
 
-class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsMeshArmature):
+    assetTags : StringProperty(
+        name = "Tags",
+        description = "List of tags to add to the imported Poses",
+        default = "")
+
+    assetAuthor : StringProperty(
+        name = "Author",
+        description = "Name of the Author",
+        default = "")
+
+    assetDescription : StringProperty(
+        name = "Description",
+        description = "Description to add to all Poses",
+        default = "")
+
+    def draw(self, context):
+        self.layout.prop(self, "makeNewPoseLib")
+        if self.makeNewPoseLib:
+            self.layout.prop(self, "poseLibName")
+        if bpy.app.version >= (3,0,0):
+            self.layout.prop(self, "useAssetBrowser")
+            self.layout.prop(self, "usePreviewImages")
+            self.layout.prop(self, "assetTags")
+            self.layout.prop(self, "assetAuthor")
+            self.layout.prop(self, "assetDescription")
+
+#-------------------------------------------------------------
+#   AnimatorBase
+#-------------------------------------------------------------
+
+class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, MorphOptions, IsMeshArmature):
     filename_ext = ".duf"
     filter_glob : StringProperty(default = G.theDazDefaults + G.theImagedDefaults, options={'HIDDEN'})
     lockMeshes = False
@@ -472,24 +645,10 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, IsM
         pass
 
     def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "affectBones")
-        if self.affectBones:
-            layout.prop(self, "affectScale")
-            layout.prop(self, "affectSelectedOnly")
-            layout.prop(self, "affectDrivenBones")
-        layout.label(text="Object Transformations Affect:")
-        layout.prop(self, "affectObject", expand=True)
-        layout.prop(self, "affectMorphs")
+        AffectOptions.draw(self, context)
         if self.affectMorphs:
-            layout.prop(self, "useClearMorphs")
-            layout.prop(self, "affectGeograft")
-            layout.prop(self, "onMissingMorphs")
-            if self.onMissingMorphs == 'LOAD_ALL':
-                layout.prop(self, "useMakePosable")
-        layout.prop(self, "convertPoses")
-        if self.convertPoses:
-            layout.prop(self, "srcCharacter")
+            MorphOptions.draw(self, context)
+        ConvertOptions.draw(self, context)
 
 
     def getSingleAnimation(self, filepath, context, offset):
@@ -976,17 +1135,7 @@ class StandardAnimation:
         self.loadAnimation(context)
         hasError = False
         if self.missing:
-            if self.onMissingMorphs == 'REPORT':
-                missing = list(self.missing.keys())
-                missing.sort()
-                print("Missing morphs:\n  %s" % missing)
-                hasError = True
-            elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
-                self.unfound = []
-                self.loadMissingMorphs(context, rig)
-                if self.unfound:
-                    print("Missing morphs not found:\n  %s" % self.unfound)
-                    hasError = True
+            hasError,_ = self.handleMissingMorphs(context, rig, self.missing)
             if self.useMakePosable and self.onMissingMorphs == 'LOAD_ALL':
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
@@ -1047,92 +1196,6 @@ class StandardAnimation:
             else:
                 bone.select = (bone.name in select)
         return selected
-
-
-    def loadMissingMorphs(self, context, rig):
-        global theMorphTables
-        if rig.DazId in theMorphTables.keys():
-            table = theMorphTables[rig.DazId]
-        else:
-            table = theMorphTables[rig.DazId] = self.setupMorphTable(rig)
-        namepathTable = {}
-        for mname in self.missing.keys():
-            lname = mname.lower()
-            if lname in table.keys():
-                path,morphset = table[lname]
-                if morphset not in namepathTable.keys():
-                    namepathTable[morphset] = []
-                namepathTable[morphset].append((mname, path, morphset))
-            else:
-                self.unfound.append(mname)
-
-        from .morphing import CustomMorphLoader, StandardMorphLoader
-        for morphset in namepathTable.keys():
-            if ((self.onMissingMorphs == 'LOAD_FACE' and morphset not in ["Body","Custom"]) or
-                (self.onMissingMorphs == 'LOAD_ALL' and morphset != "Custom")):
-                mloader = StandardMorphLoader()
-                mloader.morphset = morphset
-                mloader.category = ""
-                mloader.hideable = True
-                print("\nLoading missing %s morphs" % morphset)
-                mloader.getAllMorphs(namepathTable[morphset], context, True)
-        if "Custom" in namepathTable.keys():
-            customs = {}
-            for namepath in namepathTable["Custom"]:
-                mname,path,morphset = namepath
-                folder = os.path.dirname(path)
-                cat = os.path.split(folder)[-1]
-                if cat not in customs.keys():
-                    customs[cat] = []
-                customs[cat].append(namepath)
-            for cat, namepaths in customs.items():
-                mloader = CustomMorphLoader()
-                rig.DazCustomMorphs = True
-                mloader.morphset = "Custom"
-                mloader.category = cat
-                mloader.hideable = True
-                print("\nLoading morphs in category %s" % cat)
-                mloader.getAllMorphs(namepaths, context, True)
-        for mname,value in self.missing.items():
-            rig[mname] = value
-
-
-    def setupMorphTable(self, rig):
-        def setupTable(folder, table, mtypes):
-            for file in os.listdir(folder):
-                path = os.path.join(folder, file)
-                if os.path.isdir(path):
-                    setupTable(path, table, mtypes)
-                elif file[0:5] != "alias":
-                    words = os.path.splitext(file)
-                    if words[-1] in [".dsf", ".duf"]:
-                        mname = words[0].lower()
-                        if file in mtypes.keys():
-                            morphset = mtypes[file]
-                        else:
-                            morphset = "Custom"
-                        table[mname] = (path, morphset)
-                        if mname[0:5] == "pctrl":
-                            table[mname[1:]] = (path, morphset)
-                        elif mname[0:4] == "ctrl":
-                            table["p%s" % mname] = (path, morphset)
-
-        from .fileutils import getFolders
-        from .morphing import getMorphPaths
-        folders = getFolders(rig, ["Morphs/", ""])
-        table = {}
-        mpaths = getMorphPaths(rig.DazMesh)
-        mtypes = {}
-        if mpaths:
-            for morphset,paths in mpaths.items():
-                for path in paths:
-                    mtypes[os.path.basename(path)] = morphset
-        print("Setting up morph table for %s" % rig.DazMesh)
-        for folder in folders:
-            setupTable(folder, table, mtypes)
-        return table
-
-theMorphTables = {}
 
 #-------------------------------------------------------------
 #   Import Node Pose
@@ -1207,38 +1270,10 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
     firstFrame = -1000
     lastFrame = 1000
 
-    usePreviewImages : BoolProperty(
-        name = "Import Previews",
-        description = "Import preview images for imported poses",
-        default = False)
-
-    assetTags : StringProperty(
-        name = "Tags",
-        description = "List of tags to add to the imported Poses",
-        default = "")
-
-    assetAuthor : StringProperty(
-        name = "Author",
-        description = "Name of the Author",
-        default = "")
-
-    assetDescription : StringProperty(
-        name = "Description",
-        description = "Description to add to all Poses",
-        default = "")
-
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
-        self.layout.prop(self, "makeNewPoseLib")
-        if self.makeNewPoseLib:
-            self.layout.prop(self, "poseLibName")
-        if bpy.app.version >= (3,0,0):
-            self.layout.prop(self, "useAssetBrowser")
-            self.layout.prop(self, "usePreviewImages")
-            self.layout.prop(self, "assetTags")
-            self.layout.prop(self, "assetAuthor")
-            self.layout.prop(self, "assetDescription")
+        PoseLibOptions.draw(self, context)
 
 
     def clearAnimation(self, ob):
