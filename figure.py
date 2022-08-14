@@ -796,6 +796,10 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
     def changeLayer(self, eb, rig):
         pass
 
+    def isSuchDriver(self, bname, drivers):
+        isLoc,isRot,isScale = ExtraBones.isSuchDriver(self, bname, drivers)
+        return True, True, False
+
 #-------------------------------------------------------------
 #   Finalize bones
 #-------------------------------------------------------------
