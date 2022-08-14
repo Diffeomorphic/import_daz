@@ -60,6 +60,18 @@ class Fixer(DriverUser):
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useKeepRig")
 
+
+    def copyLocksLimits(self, rig, srcname, trgname, suffix):
+        src = rig.pose.bones["%s.%s" % (srcname, suffix)]
+        trg = rig.pose.bones["%s.%s" % (trgname, suffix)]
+        trg.lock_location = src.lock_location
+        trg.lock_rotation = src.lock_rotation
+        trg.lock_scale = src.lock_scale
+        cns = getConstraint(src, 'LIMIT_ROTATION')
+        if cns:
+            copyConstraint(cns, trg, rig)
+
+
     def fixPelvis(self, rig):
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
@@ -591,12 +603,16 @@ ConstraintAttributes = [
 
 def copyConstraints(src, trg, rig=None):
     for scns in src.constraints:
-        tcns = trg.constraints.new(scns.type)
-        for attr in ConstraintAttributes:
-            if (hasattr(scns, attr) and attr != "type"):
-                setattr(tcns, attr, getattr(scns, attr))
-        if rig and hasattr(tcns, "target"):
-            tcns.target = rig
+        copyConstraint(scns, trg, rig)
+
+
+def copyConstraint(scns, trg, rig):
+    tcns = trg.constraints.new(scns.type)
+    for attr in ConstraintAttributes:
+        if (hasattr(scns, attr) and attr != "type"):
+            setattr(tcns, attr, getattr(scns, attr))
+    if rig and hasattr(tcns, "target"):
+        tcns.target = rig
 
 
 class ConstraintStore:
