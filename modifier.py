@@ -666,7 +666,7 @@ class Morph(FormulaAsset):
             "values" in morph["deltas"].keys()):
             self.deltas = morph["deltas"]["values"]
         else:
-            print("Morph without deltas: %s", self.name)
+            print("Morph without deltas: %s" % self.name)
         if "vertex_count" in morph.keys():
             self.vertex_count = morph["vertex_count"]
         if "hd_url" in morph.keys():

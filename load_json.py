@@ -55,6 +55,9 @@ def loadJson(filepath, mustOpen=False, silent=False):
             if nstring.isdigit():
                 n1 = int(nstring)
                 n = n1-1
+                if len(string) < n:
+                    print("Unknown error: %s" % jsonerr)
+                    return None
                 while string[n].isspace() and n > 0:
                     n -= 1
                 if string[n] == ",":
