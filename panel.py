@@ -56,6 +56,7 @@ class DAZ_PT_Setup(DAZ_PT_Base, bpy.types.Panel):
         self.layout.prop(scn, "DazFavoPath")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
+        self.layout.operator("daz.scan_morph_database")
 
 
 class DAZ_PT_SetupCorrections(DAZ_PT_Base, bpy.types.Panel):
@@ -123,8 +124,6 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
-            self.layout.operator("daz.scan_morph_database")
-            self.layout.separator()
             self.layout.label(text="Create low-poly meshes before transfers.")
             self.layout.operator("daz.transfer_shapekeys")
             self.layout.operator("daz.apply_all_shapekeys")
@@ -137,7 +136,6 @@ class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Finishing"
 
     def draw(self, context):
-        self.layout.operator("daz.add_softbody")
         self.layout.operator("daz.merge_geografts")
         self.layout.operator("daz.merge_meshes")
         self.layout.operator("daz.merge_uv_layers")
@@ -287,6 +285,8 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Simulation"
 
     def draw(self, context):
+        self.layout.operator("daz.add_softbody")
+        self.layout.separator()
         self.layout.operator("daz.make_simulation")
         self.layout.separator()
         self.layout.operator("daz.make_deflection")

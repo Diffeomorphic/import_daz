@@ -31,8 +31,9 @@ from bpy.props import *
 from .error import *
 from .utils import *
 
+theScannedFiles = {}
 
-class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
+class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
     bl_idname = "daz.scan_morph_database"
     bl_label = "Scan Morph Database"
     bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
@@ -92,11 +93,16 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
         description = "Scan Genesis 8.1 male",
         default = False)
 
+    def getActive(self, ob):
+        return (ob and ob.type in ['MESH', 'ARMATURE'])
+
     def draw(self, context):
-        self.layout.prop(self, "useStandardMorphs")
-        self.layout.prop(self, "useActive")
-        if not self.useActive:
+        #self.layout.prop(self, "useStandardMorphs")
+        active = self.getActive(context.object)
+        if active:
+            self.layout.prop(self, "useActive")
             self.layout.separator()
+        if not (active and self.useActive):
             self.layout.prop(self, "useGenesis")
             self.layout.prop(self, "useGenesis2Female")
             self.layout.prop(self, "useGenesis2Male")
@@ -108,7 +114,8 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
             self.layout.prop(self, "useGenesis8_1Male")
 
     def run(self, context):
-        if self.useActive:
+        active = self.getActive(context.object)
+        if active and self.useActive:
             self.rig, self.mesh, name, relpath, scanpath = getCharData(context)
             self.scanCharacter(context, name, relpath, scanpath)
         else:
@@ -130,6 +137,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
 
 
     def scanCharacter(self, context, name, relpath, scanpath):
+        global theScannedFiles
         from .load_json import saveJson
         from time import perf_counter
         t1 = perf_counter()
@@ -154,6 +162,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, IsMeshArmature):
             self.scanMorphs(morphpath, len(morphpath))
         self.wm.progress_end()
         saveJson(struct, scanpath)
+        theScannedFiles[name] = struct
         t2 = perf_counter()
         print("Database for %s scanned in %.3f seconds and saved in\n%s" % (name, t2-t1, scanpath))
 
@@ -299,8 +308,11 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
 
 
     def loadScanned(self, name, scanpath, silent):
+        global theScannedFiles
         from .load_json import loadJson
-        struct = loadJson(scanpath, silent=silent)
+        if name not in theScannedFiles.keys():
+            theScannedFiles[name] = loadJson(scanpath, silent=silent)
+        struct = theScannedFiles[name]
         if struct:
             version = struct.get("version")
             if version is None:
