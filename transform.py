@@ -77,6 +77,8 @@ class Transform:
     def setScale(self, scale, addUnit, prop=None, index=None):
         if index is None:
             self.scale = Vector(scale)
+        elif index == -1:
+            self.scale = Vector((scale,scale,scale))
         else:
             self.scale = Vector((0,0,0))
             self.scale[index] = scale

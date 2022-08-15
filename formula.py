@@ -219,17 +219,19 @@ class Formula:
     def parseChannel(self, channel):
         if channel == "value":
             return channel, 0, 0.0
-        elif channel  == "general_scale":
-            return channel, 0, 1.0
+        elif channel == "general_scale":
+            channel = "scale/general"
         data = channel.split("/")
         if len(data) != 2:
             return channel, 0, 0.0
         attr,comp = data
         idx = getIndex(comp)
-        if attr in ["rotation", "translation", "scale", "center_point", "end_point"]:
-            default = Vector((0,0,0))
+        if attr in ["rotation", "translation", "center_point", "end_point"]:
+            default = Zero
+        elif attr == "scale":
+            default = One
         elif attr in ["orientation"]:
-            return None, 0, Vector()
+            return None, 0, Zero
         else:
             msg = ("Unknown attribute: %s" % attr)
             reportError(msg)

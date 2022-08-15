@@ -1287,7 +1287,6 @@ class LoadMorph(DriverUser):
 
     def addScaleDriver(self, pb, idx):
         from .driver import removeModifiers
-        print("SCA", pb, idx)
         fcu = pb.driver_add("scale", idx)
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
