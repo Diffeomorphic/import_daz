@@ -56,7 +56,6 @@ class DAZ_PT_Setup(DAZ_PT_Base, bpy.types.Panel):
         self.layout.prop(scn, "DazFavoPath")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
-        self.layout.operator("daz.scan_morph_database")
 
 
 class DAZ_PT_SetupCorrections(DAZ_PT_Base, bpy.types.Panel):
@@ -101,9 +100,12 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         ob = context.object
-        if ob and ob.DazDriversDisabled:
+        if not ob or ob.type not in ['ARMATURE', 'MESH']:
+            self.layout.operator("daz.scan_morph_database")
+        elif ob and ob.DazDriversDisabled:
             self.layout.label(text = "Morph Drivers Disabled")
             self.layout.operator("daz.enable_drivers")
+            self.layout.operator("daz.scan_morph_database")
         elif ob and ob.type in ['ARMATURE', 'MESH']:
             if ob.DazMorphPrefixes:
                 self.layout.label(text="Object with obsolete morphs")
@@ -123,6 +125,8 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.separator()
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
+            self.layout.separator()
+            self.layout.operator("daz.scan_morph_database")
             self.layout.separator()
             self.layout.label(text="Create low-poly meshes before transfers.")
             self.layout.operator("daz.transfer_shapekeys")

@@ -270,8 +270,14 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
     bl_description = "Import morphs only from DAZ pose preset file(s),\nusing the scanned morph database for missing morphs"
     bl_options = {'UNDO'}
 
+    useClearBones : BoolProperty(
+        name = "Clear Bone Poses",
+        description = "Clear bone poses defined in file",
+        default = True)
+
     def draw(self, context):
         MorphOptions.draw(self, context)
+        self.layout.prop(self, "useClearBones")
         toolset = context.scene.tool_settings
         self.layout.prop(toolset, "use_keyframe_insert_auto")
 
@@ -337,14 +343,14 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
         if anims is None:
             return 0
 
-        keyframes,used = self.getKeyFrames(rig, anims)
+        keyframes,used,clearbones,setbones = self.getKeyFrames(rig, anims)
         missing = {}
         for prop in used.keys():
             if prop not in rig.keys() and prop not in self.shapekeys.keys():
                 missing[prop] = 0.0
         hasError,again = self.handleMissingMorphs(context, rig, missing)
         if again:
-            keyframes,used = self.getKeyFrames(rig, anims)
+            keyframes,used,clearbones,setbones = self.getKeyFrames(rig, anims)
 
         for t,data in keyframes.items():
             for prop,value in data.items():
@@ -356,6 +362,24 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
                     self.shapekeys[prop].value = value
                     if self.useInsertKeys:
                         self.shapekeys[prop].keyframe_insert("value", frame=frame+t, group=prop)
+
+        for bname,channels in clearbones.items():
+            for channel,ok in channels.items():
+                if ok and not setbones[bname][channel]:
+                    pb = rig.pose.bones[bname]
+                    if channel == "translation":
+                        pb.location = Zero
+                        if self.useInsertKeys:
+                            pb.keyframe_insert("location", frame=frame)
+                    elif channel == "rotation":
+                        pb.rotation_euler = Zero
+                        if self.useInsertKeys:
+                            pb.keyframe_insert("rotation_euler", frame=frame)
+                    elif channel in ["scale", "general_scale"]:
+                        pb.scale = One
+                        if self.useInsertKeys:
+                            pb.keyframe_insert("scale", frame=frame)
+
         if keyframes:
             times = list(keyframes.keys())
             return max(times)+1
@@ -368,11 +392,14 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
         m = len(prefix)
         n = len(suffix)
         keyframes = {}
+        clearbones = {}
+        setbones = {}
         used = {}
         pgs = rig.DazAlias
         for anim in anims:
             url = anim["url"]
-            if url[0:m] == prefix and url[-n:] == suffix:
+            if (url[0:m] == "name://@selection#" and
+                url[-n:] == ":?value/value"):
                 prop = url[m:-n]
                 alias = None
                 if prop in pgs.keys():
@@ -401,7 +428,40 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
                             data[prop] = 0.0
                         data[prop] += value*factor
                         used[prop] = True
-        return keyframes, used
+
+            elif self.useClearBones and url[0:m] == "name://@selection/":
+                bname,rest = url[m:].split(":",1)
+                words = rest.split("/")
+                channel = words[0][1:]
+                if bname not in rig.pose.bones.keys():
+                    default = None
+                elif channel in ["rotation", "translation"]:
+                    default = 0
+                elif channel in ["scale", "general_scale"]:
+                    default = 1
+                else:
+                    default = None
+                if default is not None:
+                    if bname not in clearbones.keys():
+                        clearbones[bname] = {
+                            "rotation" : False,
+                            "translation" : False,
+                            "scale" : False,
+                            "general_scale" : False,
+                        }
+                        setbones[bname] = {
+                            "rotation" : False,
+                            "translation" : False,
+                            "scale" : False,
+                            "general_scale" : False,
+                        }
+                    clearbones[bname][channel] = True
+                    for t,value in anim["keys"]:
+                        if value != default:
+                            setbones[bname][channel] = True
+                            break
+
+        return keyframes, used, clearbones, setbones
 
 #----------------------------------------------------------
 #   Initialize
