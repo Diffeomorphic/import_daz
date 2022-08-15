@@ -797,8 +797,8 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
         pass
 
     def isSuchDriver(self, bname, drivers):
-        isLoc,isRot,isScale = ExtraBones.isSuchDriver(self, bname, drivers)
-        return True, True, isScale
+        #isLoc,isRot,isScale = ExtraBones.isSuchDriver(self, bname, drivers)
+        return True, True, True
 
 #-------------------------------------------------------------
 #   Finalize bones
