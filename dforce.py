@@ -478,8 +478,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         self.bones = bstruct["bones"]
         self.fixDeformBones()
         subsurfs = {}
+        multires = {}
         for ob in selected:
             subsurfs[ob.name] = self.removeSubsurf(ob)
+            multires[ob.name] = self.setMultiresZero(ob)
 
         hstruct = struct["mesh"]
         self.addVertexGroups(hum, selected, hstruct["vertex_groups"])
@@ -515,6 +517,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         activateObject(context, hum)
         for ob in selected:
             self.restoreSubsurf(ob, subsurfs[ob.name])
+            self.restoreMultires(ob, multires[ob.name])
 
 
     def fixDeformBones(self):
@@ -773,6 +776,15 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         return subsurf
 
 
+    def setMultiresZero(self, ob):
+        mod = getModifier(ob, 'MULTIRES')
+        if mod:
+            levels = mod.levels
+            mod.levels = 0
+            return levels
+        return 0
+
+
     def restoreSubsurf(self, ob, subsurf):
         if subsurf:
             ob.modifiers.new("Subsurf", 'SUBSURF')
@@ -782,6 +794,13 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
                     setattr(mod, key, value)
                 except AttributeError:
                     pass
+
+
+    def restoreMultires(self, ob, levels):
+        return
+        mod = getModifier(ob, 'MULTIRES')
+        if mod:
+            mod.levels = levels
 
 
     def addCorrSmooth(self, ob, vgrp, iters, stype):
