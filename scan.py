@@ -31,6 +31,8 @@ from bpy.props import *
 from .error import *
 from .utils import *
 
+CURRENT_VERSION = 3
+
 theScannedFiles = {}
 
 class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
@@ -141,14 +143,14 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
         from .load_json import saveJson
         from time import perf_counter
         t1 = perf_counter()
-        self.morphs = {}
-        self.defs = {}
+        self.formulas = {}
+        self.defins = {}
         struct = {
             "name" : name,
             "path" : relpath,
-            "version" : 2,
-            "definitions" : self.defs,
-            "morphs" : self.morphs,
+            "version" : CURRENT_VERSION,
+            "definitions" : self.defins,
+            "formulas" : self.formulas,
         }
         self.count = 0
         self.maxcount = 1000000
@@ -168,22 +170,6 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
 
 
     def scanMorphs(self, folderpath, nskip):
-        def isExcluded(path):
-            lpath = path.lower().replace("\\", "/")
-            return lpath.endswith(
-                ("/daz 3d/base",
-                 "/daz 3d/base correctives",
-                 "/daz 3d/base flexions",
-                 "/daz 3d/base pose",
-                 "/daz 3d/base pose head",
-                 "/daz 3d/body",
-                 "/daz 3d/control rig",
-                 "/daz 3d/clones",
-                 "/daz 3d/expressions",
-                 "/daz 3d/facs",
-                 "/daz 3d/head",
-                 ))
-
         if self.count > self.maxcount:
             return
         if not os.path.exists(folderpath):
@@ -193,7 +179,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
             path = os.path.join(folderpath, file)
             if os.path.isdir(path):
                 self.scanMorphs(path, nskip)
-            elif not self.useStandardMorphs and isExcluded(folderpath):
+            elif not self.useStandardMorphs and getMorphSet(folderpath) != "Custom":
                 pass
             elif file[0:5] != "alias":
                 ext = os.path.splitext(file)[-1]
@@ -207,19 +193,33 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
         from .load_json import loadJson
         from .files import parseAssetFile
         from .formula import Formula
+        from .modifier import Morph
+        from .channels import Channels
         print("* %s" % path[nskip:])
         struct = loadJson(path, silent=True)
+        if "modifier_library" not in struct.keys():
+            print("NOPE", path)
+            return
         asset = parseAssetFile(struct)
-        if isinstance(asset, Formula):
+        ref = info = None
+        if isinstance(asset, Morph):
+            ref,key = asset.id.rsplit("#",1)
+        elif isinstance(asset, Formula):
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info = self.evalExprs(asset, exprs)
-            if info:
-                self.count += 1
-                self.wm.progress_update(self.count)
-                ref,key = asset.id.rsplit("#",1)
-                self.morphs[key.lower()] = info
-                filepath = bpy.path.resolve_ncase(unquote(ref))
-                self.defs[key.lower()] = filepath
+            ref,key = asset.id.rsplit("#",1)
+        elif isinstance(asset, Channels):
+            print("CHA", asset)
+            pass
+        if ref:
+            filepath = bpy.path.resolve_ncase(unquote(ref))
+            #key = key.lower()
+            self.defins[key] = filepath
+        if info:
+            self.formulas[key] = info
+        if info or ref:
+            self.count += 1
+            self.wm.progress_update(self.count)
 
 
     def evalExprs(self, asset, exprs):
@@ -262,22 +262,39 @@ def getScanPath(name):
 #-------------------------------------------------------------
 
 from .fileutils import MultiFile, DazImageFile
-from .animation import MorphOptions
 
-class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, IsMeshArmature):
+class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, IsMeshArmature):
     bl_idname = "daz.import_scanned"
     bl_label = "Import Morph"
     bl_description = "Import morphs only from DAZ pose preset file(s),\nusing the scanned morph database for missing morphs"
     bl_options = {'UNDO'}
+
+    useClearMorphs : BoolProperty(
+        name = "Clear Morphs",
+        description = "Clear all morph properties before loading new ones",
+        default = True)
 
     useClearBones : BoolProperty(
         name = "Clear Bone Poses",
         description = "Clear bone poses defined in file",
         default = True)
 
+    category : StringProperty(
+        name = "Category",
+        description = "Add loaded custom morphs to this category",
+        default = "Loaded")
+
+    useLoadMissing : BoolProperty(
+        name = "Load Missing Morphs",
+        description = "Load missing morphs",
+        default = True)
+
     def draw(self, context):
-        MorphOptions.draw(self, context)
+        self.layout.prop(self, "useClearMorphs")
         self.layout.prop(self, "useClearBones")
+        self.layout.prop(self, "useLoadMissing")
+        if self.useLoadMissing:
+            self.layout.prop(self, "category")
         toolset = context.scene.tool_settings
         self.layout.prop(toolset, "use_keyframe_insert_auto")
 
@@ -300,11 +317,11 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
             raise DazError("Scanned morphs for %s do not exist" % name)
         filepaths = self.getMultiFiles(["duf", "dsf"])
         if filepaths:
-            self.defs, self.morphs = self.loadScanned(name, scanpath, False)
+            self.defins, self.formulas = self.loadScanned(name, scanpath, False)
             name2 = self.altNames.get(name)
             if name2:
                 scanpath2 = getScanPath(name2)
-                self.defs2, self.morphs2 = self.loadScanned(name2, scanpath2, True)
+                self.defins2, self.formulas2 = self.loadScanned(name2, scanpath2, True)
             if self.useClearMorphs:
                 clearAllMorphs(rig, scn.frame_current, self.useInsertKeys)
             frame = scn.frame_current
@@ -321,13 +338,13 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
         struct = theScannedFiles[name]
         if struct:
             version = struct.get("version")
-            if version is None:
+            if version is None or version < CURRENT_VERSION:
                 msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
                 if silent:
                     print(msg)
                     return {},{}
                 raise DazError(msg)
-            return struct["definitions"], struct["morphs"]
+            return struct["definitions"], struct["formulas"]
         else:
             return {}, {}
 
@@ -348,7 +365,7 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
         for prop in used.keys():
             if prop not in rig.keys() and prop not in self.shapekeys.keys():
                 missing[prop] = 0.0
-        hasError,again = self.handleMissingMorphs(context, rig, missing)
+        again = self.handleMissingMorphs(context, rig, missing)
         if again:
             keyframes,used,clearbones,setbones = self.getKeyFrames(rig, anims)
 
@@ -405,17 +422,17 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
                 if prop in pgs.keys():
                     alias = pgs[prop].s
                 if alias and alias in rig.keys() or alias in self.shapekeys.keys():
-                    morphs = {alias : 1.0}
+                    formulas = {alias : 1.0}
                 elif prop in rig.keys() or prop in self.shapekeys.keys():
-                    morphs = {prop : 1.0}
-                elif prop in self.morphs.keys():
-                    morphs = self.morphs[prop]
-                elif prop in self.morphs2.keys():
-                    morphs = self.morphs2[prop]
-                elif alias and alias in self.morphs.keys():
-                    morphs = self.morphs[alias]
-                elif alias and alias in self.morphs2.keys():
-                    morphs = self.morphs2[alias]
+                    formulas = {prop : 1.0}
+                elif prop in self.formulas.keys():
+                    formulas = self.formulas[prop]
+                elif prop in self.formulas2.keys():
+                    formulas = self.formulas2[prop]
+                elif alias and alias in self.formulas.keys():
+                    formulas = self.formulas[alias]
+                elif alias and alias in self.formulas2.keys():
+                    formulas = self.formulas2[alias]
                 else:
                     used[prop] = True
                     continue
@@ -423,11 +440,12 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
                     if t not in keyframes.keys():
                         keyframes[t] = {}
                     data = keyframes[t]
-                    for prop,factor in morphs.items():
+                    for prop,factor in formulas.items():
                         if prop not in data.keys():
                             data[prop] = 0.0
                         data[prop] += value*factor
-                        used[prop] = True
+                        if value > 0:
+                            used[prop] = True
 
             elif self.useClearBones and url[0:m] == "name://@selection/":
                 bname,rest = url[m:].split(":",1)
@@ -462,6 +480,86 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, I
                             break
 
         return keyframes, used, clearbones, setbones
+
+
+    def handleMissingMorphs(self, context, rig, missing):
+        if self.useLoadMissing:
+            return loadMissingMorphs(context, rig, missing, self.category, self.defins, self.defins2)
+        else:
+            return False
+
+#----------------------------------------------------------
+#   Load missing morphs
+#----------------------------------------------------------
+
+def loadMissingMorphs(context, rig, missing, cat, defins, defins2):
+    def getFullPath(path):
+        for folder in G.theDazPaths:
+            path1 = "%s%s" % (folder, path)
+            fullpath = bpy.path.resolve_ncase(path1.replace("//", "/"))
+            if os.path.exists(fullpath):
+                return fullpath
+        return None
+
+    from .asset import setDazPaths
+    from .morphing import CustomMorphLoader, StandardMorphLoader, addToCategories
+    if not missing:
+        return False
+    standards = {}
+    customs = []
+    setDazPaths()
+    for ref in missing:
+        path = defins.get(ref)
+        if path is None:
+            path = defins2.get(ref)
+        if path:
+            path = getFullPath(path)
+        if path:
+            mset = getMorphSet(path)
+            if mset == "Custom":
+                customs.append((ref, path, mset))
+            elif mset is not None:
+                if mset not in standards.keys():
+                    standards[mset] = []
+                standards[mset].append((ref, path, mset))
+    again = False
+    for mset,namepaths in standards.items():
+        mloader = StandardMorphLoader()
+        mloader.morphset = mset
+        mloader.category = ""
+        mloader.hideable = True
+        print("\nLoading missing %s morphs" % mset)
+        mloader.getAllMorphs(namepaths, context, True)
+        again = True
+    if customs:
+        mloader = CustomMorphLoader()
+        rig.DazCustomMorphs = True
+        mloader.morphset = "Custom"
+        mloader.category = cat
+        mloader.hideable = True
+        print("\nLoading morphs in category %s" % cat)
+        mloader.getAllMorphs(customs, context, True)
+        props = [prop for (prop,path,ref) in customs]
+        addToCategories(rig, props, cat)
+        again = True
+    return again
+
+
+def getMorphSet(path):
+    lpath = path.lower().replace("\\", "/")
+    for subdir,morphgroup in [
+        ("/daz 3d/base/", "Units"),
+        ("/daz 3d/base correctives/", "Jcms"),
+        ("/daz 3d/base flexions/", "Flexions"),
+        ("/daz 3d/base pose/", "Body"),
+        ("/daz 3d/base pose head/", "Units"),
+        ("/daz 3d/expressions/", "Expressions"),
+        ("/daz 3d/facs/", "Facs"),
+        ("/daz 3d/facsexpressions/", "Facsexpr"),
+        ]:
+        if subdir in lpath:
+            return morphgroup
+    return "Custom"
 
 #----------------------------------------------------------
 #   Initialize
