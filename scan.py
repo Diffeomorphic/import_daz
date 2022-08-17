@@ -30,6 +30,7 @@ import bpy
 from bpy.props import *
 from .error import *
 from .utils import *
+from .animation import MorphOptions
 
 CURRENT_VERSION = 3
 
@@ -118,7 +119,8 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
     def run(self, context):
         active = self.getActive(context.object)
         if active and self.useActive:
-            self.rig, self.mesh, name, relpath, scanpath = getCharData(context)
+            self.rig, self.mesh, name, relpath = getCharData(context)
+            scanpath = getScanPath(name)
             self.scanCharacter(context, name, relpath, scanpath)
         else:
             self.rig = self.mesh = None
@@ -248,8 +250,7 @@ def getCharData(context):
     relfile = mesh.DazUrl.rsplit("#",1)[0]
     relpath = os.path.dirname(relfile)
     name = os.path.basename(os.path.splitext(relfile)[0])
-    scanpath = getScanPath(name)
-    return rig, mesh, name, relpath, scanpath
+    return rig, mesh, name, relpath
 
 
 def getScanPath(name):
@@ -263,90 +264,40 @@ def getScanPath(name):
 
 from .fileutils import MultiFile, DazImageFile
 
-class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, IsMeshArmature):
+class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, IsMeshArmature):
     bl_idname = "daz.import_scanned"
     bl_label = "Import Morph"
     bl_description = "Import morphs only from DAZ pose preset file(s),\nusing the scanned morph database for missing morphs"
     bl_options = {'UNDO'}
-
-    useClearMorphs : BoolProperty(
-        name = "Clear Morphs",
-        description = "Clear all morph properties before loading new ones",
-        default = True)
 
     useClearBones : BoolProperty(
         name = "Clear Bone Poses",
         description = "Clear bone poses defined in file",
         default = True)
 
-    category : StringProperty(
-        name = "Category",
-        description = "Add loaded custom morphs to this category",
-        default = "Loaded")
-
-    useLoadMissing : BoolProperty(
-        name = "Load Missing Morphs",
-        description = "Load missing morphs",
-        default = True)
-
     def draw(self, context):
-        self.layout.prop(self, "useClearMorphs")
+        MorphOptions.draw(self,context)
         self.layout.prop(self, "useClearBones")
-        self.layout.prop(self, "useLoadMissing")
-        if self.useLoadMissing:
-            self.layout.prop(self, "category")
         toolset = context.scene.tool_settings
         self.layout.prop(toolset, "use_keyframe_insert_auto")
 
-    altNames = {
-        "Genesis8Female" : "Genesis8_1Female",
-        "Genesis8_1Female" : "Genesis8Female",
-        "Genesis8Male" : "Genesis8_1Male",
-        "Genesis8_1Male" : "Genesis8Male",
-    }
-
     def run(self, context):
         from .morphing import clearAllMorphs
-        rig, mesh, name, relpath, scanpath = getCharData(context)
+        rig, mesh, name, relpath = getCharData(context)
         self.shapekeys = {}
         if mesh and mesh.data.shape_keys:
             self.shapekeys = mesh.data.shape_keys.key_blocks
         scn = context.scene
         self.useInsertKeys = scn.tool_settings.use_keyframe_insert_auto
-        if not os.path.exists(scanpath):
-            raise DazError("Scanned morphs for %s do not exist" % name)
         filepaths = self.getMultiFiles(["duf", "dsf"])
         if filepaths:
-            self.defins, self.formulas = self.loadScanned(name, scanpath, False)
-            name2 = self.altNames.get(name)
-            if name2:
-                scanpath2 = getScanPath(name2)
-                self.defins2, self.formulas2 = self.loadScanned(name2, scanpath2, True)
+            self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
             if self.useClearMorphs:
                 clearAllMorphs(rig, scn.frame_current, self.useInsertKeys)
             frame = scn.frame_current
             for filepath in filepaths:
                 frame += self.importFile(context, rig, filepath, frame)
             updateDrivers(rig)
-
-
-    def loadScanned(self, name, scanpath, silent):
-        global theScannedFiles
-        from .load_json import loadJson
-        if name not in theScannedFiles.keys():
-            theScannedFiles[name] = loadJson(scanpath, silent=silent)
-        struct = theScannedFiles[name]
-        if struct:
-            version = struct.get("version")
-            if version is None or version < CURRENT_VERSION:
-                msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
-                if silent:
-                    print(msg)
-                    return {},{}
-                raise DazError(msg)
-            return struct["definitions"], struct["formulas"]
-        else:
-            return {}, {}
 
 
     def importFile(self, context, rig, filepath, frame):
@@ -412,28 +363,13 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, IsMeshArmature)
         clearbones = {}
         setbones = {}
         used = {}
-        pgs = rig.DazAlias
         for anim in anims:
             url = anim["url"]
             if (url[0:m] == "name://@selection#" and
                 url[-n:] == ":?value/value"):
                 prop = url[m:-n]
-                alias = None
-                if prop in pgs.keys():
-                    alias = pgs[prop].s
-                if alias and alias in rig.keys() or alias in self.shapekeys.keys():
-                    formulas = {alias : 1.0}
-                elif prop in rig.keys() or prop in self.shapekeys.keys():
-                    formulas = {prop : 1.0}
-                elif prop in self.formulas.keys():
-                    formulas = self.formulas[prop]
-                elif prop in self.formulas2.keys():
-                    formulas = self.formulas2[prop]
-                elif alias and alias in self.formulas.keys():
-                    formulas = self.formulas[alias]
-                elif alias and alias in self.formulas2.keys():
-                    formulas = self.formulas2[alias]
-                else:
+                formulas = getFormulas(rig, prop, self.formulas, self.formulas2, self.shapekeys.keys())
+                if formulas is None:
                     used[prop] = True
                     continue
                 for t,value in anim["keys"]:
@@ -481,12 +417,66 @@ class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, IsMeshArmature)
 
         return keyframes, used, clearbones, setbones
 
+#----------------------------------------------------------
+#   getFormulas
+#----------------------------------------------------------
 
-    def handleMissingMorphs(self, context, rig, missing):
-        if self.useLoadMissing:
-            return loadMissingMorphs(context, rig, missing, self.category, self.defins, self.defins2)
+def getFormulas(rig, prop, formulas, formulas2, snames):
+    alias = None
+    if prop in rig.DazAlias.keys():
+        alias = rig.DazAlias[prop].s
+    if alias and alias in rig.keys() or alias in snames:
+        return {alias : 1.0}
+    elif prop in rig.keys() or prop in snames:
+        return {prop : 1.0}
+    elif prop in formulas.keys():
+        return formulas[prop]
+    elif prop in formulas2.keys():
+        return formulas2[prop]
+    elif alias and alias in formulas.keys():
+        return formulas[alias]
+    elif alias and alias in formulas2.keys():
+        return formulas2[alias]
+    else:
+        return None
+
+#----------------------------------------------------------
+#   Load scanned info
+#----------------------------------------------------------
+
+def loadScannedInfo(name):
+    def loadScanned(name, scanpath):
+        global theScannedFiles
+        if name not in theScannedFiles.keys():
+            from .load_json import loadJson
+            theScannedFiles[name] = loadJson(scanpath)
+        struct = theScannedFiles[name]
+        if struct:
+            version = struct.get("version")
+            if version is None or version < CURRENT_VERSION:
+                msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
+                raise DazError(msg)
+            return struct["definitions"], struct["formulas"]
         else:
-            return False
+            return {}, {}
+
+    altNames = {
+        "Genesis8Female" : "Genesis8_1Female",
+        "Genesis8_1Female" : "Genesis8Female",
+        "Genesis8Male" : "Genesis8_1Male",
+        "Genesis8_1Male" : "Genesis8Male",
+    }
+
+    scanpath = getScanPath(name)
+    if not os.path.exists(scanpath):
+        raise DazError("Scanned morphs for %s do not exist" % name)
+    defins, formulas = loadScanned(name, scanpath)
+    name2 = altNames.get(name)
+    if name2:
+        scanpath2 = getScanPath(name2)
+        defins2, formulas2 = loadScanned(name2, scanpath2)
+    return defins, defins2, formulas, formulas2
+
 
 #----------------------------------------------------------
 #   Load missing morphs

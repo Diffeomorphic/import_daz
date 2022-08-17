@@ -147,13 +147,35 @@ class FrameConverter:
                     pb.lock_location = (True, True, True)
         return locks
 
+    #-------------------------------------------------------------
+    #   Convert animations
+    #-------------------------------------------------------------
 
-    def convertAnimations(self, anims, rig):
-        if rig.type != 'ARMATURE':
-            return anims, []
+    def prepareAnimations(self, anims, rig):
+        locks = []
+        if self.affectBones:
+            bonemap,locks = self.setupBoneMap(anims, rig)
+        nanims = []
+        for banim,vanim in anims:
+            if self.affectBones:
+                nbanim = {}
+                for bname,frames in banim.items():
+                    nbanim[bonemap[bname]] = frames
+            else:
+                nbanim = banim
+            nvanim = self.convertMorphAnim(vanim, rig)
+            nanims.append((nbanim,nvanim))
+        if self.affectBones and self.convertPoses:
+            self.convertAllFrames(nanims, rig, bonemap)
+        return nanims, locks
+
+    #-------------------------------------------------------------
+    #   Convert bone anims
+    #-------------------------------------------------------------
+
+    def setupBoneMap(self, anims, rig):
         conv,twists,bonemap = self.getConv(anims[0][0], rig)
         locks = self.getRigifyLocks(rig, conv)
-
         for banim,vanim in anims:
             bonenames = list(banim.keys())
             bonenames.reverse()
@@ -170,17 +192,7 @@ class FrameConverter:
                     bonemap[bname] = rname
                 else:
                     bonemap[bname] = bname
-
-        nanims = []
-        for banim,vanim in anims:
-            nbanim = {}
-            for bname,frames in banim.items():
-                nbanim[bonemap[bname]] = frames
-            nanims.append((nbanim,vanim))
-
-        if self.convertPoses:
-            self.convertAllFrames(nanims, rig, bonemap)
-        return nanims, locks
+        return bonemap, locks
 
 
     def convertAllFrames(self, anims, rig, bonemap):
@@ -250,6 +262,74 @@ class FrameConverter:
             nvecs[t] = Vector(nmat.to_euler(nxyz))/D
         return vectorsToFrames(nvecs)
 
+    #-------------------------------------------------------------
+    #   Convert morph anims
+    #-------------------------------------------------------------
+
+    def convertMorphAnim(self, vanim, rig):
+        def nonzero(frames):
+            for value in frames.values():
+                if value != 0:
+                    return True
+            return False
+
+        if not self.affectMorphs:
+            return vanim
+
+        struct = {}
+        for prop,frames in vanim.items():
+            struct[prop] = dict(frames)
+
+        if not self.useScanned:
+            for prop,frames in struct.items():
+                if nonzero(frames):
+                    self.used[prop] = True
+            return vanim
+
+        nstruct = {}
+        for prop,frames in struct.items():
+            formulas = self.getFormulas(rig, prop)
+            if formulas is None:
+                if nonzero(frames):
+                    self.used[prop] = True
+                continue
+            for nprop,factor in formulas.items():
+                if nprop not in nstruct.keys():
+                    nstruct[nprop] = {}
+                nframes = nstruct[nprop]
+                for t,value in frames.items():
+                    if t in nframes.keys():
+                        nframes[t] += factor*value
+                    else:
+                        nframes[t] = factor*value
+
+        nvanim = {}
+        for prop,frames in nstruct.items():
+            if nonzero(frames):
+                self.used[prop] = True
+            nvanim[prop] = frames.items()
+        return nvanim
+
+
+    def getFormulas(self, rig, prop):
+        alias = None
+        if prop in rig.DazAlias.keys():
+            alias = rig.DazAlias[prop].s
+        if alias and alias in rig.keys() or alias in self.shapekeys.keys():
+            return {alias : 1.0}
+        elif prop in rig.keys() or prop in self.shapekeys.keys():
+            return {prop : 1.0}
+        elif prop in self.formulas.keys():
+            return self.formulas[prop]
+        elif prop in self.formulas2.keys():
+            return self.formulas2[prop]
+        elif alias and alias in self.formulas.keys():
+            return self.formulas[alias]
+        elif alias and alias in self.formulas2.keys():
+            return self.formulas2[alias]
+        else:
+            return None
+
 #-------------------------------------------------------------
 #   HideOperator class
 #-------------------------------------------------------------
@@ -300,36 +380,10 @@ class HideOperator(DazOperator, IsArmature):
         muteDazFcurves(rig, rig.DazDriversDisabled)
 
 #-------------------------------------------------------------
-#   ConvertOptions
-#-------------------------------------------------------------
-
-class ConvertOptions:
-    convertPoses : BoolProperty(
-        name = "Convert Poses",
-        description = "Attempt to convert poses to the current rig.",
-        default = False)
-
-    srcCharacter : EnumProperty(
-        items = G.theRestPoseItems,
-        name = "Source Character",
-        description = "Character this file was made for",
-        default = "genesis_3_female")
-
-    def draw(self, context):
-        self.layout.prop(self, "convertPoses")
-        if self.convertPoses:
-            self.layout.prop(self, "srcCharacter")
-
-#-------------------------------------------------------------
 #   AffectOptions
 #-------------------------------------------------------------
 
 class AffectOptions:
-    affectBones : BoolProperty(
-        name = "Affect Bones",
-        description = "Animate bones.",
-        default = True)
-
     affectDrivenBones : BoolProperty(
         name = "Affect Driven Bones",
         description = "Animate bones with a Drv parent",
@@ -354,14 +408,74 @@ class AffectOptions:
         description = "Include bone scale in animation",
         default = False)
 
+    convertPoses : BoolProperty(
+        name = "Convert Poses",
+        description = "Attempt to convert poses to the current rig.",
+        default = False)
+
+    srcCharacter : EnumProperty(
+        items = G.theRestPoseItems,
+        name = "Source Character",
+        description = "Character this file was made for",
+        default = "genesis_3_female")
+
     def draw(self, context):
-        self.layout.prop(self, "affectBones")
+        self.drawBones(context)
         if self.affectBones:
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "affectDrivenBones")
-        self.layout.label(text="Object Transformations Affect:")
-        self.layout.prop(self, "affectObject", expand=True)
+            self.layout.label(text="Object Transformations Affect:")
+            self.layout.prop(self, "affectObject", expand=True)
+            self.layout.prop(self, "convertPoses")
+            if self.convertPoses:
+                self.layout.prop(self, "srcCharacter")
+        self.drawMorphs(context)
+
+    def drawBones(self, context):
+        pass
+
+    def drawMorphs(self, context):
+        pass
+
+
+class AffectBonesOn:
+    affectBones : BoolProperty(
+        name = "Affect Bones",
+        description = "Animate bones.",
+        default = True)
+
+    def drawBones(self, context):
+        self.layout.prop(self, "affectBones")
+
+
+class AffectBonesOff:
+    affectBones : BoolProperty(
+        name = "Affect Bones",
+        description = "Animate bones.",
+        default = False)
+
+    def drawBones(self, context):
+        self.layout.prop(self, "affectBones")
+
+
+class AffectMorphsOn:
+    affectMorphs : BoolProperty(
+        name = "Affect Morphs",
+        description = "Animate morph properties",
+        default = True)
+
+    def drawMorphs(self, context):
+        self.layout.prop(self, "affectMorphs")
+
+
+class AffectMorphsOff:
+    affectMorphs : BoolProperty(
+        name = "Affect Morphs",
+        description = "Animate morph properties",
+        default = False)
+
+    def drawMorphs(self, context):
         self.layout.prop(self, "affectMorphs")
 
 #-------------------------------------------------------------
@@ -379,26 +493,27 @@ def getGeograftItems(scn, context):
 
 
 class MorphOptions:
-    affectMorphs : BoolProperty(
-        name = "Affect Morphs",
-        description = "Animate morph properties",
-        default = False)
-
     onMorphSuffix = 'NONE'
 
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
         description = "Clear all morph properties before loading new ones",
+        default = False)
+
+    useLoadMissing : BoolProperty(
+        name = "Load Missing Morphs",
+        description = "Load missing morphs",
         default = True)
 
-    onMissingMorphs : EnumProperty(
-        items = [('IGNORE', "Ignore", "Ignore missing morphs"),
-                 ('REPORT', "Report", "Report missing morphs"),
-                 ('LOAD_FACE', "Load Face", "Load missing face morphs but not body morphs"),
-                 ('LOAD_ALL', "Load All", "Load all missing morphs")],
-        name = "Missing Morphs",
-        description = "What to do with missing morphs",
-        default = 'REPORT')
+    category : StringProperty(
+        name = "Category",
+        description = "Add missing morphs to this category",
+        default = "Loaded")
+
+    useScanned : BoolProperty(
+        name = "Use Scanned Database",
+        description = "Use the scanned database to find morphs",
+        default = True)
 
     affectGeograft : EnumProperty(
         items = getGeograftItems,
@@ -412,20 +527,22 @@ class MorphOptions:
 
     def draw(self, context):
         self.layout.prop(self, "useClearMorphs")
-        self.layout.prop(self, "affectGeograft")
-        self.layout.prop(self, "onMissingMorphs")
-        if self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+        self.layout.prop(self, "useScanned")
+        self.layout.prop(self, "useLoadMissing")
+        if self.useLoadMissing:
+            self.layout.prop(self, "category")
             self.layout.prop(self, "useMakePosable")
+        self.layout.prop(self, "affectGeograft")
 
 
-    def loadMissingMorphs(self, context, rig, missing):
+    def loadMissingOld(self, context, rig, missing):
         global theMorphTables
         if rig.DazId in theMorphTables.keys():
             table = theMorphTables[rig.DazId]
         else:
             table = theMorphTables[rig.DazId] = self.setupMorphTable(rig)
         namepathTable = {}
-        for mname in missing.keys():
+        for mname in missing:
             lname = mname.lower()
             if lname in table.keys():
                 path,morphset = table[lname]
@@ -437,15 +554,14 @@ class MorphOptions:
 
         from .morphing import CustomMorphLoader, StandardMorphLoader
         for morphset in namepathTable.keys():
-            if ((self.onMissingMorphs == 'LOAD_FACE' and morphset not in ["Body","Custom"]) or
-                (self.onMissingMorphs == 'LOAD_ALL' and morphset != "Custom")):
+            if self.useLoadMissing:
                 mloader = StandardMorphLoader()
                 mloader.morphset = morphset
                 mloader.category = ""
                 mloader.hideable = True
                 print("\nLoading missing %s morphs" % morphset)
                 mloader.getAllMorphs(namepathTable[morphset], context, True)
-        if (self.onMissingMorphs == 'LOAD_ALL' and "Custom" in namepathTable.keys()):
+        if self.useLoadMissing and "Custom" in namepathTable.keys():
             customs = {}
             for namepath in namepathTable["Custom"]:
                 mname,path,morphset = namepath
@@ -462,8 +578,6 @@ class MorphOptions:
                 mloader.hideable = True
                 print("\nLoading morphs in category %s" % cat)
                 mloader.getAllMorphs(namepaths, context, True)
-        for mname,value in missing.items():
-            rig[mname] = value
 
 
     def setupMorphTable(self, rig):
@@ -502,20 +616,21 @@ class MorphOptions:
         return table
 
 
-    def handleMissingMorphs(self, context, rig, missing):
-        if self.onMissingMorphs == 'REPORT':
-            props = list(missing.keys())
-            props.sort()
-            print("Missing morphs:\n  %s" % props)
-            return True,False
-        elif self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+    def handleMissingMorphs(self, context, rig):
+        if not self.useLoadMissing:
+            return False
+        missing = [prop for prop in self.used if prop not in rig.keys()]
+        if self.useScanned:
+            from .scan import loadMissingMorphs
+            return loadMissingMorphs(context, rig, missing, self.category, self.defins, self.defins2)
+        else:
             self.unfound = []
-            self.loadMissingMorphs(context, rig, missing)
+            self.loadMissingOld(context, rig, missing)
             if self.unfound:
                 print("Missing morphs not found:\n  %s" % self.unfound)
-                return True,True
-            return False,True
-        return False,False
+                return True
+            return True
+        return False
 
 theMorphTables = {}
 
@@ -581,61 +696,10 @@ class ActionOptions:
                 act.name = self.actionName
 
 #-------------------------------------------------------------
-#   PoseLibOptions
-#-------------------------------------------------------------
-
-class PoseLibOptions:
-    makeNewPoseLib : BoolProperty(
-        name = "New Pose Library",
-        description = "Unlink current pose library and make a new one",
-        default = True)
-
-    poseLibName : StringProperty(
-        name = "Pose Library Name",
-        description = "Name of loaded pose library",
-        default = "PoseLib")
-
-    useAssetBrowser : BoolProperty(
-        name = "Asset Browser",
-        description = "Create asset browser library",
-        default = True)
-
-    usePreviewImages : BoolProperty(
-        name = "Import Previews",
-        description = "Import preview images for imported poses",
-        default = False)
-
-    assetTags : StringProperty(
-        name = "Tags",
-        description = "List of tags to add to the imported Poses",
-        default = "")
-
-    assetAuthor : StringProperty(
-        name = "Author",
-        description = "Name of the Author",
-        default = "")
-
-    assetDescription : StringProperty(
-        name = "Description",
-        description = "Description to add to all Poses",
-        default = "")
-
-    def draw(self, context):
-        self.layout.prop(self, "makeNewPoseLib")
-        if self.makeNewPoseLib:
-            self.layout.prop(self, "poseLibName")
-        if bpy.app.version >= (3,0,0):
-            self.layout.prop(self, "useAssetBrowser")
-            self.layout.prop(self, "usePreviewImages")
-            self.layout.prop(self, "assetTags")
-            self.layout.prop(self, "assetAuthor")
-            self.layout.prop(self, "assetDescription")
-
-#-------------------------------------------------------------
 #   AnimatorBase
 #-------------------------------------------------------------
 
-class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, MorphOptions, IsMeshArmature):
+class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     filename_ext = ".duf"
     filter_glob : StringProperty(default = G.theDazDefaults + G.theImagedDefaults, options={'HIDDEN'})
     lockMeshes = False
@@ -647,11 +711,21 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
         AffectOptions.draw(self, context)
         if self.affectMorphs:
             MorphOptions.draw(self, context)
-        ConvertOptions.draw(self, context)
 
 
     def getSingleAnimation(self, filepath, context, offset):
         from .load_json import loadJson
+
+        if self.affectMorphs and self.useScanned:
+            from .scan import getCharData, loadScannedInfo
+            rig, mesh, name, relpath = getCharData(context)
+            self.shapekeys = {}
+            if mesh and mesh.data.shape_keys:
+                self.shapekeys = mesh.data.shape_keys.key_blocks
+            self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
+        else:
+            rig = context.object
+
         if filepath is None:
             return offset,None
         ext = os.path.splitext(filepath)[1]
@@ -661,15 +735,20 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
             raise DazError("Wrong type of file: %s" % filepath)
         if "scene" not in struct.keys():
             return offset,None
-        animations = self.parseScene(struct["scene"])
-        rig = context.object
+        anims = self.parseScene(struct["scene"])
         if rig.type == 'ARMATURE':
             setMode('POSE')
             self.prepareRig(rig)
+        nanims,locks = self.prepareAnimations(anims, rig)
+        again = self.handleMissingMorphs(context, rig)
+        if again:
+            if self.useMakePosable:
+                print("Make all bones posable")
+                bpy.ops.daz.make_all_bones_posable()
+            nanims,locks = self.prepareAnimations(anims, rig)
         self.clearPose(rig, offset)
-        animations,locks = self.convertAnimations(animations, rig)
         prop = None
-        result = self.animateBones(context, animations, offset, prop, filepath)
+        result = self.animateBones(context, nanims, offset, prop, filepath)
         for pb,lock in locks:
             pb.lock_location = lock
         updateDrivers(rig)
@@ -706,6 +785,9 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
         self.completeAnimations(bones)
         return animations
 
+    #-------------------------------------------------------------
+    #
+    #-------------------------------------------------------------
 
     def parseAnimations(self, struct, bones, values):
         if "animations" in struct.keys():
@@ -820,6 +902,10 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
             return None
 
 
+    #-------------------------------------------------------------
+    #   Clear pose
+    #-------------------------------------------------------------
+
     def clearPose(self, rig, frame):
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
@@ -857,10 +943,14 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
         "Genesis3Male",
     ]
 
-    def animateBones(self, context, animations, offset, prop, filepath):
+    #-------------------------------------------------------------
+    #   Animate bones
+    #-------------------------------------------------------------
+
+    def animateBones(self, context, anims, offset, prop, filepath):
         rig = context.object
         errors = {}
-        for banim,vanim in animations:
+        for banim,vanim in anims:
             frames = {}
             n = -1
             for bname, channels in banim.items():
@@ -974,6 +1064,9 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
             hand.rotation_euler[1] = forearm.rotation_euler[1]
             forearm.rotation_euler[1] = 0
 
+    #-------------------------------------------------------------
+    #   Add frames
+    #-------------------------------------------------------------
 
     def addFrames(self, bname, channel, nmax, cname, frames, default=None):
         for comp in range(nmax):
@@ -1046,9 +1139,10 @@ class AnimatorBase(MultiFile, FrameConverter, ConvertOptions, AffectOptions, Mor
             prop = self.alias[prop]
             if prop in rig.keys():
                 return prop
+        return None
         if prop not in self.missing.keys():
             self.missing[prop] = float(value)
-            if self.onMissingMorphs in ['LOAD_FACE', 'LOAD_ALL']:
+            if self.useLoadMissing and not self.useScanned:
                 rig[prop] = float(value)
                 return prop
         return None
@@ -1125,25 +1219,18 @@ class StandardAnimation:
 
     def run(self, context):
         from time import perf_counter
+        from .scan import getCharData, loadScannedInfo
         scn = context.scene
-        rig = context.object
+        rig, mesh, name, relpath = getCharData(context)
+        self.shapekeys = {}
+        if mesh and mesh.data.shape_keys:
+            self.shapekeys = mesh.data.shape_keys.key_blocks
+        self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
         if scn.tool_settings.use_keyframe_insert_auto:
             self.useInsertKeys = True
         else:
             self.useInsertKeys = self.useAction
         self.loadAnimation(context)
-        hasError = False
-        if self.missing:
-            hasError,_ = self.handleMissingMorphs(context, rig, self.missing)
-            if self.useMakePosable and self.onMissingMorphs == 'LOAD_ALL':
-                print("Make all bones posable")
-                bpy.ops.daz.make_all_bones_posable()
-                print("Reloading animation")
-                self.loadAnimation(context)
-        if hasError:
-            raise DazError(
-                "Animation loaded but some morphs were missing.     \n"+
-                "See list in terminal window.", warning=True)
 
 
     def loadAnimation(self, context):
@@ -1155,6 +1242,7 @@ class StandardAnimation:
         self.findDrivers(rig)
         self.clearAnimation(rig)
         self.missing = {}
+        self.used = {}
         self.alias = dict([(getAlias(prop, rig), prop) for prop in rig.keys()])
         startframe = offset = scn.frame_current
         props = []
@@ -1238,7 +1326,12 @@ class NodePose:
 #   Import Action
 #-------------------------------------------------------------
 
-class ActionBase(ActionOptions, AnimatorBase):
+class DAZ_OT_ImportAction(HideOperator, AffectBonesOn, AffectMorphsOn, ActionOptions, AnimatorBase, StandardAnimation):
+    bl_idname = "daz.import_action"
+    bl_label = "Import Action"
+    bl_description = "Import poses from DAZ pose preset file(s) to action"
+    bl_options = {'UNDO', 'PRESET'}
+
     verbose = False
     useAction = True
     usePoseLib = False
@@ -1247,13 +1340,6 @@ class ActionBase(ActionOptions, AnimatorBase):
         AnimatorBase.draw(self, context)
         ActionOptions.draw(self, context)
 
-
-class DAZ_OT_ImportAction(HideOperator, ActionBase, StandardAnimation):
-    bl_idname = "daz.import_action"
-    bl_label = "Import Action"
-    bl_description = "Import poses from DAZ pose preset file(s) to action"
-    bl_options = {'UNDO', 'PRESET'}
-
     def run(self, context):
         StandardAnimation.run(self, context)
 
@@ -1261,13 +1347,66 @@ class DAZ_OT_ImportAction(HideOperator, ActionBase, StandardAnimation):
 #   Import Poselib
 #-------------------------------------------------------------
 
-class PoselibBase(PoseLibOptions, AnimatorBase):
+class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
+    bl_idname = "daz.import_poselib"
+    bl_label = "Import Pose Library"
+    bl_description = "Import poses from DAZ pose preset file(s) to pose library"
+    bl_options = {'UNDO', 'PRESET'}
+
     verbose = False
     useAction = False
     usePoseLib = True
     atFrameOne = False
     firstFrame = -1000
     lastFrame = 1000
+    affectBones = True
+    affectMorphs = False
+
+    makeNewPoseLib : BoolProperty(
+        name = "New Pose Library",
+        description = "Unlink current pose library and make a new one",
+        default = True)
+
+    poseLibName : StringProperty(
+        name = "Pose Library Name",
+        description = "Name of loaded pose library",
+        default = "PoseLib")
+
+    useAssetBrowser : BoolProperty(
+        name = "Asset Browser",
+        description = "Create asset browser library",
+        default = True)
+
+    usePreviewImages : BoolProperty(
+        name = "Import Previews",
+        description = "Import preview images for imported poses",
+        default = False)
+
+    assetTags : StringProperty(
+        name = "Tags",
+        description = "List of tags to add to the imported Poses",
+        default = "")
+
+    assetAuthor : StringProperty(
+        name = "Author",
+        description = "Name of the Author",
+        default = "")
+
+    assetDescription : StringProperty(
+        name = "Description",
+        description = "Description to add to all Poses",
+        default = "")
+
+    def draw(self, context):
+        self.layout.prop(self, "makeNewPoseLib")
+        if self.makeNewPoseLib:
+            self.layout.prop(self, "poseLibName")
+        if bpy.app.version >= (3,0,0):
+            self.layout.prop(self, "useAssetBrowser")
+            self.layout.prop(self, "usePreviewImages")
+            self.layout.prop(self, "assetTags")
+            self.layout.prop(self, "assetAuthor")
+            self.layout.prop(self, "assetDescription")
 
     def draw(self, context):
         AnimatorBase.draw(self, context)
@@ -1335,12 +1474,6 @@ class PoselibBase(PoseLibOptions, AnimatorBase):
         print("No preview file found for %s" % name)
 
 
-class DAZ_OT_ImportPoseLib(HideOperator, PoselibBase, StandardAnimation):
-    bl_idname = "daz.import_poselib"
-    bl_label = "Import Pose Library"
-    bl_description = "Import poses from DAZ pose preset file(s) to pose library"
-    bl_options = {'UNDO', 'PRESET'}
-
     def run(self, context):
         StandardAnimation.run(self, context)
 
@@ -1356,32 +1489,41 @@ class PoseBase(AnimatorBase):
     firstFrame = -1000
     lastFrame = 1000
 
+    def draw(self, context):
+        AnimatorBase.draw(self, context)
+        toolset = context.scene.tool_settings
+        self.layout.prop(toolset, "use_keyframe_insert_auto")
 
-class DAZ_OT_ImportPose(HideOperator, PoseBase, StandardAnimation):
+
+class DAZ_OT_ImportPose(HideOperator, AffectMorphsOff, PoseBase, StandardAnimation):
     bl_idname = "daz.import_pose"
     bl_label = "Import Pose"
     bl_description = "Import a pose from DAZ pose preset file(s)"
     bl_options = {'UNDO', 'PRESET'}
 
-    def draw(self, context):
-        PoseBase.draw(self, context)
-        toolset = context.scene.tool_settings
-        self.layout.prop(toolset, "use_keyframe_insert_auto")
+    affectBones = True
 
     def run(self, context):
         StandardAnimation.run(self, context)
 
 
-class DAZ_OT_ImportNodePose(HideOperator, NodePose, PoseBase, StandardAnimation):
+class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAnimation):
+    bl_idname = "daz.import_expression"
+    bl_label = "Import Expression"
+    bl_description = "Import an expression from DAZ pose preset file(s)"
+    bl_options = {'UNDO', 'PRESET'}
+
+    affectMorphs = True
+
+    def run(self, context):
+        StandardAnimation.run(self, context)
+
+
+class DAZ_OT_ImportNodePose(HideOperator, NodePose, AffectBonesOn, AffectMorphsOn, PoseBase, StandardAnimation):
     bl_idname = "daz.import_node_pose"
     bl_label = "Import Pose From Scene"
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
     bl_options = {'UNDO', 'PRESET'}
-
-    def draw(self, context):
-        PoseBase.draw(self, context)
-        toolset = context.scene.tool_settings
-        self.layout.prop(toolset, "use_keyframe_insert_auto")
 
     def run(self, context):
         StandardAnimation.run(self, context)
@@ -1507,6 +1649,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     bl_options = {'UNDO', 'PRESET'}
 
     convertPoses = False
+    affectBones = True
+    affectMorphs = False
 
     useAction : BoolProperty(
         name = "Use Action",
@@ -2309,6 +2453,7 @@ classes = [
     DAZ_OT_ImportAction,
     DAZ_OT_ImportPoseLib,
     DAZ_OT_ImportPose,
+    DAZ_OT_ImportExpression,
     DAZ_OT_ImportNodePose,
     DAZ_OT_ClearPose,
     DAZ_OT_PruneAction,
