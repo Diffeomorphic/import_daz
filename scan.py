@@ -293,6 +293,8 @@ def loadScannedInfo(name):
     if name2:
         scanpath2 = getScanPath(name2)
         defins2, formulas2 = loadScanned(name2, scanpath2)
+    else:
+        defins2 = formulas2 = {}
     return defins, defins2, formulas, formulas2
 
 #----------------------------------------------------------

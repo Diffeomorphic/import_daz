@@ -516,8 +516,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
                 self.addCorrSmooth(ob, "SMOOTH", 4, 'LENGTH_WEIGHTED')
         activateObject(context, hum)
         for ob in selected:
-            self.restoreSubsurf(ob, subsurfs[ob.name])
-            self.restoreMultires(ob, multires[ob.name])
+            if not multires[ob.name]:
+                self.restoreSubsurf(ob, subsurfs[ob.name])
 
 
     def fixDeformBones(self):
@@ -781,8 +781,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         if mod:
             levels = mod.levels
             mod.levels = 0
-            return levels
-        return 0
+            return True
+        return False
 
 
     def restoreSubsurf(self, ob, subsurf):
@@ -794,13 +794,6 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
                     setattr(mod, key, value)
                 except AttributeError:
                     pass
-
-
-    def restoreMultires(self, ob, levels):
-        return
-        mod = getModifier(ob, 'MULTIRES')
-        if mod:
-            mod.levels = levels
 
 
     def addCorrSmooth(self, ob, vgrp, iters, stype):
