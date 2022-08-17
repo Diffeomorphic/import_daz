@@ -258,188 +258,6 @@ def getScanPath(name):
         os.makedirs(GS.scanPath)
     return os.path.join(GS.scanPath, "%s.json" % name)
 
-#-------------------------------------------------------------
-#   Import Scanned Morph
-#-------------------------------------------------------------
-
-from .fileutils import MultiFile, DazImageFile
-
-class DAZ_OT_ImportScanned(DazOperator, MultiFile, DazImageFile, MorphOptions, IsMeshArmature):
-    bl_idname = "daz.import_scanned"
-    bl_label = "Import Morph"
-    bl_description = "Import morphs only from DAZ pose preset file(s),\nusing the scanned morph database for missing morphs"
-    bl_options = {'UNDO'}
-
-    useClearBones : BoolProperty(
-        name = "Clear Bone Poses",
-        description = "Clear bone poses defined in file",
-        default = True)
-
-    def draw(self, context):
-        MorphOptions.draw(self,context)
-        self.layout.prop(self, "useClearBones")
-        toolset = context.scene.tool_settings
-        self.layout.prop(toolset, "use_keyframe_insert_auto")
-
-    def run(self, context):
-        from .morphing import clearAllMorphs
-        rig, mesh, name, relpath = getCharData(context)
-        self.shapekeys = {}
-        if mesh and mesh.data.shape_keys:
-            self.shapekeys = mesh.data.shape_keys.key_blocks
-        scn = context.scene
-        self.useInsertKeys = scn.tool_settings.use_keyframe_insert_auto
-        filepaths = self.getMultiFiles(["duf", "dsf"])
-        if filepaths:
-            self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
-            if self.useClearMorphs:
-                clearAllMorphs(rig, scn.frame_current, self.useInsertKeys)
-            frame = scn.frame_current
-            for filepath in filepaths:
-                frame += self.importFile(context, rig, filepath, frame)
-            updateDrivers(rig)
-
-
-    def importFile(self, context, rig, filepath, frame):
-        from .load_json import loadJson
-        from .asset import normalizeRef
-        struct = loadJson(filepath, False)
-        scene = struct.get("scene")
-        if scene is None:
-            return 0
-        anims = scene.get("animations")
-        if anims is None:
-            return 0
-
-        keyframes,used,clearbones,setbones = self.getKeyFrames(rig, anims)
-        missing = {}
-        for prop in used.keys():
-            if prop not in rig.keys() and prop not in self.shapekeys.keys():
-                missing[prop] = 0.0
-        again = self.handleMissingMorphs(context, rig, missing)
-        if again:
-            keyframes,used,clearbones,setbones = self.getKeyFrames(rig, anims)
-
-        for t,data in keyframes.items():
-            for prop,value in data.items():
-                if prop in rig.keys():
-                    rig[prop] = value
-                    if self.useInsertKeys:
-                        rig.keyframe_insert(propRef(prop), frame=frame+t, group=prop)
-                elif prop in self.shapekeys.keys():
-                    self.shapekeys[prop].value = value
-                    if self.useInsertKeys:
-                        self.shapekeys[prop].keyframe_insert("value", frame=frame+t, group=prop)
-
-        for bname,channels in clearbones.items():
-            for channel,ok in channels.items():
-                if ok and not setbones[bname][channel]:
-                    pb = rig.pose.bones[bname]
-                    if channel == "translation":
-                        pb.location = Zero
-                        if self.useInsertKeys:
-                            pb.keyframe_insert("location", frame=frame)
-                    elif channel == "rotation":
-                        pb.rotation_euler = Zero
-                        if self.useInsertKeys:
-                            pb.keyframe_insert("rotation_euler", frame=frame)
-                    elif channel in ["scale", "general_scale"]:
-                        pb.scale = One
-                        if self.useInsertKeys:
-                            pb.keyframe_insert("scale", frame=frame)
-
-        if keyframes:
-            times = list(keyframes.keys())
-            return max(times)+1
-        return 0
-
-
-    def getKeyFrames(self, rig, anims):
-        prefix = "name://@selection#"
-        suffix = ":?value/value"
-        m = len(prefix)
-        n = len(suffix)
-        keyframes = {}
-        clearbones = {}
-        setbones = {}
-        used = {}
-        for anim in anims:
-            url = anim["url"]
-            if (url[0:m] == "name://@selection#" and
-                url[-n:] == ":?value/value"):
-                prop = url[m:-n]
-                formulas = getFormulas(rig, prop, self.formulas, self.formulas2, self.shapekeys.keys())
-                if formulas is None:
-                    used[prop] = True
-                    continue
-                for t,value in anim["keys"]:
-                    if t not in keyframes.keys():
-                        keyframes[t] = {}
-                    data = keyframes[t]
-                    for prop,factor in formulas.items():
-                        if prop not in data.keys():
-                            data[prop] = 0.0
-                        data[prop] += value*factor
-                        if value > 0:
-                            used[prop] = True
-
-            elif self.useClearBones and url[0:m] == "name://@selection/":
-                bname,rest = url[m:].split(":",1)
-                words = rest.split("/")
-                channel = words[0][1:]
-                if bname not in rig.pose.bones.keys():
-                    default = None
-                elif channel in ["rotation", "translation"]:
-                    default = 0
-                elif channel in ["scale", "general_scale"]:
-                    default = 1
-                else:
-                    default = None
-                if default is not None:
-                    if bname not in clearbones.keys():
-                        clearbones[bname] = {
-                            "rotation" : False,
-                            "translation" : False,
-                            "scale" : False,
-                            "general_scale" : False,
-                        }
-                        setbones[bname] = {
-                            "rotation" : False,
-                            "translation" : False,
-                            "scale" : False,
-                            "general_scale" : False,
-                        }
-                    clearbones[bname][channel] = True
-                    for t,value in anim["keys"]:
-                        if value != default:
-                            setbones[bname][channel] = True
-                            break
-
-        return keyframes, used, clearbones, setbones
-
-#----------------------------------------------------------
-#   getFormulas
-#----------------------------------------------------------
-
-def getFormulas(rig, prop, formulas, formulas2, snames):
-    alias = None
-    if prop in rig.DazAlias.keys():
-        alias = rig.DazAlias[prop].s
-    if alias and alias in rig.keys() or alias in snames:
-        return {alias : 1.0}
-    elif prop in rig.keys() or prop in snames:
-        return {prop : 1.0}
-    elif prop in formulas.keys():
-        return formulas[prop]
-    elif prop in formulas2.keys():
-        return formulas2[prop]
-    elif alias and alias in formulas.keys():
-        return formulas[alias]
-    elif alias and alias in formulas2.keys():
-        return formulas2[alias]
-    else:
-        return None
-
 #----------------------------------------------------------
 #   Load scanned info
 #----------------------------------------------------------
@@ -476,7 +294,6 @@ def loadScannedInfo(name):
         scanpath2 = getScanPath(name2)
         defins2, formulas2 = loadScanned(name2, scanpath2)
     return defins, defins2, formulas, formulas2
-
 
 #----------------------------------------------------------
 #   Load missing morphs
@@ -557,7 +374,6 @@ def getMorphSet(path):
 
 classes = [
     DAZ_OT_ScanMorphDatabase,
-    DAZ_OT_ImportScanned,
 ]
 
 def register():
