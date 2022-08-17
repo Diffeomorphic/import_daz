@@ -384,11 +384,6 @@ class HideOperator(DazOperator, IsArmature):
 #-------------------------------------------------------------
 
 class AffectOptions:
-    affectDrivenBones : BoolProperty(
-        name = "Affect Driven Bones",
-        description = "Animate bones with a Drv parent",
-        default = True)
-
     affectObject : EnumProperty(
         items = [('OBJECT', "Object", "Animate global object transformation"),
                  ('MASTER', "Master Bone", "Object transformations affect master/root bone instead of object.\nOnly for MHX and Rigify"),
@@ -424,7 +419,6 @@ class AffectOptions:
         if self.affectBones:
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "affectSelectedOnly")
-            self.layout.prop(self, "affectDrivenBones")
             self.layout.label(text="Object Transformations Affect:")
             self.layout.prop(self, "affectObject", expand=True)
             self.layout.prop(self, "convertPoses")
@@ -876,11 +870,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
 
     def isAvailable(self, pb, rig):
-        if (pb.parent and
-              isDrvBone(pb.parent.name) and
-              not self.affectDrivenBones):
-            return False
-        elif (pb.name == self.getMasterBone(rig) and
+        if (pb.name == self.getMasterBone(rig) and
               self.affectObject != 'MASTER'):
             return False
         elif self.affectSelectedOnly:

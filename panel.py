@@ -109,6 +109,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
         elif ob and ob.type in ['ARMATURE', 'MESH']:
             if ob.DazMorphPrefixes:
                 self.layout.label(text="Object with obsolete morphs")
+                self.layout.operator("daz.scan_morph_database")
                 return
             self.layout.operator("daz.import_units")
             self.layout.operator("daz.import_expressions")
