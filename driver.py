@@ -730,7 +730,7 @@ class DAZ_OT_CopyBoneDrivers(DazOperator, DriverUser, IsArmature):
 
 def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True):
     def isDazFcurve(path):
-        for string in ["(fin)", "(rst)", ":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo"]:
+        for string in ["(fin)", "(rst)", ":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"]:
             if string in path:
                 return True
         return False
@@ -765,31 +765,11 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True)
                             skey.mute = mute
 
 
-class DAZ_OT_DisableDrivers(DazPropsOperator):
+class DAZ_OT_DisableDrivers(DazOperator):
     bl_idname = "daz.disable_drivers"
     bl_label = "Disable Drivers"
     bl_description = "Disable all drivers to improve performance"
     bl_options = {'UNDO'}
-
-    useLocation : BoolProperty(
-        name = "Location",
-        description = "Affect bone location drivers",
-        default = True)
-
-    useRotation : BoolProperty(
-        name = "Rotation",
-        description = "Affect bone rotation drivers",
-        default = True)
-
-    useScale : BoolProperty(
-        name = "Scale",
-        description = "Affect bone scale drivers",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useLocation")
-        self.layout.prop(self, "useRotation")
-        self.layout.prop(self, "useScale")
 
     @classmethod
     def poll(self, context):
@@ -799,7 +779,7 @@ class DAZ_OT_DisableDrivers(DazPropsOperator):
     def run(self, context):
         setMode('OBJECT')
         for rig in getSelectedArmatures(context):
-            muteDazFcurves(rig, True, self.useLocation, self.useRotation, self.useScale)
+            muteDazFcurves(rig, True)
             rig.DazDriversDisabled = True
 
 
@@ -817,7 +797,7 @@ class DAZ_OT_EnableDrivers(DazOperator):
     def run(self, context):
         setMode('OBJECT')
         for rig in getSelectedArmatures(context):
-            muteDazFcurves(rig, False, True, True, True)
+            muteDazFcurves(rig, False)
             rig.DazDriversDisabled = False
 
 #----------------------------------------------------------

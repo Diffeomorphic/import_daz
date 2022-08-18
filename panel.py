@@ -100,14 +100,13 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         ob = context.object
-        if not ob or ob.type not in ['ARMATURE', 'MESH']:
-            self.layout.operator("daz.scan_morph_database")
-        elif ob and ob.DazDriversDisabled:
-            self.layout.label(text = "Morph Drivers Disabled")
-            self.layout.operator("daz.enable_drivers")
-            self.layout.operator("daz.scan_morph_database")
-        elif ob and ob.type in ['ARMATURE', 'MESH']:
-            if ob.DazMorphPrefixes:
+        if ob and ob.type in ['ARMATURE', 'MESH'] and ob.DazId:
+            if ob.DazDriversDisabled:
+                self.layout.label(text = "Morph Drivers Disabled")
+                self.layout.operator("daz.enable_drivers")
+                self.layout.operator("daz.scan_morph_database")
+                return
+            elif ob.DazMorphPrefixes:
                 self.layout.label(text="Object with obsolete morphs")
                 self.layout.operator("daz.scan_morph_database")
                 return
@@ -133,6 +132,8 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.transfer_shapekeys")
             self.layout.operator("daz.apply_all_shapekeys")
             self.layout.operator("daz.mix_shapekeys")
+        else:
+            self.layout.operator("daz.scan_morph_database")
 
 
 class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
