@@ -32,7 +32,7 @@ from .error import *
 from .utils import *
 from .animation import MorphOptions
 
-CURRENT_VERSION = 3
+CURRENT_VERSION = 4
 
 theScannedFiles = {}
 
@@ -231,12 +231,15 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
             channel = None
             prop = None
             factor = 0
-            if "*fileref" in data.keys():
-                ref,channel = data["*fileref"]
-            if "value" in data.keys():
-                expr = data["value"][0]
-                prop = expr["prop"]
-                factor = expr["factor"]
+            for key,value in data.items():
+                if key == "*fileref":
+                    ref,channel = value
+                elif key == "value":
+                    expr = value[0]
+                    prop = expr["prop"]
+                    factor = expr["factor"]
+                elif key in ["translation", "rotation", "scale", "general_scale"]:
+                    return {}
             if prop and factor and channel=="value":
                 info[output] = factor
         return info
