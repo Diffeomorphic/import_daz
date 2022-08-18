@@ -709,17 +709,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
     def getSingleAnimation(self, filepath, context, offset):
         from .load_json import loadJson
-
-        if self.affectMorphs and self.useScanned:
-            from .scan import getCharData, loadScannedInfo
-            rig, mesh, name, relpath = getCharData(context)
-            self.shapekeys = {}
-            if mesh and mesh.data.shape_keys:
-                self.shapekeys = mesh.data.shape_keys.key_blocks
-            self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
-        else:
-            rig = context.object
-
+        rig = context.object
         if filepath is None:
             return offset,None
         ext = os.path.splitext(filepath)[1]
@@ -1209,23 +1199,22 @@ class StandardAnimation:
 
     def run(self, context):
         from time import perf_counter
-        from .scan import getCharData, loadScannedInfo
+        if self.affectMorphs and self.useScanned:
+            from .scan import getCharData, loadScannedInfo
+            rig, mesh, name, relpath = getCharData(context)
+            self.shapekeys = {}
+            if mesh and mesh.data.shape_keys:
+                self.shapekeys = mesh.data.shape_keys.key_blocks
+            self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
+        else:
+            rig = context.object
+            self.defins = self.defins2 = self.formulas = self.formulas2 = {}
         scn = context.scene
-        rig, mesh, name, relpath = getCharData(context)
-        self.shapekeys = {}
-        if mesh and mesh.data.shape_keys:
-            self.shapekeys = mesh.data.shape_keys.key_blocks
-        self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
         if scn.tool_settings.use_keyframe_insert_auto:
             self.useInsertKeys = True
         else:
             self.useInsertKeys = self.useAction
-        self.loadAnimation(context)
 
-
-    def loadAnimation(self, context):
-        rig = context.object
-        scn = context.scene
         if not self.affectSelectedOnly:
             selected = self.selectAll(rig, True)
         LS.forAnimation(self, rig)
