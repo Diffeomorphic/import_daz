@@ -297,17 +297,24 @@ class FrameConverter:
                 if nprop not in nstruct.keys():
                     nstruct[nprop] = {}
                 nframes = nstruct[nprop]
+                if nprop in self.minmax.keys():
+                    pmin,pmax = self.minmax[nprop]
+                elif nprop in self.minmax2.keys():
+                    pmin,pmax = self.minmax2[nprop]
+                else:
+                    pmin,pmax = -1e6,1e6
                 for t,value in frames.items():
+                    term = min(pmax, max(pmin, factor*value))
                     if t in nframes.keys():
-                        nframes[t] += factor*value
+                        nframes[t] += term
                     else:
-                        nframes[t] = factor*value
+                        nframes[t] = term
 
         nvanim = {}
-        for prop,frames in nstruct.items():
-            if nonzero(frames):
-                self.used[prop] = True
-            nvanim[prop] = frames.items()
+        for nprop,nframes in nstruct.items():
+            if nonzero(nframes):
+                self.used[nprop] = True
+            nvanim[nprop] = nframes.items()
         return nvanim
 
 
@@ -616,7 +623,7 @@ class MorphOptions:
         missing = [prop for prop in self.used if prop not in rig.keys()]
         if self.useScanned:
             from .scan import loadMissingMorphs
-            return loadMissingMorphs(context, rig, missing, self.category, self.defins, self.defins2)
+            return loadMissingMorphs(self, context, rig, missing, self.category)
         else:
             self.unfound = []
             self.loadMissingOld(context, rig, missing)
@@ -1199,16 +1206,17 @@ class StandardAnimation:
 
     def run(self, context):
         from time import perf_counter
+        self.defins = self.formulas = self.minmax = {}
+        self.defins2 = self.formulas2 = self.minmax2 = {}
         if self.affectMorphs and self.useScanned:
             from .scan import getCharData, loadScannedInfo
             rig, mesh, name, relpath = getCharData(context)
             self.shapekeys = {}
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
-            self.defins, self.defins2, self.formulas, self.formulas2 = loadScannedInfo(name)
+            loadScannedInfo(self, name)
         else:
             rig = context.object
-            self.defins = self.defins2 = self.formulas = self.formulas2 = {}
         scn = context.scene
         if scn.tool_settings.use_keyframe_insert_auto:
             self.useInsertKeys = True

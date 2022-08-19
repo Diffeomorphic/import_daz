@@ -147,12 +147,14 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
         t1 = perf_counter()
         self.formulas = {}
         self.defins = {}
+        self.minmax = {}
         struct = {
             "name" : name,
             "path" : relpath,
             "version" : CURRENT_VERSION,
             "definitions" : self.defins,
             "formulas" : self.formulas,
+            "minmax" : self.minmax,
         }
         self.count = 0
         self.maxcount = 1000000
@@ -195,24 +197,24 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
         from .load_json import loadJson
         from .files import parseAssetFile
         from .formula import Formula
-        from .modifier import Morph
-        from .channels import Channels
+        from .modifier import Morph, ChannelAsset
         print("* %s" % path[nskip:])
         struct = loadJson(path, silent=True)
         if "modifier_library" not in struct.keys():
             print("NOPE", path)
             return
         asset = parseAssetFile(struct)
-        ref = info = None
+        ref = info = key = None
         if isinstance(asset, Morph):
             ref,key = asset.id.rsplit("#",1)
         elif isinstance(asset, Formula):
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
-        elif isinstance(asset, Channels):
-            print("CHA", asset)
-            pass
+        if (key is not None and
+            asset.min is not None and
+            asset.max is not None):
+            self.minmax[key] = (asset.min, asset.max)
         if ref:
             filepath = bpy.path.resolve_ncase(unquote(ref))
             #key = key.lower()
@@ -265,21 +267,24 @@ def getScanPath(name):
 #   Load scanned info
 #----------------------------------------------------------
 
-def loadScannedInfo(name):
+def loadScannedInfo(self, name):
     def loadScanned(name, scanpath):
         global theScannedFiles
         if name not in theScannedFiles.keys():
             from .load_json import loadJson
             theScannedFiles[name] = loadJson(scanpath)
+        defins = formulas = minmax = {}
         struct = theScannedFiles[name]
         if struct:
             version = struct.get("version")
             if version is None or version < CURRENT_VERSION:
                 msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
                 raise DazError(msg)
-            return struct["definitions"], struct["formulas"]
-        else:
-            return {}, {}
+            defins = struct["definitions"]
+            formulas = struct["formulas"]
+            if "minmax" in struct.keys():
+                minmax = struct["minmax"]
+        return defins, formulas, minmax
 
     altNames = {
         "Genesis8Female" : "Genesis8_1Female",
@@ -291,20 +296,17 @@ def loadScannedInfo(name):
     scanpath = getScanPath(name)
     if not os.path.exists(scanpath):
         raise DazError("Scanned morphs for %s do not exist" % name)
-    defins, formulas = loadScanned(name, scanpath)
+    self.defins, self.formulas, self.minmax = loadScanned(name, scanpath)
     name2 = altNames.get(name)
     if name2:
         scanpath2 = getScanPath(name2)
-        defins2, formulas2 = loadScanned(name2, scanpath2)
-    else:
-        defins2 = formulas2 = {}
-    return defins, defins2, formulas, formulas2
+        self.defins2, self.formulas2, self.minmax2 = loadScanned(name2, scanpath2)
 
 #----------------------------------------------------------
 #   Load missing morphs
 #----------------------------------------------------------
 
-def loadMissingMorphs(context, rig, missing, cat, defins, defins2):
+def loadMissingMorphs(self, context, rig, missing, cat):
     def getFullPath(path):
         for folder in G.theDazPaths:
             path1 = "%s%s" % (folder, path)
@@ -321,9 +323,9 @@ def loadMissingMorphs(context, rig, missing, cat, defins, defins2):
     customs = []
     setDazPaths()
     for ref in missing:
-        path = defins.get(ref)
+        path = self.defins.get(ref)
         if path is None:
-            path = defins2.get(ref)
+            path = self.defins2.get(ref)
         if path:
             path = getFullPath(path)
         if path:
