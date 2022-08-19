@@ -2170,16 +2170,18 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 abs(vec[1]-vec[2]) > 1e-5):
                 general = False
                 break
+        if bname:
+            bname = "/%s" % bname
         if general:
             anim = {}
-            anim["url"] = "name://@selection/%s:?scale/general/value" % bname
+            anim["url"] = "name://@selection%s:?scale/general/value" % bname
             scales = [vec[0] for vec in vecs]
             self.addKeys(scales, anim, 1e-4)
             anims.append(anim)
         else:
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
-                anim["url"] = "name://@selection/%s:?scale/%s/value" % (bname, x)
+                anim["url"] = "name://@selection%s:?scale/%s/value" % (bname, x)
                 scales = [vec[idx] for vec in vecs]
                 self.addKeys(scales, anim, 1e-4)
                 anims.append(anim)
