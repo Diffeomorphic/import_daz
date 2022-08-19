@@ -112,7 +112,7 @@ def getChannel(url):
 
 class FrameConverter:
 
-    def getConv(self, bones, rig):
+    def getConv(self, banims, rig):
         from .figure import getRigType
         from .convert import getConverter, SourceRig
         stype = None
@@ -124,7 +124,7 @@ class FrameConverter:
             rig.DazRig[0:6] == "rigify"):
             stype = "genesis8"
         else:
-            stype = getRigType(bones, False)
+            stype = getRigType(banims, False)
         if stype:
             print("Auto-detected %s character in duf/dsf file" % stype)
             conv,twists = getConverter(stype, rig)
@@ -170,7 +170,7 @@ class FrameConverter:
         return nanims, locks
 
     #-------------------------------------------------------------
-    #   Convert bone anims
+    #   Convert bone animations
     #-------------------------------------------------------------
 
     def setupBoneMap(self, anims, rig):
@@ -263,7 +263,7 @@ class FrameConverter:
         return vectorsToFrames(nvecs)
 
     #-------------------------------------------------------------
-    #   Convert morph anims
+    #   Convert morph animations
     #-------------------------------------------------------------
 
     def convertMorphAnim(self, vanim, rig):
@@ -443,7 +443,7 @@ class AffectOptions:
 class AffectBonesOn:
     affectBones : BoolProperty(
         name = "Affect Bones",
-        description = "Animate bones.",
+        description = "Animate bones",
         default = True)
 
     def drawBones(self, context):
@@ -453,7 +453,7 @@ class AffectBonesOn:
 class AffectBonesOff:
     affectBones : BoolProperty(
         name = "Affect Bones",
-        description = "Animate bones.",
+        description = "Animate bones",
         default = False)
 
     def drawBones(self, context):
@@ -775,19 +775,19 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
 
     def parseScene(self, struct):
-        animations = []
-        bones = {}
-        values = {}
-        animations.append((bones, values))
-        self.parseAnimations(struct, bones, values)
-        self.completeAnimations(bones)
-        return animations
+        anims = []
+        banims = {}
+        vanims = {}
+        anims.append((banims, vanims))
+        self.parseAnimations(struct, banims, vanims)
+        self.completeAnimations(banims)
+        return anims
 
     #-------------------------------------------------------------
     #
     #-------------------------------------------------------------
 
-    def parseAnimations(self, struct, bones, values):
+    def parseAnimations(self, struct, banims, vanims):
         if "animations" in struct.keys():
             for anim in struct["animations"]:
                 if "url" in anim.keys():
@@ -796,10 +796,10 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         continue
                     elif channel == "value":
                         if self.affectMorphs:
-                            values[key] = getAnimKeys(anim)
+                            vanims[key] = getAnimKeys(anim)
                     elif channel in ["translation", "rotation", "scale"]:
-                        if key not in bones.keys():
-                            bone = bones[key] = {
+                        if key not in banims.keys():
+                            bone = banims[key] = {
                                 "translation" : {},
                                 "rotation" : {},
                                 "scale" : {},
@@ -807,9 +807,9 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                                 }
                         idx = getIndex(comp)
                         if idx >= 0:
-                            bones[key][channel][idx] = getAnimKeys(anim)
+                            banims[key][channel][idx] = getAnimKeys(anim)
                         else:
-                            bones[key]["general_scale"][0] = getAnimKeys(anim)
+                            banims[key]["general_scale"][0] = getAnimKeys(anim)
                     else:
                         print("Unknown channel:", channel)
         elif "extra" in struct.keys():
@@ -824,7 +824,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             print("No animations in this file")
 
 
-    def completeAnimations(self, bones):
+    def completeAnimations(self, banims):
         def addMissing(t, y, y0, miss, anim):
             if miss:
                 if y0 is None:
@@ -837,18 +837,18 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         anim.append((t1,y1))
 
         frames = {}
-        for bname in bones.keys():
-            for channel in bones[bname].keys():
-                for idx in bones[bname][channel].keys():
-                    for t,y in bones[bname][channel][idx]:
+        for bname in banims.keys():
+            for channel in banims[bname].keys():
+                for idx in banims[bname][channel].keys():
+                    for t,y in banims[bname][channel][idx]:
                         frames[t] = True
         if not frames:
             return
         frames = list(frames)
         frames.sort()
-        for bname in bones.keys():
-            for channel in bones[bname].keys():
-                for idx,anim in bones[bname][channel].items():
+        for bname in banims.keys():
+            for channel in banims[bname].keys():
+                for idx,anim in banims[bname][channel].items():
                     if len(anim) == len(frames):
                         continue
                     kpts = dict(anim)
@@ -870,7 +870,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         y = anim[-1][1]
                         for t1 in miss:
                             anim.append((t1,y))
-                    bones[bname][channel][idx] = anim
+                    banims[bname][channel][idx] = anim
 
 
     def isAvailable(self, pb, rig):
@@ -1290,14 +1290,14 @@ class StandardAnimation:
 #-------------------------------------------------------------
 
 class NodePose:
-    def parseAnimations(self, struct, bones, values):
+    def parseAnimations(self, struct, banims, vanims):
         if "nodes" in struct.keys() and self.affectBones:
             for node in struct["nodes"]:
                 key = node["id"]
-                self.addTransform(node, "translation", bones, key)
-                self.addTransform(node, "rotation", bones, key)
-                self.addTransform(node, "scale", bones, key)
-                #self.addTransform(node, "general_scale", bones, key)
+                self.addTransform(node, "translation", banims, key)
+                self.addTransform(node, "rotation", banims, key)
+                self.addTransform(node, "scale", banims, key)
+                #self.addTransform(node, "general_scale", banims, key)
         elif self.verbose:
             print("No nodes in this file")
         if "modifiers" in struct.keys() and self.affectMorphs:
@@ -1307,15 +1307,15 @@ class NodePose:
                 if key and channel:
                     value = channel.get("current_value")
                     if value is not None:
-                        values[key] = [[0, value]]
+                        vanims[key] = [[0, value]]
 
 
-    def addTransform(self, node, channel, bones, key):
+    def addTransform(self, node, channel, banims, key):
         if channel in node.keys():
-            if key not in bones.keys():
-                bone = bones[key] = {}
+            if key not in banims.keys():
+                bone = banims[key] = {}
             else:
-                bone = bones[key]
+                bone = banims[key]
             if channel not in bone.keys():
                 bone[channel] = {}
             for struct in node[channel]:
@@ -1529,8 +1529,8 @@ class DAZ_OT_ImportNodePose(HideOperator, NodePose, AffectBonesOn, AffectMorphsO
     def run(self, context):
         StandardAnimation.run(self, context)
 
-    def parseAnimations(self, struct, bones, values):
-        NodePose.parseAnimations(self, struct, bones, values)
+    def parseAnimations(self, struct, banims, vanims):
+        NodePose.parseAnimations(self, struct, banims, vanims)
 
 #-------------------------------------------------------------
 #   Save current frame
@@ -2247,7 +2247,7 @@ class DAZ_OT_BakeToFkRig(HideOperator):
         rig = context.object
         scn = context.scene
         if rig.DazRig in self.BakeBones.keys():
-            self.bones = {}
+            self.banims = {}
             for baker,baked in self.BakeBones[rig.DazRig].items():
                 self.getBones(rig, baker, baked)
             if rig.animation_data and rig.animation_data.action:
@@ -2265,7 +2265,7 @@ class DAZ_OT_BakeToFkRig(HideOperator):
                     updateScene(context)
                     self.bake(mats, act, context)
             else:
-                for bname in list(self.bones.keys()):
+                for bname in list(self.banims.keys()):
                     self.removeFromPose(bname, rig)
                 mats = self.addMats()
                 self.bake(mats, None, context)
@@ -2277,7 +2277,7 @@ class DAZ_OT_BakeToFkRig(HideOperator):
         if baker in rig.pose.bones.keys():
             pb = rig.pose.bones[baker]
             bakedBones = []
-            self.bones[baker] = (pb, bakedBones)
+            self.banims[baker] = (pb, bakedBones)
         else:
             print("Missing bone:", baker)
             return
@@ -2299,10 +2299,10 @@ class DAZ_OT_BakeToFkRig(HideOperator):
 
     def addMats(self):
         mats = []
-        for bname,bones in self.bones.items():
+        for bname,banims in self.banims.items():
             bmats = []
-            mats.append((bones[0], bmats))
-            for pb in bones[1]:
+            mats.append((banims[0], bmats))
+            for pb in banims[1]:
                 bmats.append((pb, pb.matrix.copy()))
         return mats
 
@@ -2312,7 +2312,7 @@ class DAZ_OT_BakeToFkRig(HideOperator):
         diff = pb.matrix_basis - Matrix()
         maxdiff = max([row.length for row in diff])
         if maxdiff < 1e-5:
-            del self.bones[bname]
+            del self.banims[bname]
             print("REM", bname)
 
 
@@ -2322,7 +2322,7 @@ class DAZ_OT_BakeToFkRig(HideOperator):
             words = fcu.data_path.split('"')
             if words[0] == "pose.bones[":
                 used[words[1]] = True
-        for bname in list(self.bones.keys()):
+        for bname in list(self.banims.keys()):
             if bname not in used.keys():
                 self.removeFromPose(bname, rig)
 
