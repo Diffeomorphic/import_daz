@@ -308,8 +308,8 @@ def loadScannedInfo(self, name):
     if not os.path.exists(scanpath):
         raise DazError("Scanned morphs for %s do not exist" % name)
     self.defins, self.formulas, self.minmax = loadScanned(name, scanpath)
-    name2,relpath2 = AltNames.get(name)
-    if name2:
+    if name in AltNames.keys():
+        name2,relpath2 = AltNames[name]
         scanpath2 = getScanPath(name2)
         self.defins2, self.formulas2, self.minmax2 = loadScanned(name2, scanpath2)
 
@@ -431,9 +431,10 @@ def checkNeedUpdate(name, relpath):
 
 def checkNeedUpdates(name, relpath):
     needs = checkNeedUpdate(name, relpath)
-    name2,relpath2 = AltNames.get(name)
-    if name2 and checkNeedUpdate(name2, relpath2):
-        needs.append(name2)
+    if name in AltNames.keys():
+        name2,relpath2 = AltNames[name]
+        if checkNeedUpdate(name2, relpath2):
+            needs.append(name2)
     return needs
 
 
