@@ -516,6 +516,11 @@ class MorphOptions:
         description = "Use the scanned database to find morphs",
         default = True)
 
+    useCheckUpdates : BoolProperty(
+        name = "Check For Updates",
+        description = "Check the database for new morphs before loading the animation",
+        default = True)
+
     affectGeograft : EnumProperty(
         items = getGeograftItems,
         name = "Affect Geograft",
@@ -529,6 +534,8 @@ class MorphOptions:
     def draw(self, context):
         self.layout.prop(self, "useClearMorphs")
         self.layout.prop(self, "useScanned")
+        if self.useScanned:
+            self.layout.prop(self, "useCheckUpdates")
         self.layout.prop(self, "useLoadMissing")
         if self.useLoadMissing:
             self.layout.prop(self, "category")
@@ -1209,11 +1216,18 @@ class StandardAnimation:
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
         if self.affectMorphs and self.useScanned:
-            from .scan import getCharData, loadScannedInfo
+            from .scan import getCharData, loadScannedInfo, checkNeedUpdates
             rig, mesh, name, relpath = getCharData(context)
             self.shapekeys = {}
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
+            if self.useCheckUpdates:
+                needs = checkNeedUpdates(name, relpath)
+                if needs:
+                    msg = "The following databases need to be rescanned:\n"
+                    for name in needs:
+                        msg += "    %s\n" % name
+                    raise DazError(msg)
             loadScannedInfo(self, name)
         else:
             rig = context.object

@@ -98,17 +98,20 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupMorphs"
     bl_label = "Morphs"
 
+    def drawDatabase(self):
+        self.layout.operator("daz.scan_morph_database")
+        self.layout.operator("daz.check_database")
+
     def draw(self, context):
         ob = context.object
         if ob and ob.type in ['ARMATURE', 'MESH'] and ob.DazId:
             if ob.DazDriversDisabled:
                 self.layout.label(text = "Morph Drivers Disabled")
                 self.layout.operator("daz.enable_drivers")
-                self.layout.operator("daz.scan_morph_database")
+                self.drawDatabase()
                 return
             elif ob.DazMorphPrefixes:
-                self.layout.label(text="Object with obsolete morphs")
-                self.layout.operator("daz.scan_morph_database")
+                self.drawDatabase()
                 return
             self.layout.operator("daz.import_units")
             self.layout.operator("daz.import_expressions")
@@ -126,14 +129,14 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
-            self.layout.operator("daz.scan_morph_database")
+            self.drawDatabase()
             self.layout.separator()
             self.layout.label(text="Create low-poly meshes before transfers.")
             self.layout.operator("daz.transfer_shapekeys")
             self.layout.operator("daz.apply_all_shapekeys")
             self.layout.operator("daz.mix_shapekeys")
         else:
-            self.layout.operator("daz.scan_morph_database")
+            self.drawDatabase()
 
 
 class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):

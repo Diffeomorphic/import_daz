@@ -32,15 +32,30 @@ from .error import *
 from .utils import *
 from .animation import MorphOptions
 
-CURRENT_VERSION = 4
+CURRENT_VERSION = 5
 
 theScannedFiles = {}
 
-class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
-    bl_idname = "daz.scan_morph_database"
-    bl_label = "Scan Morph Database"
-    bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
+ScanPaths = [("useGenesis", "Genesis", "/data/DAZ 3D/Genesis/Base"),
+             ("useGenesis2Female", "Genesis2Female", "/data/DAZ 3D/Genesis 2/Female"),
+             ("useGenesis2Male", "Genesis2Male", "/data/DAZ 3D/Genesis 2/Male"),
+             ("useGenesis3Female", "Genesis3Female", "/data/DAZ 3D/Genesis 3/Female"),
+             ("useGenesis3Male", "Genesis3Male", "/data/DAZ 3D/Genesis 3/Male"),
+             ("useGenesis8Female", "Genesis8Female", "/data/DAZ 3D/Genesis 8/Female"),
+             ("useGenesis8Male", "Genesis8Male", "/data/DAZ 3D/Genesis 8/Male"),
+             ("useGenesis8_1Female", "Genesis8_1Female", "/data/DAZ 3D/Genesis 8/Female 8_1"),
+             ("useGenesis8_1Male", "Genesis8_1Male", "/data/DAZ 3D/Genesis 8/Male 8_1")
+            ]
 
+
+AltNames = {
+            "Genesis8Female" : ("Genesis8_1Female", "/data/Daz 3D/Genesis 8/Female 8_1"),
+            "Genesis8_1Female" : ("Genesis8Female", "/data/Daz 3D/Genesis 8/Female"),
+            "Genesis8Male" : ("Genesis8_1Male", "/data/Daz 3D/Genesis 8/Male 8_1"),
+            "Genesis8_1Male" : ("Genesis8Male", "/data/Daz 3D/Genesis 8/Male"),
+            }
+
+class CharSelector:
     useStandardMorphs : BoolProperty(
         name = "Include Standard Morphs",
         description = "Include standard morphs bundled with DAZ Studio in scan.\nSlows down scanning but necessary to find missing standard morphs",
@@ -116,6 +131,12 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
             self.layout.prop(self, "useGenesis8_1Female")
             self.layout.prop(self, "useGenesis8_1Male")
 
+
+class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
+    bl_idname = "daz.scan_morph_database"
+    bl_label = "Scan Morph Database"
+    bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
+
     def run(self, context):
         active = self.getActive(context.object)
         if active and self.useActive:
@@ -124,17 +145,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
             self.scanCharacter(context, name, relpath, scanpath)
         else:
             self.rig = self.mesh = None
-            for attr,name,relpath in [
-                ("useGenesis", "Genesis", "/data/DAZ 3D/Genesis/Base"),
-                ("useGenesis2Female", "Genesis2Female", "/data/DAZ 3D/Genesis 2/Female"),
-                ("useGenesis2Male", "Genesis2Male", "/data/DAZ 3D/Genesis 2/Male"),
-                ("useGenesis3Female", "Genesis3Female", "/data/DAZ 3D/Genesis 3/Female"),
-                ("useGenesis3Male", "Genesis3Male", "/data/DAZ 3D/Genesis 3/Male"),
-                ("useGenesis8Female", "Genesis8Female", "/data/DAZ 3D/Genesis 8/Female"),
-                ("useGenesis8Male", "Genesis8Male", "/data/DAZ 3D/Genesis 8/Male"),
-                ("useGenesis8_1Female", "Genesis8_1Female", "/data/DAZ 3D/Genesis 8/Female 8_1"),
-                ("useGenesis8_1Male", "Genesis8_1Male", "/data/DAZ 3D/Genesis 8/Male 8_1")
-                ]:
+            for attr,name,relpath in ScanPaths:
                 if getattr(self, attr):
                     scanpath = getScanPath(name)
                     self.scanCharacter(context, name, relpath, scanpath)
@@ -143,14 +154,16 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
     def scanCharacter(self, context, name, relpath, scanpath):
         global theScannedFiles
         from .load_json import saveJson
-        from time import perf_counter
+        from time import perf_counter, ctime
         t1 = perf_counter()
         self.formulas = {}
         self.defins = {}
         self.minmax = {}
+        modified = str(os.path.getmtime(scanpath))
         struct = {
             "name" : name,
             "path" : relpath,
+            "modified" : modified,
             "version" : CURRENT_VERSION,
             "definitions" : self.defins,
             "formulas" : self.formulas,
@@ -201,7 +214,6 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator):
         print("* %s" % path[nskip:])
         struct = loadJson(path, silent=True)
         if "modifier_library" not in struct.keys():
-            print("NOPE", path)
             return
         asset = parseAssetFile(struct)
         ref = info = key = None
@@ -267,37 +279,36 @@ def getScanPath(name):
 #   Load scanned info
 #----------------------------------------------------------
 
+def getScannedFile(name, scanpath, checkVersion):
+    global theScannedFiles
+    if name not in theScannedFiles.keys():
+        from .load_json import loadJson
+        theScannedFiles[name] = loadJson(scanpath)
+    struct = theScannedFiles[name]
+    if struct and checkVersion:
+        version = struct.get("version")
+        if version is None or version < CURRENT_VERSION:
+            msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
+            raise DazError(msg)
+    return struct
+
+
 def loadScannedInfo(self, name):
     def loadScanned(name, scanpath):
-        global theScannedFiles
-        if name not in theScannedFiles.keys():
-            from .load_json import loadJson
-            theScannedFiles[name] = loadJson(scanpath)
         defins = formulas = minmax = {}
-        struct = theScannedFiles[name]
+        struct = getScannedFile(name, scanpath, True)
         if struct:
-            version = struct.get("version")
-            if version is None or version < CURRENT_VERSION:
-                msg = "Scanned database file for %s is outdated.\nPlease rescan database first" % name
-                raise DazError(msg)
             defins = struct["definitions"]
             formulas = struct["formulas"]
             if "minmax" in struct.keys():
                 minmax = struct["minmax"]
         return defins, formulas, minmax
 
-    altNames = {
-        "Genesis8Female" : "Genesis8_1Female",
-        "Genesis8_1Female" : "Genesis8Female",
-        "Genesis8Male" : "Genesis8_1Male",
-        "Genesis8_1Male" : "Genesis8Male",
-    }
-
     scanpath = getScanPath(name)
     if not os.path.exists(scanpath):
         raise DazError("Scanned morphs for %s do not exist" % name)
     self.defins, self.formulas, self.minmax = loadScanned(name, scanpath)
-    name2 = altNames.get(name)
+    name2,relpath2 = AltNames.get(name)
     if name2:
         scanpath2 = getScanPath(name2)
         self.defins2, self.formulas2, self.minmax2 = loadScanned(name2, scanpath2)
@@ -308,20 +319,20 @@ def loadScannedInfo(self, name):
 
 def loadMissingMorphs(self, context, rig, missing, cat):
     def getFullPath(path):
-        for folder in G.theDazPaths:
+        for folder in GS.getDazPaths():
             path1 = "%s%s" % (folder, path)
             fullpath = bpy.path.resolve_ncase(path1.replace("//", "/"))
             if os.path.exists(fullpath):
                 return fullpath
         return None
 
-    from .asset import setDazPaths
+    #from .asset import setDazPaths
     from .morphing import CustomMorphLoader, StandardMorphLoader, addToCategories
     if not missing:
         return False
     standards = {}
     customs = []
-    setDazPaths()
+    #setDazPaths()
     for ref in missing:
         path = self.defins.get(ref)
         if path is None:
@@ -379,8 +390,81 @@ def getMorphSet(path):
 #   Initialize
 #----------------------------------------------------------
 
+def checkNeedUpdate(name, relpath):
+    def checkFolder(folder, modified):
+        if not os.path.exists(folder):
+            print('Directory does not exist:\n"%s"' % folder)
+            return False
+        for file in os.listdir(folder):
+            path = os.path.join(folder, file)
+            mod = os.path.getmtime(path)
+            if mod > modified:
+                print("Modified path:", path)
+                return True
+            if os.path.isdir(path):
+                if checkFolder(path, modified):
+                    return True
+        return False
+
+    def checkChar(name, relpath):
+        scanpath = getScanPath(name)
+        if not os.path.exists(scanpath):
+            return True
+        struct = getScannedFile(name, scanpath, False)
+        if struct:
+            version = struct.get("version")
+            if version != CURRENT_VERSION:
+                return True
+            modified = float(struct["modified"])
+        for dazpath in GS.getDazPaths():
+            morphpath = "%s%s/Morphs" % (dazpath, relpath)
+            morphpath = bpy.path.resolve_ncase(morphpath)
+            if checkFolder(morphpath, modified):
+                return True
+        return False
+
+    needs = []
+    if checkChar(name, relpath):
+        needs.append(name)
+    return needs
+
+
+def checkNeedUpdates(name, relpath):
+    needs = checkNeedUpdate(name, relpath)
+    name2,relpath2 = AltNames.get(name)
+    if name2 and checkNeedUpdate(name2, relpath2):
+        needs.append(name2)
+    return needs
+
+
+class DAZ_OT_CheckDatabase(DazPropsOperator, CharSelector):
+    bl_idname = "daz.check_database"
+    bl_label = "Check Database For Updates"
+    bl_description = ""
+
+    def run(self, context):
+        active = self.getActive(context.object)
+        if active and self.useActive:
+            rig, mesh, name, relpath = getCharData(context)
+            needs = checkNeedUpdates(name, relpath)
+        else:
+            needs = []
+            for attr,name,relpath in ScanPaths:
+                if getattr(self, attr):
+                    needs += checkNeedUpdate(name, relpath)
+        if needs:
+            msg = "The following databases need to be rescanned:\n"
+            for name in needs:
+                msg += "    %s\n" % name
+            raise DazError(msg, warning=True)
+
+#----------------------------------------------------------
+#   Initialize
+#----------------------------------------------------------
+
 classes = [
     DAZ_OT_ScanMorphDatabase,
+    DAZ_OT_CheckDatabase,
 ]
 
 def register():
