@@ -1583,17 +1583,18 @@ class CyclesTree(Tree):
         self.volume = None
         if self.isEnabled("Translucency"):
             transcolor,transtex = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
-            sssmode, ssscolor, ssstex = self.getSSSInfo(transcolor)
             if self.isEnabled("Transmission"):
                 self.buildVolumeTransmission(transcolor, transtex)
             if self.isEnabled("Subsurface"):
-                self.buildVolumeSubSurface(sssmode, ssscolor, ssstex)
+                sssmode, ssscolor, ssstex = self.getSSSInfo()
+                self.buildVolumeSubSurface(ssscolor, ssstex)
         if self.volume:
             self.volume.width = 240
             LS.usedFeatures["Volume"] = True
 
 
-    def getSSSInfo(self, transcolor):
+    def getSSSInfo(self):
+        from .cgroup import ColorLogGroup
         if self.owner.shader == 'UBER_IRAY':
             sssmode = self.getValue(["SSS Mode"], 0)
         elif self.owner.shader == 'PBRSKIN':
@@ -1602,40 +1603,39 @@ class CyclesTree(Tree):
             sssmode = 0
         # [ "Mono", "Chromatic" ]
         if sssmode == 1:
-            ssscolor,ssstex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
-            return 1, ssscolor, ssstex
+            color,tex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
+            node = self.addGroup(ColorLogGroup, "DAZ Log Color", col=self.column-1)
+            self.linkColor(tex, node, color, "Color")
+            return 1, WHITE, node
         else:
-            return 0, WHITE, None
+            sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
+            return 0, (sss,sss,sss), tex
 
 
-    def buildVolumeTransmission(self, transcolor, transtex):
+    def buildVolumeTransmission(self, color, tex):
         from .cgroup import VolumeGroup
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
-        if not (isBlack(transcolor) or isWhite(transcolor) or dist == 0.0):
-            self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
-            self.volume.inputs["Absorbtion Density"].default_value = 100/dist
-            self.linkColor(transtex, self.volume, transcolor, "Absorbtion Color")
+        if (isBlack(color) or
+            (isWhite(color) and tex is None) or
+            dist == 0.0):
+            return
+        self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
+        self.volume.inputs["Absorbtion Density"].default_value = 100/dist
+        self.linkColor(tex, self.volume, color, "Absorbtion Color")
 
 
-    def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
+    def buildVolumeSubSurface(self, color, tex):
         from .cgroup import VolumeGroup
-        sss = self.getValue(["SSS Amount"], 0.0)
         dist = self.getValue(["Scattering Measurement Distance"], 0.0)
-        if not (sssmode == 0 or isBlack(ssscolor) or isWhite(ssscolor) or dist == 0.0):
-            color,tex = self.invertColor(ssscolor, ssstex, 6)
-            if self.volume is None:
-                self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
-            self.linkColor(tex, self.volume, color, "Scatter Color")
-            self.volume.inputs["Scatter Density"].default_value = 200/dist
-            self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
-        elif sss > 0 and dist > 0.0:
-            if self.volume is None:
-                self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
-            sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
-            color = (sss,sss,sss)
-            self.linkColor(tex, self.volume, color, "Scatter Color")
-            self.volume.inputs["Scatter Density"].default_value = 200/dist
-            self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
+        if (isBlack(color) or
+            (isWhite(color) and tex is None) or
+            dist == 0.0):
+            return
+        if self.volume is None:
+            self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
+        self.linkColor(tex, self.volume, color, "Scatter Color")
+        self.volume.inputs["Scatter Density"].default_value = 100/dist
+        self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
 
     #-------------------------------------------------------------
     #   Output

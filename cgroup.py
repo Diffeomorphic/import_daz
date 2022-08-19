@@ -283,6 +283,53 @@ class Fresnel2Group(CyclesGroup):
         self.links.new(sub.outputs[0], self.outputs.inputs["Metal"])
 
 # ---------------------------------------------------------------------
+#   ColorLog Group
+# ---------------------------------------------------------------------
+
+class ColorLogGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Color"]
+        self.outsockets += ["Color"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 6)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.outputs.new("NodeSocketColor", "Color")
+
+
+    def addNodes(self, args=None):
+        sep = self.addNode("ShaderNodeSeparateRGB", 1)
+        self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+        abs0 = self.addLog(sep.outputs[0])
+        abs1 = self.addLog(sep.outputs[1])
+        abs2 = self.addLog(sep.outputs[2])
+        comb = self.addNode("ShaderNodeCombineRGB", 5)
+        self.links.new(abs0.outputs[0], comb.inputs[0])
+        self.links.new(abs1.outputs[0], comb.inputs[1])
+        self.links.new(abs2.outputs[0], comb.inputs[2])
+        self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
+
+
+    def addLog(self, socket):
+        wrap = self.addNode("ShaderNodeMath", 2)
+        wrap.operation = 'WRAP'
+        self.links.new(socket, wrap.inputs[0])
+        wrap.inputs[1].default_value = 0.0
+        wrap.inputs[2].default_value = 0.999
+
+        log = self.addNode("ShaderNodeMath", 3)
+        log.operation = 'LOGARITHM'
+        self.links.new(wrap.outputs[0], log.inputs[0])
+        log.inputs[1].default_value = 2.720
+
+        abs = self.addNode("ShaderNodeMath", 4)
+        abs.operation = 'ABSOLUTE'
+        self.links.new(log.outputs[0], abs.inputs[0])
+        return abs
+
+# ---------------------------------------------------------------------
 #   Mix Group.
 # ---------------------------------------------------------------------
 
