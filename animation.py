@@ -37,16 +37,6 @@ from .transform import Transform
 from .fileutils import MultiFile, SingleFile, DufFile, DazExporter
 
 #-------------------------------------------------------------
-#   Alias
-#-------------------------------------------------------------
-
-def getAlias(prop, rig):
-    if prop in rig.DazAlias.keys():
-        return rig.DazAlias[prop].s
-    else:
-        return prop
-
-#-------------------------------------------------------------
 #   Convert between frames and vectors
 #-------------------------------------------------------------
 
@@ -280,18 +270,12 @@ class FrameConverter:
         for prop,frames in vanim.items():
             struct[prop] = dict(frames)
 
-        if not self.useScanned:
-            for prop,frames in struct.items():
-                if nonzero(frames):
-                    self.used[prop] = True
-            return vanim
-
         nstruct = {}
         for prop,frames in struct.items():
-            formulas = self.getFormulas(rig, prop)
+            formulas,alias = self.getFormulas(rig, prop)
             if formulas is None:
                 if nonzero(frames):
-                    self.used[prop] = True
+                    self.used[alias] = True
                 continue
             for nprop,factor in formulas.items():
                 if nprop not in nstruct.keys():
@@ -319,23 +303,25 @@ class FrameConverter:
 
 
     def getFormulas(self, rig, prop):
-        alias = None
-        if prop in rig.DazAlias.keys():
-            alias = rig.DazAlias[prop].s
+        alias = self.alias.get(prop)
         if alias and alias in rig.keys() or alias in self.shapekeys.keys():
-            return {alias : 1.0}
-        elif prop in rig.keys() or prop in self.shapekeys.keys():
-            return {prop : 1.0}
-        elif prop in self.formulas.keys():
-            return self.formulas[prop]
-        elif prop in self.formulas2.keys():
-            return self.formulas2[prop]
+            formula = {alias : 1.0}
         elif alias and alias in self.formulas.keys():
-            return self.formulas[alias]
+            formula = self.formulas[alias]
         elif alias and alias in self.formulas2.keys():
-            return self.formulas2[alias]
+            formula = self.formulas2[alias]
+        elif prop in rig.keys() or prop in self.shapekeys.keys():
+            formula = {prop : 1.0}
+        elif prop in self.formulas.keys():
+            formula = self.formulas[prop]
+        elif prop in self.formulas2.keys():
+            formula = self.formulas2[prop]
         else:
-            return None
+            formula = None
+        if alias:
+            return formula, alias
+        else:
+            return formula, prop
 
 #-------------------------------------------------------------
 #   HideOperator class
@@ -499,7 +485,7 @@ class MorphOptions:
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
         description = "Clear all morph properties before loading new ones",
-        default = False)
+        default = True)
 
     useLoadMissing : BoolProperty(
         name = "Load Missing Morphs",
@@ -1129,16 +1115,6 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 return prop2
         if prop in rig.keys():
             return prop
-        if prop in self.alias.keys():
-            prop = self.alias[prop]
-            if prop in rig.keys():
-                return prop
-        return None
-        if prop not in self.missing.keys():
-            self.missing[prop] = float(value)
-            if self.useLoadMissing and not self.useScanned:
-                rig[prop] = float(value)
-                return prop
         return None
 
 
@@ -1215,10 +1191,10 @@ class StandardAnimation:
         from time import perf_counter
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
+        self.shapekeys = {}
         if self.affectMorphs and self.useScanned:
             from .scan import getCharData, loadScannedInfo, checkNeedUpdates
             rig, mesh, name, relpath = getCharData(context)
-            self.shapekeys = {}
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
             if self.useCheckUpdates:
@@ -1230,7 +1206,13 @@ class StandardAnimation:
                     raise DazError(msg)
             loadScannedInfo(self, name)
         else:
+            from .driver import getPropMinMax
             rig = context.object
+            self.alias = dict([(key, pg.s) for key,pg in rig.DazAlias.items()])
+            for prop in rig.data.keys():
+                if isFinal(prop):
+                    key = baseProp(prop)
+                    self.minmax[key] = getPropMinMax(rig.data, prop, False)[0:2]
         scn = context.scene
         if scn.tool_settings.use_keyframe_insert_auto:
             self.useInsertKeys = True
@@ -1244,7 +1226,6 @@ class StandardAnimation:
         self.clearAnimation(rig)
         self.missing = {}
         self.used = {}
-        self.alias = dict([(getAlias(prop, rig), prop) for prop in rig.keys()])
         startframe = offset = scn.frame_current
         props = []
         t1 = perf_counter()
@@ -1726,7 +1707,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         rig = context.object
         self.setupDriven(rig)
         self.setupConverter(rig)
-        self.alias = dict([(prop, getAlias(prop, rig)) for prop in rig.keys()])
+        self.alias = dict([(key, pg.s) for key,pg in rig.DazAlias.items()])
         act = None
         self.morphs = {}
         self.locs = {}

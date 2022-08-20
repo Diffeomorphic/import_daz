@@ -32,7 +32,7 @@ from .error import *
 from .utils import *
 from .animation import MorphOptions
 
-CURRENT_VERSION = 5
+CURRENT_VERSION = 6
 
 theScannedFiles = {}
 
@@ -56,11 +56,6 @@ AltNames = {
             }
 
 class CharSelector:
-    useStandardMorphs : BoolProperty(
-        name = "Include Standard Morphs",
-        description = "Include standard morphs bundled with DAZ Studio in scan.\nSlows down scanning but necessary to find missing standard morphs",
-        default = True)
-
     useActive : BoolProperty(
         name = "Scan Active Mesh",
         description = "Only scan morphs for active mesh",
@@ -115,7 +110,6 @@ class CharSelector:
         return (ob and ob.type in ['MESH', 'ARMATURE'])
 
     def draw(self, context):
-        #self.layout.prop(self, "useStandardMorphs")
         active = self.getActive(context.object)
         if active:
             self.layout.prop(self, "useActive")
@@ -159,6 +153,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         self.formulas = {}
         self.defins = {}
         self.minmax = {}
+        self.alias = {}
         modified = str(os.path.getmtime(scanpath))
         struct = {
             "name" : name,
@@ -168,10 +163,11 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
             "definitions" : self.defins,
             "formulas" : self.formulas,
             "minmax" : self.minmax,
+            "alias" : self.alias,
         }
         self.count = 0
         self.maxcount = 1000000
-        #self.maxcount = 10
+        #self.maxcount = 100
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
         LS.forMorphLoad(self.mesh)
@@ -196,9 +192,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
             path = os.path.join(folderpath, file)
             if os.path.isdir(path):
                 self.scanMorphs(path, nskip)
-            elif not self.useStandardMorphs and getMorphSet(folderpath) != "Custom":
-                pass
-            elif file[0:5] != "alias":
+            else:
                 ext = os.path.splitext(file)[-1]
                 if ext in [".duf", ".dsf"]:
                     self.scanMorph(path, nskip)
@@ -210,7 +204,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         from .load_json import loadJson
         from .files import parseAssetFile
         from .formula import Formula
-        from .modifier import Morph, ChannelAsset
+        from .modifier import Alias, Morph, ChannelAsset
         print("* %s" % path[nskip:])
         struct = loadJson(path, silent=True)
         if "modifier_library" not in struct.keys():
@@ -219,6 +213,14 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         ref = info = key = None
         if isinstance(asset, Morph):
             ref,key = asset.id.rsplit("#",1)
+        elif isinstance(asset, Alias):
+            ref,key = asset.id.rsplit("#",1)
+            ref,target = asset.target_channel.rsplit("#",1)
+            if target[-6:] == "?value":
+                target = target[:-6]
+                if key != target:
+                    self.alias[key] = target
+            return
         elif isinstance(asset, Formula):
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info = self.evalExprs(asset, exprs)
@@ -295,23 +297,24 @@ def getScannedFile(name, scanpath, checkVersion):
 
 def loadScannedInfo(self, name):
     def loadScanned(name, scanpath):
-        defins = formulas = minmax = {}
+        defins = formulas = minmax = alias = {}
         struct = getScannedFile(name, scanpath, True)
         if struct:
             defins = struct["definitions"]
             formulas = struct["formulas"]
-            if "minmax" in struct.keys():
-                minmax = struct["minmax"]
-        return defins, formulas, minmax
+            minmax = struct["minmax"]
+            if "alias" in struct.keys():
+                alias = struct["alias"]
+        return defins, formulas, minmax, alias
 
     scanpath = getScanPath(name)
     if not os.path.exists(scanpath):
         raise DazError("Scanned morphs for %s do not exist" % name)
-    self.defins, self.formulas, self.minmax = loadScanned(name, scanpath)
+    self.defins, self.formulas, self.minmax, self.alias = loadScanned(name, scanpath)
     if name in AltNames.keys():
         name2,relpath2 = AltNames[name]
         scanpath2 = getScanPath(name2)
-        self.defins2, self.formulas2, self.minmax2 = loadScanned(name2, scanpath2)
+        self.defins2, self.formulas2, self.minmax2, self.alias2 = loadScanned(name2, scanpath2)
 
 #----------------------------------------------------------
 #   Load missing morphs
@@ -332,7 +335,6 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         return False
     standards = {}
     customs = []
-    #setDazPaths()
     for ref in missing:
         path = self.defins.get(ref)
         if path is None:
@@ -453,9 +455,23 @@ class DAZ_OT_CheckDatabase(DazPropsOperator, CharSelector):
     bl_label = "Check Database For Updates"
     bl_description = ""
 
+    useAll : BoolProperty(
+        name = "All Characters",
+        description = "Scan morph database for all character types",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useAll")
+        if not self.useAll:
+            CharSelector.draw(self, context)
+
+
     def run(self, context):
-        active = self.getActive(context.object)
-        if active and self.useActive:
+        if self.useAll:
+            needs = []
+            for attr,name,relpath in ScanPaths:
+                needs += checkNeedUpdate(name, relpath)
+        elif self.useActive and self.getActive(context.object):
             rig, mesh, name, relpath = getCharData(context)
             needs = checkNeedUpdates(name, relpath)
         else:
