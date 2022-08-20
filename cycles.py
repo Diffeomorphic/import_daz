@@ -1594,7 +1594,7 @@ class CyclesTree(Tree):
 
 
     def getSSSInfo(self):
-        from .cgroup import ColorLogGroup
+        from .cgroup import LogColorGroup
         if self.owner.shader == 'UBER_IRAY':
             sssmode = self.getValue(["SSS Mode"], 0)
         elif self.owner.shader == 'PBRSKIN':
@@ -1604,7 +1604,7 @@ class CyclesTree(Tree):
         # [ "Mono", "Chromatic" ]
         if sssmode == 1:
             color,tex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
-            node = self.addGroup(ColorLogGroup, "DAZ Log Color", col=self.column-1)
+            node = self.addGroup(LogColorGroup, "DAZ Log Color", col=self.column-1)
             self.linkColor(tex, node, color, "Color")
             return 1, WHITE, node
         else:

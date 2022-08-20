@@ -283,10 +283,10 @@ class Fresnel2Group(CyclesGroup):
         self.links.new(sub.outputs[0], self.outputs.inputs["Metal"])
 
 # ---------------------------------------------------------------------
-#   ColorLog Group
+#   LogColor Group
 # ---------------------------------------------------------------------
 
-class ColorLogGroup(CyclesGroup):
+class LogColorGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Color"]
@@ -313,15 +313,15 @@ class ColorLogGroup(CyclesGroup):
 
 
     def addLog(self, socket):
-        wrap = self.addNode("ShaderNodeMath", 2)
-        wrap.operation = 'WRAP'
-        self.links.new(socket, wrap.inputs[0])
-        wrap.inputs[1].default_value = 0.0
-        wrap.inputs[2].default_value = 0.999
+        clamp = self.addNode("ShaderNodeClamp", 2)
+        clamp.clamp_type = 'MIN_MAX'
+        self.links.new(socket, clamp.inputs[0])
+        clamp.inputs[1].default_value = 0.0
+        clamp.inputs[2].default_value = 0.999
 
         log = self.addNode("ShaderNodeMath", 3)
         log.operation = 'LOGARITHM'
-        self.links.new(wrap.outputs[0], log.inputs[0])
+        self.links.new(clamp.outputs[0], log.inputs[0])
         log.inputs[1].default_value = 2.720
 
         abs = self.addNode("ShaderNodeMath", 4)
@@ -1656,6 +1656,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
 
     groups = {
         "useDiffuse" : (DiffuseGroup, "DAZ Diffuse", []),
+        "useLogColor" : (LogColorGroup, "DAZ Log Color", []),
         "useColorEffect" : (ColorEffectGroup, "DAZ Color Effect", []),
         "useFresnel" : (Fresnel2Group, "DAZ Fresnel 2", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
@@ -1681,6 +1682,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     }
 
     useDiffuse : BoolProperty(name="Diffuse", default=False)
+    useLogColor : BoolProperty(name="Log Color", default=False)
     useColorEffect : BoolProperty(name="Color Effect", default=False)
     useFresnel : BoolProperty(name="Fresnel", default=False)
     useEmission : BoolProperty(name="Emission", default=False)
