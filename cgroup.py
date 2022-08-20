@@ -314,7 +314,7 @@ class LogColorGroup(CyclesGroup):
 
     def addLog(self, socket):
         clamp = self.addNode("ShaderNodeClamp", 2)
-        clamp.clamp_type = 'MIN_MAX'
+        clamp.clamp_type = 'MINMAX'
         self.links.new(socket, clamp.inputs[0])
         clamp.inputs[1].default_value = 0.0
         clamp.inputs[2].default_value = 0.999
