@@ -1189,6 +1189,7 @@ class StandardAnimation:
 
     def run(self, context):
         from time import perf_counter
+        from .uilist import updateScrollbars
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
@@ -1248,6 +1249,7 @@ class StandardAnimation:
         t2 = perf_counter()
         print("File %s imported in %.3f seconds" % (self.filepath, t2-t1))
         scn.frame_current = startframe
+        updateScrollbars(scn)
         self.nameAnimation(rig)
         if not self.affectSelectedOnly:
             self.selectAll(rig, selected)
