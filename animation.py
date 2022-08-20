@@ -799,7 +799,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                             vanims[key] = getAnimKeys(anim)
                     elif channel in ["translation", "rotation", "scale"]:
                         if key not in banims.keys():
-                            bone = banims[key] = {
+                            banims[key] = {
                                 "translation" : {},
                                 "rotation" : {},
                                 "scale" : {},
@@ -1313,15 +1313,14 @@ class NodePose:
     def addTransform(self, node, channel, banims, key):
         if channel in node.keys():
             if key not in banims.keys():
-                bone = banims[key] = {}
-            else:
-                bone = banims[key]
-            if channel not in bone.keys():
-                bone[channel] = {}
+                banims[key] = {}
+            banim = banims[key]
+            if channel not in banim.keys():
+                banim[channel] = {}
             for struct in node[channel]:
                 comp = struct["id"]
                 value = struct["current_value"]
-                bone[channel][getIndex(comp)] = [[0, value]]
+                banim[channel][getIndex(comp)] = [[0, value]]
 
 #-------------------------------------------------------------
 #   Import Action
@@ -1833,7 +1832,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         self.Finv[""] = Fn.inverted()
 
         for pb in rig.pose.bones:
-            bone = pb.bone
             euler = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ')
             dmat = euler.to_matrix().to_4x4()
             dmat.col[3][0:3] = Vector(pb.bone.DazHead)*rig.DazScale

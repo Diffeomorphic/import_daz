@@ -372,16 +372,26 @@ def loadMissingMorphs(self, context, rig, missing, cat):
 
 def getMorphSet(path):
     lpath = path.lower().replace("\\", "/")
-    for subdir,morphgroup in [
-        ("/daz 3d/base/", "Units"),
+    for subdir,mgrps in [
         ("/daz 3d/base correctives/", "Jcms"),
         ("/daz 3d/base flexions/", "Flexions"),
-        ("/daz 3d/base pose/", "Body"),
-        ("/daz 3d/base pose head/", "Units"),
+        ("/daz 3d/base pose/", [("ectrlv", "Visemes"), ("ectrl", "Units"), "BODY"]),
+        ("/daz 3d/base pose head/", [("ectrlv", "Visemes"), "Units"]),
         ("/daz 3d/expressions/", "Expressions"),
         ("/daz 3d/facs/", "Facs"),
         ("/daz 3d/facsexpressions/", "Facsexpr"),
         ]:
+        if isinstance(mgrps, list):
+            morphgroup = None
+            lfile = os.path.basename(lpath)
+            for prefix,mgrp in mgrps[:-1]:
+                if lfile.startswith(prefix):
+                    morphgroup = mgrp
+                    break
+            if not morphgroup:
+                morphgroup = mgrps[-1]
+        else:
+            morphgroup = mgrps
         if subdir in lpath:
             return morphgroup
     return "Custom"
