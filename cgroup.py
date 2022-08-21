@@ -488,39 +488,46 @@ class SSSFixGroup(CyclesGroup):
 class ColorEffectGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Color"]
+        self.insockets += ["Fac", "Color", "Tint"]
         self.outsockets += ["Transmit Fac", "Intensity Fac", "Color"]
 
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 3)
+        CyclesGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketColor", "Tint")
         self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
         self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
         self.group.outputs.new("NodeSocketColor", "Color")
 
 
     def addNodes(self, args=None):
-        mix = self.addNode("ShaderNodeMixRGB", 1)
+        tint = colorInput = self.addNode("ShaderNodeMixRGB", 1)
+        tint.blend_type = 'MULTIPLY'
+        tint.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], tint.inputs[1])
+        self.links.new(self.inputs.outputs["Tint"], tint.inputs[2])
+
+        mix = self.addNode("ShaderNodeMixRGB", 2)
         mix.blend_type = 'MIX'
         self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
         mix.inputs[1].default_value[0:3] = BLACK
-        self.links.new(self.inputs.outputs["Color"], mix.inputs[2])
+        self.links.new(tint.outputs["Color"], mix.inputs[2])
 
-        rgb = self.addNode("ShaderNodeMixRGB", 1)
+        rgb = self.addNode("ShaderNodeMixRGB", 2)
         rgb.blend_type = 'COLOR'
         rgb.inputs[0].default_value = 1.0
         rgb.inputs[1].default_value[0:3] = WHITE
-        self.links.new(self.inputs.outputs["Color"], rgb.inputs[2])
+        self.links.new(tint.outputs["Color"], rgb.inputs[2])
 
-        scale = self.addNode("ShaderNodeVectorMath", 2)
+        scale = self.addNode("ShaderNodeVectorMath", 3)
         scale.operation = 'SCALE'
         self.links.new(mix.outputs["Color"], scale.inputs["Vector"])
         scale.inputs["Scale"].default_value = 1.0
 
-        hsv2 = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv2 = self.addNode("ShaderNodeHueSaturation", 3)
         hsv2.inputs["Hue"].default_value = 0.5
         hsv2.inputs["Saturation"].default_value = 0.0
         hsv2.inputs["Value"].default_value = 1.0

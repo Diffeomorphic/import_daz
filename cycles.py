@@ -747,15 +747,8 @@ class CyclesTree(Tree):
             from .cgroup import ColorEffectGroup
             effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
             self.linkScalar(factex, effect, fac, "Fac")
-            if tint == WHITE:
-                colorInput = self.linkColor(tex, effect, color, "Color")
-            else:
-                mix = colorInput = self.addNode("ShaderNodeMixRGB", self.column-2)
-                mix.blend_type = 'MULTIPLY'
-                mix.inputs[0].default_value = 1.0
-                self.linkColor(tex, mix, color, 1)
-                mix.inputs[2].default_value[0:3] = tint
-                self.links.new(mix.outputs["Color"], effect.inputs["Color"])
+            colorInput = self.linkColor(tex, effect, color, "Color")
+            effect.inputs["Tint"].default_value[0:3] = tint
             outfac = {
                 1:  "Transmit Fac", # Scatter & Transmit
                 2:  "Intensity Fac" # Scatter & Transmit Intensity
