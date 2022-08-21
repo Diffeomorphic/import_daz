@@ -495,6 +495,7 @@ def addMultires(context, ob, hdob, strict):
         failtype = "Runtime"
     if failtype is None:
         hdob.DazMultires = True
+        mod.levels = 0
         return True
     elif strict:
         raise DazError(msg)
