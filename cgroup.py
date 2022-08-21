@@ -488,32 +488,27 @@ class SSSFixGroup(CyclesGroup):
 class ColorEffectGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Color", "Tint"]
+        self.insockets += ["Fac", "Color"]
         self.outsockets += ["Transmit Fac", "Intensity Fac", "Color"]
-
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketColor", "Tint")
         self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
         self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
         self.group.outputs.new("NodeSocketColor", "Color")
 
+    def getTint(self):
+        return self.inputs
 
     def addNodes(self, args=None):
-        tint = colorInput = self.addNode("ShaderNodeMixRGB", 1)
-        tint.blend_type = 'MULTIPLY'
-        tint.inputs[0].default_value = 1.0
-        self.links.new(self.inputs.outputs["Color"], tint.inputs[1])
-        self.links.new(self.inputs.outputs["Tint"], tint.inputs[2])
-
         mix = self.addNode("ShaderNodeMixRGB", 2)
         mix.blend_type = 'MIX'
         self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
         mix.inputs[1].default_value[0:3] = BLACK
+        tint = self.getTint()
         self.links.new(tint.outputs["Color"], mix.inputs[2])
 
         rgb = self.addNode("ShaderNodeMixRGB", 2)
@@ -537,6 +532,24 @@ class ColorEffectGroup(CyclesGroup):
         self.links.new(scale.outputs[0], self.outputs.inputs["Transmit Fac"])
         self.links.new(hsv2.outputs["Color"], self.outputs.inputs["Intensity Fac"])
         self.links.new(rgb.outputs["Color"], self.outputs.inputs["Color"])
+
+
+class TintedEffectGroup(ColorEffectGroup):
+    def __init__(self):
+        ColorEffectGroup.__init__(self)
+        self.insockets += ["Tint"]
+
+    def create(self, node, name, parent):
+        ColorEffectGroup.create(self, node, name, parent)
+        self.group.inputs.new("NodeSocketColor", "Tint")
+
+    def getTint(self):
+        tint = self.addNode("ShaderNodeMixRGB", 1)
+        tint.blend_type = 'MULTIPLY'
+        tint.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], tint.inputs[1])
+        self.links.new(self.inputs.outputs["Tint"], tint.inputs[2])
+        return tint
 
 # ---------------------------------------------------------------------
 #   Invert Normal Map Group
@@ -1665,6 +1678,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useDiffuse" : (DiffuseGroup, "DAZ Diffuse", []),
         "useLogColor" : (LogColorGroup, "DAZ Log Color", []),
         "useColorEffect" : (ColorEffectGroup, "DAZ Color Effect", []),
+        "useTintedEffect" : (TintedEffectGroup, "DAZ Tinted Effect", []),
         "useFresnel" : (Fresnel2Group, "DAZ Fresnel 2", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
         "useOneSided" : (OneSidedGroup, "DAZ One-Sided", []),
@@ -1691,6 +1705,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useDiffuse : BoolProperty(name="Diffuse", default=False)
     useLogColor : BoolProperty(name="Log Color", default=False)
     useColorEffect : BoolProperty(name="Color Effect", default=False)
+    useTintedEffect : BoolProperty(name="Tinted Effect", default=False)
     useFresnel : BoolProperty(name="Fresnel", default=False)
     useEmission : BoolProperty(name="Emission", default=False)
     useOneSided : BoolProperty(name="One Sided", default=False)

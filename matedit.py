@@ -386,10 +386,10 @@ class ChannelSetter:
                         fromnode.inputs[1].default_value = self.getItemValue(1, item)
                     elif fromnode.type in ["TEX_IMAGE", "GAMMA"]:
                         self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
-                    elif isGroupType(fromnode, "DAZ Log Color"):
+                    elif isGroupType(fromnode, ["DAZ Log Color"]):
                         self.ensureColor(ncomps, item)
                         fromnode.inputs["Color"].default_value = self.getItemValue(4, item)
-                    elif isGroupType(fromnode, "DAZ Color Effect"):
+                    elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
                         if slot == "Fac":
                             fromnode.inputs["Fac"].default_value = self.getItemValue(1, item)
                         elif slot == "Color":
@@ -461,9 +461,9 @@ class ChannelSetter:
                         return fromnode.inputs[0].default_value, ncomps
                     elif fromnode.type == "TEX_IMAGE":
                         return WHITE, ncomps
-                    elif isGroupType(fromnode, "DAZ Log Color"):
+                    elif isGroupType(fromnode, ["DAZ Log Color"]):
                         return fromnode.inputs["Color"].default_value, ncomps
-                    elif isGroupType(fromnode, "DAZ Color Effect"):
+                    elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
                         print("EFF", slot, ncomps)
                         return fromnode.inputs[slot].default_value, ncomps
                 else:
@@ -516,8 +516,8 @@ class ChannelSetter:
         return False
 
 
-def isGroupType(node, gtype):
-    return (node.type == 'GROUP' and node.node_tree.name == gtype)
+def isGroupType(node, gtypes):
+    return (node.type == 'GROUP' and node.node_tree.name in gtypes)
 
 # ---------------------------------------------------------------------
 #   Launch button
