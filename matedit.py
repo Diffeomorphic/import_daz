@@ -464,7 +464,6 @@ class ChannelSetter:
                     elif isGroupType(fromnode, ["DAZ Log Color"]):
                         return fromnode.inputs["Color"].default_value, ncomps
                     elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
-                        print("EFF", slot, ncomps)
                         return fromnode.inputs[slot].default_value, ncomps
                 else:
                     return socket.default_value, ncomps
@@ -769,7 +768,9 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
 
         for link in socket.links:
             node = link.to_node
-            if node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
+            if node.type in ['MIX_RGB', 'MATH', 'GAMMA', 'INVERT']:
+                pass
+            elif isGroupType(node, ["DAZ Log Color", "DAZ Color Effect", "DAZ Tinted Effect"]):
                 pass
             elif node.type == 'GROUP':
                 treename = node.node_tree.name
@@ -794,8 +795,14 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
                 if node.name not in self.nodes.keys():
                     self.nodes[node.name] = node
                     self.tnodes[node.name] = TNode(node)
-                for socket in node.inputs:
-                    self.selectNodes(socket, slot)
+                if isGroupType(node, ["DAZ Color Effect", "DAZ Tinted Effect"]):
+                    if slot.endswith("Fac"):
+                        self.selectNodes(node.inputs["Fac"], slot)
+                    elif slot.endswith("Color"):
+                        self.selectNodes(node.inputs["Color"], slot)
+                else:
+                    for socket in node.inputs:
+                        self.selectNodes(socket, slot)
                 if node.type == 'BUMP':
                     self.useBump = True
 
@@ -803,10 +810,10 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
     def makeGroup(self, ob):
         gname = "%s:%s Combo" % (ob.name, ob.active_material.name)
         group = bpy.data.node_groups.new(gname, "ShaderNodeTree")
-        innode = group.nodes.new("NodeGroupInput")
-        innode.location = (0, 2*YSIZE)
-        outnode = group.nodes.new("NodeGroupOutput")
         xlocs = [node.location[0] for node in self.nodes.values()]
+        innode = group.nodes.new("NodeGroupInput")
+        innode.location = (min(xlocs) - XSIZE, 2*YSIZE)
+        outnode = group.nodes.new("NodeGroupOutput")
         outnode.location = (max(xlocs) + XSIZE, 2*YSIZE)
         for key,links in self.inputs.items():
             if links and links[0].from_socket.type == 'VALUE':
