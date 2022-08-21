@@ -192,13 +192,14 @@ class DAZ_OT_SelectNoMaterial(bpy.types.Operator):
 
 TweakableChannels = OrderedDict([
     ("Bump And Normal", None),
-    ("Bump Strength", ("BUMP", "Strength", "use_map_normal", "normal_factor", 1, None)),
+    ("Bump Strength", ("BUMP", "Strength", 1)),
     ("Bump Distance", ("BUMP", "Distance", 1)),
-    ("Normal Strength", ("NORMAL_MAP", "Strength", "use_map_normal", "normal_factor", 1, None)),
+    ("Normal Strength", ("NORMAL_MAP", "Strength", 1)),
 
     ("Diffuse", None),
-    ("Diffuse Color", ("BSDF_DIFFUSE", "Color", 4)),
-    ("Diffuse Roughness", ("BSDF_DIFFUSE", "Roughness", 1)),
+    ("Diffuse Color", ("DAZ Diffuse", "Color", 4)),
+    ("Diffuse Roughness", ("DAZ Diffuse", "Roughness", 1)),
+    ("Diffuse Strength", ("DAZ Diffuse", "Fac", 1)),
 
     ("Glossy", None),
     ("Glossy Color", ("DAZ Glossy", "Color", 4)),
@@ -266,8 +267,9 @@ TweakableChannels = OrderedDict([
     ("Top Coat", None),
     ("Top Coat Color", ("DAZ Top Coat", "Color", 4)),
     ("Top Coat Roughness", ("DAZ Top Coat", "Roughness", 1)),
-    ("Top Coat Bump", ("DAZ Top Coat", "Bump", 1)),
-    ("Top Coat Distance", ("DAZ Top Coat", "Distance", 1)),
+    ("Top Coat Anisotropy", ("DAZ Top Coat", "Anisotropy", 1)),
+    ("Top Coat Rotation", ("DAZ Top Coat", "Rotation", 1)),
+    ("Top Coat Strength", ("DAZ Top Coat", "Fac", 1)),
 
     ("Overlay", None),
     ("Overlay Color", ("DAZ Overlay", "Color", 4)),
@@ -275,10 +277,10 @@ TweakableChannels = OrderedDict([
     ("Overlay Strength", ("DAZ Overlay", "Fac", 1)),
 
     ("Metal Uber", None),
-    ("Metallicity", ("DAZ Metal", "Fac", 1)),
+    ("Metal Uber Metallicity", ("DAZ Metal", "Fac", 1)),
 
     ("Metal PBR", None),
-    ("Metallicity", ("DAZ Metal PBR", "Fac", 1)),
+    ("Metal PBR Metallicity", ("DAZ Metal PBR", "Fac", 1)),
 
     ("Refraction", None),
     ("Refraction Color", ("DAZ Refraction", "Refraction Color", 4)),
@@ -295,7 +297,6 @@ TweakableChannels = OrderedDict([
 
     ("Emission", None),
     ("Emission Color", ("DAZ Emission", "Color", 4)),
-    ("Emission Strength", ("DAZ Emission", "Strength", 1)),
     ("Emission Strength", ("DAZ Emission", "Fac", 1)),
 
     ("Volume", None),
@@ -347,11 +348,10 @@ def printItem(string, item):
 
 def getTweakableChannel(cname):
     data = TweakableChannels[cname]
-    if len(data) == 6:
-        return data
-    else:
-        nodeType, slot, ncomps = data
-        return (nodeType, slot, None, None, ncomps, None)
+    if len(data) != 3:
+        print("ERR", cname)
+        halt
+    return data
 
 
 class ChannelSetter:
@@ -361,7 +361,7 @@ class ChannelSetter:
     dirty = {}
 
     def setChannelCycles(self, mat, item):
-        nodeType, slot, useAttr, factorAttr, ncomps, fromType = getTweakableChannel(item.name)
+        nodeType, slot, ncomps = getTweakableChannel(item.name)
         if self.useChangedOnly:
             value = self.getItemValue(ncomps, item)
             origItem = self.origSlots[item.name]
@@ -371,7 +371,7 @@ class ChannelSetter:
             self.dirty[item.name] = True
 
         for node in mat.node_tree.nodes.values():
-            if self.matchingNode(node, nodeType, mat, fromType):
+            if self.matchingNode(node, nodeType, mat):
                 socket = node.inputs[slot]
                 self.setOriginal(socket, ncomps, mat, item.name)
                 socket.default_value = self.getItemValue(ncomps, item)
@@ -386,6 +386,15 @@ class ChannelSetter:
                         fromnode.inputs[1].default_value = self.getItemValue(1, item)
                     elif fromnode.type in ["TEX_IMAGE", "GAMMA"]:
                         self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
+                    elif isGroupType(fromnode, "DAZ Log Color"):
+                        self.ensureColor(ncomps, item)
+                        fromnode.inputs["Color"].default_value = self.getItemValue(4, item)
+                    elif isGroupType(fromnode, "DAZ Color Effect"):
+                        if slot == "Fac":
+                            fromnode.inputs["Fac"].default_value = self.getItemValue(1, item)
+                        elif slot == "Color":
+                            self.ensureColor(ncomps, item)
+                            fromnode.inputs[slot].default_value = self.getItemValue(4, item)
 
 
     def ensureColor(self, ncomps, item):
@@ -434,12 +443,12 @@ class ChannelSetter:
 
 
     def getEditChannel(self, ob, key):
-        nodeType, slot, useAttr, factorAttr, ncomps, fromType = getTweakableChannel(key)
+        nodeType, slot, ncomps = getTweakableChannel(key)
         mat = ob.active_material
         if not mat.use_nodes:
             return None,0
         for node in mat.node_tree.nodes.values():
-            if (self.matchingNode(node, nodeType, mat, fromType) and
+            if (self.matchingNode(node, nodeType, mat) and
                 slot in node.inputs.keys()):
                 socket = node.inputs[slot]
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
@@ -452,6 +461,11 @@ class ChannelSetter:
                         return fromnode.inputs[0].default_value, ncomps
                     elif fromnode.type == "TEX_IMAGE":
                         return WHITE, ncomps
+                    elif isGroupType(fromnode, "DAZ Log Color"):
+                        return fromnode.inputs["Color"].default_value, ncomps
+                    elif isGroupType(fromnode, "DAZ Color Effect"):
+                        print("EFF", slot, ncomps)
+                        return fromnode.inputs[slot].default_value, ncomps
                 else:
                     return socket.default_value, ncomps
         return None,0
@@ -493,18 +507,17 @@ class ChannelSetter:
         return None,None
 
 
-    def matchingNode(self, node, nodeType, mat, fromType):
+    def matchingNode(self, node, nodeType, mat):
         if node.type == nodeType:
-            if fromType is None:
-                return True
-            for link in mat.node_tree.links.values():
-                if link.to_node == node and link.from_node.type == fromType:
-                    return True
-            return False
+            return True
         elif (node.type == "GROUP" and
-            nodeType in bpy.data.node_groups.keys()):
+              nodeType in bpy.data.node_groups.keys()):
             return (node.node_tree == bpy.data.node_groups[nodeType])
         return False
+
+
+def isGroupType(node, gtype):
+    return (node.type == 'GROUP' and node.node_tree.name == gtype)
 
 # ---------------------------------------------------------------------
 #   Launch button

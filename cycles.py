@@ -1606,7 +1606,7 @@ class CyclesTree(Tree):
             color,tex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
             node = self.addGroup(LogColorGroup, "DAZ Log Color", col=self.column-1)
             self.linkColor(tex, node, color, "Color")
-            return 1, WHITE, node
+            return 1, color, node
         else:
             sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
             return 0, (sss,sss,sss), tex
@@ -1633,7 +1633,9 @@ class CyclesTree(Tree):
             return
         if self.volume is None:
             self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
-        self.linkColor(tex, self.volume, color, "Scatter Color")
+        self.volume.inputs["Scatter Color"].default_value[0:3] = color
+        if tex:
+            self.links.new(tex.outputs["Color"], self.volume.inputs["Scatter Color"])
         self.volume.inputs["Scatter Density"].default_value = 100/dist
         self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
 
