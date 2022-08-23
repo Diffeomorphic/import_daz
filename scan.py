@@ -167,7 +167,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         }
         self.count = 0
         self.maxcount = 1000000
-        self.maxcount = 10
+        #self.maxcount = 10
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
         LS.forMorphLoad(self.mesh)
