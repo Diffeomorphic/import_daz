@@ -398,6 +398,17 @@ class CyclesTree(Tree):
 
 
     def buildShells(self):
+        def fixShellUv(shell, uvs):
+            altUvs = {
+                "Base Female" : "Base 8.1 Female",
+                "Base 8.1 Female" : "Base Female",
+                "Base Male" : "Base 8.1 Male",
+                "Base 8.1 Male" : "Base Male",
+            }
+            if (shell.uv not in uvs.keys() and
+                shell.uv in altUvs.keys()):
+                shell.uv = altUvs[shell.uv]
+
         if (LS.materialMethod == 'SINGLE_PRINCIPLED' or
             GS.shellMethod != 'MATERIAL'):
             return
@@ -410,7 +421,13 @@ class CyclesTree(Tree):
         shells.sort()
         if shells:
             self.column += 1
+        if self.owner.geometry:
+            geo = self.owner.geometry.data
+            uvs = geo.uv_sets
+        else:
+            uvs = {}
         for push,n,shell in shells:
+            fixShellUv(shell, uvs)
             node = self.addShellGroup(shell, push)
             if node:
                 self.linkCycles(node, "BSDF")
