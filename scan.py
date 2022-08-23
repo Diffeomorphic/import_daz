@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import os
+import time
 import bpy
 from bpy.props import *
 from .error import *
@@ -148,17 +149,16 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
     def scanCharacter(self, context, name, relpath, scanpath):
         global theScannedFiles
         from .load_json import saveJson
-        from time import perf_counter, ctime
-        t1 = perf_counter()
+        t1 = time.perf_counter()
         self.formulas = {}
         self.defins = {}
         self.minmax = {}
         self.alias = {}
-        modified = str(os.path.getmtime(scanpath))
+        modified = time.time()
         struct = {
             "name" : name,
             "path" : relpath,
-            "modified" : modified,
+            "modified" : str(modified),
             "version" : CURRENT_VERSION,
             "definitions" : self.defins,
             "formulas" : self.formulas,
@@ -167,7 +167,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         }
         self.count = 0
         self.maxcount = 1000000
-        #self.maxcount = 100
+        self.maxcount = 10
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
         LS.forMorphLoad(self.mesh)
@@ -178,7 +178,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         self.wm.progress_end()
         saveJson(struct, scanpath)
         theScannedFiles[name] = struct
-        t2 = perf_counter()
+        t2 = time.perf_counter()
         print("Database for %s scanned in %.3f seconds and saved in\n%s" % (name, t2-t1, scanpath))
 
 
