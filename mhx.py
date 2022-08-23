@@ -737,7 +737,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
         self.addTongueIk(rig)
-        self.fixDrivers(rig)
+        self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
         showProgress(22, 25, "  Collect deform bones")
