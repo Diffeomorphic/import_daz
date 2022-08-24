@@ -997,7 +997,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 if sb is None:
                     sb = tb.parent
                 sb = deriveBone(bname, tb, rig, L_SPINE, sb)
-                sb.use_connect = conn
+                setConnected(sb, conn)
                 tb.parent = sb
                 for eb in tb.children:
                     if eb.name in self.noTweakParents:
@@ -1171,12 +1171,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             upper_armFk = deriveBone("upper_arm.fk.%s" % suffix, upper_arm, rig, L_LARMFK+dlayer, armParent)
             forearmFk = deriveBone("forearm.fk.%s" % suffix, forearm, rig, L_LARMFK+dlayer, upper_armFk)
-            forearmFk.use_connect = forearm.use_connect
+            setConnected(forearmFk, forearm.use_connect)
             handFk = deriveBone("hand.fk.%s" % suffix, hand, rig, L_LARMFK+dlayer, forearmFk)
             handFk.use_connect = False
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, L_HELP2, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
-            forearmIk.use_connect = forearm.use_connect
+            setConnected(forearmIk, forearm.use_connect)
             handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIk)
             upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LARMIK+dlayer, upper_armIk)
@@ -1203,7 +1203,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             shin.tail = foot.head
             foot.tail = toe.head
             foot.use_connect = False
-            toe.use_connect = True
+            setConnected(toe, True)
 
             legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, L_LEXTRA+dlayer, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)
@@ -1212,14 +1212,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             thighFk = deriveBone("thigh.fk.%s" % suffix, thigh, rig, L_LLEGFK+dlayer, thigh.parent)
             shinFk = deriveBone("shin.fk.%s" % suffix, shin, rig, L_LLEGFK+dlayer, thighFk)
-            shinFk.use_connect = shin.use_connect
+            setConnected(shinFk, shin.use_connect)
             footFk = deriveBone("foot.fk.%s" % suffix, foot, rig, L_LLEGFK+dlayer, shinFk)
             footFk.use_connect = False
             toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, L_LLEGFK+dlayer, footFk)
-            toeFk.use_connect = True
+            setConnected(toeFk, True)
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, L_HELP2, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
-            shinIk.use_connect = shin.use_connect
+            setConnected(shinIk, shin.use_connect)
             thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, L_LLEGIK+dlayer, thighIk)
             thighIkTwist.layers[L_LEXTRA+dlayer] = True
             shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, L_LLEGIK+dlayer, shinIk)
@@ -1233,15 +1233,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 locFootIk = (foot.head[0], foot.head[1] - 0.5*vec[1], toe.tail[2])
             footIk = makeBone("foot.ik.%s" % suffix, rig, locFootIk, toe.tail, 180*D, L_LLEGIK+dlayer, self.master)
             toeRev = makeBone("toe.rev.%s" % suffix, rig, toe.tail, toe.head, 0, L_LLEGIK+dlayer, footIk)
-            toeRev.use_connect = True
+            setConnected(toeRev, True)
             footRev = makeBone("foot.rev.%s" % suffix, rig, toe.head, foot.head, 0, L_LLEGIK+dlayer, toeRev)
-            footRev.use_connect = True
+            setConnected(footRev, True)
             locAnkle = foot.head + (shin.tail-shin.head)/4
             if self.useFoot2:
                 foot2 = deriveBone("foot.2.%s" % suffix, foot, rig, L_LEXTRA+dlayer, self.master)
-                foot2.use_connect = False
+                setConnected(foot2, False)
                 toe2 = deriveBone("toe.2.%s" % suffix, toe, rig, L_LEXTRA+dlayer, foot2)
-                toe2.use_connect = True
+                setConnected(toe2, True)
             ankleIk = deriveBone("ankle.ik.%s" % suffix, foot, rig, L_HELP2, footRev)
 
             vec = thigh.matrix.to_3x3().col[2]
@@ -1778,6 +1778,11 @@ def connectToParent(rig):
                 eb = eb.parent
             eb.parent.tail = eb.head
             eb.use_connect = True
+
+
+def setConnected(eb, conn):
+    if eb.tail != eb.parent.tail:
+        eb.use_connect = conn
 
 #-------------------------------------------------------------
 #   Gizmos used by winders
