@@ -59,13 +59,13 @@ def safeOpen(filepath, rw, encoding="utf-8-sig"):
 #-------------------------------------------------------------
 
 the81Folders = {
-    "/data/DAZ 3D/Genesis 8/Female" : "/data/DAZ 3D/Genesis 8/Female 8_1",
-    "/data/DAZ 3D/Genesis 8_1/Female" : "/data/DAZ 3D/Genesis 8/Female 8",
-    "/data/DAZ 3D/Genesis 8/Male" : "/data/DAZ 3D/Genesis 8/Male 8_1",
-    "/data/DAZ 3D/Genesis 8_1/Male" : "/data/DAZ 3D/Genesis 8/Male 8",
+    "/data/daz 3d/genesis 8/female" : "/data/daz 3d/genesis 8/female 8_1",
+    "/data/daz 3d/genesis 8/female 8_1" : "/data/daz 3d/genesis 8/female",
+    "/data/daz 3d/genesis 8/male" : "/data/daz 3d/genesis 8/male 8_1",
+    "/data/daz 3d/genesis 8/male 8_1" : "/data/daz 3d/genesis 8/male",
 }
 
-def getFolders(ob, subdirs, match81=False):
+def getFolders(reldir, subdirs, match81=False):
     def addFolders(reldir):
         for basedir in GS.getDazPaths():
             for subdir in subdirs:
@@ -75,19 +75,55 @@ def getFolders(ob, subdirs, match81=False):
                 if os.path.exists(folder):
                     folders.append(folder)
 
-    if ob is None:
+    if reldir is None:
         return []
-    fileref = ob.DazUrl.split("#")[0]
-    if len(fileref) < 2:
-        return []
-    reldir = os.path.dirname(fileref)
     folders = []
+    reldir = unquote(reldir)
     addFolders(reldir)
     if match81:
-        reldir2 = the81Folders.get(reldir)
+        reldir2 = the81Folders.get(reldir.lower())
         if reldir2:
             addFolders(reldir2)
     return folders
+
+
+def getFoldersFromObject(ob, subdirs, match81=False):
+    reldir = getReldirFromObject(ob)
+    return getFolders(reldir, subdirs, match81)
+
+
+def getReldirFromObject(ob):
+    if ob is None:
+        return None
+    fileref = ob.DazUrl.split("#")[0]
+    if len(fileref) < 2:
+        return None
+    return os.path.dirname(unquote(fileref))
+
+
+def findPathRecursive(files, relpath, subpath):
+    def findFileRecursive(folder, files):
+        for file in os.listdir(folder):
+            path = os.path.join(folder, file)
+            if file in files:
+                return path
+            elif os.path.isdir(path):
+                tpath = findFileRecursive(path, files)
+                if tpath:
+                    return tpath
+        return None
+
+    folders = getFolders(relpath, subpath, match81=True)
+    for folder in folders:
+        path = findFileRecursive(folder, files)
+        if path:
+            return path
+    return None
+
+
+def findPathRecursiveFromObject(files, ob, subpath):
+    reldir = getReldirFromObject(ob)
+    return findPathRecursive(files, reldir, subpath)
 
 #-------------------------------------------------------------
 #    File extensions

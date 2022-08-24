@@ -367,7 +367,9 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             cskey = None
             filepath = None
             if self.useVendorMorphs:
-                filepath = getMorphPath(sname, trg)
+                from .fileutils import findPathRecursiveFromObject
+                files = ["%s.dsf" % sname]
+                filepath = findPathRecursiveFromObject(files, trg, ["Morphs/"])
             if filepath is not None:
                 cskey = self.loadMorph(filepath, src, trg, scn)
             if cskey:
@@ -763,33 +765,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             for cvn,co in enumerate(ccos):
                 cskey.data[cvn].co = co
         return True
-
-#----------------------------------------------------------
-#   Utilities
-#----------------------------------------------------------
-
-def getMorphPath(sname, ob):
-    from .fileutils import getFolders
-    file = sname + ".dsf"
-    folders = getFolders(ob, ["Morphs/"], match81=True)
-    for folder in folders:
-        path = findFileRecursive(folder, file)
-        if path:
-            return path
-    return None
-
-
-def findFileRecursive(folder, tfile):
-    for file in os.listdir(folder):
-        path = os.path.join(folder, file)
-        if file == tfile:
-            return path
-        elif os.path.isdir(path):
-            tpath = findFileRecursive(path, tfile)
-            if tpath:
-                return tpath
-    return None
-
 
 #----------------------------------------------------------
 #   Apply all shapekeys

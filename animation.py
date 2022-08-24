@@ -594,9 +594,9 @@ class MorphOptions:
                         elif mname[0:4] == "ctrl":
                             table["p%s" % mname] = (path, morphset)
 
-        from .fileutils import getFolders
+        from .fileutils import getFoldersFromObject
         from .morphing import getMorphPaths
-        folders = getFolders(rig, [""], match81=True)
+        folders = getFoldersFromObject(rig, [""], match81=True)
         table = {}
         mpaths = getMorphPaths(rig.DazMesh)
         mtypes = {}

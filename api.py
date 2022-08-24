@@ -217,8 +217,8 @@ def get_absolute_paths(paths):
 #-------------------------------------------------------------
 
 def get_default_morph_directories(ob):
-    from .fileutils import getFolders
-    return getFolders(ob, ["Morphs/"])
+    from .fileutils import getFoldersFromObject
+    return getFoldersFromObject(ob, ["Morphs/"])
 
 def get_dhdm_directories(ob=None):
     from .hdmorphs import getHDDirs

@@ -940,22 +940,18 @@ class Geometry(Asset, Channels):
 
     def findUvSet(self, uv, url):
         from .asset import getDazPath, getRelativeRef
-        from .transfer import findFileRecursive
-        path = os.path.dirname(url)
-        folder = getDazPath("%s/UV Sets" % path, strict=False)
-        if not folder:
-            folder = getDazPath(path)
-        file = ("%s.dsf" % uv)
-        if folder:
-            file = findFileRecursive(folder, file)
-            if file:
-                url = unquote("%s#%s" % (file, uv))
-                url = getRelativeRef(url)
-                asset = self.getAsset(url)
-                if asset:
-                    print("Found UV set '%s' in '%s'" % (uv, unquote(url)))
-                    self.uv_sets[uv] = asset
-                return asset
+        from .fileutils import findPathRecursive
+        files = ["%s.dsf" % uv]
+        relpath = os.path.dirname(url)
+        filepath = findPathRecursive(files, relpath, ["UV Sets/"])
+        if filepath:
+            url = unquote("%s#%s" % (filepath, uv))
+            url = getRelativeRef(url)
+            asset = self.getAsset(url)
+            if asset:
+                print("Found UV set '%s' in '%s'" % (uv, unquote(url)))
+                self.uv_sets[uv] = asset
+            return asset
         return None
 
 
@@ -1582,8 +1578,8 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
     bl_options = {'UNDO'}
 
     def invoke(self, context, event):
-        from .fileutils import getFolders
-        folders = getFolders(context.object, ["UV Sets/", ""])
+        from .fileutils import getFoldersFromObject
+        folders = getFoldersFromObject(context.object, ["UV Sets/", ""])
         if folders:
             self.properties.filepath = folders[0]
         return SingleFile.invoke(self, context, event)
