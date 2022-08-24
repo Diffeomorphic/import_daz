@@ -1016,9 +1016,10 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
 
 
     def saveImage(self, img):
-        path = bpy.path.abspath(img.filepath)
-        path = bpy.path.reduce_dirs([path])[0]
-        self.images.append((path, img))
+        if img:
+            path = bpy.path.abspath(img.filepath)
+            path = bpy.path.reduce_dirs([path])[0]
+            self.images.append((path, img))
 
 
     def saveNodesInTree(self, tree):
@@ -1714,6 +1715,9 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
             _,newpath = self.getNewPath(base)
             if not os.path.exists(newpath):
                 img = bpy.data.images.load(base)
+                if img is None:
+                    print("Could not load %s" % base)
+                    continue
                 x,y = img.size
                 img.scale(int(x/scale), int(y/scale))
                 img.filepath_raw = newpath
