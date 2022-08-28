@@ -76,7 +76,7 @@ class GeoNode(Node, SimNode):
         self.index = figure.count
         self.modifiers = {}
         self.morphsValues = {}
-        self.shstruct = {}
+        self.isShell = False
         self.shellGeos = []
         self.shellPrefix = ""
         self.push = 0
@@ -644,7 +644,7 @@ class Geometry(Asset, Channels):
         self.root_region = None
         self.SubDIALevel = 0
         self.SubDRenderLevel = 0
-        self.shstruct = {}
+        self.isShell = False
         self.shells = {}
 
 
@@ -729,7 +729,7 @@ class Geometry(Asset, Channels):
 
     def setExtra(self, extra):
         if extra["type"] == "studio/geometry/shell":
-            self.shstruct = extra
+            self.isShell = True
         elif extra["type"] == "material_selection_sets":
             self.material_selection_sets = extra["material_selection_sets"]
 
@@ -788,7 +788,7 @@ class Geometry(Asset, Channels):
 
 
     def preprocess(self, context, inst):
-        if self.shstruct:
+        if self.isShell:
             self.uvs = {}
             for geonode in self.nodes.values():
                 self.processShell(geonode, inst)
@@ -820,7 +820,7 @@ class Geometry(Asset, Channels):
         missing = []
         geonode = inst.geometries[0]
         geo = geonode.data
-        if shinst.shstruct:
+        if shinst.isShell:
             shgeonode = shinst.geometries[0]
             shname = shinst.name
             shmats = {}
@@ -829,6 +829,7 @@ class Geometry(Asset, Channels):
                 vis = self.material_group_vis.get(mname)
                 if vis is None:
                     print("Warning: no visibility for material %s" % mname)
+                    vis = True
                 if (shmat.getValue("getChannelCutoutOpacity", 1) == 0 or
                     shmat.getValue("getChannelOpacity", 1) == 0):
                     vis = False

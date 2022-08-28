@@ -149,7 +149,7 @@ class Instance(Accessor, Channels, SimNode):
         node.nodeExtra = {}
         self.channels = node.channels
         node.channels = {}
-        self.shstruct = {}
+        self.isShell = False
         self.center = Vector((0,0,0))
         self.cpoint = Vector((0,0,0))
         self.wmat = self.wrot = self.wscale = Matrix()
@@ -210,8 +210,11 @@ class Instance(Accessor, Channels, SimNode):
             elif channel["type"] == "bool":
                 words = channel["id"].split("_")
                 if len(words) > 2 and words[1] == "group" and words[-1] == "vis":
-                    if words[0] == "material" and "label" in channel.keys():
-                        label = channel["label"]
+                    if words[0] == "material":
+                        if "label" in channel.keys():
+                            label = channel["label"]
+                        else:
+                            label = words[2]
                         value = getCurrentValue(channel)
                         for geonode in self.geometries:
                             geonode.data.material_group_vis[label] = value
@@ -223,7 +226,7 @@ class Instance(Accessor, Channels, SimNode):
             if etype == None:
                 continue
             elif etype == "studio/node/shell":
-                self.shstruct = extra
+                self.isShell = True
             elif etype == "studio/node/group_node":
                 self.isGroupNode = True
             #elif etype == "studio/node/instance":
@@ -840,7 +843,7 @@ class Node(Asset, Formula, Channels):
             ob = bpy.data.objects.new(inst.name, None)
             self.data.fixMappingNodes(inst)
         elif isinstance(self.data, Asset):
-            if self.data.shstruct and GS.shellMethod == 'MATERIAL':
+            if self.data.isShell and GS.shellMethod == 'MATERIAL':
                 return
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
