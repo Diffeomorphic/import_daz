@@ -92,95 +92,85 @@ RotationModes = {
 #   Alternative bone names
 #-------------------------------------------------------------
 
-BoneIds = {
-    "abdomen" : "abdomenLower",
-    "abdomen2" : "abdomenUpper",
-    "chest" : "chestLower",
-    "chest_2" : "chestUpper",
-    "neck" : "neckLower",
-    "neck_2" : "neckUpper",
+def getMappedBone(bname, rig):
+    boneMap = {
+        "abdomen" : "abdomenLower",
+        "abdomen2" : "abdomenUpper",
+        "chest" : "chestLower",
+        "chest_2" : "chestUpper",
+        "neck" : "neckLower",
+        "neck_2" : "neckUpper",
 
-    "lShldr" : "lShldrBend",
-    "lForeArm" : "lForearmBend",
-    "lWrist" : "lForearmTwist",
-    "lCarpal2-1" : "lCarpal2",
-    "lCarpal2" : "lCarpal4",
+        "lShldr" : "lShldrBend",
+        "lForeArm" : "lForearmBend",
+        "lWrist" : "lForearmTwist",
+        "lCarpal2-1" : "lCarpal2",
+        "lCarpal2" : "lCarpal4",
 
-    "rShldr" : "rShldrBend",
-    "rForeArm" : "rForearmBend",
-    "rWrist" : "rForearmTwist",
-    "rCarpal2-1" : "rCarpal2",
-    "rCarpal2" : "rCarpal4",
+        "rShldr" : "rShldrBend",
+        "rForeArm" : "rForearmBend",
+        "rWrist" : "rForearmTwist",
+        "rCarpal2-1" : "rCarpal2",
+        "rCarpal2" : "rCarpal4",
 
-    "upperJaw" : "upperTeeth",
-    "tongueBase" : "tongue01",
-    "tongue01" : "tongue02",
-    "tongue02" : "tongue03",
-    "tongue03" : "tongue04",
-    "MidBrowUpper" : "CenterBrow",
+        "upperJaw" : "upperTeeth",
+        "tongueBase" : "tongue01",
+        "tongue01" : "tongue02",
+        "tongue02" : "tongue03",
+        "tongue03" : "tongue04",
+        "MidBrowUpper" : "CenterBrow",
 
-    "lLipCorver" : "lLipCorner",
-    "lCheekLowerInner" : "lCheekLower",
-    "lCheekUpperInner" : "lCheekUpper",
-    "lEyelidTop" : "lEyelidUpper",
-    "lEyelidLower_2" : "lEyelidLowerInner",
-    "lNoseBirdge" : "lNasolabialUpper",
+        "lLipCorver" : "lLipCorner",
+        "lCheekLowerInner" : "lCheekLower",
+        "lCheekUpperInner" : "lCheekUpper",
+        "lEyelidTop" : "lEyelidUpper",
+        "lEyelidLower_2" : "lEyelidLowerInner",
+        "lNoseBirdge" : "lNasolabialUpper",
 
-    "rCheekLowerInner" : "rCheekLower",
-    "rCheekUpperInner" : "rCheekUpper",
+        "rCheekLowerInner" : "rCheekLower",
+        "rCheekUpperInner" : "rCheekUpper",
 
-    "lThigh" : "lThighBend",
-    "lBigToe2" : "lBigToe_2",
+        "lThigh" : "lThighBend",
+        "lBigToe2" : "lBigToe_2",
 
-    "rThigh" : "rThighBend",
-    "rBigToe2" : "rBigToe_2",
+        "rThigh" : "rThighBend",
+        "rBigToe2" : "rBigToe_2",
 
-    "Shaft 1" : "shaft1",
-    "Shaft 2" : "shaft2",
-    "Shaft 3" : "shaft3",
-    "Shaft 4" : "shaft4",
-    "Shaft 5" : "shaft5",
-    "Shaft5" : "shaft5",
-    "Shaft 6" : "shaft6",
-    "Shaft 7" : "shaft7",
-    "Left Testicle" : "lTesticle",
-    "Right Testicle" : "rTesticle",
-    "Scortum" : "scrotum",
-    "Legs Crease" : "legsCrease",
-    "Rectum" : "rectum1",
-    "Rectum 1" : "rectum1",
-    "Rectum 2" : "rectum2",
-    "Colon" : "colon",
-    "Root" : "shaftRoot",
-    "root" : "shaftRoot",
-}
+        "Shaft 1" : "shaft1",
+        "Shaft 2" : "shaft2",
+        "Shaft 3" : "shaft3",
+        "Shaft 4" : "shaft4",
+        "Shaft 5" : "shaft5",
+        "Shaft5" : "shaft5",
+        "Shaft 6" : "shaft6",
+        "Shaft 7" : "shaft7",
+        "Left Testicle" : "lTesticle",
+        "Right Testicle" : "rTesticle",
+        "Scortum" : "scrotum",
+        "Legs Crease" : "legsCrease",
+        "Rectum" : "rectum1",
+        "Rectum 1" : "rectum1",
+        "Rectum 2" : "rectum2",
+        "Colon" : "colon",
+        "Root" : "shaftRoot",
+        "root" : "shaftRoot",
+    }
 
-
-def getBoneFromId(boneid, rig):
-    def getBoneName(boneid, rig):
-        pg = rig.data.DazBoneIds.get(boneid)
-        if pg:
-            return pg.s
-        bname = BoneIds.get(boneid)
-        if bname:
-            return bname
-        if boneid:
-            return boneid
+    if rig is None or bname is None:
         return None
-
+    bname = unquote(bname)
+    if bname in rig.pose.bones.keys():
+        return rig.pose.bones[bname]
+    pg = rig.data.DazBoneMap.get(bname)
+    if pg:
+        return pg.s
+    if bname in boneMap.keys():
+        return boneMap[bname]
     from .fix import getSuffixName
-    if rig is None:
-        return None
-    boneid = unquote(boneid)
-    bname = getBoneName(boneid, rig)
-    suffname = None
-    if bname:
-        if bname in rig.pose.bones.keys():
-            return bname
-        suffname = getSuffixName(bname)
-        if suffname in rig.pose.bones.keys():
-            return suffname
-    print("NO BONE FOUND", boneid, bname, suffname)
+    bname = getSuffixName(bname)
+    if bname in rig.pose.bones.keys():
+        return bname
+    print("NO BONE FOUND", bname)
     return None
 
 #-------------------------------------------------------------
@@ -514,9 +504,12 @@ class BoneInstance(Instance):
             return
         pb = rig.pose.bones[node.name]
         self.rna = pb
-        if self.name != self.id:
-            pg = rig.data.DazBoneIds.add()
-            pg.name = self.id
+        mapped = self.node.mapped
+        if (mapped and
+            self.name != mapped and
+            mapped not in rig.data.DazBoneMap.keys()):
+            pg = rig.data.DazBoneMap.add()
+            pg.name = mapped
             pg.s = self.name
         if isBoneDriven(rig, pb):
             pb.rotation_mode = self.getRotationMode(pb, True)
@@ -538,7 +531,7 @@ class BoneInstance(Instance):
         from .node import setBoneTransform
         if LS.fitFile:
             return {}
-        tname = getBoneFromId(node.name, rig)
+        tname = getMappedBone(node.name, rig)
         if tname and tname in targets.keys():
             tinst = targets[tname]
             tfm = Transform(
@@ -707,6 +700,7 @@ class Bone(Node):
         self.translation = []
         self.rotation = []
         self.scale = []
+        self.mapped = None
 
 
     def __repr__(self):
@@ -765,6 +759,12 @@ class Bone(Node):
             self.figure = self.parent
         elif isinstance(self.parent, Bone):
             self.figure = self.parent.figure
+
+
+    def update(self, struct):
+        Node.update(self, struct)
+        if "url" in struct.keys():
+            self.mapped = unquote(struct["url"]).rsplit("#")[-1]
 
 
     def build(self, context, inst=None):

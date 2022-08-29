@@ -1910,7 +1910,7 @@ def register():
         default = False,
         update = toggleMorphArmatures)
 
-    bpy.types.Armature.DazBoneIds = CollectionProperty(type=DazStringGroup)
+    bpy.types.Armature.DazBoneMap = CollectionProperty(type=DazStringGroup)
 
 
     for cls in classes:

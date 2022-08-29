@@ -128,7 +128,7 @@ class Formula:
 
 
     def evalFormula(self, formula, exprs, rig, mesh, force):
-        from .bone import getBoneFromId
+        from .bone import getMappedBone
         from .modifier import ChannelAsset
 
         words = unquote(formula["output"]).split("#")
@@ -143,7 +143,7 @@ class Formula:
                     print("  ", unquote(formula["output"]))
                 return False
         elif rig:
-            output1 = getBoneFromId(output, rig)
+            output1 = getMappedBone(output, rig)
             if output1 is None:
                 reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
                 return False
@@ -170,7 +170,7 @@ class Formula:
 
 
     def evalOperations(self, formula, expr, rig):
-        from .bone import getBoneFromId
+        from .bone import getMappedBone
         opers = formula["operations"]
         prop,type,path,comp = self.evalUrl(opers[0])
         factor = "factor"
@@ -178,10 +178,10 @@ class Formula:
             if expr["prop"] is None:
                 expr["prop"] = prop
         elif expr["bone"] is None:
-            expr["bone"] = getBoneFromId(prop, rig)
+            expr["bone"] = getMappedBone(prop, rig)
             expr["comp"] = comp
         else:
-            expr["bone2"] = getBoneFromId(prop, rig)
+            expr["bone2"] = getMappedBone(prop, rig)
             factor = "factor2"
             expr["comp2"] = comp
         expr["path"] = path

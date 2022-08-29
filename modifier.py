@@ -435,9 +435,15 @@ class SkinBinding(Modifier):
         if ob is None or rig is None or ob.type != 'MESH':
             return
 
-        if "selection_map" in self.skin.keys():
-            selmap = self.skin["selection_map"]
-            geonode.addMappings(selmap[0])
+        selmaps = self.skin.get("selection_map")
+        if False and selmaps:
+            for selmap in selmaps:
+                for blabel,bname in selmap["mappings"]:
+                    if blabel != bname:
+                        print("MMM", blabel, bname)
+                        pg = rig.data.DazBoneMap.add()
+                        pg.name = blabel
+                        pg.s = bname
 
         makeArmatureModifier(self.name, context, ob, rig)
         self.addVertexGroups(ob, geonode, rig)
