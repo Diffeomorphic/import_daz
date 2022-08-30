@@ -315,7 +315,7 @@ class HairSystem:
         btn = self.button
 
         hlen = int(len(self.strands[0]))
-        if hlen < 3:
+        if hlen < 2:
             return
         bpy.ops.object.particle_system_add()
         psys = ob.particle_systems.active
