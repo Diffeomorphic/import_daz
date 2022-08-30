@@ -160,12 +160,12 @@ def getMappedBone(bname, rig):
         return None
     bname = unquote(bname)
     if bname in rig.pose.bones.keys():
-        return rig.pose.bones[bname]
+        return bname
     pg = rig.data.DazBoneMap.get(bname)
     if pg:
         return pg.s
-    if bname in boneMap.keys():
-        return boneMap[bname]
+    #if bname in boneMap.keys():
+    #    return boneMap[bname]
     from .fix import getSuffixName
     bname = getSuffixName(bname)
     if bname in rig.pose.bones.keys():
