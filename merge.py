@@ -1476,10 +1476,11 @@ def reparentToes(rig, context, useParent):
     setActiveObject(context, rig)
     toenames = GenesisToes["lToe"] + GenesisToes["rToe"]
     drvnames = [drvBone(toename) for toename in toenames]
-    for fcu in list(rig.animation_data.drivers):
-        words = fcu.data_path.split('"')
-        if words[0] == "pose.bones[" and words[1] in drvnames:
-            rig.animation_data.drivers.remove(fcu)
+    if rig.animation_data:
+        for fcu in list(rig.animation_data.drivers):
+            words = fcu.data_path.split('"')
+            if words[0] == "pose.bones[" and words[1] in drvnames:
+                rig.animation_data.drivers.remove(fcu)
     for bname in toenames:
         pb = rig.pose.bones.get(bname)
         if pb:
