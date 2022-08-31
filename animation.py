@@ -1381,6 +1381,8 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
         default = "")
 
     def draw(self, context):
+        AnimatorBase.draw(self, context)
+        self.layout.separator()
         self.layout.prop(self, "makeNewPoseLib")
         if self.makeNewPoseLib:
             self.layout.prop(self, "poseLibName")
@@ -1390,11 +1392,6 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
             self.layout.prop(self, "assetTags")
             self.layout.prop(self, "assetAuthor")
             self.layout.prop(self, "assetDescription")
-
-    def draw(self, context):
-        AnimatorBase.draw(self, context)
-        self.layout.separator()
-        PoseLibOptions.draw(self, context)
 
 
     def clearAnimation(self, ob):
