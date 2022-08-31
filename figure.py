@@ -801,6 +801,41 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
         return True, True, True
 
 #-------------------------------------------------------------
+#   Fix legacy posable bones
+#-------------------------------------------------------------
+
+class DAZ_OT_FixLegacyPosable(DazOperator, ExtraBones, IsArmature):
+    bl_idname = "daz.fix_legacy_posable"
+    bl_label = "Fix Legacy Posable Bones"
+    bl_description = "Convert legacy posable bones to modern ones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        if rig.animation_data:
+            for fcu in rig.animation_data.drivers:
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        if isFinal(trg.bone_target):
+                            trg.bone_target = baseBone(trg.bone_target)
+        parents = {}
+        setMode('EDIT')
+        for eb in list(rig.data.edit_bones):
+            par = eb.parent
+            if par and isDrvBone(par.name):
+                eb.parent = par.parent
+                parents[eb.name] = par.name
+            if isFinal(eb.name):
+                rig.data.edit_bones.remove(eb)
+        setMode('OBJECT')
+        for bname in parents.keys():
+            self.addCopyConstraint(rig, bname, [], [])
+
+
+    def isSuchDriver(self, bname, drivers):
+        return True, True, True
+
+#-------------------------------------------------------------
 #   Finalize bones
 #-------------------------------------------------------------
 
@@ -1852,6 +1887,7 @@ classes = [
     DAZ_OT_RotateBones,
     DAZ_OT_SetAddExtraFaceBones,
     DAZ_OT_MakeAllBonesPosable,
+    DAZ_OT_FixLegacyPosable,
     DAZ_OT_FinalizeArmature,
     DAZ_OT_ConnectIKChains,
     DAZ_OT_SelectNamedLayers,
