@@ -726,7 +726,7 @@ class BendTwists:
         return bendname, twistname
 
 
-    def joinBendTwists(self, rig, renames, keep=True):
+    def joinBendTwists(self, rig, renames, keep=True, useJoin=True):
         setMode('POSE')
         hiddenLayer = 31*[False] + [True]
         rotmodes = {}
@@ -760,7 +760,7 @@ class BendTwists:
             target = rig.data.edit_bones[tname]
             eb.head = bend.head
             bend.tail = twist.head
-            eb.tail = twist.tail = target.head
+            eb.tail = twist.tail #= target.head
             eb.roll = bend.roll
             eb.parent = bend.parent
             eb.use_deform = False
@@ -809,6 +809,8 @@ class BendTwists:
                     rig.data.edit_bones.remove(eb)
 
         setMode('OBJECT')
+        if not useJoin:
+            return
         for ob in rig.children:
             for data in self.BendTwistBones:
                 bname = data[0]
@@ -906,9 +908,17 @@ class BendTwists:
                 tvgname = twistname
 
             for ob in rig.children:
-                if (ob.type == 'MESH' and
-                    self.getVertexGroup(ob, bname)):
-                    self.splitVertexGroup2(ob, bname, bvgname, tvgname, eb.head, eb.tail)
+                if ob.type == 'MESH':
+                    if bname in ob.vertex_groups.keys():
+                        self.splitVertexGroup(ob, bname, bvgname, tvgname, eb.head, eb.tail)
+                    else:
+                        base,suffix = bname.split(".",1)
+                        bendgrp = ob.vertex_groups.get("%sBend.%s" % (base, suffix))
+                        if bendgrp:
+                            bendgrp.name = bvgname
+                        twistgrp = ob.vertex_groups.get("%sTwist.%s" % (base, suffix))
+                        if twistgrp:
+                            twistgrp.name = tvgname
 
 
     def getVertexGroup(self, ob, vgname):
@@ -918,30 +928,10 @@ class BendTwists:
         return None
 
 
-    def splitVertexGroup2(self, ob, bname, bend, twist, head, tail):
-        vgrp = self.getVertexGroup(ob, bname)
-        vgrp1 = ob.vertex_groups.new(name=bend)
-        vgrp2 = ob.vertex_groups.new(name=twist)
-        vec = tail-head
-        vec /= vec.dot(vec)
-        for v in ob.data.vertices:
-            for g in v.groups:
-                if g.group == vgrp.index:
-                    x = vec.dot(v.co - head)
-                    if x < 0:
-                        vgrp1.add([v.index], g.weight, 'REPLACE')
-                    elif x < 1:
-                        vgrp1.add([v.index], g.weight*(1-x), 'REPLACE')
-                        vgrp2.add([v.index], g.weight*(x), 'REPLACE')
-                    elif x > 1:
-                        vgrp2.add([v.index], g.weight, 'REPLACE')
-        ob.vertex_groups.remove(vgrp)
-
-
-    def splitVertexGroup(self, ob, vgname, bendname, twistname, head, tail):
-        vgrp = self.getVertexGroup(ob, vgname)
-        bend = ob.vertex_groups.new(name=bendname)
-        twist = ob.vertex_groups.new(name=twistname)
+    def splitVertexGroup(self, ob, vgname, bvgname, tvgname, head, tail):
+        vgrp = ob.vertex_groups.get(vgname)
+        bendgrp = ob.vertex_groups.new(name=bvgname)
+        twistgrp = ob.vertex_groups.new(name=tvgname)
         vec = tail-head
         vec /= vec.dot(vec)
         for v in ob.data.vertices:
@@ -952,8 +942,8 @@ class BendTwists:
                         x = 0
                     elif x > 1:
                         x = 1
-                    bend.add([v.index], g.weight*(1-x), 'REPLACE')
-                    twist.add([v.index], g.weight*x, 'REPLACE')
+                    bendgrp.add([v.index], g.weight*(1-x), 'REPLACE')
+                    twistgrp.add([v.index], g.weight*x, 'REPLACE')
         ob.vertex_groups.remove(vgrp)
 
 
