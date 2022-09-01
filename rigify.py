@@ -1583,6 +1583,25 @@ classes = [
 ]
 
 def register():
+    # Duplicated definitions from MHX RTS.
+
+    bpy.types.Object.MhaGazeFollowsHead = FloatPropOVR(0.0,
+        name = "Gaze Follows Head",
+        description = "The gaze bone follows the head bone rotations")
+
+    bpy.types.Object.MhaGaze_L = FloatPropOVR(0.0,
+        name = "Gaze Left",
+        description = "eye tracking the left gaze bone amount")
+
+    bpy.types.Object.MhaGaze_R = FloatPropOVR(0.0,
+        name = "Gaze Right",
+        description = "eye tracking the right gaze bone amount")
+
+    bpy.types.Object.MhaTongueIk = BoolPropOVR(
+        name = "Tongue IK",
+        description = "Tongue bones controlled by IK",
+        default = False)
+
     bpy.types.Object.DazMeta = BoolProperty(default=False)
     bpy.types.Object.DazRigifyType = StringProperty(default="")
     bpy.types.Object.DazUseSplitNeck = BoolProperty(default=False)
