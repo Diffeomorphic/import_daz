@@ -782,7 +782,7 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
     def checkAllowed(self, rig):
         if rig.DazRig[0:3] in ["mhx", "rig"]:
             msg = "Rig type = %s" % rig.DazRig
-        elif rig.data.DazSimpleIK:
+        elif rig.DazSimpleIK:
             msg = "Rig has simple IK"
         elif rig.data.DazFinalized:
             msg = "Rig has been finalized"
@@ -949,15 +949,15 @@ class SimpleIK:
 
 
     def storeProps(self, rig):
-        self.ikprops = (rig.data.DazArmIK_L, rig.data.DazArmIK_R, rig.data.DazLegIK_L, rig.data.DazLegIK_R)
+        self.ikprops = (rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R)
 
 
     def setProps(self, rig, onoff):
-        rig.data.DazArmIK_L = rig.data.DazArmIK_R = rig.data.DazLegIK_L = rig.data.DazLegIK_R = onoff
+        rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = onoff
 
 
     def restoreProps(self, rig):
-        rig.data.DazArmIK_L, rig.data.DazArmIK_R, rig.data.DazLegIK_L, rig.data.DazLegIK_R = self.ikprops
+        rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R = self.ikprops
 
 
     def getIKProp(self, prefix, type):
@@ -1090,7 +1090,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     addDriver(cns, "influence", rig, prop, expr)
 
         rig = context.object
-        if rig.data.DazSimpleIK:
+        if rig.DazSimpleIK:
             raise DazError("The rig %s already has simple IK" % rig.name)
         if not rig.DazCustomShapes:
             raise DazError("Make custom shapes first")
@@ -1101,8 +1101,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         if not genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
 
-        rig.data.DazSimpleIK = True
-        rig.data.DazArmIK_L = rig.data.DazArmIK_R = rig.data.DazLegIK_L = rig.data.DazLegIK_R = 1.0
+        rig.DazSimpleIK = True
+        rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 1.0
 
         LS.customShapes = []
         csHandIk = makeCustomShape("CS_HandIk", "RectX")
@@ -1141,14 +1141,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 hand = rpbs[prefix+"Hand"]
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp, "1-x")
                 handIK = getBoneCopy(prefix+"HandIK", hand, rpbs)
-                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD', amt=rig.data)
+                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD', amt=rig)
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_" + suffix
                 foot = rpbs[prefix+"Foot"]
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp, "1-x")
                 footIK = getBoneCopy(prefix+"FootIK", foot, rpbs)
-                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD', amt=rig.data)
+                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD', amt=rig)
                 addToLayer(footIK, "IK Leg", rig, "IK")
 
             if genesis == "G38":
@@ -1165,12 +1165,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useLegs:
                     setCustomShape(footIK, csFootIk, 3.0)
                     thighBend = rpbs[prefix+"ThighBend"]
-                    IK.limitBone(thighBend, False, rig, legProp, stiffness=(0,0,0.326))
+                    IK.limitBone(thighBend, False, rig, legProp)    #, stiffness=(0,0,0.326))
                     thighTwist = rpbs[prefix+"ThighTwist"]
-                    IK.limitBone(thighTwist, True, rig, legProp, stiffness=(0,0.160,0))
+                    IK.limitBone(thighTwist, True, rig, legProp)    #, stiffness=(0,0.160,0))
                     shin = rpbs[prefix+"Shin"]
-                    IK.limitBone(shin, False, rig, legProp, stiffness=(0.068,0,0.517))
+                    IK.limitBone(shin, False, rig, legProp)         #, stiffness=(0.068,0,0.517))
                     fixIk(rig, [shin.name])
+                    shin.lock_ik_z = True
 
             elif genesis == "G12":
                 if self.useArms:
@@ -1186,6 +1187,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     shin = rpbs[prefix+"Shin"]
                     IK.limitBone(shin, False, rig, legProp)
                     fixIk(rig, [shin.name])
+                    shin.lock_ik_z = True
 
             if IK.usePoleTargets:
                 if self.useArms:
@@ -1211,14 +1213,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
             if genesis == "G38":
                 if self.useArms:
-                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp, amt=rig.data)
+                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp, amt=rig)
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp, amt=rig.data)
+                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp, amt=rig)
             else:
                 if self.useArms:
-                    ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp, amt=rig.data)
+                    ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp, amt=rig)
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp, amt=rig.data)
+                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp, amt=rig)
 
         from .node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
@@ -1632,6 +1634,15 @@ class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
         for pb in rig.pose.bones:
             pb.custom_shape = None
 
+
+def setSimpleToFk(rig, layers):
+    for lname in ["Left FK Arm", "Right FK Arm", "Left FK Leg", "Right FK Leg"]:
+        layers[BoneLayers[lname]] = True
+    for lname in ["Left IK Arm", "Right IK Arm", "Left IK Leg", "Right IK Leg"]:
+        layers[BoneLayers[lname]] = False
+    rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 0.0
+    return layers
+
 #----------------------------------------------------------
 #   FK Snap
 #----------------------------------------------------------
@@ -1650,9 +1661,11 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
         bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
+            setattr(rig, prop, 1.0)
             self.snapSimpleFK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, True)
             toggleLayer(rig, "IK", self.prefix, self.type, False)
+            setattr(rig, prop, 0.0)
 
     def snapSimpleFK(self, rig, bnames, prop):
         mats = []
@@ -1681,9 +1694,11 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
         bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
+            setattr(rig, prop, 0.0)
             snapSimpleIK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, False)
             toggleLayer(rig, "IK", self.prefix, self.type, True)
+            setattr(rig, prop, 1.0)
 
 
 def snapSimpleIK(rig, bnames, prop):
@@ -1910,11 +1925,11 @@ def register():
 
     bpy.types.Object.DazCustomShapes = BoolProperty(default=False)
     bpy.types.Armature.DazFinalized = BoolProperty(default=False)
-    bpy.types.Armature.DazSimpleIK = BoolProperty(default=False)
-    bpy.types.Armature.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Armature.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazSimpleIK = BoolProperty(default=False)
+    bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
 
     bpy.types.Object.DazRotLocks = BoolPropOVR(
         name = "Rotation Locks",

@@ -332,9 +332,6 @@ class HideOperator(DazOperator, IsArmature):
         from .driver import muteDazFcurves
         DazOperator.storeState(self, context)
         rig = context.object
-        amt = rig.data
-        if amt.DazSimpleIK:
-            amt.DazArmIK_L = amt.DazArmIK_R = amt.DazLegIK_L = amt.DazLegIK_R = 0.0
         self.boneLayers = list(rig.data.layers)
         rig.data.layers = 32*[True]
         self.layerColls = []
@@ -758,6 +755,9 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
         elif rig.MhxRig or rig.DazRig == "mhx":
             from .mhx import setToFk
             self.boneLayers = setToFk(rig, self.boneLayers)
+        elif rig.DazSimpleIK:
+            from .figure import setSimpleToFk
+            self.boneLayers = setSimpleToFk(rig, self.boneLayers)
 
 
     def parseScene(self, struct):

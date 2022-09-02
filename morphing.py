@@ -947,7 +947,7 @@ class MorphLoader(LoadMorph):
 
     def findIked(self):
         self.iked = []
-        if self.rig and self.rig.data.DazSimpleIK:
+        if self.rig and self.rig.DazSimpleIK:
             for pb in self.rig.pose.bones:
                 cns = getConstraint(pb, 'IK')
                 if cns:

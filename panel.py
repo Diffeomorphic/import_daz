@@ -898,13 +898,13 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
         return (context.object and context.object.DazCustomShapes)
 
     def draw(self, context):
-        amt = context.object.data
-        self.drawLayers(amt)
-        if amt.DazSimpleIK:
-            self.drawSimpleIK(amt)
+        rig = context.object
+        self.drawLayers(rig)
+        if rig.DazSimpleIK:
+            self.drawSimpleIK(rig)
 
 
-    def drawSimpleIK(self, amt):
+    def drawSimpleIK(self, rig):
         layout = self.layout
         layout.separator()
         layout.label(text="IK Influence")
@@ -914,12 +914,12 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
         split.label(text="Right")
         split = layout.split(factor=0.2)
         split.label(text="Arm")
-        split.prop(amt, "DazArmIK_L", text="")
-        split.prop(amt, "DazArmIK_R", text="")
+        split.prop(rig, "DazArmIK_L", text="")
+        split.prop(rig, "DazArmIK_R", text="")
         split = layout.split(factor=0.2)
         split.label(text="Leg")
-        split.prop(amt, "DazLegIK_L", text="")
-        split.prop(amt, "DazLegIK_R", text="")
+        split.prop(rig, "DazLegIK_L", text="")
+        split.prop(rig, "DazLegIK_R", text="")
 
         layout.label(text="Snap FK bones")
         row = layout.row()
@@ -954,7 +954,7 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
         op.type = "Leg"
 
 
-    def drawLayers(self, amt):
+    def drawLayers(self, rig):
         from .figure import BoneLayers
         layout = self.layout
         layout.label(text="Layers")
@@ -970,8 +970,8 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
                 first,second = lnames
             m = BoneLayers[first]
             n = BoneLayers[second]
-            row.prop(amt, "layers", index=m, toggle=True, text=first)
-            row.prop(amt, "layers", index=n, toggle=True, text=second)
+            row.prop(rig.data, "layers", index=m, toggle=True, text=first)
+            row.prop(rig.data, "layers", index=n, toggle=True, text=second)
 
 #------------------------------------------------------------------------
 #   Visibility panels
