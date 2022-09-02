@@ -1141,14 +1141,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 hand = rpbs[prefix+"Hand"]
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp, "1-x")
                 handIK = getBoneCopy(prefix+"HandIK", hand, rpbs)
-                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD', amt=rig)
+                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_" + suffix
                 foot = rpbs[prefix+"Foot"]
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp, "1-x")
                 footIK = getBoneCopy(prefix+"FootIK", foot, rpbs)
-                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD', amt=rig)
+                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
                 addToLayer(footIK, "IK Leg", rig, "IK")
 
             if genesis == "G38":
@@ -1213,14 +1213,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
             if genesis == "G38":
                 if self.useArms:
-                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp, amt=rig)
+                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp)
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp, amt=rig)
+                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp)
             else:
                 if self.useArms:
-                    ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp, amt=rig)
+                    ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp)
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp, amt=rig)
+                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
 
         from .node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
