@@ -85,8 +85,6 @@ def getBoneCopy(bname, model, rpbs):
     pb = rpbs[bname]
     pb.DazRotMode = model.DazRotMode
     pb.rotation_mode = model.rotation_mode
-    #if "DazAltName" in model.keys():
-    #    pb.DazAltName = model.DazAltName
     return pb
 
 
@@ -347,11 +345,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         default = True
     )
 
-    useDazLocations : BoolProperty(
-        name = "DAZ Bone Locations",
-        description = "Maintain exactly bone locations from DAZ Studio",
-        default = False)
-
     useChildOfConstraints : BoolProperty(
         name = "ChildOf Constraints (Experimental)",
         description = ("Use childOf constraints for parents of elbow and knee pole targets.\n" +
@@ -467,7 +460,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def draw(self, context):
         self.layout.prop(self, "addTweakBones")
-        self.layout.prop(self, "useDazLocations")
         self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
         self.layout.prop(self, "useChildOfConstraints")
@@ -509,7 +501,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def checkMhxEnabled(self, rig):
         try:
-            getattr(rig, "MhaGazeFollowsHead")
+            getattr(rig, "MhaFingerControl_L")
             return True
         except AttributeError:
             return False
@@ -680,9 +672,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.driver_remove("HdOffset")
             pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
-            if not self.useDazLocations:
-                showProgress(2, 25, "  Connect to parent")
-                connectToParent(rig)
+            showProgress(2, 25, "  Connect to parent")
+            connectToParent(rig)
             showProgress(3, 25, "  Reparent toes")
             reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
@@ -690,9 +681,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
             self.joinBendTwists(rig, {}, keep=False, useJoin=False)
-            if not self.useDazLocations:
-                showProgress(6, 25, "  Fix knees")
-                self.fixKnees(rig)
+            showProgress(6, 25, "  Fix knees")
+            self.fixKnees(rig)
             showProgress(7, 25, "  Fix hands")
             self.fixHands(rig)
             showProgress(8, 25, "  Store all constraints")
@@ -704,13 +694,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         elif rig.DazRig in ["genesis1", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
-            if not self.useDazLocations:
-                connectToParent(rig)
+            connectToParent(rig)
             reparentToes(rig, context, False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
-            if not self.useDazLocations:
-                self.fixKnees(rig)
+            self.fixKnees(rig)
             self.fixHands(rig)
             self.storeAllConstraints(rig)
             self.createBendTwists(rig)
@@ -1609,8 +1597,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         iktwist.lock_rotation = (True,False,True)
         cns = getConstraint(fkbone, 'LIMIT_ROTATION')
         if cns:
-            if not self.useDazLocations:
-                self.setIkLimits(cns, fkbone, ikbone)
+            self.setIkLimits(cns, fkbone, ikbone)
             ikcns = limitRotation(iktwist, rig)
             ikcns.use_limit_y = True
             ikcns.min_y = cns.min_y
