@@ -1587,14 +1587,17 @@ def register():
 
     bpy.types.Object.MhaGazeFollowsHead = FloatPropOVR(0.0,
         name = "Gaze Follows Head",
+        min = 0, max = 1,
         description = "The gaze bone follows the head bone rotations")
 
     bpy.types.Object.MhaGaze_L = FloatPropOVR(0.0,
         name = "Gaze Left",
+        min = 0, max = 1,
         description = "eye tracking the left gaze bone amount")
 
     bpy.types.Object.MhaGaze_R = FloatPropOVR(0.0,
         name = "Gaze Right",
+        min = 0, max = 1,
         description = "eye tracking the right gaze bone amount")
 
     bpy.types.Object.MhaTongueIk = BoolPropOVR(

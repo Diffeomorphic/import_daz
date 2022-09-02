@@ -1026,15 +1026,14 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
     def poll(cls, context):
         ob = context.object
         return (ob and
-                ob.DazRig in ["rigify", "rigify2"] and
-                "MhaGazeFollowsHead" in ob.data.keys())
+                ob.DazRig in ["rigify", "rigify2"])
 
     def draw(self, context):
-        amt = context.object.data
-        self.layout.prop(amt, propRef("MhaGazeFollowsHead"), text="Gaze Follows Head")
-        self.layout.prop(amt, propRef("MhaGaze_L"), text="Left Gaze")
-        self.layout.prop(amt, propRef("MhaGaze_R"), text="Right Gaze")
-        self.layout.prop(amt, propRef("MhaTongueIk"), text="Tongue IK")
+        rig = context.object
+        self.layout.prop(rig, "MhaGazeFollowsHead", text="Gaze Follows Head")
+        self.layout.prop(rig, "MhaGaze_L", text="Left Gaze")
+        self.layout.prop(rig, "MhaGaze_R", text="Right Gaze")
+        self.layout.prop(rig, "MhaTongueIk", text="Tongue IK")
 
 #-------------------------------------------------------------
 #   Initialize
