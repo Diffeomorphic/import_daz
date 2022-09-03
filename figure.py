@@ -1672,7 +1672,7 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
         for bname in bnames:
             pb = rig.pose.bones[bname]
             mats.append((pb, pb.matrix.copy()))
-        setattr(rig.data, prop, False)
+        setattr(rig, prop, False)
         for pb,mat in mats:
             pb.matrix = mat
 
@@ -1706,7 +1706,7 @@ def snapSimpleIK(rig, bnames, prop):
     handfk = rig.pose.bones[hand]
     mat = handfk.matrix.copy()
     handik = rig.pose.bones[hand+"IK"]
-    setattr(rig.data, prop, True)
+    setattr(rig, prop, True)
     handik.matrix = mat
 
 
