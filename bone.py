@@ -92,8 +92,7 @@ RotationModes = {
 #   Alternative bone names
 #-------------------------------------------------------------
 
-def getMappedBone(bname, rig):
-    boneMap = {
+BoneMap = {
         "abdomen" : "abdomenLower",
         "abdomen2" : "abdomenUpper",
         "chest" : "chestLower",
@@ -154,8 +153,9 @@ def getMappedBone(bname, rig):
         "Colon" : "colon",
         "Root" : "shaftRoot",
         "root" : "shaftRoot",
-    }
+}
 
+def getMappedBone(bname, rig):
     if rig is None or bname is None:
         return None
     bname = unquote(bname)
@@ -164,8 +164,8 @@ def getMappedBone(bname, rig):
     pg = rig.data.DazBoneMap.get(bname)
     if pg:
         return pg.s
-    if bname in boneMap.keys():
-        return boneMap[bname]
+    if bname in BoneMap.keys():
+        return BoneMap[bname]
     from .fix import getSuffixName
     bname = getSuffixName(bname)
     if bname in rig.pose.bones.keys():
@@ -186,12 +186,6 @@ class BoneInstance(Instance):
             self.figure = self.parent
         elif isinstance(self.parent, BoneInstance):
             self.figure = self.parent.figure
-        self.translation = node.translation
-        self.rotation = node.rotation
-        self.scale = node.scale
-        node.translation = []
-        node.rotation = []
-        node.scale = []
         self.id = self.node.id.rsplit("#",1)[-1]
         self.name = self.node.name
         self.roll = 0.0
@@ -501,6 +495,7 @@ class BoneInstance(Instance):
         node = self.node
         rig = figure.rna
         if node.name not in rig.pose.bones.keys():
+            print("NIX", node.name)
             return
         pb = rig.pose.bones[node.name]
         self.rna = pb
@@ -582,7 +577,7 @@ class BoneInstance(Instance):
     IndexComp = { 0 : "x", 1 : "y", 2 : "z" }
 
     def setRotationLockDaz(self, pb):
-        locks,limits,useLimits = self.getLocksLimits(pb, self.rotation)
+        locks,limits,useLimits = self.getLocksLimits(pb, self.node.rotation)
         if pb.rotation_mode == 'QUATERNION':
             return
         if GS.useLockRot:
@@ -625,7 +620,7 @@ class BoneInstance(Instance):
 
 
     def setLocationLockDaz(self, pb):
-        locks,limits,useLimits = self.getLocksLimits(pb, self.translation)
+        locks,limits,useLimits = self.getLocksLimits(pb, self.node.translation)
         if GS.useLockLoc:
             # DazLocLocks used to update lock_location
             for n,lock in enumerate(locks):
@@ -697,9 +692,6 @@ class Bone(Node):
 
     def __init__(self, fileref):
         Node.__init__(self, fileref)
-        self.translation = []
-        self.rotation = []
-        self.scale = []
         self.mapped = None
 
 
@@ -723,7 +715,7 @@ class Bone(Node):
         if iref in self.instances.keys():
             return self.instances[iref]
         try:
-            return self.instances[BoneIds[iref]]
+            return self.instances[BoneMap[iref]]
         except KeyError:
             pass
         trgfig = self.figure.sourcing
