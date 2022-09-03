@@ -315,8 +315,10 @@ class HairSystem:
         btn = self.button
 
         hlen = int(len(self.strands[0]))
-        if hlen < 3:
+        if hlen < 2:
             return
+        elif hlen == 2:
+            self.strands = [(v0, (v0+v1)/2, v1) for v0,v1 in self.strands]
         bpy.ops.object.particle_system_add()
         psys = ob.particle_systems.active
         psys.name = self.name
