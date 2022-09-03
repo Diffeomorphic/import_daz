@@ -60,6 +60,8 @@ class FigureInstance(Instance):
     def postbuild(self, context):
         Instance.postbuild(self, context)
         if LS.fitFile:
+            rig = self.rna
+            mat = self.worldmat
             self.shiftBones(context, self.rna, self.worldmat.inverted())
 
 
@@ -68,10 +70,10 @@ class FigureInstance(Instance):
         if isUnitMatrix(mat):
             return
         activateObject(context, rig)
+        headtails = dict([(b.name, (mat@b.head_local, mat@b.tail_local)) for b in rig.data.bones])
         setMode('EDIT')
         for eb in rig.data.edit_bones:
-            eb.head = mat @ eb.head
-            eb.tail = mat @ eb.tail
+            eb.head, eb.tail = headtails[eb.name]
         setMode('OBJECT')
 
 
