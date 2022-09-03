@@ -60,8 +60,6 @@ class FigureInstance(Instance):
     def postbuild(self, context):
         Instance.postbuild(self, context)
         if LS.fitFile:
-            rig = self.rna
-            mat = self.worldmat
             self.shiftBones(context, self.rna, self.worldmat.inverted())
 
 
