@@ -215,7 +215,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazZup")
         box.prop(scn, "DazUnflipped")
         box.prop(scn, "DazDump")
-        box.prop(scn, "DazShowHiddenObjects")
         box.prop(scn, "DazPruneNodes")
 
         box = col.box()
@@ -282,6 +281,11 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseEmission")
         box.prop(scn, "DazGhostLights")
         box.prop(scn, "DazUseReflection")
+
+        box = col.box()
+        box.label(text = "Objects")
+        box.prop(scn, "DazShowHiddenObjects")
+        box.prop(scn, "DazIgnoreHiddenObjects")
 
         row = self.layout.row()
         row.operator("daz.load_root_paths")
@@ -423,13 +427,15 @@ def register():
 
     bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
         name = "Make Hidden Sliders",
-        description = "Create properties for hidden morphs,\nso they can be displayed in the UI",
-        default = False)
+        description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
 
     bpy.types.Scene.DazShowHiddenObjects = BoolProperty(
         name = "Show Hidden Objects",
-        description = "Don't hide objects which are hidden in DAZ Studio",
-        default = False)
+        description = "Don't hide objects which are hidden in DAZ Studio")
+
+    bpy.types.Scene.DazIgnoreHiddenObjects = BoolProperty(
+        name = "Ignore Hidden Objects",
+        description = "Don't build objects which are hidden in DAZ Studio")
 
     # Object properties
 

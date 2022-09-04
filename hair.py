@@ -319,6 +319,7 @@ class HairSystem:
             return
         elif hlen == 2:
             self.strands = [(v0, (v0+v1)/2, v1) for v0,v1 in self.strands]
+            hlen = 3
         bpy.ops.object.particle_system_add()
         psys = ob.particle_systems.active
         psys.name = self.name

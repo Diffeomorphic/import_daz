@@ -205,6 +205,8 @@ class Instance(Accessor, Channels, SimNode):
                 self.instanceTarget = self.getChannelInstance(channel)
             elif key == "Shell Node":
                 self.shellNode = self.getChannelInstance(channel)
+            elif key == "Visible" and GS.useIgnoreHiddenObjects:
+                self.ignore = (not getCurrentValue(channel))
             elif "type" not in channel.keys():
                 continue
             elif channel["type"] == "bool":

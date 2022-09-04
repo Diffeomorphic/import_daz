@@ -58,6 +58,7 @@ class GlobalSettings:
         self.unflipped = False
         self.useMakeHiddenSliders = False
         self.showHiddenObjects = False
+        self.useIgnoreHiddenObjects = False
 
         self.materialMethod = 'SELECT'
         if bpy.app.version < (3,0,0):
@@ -140,6 +141,7 @@ class GlobalSettings:
         "DazZup" : "zup",
         "DazMakeHiddenSliders" : "useMakeHiddenSliders",
         "DazShowHiddenObjects" : "showHiddenObjects",
+        "DazIgnoreHiddenObjects" : "useIgnoreHiddenObjects",
         "DazShellMethod" : "shellMethod",
         "DazPruneNodes" : "pruneNodes",
 
