@@ -293,6 +293,8 @@ class Fixer(DriverUser):
         nrig = None
         for ob in newObjects:
             ob.name = dazName(baseName(ob.name))
+            if ob.data:
+                ob.data.name = dazName(baseName(ob.data.name))
             if ob.name == dazName(baseName(rig.name)):
                 nrig = ob
             unlinkAll(ob)
@@ -300,9 +302,6 @@ class Fixer(DriverUser):
                 mcoll.objects.link(ob)
             else:
                 coll.objects.link(ob)
-        if nrig:
-            for ob in newObjects:
-                self.changeAllTargets(ob, rig, nrig)
         activateObject(context, rig)
 
     #-------------------------------------------------------------
