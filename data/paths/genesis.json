@@ -16,8 +16,8 @@
 		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
 	},
 	"visemes" : {
-		"prefix" : "vsm",
-		"include" : ["vsm"],
+		"prefix" : "ctrlvsm",
+		"include" : ["ctrlvsm"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
 	},
