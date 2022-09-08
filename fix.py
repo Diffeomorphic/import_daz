@@ -35,6 +35,16 @@ from .utils import *
 from .driver import DriverUser
 
 #-------------------------------------------------------------
+#   Utilities
+#-------------------------------------------------------------
+
+def origName(bname):
+    return "%s-orig" % bname
+
+def isOrigName(bname):
+    return bname[-5:] == "-orig"
+
+#-------------------------------------------------------------
 #   Fixer class
 #-------------------------------------------------------------
 
@@ -759,7 +769,7 @@ class BendTwists:
             target = rig.data.edit_bones[tname]
             eb.head = bend.head
             bend.tail = twist.head
-            eb.tail = twist.tail #= target.head
+            eb.tail = twist.tail
             eb.roll = bend.roll
             eb.parent = bend.parent
             eb.use_deform = False
@@ -882,6 +892,12 @@ class BendTwists:
             bend.use_connect = eb.use_connect
             twist.use_connect = True
             eb.use_deform = False
+            bendOrig = rig.data.edit_bones.get(origName(bendname))
+            twistOrig = rig.data.edit_bones.get(origName(twistname))
+            bend.layers = twist.layers = finLayer
+            if bendOrig and twistOrig:
+                bend = bendOrig
+                twist = twistOrig
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
@@ -895,7 +911,6 @@ class BendTwists:
                 twisttwk.parent = twist
                 bend.use_deform = twist.use_deform = False
                 bendtwk.use_deform = twisttwk.use_deform = True
-                bend.layers = twist.layers = finLayer
                 bendtwk.layers = twisttwk.layers = defLayer
                 bendtwk.layers[L_TWEAK] = twisttwk.layers[L_TWEAK] = True
                 bvgname = btwkname
@@ -903,8 +918,8 @@ class BendTwists:
             else:
                 bend.use_deform = twist.use_deform = True
                 bend.layers = twist.layers = defLayer
-                bvgname = bendname
-                tvgname = twistname
+                bvgname = bend.name
+                tvgname = twist.name
 
             for ob in rig.children:
                 if ob.type == 'MESH':
@@ -947,7 +962,7 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig):
-        from .mhx import dampedTrack, copyRotation, stretchTo, addDriver, setMhxProp
+        from .mhx import dampedTrack, copyRotation, copyScale, stretchTo, addDriver, setMhxProp
         setMode('POSE')
         gizmo = "GZM_Ball025"
         for bname,trgname,stretch,prop in self.BendTwistBones:
