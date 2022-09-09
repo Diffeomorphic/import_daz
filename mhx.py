@@ -1456,7 +1456,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             handFk.lock_location = footFk.lock_location = (False,False,False)
 
         self.addGazeFollowsHead(rig)
-        setMhxProp(rig, "MhaLimitsOn", True)
         for prop in ["MhaToeTarsal_L", "MhaToeTarsal_R"]:
             setMhxProp(rig, prop, False)
 
