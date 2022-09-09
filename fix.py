@@ -735,11 +735,11 @@ class BendTwists:
         return bendname, twistname
 
 
-    def joinBendTwists(self, rig, renames, keep=True, useJoin=True):
+    def joinBendTwists(self, rig, renames, bendTwistBones, keep=True, useJoin=True):
         setMode('POSE')
         hiddenLayer = 31*[False] + [True]
         rotmodes = {}
-        for data in self.BendTwistBones:
+        for data in bendTwistBones:
             bname = data[0]
             tname = data[1]
             bendname,twistname = self.getBendTwistNames(bname)
@@ -756,7 +756,7 @@ class BendTwists:
             self.deleteBoneDrivers(rig, twistname)
 
         setMode('EDIT')
-        for data in self.BendTwistBones:
+        for data in bendTwistBones:
             bname = data[0]
             tname = data[1]
             bendname,twistname = self.getBendTwistNames(bname)
@@ -789,7 +789,7 @@ class BendTwists:
                 pb.DazRotMode = rotmode
 
         from .figure import copyBoneInfo
-        for data in self.BendTwistBones:
+        for data in bendTwistBones:
             bname = data[0]
             tname = data[1]
             bendname,twistname = self.getBendTwistNames(bname)
@@ -800,7 +800,7 @@ class BendTwists:
             copyBoneInfo(srcbone, trgbone)
 
         setMode('EDIT')
-        for data in self.BendTwistBones:
+        for data in bendTwistBones:
             bname = data[0]
             tname = data[1]
             bendname,twistname = self.getBendTwistNames(bname)
@@ -821,7 +821,7 @@ class BendTwists:
         if not useJoin:
             return
         for ob in rig.children:
-            for data in self.BendTwistBones:
+            for data in bendTwistBones:
                 bname = data[0]
                 bend,twist = self.getBendTwistNames(bname)
                 self.joinVertexGroups(ob, bname, bend, twist)
@@ -869,14 +869,14 @@ class BendTwists:
         return bendname,twistname
 
 
-    def createBendTwists(self, rig):
+    def createBendTwists(self, rig, bendTwistBones):
         from .mhx import L_TWEAK, L_FIN, L_DEF
         defLayer = L_DEF*[False] + [True] + (31-L_DEF)*[False]
         finLayer = L_FIN*[False] + [True] + (31-L_FIN)*[False]
         tweakLayer = L_TWEAK*[False] + [True] + (31-L_TWEAK)*[False]
         setMode('EDIT')
 
-        for data in self.BendTwistBones:
+        for data in bendTwistBones:
             bname = data[0]
             eb = rig.data.edit_bones[bname]
             vec = eb.tail - eb.head
@@ -961,11 +961,11 @@ class BendTwists:
         ob.vertex_groups.remove(vgrp)
 
 
-    def constrainBendTwists(self, rig):
+    def constrainBendTwists(self, rig, bendTwistBones):
         from .mhx import dampedTrack, copyRotation, copyScale, stretchTo, addDriver, setMhxProp
         setMode('POSE')
         gizmo = "GZM_Ball025"
-        for bname,trgname,stretch,prop in self.BendTwistBones:
+        for bname,trgname,stretch,prop in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):
                 continue

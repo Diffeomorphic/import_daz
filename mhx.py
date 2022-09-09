@@ -346,10 +346,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         default = True
     )
 
-    keepOrigBones : BoolProperty(
-        name = "Keep Original Bones",
-        description = "Keep the original DAZ bones for correct deformation and JCMs",
-        default = True)
+    keepOrigBones = False
+
+    useSplitShin : BoolProperty(
+        name = "Split Shin Bone",
+        description = "Split the shin bone into bend and twist parts",
+        default = False)
 
     useChildOfConstraints : BoolProperty(
         name = "ChildOf Constraints (Experimental)",
@@ -421,15 +423,18 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     ]
 
     BendTwistBones = [
-        ("shin.L", "foot.L", True, "MhaLegStretch_L"),
         ("thigh.L", "shin.L", False, "MhaLegStretch_L"),
         ("forearm.L", "hand.L", True, "MhaArmStretch_L"),
         ("upper_arm.L", "forearm.L", False, "MhaArmStretch_L"),
-        ("shin.R", "foot.R", True, "MhaLegStretch_R"),
         ("thigh.R", "shin.R", False, "MhaLegStretch_R"),
         ("forearm.R", "hand.R", True, "MhaArmStretch_R"),
         ("upper_arm.R", "forearm.R", False, "MhaArmStretch_R"),
-        ]
+    ]
+
+    ShinBendTwists = [
+        ("shin.L", "foot.L", True, "MhaLegStretch_L"),
+        ("shin.R", "foot.R", True, "MhaLegStretch_R"),
+    ]
 
     Knees = [
         ("thigh.L", "shin.L", Vector((0,-1,0))),
@@ -466,7 +471,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def draw(self, context):
         self.layout.prop(self, "addTweakBones")
-        self.layout.prop(self, "keepOrigBones")
+        self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
         self.layout.prop(self, "useChildOfConstraints")
@@ -672,6 +677,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #-------------------------------------------------------------
 
         showProgress(1, 25, "  Fix DAZ rig")
+        if self.useSplitShin:
+            bendTwistBones = self.ShinBendTwists + self.BendTwistBones
+        else:
+            bendTwistBones = self.BendTwistBones
         self.constraints = {}
         rig.data.layers = 32*[True]
         bchildren = applyBoneChildren(context, rig)
@@ -680,14 +689,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
             showProgress(2, 25, "  Connect to parent")
-            connectToParent(rig, keepOrig=self.keepOrigBones, connectAll=False)
+            connectToParent(rig, keepOrig=self.keepOrigBones, connectAll=False, useSplitShin=self.useSplitShin)
             showProgress(3, 25, "  Reparent toes")
             reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
-            self.joinBendTwists(rig, {}, keep=False, useJoin=False)
+            self.joinBendTwists(rig, {}, bendTwistBones, keep=False, useJoin=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
             showProgress(7, 25, "  Fix hands")
@@ -695,20 +704,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(8, 25, "  Store all constraints")
             self.storeAllConstraints(rig)
             showProgress(9, 25, "  Create bend and twist bones")
-            self.createBendTwists(rig)
+            self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
             self.fixBoneDrivers(rig, self.Correctives)
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
-            connectToParent(rig, keepOrig=False, connectAll=False)
+            connectToParent(rig, keepOrig=False, connectAll=False, useSplitShin=self.useSplitShin)
             reparentToes(rig, context, False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
             self.fixKnees(rig)
             self.fixHands(rig)
             self.storeAllConstraints(rig)
-            self.createBendTwists(rig)
+            self.createBendTwists(rig, bendTwistBones)
             self.fixBoneDrivers(rig, self.Correctives)
         else:
             raise DazError("Cannot convert %s to Mhx" % rig.name)
@@ -734,7 +743,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(19, 25, "  Add gizmos")
         self.addGizmos(rig, context)
         showProgress(11, 25, "  Constrain bend and twist bones")
-        self.constrainBendTwists(rig)
+        self.constrainBendTwists(rig, bendTwistBones)
         self.addCopyLocConstraints(rig)
         self.addChildofConstraints(rig)
         if self.keepOrigBones:
@@ -1192,17 +1201,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, L_HELP2, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
-            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
-            hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIk)
             upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LARMIK+dlayer, upper_armIk)
             forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LARMIK+dlayer, forearmIk)
+            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
+            hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
             vec = upper_arm.matrix.to_3x3().col[2]
             vec.normalize()
             dist = max(upper_arm.length, forearm.length)
             locElbowPt = forearm.head - 1.2*dist*vec
-            elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head-ez, 0, L_LARMIK+dlayer, armSocket)
-            elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, forearm.head, forearm.head-ez, 0, L_HELP2, armParent)
+            elbowFac = upper_arm.length/(upper_arm.length + forearm.length)
+            elbowVec = forearm.tail - upper_arm.head
+            elbowHead = upper_arm.head + elbowFac*elbowVec
+            elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, L_LARMIK+dlayer, armSocket)
+            elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
             parent = self.getElbowParent(rig, suffix)
             elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, parent)
             elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, L_LARMIK+dlayer, upper_armIk)
@@ -1263,8 +1275,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             vec.normalize()
             dist = max(thigh.length, shin.length)
             locKneePt = shin.head - 1.2*dist*vec
-            kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head-ez, 0, L_LLEGIK+dlayer, legSocket)
-            kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, shin.head, shin.head-ez, 0, L_HELP2, hip)
+            kneeFac = thigh.length/(thigh.length + shin.length)
+            kneeVec = shin.tail - thigh.head
+            kneeHead = thigh.head + kneeFac*kneeVec
+            kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, L_LLEGIK+dlayer, legSocket)
+            kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
             kneePoleA.layers[L_LEXTRA+dlayer] = True
             parent = self.getKneeParent(rig, suffix)
             kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent)
@@ -1363,7 +1378,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowPoleA.lock_rotation = (True,False,True)
             dampedTrack(elbowPoleA, handIk, rig)
             cns = copyLocation(elbowPoleA, handIk, rig)
-            cns.influence = upper_arm.bone.length/(upper_arm.bone.length + forearm.bone.length)
+            cns.influence = elbowFac
             copyTransform(elbowPoleP, elbowPoleA, rig)
             if not self.useChildOfConstraints:
                 setMhxProp(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
@@ -1430,7 +1445,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             kneePoleA.lock_rotation = (True,False,True)
             dampedTrack(kneePoleA, ankleIk, rig)
             cns = copyLocation(kneePoleA, ankleIk, rig)
-            cns.influence = thigh.bone.length/(thigh.bone.length + shin.bone.length)
+            cns.influence = kneeFac
             copyTransform(kneePoleP, kneePoleA, rig)
             if not self.useChildOfConstraints:
                 setMhxProp(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
@@ -1795,7 +1810,7 @@ def getBoneLayer(pb, rig):
     return L_CUSTOM, True
 
 
-def connectToParent(rig, keepOrig=False, connectAll=False):
+def connectToParent(rig, keepOrig=False, connectAll=False, useSplitShin=True):
     def origBone(bname):
         if len(bname) > 2 and bname[0] in ["l", "r"] and bname[1].isupper():
             if bname[-4:] == "Bend":
@@ -1824,8 +1839,6 @@ def connectToParent(rig, keepOrig=False, connectAll=False):
         "rThighTwist", "rFoot", "rToe",
     ]
 
-    shinBones = ["lShin", "rShin"]
-
     otherBones = [
         "abdomenUpper", "chestLower", "chestUpper", "neckLower", "neckUpper",
         "lThumb2", "lThumb3",
@@ -1839,6 +1852,12 @@ def connectToParent(rig, keepOrig=False, connectAll=False):
         "rRing1", "rRing2", "rRing3",
         "rPinky1", "rPinky2", "rPinky3",
     ]
+
+    if useSplitShin:
+        shinBones = ["lShin", "rShin"]
+    else:
+        shinBones = []
+        otherBones += ["lShin", "rShin"]
 
     if keepOrig:
         for eb in list(rig.data.edit_bones):
