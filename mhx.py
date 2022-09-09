@@ -1201,8 +1201,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             vec.normalize()
             dist = max(upper_arm.length, forearm.length)
             locElbowPt = forearm.head - 1.2*dist*vec
-            elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head-ez, 0, L_LARMIK+dlayer, armSocket)
-            elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, forearm.head, forearm.head-ez, 0, L_HELP2, armParent)
+            elbowFac = upper_arm.length/(upper_arm.length + forearm.length)
+            elbowVec = forearm.tail - upper_arm.head
+            elbowHead = upper_arm.head + elbowFac*elbowVec
+            elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, L_LARMIK+dlayer, armSocket)
+            elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
             parent = self.getElbowParent(rig, suffix)
             elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, parent)
             elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, L_LARMIK+dlayer, upper_armIk)
@@ -1263,8 +1266,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             vec.normalize()
             dist = max(thigh.length, shin.length)
             locKneePt = shin.head - 1.2*dist*vec
-            kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head-ez, 0, L_LLEGIK+dlayer, legSocket)
-            kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, shin.head, shin.head-ez, 0, L_HELP2, hip)
+            kneeFac = thigh.length/(thigh.length + shin.length)
+            kneeVec = shin.tail - thigh.head
+            kneeHead = thigh.head + kneeFac*kneeVec
+            kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, L_LLEGIK+dlayer, legSocket)
+            kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
             kneePoleA.layers[L_LEXTRA+dlayer] = True
             parent = self.getKneeParent(rig, suffix)
             kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent)
@@ -1363,7 +1369,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowPoleA.lock_rotation = (True,False,True)
             dampedTrack(elbowPoleA, handIk, rig)
             cns = copyLocation(elbowPoleA, handIk, rig)
-            cns.influence = upper_arm.bone.length/(upper_arm.bone.length + forearm.bone.length)
+            cns.influence = elbowFac
             copyTransform(elbowPoleP, elbowPoleA, rig)
             if not self.useChildOfConstraints:
                 setMhxProp(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
@@ -1430,7 +1436,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             kneePoleA.lock_rotation = (True,False,True)
             dampedTrack(kneePoleA, ankleIk, rig)
             cns = copyLocation(kneePoleA, ankleIk, rig)
-            cns.influence = thigh.bone.length/(thigh.bone.length + shin.bone.length)
+            cns.influence = kneeFac
             copyTransform(kneePoleP, kneePoleA, rig)
             if not self.useChildOfConstraints:
                 setMhxProp(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
