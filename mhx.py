@@ -1192,10 +1192,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, L_HELP2, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
-            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
-            hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIk)
             upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LARMIK+dlayer, upper_armIk)
             forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LARMIK+dlayer, forearmIk)
+            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
+            hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
             vec = upper_arm.matrix.to_3x3().col[2]
             vec.normalize()
