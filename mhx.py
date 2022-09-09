@@ -1543,7 +1543,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if isOrigName(pb.name):
                 base = rig.pose.bones.get(pb.name[:-5])
                 if base is not None:
-                    cns = copyTransform(pb, base, rig)
+                    cns = copyRotation(pb, base, rig)
                     cns.target_space = 'LOCAL'
                     cns.owner_space = 'LOCAL'
                     base.bone.use_deform = False
