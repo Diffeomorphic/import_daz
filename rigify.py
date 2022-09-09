@@ -805,7 +805,7 @@ class Rigify:
             raise DazError(msg)
 
         print("  Connect to parent")
-        connectToParent(rig, False)
+        connectToParent(rig, keepOrig=False, connectAll=True)
         print("  Setup DAZ skeleton")
         rigifySkel, spineBones, dazSkel = self.setupDazSkeleton(rig)
         dazBones = self.getDazBones(rig)
