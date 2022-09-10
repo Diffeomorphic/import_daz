@@ -283,9 +283,9 @@ def setMhxProp(rig, prop, value):
         setBoolProp(rig, prop, value, True)
 
 
-def addDriver(rna, channel, rig, prop, expr):
+def addDriver(rna, channel, rig, prop, expr, index=-1):
     from .driver import addDriverVar
-    fcu = rna.driver_add(channel)
+    fcu = rna.driver_add(channel, index)
     fcu.driver.type = 'SCRIPTED'
     if isinstance(prop, str):
         fcu.driver.expression = expr
@@ -1356,8 +1356,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowPt = rpbs["elbow.pt.ik.%s" % suffix]
             elbowLink = rpbs["elbow.link.%s" % suffix]
 
-            prop = "MhaForearmFollow_%s" % suffix
-            setMhxProp(rig, prop, True)
             prop = "MhaArmHinge_%s" % suffix
             setMhxProp(rig, prop, 0.0)
             cns = copyTransform(armParent, armSocket, rig)
@@ -1365,11 +1363,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = copyLocation(armParent, armSocket, rig)
             addDriver(cns, "influence", rig, prop, "x")
 
-            prop = "MhaArmIk_%s" % suffix
-            setMhxProp(rig, prop, 1.0)
-            copyTransformFkIk(upper_arm, upper_armFk, upper_armIkTwist, rig, prop)
-            copyTransformFkIk(forearm, forearmFk, forearmIkTwist, rig, prop)
-            copyTransformFkIk(hand, handFk, handIk, rig, prop)
+            ikprop = "MhaArmIk_%s" % suffix
+            setMhxProp(rig, ikprop, 1.0)
+            copyTransformFkIk(upper_arm, upper_armFk, upper_armIkTwist, rig, ikprop)
+            copyTransformFkIk(forearm, forearmFk, forearmIkTwist, rig, ikprop)
+            copyTransformFkIk(hand, handFk, handIk, rig, ikprop)
             copyTransform(hand0Ik, handIk, rig)
 
             elbowPoleA = rpbs["elbowPoleA.%s" % suffix]
@@ -1389,10 +1387,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowPt.rotation_euler[0] = -90*D
             elbowPt.lock_rotation = (True,True,True)
 
+            prop = "MhaForearmFollow_%s" % suffix
+            setMhxProp(rig, prop, True)
             cns1 = copyRotation(forearm, handFk, rig, space='LOCAL')
-            cns2 = copyRotation(forearm, hand0Ik, rig, prop, space='LOCAL')
+            cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, space='LOCAL')
             cns1.use_x = cns1.use_z = cns2.use_x = cns2.use_z = False
+            addDriver(cns1, "mute", rig, prop, "not(x)")
+            addDriver(cns2, "mute", rig, prop, "not(x)")
             forearmFk.lock_rotation[1] = True
+            addDriver(forearmFk, "lock_rotation", rig, prop, "x", index=1)
 
             legSocket = rpbs["legSocket.%s" % suffix]
             legParent = rpbs["leg_parent.%s" % suffix]
@@ -1470,9 +1473,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             ])
             handFk.lock_location = footFk.lock_location = (False,False,False)
 
+            for pb in [upper_armIk, forearmIk, thighIk, shinIk]:
+                for attr in ["use_ik_limit_x", "use_ik_limit_y", "use_ik_limit_z"]:
+                    addDriver(pb, attr, rig, "DazRotLimits", "x")
+            setMhxProp(rig, "MhaToeTarsal_%s" % suffix, False)
+
         self.addGazeFollowsHead(rig)
-        for prop in ["MhaToeTarsal_L", "MhaToeTarsal_R"]:
-            setMhxProp(rig, prop, False)
 
 
     def lockLocations(self, bones):
@@ -1586,7 +1592,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.flipLimits(rig, "shin.fk.%s" % suffix, "shin.%s" % suffix)
             self.flipLimits(rig, "foot.fk.%s" % suffix, "foot.%s" % suffix)
             self.flipLimits(rig, "toe.fk.%s" % suffix, "toe.%s" % suffix)
-            self.unlimitYrot(rig, "hand.fk.%s" % suffix)
+            self.driveYrot(rig, "hand.fk.%s" % suffix, "MhaForearmFollow_%s" % suffix)
             if self.useFingerIk:
                 self.addFingerIk(rig, suffix)
             self.copyToeRotation(rig, True, suffix, ["big_toe.01", "small_toe_1.01", "small_toe_2.01", "small_toe_3.01", "small_toe_4.01"])
@@ -1625,11 +1631,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns.max_y = 90*D
 
 
-    def unlimitYrot(self, rig, bname):
+    def driveYrot(self, rig, bname, prop):
         pb = rig.pose.bones[bname]
         cns = getConstraint(pb, 'LIMIT_ROTATION')
         if cns:
-            cns.use_limit_y = False
+            addDriver(cns, "use_limit_y", rig, prop, "not(x)")
 
 
     def copyIkLimits(self, rig, bname, suffix):
