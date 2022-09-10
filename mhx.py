@@ -1472,13 +1472,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 thighIk, shinIk, thighIkTwist, shinIkTwist, kneeLink, footRev, toeRev,
             ])
             handFk.lock_location = footFk.lock_location = (False,False,False)
-
-            for pb in [upper_armIk, forearmIk, thighIk, shinIk]:
-                for attr in ["use_ik_limit_x", "use_ik_limit_y", "use_ik_limit_z"]:
-                    addDriver(pb, attr, rig, "DazRotLimits", "x")
             setMhxProp(rig, "MhaToeTarsal_%s" % suffix, False)
 
         self.addGazeFollowsHead(rig)
+        setMhxProp(rig, "MhaLimitsOn", True)
 
 
     def lockLocations(self, bones):
