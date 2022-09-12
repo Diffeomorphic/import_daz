@@ -110,6 +110,7 @@ class GlobalSettings:
         self.useInstancing = True
         self.useHairGuides = False
         self.useHighDef = True
+        self.keepBaseMesh = False
         self.useMultires = True
         self.useMultiUvLayers = True
         self.useMultiShapes = True
@@ -193,6 +194,7 @@ class GlobalSettings:
         "DazUseInstancing" : "useInstancing",
         "DazHairGuides" : "useHairGuides",
         "DazHighdef" : "useHighDef",
+        "DazKeepBaseMesh" : "keepBaseMesh",
         "DazHDArmature" : "useHDArmature",
         "DazMultires" : "useMultires",
         "DazMultiUvLayers" : "useMultiUvLayers",

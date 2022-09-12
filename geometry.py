@@ -297,12 +297,19 @@ class GeoNode(Node, SimNode):
             shiftMesh(ob, inst.worldmat.inverted())
             if hdob and hdob != ob:
                 shiftMesh(hdob, inst.worldmat.inverted())
+        if hdob and not GS.keepBaseMesh:
+            unlinkAll(ob)
+            if hdob.parent and hdob.parent.name in LS.collection.objects:
+                LS.collection.objects.unlink(hdob.parent)
 
 
     def finishHD(self, context, ob, hdob, inst):
         from .finger import getFingerPrint
         if hdob != ob:
             self.copyHDMaterials(ob, hdob, context, inst)
+            hdob.parent = ob.parent
+            hdob.parent_type = ob.parent_type
+            hdob.parent_bone = ob.parent_bone
         if LS.hdcollection is None:
             from .main import makeRootCollection
             LS.hdcollection = makeRootCollection(LS.collection.name + "_HD", context)
@@ -317,9 +324,6 @@ class GeoNode(Node, SimNode):
             hdob.DazMesh = ob.DazMesh
         if hdob == ob:
             return
-        hdob.parent = ob.parent
-        hdob.parent_type = ob.parent_type
-        hdob.parent_bone = ob.parent_bone
         setWorldMatrix(hdob, ob.matrix_world)
         if hdob.name in inst.collection.objects:
             inst.collection.objects.unlink(hdob)

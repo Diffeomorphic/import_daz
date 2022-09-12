@@ -221,6 +221,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.label(text = "Meshes")
         box.prop(scn, "DazShellMethod")
         box.prop(scn, "DazHighdef")
+        box.prop(scn, "DazKeepBaseMesh")
         box.prop(scn, "DazMultires")
         box.prop(scn, "DazMultiUvLayers")
         box.prop(scn, "DazHDArmature")
@@ -614,6 +615,10 @@ def register():
     bpy.types.Scene.DazHighdef = BoolProperty(
         name = "Build HD Meshes",
         description = "Build HD meshes if included in .dbz file")
+
+    bpy.types.Scene.DazKeepBaseMesh = BoolProperty(
+        name = "Keep Base Meshes",
+        description = "Keep base resolution meshes if HD mesh is built")
 
     bpy.types.Scene.DazHDArmature = BoolProperty(
         name = "Add Armature To HD Meshes",
