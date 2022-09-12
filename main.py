@@ -795,6 +795,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         objects = self.objects[rigname]
         hdmeshes = self.hdmeshes[rigname]
         hairs = self.hairs[rigname]
+        if hdmeshes and not GS.keepBaseMesh:
+            meshes = hdmeshes
+            hdmeshes = []
         if len(rigs) > 0:
             mainRig = rigs[0]
         else:

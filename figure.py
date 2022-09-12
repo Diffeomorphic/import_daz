@@ -187,15 +187,14 @@ class FigureInstance(Instance):
                     fcu.driver.variables.remove(var)
 
 
-    def addLSRig(self, rig):
+    def setLSRig(self):
         if LS.rigname is None or self.isMainFigure(5):
-            LS.rigname = rig.name
+            LS.rigname = self.name
             LS.rigs[LS.rigname] = []
             LS.meshes[LS.rigname] = []
             LS.objects[LS.rigname] = []
             LS.hairs[LS.rigname] = []
             LS.hdmeshes[LS.rigname] = []
-        LS.rigs[LS.rigname].append(rig)
 
 #-------------------------------------------------------------
 #   Figure
@@ -232,16 +231,17 @@ class Figure(Node):
 
         center = d2b(inst.attributes["center_point"])
         Asset.build(self, context, inst)
-        for geo in inst.geometries:
-            geo.buildObject(context, inst, center)
-            geo.rna.location = Zero
+        inst.setLSRig()
+        for geonode in inst.geometries:
+            geonode.buildObject(context, inst, center)
+            geonode.rna.location = Zero
         amt = self.data = bpy.data.armatures.new(inst.name)
         self.buildObject(context, inst, center)
         rig = self.rna
+        LS.rigs[LS.rigname].append(rig)
         amt.display_type = 'STICK'
         rig.show_in_front = True
         rig.data.DazUnflipped = GS.unflipped
-        inst.addLSRig(rig)
         for geonode in inst.geometries:
             geonode.parent = geonode.figure = self
             geonode.rna.parent = rig

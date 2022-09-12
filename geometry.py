@@ -298,7 +298,13 @@ class GeoNode(Node, SimNode):
             if hdob and hdob != ob:
                 shiftMesh(hdob, inst.worldmat.inverted())
         if hdob and not GS.keepBaseMesh:
-            unlinkAll(ob)
+            if hdob == ob:
+                if hdob.name in LS.collection.objects:
+                    LS.collection.objects.unlink(hdob)
+                hdob.name = "%s_HD" % ob.name
+                LS.hdmeshes[LS.rigname].append(hdob)
+            else:
+                unlinkAll(ob)
             if hdob.parent and hdob.parent.name in LS.collection.objects:
                 LS.collection.objects.unlink(hdob.parent)
 
