@@ -1987,13 +1987,21 @@ LRGizmos = {
 #-------------------------------------------------------------
 
 def setToFk(rig, layers):
-    for pname in [
-        "MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R",
-        "MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R"]:
-        if pname in rig.keys():
-            rig[pname] = 0.0
-        if pname in rig.data.keys():
-            rig.data[pname] = 0.0
+    def setValue(rig, prop, value):
+        if hasattr(rig, prop):
+            setattr(rig, prop, value)
+        elif prop in rig.keys():
+            rig[prop] = value
+        elif prop in rig.data.keys():
+            rig.data[prop] = value
+
+    for prop in ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]:
+        setValue(rig, prop, 0.0)
+    for prop in [
+        "MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R",
+        "MhaForearmFollow_L", "MhaForearmFollow_R",
+        ]:
+        setValue(rig, prop, False)
     for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
         layers[layer] = True
     for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:
