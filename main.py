@@ -720,6 +720,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     def invoke(self, context, event):
         self.favoPath = context.scene.DazFavoPath
+        self.useFavoMorphs = (self.favoPath != "")
         return MultiFile.invoke(self, context, event)
 
     def storeState(self, context):
