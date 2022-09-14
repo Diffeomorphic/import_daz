@@ -376,6 +376,11 @@ class Rigify:
         description = "Add limits to IK bones, to prevent poor bending",
         default = True)
 
+    useSeparateIkToe : BoolProperty(
+        name = "Separate IK Toes",
+        description = "Create separate IK toe controls for better IK/FK snapping",
+        default = (bpy.app.version >= (3,3,0)))
+
     useRenameBones : BoolProperty(
         name = "Rename Left-Right Bones",
         description = "Rename bones from l/r prefix to .L/.R suffix",
@@ -552,7 +557,7 @@ class Rigify:
                     pb.rigify_parameters.rotation_axis = 'x'
                     pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
                 elif pb["rigify_type"] == "limbs.leg":
-                    pb.rigify_parameters.extra_ik_toe = False
+                    pb.rigify_parameters.extra_ik_toe = self.useSeparateIkToe
                 elif pb["rigify_type"] in [
                     "spines.super_spine",
                     "spines.basic_spine",
@@ -1437,6 +1442,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         self.layout.prop(self, "useAutoAlign")
         self.layout.prop(self, "useDeleteMeta")
         self.layout.prop(self, "useIkFix")
+        self.layout.prop(self, "useSeparateIkToe")
         Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
         self.layout.prop(self, "useRenameBones")
