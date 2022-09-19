@@ -593,6 +593,7 @@ class UnGeometry(Asset, Channels):
         self.etype = etype
         if self.etype == "studio_geometry_channels":
             self.polygon_material_groups = []
+        self.uv_sets = {}
 
     def parse(self, struct):
         Asset.parse(self, struct)
