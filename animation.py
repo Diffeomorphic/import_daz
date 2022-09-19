@@ -174,6 +174,8 @@ class FrameConverter:
                     bonemap[bname] = bname
                 elif bname in conv.keys():
                     bonemap[bname] = conv[bname]
+                elif len(bname) < 2:
+                    bonemap[bname] = bname
                 elif bname[0] in ["l", "r"] and bname[1].isupper():
                     rname = "%s%s.%s" % (bname[1].lower(), bname[2:], bname[0].upper())
                     bonemap[bname] = rname
@@ -393,6 +395,11 @@ class AffectOptions:
         description = "Include bone scale in animation",
         default = False)
 
+    keepLimits : BoolProperty(
+        name = "Keep Limits",
+        description = "Keep locks and limits.\nDisable for better matching",
+        default = False)
+
     convertPoses : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -408,6 +415,7 @@ class AffectOptions:
         self.drawBones(context)
         if self.affectBones:
             self.layout.prop(self, "affectScale")
+            self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.label(text="Object Transformations Affect:")
             self.layout.prop(self, "affectObject", expand=True)
@@ -754,7 +762,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             self.boneLayers = setFkIk2(rig, True, self.boneLayers)
         elif rig.MhxRig or rig.DazRig == "mhx":
             from .mhx import setToFk
-            self.boneLayers = setToFk(rig, self.boneLayers)
+            self.boneLayers = setToFk(rig, self.boneLayers, self.keepLimits)
         elif rig.DazSimpleIK:
             from .figure import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers)
@@ -1132,7 +1140,10 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
                 setBoneTransform(tfm, pb)
+            if self.keepLimits:
                 self.imposeLocks(pb)
+            elif not self.unlimited.get(pb.name):
+                self.unlimit(pb)
             if self.useInsertKeys:
                 tfm.insertKeys(rig, pb, n+offset, bname, self)
         else:
@@ -1155,6 +1166,18 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                     pb.rotation_euler[n] = 0
 
 
+    def unlimit(self, pb):
+        pb.lock_location = pb.lock_scale = pb.DazLocLocks = pb.DazRotLocks = (False,False,False)
+        if pb.rotation_mode == 'QUATERNION':
+            pb.lock_rotation = (False,False,False,False)
+        else:
+            pb.lock_rotation = (False,False,False)
+        for cns in pb.constraints:
+            if cns.type[0:6] == "LIMIT_":
+                cns.mute = True
+        self.unlimited[pb.name] = True
+
+
     def mergeHipObject(self, rig):
         if self.affectObject == 'MASTER' and self.affectBones:
             master = self.getMasterBone(rig)
@@ -1166,13 +1189,18 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
 
     def findDrivers(self, rig):
+        transforms = [
+            "].rotation_euler",
+            "].rotation_quaternion",
+            "].location",
+            "].scale",
+        ]
         driven = {}
         if (rig.animation_data and
             rig.animation_data.drivers):
             for fcu in rig.animation_data.drivers:
                 words = fcu.data_path.split('"')
-                if (words[0] == "pose.bones[" and
-                    words[2] not in ["].constraints[", "].HdOffset", "].TlOffset"]):
+                if words[0] == "pose.bones[" and words[2] in transforms:
                     driven[words[1]] = True
         self.driven = list(driven.keys())
 
@@ -1223,6 +1251,7 @@ class StandardAnimation:
         if not self.affectSelectedOnly:
             selected = self.selectAll(rig, True)
         LS.forAnimation(self, rig)
+        self.unlimited = {}
         self.findDrivers(rig)
         self.clearAnimation(rig)
         self.missing = {}
