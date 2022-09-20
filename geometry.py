@@ -55,7 +55,7 @@ class GeoNode(Node, SimNode):
             geo.caller = self
             geo.nodes[self.id] = self
         elif isinstance(geo, UnGeometry):
-            print("UnGeometry: %s" % etype)
+            print("UnGeometry: %s %s" % (self.id, etype))
         else:
             msg = ("Not a geometry:\n%s" % geo)
             reportError(msg, trigger=(2,3))

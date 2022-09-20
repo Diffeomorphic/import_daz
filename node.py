@@ -380,6 +380,9 @@ class Instance(Accessor, Channels, SimNode):
     def linkRefChildren(self, refcoll, parent, context, wmats):
         for child in self.children.values():
             ob = child.rna
+            if not isinstance(ob, bpy.types.Object):
+                print("REF Child not an object: %s" % ob)
+                continue
             wmats[ob.name] = ob.matrix_world.copy()
             if child.instanceTarget:
                 coll = child.instanceTarget.getRefColl(context)
@@ -429,6 +432,8 @@ class Instance(Accessor, Channels, SimNode):
         items = self.nodeExtra.get("instance_items")
         coll = self.instanceTarget.getRefColl(context)
         empty = self.rna
+        if empty is None:
+            return
         if empty.name in coll.objects:
             print("Unlink '%s' from '%s'" % (empty.name, coll.name))
             coll.objects.unlink(empty)
