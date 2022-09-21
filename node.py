@@ -174,7 +174,7 @@ class Instance(Accessor, Channels, SimNode):
 
     def __repr__(self):
         pname = (self.parent.id if self.parent else None)
-        return "<Instance %s %d N: %s P: %s R: %s>" % (self.label, self.index, self.node.name, pname, self.rna)
+        return "<Instance %s L:%s %d N: %s P: %s R: %s>" % (self.id, self.label, self.index, self.node.name, pname, self.rna)
 
 
     def errorWrite(self, ref, fp):
@@ -378,10 +378,16 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def linkRefChildren(self, refcoll, parent, context, wmats):
+        from .bone import BoneInstance
+        for geonode in self.geometries:
+            ob = geonode.rna
+            if ob:
+                unlinkAll(ob)
+                refcoll.objects.link(ob)
         for child in self.children.values():
             ob = child.rna
             if not isinstance(ob, bpy.types.Object):
-                print("REF Child not an object: %s" % ob)
+                print("Ref Child not an object:\nP:%s\nS:%s\nC:%s" % (self.parent, self, child))
                 continue
             wmats[ob.name] = ob.matrix_world.copy()
             if child.instanceTarget:
