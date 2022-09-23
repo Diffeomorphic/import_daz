@@ -1984,7 +1984,7 @@ class CyclesTree(Tree):
 
     def selectDiffuse(self, marked):
         try:
-            if self.diffuseTex and marked[self.diffuseTex.name]:
+            if self.diffuseTex and marked.get(self.diffuseTex.name):
                 self.diffuseTex.select = True
                 self.nodes.active = self.diffuseTex
         except UnicodeDecodeError:
