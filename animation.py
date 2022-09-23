@@ -1169,7 +1169,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
 
     def unlimit(self, pb):
-        pb.lock_location = pb.lock_rotation = pb.lock_scale = pb.DazLocLocks = pb.DazRotLocks = (False,False,False)
+        pb.lock_location = pb.lock_rotation = pb.lock_scale = (False,False,False)
         if pb.rotation_mode == 'QUATERNION':
             pb.lock_rotation_w = False
         for cns in pb.constraints:

@@ -378,7 +378,6 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def linkRefChildren(self, refcoll, parent, context, wmats):
-        from .bone import BoneInstance
         for geonode in self.geometries:
             ob = geonode.rna
             if ob:
