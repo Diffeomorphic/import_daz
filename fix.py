@@ -571,6 +571,16 @@ def getSuffixName(bname):
             return "%s%s.L" % (bname[1].lower(), bname[2:])
     elif bname[0].isupper():
         return "%s%s" % (bname[0].lower(), bname[1:])
+    else:
+        return None
+
+
+def getPreSufName(bname, rig):
+    if bname in rig.data.bones.keys():
+        return bname
+    sufname = getSuffixName(bname)
+    if sufname and sufname in rig.data.bones.keys():
+        return sufname
     return None
 
 #-------------------------------------------------------------

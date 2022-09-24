@@ -976,27 +976,39 @@ class SimpleIK:
 
 
     def hasAllBones(self, rig, bnames, prefix):
+        from .fix import getSuffixName
         bnames = [prefix+bname for bname in bnames]
         for bname in bnames:
             if bname not in rig.data.bones.keys():
-                print("Miss", bname)
-                return False
+                sufname = getSuffixName(bname)
+                if sufname not in rig.data.bones.keys():
+                    print("Miss", bname, sufname)
+                    return False
         return True
 
 
     def getLimbBoneNames(self, rig, prefix, type):
         genesis = self.getGenesisType(rig)
         if not genesis:
-            return None
+            return []
+        from .fix import getPreSufName
         table = getattr(self, genesis+type)
-        return [prefix+bname for bname in table]
+        prenames = []
+        for bname in table:
+            prename = "%s%s" % (prefix, bname)
+            if getPreSufName(prename, rig):
+                prenames.append(prename)
+        return prenames
 
 
     def insertIKKeys(self, rig, frame):
+        from .fix import getPreSufName
         for bname in ["lHandIK", "rHandIK", "lFootIK", "rFootIK"]:
-            pb = rig.pose.bones[bname]
-            pb.keyframe_insert("location", frame=frame, group=bname)
-            pb.keyframe_insert("rotation_euler", frame=frame, group=bname)
+            bname = getPreSufName(bname, rig)
+            if bname:
+                pb = rig.pose.bones[bname]
+                pb.keyframe_insert("location", frame=frame, group=bname)
+                pb.keyframe_insert("rotation_euler", frame=frame, group=bname)
 
 
     def limitBone(self, pb, twist, rig, prop, stiffness=(0,0,0)):
@@ -1017,21 +1029,6 @@ class SimpleIK:
         pb.ik_stiffness_z = stiffness[2]
 
         pb.driver_remove("rotation_euler")
-
-        if False:
-            from .mhx import addDriver
-            cns = getConstraint(pb, 'LIMIT_ROTATION')
-            if cns:
-                pb.use_ik_limit_x = cns.use_limit_x
-                pb.use_ik_limit_y = cns.use_limit_y
-                pb.use_ik_limit_z = cns.use_limit_z
-                pb.ik_min_x = cns.min_x
-                pb.ik_max_x = cns.max_x
-                pb.ik_min_y = cns.min_y
-                pb.ik_max_y = cns.max_y
-                pb.ik_min_z = cns.min_z
-                pb.ik_max_z = cns.max_z
-                addDriver(cns, "influence", rig, prop, "1-x")
 
 #-------------------------------------------------------------
 #   Add Simple IK
@@ -1667,11 +1664,14 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
             toggleLayer(rig, "IK", self.prefix, self.type, False)
             setattr(rig, prop, 0.0)
 
+
     def snapSimpleFK(self, rig, bnames, prop):
+        from .fix import getPreSufName
         mats = []
         for bname in bnames:
-            pb = rig.pose.bones[bname]
-            mats.append((pb, pb.matrix.copy()))
+            pb = rig.pose.bones.get(getPreSufName(bname, rig))
+            if pb:
+                mats.append((pb, pb.matrix.copy()))
         setattr(rig, prop, False)
         for pb,mat in mats:
             pb.matrix = mat
@@ -1702,12 +1702,16 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
 
 
 def snapSimpleIK(rig, bnames, prop):
+    from .fix import getPreSufName
     hand = bnames[-1]
-    handfk = rig.pose.bones[hand]
+    handfk = rig.pose.bones.get(getPreSufName(hand, rig))
+    if handfk is None:
+        return
     mat = handfk.matrix.copy()
-    handik = rig.pose.bones[hand+"IK"]
     setattr(rig, prop, True)
-    handik.matrix = mat
+    handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
+    if handik:
+        handik.matrix = mat
 
 
 def toggleLayer(rig, fk, prefix, type, on):

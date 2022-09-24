@@ -167,9 +167,9 @@ def getMappedBone(bname, rig):
     if bname in BoneMap.keys():
         return BoneMap[bname]
     from .fix import getSuffixName
-    bname = getSuffixName(bname)
-    if bname in rig.pose.bones.keys():
-        return bname
+    sufname = getSuffixName(bname)
+    if sufname != bname and sufname in rig.pose.bones.keys():
+        return sufname
     print("NO BONE FOUND", bname)
     return None
 

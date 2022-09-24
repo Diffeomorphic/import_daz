@@ -175,6 +175,7 @@ class DAZ_PT_SetupRigging(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.create_meta")
         self.layout.operator("daz.rigify_meta")
         self.layout.separator()
+        self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.add_mannequin")
 
 #----------------------------------------------------------
@@ -317,7 +318,6 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
-        self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.lock_bones")
         self.layout.separator()
         self.layout.operator("daz.fix_legacy_posable")
