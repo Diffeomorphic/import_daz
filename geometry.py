@@ -664,14 +664,21 @@ class Geometry(Asset, Channels):
 
 
     def getInstance(self, ref, caller=None):
-        iref = instRef(ref)
-        if iref in self.nodes.keys():
-            return self.nodes[iref]
-        iref = unquote(iref)
-        if iref in self.nodes.keys():
-            return self.nodes[iref]
-        else:
-            return None
+        def getSelfInstance(ref, nodes):
+            iref = instRef(ref)
+            if iref in nodes.keys():
+                return nodes[iref]
+            iref = unquote(iref)
+            return nodes.get(iref)
+
+        iref = getSelfInstance(ref, self.nodes)
+        if iref:
+            return iref
+        if self.sourcing:
+            iref = getSelfInstance(ref, self.sourcing.nodes)
+            if iref:
+                return iref
+        return None
 
 
     def parse(self, struct):

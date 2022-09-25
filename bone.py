@@ -731,14 +731,16 @@ class Bone(Node):
 
         trgfig = self.figure.sourcing
         if trgfig:
+            iref = instRef(ref)
             struct = {
                 "id" : iref,
                 "url" : self.url,
                 "target" : trgfig,
             }
+            print("Creating reference to target figure:\n", trgfig)
             inst = self.makeInstance(self.fileref, struct)
             self.instances[iref] = inst
-            print("Creating reference to target figure:\n", inst)
+            print("Target instance:\n", inst)
             return inst
         if (GS.verbosity <= 2 and
             len(self.instances.values()) > 0):

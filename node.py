@@ -740,18 +740,25 @@ class Node(Asset, Formula, Channels):
 
 
     def getInstance(self, ref, caller=None):
+        def getSelfInstance(ref, instances):
+            iref = instRef(ref)
+            if iref in instances.keys():
+                return instances[iref]
+            iref = unquote(iref)
+            return instances.get(iref)
+
         if caller is None:
             caller = self
-        iref = instRef(ref)
-        if iref in caller.instances.keys():
-            return caller.instances[iref]
-        iref = unquote(iref)
-        if iref in caller.instances.keys():
-            return caller.instances[iref]
-        else:
-            msg = ("Node: Did not find instance %s in %s" % (iref, caller))
-            insts = caller.instances
-            reportError(msg, insts, trigger=(2,4))
+        iref = getSelfInstance(ref, caller.instances)
+        if iref:
+            return iref
+        if caller.sourcing:
+            iref = getSelfInstance(ref, caller.sourcing.instances)
+            if iref:
+                return iref
+        msg = ("Node: Did not find instance %s in %s" % (iref, caller))
+        insts = caller.instances
+        reportError(msg, insts, trigger=(2,4))
         return None
 
 
