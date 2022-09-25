@@ -168,7 +168,7 @@ def getMappedBone(bname, rig):
         return BoneMap[bname]
     from .fix import getSuffixName
     sufname = getSuffixName(bname)
-    if sufname != bname and sufname in rig.pose.bones.keys():
+    if sufname in rig.pose.bones.keys():
         return sufname
     print("NO BONE FOUND", bname)
     return None
@@ -708,16 +708,27 @@ class Bone(Node):
 
 
     def getInstance(self, ref, caller=None):
-        iref = instRef(ref)
-        if iref in self.instances.keys():
-            return self.instances[iref]
-        iref = unquote(iref)
-        if iref in self.instances.keys():
-            return self.instances[iref]
-        try:
-            return self.instances[BoneMap[iref]]
-        except KeyError:
-            pass
+        def getSelfInstance(ref, instances):
+            iref = instRef(ref)
+            if iref in instances.keys():
+                return instances[iref]
+            iref = unquote(iref)
+            if iref in instances.keys():
+                return instances[iref]
+            elif iref in BoneMap.keys():
+                return instances.get(BoneMap[iref])
+            else:
+                return None
+
+        iref = getSelfInstance(ref, self.instances)
+        if iref:
+            return iref
+        if self.sourcing:
+            iref = getSelfInstance(ref, self.sourcing.instances)
+            if iref:
+                print("Sourced %s" % iref)
+                return iref
+
         trgfig = self.figure.sourcing
         if trgfig:
             struct = {
@@ -732,7 +743,7 @@ class Bone(Node):
         if (GS.verbosity <= 2 and
             len(self.instances.values()) > 0):
             return list(self.instances.values())[0]
-        msg = ("Bone: Did not find instance %s in %s" % (iref, list(self.instances.keys())))
+        msg = ("Bone: Did not find instance %s in %s\nSelf = %s\nSourcing = %s" % (iref, list(self.instances.keys()), self, self.sourcing))
         reportError(msg, trigger=(2,3))
         return None
 
