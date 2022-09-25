@@ -756,9 +756,8 @@ class Node(Asset, Formula, Channels):
             iref = getSelfInstance(ref, caller.sourcing.instances)
             if iref:
                 return iref
-        msg = ("Node: Did not find instance %s in %s" % (iref, caller))
-        insts = caller.instances
-        reportError(msg, insts, trigger=(2,4))
+        msg = ("Node: Did not find instance %s in %s" % (instRef(ref), caller))
+        reportError(msg, caller.instances, trigger=(2,4))
         return None
 
 

@@ -942,16 +942,20 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
         op = row.operator("daz.snap_simple_ik", text="Left Arm")
         op.prefix = "l"
         op.type = "Arm"
+        op.pole = "lElbow"
         op = row.operator("daz.snap_simple_ik", text="Right Arm")
         op.prefix = "r"
         op.type = "Arm"
+        op.pole = "rElbow"
         row = layout.row()
         op = row.operator("daz.snap_simple_ik", text="Left Leg")
         op.prefix = "l"
         op.type = "Leg"
+        op.pole = "lKnee"
         op = row.operator("daz.snap_simple_ik", text="Right Leg")
         op.prefix = "r"
         op.type = "Leg"
+        op.pole = "rKnee"
 
 
     def drawLayers(self, rig):

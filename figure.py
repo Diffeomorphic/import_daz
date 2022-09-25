@@ -1688,6 +1688,7 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
 
     prefix : StringProperty()
     type : StringProperty()
+    pole : StringProperty()
 
     def run(self, context):
         rig = context.object
@@ -1695,23 +1696,53 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
             setattr(rig, prop, 0.0)
-            snapSimpleIK(rig, bnames, prop)
+            self.snapSimpleIK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, False)
             toggleLayer(rig, "IK", self.prefix, self.type, True)
             setattr(rig, prop, 1.0)
 
 
-def snapSimpleIK(rig, bnames, prop):
-    from .fix import getPreSufName
-    hand = bnames[-1]
-    handfk = rig.pose.bones.get(getPreSufName(hand, rig))
-    if handfk is None:
-        return
-    mat = handfk.matrix.copy()
-    setattr(rig, prop, True)
-    handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
-    if handik:
-        handik.matrix = mat
+    def snapSimpleIK(self, rig, bnames, prop):
+        from .fix import getPreSufName
+        hand = bnames[-1]
+        handfk = rig.pose.bones.get(getPreSufName(hand, rig))
+        if handfk is None:
+            return
+        handmat = handfk.matrix.copy()
+        pole = getPreSufName(self.pole, rig)
+        if pole:
+            poleik = rig.pose.bones.get(pole)
+            uparm = bnames[0]
+            loarm = bnames[1] if len(bnames) == 3 else bnames[2]
+            uparmfk = rig.pose.bones.get(getPreSufName(uparm, rig))
+            loarmfk = rig.pose.bones.get(getPreSufName(loarm, rig))
+            polemat = self.getPoleMatrix(uparmfk, loarmfk)
+        setattr(rig, prop, True)
+        handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
+        if handik:
+            handik.matrix = handmat
+        if pole:
+            poleik.matrix = polemat
+
+
+    def getPoleMatrix(self, above, below):
+        ay = Vector(above.matrix.col[1][:3])
+        by = Vector(below.matrix.col[1][:3])
+        az = Vector(above.matrix.col[2][:3])
+        bz = Vector(below.matrix.col[2][:3])
+        p0 = Vector(below.matrix.col[3][:3])
+        n = ay.cross(by)
+        if abs(n.length) > 1e-4:
+            d = ay - by
+            n.normalize()
+            d -= d.dot(n)*n
+            d.normalize()
+            if d.dot(az) > 0:
+                d = -d
+            p = p0 + 2*above.bone.length*d
+        else:
+            p = p0
+        return Matrix.Translation(p)
 
 
 def toggleLayer(rig, fk, prefix, type, on):
