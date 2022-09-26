@@ -247,7 +247,12 @@ class Instance(Accessor, Channels, SimNode):
                 self.ignore = True
             elif etype == "studio/scene_data/iray_decal":
                 if self.parent:
-                    for geo in self.parent.geometries:
+                    parent = self.parent
+                    geos = parent.geometries
+                    while not geos and parent.parent:
+                        parent = parent.parent
+                        geos = parent.geometries
+                    for geo in geos:
                         for dmat in geo.materials.values():
                             dmat.decals.append(self)
 
@@ -403,7 +408,8 @@ class Instance(Accessor, Channels, SimNode):
                     empty.parent = ob.parent
                     empty.parent_type = ob.parent_type
                 elif child.hasInstanceChildren(refcoll):
-                    print('Warning: "%s" has instance children' % ob.name)
+                    if GS.verbosity >= 3:
+                        print('Warning: "%s" has instance children' % ob.name)
                     LS.hasInstanceChildren[ob.name] = True
                 else:
                     unlinkAll(ob)
@@ -413,7 +419,8 @@ class Instance(Accessor, Channels, SimNode):
 
     def hasInstanceChildren(self, refcoll):
         if self.instanceTarget and self.instanceTarget.name == refcoll.name:
-            print('"%s" is an instance of "%s"' % (self.name, refcoll.name))
+            if GS.verbosity >= 3:
+                print('"%s" is an instance of "%s"' % (self.name, refcoll.name))
             return True
         for child in self.children.values():
             if child.hasInstanceChildren(refcoll):

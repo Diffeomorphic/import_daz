@@ -361,7 +361,7 @@ class CyclesTree(Tree):
                 else:
                     mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna], force=True)
                     inst.mappingNode = mapping.node_tree
-            self.column += 1
+            self.addColumn()
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
                     dmat.isShellMat = True
@@ -409,7 +409,7 @@ class CyclesTree(Tree):
                 n += 1
         shells.sort()
         if shells:
-            self.column += 1
+            self.addColumn()
         if self.owner.geometry:
             geo = self.owner.geometry.data
             uvs = geo.uv_sets
@@ -781,7 +781,7 @@ class CyclesTree(Tree):
         if not self.isEnabled("Diffuse"):
             return
         from .cgroup import DiffuseGroup
-        self.column += 1
+        self.addColumn()
         fac,factex = self.getFacFromTranslucency()
         if fac == 0:
             return
@@ -828,7 +828,7 @@ class CyclesTree(Tree):
     def buildOverlay(self):
         if (self.getValue(["Diffuse Overlay Weight"], 0) and
             LS.materialMethod != 'SINGLE_PRINCIPLED'):
-            self.column += 1
+            self.addColumn()
             slot = self.getImageSlot(["Diffuse Overlay Weight"])
             fac,factex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
             if self.getValue(["Diffuse Overlay Weight Squared"], False):
@@ -914,7 +914,7 @@ class CyclesTree(Tree):
         if wt == 0:
             return
         from .cgroup import MakeupGroup
-        self.column += 1
+        self.addColumn()
         node = self.addGroup(MakeupGroup, "DAZ Makeup", size=100)
         color,tex = self.getColorTex(["Makeup Base Color"], "COLOR", WHITE, False)
         self.linkColor(tex, node, color, "Color")
@@ -944,7 +944,7 @@ class CyclesTree(Tree):
         from .cgroup import DualLobeGroupUberIray, DualLobeGroupPbrSkin
         if not self.isEnabled("Dual Lobe Specular"):
             return
-        self.column += 1
+        self.addColumn()
         if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", size=100)
         else:
@@ -995,7 +995,7 @@ class CyclesTree(Tree):
         if self.getValue(["Metallic Weight"], 0) == 0:
             return
         from .cgroup import MetalGroupUber, MetalGroupPbrSkin
-        self.column += 1
+        self.addColumn()
         if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=100)
             rough1,rough2,roughtex, ratio = self.getDualRoughness(0.0)
@@ -1031,7 +1031,7 @@ class CyclesTree(Tree):
             return
 
         from .cgroup import GlossyGroup
-        self.column += 1
+        self.addColumn()
         glossy = self.addGroup(GlossyGroup, "DAZ Glossy", size=100)
         fac,factex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 0)
         color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, False)
@@ -1101,7 +1101,7 @@ class CyclesTree(Tree):
             return False
         else:
             from .cgroup import WeightedGroup
-            self.column += 1
+            self.addColumn()
             node = self.addGroup(WeightedGroup, "DAZ Weighted", size=100)
             self.linkScalar(glosstex, node, fac, "Fac")
             if self.diffuseCycles:
@@ -1168,7 +1168,7 @@ class CyclesTree(Tree):
         anirot,rottex = self.getColorTex(["Top Coat Rotations"], "NONE", 0)
 
         from .cgroup import TopCoatGroup
-        self.column += 1
+        self.addColumn()
         top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=100)
         effect = self.getValue(["Top Coat Color Effect"], 0)
         self.buildColorEffect(effect, color, coltex, None, fac, factex, top)
@@ -1284,7 +1284,7 @@ class CyclesTree(Tree):
         transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
-        self.column += 1
+        self.addColumn()
         node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface", size=200)
         node.inputs["Scale"].default_value = 1.0
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
@@ -1436,7 +1436,7 @@ class CyclesTree(Tree):
         self.mixWithActive(weight, wttex, node)
         if GS.useFakeCaustics and not self.owner.isThinWall():
             from .cgroup import FakeCausticsGroup
-            self.column += 1
+            self.addColumn()
             node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[color], force=True)
             self.mixWithActive(weight, wttex, node, keep=True)
         return weight,wttex
@@ -1444,7 +1444,7 @@ class CyclesTree(Tree):
 
     def buildRefractionNode(self):
         from .cgroup import RefractionGroup
-        self.column += 1
+        self.addColumn()
         node = self.addGroup(RefractionGroup, "DAZ Refraction", size=150)
         node.width = 240
 
@@ -1479,7 +1479,7 @@ class CyclesTree(Tree):
     def buildCutout(self):
         alpha,tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
         if alpha < 1 or tex:
-            self.column += 1
+            self.addColumn()
             self.useCutout = True
             if alpha == 0:
                 node = self.addNode("ShaderNodeBsdfTransparent")
@@ -1494,7 +1494,7 @@ class CyclesTree(Tree):
                 self.owner.setTransSettings(False, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
             if self.emit and GS.useGhostLight:
-                self.column += 1
+                self.addColumn()
                 self.cycles = self.addGhost(node, "BSDF")
 
 
@@ -1515,7 +1515,7 @@ class CyclesTree(Tree):
         color = self.getColor("getChannelEmissionColor", BLACK)
         if not isBlack(color):
             from .cgroup import EmissionGroup
-            self.column += 1
+            self.addColumn()
             emit = self.addGroup(EmissionGroup, "DAZ Emission")
             self.addEmitColor(emit, "Color")
             strength = self.getLuminance(emit)
@@ -1645,7 +1645,7 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildOutput(self):
-        self.column += 1
+        self.addColumn()
         output = self.addNode("ShaderNodeOutputMaterial")
         output.target = 'ALL'
         cycles = self.getCyclesSocket()

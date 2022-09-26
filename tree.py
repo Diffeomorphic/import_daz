@@ -54,6 +54,7 @@ class Tree:
     def addNode(self, stype, col=None, size=0, label=None, parent=None):
         if col is None:
             col = self.column
+        col = max(0, min(col, NCOLUMNS-1))
         node = self.nodes.new(type = stype)
         node.location = ((col-2)*XSIZE, self.ycoords[col])
         self.ycoords[col] -= (YSIZE + size)
@@ -62,6 +63,13 @@ class Tree:
         if parent:
             node.parent = parent
         return node
+
+
+    def addColumn(self):
+        self.column += 1
+        if self.column >= NCOLUMNS:
+            print("Material has too many columns: %s" % self.owner.name)
+            self.column = NCOLUMNS-10
 
 
     def addGroup(self, classdef, name, col=None, size=0, args=[], force=False):

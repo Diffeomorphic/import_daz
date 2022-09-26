@@ -102,7 +102,7 @@ class PbrTree(CyclesTree):
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         mix = self.addNode("ShaderNodeMixShader", col=self.column+1)
         node = self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, mix, colorslot=None)
-        self.column += 1
+        self.addColumn()
         self.linkScalar(factex, mix, fac, "Fac")
         self.links.new(self.translucent.outputs["BSDF"], mix.inputs[1])
         self.links.new(self.pbr.outputs[0], mix.inputs[2])
@@ -422,7 +422,7 @@ class PbrTree(CyclesTree):
         if (self.owner.isThinWall() and
             LS.materialMethod != 'SINGLE_PRINCIPLED'):
             from .cgroup import RayClipGroup
-            self.column += 1
+            self.addColumn()
             clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
             self.links.new(pbr.outputs[0], clip.inputs["Shader"])
             self.linkColor(coltex, clip, color, "Color")
@@ -437,7 +437,7 @@ class PbrTree(CyclesTree):
             elif self.owner.basemix == 2:
                 self.cycles = clip
             else:
-                self.column += 1
+                self.addColumn()
                 mix = self.mixShaders(weight, wttex, self.pbr, clip)
                 self.cycles = mix
         self.postPBR = True
@@ -485,7 +485,7 @@ class PbrTree(CyclesTree):
         if self.getValue(["Share Glossy Inputs"], False):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
         self.pbr = pbr
-        self.column += 1
+        self.addColumn()
 
     #-------------------------------------------------------------
     #   Utilities

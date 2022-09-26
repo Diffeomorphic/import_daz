@@ -1554,7 +1554,7 @@ class HairTree(CyclesTree):
 
 
     def buildOutput(self):
-        self.column += 1
+        self.addColumn()
         output = self.addNode('ShaderNodeOutputMaterial')
         self.links.new(self.active.outputs[0], output.inputs['Surface'])
 
@@ -1656,7 +1656,7 @@ class HairBSDFTree(HairTree):
         self.readColor(0.5)
         trans = self.buildTransmission()
         refl = self.buildHighlight()
-        self.column += 1
+        self.addColumn()
         if trans and refl:
             #weight = self.getValue(["Highlight Weight"], 0.11)
             weight = self.getValue(["Glossy Layer Weight"], 0.5)
@@ -1706,7 +1706,7 @@ class HairBSDFTree(HairTree):
             node.inputs["Rotation"].default_value = arots
             self.linkTangent(node)
             self.linkBumpNormal(node)
-            self.column += 1
+            self.addColumn()
             self.active = self.addShaders(self.active, node)
 
 
@@ -1716,7 +1716,7 @@ class HairBSDFTree(HairTree):
         if alpha < 1:
             transp = self.addNode("ShaderNodeBsdfTransparent")
             transp.inputs["Color"].default_value[0:3] = WHITE
-            self.column += 1
+            self.addColumn()
             self.active = self.mixShaders(transp, self.active, alpha)
             self.owner.setTransSettings(False, False, WHITE, alpha)
 

@@ -195,14 +195,14 @@ class WorldTree(CyclesTree):
             bgnode,socket = self.buildBackground(background, backdrop)
 
         if envnode and bgnode:
-            self.column += 1
+            self.addColumn()
             mix = self.addNode("ShaderNodeMixShader")
             self.links.new(bgnode.outputs["Fac"], mix.inputs[0])
             self.links.new(envnode.outputs["Background"], mix.inputs[1])
             self.links.new(bgnode.outputs["Color"], mix.inputs[2])
             socket = mix.outputs[0]
 
-        self.column += 1
+        self.addColumn()
         output = self.addNode("ShaderNodeOutputWorld")
         if socket:
             self.links.new(socket, output.inputs["Surface"])
