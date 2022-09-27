@@ -1667,14 +1667,28 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
 
     def snapSimpleFK(self, rig, bnames, prop):
         from .fix import getPreSufName
-        mats = []
+        mats = {}
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
-                mats.append((pb, pb.matrix.copy()))
+                mats[bname] = (pb, pb.matrix.copy())
         setattr(rig, prop, False)
-        for pb,mat in mats:
+        for pb,mat in mats.values():
             pb.matrix = mat
+        for bname in bnames:
+            if bname[-5:] == "Twist":
+                twist = rig.pose.bones.get(getPreSufName(bname, rig))
+                if twist:
+                    bend = rig.pose.bones.get(getPreSufName("%sBend" % bname[:-5], rig))
+                    loc,rot,scale = bend.matrix_basis.decompose()
+                    bendeuler = rot.to_euler(bend.rotation_mode)
+                    twisteuler = Euler((0,bendeuler.y,0), bend.rotation_mode)
+                    bendeuler.y = 0
+                    bendmat = Matrix.Translation(loc) @ bendeuler.to_matrix().to_4x4() @ Matrix.Diagonal(scale).to_4x4()
+                    bend.matrix_basis = bendmat
+                    twist.location = Zero
+                    twist.rotation_euler = twisteuler
+                    twist.scale = One
 
 #----------------------------------------------------------
 #   IK Snap
@@ -1723,6 +1737,10 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
             handik.matrix = handmat
         if pole:
             poleik.matrix = polemat
+        for bname in bnames:
+            pb = rig.pose.bones.get(getPreSufName(bname, rig))
+            if pb:
+                pb.matrix_basis = Matrix()
 
 
     def getPoleMatrix(self, above, below):
