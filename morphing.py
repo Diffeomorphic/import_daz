@@ -3010,7 +3010,8 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
 
 
     def copyFcurve(self, fcu1, fcu2):
-        fcu2.keyframe_points.clear()
+        for kp in list(fcu2.keyframe_points):
+            fcu2.keyframe_points.remove(kp, fast=True)
         for kp in fcu1.keyframe_points:
             fcu2.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
         for attr in ['color', 'color_mode', 'extrapolation', 'hide', 'lock', 'mute', 'select']:
