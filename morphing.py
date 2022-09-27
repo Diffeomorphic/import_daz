@@ -2948,7 +2948,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
 
     def run(self, context):
         rig = getRigFromObject(context.object)
-        if rig.animation_data is None or rig.animation_data.action is None:
+        if not (rig and rig.animation_data and rig.animation_data.action):
             raise DazError("No action found")
         actrig = rig.animation_data.action
 
