@@ -2909,7 +2909,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         print("%d morphs converted in %g seconds" % (nitems, t2-t1))
 
 
-
     def applyArmature(self, ob, rig, mod, mname):
         mod.name = mname
         if bpy.app.version < (2,90,0):
@@ -2934,6 +2933,67 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         for i in range(len(ob.modifiers)-1):
             bpy.ops.object.modifier_move_up(modifier=nmod.name)
         return nmod
+
+#-------------------------------------------------------------
+#   Convert pose to shapekey
+#-------------------------------------------------------------
+
+class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
+    bl_idname = "daz.transfer_animation_to_shapekeys"
+    bl_label = "Transfer Animation To Shapekeys"
+    bl_description = (
+        "Convert the active armature action to actions for mesh shapekeys.\n" +
+        "Transferred morph F-curves are removed from the armature action")
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = getRigFromObject(context.object)
+        if rig.animation_data is None or rig.animation_data.action is None:
+            raise DazError("No action found")
+        actrig = rig.animation_data.action
+
+        morphnames = {}
+        for morphset in theStandardMorphSets:
+            pgs = getattr(rig, "Daz"+morphset)
+            for pg in pgs:
+                morphnames[pg.name] = pg.text
+        for cat in rig.DazMorphCats:
+            for pg in cat.morphs:
+                morphnames[pg.name] = pg.text
+
+        for ob in rig.children:
+            if (ob.type != 'MESH' or
+                ob.data.shape_keys is None):
+                continue
+            skeys = ob.data.shape_keys
+            act = None
+            fcurves = {}
+            for fcurig in actrig.fcurves:
+                prop = getProp(fcurig.data_path)
+                if prop:
+                    sname = morphnames.get(prop)
+                    if sname and sname in skeys.key_blocks.keys():
+                        skey = skeys.key_blocks[sname]
+                        channel = 'key_blocks["%s"].value' % sname
+                        if skeys.animation_data is None:
+                            skeys.animation_data_create()
+                        skey.keyframe_insert("value")
+                        if act is None:
+                            act = skeys.animation_data.action
+                            act.name = "%s:%s" % (ob.name, actrig.name)
+                        fcu = act.fcurves.find(channel)
+                        self.copyFcurve(fcurig, fcu)
+                        fcurves[fcurig.data_path] = fcurig
+            for fcu in fcurves.values():
+                actrig.fcurves.remove(fcu)
+
+
+    def copyFcurve(self, fcu1, fcu2):
+        fcu2.keyframe_points.clear()
+        for kp in fcu1.keyframe_points:
+            fcu2.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
+        for attr in ['color', 'color_mode', 'extrapolation', 'hide', 'lock', 'mute', 'select']:
+            setattr(fcu2, attr, getattr(fcu1, attr))
 
 #-------------------------------------------------------------
 #   Transfer verts to shapekeys
@@ -3296,6 +3356,7 @@ classes = [
     DAZ_OT_PinShape,
     DAZ_OT_LoadMoho,
     DAZ_OT_ConvertMorphsToShapes,
+    DAZ_OT_TransferAnimationToShapekeys,
     DAZ_OT_MeshToShape,
     DAZ_OT_SaveFavoMorphs,
     DAZ_OT_LoadFavoMorphs,
