@@ -1218,12 +1218,12 @@ class StandardAnimation:
     def run(self, context):
         from time import perf_counter
         from .uilist import updateScrollbars
+        from .scan import getCharData, loadScannedInfo, checkNeedUpdates
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
-        if self.affectMorphs and self.useScanned:
-            from .scan import getCharData, loadScannedInfo, checkNeedUpdates
-            rig, mesh, name, relpath = getCharData(context)
+        rig, mesh, name, relpath = getCharData(context, False)
+        if self.affectMorphs and self.useScanned and relpath:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
             if self.useCheckUpdates:

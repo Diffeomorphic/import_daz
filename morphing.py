@@ -2873,6 +2873,15 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     bl_description = "Convert selected morphs to shapekeys.\nAll morphs are converted when called from script"
     bl_options = {'UNDO'}
 
+    useLabels : BoolProperty(
+        name = "Labels As Names",
+        description = "Use the morph labels instead of morph names as shapekey names",
+        default = True)
+
+    def draw(self, context):
+        GeneralMorphSelector.draw(self, context)
+        self.layout.prop(self, "useLabels")
+
     def run(self, context):
         ob = context.object
         mod = getModifier(ob, 'ARMATURE')
@@ -2882,7 +2891,10 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         if rig.DazDriversDisabled:
             raise DazError("Drivers are disabled")
         if self.invoked:
-            items = [(item.name, item.text) for item in self.getSelectedItems()]
+            if self.useLabels:
+                items = [(item.name, item.text) for item in self.getSelectedItems()]
+            else:
+                items = [(item.name, item.name) for item in self.getSelectedItems()]
         else:
             items = [(key, key) for key in rig.keys() if not self.specialKey(self, key)]
         nitems = len(items)
@@ -2942,7 +2954,8 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
     bl_idname = "daz.transfer_animation_to_shapekeys"
     bl_label = "Transfer Animation To Shapekeys"
     bl_description = (
-        "Convert the active armature action to actions for mesh shapekeys.\n" +
+        "Transfer the armature action to actions for shapekeys.\n" +
+        "From active armature to selected meshes.\n" +
         "Transferred morph F-curves are removed from the armature action")
     bl_options = {'UNDO'}
 
@@ -2951,30 +2964,29 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
         if not (rig and rig.animation_data and rig.animation_data.action):
             raise DazError("No action found")
         actrig = rig.animation_data.action
+        meshes = [ob for ob in rig.children if ob.type == 'MESH' and ob.data.shape_keys]
+        if not meshes:
+            raise DazError("No meshes with shapekeys selected")
 
-        morphnames = {}
+        self.morphnames = {}
         for morphset in theStandardMorphSets:
             pgs = getattr(rig, "Daz"+morphset)
             for pg in pgs:
-                morphnames[pg.name] = pg.text
+                self.morphnames[pg.name] = pg.text
         for cat in rig.DazMorphCats:
             for pg in cat.morphs:
-                morphnames[pg.name] = pg.text
+                self.morphnames[pg.name] = pg.text
 
-        for ob in rig.children:
-            if (ob.type != 'MESH' or
-                ob.data.shape_keys is None):
-                continue
+        for ob in meshes:
             skeys = ob.data.shape_keys
             act = None
             fcurves = {}
             for fcurig in actrig.fcurves:
                 prop = getProp(fcurig.data_path)
                 if prop:
-                    sname = morphnames.get(prop)
-                    if sname and sname in skeys.key_blocks.keys():
-                        skey = skeys.key_blocks[sname]
-                        channel = 'key_blocks["%s"].value' % sname
+                    skey = self.getShape(prop, skeys)
+                    if skey:
+                        channel = 'key_blocks["%s"].value' % skey.name
                         if skeys.animation_data is None:
                             skeys.animation_data_create()
                         skey.keyframe_insert("value")
@@ -2986,6 +2998,15 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
                         fcurves[fcurig.data_path] = fcurig
             for fcu in fcurves.values():
                 actrig.fcurves.remove(fcu)
+
+
+    def getShape(self, prop, skeys):
+        if prop in skeys.key_blocks.keys():
+            return skeys.key_blocks[prop]
+        sname = self.morphnames.get(prop)
+        if sname:
+            return skeys.key_blocks.get(sname)
+        return None
 
 
     def copyFcurve(self, fcu1, fcu2):
