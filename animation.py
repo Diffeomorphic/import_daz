@@ -492,6 +492,11 @@ class MorphOptions:
         description = "Clear all morph properties before loading new ones",
         default = True)
 
+    useShapekeys : BoolProperty(
+        name = "Load To Shapekeys",
+        description = "Load morphs to mesh shapekeys instead of rig properties",
+        default = False)
+
     useLoadMissing : BoolProperty(
         name = "Load Missing Morphs",
         description = "Load missing morphs",
@@ -524,13 +529,15 @@ class MorphOptions:
 
     def draw(self, context):
         self.layout.prop(self, "useClearMorphs")
-        self.layout.prop(self, "useScanned")
-        if self.useScanned:
-            self.layout.prop(self, "useCheckUpdates")
-        self.layout.prop(self, "useLoadMissing")
-        if self.useLoadMissing:
-            self.layout.prop(self, "category")
-            self.layout.prop(self, "useMakePosable")
+        self.layout.prop(self, "useShapekeys")
+        if not self.useShapekeys:
+            self.layout.prop(self, "useScanned")
+            if self.useScanned:
+                self.layout.prop(self, "useCheckUpdates")
+            self.layout.prop(self, "useLoadMissing")
+            if self.useLoadMissing:
+                self.layout.prop(self, "category")
+                self.layout.prop(self, "useMakePosable")
         self.layout.prop(self, "affectGeograft")
 
 
@@ -916,8 +923,17 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         tfm.insertKeys(rig, pb, frame, pb.name, self)
             setChildofInverses(rig)
         if self.affectMorphs and self.useClearMorphs:
-            from .morphing import clearAllMorphs
-            clearAllMorphs(rig, frame, self.useInsertKeys)
+            if self.useShapekeys:
+                for ob in rig.children:
+                    if ob.type == 'MESH' and ob.data.shape_keys:
+                        for skey in ob.data.shape_keys.key_blocks:
+                            skey.value = 0.0
+                            if self.useInsertKeys:
+                                skey.keyframe_insert("value", frame=frame)
+            else:
+                from .morphing import clearAllMorphs
+                clearAllMorphs(rig, frame, self.useInsertKeys)
+
 
     KnownRigs = [
         "Genesis",
@@ -1003,16 +1019,13 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         twists.append((bname[6:], tfm, value))
                     elif "value" in bframe.keys():
                         if self.affectMorphs:
-                            key = self.getRigKey(bname, rig, value)
-                            if key:
-                                oldval = rig[key]
-                                if isinstance(oldval, int):
-                                    value = int(value)
-                                elif isinstance(oldval, float):
-                                    value = float(value)
-                                rig[key] = value
-                                if self.useInsertKeys:
-                                    rig.keyframe_insert(propRef(key), frame=n+offset, group="Morphs")
+                            prop = unquote(bname)
+                            if self.useShapekeys:
+                                self.setShapeValues(rig, prop, value, n, offset)
+                            else:
+                                key = self.getRigKey(prop, rig, value)
+                                if key:
+                                    self.setRigProp(rig, key, value, n, offset)
 
                 for (bname, tfm, value) in twists:
                     self.transformBone(rig, bname, tfm, value, n, offset, True)
@@ -1035,6 +1048,28 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             self.addToPoseLib(rig, filepath)
             offset += n + 1
         return offset,prop
+
+
+    def setRigProp(self, rig, key, value, n, offset):
+        if key:
+            oldval = rig[key]
+            if isinstance(oldval, int):
+                value = int(value)
+            elif isinstance(oldval, float):
+                value = float(value)
+            rig[key] = value
+            if self.useInsertKeys:
+                rig.keyframe_insert(propRef(key), frame=n+offset, group="Morphs")
+
+
+    def setShapeValues(self, rig, key, value, n, offset):
+        for ob in rig.children:
+            if ob.type == 'MESH' and ob.data.shape_keys:
+                skey = ob.data.shape_keys.key_blocks.get(key)
+                if skey:
+                    skey.value = value
+                    if self.useInsertKeys:
+                        skey.keyframe_insert("value", frame=n+offset)
 
 
     def addToPoseLib(self, rig, filepath):
@@ -1115,8 +1150,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         pb.keyframe_insert("scale", frame=frame, group=pb.name)
 
 
-    def getRigKey(self, key, rig, value):
-        prop = unquote(key)
+    def getRigKey(self, prop, rig, value):
         if self.affectGeograft != "-":
             prop2 = "%s:%s" % (prop, self.affectGeograft)
             if prop2 in rig.keys():
@@ -1223,6 +1257,8 @@ class StandardAnimation:
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
         rig, mesh, name, relpath = getCharData(context, False)
+        if self.useShapekeys:
+            self.useScanned = False
         if self.affectMorphs and self.useScanned and relpath:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
