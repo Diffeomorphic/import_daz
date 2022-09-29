@@ -39,15 +39,10 @@ from .fileutils import SingleFile, TextFile, CsvFile
 
 class FACSImporter(SingleFile, ActionOptions):
 
-    makeNewAction : BoolProperty(
-        name = "New Action",
-        description = "Unlink current action and make a new one",
-        default = True)
-
-    actionName : StringProperty(
-        name = "Action Name",
-        description = "Name of loaded action",
-        default = "Action")
+    useShapekeys : BoolProperty(
+        name = "Load To Shapekeys",
+        description = "Load morphs to mesh shapekeys instead of rig properties",
+        default = False)
 
     useHeadLoc : BoolProperty(
         name = "Head Location",
@@ -98,6 +93,8 @@ class FACSImporter(SingleFile, ActionOptions):
         self.layout.prop(self, "makeNewAction")
         if self.makeNewAction:
             self.layout.prop(self, "actionName")
+        self.layout.prop(self, "useShapekeys")
+        self.layout.separator()
         self.layout.prop(self, "useHeadLoc")
         self.layout.prop(self, "useHeadRot")
         if self.useHeadRot:
@@ -124,11 +121,21 @@ class FACSImporter(SingleFile, ActionOptions):
         self.hrotkeys = {}
         self.leyekeys = {}
         self.reyekeys = {}
+        self.shapekeys = {}
+        if self.useShapekeys:
+            for ob in rig.children:
+                if ob.type == 'MESH' and ob.data.shape_keys:
+                    for skey in ob.data.shape_keys.key_blocks:
+                        self.shapekeys[skey.name] = True
         self.parse()
         first = list(self.bskeys.values())[0]
         print("Blendshapes: %d\nKeys: %d" % (len(self.bshapes), len(first)))
         if self.makeNewAction and rig.animation_data:
             rig.animation_data.action = None
+        if self.makeNewAction and self.useShapekeys:
+            for ob in rig.children:
+                if ob.type == 'MESH' and ob.data.shape_keys and ob.data.shape_keys.animation_data:
+                    ob.data.shape_keys.animation_data.action = None
         self.build(rig, context)
         if self.makeNewAction and rig.animation_data:
             act = rig.animation_data.action
@@ -162,6 +169,17 @@ class FACSImporter(SingleFile, ActionOptions):
                     pass
                 elif not self.useTongue and "Tongue" in prop:
                     pass
+                elif prop in self.shapekeys.keys():
+                    for ob in rig.children:
+                        if ob.type == 'MESH' and ob.data.shape_keys:
+                            if prop in ob.data.shape_keys.key_blocks.keys():
+                                skey = ob.data.shape_keys.key_blocks[prop]
+                                skey.value = value
+                                skey.keyframe_insert("value", frame=frame)
+                            else:
+                                print("RPP", prop, ob.name)
+                                print(list(ob.data.shape_keys.keys()))
+                                halt
                 elif prop in rig.keys():
                     rig[prop] = value
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
