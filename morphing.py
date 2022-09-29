@@ -2878,9 +2878,16 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         description = "Use the morph labels instead of morph names as shapekey names",
         default = False)
 
+    useDelete : BoolProperty(
+        name = "Delete Existing Shapekeys",
+        description = "Delete shapekeys that already exists",
+        default = False)
+
     def draw(self, context):
         GeneralMorphSelector.draw(self, context)
-        self.layout.prop(self, "useLabels")
+        row = self.layout.row()
+        row.prop(self, "useLabels")
+        row.prop(self, "useDelete")
 
     def run(self, context):
         ob = context.object
@@ -2898,6 +2905,14 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         else:
             items = [(key, key) for key in rig.keys() if not self.specialKey(self, key)]
         nitems = len(items)
+        skeys = ob.data.shape_keys
+        existing = {}
+        if self.useDelete and skeys:
+            for skey in skeys.key_blocks[1:]:
+                existing[skey.name] = skey
+                skey.driver_remove("value")
+                skey.driver_remove("slider_min")
+                skey.driver_remove("slider_max")
         startProgress("Convert morphs to shapekeys")
         t1 = t = perf_counter()
         for n,item in enumerate(items):
@@ -2905,9 +2920,10 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             key,mname = item
             showProgress(n, nitems)
             rig[key] = 0.0
-            if (ob.data.shape_keys and
-                mname in ob.data.shape_keys.key_blocks.keys()):
+            if skeys and mname in skeys.key_blocks.keys():
                 print("Skip", mname)
+                if mname in existing.keys():
+                    del existing[mname]
                 continue
             if mname:
                 rig[key] = 1.0
@@ -2917,6 +2933,8 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
                 t = perf_counter()
                 print("Converted %s in %g seconds" % (mname, t-t0))
         updateRigDrivers(context, rig)
+        for skey in existing.values():
+            ob.shape_key_remove(skey)
         t2 = perf_counter()
         print("%d morphs converted in %g seconds" % (nitems, t2-t1))
 
@@ -2935,10 +2953,10 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         omin = min(offsets)
         eps = 1e-2 * ob.DazScale    # eps = 0.1 mm
         if abs(omax) < eps and abs(omin) < eps:
-            idx = skeys.key_blocks.keys().index(skey.name)
-            ob.active_shape_key_index = idx
-            bpy.ops.object.shape_key_remove()
-            ob.active_shape_key_index = 0
+            #idx = skeys.key_blocks.keys().index(skey.name)
+            #ob.active_shape_key_index = idx
+            ob.shape_key_remove(skey)
+            #ob.active_shape_key_index = 0
         nmod = ob.modifiers.new(rig.name, "ARMATURE")
         nmod.object = rig
         nmod.use_deform_preserve_volume = True

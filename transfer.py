@@ -954,11 +954,11 @@ class DAZ_OT_MixShapekeys(DazOperator):
     def deleteShape(self, ob, skeys, skey, sname):
         from .morphing import removeShapeDriversAndProps
         skey.driver_remove("value")
+        skey.driver_remove("slider_min")
+        skey.driver_remove("slider_max")
         removeShapeDriversAndProps(ob.parent, sname)
         updateDrivers(skeys)
-        idx = skeys.key_blocks.keys().index(sname)
-        ob.active_shape_key_index = idx
-        bpy.ops.object.shape_key_remove()
+        ob.shape_key_remove(skey)
 
 #-------------------------------------------------------------
 #   Prune vertex groups
