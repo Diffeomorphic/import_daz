@@ -2876,7 +2876,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     useLabels : BoolProperty(
         name = "Labels As Names",
         description = "Use the morph labels instead of morph names as shapekey names",
-        default = True)
+        default = False)
 
     def draw(self, context):
         GeneralMorphSelector.draw(self, context)
@@ -3004,8 +3004,8 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
         if prop in skeys.key_blocks.keys():
             return skeys.key_blocks[prop]
         sname = self.morphnames.get(prop)
-        if sname:
-            return skeys.key_blocks.get(sname)
+        if sname in skeys.key_blocks.keys():
+            return skeys.key_blocks[sname]
         return None
 
 

@@ -623,7 +623,7 @@ class MorphOptions:
 
 
     def handleMissingMorphs(self, context, rig):
-        if not self.useLoadMissing:
+        if self.useShapekeys or not self.useLoadMissing:
             return False
         missing = [prop for prop in self.used if prop not in rig.keys()]
         if self.useScanned:
@@ -1253,15 +1253,20 @@ class StandardAnimation:
         from time import perf_counter
         from .uilist import updateScrollbars
         from .scan import getCharData, loadScannedInfo, checkNeedUpdates
+        rig, mesh, name, relpath = getCharData(context, False)
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
-        rig, mesh, name, relpath = getCharData(context, False)
-        if self.useShapekeys:
-            self.useScanned = False
-        if self.affectMorphs and self.useScanned and relpath:
+        if self.affectMorphs:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
+            else:
+                for ob in rig.children:
+                    if ob.type == 'MESH' and ob.data.shape_keys:
+                        for sname in ob.data.shape_keys.key_blocks.keys():
+                            self.shapekeys[sname] = True
+
+        if self.affectMorphs and self.useScanned and relpath and not self.useShapekeys:
             if self.useCheckUpdates:
                 needs = checkNeedUpdates(name, relpath)
                 if needs:
