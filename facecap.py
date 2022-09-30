@@ -156,6 +156,7 @@ class FACSImporter(SingleFile, ActionOptions):
 
         from time import perf_counter
         self.setupBones(rig)
+        missingShapes = {}
         self.scale = rig.DazScale
         warned = []
         nframes = len(self.bskeys)
@@ -177,9 +178,9 @@ class FACSImporter(SingleFile, ActionOptions):
                                 skey.value = value
                                 skey.keyframe_insert("value", frame=frame)
                             else:
-                                print("RPP", prop, ob.name)
-                                print(list(ob.data.shape_keys.keys()))
-                                halt
+                                if ob.name not in missingShapes.keys():
+                                    missingShapes[ob.name] = {}
+                                missingShapes[ob.name][prop] = True
                 elif prop in rig.keys():
                     rig[prop] = value
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
@@ -188,16 +189,21 @@ class FACSImporter(SingleFile, ActionOptions):
                     warned.append(bshape)
         t2 = perf_counter()
         print("%d frames loaded in %g seconds" % (nframes, t2-t1))
+        if missingShapes:
+            msg = "The following objects are missing shapekeys:\n"
+            for obname in missingShapes.keys():
+                msg += "  %s\n" % obname
+            raise DazError(msg, warning=True)
 
 
     def setupBones(self, rig):
-        self.leye = getBones(["lEye", "eye.L"], rig)
-        self.reye = getBones(["rEye", "eye.R"], rig)
-        self.head = getBones(["head"], rig)
-        self.neckUpper = getBones(["neckUpper", "neck-1"], rig)
-        self.neckLower = getBones(["neckLower", "neck"], rig)
-        self.abdomen = getBones(["abdomenUpper", "spine-1", "spine_fk.002"], rig)
-        self.hip = getBones(["hip", "torso"], rig)
+        self.leye = self.getBones(["lEye", "eye.L"], rig)
+        self.reye = self.getBones(["rEye", "eye.R"], rig)
+        self.head = self.getBones(["head"], rig)
+        self.neckUpper = self.getBones(["neckUpper", "neck-1"], rig)
+        self.neckLower = self.getBones(["neckLower", "neck"], rig)
+        self.abdomen = self.getBones(["abdomenUpper", "spine-1", "spine_fk.002"], rig)
+        self.hip = self.getBones(["hip", "torso"], rig)
         if self.head is None:
             self.headDist = 0
         if self.neckUpper is None:
@@ -240,29 +246,26 @@ class FACSImporter(SingleFile, ActionOptions):
             pb.rotation_euler = mat.to_euler(pb.rotation_mode)
             pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
 
-#------------------------------------------------------------------
-#   Utility
-#------------------------------------------------------------------
 
-def getBones(bnames, rig):
-    def getBone(bname, rig):
-        if bname not in rig.pose.bones.keys():
-            return None
-        pb = rig.pose.bones[bname]
-        msg = ("Bone %s is driven.\nMake bones posable first" % bname)
-        if rig.animation_data:
-            datapath = 'pose.bones["%s"].rotation_euler' % bname
-            for fcu in rig.animation_data.drivers:
-                if fcu.data_path == datapath:
-                    raise DazError(msg)
-        return pb
-
-    for bname in bnames:
-        pb = getBone(bname, rig)
-        if pb:
+    def getBones(self, bnames, rig):
+        def getBone(bname, rig):
+            if bname not in rig.pose.bones.keys():
+                return None
+            pb = rig.pose.bones[bname]
+            if rig.animation_data and not self.useShapekeys:
+                msg = ("Bone %s is driven.\nMake bones posable first" % bname)
+                datapath = 'pose.bones["%s"].rotation_euler' % bname
+                for fcu in rig.animation_data.drivers:
+                    if fcu.data_path == datapath:
+                        raise DazError(msg)
             return pb
-    print("Did not find bones: %s" % bnames)
-    return None
+
+        for bname in bnames:
+            pb = getBone(bname, rig)
+            if pb:
+                return pb
+        print("Did not find bones: %s" % bnames)
+        return None
 
 #------------------------------------------------------------------
 #   FaceCap
@@ -487,8 +490,8 @@ class GazeTransferer:
 
 
     def setupBones(self, rig):
-        self.leye = getBones(["lEye", "eye.L"], rig)
-        self.reye = getBones(["rEye", "eye.R"], rig)
+        self.leye = self.getBones(["lEye", "eye.L"], rig)
+        self.reye = self.getBones(["rEye", "eye.R"], rig)
         self.gaze = rig.pose.bones["gaze"]
         self.lgaze = rig.pose.bones["gaze.L"]
         self.rgaze = rig.pose.bones["gaze.R"]
