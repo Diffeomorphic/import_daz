@@ -370,16 +370,22 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             for vgrp in aob.vertex_groups:
                 if vgrp.name not in list(cob.vertex_groups.keys()):
                     cob.vertex_groups.new(name=vgrp.name)
-            for mod in list(aob.modifiers):
-                mod.show_viewport = False
-                mod.show_render = False
+            if bpy.app.version < (3,3,0):
+                for mod in list(aob.modifiers):
+                    mod.show_viewport = False
+                    mod.show_render = False
         self.replaceTexco(cob)
 
         mod = getModifier(cob, 'NODES')
         if mod is None:
             mod = cob.modifiers.new("Geografts", 'NODES')
+            amtmod = getModifier(cob, 'ARMATURE')
             nmods = len(cob.modifiers)
-            for n in range(nmods-1):
+            if bpy.app.version < (3,3,0) or amtmod is None:
+                nups = nmods-1
+            else:
+                nups = nmods-2
+            for n in range(nups):
                 bpy.ops.object.modifier_move_up(modifier=mod.name)
 
         mod.node_group = self.makeGeograftGroup(cob, anatomies)
