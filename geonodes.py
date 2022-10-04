@@ -198,12 +198,23 @@ class GeograftGroup(GeoTree):
         self.group.outputs.new("NodeSocketInt", "Vertex Table")
 
 
-    def addNodes(self, anatomies):
+    def addNodes(self, cob, anatomies):
+        if cob is None:
+            char = self.inputs
+        else:
+            objinfo = self.addNode("GeometryNodeObjectInfo", 0)
+            objinfo.inputs[0].default_value = cob
+            captureChar = self.addNode("GeometryNodeCaptureAttribute", 1)
+            captureChar.data_type = 'FLOAT'
+            captureChar.domain = 'POINT'
+            self.links.new(objinfo.outputs["Geometry"], captureChar.inputs["Geometry"])
+            char = captureChar
+
         index = self.addNode("GeometryNodeInputIndex", 0)
         captureIndex = self.addNode("GeometryNodeCaptureAttribute", 1)
         captureIndex.data_type = 'INT'
         captureIndex.domain = 'POINT'
-        self.links.new(self.inputs.outputs["Geometry"], captureIndex.inputs["Geometry"])
+        self.links.new(char.outputs["Geometry"], captureIndex.inputs["Geometry"])
         self.links.new(index.outputs["Index"], captureIndex.inputs[INT])
 
         captureEdge = self.addNode("GeometryNodeCaptureAttribute", 1)
