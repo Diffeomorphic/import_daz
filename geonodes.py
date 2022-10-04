@@ -195,32 +195,19 @@ class GeograftGroup(GeoTree):
         self.group.inputs.new("NodeSocketFloat", "Geograft Area")
         self.group.inputs.new("NodeSocketFloat", "Merge Distance")
         self.group.outputs.new("NodeSocketGeometry", "Geometry")
-        self.group.outputs.new("NodeSocketInt", "Vertex Table")
 
 
     def addNodes(self, cob, anatomies):
         if cob is None:
             char = self.inputs
         else:
-            objinfo = self.addNode("GeometryNodeObjectInfo", 0)
-            objinfo.inputs[0].default_value = cob
-            captureChar = self.addNode("GeometryNodeCaptureAttribute", 1)
-            captureChar.data_type = 'FLOAT'
-            captureChar.domain = 'POINT'
-            self.links.new(objinfo.outputs["Geometry"], captureChar.inputs["Geometry"])
-            char = captureChar
-
-        index = self.addNode("GeometryNodeInputIndex", 0)
-        captureIndex = self.addNode("GeometryNodeCaptureAttribute", 1)
-        captureIndex.data_type = 'INT'
-        captureIndex.domain = 'POINT'
-        self.links.new(char.outputs["Geometry"], captureIndex.inputs["Geometry"])
-        self.links.new(index.outputs["Index"], captureIndex.inputs[INT])
+            char = self.addNode("GeometryNodeObjectInfo", 0)
+            char.inputs[0].default_value = cob
 
         captureEdge = self.addNode("GeometryNodeCaptureAttribute", 1)
         captureEdge.data_type = 'FLOAT'
         captureEdge.domain = 'POINT'
-        self.links.new(captureIndex.outputs["Geometry"], captureEdge.inputs["Geometry"])
+        self.links.new(char.outputs["Geometry"], captureEdge.inputs["Geometry"])
         self.links.new(self.inputs.outputs["Geograft Edge"], captureEdge.inputs[VALUE])
         union = captureEdge.outputs[VALUE]
 
@@ -257,7 +244,6 @@ class GeograftGroup(GeoTree):
         self.links.new(union, mergeDist.inputs["Selection"])
 
         self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
-        self.links.new(captureIndex.outputs[INT], self.outputs.inputs["Vertex Table"])
 
 # ---------------------------------------------------------------------
 #   Geoshell group
