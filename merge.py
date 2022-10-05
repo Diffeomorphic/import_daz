@@ -379,21 +379,33 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                 if vgrp.name not in list(cob.vertex_groups.keys()):
                     cob.vertex_groups.new(name=vgrp.name)
             if bpy.app.version < (3,3,0) and not self.useNewMesh:
-                for mod in aob.modifiers:
+                mod = getModifier(aob, 'ARMATURE')
+                mod.show_viewport = mod.show_render = False
+            for mod in aob.modifiers:
+                if mod.type in ['SUBSURF']:
                     mod.show_viewport = mod.show_render = False
         self.replaceTexco(cob)
 
         if self.useNewMesh:
-            me = bpy.data.meshes.new("%s Merged" % cob.name)
-            eob = bpy.data.objects.new("%s Merged" % cob.name, me)
+            if cob.name[-5:] == " Mesh":
+                ename = "%s Merged" % cob.name[:-5]
+            else:
+                ename = "%s Merged" % cob.name
+            me = bpy.data.meshes.new(ename)
+            eob = bpy.data.objects.new(ename, me)
+            #eob.show_wire = True
             for coll in bpy.data.collections:
                 if cob.name in coll.objects.keys():
                     coll.objects.link(eob)
-            context.view_layer.objects.active = eob
+            activateObject(context, eob)
+            self.activeObject = eob
             tob = cob
             mod = eob.modifiers.new("Geografts", 'NODES')
+            cob.hide_set(True)
+            cob.hide_render = True
         else:
             tob = None
+            #cob.show_wire = True
             mod = getModifier(cob, 'NODES')
             if mod is None:
                 mod = cob.modifiers.new("Geografts", 'NODES')
@@ -407,15 +419,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                     bpy.ops.object.modifier_move_up(modifier=mod.name)
 
         mod.node_group = self.makeGeograftGroup(cob, tob, anatomies)
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
         mod["Input_1_attribute_name"] = edgename
         mod["Input_2_attribute_name"] = maskname
         mod["Input_3"] = 0.01*cob.DazScale
-        if self.useNewMesh:
-            activateObject(context, eob)
-            cob.hide_set(True)
-            cob.hide_render = True
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
         for aob in anatomies:
             aob.hide_set(True)
             aob.hide_render = True

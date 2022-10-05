@@ -216,7 +216,9 @@ class GeograftGroup(GeoTree):
         self.links.new(self.inputs.outputs["Geograft Area"], deleteMask.inputs["Selection"])
 
         joinGeo = self.addNode("GeometryNodeJoinGeometry", 3)
-        joins = [deleteMask]
+        joins = []
+        if bpy.app.version < (3,3,0):
+            joins = [deleteMask]
         for aob in anatomies:
             objinfo = self.addNode("GeometryNodeObjectInfo", 0)
             objinfo.inputs[0].default_value = aob
@@ -233,6 +235,8 @@ class GeograftGroup(GeoTree):
             self.links.new(union, node.inputs[0])
             self.links.new(captureAnatomy.outputs[VALUE], node.inputs[1])
             union = node.outputs[0]
+        if bpy.app.version >= (3,3,0):
+            joins.append(deleteMask)
         joins.reverse()
         for node in joins:
             self.links.new(node.outputs["Geometry"], joinGeo.inputs["Geometry"])
