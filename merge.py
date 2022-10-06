@@ -379,11 +379,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
                 if vgrp.name not in list(cob.vertex_groups.keys()):
                     cob.vertex_groups.new(name=vgrp.name)
             if bpy.app.version < (3,3,0) and not self.useNewMesh:
-                mod = getModifier(aob, 'ARMATURE')
-                mod.show_viewport = mod.show_render = False
-            for mod in aob.modifiers:
-                if mod.type in ['SUBSURF']:
-                    mod.show_viewport = mod.show_render = False
+                amod = getModifier(aob, 'ARMATURE')
+                amod.show_viewport = amod.show_render = False
+            for amod in list(aob.modifiers):
+                if amod.type in ['SUBSURF']:
+                    amod.show_viewport = amod.show_render = False
+                    aob.modifiers.remove(amod)
         self.replaceTexco(cob)
 
         if self.useNewMesh:
@@ -392,6 +393,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             else:
                 ename = "%s Merged" % cob.name
             me = bpy.data.meshes.new(ename)
+            me.use_auto_smooth = cob.data.use_auto_smooth
+            me.auto_smooth_angle = cob.data.auto_smooth_angle
             eob = bpy.data.objects.new(ename, me)
             #eob.show_wire = True
             for coll in bpy.data.collections:
@@ -401,6 +404,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             self.activeObject = eob
             tob = cob
             mod = eob.modifiers.new("Geografts", 'NODES')
+            for cmod in list(cob.modifiers):
+                if cmod.type in ['SUBSURF']:
+                    emod = eob.modifiers.new(cmod.name, cmod.type)
+                    copyModifier(cmod, emod)
+                    cmod.show_viewport = cmod.show_render = False
+                    cob.modifiers.remove(cmod)
             cob.hide_set(True)
             cob.hide_render = True
         else:
@@ -577,6 +586,16 @@ def replaceNodeNames(mat, oldname, newname):
                 tosockets.append(link.to_socket)
         for tosocket in tosockets:
             mat.node_tree.links.new(fromsocket, tosocket)
+
+
+def copyModifier(smod, tmod):
+    for attr in dir(smod):
+        if (attr[0] != "_" and
+            attr not in ["bl_rna", "is_override_data", "rna_type", "type"]):
+            try:
+                setattr(tmod, attr, getattr(smod, attr))
+            except AttributeError:
+                print(attr)
 
 #-------------------------------------------------------------
 #   Create graft and mask vertex groups
