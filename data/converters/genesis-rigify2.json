@@ -10,7 +10,7 @@
     "chestUpper" : "spine_fk.004", 
     "neck" : "neck", 
     "neckLower" : "neck", 
-    "neckUpper" : "", 
+    "neckUpper" : "TWIST-neck", 
     "head" : "head", 
     
     "tongue01" : "tounge00", 

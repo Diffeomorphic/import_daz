@@ -1564,8 +1564,8 @@ def setFkIk2(rig, fk, layers):
         pb["IK_FK"] = value
     if "torso" in rig.pose.bones.keys():
         pb = rig.pose.bones["torso"]
-        pb["neck_follow"] = 1.0-value
-        pb["head_follow"] = 1.0-value
+        pb["neck_follow"] = 1.0
+        pb["head_follow"] = 1.0
     for suffix in ["L", "R"]:
         for fing in ["thumb", "f_index", "f_middle", "f_ring", "f_pinky"]:
             bname = "%s.01_ik.%s" % (fing, suffix)
