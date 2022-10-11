@@ -904,7 +904,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     def clearPose(self, rig, frame):
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
-        if self.affectObject == 'OBJECT':
+        if self.affectObject == 'OBJECT' and self.affectBones:
             if not self.affectScale:
                 tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
@@ -999,7 +999,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                     if (bname == "@selection" or
                         bname in self.KnownRigs):
                         master = self.getMasterBone(rig)
-                        if self.affectObject == 'NONE':
+                        if self.affectObject == 'NONE' or not self.affectBones:
                             pass
                         elif (self.affectObject == 'MASTER' and
                               master and

@@ -1093,11 +1093,14 @@ class CyclesTree(Tree):
             return False
         diffweight,difftex = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex = self.getColorTex(["Glossy Weight"], "NONE", 0)
-        fac = glossweight / (glossweight + diffweight)
-        if fac == 0:
+        if glossweight == 0:
             self.cycles = self.diffuseCycles
             return False
-        elif fac == 1 and difftex is None and glosstex is None:
+        if glossweight + diffweight == 0:
+            fac = 1
+        else:
+            fac = glossweight / (glossweight + diffweight)
+        if fac == 1 and difftex is None and glosstex is None:
             return False
         else:
             from .cgroup import WeightedGroup
