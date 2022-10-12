@@ -314,12 +314,11 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def transferMorphs(self, src, trg, context):
-        from .asset import setDazPaths
         from .load_morph import printName
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
         scn = context.scene
-        setDazPaths()
+        GS.setRootPaths()
         activateObject(context, src)
         if not self.findMatch(src, trg):
             return False

@@ -49,7 +49,8 @@ class GlobalSettings:
         self.errorPath = self.fixPath("~/Documents/daz_importer_errors.txt")
         self.scanPath = self.fixPath("~/Documents/Scanned DAZ Database")
         self.settingsPath = self.fixPath("~/import-daz-settings-28x.json")
-        self.rootPath = self.fixPath("~/import-daz-paths.json")
+        self.rootPaths = []
+        self.absPaths = {}
 
         self.unitScale = 0.01
         self.verbosity = 2
@@ -228,6 +229,7 @@ class GlobalSettings:
         self.errorPath = self.fixPath(getattr(scn, "DazErrorPath"))
         self.scanPath = self.fixPath(getattr(scn, "DazScanPath"))
         self.eliminateDuplicates()
+        self.scanAbsPaths()
 
 
     def pathsFromScene(self, pgs):
@@ -399,6 +401,77 @@ class GlobalSettings:
     def saveDefaults(self):
         self.save(self.settingsPath)
 
+
+    def setRootPaths(self):
+        from .error import DazError
+        self.rootPaths = []
+        for path in self.getDazPaths():
+            if path:
+                path = bpy.path.resolve_ncase(path)
+                if not os.path.exists(path):
+                    msg = ("The DAZ library path\n" +
+                           "%s          \n" % path +
+                           "does not exist. Check and correct the\n" +
+                           "Paths to DAZ library section in the Settings panel." +
+                           "For more details see\n" +
+                           "http://diffeomorphic.blogspot.se/p/settings-panel_17.html.       ")
+                    print(msg)
+                    raise DazError(msg)
+                else:
+                    self.rootPaths.append(path)
+                    if os.path.isdir(path):
+                        for fname in os.listdir(path):
+                            if "." not in fname:
+                                numname = "".join(fname.split("_"))
+                                if numname.isdigit():
+                                    subpath = "%s/%s" % (path, fname)
+                                    self.rootPaths.append(subpath)
+
+
+    def scanAbsPaths(self):
+        def scanPath(folder, path):
+            lpath = path.lower()
+            if lpath not in self.absPaths.keys():
+                self.absPaths[lpath] = [folder]
+            else:
+                self.absPaths[lpath].append(folder)
+            for file in os.listdir(folder):
+                nfolder = "%s/%s" % (folder, file)
+                if os.path.isdir(nfolder):
+                    npath = "%s/%s" % (path, file)
+                    scanPath(nfolder, npath)
+
+        if self.caseSensitivePaths:
+            self.absPaths = {}
+            for path in self.getDazPaths():
+                print("Scanning", path)
+                scanPath(path, "")
+
+
+    def getAbsPath(self, path):
+        if self.caseSensitivePaths:
+            folder = os.path.dirname(path)
+            file = os.path.basename(path)
+            lfile = file.lower()
+            folders = self.absPaths.get(folder.lower(), [])
+            for folder in folders:
+                lfiles = [file.lower() for file in os.listdir(folder)]
+                if lfile in lfiles:
+                    return "%s/%s" % (folder, file)
+        else:
+            for folder in self.rootPaths:
+                filepath = "%s/%s" % (folder, path)
+                filepath = filepath.replace("//", "/")
+                if os.path.exists(filepath):
+                    return filepath
+                words = filepath.rsplit("/", 2)
+                if len(words) == 3 and words[1].lower() == "hiddentemp":
+                    filepath = "%s/%s" % (words[0], words[2])
+                    if filepath:
+                        return filepath
+        print("AAA", path, folder, file, lfile)
+        return ""
+
 #-------------------------------------------------------------
 #   Local settings
 #-------------------------------------------------------------
@@ -488,12 +561,11 @@ class LocalSettings:
 
 
     def reset(self):
-        from .asset import setDazPaths
         G.theTrace = []
         G.theAssets = {}
         G.theOtherAssets = {}
         G.theSources = {}
-        setDazPaths()
+        GS.setRootPaths()
         self.useStrict = False
         self.scene = ""
 

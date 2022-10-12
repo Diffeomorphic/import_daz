@@ -202,8 +202,8 @@ def get_absolute_paths(paths):
     Returns:
     The corresponding absolute paths if they exist.
     """
-    from .asset import getDazPath, setDazPaths
-    setDazPaths()
+    from .asset import getDazPath
+    GS.setRootPaths()
     abspaths = []
     for path in paths:
         path = path.replace("\\", "/")

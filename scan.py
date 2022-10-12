@@ -334,7 +334,6 @@ def loadMissingMorphs(self, context, rig, missing, cat):
                 return fullpath
         return None
 
-    #from .asset import setDazPaths
     from .morphing import CustomMorphLoader, StandardMorphLoader, addToCategories
     if not missing:
         return False

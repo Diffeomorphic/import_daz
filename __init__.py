@@ -97,6 +97,7 @@ def register():
         if modname in regnames:
             mod.register()
     GS.loadDefaults()
+    GS.scanAbsPaths()
 
 
 def unregister():

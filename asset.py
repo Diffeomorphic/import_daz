@@ -497,74 +497,9 @@ def normalizeUrl(filepath):
 #   Paths
 #-------------------------------------------------------------
 
-def setDazPaths():
-    from .error import DazError
-    filepaths = []
-    for path in GS.getDazPaths():
-        if path:
-            path = bpy.path.resolve_ncase(path)
-            if not os.path.exists(path):
-                msg = ("The DAZ library path\n" +
-                       "%s          \n" % path +
-                       "does not exist. Check and correct the\n" +
-                       "Paths to DAZ library section in the Settings panel." +
-                       "For more details see\n" +
-                       "http://diffeomorphic.blogspot.se/p/settings-panel_17.html.       ")
-                print(msg)
-                raise DazError(msg)
-            else:
-                filepaths.append(path)
-                if os.path.isdir(path):
-                    for fname in os.listdir(path):
-                        if "." not in fname:
-                            numname = "".join(fname.split("_"))
-                            if numname.isdigit():
-                                subpath = "%s/%s" % (path, fname)
-                                filepaths.append(subpath)
-    G.theDazPaths = filepaths
-
-
-def fixBrokenPath(path):
-    """
-    many asset file paths assume a case insensitive file system, try to fix here
-    :param path:
-    :return:
-    """
-    path_components = []
-    head = path
-    while True:
-        head, tail = os.path.split(head)
-        if tail != "":
-            path_components.append(tail)
-        else:
-            if head != "":
-                path_components.append(head)
-            path_components.reverse()
-            break
-
-    check = path_components[0]
-    for pc in path_components[1:]:
-        if not os.path.exists(check):
-            return check
-        cand = os.path.join(check, pc)
-        if not os.path.exists(cand):
-            corrected = [f for f in os.listdir(check) if f.lower() == pc.lower()]
-            if len(corrected) > 0:
-                cand = os.path.join(check, corrected[0])
-            else:
-                msg = ("Broken path: '%s'\n" % path +
-                       "  Folder: '%s'\n" % check +
-                       "  File: '%s'\n" % pc +
-                       "  Files: %s" % os.listdir(check))
-                reportError(msg, trigger=(4,5))
-        check = cand
-
-    return check
-
-
 def getRelativeRef(ref):
     path = unquote(ref)
-    for dazpath in G.theDazPaths:
+    for dazpath in GS.rootPaths:
         n = len(dazpath)
         if path[0:n].lower() == dazpath.lower():
             return ref[n:]
@@ -577,10 +512,6 @@ def getDazPath(ref, strict=True):
         filepath = bpy.path.resolve_ncase(filepath)
         if os.path.exists(filepath):
             return filepath
-        elif False and GS.caseSensitivePaths:
-            filepath = fixBrokenPath(filepath)
-            if os.path.exists(filepath):
-                return filepath
         return None
 
     path = unquote(ref)
@@ -590,17 +521,7 @@ def getDazPath(ref, strict=True):
         if GS.verbosity > 2:
             print("Load", filepath)
     elif path[0] == "/":
-        for folder in G.theDazPaths:
-            filepath = folder + path
-            filepath = filepath.replace("//", "/")
-            okpath = getExistingPath(filepath)
-            if okpath:
-                return okpath
-            words = filepath.rsplit("/", 2)
-            if len(words) == 3 and words[1].lower() == "hiddentemp":
-                okpath = getExistingPath("%s/%s" % (words[0], words[2]))
-                if okpath:
-                    return okpath
+        filepath = GS.getAbsPath(path)
     if os.path.exists(filepath):
         if GS.verbosity > 2:
             print("Found", filepath)

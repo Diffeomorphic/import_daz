@@ -170,7 +170,7 @@ def printTraceBack(context, fp):
         fp.write('"%s"\n    %s\n\n' % (ref, G.theOtherAssets[ref]))
 
     fp.write("\nDAZ ROOT PATHS:\n")
-    for n, path in enumerate(G.theDazPaths):
+    for n, path in enumerate(GS.rootPaths):
         fp.write('%d:   "%s"\n' % (n, path))
 
     string = getMissingAssets()
