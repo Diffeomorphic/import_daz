@@ -217,19 +217,35 @@ class GlobalSettings:
 
 
     def fromScene(self, scn):
+        def differ(list1, list2):
+            if len(list1) != len(list2):
+                return True
+            for elt1,elt2 in zip(list1, list2):
+                if elt1 != elt2:
+                    return True
+            return False
+
+        caseOld = self.caseSensitivePaths
         for prop,key in self.SceneTable.items():
             if hasattr(scn, prop) and hasattr(self, key):
                 value = getattr(scn, prop)
                 setattr(self, key, value)
             else:
                 print("MIS", prop, key)
+        contentOld = self.contentDirs
+        mdlOld = self.mdlDirs
+        cloudOld = self.cloudDirs
         self.contentDirs = self.pathsFromScene(scn.DazContentDirs)
         self.mdlDirs = self.pathsFromScene(scn.DazMDLDirs)
         self.cloudDirs = self.pathsFromScene(scn.DazCloudDirs)
         self.errorPath = self.fixPath(getattr(scn, "DazErrorPath"))
         self.scanPath = self.fixPath(getattr(scn, "DazScanPath"))
         self.eliminateDuplicates()
-        self.scanAbsPaths()
+        if (differ(contentOld, self.contentDirs) or
+            differ(mdlOld, self.mdlDirs) or
+            differ(cloudOld, self.cloudDirs) or
+            caseOld != self.caseSensitivePaths):
+            self.scanAbsPaths()
 
 
     def pathsFromScene(self, pgs):
