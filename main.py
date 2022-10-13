@@ -737,15 +737,15 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             raise DazError("No valid files selected")
         if self.useFavoMorphs:
             self.favoPath = getExistingFilePath(self.favoPath, ".json")
-        theFilePaths = G.theFilePaths
+        theFilePaths = LS.theFilePaths
         for filepath in filepaths:
-            G.theFilePaths = [filepath]
+            LS.theFilePaths = [filepath]
             try:
                 self.easyImport(context)
             except DazError as msg:
                 raise DazError(msg)
             finally:
-                G.theFilePaths = theFilePaths
+                LS.theFilePaths = theFilePaths
 
 
     def easyImport(self, context):
@@ -759,7 +759,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         if not LS.objects:
             raise DazError("No objects found")
-        G.theSilentMode = True
+        GS.silentMode = True
         visibles = getVisibleObjects(context)
         self.rigs = self.getTypedObjects(visibles, LS.rigs)
         self.meshes = self.getTypedObjects(visibles, LS.meshes)
@@ -776,7 +776,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
-        G.theSilentMode = False
+        GS.silentMode = False
         context.scene.DazFavoPath = self.favoPath
         time2 = perf_counter()
         print("File %s loaded in %.3f seconds" % (self.filepath, time2-time1))
@@ -1039,7 +1039,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     selected = True
             if not selected:
                 return
-            G.theFilePaths = snames
+            LS.theFilePaths = snames
             bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers))
 
 

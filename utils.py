@@ -31,7 +31,6 @@ from mathutils import Vector
 from urllib.parse import unquote
 from bpy.props import *
 from .settings import GS, LS
-from . import globvars as G
 
 #-------------------------------------------------------------
 #   Blender 2.8 compatibility

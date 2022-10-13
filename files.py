@@ -31,7 +31,6 @@ from mathutils import Vector, Matrix
 from .asset import Asset
 from .error import reportError
 from .utils import LS, GS
-from . import globvars as G
 
 class FileAsset(Asset):
 
@@ -57,7 +56,7 @@ class FileAsset(Asset):
 
     def parse(self, struct):
         msg = ("+FILE %s" % self.fileref)
-        G.theTrace.append(msg)
+        LS.theTrace.append(msg)
         if GS.verbosity > 4:
             print(msg)
 
@@ -165,7 +164,7 @@ class FileAsset(Asset):
                 self.parseRender(scene)
 
         msg = ("-FILE %s" % self.fileref)
-        G.theTrace.append(msg)
+        LS.theTrace.append(msg)
         if GS.verbosity > 4:
             print(msg)
         return self

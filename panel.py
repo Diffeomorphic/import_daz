@@ -431,7 +431,7 @@ class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
             box.label(text = "No active bone")
 
         layout.separator()
-        icon = 'CHECKBOX_HLT' if G.theSilentMode else 'CHECKBOX_DEHLT'
+        icon = 'CHECKBOX_HLT' if GS.silentMode else 'CHECKBOX_DEHLT'
         layout.operator("daz.set_silent_mode", icon=icon, emboss=False)
         layout.operator("daz.get_finger_print")
         layout.operator("daz.inspect_world_matrix")

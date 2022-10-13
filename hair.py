@@ -41,6 +41,11 @@ from .guess import ColorProp
 #   Classes
 #-------------------------------------------------------------
 
+def getMaterialEnums(self, context):
+    ob = context.object
+    return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]
+
+
 class ColorGroup(bpy.types.PropertyGroup):
     color : FloatVectorProperty(
         name = "Hair Color",
@@ -194,7 +199,7 @@ class HairOptions:
         default = True)
 
     activeMaterial : EnumProperty(
-        items = G.getMaterialEnums,
+        items = getMaterialEnums,
         name = "Material",
         description = "Material to use as hair material")
 

@@ -38,6 +38,7 @@ from .channels import Channels
 from .utils import *
 from .error import *
 from .fileutils import MultiFile, ImageFile
+from .animation import theImageExtensions
 from mathutils import Vector, Matrix
 
 WHITE = Vector((1.0,1.0,1.0))
@@ -1705,7 +1706,7 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
         if self.resizeAll:
             paths = self.getAllTextures(context, False)
         else:
-            paths = self.getMultiFiles(G.theImageExtensions)
+            paths = self.getMultiFiles(theImageExtensions)
         self.getFileNames(paths)
 
         scale = int(2**self.steps)

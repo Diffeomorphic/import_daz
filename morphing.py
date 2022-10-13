@@ -420,15 +420,15 @@ class Selector():
 
 
     def getSelectedProps(self):
-        if G.theFilePaths:
-            return G.theFilePaths
+        if LS.theFilePaths:
+            return LS.theFilePaths
         else:
             return [item.name for item in self.getSelectedItems()]
 
 
     def invokeDialog(self, context):
         setSelector(self)
-        G.theFilePaths = []
+        LS.theFilePaths = []
         wm = context.window_manager
         ncols = len(self.selection)//self.nrows + 1
         if ncols > self.ncols:
@@ -968,7 +968,7 @@ class MorphLoader(LoadMorph):
             activateObject(context, self.mesh)
             for mesh in meshes:
                 selectSet(mesh, True)
-            G.theFilePaths = self.faceshapes.keys()
+            LS.theFilePaths = self.faceshapes.keys()
             bpy.ops.daz.transfer_shapekeys()
 
 #------------------------------------------------------------------
@@ -1037,8 +1037,8 @@ class StandardMorphSelector(Selector):
 
     def getActiveMorphFiles(self, context):
         namepaths = []
-        if G.theFilePaths:
-            for path in G.theFilePaths:
+        if LS.theFilePaths:
+            for path in LS.theFilePaths:
                 text = os.path.splitext(os.path.basename(path))[0]
                 namepaths.append((text, path, self.bodypart))
         else:

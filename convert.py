@@ -32,8 +32,12 @@ from collections import OrderedDict
 from mathutils import *
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, JsonFile, JsonExportFile
+from .fileutils import SingleFile, JsonFile, JsonExportFile, theRestPoseFolder, theParentsFolder, theIkPoseFolder, theRestPoseItems
 from .animation import HideOperator
+
+#-------------------------------------------------------------
+#   Global variables
+#-------------------------------------------------------------
 
 Converters = {}
 TwistBones = {}
@@ -170,7 +174,7 @@ def getOrientation(character, bname, rig):
         pb = rig.pose.bones[bname]
         return pb.bone.DazOrient, pb.DazRotMode
 
-    loadRestPoseEntry(character, RestPoses, G.theRestPoseFolder)
+    loadRestPoseEntry(character, RestPoses, theRestPoseFolder)
     poses = RestPoses[character]["pose"]
     if bname in poses.keys():
         orient, xyz = poses[bname][-2:]
@@ -181,7 +185,7 @@ def getOrientation(character, bname, rig):
 
 def getParentCharacter(character):
     global RestPoses
-    loadRestPoseEntry(character, RestPoses, G.theRestPoseFolder)
+    loadRestPoseEntry(character, RestPoses, theRestPoseFolder)
     if "parent" in RestPoses[character].keys():
         parent = RestPoses[character]["parent"]
         return parent.lower().replace(" ", "_")
@@ -192,7 +196,7 @@ def getParentCharacter(character):
 def getParent(character, bname):
     global Parents
     parent = getParentCharacter(character)
-    loadRestPoseEntry(parent, Parents, G.theParentsFolder)
+    loadRestPoseEntry(parent, Parents, theParentsFolder)
     parents = Parents[parent]["parents"]
     if bname in parents.keys() and parents[bname]:
         return parents[bname]
@@ -324,7 +328,7 @@ def optimizePose(context, useApplyRestPose):
     char = getCharacter(rig)
     if char is None:
         raise DazError("Did not recognize character")
-    loadRestPoseEntry(char, IkPoses, G.theIkPoseFolder)
+    loadRestPoseEntry(char, IkPoses, theIkPoseFolder)
     loadPose(context, rig, char, IkPoses, False)
     if useApplyRestPose:
         applyRestPoses(context, rig, [])
@@ -356,7 +360,7 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
     bl_options = {'UNDO'}
 
     newRig : EnumProperty(
-        items = G.theRestPoseItems,
+        items = theRestPoseItems,
         name = "New Rig",
         description = "Convert active rig to this",
         default = "genesis_3_female")
@@ -374,7 +378,7 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
 
         rig = context.object
         scn = context.scene
-        loadRestPoseEntry(self.newRig, RestPoses, G.theRestPoseFolder)
+        loadRestPoseEntry(self.newRig, RestPoses, theRestPoseFolder)
         scale = 1.0
         if self.newRig in SourceRig.keys():
             modify = False

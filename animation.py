@@ -34,7 +34,7 @@ from mathutils import *
 from .error import *
 from .utils import *
 from .transform import Transform
-from .fileutils import MultiFile, SingleFile, DufFile, DazExporter
+from .fileutils import *
 
 #-------------------------------------------------------------
 #   Convert between frames and vectors
@@ -406,7 +406,7 @@ class AffectOptions:
         default = False)
 
     srcCharacter : EnumProperty(
-        items = G.theRestPoseItems,
+        items = theRestPoseItems,
         name = "Source Character",
         description = "Character this file was made for",
         default = "genesis_3_female")
@@ -707,7 +707,7 @@ class ActionOptions:
 
 class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     filename_ext = ".duf"
-    filter_glob : StringProperty(default = G.theDazDefaults + G.theImagedDefaults, options={'HIDDEN'})
+    filter_glob : StringProperty(default = theDazDefaults + theImagedDefaults, options={'HIDDEN'})
     lockMeshes = False
 
     def __init__(self):
@@ -1302,7 +1302,7 @@ class StandardAnimation:
         t1 = perf_counter()
         print("\n--------------------")
 
-        dazfiles = self.getMultiFiles(G.theDazExtensions)
+        dazfiles = self.getMultiFiles(theDazExtensions)
         nfiles = len(dazfiles)
         if nfiles == 0:
             raise DazError("No corresponding DAZ file selected")

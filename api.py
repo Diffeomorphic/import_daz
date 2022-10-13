@@ -26,7 +26,6 @@
 # either expressed or implied, of the FreeBSD Project.
 
 from urllib.parse import unquote
-from . import globvars as G
 from .error import DazError
 from .settings import GS, LS
 
@@ -43,11 +42,11 @@ def get_error_message():
     The error message from previous operator invokation if it raised
     an error, or the empty string if the operator exited without errors.
     """
-    return G.theMessage
+    return LS.theMessage
 
 
 def get_silent_mode():
-    return G.theSilentMode
+    return GS.silentMode
 
 
 def set_silent_mode(value):
@@ -59,7 +58,7 @@ def set_silent_mode(value):
     Arguments:
     ?value: True turns silent mode on, False turns it off.
     """
-    G.theSilentMode = value
+    GS.silentMode = value
 
 
 def get_morphs(ob, morphset, category=None, activeOnly=False):
@@ -115,7 +114,7 @@ def clear_selection():
 
     Clear the active file selection to be loaded by consecutive operators.
     """
-    G.theFilePaths = []
+    LS.theFilePaths = []
     print("File paths cleared")
 
 
@@ -127,7 +126,7 @@ def get_selection():
     Returns:
     The active list of file paths (strings).
     """
-    return G.theFilePaths
+    return LS.theFilePaths
 
 
 def set_selection(files):
@@ -139,7 +138,7 @@ def set_selection(files):
     ?files: A list of file paths (strings).
     """
     if isinstance(files, list):
-        G.theFilePaths = [file.replace("\\", "/") for file in files]
+        LS.theFilePaths = [file.replace("\\", "/") for file in files]
     else:
         try:
             raise DazError("File paths must be a list of strings")

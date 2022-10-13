@@ -54,7 +54,7 @@ class Accessor:
             return None
         ref = getRef(id, self.fileref)
         try:
-            return G.theAssets[ref]
+            return LS.theAssets[ref]
         except KeyError:
             pass
 
@@ -62,16 +62,16 @@ class Accessor:
             if self.caller:
                 ref = getRef(id, self.caller.fileref)
                 try:
-                    return G.theAssets[ref]
+                    return LS.theAssets[ref]
                 except KeyError:
                     pass
             ref = getRef(id, self.fileref)
             try:
-                return G.theAssets[ref]
+                return LS.theAssets[ref]
             except KeyError:
                 pass
             try:
-                return G.theOtherAssets[ref]
+                return LS.theOtherAssets[ref]
             except KeyError:
                 pass
             if strict:
@@ -95,7 +95,7 @@ class Accessor:
             struct = loadJson(filepath)
             file = parseAssetFile(struct, fileref=fileref)
             try:
-                return G.theAssets[ref]
+                return LS.theAssets[ref]
             except KeyError:
                 pass
         else:
@@ -119,7 +119,7 @@ class Accessor:
     def getOldAsset(self, id):
         ref = getRef(id, self.fileref)
         try:
-            return G.theAssets[ref]
+            return LS.theAssets[ref]
         except KeyError:
             pass
         return self.getNewAsset(id, ref)
@@ -180,7 +180,7 @@ class Accessor:
                 print("No id", struct.keys())
 
         try:
-            asset2 = G.theAssets[ref]
+            asset2 = LS.theAssets[ref]
         except KeyError:
             asset2 = None
 
@@ -191,16 +191,16 @@ class Accessor:
                    "  Ref 1: %s\n" % ref +
                    "  Ref 2: %s\n" % ref2)
             reportError(msg, trigger=(2,4))
-            G.theAssets[ref2] = asset
+            LS.theAssets[ref2] = asset
         else:
-            G.theAssets[ref] = G.theAssets[ref2] = asset
+            LS.theAssets[ref] = LS.theAssets[ref2] = asset
         return
 
         if asset.caller:
             ref2 = lowerPath(asset.caller.id) + "#" + struct["id"]
             ref2 = normalizeRef(ref2)
-            if ref2 in G.theAssets.keys():
-                asset2 = G.theAssets[ref2]
+            if ref2 in LS.theAssets.keys():
+                asset2 = LS.theAssets[ref2]
                 if asset != asset2 and GS.verbosity > 1:
                     msg = ("Duplicate asset definition\n" +
                            "  Asset 1: %s\n" % asset +
@@ -212,7 +212,7 @@ class Accessor:
             else:
                 print("REF2", ref2)
                 print("  ", asset)
-                G.theAssets[ref2] = asset
+                LS.theAssets[ref2] = asset
 
 #-------------------------------------------------------------
 #   Asset base class
@@ -281,11 +281,11 @@ class Asset(Accessor):
         old = asset.id.rsplit("#", 1)[0]
         new = self.id.rsplit("#", 1)[0]
         self.copySourceAssets(old, new)
-        if old not in G.theSources.keys():
-            G.theSources[old] = []
-        for other in G.theSources[old]:
+        if old not in LS.theSources.keys():
+            LS.theSources[old] = []
+        for other in LS.theSources[old]:
             self.copySourceAssets(other, new)
-        G.theSources[old].append(new)
+        LS.theSources[old].append(new)
         return asset
 
 
@@ -294,12 +294,12 @@ class Asset(Accessor):
         nnew = len(new)
         adds = []
         assets = []
-        for key,asset in G.theAssets.items():
+        for key,asset in LS.theAssets.items():
             if key[0:nold] == old:
                 adds.append((new + key[nold:], asset))
         for key,asset in adds:
-            if key not in G.theOtherAssets.keys():
-                G.theOtherAssets[key] = asset
+            if key not in LS.theOtherAssets.keys():
+                LS.theOtherAssets[key] = asset
                 assets.append(asset)
 
 
@@ -354,7 +354,7 @@ class Asset(Accessor):
             if self.type == asset.type:
                 self.source = asset
                 asset.sourcing = self
-                G.theAssets[url] = self
+                LS.theAssets[url] = self
             else:
                 msg = ("Source type mismatch:   \n" +
                        "%s != %s\n" % (asset.type, self.type) +
@@ -389,7 +389,7 @@ class Asset(Accessor):
         for srcnode in source.children:
             url = self.fileref + "#" + srcnode.id.rsplit("#",1)[-1]
             print("HHH", url)
-            G.theAssets[url] = srcnode
+            LS.theAssets[url] = srcnode
             self.sourceChildren(srcnode)
 
 
@@ -412,16 +412,16 @@ class Asset(Accessor):
 def getAssetFromStruct(struct, fileref):
     id = getId(struct["id"], fileref)
     try:
-        return G.theAssets[id]
+        return LS.theAssets[id]
     except KeyError:
         return None
 
 
 def getExistingFile(fileref):
     ref = normalizeRef(fileref)
-    if ref in G.theAssets.keys():
+    if ref in LS.theAssets.keys():
         #print("Reread", fileref, ref)
-        return G.theAssets[ref]
+        return LS.theAssets[ref]
     else:
         return None
 
@@ -430,11 +430,11 @@ def getExistingFile(fileref):
 #-------------------------------------------------------------
 
 def storeAsset(asset, url):
-    G.theAssets[url] = asset
+    LS.theAssets[url] = asset
 
 
 def getAssets():
-    return G.theAssets
+    return LS.theAssets
 
 
 def getId(id0, fileref):

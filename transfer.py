@@ -34,6 +34,10 @@ from .utils import *
 from .morphing import JCMSelector
 from .driver import DriverUser
 
+#-------------------------------------------------------------
+#
+#-------------------------------------------------------------
+
 
 class FastMatcher:
     def checkTransforms(self, ob):
@@ -796,6 +800,26 @@ class DAZ_OT_ApplyAllShapekeys(DazOperator, IsMesh):
 #   Mix Shapekeys
 #----------------------------------------------------------
 
+def shapekeyItems1(self, context):
+    filter = self.filter1.lower()
+    enums = [(sname,sname,sname)
+            for sname in context.object.data.shape_keys.key_blocks.keys()[1:]
+            if filter in sname.lower()
+           ]
+    enums.sort()
+    return enums
+
+
+def shapekeyItems2(self, context):
+    filter = self.filter2.lower()
+    enums = [(sname,sname,sname)
+              for sname in context.object.data.shape_keys.key_blocks.keys()[1:]
+              if filter in sname.lower()
+            ]
+    enums.sort()
+    return [("-", "-", "None")] + enums
+
+
 class DAZ_OT_MixShapekeys(DazOperator):
     bl_idname = "daz.mix_shapekeys"
     bl_label = "Mix Shapekeys"
@@ -803,12 +827,12 @@ class DAZ_OT_MixShapekeys(DazOperator):
     bl_options = {'UNDO'}
 
     shape1 : EnumProperty(
-        items = G.shapekeyItems1,
+        items = shapekeyItems1,
         name = "Shapekey 1",
         description = "First shapekey")
 
     shape2 : EnumProperty(
-        items = G.shapekeyItems2,
+        items = shapekeyItems2,
         name = "Shapekey 2",
         description = "Second shapekey")
 

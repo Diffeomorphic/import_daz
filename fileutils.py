@@ -32,6 +32,27 @@ from .error import *
 from .utils import *
 
 #-------------------------------------------------------------
+#   Global variables
+#-------------------------------------------------------------
+
+theImagedDefaults = ";*.png;*.jpeg;*.jpg;*.bmp"
+theImageExtensions = ["png", "jpeg", "jpg", "bmp", "tif", "tiff"]
+
+theDazExtensions = ["dsf", "duf"]
+theDazUpcaseExtensions = [ext.upper() for ext in theDazExtensions]
+theDazDefaults = ";".join(["*.%s" % ext for ext in theDazExtensions+theDazUpcaseExtensions])
+
+theRestPoseFolder = os.path.join(os.path.dirname(__file__), "data", "restposes")
+theParentsFolder = os.path.join(os.path.dirname(__file__), "data", "parents")
+theIkPoseFolder = os.path.join(os.path.dirname(__file__), "data", "ikposes")
+
+theRestPoseItems = []
+for file in os.listdir(theRestPoseFolder):
+    fname = os.path.splitext(file)[0]
+    name = fname.replace("_", " ").capitalize()
+    theRestPoseItems.append((fname, name, name))
+
+#-------------------------------------------------------------
 #   Open and check for case change
 #-------------------------------------------------------------
 
@@ -218,7 +239,7 @@ class MultiFile(ImportHelper):
         subtype='DIR_PATH')
 
     def invoke(self, context, event):
-        G.theFilePaths = []
+        LS.theFilePaths = []
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -251,8 +272,8 @@ class MultiFile(ImportHelper):
 
 
         filepaths = []
-        if G.theFilePaths:
-            for path in G.theFilePaths:
+        if LS.theFilePaths:
+            for path in LS.theFilePaths:
                 filepath = getTypedFilePath(path, extensions)
                 if filepath:
                     filepaths.append(filepath)

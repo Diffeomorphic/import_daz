@@ -27,7 +27,6 @@
 
 import os
 import bpy
-from . import globvars as G
 
 #-------------------------------------------------------------
 #   Global settings
@@ -54,6 +53,7 @@ class GlobalSettings:
 
         self.unitScale = 0.01
         self.verbosity = 2
+        self.silentMode = False
         self.useDump = False
         self.zup = True
         self.unflipped = False
@@ -485,7 +485,6 @@ class GlobalSettings:
                     filepath = "%s/%s" % (words[0], words[2])
                     if filepath:
                         return filepath
-        print("AAA", path, folder, file, lfile)
         return ""
 
 #-------------------------------------------------------------
@@ -494,6 +493,15 @@ class GlobalSettings:
 
 class LocalSettings:
     def __init__(self):
+        self.theMessage = ""
+        self.theErrorLines = []
+        self.theFilePaths = []
+        self.theDazPaths = []
+        self.theAssets = {}
+        self.theOtherAssets = {}
+        self.theSources = {}
+        self.theTrace = []
+
         self.scale = 0.1
         self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None
@@ -577,10 +585,6 @@ class LocalSettings:
 
 
     def reset(self):
-        G.theTrace = []
-        G.theAssets = {}
-        G.theOtherAssets = {}
-        G.theSources = {}
         GS.setRootPaths()
         self.useStrict = False
         self.scene = ""
@@ -671,5 +675,5 @@ class LocalSettings:
 
 GS = GlobalSettings()
 LS = LocalSettings()
-G.theTrace = []
+LS.theTrace = []
 

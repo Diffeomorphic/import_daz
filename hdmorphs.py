@@ -30,7 +30,7 @@ import bpy
 
 from .error import *
 from .utils import *
-from .fileutils import MultiFile, ImageFile
+from .fileutils import MultiFile, ImageFile, theImageExtensions
 from .cgroup import CyclesGroup
 from .propgroups import DazBoolGroup, DazStringBoolGroup
 from .morphing import Selector
@@ -93,7 +93,7 @@ class LoadMaps(MultiFile, ImageFile, IsMesh):
         amt = None
         if rig and rig.type == 'ARMATURE':
             amt = rig.data
-        filepaths = self.getMultiFiles(G.theImageExtensions)
+        filepaths = self.getMultiFiles(theImageExtensions)
         self.props = {}
         for item in ob.data.DazDhdmFiles:
             key = os.path.splitext(os.path.basename(item.s))[0].lower()

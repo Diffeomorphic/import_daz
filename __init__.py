@@ -55,7 +55,7 @@ def importModules():
             importlib.reload(mod)
     else:
         print("\nLoading DAZ")
-        modnames = ["buildnumber", "globvars", "settings", "utils", "error", "uilist",
+        modnames = ["buildnumber", "settings", "utils", "error", "uilist",
                     "propgroups", "daz", "fileutils", "load_json", "driver", "asset", "channels", "formula",
                     "transform", "node", "figure", "bone", "geometry", "objfile",
                     "fix", "modifier", "animation", "load_morph", "morphing", "panel",
