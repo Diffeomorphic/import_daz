@@ -191,9 +191,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         else:
             cgrafts = []
 
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
+        deselectAllVerts(cob)
 
         # Select body verts to delete
         self.vdeleted = dict([(vn,False) for vn in range(nverts)])
@@ -237,14 +235,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
 
         # Select nothing
         for aob in anatomies:
-            activateObject(context, aob)
-            setMode('EDIT')
-            bpy.ops.mesh.select_all(action='DESELECT')
-            setMode('OBJECT')
-        activateObject(context, cob)
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
+            #activateObject(context, aob)
+            deselectAllVerts(aob)
+        #activateObject(context, cob)
+        deselectAllVerts(cob)
 
         # Select verts on common boundary
         self.cedge = dict([(vn,False) for vn in range(nverts)])
@@ -312,9 +306,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         bpy.ops.mesh.remove_doubles(threshold=threshold)
         setMode('OBJECT')
         selected = dict([(v.index,v.co.copy()) for v in cob.data.vertices if v.select])
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
+        deselectAllVerts(cob)
 
         # Create graft vertex group
         vgrp = cob.vertex_groups.new(name="Graft")
@@ -690,13 +682,12 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
 
 
     def run(self, context):
+        ob = context.object
         if self.keepIdx < 0:
             raise DazError("No active UV layer found")
         mergeIdx = int(self.layer)
-        mergeUvLayers(context.object.data, self.keepIdx, mergeIdx, self.allowOverlap)
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
+        mergeUvLayers(ob.data, self.keepIdx, mergeIdx, self.allowOverlap)
+        deselectAllVerts(ob)
 
 
 class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
@@ -732,9 +723,7 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
             idxs.reverse()
             for idx in idxs:
                 mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
+        deselectAllVerts(ob)
         for mod in ob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)

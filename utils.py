@@ -173,6 +173,18 @@ def setattrOVR(rna, attr, value):
 #   Utility functions
 #-------------------------------------------------------------
 
+def deselectAllVerts(ob):
+    #setMode('EDIT')
+    #bpy.ops.mesh.select_all(action='DESELECT')
+    #setMode('OBJECT')
+    for f in ob.data.polygons:
+        f.select = False
+    for e in ob.data.edges:
+        e.select = False
+    for v in ob.data.vertices:
+        v.select = False
+
+
 def deleteObjects(context, objects):
     selectObjects(context, objects)
     bpy.ops.object.delete(use_global=False)
