@@ -211,6 +211,7 @@ class GeoNode(Node, SimNode):
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
             self.data.creaseEdges(context, ob)
+            ob.data.use_auto_smooth = False
         if subDLevel > renderLevel:
             mod = ob.modifiers.new("SubD Displacement", 'SUBSURF')
             mod.subdivision_type = 'SIMPLE'

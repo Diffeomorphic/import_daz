@@ -61,6 +61,11 @@ class MergeGeograftOptions:
         description = "Allow merging overlapping UV layers",
         default = False)
 
+    useSubDDisplacement : BoolProperty(
+        name = "SubD Displacement",
+        description = "Add SubD Displacement to the merge mesh if some geograft has it.\nMay slow down rendering",
+        default = False)
+
     useGeoNodes: BoolProperty(
         name = "Geometry Nodes (Experimental)",
         description = "Merge geografts using geometry nodes",
@@ -89,6 +94,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         self.layout.prop(self, "useMergeUvs")
         if self.useMergeUvs:
             self.layout.prop(self, "allowOverlap")
+        self.layout.prop(self, "useSubDDisplacement")
 
 
     def __init__(self):
@@ -155,7 +161,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':
                     aob.modifiers.remove(mod)
-                elif mod.type == 'SUBSURF' and mod.name == "SubD Displacement":
+                elif (self.useSubDDisplacement and
+                      mod.type == 'SUBSURF' and
+                      mod.subdivision_type == 'SIMPLE'):
                     if mod.render_levels > subDLevels:
                         subDLevels = mod.render_levels
         cname = self.getUvName(cob.data)
@@ -277,11 +285,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerg
         for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-            elif mod.type == 'SUBSURF' and mod.name == "SubD Displacement":
+            elif (mod.type == 'SUBSURF' and
+                  mod.subdivision_type == 'SIMPLE'):
                 if subDLevels > mod.render_levels:
                     mod.render_levels = subDLevels
                 subDLevels = 0
-        if subDLevels > 0:
+        if self.useSubDDisplacement and subDLevels > 0:
             mod = cob.modifiers.new("SubD Displacement", 'SUBSURF')
             mod.subdivision_type = 'SIMPLE'
             mod.render_levels = subDLevels
