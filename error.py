@@ -113,7 +113,7 @@ def handleDazError(context, warning=False, dump=False):
     fp.write(LS.theMessage)
 
     try:
-        if warning:
+        if False and warning:
             string = getMissingAssets()
             fp.write(string)
             print(string)
@@ -171,6 +171,12 @@ def printTraceBack(context, fp):
     fp.write("\nDAZ ROOT PATHS:\n")
     for n, path in enumerate(GS.rootPaths):
         fp.write('%d:   "%s"\n' % (n, path))
+
+    fp.write("\nABSOLUTE PATHS:\n")
+    for lpath,folders in GS.absPaths.items():
+        fp.write('"%s":\n' % lpath)
+        for folder in folders:
+            fp.write('    "%s"\n' % folder)
 
     string = getMissingAssets()
     fp.write(string)
