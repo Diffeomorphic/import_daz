@@ -31,7 +31,7 @@ import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
-from .morphing import MorphSuffix, MorphTypeOptions
+from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
 from .daz import MaterialMethodItems
@@ -531,7 +531,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, SoftbodyOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -681,6 +681,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
             self.subprop("favoPath")
+            self.subprop("ignoreUrl"),
+            self.subprop("ignoreFinger")
             self.subprop("onMorphSuffix")
             if self.onMorphSuffix == 'ALL':
                 self.subprop("morphSuffix")

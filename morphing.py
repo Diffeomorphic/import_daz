@@ -3119,21 +3119,23 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
                 mstruct[key].append(data)
 
 
-class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, SingleFile, JsonFile, IsMeshArmature):
-    bl_idname = "daz.load_favo_morphs"
-    bl_label = "Load Favorite Morphs"
-    bl_description = "Load favorite morphs"
-
+class FavoOptions:
     ignoreUrl : BoolProperty(
         name = "Ignore URL",
         description = ("Ignore the mesh URL and only use the fingerprint to identify the mesh.\n" +
                        "Use this to load Genesis 8 morphs to Genesis 8.1 figures and vice versa"),
-        default = False)
+        default = True)
 
     ignoreFinger : BoolProperty(
         name = "Ignore Fingerprint",
         description = "Ignore the mesh fingerprint which describes the mesh topology",
         default = False)
+
+
+class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, SingleFile, JsonFile, IsMeshArmature):
+    bl_idname = "daz.load_favo_morphs"
+    bl_label = "Load Favorite Morphs"
+    bl_description = "Load favorite morphs"
 
     def draw(self, context):
         MorphSuffix.draw(self, context)
