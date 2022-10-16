@@ -232,7 +232,7 @@ class CyclesTree(Tree):
         self.isDecal = False
 
         self.diffuseInput = None
-        self.diffuseColor = (1,1,1,1)
+        self.diffuseColor = WHITE
         self.diffuseTex = None
         self.normal = None
         self.normalval = 0.0
