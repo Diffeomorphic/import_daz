@@ -86,7 +86,7 @@ the81Folders = {
     "/data/daz 3d/genesis 8/male 8_1" : "/data/daz 3d/genesis 8/male",
 }
 
-def getFolders(reldir, subdirs, match81=False):
+def getFolders(reldir, subdirs, match81=True):
     def addFolders(reldir):
         for basedir in GS.getDazPaths():
             for subdir in subdirs:
@@ -94,21 +94,26 @@ def getFolders(reldir, subdirs, match81=False):
                 folder = folder.replace("//", "/")
                 folder = bpy.path.resolve_ncase(folder)
                 if os.path.exists(folder):
-                    folders.append(folder)
+                    if basedir == prefroot:
+                        preferred.append(folder)
+                    else:
+                        others.append(folder)
 
     if reldir is None:
         return []
-    folders = []
+    prefroot = bpy.context.scene.DazPreferredRoot
+    preferred = []
+    others = []
     reldir = unquote(reldir)
     addFolders(reldir)
     if match81:
         reldir2 = the81Folders.get(reldir.lower())
         if reldir2:
             addFolders(reldir2)
-    return folders
+    return preferred+others
 
 
-def getFoldersFromObject(ob, subdirs, match81=False):
+def getFoldersFromObject(ob, subdirs, match81=True):
     reldir = getReldirFromObject(ob)
     return getFolders(reldir, subdirs, match81)
 

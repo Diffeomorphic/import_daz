@@ -1601,7 +1601,7 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
 
     def invoke(self, context, event):
         from .fileutils import getFoldersFromObject
-        folders = getFoldersFromObject(context.object, ["UV Sets/", ""])
+        folders = getFoldersFromObject(context.object, ["UV Sets/"])
         if folders:
             self.properties.filepath = folders[0]
         return SingleFile.invoke(self, context, event)

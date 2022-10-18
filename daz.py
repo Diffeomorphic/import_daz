@@ -329,6 +329,10 @@ MaterialMethodItems = [
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]
 
+def getRootEnums(scn, context):
+    return [(folder,folder,folder) for folder in GS.getDazPaths()]
+
+
 def register():
 
     bpy.types.Scene.DazContentDirs = CollectionProperty(
@@ -720,6 +724,10 @@ def register():
         name = "Interpolation",
         description = "Image interpolation")
 
+    bpy.types.Scene.DazPreferredRoot = EnumProperty(
+        items = getRootEnums,
+        name = "Preferred Root Directory",
+        description = "Preferred root directory used by some import tools")
 
     bpy.types.Material.DazRenderEngine = StringProperty(default='NONE')
     bpy.types.Material.DazShader = StringProperty(default='NONE')
