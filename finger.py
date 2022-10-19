@@ -42,6 +42,7 @@ FingerPrints = {
     "17246-33982-16828" : "Genesis3-male",
     "16556-32882-16368" : "Genesis8-female",
     "16384-32538-16196" : "Genesis8-male",
+    "25182-50338-25156" : "Genesis9",
 }
 
 VertexCounts = {
@@ -51,6 +52,7 @@ VertexCounts = {
     17246 : "Genesis 3 male",
     16556 : "Genesis 8 female",
     16384 : "Genesis 8 male",
+    25182 : "Genesis 9",
 }
 
 FingerPrintsHD = {
@@ -79,6 +81,8 @@ FingerPrintsHD = {
     "65118-129860-64784" : ("Genesis8-male", 1),
     "259762-518856-259136" : ("Genesis8-male", 2),
     "1037754-2074256-1036544" : ("Genesis8-male", 3),
+
+    "25182-50338-25156" : ("Genesis9", 0),
 }
 
 

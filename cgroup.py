@@ -1650,6 +1650,7 @@ class LayeredGroup(CyclesGroup):
                 "add" : 'ADD',
                 "subtract" : 'SUBTRACT',
                 "alpha_blend" : 'MIX',
+                "blend_source_over" : 'MIX',
             }
             mix.blend_type = blendType[map.operation]
             mix.inputs[0].default_value = map.transparency
