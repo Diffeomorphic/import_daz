@@ -454,6 +454,8 @@ def getConverter(stype, trg):
         cname = stype[:-1] + "-mhx"
     elif trgtype[0:6] == "rigify":
         cname = stype[:-1] + "-" + trgtype
+    elif trgtype == "genesis9":
+        cname = "genesis1238-genesis9"
     else:
         cname = stype + "-" + trgtype
 
