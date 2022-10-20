@@ -911,6 +911,7 @@ class RigInfo:
         self.matrix = rig.matrix_world.copy()
         self.editbones = {}
         self.posebones = {}
+        self.bones = {}
 
 
     def getBoneKey(self, bname):
@@ -943,12 +944,15 @@ class RigInfo:
                 self.editbones[key] = (eb.head.copy(), eb.tail.copy(), eb.roll, parent)
         setMode('OBJECT')
         for pb in self.rig.pose.bones:
-            if pb.name not in mainbones:
-                extrabones.append(pb.name)
+            if pb.name in mainbones:
+                key = pb.name
+            else:
                 key = self.getBoneKey(pb.name)
+                extrabones.append(pb.name)
                 self.posebones[key] = (pb, pb.matrix.copy())
                 if not self.button.useCreateDuplicates:
                     mainbones.append(pb.name)
+            self.bones[key] = pb.bone.use_deform
 
 
     def addEditBones(self, rig, layers):
@@ -991,6 +995,10 @@ class RigInfo:
             subpb, pb.matrix = data
             copyBoneInfo(subpb, pb)
             copyConstraints(subpb, pb, rig)
+        for bname,deform in self.bones.items():
+            pb = rig.pose.bones[bname]
+            if deform:
+                pb.bone.use_deform = True
 
 
     def copyProps(self, src, trg, ovr):
