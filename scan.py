@@ -385,6 +385,7 @@ def getMorphSet(path):
         ("/daz 3d/base pose head/", [("ectrlv", "Visemes"), "Units"]),
         ("/daz 3d/expressions/", "Expressions"),
         ("/daz 3d/facs/", "Facs"),
+        ("/daz 3d/facsdetails/", "Facsdetails"),
         ("/daz 3d/facsexpressions/", "Facsexpr"),
         ]:
         if isinstance(mgrps, list):

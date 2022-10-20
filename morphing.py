@@ -44,7 +44,7 @@ from .fileutils import DazExporter
 #   Morph sets
 #-------------------------------------------------------------
 
-theStandardMorphSets = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsexpr", "Body"]
+theStandardMorphSets = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
 theCustomMorphSets = ["Custom"]
 theJCMMorphSets = ["Jcms", "Flexions"]
 theMorphSets = theStandardMorphSets + theCustomMorphSets + theJCMMorphSets + ["Visibility"]
@@ -56,6 +56,7 @@ theAdjusters = {
     "Expressions" : "Adjust Expressions",
     "Visemes" : "Adjust Visemes",
     "Facs" : "Adjust FACS",
+    "Facsdetails" : "Adjust FACS Details",
     "Facsexpr" : "Adjust FACS Expressions",
     "Body" : "Adjust Body Morphs",
     "Head" : "Adjust Head Morphs",
@@ -961,7 +962,7 @@ class MorphLoader(LoadMorph):
 
     def transferToLashes(self, context):
         from .main import getMatchingMeshes
-        keys = ["eyelash", "tear", "brow", "beard"]
+        keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
         meshes = getMatchingMeshes(self.rig, self.mesh, "head", keys)
         if meshes:
             print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
@@ -1118,6 +1119,16 @@ class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader,
     bodypart = "Face"
 
 
+class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+    bl_idname = "daz.import_facs_details"
+    bl_label = "Import FACS Details"
+    bl_description = "Import selected FACS details morphs"
+    bl_options = {'UNDO'}
+
+    morphset = "Facsdetails"
+    bodypart = "Face"
+
+
 class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_facs_expressions"
     bl_label = "Import FACS Expressions"
@@ -1231,6 +1242,11 @@ class MorphTypeOptions:
         description = "Import all FACS units",
         default = False)
 
+    facsdetails : BoolProperty(
+        name = "FACS Details",
+        description = "Import all FACS details",
+        default = False)
+
     facsexpr : BoolProperty(
         name = "FACS Expressions",
         description = "Import all FACS expressions",
@@ -1261,6 +1277,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "expressions")
         self.layout.prop(self, "visemes")
         self.layout.prop(self, "facs")
+        self.layout.prop(self, "facsdetails")
         self.layout.prop(self, "facsexpr")
         self.layout.prop(self, "body")
         if self.body and self.isMhxAware:
@@ -1302,6 +1319,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.expressions, "Expressions", "Face")
         self.loadMorphType(context, self.visemes, "Visemes", "Face")
         self.loadMorphType(context, self.facs, "Facs", "Face")
+        self.loadMorphType(context, self.facsdetails, "FacsDetails", "Face")
         self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face")
         self.loadMorphType(context, self.body, "Body", "Body")
         self.loadMorphType(context, self.jcms, "Jcms", "Body")
@@ -1700,6 +1718,7 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
         self.removeMorphType(rig, self.expressions, "Expressions")
         self.removeMorphType(rig, self.visemes, "Visemes")
         self.removeMorphType(rig, self.facs, "Facs")
+        self.removeMorphType(rig, self.facsdetails, "Facsdetails")
         self.removeMorphType(rig, self.facsexpr, "Facsexpr")
         self.removeMorphType(rig, self.body, "Body")
         self.removeMorphType(rig, self.jcms, "Jcms")
@@ -3366,6 +3385,7 @@ classes = [
     DAZ_OT_ImportExpressions,
     DAZ_OT_ImportVisemes,
     DAZ_OT_ImportFacs,
+    DAZ_OT_ImportFacsDetails,
     DAZ_OT_ImportFacsExpressions,
     DAZ_OT_ImportBodyMorphs,
     DAZ_OT_ImportFlexions,

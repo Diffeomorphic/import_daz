@@ -118,6 +118,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.import_expressions")
             self.layout.operator("daz.import_visemes")
             self.layout.operator("daz.import_facs")
+            self.layout.operator("daz.import_facs_details")
             self.layout.operator("daz.import_facs_expressions")
             self.layout.operator("daz.import_body_morphs")
             self.layout.separator()
@@ -715,6 +716,17 @@ class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         DAZ_PT_Morphs.preamble(self, layout, rig)
 
 
+class DAZ_UL_FacsDetails(DAZ_UL_StandardMorphs):
+    morphset = "Facsdetails"
+
+class DAZ_PT_FacsDetails(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+    bl_label = "FACS Details"
+    bl_parent_id = "DAZ_PT_MorphGroup"
+    morphset = "Facsdetails"
+    ftype = "DazFacsdetails"
+    uilist = "DAZ_UL_FacsDetails"
+
+
 class DAZ_UL_FacsExpressions(DAZ_UL_StandardMorphs):
     morphset = "Facsexpr"
 
@@ -1073,6 +1085,7 @@ classes = [
     DAZ_UL_Expressions,
     DAZ_UL_Visemes,
     DAZ_UL_Facs,
+    DAZ_UL_FacsDetails,
     DAZ_UL_FacsExpressions,
     DAZ_UL_Body,
     DAZ_UL_JCMs,
@@ -1085,6 +1098,7 @@ classes = [
     DAZ_PT_Expressions,
     DAZ_PT_Visemes,
     DAZ_PT_Facs,
+    DAZ_PT_FacsDetails,
     DAZ_PT_FacsExpressions,
     DAZ_PT_Body,
     DAZ_PT_JCMs,

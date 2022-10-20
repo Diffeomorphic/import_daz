@@ -52,7 +52,7 @@ VertexCounts = {
     17246 : "Genesis 3 male",
     16556 : "Genesis 8 female",
     16384 : "Genesis 8 male",
-    25182 : "Genesis 9",
+    25182 : "Genesis 9 (male or female)",
 }
 
 FingerPrintsHD = {

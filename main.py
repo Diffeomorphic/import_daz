@@ -688,7 +688,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useAdjusters")
-        if self.useFavoMorphs or self.facs or self.facsexpr or self.jcms or self.flexions:
+        if (self.useFavoMorphs or
+            self.facs or
+            self.facsdetails or
+            self.facsexpr or
+            self.jcms or
+            self.flexions):
             self.layout.prop(self, "useTransferLashes")
             self.layout.prop(self, "useTransferShapes")
         self.layout.separator()
@@ -885,6 +890,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                   self.expressions or
                   self.visemes or
                   self.facs or
+                  self.facsdetails or
                   self.facsexpr or
                   self.body or
                   self.jcms or
@@ -895,6 +901,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         expressions = self.expressions,
                         visemes = self.visemes,
                         facs = self.facs,
+                        facsdetails = self.facsdetails,
                         facsexpr = self.facsexpr,
                         body = self.body,
                         useMhxOnly = self.useMhxOnly,
@@ -1061,6 +1068,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             keys.append("tear")
         if self.useBrows:
             keys.append("brow")
+            keys.append("hair cap")
         if self.useBeard:
             keys.append("beard")
         return getMatchingMeshes(rig, ob, "head", keys)
