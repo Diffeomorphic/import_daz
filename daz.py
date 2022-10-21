@@ -209,6 +209,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUnitScale")
         box.prop(scn, "DazVerbosity")
         box.prop(scn, "DazCaseSensitivePaths")
+        box.prop(scn, "DazRescanPaths")
 
         box = col.box()
         box.label(text = "Debugging")
@@ -607,6 +608,10 @@ def register():
     bpy.types.Scene.DazCaseSensitivePaths = BoolProperty(
         name = "Case-Sensitive Paths",
         description = "Convert URLs to lowercase. Works best on Windows.")
+
+    bpy.types.Scene.DazRescanPaths = BoolProperty(
+        name = "Rescan Paths On Start",
+        description = "Rescan case-sensitive paths when Blender starts")
 
     bpy.types.Scene.DazUseInstancing = BoolProperty(
         name = "Use Instancing",

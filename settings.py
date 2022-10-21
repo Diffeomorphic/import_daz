@@ -69,6 +69,7 @@ class GlobalSettings:
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.caseSensitivePaths = (platform != 'win32')
+        self.useRescanPaths = True
         self.shellMethod = 'MATERIAL'
         self.pruneNodes = True
 
@@ -137,6 +138,7 @@ class GlobalSettings:
         "DazErrorPath" : "errorPath",
         "DazScanPath" : "scanPath",
         "DazCaseSensitivePaths" : "caseSensitivePaths",
+        "DazRescanPaths" : "useRescanPaths",
 
         # Debugging
         "DazDump" : "useDump",
@@ -213,6 +215,8 @@ class GlobalSettings:
 
     def getDazPaths(self):
         paths = self.contentDirs + self.mdlDirs + self.cloudDirs
+        paths = [bpy.path.resolve_ncase(path) for path in paths]
+        paths = [path for path in paths if os.path.exists(path)]
         return paths
 
 
