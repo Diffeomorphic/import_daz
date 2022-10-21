@@ -69,7 +69,6 @@ class GlobalSettings:
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.caseSensitivePaths = (platform != 'win32')
-        self.useRescanPaths = True
         self.shellMethod = 'MATERIAL'
         self.pruneNodes = True
 
@@ -138,7 +137,6 @@ class GlobalSettings:
         "DazErrorPath" : "errorPath",
         "DazScanPath" : "scanPath",
         "DazCaseSensitivePaths" : "caseSensitivePaths",
-        "DazRescanPaths" : "useRescanPaths",
 
         # Debugging
         "DazDump" : "useDump",
