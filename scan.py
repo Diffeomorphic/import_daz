@@ -45,7 +45,8 @@ ScanPaths = [("useGenesis", "Genesis", "/data/DAZ 3D/Genesis/Base"),
              ("useGenesis8Female", "Genesis8Female", "/data/DAZ 3D/Genesis 8/Female"),
              ("useGenesis8Male", "Genesis8Male", "/data/DAZ 3D/Genesis 8/Male"),
              ("useGenesis8_1Female", "Genesis8_1Female", "/data/DAZ 3D/Genesis 8/Female 8_1"),
-             ("useGenesis8_1Male", "Genesis8_1Male", "/data/DAZ 3D/Genesis 8/Male 8_1")
+             ("useGenesis8_1Male", "Genesis8_1Male", "/data/DAZ 3D/Genesis 8/Male 8_1"),
+             ("useGenesis9", "Genesis9", "/data/DAZ 3D/Genesis 9"),
             ]
 
 
@@ -107,6 +108,11 @@ class CharSelector:
         description = "Scan Genesis 8.1 male",
         default = False)
 
+    useGenesis9 : BoolProperty(
+        name = "Genesis 9",
+        description = "Scan Genesis 9",
+        default = False)
+
     def getActive(self, ob):
         return (ob and ob.type in ['MESH', 'ARMATURE'])
 
@@ -125,6 +131,7 @@ class CharSelector:
             self.layout.prop(self, "useGenesis8Male")
             self.layout.prop(self, "useGenesis8_1Female")
             self.layout.prop(self, "useGenesis8_1Male")
+            self.layout.prop(self, "useGenesis9")
 
 
 class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
