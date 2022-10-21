@@ -1525,13 +1525,20 @@ GenesisToes = {
               "lBigToe_2", "lSmallToe1_2", "lSmallToe2_2", "lSmallToe3_2", "lSmallToe4_2"],
     "rToe" : ["rBigToe", "rSmallToe1", "rSmallToe2", "rSmallToe3", "rSmallToe4",
               "rBigToe_2", "rSmallToe1_2", "rSmallToe2_2", "rSmallToe3_2", "rSmallToe4_2"],
+    "l_foot" : ["l_metatarsal"],
+    "r_foot" : ["r_metatarsal"],
+    "l_toes" : ["l_bigtoe1", "l_indextoe1", "l_midtoe1", "l_ringtoe1", "l_pinkytoe1",
+                "l_bigtoe2", "l_indextoe2", "l_midtoe2", "l_ringtoe2", "l_pinkytoe2"],
+    "r_toes" : ["r_bigtoe1", "r_indextoe1", "r_midtoe1", "r_ringtoe1", "r_pinkytoe1",
+                "r_bigtoe2", "r_indextoe2", "r_midtoe2", "r_ringtoe2", "r_pinkytoe2"],
 }
 
 NewParent = {
     "lToe" : "lFoot",
     "rToe" : "rFoot",
+    "l_toes" : "l_foot",
+    "r_toes" : "r_foot",
 }
-
 
 def reparentToes(rig, context, useParent):
     setActiveObject(context, rig)
@@ -1597,14 +1604,16 @@ def mergeBonesAndVgroups(rig, mergers, parents, context):
     for ob in rig.children:
         if ob.type == 'MESH':
             for toe,subtoes in mergers.items():
-                if toe in ob.vertex_groups.keys():
-                    vgrp = ob.vertex_groups[toe]
-                else:
-                    vgrp = ob.vertex_groups.new(name=toe)
                 subgrps = []
                 for subtoe in subtoes:
                     if subtoe in ob.vertex_groups.keys():
                         subgrps.append(ob.vertex_groups[subtoe])
+                if toe in ob.vertex_groups.keys():
+                    vgrp = ob.vertex_groups[toe]
+                elif subgrps:
+                    vgrp = ob.vertex_groups.new(name=toe)
+                else:
+                    continue
                 idxs = [vg.index for vg in subgrps]
                 idxs.append(vgrp.index)
                 weights = dict([(vn,0) for vn in range(len(ob.data.vertices))])
