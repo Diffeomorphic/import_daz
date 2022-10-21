@@ -32,51 +32,9 @@ import math
 from mathutils import *
 from .error import *
 from .utils import *
+from .layers import *
 from .propgroups import DazPairGroup
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser, origName, isOrigName
-
-#-------------------------------------------------------------
-#   Bone layers
-#-------------------------------------------------------------
-
-L_MAIN =    0
-L_SPINE =   1
-
-L_LARMIK =  2
-L_LARMFK =  3
-L_LLEGIK =  4
-L_LLEGFK =  5
-L_LHAND =   6
-L_LFINGER = 7
-L_LEXTRA =  12
-L_LTOE =    13
-
-L_RARMIK =  18
-L_RARMFK =  19
-L_RLEGIK =  20
-L_RLEGFK =  21
-L_RHAND =   22
-L_RFINGER = 23
-L_REXTRA =  28
-L_RTOE =    29
-
-L_FACE =    8
-L_TWEAK =   9
-L_HEAD =    10
-L_CUSTOM =  16
-
-L_HELP =    14
-L_HELP2 =   15
-L_ORIG =    27
-L_HIDE =    29
-L_FIN =     30
-L_DEF =     31
-
-
-def fkLayers():
-    return [L_MAIN, L_SPINE, L_HEAD,
-            L_LARMFK, L_LLEGFK, L_LHAND, L_LFINGER,
-            L_RARMFK, L_RLEGFK, L_RHAND, L_RFINGER]
 
 #-------------------------------------------------------------
 #
@@ -547,129 +505,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         finalizeArmature(rig)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
-
-        #-------------------------------------------------------------
-        #   MHX skeleton
-        #   (mhx, genesis, layer)
-        #-------------------------------------------------------------
-
-        self.skeleton = [
-            ("hip", "hip", L_MAIN),
-            ("pelvis", "pelvis", L_SPINE),
-
-            ("thigh.L", "lThigh", L_LLEGFK),
-            ("thighBend.L", "lThighBend", L_LLEGFK),
-            ("thighTwist.L", "lThighTwist", L_LLEGFK),
-            ("shin.L", "lShin", L_LLEGFK),
-            ("foot.L", "lFoot", L_LLEGFK),
-            ("toe.L", "lToe", L_LLEGFK),
-            ("heel.L", "lHeel", L_LTOE),
-            ("tarsal.L", "lMetatarsals", L_LTOE),
-
-            ("thigh.R", "rThigh", L_RLEGFK),
-            ("thighBend.R", "rThighBend", L_RLEGFK),
-            ("thighTwist.R", "rThighTwist", L_RLEGFK),
-            ("shin.R", "rShin", L_RLEGFK),
-            ("foot.R", "rFoot", L_RLEGFK),
-            ("toe.R", "rToe", L_RLEGFK),
-            ("heel.R", "rHeel", L_RTOE),
-            ("tarsal.R", "rMetatarsals", L_RTOE),
-
-            ("spine", "abdomenLower", L_SPINE),
-            ("spine", "abdomen", L_SPINE),
-            ("spine-1", "abdomenUpper", L_SPINE),
-            ("spine-1", "abdomen2", L_SPINE),
-            ("chest", "chest", L_SPINE),
-            ("chest", "chestLower", L_SPINE),
-            ("chest-1", "chestUpper", L_SPINE),
-            ("pectoral.L", "lPectoral", L_TWEAK),
-            ("pectoral.R", "rPectoral", L_TWEAK),
-            ("neck", "neck", L_SPINE),
-            ("neck", "neckLower", L_SPINE),
-            ("neck-1", "neckUpper", L_SPINE),
-            ("head", "head", L_SPINE),
-
-            ("clavicle.L", "lCollar", L_LARMFK),
-            ("upper_arm.L", "lShldr", L_LARMFK),
-            ("upper_armBend.L", "lShldrBend", L_LARMFK),
-            ("upper_armTwist.L", "lShldrTwist", L_LARMFK),
-            ("forearm.L", "lForeArm", L_LARMFK),
-            ("forearmBend.L", "lForearmBend", L_LARMFK),
-            ("forearmTwist.L", "lForearmTwist", L_LARMFK),
-            ("hand.L", "lHand", L_LARMFK),
-            ("palm_index.L", "lCarpal1", L_LFINGER),
-            ("palm_middle.L", "lCarpal2", L_LFINGER),
-            ("palm_ring.L", "lCarpal3", L_LFINGER),
-            ("palm_pinky.L", "lCarpal4", L_LFINGER),
-
-            ("clavicle.R", "rCollar", L_RARMFK),
-            ("upper_arm.R", "rShldr", L_RARMFK),
-            ("upper_armBend.R", "rShldrBend", L_RARMFK),
-            ("upper_armTwist.R", "rShldrTwist", L_RARMFK),
-            ("forearm.R", "rForeArm", L_RARMFK),
-            ("forearmBend.R", "rForearmBend", L_RARMFK),
-            ("forearmTwist.R", "rForearmTwist", L_RARMFK),
-            ("hand.R", "rHand", L_RARMFK),
-            ("palm_index.R", "rCarpal1", L_RFINGER),
-            ("palm_middle.R", "rCarpal2", L_RFINGER),
-            ("palm_ring.R", "rCarpal3", L_RFINGER),
-            ("palm_pinky.R", "rCarpal4", L_RFINGER),
-
-            ("thumb.01.L", "lThumb1", L_LFINGER),
-            ("thumb.02.L", "lThumb2", L_LFINGER),
-            ("thumb.03.L", "lThumb3", L_LFINGER),
-            ("f_index.01.L", "lIndex1", L_LFINGER),
-            ("f_index.02.L", "lIndex2", L_LFINGER),
-            ("f_index.03.L", "lIndex3", L_LFINGER),
-            ("f_middle.01.L", "lMid1", L_LFINGER),
-            ("f_middle.02.L", "lMid2", L_LFINGER),
-            ("f_middle.03.L", "lMid3", L_LFINGER),
-            ("f_ring.01.L", "lRing1", L_LFINGER),
-            ("f_ring.02.L", "lRing2", L_LFINGER),
-            ("f_ring.03.L", "lRing3", L_LFINGER),
-            ("f_pinky.01.L", "lPinky1", L_LFINGER),
-            ("f_pinky.02.L", "lPinky2", L_LFINGER),
-            ("f_pinky.03.L", "lPinky3", L_LFINGER),
-
-            ("thumb.01.R", "rThumb1", L_RFINGER),
-            ("thumb.02.R", "rThumb2", L_RFINGER),
-            ("thumb.03.R", "rThumb3", L_RFINGER),
-            ("f_index.01.R", "rIndex1", L_RFINGER),
-            ("f_index.02.R", "rIndex2", L_RFINGER),
-            ("f_index.03.R", "rIndex3", L_RFINGER),
-            ("f_middle.01.R", "rMid1", L_RFINGER),
-            ("f_middle.02.R", "rMid2", L_RFINGER),
-            ("f_middle.03.R", "rMid3", L_RFINGER),
-            ("f_ring.01.R", "rRing1", L_RFINGER),
-            ("f_ring.02.R", "rRing2", L_RFINGER),
-            ("f_ring.03.R", "rRing3", L_RFINGER),
-            ("f_pinky.01.R", "rPinky1", L_RFINGER),
-            ("f_pinky.02.R", "rPinky2", L_RFINGER),
-            ("f_pinky.03.R", "rPinky3", L_RFINGER),
-
-            ("big_toe.01.L", "lBigToe", L_LTOE),
-            ("small_toe_1.01.L", "lSmallToe1", L_LTOE),
-            ("small_toe_2.01.L", "lSmallToe2", L_LTOE),
-            ("small_toe_3.01.L", "lSmallToe3", L_LTOE),
-            ("small_toe_4.01.L", "lSmallToe4", L_LTOE),
-            ("big_toe.02.L", "lBigToe_2", L_LTOE),
-            ("small_toe_1.02.L", "lSmallToe1_2", L_LTOE),
-            ("small_toe_2.02.L", "lSmallToe2_2", L_LTOE),
-            ("small_toe_3.02.L", "lSmallToe3_2", L_LTOE),
-            ("small_toe_4.02.L", "lSmallToe4_2", L_LTOE),
-
-            ("big_toe.01.R", "rBigToe", L_RTOE),
-            ("small_toe_1.01.R", "rSmallToe1", L_RTOE),
-            ("small_toe_2.01.R", "rSmallToe2", L_RTOE),
-            ("small_toe_3.01.R", "rSmallToe3", L_RTOE),
-            ("small_toe_4.01.R", "rSmallToe4", L_RTOE),
-            ("big_toe.02.R", "rBigToe_2", L_RTOE),
-            ("small_toe_1.02.R", "rSmallToe1_2", L_RTOE),
-            ("small_toe_2.02.R", "rSmallToe2_2", L_RTOE),
-            ("small_toe_3.02.R", "rSmallToe3_2", L_RTOE),
-            ("small_toe_4.02.R", "rSmallToe4_2", L_RTOE),
-        ]
-
         self.sacred = ["root", "hips", "spine"]
 
         #-------------------------------------------------------------
@@ -705,6 +540,26 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.storeAllConstraints(rig)
             showProgress(9, 25, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones)
+            showProgress(10, 25, "  Fix bone drivers")
+            self.fixBoneDrivers(rig, self.Correctives)
+        elif rig.DazRig == "genesis9":
+            showProgress(2, 25, "  Connect to parent")
+            connectToParent(rig, keepOrig=self.keepOrigBones, connectAll=False, useSplitShin=self.useSplitShin)
+            showProgress(3, 25, "  Reparent toes")
+            reparentToes(rig, context, False)
+            showProgress(4, 25, "  Rename bones")
+            #self.deleteBendTwistDrvBones(rig)
+            self.rename2Mhx(rig)
+            #showProgress(5, 25, "  Join bend and twist bones")
+            #self.joinBendTwists(rig, {}, bendTwistBones, keep=False, useJoin=False)
+            showProgress(6, 25, "  Fix knees")
+            self.fixKnees(rig)
+            showProgress(7, 25, "  Fix hands")
+            self.fixHands(rig)
+            showProgress(8, 25, "  Store all constraints")
+            self.storeAllConstraints(rig)
+            showProgress(9, 25, "  Create bend and twist bones")
+            #self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
             self.fixBoneDrivers(rig, self.Correctives)
         elif rig.DazRig in ["genesis", "genesis2"]:
@@ -801,6 +656,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def rename2Mhx(self, rig):
+        from .mhx_data import MhxSkeleton
         fixed = []
         helpLayer = L_HELP*[False] + [True] + (31-L_HELP)*[False]
         deformLayer = 31*[False] + [True]
@@ -817,15 +673,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         setMode('OBJECT')
         for bone in rig.data.bones:
+            bname = bone.name
             if bone.name in self.sacred:
-                bone.name = bone.name + ".1"
-
-        for mname,dname,layer in self.skeleton:
-            if dname in rig.data.bones.keys():
-                bone = rig.data.bones[dname]
-                if dname != mname:
+                bone.name = bname + ".1"
+            elif bname in MhxSkeleton.keys():
+                mname,layer = MhxSkeleton[bname]
+                if bname != mname:
                     bone.name = mname
-                    origBone = rig.data.bones.get(origName(dname))
+                    origBone = rig.data.bones.get(origName(bname))
                     if origBone:
                         origBone.name = origName(mname)
                 bone.layers = layer*[False] + [True] + (31-layer)*[False]
@@ -859,17 +714,18 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def getMhxBone(self, rig, bname):
         if bname in rig.data.bones.keys():
             return rig.data.bones[bname]
-        for mname,dname,_ in self.skeleton:
-            if dname == bname:
-                if mname[-2] == ".":
-                    if mname[-6:-2] == "Bend":
-                        mname = "%s.bend.%s" % (mname[:-6],  mname[-1])
-                    elif mname[-7:-2] == "Twist":
-                        mname = "%s.twist.%s" % (mname[:-7],  mname[-1])
-                if mname in rig.data.bones.keys():
-                    return rig.data.bones[mname]
-                else:
-                    print("Missing MHX bone:", bname, mname)
+        from .mhx_data import MhxSkeleton
+        if bname in MhxSkeleton.keys():
+            mname = MhxSkeleton[bname][0]
+            if mname[-2] == ".":
+                if mname[-6:-2] == "Bend":
+                    mname = "%s.bend.%s" % (mname[:-6],  mname[-1])
+                elif mname[-7:-2] == "Twist":
+                    mname = "%s.twist.%s" % (mname[:-7],  mname[-1])
+            if mname in rig.data.bones.keys():
+                return rig.data.bones[mname]
+            else:
+                print("Missing MHX bone:", bname, mname)
         return None
 
     #-------------------------------------------------------------
@@ -1191,7 +1047,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             armSocket = makeBone("armSocket.%s" % suffix, rig, upper_arm.head, upper_arm.head+ez, 0, L_LEXTRA+dlayer, upper_arm.parent)
             armParent = deriveBone("arm_parent.%s" % suffix, armSocket, rig, L_HELP, hip)
             upper_arm.parent = armParent
-            rig.data.edit_bones["upper_arm.bend.%s" % suffix].parent = armParent
+            bend = rig.data.edit_bones.get("upper_arm.bend.%s" % suffix)
+            if bend:
+                bend.parent = armParent
 
             upper_armFk = deriveBone("upper_arm.fk.%s" % suffix, upper_arm, rig, L_LARMFK+dlayer, armParent)
             forearmFk = deriveBone("forearm.fk.%s" % suffix, forearm, rig, L_LARMFK+dlayer, upper_armFk)
@@ -1235,7 +1093,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, L_LEXTRA+dlayer, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)
             thigh.parent = legParent
-            rig.data.edit_bones["thigh.bend.%s" % suffix].parent = legParent
+            bend = rig.data.edit_bones.get("thigh.bend.%s" % suffix)
+            if bend:
+                bend.parent = legParent
 
             thighFk = deriveBone("thigh.fk.%s" % suffix, thigh, rig, L_LLEGFK+dlayer, thigh.parent)
             shinFk = deriveBone("shin.fk.%s" % suffix, shin, rig, L_LLEGFK+dlayer, thighFk)

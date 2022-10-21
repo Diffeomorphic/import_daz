@@ -25,13 +25,13 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
 import bpy
 import math
 import os
 from mathutils import *
 from .error import *
 from .utils import *
+from .layers import *
 from .driver import DriverUser
 
 #-------------------------------------------------------------
@@ -569,6 +569,11 @@ def getSuffixName(bname):
             return "%s%s.R" % (bname[1].lower(), bname[2:])
         elif bname[0] == "l":
             return "%s%s.L" % (bname[1].lower(), bname[2:])
+    elif len(bname) >= 3 and bname[1] == "_":
+        if bname[0] == "r":
+            return "%s%s.R" % (bname[2].lower(), bname[3:])
+        elif bname[0] == "l":
+            return "%s%s.L" % (bname[2].lower(), bname[3:])
     elif bname[0].isupper():
         return "%s%s" % (bname[0].lower(), bname[1:])
     else:
@@ -880,7 +885,6 @@ class BendTwists:
 
 
     def createBendTwists(self, rig, bendTwistBones):
-        from .mhx import L_TWEAK, L_FIN, L_DEF
         defLayer = L_DEF*[False] + [True] + (31-L_DEF)*[False]
         finLayer = L_FIN*[False] + [True] + (31-L_FIN)*[False]
         tweakLayer = L_TWEAK*[False] + [True] + (31-L_TWEAK)*[False]

@@ -41,15 +41,8 @@ from mathutils import Vector
 
 from .error import *
 from .utils import *
+from .layers import *
 from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
-
-R_FACE = 1
-R_DETAIL = 2
-R_CUSTOM = 19
-R_DEFORM = 29
-R_HELP = 30
-R_LAST = 31
-R_FIN = 27
 
 def setupTables(meta):
     def deleteChildren(eb, meta):
@@ -67,16 +60,7 @@ def setupTables(meta):
     global RigifySkeleton, GenesisCarpals, GenesisSpine
     global Genesis3Spine, Genesis3Mergers, Genesis3Parents
     global Genesis3Renames
-    global DeformBones, MhxRigifyLayer
-
-    from .mhx import L_HELP, L_FACE, L_HEAD, L_CUSTOM, L_FIN
-    MhxRigifyLayer = {
-        L_HELP : R_HELP,
-        L_FACE : R_DETAIL,
-        L_HEAD : R_FACE,
-        L_CUSTOM : R_CUSTOM,
-        L_FIN : R_LAST,
-    }
+    global DeformBones
 
     if meta.DazPre278:
         hips = "hips"

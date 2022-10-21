@@ -58,11 +58,11 @@ def importModules():
         modnames = ["buildnumber", "settings", "utils", "error", "uilist",
                     "propgroups", "daz", "fileutils", "load_json", "driver", "asset", "channels", "formula",
                     "transform", "node", "figure", "bone", "geometry", "objfile",
-                    "fix", "modifier", "animation", "load_morph", "morphing", "panel",
+                    "layers", "fix", "modifier", "animation", "load_morph", "morphing", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "rigify", "hide", "store",
-                    "mhx", "layers", "hair", "transfer", "dforce", "main",
+                    "mhx", "mhx_data", "hair", "transfer", "dforce", "main",
                     "udim", "hdmorphs", "facecap", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
@@ -88,7 +88,7 @@ regnames = ["propgroups", "daz", "uilist", "driver",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
             "matedit", "proxy", "rigify", "merge", "hide", "store",
-            "mhx", "layers", "hair", "transfer", "dforce",
+            "mhx", "hair", "transfer", "dforce",
             "hdmorphs", "facecap", "udim", "geonodes", "scan"]
 
 def register():
