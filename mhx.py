@@ -35,6 +35,7 @@ from .utils import *
 from .layers import *
 from .propgroups import DazPairGroup
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser, origName, isOrigName
+from .mhx_data import *
 
 #-------------------------------------------------------------
 #
@@ -286,6 +287,12 @@ def applyBoneChildren(context, rig):
 #   Convert to MHX button
 #-------------------------------------------------------------
 
+MhxDrivenParents = {
+    "lowerFaceRig" :    "lowerJaw",
+    drvBone("lowerTeeth") : "lowerJaw",
+    drvBone("tongue01") :   "lowerTeeth",
+}
+
 class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, GizmoUser):
     bl_idname = "daz.convert_to_mhx"
     bl_label = "Convert To MHX"
@@ -358,71 +365,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis"))
 
-
-    DefaultBoneGroups = [
-        ('Spine',        (1,1,0),   (L_MAIN, L_SPINE)),
-        ('Left Arm FK',  (0.5,0,0), (L_LARMFK,)),
-        ('Right Arm FK', (0,0,0.5), (L_RARMFK,)),
-        ('Left Arm IK',  (1,0,0),   (L_LARMIK,)),
-        ('Right Arm IK', (0,0,1),   (L_RARMIK,)),
-        ('Left Hand',    (1,0,0),   (L_LHAND,)),
-        ('Right Hand',   (0,0,1),   (L_RHAND,)),
-        ('Left Fingers', (0.5,0,0), (L_LFINGER,)),
-        ('Right Fingers',(0,0,0.5), (L_RFINGER,)),
-        ('Left Leg FK',  (0.5,0,0), (L_LLEGFK,)),
-        ('Right Leg FK', (0,0,0.5), (L_RLEGFK,)),
-        ('Left Leg IK',  (1,0,0),   (L_LLEGIK,)),
-        ('Right Leg IK', (0,0,1),   (L_RLEGIK,)),
-        ('Left Toes',    (0.5,0,0), (L_LTOE,)),
-        ('Right Toes',   (0,0,0.5), (L_RTOE,)),
-        ('Face',         (0,1,0),   (L_HEAD, L_FACE)),
-        ('Tweak',        (0,0.5,0), (L_TWEAK,)),
-        ('Custom',       (1,0.5,0), (L_CUSTOM,)),
-    ]
-
-    BendTwistBones = [
-        ("thigh.L", "shin.L", False, "MhaLegStretch_L"),
-        ("forearm.L", "hand.L", True, "MhaArmStretch_L"),
-        ("upper_arm.L", "forearm.L", False, "MhaArmStretch_L"),
-        ("thigh.R", "shin.R", False, "MhaLegStretch_R"),
-        ("forearm.R", "hand.R", True, "MhaArmStretch_R"),
-        ("upper_arm.R", "forearm.R", False, "MhaArmStretch_R"),
-    ]
-
-    ShinBendTwists = [
-        ("shin.L", "foot.L", True, "MhaLegStretch_L"),
-        ("shin.R", "foot.R", True, "MhaLegStretch_R"),
-    ]
-
-    Knees = [
-        ("thigh.L", "shin.L", Vector((0,-1,0))),
-        ("thigh.R", "shin.R", Vector((0,-1,0))),
-        ("upper_arm.L", "forearm.L", Vector((0,1,0))),
-        ("upper_arm.R", "forearm.R", Vector((0,1,0))),
-    ]
-
-    Correctives = {
-        "upper_armBend.L" : "upper_arm.bend.L",
-        "forearmBend.L" : "forearm.bend.L",
-        "thighBend.L" : "thigh.bend.L",
-        "upper_armBend.R" : "upper_arm.bend.R",
-        "forearmBend.R" : "forearm.bend.R",
-        "thighBend.R" : "thigh.bend.R",
-
-        "lShldrBend(fin)" : "upper_arm.bend.L",
-        "lForearmBend(fin)" : "forearm.bend.L",
-        "lThighBend(fin)" : "thigh.bend.L",
-        "rShldrBend(fin)" : "upper_arm.bend.R",
-        "rForearmBend(fin)" : "forearm.bend.R",
-        "rThighBend(fin)" : "thigh.bend.R",
-    }
-
-    DrivenParents = {
-        "lowerFaceRig" :        "lowerJaw",
-        drvBone("lowerTeeth") : "lowerJaw",
-        drvBone("tongue01") :   "lowerTeeth",
-    }
-
     def __init__(self):
         ConstraintStore.__init__(self)
         Fixer.__init__(self)
@@ -458,10 +400,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def createBoneGroups(self, rig):
-        if len(rig.pose.bone_groups) != len(self.DefaultBoneGroups):
+        if len(rig.pose.bone_groups) != len(MhxBoneGroups):
             for bg in list(rig.pose.bone_groups):
                 rig.pose.bone_groups.remove(bg)
-            for bgname,color,_layers in self.DefaultBoneGroups:
+            for bgname,color,_layers in MhxBoneGroups:
                 bg = rig.pose.bone_groups.new(name=bgname)
                 bg.color_set = 'CUSTOM'
                 bg.colors.normal = color
@@ -513,9 +455,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         showProgress(1, 25, "  Fix DAZ rig")
         if self.useSplitShin:
-            bendTwistBones = self.ShinBendTwists + self.BendTwistBones
+            bendTwistBones = MhxShinBendTwists + MhxBendTwistBones
         else:
-            bendTwistBones = self.BendTwistBones
+            bendTwistBones = list(MhxBendTwistBones)
         self.constraints = {}
         rig.data.layers = 32*[True]
         bchildren = applyBoneChildren(context, rig)
@@ -541,7 +483,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(9, 25, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
-            self.fixBoneDrivers(rig, self.Correctives)
+            self.fixBoneDrivers(rig, MhxBoneDrivers)
         elif rig.DazRig == "genesis9":
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, keepOrig=self.keepOrigBones, connectAll=False, useSplitShin=self.useSplitShin)
@@ -561,7 +503,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(9, 25, "  Create bend and twist bones")
             #self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
-            self.fixBoneDrivers(rig, self.Correctives)
+            self.fixBoneDrivers(rig, MhxBoneDrivers)
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
@@ -573,7 +515,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixHands(rig)
             self.storeAllConstraints(rig)
             self.createBendTwists(rig, bendTwistBones)
-            self.fixBoneDrivers(rig, self.Correctives)
+            self.fixBoneDrivers(rig, MhxBoneDrivers)
         else:
             raise DazError("Cannot convert %s to Mhx" % rig.name)
 
@@ -656,13 +598,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def rename2Mhx(self, rig):
-        from .mhx_data import MhxSkeleton
         fixed = []
         helpLayer = L_HELP*[False] + [True] + (31-L_HELP)*[False]
         deformLayer = 31*[False] + [True]
 
         setMode('EDIT')
-        for bname,pname in self.DrivenParents.items():
+        for bname,pname in MhxDrivenParents.items():
             if (bname in rig.data.edit_bones.keys() and
                 pname in rig.data.edit_bones.keys()):
                 eb = rig.data.edit_bones[bname]
@@ -714,7 +655,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def getMhxBone(self, rig, bname):
         if bname in rig.data.bones.keys():
             return rig.data.bones[bname]
-        from .mhx_data import MhxSkeleton
         if bname in MhxSkeleton.keys():
             mname = MhxSkeleton[bname][0]
             if mname[-2] == ".":
@@ -783,7 +723,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addBoneGroups(self, rig):
-        for idx,data in enumerate(self.DefaultBoneGroups):
+        for idx,data in enumerate(MhxBoneGroups):
             _bgname,_theme,layers = data
             bgrp = rig.pose.bone_groups[idx]
             for pb in rig.pose.bones.values():

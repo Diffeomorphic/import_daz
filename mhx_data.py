@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 from .layers import *
+from mathutils import Vector
 
 MhxSkeleton = {
     "hip" : ("hip", L_MAIN),
@@ -234,4 +235,63 @@ MhxSkeleton = {
     "r_pinky1" : ("f_pinky.01.R", L_RFINGER),
     "r_pinky2" : ("f_pinky.02.R", L_RFINGER),
     "r_pinky3" : ("f_pinky.03.R", L_RFINGER)
+}
+
+
+MhxBoneGroups = [
+    ('Spine',    (1,1,0),   (L_MAIN, L_SPINE)),
+    ('Left Arm FK',  (0.5,0,0), (L_LARMFK,)),
+    ('Right Arm FK', (0,0,0.5), (L_RARMFK,)),
+    ('Left Arm IK',  (1,0,0),   (L_LARMIK,)),
+    ('Right Arm IK', (0,0,1),   (L_RARMIK,)),
+    ('Left Hand',    (1,0,0),   (L_LHAND,)),
+    ('Right Hand',   (0,0,1),   (L_RHAND,)),
+    ('Left Fingers', (0.5,0,0), (L_LFINGER,)),
+    ('Right Fingers',(0,0,0.5), (L_RFINGER,)),
+    ('Left Leg FK',  (0.5,0,0), (L_LLEGFK,)),
+    ('Right Leg FK', (0,0,0.5), (L_RLEGFK,)),
+    ('Left Leg IK',  (1,0,0),   (L_LLEGIK,)),
+    ('Right Leg IK', (0,0,1),   (L_RLEGIK,)),
+    ('Left Toes',    (0.5,0,0), (L_LTOE,)),
+    ('Right Toes',   (0,0,0.5), (L_RTOE,)),
+    ('Face',     (0,1,0),   (L_HEAD, L_FACE)),
+    ('Tweak',    (0,0.5,0), (L_TWEAK,)),
+    ('Custom',       (1,0.5,0), (L_CUSTOM,)),
+]
+
+MhxBendTwistBones = [
+    ("thigh.L", "shin.L", False, "MhaLegStretch_L"),
+    ("forearm.L", "hand.L", True, "MhaArmStretch_L"),
+    ("upper_arm.L", "forearm.L", False, "MhaArmStretch_L"),
+    ("thigh.R", "shin.R", False, "MhaLegStretch_R"),
+    ("forearm.R", "hand.R", True, "MhaArmStretch_R"),
+    ("upper_arm.R", "forearm.R", False, "MhaArmStretch_R"),
+]
+
+MhxShinBendTwists = [
+    ("shin.L", "foot.L", True, "MhaLegStretch_L"),
+    ("shin.R", "foot.R", True, "MhaLegStretch_R"),
+]
+
+MhxKnees = [
+    ("thigh.L", "shin.L", Vector((0,-1,0))),
+    ("thigh.R", "shin.R", Vector((0,-1,0))),
+    ("upper_arm.L", "forearm.L", Vector((0,1,0))),
+    ("upper_arm.R", "forearm.R", Vector((0,1,0))),
+]
+
+MhxBoneDrivers = {
+    "upper_armBend.L" : "upper_arm.bend.L",
+    "forearmBend.L" : "forearm.bend.L",
+    "thighBend.L" : "thigh.bend.L",
+    "upper_armBend.R" : "upper_arm.bend.R",
+    "forearmBend.R" : "forearm.bend.R",
+    "thighBend.R" : "thigh.bend.R",
+
+    "lShldrBend(fin)" : "upper_arm.bend.L",
+    "lForearmBend(fin)" : "forearm.bend.L",
+    "lThighBend(fin)" : "thigh.bend.L",
+    "rShldrBend(fin)" : "upper_arm.bend.R",
+    "rForearmBend(fin)" : "forearm.bend.R",
+    "rThighBend(fin)" : "thigh.bend.R",
 }

@@ -169,9 +169,10 @@ class Fixer(DriverUser):
 
     def fixKnees(self, rig):
         from .bone import setRoll
+        from .mhx_data import MhxKnees
         eps = 0.5
         setMode('EDIT')
-        for thigh,shin,zaxis in self.Knees:
+        for thigh,shin,zaxis in MhxKnees:
             eb1 = rig.data.edit_bones[thigh]
             eb2 = rig.data.edit_bones[shin]
             hip = eb1.head
