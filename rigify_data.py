@@ -128,8 +128,8 @@ class RigifyData:
             "shoulder.R" : chest1,
         }
 
-        self.RigifySkeleton = {
-            self.hips :            ("hip", ["hip", "pelvis"]),
+        self.RigifyGenesis38 = {
+            self.hips :         ("hip", ["hip", "pelvis"]),
 
             "thigh.L" :         "lThigh",
             "shin.L" :          "lShin",
@@ -199,16 +199,77 @@ class RigifyData:
             "palm.04.R" :       "rCarpal4",
         }
 
-        self.GenesisCarpals = {
-            "palm.01.L" :        (("lCarpal1", "lIndex1"), ["lCarpal1"]),
-            "palm.02.L" :        (("lCarpal1", "lMid1"), []),
-            "palm.03.L" :        (("lCarpal2", "lRing1"), ["lCarpal2"]),
-            "palm.04.L" :        (("lCarpal2", "lPinky1"), []),
+        self.RigifyGenesis9 = {
+            self.hips :         ("hip", ["hip", "pelvis"]),
 
-            "palm.01.R" :        (("rCarpal1", "rIndex1"), ["rCarpal1"]),
-            "palm.02.R" :        (("rCarpal1", "rMid1"), []),
-            "palm.03.R" :        (("rCarpal2", "rRing1"), ["rCarpal2"]),
-            "palm.04.R" :        (("rCarpal2", "rPinky1"), []),
+            "thigh.L" :         "l_thigh",
+            "shin.L" :          "l_shin",
+            "foot.L" :          "l_foot",
+            "toe.L" :           "l_toes",
+
+            "thigh.R" :         "r_thigh",
+            "shin.R" :          "r_shin",
+            "foot.R" :          "r_foot",
+            "toe.R" :           "r_toes",
+
+            "abdomen" :         "spine1",
+            "abdomen2" :        "spine2",
+            "chest" :           "spine3",
+            "chestUpper" :      "spine4",
+            "neck" :            "neck1",
+            "head" :            "head",
+
+            "shoulder.L" :      "l_shoulder",
+            "upper_arm.L" :     "l_upperarm",
+            "forearm.L" :       "l_forearm",
+            "hand.L" :          "l_hand",
+
+            "shoulder.R" :      "r_shoulder",
+            "upper_arm.R" :     "r_upperarm",
+            "forearm.R" :       "r_forearm",
+            "hand.R" :          "r_hand",
+
+            "thumb.01.L" :       "l_thumb1",
+            "thumb.02.L" :       "l_thumb2",
+            "thumb.03.L" :       "l_thumb3",
+            "f_index.01.L" :     "l_index1",
+            "f_index.02.L" :     "l_index2",
+            "f_index.03.L" :     "l_index3",
+            "f_middle.01.L" :    "l_mid1",
+            "f_middle.02.L" :    "l_mid2",
+            "f_middle.03.L" :    "l_mid3",
+            "f_ring.01.L" :      "l_ring1",
+            "f_ring.02.L" :      "l_ring2",
+            "f_ring.03.L" :      "l_ring3",
+            "f_pinky.01.L" :     "l_pinky1",
+            "f_pinky.02.L" :     "l_pinky2",
+            "f_pinky.03.L" :     "l_pinky3",
+
+            "thumb.01.R" :       "r_thumb1",
+            "thumb.02.R" :       "r_thumb2",
+            "thumb.03.R" :       "r_thumb3",
+            "f_index.01.R" :     "r_index1",
+            "f_index.02.R" :     "r_index2",
+            "f_index.03.R" :     "r_index3",
+            "f_middle.01.R" :    "r_mid1",
+            "f_middle.02.R" :    "r_mid2",
+            "f_middle.03.R" :    "r_mid3",
+            "f_ring.01.R" :      "r_ring1",
+            "f_ring.02.R" :      "r_ring2",
+            "f_ring.03.R" :      "r_ring3",
+            "f_pinky.01.R" :     "r_pinky1",
+            "f_pinky.02.R" :     "r_pinky2",
+            "f_pinky.03.R" :     "r_pinky3",
+
+            "palm.01.L" :       "l_indexmetacarpal",
+            "palm.02.L" :       "l_midmetacarpal",
+            "palm.03.L" :       "l_ringmetacarpal",
+            "palm.04.L" :       "l_pinkymetacarpal",
+
+            "palm.01.R" :       "r_indexmetacarpal",
+            "palm.02.R" :       "r_midmetacarpal",
+            "palm.03.R" :       "r_ringmetacarpal",
+            "palm.04.R" :       "r_pinkymetacarpal",
         }
 
         self.GenesisSpine = [
@@ -219,21 +280,34 @@ class RigifyData:
             ("head", self.head, neck),
         ]
 
-        self.Genesis3Spine = [
+        self.Genesis38Spine = [
             ("abdomen", spine, self.hips),
             ("abdomen2", spine1, spine),
             ("chest", chest, spine1),
             ("chestUpper", chest1, chest),
             ("neck", neck, chest1),
         ]
+
+        self.Genesis9Spine = [
+            ("spine1", spine, self.hips),
+            ("spine2", spine1, spine),
+            ("spine3", chest, spine1),
+            ("spine4", chest1, chest),
+            ("neck1", neck, chest1),
+        ]
+
         if meta.DazUseSplitNeck:
-            self.Genesis3Spine += [
+            self.Genesis38Spine += [
                 ("neckUpper", neck1, neck),
                 ("head", self.head, neck1)]
+            self.Genesis9Spine += [
+                ("neck2", neck1, neck),
+                ("head", self.head, neck1)]
         else:
-            self.Genesis3Spine.append(("head", self.head, neck))
+            self.Genesis38Spine.append(("head", self.head, neck))
+            self.Genesis9Spine.append(("head", self.head, neck))
 
-        self.Genesis3Mergers = {
+        self.Genesis38Mergers = {
             "lShldrBend" : ["lShldrTwist"],
             "lForearmBend" : ["lForearmTwist"],
             "lThighBend" : ["lThighTwist"],
@@ -243,10 +317,19 @@ class RigifyData:
             "rThighBend" : ["rThighTwist"],
             #"rFoot" : ["rMetatarsals"],
         }
+        self.Genesis9Mergers = {
+            "l_upperarm" : ["l_upperarmtwist1", "l_upperarmtwist2"],
+            "l_forearm" : ["l_forearmtwist1", "l_forearmtwist2"],
+            "l_thigh" : ["l_thightwist1", "l_thightwist2"],
+            "r_upperarm" : ["r_upperarmtwist1", "r_upperarmtwist2"],
+            "r_forearm" : ["r_forearmtwist1", "r_forearmtwist2"],
+            "r_thigh" : ["r_thightwist1", "r_thightwist2"],
+        }
         if not meta.DazUseSplitNeck:
-            self.Genesis3Mergers["neckLower"] = ["neckUpper"]
+            self.Genesis38Mergers["neckLower"] = ["neckUpper"]
+            self.Genesis9Mergers["neck1"] = ["neck2"]
 
-        self.Genesis3Parents = {
+        self.Genesis38Parents = {
             "neckLower" : "chestUpper",
             "chestUpper" : "chestLower",
             "chestLower" : "abdomenUpper",
@@ -260,13 +343,30 @@ class RigifyData:
             "rShin" : "rThighBend",
             "rToe" : "rFoot",
         }
+        self.Genesis9Parents = {
+            "neck1" : "spine4",
+            "spine4" : "spine3",
+            "spine3" : "spine2",
+            "spine2" : "spine1",
+            "l_forearm" : "l_upperarm",
+            "l_hand" : "l_forearm",
+            "l_shin" : "l_thigh",
+            "l_toes" : "l_foot",
+            "r_forearm" : "r_upperarm",
+            "r_hand" : "r_forearm",
+            "r_shin" : "r_thigh",
+            "r_toes" : "r_foot",
+        }
         if meta.DazUseSplitNeck:
-            self.Genesis3Parents["head"] = "neckUpper"
-            self.Genesis3Parents["neckUpper"] = "neckLower"
+            self.Genesis38Parents["head"] = "neckUpper"
+            self.Genesis38Parents["neckUpper"] = "neckLower"
+            self.Genesis9Parents["head"] = "neck2"
+            self.Genesis9Parents["neck2"] = "neck1"
         else:
-            self.Genesis3Parents["head"] = "neckLower"
+            self.Genesis38Parents["head"] = "neckLower"
+            self.Genesis9Parents["head"] = "neck1"
 
-        self.Genesis3Renames = {
+        self.Genesis38Renames = {
             "abdomenLower" : "abdomen",
             "abdomenUpper" : "abdomen2",
             "chestLower" : "chest",

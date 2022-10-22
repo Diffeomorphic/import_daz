@@ -114,13 +114,17 @@ class Rigify:
                   ("Custom ", R_CUSTOM, 13, 6)]
 
     def setupDazSkeleton(self, rig):
-        rigifySkel = RF.RigifySkeleton
         if rig.DazRig in ["genesis1", "genesis2"]:
+            rigifySkel = RF.RigifyGenesis38
             rigifySkel["chestUpper"] = "chestUpper"
             rigifySkel["abdomen2"] = "abdomen2"
-            spineBones = RF.Genesis3Spine
+            spineBones = RF.Genesis38Spine
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            spineBones = RF.Genesis3Spine
+            rigifySkel = RF.RigifyGenesis38
+            spineBones = RF.Genesis38Spine
+        elif rig.DazRig == "genesis9":
+            rigifySkel = RF.RigifyGenesis9
+            spineBones = RF.Genesis9Spine
 
         dazskel = {}
         for rbone, dbone in rigifySkel.items():
@@ -476,7 +480,7 @@ class Rigify:
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
 
         unhideAllObjects(context, rig)
-        for bname in ["lEye", "rEye"]:
+        for bname in ["lEye", "rEye", "l_eye", "r_eye"]:
             pb = rig.pose.bones.get(bname)
             if pb:
                 self.storeConstraints(bname, pb)
@@ -519,9 +523,13 @@ class Rigify:
             self.splitBone(rig, "chest", "chestUpper")
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            mergeBonesAndVgroups(rig, RF.Genesis3Mergers, RF.Genesis3Parents, context)
+            mergeBonesAndVgroups(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
             reparentToes(rig, context, True)
-            self.renameBones(rig, RF.Genesis3Renames)
+            self.renameBones(rig, RF.Genesis38Renames)
+        elif rig.DazRig == "genesis9":
+            mergeBonesAndVgroups(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
+            reparentToes(rig, context, True)
+            #self.renameBones(rig, RF.Genesis9Renames)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
             activateObject(context, meta)
@@ -802,9 +810,9 @@ class Rigify:
             if isDrvBone(bname) or isFinal(bname):
                 continue
             setAssoc(bname, bname)
-        for dname,rname,_ in RF.Genesis3Spine:
+        for dname,rname,_ in RF.Genesis38Spine:
             setAssoc(dname, rname)
-        for rname,dname in RF.RigifySkeleton.items():
+        for rname,dname in rigifySkel.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
@@ -824,12 +832,20 @@ class Rigify:
 
         # Fix bend and twist drivers
         print("  Fix bend and twist drivers")
-        specials = {
-            "Shldr" : "upper_arm",
-            "ForeArm" : "forearm",
-            "Thigh" : "thigh",
-            "Shin" : "shin",
-        }
+        if rig.DazRig == "genesis9":
+            specials = {
+                "_upperarm" : "upper_arm",
+                "_forearm" : "forearm",
+                "_thigh" : "thigh",
+                "_shin" : "shin",
+            }
+        else:
+            specials = {
+                "Shldr" : "upper_arm",
+                "ForeArm" : "forearm",
+                "Thigh" : "thigh",
+                "Shin" : "shin",
+            }
         for dname0,rname0 in specials.items():
             for prefix,suffix in [("l","L"), ("r","R")]:
                 dname = "%s%s" % (prefix, dname0)
@@ -858,9 +874,14 @@ class Rigify:
         self.addTongueIk(gen)
 
         # Face bone gizmos
-        rename = ["Pectoral", "Eye", "Ear", "Metatarsals"]
-        rename += [bone.name[1:] for bone in gen.data.bones
-            if bone.name[1:].startswith(("BigToe", "SmallToe"))]
+        if rig.DazRig == "genesis9":
+            rename = ["_pectoral", "_eye", "_ear", "_metatarsal"]
+            rename += [bone.name[1:] for bone in gen.data.bones
+                if bone.name.endswith("toe")]
+        else:
+            rename = ["Pectoral", "Eye", "Ear", "Metatarsals"]
+            rename += [bone.name[1:] for bone in gen.data.bones
+                if bone.name[1:].startswith(("BigToe", "SmallToe"))]
         self.renameFaceBones(gen, rename)
         self.addGizmos(gen)
 

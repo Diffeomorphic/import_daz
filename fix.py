@@ -386,7 +386,12 @@ class Fixer(DriverUser):
     def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
         from .mhx import makeBone, deriveBone
         prefix = suffix.lower()
-        eye = rig.data.edit_bones[prefix + "Eye"]
+        eye = rig.data.edit_bones.get("%sEye" % prefix)
+        if eye is None:
+            eye = rig.data.edit_bones.get("%s_eye" % prefix)
+        if eye is None:
+            print("Did not find eye")
+            return
         drvname = drvBone(eye.name)
         if drvname not in rig.data.edit_bones.keys():
             eyegaze = deriveBone(drvname, eye, rig, helpLayer, eye.parent)
@@ -423,9 +428,15 @@ class Fixer(DriverUser):
         prop = "MhaGaze_%s" % suffix
         setMhxProp(rig, prop, 1.0)
         prefix = suffix.lower()
-        eye = rig.pose.bones["%sEye" % prefix]
-        eyedrv = rig.pose.bones[drvBone("%sEye" % prefix)]
-        gaze = rig.pose.bones["gaze.%s" % suffix]
+        eye = rig.data.edit_bones.get("%sEye" % prefix)
+        eyedrv = rig.pose.bones.get(drvBone("%sEye" % prefix))
+        if eye is None:
+            eye = rig.data.edit_bones.get("%s_eye" % prefix)
+            eyedrv = rig.pose.bones.get(drvBone("%s_eye" % prefix))
+        gaze = rig.pose.bones.get("gaze.%s" % suffix)
+        if not (eye and eyeDrv and gaze):
+            print("Cannot add gaze constraint", eye, eyeDrv, gaze)
+            return
         if not constraintExists(eye, eyedrv):
             cns = copyRotation(eye, eyedrv, rig)
             cns.mix_mode = 'ADD'
