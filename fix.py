@@ -35,16 +35,6 @@ from .layers import *
 from .driver import DriverUser
 
 #-------------------------------------------------------------
-#   Utilities
-#-------------------------------------------------------------
-
-def origName(bname):
-    return "%s-orig" % bname
-
-def isOrigName(bname):
-    return bname[-5:] == "-orig"
-
-#-------------------------------------------------------------
 #   Fixer class
 #-------------------------------------------------------------
 
@@ -907,12 +897,7 @@ class BendTwists:
             bend.use_connect = eb.use_connect
             twist.use_connect = True
             eb.use_deform = False
-            bendOrig = rig.data.edit_bones.get(origName(bendname))
-            twistOrig = rig.data.edit_bones.get(origName(twistname))
             bend.layers = twist.layers = finLayer
-            if bendOrig and twistOrig:
-                bend = bendOrig
-                twist = twistOrig
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)

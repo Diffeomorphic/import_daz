@@ -34,7 +34,7 @@ from .error import *
 from .utils import *
 from .layers import *
 from .propgroups import DazPairGroup
-from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser, origName, isOrigName
+from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
 from .mhx_data import *
 
 #-------------------------------------------------------------
@@ -311,8 +311,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         default = True
     )
 
-    keepOrigBones = False
-
     useSplitShin : BoolProperty(
         name = "Split Shin Bone",
         description = "Split the shin bone into bend and twist parts",
@@ -466,7 +464,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
             showProgress(2, 25, "  Connect to parent")
-            connectToParent(rig, keepOrig=self.keepOrigBones, connectAll=False, useSplitShin=self.useSplitShin)
+            connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
             showProgress(3, 25, "  Reparent toes")
             reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
@@ -486,7 +484,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixBoneDrivers(rig, MhxBoneDrivers)
         elif rig.DazRig == "genesis9":
             showProgress(2, 25, "  Connect to parent")
-            connectToParent(rig, keepOrig=self.keepOrigBones, connectAll=False, useSplitShin=self.useSplitShin)
+            connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
             showProgress(3, 25, "  Reparent toes")
             reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
@@ -507,7 +505,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
-            connectToParent(rig, keepOrig=False, connectAll=False, useSplitShin=self.useSplitShin)
+            connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
             reparentToes(rig, context, False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
@@ -543,8 +541,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.constrainBendTwists(rig, bendTwistBones)
         self.addCopyLocConstraints(rig)
         self.addChildofConstraints(rig)
-        if self.keepOrigBones:
-            self.addOrigConstraints(rig)
         showProgress(20, 25, "  Restore constraints")
         self.restoreAllConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
@@ -575,9 +571,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 pb.bone.show_wire = True
 
         self.restoreBoneChildren(bchildren, context, rig)
-        if self.keepOrigBones:
-            for ob in context.view_layer.objects:
-                self.changeOrigVertexGroups(ob, rig)
         updateAll(context)
 
 
@@ -621,14 +614,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 mname,layer = MhxSkeleton[bname]
                 if bname != mname:
                     bone.name = mname
-                    origBone = rig.data.bones.get(origName(bname))
-                    if origBone:
-                        origBone.name = origName(mname)
                 bone.layers = layer*[False] + [True] + (31-layer)*[False]
                 fixed.append(mname)
-        for bone in rig.data.bones:
-            if bone.name[0:5] == "shldr" and isOrigName(bone.name):
-                bone.name = "upper_arm%s" % bone.name[5:]
 
         for pb in rig.pose.bones:
             if pb.name in fixed:
@@ -1354,18 +1341,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns = childOf(pb, "hip", rig, hipprop, "x")
             cns.name = "ChildOf Hip"
 
-
-    def addOrigConstraints(self, rig):
-        for pb in rig.pose.bones:
-            if isOrigName(pb.name):
-                base = rig.pose.bones.get(pb.name[:-5])
-                if base is not None:
-                    cns = copyRotation(pb, base, rig)
-                    cns.target_space = 'LOCAL'
-                    cns.owner_space = 'LOCAL'
-                    base.bone.use_deform = False
-                    pb.bone.use_deform = True
-
     #-------------------------------------------------------------
     #   Fix constraints -
     #-------------------------------------------------------------
@@ -1546,9 +1521,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def collectDeformBones(self, rig):
         setMode('OBJECT')
         for bone in rig.data.bones:
-            if isOrigName(bone.name):
-                bone.layers[L_ORIG] = True
-            elif bone.use_deform:
+            if bone.use_deform:
                 bone.layers[L_DEF] = True
 
 
@@ -1558,18 +1531,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             clavicle = rig.data.bones["clavicle.%s" % suffix]
             clavicle.layers[L_SPINE] = True
             clavicle.layers[L_LARMIK+dlayer] = True
-
-    #-------------------------------------------------------------
-    #   Change orig vertex group names
-    #-------------------------------------------------------------
-
-    def changeOrigVertexGroups(self, ob, rig):
-        if ob.type == 'MESH':
-            mod = getModifier(ob, 'ARMATURE')
-            if mod and mod.object == rig:
-                for vgrp in list(ob.vertex_groups):
-                    if origName(vgrp.name) in rig.data.bones.keys():
-                        vgrp.name = origName(vgrp.name)
 
     #-------------------------------------------------------------
     #   Error on missing bone
@@ -1598,8 +1559,6 @@ def getBoneLayer(pb, rig):
         return L_HELP, False
     elif isFinal(pb.name) or pb.bone.layers[L_FIN]:
         return L_FIN, False
-    elif isOrigName(pb.name):
-        return L_ORIG, False
     elif pb.name[0:6] == "tongue":
         return L_HEAD, False
     elif pb.parent:
@@ -1613,27 +1572,7 @@ def getBoneLayer(pb, rig):
     return L_CUSTOM, True
 
 
-def connectToParent(rig, keepOrig=False, connectAll=False, useSplitShin=True):
-    def origBone(bname):
-        if len(bname) > 2 and bname[0] in ["l", "r"] and bname[1].isupper():
-            if bname[-4:] == "Bend":
-                return origName("%s%s.bend.%s" % (bname[1].lower(), bname[2:-4], bname[0].upper()))
-            elif bname[-5:] == "Twist":
-                return origName("%s%s.twist.%s" % (bname[1].lower(), bname[2:-5], bname[0].upper()))
-            else:
-                return origName("%s%s.%s" % (bname[1].lower(), bname[2:], bname[0].upper()))
-        else:
-            return origName("%s%s" % (bname[0].lower(), bname[1:]))
-
-    def addOrigBone(eb, bname, rig):
-        db = rig.data.edit_bones.new(origBone(bname))
-        db.head = eb.head
-        db.tail = eb.tail
-        db.roll = eb.roll
-        db.parent = eb.parent
-        db.use_deform = True
-        return db
-
+def connectToParent(rig, connectAll=False, useSplitShin=True):
     setMode('EDIT')
     bendTwistBones = [
         "lShldrTwist", "lForeArm", "lForearmBend", "lForearmTwist", "lHand",
@@ -1661,23 +1600,6 @@ def connectToParent(rig, keepOrig=False, connectAll=False, useSplitShin=True):
     else:
         shinBones = []
         otherBones += ["lShin", "rShin"]
-
-    if keepOrig:
-        for eb in list(rig.data.edit_bones):
-            if eb.name in bendTwistBones:
-                addOrigBone(eb, eb.name, rig)
-                if eb.parent.name not in bendTwistBones+shinBones:
-                    addOrigBone(eb.parent, eb.parent.name, rig)
-            elif eb.name in shinBones:
-                bend = addOrigBone(eb, "%sBend" % eb.name, rig)
-                twist = addOrigBone(eb, "%sTwist" % eb.name, rig)
-                bend.tail = twist.head = (bend.head+twist.tail)/2
-                twist.parent = bend
-
-        for eb in rig.data.edit_bones:
-            if (eb.parent and
-                origName(eb.parent.name) in rig.data.edit_bones.keys()):
-                eb.parent = rig.data.edit_bones[origName(eb.parent.name)]
 
     if connectAll:
         allBones = bendTwistBones+shinBones+otherBones
