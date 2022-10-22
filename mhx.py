@@ -311,6 +311,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         default = True
     )
 
+    reuseBendTwists : BoolProperty(
+        name = "Reuse Bend And Twist Bones",
+        description = "Use the original bend-twist bones and vertex groups",
+        default = False)
+
     useSplitShin : BoolProperty(
         name = "Split Shin Bone",
         description = "Split the shin bone into bend and twist parts",
@@ -369,6 +374,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def draw(self, context):
         self.layout.prop(self, "addTweakBones")
+        self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
@@ -469,6 +475,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
+            if not self.reuseBendTwists:
+                for ob in rig.children:
+                    self.joinVertexGroups(ob, MhxBendTwistGenesis38)
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
             self.joinBendTwists(rig, {}, bendTwistBones, keep=False, useJoin=False)
@@ -488,18 +497,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(3, 25, "  Reparent toes")
             reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
-            #self.deleteBendTwistDrvBones(rig)
+            if not self.reuseBendTwists:
+                self.deleteBendTwistDrvBones(rig)
+                for ob in rig.children:
+                    self.joinVertexGroups(ob, MhxBendTwistGenesis9)
             self.rename2Mhx(rig)
-            #showProgress(5, 25, "  Join bend and twist bones")
-            #self.joinBendTwists(rig, {}, bendTwistBones, keep=False, useJoin=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
             showProgress(7, 25, "  Fix hands")
             self.fixHands(rig)
             showProgress(8, 25, "  Store all constraints")
             self.storeAllConstraints(rig)
-            showProgress(9, 25, "  Create bend and twist bones")
-            #self.createBendTwists(rig, bendTwistBones)
+            if not self.reuseBendTwists:
+                showProgress(9, 25, "  Create bend and twist bones")
+                self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
             self.fixBoneDrivers(rig, MhxBoneDrivers)
         elif rig.DazRig in ["genesis", "genesis2"]:

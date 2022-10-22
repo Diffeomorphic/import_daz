@@ -718,9 +718,13 @@ class BendTwists:
         for bone in rig.data.bones:
             if isDrvBone(bone.name) or isFinal(bone.name):
                 bname = baseBone(bone.name)
-                if bname.endswith(("Bend", "Twist")):
+                if bname.endswith(("Bend", "Twist", "twist1", "twist2")):
                     btnames.append(bone.name)
                     bnames[bname] = True
+            elif bone.name.endswith(("twist1", "twist2")):
+                btnames.append(bone.name)
+                bnames[bone.name] = True
+
         removeBoneSumDrivers(rig, bnames.keys())
         setMode('EDIT')
         for bname in btnames:
@@ -822,15 +826,7 @@ class BendTwists:
                     eb.layers = hiddenLayer
                 else:
                     rig.data.edit_bones.remove(eb)
-
         setMode('OBJECT')
-        if not useJoin:
-            return
-        for ob in rig.children:
-            for data in bendTwistBones:
-                bname = data[0]
-                bend,twist = self.getBendTwistNames(bname)
-                self.joinVertexGroups(ob, bname, bend, twist)
 
 
     def deleteBoneDrivers(self, rig, bname):
@@ -840,32 +836,38 @@ class BendTwists:
                 rig.driver_remove("%s.%s" % (path, channel))
 
 
-    def joinVertexGroups(self, ob, bname, bend, twist):
-        vgbend = vgtwist = None
-        if bend in ob.vertex_groups.keys():
-            vgbend = ob.vertex_groups[bend]
-        if twist in ob.vertex_groups.keys():
-            vgtwist = ob.vertex_groups[twist]
-        if vgbend is None and vgtwist is None:
-            return
-        elif vgbend is None:
-            vgtwist.name = bname
-            return
-        elif vgtwist is None:
-            vgbend.name = bname
-            return
+    def joinVertexGroups(self, ob, info):
+        for bname, bend, twists in info:
+            vgbend = ob.vertex_groups.get(bend)
+            vgtwists = []
+            for twist in twists:
+                vgtwist = ob.vertex_groups.get(twist)
+                if vgtwist:
+                    vgtwists.append(vgtwist)
+            if vgbend and vgtwists:
+                pass
+            elif vgbend:
+                vgbend.name = bname
+                return
+            elif not vgtwists:
+                return
 
-        vgrp = ob.vertex_groups.new(name=bname)
-        indices = [vgbend.index, vgtwist.index]
-        for v in ob.data.vertices:
-            w = 0.0
-            for g in v.groups:
-                if g.group in indices:
-                    w += g.weight
-            if w > 1e-4:
-                vgrp.add([v.index], w, 'REPLACE')
-        ob.vertex_groups.remove(vgbend)
-        ob.vertex_groups.remove(vgtwist)
+            vgrp = ob.vertex_groups.new(name=bname)
+            indices = [vgtwist.index for vgtwist in vgtwists]
+            if vgbend:
+                indices.append(vgbend.index)
+            for v in ob.data.vertices:
+                w = 0.0
+                for g in v.groups:
+                    if g.group in indices:
+                        w += g.weight
+                if w > 1e-4:
+                    vgrp.add([v.index], w, 'REPLACE')
+            if vgbend:
+                ob.vertex_groups.remove(vgbend)
+            for vgtwist in vgtwists:
+                ob.vertex_groups.remove(vgtwist)
+            vgrp.name = bname
 
 
     def getSubBoneNames(self, bname):

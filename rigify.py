@@ -25,15 +25,6 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
-
-"""
-Abstract
-
-Postprocessing of rigify rig
-
-"""
-
 import bpy
 import os
 from collections import OrderedDict
@@ -43,266 +34,6 @@ from .error import *
 from .utils import *
 from .layers import *
 from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
-
-def setupTables(meta):
-    def deleteChildren(eb, meta):
-        for child in eb.children:
-            deleteChildren(child, meta)
-            meta.data.edit_bones.remove(child)
-
-    def deleteBones(meta, bnames):
-        ebones = meta.data.edit_bones
-        rembones = [ebones[bname] for bname in bnames if bname in ebones.keys()]
-        for eb in rembones:
-            ebones.remove(eb)
-
-    global MetaBones, MetaParents, MetaDisconnect, RigifyParams
-    global RigifySkeleton, GenesisCarpals, GenesisSpine
-    global Genesis3Spine, Genesis3Mergers, Genesis3Parents
-    global Genesis3Renames
-    global DeformBones
-
-    if meta.DazPre278:
-        hips = "hips"
-        spine = "spine"
-        spine1 = "spine-1"
-        chest = "chest"
-        chest1 = "chest-1"
-        neck = "neck"
-        head = "head"
-        rigtype = "rigify"
-
-        MetaBones = {
-            "spine" : spine,
-            "spine-1" : spine1,
-            "chest" : chest,
-            "chest-1" : chest1,
-            "chestUpper" : chest1,
-            "neck" : neck,
-            "head" : head,
-        }
-
-        RigifyParams = {}
-
-        DeformBones = {
-            "neckLower" : "DEF-neck",
-            "neckUpper" : "DEF-neck",
-            "ShldrBend" : "DEF-upper_arm.01.%s",
-            "ForearmBend" : "DEF-forearm.01.%s",
-            "ThighBend" : "DEF-thigh.01.%s",
-            "ShldrTwist" : "DEF-upper_arm.02.%s",
-            "ForearmTwist" : "DEF-forearm.02.%s",
-            "ThighTwist" : "DEF-thigh.02.%s",
-            "Shin" : "DEF-shin.02.%s",
-        }
-
-    else:
-        hips = "spine"
-        spine = "spine.001"
-        spine1 = "spine.002"
-        chest = "spine.003"
-        chest1 = "spine.004"
-        neck = "spine.005"
-        if meta.DazUseSplitNeck:
-            neck1= "spine.006"
-            head = "spine.007"
-        else:
-            head = "spine.006"
-        rigtype = "rigify2"
-        setMode('EDIT')
-        eb = meta.data.edit_bones[head]
-        deleteChildren(eb, meta)
-        deleteBones(meta, ["breast.L", "breast.R"])
-        setMode('OBJECT')
-
-        MetaBones = {
-            "spine" : hips,
-            "spine-1" : spine1,
-            "chest" : chest,
-            "chest-1" : chest1,
-            "chestUpper" : chest1,
-            "neck" : neck,
-            "head" : head,
-        }
-
-        RigifyParams = {
-            ("spine", "neck_pos", 6),
-            ("spine", "pivot_pos", 1),
-        }
-
-        DeformBones = {
-            "neckLower" : "DEF-spine.005",
-            "neckUpper" : "DEF-spine.006",
-            "ShldrBend" : "DEF-upper_arm.%s",
-            "ForearmBend" : "DEF-forearm.%s",
-            "ThighBend" : "DEF-thigh.%s",
-            "ShldrTwist" : "DEF-upper_arm.%s.001",
-            "ForearmTwist" : "DEF-forearm.%s.001",
-            "ThighTwist" : "DEF-thigh.%s.001",
-            "Shin" : "DEF-shin.%s.001",
-        }
-
-
-    MetaDisconnect = [hips, neck]
-
-    MetaParents = {
-        "shoulder.L" : chest1,
-        "shoulder.R" : chest1,
-    }
-
-    RigifySkeleton = {
-    hips :            ("hip", ["hip", "pelvis"]),
-
-    "thigh.L" :         "lThigh",
-    "shin.L" :          "lShin",
-    "foot.L" :          "lFoot",
-    "toe.L" :           "lToe",
-
-    "thigh.R" :         "rThigh",
-    "shin.R" :          "rShin",
-    "foot.R" :          "rFoot",
-    "toe.R" :           "rToe",
-
-    "abdomen" :         "abdomen",
-    "chest" :           "chest",
-    "neck" :            "neck",
-    "head" :            "head",
-
-    "shoulder.L" :      "lCollar",
-    "upper_arm.L" :     "lShldr",
-    "forearm.L" :       "lForeArm",
-    "hand.L" :          "lHand",
-
-    "shoulder.R" :      "rCollar",
-    "upper_arm.R" :     "rShldr",
-    "forearm.R" :       "rForeArm",
-    "hand.R" :          "rHand",
-
-    "thumb.01.L" :       "lThumb1",
-    "thumb.02.L" :       "lThumb2",
-    "thumb.03.L" :       "lThumb3",
-    "f_index.01.L" :     "lIndex1",
-    "f_index.02.L" :     "lIndex2",
-    "f_index.03.L" :     "lIndex3",
-    "f_middle.01.L" :    "lMid1",
-    "f_middle.02.L" :    "lMid2",
-    "f_middle.03.L" :    "lMid3",
-    "f_ring.01.L" :      "lRing1",
-    "f_ring.02.L" :      "lRing2",
-    "f_ring.03.L" :      "lRing3",
-    "f_pinky.01.L" :     "lPinky1",
-    "f_pinky.02.L" :     "lPinky2",
-    "f_pinky.03.L" :     "lPinky3",
-
-    "thumb.01.R" :       "rThumb1",
-    "thumb.02.R" :       "rThumb2",
-    "thumb.03.R" :       "rThumb3",
-    "f_index.01.R" :     "rIndex1",
-    "f_index.02.R" :     "rIndex2",
-    "f_index.03.R" :     "rIndex3",
-    "f_middle.01.R" :    "rMid1",
-    "f_middle.02.R" :    "rMid2",
-    "f_middle.03.R" :    "rMid3",
-    "f_ring.01.R" :      "rRing1",
-    "f_ring.02.R" :      "rRing2",
-    "f_ring.03.R" :      "rRing3",
-    "f_pinky.01.R" :     "rPinky1",
-    "f_pinky.02.R" :     "rPinky2",
-    "f_pinky.03.R" :     "rPinky3",
-
-    "palm.01.L" :       "lCarpal1",
-    "palm.02.L" :       "lCarpal2",
-    "palm.03.L" :       "lCarpal3",
-    "palm.04.L" :       "lCarpal4",
-
-    "palm.01.R" :       "rCarpal1",
-    "palm.02.R" :       "rCarpal2",
-    "palm.03.R" :       "rCarpal3",
-    "palm.04.R" :       "rCarpal4",
-    }
-
-    GenesisCarpals = {
-    "palm.01.L" :        (("lCarpal1", "lIndex1"), ["lCarpal1"]),
-    "palm.02.L" :        (("lCarpal1", "lMid1"), []),
-    "palm.03.L" :        (("lCarpal2", "lRing1"), ["lCarpal2"]),
-    "palm.04.L" :        (("lCarpal2", "lPinky1"), []),
-
-    "palm.01.R" :        (("rCarpal1", "rIndex1"), ["rCarpal1"]),
-    "palm.02.R" :        (("rCarpal1", "rMid1"), []),
-    "palm.03.R" :        (("rCarpal2", "rRing1"), ["rCarpal2"]),
-    "palm.04.R" :        (("rCarpal2", "rPinky1"), []),
-    }
-
-    GenesisSpine = [
-    ("abdomen", spine, hips),
-    ("abdomen2", spine1, spine),
-    ("chest", chest, spine1),
-    ("neck", neck, chest),
-    ("head", head, neck),
-    ]
-
-    Genesis3Spine = [
-    ("abdomen", spine, hips),
-    ("abdomen2", spine1, spine),
-    ("chest", chest, spine1),
-    ("chestUpper", chest1, chest),
-    ("neck", neck, chest1),
-    ]
-    if meta.DazUseSplitNeck:
-        Genesis3Spine += [
-            ("neckUpper", neck1, neck),
-            ("head", head, neck1)]
-    else:
-        Genesis3Spine.append(("head", head, neck))
-
-    Genesis3Mergers = {
-    "lShldrBend" : ["lShldrTwist"],
-    "lForearmBend" : ["lForearmTwist"],
-    "lThighBend" : ["lThighTwist"],
-    #"lFoot" : ["lMetatarsals"],
-
-    "rShldrBend" : ["rShldrTwist"],
-    "rForearmBend" : ["rForearmTwist"],
-    "rThighBend" : ["rThighTwist"],
-    #"rFoot" : ["rMetatarsals"],
-    }
-    if not meta.DazUseSplitNeck:
-        Genesis3Mergers["neckLower"] = ["neckUpper"]
-
-    Genesis3Parents = {
-    "neckLower" : "chestUpper",
-    "chestUpper" : "chestLower",
-    "chestLower" : "abdomenUpper",
-    "abdomenUpper" : "abdomenLower",
-    "lForearmBend" : "lShldrBend",
-    "lHand" : "lForearmBend",
-    "lShin" : "lThighBend",
-    "lToe" : "lFoot",
-    "rForearmBend" : "rShldrBend",
-    "rHand" : "rForearmBend",
-    "rShin" : "rThighBend",
-    "rToe" : "rFoot",
-    }
-    if meta.DazUseSplitNeck:
-        Genesis3Parents["head"] = "neckUpper"
-        Genesis3Parents["neckUpper"] = "neckLower"
-    else:
-        Genesis3Parents["head"] = "neckLower"
-
-    Genesis3Renames = {
-    "abdomenLower" : "abdomen",
-    "abdomenUpper" : "abdomen2",
-    "chestLower" : "chest",
-    "neckLower" : "neck",
-    "lShldrBend" : "lShldr",
-    "lForearmBend" : "lForeArm",
-    "lThighBend" : "lThigh",
-    "rShldrBend" : "rShldr",
-    "rForearmBend" : "rForeArm",
-    "rThighBend" : "rThigh",
-    }
-
-    return rigtype, hips, head
 
 
 class DazBone:
@@ -383,13 +114,13 @@ class Rigify:
                   ("Custom ", R_CUSTOM, 13, 6)]
 
     def setupDazSkeleton(self, rig):
-        rigifySkel = RigifySkeleton
+        rigifySkel = RF.RigifySkeleton
         if rig.DazRig in ["genesis1", "genesis2"]:
             rigifySkel["chestUpper"] = "chestUpper"
             rigifySkel["abdomen2"] = "abdomen2"
-            spineBones = Genesis3Spine
+            spineBones = RF.Genesis3Spine
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            spineBones = Genesis3Spine
+            spineBones = RF.Genesis3Spine
 
         dazskel = {}
         for rbone, dbone in rigifySkel.items():
@@ -555,7 +286,7 @@ class Rigify:
                 else:
                     pass
                     #print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
-        for rname,prop,value in RigifyParams:
+        for rname,prop,value in RF.RigifyParams:
             if rname in meta.pose.bones:
                 pb = meta.pose.bones[rname]
                 setattr(pb.rigify_parameters, prop, value)
@@ -694,16 +425,15 @@ class Rigify:
 
 
     def getRigifyBone(self, bname, dazSkel, extras, spineBones):
-        global DeformBones
-        if bname in DeformBones:
-            return DeformBones[bname]
-        if bname[1:] in DeformBones:
+        if bname in RF.DeformBones:
+            return RF.DeformBones[bname]
+        if bname[1:] in RF.DeformBones:
             prefix = bname[0]
-            return (DeformBones[bname[1:]] % prefix.upper())
+            return (RF.DeformBones[bname[1:]] % prefix.upper())
         if bname in dazSkel.keys():
             rname = dazSkel[bname]
-            if rname in MetaBones.keys():
-                return "DEF-" + MetaBones[rname]
+            if rname in RF.MetaBones.keys():
+                return "DEF-" + RF.MetaBones[rname]
             else:
                 return "DEF-" + rname
         elif bname in extras.keys():
@@ -731,10 +461,12 @@ class Rigify:
 
 
     def createMeta(self, context):
+        global RF
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
         from .figure import getRigType
         from .merge import mergeBonesAndVgroups, reparentToes
+        from .rigify_data import RigifyData
 
         print("Create metarig")
         rig = context.object
@@ -774,7 +506,7 @@ class Rigify:
         meta.DazUseSplitNeck = (not meta.DazPre278 and rig.DazRig in ["genesis3", "genesis8"])
         if meta.DazUseSplitNeck:
             self.splitNeck(meta)
-        meta.DazRigifyType,hips,head = setupTables(meta)
+        RF = RigifyData(meta)
 
         activateObject(context, rig)
         rig.select_set(True)
@@ -787,9 +519,9 @@ class Rigify:
             self.splitBone(rig, "chest", "chestUpper")
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            mergeBonesAndVgroups(rig, Genesis3Mergers, Genesis3Parents, context)
+            mergeBonesAndVgroups(rig, RF.Genesis3Mergers, RF.Genesis3Parents, context)
             reparentToes(rig, context, True)
-            self.renameBones(rig, Genesis3Renames)
+            self.renameBones(rig, RF.Genesis3Renames)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
             activateObject(context, meta)
@@ -797,7 +529,7 @@ class Rigify:
             raise DazError(msg)
 
         print("  Connect to parent")
-        connectToParent(rig, keepOrig=False, connectAll=True)
+        connectToParent(rig, connectAll=True)
         print("  Setup DAZ skeleton")
         rigifySkel, spineBones, dazSkel = self.setupDazSkeleton(rig)
         dazBones = self.getDazBones(rig)
@@ -809,10 +541,10 @@ class Rigify:
         activateObject(context, meta)
         setMode('EDIT')
         self.fitToDaz(meta, rigifySkel, dazBones)
-        hip = self.fitHip(meta, hips, dazBones)
+        hip = self.fitHip(meta, RF.hips, dazBones)
 
         if rig.DazRig in ["genesis3", "genesis8"]:
-            eb = meta.data.edit_bones[head]
+            eb = meta.data.edit_bones[RF.head]
             eb.tail = eb.head + 1.0*(eb.tail - eb.head)
 
         self.fixHands(meta)
@@ -823,12 +555,12 @@ class Rigify:
         for eb in meta.data.edit_bones:
             if (eb.parent and
                 eb.head == eb.parent.tail and
-                eb.name not in MetaDisconnect):
+                eb.name not in RF.MetaDisconnect):
                 eb.use_connect = True
 
         self.fitSpine(meta, spineBones, dazBones)
         print("  Reparent bones")
-        self.reparentBones(meta, MetaParents)
+        self.reparentBones(meta, RF.MetaParents)
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
         if self.useCustomLayers and not meta.DazPre278:
@@ -1070,9 +802,9 @@ class Rigify:
             if isDrvBone(bname) or isFinal(bname):
                 continue
             setAssoc(bname, bname)
-        for dname,rname,_ in Genesis3Spine:
+        for dname,rname,_ in RF.Genesis3Spine:
             setAssoc(dname, rname)
-        for rname,dname in RigifySkeleton.items():
+        for rname,dname in RF.RigifySkeleton.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)

@@ -268,6 +268,24 @@ MhxBendTwistBones = [
     ("upper_arm.R", "forearm.R", False, "MhaArmStretch_R"),
 ]
 
+MhxBendTwistGenesis38 = [
+    ("lThigh", "lThighBend", ["lThighTwist"]),
+    ("lShldr", "lShldrBend", ["lShldrTwist"]),
+    ("lForearm", "lForearmBend", ["lForearmTwist"]),
+    ("rThigh", "rThighBend", ["rThighTwist"]),
+    ("rShldr", "rShldrBend", ["rShldrTwist"]),
+    ("rForearm", "rForearmBend", ["rForearmTwist"]),
+]
+
+MhxBendTwistGenesis9 = [
+    ("l_thigh", "l_thigh", ["l_thightwist1", "l_thightwist2"]),
+    ("l_upperarm", "l_upperarm", ["l_upperarmtwist1", "l_upperarmtwist2"]),
+    ("l_forearm", "l_forearm", ["l_forearmtwist1", "l_forearmtwist2"]),
+    ("r_thigh", "r_thigh", ["r_thightwist1", "r_thightwist2"]),
+    ("r_upperarm", "r_upperarm", ["r_upperarmtwist1", "r_upperarmtwist2"]),
+    ("r_forearm", "r_forearm", ["r_forearmtwist1", "r_forearmtwist2"]),
+]
+
 MhxShinBendTwists = [
     ("shin.L", "foot.L", True, "MhaLegStretch_L"),
     ("shin.R", "foot.R", True, "MhaLegStretch_R"),

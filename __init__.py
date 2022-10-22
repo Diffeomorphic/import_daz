@@ -61,8 +61,8 @@ def importModules():
                     "layers", "fix", "modifier", "animation", "load_morph", "morphing", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
-                    "matedit", "tables", "proxy", "rigify", "hide", "store",
-                    "mhx_data", "mhx", "hair", "transfer", "dforce", "main",
+                    "matedit", "tables", "proxy", "hide", "store",
+                    "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
                     "udim", "hdmorphs", "facecap", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
