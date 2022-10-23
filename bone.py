@@ -58,11 +58,31 @@ RollCorrection = {
     "rThumb2" : 180,
     "rThumb3" : 180,
 
+    "l_shoulder" : 180,
+    "l_upperarm" : -90,
+    "l_upperarmtwist1" : -90,
+    "l_upperarmtwist2" : -90,
+    "l_hand" : -90,
+    "l_thumb1" : 180,
+    "l_thumb2" : 180,
+    "l_thumb3" : 180,
+
+    "r_shoulder" : 180,
+    "r_upperarm" : 90,
+    "r_upperarmtwist1" : 90,
+    "r_upperarmtwist2" : 90,
+    "r_hand" : 90,
+    "r_thumb1" : 180,
+    "r_thumb2" : 180,
+    "r_thumb3" : 180,
+
     "lEar" : -90,
     "rEar" : 90,
+    "l_ear" : -90,
+    "r_ear" : 90,
 }
 
-RollCorrectionGenesis = {
+RollCorrectionG12 = {
     "lEye" : 180,
     "rEye" : 180,
 }
@@ -72,6 +92,8 @@ SocketBones = [
     "rShldr", "rShldrBend",
     "lThigh", "lThighBend",
     "rThigh", "rThighBend",
+    "l_upperarm", "l_thigh",
+    "r_upperarm", "r_thigh",
 ]
 
 RotationModes = {
@@ -86,6 +108,20 @@ RotationModes = {
     "rShldrTwist" : ("YXZ", True),
     "rForearmTwist" : ("YZX", True),
     "rHand" : ("YXZ", True),
+
+    "l_upperarm" : ("YXZ", False),
+    "l_upperarmtwist1" : ("YXZ", False),
+    "l_upperarmtwist2" : ("YXZ", False),
+    "l_forearmtwist1" : ("YZX", False),
+    "l_forearmtwist2" : ("YZX", False),
+    "l_hand" : ("YXZ", False),
+
+    "r_upperarm" : ("YXZ", True),
+    "r_upperarmtwist1" : ("YXZ", True),
+    "r_upperarmtwist2" : ("YXZ", True),
+    "r_forearmtwist1" : ("YZX", True),
+    "r_forearmtwist2" : ("YZX", True),
+    "r_hand" : ("YXZ", True),
 }
 
 #-------------------------------------------------------------
@@ -264,6 +300,9 @@ class BoneInstance(Instance):
         if not GS.unflipped:
             omat,flip = self.flipAxes(omat, xyz)
 
+        if self.test:
+            print("BB", self.name, orient)
+
         #  engetudouiti's fix for posed bones
         rmat = wsmat.to_4x4()
         if GS.zup:
@@ -354,7 +393,7 @@ class BoneInstance(Instance):
             self.flopped = [True,True,False]
 
         if self.test:
-            print("AXES", self.name, xyz, self.axes)
+            print("\nAXES", self.name, xyz, self.axes)
         rmat = euler.to_matrix().to_4x4()
         omat = omat @ rmat
         return omat, flip
@@ -376,8 +415,8 @@ class BoneInstance(Instance):
         if eb.name in RollCorrection.keys():
             offset = RollCorrection[eb.name]
         elif (figure.rigtype in ["genesis1", "genesis2"] and
-              eb.name in RollCorrectionGenesis.keys()):
-            offset = RollCorrectionGenesis[eb.name]
+              eb.name in RollCorrectionG12.keys()):
+            offset = RollCorrectionG12[eb.name]
         else:
             return
 
@@ -606,8 +645,6 @@ class BoneInstance(Instance):
                         minr = -maxr
                         maxr = -tmp
                     xyz = self.IndexComp[idx]
-                    if self.test:
-                        print("RRR", pb.name, n, limit, self.flipped[n], xyz, int(minr/D), int(maxr/D))
                     setattr(cns, "use_limit_%s" % xyz, True)
                     setattr(cns, "min_%s" % xyz, minr)
                     setattr(cns, "max_%s" % xyz, maxr)
@@ -641,8 +678,6 @@ class BoneInstance(Instance):
                         mind = -maxd
                         maxd = -tmp
                     xyz = self.IndexComp[idx]
-                    if self.test:
-                        print("LLL", pb.name, n, self.axes, limit, self.flipped[n], xyz, mind, maxd)
                     setattr(cns, "use_min_%s" % xyz, True)
                     setattr(cns, "use_max_%s" % xyz, True)
                     setattr(cns, "min_%s" % xyz, mind*LS.scale)
