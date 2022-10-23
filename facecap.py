@@ -197,12 +197,12 @@ class FACSImporter(SingleFile, ActionOptions):
 
 
     def setupBones(self, rig):
-        self.leye = self.getBones(["lEye", "eye.L"], rig)
-        self.reye = self.getBones(["rEye", "eye.R"], rig)
+        self.leye = self.getBones(["lEye", "l_eye", "eye.L"], rig)
+        self.reye = self.getBones(["rEye", "r_eye", "eye.R"], rig)
         self.head = self.getBones(["head"], rig)
-        self.neckUpper = self.getBones(["neckUpper", "neck-1"], rig)
-        self.neckLower = self.getBones(["neckLower", "neck"], rig)
-        self.abdomen = self.getBones(["abdomenUpper", "spine-1", "spine_fk.002"], rig)
+        self.neckUpper = self.getBones(["neckUpper", "neck2", "neck-1"], rig)
+        self.neckLower = self.getBones(["neckLower", "neck1", "neck"], rig)
+        self.abdomen = self.getBones(["abdomenUpper", "spine2", "spine-1", "spine_fk.002"], rig)
         self.hip = self.getBones(["hip", "torso"], rig)
         if self.head is None:
             self.headDist = 0

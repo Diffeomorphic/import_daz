@@ -407,15 +407,16 @@ class Fixer(DriverUser):
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
         from .mhx import makeBone, deriveBone
-        lgaze = rig.data.edit_bones["gaze.L"]
-        rgaze = rig.data.edit_bones["gaze.R"]
-        head = rig.data.edit_bones["head"]
-        loc = (lgaze.head + rgaze.head)/2
-        gaze0 = makeBone("gaze0", rig, loc, loc+Vector((0,15*rig.DazScale,0)), 0, helpLayer, head)
-        gaze1 = deriveBone("gaze1", gaze0, rig, helpLayer, None)
-        gaze = deriveBone("gaze", gaze0, rig, headLayer, gaze1)
-        lgaze.parent = gaze
-        rgaze.parent = gaze
+        lgaze = rig.data.edit_bones.get("gaze.L")
+        rgaze = rig.data.edit_bones.get("gaze.R")
+        head = rig.data.edit_bones.get("head")
+        if lgaze and rgaze and head:
+            loc = (lgaze.head + rgaze.head)/2
+            gaze0 = makeBone("gaze0", rig, loc, loc+Vector((0,15*rig.DazScale,0)), 0, helpLayer, head)
+            gaze1 = deriveBone("gaze1", gaze0, rig, helpLayer, None)
+            gaze = deriveBone("gaze", gaze0, rig, headLayer, gaze1)
+            lgaze.parent = gaze
+            rgaze.parent = gaze
 
 
     def addGazeConstraint(self, rig, suffix):
@@ -428,14 +429,14 @@ class Fixer(DriverUser):
             return False
 
         from .mhx import setMhxProp, dampedTrack, copyRotation
-        prop = "MhaGaze_%s" % suffix
-        setMhxProp(rig, prop, 1.0)
         eye = rig.pose.bones.get("eye.%s" % suffix)
         eyedrv = rig.pose.bones.get(drvBone("eye.%s" % suffix))
         gaze = rig.pose.bones.get("gaze.%s" % suffix)
         if not (eye and eyedrv and gaze):
             print("Cannot add gaze constraint")
             return
+        prop = "MhaGaze_%s" % suffix
+        setMhxProp(rig, prop, 1.0)
         if not constraintExists(eye, eyedrv):
             cns = copyRotation(eye, eyedrv, rig)
             cns.mix_mode = 'ADD'
@@ -444,11 +445,12 @@ class Fixer(DriverUser):
 
     def addGazeFollowsHead(self, rig):
         from .mhx import setMhxProp, copyTransform
-        prop = "MhaGazeFollowsHead"
-        setMhxProp(rig, prop, 1.0)
-        gaze0 = rig.pose.bones["gaze0"]
-        gaze1 = rig.pose.bones["gaze1"]
-        copyTransform(gaze1, gaze0, rig, prop)
+        gaze0 = rig.pose.bones.get("gaze0")
+        gaze1 = rig.pose.bones.get("gaze1")
+        if gaze0 and gaze1:
+            prop = "MhaGazeFollowsHead"
+            setMhxProp(rig, prop, 1.0)
+            copyTransform(gaze1, gaze0, rig, prop)
 
     #-------------------------------------------------------------
     #   Toe rotation

@@ -35,6 +35,7 @@ from .error import *
 from .utils import *
 from .transform import Transform
 from .fileutils import *
+from .bone_data import *
 
 #-------------------------------------------------------------
 #   Convert between frames and vectors
@@ -1797,8 +1798,10 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def isLocUnlocked(self, pb, bname):
+        bnames = ["lHand", "rHand", "lFoot", "rFoot",
+                  "l_hand", "r_hand", "l_foot", "r_foot"]
         return (isLocationUnlocked(pb) and
-                bname not in ["lHand", "rHand", "lFoot", "rFoot"])
+                bname not in bnames)
 
 
     def getFcurves(self, rig, act):
@@ -2052,16 +2055,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def getTwistBone(self, bname):
         if "TWIST-" + bname in self.conv.keys():
-            twidxs = {
-                "lShldrTwist" : 0,
-                "lForearmTwist" : 0,
-                "lThighTwist" : 1,
-                "rShldrTwist" : 0,
-                "rForearmTwist" : 0,
-                "rThighTwist" : 1,
-            }
             twname = self.conv["TWIST-" + bname][0]
-            return twname, twidxs[twname]
+            return twname, TwistDxs[twname]
         else:
             return None, 0
 

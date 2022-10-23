@@ -1017,7 +1017,9 @@ class SimpleIK:
 
     def insertIKKeys(self, rig, frame):
         from .fix import getPreSufName
-        for bname in ["lHandIK", "rHandIK", "lFootIK", "rFootIK"]:
+        bnames = ["lHandIK", "rHandIK", "lFootIK", "rFootIK",
+                  "l_handIK", "r_handIK", "l_footIK", "r_footIK"]
+        for bname in bnames:
             bname = getPreSufName(bname, rig)
             if bname:
                 pb = rig.pose.bones[bname]
@@ -1128,7 +1130,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 table = {
                     "G12" : (prefix+"Hand", prefix+"HandIK", prefix+"Forearm", prefix+"Collar", prefix+"Elbow"),
                     "G38" : (prefix+"Hand", prefix+"HandIK", prefix+"ForearmBend", prefix+"Collar", prefix+"Elbow"),
-                    "G9" : (prefix+"_hand", prefix+"_hand_ik", prefix+"_forearm", prefix+"_shoulder", prefix+"_elbow"),
+                    "G9" : (prefix+"_hand", prefix+"_handIK", prefix+"_forearm", prefix+"_shoulder", prefix+"_elbow"),
                 }
                 handname, hikname, forearmname, collarname, elbowname = table[genesis]
                 hand = ebones[handname]
@@ -1142,7 +1144,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 table = {
                     "G12" : (prefix+"Foot", prefix+"FootIK", prefix+"Shin", "hip", prefix+"Knee"),
                     "G38" : (prefix+"Foot", prefix+"FootIK", prefix+"Shin", "hip", prefix+"Knee"),
-                    "G9" : (prefix+"_foot", prefix+"_foot_ik", prefix+"_shin", "hip", prefix+"_knee"),
+                    "G9" : (prefix+"_foot", prefix+"_footIK", prefix+"_shin", "hip", prefix+"_knee"),
                 }
                 footname, fikname, shinname, hipname, kneename = table[genesis]
                 foot = ebones[footname]
@@ -1160,7 +1162,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 armProp = "DazArmIK_" + suffix
                 hand = getPoseBone(rig, (prefix+"Hand", prefix+"_hand"))
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp, "1-x")
-                hikname = getGenesisName(genesis, (prefix+"HandIK", prefix+"_hand_ik"))
+                hikname = getGenesisName(genesis, (prefix+"HandIK", prefix+"_handIK"))
                 handIK = getBoneCopy(hikname, hand, rpbs)
                 copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
                 addToLayer(handIK, "IK Arm", rig, "IK")
@@ -1168,7 +1170,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 legProp = "DazLegIK_" + suffix
                 foot = getPoseBone(rig, (prefix+"Foot", prefix+"_foot"))
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp, "1-x")
-                fikname = getGenesisName(genesis, (prefix+"FootIK", prefix+"_foot_ik"))
+                fikname = getGenesisName(genesis, (prefix+"FootIK", prefix+"_footIK"))
                 footIK = getBoneCopy(fikname, foot, rpbs)
                 copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
                 addToLayer(footIK, "IK Leg", rig, "IK")

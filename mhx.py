@@ -1554,15 +1554,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 def getBoneLayer(pb, rig):
     from .driver import isBoneDriven
     lname = pb.name.lower()
-    facerigs = ["upperFaceRig", "lowerFaceRig", "upperfacerig", "lowerfacerig"]
-    headbones = ["upperJaw", "lowerJaw", "upperTeeth", "lowerTeeth",
-                 "upperjaw", "lowerjaw", "upperteeth", "lowerteeth",
-                ]
-    if pb.name in headbones:
+    if pb.name in HeadBones:
         return L_HEAD, False
     elif (isDrvBone(pb.name) or
         isBoneDriven(rig, pb) or
-        pb.name in facerigs):
+        pb.name in FaceRigs):
         return L_HELP, False
     elif isFinal(pb.name) or pb.bone.layers[L_FIN]:
         return L_FIN, False
@@ -1570,48 +1566,27 @@ def getBoneLayer(pb, rig):
         return L_HEAD, False
     elif pb.parent:
         par = pb.parent
-        if par.name in facerigs:
+        if par.name in FaceRigs:
             return L_FACE, True
         elif (isDrvBone(par.name) and
               par.parent and
-              par.parent.name in facerigs):
+              par.parent.name in FaceRigs):
             return L_FACE, True
     return L_CUSTOM, True
 
 
 def connectToParent(rig, connectAll=False, useSplitShin=True):
     setMode('EDIT')
-    bendTwistBones = [
-        "lShldrTwist", "lForeArm", "lForearmBend", "lForearmTwist", "lHand",
-        "rShldrTwist", "rForeArm", "rForearmBend", "rForearmTwist", "rHand",
-        "lThighTwist", "lFoot", "lToe",
-        "rThighTwist", "rFoot", "rToe",
-    ]
-
-    otherBones = [
-        "abdomenUpper", "chestLower", "chestUpper", "neckLower", "neckUpper",
-        "lThumb2", "lThumb3",
-        "lIndex1", "lIndex2", "lIndex3",
-        "lMid1", "lMid2", "lMid3",
-        "lRing1", "lRing2", "lRing3",
-        "lPinky1", "lPinky2", "lPinky3",
-        "rThumb2", "rThumb3",
-        "rIndex1", "rIndex2", "rIndex3",
-        "rMid1", "rMid2", "rMid3",
-        "rRing1", "rRing2", "rRing3",
-        "rPinky1", "rPinky2", "rPinky3",
-    ]
-
     if useSplitShin:
-        shinBones = ["lShin", "rShin"]
+        shinBones = ConnectShin
+        otherBones = ConnectOther
     else:
         shinBones = []
-        otherBones += ["lShin", "rShin"]
-
+        otherBones = ConnectOther+ConnectShin
     if connectAll:
-        allBones = bendTwistBones+shinBones+otherBones
+        allBones = ConnectBendTwist+shinBones+otherBones
     else:
-        allBones = bendTwistBones+shinBones
+        allBones = ConnectBendTwist+shinBones
     for eb in rig.data.edit_bones:
         if eb.name in allBones:
             eb.parent.tail = eb.head
