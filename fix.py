@@ -597,13 +597,10 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
     bl_description = "Change l/r prefix to .L/.R suffix,\nto use Blender symmetry tools"
     bl_options = {'UNDO'}
 
-    useRenameBones = True
-
     def run(self, context):
         rig = context.object
         self.renameFaceBones(rig)
         rig.DazRig = ""
-
 
     def isFaceBone(self, pb):
         return True

@@ -347,12 +347,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Add extra foot and toe bones as IK targets",
         default = False)
 
-    useRenameBones : BoolProperty(
-        name = "Rename Face Bones",
-        description = "Rename face bones from l/r prefix to .L/.R suffix",
-        default = True
-    )
-
     boneGroups : CollectionProperty(
         type = DazPairGroup,
         name = "Bone Groups")
@@ -382,7 +376,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useFoot2")
-        self.layout.prop(self, "useRenameBones")
         self.layout.prop(self, "useRaiseError")
 
     def invoke(self, context, event):
@@ -564,8 +557,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.collectDeformBones(rig)
         setMode('POSE')
         showProgress(23, 25, "  Rename face bones")
-        if self.useRenameBones:
-            self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
+        self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
         rig.MhxRig = True
@@ -1108,7 +1100,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('OBJECT')
         #setMode('POSE')
         rpbs = rig.pose.bones
-        print("PP", rpbs.get("eye.L"))
         master = rpbs["master"]
         for suffix in ["L", "R"]:
             for bname in ["upper_arm", "forearm", "hand",
@@ -1263,7 +1254,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 copyTransform(foot, foot2, rig, prop2)
                 copyTransform(toe, toe2, rig, prop2)
 
-            print("UU", rpbs.get("eye.L"))
             self.addGazeConstraint(rig, suffix)
 
             self.lockLocations([
@@ -1564,8 +1554,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 def getBoneLayer(pb, rig):
     from .driver import isBoneDriven
     lname = pb.name.lower()
-    facerigs = ["upperFaceRig", "lowerFaceRig"]
-    if pb.name in ["lEye", "rEye", "lEar", "rEar", "upperJaw", "lowerJaw", "upperTeeth", "lowerTeeth"]:
+    facerigs = ["upperFaceRig", "lowerFaceRig", "upperfacerig", "lowerfacerig"]
+    headbones = ["upperJaw", "lowerJaw", "upperTeeth", "lowerTeeth",
+                 "upperjaw", "lowerjaw", "upperteeth", "lowerteeth",
+                ]
+    if pb.name in headbones:
         return L_HEAD, False
     elif (isDrvBone(pb.name) or
         isBoneDriven(rig, pb) or
@@ -1652,10 +1645,11 @@ Gizmos = {
     "neck-1" :          ("GZM_MNeck", 1),
     "head" :            ("GZM_MHead", 1),
     "lowerJaw" :        ("GZM_MJaw", 1),
-    "rEye" :            ("GZM_Circle025", 1),
-    "lEye" :            ("GZM_Circle025", 1),
-    "rEar" :            ("GZM_Circle025", 1.5),
-    "lEar" :            ("GZM_Circle025", 1.5),
+    "lowerjaw" :        ("GZM_MJaw", 1),
+    "eye.R" :           ("GZM_Circle025", 1),
+    "eye.L" :           ("GZM_Circle025", 1),
+    "ear.R" :           ("GZM_Circle025", 1.5),
+    "ear.L" :           ("GZM_Circle025", 1.5),
     "gaze" :            ("GZM_Gaze", 1),
 }
 

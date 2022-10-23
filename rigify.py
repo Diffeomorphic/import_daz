@@ -99,11 +99,6 @@ class Rigify:
     else:
         useSeparateIkToe = False
 
-    useRenameBones : BoolProperty(
-        name = "Rename Left-Right Bones",
-        description = "Rename bones from l/r prefix to .L/.R suffix",
-        default = True)
-
     useRecalcRoll : BoolProperty(
         name = "Recalc Roll",
         description = "Recalculate the roll angles of the thigh and shin bones,\nso they are aligned with the global Z axis.\nFor Genesis 1,2, and 3 characters",
@@ -871,13 +866,12 @@ class Rigify:
         if rig.DazRig == "genesis9":
             rename = ["_pectoral", "_eye", "_ear", "_metatarsal"]
             rename += [bone.name[1:] for bone in gen.data.bones
-                if bone.name.endswith("toe")]
+                if bone.name.endswith(("toe1", "toe2"))]
         else:
             rename = ["Pectoral", "Eye", "Ear", "Metatarsals"]
             rename += [bone.name[1:] for bone in gen.data.bones
                 if bone.name[1:].startswith(("BigToe", "SmallToe"))]
-        if self.useRenameBones:
-            self.renameFaceBones(gen, rename)
+        self.renameFaceBones(gen, rename)
         self.addGizmos(gen)
 
         # Gaze bones
@@ -1078,6 +1072,7 @@ class Rigify:
 
     def addGizmos(self, gen):
         gizmos = {
+            "lowerjaw" :        ("GZM_MJaw", 1),
             "lowerJaw" :        ("GZM_MJaw", 1),
             "eye.L" :           ("GZM_Circle025", 1),
             "eye.R" :           ("GZM_Circle025", 1),
@@ -1106,7 +1101,8 @@ class Rigify:
             elif pb.name[0:6] == "tongue":
                 self.addGizmo(pb, "GZM_MTongue", 1)
                 pb.bone_group = bgrp
-            elif pb.name.startswith(("bigToe", "smallToe")):
+            elif (pb.name.startswith(("bigToe", "smallToe")) or
+                  pb.name.endswith(("toe1.L", "toe2.L", "toe1.R", "toe2.R"))):
                 self.addGizmo(pb, "GZM_Circle", 0.4)
                 pb.bone_group = bgrp
             elif pb.name in gizmos.keys():
@@ -1187,7 +1183,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
             self.layout.prop(self, "useSeparateIkToe")
         Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
-        self.layout.prop(self, "useRenameBones")
         self.layout.prop(self, "useRecalcRoll")
 
 
