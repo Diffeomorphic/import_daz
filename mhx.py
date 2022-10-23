@@ -564,7 +564,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.collectDeformBones(rig)
         setMode('POSE')
         showProgress(23, 25, "  Rename face bones")
-        self.renameFaceBones(rig, ["Eye", "Ear"])
+        if self.useRenameBones:
+            self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
         rig.MhxRig = True
@@ -1105,8 +1106,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         from .figure import copyBoneInfo
         setMode('OBJECT')
-        setMode('POSE')
+        #setMode('POSE')
         rpbs = rig.pose.bones
+        print("PP", rpbs.get("eye.L"))
         master = rpbs["master"]
         for suffix in ["L", "R"]:
             for bname in ["upper_arm", "forearm", "hand",
@@ -1261,6 +1263,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 copyTransform(foot, foot2, rig, prop2)
                 copyTransform(toe, toe2, rig, prop2)
 
+            print("UU", rpbs.get("eye.L"))
             self.addGazeConstraint(rig, suffix)
 
             self.lockLocations([

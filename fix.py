@@ -312,11 +312,12 @@ class Fixer(DriverUser):
     def isFaceBone(self, pb):
         if pb.parent:
             par = pb.parent
-            if par.name in ["upperFaceRig", "lowerFaceRig"]:
+            faces = ["upperFaceRig", "lowerFaceRig", "upperfacerig", "lowerfacerig"]
+            if par.name.lower() in faces:
                 return True
             elif (isDrvBone(par.name) and
                   par.parent and
-                  par.parent.name in ["upperFaceRig", "lowerFaceRig"]):
+                  par.parent.name in faces):
                 return True
         return False
 
@@ -386,16 +387,18 @@ class Fixer(DriverUser):
     def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
         from .mhx import makeBone, deriveBone
         prefix = suffix.lower()
-        eye = rig.data.edit_bones.get("%sEye" % prefix)
+        bnames = ["%sEye" % prefix, "%s_eye" % prefix, "eye.%s" % suffix]
+        for bname in bnames:
+            eye = rig.data.edit_bones.get(bname)
+            if eye:
+                break
         if eye is None:
-            eye = rig.data.edit_bones.get("%s_eye" % prefix)
-        if eye is None:
-            print("Did not find eye")
+            print("Did not find eye", bnames)
             return
-        drvname = drvBone(eye.name)
+        drvname = drvBone("eye.%s" % suffix)
         if drvname not in rig.data.edit_bones.keys():
             eyegaze = deriveBone(drvname, eye, rig, helpLayer, eye.parent)
-            #eye.parent = eyegaze
+            eye.parent = eyegaze
         vec = eye.tail-eye.head
         vec.normalize()
         loc = eye.head + vec*rig.DazScale*30
@@ -427,15 +430,11 @@ class Fixer(DriverUser):
         from .mhx import setMhxProp, dampedTrack, copyRotation
         prop = "MhaGaze_%s" % suffix
         setMhxProp(rig, prop, 1.0)
-        prefix = suffix.lower()
-        eye = rig.data.edit_bones.get("%sEye" % prefix)
-        eyedrv = rig.pose.bones.get(drvBone("%sEye" % prefix))
-        if eye is None:
-            eye = rig.data.edit_bones.get("%s_eye" % prefix)
-            eyedrv = rig.pose.bones.get(drvBone("%s_eye" % prefix))
+        eye = rig.pose.bones.get("eye.%s" % suffix)
+        eyedrv = rig.pose.bones.get(drvBone("eye.%s" % suffix))
         gaze = rig.pose.bones.get("gaze.%s" % suffix)
-        if not (eye and eyeDrv and gaze):
-            print("Cannot add gaze constraint", eye, eyeDrv, gaze)
+        if not (eye and eyedrv and gaze):
+            print("Cannot add gaze constraint")
             return
         if not constraintExists(eye, eyedrv):
             cns = copyRotation(eye, eyedrv, rig)
@@ -549,8 +548,6 @@ class GizmoUser:
                 renamed[bname] = newname
                 bone.name = newname
 
-        if not self.useRenameBones:
-            return
         renamed = {}
         for pb in rig.pose.bones:
             if (self.isFaceBone(pb) or

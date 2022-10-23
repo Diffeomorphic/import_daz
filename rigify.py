@@ -867,13 +867,7 @@ class Rigify:
                 if pb:
                     pb.lock_rotation = (False, False, False)
 
-        # Gaze bones
-        for suffix in ["L", "R"]:
-            self.addGazeConstraint(gen, suffix)
-        self.addGazeFollowsHead(gen)
-        self.addTongueIk(gen)
-
-        # Face bone gizmos
+        # Face bone and gizmos
         if rig.DazRig == "genesis9":
             rename = ["_pectoral", "_eye", "_ear", "_metatarsal"]
             rename += [bone.name[1:] for bone in gen.data.bones
@@ -882,8 +876,15 @@ class Rigify:
             rename = ["Pectoral", "Eye", "Ear", "Metatarsals"]
             rename += [bone.name[1:] for bone in gen.data.bones
                 if bone.name[1:].startswith(("BigToe", "SmallToe"))]
-        self.renameFaceBones(gen, rename)
+        if self.useRenameBones:
+            self.renameFaceBones(gen, rename)
         self.addGizmos(gen)
+
+        # Gaze bones
+        for suffix in ["L", "R"]:
+            self.addGazeConstraint(gen, suffix)
+        self.addGazeFollowsHead(gen)
+        self.addTongueIk(gen)
 
         # Finger IK
         if self.useFingerIk:
