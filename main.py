@@ -237,6 +237,8 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             t2 = perf_counter()
             print("Total load time: %.3f seconds" % (t2-t1))
 
+        LS.fixMappingNodes()
+
         msg = ""
         if LS.legacySkin:
             msg += ("Objects with legacy skin binding found:\n" +

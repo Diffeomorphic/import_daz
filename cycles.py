@@ -571,15 +571,14 @@ class CyclesTree(Tree):
             if hasattr(mapping, "translation"):
                 mapping.translation = (dx,dy,0)
                 mapping.scale = (sx,sy,1)
-                if rz != 0:
-                    mapping.rotation = (0,0,rz)
+                mapping.rotation = (0,0,rz)
             else:
                 mapping.inputs['Location'].default_value = (dx,dy,0)
                 mapping.inputs['Scale'].default_value = (sx,sy,1)
-                if rz != 0:
-                    mapping.inputs['Rotation'].default_value = (0,0,rz)
+                mapping.inputs['Rotation'].default_value = (0,0,rz)
             if map and not map.invert and hasattr(mapping, "use_min"):
                 mapping.use_min = mapping.use_max = 1
+            LS.mappingNodes.append((mapping, data))
             return mapping
         return None
 

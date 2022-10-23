@@ -852,8 +852,8 @@ class Texture:
             return (0,0,1,1,0)
 
         if map.size is None:
-            dx = mat.getValue("getChannelHorizontalOffset", 0)
-            dy = mat.getValue("getChannelVerticalOffset", 0)
+            dx = mat.getValue("getChannelHorizontalOffset", 0.0)
+            dy = mat.getValue("getChannelVerticalOffset", 0.0)
             sx = 1.0/mat.getValue("getChannelHorizontalTiles", 1)
             sy = 1.0/mat.getValue("getChannelVerticalTiles", 1)
             rz = 0.0
@@ -864,8 +864,8 @@ class Texture:
         kx,ky = tx/mx,ty/my
         ox,oy = map.xoffset/mx, map.yoffset/my
         rz = map.rotation
-        ox += mat.getValue("getChannelHorizontalOffset", 0)
-        oy += mat.getValue("getChannelVerticalOffset", 0)
+        ox += mat.getValue("getChannelHorizontalOffset", 0.0)
+        oy += mat.getValue("getChannelVerticalOffset", 0.0)
         kx *= mat.getValue("getChannelHorizontalTiles", 1)
         ky *= mat.getValue("getChannelVerticalTiles", 1)
         sx = map.xscale*kx
