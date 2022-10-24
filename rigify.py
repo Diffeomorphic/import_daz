@@ -499,10 +499,9 @@ class Rigify:
         cns.target = rig
         cns.mute = True
 
-        meta.DazPre278 = ("hips" in meta.data.bones.keys())
         meta.DazMeta = True
         meta.DazRig = "metarig"
-        meta.DazUseSplitNeck = (not meta.DazPre278 and rig.DazRig in ["genesis3", "genesis8"])
+        meta.DazUseSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
         if meta.DazUseSplitNeck:
             self.splitNeck(meta)
         RF = RigifyData(meta)
@@ -552,7 +551,7 @@ class Rigify:
 
         self.fixHands(meta)
         self.fitLimbs(meta, hip)
-        if self.useCustomLayers and not meta.DazPre278:
+        if self.useCustomLayers:
             self.addGroupBones(meta, rig)
 
         for eb in meta.data.edit_bones:
@@ -566,7 +565,7 @@ class Rigify:
         self.reparentBones(meta, RF.MetaParents)
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
-        if self.useCustomLayers and not meta.DazPre278:
+        if self.useCustomLayers:
             self.setupGroupBones(meta)
 
         print("  Set connected")
@@ -668,7 +667,7 @@ class Rigify:
 
         # Group bones
         print("  Create group bones")
-        if self.useCustomLayers and not meta.DazPre278:
+        if self.useCustomLayers:
             for data in self.GroupBones:
                 eb = gen.data.edit_bones[data[0]]
                 eb.layers = helpLayers
@@ -681,7 +680,9 @@ class Rigify:
             dbone = dazBones[dname]
             eb = gen.data.edit_bones[rname]
             if dbone.parent:
-                pname = self.getRigifyBone(dbone.parent, dazSkel, extras, spineBones)
+                pname = RF.ExtraParents.get(dbone.name)
+                if pname not in gen.data.edit_bones.keys():
+                    pname = self.getRigifyBone(dbone.parent, dazSkel, extras, spineBones)
                 if (pname in gen.data.edit_bones.keys()):
                     eb.parent = gen.data.edit_bones[pname]
                     eb.use_connect = (eb.parent != None and eb.parent.tail == eb.head)
@@ -777,9 +778,6 @@ class Rigify:
                 for rname,dname in rigifySkel.items():
                     if dname[1:] in ["Thigh", "Shin", "Shldr", "ForeArm"]:
                         self.rigifySplitGroup(rname, dname, ob, rig, True, meta)
-                    elif (meta.DazPre278 and
-                          dname[1:] in ["Thumb1", "Index1", "Mid1", "Ring1", "Pinky1"]):
-                        self.rigifySplitGroup(rname, dname, ob, rig, False, meta)
                     elif isinstance(dname, str):
                         if dname in ob.vertex_groups.keys():
                             vgrp = ob.vertex_groups[dname]
@@ -909,10 +907,7 @@ class Rigify:
                         layer.exclude = True
                     break
 
-        if meta.DazPre278:
-            setFkIk1(gen, True, gen.data.layers)
-        else:
-            setFkIk2(gen, False, gen.data.layers)
+        setFkIk2(gen, False, gen.data.layers)
         if activateObject(context, rig):
             deleteObjects(context, [rig])
         if self.useDeleteMeta:
@@ -1018,12 +1013,8 @@ class Rigify:
             return
         bone = rig.data.bones[dname]
         if before:
-            if meta.DazPre278:
-                bendname = "DEF-" + rname[:-2] + ".01" + rname[-2:]
-                twistname = "DEF-" + rname[:-2] + ".02" + rname[-2:]
-            else:
-                bendname = "DEF-" + rname
-                twistname = "DEF-" + rname + ".001"
+            bendname = "DEF-" + rname
+            twistname = "DEF-" + rname + ".001"
         else:
             bendname = "DEF-" + rname + ".01"
             twistname = "DEF-" + rname + ".02"
@@ -1351,7 +1342,6 @@ def register():
     bpy.types.Object.DazMeta = BoolProperty(default=False)
     bpy.types.Object.DazRigifyType = StringProperty(default="")
     bpy.types.Object.DazUseSplitNeck = BoolProperty(default=False)
-    bpy.types.Object.DazPre278 = BoolProperty(default=False)
 
     for cls in classes:
         bpy.utils.register_class(cls)

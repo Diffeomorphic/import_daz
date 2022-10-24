@@ -40,85 +40,50 @@ class RigifyData:
             for eb in rembones:
                 ebones.remove(eb)
 
-        if meta.DazPre278:
-            self.hips = "hips"
-            spine = "spine"
-            spine1 = "spine-1"
-            chest = "chest"
-            chest1 = "chest-1"
-            neck = "neck"
-            self.head = "head"
-            meta.DazRigifyType = "rigify"
-
-            self.MetaBones = {
-                "spine" : spine,
-                "spine-1" : spine1,
-                "chest" : chest,
-                "chest-1" : chest1,
-                "chestUpper" : chest1,
-                "neck" : neck,
-                "head" : self.head,
-            }
-
-            self.RigifyParams = {}
-
-            self.DeformBones = {
-                "neckLower" : "DEF-neck",
-                "neckUpper" : "DEF-neck",
-                "ShldrBend" : "DEF-upper_arm.01.%s",
-                "ForearmBend" : "DEF-forearm.01.%s",
-                "ThighBend" : "DEF-thigh.01.%s",
-                "ShldrTwist" : "DEF-upper_arm.02.%s",
-                "ForearmTwist" : "DEF-forearm.02.%s",
-                "ThighTwist" : "DEF-thigh.02.%s",
-                "Shin" : "DEF-shin.02.%s",
-            }
-
+        self.hips = "spine"
+        spine = "spine.001"
+        spine1 = "spine.002"
+        chest = "spine.003"
+        chest1 = "spine.004"
+        neck = "spine.005"
+        if meta.DazUseSplitNeck:
+            neck1= "spine.006"
+            self.head = "spine.007"
         else:
-            self.hips = "spine"
-            spine = "spine.001"
-            spine1 = "spine.002"
-            chest = "spine.003"
-            chest1 = "spine.004"
-            neck = "spine.005"
-            if meta.DazUseSplitNeck:
-                neck1= "spine.006"
-                self.head = "spine.007"
-            else:
-                self.head = "spine.006"
-            meta.DazRigifyType = "rigify2"
-            setMode('EDIT')
-            eb = meta.data.edit_bones[self.head]
-            deleteChildren(eb, meta)
-            deleteBones(meta, ["breast.L", "breast.R"])
-            setMode('OBJECT')
+            self.head = "spine.006"
+        meta.DazRigifyType = "rigify2"
+        setMode('EDIT')
+        eb = meta.data.edit_bones[self.head]
+        deleteChildren(eb, meta)
+        deleteBones(meta, ["breast.L", "breast.R"])
+        setMode('OBJECT')
 
-            self.MetaBones = {
-                "spine" : self.hips,
-                "spine-1" : spine1,
-                "chest" : chest,
-                "chest-1" : chest1,
-                "chestUpper" : chest1,
-                "neck" : neck,
-                "head" : self.head,
-            }
+        self.MetaBones = {
+            "spine" : self.hips,
+            "spine-1" : spine1,
+            "chest" : chest,
+            "chest-1" : chest1,
+            "chestUpper" : chest1,
+            "neck" : neck,
+            "head" : self.head,
+        }
 
-            self.RigifyParams = {
-                ("spine", "neck_pos", 6),
-                ("spine", "pivot_pos", 1),
-            }
+        self.RigifyParams = {
+            ("spine", "neck_pos", 6),
+            ("spine", "pivot_pos", 1),
+        }
 
-            self.DeformBones = {
-                "neckLower" : "DEF-spine.005",
-                "neckUpper" : "DEF-spine.006",
-                "ShldrBend" : "DEF-upper_arm.%s",
-                "ForearmBend" : "DEF-forearm.%s",
-                "ThighBend" : "DEF-thigh.%s",
-                "ShldrTwist" : "DEF-upper_arm.%s.001",
-                "ForearmTwist" : "DEF-forearm.%s.001",
-                "ThighTwist" : "DEF-thigh.%s.001",
-                "Shin" : "DEF-shin.%s.001",
-            }
+        self.DeformBones = {
+            "neckLower" : "DEF-spine.005",
+            "neckUpper" : "DEF-spine.006",
+            "ShldrBend" : "DEF-upper_arm.%s",
+            "ForearmBend" : "DEF-forearm.%s",
+            "ThighBend" : "DEF-thigh.%s",
+            "ShldrTwist" : "DEF-upper_arm.%s.001",
+            "ForearmTwist" : "DEF-forearm.%s.001",
+            "ThighTwist" : "DEF-thigh.%s.001",
+            "Shin" : "DEF-shin.%s.001",
+        }
 
 
         self.MetaDisconnect = [self.hips, neck]
@@ -377,4 +342,11 @@ class RigifyData:
             "rShldrBend" : "rShldr",
             "rForearmBend" : "rForeArm",
             "rThighBend" : "rThigh",
+        }
+
+        self.ExtraParents = {
+            "lPectoral" : "DEF-spine.004",
+            "rPectoral" : "DEF-spine.004",
+            "l_pectoral" : "DEF-spine.004",
+            "r_pectoral" : "DEF-spine.004",
         }
