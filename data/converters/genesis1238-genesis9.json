@@ -38,10 +38,10 @@
     "rCollar" : "r_shoulder",
     "rShldr" : "r_upperarm", 
     "rShldrBend" : "r_upperarm", 
-    "rShldrTwist" : "TWIST-l_upperarm", 
+    "rShldrTwist" : "TWIST-r_upperarm", 
     "rForeArm" : "r_forearm", 
     "rForearmBend" : "r_forearm", 
-    "rForearmTwist" : "TWIST-l_forearm", 
+    "rForearmTwist" : "TWIST-r_forearm", 
     "rHand" : "r_hand", 
     
     "lThigh" : "l_thigh", 
@@ -65,7 +65,7 @@
     
     "rThigh" : "r_thigh", 
     "rThighBend" : "r_thigh", 
-    "rThighTwist" : "TWIST-l_thigh", 
+    "rThighTwist" : "TWIST-r_thigh", 
     "rShin" : "r_shin", 
     "rFoot" : "r_foot", 
     "rMetatarsals" : "r_metatarsal", 
