@@ -752,7 +752,7 @@ class BendTwists:
         return bendname, twistname
 
 
-    def joinBendTwists(self, rig, renames, bendTwistBones, keep=True, useJoin=True):
+    def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
         setMode('POSE')
         hiddenLayer = 31*[False] + [True]
         rotmodes = {}
@@ -841,6 +841,11 @@ class BendTwists:
             path = 'pose.bones["%s"]' % bname
             for channel in ["location", "rotation_euler", "rotation_quaternion", "scale", "HdOffset", "TlOffset"]:
                 rig.driver_remove("%s.%s" % (path, channel))
+
+
+    def joinBendTwistVGroups(self, rig, info):
+        for ob in rig.children:
+            self.joinVertexGroups(ob, info)
 
 
     def joinVertexGroups(self, ob, info):

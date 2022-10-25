@@ -469,11 +469,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
             if not self.reuseBendTwists:
-                for ob in rig.children:
-                    self.joinVertexGroups(ob, MhxBendTwistGenesis38)
+                self.joinBendTwistVGroups(rig, MhxBendTwistGenesis38)
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
-            self.joinBendTwists(rig, {}, bendTwistBones, keep=False, useJoin=False)
+            self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
             showProgress(7, 25, "  Fix hands")
@@ -492,8 +491,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(4, 25, "  Rename bones")
             if not self.reuseBendTwists:
                 self.deleteBendTwistDrvBones(rig)
-                for ob in rig.children:
-                    self.joinVertexGroups(ob, MhxBendTwistGenesis9)
+                self.joinBendTwistVGroups(rig, MhxBendTwistGenesis9)
             self.rename2Mhx(rig)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)

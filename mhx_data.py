@@ -293,21 +293,21 @@ MhxBendTwistBones = [
 ]
 
 MhxBendTwistGenesis38 = [
-    ("lThigh", "lThighBend", ["lThighTwist"]),
-    ("lShldr", "lShldrBend", ["lShldrTwist"]),
-    ("lForearm", "lForearmBend", ["lForearmTwist"]),
-    ("rThigh", "rThighBend", ["rThighTwist"]),
-    ("rShldr", "rShldrBend", ["rShldrTwist"]),
-    ("rForearm", "rForearmBend", ["rForearmTwist"]),
+    ("thigh.L", "lThighBend", ["lThighTwist"]),
+    ("upper_arm.L", "lShldrBend", ["lShldrTwist"]),
+    ("forearm.L", "lForearmBend", ["lForearmTwist"]),
+    ("thigh.R", "rThighBend", ["rThighTwist"]),
+    ("upper_arm.R", "rShldrBend", ["rShldrTwist"]),
+    ("forearm.R", "rForearmBend", ["rForearmTwist"]),
 ]
 
 MhxBendTwistGenesis9 = [
-    ("l_thigh", "l_thigh", ["l_thightwist1", "l_thightwist2"]),
-    ("l_upperarm", "l_upperarm", ["l_upperarmtwist1", "l_upperarmtwist2"]),
-    ("l_forearm", "l_forearm", ["l_forearmtwist1", "l_forearmtwist2"]),
-    ("r_thigh", "r_thigh", ["r_thightwist1", "r_thightwist2"]),
-    ("r_upperarm", "r_upperarm", ["r_upperarmtwist1", "r_upperarmtwist2"]),
-    ("r_forearm", "r_forearm", ["r_forearmtwist1", "r_forearmtwist2"]),
+    ("thigh.L", "l_thigh", ["l_thightwist1", "l_thightwist2"]),
+    ("upper_arm.L", "l_upperarm", ["l_upperarmtwist1", "l_upperarmtwist2"]),
+    ("forearm.L", "l_forearm", ["l_forearmtwist1", "l_forearmtwist2"]),
+    ("thigh.R", "r_thigh", ["r_thightwist1", "r_thightwist2"]),
+    ("upper_arm.R", "r_upperarm", ["r_upperarmtwist1", "r_upperarmtwist2"]),
+    ("forearm.R", "r_forearm", ["r_forearmtwist1", "r_forearmtwist2"]),
 ]
 
 MhxShinBendTwists = [
