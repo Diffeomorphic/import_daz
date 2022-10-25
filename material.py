@@ -1042,42 +1042,7 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
 #   Merge identical materials
 #-------------------------------------------------------------
 
-class MaterialMerger:
-
-    def mergeMaterials(self, ob):
-        if ob.type != 'MESH':
-            return
-
-        self.matlist = []
-        self.assoc = {}
-        self.reindex = {}
-        self.newname = {None : None}
-        m = 0
-        reduced = False
-        for n,mat in enumerate(ob.data.materials):
-            self.newname[mat.name] = mat.name
-            if self.keepMaterial(n, mat, ob):
-                self.matlist.append(mat)
-                self.reindex[n] = self.assoc[mat.name] = m
-                m += 1
-            else:
-                reduced = True
-        if reduced:
-            phairs = []
-            for f in ob.data.polygons:
-                f.material_index = self.reindex[f.material_index]
-            for psys in ob.particle_systems:
-                pset = psys.settings
-                phairs.append((pset, pset.material_slot))
-            for n,mat in enumerate(self.matlist):
-                ob.data.materials[n] = mat
-            for n in range(len(self.matlist), len(ob.data.materials)):
-                ob.data.materials.pop()
-            for pset,matslot in phairs:
-                pset.material_slot = self.newname[matslot]
-
-
-class DAZ_OT_MergeMaterials(DazPropsOperator, MaterialMerger, IsMesh):
+class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
     bl_idname = "daz.merge_materials"
     bl_label = "Merge Materials"
     bl_description = "Merge identical materials"
@@ -1112,13 +1077,60 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, MaterialMerger, IsMesh):
             self.removeUnusedMaterials(ob)
 
 
-    def keepMaterial(self, mn, mat, ob):
+    def mergeMaterials(self, ob):
+        if ob.type != 'MESH':
+            return
+
+        self.matlist = []
+        self.assoc = {}
+        self.reindex = {}
+        self.matdists = {}
+        self.newname = {None : None}
+        m = 0
+        reduced = False
+        for n,mat in enumerate(ob.data.materials):
+            self.newname[mat.name] = mat.name
+            if self.keepMaterial(n, mat, ob):
+                self.matlist.append(mat)
+                self.reindex[n] = self.assoc[mat.name] = m
+                self.matdists[m] = [self.addToMatdists(mat, n)]
+                m += 1
+            else:
+                reduced = True
+        if reduced:
+            phairs = []
+            for f in ob.data.polygons:
+                f.material_index = self.reindex[f.material_index]
+            for psys in ob.particle_systems:
+                pset = psys.settings
+                phairs.append((pset, pset.material_slot))
+            for n,mat in enumerate(self.matlist):
+                ob.data.materials[n] = mat
+                mlist = self.matdists[n]
+                mlist.sort()
+                mat1 = mlist[0][2]
+                mat.name = mat1.name
+                mat.diffuse_color = mat1.diffuse_color
+            for n in range(len(self.matlist), len(ob.data.materials)):
+                ob.data.materials.pop()
+            for pset,matslot in phairs:
+                pset.material_slot = self.newname[matslot]
+
+
+    def keepMaterial(self, n, mat, ob):
         for mat2 in self.matlist:
             if self.areSameMaterial(mat, mat2):
-                self.reindex[mn] = self.assoc[mat2.name]
+                m = self.reindex[n] = self.assoc[mat2.name]
                 self.newname[mat.name] = mat2.name
+                self.matdists[m].append(self.addToMatdists(mat, n))
                 return False
         return True
+
+
+    def addToMatdists(self, mat, n):
+        r,g,b,a = mat.diffuse_color
+        dist = (r-g)**2 + (r-b)**2 + (g-b)**2
+        return (dist, n, mat)
 
 
     def areSameMaterial(self, mat1, mat2):

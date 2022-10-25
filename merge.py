@@ -33,7 +33,6 @@ from mathutils import Matrix
 
 from .utils import *
 from .error import *
-from .material import MaterialMerger
 from .driver import DriverUser
 
 #-------------------------------------------------------------
@@ -78,7 +77,7 @@ class MergeGeograftOptions:
 
 
 
-class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, MaterialMerger, DriverUser, IsMesh):
+class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, IsMesh):
     bl_idname = "daz.merge_geografts"
     bl_label = "Merge Geografts"
     bl_description = "Merge selected geografts to active object"
