@@ -1462,6 +1462,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 return table.get(bname)
 
+        def flipString(string):
+            if string[0:6] == "clamp(":
+                expr,limits = string[6:].split(",",1)
+                return "clamp(-(%s),%s" % (expr,limits)
+            else:
+                return "-(%s)" % string
+
         if rna.animation_data is None:
             return
         for fcu in rna.animation_data.drivers:
@@ -1475,11 +1482,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                             if trg.transform_type == "ROT_X":
                                 trg.transform_type = "ROT_Z"
                                 if flip == -1:
-                                    fcu.driver.expression = "-(%s)" % fcu.driver.expression
+                                    fcu.driver.expression = flipString(fcu.driver.expression)
                             elif trg.transform_type == "ROT_Z":
                                 trg.transform_type = "ROT_X"
                                 if flip == 1:
-                                    fcu.driver.expression = "-(%s)" % fcu.driver.expression
+                                    fcu.driver.expression = flipString(fcu.driver.expression)
 
     #-------------------------------------------------------------
     #   Markers
