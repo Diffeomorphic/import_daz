@@ -58,10 +58,11 @@ class ErrorOperator(bpy.types.Operator):
 
 
 def invokeErrorMessage(value, warning=False):
+    from .buildnumber import BUILD
     if warning:
-        LS.theMessage = "WARNING:\n" + value
+        LS.theMessage = "WARNING:\n%s" % value
     else:
-        LS.theMessage = "ERROR:\n" + value
+        LS.theMessage = "ERROR (1.6.2.%04d):\n%s" % (BUILD, value)
     if GS.silentMode:
         print(LS.theMessage)
     else:

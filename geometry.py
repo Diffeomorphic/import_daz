@@ -57,9 +57,12 @@ class GeoNode(Node, SimNode):
         elif isinstance(geo, UnGeometry):
             if GS.verbosity >= 3:
                 print("UnGeometry: %s %s" % (self.id, etype))
+        elif geo is None:
+            if GS.verbosity >= 3:
+                print("Geometry is None: %s %s" % (self.id, etype))
         else:
             msg = ("Not a geometry:\n%s" % geo)
-            reportError(msg, trigger=(2,3))
+            reportError(msg, trigger=(2,4))
         self.data = geo
         self.figure = figure
         self.figureInst = None
@@ -159,7 +162,7 @@ class GeoNode(Node, SimNode):
 
 
     def subdivideObject(self, ob, inst, context):
-        if isinstance(self.data, UnGeometry):
+        if not isinstance(self.data, Geometry):
             return
         if self.highdef:
             me = self.buildHDMesh(ob)

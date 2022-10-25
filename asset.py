@@ -523,8 +523,8 @@ def getDazPath(ref, strict=True):
     elif path[0] == "/":
         filepath = GS.getAbsPath(path)
     if os.path.exists(filepath):
-        if GS.verbosity > 2:
-            print("Found", filepath)
+        if GS.verbosity > 3:
+            print('Found "%s"' % filepath)
         return filepath
 
     if path.startswith("name:/@selection"):

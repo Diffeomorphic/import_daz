@@ -117,7 +117,7 @@ class FileAsset(Asset):
                         self.nodes.append((asset, inst))
                     else:
                         msg = ("Expected node but got\n%s" % asset)
-                        reportError(msg, trigger=(2,3))
+                        reportError(msg, trigger=(2,4))
 
             if LS.useMaterials and "materials" in scene.keys():
                 for mstruct in scene["materials"]:
