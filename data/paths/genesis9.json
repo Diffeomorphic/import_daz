@@ -19,6 +19,12 @@
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/Daz 3D/FACS Details/"
 	},
+	"facsexpr" : {
+		"prefix" : ["facs_ctrl_"],
+		"include" : ["facs_ctrl_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/Daz 3D/FACSExpressions/"
+	},
 	"flexions" : {
 		"prefix" : "body_",
 		"include" : ["body_"],

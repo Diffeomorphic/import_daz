@@ -162,6 +162,7 @@ class FACSImporter(SingleFile, ActionOptions):
 
         from time import perf_counter
         self.setupBones(rig)
+        self.skipped = {}
         self.facsShapes = self.setupFacsProps(self.shapekeys.keys())
         self.facsProps = self.setupFacsProps(rig.keys())
         missingShapes = {}
@@ -193,7 +194,7 @@ class FACSImporter(SingleFile, ActionOptions):
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
                     continue
 
-                if bshape not in warned:
+                if bshape not in warned and bshape not in self.skipped.keys():
                     print("MISS", bshape, prop)
                     warned.append(bshape)
         t2 = perf_counter()
@@ -221,6 +222,7 @@ class FACSImporter(SingleFile, ActionOptions):
         for bshape,bases in self.facstable.items():
             if (not self.useEyes and "eye" in bshape or
                 not self.useTongue and "tongue" in bshape):
+                self.skipped[bshape] = True
                 continue
             table[bshape] = loopTable(bases, props)
         return table
