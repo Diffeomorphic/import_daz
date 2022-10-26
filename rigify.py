@@ -327,7 +327,7 @@ class Rigify:
 
 
     def recalcRoll(self, dazrig, meta):
-        if not self.useRecalcRoll or dazrig == "genesis8":
+        if not self.useRecalcRoll or dazrig in ["genesis8", "genesis9"]:
             return
         # https://bitbucket.org/Diffeomorphic/import_daz/issues/199/rigi-fy-thigh_ik_targetl-and
         for eb in meta.data.edit_bones:
@@ -545,7 +545,7 @@ class Rigify:
         self.fitToDaz(meta, rigifySkel, dazBones)
         hip = self.fitHip(meta, RF.hips, dazBones)
 
-        if rig.DazRig in ["genesis3", "genesis8"]:
+        if rig.DazRig in ["genesis3", "genesis8", "genesis9"]:
             eb = meta.data.edit_bones[RF.head]
             eb.tail = eb.head + 1.0*(eb.tail - eb.head)
 
@@ -728,7 +728,13 @@ class Rigify:
 
         # Rescale custom shapes
         if rig.DazRig in ["genesis3", "genesis8"]:
-            self.fixCustomShape(gen, ["head", "spine_fk.007"], 4)
+            customfix = RF.CustomShapeFixGenesis38
+        elif rig.DazRig == "genesis9":
+            customfix = RF.CustomShapeFixGenesis9
+        else:
+            customfix = []
+        for bnames,scale in customfix:
+            self.fixCustomShape(gen, bnames, scale)
         self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*rig.DazScale,0)))
 
         # Add DAZ properties

@@ -1627,7 +1627,6 @@ def mergeBonesAndVgroups(rig, mergers, parents, context):
                         vgrp.add([vn], w, 'REPLACE')
 
     updateDrivers(rig)
-    setMode('OBJECT')
 
 
 class DAZ_OT_MergeToes(DazOperator, IsArmature):

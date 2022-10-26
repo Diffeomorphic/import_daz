@@ -350,3 +350,12 @@ class RigifyData:
             "l_pectoral" : "DEF-spine.004",
             "r_pectoral" : "DEF-spine.004",
         }
+
+        self.CustomShapeFixGenesis38 = [
+            (["head", "spine_fk.007"], 4)
+        ]
+
+        self.CustomShapeFixGenesis9 = [
+            (["head", "spine_fk.007"], 4),
+            (["neck"], 0.6),
+        ]
