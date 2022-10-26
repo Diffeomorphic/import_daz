@@ -144,6 +144,12 @@ class FACSImporter(SingleFile, ActionOptions):
 
 
     def build(self, rig, context):
+        def isMatch(string, bases):
+            for base in bases:
+                if string in base:
+                    return True
+            return False
+
         missing = []
         for bshape in self.bshapes:
             if bshape not in self.facstable.keys():
@@ -165,12 +171,16 @@ class FACSImporter(SingleFile, ActionOptions):
             frame = self.getFrame(t)
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
-                prop = self.facstable[bshape]
-                if not self.useEyes and "Eye" in prop:
-                    pass
-                elif not self.useTongue and "Tongue" in prop:
-                    pass
-                elif prop in self.shapekeys.keys():
+                bases = self.facstable[bshape]
+                if isinstance(bases, str):
+                    bases = [bases]
+                if not self.useEyes and isMatch("Eye", bases):
+                    continue
+                elif not self.useTongue and isMatch("Tongue", bases):
+                    continue
+
+                prop = self.getFacsProp(bases, self.shapekeys.keys())
+                if prop:
                     for ob in rig.children:
                         if ob.type == 'MESH' and ob.data.shape_keys:
                             if prop in ob.data.shape_keys.key_blocks.keys():
@@ -181,10 +191,14 @@ class FACSImporter(SingleFile, ActionOptions):
                                 if ob.name not in missingShapes.keys():
                                     missingShapes[ob.name] = {}
                                 missingShapes[ob.name][prop] = True
-                elif prop in rig.keys():
+
+                prop = self.getFacsProp(bases, rig.keys())
+                if prop:
                     rig[prop] = value
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
-                elif bshape not in warned:
+                    continue
+
+                if bshape not in warned:
                     print("MISS", bshape, prop)
                     warned.append(bshape)
         t2 = perf_counter()
@@ -194,6 +208,15 @@ class FACSImporter(SingleFile, ActionOptions):
             for obname in missingShapes.keys():
                 msg += "  %s\n" % obname
             raise DazError(msg, warning=True)
+
+
+    def getFacsProp(self, bases, props):
+        for prefix in ["", "facs_", "facs_ctrl_", "facs_jnt_", "facs_bs_"]:
+            for suffix in ["", "_div2"]:
+                for base in bases:
+                    prop = "%s%s%s" % (prefix, base, suffix)
+                    if prop in props:
+                        return prop
 
 
     def setupBones(self, rig):
@@ -284,58 +307,58 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
         default = 24)
 
     FacsTable = {
-        "browInnerUp" : "facs_ctrl_BrowInnerUp",
-        "browDown_L" : "facs_BrowDownLeft",
-        "browDown_R" : "facs_BrowDownRight",
-        "browOuterUp_L" : "facs_BrowOuterUpLeft",
-        "browOuterUp_R" : "facs_BrowOuterUpRight",
-        "eyeLookUp_L" : "facs_jnt_EyeLookUpLeft",
-        "eyeLookUp_R" : "facs_jnt_EyeLookUpRight",
-        "eyeLookDown_L" : "facs_jnt_EyeLookDownLeft",
-        "eyeLookDown_R" : "facs_jnt_EyeLookDownRight",
-        "eyeLookIn_L" : "facs_bs_EyeLookInLeft_div2",
-        "eyeLookIn_R" : "facs_bs_EyeLookInRight_div2",
-        "eyeLookOut_L" : "facs_bs_EyeLookOutLeft_div2",
-        "eyeLookOut_R" : "facs_bs_EyeLookOutRight_div2",
-        "eyeBlink_L" : "facs_jnt_EyeBlinkLeft",
-        "eyeBlink_R" : "facs_jnt_EyeBlinkRight",
-        "eyeSquint_L" : "facs_bs_EyeSquintLeft_div2",
-        "eyeSquint_R" : "facs_bs_EyeSquintRight_div2",
-        "eyeWide_L" : "facs_jnt_EyesWideLeft",
-        "eyeWide_R" : "facs_jnt_EyesWideRight",
-        "cheekPuff" : "facs_ctrl_CheekPuff",
-        "cheekSquint_L" : "facs_bs_CheekSquintLeft_div2",
-        "cheekSquint_R" : "facs_bs_CheekSquintRight_div2",
-        "noseSneer_L" : "facs_bs_NoseSneerLeft_div2",
-        "noseSneer_R" : "facs_bs_NoseSneerRight_div2",
-        "jawOpen" : "facs_jnt_JawOpen",
-        "jawForward" : "facs_jnt_JawForward",
-        "jawLeft" : "facs_jnt_JawLeft",
-        "jawRight" : "facs_jnt_JawRight",
-        "mouthFunnel" : "facs_bs_MouthFunnel_div2",
-        "mouthPucker" : "facs_bs_MouthPucker_div2",
-        "mouthLeft" : "facs_bs_MouthLeft_div2",
-        "mouthRight" : "facs_bs_MouthRight_div2",
-        "mouthRollUpper" : "facs_bs_MouthRollUpper_div2",
-        "mouthRollLower" : "facs_bs_MouthRollLower_div2",
-        "mouthShrugUpper" : "facs_bs_MouthShrugUpper_div2",
-        "mouthShrugLower" : "facs_bs_MouthShrugLower_div2",
-        "mouthClose" : "facs_bs_MouthClose_div2",
-        "mouthSmile_L" : "facs_bs_MouthSmileLeft_div2",
-        "mouthSmile_R" : "facs_bs_MouthSmileRight_div2",
-        "mouthFrown_L" : "facs_bs_MouthFrownLeft_div2",
-        "mouthFrown_R" : "facs_bs_MouthFrownRight_div2",
-        "mouthDimple_L" : "facs_bs_MouthDimpleLeft_div2",
-        "mouthDimple_R" : "facs_bs_MouthDimpleRight_div2",
-        "mouthUpperUp_L" : "facs_bs_MouthUpperUpLeft_div2",
-        "mouthUpperUp_R" : "facs_bs_MouthUpperUpRight_div2",
-        "mouthLowerDown_L" : "facs_bs_MouthLowerDownLeft_div2",
-        "mouthLowerDown_R" : "facs_bs_MouthLowerDownRight_div2",
-        "mouthPress_L" : "facs_bs_MouthPressLeft_div2",
-        "mouthPress_R" : "facs_bs_MouthPressRight_div2",
-        "mouthStretch_L" : "facs_bs_MouthStretchLeft_div2",
-        "mouthStretch_R" : "facs_bs_MouthStretchRight_div2",
-        "tongueOut" : "facs_bs_TongueOut",
+        "browInnerUp" : "BrowInnerUp",
+        "browDown_L" : "BrowDownLeft",
+        "browDown_R" : "BrowDownRight",
+        "browOuterUp_L" : "BrowOuterUpLeft",
+        "browOuterUp_R" : "BrowOuterUpRight",
+        "eyeLookUp_L" : "EyeLookUpLeft",
+        "eyeLookUp_R" : "EyeLookUpRight",
+        "eyeLookDown_L" : "EyeLookDownLeft",
+        "eyeLookDown_R" : "EyeLookDownRight",
+        "eyeLookIn_L" : "EyeLookInLeft",
+        "eyeLookIn_R" : "EyeLookInRight",
+        "eyeLookOut_L" : "EyeLookOutLeft",
+        "eyeLookOut_R" : "EyeLookOutRight",
+        "eyeBlink_L" : "EyeBlinkLeft",
+        "eyeBlink_R" : "EyeBlinkRight",
+        "eyeSquint_L" : "EyeSquintLeft",
+        "eyeSquint_R" : "EyeSquintRight",
+        "eyeWide_L" : ("EyesWideLeft", "EyeWideLeft"),
+        "eyeWide_R" : ("EyesWideRight", "EyeWideRight"),
+        "cheekPuff" : "CheekPuff",
+        "cheekSquint_L" : "CheekSquintLeft",
+        "cheekSquint_R" : "CheekSquintRight",
+        "noseSneer_L" : "NoseSneerLeft",
+        "noseSneer_R" : "NoseSneerRight",
+        "jawOpen" : "JawOpen",
+        "jawForward" : "JawForward",
+        "jawLeft" : "JawLeft",
+        "jawRight" : "JawRight",
+        "mouthFunnel" : "MouthFunnel",
+        "mouthPucker" : "MouthPucker",
+        "mouthLeft" : "MouthLeft",
+        "mouthRight" : "MouthRight",
+        "mouthRollUpper" : "MouthRollUpper",
+        "mouthRollLower" : "MouthRollLower",
+        "mouthShrugUpper" : "MouthShrugUpper",
+        "mouthShrugLower" : "MouthShrugLower",
+        "mouthClose" : "MouthClose",
+        "mouthSmile_L" : "MouthSmileLeft",
+        "mouthSmile_R" : "MouthSmileRight",
+        "mouthFrown_L" : "MouthFrownLeft",
+        "mouthFrown_R" : "MouthFrownRight",
+        "mouthDimple_L" : "MouthDimpleLeft",
+        "mouthDimple_R" : "MouthDimpleRight",
+        "mouthUpperUp_L" : "MouthUpperUpLeft",
+        "mouthUpperUp_R" : "MouthUpperUpRight",
+        "mouthLowerDown_L" : "MouthLowerDownLeft",
+        "mouthLowerDown_R" : "MouthLowerDownRight",
+        "mouthPress_L" : "MouthPressLeft",
+        "mouthPress_R" : "MouthPressRight",
+        "mouthStretch_L" : "MouthStretchLeft",
+        "mouthStretch_R" : "MouthStretchRight",
+        "tongueOut" : "TongueOut",
     }
 
     def draw(self, context):
@@ -376,58 +399,58 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
 #------------------------------------------------------------------
 
 LiveLinkFacsTable = {
-    "browInnerUp" : "facs_ctrl_BrowInnerUp",
-    "browDownLeft" : "facs_BrowDownLeft",
-    "browDownRight" : "facs_BrowDownRight",
-    "browOuterUpLeft" : "facs_BrowOuterUpLeft",
-    "browOuterUpRight" : "facs_BrowOuterUpRight",
-    "eyeLookUpLeft" : "facs_jnt_EyeLookUpLeft",
-    "eyeLookUpRight" : "facs_jnt_EyeLookUpRight",
-    "eyeLookDownLeft" : "facs_jnt_EyeLookDownLeft",
-    "eyeLookDownRight" : "facs_jnt_EyeLookDownRight",
-    "eyeLookInLeft" : "facs_bs_EyeLookInLeft_div2",
-    "eyeLookInRight" : "facs_bs_EyeLookInRight_div2",
-    "eyeLookOutLeft" : "facs_bs_EyeLookOutLeft_div2",
-    "eyeLookOutRight" : "facs_bs_EyeLookOutRight_div2",
-    "eyeBlinkLeft" : "facs_jnt_EyeBlinkLeft",
-    "eyeBlinkRight" : "facs_jnt_EyeBlinkRight",
-    "eyeSquintLeft" : "facs_bs_EyeSquintLeft_div2",
-    "eyeSquintRight" : "facs_bs_EyeSquintRight_div2",
-    "eyeWideLeft" : "facs_jnt_EyesWideLeft",
-    "eyeWideRight" : "facs_jnt_EyesWideRight",
-    "cheekPuff" : "facs_ctrl_CheekPuff",
-    "cheekSquintLeft" : "facs_bs_CheekSquintLeft_div2",
-    "cheekSquintRight" : "facs_bs_CheekSquintRight_div2",
-    "noseSneerLeft" : "facs_bs_NoseSneerLeft_div2",
-    "noseSneerRight" : "facs_bs_NoseSneerRight_div2",
-    "jawOpen" : "facs_jnt_JawOpen",
-    "jawForward" : "facs_jnt_JawForward",
-    "jawLeft" : "facs_jnt_JawLeft",
-    "jawRight" : "facs_jnt_JawRight",
-    "mouthFunnel" : "facs_bs_MouthFunnel_div2",
-    "mouthPucker" : "facs_bs_MouthPucker_div2",
-    "mouthLeft" : "facs_bs_MouthLeft_div2",
-    "mouthRight" : "facs_bs_MouthRight_div2",
-    "mouthRollUpper" : "facs_bs_MouthRollUpper_div2",
-    "mouthRollLower" : "facs_bs_MouthRollLower_div2",
-    "mouthShrugUpper" : "facs_bs_MouthShrugUpper_div2",
-    "mouthShrugLower" : "facs_bs_MouthShrugLower_div2",
-    "mouthClose" : "facs_bs_MouthClose_div2",
-    "mouthSmileLeft" : "facs_bs_MouthSmileLeft_div2",
-    "mouthSmileRight" : "facs_bs_MouthSmileRight_div2",
-    "mouthFrownLeft" : "facs_bs_MouthFrownLeft_div2",
-    "mouthFrownRight" : "facs_bs_MouthFrownRight_div2",
-    "mouthDimpleLeft" : "facs_bs_MouthDimpleLeft_div2",
-    "mouthDimpleRight" : "facs_bs_MouthDimpleRight_div2",
-    "mouthUpperUpLeft" : "facs_bs_MouthUpperUpLeft_div2",
-    "mouthUpperUpRight" : "facs_bs_MouthUpperUpRight_div2",
-    "mouthLowerDownLeft" : "facs_bs_MouthLowerDownLeft_div2",
-    "mouthLowerDownRight" : "facs_bs_MouthLowerDownRight_div2",
-    "mouthPressLeft" : "facs_bs_MouthPressLeft_div2",
-    "mouthPressRight" : "facs_bs_MouthPressRight_div2",
-    "mouthStretchLeft" : "facs_bs_MouthStretchLeft_div2",
-    "mouthStretchRight" : "facs_bs_MouthStretchRight_div2",
-    "tongueOut" : "facs_bs_TongueOut",
+    "browInnerUp" : "BrowInnerUp",
+    "browDownLeft" : "BrowDownLeft",
+    "browDownRight" : "BrowDownRight",
+    "browOuterUpLeft" : "BrowOuterUpLeft",
+    "browOuterUpRight" : "BrowOuterUpRight",
+    "eyeLookUpLeft" : "EyeLookUpLeft",
+    "eyeLookUpRight" : "EyeLookUpRight",
+    "eyeLookDownLeft" : "EyeLookDownLeft",
+    "eyeLookDownRight" : "EyeLookDownRight",
+    "eyeLookInLeft" : "EyeLookInLeft",
+    "eyeLookInRight" : "EyeLookInRight",
+    "eyeLookOutLeft" : "EyeLookOutLeft",
+    "eyeLookOutRight" : "EyeLookOutRight",
+    "eyeBlinkLeft" : "EyeBlinkLeft",
+    "eyeBlinkRight" : "EyeBlinkRight",
+    "eyeSquintLeft" : "EyeSquintLeft",
+    "eyeSquintRight" : "EyeSquintRight",
+    "eyeWideLeft" : ("EyesWideLeft", "EyeWideLeft"),
+    "eyeWideRight" : ("EyesWideRight", "EyeWideRight"),
+    "cheekPuff" : "CheekPuff",
+    "cheekSquintLeft" : "CheekSquintLeft",
+    "cheekSquintRight" : "CheekSquintRight",
+    "noseSneerLeft" : "NoseSneerLeft",
+    "noseSneerRight" : "NoseSneerRight",
+    "jawOpen" : "JawOpen",
+    "jawForward" : "JawForward",
+    "jawLeft" : "JawLeft",
+    "jawRight" : "JawRight",
+    "mouthFunnel" : "MouthFunnel",
+    "mouthPucker" : "MouthPucker",
+    "mouthLeft" : "MouthLeft",
+    "mouthRight" : "MouthRight",
+    "mouthRollUpper" : "MouthRollUpper",
+    "mouthRollLower" : "MouthRollLower",
+    "mouthShrugUpper" : "MouthShrugUpper",
+    "mouthShrugLower" : "MouthShrugLower",
+    "mouthClose" : "MouthClose",
+    "mouthSmileLeft" : "MouthSmileLeft",
+    "mouthSmileRight" : "MouthSmileRight",
+    "mouthFrownLeft" : "MouthFrownLeft",
+    "mouthFrownRight" : "MouthFrownRight",
+    "mouthDimpleLeft" : "MouthDimpleLeft",
+    "mouthDimpleRight" : "MouthDimpleRight",
+    "mouthUpperUpLeft" : "MouthUpperUpLeft",
+    "mouthUpperUpRight" : "MouthUpperUpRight",
+    "mouthLowerDownLeft" : "MouthLowerDownLeft",
+    "mouthLowerDownRight" : "MouthLowerDownRight",
+    "mouthPressLeft" : "MouthPressLeft",
+    "mouthPressRight" : "MouthPressRight",
+    "mouthStretchLeft" : "MouthStretchLeft",
+    "mouthStretchRight" : "MouthStretchRight",
+    "tongueOut" : "TongueOut",
 }
 
 class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
