@@ -162,6 +162,8 @@ class FACSImporter(SingleFile, ActionOptions):
 
         from time import perf_counter
         self.setupBones(rig)
+        self.facsShapes = self.setupFacsProps(self.shapekeys.keys())
+        self.facsProps = self.setupFacsProps(rig.keys())
         missingShapes = {}
         self.scale = rig.DazScale
         warned = []
@@ -171,15 +173,11 @@ class FACSImporter(SingleFile, ActionOptions):
             frame = self.getFrame(t)
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
-                bases = self.facstable[bshape]
-                if isinstance(bases, str):
-                    bases = [bases]
-                if not self.useEyes and isMatch("Eye", bases):
+                if not self.useEyes and isMatch("eye", bshape):
                     continue
-                elif not self.useTongue and isMatch("Tongue", bases):
+                elif not self.useTongue and isMatch("tongue", bshape):
                     continue
-
-                prop = self.getFacsProp(bases, self.shapekeys.keys())
+                prop = self.facsShapes.get(bshape)
                 if prop:
                     for ob in rig.children:
                         if ob.type == 'MESH' and ob.data.shape_keys:
@@ -191,8 +189,9 @@ class FACSImporter(SingleFile, ActionOptions):
                                 if ob.name not in missingShapes.keys():
                                     missingShapes[ob.name] = {}
                                 missingShapes[ob.name][prop] = True
+                    continue
 
-                prop = self.getFacsProp(bases, rig.keys())
+                prop = self.facsProps.get(bshape)
                 if prop:
                     rig[prop] = value
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
@@ -210,13 +209,21 @@ class FACSImporter(SingleFile, ActionOptions):
             raise DazError(msg, warning=True)
 
 
-    def getFacsProp(self, bases, props):
-        for prefix in ["", "facs_", "facs_ctrl_", "facs_jnt_", "facs_bs_"]:
-            for suffix in ["", "_div2"]:
-                for base in bases:
-                    prop = "%s%s%s" % (prefix, base, suffix)
-                    if prop in props:
-                        return prop
+    def setupFacsProps(self, props):
+        def loopTable(
+            if isinstance(bases, str):
+                bases = [bases]
+                for prefix in ["", "facs_", "facs_ctrl_", "facs_jnt_", "facs_bs_"]:
+                    for suffix in ["", "_div2"]:
+                        for base in bases:
+                            prop = "%s%s%s" % (prefix, base, suffix)
+                            if prop in props:
+                                return prop
+            return None
+
+        table = {}
+        for bshape,bases in self.facstable.items():
+            table[bshape] = loopTable(bshape, bases)
 
 
     def setupBones(self, rig):

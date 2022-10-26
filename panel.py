@@ -279,7 +279,6 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Mesh"
 
     def draw(self, context):
-        self.layout.operator("daz.add_projection")
         self.layout.operator("daz.limit_vertex_groups")
         self.layout.operator("daz.prune_vertex_groups")
         self.layout.operator("daz.create_graft_groups")
