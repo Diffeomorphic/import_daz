@@ -173,10 +173,6 @@ class FACSImporter(SingleFile, ActionOptions):
             frame = self.getFrame(t)
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
-                if not self.useEyes and isMatch("eye", bshape):
-                    continue
-                elif not self.useTongue and isMatch("tongue", bshape):
-                    continue
                 prop = self.facsShapes.get(bshape)
                 if prop:
                     for ob in rig.children:
@@ -210,20 +206,24 @@ class FACSImporter(SingleFile, ActionOptions):
 
 
     def setupFacsProps(self, props):
-        def loopTable(
+        def loopTable(bases, props):
             if isinstance(bases, str):
                 bases = [bases]
-                for prefix in ["", "facs_", "facs_ctrl_", "facs_jnt_", "facs_bs_"]:
-                    for suffix in ["", "_div2"]:
-                        for base in bases:
-                            prop = "%s%s%s" % (prefix, base, suffix)
-                            if prop in props:
-                                return prop
+            for prefix in ["", "facs_", "facs_ctrl_", "facs_jnt_", "facs_bs_"]:
+                for suffix in ["", "_div2"]:
+                    for base in bases:
+                        prop = "%s%s%s" % (prefix, base, suffix)
+                        if prop in props:
+                            return prop
             return None
 
         table = {}
         for bshape,bases in self.facstable.items():
-            table[bshape] = loopTable(bshape, bases)
+            if (not self.useEyes and "eye" in bshape or
+                not self.useTongue and "tongue" in bshape):
+                continue
+            table[bshape] = loopTable(bases, props)
+        return table
 
 
     def setupBones(self, rig):
