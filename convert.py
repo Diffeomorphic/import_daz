@@ -39,11 +39,11 @@ from .animation import HideOperator
 #   Global variables
 #-------------------------------------------------------------
 
-Converters = {}
-TwistBones = {}
-RestPoses = {}
-Parents = {}
-IkPoses = {}
+theConverters = {}
+theTwistBones = {}
+theRestPoses = {}
+theParents = {}
+theIkPoses = {}
 
 #-------------------------------------------------------------
 #   Save current pose
@@ -169,13 +169,13 @@ def loadRestPoseEntry(character, table, folder):
 
 
 def getOrientation(character, bname, rig):
-    global RestPoses
+    global theRestPoses
     if rig and bname in rig.pose.bones.keys():
         pb = rig.pose.bones[bname]
         return pb.bone.DazOrient, pb.DazRotMode
 
-    loadRestPoseEntry(character, RestPoses, theRestPoseFolder)
-    poses = RestPoses[character]["pose"]
+    loadRestPoseEntry(character, theRestPoses, theRestPoseFolder)
+    poses = theRestPoses[character]["pose"]
     if bname in poses.keys():
         orient, xyz = poses[bname][-2:]
         return orient, xyz
@@ -184,20 +184,20 @@ def getOrientation(character, bname, rig):
 
 
 def getParentCharacter(character):
-    global RestPoses
-    loadRestPoseEntry(character, RestPoses, theRestPoseFolder)
-    if "parent" in RestPoses[character].keys():
-        parent = RestPoses[character]["parent"]
+    global theRestPoses
+    loadRestPoseEntry(character, theRestPoses, theRestPoseFolder)
+    if "parent" in theRestPoses[character].keys():
+        parent = theRestPoses[character]["parent"]
         return parent.lower().replace(" ", "_")
     else:
         return character
 
 
 def getParent(character, bname):
-    global Parents
+    global theParents
     parent = getParentCharacter(character)
-    loadRestPoseEntry(parent, Parents, theParentsFolder)
-    parents = Parents[parent]["parents"]
+    loadRestPoseEntry(parent, theParents, theParentsFolder)
+    parents = theParents[parent]["parents"]
     if bname in parents.keys() and parents[bname]:
         return parents[bname]
     else:
@@ -328,8 +328,8 @@ def optimizePose(context, useApplyRestPose):
     char = getCharacter(rig)
     if char is None:
         raise DazError("Did not recognize character")
-    loadRestPoseEntry(char, IkPoses, theIkPoseFolder)
-    loadPose(context, rig, char, IkPoses, False)
+    loadRestPoseEntry(char, theIkPoses, theIkPoseFolder)
+    loadPose(context, rig, char, theIkPoses, False)
     if useApplyRestPose:
         applyRestPoses(context, rig, [])
 
@@ -374,11 +374,11 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
         self.layout.prop(self, "newRig")
 
     def run(self, context):
-        global RestPoses
+        global theRestPoses
 
         rig = context.object
         scn = context.scene
-        loadRestPoseEntry(self.newRig, RestPoses, theRestPoseFolder)
+        loadRestPoseEntry(self.newRig, theRestPoses, theRestPoseFolder)
         scale = 1.0
         if self.newRig in SourceRig.keys():
             modify = False
@@ -389,12 +389,12 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
         else:
             modify = True
             src = self.newRig
-            table = RestPoses[src]
+            table = theRestPoses[src]
             if "translate" in table.keys():
                 self.renameBones(rig, table["translate"])
             if "scale" in table.keys():
                 scale = table["scale"] * rig.DazScale
-        loadPose(context, rig, self.newRig, RestPoses, modify)
+        loadPose(context, rig, self.newRig, theRestPoses, modify)
         rig.DazRig = src
         print("Rig converted to %s" % self.newRig)
         if scale != 1.0:
@@ -422,7 +422,7 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
 #   Bone conversion
 #-------------------------------------------------------------
 
-TwistBones["genesis3"] = [
+theTwistBones["genesis3"] = [
     ("lShldrBend", "lShldrTwist"),
     ("rShldrBend", "rShldrTwist"),
     ("lForearmBend", "lForearmTwist"),
@@ -430,7 +430,7 @@ TwistBones["genesis3"] = [
     ("lThighBend", "lThighTwist"),
     ("rThighBend", "rThighTwist"),
 ]
-TwistBones["genesis8"] = TwistBones["genesis3"]
+theTwistBones["genesis8"] = theTwistBones["genesis3"]
 
 
 def getConverter(stype, trg):
@@ -442,9 +442,9 @@ def getConverter(stype, trg):
 
     if stype == "" or trgtype == "":
         return {},[]
-    if (stype in TwistBones.keys() and
-        trgtype not in TwistBones.keys()):
-        twists = TwistBones[stype]
+    if (stype in theTwistBones.keys() and
+        trgtype not in theTwistBones.keys()):
+        twists = theTwistBones[stype]
     else:
         twists = []
 
@@ -468,14 +468,14 @@ def getConverter(stype, trg):
 def getConverterEntry(cname):
     import json
     from .fileutils import safeOpen
-    if cname in Converters.keys():
-        return Converters[cname]
+    if cname in theConverters.keys():
+        return theConverters[cname]
     else:
         folder = os.path.join(os.path.dirname(__file__), "data", "converters")
         filepath = os.path.join(folder, cname + ".json")
         if os.path.exists(filepath):
             with safeOpen(filepath, "r") as fp:
-                conv = Converters[cname] = json.load(fp)
+                conv = theConverters[cname] = json.load(fp)
             return conv
     return {}
 
