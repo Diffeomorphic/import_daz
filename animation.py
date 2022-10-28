@@ -25,7 +25,6 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
 import bpy
 import math
 import os
@@ -382,7 +381,7 @@ class AffectOptions:
         default = True)
 
     srcCharacter : EnumProperty(
-        items = theRestPoseItems,
+        items = AF.RestPoseItems,
         name = "Source Character",
         description = "Character this file was made for",
         default = "genesis_8_female")

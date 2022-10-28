@@ -42,15 +42,22 @@ theDazExtensions = ["dsf", "duf"]
 theDazUpcaseExtensions = [ext.upper() for ext in theDazExtensions]
 theDazDefaults = ";".join(["*.%s" % ext for ext in theDazExtensions+theDazUpcaseExtensions])
 
-theRestPoseFolder = os.path.join(os.path.dirname(__file__), "data", "restposes")
-theParentsFolder = os.path.join(os.path.dirname(__file__), "data", "parents")
-theIkPoseFolder = os.path.join(os.path.dirname(__file__), "data", "ikposes")
+class AnimationFolders:
+    def __init__(self):
+        self.Converters = {}
+        self.TwistBones = {}
+        self.RestPoses = {}
+        self.Parents = {}
+        self.IkPoses = {}
+        self.RestPoseFolder = os.path.join(os.path.dirname(__file__), "data", "restposes")
+        self.IkPoseFolder = os.path.join(os.path.dirname(__file__), "data", "ikposes")
+        self.RestPoseItems = []
+        for file in os.listdir(self.RestPoseFolder):
+            fname = os.path.splitext(file)[0]
+            name = fname.replace("_", " ").capitalize()
+            self.RestPoseItems.append((fname, name, name))
 
-theRestPoseItems = []
-for file in os.listdir(theRestPoseFolder):
-    fname = os.path.splitext(file)[0]
-    name = fname.replace("_", " ").capitalize()
-    theRestPoseItems.append((fname, name, name))
+AF = AnimationFolders()
 
 #-------------------------------------------------------------
 #   Open and check for case change

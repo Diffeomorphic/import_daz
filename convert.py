@@ -8,7 +8,7 @@
 #    list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
+#    and/or oCF.r materials provided with the distribution.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
 #
 # The views and conclusions contained in the software and documentation are those
 # of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
+# eiCF.r expressed or implied, of the FreeBSD Project.
 
 
 import bpy
@@ -32,18 +32,8 @@ from collections import OrderedDict
 from mathutils import *
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, JsonFile, JsonExportFile, theRestPoseFolder, theParentsFolder, theIkPoseFolder, theRestPoseItems
+from .fileutils import SingleFile, JsonFile, JsonExportFile, AF
 from .animation import HideOperator
-
-#-------------------------------------------------------------
-#   Global variables
-#-------------------------------------------------------------
-
-theConverters = {}
-theTwistBones = {}
-theRestPoses = {}
-theParents = {}
-theIkPoses = {}
 
 #-------------------------------------------------------------
 #   Save current pose
@@ -169,13 +159,12 @@ def loadRestPoseEntry(character, table, folder):
 
 
 def getOrientation(character, bname, rig):
-    global theRestPoses
     if rig and bname in rig.pose.bones.keys():
         pb = rig.pose.bones[bname]
         return pb.bone.DazOrient, pb.DazRotMode
 
-    loadRestPoseEntry(character, theRestPoses, theRestPoseFolder)
-    poses = theRestPoses[character]["pose"]
+    loadRestPoseEntry(character, AF.RestPoses, AF.RestPoseFolder)
+    poses = AF.RestPoses[character]["pose"]
     if bname in poses.keys():
         orient, xyz = poses[bname][-2:]
         return orient, xyz
@@ -184,20 +173,18 @@ def getOrientation(character, bname, rig):
 
 
 def getParentCharacter(character):
-    global theRestPoses
-    loadRestPoseEntry(character, theRestPoses, theRestPoseFolder)
-    if "parent" in theRestPoses[character].keys():
-        parent = theRestPoses[character]["parent"]
+    loadRestPoseEntry(character, AF.RestPoses, AF.RestPoseFolder)
+    if "parent" in AF.RestPoses[character].keys():
+        parent = AF.RestPoses[character]["parent"]
         return parent.lower().replace(" ", "_")
     else:
         return character
 
 
 def getParent(character, bname):
-    global theParents
     parent = getParentCharacter(character)
-    loadRestPoseEntry(parent, theParents, theParentsFolder)
-    parents = theParents[parent]["parents"]
+    loadRestPoseEntry(parent, AF.Parents, AF.ParentsFolder)
+    parents = AF.Parents[parent]["parents"]
     if bname in parents.keys() and parents[bname]:
         return parents[bname]
     else:
@@ -328,8 +315,8 @@ def optimizePose(context, useApplyRestPose):
     char = getCharacter(rig)
     if char is None:
         raise DazError("Did not recognize character")
-    loadRestPoseEntry(char, theIkPoses, theIkPoseFolder)
-    loadPose(context, rig, char, theIkPoses, False)
+    loadRestPoseEntry(char, AF.IkPoses, AF.IkPoseFolder)
+    loadPose(context, rig, char, AF.IkPoses, False)
     if useApplyRestPose:
         applyRestPoses(context, rig, [])
 
@@ -356,11 +343,11 @@ SourceRig = {
 class DAZ_OT_ConvertRigPose(DazPropsOperator):
     bl_idname = "daz.convert_rig"
     bl_label = "Convert DAZ Rig"
-    bl_description = "Convert current DAZ rig to other DAZ rig"
+    bl_description = "Convert current DAZ rig to oCF.r DAZ rig"
     bl_options = {'UNDO'}
 
     newRig : EnumProperty(
-        items = theRestPoseItems,
+        items = AF.RestPoseItems,
         name = "New Rig",
         description = "Convert active rig to this",
         default = "genesis_3_female")
@@ -374,11 +361,9 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
         self.layout.prop(self, "newRig")
 
     def run(self, context):
-        global theRestPoses
-
         rig = context.object
         scn = context.scene
-        loadRestPoseEntry(self.newRig, theRestPoses, theRestPoseFolder)
+        loadRestPoseEntry(self.newRig, AF.RestPoses, AF.RestPoseFolder)
         scale = 1.0
         if self.newRig in SourceRig.keys():
             modify = False
@@ -389,12 +374,12 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
         else:
             modify = True
             src = self.newRig
-            table = theRestPoses[src]
+            table = AF.RestPoses[src]
             if "translate" in table.keys():
                 self.renameBones(rig, table["translate"])
             if "scale" in table.keys():
                 scale = table["scale"] * rig.DazScale
-        loadPose(context, rig, self.newRig, theRestPoses, modify)
+        loadPose(context, rig, self.newRig, AF.RestPoses, modify)
         rig.DazRig = src
         print("Rig converted to %s" % self.newRig)
         if scale != 1.0:
@@ -422,7 +407,7 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
 #   Bone conversion
 #-------------------------------------------------------------
 
-theTwistBones["genesis3"] = [
+AF.TwistBones["genesis3"] = [
     ("lShldrBend", "lShldrTwist"),
     ("rShldrBend", "rShldrTwist"),
     ("lForearmBend", "lForearmTwist"),
@@ -430,7 +415,7 @@ theTwistBones["genesis3"] = [
     ("lThighBend", "lThighTwist"),
     ("rThighBend", "rThighTwist"),
 ]
-theTwistBones["genesis8"] = theTwistBones["genesis3"]
+AF.TwistBones["genesis8"] = AF.TwistBones["genesis3"]
 
 
 def getConverter(stype, trg):
@@ -442,9 +427,9 @@ def getConverter(stype, trg):
 
     if stype == "" or trgtype == "":
         return {},[]
-    if (stype in theTwistBones.keys() and
-        trgtype not in theTwistBones.keys()):
-        twists = theTwistBones[stype]
+    if (stype in AF.TwistBones.keys() and
+        trgtype not in AF.TwistBones.keys()):
+        twists = AF.TwistBones[stype]
     else:
         twists = []
 
@@ -468,14 +453,14 @@ def getConverter(stype, trg):
 def getConverterEntry(cname):
     import json
     from .fileutils import safeOpen
-    if cname in theConverters.keys():
-        return theConverters[cname]
+    if cname in AF.Converters.keys():
+        return AF.Converters[cname]
     else:
         folder = os.path.join(os.path.dirname(__file__), "data", "converters")
         filepath = os.path.join(folder, cname + ".json")
         if os.path.exists(filepath):
             with safeOpen(filepath, "r") as fp:
-                conv = theConverters[cname] = json.load(fp)
+                conv = AF.Converters[cname] = json.load(fp)
             return conv
     return {}
 
