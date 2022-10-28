@@ -8,7 +8,7 @@
 #    list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
-#    and/or oCF.r materials provided with the distribution.
+#    and/or other materials provided with the distribution.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
 #
 # The views and conclusions contained in the software and documentation are those
 # of the authors and should not be interpreted as representing official policies,
-# eiCF.r expressed or implied, of the FreeBSD Project.
+# either expressed or implied, of the FreeBSD Project.
 
 
 import bpy
@@ -343,7 +343,7 @@ SourceRig = {
 class DAZ_OT_ConvertRigPose(DazPropsOperator):
     bl_idname = "daz.convert_rig"
     bl_label = "Convert DAZ Rig"
-    bl_description = "Convert current DAZ rig to oCF.r DAZ rig"
+    bl_description = "Convert current DAZ rig to other DAZ rig"
     bl_options = {'UNDO'}
 
     newRig : EnumProperty(

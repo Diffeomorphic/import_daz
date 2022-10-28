@@ -378,7 +378,7 @@ class AffectOptions:
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
-        default = True)
+        default = False)
 
     srcCharacter : EnumProperty(
         items = AF.RestPoseItems,
