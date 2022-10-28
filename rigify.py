@@ -110,24 +110,23 @@ class Rigify:
 
     def setupDazSkeleton(self, rig):
         if rig.DazRig in ["genesis1", "genesis2"]:
-            rigifySkel = RF.RigifyGenesis38
-            rigifySkel["chestUpper"] = "chestUpper"
-            rigifySkel["abdomen2"] = "abdomen2"
-            spineBones = RF.Genesis38Spine
+            self.rigifySkel = RF.RigifyGenesis38
+            self.rigifySkel["chestUpper"] = "chestUpper"
+            self.rigifySkel["abdomen2"] = "abdomen2"
+            self.spineBones = RF.Genesis38Spine
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            rigifySkel = RF.RigifyGenesis38
-            spineBones = RF.Genesis38Spine
+            self.rigifySkel = RF.RigifyGenesis38
+            self.spineBones = RF.Genesis38Spine
         elif rig.DazRig == "genesis9":
-            rigifySkel = RF.RigifyGenesis9
-            spineBones = RF.Genesis9Spine
+            self.rigifySkel = RF.RigifyGenesis9
+            self.spineBones = RF.Genesis9Spine
 
-        dazskel = {}
-        for rbone, dbone in rigifySkel.items():
+        self.dazSkel = {}
+        for rbone, dbone in self.rigifySkel.items():
             if isinstance(dbone, tuple):
                 dbone = dbone[0]
             if isinstance(dbone, str):
-                dazskel[dbone] = rbone
-        return rigifySkel, spineBones, dazskel
+                self.dazSkel[dbone] = rbone
 
 
     def renameBones(self, rig, bones):
@@ -144,35 +143,35 @@ class Rigify:
         setMode('OBJECT')
 
 
-    def fitToDaz(self, meta, rigifySkel, dazBones):
+    def fitToDaz(self, meta):
         for eb in meta.data.edit_bones:
             eb.use_connect = False
 
         for eb in meta.data.edit_bones:
             try:
-                dname = rigifySkel[eb.name]
+                dname = self.rigifySkel[eb.name]
             except KeyError:
                 dname = None
             if isinstance(dname, tuple):
                 dname,_vgrps = dname
             if isinstance(dname, str):
-                if dname in dazBones.keys():
-                    dbone = dazBones[dname]
+                if dname in self.dazBones.keys():
+                    dbone = self.dazBones[dname]
                     eb.head = dbone.head
                     eb.tail = dbone.tail
                     eb.roll = dbone.roll
             elif isinstance(dname, tuple):
-                if (dname[0] in dazBones.keys() and
-                    dname[1] in dazBones.keys()):
-                    dbone1 = dazBones[dname[0]]
-                    dbone2 = dazBones[dname[1]]
+                if (dname[0] in self.dazBones.keys() and
+                    dname[1] in self.dazBones.keys()):
+                    dbone1 = self.dazBones[dname[0]]
+                    dbone2 = self.dazBones[dname[1]]
                     eb.head = dbone1.head
                     eb.tail = dbone2.head
 
 
-    def fitHip(self, meta, hips, dazBones):
-        hip = meta.data.edit_bones[hips]
-        dbone = dazBones["hip"]
+    def fitHip(self, meta):
+        hip = meta.data.edit_bones[RF.hips]
+        dbone = self.dazBones["hip"]
         hip.tail = Vector((1,2,3))
         hip.head = dbone.tail
         hip.tail = dbone.head
@@ -223,12 +222,12 @@ class Rigify:
                 heel02.tail = heel02tail
 
 
-    def fitSpine(self, meta, spineBones, dazBones):
+    def fitSpine(self, meta):
         mbones = meta.data.edit_bones
-        for dname,rname,pname in spineBones:
-            if dname not in dazBones.keys():
+        for dname,rname,pname in self.spineBones:
+            if dname not in self.dazBones.keys():
                 continue
-            dbone = dazBones[dname]
+            dbone = self.dazBones[dname]
             if rname in mbones.keys():
                 eb = mbones[rname]
             else:
@@ -338,7 +337,7 @@ class Rigify:
         bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Y')
 
 
-    def setupExtras(self, context, rig, rigifySkel, spineBones):
+    def setupExtras(self, context, rig):
         def addRecursive(pb, extras):
             if pb.name not in extras.keys():
                 extras[pb.name] = pb.name
@@ -347,9 +346,9 @@ class Rigify:
 
         extras = OrderedDict()
         taken = []
-        for dbone,_rbone,_pbone in spineBones:
+        for dbone,_rbone,_pbone in self.spineBones:
             taken.append(dbone)
-        for _rbone, dbone in rigifySkel.items():
+        for _rbone, dbone in self.rigifySkel.items():
             if isinstance(dbone, tuple):
                 dbone = dbone[0]
                 if isinstance(dbone, tuple):
@@ -423,14 +422,14 @@ class Rigify:
         return False
 
 
-    def getRigifyBone(self, bname, dazSkel, extras, spineBones):
+    def getRigifyBone(self, bname, extras):
         if bname in RF.DeformBones:
             return RF.DeformBones[bname]
         if bname[1:] in RF.DeformBones:
             prefix = bname[0]
             return (RF.DeformBones[bname[1:]] % prefix.upper())
-        if bname in dazSkel.keys():
-            rname = dazSkel[bname]
+        if bname in self.dazSkel.keys():
+            rname = self.dazSkel[bname]
             if rname in RF.MetaBones.keys():
                 return "DEF-" + RF.MetaBones[rname]
             else:
@@ -438,7 +437,7 @@ class Rigify:
         elif bname in extras.keys():
             return extras[bname]
         else:
-            for dname,rname,pname in spineBones:
+            for dname,rname,pname in self.spineBones:
                 if dname == bname:
                     return "DEF-" + rname
         print("MISS", bname)
@@ -447,16 +446,13 @@ class Rigify:
 
     def getDazBones(self, rig):
         # Setup info about DAZ bones
-        dazBones = OrderedDict()
+        self.dazBones = OrderedDict()
         setMode('EDIT')
         for eb in rig.data.edit_bones:
-            dazBones[eb.name] = DazBone(eb)
-        setMode('POSE')
-        for pb in rig.pose.bones:
-            dazBones[pb.name].getPose(pb)
-
+            self.dazBones[eb.name] = DazBone(eb)
         setMode('OBJECT')
-        return dazBones
+        for pb in rig.pose.bones:
+            self.dazBones[pb.name].getPose(pb)
 
 
     def createMeta(self, context):
@@ -533,8 +529,8 @@ class Rigify:
         print("  Connect to parent")
         connectToParent(rig, connectAll=True)
         print("  Setup DAZ skeleton")
-        rigifySkel, spineBones, dazSkel = self.setupDazSkeleton(rig)
-        dazBones = self.getDazBones(rig)
+        self.setupDazSkeleton(rig)
+        self.getDazBones(rig)
 
         # Fit metarig to default DAZ rig
         print("  Fit to DAZ")
@@ -542,8 +538,8 @@ class Rigify:
         meta.select_set(True)
         activateObject(context, meta)
         setMode('EDIT')
-        self.fitToDaz(meta, rigifySkel, dazBones)
-        hip = self.fitHip(meta, RF.hips, dazBones)
+        self.fitToDaz(meta)
+        hip = self.fitHip(meta)
 
         if rig.DazRig in ["genesis3", "genesis8", "genesis9"]:
             eb = meta.data.edit_bones[RF.head]
@@ -560,7 +556,7 @@ class Rigify:
                 eb.name not in RF.MetaDisconnect):
                 eb.use_connect = True
 
-        self.fitSpine(meta, spineBones, dazBones)
+        self.fitSpine(meta)
         print("  Reparent bones")
         self.reparentBones(meta, RF.MetaParents)
         print("  Add props to rigify")
@@ -630,11 +626,11 @@ class Rigify:
 
         print("  Setup DAZ Skeleton")
         setActiveObject(context, rig)
-        rigifySkel, spineBones, dazSkel = self.setupDazSkeleton(rig)
-        dazBones = self.getDazBones(rig)
+        self.setupDazSkeleton(rig)
+        self.getDazBones(rig)
 
         print("  Setup extras")
-        extras = self.setupExtras(context, rig, rigifySkel, spineBones)
+        extras = self.setupExtras(context, rig)
         print("  Get driven bones")
         driven = {}
         for pb in rig.pose.bones:
@@ -649,9 +645,9 @@ class Rigify:
         setActiveObject(context, gen)
         setMode('EDIT')
         for dname,rname in extras.items():
-            if dname not in dazBones.keys():
+            if dname not in self.dazBones.keys():
                 continue
-            dbone = dazBones[dname]
+            dbone = self.dazBones[dname]
             eb = gen.data.edit_bones.new(rname)
             eb.head = dbone.head
             eb.tail = dbone.tail
@@ -675,22 +671,22 @@ class Rigify:
         # Add parents to extra bones
         print("  Add parents to extra bones")
         for dname,rname in extras.items():
-            if dname not in dazBones.keys():
+            if dname not in self.dazBones.keys():
                 continue
-            dbone = dazBones[dname]
+            dbone = self.dazBones[dname]
             eb = gen.data.edit_bones[rname]
             if dbone.parent:
-                pname = RF.ExtraParents.get(dbone.name)
-                if pname not in gen.data.edit_bones.keys():
-                    pname = self.getRigifyBone(dbone.parent, dazSkel, extras, spineBones)
-                if (pname in gen.data.edit_bones.keys()):
-                    eb.parent = gen.data.edit_bones[pname]
+                parname = RF.ExtraParents.get(dbone.name)
+                if parname not in gen.data.edit_bones.keys():
+                    parname = self.getRigifyBone(dbone.parent, extras)
+                if (parname in gen.data.edit_bones.keys()):
+                    eb.parent = gen.data.edit_bones[parname]
                     eb.use_connect = (eb.parent != None and eb.parent.tail == eb.head)
                 else:
-                    print("No parent", dbone.name, dbone.parent, pname)
+                    print("No parent", dbone.name, dbone.parent, parname)
                     if isDrvBone(dbone.name):
                         continue
-                    bones = list(dazSkel.keys())
+                    bones = list(self.dazSkel.keys())
                     bones.sort()
                     print("Bones:", bones)
                     msg = ("Bone %s has no parent %s" % (dbone.name, dbone.parent))
@@ -711,11 +707,11 @@ class Rigify:
         # Lock extras
         print("  Lock extras")
         for dname,rname in extras.items():
-            if dname not in dazBones.keys():
+            if dname not in self.dazBones.keys():
                 continue
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
-                dazBones[dname].setPose(pb, gen)
+                self.dazBones[dname].setPose(pb, gen)
                 mhxlayer,unlock = getBoneLayer(pb, gen)
                 layer = MhxRigifyLayer[mhxlayer]
                 pb.bone.layers = layer*[False] + [True] + (31-layer)*[False]
@@ -759,7 +755,7 @@ class Rigify:
                 clearParent(ob)
 
         for ob,dname in boneParents:
-            rname = self.getRigifyBone(dname, dazSkel, extras, spineBones)
+            rname = self.getRigifyBone(dname, extras)
             if rname and rname in gen.data.bones.keys():
                 print("Parent %s to bone %s" % (ob.name, rname))
                 bone = gen.data.bones[rname]
@@ -775,13 +771,13 @@ class Rigify:
             if ob.type == 'MESH':
                 ob.parent = gen
 
-                xspineBones = [("pelvis", "spine", None)] + spineBones
+                xspineBones = [("pelvis", "spine", None)] + self.spineBones
                 for dname,rname,_pname in xspineBones:
                     if dname in ob.vertex_groups.keys():
                         vgrp = ob.vertex_groups[dname]
                         vgrp.name = "DEF-" + rname
 
-                for rname,dname in rigifySkel.items():
+                for rname,dname in self.rigifySkel.items():
                     if dname[1:] in ["Thigh", "Shin", "Shldr", "ForeArm"]:
                         self.rigifySplitGroup(rname, dname, ob, rig, True, meta)
                     elif isinstance(dname, str):
@@ -811,7 +807,7 @@ class Rigify:
             setAssoc(bname, bname)
         for dname,rname,_ in RF.Genesis38Spine:
             setAssoc(dname, rname)
-        for rname,dname in rigifySkel.items():
+        for rname,dname in self.rigifySkel.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
