@@ -109,7 +109,7 @@ class FrameConverter:
         stype = None
         conv = {}
         twists = {}
-        if self.convertPoses:
+        if self.useConvert:
             stype = SourceRig[self.srcCharacter]
         elif (rig.DazRig == "mhx" or
             rig.DazRig[0:6] == "rigify"):
@@ -156,7 +156,7 @@ class FrameConverter:
                 nbanim = banim
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
-        if self.affectBones and self.convertPoses:
+        if self.affectBones and self.useConvert:
             self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
 
@@ -189,7 +189,7 @@ class FrameConverter:
 
 
     def convertAllFrames(self, anims, rig, bonemap):
-        from .convert import getCharacter, getParent
+        from .convert import getCharacter, getOrientation
 
         trgCharacter = getCharacter(rig)
         if trgCharacter is None:
@@ -197,63 +197,38 @@ class FrameConverter:
 
         restmats = {}
         nrestmats = {}
-        transmats = {}
-        ntransmats = {}
         xyzs = {}
         nxyzs = {}
         for bname,nname in bonemap.items():
-            bparname = getParent(self.srcCharacter, bname)
-            self.getMatrices(bname, None, self.srcCharacter, bparname, restmats, transmats, xyzs)
+            orient,xyzs[bname] = getOrientation(self.srcCharacter, bname, rig)
+            if orient is not None:
+                restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
             if nname[0:6] == "TWIST-":
                 continue
-            if bparname in bonemap.keys():
-                nparname = bonemap[bparname]
-                if nparname[0:6] == "TWIST-":
-                    nparname = nparname[6:]
-            elif bparname is None:
-                nparname = None
-            else:
-                continue
-            self.getMatrices(nname, rig, trgCharacter, nparname, nrestmats, ntransmats, nxyzs)
+            orient,nxyzs[bname] = getOrientation(trgCharacter, bname, rig)
+            if orient is not None:
+                nrestmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
+
+        def convertFrames(trmat, xyz, nxyz, frames):
+            vecs = framesToVectors(frames)
+            nvecs = {}
+            for t,vec in vecs.items():
+                mat = Euler(vec*D, xyz).to_matrix()
+                nmat = mat @ trmat
+                nvecs[t] = Vector(nmat.to_euler(nxyz))/D
+            return vectorsToFrames(nvecs)
 
         for banim,vanim in anims:
             nbanim = {}
             for bname,nname in bonemap.items():
-                if nname in banim.keys() and nname in ntransmats.keys() and bname in transmats.keys():
+                if (nname in banim.keys() and
+                    nname in nrestmats.keys() and
+                    bname in restmats.keys()):
                     frames = banim[nname]
                     if "rotation" in frames.keys():
-                        amat = ntransmats[nname].inverted()
-                        bmat = transmats[bname]
-                        nframes = self.convertFrames(amat, bmat, xyzs[bname], nxyzs[nname], frames["rotation"])
+                        trmat = restmats[bname] @ nrestmats[bname].inverted()
+                        nframes = convertFrames(trmat, xyzs[bname], nxyzs[nname], frames["rotation"])
                         banim[nname]["rotation"] = nframes
-
-
-    def getMatrices(self, bname, rig, char, parname, restmats, transmats, xyzs):
-        from .convert import getOrientation
-
-        orient,xyzs[bname] = getOrientation(char, bname, rig)
-        if orient is None:
-            return
-        restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
-
-        orient = None
-        if parname:
-            orient,xyz = getOrientation(char, parname, rig)
-            if orient:
-                parmat = Euler(Vector(orient)*D, 'XYZ').to_matrix()
-                transmats[bname] = restmats[bname] @ parmat.inverted()
-        if orient is None:
-            transmats[bname] = Matrix().to_3x3()
-
-
-    def convertFrames(self, amat, bmat, xyz, nxyz, frames):
-        vecs = framesToVectors(frames)
-        nvecs = {}
-        for t,vec in vecs.items():
-            mat = Euler(vec*D, xyz).to_matrix()
-            nmat = amat @ mat @ bmat
-            nvecs[t] = Vector(nmat.to_euler(nxyz))/D
-        return vectorsToFrames(nvecs)
 
     #-------------------------------------------------------------
     #   Convert morph animations
@@ -401,16 +376,16 @@ class AffectOptions:
         description = "Keep locks and limits.\nDisable for better matching",
         default = False)
 
-    convertPoses : BoolProperty(
+    useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
-        default = False)
+        default = True)
 
     srcCharacter : EnumProperty(
         items = theRestPoseItems,
         name = "Source Character",
         description = "Character this file was made for",
-        default = "genesis_3_female")
+        default = "genesis_8_female")
 
     def draw(self, context):
         self.drawBones(context)
@@ -420,8 +395,8 @@ class AffectOptions:
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.label(text="Object Transformations Affect:")
             self.layout.prop(self, "affectObject", expand=True)
-            self.layout.prop(self, "convertPoses")
-            if self.convertPoses:
+            self.layout.prop(self, "useConvert")
+            if self.useConvert:
                 self.layout.prop(self, "srcCharacter")
         self.drawMorphs(context)
 
@@ -1699,7 +1674,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     bl_description = "Save the active action as a pose preset,\nto be used in DAZ Studio"
     bl_options = {'UNDO', 'PRESET'}
 
-    convertPoses = False
+    useConvert = False
     affectBones = True
     affectMorphs = False
 
