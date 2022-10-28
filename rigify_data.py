@@ -237,40 +237,38 @@ class RigifyData:
             "palm.04.R" :       "r_pinkymetacarpal",
         }
 
-        self.GenesisSpine = [
-            ("abdomen", spine, self.hips),
-            ("abdomen2", spine1, spine),
-            ("chest", chest, spine1),
-            ("neck", neck, chest),
-            ("head", self.head, neck),
-        ]
+        self.GenesisSpine = {
+            "abdomen" : (spine, self.hips),
+            "abdomen2" : (spine1, spine),
+            "chest" : (chest, spine1),
+            "neck" : (neck, chest),
+            "head" : (self.head, neck),
+        }
 
-        self.Genesis38Spine = [
-            ("abdomen", spine, self.hips),
-            ("abdomen2", spine1, spine),
-            ("chest", chest, spine1),
-            ("chestUpper", chest1, chest),
-            ("neck", neck, chest1),
-        ]
+        self.Genesis38Spine = {
+            "abdomen" : (spine, self.hips),
+            "abdomen2" : (spine1, spine),
+            "chest" : (chest, spine1),
+            "chestUpper" : (chest1, chest),
+            "neck" : (neck, chest1),
+        }
 
-        self.Genesis9Spine = [
-            ("spine1", spine, self.hips),
-            ("spine2", spine1, spine),
-            ("spine3", chest, spine1),
-            ("spine4", chest1, chest),
-            ("neck1", neck, chest1),
-        ]
+        self.Genesis9Spine = {
+            "spine1" : (spine, self.hips),
+            "spine2" : (spine1, spine),
+            "spine3" : (chest, spine1),
+            "spine4" : (chest1, chest),
+            "neck1" : (neck, chest1),
+        }
 
         if meta.DazUseSplitNeck:
-            self.Genesis38Spine += [
-                ("neckUpper", neck1, neck),
-                ("head", self.head, neck1)]
-            self.Genesis9Spine += [
-                ("neck2", neck1, neck),
-                ("head", self.head, neck1)]
+            self.Genesis38Spine["neckUpper"] = (neck1, neck)
+            self.Genesis38Spine["head"] = (self.head, neck1)
+            self.Genesis9Spine["neck2"] = (neck1, neck)
+            self.Genesis9Spine["head"] = (self.head, neck1)
         else:
-            self.Genesis38Spine.append(("head", self.head, neck))
-            self.Genesis9Spine.append(("head", self.head, neck))
+            self.Genesis38Spine["head"] = (self.head, neck)
+            self.Genesis9Spine["head"] = (self.head, neck)
 
         self.Genesis38Mergers = {
             "lShldrBend" : ["lShldrTwist"],

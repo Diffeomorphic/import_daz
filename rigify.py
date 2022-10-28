@@ -224,9 +224,10 @@ class Rigify:
 
     def fitSpine(self, meta):
         mbones = meta.data.edit_bones
-        for dname,rname,pname in self.spineBones:
+        for dname in self.spineBones.keys():
             if dname not in self.dazBones.keys():
                 continue
+            rname,pname = self.spineBones[dname]
             dbone = self.dazBones[dname]
             if rname in mbones.keys():
                 eb = mbones[rname]
@@ -346,7 +347,7 @@ class Rigify:
 
         extras = OrderedDict()
         taken = []
-        for dbone,_rbone,_pbone in self.spineBones:
+        for dbone in self.spineBones.keys():
             taken.append(dbone)
         for _rbone, dbone in self.rigifySkel.items():
             if isinstance(dbone, tuple):
@@ -422,25 +423,26 @@ class Rigify:
         return False
 
 
-    def getRigifyBone(self, bname, extras):
+    def getRigifyBone(self, bname, extras, bones):
         if bname in RF.DeformBones:
-            return RF.DeformBones[bname]
-        if bname[1:] in RF.DeformBones:
+            rname = RF.DeformBones[bname]
+        elif bname[1:] in RF.DeformBones:
             prefix = bname[0]
-            return (RF.DeformBones[bname[1:]] % prefix.upper())
-        if bname in self.dazSkel.keys():
+            rname = RF.DeformBones[bname[1:]] % prefix.upper()
+        elif bname in self.spineBones.keys():
+            rname,pname = self.spineBones[bname]
+            rname = "DEF-%s" % rname
+        elif bname in self.dazSkel.keys():
             rname = self.dazSkel[bname]
             if rname in RF.MetaBones.keys():
-                return "DEF-" + RF.MetaBones[rname]
+                rname = "DEF-%s" % RF.MetaBones[rname]
             else:
-                return "DEF-" + rname
+                rname = "DEF-%s" % rname
         elif bname in extras.keys():
-            return extras[bname]
-        else:
-            for dname,rname,pname in self.spineBones:
-                if dname == bname:
-                    return "DEF-" + rname
-        print("MISS", bname)
+            rname = extras[bname]
+        if rname and rname in bones.keys():
+            return rname
+        print("MISS", bname, rname)
         return None
 
 
@@ -678,12 +680,12 @@ class Rigify:
             if dbone.parent:
                 parname = RF.ExtraParents.get(dbone.name)
                 if parname not in gen.data.edit_bones.keys():
-                    parname = self.getRigifyBone(dbone.parent, extras)
-                if (parname in gen.data.edit_bones.keys()):
+                    parname = self.getRigifyBone(dbone.parent, extras, gen.data.edit_bones)
+                if parname:
                     eb.parent = gen.data.edit_bones[parname]
                     eb.use_connect = (eb.parent != None and eb.parent.tail == eb.head)
                 else:
-                    print("No parent", dbone.name, dbone.parent, parname)
+                    print("No parent", dbone.name, dbone.parent)
                     if isDrvBone(dbone.name):
                         continue
                     bones = list(self.dazSkel.keys())
@@ -755,13 +757,13 @@ class Rigify:
                 clearParent(ob)
 
         for ob,dname in boneParents:
-            rname = self.getRigifyBone(dname, extras)
-            if rname and rname in gen.data.bones.keys():
+            rname = self.getRigifyBone(dname, extras, gen.data.bones)
+            if rname:
                 print("Parent %s to bone %s" % (ob.name, rname))
                 bone = gen.data.bones[rname]
                 setParent(context, ob, gen, bone.name)
             else:
-                print("Did not find bone parent %s %s" %(dname, rname))
+                print("Did not find bone parent %s" % dname)
                 setParent(context, ob, gen, None)
 
         # Change vertex groups
@@ -771,8 +773,9 @@ class Rigify:
             if ob.type == 'MESH':
                 ob.parent = gen
 
-                xspineBones = [("pelvis", "spine", None)] + self.spineBones
-                for dname,rname,_pname in xspineBones:
+                self.spineBones["pelvis"] = ("spine", None)
+                for dname in self.spineBones.keys():
+                    rname,_pname = self.spineBones[dname]
                     if dname in ob.vertex_groups.keys():
                         vgrp = ob.vertex_groups[dname]
                         vgrp.name = "DEF-" + rname
@@ -805,7 +808,8 @@ class Rigify:
             if isDrvBone(bname) or isFinal(bname):
                 continue
             setAssoc(bname, bname)
-        for dname,rname,_ in RF.Genesis38Spine:
+        for dname in self.spineBones.keys():
+            rname = self.spineBones[dname]
             setAssoc(dname, rname)
         for rname,dname in self.rigifySkel.items():
             if isinstance(dname, tuple):
