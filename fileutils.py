@@ -44,18 +44,77 @@ theDazDefaults = ";".join(["*.%s" % ext for ext in theDazExtensions+theDazUpcase
 
 class AnimationFolders:
     def __init__(self):
-        self.Converters = {}
+        self.converters = {}
+        self.restposes = {}
+        self.ikposes = {}
+        self.presets = {}
+        self.lowpoly = {}
+
+        self.SourceRigs = {
+            "genesis" : "genesis1",
+            "genesis_2_female" : "genesis2",
+            "genesis_2_male" : "genesis2",
+            "genesis_3_female" : "genesis3",
+            "genesis_3_male" : "genesis3",
+            "genesis_8_female" : "genesis8",
+            "genesis_8_male" : "genesis8",
+            "genesis_9" : "genesis9",
+            "victoria_4" : "genesis3",
+            "victoria_7" : "genesis3",
+            "victoria_8" : "genesis8",
+            "michael_4" : "genesis3",
+            "michael_7" : "genesis3",
+            "michael_8" : "genesis8",
+        }
+
         self.TwistBones = {}
-        self.RestPoses = {}
-        self.Parents = {}
-        self.IkPoses = {}
-        self.RestPoseFolder = os.path.join(os.path.dirname(__file__), "data", "restposes")
-        self.IkPoseFolder = os.path.join(os.path.dirname(__file__), "data", "ikposes")
+        self.TwistBones["genesis3"] = [
+            ("lShldrBend", "lShldrTwist"),
+            ("rShldrBend", "rShldrTwist"),
+            ("lForearmBend", "lForearmTwist"),
+            ("rForearmBend", "rForearmTwist"),
+            ("lThighBend", "lThighTwist"),
+            ("rThighBend", "rThighTwist"),
+        ]
+        self.TwistBones["genesis8"] = self.TwistBones["genesis3"]
+
         self.RestPoseItems = []
-        for file in os.listdir(self.RestPoseFolder):
+        folder = os.path.join(os.path.dirname(__file__), "data", "restposes")
+        for file in os.listdir(folder):
             fname = os.path.splitext(file)[0]
             name = fname.replace("_", " ").capitalize()
             self.RestPoseItems.append((fname, name, name))
+
+
+    def loadEntry(self, char, folder):
+        table = getattr(self, folder)
+        if char in table.keys():
+            return table[char]
+        import json
+        filepath = os.path.join(os.path.dirname(__file__), "data", folder, char +  ".json")
+        print("Load", filepath)
+        if not os.path.exists(filepath):
+            raise DazError("File %s    \n does not exist" % filepath)
+        else:
+            with safeOpen(filepath, "r") as fp:
+                data = json.load(fp)
+        table[char] = data
+        return table[char]
+
+
+    def getOrientation(self, char, bname, rig):
+        if rig and bname in rig.pose.bones.keys():
+            pb = rig.pose.bones[bname]
+            return pb.bone.DazOrient, pb.DazRotMode
+
+        self.loadEntry(char, "restposes")
+        poses = self.restposes[char]["pose"]
+        if bname in poses.keys():
+            orient, xyz = poses[bname][-2:]
+            return orient, xyz
+        else:
+            return None, "XYZ"
+
 
 AF = AnimationFolders()
 

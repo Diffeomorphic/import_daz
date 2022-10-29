@@ -143,54 +143,6 @@ def getCharacter(rig):
         return None
 
 
-def loadRestPoseEntry(character, table, folder):
-    import json
-    from .fileutils import safeOpen
-    if character in table.keys():
-        return
-    filepath = os.path.join(folder, character +  ".json")
-    print("Load", filepath)
-    if not os.path.exists(filepath):
-        raise DazError("File %s    \n does not exist" % filepath)
-    else:
-        with safeOpen(filepath, "r") as fp:
-            data = json.load(fp)
-    table[character] = data
-
-
-def getOrientation(character, bname, rig):
-    if rig and bname in rig.pose.bones.keys():
-        pb = rig.pose.bones[bname]
-        return pb.bone.DazOrient, pb.DazRotMode
-
-    loadRestPoseEntry(character, AF.RestPoses, AF.RestPoseFolder)
-    poses = AF.RestPoses[character]["pose"]
-    if bname in poses.keys():
-        orient, xyz = poses[bname][-2:]
-        return orient, xyz
-    else:
-        return None, "XYZ"
-
-
-def getParentCharacter(character):
-    loadRestPoseEntry(character, AF.RestPoses, AF.RestPoseFolder)
-    if "parent" in AF.RestPoses[character].keys():
-        parent = AF.RestPoses[character]["parent"]
-        return parent.lower().replace(" ", "_")
-    else:
-        return character
-
-
-def getParent(character, bname):
-    parent = getParentCharacter(character)
-    loadRestPoseEntry(parent, AF.Parents, AF.ParentsFolder)
-    parents = AF.Parents[parent]["parents"]
-    if bname in parents.keys() and parents[bname]:
-        return parents[bname]
-    else:
-        return None
-
-
 def loadPose(context, rig, character, table, modify):
 
     def getBoneName(bname, bones):
@@ -281,7 +233,7 @@ class DAZ_OT_LoadPoseInternal(HideOperator, JsonFile, SingleFile, IsArmature):
         folder = os.path.dirname(self.filepath)
         character = os.path.splitext(os.path.basename(self.filepath))[0]
         table = {}
-        loadRestPoseEntry(character, table, folder)
+        AF.loadEntry(character, table, folder)
         print("Load pose")
         loadPose(context, context.object, character, table, False)
         print("Pose %s loaded" % self.filepath)
@@ -315,30 +267,14 @@ def optimizePose(context, useApplyRestPose):
     char = getCharacter(rig)
     if char is None:
         raise DazError("Did not recognize character")
-    loadRestPoseEntry(char, AF.IkPoses, AF.IkPoseFolder)
-    loadPose(context, rig, char, AF.IkPoses, False)
+    AF.loadEntry(char, "ikposes")
+    loadPose(context, rig, char, AF.ikposes, False)
     if useApplyRestPose:
         applyRestPoses(context, rig, [])
 
 #-------------------------------------------------------------
 #   Convert Rig
 #-------------------------------------------------------------
-
-SourceRig = {
-    "genesis" : "genesis1",
-    "genesis_2_female" : "genesis2",
-    "genesis_2_male" : "genesis2",
-    "genesis_3_female" : "genesis3",
-    "genesis_3_male" : "genesis3",
-    "genesis_8_female" : "genesis8",
-    "genesis_8_male" : "genesis8",
-    "victoria_4" : "genesis3",
-    "victoria_7" : "genesis3",
-    "victoria_8" : "genesis8",
-    "michael_4" : "genesis3",
-    "michael_7" : "genesis3",
-    "michael_8" : "genesis8",
-}
 
 class DAZ_OT_ConvertRigPose(DazPropsOperator):
     bl_idname = "daz.convert_rig"
@@ -363,23 +299,23 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
     def run(self, context):
         rig = context.object
         scn = context.scene
-        loadRestPoseEntry(self.newRig, AF.RestPoses, AF.RestPoseFolder)
+        AF.loadEntry(self.newRig, "restposes")
         scale = 1.0
-        if self.newRig in SourceRig.keys():
+        if self.newRig in AF.sourceRigs.keys():
             modify = False
-            src = SourceRig[self.newRig]
+            src = AF.sourceRigs[self.newRig]
             conv,twists = getConverter(src, rig)
             if conv:
                 self.renameBones(rig, conv)
         else:
             modify = True
             src = self.newRig
-            table = AF.RestPoses[src]
+            table = AF.restposes[src]
             if "translate" in table.keys():
                 self.renameBones(rig, table["translate"])
             if "scale" in table.keys():
                 scale = table["scale"] * rig.DazScale
-        loadPose(context, rig, self.newRig, AF.RestPoses, modify)
+        loadPose(context, rig, self.newRig, AF.restposes, modify)
         rig.DazRig = src
         print("Rig converted to %s" % self.newRig)
         if scale != 1.0:
@@ -436,33 +372,18 @@ def getConverter(stype, trg):
     if stype == trgtype:
         return {},twists
     if trgtype == "mhx":
-        cname = stype[:-1] + "-mhx"
+        char = stype[:-1] + "-mhx"
     elif trgtype[0:6] == "rigify":
-        cname = stype[:-1] + "-" + trgtype
+        char = stype[:-1] + "-" + trgtype
     elif trgtype == "genesis9":
-        cname = "genesis1238-genesis9"
+        char = "genesis1238-genesis9"
     else:
-        cname = stype + "-" + trgtype
+        char = stype + "-" + trgtype
 
-    conv = getConverterEntry(cname)
+    conv = AF.loadEntry(char, "converters")
     if not conv:
         print("No converter", stype, trg.DazRig)
     return conv, twists
-
-
-def getConverterEntry(cname):
-    import json
-    from .fileutils import safeOpen
-    if cname in AF.Converters.keys():
-        return AF.Converters[cname]
-    else:
-        folder = os.path.join(os.path.dirname(__file__), "data", "converters")
-        filepath = os.path.join(folder, cname + ".json")
-        if os.path.exists(filepath):
-            with safeOpen(filepath, "r") as fp:
-                conv = AF.Converters[cname] = json.load(fp)
-            return conv
-    return {}
 
 #----------------------------------------------------------
 #   Initialize

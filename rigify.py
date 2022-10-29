@@ -33,6 +33,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .layers import *
+from .fileutils import AF
 from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
 
 
@@ -619,7 +620,8 @@ class Rigify:
         gen = context.object
         if gen.name in scn.collection.objects:
             scn.collection.objects.unlink(gen)
-        coll.objects.link(gen)
+        if gen.name not in coll.objects:
+            coll.objects.link(gen)
         self.startGizmos(context, gen)
         print("Fix generated rig", gen.name)
         if self.useIkFix:
@@ -743,8 +745,7 @@ class Rigify:
             copyProp(key, rig.data, gen.data, False)
 
         # Some more bones
-        from .convert import getConverterEntry
-        conv = getConverterEntry("genesis-" + meta.DazRigifyType)
+        conv = AF.loadEntry("genesis-%s" % meta.DazRigifyType, "converters")
         for srcname,trgname in conv.items():
             self.copyBoneInfo(srcname, trgname, rig, gen)
 

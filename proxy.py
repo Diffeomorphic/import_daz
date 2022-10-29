@@ -31,6 +31,7 @@ from mathutils import Vector, Euler
 from .error import *
 from .tables import *
 from .utils import *
+from .fileutils import AF
 from .morphing import Selector
 from .driver import DriverUser
 
@@ -1826,15 +1827,10 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, IsMesh):
 
 
     def run(self, context):
-        from .load_json import loadJson
         ob = context.object
         fac = self.offset*0.1*ob.DazScale
-        char = ob.DazMesh
-
-        folder = os.path.dirname(__file__)
-        filepath = os.path.join(folder, "data", "lowpoly", char.lower()+".json")
-        print("Loading %s" % filepath)
-        struct = loadJson(filepath, mustOpen=True)
+        char = ob.DazMesh.lower()
+        struct = AF.loadEntry(char, "lowpoly")
         vnums = struct["vertices"]
         verts = ob.data.vertices
         coords = [(verts[vn].co + fac*verts[vn].normal) for vn in vnums]

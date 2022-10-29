@@ -104,12 +104,12 @@ class FrameConverter:
 
     def getConv(self, banims, rig):
         from .figure import getRigType
-        from .convert import getConverter, SourceRig
+        from .convert import getConverter
         stype = None
         conv = {}
         twists = {}
         if self.useConvert:
-            stype = SourceRig[self.srcCharacter]
+            stype = AF.sourceRigs[self.srcCharacter]
         elif (rig.DazRig == "mhx" or
             rig.DazRig[0:6] == "rigify"):
             stype = "genesis8"
@@ -188,7 +188,7 @@ class FrameConverter:
 
 
     def convertAllFrames(self, anims, rig, bonemap):
-        from .convert import getCharacter, getOrientation
+        from .convert import getCharacter
 
         trgCharacter = getCharacter(rig)
         if trgCharacter is None:
@@ -199,12 +199,12 @@ class FrameConverter:
         xyzs = {}
         nxyzs = {}
         for bname,nname in bonemap.items():
-            orient,xyzs[bname] = getOrientation(self.srcCharacter, bname, rig)
+            orient,xyzs[bname] = AF.getOrientation(self.srcCharacter, bname, rig)
             if orient is not None:
                 restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
             if nname[0:6] == "TWIST-":
                 continue
-            orient,nxyzs[bname] = getOrientation(trgCharacter, bname, rig)
+            orient,nxyzs[bname] = AF.getOrientation(trgCharacter, bname, rig)
             if orient is not None:
                 nrestmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
 

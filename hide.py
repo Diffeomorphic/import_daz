@@ -407,6 +407,7 @@ class DAZ_OT_MakeInvisible(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        ob = context.object
         bpy.ops.object.mode_set(mode='OBJECT')
         makePermanentMaterial(ob, "Invisio", (0.8,0.8,0.8,0))
 
