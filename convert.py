@@ -301,9 +301,9 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
         scn = context.scene
         AF.loadEntry(self.newRig, "restposes")
         scale = 1.0
-        if self.newRig in AF.sourceRigs.keys():
+        if self.newRig in AF.SourceRigs.keys():
             modify = False
-            src = AF.sourceRigs[self.newRig]
+            src = AF.SourceRigs[self.newRig]
             conv,twists = getConverter(src, rig)
             if conv:
                 self.renameBones(rig, conv)
@@ -342,17 +342,6 @@ class DAZ_OT_ConvertRigPose(DazPropsOperator):
 #-------------------------------------------------------------
 #   Bone conversion
 #-------------------------------------------------------------
-
-AF.TwistBones["genesis3"] = [
-    ("lShldrBend", "lShldrTwist"),
-    ("rShldrBend", "rShldrTwist"),
-    ("lForearmBend", "lForearmTwist"),
-    ("rForearmBend", "rForearmTwist"),
-    ("lThighBend", "lThighTwist"),
-    ("rThighBend", "rThighTwist"),
-]
-AF.TwistBones["genesis8"] = AF.TwistBones["genesis3"]
-
 
 def getConverter(stype, trg):
     if stype == "genesis8":

@@ -109,7 +109,7 @@ class FrameConverter:
         conv = {}
         twists = {}
         if self.useConvert:
-            stype = AF.sourceRigs[self.srcCharacter]
+            stype = AF.SourceRigs[self.srcCharacter]
         elif (rig.DazRig == "mhx" or
             rig.DazRig[0:6] == "rigify"):
             stype = "genesis8"
