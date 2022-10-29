@@ -1682,6 +1682,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         description = "Import action instead of single pose",
         default = True)
 
+    useObject : BoolProperty(
+        name = "Use Object",
+        description = "Include object in the pose preset",
+        default = True)
+
     useBones : BoolProperty(
         name = "Use Bones",
         description = "Include bones in the pose preset",
@@ -1732,6 +1737,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         DazExporter.draw(self, context)
         self.layout.prop(self, "useBones")
         if self.useBones:
+            self.layout.prop(self, "useObject")
             self.layout.prop(self, "includeLocks")
             self.layout.prop(self, "useScale")
             self.layout.prop(self, "useFaceBones")
@@ -2068,6 +2074,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                         scales = [L.to_scale() for L in Ls]
                         self.getScale(bname, pb, scales, anims)
 
+        if self.useObject:
             Ls = [self.Ls[frame][""] for frame in range(self.first, self.last+1)]
             locs = [L.to_translation() for L in Ls]
             self.getTrans("", rig, locs, 1/rig.DazScale, anims)
