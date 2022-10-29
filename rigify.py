@@ -799,24 +799,22 @@ class Rigify:
                 self.changeAllTargets(ob, rig, gen)
 
         # Fix drivers
-        def setAssoc(dname, rname):
-            assoc[dname] = rname
-
         print("  Fix drivers")
         assoc = {}
         for bname in rig.data.bones.keys():
-            rname = bname
             if isDrvBone(bname) or isFinal(bname):
                 continue
-            setAssoc(bname, bname)
+            assoc[bname] = bname
         for dname in self.spineBones.keys():
             rname = self.spineBones[dname]
-            setAssoc(dname, rname)
+            if isinstance(rname, tuple):
+                rname = rname[0]
+            assoc[dname] = rname
         for rname,dname in self.rigifySkel.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
-            setAssoc(dname, orgname)
+            assoc[dname] = orgname
 
         for fcu in getPropDrivers(rig):
             fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen)
