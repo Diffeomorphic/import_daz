@@ -42,6 +42,10 @@ function setupMenus(text, desc, file)
 //==============================================================================
 // Run it
 //==============================================================================
+           
+setupMenus("Save Root Paths",
+           "Export a .json file with root paths for use with the DAZ Importer",
+           "/Scripts/Diffeomorphic/save_root_paths.dsa");
 
 setupMenus("Export HD To Blender",
            "Export a .dzb file for use with the DAZ Importer",
@@ -51,9 +55,9 @@ setupMenus("Export To Blender",
            "Export a .dzb file for use with the DAZ Importer",
            "/Scripts/Diffeomorphic/export_to_blender.dsa");
            
-setupMenus("Save Root Paths",
-           "Export a .json file with root paths for use with the DAZ Importer",
-           "/Scripts/Diffeomorphic/save_root_paths.dsa");
+setupMenus("Mesh Statistics",
+           "Display mesh statistics",
+           "/Scripts/Diffeomorphic/mesh_statistics.dsa");
            
 msg = "Menu entries created."
 MessageBox.information( msg, appName, "&OK" );

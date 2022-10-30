@@ -230,8 +230,6 @@ def getConverter(stype, trg):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_SavePoseInternal,
-    DAZ_OT_LoadPoseInternal,
     DAZ_OT_OptimizePose,
     DAZ_OT_ConvertRigPose,
 ]

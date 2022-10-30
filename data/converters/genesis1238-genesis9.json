@@ -82,6 +82,16 @@
     "rSmallToe4" : "r_pinkytoe1", 
     "rSmallToe4_2" : "r_pinkytoe2",   
     
+    "lCarpal1" : "l_indexmetacarpal",
+    "lCarpal2" : "l_midmetacarpal",
+    "lCarpal3" : "l_ringmetacarpal",
+    "lCarpal4" : "l_pinkymetacarpal",
+    
+    "rCarpal1" : "r_indexmetacarpal",
+    "rCarpal2" : "r_midmetacarpal",
+    "rCarpal3" : "r_ringmetacarpal",
+    "rCarpal4" : "r_pinkymetacarpal",
+    
     "lThumb1" : "l_thumb1",
     "lThumb2" : "l_thumb2",
     "lThumb3" : "l_thumb3",    

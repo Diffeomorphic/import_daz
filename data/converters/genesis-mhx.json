@@ -80,6 +80,8 @@
     "l_toes" : "toe.fk.L", 
     "lHeel" : "heel.L", 
 
+    "lMetatarsals" : "tarsal.L",
+    "l_metatarsal" : "tarsal.L",
     "lBigToe" : "", 
     "lBigToe_2" : "", 
     "lSmallToe1" : "", 
@@ -105,6 +107,8 @@
     "r_toes" : "toe.fk.R", 
     "rHeel" : "heel.R", 
 
+    "rMetatarsals" : "tarsal.R",
+    "r_metatarsal" : "tarsal.R",
     "rBigToe" : "", 
     "rBigToe_2" : "", 
     "rSmallToe1" : "", 
@@ -178,5 +182,24 @@
     "r_ring3" : "f_ring.03.R", 
     "r_pinky1" : "f_pinky.01.R", 
     "r_pinky2" : "f_pinky.02.R", 
-    "r_pinky3" : "f_pinky.03.R"   
+    "r_pinky3" : "f_pinky.03.R",
+    
+    "lCarpal1" : "palm_index.L",
+    "lCarpal2" : "palm_middle.L",
+    "lCarpal3" : "palm_ring.L",
+    "lCarpal4" : "palm_pinky.L",    
+    "l_indexmetacarpal" : "palm_index.L",
+    "l_midmetacarpal" : "palm_middle.L",
+    "l_ringmetacarpal" : "palm_ring.L",
+    "l_pinkymetacarpal" : "palm_pinky.L",
+    
+    "rCarpal1" : "palm_index.R",
+    "rCarpal2" : "palm_middle.R",
+    "rCarpal3" : "palm_ring.R",
+    "rCarpal4" : "palm_pinky.R",    
+    "r_indexmetacarpal" : "palm_index.R",
+    "r_midmetacarpal" : "palm_middle.R",
+    "r_ringmetacarpal" : "palm_ring.R",
+    "r_pinkymetacarpal" : "palm_pinky.R"
+    
 }

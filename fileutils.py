@@ -46,6 +46,7 @@ class AnimationFolders:
     def __init__(self):
         self.converters = {}
         self.restposes = {}
+        self.parents = {}
         self.ikposes = {}
         self.presets = {}
         self.lowpoly = {}
