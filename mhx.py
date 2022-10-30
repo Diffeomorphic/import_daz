@@ -76,7 +76,7 @@ def normalizeRoll(roll):
 #   Constraints
 #-------------------------------------------------------------
 
-def copyTransform(bone, target, rig, prop=None, expr="x"):
+def copyTransform(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns = bone.constraints.new('COPY_TRANSFORMS')
     cns.name = "Copy Transform %s" % target.name
     cns.target = rig
@@ -569,6 +569,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         for pb in rig.pose.bones:
             pb.bone.select = False
+            pb.bone.inherit_scale = 'NONE'
             if pb.custom_shape:
                 pb.bone.show_wire = True
 

@@ -976,7 +976,7 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig, bendTwistBones):
-        from .mhx import dampedTrack, copyRotation, copyScale, stretchTo, addDriver, setMhxProp
+        from .mhx import dampedTrack, copyTransform, stretchTo, addDriver, setMhxProp
         setMode('POSE')
         gizmo = "GZM_Ball025"
         for bname,trgname,stretch,prop in bendTwistBones:
@@ -989,7 +989,7 @@ class BendTwists:
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             pb2 = rig.pose.bones[trgname]
             cns1 = dampedTrack(bend, pb2, rig)
-            cns2 = copyRotation(twist, pb, rig, space='WORLD')
+            cns2 = copyTransform(twist, pb, rig)
             if stretch:
                 cns = stretchTo(bend, pb2, rig, prop, "x")
                 cns = stretchTo(twist, pb2, rig, prop, "x")

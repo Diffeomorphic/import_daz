@@ -923,6 +923,17 @@ def toggleLocLimits(self, context):
     toggleLimits(self, context, "DazLocLimits", "LIMIT_LOCATION")
 
 #----------------------------------------------------------
+#   Toggle Inherit Scale
+#----------------------------------------------------------
+
+def toggleInheritScale(self, context):
+    for pb in self.pose.bones:
+        if self.DazInheritScale:
+            pb.bone.inherit_scale = 'FULL'
+        else:
+            pb.bone.inherit_scale = 'NONE'
+
+#----------------------------------------------------------
 #   Toggle Morph Armature
 #----------------------------------------------------------
 
@@ -2069,6 +2080,12 @@ def register():
         description = "Location Limits",
         default = True,
         update = toggleLocLimits)
+
+    bpy.types.Object.DazInheritScale = BoolPropOVR(
+        name = "Inherit Scale",
+        description = "Bones inherit scale",
+        default = False,
+        update = toggleInheritScale)
 
     bpy.types.Scene.DazAutoMorphArmatures = BoolProperty(
         name = "Auto Morph Armatures",

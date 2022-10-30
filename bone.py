@@ -387,6 +387,7 @@ class BoneInstance(Instance):
             return
         pb = rig.pose.bones[node.name]
         self.rna = pb
+        pb.bone.inherit_scale = 'NONE'
         mapped = self.node.mapped
         if (mapped and
             self.name != mapped and

@@ -505,6 +505,7 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
             layout.prop(rig, "DazRotLocks")
             layout.prop(rig, "DazLocLimits")
             layout.prop(rig, "DazRotLimits")
+            layout.prop(rig, "DazInheritScale")
             return
             layout.separator()
             layout.operator("daz.rotate_bones")
