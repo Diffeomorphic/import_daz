@@ -1,21 +1,15 @@
 // DAZ Studio Script
 
-var appName = "mesh_statistics";
-var version = "\"1.6.2.1041\"";
-
 function meshStatistics()
 {
-    var string = ""
-
+    var string = "HD Meshes\n"
     for ( var i = 0; i < Scene.getNumNodes(); i++ )
     {
         var node = Scene.getNode(i);
         obj = node.getObject();
         if (obj != null) 
         {
-            var shape = obj.getCurrentShape();
             var geom = obj.getCachedGeom();
-            var geom = shape.getGeometry();
             var nv = geom.getNumVertices();
             var ne = geom.getNumEdges();
             var nf = geom.getNumFacets();
@@ -23,7 +17,30 @@ function meshStatistics()
             string += node.getLabel() + "    V: " + nv + "    E: " + ne + "    F: " + nf + "   P: " + npl + "\n";
         }
     }
-    MessageBox.information( string, appName, "&OK" );
+
+    string += "\nBase Meshes\n"
+    for ( var i = 0; i < Scene.getNumNodes(); i++ )
+    {
+        var node = Scene.getNode(i);
+        obj = node.getObject();
+        if (obj != null) 
+        {
+            var shape = obj.getCurrentShape();
+            var lodctrl = shape.getLODControl();
+            var lodvalue = lodctrl.getValue();
+            lodctrl.setValue(0);
+            obj.forceCacheUpdate(node,false);   
+            var geom = obj.getCachedGeom();
+            var nv = geom.getNumVertices();
+            var ne = geom.getNumEdges();
+            var nf = geom.getNumFacets();
+            var npl = geom.getNumPolylines();
+            string += node.getLabel() + "    V: " + nv + "    E: " + ne + "    F: " + nf + "   P: " + npl + "\n";
+            lodctrl.setValue(lodvalue);    
+        }
+    }
+
+    MessageBox.information( string, "Mesh statistics", "&OK" );
 }
 
 meshStatistics()
