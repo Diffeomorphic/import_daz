@@ -27,6 +27,8 @@
 
 import bpy
 import os
+import json
+from collections import OrderedDict
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from .error import *
 from .utils import *
@@ -91,14 +93,13 @@ class AnimationFolders:
         table = getattr(self, folder)
         if char in table.keys():
             return table[char]
-        import json
         filepath = os.path.join(os.path.dirname(__file__), "data", folder, char +  ".json")
         print("Load", filepath)
         if not os.path.exists(filepath):
             raise DazError("File %s    \n does not exist" % filepath)
         else:
             with safeOpen(filepath, "r") as fp:
-                data = json.load(fp)
+                data = json.load(fp, object_pairs_hook=OrderedDict)
         table[char] = data
         return table[char]
 

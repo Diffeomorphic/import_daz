@@ -201,18 +201,31 @@ class FrameConverter:
 
     def convertAllFrames(self, anims, rig, bonemap):
         from .convert import getCharacter
-
         trgCharacter = getCharacter(rig)
         if trgCharacter is None:
             return anims
+
+        parents = AF.loadEntry(self.srcCharacter, "parents").get("parents")
+        nparents = AF.loadEntry(trgCharacter, "parents").get("parents")
+        core = {}
+        for bname, parname in parents.items():
+            if bname in ["head",
+                "lHand", "lFoot", "l_hand", "l_foot",
+                "rHand", "rFoot", "r_hand", "r_foot",
+                ]:
+                core[bname] = False
+            elif parname:
+                core[bname] = core[parname]
+            else:
+                core[bname] = True
 
         restmats = {}
         nrestmats = {}
         xyzs = {}
         nxyzs = {}
-        parents = AF.loadEntry(self.srcCharacter, "parents").get("parents")
-        nparents = AF.loadEntry(trgCharacter, "parents").get("parents")
         for bname,nname in bonemap.items():
+            if not core.get(bname):
+                continue
             orient,xyzs[bname] = AF.getOrientation(self.srcCharacter, bname)
             if orient is not None:
                 restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
@@ -237,14 +250,16 @@ class FrameConverter:
         for banim,vanim in anims:
             nbanim = {}
             for bname,nname in bonemap.items():
+                if not core.get(bname):
+                    continue
                 if (nname in banim.keys() and
                     bname in nrestmats.keys() and
                     bname in restmats.keys()):
                     frames = banim[nname]
                     if "rotation" in frames.keys():
                         parname = parents.get(bname)
-                        #if parname and parname[-5:] == "Twist":
-                        #    parname = "%sBend" % parname[:-5]
+                        if parname and parname[-5:] == "Twist":
+                            parname = "%sBend" % parname[:-5]
                         if parname in nrestmats.keys():
                             trmat = restmats[bname] @ restmats[parname].inverted() @ nrestmats[parname] @ nrestmats[bname].inverted()
                         elif not parname:
