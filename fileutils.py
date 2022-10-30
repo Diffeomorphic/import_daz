@@ -102,13 +102,9 @@ class AnimationFolders:
         return table[char]
 
 
-    def getOrientation(self, char, bname, rig):
-        if rig and bname in rig.pose.bones.keys():
-            pb = rig.pose.bones[bname]
-            return pb.bone.DazOrient, pb.DazRotMode
-
-        self.loadEntry(char, "restposes")
-        poses = self.restposes[char]["pose"]
+    def getOrientation(self, char, bname):
+        entry = self.loadEntry(char, "restposes")
+        poses = entry["pose"]
         if bname in poses.keys():
             orient, xyz = poses[bname][-2:]
             return orient, xyz

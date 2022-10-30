@@ -199,14 +199,15 @@ class FrameConverter:
         xyzs = {}
         nxyzs = {}
         for bname,nname in bonemap.items():
-            orient,xyzs[bname] = AF.getOrientation(self.srcCharacter, bname, rig)
+            orient,xyzs[bname] = AF.getOrientation(self.srcCharacter, bname)
             if orient is not None:
                 restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
             if nname[0:6] == "TWIST-":
                 continue
-            orient,nxyzs[bname] = AF.getOrientation(trgCharacter, bname, rig)
-            if orient is not None:
-                nrestmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                nxyzs[bname] = pb.DazRotMode
+                nrestmats[bname] = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ').to_matrix()
 
         def convertFrames(trmat, xyz, nxyz, frames):
             vecs = framesToVectors(frames)
@@ -217,6 +218,7 @@ class FrameConverter:
                 nvecs[t] = Vector(nmat.to_euler(nxyz))/D
             return vectorsToFrames(nvecs)
 
+        print("CC", self.srcCharacter, trgCharacter)
         for banim,vanim in anims:
             nbanim = {}
             for bname,nname in bonemap.items():
@@ -224,10 +226,17 @@ class FrameConverter:
                     nname in nrestmats.keys() and
                     bname in restmats.keys()):
                     frames = banim[nname]
+                    if bname in ["lShldrBend", "lShldrTwist"]:
+                        print("\nBB", bname, nname)
+                        print(restmats[bname].to_euler())
+                        print(nrestmats[bname].to_euler())
+                        print(frames["rotation"])
                     if "rotation" in frames.keys():
                         trmat = restmats[bname] @ nrestmats[bname].inverted()
                         nframes = convertFrames(trmat, xyzs[bname], nxyzs[nname], frames["rotation"])
                         banim[nname]["rotation"] = nframes
+                    if bname in ["lShldrBend", "lShldrTwist"]:
+                        print(nframes)
 
     #-------------------------------------------------------------
     #   Convert morph animations
@@ -378,13 +387,13 @@ class AffectOptions:
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
-        default = False)
+        default = True)
 
     srcCharacter : EnumProperty(
         items = AF.RestPoseItems,
         name = "Source Character",
         description = "Character this file was made for",
-        default = "genesis_8_female")
+        default = "genesis_3_female")
 
     def draw(self, context):
         self.drawBones(context)
