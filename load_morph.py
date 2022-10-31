@@ -1147,7 +1147,7 @@ class LoadMorph(DriverUser):
                     if fcu0:
                         if fcu0.driver.type == 'SUM':
                             self.recoverOldDrivers(fcu0, drivers)
-                        elif channel == "scale":
+                        elif channel == "scale" and self.rig.DazInheritScale:
                             fcu1 = self.findScaleSumDriver(fcu0)
                             if fcu1:
                                 self.recoverOldDrivers(fcu1, drivers)
@@ -1290,14 +1290,14 @@ class LoadMorph(DriverUser):
         fcu = pb.driver_add("scale", idx)
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
+        prop = self.getFinalScaleProp(pb, idx)
         if pb.parent and inheritScale(pb):
-            prop = self.getFinalScaleProp(pb, idx)
             fcu.driver.expression = "(1+a)/parscale"
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
             self.correctScaleFcurve(fcu, pb, idx)
         else:
-            fcu.driver.expression = "1+a"
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
+            fcu.driver.expression = "1+a"
         return fcu
 
 

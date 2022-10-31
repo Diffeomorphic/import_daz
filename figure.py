@@ -242,6 +242,7 @@ class Figure(Node):
         amt.display_type = 'STICK'
         rig.show_in_front = True
         rig.data.DazUnflipped = GS.unflipped
+        rig.DazInheritScale = False
         for geonode in inst.geometries:
             geonode.parent = geonode.figure = self
             geonode.rna.parent = rig
@@ -927,11 +928,11 @@ def toggleLocLimits(self, context):
 #----------------------------------------------------------
 
 def toggleInheritScale(self, context):
-    for pb in self.pose.bones:
+    for bone in self.data.bones:
         if self.DazInheritScale:
-            pb.bone.inherit_scale = 'FULL'
+            bone.inherit_scale = 'FULL'
         else:
-            pb.bone.inherit_scale = 'NONE'
+            bone.inherit_scale = 'NONE'
 
 #----------------------------------------------------------
 #   Toggle Morph Armature
@@ -2084,7 +2085,7 @@ def register():
     bpy.types.Object.DazInheritScale = BoolPropOVR(
         name = "Inherit Scale",
         description = "Bones inherit scale",
-        default = False,
+        default = True,
         update = toggleInheritScale)
 
     bpy.types.Scene.DazAutoMorphArmatures = BoolProperty(
