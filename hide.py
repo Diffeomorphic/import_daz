@@ -446,6 +446,56 @@ def makePermanentMaterial(ob, mname, color):
             f.material_index = mnum
 
 #----------------------------------------------------------
+#   Shapekey selector
+#----------------------------------------------------------
+
+class ShapekeySelector(Selector):
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and ob.data.shape_keys)
+
+    def selectCondition(self, item):
+        return (item.name != "Basic")
+
+    def getKeys(self, rig, ob):
+        return [(skey.name, skey.name, skey.name) for skey in ob.data.shape_keys.key_blocks]
+
+
+class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
+    bl_idname = "daz.add_shape_vis_drivers"
+    bl_label = "Add Shapekey Visibility Drivers"
+    bl_description = "Add drivers to selected shapekeys,\ndepending on the visibility of selected clothes"
+    bl_options = {'UNDO'}
+
+    def draw(self, context):
+        ShapekeySelector.draw(self, context)
+
+    def run(self, context):
+        from .driver import addDriverVar
+        from .morphing import getRigFromObject
+        hum = context.object
+        rig = getRigFromObject(hum)
+        clothes = [ob for ob in getSelectedMeshes(context) if ob != hum]
+        if len(clothes) != 1:
+            raise DazError("Exactly two meshes must be selected")
+        clo = clothes[0]
+        props = self.getSelectedProps()
+        for skey in hum.data.shape_keys.key_blocks:
+            if skey.name in props:
+                skey.driver_remove("value")
+                fcu = skey.driver_add("value")
+                fcu.driver.type = 'SCRIPTED'
+                addDriverVar(fcu, "a", "hide_render", clo)
+                final = finalProp(skey.name)
+                if rig and final in rig.data.keys():
+                    addDriverVar(fcu, "b", propRef(final), rig.data)
+                    fcu.driver.expression = "a+b"
+                else:
+                    fcu.driver.expression = "a"
+
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -458,6 +508,7 @@ classes = [
     DAZ_OT_AddShrinkwrap,
     DAZ_OT_ToggleVis,
     DAZ_OT_MakeInvisible,
+    DAZ_OT_AddShapeVisDrivers,
 ]
 
 def register():

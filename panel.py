@@ -220,6 +220,7 @@ class DAZ_PT_AdvancedVisibility(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.create_masks")
         self.layout.operator("daz.add_visibility_drivers")
         self.layout.operator("daz.remove_visibility_drivers")
+        self.layout.operator("daz.add_shape_vis_drivers")
 
 
 class DAZ_PT_AdvancedHDMesh(DAZ_PT_Base, bpy.types.Panel):
