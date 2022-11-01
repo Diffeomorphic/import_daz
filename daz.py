@@ -242,6 +242,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseLimitLoc")
         box.prop(scn, "DazUseLockRot")
         box.prop(scn, "DazUseLimitRot")
+        box.prop(scn, "DazInheritScale")
         box.prop(scn, "DazDisplayLimitRot")
 
         box = col.box()
@@ -578,6 +579,10 @@ def register():
     bpy.types.Scene.DazUseLimitRot = BoolProperty(
         name = "Rotation Limits",
         description = "Enable rotation limits")
+
+    bpy.types.Scene.DazInheritScale = BoolProperty(
+        name = "Bones Inherit Scale",
+        description = "Bones inherit scale from their parents (Blender default).\nDisable to mimic behaviour in DAZ Studio")
 
     bpy.types.Scene.DazDisplayLimitRot = BoolProperty(
         name = "Display Rotation Limits",

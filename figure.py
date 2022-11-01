@@ -929,11 +929,9 @@ def toggleLocLimits(self, context):
 #----------------------------------------------------------
 
 def toggleInheritScale(self, context):
+    inherits = ('FULL' if self.DazInheritScale else 'NONE')
     for bone in self.data.bones:
-        if self.DazInheritScale:
-            bone.inherit_scale = 'FULL'
-        else:
-            bone.inherit_scale = 'NONE'
+        bone.inherit_scale = inherits
 
 #----------------------------------------------------------
 #   Toggle Morph Armature

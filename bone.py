@@ -309,7 +309,7 @@ class BoneInstance(Instance):
         if self.name not in rig.data.bones.keys():
             return
         bone = rig.data.bones[self.name]
-        bone.use_inherit_scale = True
+        bone.inherit_scale = GS.defaultInherit()
         bone.DazOrient = self.attributes["orientation"]
 
         head,tail,orient,xyz,wsmat = self.getHeadTail(center)
@@ -387,7 +387,7 @@ class BoneInstance(Instance):
             return
         pb = rig.pose.bones[node.name]
         self.rna = pb
-        pb.bone.inherit_scale = 'NONE'
+        pb.bone.inherit_scale = GS.defaultInherit()
         mapped = self.node.mapped
         if (mapped and
             self.name != mapped and

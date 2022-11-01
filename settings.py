@@ -105,6 +105,7 @@ class GlobalSettings:
         self.useLimitLoc = True
         self.useLockRot = True
         self.useLimitRot = True
+        self.useInheritScale = False
         self.displayLimitRot = False
         self.useConnectClose = False
 
@@ -128,6 +129,10 @@ class GlobalSettings:
             return 'RANDOM_WALK'
         else:
             return self.sssMethod
+
+
+    def defaultInherit(self):
+        return ('FULL' if self.useInheritScale else 'NONE')
 
 
     SceneTable = {
@@ -189,6 +194,7 @@ class GlobalSettings:
         "DazUseLimitLoc" : "useLimitLoc",
         "DazUseLockRot" : "useLockRot",
         "DazUseLimitRot" : "useLimitRot",
+        "DazInheritScale" : "useInheritScale",
         "DazDisplayLimitRot" : "displayLimitRot",
 
         # Meshes

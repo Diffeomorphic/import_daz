@@ -406,8 +406,8 @@ def getConstraint(ob, type):
     return None
 
 
-def inheritScale(pb):
-    return (pb.bone.inherit_scale not in ['NONE', 'NONE_LEGACY'])
+def inheritsScale(bone):
+    return (bone.inherit_scale not in ['NONE', 'NONE_LEGACY'])
 
 
 def hasPoseBones(rig, bnames):
