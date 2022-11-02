@@ -591,19 +591,8 @@ def copyVertexGroups(ob, hdob):
         for vn in vnums:
             vgrp.add([vn], 1.0, 'REPLACE')
 
-    from .finger import isGenesis9Eyes, getFingerPrint
-    if isGenesis9Eyes(ob, hdob):
-        print("Adding vertex groups for Genesis 9 Eyes")
-        nverts = len(hdob.data.vertices)
-        lverts = [v.index for v in hdob.data.vertices if v.co[0] > 0]
-        rverts = [v.index for v in hdob.data.vertices if v.co[0] < 0]
-        addVertexGroup(hdob, "Rigidity", range(0,nverts))
-        addVertexGroup(hdob, "l_eye", lverts)
-        addVertexGroup(hdob, "r_eye", rverts)
-        return True
-    finger = getFingerPrint(ob)
-    hdfinger = getFingerPrint(hdob)
-    if finger != hdfinger:
+    from .finger import getFingerPrint
+    if getFingerPrint(ob) != getFingerPrint(hdob):
         return False
 
     hdvgrps = {}

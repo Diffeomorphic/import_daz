@@ -165,6 +165,7 @@ class GeoNode(Node, SimNode):
         if not isinstance(self.data, Geometry):
             return
         if self.highdef:
+            from .finger import getFingerPrint
             me = self.buildHDMesh(ob)
             hdob = bpy.data.objects.new(ob.name + "_HD", me)
             self.hdobject = inst.hdobject = hdob
@@ -174,17 +175,14 @@ class GeoNode(Node, SimNode):
             center = Vector((0,0,0))
             self.arrangeObject(hdob, inst, context, center)
             multi = False
-            useHDUvs = (not GS.useMultiUvLayers or isGenesis9Eyes(ob, hdob))
-            if useHDUvs:
+            if not GS.useMultiUvLayers:
                 self.addHDUvs(ob, hdob)
             if GS.useMultires and hdob.data.polygons:
                 multi = addMultires(context, ob, hdob, False)
             if multi:
-                if not useHDUvs:
+                if GS.useMultiUvLayers:
                     copyUvLayers(ob, hdob)
-            elif (len(hdob.data.vertices) == len(ob.data.vertices) and
-                  len(hdob.data.edges) == len(ob.data.edges) and
-                  len(hdob.data.polygons) == len(ob.data.polygons)):
+            elif getFingerPrint(ob) == getFingerPrint(hdob):
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
@@ -488,28 +486,47 @@ def isEmpty(vgrp, ob):
 #-------------------------------------------------------------
 
 def addMultires(context, ob, hdob, strict):
-    from .finger import getFingerPrint, isGenesis9Eyes
+    from .finger import getFingerPrint
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
         return False
-    if isGenesis9Eyes(ob, hdob):
-        print("Found Genesis 9 Eyes", hdob.name)
-        return True
     activateObject(context, hdob)
     hdme = hdob.data.copy()
     setMode('EDIT')
     bpy.ops.mesh.delete_loose()
     setMode('OBJECT')
+    nmods = len(hdob.modifiers)
     mod = hdob.modifiers.new("Multires", 'MULTIRES')
+    for n in range(nmods-1):
+        bpy.ops.object.modifier_move_up(modifier=mod.name)
+    nhdverts = len(hdob.data.vertices)
     try:
         bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
         failtype = None
     except RuntimeError:
         msg = ('Cannot rebuild subdivisions for "%s"' % hdob.name)
         failtype = "Runtime"
+    nverts = len(ob.data.vertices)
     finger = getFingerPrint(ob)
     hdfinger = getFingerPrint(hdob)
-    if hdfinger != finger:
+    if len(hdob.data.vertices) < nverts:
+        verts = [list(v.co) for v in ob.data.vertices]
+        edges = [list(e.vertices) for e in ob.data.edges]
+        faces = [list(f.vertices) for f in ob.data.polygons]
+        table = { 1: 0, 2:1, 4:2, 8:3, 16:4, 32:5 }
+        levels = table[int(round(math.sqrt(nhdverts/nverts)))]
+        print("G9FFF", hdob, nverts, levels)
+        hdme = bpy.data.meshes.new(hdob.data.name)
+        hdme.from_pydata(verts, edges, faces)
+        hdob.modifiers.remove(mod)
+        hdob.data = hdme
+        mod = hdob.modifiers.new("Multires", 'MULTIRES')
+        for n in range(levels):
+            bpy.ops.object.multires_subdivide(modifier=mod.name, mode='CATMULL_CLARK')
+        mod.levels = 0
+        hdob.DazMultires = True
+        return True
+    elif hdfinger != finger:
         msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
         failtype = "Finger"
     if failtype is None:
