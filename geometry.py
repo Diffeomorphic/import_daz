@@ -174,12 +174,13 @@ class GeoNode(Node, SimNode):
             center = Vector((0,0,0))
             self.arrangeObject(hdob, inst, context, center)
             multi = False
-            if not (GS.useMultires and GS.useMultiUvLayers):
+            useHDUvs = (not GS.useMultiUvLayers or isGenesis9Eyes(ob, hdob))
+            if useHDUvs:
                 self.addHDUvs(ob, hdob)
             if GS.useMultires and hdob.data.polygons:
                 multi = addMultires(context, ob, hdob, False)
             if multi:
-                if GS.useMultiUvLayers:
+                if not useHDUvs:
                     copyUvLayers(ob, hdob)
             elif (len(hdob.data.vertices) == len(ob.data.vertices) and
                   len(hdob.data.edges) == len(ob.data.edges) and
@@ -491,6 +492,9 @@ def addMultires(context, ob, hdob, strict):
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
         return False
+    if isGenesis9Eyes(ob, hdob):
+        print("Found Genesis 9 Eyes", hdob.name)
+        return True
     activateObject(context, hdob)
     hdme = hdob.data.copy()
     setMode('EDIT')
@@ -506,9 +510,8 @@ def addMultires(context, ob, hdob, strict):
     finger = getFingerPrint(ob)
     hdfinger = getFingerPrint(hdob)
     if hdfinger != finger:
-        if not isGenesis9Eyes(finger, hdfinger):
-            msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
-            failtype = "Finger"
+        msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
+        failtype = "Finger"
     if failtype is None:
         hdob.DazMultires = True
         mod.levels = 0
@@ -532,26 +535,21 @@ class DAZ_OT_MakeMultires(DazOperator, IsMesh):
 
     def run(self, context):
         from .modifier import makeArmatureModifier, copyVertexGroups
-        meshes = getSelectedMeshes(context)
-        if len(meshes) != 2:
-            raise DazError("Two meshes must be selected, \none subdivided and one at base resolution.")
-        hdob = context.object
-        baseob = None
-        for ob in meshes:
-            if ob != hdob:
-                if len(hdob.data.vertices) > len(ob.data.vertices):
-                    baseob = ob
-                else:
-                    hdob = ob
-                    baseob = context.object
+        hdob = None
+        baseob = context.object
+        for ob in getSelectedMeshes(context):
+            if ob != baseob:
+                hdob = ob
                 break
+        if hdob is None:
+            raise DazError("Two meshes must be selected, \none subdivided and one at base resolution.")
+        print('Base "%s", HD "%s"' % (baseob.name, hdob.name))
         addMultires(context, baseob, hdob, True)
         copyUvLayers(baseob, hdob)
         rig = baseob.parent
-        if not (rig and rig.type == 'ARMATURE'):
-            return
         hdob.parent = rig
-        makeArmatureModifier(rig.name, context, hdob, rig)
+        if rig and rig.type == 'ARMATURE':
+            makeArmatureModifier(rig.name, context, hdob, rig)
         copyVertexGroups(baseob, hdob)
 
 
@@ -580,10 +578,11 @@ def copyUvLayers(ob, hdob):
                 loop = f.loop_indices[i]
                 hddata[hdLoop].uv = uvdata[loop].uv
 
-    for uvlayer in list(hdob.data.uv_layers):
-        hdob.data.uv_layers.remove(uvlayer)
     loopsMapping = setupLoopsMapping()
     for uvlayer in ob.data.uv_layers:
+        if uvlayer.name in hdob.data.uv_layers.keys():
+            print('UV layer "%s" already exists' % uvlayer.name)
+            continue
         hdlayer = makeNewUvloop(hdob.data, uvlayer.name, False)
         copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
 

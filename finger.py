@@ -136,10 +136,15 @@ def isCharacter(ob):
     return getFingeredCharacter(ob, False, verbose=False)[2]
 
 
-def isGenesis9Eyes(finger, hdfinger):
+def isGenesis9Eyes(ob, hdob):
+    finger = getFingerPrint(ob)
+    hdfinger = getFingerPrint(hdob)
     char = FingerPrintsHD.get(finger)
     hdchar = FingerPrintsHD.get(hdfinger)
-    return (char and hdchar and char[0] == "Genesis9-eyes" and hdchar[0] == "Genesis9-eyes")
+    if char and hdchar and char[0] == "Genesis9-eyes" and hdchar[0] == "Genesis9-eyes":
+        return (char[1] == 0)
+    else:
+        return False
 
 
 class DAZ_OT_GetFingerPrint(bpy.types.Operator, IsMeshArmature):

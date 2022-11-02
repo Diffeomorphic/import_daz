@@ -431,11 +431,6 @@ class SkinBinding(Modifier):
 
 
     def build(self, context, inst):
-        def addVertexGroup(ob, vgname, vnums):
-            vgrp = ob.vertex_groups.new(name=vgname)
-            for vn in vnums:
-                vgrp.add([vn], 1.0, 'REPLACE')
-
         ob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
@@ -455,20 +450,9 @@ class SkinBinding(Modifier):
         hdob = geonode.hdobject
         if (hdob and hdob != ob and
             (GS.useHDArmature or (hdob.DazMultires and GS.useMultires))):
-            from .finger import getFingerPrint, isGenesis9Eyes
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
-            finger = getFingerPrint(ob)
-            hdfinger = getFingerPrint(hdob)
-            if hdfinger == finger:
-                copyVertexGroups(ob, hdob)
-            elif isGenesis9Eyes(finger, hdfinger):
-                print("Adding vertex groups for Genesis 9 Eyes")
-                nverts = len(hdob.data.vertices)
-                lverts = nverts//2
-                addVertexGroup(hdob, "l_eye", range(0,lverts))
-                addVertexGroup(hdob, "r_eye", range(lverts,nverts))
-            else:
+            if not copyVertexGroups(ob, hdob):
                 LS.hdWeights.append(hdob.name)
 
 
@@ -598,6 +582,30 @@ def makeArmatureModifier(name, context, ob, rig):
 
 
 def copyVertexGroups(ob, hdob):
+    def addVertexGroup(hdob, vgname, vnums):
+        vgrp = hdob.vertex_groups.get(vgname)
+        if vgrp:
+            print("DEL", vgrp)
+            hdob.vertex_groups.remove(vgrp)
+        vgrp = hdob.vertex_groups.new(name=vgname)
+        for vn in vnums:
+            vgrp.add([vn], 1.0, 'REPLACE')
+
+    from .finger import isGenesis9Eyes, getFingerPrint
+    if isGenesis9Eyes(ob, hdob):
+        print("Adding vertex groups for Genesis 9 Eyes")
+        nverts = len(hdob.data.vertices)
+        lverts = [v.index for v in hdob.data.vertices if v.co[0] > 0]
+        rverts = [v.index for v in hdob.data.vertices if v.co[0] < 0]
+        addVertexGroup(hdob, "Rigidity", range(0,nverts))
+        addVertexGroup(hdob, "l_eye", lverts)
+        addVertexGroup(hdob, "r_eye", rverts)
+        return True
+    finger = getFingerPrint(ob)
+    hdfinger = getFingerPrint(hdob)
+    if finger != hdfinger:
+        return False
+
     hdvgrps = {}
     for vgrp in ob.vertex_groups:
         hdvgrp = hdob.vertex_groups.new(name=vgrp.name)
@@ -606,7 +614,7 @@ def copyVertexGroups(ob, hdob):
         vn = v.index
         for g in v.groups:
             hdvgrps[g.group].add([vn], g.weight, 'REPLACE')
-
+    return True
 
 class LegacySkinBinding(SkinBinding):
 
