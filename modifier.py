@@ -431,6 +431,11 @@ class SkinBinding(Modifier):
 
 
     def build(self, context, inst):
+        def addVertexGroup(ob, vgname, vnums):
+            vgrp = ob.vertex_groups.new(name=vgname)
+            for vn in vnums:
+                vgrp.add([vn], 1.0, 'REPLACE')
+
         ob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
@@ -450,10 +455,19 @@ class SkinBinding(Modifier):
         hdob = geonode.hdobject
         if (hdob and hdob != ob and
             (GS.useHDArmature or (hdob.DazMultires and GS.useMultires))):
+            from .finger import getFingerPrint, isGenesis9Eyes
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
-            if len(hdob.data.vertices) == len(ob.data.vertices):
+            finger = getFingerPrint(ob)
+            hdfinger = getFingerPrint(hdob)
+            if hdfinger == finger:
                 copyVertexGroups(ob, hdob)
+            elif isGenesis9Eyes(finger, hdfinger):
+                print("Adding vertex groups for Genesis 9 Eyes")
+                nverts = len(hdob.data.vertices)
+                lverts = nverts//2
+                addVertexGroup(hdob, "l_eye", range(0,lverts))
+                addVertexGroup(hdob, "r_eye", range(lverts,nverts))
             else:
                 LS.hdWeights.append(hdob.name)
 

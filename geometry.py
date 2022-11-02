@@ -487,7 +487,7 @@ def isEmpty(vgrp, ob):
 #-------------------------------------------------------------
 
 def addMultires(context, ob, hdob, strict):
-    from .finger import getFingerPrint
+    from .finger import getFingerPrint, isGenesis9Eyes
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
         return False
@@ -499,15 +499,16 @@ def addMultires(context, ob, hdob, strict):
     mod = hdob.modifiers.new("Multires", 'MULTIRES')
     try:
         bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
-        finger = getFingerPrint(hdob)
-        if finger != ob.data.DazFingerPrint:
-            msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
-            failtype = "Finger"
-        else:
-            failtype = None
+        failtype = None
     except RuntimeError:
         msg = ('Cannot rebuild subdivisions for "%s"' % hdob.name)
         failtype = "Runtime"
+    finger = getFingerPrint(ob)
+    hdfinger = getFingerPrint(hdob)
+    if hdfinger != finger:
+        if not isGenesis9Eyes(finger, hdfinger):
+            msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
+            failtype = "Finger"
     if failtype is None:
         hdob.DazMultires = True
         mod.levels = 0

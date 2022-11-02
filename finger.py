@@ -83,6 +83,12 @@ FingerPrintsHD = {
     "1037754-2074256-1036544" : ("Genesis8-male", 3),
 
     "25182-50338-25156" : ("Genesis9", 0),
+
+    "536-1056-528" : ("Genesis9-eyes", -1),
+    "2120-4224-2112" : ("Genesis9-eyes", 0),
+    "8456-16896-8448" : ("Genesis9-eyes", 1),
+    "33800-67584-33792" : ("Genesis9-eyes", 2),
+    "135176-270336-135168" : ("Genesis9-eyes", 3),
 }
 
 
@@ -128,6 +134,12 @@ def getFingeredCharacter(ob, useOrig, verbose=True):
 
 def isCharacter(ob):
     return getFingeredCharacter(ob, False, verbose=False)[2]
+
+
+def isGenesis9Eyes(finger, hdfinger):
+    char = FingerPrintsHD.get(finger)
+    hdchar = FingerPrintsHD.get(hdfinger)
+    return (char and hdchar and char[0] == "Genesis9-eyes" and hdchar[0] == "Genesis9-eyes")
 
 
 class DAZ_OT_GetFingerPrint(bpy.types.Operator, IsMeshArmature):
