@@ -77,6 +77,7 @@ class GeoNode(Node, SimNode):
         self.polyline_materials = []
         self.highdef = None
         self.hdobject = None
+        self.hdType = 'NONE'
         self.index = figure.count
         self.modifiers = {}
         self.morphsValues = {}
@@ -174,28 +175,27 @@ class GeoNode(Node, SimNode):
             self.addHDMaterials(ob.data.materials, "")
             center = Vector((0,0,0))
             self.arrangeObject(hdob, inst, context, center)
-            multi = False
             if not GS.useMultiUvLayers:
                 self.addHDUvs(ob, hdob)
+            self.hdType = 'HIGHDEF'
             if GS.useMultires and hdob.data.polygons:
-                multi = addMultires(context, ob, hdob, False)
-            if multi:
+                self.hdType = addMultires(context, ob, hdob, False)
+            if self.hdType == 'MULTIRES':
                 if GS.useMultiUvLayers:
                     copyUvLayers(ob, hdob)
-            elif getFingerPrint(ob) == getFingerPrint(hdob):
+            elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
-            elif GS.useMultires:
+            elif self.hdType == 'HIGHDEF' and GS.useMultiUvLayers:
                 self.addHDUvs(ob, hdob)
         elif LS.useHDObjects:
             self.hdobject = inst.hdobject = ob
 
         if ob and self.data:
             self.data.buildRigidity(ob)
-            hdob = self.hdobject
-            if hdob and hdob != ob:
-                self.data.buildRigidity(hdob)
+            if self.hdType == 'MULTIRES':
+                self.data.buildRigidity(self.hdobject)
 
         renderLevel = 0
         subDLevel = 0
@@ -315,11 +315,11 @@ class GeoNode(Node, SimNode):
 
     def finishHD(self, context, ob, hdob, inst):
         from .finger import getFingerPrint
-        if hdob != ob:
+        if self.hdType in ['HIGHDEF','MULTIRES']:
             self.copyHDMaterials(ob, hdob, context, inst)
-            hdob.parent = ob.parent
-            hdob.parent_type = ob.parent_type
-            hdob.parent_bone = ob.parent_bone
+        hdob.parent = ob.parent
+        hdob.parent_type = ob.parent_type
+        hdob.parent_bone = ob.parent_bone
         if LS.hdcollection is None:
             from .main import makeRootCollection
             LS.hdcollection = makeRootCollection(LS.collection.name + "_HD", context)
@@ -489,7 +489,7 @@ def addMultires(context, ob, hdob, strict):
     from .finger import getFingerPrint
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
-        return False
+        return 'HIGHDEF'
     activateObject(context, hdob)
     hdme = hdob.data.copy()
     setMode('EDIT')
@@ -510,29 +510,24 @@ def addMultires(context, ob, hdob, strict):
     finger = getFingerPrint(ob)
     hdfinger = getFingerPrint(hdob)
     if len(hdob.data.vertices) < nverts:
-        verts = [list(v.co) for v in ob.data.vertices]
-        edges = [list(e.vertices) for e in ob.data.edges]
-        faces = [list(f.vertices) for f in ob.data.polygons]
-        table = { 1: 0, 2:1, 4:2, 8:3, 16:4, 32:5 }
-        levels = table[int(round(math.sqrt(nhdverts/nverts)))]
-        print("G9FFF", hdob, nverts, levels)
-        hdme = bpy.data.meshes.new(hdob.data.name)
-        hdme.from_pydata(verts, edges, faces)
+        factor = math.sqrt(nhdverts/nverts)
+        levels = int(round(math.log(factor, 2)))
+        print("Adding multires to HD mesh %s: %f %d" % (hdob.name, factor, levels))
         hdob.modifiers.remove(mod)
-        hdob.data = hdme
+        hdob.data = ob.data.copy()
         mod = hdob.modifiers.new("Multires", 'MULTIRES')
         for n in range(levels):
             bpy.ops.object.multires_subdivide(modifier=mod.name, mode='CATMULL_CLARK')
         mod.levels = 0
         hdob.DazMultires = True
-        return True
+        return 'SAME'
     elif hdfinger != finger:
         msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
         failtype = "Finger"
     if failtype is None:
         hdob.DazMultires = True
         mod.levels = 0
-        return True
+        return 'MULTIRES'
     elif strict:
         raise DazError(msg)
     else:
@@ -541,7 +536,7 @@ def addMultires(context, ob, hdob, strict):
         LS.hdFailures.append(hdob.name)
         if failtype == "Finger":
             hdob.data = hdme
-        return False
+        return 'HIGHDEF'
 
 
 class DAZ_OT_MakeMultires(DazOperator, IsMesh):
@@ -561,13 +556,15 @@ class DAZ_OT_MakeMultires(DazOperator, IsMesh):
         if hdob is None:
             raise DazError("Two meshes must be selected, \none subdivided and one at base resolution.")
         print('Base "%s", HD "%s"' % (baseob.name, hdob.name))
-        addMultires(context, baseob, hdob, True)
-        copyUvLayers(baseob, hdob)
-        rig = baseob.parent
-        hdob.parent = rig
-        if rig and rig.type == 'ARMATURE':
-            makeArmatureModifier(rig.name, context, hdob, rig)
-        copyVertexGroups(baseob, hdob)
+        hdtype = addMultires(context, baseob, hdob, True)
+        if hdtype == 'MULTIRES':
+            copyUvLayers(baseob, hdob)
+            copyVertexGroups(baseob, hdob)
+        if hdtype != 'NONE':
+            rig = baseob.parent
+            hdob.parent = rig
+            if rig and rig.type == 'ARMATURE' and not getModifier(hdob, 'ARMATURE'):
+                makeArmatureModifier(rig.name, context, hdob, rig)
 
 
 def copyUvLayers(ob, hdob):

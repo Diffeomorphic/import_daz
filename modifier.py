@@ -452,8 +452,9 @@ class SkinBinding(Modifier):
             (GS.useHDArmature or (hdob.DazMultires and GS.useMultires))):
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
-            if not copyVertexGroups(ob, hdob):
-                LS.hdWeights.append(hdob.name)
+            if geonode.hdType == 'MULTIRES':
+                if not copyVertexGroups(ob, hdob):
+                    LS.hdWeights.append(hdob.name)
 
 
     def addVertexGroups(self, ob, geonode, rig):
