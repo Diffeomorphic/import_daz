@@ -1147,7 +1147,7 @@ class LoadMorph(DriverUser):
                     if fcu0:
                         if fcu0.driver.type == 'SUM':
                             self.recoverOldDrivers(fcu0, drivers)
-                        elif channel == "scale" and self.rig.DazInheritScale:
+                        elif channel == "scale" and inheritsScale(pb.bone):
                             fcu1 = self.findScaleSumDriver(fcu0)
                             if fcu1:
                                 self.recoverOldDrivers(fcu1, drivers)
@@ -1287,6 +1287,7 @@ class LoadMorph(DriverUser):
 
     def addScaleDriver(self, pb, idx):
         from .driver import removeModifiers
+        pb.driver_remove("scale", idx)
         fcu = pb.driver_add("scale", idx)
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
