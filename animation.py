@@ -34,7 +34,7 @@ from .error import *
 from .utils import *
 from .transform import Transform
 from .fileutils import *
-from .bone_data import *
+from .bone_data import BD
 
 #-------------------------------------------------------------
 #   Convert between frames and vectors
@@ -2077,7 +2077,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def getTwistBone(self, bname):
         if "TWIST-" + bname in self.conv.keys():
             twname = self.conv["TWIST-" + bname][0]
-            return twname, TwistDxs[twname]
+            return twname, BD.TwistDxs[twname]
         else:
             return None, 0
 

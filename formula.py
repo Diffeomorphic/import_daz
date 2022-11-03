@@ -144,6 +144,7 @@ class Formula:
                 return False
         elif rig:
             output1 = getMappedBone(output, rig)
+            print("OO", output, channel, output1)
             if output1 is None:
                 reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
                 return False

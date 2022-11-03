@@ -34,7 +34,7 @@ from .utils import *
 from .transform import Transform
 from .error import *
 from .node import Node, Instance
-from .bone_data import *
+from .bone_data import BD
 
 #-------------------------------------------------------------
 #   Alternative bone names
@@ -49,8 +49,8 @@ def getMappedBone(bname, rig):
     pg = rig.data.DazBoneMap.get(bname)
     if pg:
         return pg.s
-    if bname in BoneMap.keys():
-        return BoneMap[bname]
+    if bname in BD.BoneMap.keys():
+        return BD.BoneMap[bname]
     from .fix import getSuffixName
     sufname = getSuffixName(bname)
     if sufname in rig.pose.bones.keys():
@@ -164,8 +164,8 @@ class BoneInstance(Instance):
             eb.matrix = omat
         else:
             omat = self.flipBone(omat, head, tail, flip)
-            if self.name in RotationModes.keys():
-                self.flipped[0] = RotationModes[self.name][1]
+            if self.name in BD.RotationModes.keys():
+                self.flipped[0] = BD.RotationModes[self.name][1]
             if self.test:
                 print("FBONE", self.name, self.rotation_order, self.axes, self.flipped)
             omat.col[3][0:3] = head
@@ -261,11 +261,11 @@ class BoneInstance(Instance):
 
 
     def correctRoll(self, eb, figure):
-        if eb.name in RollCorrection.keys():
-            offset = RollCorrection[eb.name]
+        if eb.name in BD.RollCorrection.keys():
+            offset = BD.RollCorrection[eb.name]
         elif (figure.rigtype in ["genesis1", "genesis2"] and
-              eb.name in RollCorrectionG12.keys()):
-            offset = RollCorrectionG12[eb.name]
+              eb.name in BD.RollCorrectionG12.keys()):
+            offset = BD.RollCorrectionG12[eb.name]
         else:
             return
 
@@ -363,8 +363,8 @@ class BoneInstance(Instance):
 
     def getRotationMode(self, pb, useEulers):
         def getDefaultMode(pb):
-            if pb.name in RotationModes.keys():
-                return RotationModes[pb.name][0]
+            if pb.name in BD.RotationModes.keys():
+                return BD.RotationModes[pb.name][0]
             else:
                 return 'YZX'
 
@@ -372,7 +372,7 @@ class BoneInstance(Instance):
             return self.rotation_order
         elif useEulers:
             return getDefaultMode(pb)
-        elif GS.useQuaternions and pb.name in SocketBones:
+        elif GS.useQuaternions and pb.name in BD.SocketBones:
             return 'QUATERNION'
         else:
             return getDefaultMode(pb)
@@ -600,8 +600,8 @@ class Bone(Node):
             iref = unquote(iref)
             if iref in instances.keys():
                 return instances[iref]
-            elif iref in BoneMap.keys():
-                return instances.get(BoneMap[iref])
+            elif iref in BD.BoneMap.keys():
+                return instances.get(BD.BoneMap[iref])
             else:
                 return None
 
