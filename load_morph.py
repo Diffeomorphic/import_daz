@@ -529,7 +529,10 @@ class LoadMorph(DriverUser):
         bname = self.getDrivenBone(bname)
         if bname is None:
             return
-        pb = self.rig.pose.bones[bname]
+        elif bname == "RIG":
+            pb = self.rig
+        else:
+            pb = self.rig.pose.bones[bname]
         factor = expr["factor"]
         if "points" in expr.keys():
             factor = self.cheatSplineTCB(expr["points"], factor)
@@ -591,7 +594,20 @@ class LoadMorph(DriverUser):
     #   Add posebone driver
     #-------------------------------------------------------------
 
+    def addObjectDriver(self, tfm):
+        success = False
+        if tfm.scaleProp:
+            self.setFcurves(self.rig, tfm.scale-One, tfm.scaleProp, "scale")
+            success = True
+        elif tfm.generalProp:
+            self.setFcurves(self.rig, tfm.general-One, tfm.generalProp, "scale")
+            success = True
+        return success
+
+
     def addPoseboneDriver(self, pb, tfm):
+        if pb == self.rig:
+            return self.addObjectDriver(tfm)
         from .node import getBoneMatrix
         mat = getBoneMatrix(tfm, pb)
         loc,quat,scale = mat.decompose()
@@ -1147,7 +1163,7 @@ class LoadMorph(DriverUser):
                     if fcu0:
                         if fcu0.driver.type == 'SUM':
                             self.recoverOldDrivers(fcu0, drivers)
-                        elif channel == "scale" and inheritsScale(pb.bone):
+                        elif channel == "scale" and inheritsScale(pb):
                             fcu1 = self.findScaleSumDriver(fcu0)
                             if fcu1:
                                 self.recoverOldDrivers(fcu1, drivers)
@@ -1292,7 +1308,7 @@ class LoadMorph(DriverUser):
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
         prop = self.getFinalScaleProp(pb, idx)
-        if pb.parent and inheritsScale(pb.bone):
+        if inheritsScale(pb) and pb.parent:
             fcu.driver.expression = "(1+a)/parscale"
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
             self.correctScaleFcurve(fcu, pb, idx)
@@ -1316,7 +1332,7 @@ class LoadMorph(DriverUser):
     def correctScaleParents(self):
         from .driver import getDriver, removeModifiers
         for pb in self.rig.pose.bones:
-            if inheritsScale(pb.bone) and pb.parent:
+            if inheritsScale(pb) and pb.parent:
                 parchannel = 'pose.bones["%s"].scale' % pb.parent.name
                 channel = 'pose.bones["%s"].scale' % pb.name
                 for idx in range(3):

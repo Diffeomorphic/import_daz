@@ -144,15 +144,16 @@ class Formula:
                 return False
         elif rig:
             output1 = getMappedBone(output, rig)
-            print("OO", output, channel, output1)
             if output1 is None:
                 reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
                 return False
             else:
                 output = output1
-            if output not in rig.pose.bones.keys():
+            if output in rig.pose.bones.keys():
+                pb = rig.pose.bones[output]
+            elif output != "RIG":
                 return False
-            pb = rig.pose.bones[output]
+
 
         path,idx,default = self.parseChannel(channel)
         expr = setFormulaExpr(exprs, output, path, channel, idx, fileref)

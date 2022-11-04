@@ -119,6 +119,7 @@ class BoneData:
         #-------------------------------------------------------------
 
         self.BoneMap = {
+            "Genesis9" : "RIG",
 
             "abdomen" : "abdomenLower",
             "abdomen2" : "abdomenUpper",

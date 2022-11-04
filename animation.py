@@ -1159,7 +1159,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             return
         for frame,smats in self.scales.items():
             for pb in rig.pose.bones:
-                if pb.parent and inheritsScale(pb.bone) and self.isAvailable(pb, rig):
+                if pb.parent and inheritsScale(pb) and self.isAvailable(pb, rig):
                     smat = smats[pb.name] @ smats[pb.parent.name].inverted()
                     pb.scale = smat.to_scale()
                     if self.useInsertKeys:
@@ -1973,7 +1973,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                         smat = Matrix.Diagonal(scale)
                         if (pb.parent and
                             pb.parent.name in smats.keys() and
-                            inheritsScale(pb.bone)):
+                            inheritsScale(pb)):
                             psmat = smats[pb.parent.name]
                             smat = smat @ psmat
                         mat = mat @ smat.to_4x4()
