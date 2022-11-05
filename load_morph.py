@@ -637,7 +637,10 @@ class LoadMorph(DriverUser):
 
     def setFcurves(self, pb, vec, prop, channel, pose="pose"):
         def getBoneFcurves(pb, channel):
-            path = '%s.bones["%s"].%s' % (pose, pb.name, channel)
+            if isinstance(pb, bpy.types.Object):
+                path = channel
+            else:
+                path = '%s.bones["%s"].%s' % (pose, pb.name, channel)
             fcurves = {}
             if self.rig.animation_data:
                 for fcu in self.rig.animation_data.drivers:
@@ -1163,10 +1166,11 @@ class LoadMorph(DriverUser):
                     if fcu0:
                         if fcu0.driver.type == 'SUM':
                             self.recoverOldDrivers(fcu0, drivers)
-                        elif channel == "scale" and inheritsScale(pb):
+                        elif channel == "scale":
                             fcu1 = self.findScaleSumDriver(fcu0)
                             if fcu1:
                                 self.recoverOldDrivers(fcu1, drivers)
+                                self.amt.driver_remove(fcu1.data_path, fcu1.array_index)
                         else:
                             path = self.getOrigo(fcu0, pb, channel, idx)
                             pathids[path] = 'ARMATURE'
