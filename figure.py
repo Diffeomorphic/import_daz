@@ -1139,7 +1139,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         for prefix in ["l", "r"]:
             if self.useArms:
                 table = {
-                    "G12" : (prefix+"Hand", prefix+"HandIK", prefix+"Forearm", prefix+"Collar", prefix+"Elbow"),
+                    "G12" : (prefix+"Hand", prefix+"HandIK", prefix+"ForeArm", prefix+"Collar", prefix+"Elbow"),
                     "G38" : (prefix+"Hand", prefix+"HandIK", prefix+"ForearmBend", prefix+"Collar", prefix+"Elbow"),
                     "G9" : (prefix+"_hand", prefix+"_handIK", prefix+"_forearm", prefix+"_shoulder", prefix+"_elbow"),
                 }
