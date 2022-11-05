@@ -490,53 +490,64 @@ def addMultires(context, ob, hdob, strict):
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
         return 'HIGHDEF'
+    nverts = len(ob.data.vertices)
+    nhdverts = len(hdob.data.vertices)
+    if nverts == nhdverts:
+        print("Not a HD object: %s" % hdob.name)
+        return
     activateObject(context, hdob)
     hdme = hdob.data.copy()
     setMode('EDIT')
     bpy.ops.mesh.delete_loose()
     setMode('OBJECT')
+
     nmods = len(hdob.modifiers)
     mod = hdob.modifiers.new("Multires", 'MULTIRES')
     for n in range(nmods-1):
         bpy.ops.object.modifier_move_up(modifier=mod.name)
-    nhdverts = len(hdob.data.vertices)
     try:
         bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
-        failtype = None
+        ok = True
     except RuntimeError:
-        msg = ('Cannot rebuild subdivisions for "%s"' % hdob.name)
-        failtype = "Runtime"
-    nverts = len(ob.data.vertices)
-    finger = getFingerPrint(ob)
-    hdfinger = getFingerPrint(hdob)
-    if len(hdob.data.vertices) < nverts:
+        ok = False
+    if ok:
+        finger = getFingerPrint(ob)
+        hdfinger = getFingerPrint(hdob)
+        if hdfinger == finger:
+            print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
+            hdob.DazMultires = True
+            mod.levels = 0
+            return 'MULTIRES'
+
+    nhdverts = len(hdob.data.vertices)
+    if nhdverts < nverts:
+        hdob.data = hdme.copy()
+        nhdverts = len(hdob.data.vertices)
         factor = math.sqrt(nhdverts/nverts)
         levels = int(round(math.log(factor, 2)))
-        print("Adding multires to HD mesh %s: %f %d" % (hdob.name, factor, levels))
         hdob.modifiers.remove(mod)
-        hdob.data = ob.data.copy()
+        print('Unsubdivide "%s": %f %d %d' % (hdob.name, factor, levels, nhdverts))
         mod = hdob.modifiers.new("Multires", 'MULTIRES')
         for n in range(levels):
-            bpy.ops.object.multires_subdivide(modifier=mod.name, mode='CATMULL_CLARK')
-        mod.levels = 0
-        hdob.DazMultires = True
-        return 'SAME'
-    elif hdfinger != finger:
-        msg = ('Multires mesh "%s" does not match "%s"' % (hdob.name, ob.name))
-        failtype = "Finger"
-    if failtype is None:
-        hdob.DazMultires = True
-        mod.levels = 0
-        return 'MULTIRES'
-    elif strict:
+            try:
+                print("  Step %d" % n)
+                bpy.ops.object.multires_unsubdivide(modifier="Multires")
+            except RuntimeError:
+                pass
+        hdfinger = getFingerPrint(hdob)
+        if hdfinger == finger:
+            print('Rebuilt %d subdiv levels for "%s"' % (mod.render_levels, hdob.name))
+            hdob.DazMultires = True
+            mod.sculpt_levels = mod.render_levels
+            return 'MULTIRES'
+
+    msg = ('Cannot unsubdivide "%s"' % hdob.name)
+    if strict:
         raise DazError(msg)
-    else:
-        reportError(msg, trigger=(2,4))
-        hdob.modifiers.remove(mod)
-        LS.hdFailures.append(hdob.name)
-        if failtype == "Finger":
-            hdob.data = hdme
-        return 'HIGHDEF'
+    reportError(msg, trigger=(2,4))
+    hdob.modifiers.remove(mod)
+    LS.hdFailures.append(hdob.name)
+    return 'HIGHDEF'
 
 
 class DAZ_OT_MakeMultires(DazOperator, IsMesh):
