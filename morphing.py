@@ -735,6 +735,21 @@ class MorphPaths:
                 return True, name
         return False, name
 
+
+    def getAllMorphFiles(self, chars, morphset, strict=False):
+        files = {}
+        for char in chars:
+            if (char in self.morphFiles.keys() and
+                morphset in self.morphFiles[char].keys()):
+                files[char] = self.morphFiles[char][morphset]
+        if files:
+            return files,""
+        msg = ("Characters %s does not support feature %s" % (chars, morphset))
+        if strict:
+            raise DazError(msg)
+        return files,msg
+
+
 MP = MorphPaths()
 
 #------------------------------------------------------------------
@@ -836,7 +851,7 @@ class MorphLoader(LoadMorph):
 
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacters
-        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
+        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(bpy.context.object, GS.useModifiedMesh)
         if mesh:
             self.meshes = [mesh]
 
@@ -984,23 +999,14 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
 
     def setupCharacter(self, context):
         ob = context.object
-        if not self.char:
+        if not self.chars:
             msg = ("Can not add morphs to this mesh:\n %s" % ob.name)
             invokeErrorMessage(msg)
             return False
         return True
 
-
     def findPropGroup(self, prop):
         return getattr(self.rig, "Daz"+self.morphset)
-
-
-    def getMorphFiles(self):
-        try:
-            return MP.morphFiles[self.char][self.morphset]
-        except KeyError:
-            return []
-
 
     def getPaths(self, context):
         return
@@ -1010,13 +1016,36 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
         global theAdjusters
         self.adjuster = theAdjusters[self.morphset]
         MP.setupMorphPaths(False)
+        msg = None
         if self.rig:
             self.rig.DazMorphPrefixes = False
             self.findIked()
-        namepaths = self.getActiveMorphFiles(context)
-        msg = self.getAllMorphs(namepaths, context, True)
+        for mesh in self.meshes:
+            self.mesh = mesh
+            self.char = mesh.DazMesh
+            namepaths = self.getActiveMorphFiles()
+            print("MM", mesh.name, namepaths)
+            msg = self.getAllMorphs(namepaths, context, True)
         if msg:
             raise DazError(msg, warning=True)
+
+
+    def getActiveMorphFiles(self):
+        namepaths = []
+        morphFiles = self.morphFiles.get(self.char)
+        if morphFiles is None:
+            return []
+        elif LS.theFilePaths:
+            for path in LS.theFilePaths:
+                text = os.path.splitext(os.path.basename(path))[0]
+                namepaths.append((text, path, self.bodypart))
+        else:
+            for item in self.getSelectedItems():
+                key = item.name
+                path = morphFiles.get(key)
+                if path:
+                    namepaths.append((item.text, path, self.bodypart))
+        return namepaths
 
 #------------------------------------------------------------------------
 #   Import general morph or driven pose
@@ -1036,18 +1065,6 @@ class StandardMorphSelector(Selector):
         else:
             row.label(text="")
 
-    def getActiveMorphFiles(self, context):
-        namepaths = []
-        if LS.theFilePaths:
-            for path in LS.theFilePaths:
-                text = os.path.splitext(os.path.basename(path))[0]
-                namepaths.append((text, path, self.bodypart))
-        else:
-            for item in self.getSelectedItems():
-                namepaths.append((item.text, item.name, self.bodypart))
-        return namepaths
-
-
     def isActive(self, name, scn):
         return True
 
@@ -1060,21 +1077,20 @@ class StandardMorphSelector(Selector):
         if not self.setupCharacter(context):
             return {'FINISHED'}
         MP.setupMorphPaths(False)
-        try:
-            pgs = MP.morphFiles[self.char][self.morphset]
-            nosupport = False
-        except KeyError:
-            nosupport = True
-        if nosupport:
-            msg = ("Character %s does not support feature %s" % (self.char, self.morphset))
+        self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
+        if not self.morphFiles:
             invokeErrorMessage(msg)
             return {'CANCELLED'}
-        for key,path in pgs.items():
-            item = self.selection.add()
-            item.name = path
-            item.text = key
-            item.category = self.morphset
-            item.select = True
+        print("FF", self.morphFiles.keys())
+        for char,struct in self.morphFiles.items():
+            print("CC", char)
+            for key,path in struct.items():
+                if key not in self.selection.keys():
+                    item = self.selection.add()
+                    item.name = key
+                    item.text = key
+                    item.category = self.morphset
+                    item.select = True
         return self.invokeDialog(context)
 
 
@@ -1334,11 +1350,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     def loadMorphType(self, context, use, morphset, bodypart):
         if not use:
             return
-        try:
-            struct = MP.morphFiles[self.char][morphset]
-        except KeyError:
-            msg = ("Character %s does not support feature %s" % (self.char, morphset))
-            print(msg)
+        files,msg = MP.getAllMorphFiles(self.chars, morphset)
+        if not files:
             return
         print("Load %s" % morphset)
         if morphset == "Body" and self.useMhxOnly:

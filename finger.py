@@ -125,17 +125,31 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
         return ob.parent,[ob],chars,modded
 
     elif ob.type == 'ARMATURE':
+        def addChar(finger, mesh):
+            char = FingerPrints.get(finger)
+            if char:
+                if char.startswith("Genesis"):
+                    meshes0.append(child)
+                    chars0.append(char)
+                else:
+                    meshes.append(child)
+                    chars.append(char)
+            return char
+
         meshes = []
+        chars = []
+        meshes0 = []
+        chars0 = []
         modded = False
         for child in ob.children:
             if child.type == 'MESH':
                 finger = getFingerPrint(child)
-                if finger in FingerPrints.keys():
-                    meshes.append(child)
-                    chars.append(FingerPrints[finger])
-                elif useOrig and child.data.DazFingerPrint in FingerPrints.keys():
-                    meshes.append(child)
-                    chars.append(child.data.DazFingerPrint)
+                if addChar(finger, child):
+                    pass
+                elif useOrig:
+                    addChar(child.data.DazFingerPrint, child)
+        meshes = meshes0 + meshes
+        chars = chars0 + chars
         return ob,meshes,chars,modded
 
     elif ob.parent and ob.parent.type == 'ARMATURE':

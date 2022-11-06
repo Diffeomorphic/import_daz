@@ -52,6 +52,7 @@ class LoadMorph(DriverUser):
     def __init__(self, rig, mesh):
         self.rig = rig
         self.mesh = mesh
+        self.char = None
         self.initAmt()
         self.mult = []
         self.mults = {}
