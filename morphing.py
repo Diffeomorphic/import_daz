@@ -844,10 +844,10 @@ class MorphLoader(LoadMorph):
         description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
-    useTransferLashes : BoolProperty(
+    useTransferFace : BoolProperty(
         name = "Transfer To Face Meshes",
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
-        default = False)
+        default = True)
 
     def __init__(self, rig=None, mesh=None):
         from .finger import getFingeredCharacters
@@ -904,7 +904,12 @@ class MorphLoader(LoadMorph):
         else:
             raise DazError("No morphs selected")
         self.loadAllMorphs(namepaths)
+        self.finishLoading(namepaths, context, t1, usePosable)
+
+
+    def finishLoading(self, namepaths, context, t1, usePosable):
         t2 = perf_counter()
+        folder = os.path.dirname(namepaths[0][0])
         print("Folder %s loaded in %.3f seconds" % (folder, t2-t1))
         if LS.targetCharacter:
             msg = "Morphs made for %s" % LS.targetCharacter
@@ -921,7 +926,7 @@ class MorphLoader(LoadMorph):
         if usePosable and self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
-        if self.faceshapes and self.useTransferLashes and self.rig and self.mesh:
+        if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
             self.transferToLashes(context)
         if msg:
             print(msg)
@@ -979,6 +984,7 @@ class MorphLoader(LoadMorph):
         from .main import getMatchingMeshes
         keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
         meshes = getMatchingMeshes(self.rig, self.mesh, "head", keys)
+        meshes = [mesh for mesh in meshes if mesh not in self.loadedMeshes]
         if meshes:
             print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
             activateObject(context, self.mesh)
@@ -1016,18 +1022,23 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
         global theAdjusters
         self.adjuster = theAdjusters[self.morphset]
         MP.setupMorphPaths(False)
-        msg = None
+        self.errors = {}
+        self.loadedMeshes = []
+        t1 = perf_counter()
         if self.rig:
             self.rig.DazMorphPrefixes = False
             self.findIked()
+        self.meshes.reverse()
         for mesh in self.meshes:
             self.mesh = mesh
             self.char = mesh.DazMesh
             namepaths = self.getActiveMorphFiles()
-            print("MM", mesh.name, namepaths)
-            msg = self.getAllMorphs(namepaths, context, True)
-        if msg:
-            raise DazError(msg, warning=True)
+            print("Load %d morphs to %s" % (len(namepaths), mesh.name))
+            LS.forMorphLoad(mesh)
+            if namepaths:
+                self.loadAllMorphs(namepaths)
+                self.loadedMeshes.append(mesh)
+        self.finishLoading(namepaths, context, t1, False)
 
 
     def getActiveMorphFiles(self):
@@ -1057,7 +1068,7 @@ class StandardMorphSelector(Selector):
         row = self.layout.row()
         row.prop(self, "useMakePosable")
         if self.bodypart == "Face":
-            row.prop(self, "useTransferLashes")
+            row.prop(self, "useTransferFace")
         row.prop(self, "useAdjusters")
         row.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
@@ -1124,10 +1135,20 @@ class DAZ_OT_ImportVisemes(DazOperator, StandardMorphSelector, StandardMorphLoad
     bodypart = "Face"
 
 
+class DAZ_OT_ImportHead(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+    bl_idname = "daz.import_head"
+    bl_label = "Import Head"
+    bl_description = "Import selected head morphs"
+    bl_options = {'UNDO'}
+
+    morphset = "Head"
+    bodypart = "Face"
+
+
 class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_facs"
-    bl_label = "Import FACS Units"
-    bl_description = "Import selected FACS unit morphs"
+    bl_label = "Import FACS"
+    bl_description = "Import selected FACS morphs"
     bl_options = {'UNDO'}
 
     morphset = "Facs"
@@ -1319,7 +1340,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         MorphTypeOptions.draw(self, context)
         self.layout.separator()
         MorphSuffix.draw(self, context)
-        self.layout.prop(self, "useTransferLashes")
+        self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useMakePosable")
 
@@ -1459,14 +1480,14 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
         if self.bodypart == "Face":
-            self.layout.prop(self, "useTransferLashes")
+            self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "treatHD")
         self.layout.prop(self, "useMakePosable")
 
 
     def invoke(self, context, event):
         from .fileutils import getFoldersFromObject
-        folders = getFoldersFromObject(self.mesh, ["Morphs/"])
+        folders = getFoldersFromObject(self.meshes[0], ["Morphs/"])
         if not folders:
             folders = getFoldersFromObject(self.rig, ["Morphs/"])
         if folders:
@@ -1476,9 +1497,33 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
     def run(self, context):
         from .uilist import updateScrollbars
+        from .finger import replaceHomeDir
         self.findIked()
-        namepaths = self.getNamePaths()
-        msg = self.getAllMorphs(namepaths, context, True)
+        self.errors = {}
+        self.loadedMeshes = []
+        t1 = perf_counter()
+        namepaths0 = self.getNamePaths()
+        mesh0 = self.meshes[0]
+        char0 = mesh0.DazMesh
+        meshlist = list(enumerate(self.meshes))
+        meshlist.reverse()
+        for n,mesh in meshlist:
+            self.mesh = mesh
+            self.char = mesh.DazMesh
+            if n == 0:
+                namepaths = namepaths0
+            else:
+                namepaths = []
+                for key,path0,bodypart in namepaths0:
+                    path = replaceHomeDir(path0, char0, self.char)
+                    if path:
+                        namepaths.append((key, path, bodypart))
+            print("Load %d morphs to %s" % (len(namepaths), mesh.name))
+            LS.forMorphLoad(mesh)
+            if namepaths:
+                self.loadAllMorphs(namepaths)
+                self.loadedMeshes.append(mesh)
+
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True
         elif self.useMeshCats and self.shapekeys:
@@ -1486,8 +1531,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             addToCategories(self.mesh, props, self.category)
             self.mesh.DazMeshMorphs = True
         updateScrollbars(context.scene)
-        if msg:
-            raise DazError(msg, warning=True)
+        self.finishLoading(namepaths, context, t1, False)
 
 
     def getNamePaths(self):
@@ -3397,6 +3441,7 @@ classes = [
     DAZ_OT_ImportUnits,
     DAZ_OT_ImportExpressions,
     DAZ_OT_ImportVisemes,
+    DAZ_OT_ImportHead,
     DAZ_OT_ImportFacs,
     DAZ_OT_ImportFacsDetails,
     DAZ_OT_ImportFacsExpressions,

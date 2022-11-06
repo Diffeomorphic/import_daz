@@ -1,0 +1,23 @@
+{
+	"name" : "Lashes81-male",
+	"hd-morphs" : true,
+	"head" : {
+		"prefix" : "phm",
+		"include" : ["phm"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 8/Male 8_1 Eyelashes/Morphs/DAZ 3D/Head/"
+	},
+	"facs" : {
+		"prefix" : "facs_",
+		"include" : ["facs_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 8/Male 8_1 Eyelashes/Morphs/Daz 3D/FACS/"
+	},
+	"facsexpr" : {
+		"prefix" : ["facs_ctrl_"],
+		"include" : ["facs_ctrl_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 8/Male 8_1 Eyelashes/Morphs/Daz 3D/FACSExpressions/"
+	}
+}	
+		

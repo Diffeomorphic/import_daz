@@ -78,14 +78,12 @@ class FigureInstance(Instance):
     def finalize(self, context):
         from .finger import getFingeredCharacters
         rig,meshes,chars,modded = getFingeredCharacters(self.rna, False)
-        print("FF", meshes, chars)
         if rig and meshes:
             mesh = meshes[0]
             char = chars[0]
             if (char.startswith("Genesis") and
                 mesh.name in [self.name, "%s.001" % self.name]):
                 mesh.name = "%s Mesh" % self.name
-                print("RR", mesh)
             for mesh,char in zip(meshes, chars):
                 mesh.DazMesh = char
             self.poseChildren(rig, rig)

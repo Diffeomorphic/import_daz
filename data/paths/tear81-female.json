@@ -1,17 +1,17 @@
 {
-	"name" : "Tear8-male",
+	"name" : "Tear81-female",
 	"hd-morphs" : true,
 	"facs" : {
 		"prefix" : "facs_",
 		"include" : ["facs_"],
 		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 8/Male 8_1 Tear/Morphs/Daz 3D/FACS/"
+		"path" : "data/DAZ 3D/Genesis 8/Female 8_1 Tear/Morphs/Daz 3D/FACS/"
 	},
 	"facsexpr" : {
 		"prefix" : ["facs_ctrl_"],
 		"include" : ["facs_ctrl_"],
 		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 8/Male 8_1 Tear/Morphs/Daz 3D/FACSExpressions/"
+		"path" : "data/DAZ 3D/Genesis 8/Female 8_1 Tear/Morphs/Daz 3D/FACSExpressions/"
 	}
 }	
 		

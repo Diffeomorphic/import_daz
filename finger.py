@@ -25,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
+import os
 import bpy
 from .utils import *
 from .error import *
@@ -33,15 +33,17 @@ from .error import *
 #-------------------------------------------------------------
 #   Fingerprints
 #-------------------------------------------------------------
-#5670-13025-7459
+
 FingerPrints = {
     "19296-38115-18872" : "Genesis",
-    "21556-42599-21098" : "Genesis2-female",
-    #"21556-42599-21098" : "Genesis2-male",
+    "21556-42599-21098" : ("Genesis2-female", "Genesis2-male"),
     "17418-34326-17000" : "Genesis3-female",
     "17246-33982-16828" : "Genesis3-male",
     "16556-32882-16368" : "Genesis8-female",
+    "464-804-352" : ("Lashes8-female", "Lashes8-male"),
     "16384-32538-16196" : "Genesis8-male",
+    "1128-1440-438" : ("Lashes81-female", "Lashes81-male"),
+    "212-376-164" : ("Tear81-female", "Tear81-male"),
 
     "25182-50338-25156" : "Genesis9",
     "2120-4224-2112" : "Eyes9",
@@ -51,6 +53,29 @@ FingerPrints = {
 
 }
 
+HomeDirs = {
+    "Genesis" : "data/DAZ 3D/Genesis/Base/Morphs",
+    "Genesis2-female" : "data/DAZ 3D/Genesis 2/Female/Morphs",
+    "Genesis2-male" : "data/DAZ 3D/Genesis 2/Male/Morphs",
+    "Genesis3-female" : "data/DAZ 3D/Genesis 3/Female/Morphs",
+    "Genesis3-male" : "data/DAZ 3D/Genesis 3/Male/Morphs",
+    "Genesis8-female" : "data/DAZ 3D/Genesis 8/Female/Morphs",
+    "Genesis8-male" : "data/DAZ 3D/Genesis 8/Male/Morphs",
+    "Genesis81-female" : "data/DAZ 3D/Genesis 8/Female 8_1/Morphs",
+    "Genesis81-male" : "data/DAZ 3D/Genesis 8/Male 8_1/Morphs",
+    "Lashes8-female" : "data/DAZ 3D/Genesis 8/Female Eyelashes/Morphs",
+    "Lashes8-male" : "data/DAZ 3D/Genesis 8/Male Eyelashes/Morphs",
+    "Lashes81-female" : "data/DAZ 3D/Genesis 8/Female 8_1 Eyelashes/Morphs",
+    "Lashes81-male" : "data/DAZ 3D/Genesis 8/Male 8_1 Eyelashes/Morphs",
+    "Tear81-female" : "data/DAZ 3D/Genesis 8/Female 8_1 Tear/Morphs",
+    "Tear81-male" : "data/DAZ 3D/Genesis 8/Male 8_1 Tear/Morphs",
+    "Genesis9" : "data/DAZ 3D/Genesis 9/Base/Morphs",
+    "Eyes9" : "data/DAZ 3D/Genesis 9/Genesis 9 Eyes/Morphs",
+    "Lashes9" : "data/DAZ 3D/Genesis 9/Genesis 9 Eyelashes/Morphs",
+    "Tear9" : "data/DAZ 3D/Genesis 9/Genesis 9 Tear/Morphs",
+    "Mouth9" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs",
+}
+
 VertexCounts = {
     19296 : "Genesis (male or female)",
     21556 : "Genesis 2 (male or female)",
@@ -58,6 +83,9 @@ VertexCounts = {
     17246 : "Genesis 3 male",
     16556 : "Genesis 8 female",
     16384 : "Genesis 8 male",
+    464 : "Genesis 8 eyelashes",
+    1128 : "Genesis 8.1 eyelashes",
+    212 : "Genesis 8.1 tear",
     25182 : "Genesis 9 (male or female)",
     2120 : "Genesis 9 eyes",
     2028 : "Geneis 9 eyelashes",
@@ -108,26 +136,41 @@ def getFingerPrint(ob):
 
 
 def getFingeredCharacters(ob, useOrig, verbose=True):
+    def getSingleChar(rig, char):
+        if isinstance(char, tuple):
+            url = rig.DazUrl.rsplit("#",1)[-1]
+            if url.startswith("Genesis"):
+                if "Female" in url:
+                    return char[0]
+                elif "Male" in url:
+                    return char[1]
+            else:
+                return char[0]
+        return char
+
     modded = False
+    char = None
     if ob is None:
         return None,[],[],False
     elif ob.type == 'MESH':
         finger = getFingerPrint(ob)
         if finger in FingerPrints.keys():
-            chars = [FingerPrints[finger]]
+            char = FingerPrints[finger]
         elif useOrig and ob.data.DazFingerPrint in FingerPrints.keys():
-            chars = [FingerPrints[ob.data.DazFingerPrint]]
+            char = FingerPrints[ob.data.DazFingerPrint]
             modded = True
         else:
             if verbose:
                 print("Did not find fingerprint", finger)
-            chars = []
+        if char:
+            chars = [getSingleChar(ob.parent, char)]
         return ob.parent,[ob],chars,modded
 
     elif ob.type == 'ARMATURE':
         def addChar(finger, mesh):
             char = FingerPrints.get(finger)
             if char:
+                char = getSingleChar(ob, char)
                 if char.startswith("Genesis"):
                     meshes0.append(child)
                     chars0.append(char)
@@ -170,6 +213,18 @@ def isGenesis9Eyes(ob, hdob):
         return (char[1] == 0)
     else:
         return False
+
+
+def replaceHomeDir(path0, char0, char):
+    if char0 and char:
+        homedir0 = HomeDirs[char0].lower()
+        homedir = HomeDirs[char].lower()
+        path0 = path0.lower().replace("\\", "/")
+        if homedir0 in path0:
+            path = path0.replace(homedir0, homedir)
+            if os.path.exists(path):
+                return path
+    return None
 
 
 class DAZ_OT_GetFingerPrint(bpy.types.Operator, IsMeshArmature):

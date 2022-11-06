@@ -1,5 +1,5 @@
 {
-	"name" : "Genesis 8 Female Eyelashes",
+	"name" : "Lashes8-female",
 	"hd-morphs" : true,
 	"units" : {
 		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
@@ -18,18 +18,6 @@
 		"include" : ["phm"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 8/Female Eyelashes/Morphs/DAZ 3D/Head/"
-	},
-	"facs" : {
-		"prefix" : "facs_",
-		"include" : ["facs_"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 8/Female 8_1 Eyelashes/Morphs/Daz 3D/FACS/"
-	},
-	"facsexpr" : {
-		"prefix" : ["facs_ctrl_"],
-		"include" : ["facs_ctrl_"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 8/Female 8_1 Eyelashes/Morphs/Daz 3D/FACSExpressions/"
 	}
 }	
 		

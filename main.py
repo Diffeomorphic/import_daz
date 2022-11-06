@@ -639,7 +639,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Useful if the character is baked"),
         default = False)
 
-    useTransferLashes : BoolProperty(
+    useTransferFace : BoolProperty(
         name = "Transfer To Face Meshes",
         description = (
             "Automatically transfer shapekeys to face meshes\n" +
@@ -696,7 +696,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.facsexpr or
             self.jcms or
             self.flexions):
-            self.layout.prop(self, "useTransferLashes")
+            self.layout.prop(self, "useTransferFace")
             self.layout.prop(self, "useTransferShapes")
         self.layout.separator()
         self.layout.prop(self, "useSoftbody")
@@ -887,7 +887,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters,
-                        useTransferLashes = self.useTransferLashes)
+                        useTransferFace = self.useTransferFace)
             if (self.units or
                   self.expressions or
                   self.visemes or
@@ -910,7 +910,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         jcms = self.jcms,
                         flexions = self.flexions,
                         useAdjusters = self.useAdjusters,
-                        useTransferLashes = self.useTransferLashes)
+                        useTransferFace = self.useTransferFace)
 
         # Add softbody simulation
         if self.useSoftbody and mainMesh and activateObject(context, mainMesh):
