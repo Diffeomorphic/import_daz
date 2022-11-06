@@ -1,0 +1,35 @@
+{
+	"name" : "Mouth 9",
+	"hd-morphs" : true,
+	"head" : {
+		"prefix" : "head_",
+		"include" : ["head_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/DAZ 3D/Head Asymmetry/"
+	},
+	"facs" : {
+		"prefix" : "facs_",
+		"include" : ["facs_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/Daz 3D/FACS/"
+	},
+	"facsdetails" : {
+		"prefix" : "facsdetails_facs_",
+		"include" : ["facsdetails_facs_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/Daz 3D/FACS Details/"
+	},
+	"facsexpr" : {
+		"prefix" : ["facs_ctrl_"],
+		"include" : ["facs_ctrl_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/Daz 3D/FACSExpressions/"
+	},
+	"flexions" : {
+		"prefix" : "body_",
+		"include" : ["body_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/DAZ 3D/Base Flexions/"
+	}
+}	
+		
