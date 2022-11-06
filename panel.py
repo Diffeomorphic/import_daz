@@ -116,7 +116,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
                 return
             self.layout.operator("daz.import_units")
             self.layout.operator("daz.import_expressions")
-            #self.layout.operator("daz.import_visemes")
+            self.layout.operator("daz.import_visemes")
             self.layout.operator("daz.import_head")
             self.layout.operator("daz.import_facs")
             self.layout.operator("daz.import_facs_details")
@@ -664,9 +664,6 @@ class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     ftype = "DazUnits"
     uilist = "DAZ_UL_Units"
 
-    def draw(self, context):
-        self.layout.operator("daz.load_moho")
-        DAZ_PT_Morphs.draw(self, context)
 
 class DAZ_UL_Head(DAZ_UL_StandardMorphs):
     morphset = "Head"

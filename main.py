@@ -891,6 +891,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if (self.units or
                   self.expressions or
                   self.visemes or
+                  self.head or
                   self.facs or
                   self.facsdetails or
                   self.facsexpr or
@@ -902,6 +903,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         units = self.units,
                         expressions = self.expressions,
                         visemes = self.visemes,
+                        head = self.head,
                         facs = self.facs,
                         facsdetails = self.facsdetails,
                         facsexpr = self.facsexpr,

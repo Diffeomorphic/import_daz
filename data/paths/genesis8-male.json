@@ -3,7 +3,7 @@
 	"hd-morphs" : true,
 	"units" : {
 		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
-		"include" : ["ectrl", "ctrl", "phm", "ephm"],
+		"include" : "units",
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 8/Male/Morphs/DAZ 3D/Base Pose Head/"
 	},
@@ -12,6 +12,12 @@
 		"include" : ["ectrl", "ejcm", "ephm"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 8/Male/Morphs/DAZ 3D/Expressions/"
+	},
+	"visemes" : {
+		"prefix" : "ectrlv",
+		"include" : ["ectrlv"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 8/Male/Morphs/DAZ 3D/Base Pose Head/"
 	},
 	"head" : {
 		"prefix" : "phm",

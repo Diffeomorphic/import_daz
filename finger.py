@@ -162,8 +162,7 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
         else:
             if verbose:
                 print("Did not find fingerprint", finger)
-        if char:
-            chars = [getSingleChar(ob.parent, char)]
+        chars = [getSingleChar(ob.parent, char)]
         return ob.parent,[ob],chars,modded
 
     elif ob.type == 'ARMATURE':
@@ -201,18 +200,9 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
 
 
 def isCharacter(ob):
-    return getFingeredCharacter(ob, False, verbose=False)[2]
-
-
-def isGenesis9Eyes(ob, hdob):
-    finger = getFingerPrint(ob)
-    hdfinger = getFingerPrint(hdob)
-    char = FingerPrintsHD.get(finger)
-    hdchar = FingerPrintsHD.get(hdfinger)
-    if char and hdchar and char[0] == "Genesis9-eyes" and hdchar[0] == "Genesis9-eyes":
-        return (char[1] == 0)
-    else:
-        return False
+    chars = getFingeredCharacters(ob, False, verbose=False)[2]
+    char = chars[0]
+    return (char and char.startswith("Genesis"))
 
 
 def replaceHomeDir(path0, char0, char):

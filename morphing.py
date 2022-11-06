@@ -44,7 +44,7 @@ from .fileutils import DazExporter
 #   Morph sets
 #-------------------------------------------------------------
 
-theStandardMorphSets = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
+theStandardMorphSets = ["Standard", "Units", "Expressions", "Head", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
 theCustomMorphSets = ["Custom"]
 theJCMMorphSets = ["Jcms", "Flexions"]
 theMorphSets = theStandardMorphSets + theCustomMorphSets + theJCMMorphSets + ["Visibility"]
@@ -54,6 +54,7 @@ theAdjusters = {
     "Custom" : "Adjust Custom",
     "Units" : "Adjust Units",
     "Expressions" : "Adjust Expressions",
+    "Head" : "Adjust Head",
     "Visemes" : "Adjust Visemes",
     "Facs" : "Adjust FACS",
     "Facsdetails" : "Adjust FACS Details",
@@ -616,7 +617,7 @@ class MorphPaths:
     def __init__(self):
         self.morphFiles = {}
         self.morphNames = {}
-        self.ShortForms["units"] = self.ShortForms["ctrlunits"] + self.ShortForms["ectrlunits"] + ShortForms["phmunits"]
+        self.ShortForms["units"] = self.ShortForms["ctrlunits"] + self.ShortForms["ectrlunits"] + self.ShortForms["phmunits"]
 
 
     def getMorphPaths(self, char):
@@ -884,8 +885,6 @@ class MorphLoader(LoadMorph):
 
 
     def getAllMorphs(self, namepaths, context, usePosable):
-        from time import perf_counter
-
         if self.mesh:
             ob = self.mesh
         elif self.rig:
@@ -895,7 +894,6 @@ class MorphLoader(LoadMorph):
         LS.forMorphLoad(ob)
         if not self.usePropDrivers:
             self.rig = None
-
         self.errors = {}
         t1 = perf_counter()
         if namepaths:
@@ -908,6 +906,8 @@ class MorphLoader(LoadMorph):
 
 
     def finishLoading(self, namepaths, context, t1, usePosable):
+        if not namepaths:
+            return
         t2 = perf_counter()
         folder = os.path.dirname(namepaths[0][0])
         print("Folder %s loaded in %.3f seconds" % (folder, t2-t1))
@@ -1019,16 +1019,22 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
 
 
     def run(self, context):
-        global theAdjusters
-        self.adjuster = theAdjusters[self.morphset]
         MP.setupMorphPaths(False)
         self.errors = {}
         self.loadedMeshes = []
+        self.meshes.reverse()
         t1 = perf_counter()
+        namepaths = self.loadStandardMorphs()
+        self.finishLoading(namepaths, context, t1, False)
+
+
+    def loadStandardMorphs(self):
+        global theAdjusters
         if self.rig:
             self.rig.DazMorphPrefixes = False
             self.findIked()
-        self.meshes.reverse()
+        self.adjuster = theAdjusters[self.morphset]
+        namepaths = []
         for mesh in self.meshes:
             self.mesh = mesh
             self.char = mesh.DazMesh
@@ -1038,7 +1044,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             if namepaths:
                 self.loadAllMorphs(namepaths)
                 self.loadedMeshes.append(mesh)
-        self.finishLoading(namepaths, context, t1, False)
+        return namepaths
 
 
     def getActiveMorphFiles(self):
@@ -1128,7 +1134,7 @@ class DAZ_OT_ImportExpressions(DazOperator, StandardMorphSelector, StandardMorph
 class DAZ_OT_ImportVisemes(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_visemes"
     bl_label = "Import Visemes"
-    bl_description = "Import selected viseme morphs"
+    bl_description = "Import selected visemes morphs"
     bl_options = {'UNDO'}
 
     morphset = "Visemes"
@@ -1274,9 +1280,14 @@ class MorphTypeOptions:
         description = "Import all visemes",
         default = False)
 
+    head : BoolProperty(
+        name = "Head",
+        description = "Import all head morphs",
+        default = False)
+
     facs : BoolProperty(
         name = "FACS",
-        description = "Import all FACS units",
+        description = "Import all FACS morphs",
         default = False)
 
     facsdetails : BoolProperty(
@@ -1313,6 +1324,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "units")
         self.layout.prop(self, "expressions")
         self.layout.prop(self, "visemes")
+        self.layout.prop(self, "head")
         self.layout.prop(self, "facs")
         self.layout.prop(self, "facsdetails")
         self.layout.prop(self, "facsexpr")
@@ -1348,15 +1360,18 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if not self.setupCharacter(context):
             return
         MP.setupMorphPaths(False)
+        self.errors = {}
+        self.loadedMeshes = []
+        self.meshes.reverse()
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
         self.loadMorphType(context, self.units, "Units", "Face")
-        self.loadMorphType(context, False, "Head", "Face")
+        self.loadMorphType(context, self.head, "Head", "Face")
         self.loadMorphType(context, self.expressions, "Expressions", "Face")
         self.loadMorphType(context, self.visemes, "Visemes", "Face")
         self.loadMorphType(context, self.facs, "Facs", "Face")
-        self.loadMorphType(context, self.facsdetails, "FacsDetails", "Face")
+        self.loadMorphType(context, self.facsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face")
         self.loadMorphType(context, self.body, "Body", "Body")
         self.loadMorphType(context, self.jcms, "Jcms", "Body")
@@ -1369,23 +1384,25 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
 
     def loadMorphType(self, context, use, morphset, bodypart):
-        if not use:
-            return
-        files,msg = MP.getAllMorphFiles(self.chars, morphset)
-        if not files:
-            return
-        print("Load %s" % morphset)
-        if morphset == "Body" and self.useMhxOnly:
-            struct = self.selectMhxMorphs(struct)
-        self.morphset = morphset
-        self.adjuster = theAdjusters[morphset]
-        self.namepaths = []
-        for key,filepath in struct.items():
-            fileref = self.getFileRef(filepath)
-            self.namepaths.append((key, filepath, bodypart))
-        msg = self.getAllMorphs(self.namepaths, context, False)
-        if msg:
-            self.message = msg
+        if use:
+            self.morphset = morphset
+            self.bodypart = bodypart
+            print("Load %s" % morphset)
+            self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
+            self.loadStandardMorphs()
+
+
+    def getActiveMorphFiles(self):
+        namepaths = []
+        morphFiles = self.morphFiles.get(self.char)
+        if morphFiles is None:
+            return []
+        else:
+            if self.morphset == "Body" and self.useMhxOnly:
+                morphFiles = self.selectMhxMorphs(morphFiles)
+            for key,path in morphFiles.items():
+                namepaths.append((key, path, self.bodypart))
+        return namepaths
 
 
     def selectMhxMorphs(self, struct):
@@ -1771,9 +1788,9 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
     def run(self, context):
         rig = context.object
         self.removeMorphType(rig, self.units, "Units")
-        self.removeMorphType(rig, False, "Head")
         self.removeMorphType(rig, self.expressions, "Expressions")
         self.removeMorphType(rig, self.visemes, "Visemes")
+        self.removeMorphType(rig, self.head, "Head")
         self.removeMorphType(rig, self.facs, "Facs")
         self.removeMorphType(rig, self.facsdetails, "Facsdetails")
         self.removeMorphType(rig, self.facsexpr, "Facsexpr")
@@ -3230,6 +3247,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         if ("filetype" not in struct.keys() or
             struct["filetype"] != "favo_morphs"):
             raise DazError("This file does not contain favorite morphs")
+        self.useTransferFace = False
         rig = self.rig = getRigFromObject(context.object)
         rig.DazMorphUrls.clear()
         self.loadPreset(rig, rig, struct, context)
@@ -3241,9 +3259,11 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
 
     def loadPreset(self, ob, rig, struct, context):
         from urllib.parse import quote
-        from .finger import getFingerPrint
+        from .finger import getFingeredCharacters
         if ob.type != 'MESH':
             return
+        self.chars = getFingeredCharacters(ob, False, verbose=False)[2]
+        self.char = self.chars[0]
         if self.ignoreUrl:
             for ustruct in struct.values():
                 if isinstance(ustruct, dict):
@@ -3260,6 +3280,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
 
 
     def loadSinglePreset(self, ob, rig, ustruct, context):
+        from .finger import getFingerPrint
         if ("finger_print" in ustruct.keys() and
             (self.ignoreUrl or not self.ignoreFinger)):
             if ob.data.DazFingerPrint:
