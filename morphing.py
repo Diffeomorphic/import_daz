@@ -885,8 +885,9 @@ class MorphLoader(LoadMorph):
 
 
     def getAllMorphs(self, namepaths, context, usePosable):
-        if self.mesh:
-            ob = self.mesh
+        if self.meshes:
+            ob = self.mesh = self.meshes[0]
+            self.char = self.chars[0]
         elif self.rig:
             ob = self.rig
         else:
@@ -1098,9 +1099,7 @@ class StandardMorphSelector(Selector):
         if not self.morphFiles:
             invokeErrorMessage(msg)
             return {'CANCELLED'}
-        print("FF", self.morphFiles.keys())
         for char,struct in self.morphFiles.items():
-            print("CC", char)
             for key,path in struct.items():
                 if key not in self.selection.keys():
                     item = self.selection.add()

@@ -46,7 +46,7 @@ ScanPaths = [("useGenesis", "Genesis", "/data/DAZ 3D/Genesis/Base"),
              ("useGenesis8Male", "Genesis8Male", "/data/DAZ 3D/Genesis 8/Male"),
              ("useGenesis8_1Female", "Genesis8_1Female", "/data/DAZ 3D/Genesis 8/Female 8_1"),
              ("useGenesis8_1Male", "Genesis8_1Male", "/data/DAZ 3D/Genesis 8/Male 8_1"),
-             ("useGenesis9", "Genesis9", "/data/DAZ 3D/Genesis 9"),
+             ("useGenesis9", "Genesis9", "/data/DAZ 3D/Genesis 9/Base"),
             ]
 
 

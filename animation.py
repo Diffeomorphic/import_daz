@@ -531,7 +531,7 @@ class MorphOptions:
     useCheckUpdates : BoolProperty(
         name = "Check For Updates",
         description = "Check the database for new morphs before loading the animation",
-        default = True)
+        default = False)
 
     affectGeograft : EnumProperty(
         items = getGeograftItems,
