@@ -602,144 +602,144 @@ def classifyShapekeys(ob, skeys):
 #   Global lists of morph paths
 #------------------------------------------------------------------
 
-ShortForms = {
-    "phmunits" : ["phmbrow", "phmcheek", "phmeye", "phmjaw", "phmlip", "phmmouth", "phmnos", "phmteeth", "phmtongue"],
-    "ctrlunits" : ["ctrlbrow", "ctrlcheek", "ctrleye", "ctrljaw", "ctrllip", "ctrlmouth", "ctrlnos", "ctrlteeth", "ctrltongue"],
-    "ectrlunits" : ["ectrlbrow", "ectrlcheek", "ectrleye", "ectrljaw", "ectrllip", "ectrlmouth", "ectrlnos", "ectrlteeth", "ectrltongue"],
-    "ctrlbody" : ["ctrlarm", "ctrlbreast", "ctrlhip", "ctrlleg", "ctrlneck", "ctrlshld", "ctrlshould", "ctrltoe", "ctrlwaist",
-                  "ctrllarm", "ctrllbreast", "ctrllfing", "ctrllfoot", "ctrllhand", "ctrllleg", "ctrllthumb", "ctrllindex", "ctrllmid", "ctrllring", "ctrllpinky", "ctrlltoe", "ctrllbigtoe",
-                  "ctrlrarm", "ctrlrbreast", "ctrlrfing", "ctrlrfoot", "ctrlrhand", "ctrlrleg", "ctrlrthumb", "ctrlrindex", "ctrlrmid", "ctrlrring", "ctrlrpinky", "ctrlrtoe", "ctrlrbigtoe",
-                  ],
-}
+class MorphPaths:
+    ShortForms = {
+        "phmunits" : ["phmbrow", "phmcheek", "phmeye", "phmjaw", "phmlip", "phmmouth", "phmnos", "phmteeth", "phmtongue"],
+        "ctrlunits" : ["ctrlbrow", "ctrlcheek", "ctrleye", "ctrljaw", "ctrllip", "ctrlmouth", "ctrlnos", "ctrlteeth", "ctrltongue"],
+        "ectrlunits" : ["ectrlbrow", "ectrlcheek", "ectrleye", "ectrljaw", "ectrllip", "ectrlmouth", "ectrlnos", "ectrlteeth", "ectrltongue"],
+        "ctrlbody" : ["ctrlarm", "ctrlbreast", "ctrlhip", "ctrlleg", "ctrlneck", "ctrlshld", "ctrlshould", "ctrltoe", "ctrlwaist",
+                      "ctrllarm", "ctrllbreast", "ctrllfing", "ctrllfoot", "ctrllhand", "ctrllleg", "ctrllthumb", "ctrllindex", "ctrllmid", "ctrllring", "ctrllpinky", "ctrlltoe", "ctrllbigtoe",
+                      "ctrlrarm", "ctrlrbreast", "ctrlrfing", "ctrlrfoot", "ctrlrhand", "ctrlrleg", "ctrlrthumb", "ctrlrindex", "ctrlrmid", "ctrlrring", "ctrlrpinky", "ctrlrtoe", "ctrlrbigtoe",
+                      ],
+    }
 
-ShortForms["units"] = ShortForms["ctrlunits"] + ShortForms["ectrlunits"] + ShortForms["phmunits"]
-
-def getShortformList(item):
-    if isinstance(item, list):
-        return item
-    else:
-        return ShortForms[item]
+    def __init__(self):
+        self.morphFiles = {}
+        self.morphNames = {}
+        self.ShortForms["units"] = self.ShortForms["ctrlunits"] + self.ShortForms["ectrlunits"] + ShortForms["phmunits"]
 
 
-theMorphFiles = {}
-theMorphNames = {}
-
-def getAllMorphFiles(char, morphset):
-    return list(theMorphFiles[char][morphset].values())
-
-
-def getMorphPaths(char):
-    setupMorphPaths(False)
-    morphpaths = {}
-    if char in theMorphFiles.keys():
-        for morphset,pgs in theMorphFiles[char].items():
-            morphpaths[morphset] = pgs.values()
-    return morphpaths
+    def getMorphPaths(self, char):
+        self.setupMorphPaths(False)
+        morphpaths = {}
+        if char in self.morphFiles.keys():
+            for morphset,pgs in self.morphFiles[char].items():
+                morphpaths[morphset] = pgs.values()
+        return morphpaths
 
 
-def setupMorphPaths(force):
-    global theMorphFiles, theMorphNames
-    from collections import OrderedDict
-    #from .asset import fixBrokenPath
-    from .load_json import loadJson
-    from .modifier import getCanonicalKey
-
-    if theMorphFiles and not force:
-        return
-    theMorphFiles = {}
-    theMorphNames = {}
-
-    folder = os.path.join(os.path.dirname(__file__), "data/paths/")
-    charPaths = {}
-    files = list(os.listdir(folder))
-    files.sort()
-    for file in files:
-        path = os.path.join(folder, file)
-        struct = loadJson(path)
-        charPaths[struct["name"]] = struct
-
-    for char in charPaths.keys():
-        charFiles = theMorphFiles[char] = {}
-
-        for key,struct in charPaths[char].items():
-            if key in ["name", "hd-morphs"]:
-                continue
-            type = key.capitalize()
-            if type not in charFiles.keys():
-                charFiles[type] = OrderedDict()
-            typeFiles = charFiles[type]
-            if type not in theMorphNames.keys():
-                theMorphNames[type] = OrderedDict()
-            typeNames = theMorphNames[type]
-
-            if isinstance(struct["prefix"], list):
-                prefixes = struct["prefix"]
+    def setupMorphPaths(self, force):
+        def getShortformList(item):
+            if isinstance(item, list):
+                return item
             else:
-                prefixes = [struct["prefix"]]
-            if "strip" in struct.keys():
-                strips = struct["strip"]
-            else:
-                strips = prefixes
-            folder = struct["path"]
-            includes = getShortformList(struct["include"])
-            excludes = getShortformList(struct["exclude"])
-            if "exclude2" in struct.keys():
-                excludes = excludes + getShortformList(struct["exclude2"])
-            if "exclude3" in struct.keys():
-                excludes = excludes + getShortformList(struct["exclude3"])
+                return self.ShortForms[item]
 
-            for dazpath in GS.getDazPaths():
-                folderpath = "%s/%s" % (dazpath, folder)
-                folderpath = bpy.path.resolve_ncase(folderpath)
-                #if not os.path.exists(folderpath) and GS.caseSensitivePaths:
-                #    folderpath = fixBrokenPath(folderpath)
-                if os.path.exists(folderpath):
-                    files = list(os.listdir(folderpath))
-                    files.sort()
-                    for file in files:
-                        fname,ext = os.path.splitext(file)
-                        if ext not in [".duf", ".dsf"]:
-                            continue
-                        isright,name = isRightType(fname, prefixes, strips, includes, excludes)
-                        if isright:
-                            fname = fname.lower()
-                            string = "%s/%s" % (folderpath, file)
-                            string = string.replace("//", "/")
-                            typeFiles[name] = bpy.path.resolve_ncase(string)
-                            typeNames[fname] = name
+        from collections import OrderedDict
+        from .load_json import loadJson
+        from .modifier import getCanonicalKey
+
+        if self.morphFiles and not force:
+            return
+        self.morphFiles = {}
+        self.morphNames = {}
+
+        folder = os.path.join(os.path.dirname(__file__), "data/paths/")
+        charPaths = {}
+        files = list(os.listdir(folder))
+        files.sort()
+        for file in files:
+            path = os.path.join(folder, file)
+            struct = loadJson(path)
+            charPaths[struct["name"]] = struct
+
+        for char in charPaths.keys():
+            charFiles = self.morphFiles[char] = {}
+
+            for key,struct in charPaths[char].items():
+                if key in ["name", "hd-morphs"]:
+                    continue
+                type = key.capitalize()
+                if type not in charFiles.keys():
+                    charFiles[type] = OrderedDict()
+                typeFiles = charFiles[type]
+                if type not in self.morphNames.keys():
+                    self.morphNames[type] = OrderedDict()
+                typeNames = self.morphNames[type]
+
+                if isinstance(struct["prefix"], list):
+                    prefixes = struct["prefix"]
+                else:
+                    prefixes = [struct["prefix"]]
+                if "strip" in struct.keys():
+                    strips = struct["strip"]
+                else:
+                    strips = prefixes
+                folder = struct["path"]
+                includes = getShortformList(struct["include"])
+                excludes = getShortformList(struct["exclude"])
+                if "exclude2" in struct.keys():
+                    excludes = excludes + getShortformList(struct["exclude2"])
+                if "exclude3" in struct.keys():
+                    excludes = excludes + getShortformList(struct["exclude3"])
+
+                for dazpath in GS.getDazPaths():
+                    folderpath = "%s/%s" % (dazpath, folder)
+                    folderpath = bpy.path.resolve_ncase(folderpath)
+                    #if not os.path.exists(folderpath) and GS.caseSensitivePaths:
+                    #    folderpath = fixBrokenPath(folderpath)
+                    if os.path.exists(folderpath):
+                        files = list(os.listdir(folderpath))
+                        files.sort()
+                        for file in files:
+                            fname,ext = os.path.splitext(file)
+                            if ext not in [".duf", ".dsf"]:
+                                continue
+                            isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
+                            if isright:
+                                fname = fname.lower()
+                                string = "%s/%s" % (folderpath, file)
+                                string = string.replace("//", "/")
+                                typeFiles[name] = bpy.path.resolve_ncase(string)
+                                typeNames[fname] = name
 
 
-def isRightType(fname, prefixes, strips, includes, excludes):
-    string = fname.lower()
-    ok = False
-    for prefix in prefixes:
-        n = len(prefix)
-        if string[0:n] == prefix:
-            ok = True
-            if prefix in strips:
-                name = fname[n:]
-            else:
-                name = fname
-            break
-    if not ok:
-        return False, fname
+    def isRightType(self, fname, prefixes, strips, includes, excludes):
+        string = fname.lower()
+        ok = False
+        for prefix in prefixes:
+            n = len(prefix)
+            if string[0:n] == prefix:
+                ok = True
+                if prefix in strips:
+                    name = fname[n:]
+                else:
+                    name = fname
+                break
+        if not ok:
+            return False, fname
 
-    if includes == []:
-        for exclude in excludes:
-            if exclude in string:
-                return False, name
-        return True, name
-
-    for include in includes:
-        if (include in string or
-            string[0:len(include)-1] == include[1:]):
+        if includes == []:
             for exclude in excludes:
-                if (exclude in string or
-                    string[0:len(exclude)-1] == exclude[1:]):
+                if exclude in string:
                     return False, name
             return True, name
-    return False, name
 
+        for include in includes:
+            if (include in string or
+                string[0:len(include)-1] == include[1:]):
+                for exclude in excludes:
+                    if (exclude in string or
+                        string[0:len(exclude)-1] == exclude[1:]):
+                        return False, name
+                return True, name
+        return False, name
+
+MP = MorphPaths()
+
+#------------------------------------------------------------------
+#
+#------------------------------------------------------------------
 
 class DAZ_OT_Update(DazOperator):
     bl_idname = "daz.update_morph_paths"
@@ -748,9 +748,9 @@ class DAZ_OT_Update(DazOperator):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        setupMorphPaths(True)
-        print(theMorphFiles.items())
-        print("UU", theMorphNames.items())
+        MP.setupMorphPaths(True)
+        print(MP.morphFiles.items())
+        print("UU", MP.morphNames.items())
 
 
 class DAZ_OT_SelectAllMorphs(DazOperator):
@@ -764,7 +764,7 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
 
     def run(self, context):
         scn = context.scene
-        names = theMorphNames[self.morphset]
+        names = MP.morphNames[self.morphset]
         for name in names.values():
             scn["Daz"+name] = self.value
 
@@ -832,13 +832,13 @@ class MorphLoader(LoadMorph):
     useTransferLashes : BoolProperty(
         name = "Transfer To Face Meshes",
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
-        default = True)
+        default = False)
 
     def __init__(self, rig=None, mesh=None):
-        from .finger import getFingeredCharacter
-        self.rig, self.mesh, self.char, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
+        from .finger import getFingeredCharacters
+        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacter(bpy.context.object, GS.useModifiedMesh)
         if mesh:
-            self.mesh = mesh
+            self.meshes = [mesh]
 
     def getMorphSet(self, asset):
         return self.morphset
@@ -997,7 +997,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
 
     def getMorphFiles(self):
         try:
-            return theMorphFiles[self.char][self.morphset]
+            return MP.morphFiles[self.char][self.morphset]
         except KeyError:
             return []
 
@@ -1009,7 +1009,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     def run(self, context):
         global theAdjusters
         self.adjuster = theAdjusters[self.morphset]
-        setupMorphPaths(False)
+        MP.setupMorphPaths(False)
         if self.rig:
             self.rig.DazMorphPrefixes = False
             self.findIked()
@@ -1055,14 +1055,13 @@ class StandardMorphSelector(Selector):
         return True
 
     def invoke(self, context, event):
-        global theMorphFiles
         scn = context.scene
         self.selection.clear()
         if not self.setupCharacter(context):
             return {'FINISHED'}
-        setupMorphPaths(False)
+        MP.setupMorphPaths(False)
         try:
-            pgs = theMorphFiles[self.char][self.morphset]
+            pgs = MP.morphFiles[self.char][self.morphset]
             nosupport = False
         except KeyError:
             nosupport = True
@@ -1311,7 +1310,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     def run(self, context):
         if not self.setupCharacter(context):
             return
-        setupMorphPaths(False)
+        MP.setupMorphPaths(False)
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
@@ -1336,7 +1335,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if not use:
             return
         try:
-            struct = theMorphFiles[self.char][morphset]
+            struct = MP.morphFiles[self.char][morphset]
         except KeyError:
             msg = ("Character %s does not support feature %s" % (self.char, morphset))
             print(msg)
@@ -2601,7 +2600,7 @@ class DAZ_OT_PinProp(DazOperator, MorphGroup, IsMeshArmature):
     def run(self, context):
         rig = getRigFromObject(context.object)
         scn = context.scene
-        setupMorphPaths(False)
+        MP.setupMorphPaths(False)
         pinProp(rig, scn, self.key, self, scn.frame_current)
         updateRigDrivers(context, rig)
 

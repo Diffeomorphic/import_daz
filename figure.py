@@ -76,19 +76,21 @@ class FigureInstance(Instance):
 
 
     def finalize(self, context):
-        from .finger import getFingeredCharacter
-        rig,mesh,char,modded = getFingeredCharacter(self.rna, False)
-        if rig and mesh:
-            if (mesh.name == self.name or
-                (mesh.name[:-4] == self.name and mesh.name[-4:] == ".001")):
-                mesh.name = "%s Mesh" % self.name
-            rig.DazMesh = mesh.DazMesh = char
+        from .finger import getFingeredCharacters
+        rig,meshes,chars,modded = getFingeredCharacters(self.rna, False)
+        if rig and meshes:
+            for mesh,char in zip(meshes, chars):
+                if (mesh.name == self.name or
+                    (mesh.name[:-4] == self.name and mesh.name[-4:] == ".001")):
+                    mesh.name = "%s Mesh" % self.name
+                mesh.DazMesh = char
             self.poseChildren(rig, rig)
-        elif mesh:
-            mesh.DazMesh = char
+        elif meshes:
+            for mesh,char in zip(meshes, chars):
+                mesh.DazMesh = char
         self.rna.name = self.name
         Instance.finalize(self, context)
-        if rig and char:
+        if rig and chars:
             activateObject(context, rig)
             self.selectChildren(rig)
         if self.hiddenBones:

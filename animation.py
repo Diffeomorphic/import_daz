@@ -623,10 +623,10 @@ class MorphOptions:
                             table["p%s" % mname] = (path, morphset)
 
         from .fileutils import getFoldersFromObject
-        from .morphing import getMorphPaths
+        from .morphing import MP
         folders = getFoldersFromObject(rig, [""], match81=True)
         table = {}
-        mpaths = getMorphPaths(rig.DazMesh)
+        mpaths = MP.getMorphPaths(rig.DazMesh)
         mtypes = {}
         if mpaths:
             for morphset,paths in mpaths.items():

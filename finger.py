@@ -42,7 +42,13 @@ FingerPrints = {
     "17246-33982-16828" : "Genesis3-male",
     "16556-32882-16368" : "Genesis8-female",
     "16384-32538-16196" : "Genesis8-male",
+
     "25182-50338-25156" : "Genesis9",
+    "2120-4224-2112" : "Eyes9",
+    "2028-2730-858" : "Lashes9",
+    "5079-10079-5000" : "Mouth9",
+    "280-500-220" : "Tear9",
+
 }
 
 VertexCounts = {
@@ -53,6 +59,10 @@ VertexCounts = {
     16556 : "Genesis 8 female",
     16384 : "Genesis 8 male",
     25182 : "Genesis 9 (male or female)",
+    2120 : "Genesis 9 eyes",
+    2028 : "Geneis 9 eyelashes",
+    5079 : "Genesis 9 mouth",
+    280 : "Genesis 9 tear",
 }
 
 FingerPrintsHD = {
@@ -97,39 +107,40 @@ def getFingerPrint(ob):
         return ("%d-%d-%d" % (len(ob.data.vertices), len(ob.data.edges), len(ob.data.polygons)))
 
 
-def getFingeredCharacter(ob, useOrig, verbose=True):
+def getFingeredCharacters(ob, useOrig, verbose=True):
     modded = False
     if ob is None:
-        return None,None,"",False
+        return None,[],[],False
     elif ob.type == 'MESH':
         finger = getFingerPrint(ob)
         if finger in FingerPrints.keys():
-            char = FingerPrints[finger]
+            chars = [FingerPrints[finger]]
         elif useOrig and ob.data.DazFingerPrint in FingerPrints.keys():
-            char = FingerPrints[ob.data.DazFingerPrint]
+            chars = [FingerPrints[ob.data.DazFingerPrint]]
             modded = True
         else:
             if verbose:
                 print("Did not find fingerprint", finger)
-            char = ""
-        return ob.parent,ob,char,modded
+            chars = []
+        return ob.parent,[ob],chars,modded
 
     elif ob.type == 'ARMATURE':
+        meshes = []
+        modded = False
         for child in ob.children:
             if child.type == 'MESH':
                 finger = getFingerPrint(child)
                 if finger in FingerPrints.keys():
-                    return ob,child,FingerPrints[finger],False
+                    meshes.append(child)
+                    chars.append(FingerPrints[finger])
                 elif useOrig and child.data.DazFingerPrint in FingerPrints.keys():
-                    return ob,child,FingerPrints[child.data.DazFingerPrint],True
-        #print("Found no recognized mesh type")
-        return ob,None,"",False
+                    meshes.append(child)
+                    chars.append(child.data.DazFingerPrint)
+        return ob,meshes,chars,modded
 
-    else:
-        ob = ob.parent
-        if ob and ob.type == 'ARMATURE':
-            return getFingeredCharacter(ob, useOrig)
-        return None,None,"",False
+    elif ob.parent and ob.parent.type == 'ARMATURE':
+        return getFingeredCharacters(ob.parent, useOrig)
+    return None,[],[],False
 
 
 def isCharacter(ob):

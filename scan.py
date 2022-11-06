@@ -269,15 +269,16 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
 
 
 def getCharData(context, error):
-    from .finger import getFingeredCharacter
-    rig, mesh = getFingeredCharacter(context.object, GS.useModifiedMesh)[0:2]
-    if mesh is None or not mesh.DazUrl:
+    from .finger import getFingeredCharacters
+    rig,meshes = getFingeredCharacters(context.object, GS.useModifiedMesh)[0:2]
+    if not meshes or not meshes[0].DazUrl:
         msg = "Cannot scan database because no DAZ mesh was found"
         if error:
             raise DazError(msg)
         else:
             print(msg)
-            return rig, mesh, "Unknown", None
+            return rig, meshes[0], "Unknown", None
+    mesh = meshes[0]
     relfile = mesh.DazUrl.rsplit("#",1)[0]
     relpath = os.path.dirname(relfile)
     name = os.path.basename(os.path.splitext(relfile)[0])

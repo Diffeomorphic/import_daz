@@ -4,7 +4,7 @@
 	"units" : {
 		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
 		"include" : ["ectrl", "ctrl", "phm", "ephm"],
-		"exclude" : ["ectrlv"],
+		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 3/Female/Morphs/DAZ 3D/Base Pose/"
 	},
 	"expressions" : {
@@ -12,12 +12,6 @@
 		"include" : ["ectrl", "ejcm", "ephm"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 3/Female/Morphs/DAZ 3D/Expressions/"
-	},
-	"visemes" : {
-		"prefix" : "ectrlv",
-		"include" : ["ectrlv"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 3/Female/Morphs/DAZ 3D/Base Pose/"
 	},
 	"head" : {
 		"prefix" : ["phm", "ctrl"],

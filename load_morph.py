@@ -727,12 +727,12 @@ class LoadMorph(DriverUser):
 
 
     def setupMorphGroups(self):
-        from .morphing import getMorphPaths
+        from .morphing import MP
         if self.char is None:
             return {}, {}
         morphrefs = {}
         groupedpaths = {}
-        for morphset,paths in getMorphPaths(self.char).items():
+        for morphset,paths in MP.getMorphPaths(self.char).items():
             groupedpaths[morphset] = []
             morphrefs[morphset] = [self.getFileRef(path) for path in paths]
         return groupedpaths, morphrefs
