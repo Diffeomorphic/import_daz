@@ -81,6 +81,7 @@ class FigureInstance(Instance):
         if rig and meshes:
             mesh = meshes[0]
             char = chars[0]
+            rig.DazMesh = char
             if (char.startswith("Genesis") and
                 mesh.name in [self.name, "%s.001" % self.name]):
                 mesh.name = "%s Mesh" % self.name

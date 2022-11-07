@@ -39,7 +39,7 @@ from .animation import HideOperator
 #   Load pose
 #-------------------------------------------------------------
 
-def getCharacter(rig):
+def getCharacterFromRig(rig):
     if rig.DazMesh:
         char = rig.DazMesh.lower().replace("-","_").replace("genesis", "genesis_")
         if char[-1] == "_":
@@ -115,7 +115,7 @@ class DAZ_OT_OptimizePose(DazPropsOperator, IsArmature):
 def optimizePose(context, useApplyRestPose):
     from .merge import applyRestPoses
     rig = context.object
-    char = getCharacter(rig)
+    char = getCharacterFromRig(rig)
     if char is None:
         raise DazError("Did not recognize character")
     entry = AF.loadEntry(char, "ikposes")

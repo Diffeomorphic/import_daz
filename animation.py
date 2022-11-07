@@ -200,8 +200,8 @@ class FrameConverter:
 
 
     def convertAllFrames(self, anims, rig, bonemap):
-        from .convert import getCharacter
-        trgCharacter = getCharacter(rig)
+        from .convert import getCharacterFromRig
+        trgCharacter = getCharacterFromRig(rig)
         if trgCharacter is None:
             return anims
 
