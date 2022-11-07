@@ -799,7 +799,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def treatRig(self, context, rigname):
-        from .finger import isCharacter, getFingerPrint
+        from .finger import isGenesis, getFingerPrint
         rigs = self.rigs[rigname]
         meshes = self.meshes[rigname]
         objects = self.objects[rigname]
@@ -817,7 +817,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         else:
             mainMesh = None
         if mainRig:
-            mainChar = isCharacter(mainRig)
+            mainChar = isGenesis(mainRig)
         else:
             mainChar = None
         if mainChar:

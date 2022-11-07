@@ -832,6 +832,7 @@ class MorphLoader(LoadMorph):
     category = ""
     adjuster = None
     bodypart = None
+    canTransferFace = True
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
@@ -983,9 +984,11 @@ class MorphLoader(LoadMorph):
 
     def transferToLashes(self, context):
         from .main import getMatchingMeshes
-        keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
+        from .finger import getCharacter
+        keys = ["eyelash", "tear", "brow", "eyes", "mouth", "hair cap", "beard"]
         meshes = getMatchingMeshes(self.rig, self.mesh, "head", keys)
-        meshes = [mesh for mesh in meshes if mesh not in self.loadedMeshes]
+        if not self.canTransferFace:
+            meshes = [mesh for mesh in meshes if not getCharacter(mesh)]
         if meshes:
             print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
             activateObject(context, self.mesh)
@@ -1022,7 +1025,6 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     def run(self, context):
         MP.setupMorphPaths(False)
         self.errors = {}
-        self.loadedMeshes = []
         self.meshes.reverse()
         t1 = perf_counter()
         namepaths = self.loadStandardMorphs()
@@ -1044,7 +1046,6 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             LS.forMorphLoad(mesh)
             if namepaths:
                 self.loadAllMorphs(namepaths)
-                self.loadedMeshes.append(mesh)
         return namepaths
 
 
@@ -1158,6 +1159,7 @@ class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Facs"
     bodypart = "Face"
+    canTransferFace = False
 
 
 class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1168,6 +1170,7 @@ class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorph
 
     morphset = "Facsdetails"
     bodypart = "Face"
+    canTransferFace = False
 
 
 class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1178,6 +1181,7 @@ class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardM
 
     morphset = "Facsexpr"
     bodypart = "Face"
+    canTransferFace = False
 
 
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
@@ -1360,21 +1364,20 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             return
         MP.setupMorphPaths(False)
         self.errors = {}
-        self.loadedMeshes = []
         self.meshes.reverse()
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
-        self.loadMorphType(context, self.units, "Units", "Face")
-        self.loadMorphType(context, self.head, "Head", "Face")
-        self.loadMorphType(context, self.expressions, "Expressions", "Face")
-        self.loadMorphType(context, self.visemes, "Visemes", "Face")
-        self.loadMorphType(context, self.facs, "Facs", "Face")
-        self.loadMorphType(context, self.facsdetails, "Facsdetails", "Face")
-        self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face")
-        self.loadMorphType(context, self.body, "Body", "Body")
-        self.loadMorphType(context, self.jcms, "Jcms", "Body")
-        self.loadMorphType(context, self.flexions, "Flexions", "Body")
+        self.loadMorphType(context, self.units, "Units", "Face", True)
+        self.loadMorphType(context, self.head, "Head", "Face", True)
+        self.loadMorphType(context, self.expressions, "Expressions", "Face", True)
+        self.loadMorphType(context, self.visemes, "Visemes", "Face", True)
+        self.loadMorphType(context, self.facs, "Facs", "Face", False)
+        self.loadMorphType(context, self.facsdetails, "Facsdetails", "Face", False)
+        self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face", False)
+        self.loadMorphType(context, self.body, "Body", "Body", True)
+        self.loadMorphType(context, self.jcms, "Jcms", "Body", True)
+        self.loadMorphType(context, self.flexions, "Flexions", "Body", True)
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
@@ -1382,10 +1385,11 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             raise DazError(self.message, warning=True)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart):
+    def loadMorphType(self, context, use, morphset, bodypart, canTransferFace):
         if use:
             self.morphset = morphset
             self.bodypart = bodypart
+            self.canTransferFace = canTransferFace
             print("Load %s" % morphset)
             self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
             self.loadStandardMorphs()
@@ -1516,7 +1520,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         from .finger import replaceHomeDir
         self.findIked()
         self.errors = {}
-        self.loadedMeshes = []
         t1 = perf_counter()
         namepaths0 = self.getNamePaths()
         mesh0 = self.meshes[0]
@@ -1538,7 +1541,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             LS.forMorphLoad(mesh)
             if namepaths:
                 self.loadAllMorphs(namepaths)
-                self.loadedMeshes.append(mesh)
 
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True

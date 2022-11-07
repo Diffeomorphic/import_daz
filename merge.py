@@ -101,14 +101,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
 
     def run(self, context):
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        from .finger import isCharacter
+        from .finger import isGenesis
         cob = context.object
         ncverts = len(cob.data.vertices)
         chars = {ncverts : cob}
         prio = {ncverts : False}
         for ob in getSelectedMeshes(context):
             nverts = len(ob.data.vertices)
-            if nverts not in chars.keys() or isCharacter(ob):
+            if nverts not in chars.keys() or isGenesis(ob):
                 chars[nverts] = ob
                 prio[nverts] = (not (not ob.data.DazGraftGroup))
 

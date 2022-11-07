@@ -50,7 +50,6 @@ FingerPrints = {
     "2028-2730-858" : "Lashes9",
     "5079-10079-5000" : "Mouth9",
     "280-500-220" : "Tear9",
-
 }
 
 HomeDirs = {
@@ -199,10 +198,20 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
     return None,[],[],False
 
 
-def isCharacter(ob):
+def isGenesis(ob):
     chars = getFingeredCharacters(ob, False, verbose=False)[2]
-    char = chars[0]
-    return (char and char.startswith("Genesis"))
+    if chars:
+        char = chars[0]
+        return (char and char.startswith("Genesis"))
+    return False
+
+
+def getCharacter(ob):
+    chars = getFingeredCharacters(ob, False, verbose=False)[2]
+    if chars:
+        return chars[0]
+    return None
+
 
 
 def replaceHomeDir(path0, char0, char):

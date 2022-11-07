@@ -60,7 +60,7 @@ class CyclesMaterial(Material):
     def guessColor(self):
         from .guess import guessMaterialColor
         from .geometry import GeoNode
-        from .finger import isCharacter
+        from .finger import isGenesis
         color = LS.clothesColor
         mat = self.rna
         mtype = 'CLOTHES'
@@ -70,7 +70,7 @@ class CyclesMaterial(Material):
             ob = self.mesh
         if ob is None:
             pass
-        elif isCharacter(ob):
+        elif isGenesis(ob):
             color = LS.skinColor
             mtype = 'SKIN'
         elif (ob.data and
