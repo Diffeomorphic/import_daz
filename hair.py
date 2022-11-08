@@ -1848,59 +1848,30 @@ class HairEeveeTree(HairTree):
 # ---------------------------------------------------------------------
 
 class Pinning:
-    pinningX0 : FloatProperty(
-        name = "Pin X0",
-        min = 0.0,
-        max = 1.0,
-        default = 0.25,
-        precision = 3,
-        description = ""
-    )
+    def __init__(self):
+        self.nodeGroup = None
+        self.curveMapping = None
 
-    pinningX1 : FloatProperty(
-        name = "Pin X1",
-        min = 0.0,
-        max = 1.0,
-        default = 0.75,
-        precision = 3,
-        description = ""
-    )
+    def getCurveMapping(self):
+        if self.nodeGroup is None:
+            self.nodeGroup = bpy.data.node_groups.new('DazPinningData', 'ShaderNodeTree')
+        if self.curveMapping is None:
+            cn = self.nodeGroup.nodes.new('ShaderNodeRGBCurve')
+            self.curveMapping = cn.name
+        return self.nodeGroup.nodes[self.curveMapping]
 
-    pinningW0 : FloatProperty(
-        name = "Pin W0",
-        min = 0.0,
-        max = 1.0,
-        default = 1.0,
-        precision = 3,
-        description = ""
-    )
-
-    pinningW1 : FloatProperty(
-        name = "Pin W1",
-        min = 0.0,
-        max = 1.0,
-        default = 0.0,
-        precision = 3,
-        description = ""
-    )
-
-
-    def pinCoeffs(self):
-        x0 = self.pinningX0
-        x1 = self.pinningX1
-        w0 = self.pinningW0
-        w1 = self.pinningW1
-        k = (w1-w0)/(x1-x0)
-        return x0,x1,w0,w1,k
+    def invoke(self, context, event):
+        node = self.getCurveMapping()
+        cu = node.mapping.curves[3]
+        cu.points[0].location = (0,1)
+        cu.points[-1].location = (1,0)
+        return DazPropsOperator.invoke(self, context, event)
 
     def draw(self, context):
-        self.layout.prop(self, "pinningX0")
-        self.layout.prop(self, "pinningX1")
-        self.layout.prop(self, "pinningW0")
-        self.layout.prop(self, "pinningW1")
+        self.layout.template_curve_mapping(self.getCurveMapping(), "mapping")
 
 
-class DAZ_OT_MeshAddPinning(DazPropsOperator, IsMesh, Pinning):
+class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
     bl_idname = "daz.mesh_add_pinning"
     bl_label = "Add Pinning Group"
     bl_description = "Add HairPin group to mesh hair"
@@ -1908,34 +1879,20 @@ class DAZ_OT_MeshAddPinning(DazPropsOperator, IsMesh, Pinning):
 
     def run(self, context):
         ob = context.object
-        x0,x1,w0,w1,k = self.pinCoeffs()
-
+        node = self.getCurveMapping()
+        cu = node.mapping.curves[3]
         if "HairPinning" in ob.vertex_groups.keys():
             vgrp = ob.vertex_groups["HairPinning"]
             ob.vertex_groups.remove(vgrp)
-
         vgrp = ob.vertex_groups.new(name="HairPinning")
         uvs = ob.data.uv_layers.active.data
         m = 0
         for f in ob.data.polygons:
             for n,vn in enumerate(f.vertices):
-                x = 1-uvs[m+n].uv[1]
-                if x < x0:  w = w0
-                elif x > x1: w = w1
-                else: w = w0 + k*(x-x0)
+                x = min(1.0, max(0.0, 1-uvs[m+n].uv[1]))
+                w = node.mapping.evaluate(cu, x)
                 vgrp.add([vn], w, 'REPLACE')
             m += len(f.vertices)
-
-
-class DAZ_OT_HairAddPinning(DazPropsOperator, IsMesh, Pinning):
-    bl_idname = "daz.hair_add_pinning"
-    bl_label = "Hair Add Pinning"
-    bl_description = "Add HairPin group to hair strands"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        ob = context.object
-        x0,x1,w0,w1,k = self.pinCoeffs()
 
 # ---------------------------------------------------------------------
 #   Initialize
@@ -1950,7 +1907,6 @@ classes = [
     DAZ_OT_ColorHair,
     DAZ_OT_ConnectHair,
     DAZ_OT_MeshAddPinning,
-    DAZ_OT_HairAddPinning,
 ]
 
 def register():
