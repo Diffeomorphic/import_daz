@@ -1067,10 +1067,13 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         min = 1, max = 32,
         default = 3)
 
-    createMeshCollection : BoolProperty(
-        name = "Create Mesh Collection",
-        description = "Create a new collection and move all meshes to it",
-        default = True)
+    if bpy.app.version >= (3,3,0):
+        createMeshCollection = False
+    else:
+        createMeshCollection : BoolProperty(
+            name = "Create Mesh Collection",
+            description = "Create a new collection and move all meshes to it",
+            default = True)
 
     def draw(self, context):
         self.layout.prop(self, "clothesLayer")
@@ -1079,7 +1082,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             self.layout.prop(self, "useSubrigsOnly")
         self.layout.prop(self, "useCreateDuplicates")
         self.layout.prop(self, "useMergeNonConforming")
-        self.layout.prop(self, "createMeshCollection")
+        if bpy.app.version < (3,3,0):
+            self.layout.prop(self, "createMeshCollection")
 
     def __init__(self):
         DriverUser.__init__(self)
