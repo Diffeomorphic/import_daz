@@ -212,6 +212,9 @@ class GeoNode(Node, SimNode):
             mod.levels = min(self.data.SubDIALevel, GS.maxSubdivs)
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
+            if self.data.SubDEdgeInterpolateLevel == 1:
+                # [ "Soft Corners And Edges", "Sharp Edges and Corners", "Sharp Edges" ]
+                mod.boundary_smooth = 'PRESERVE_CORNERS'
             self.data.creaseEdges(context, ob)
             ob.data.use_auto_smooth = False
         if subDLevel > renderLevel:
@@ -768,10 +771,15 @@ class Geometry(Asset, Channels):
             self.polygon_groups = struct["polygon_groups"]["values"]
         if "polygon_material_groups" in struct.keys():
             self.polygon_material_groups = struct["polygon_material_groups"]["values"]
-        if "SubDIALevel" in self.channels.keys():
-            self.SubDIALevel = getCurrentValue(self.channels["SubDIALevel"], 0)
-        if "SubDRenderLevel" in self.channels.keys():
-            self.SubDRenderLevel = getCurrentValue(self.channels["SubDRenderLevel"], 0)
+        for key,data in self.channels.items():
+            if key == "SubDIALevel":
+                self.SubDIALevel = getCurrentValue(data, 0)
+            elif key == "SubDRenderLevel":
+                self.SubDRenderLevel = getCurrentValue(data, 0)
+            elif key == "SubDEdgeInterpolateLevel":
+                self.SubDEdgeInterpolateLevel = getCurrentValue(data, 0)
+            elif key == "SubDNormalSmoothing":
+                self.SubDNormalSmoothing = getCurrentValue(data, 0)
         if self.SubDIALevel == 0 and "current_subdivision_level" in struct.keys():
             self.SubDIALevel = struct["current_subdivision_level"]
 
