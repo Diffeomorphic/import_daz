@@ -120,7 +120,12 @@ class FastMatcher:
 
 
     def findMatchNearest(self, src, trg):
-        closest = [(v.co, src.closest_point_on_mesh(v.co)) for v in trg.data.vertices]
+        if self.projection is None:
+            closest = [(v.co, src.closest_point_on_mesh(v.co))
+                for v in trg.data.vertices]
+        else:
+            closest = [(v.co, src.closest_point_on_mesh(v.co + Vector(self.projection[v.index])))
+                for v in trg.data.vertices]
         # (result, location, normal, index)
         cverts = np.array([list(x) for x,data in closest if data[0]])
         offsets = np.array([list(x-data[1]) for x,data in closest if data[0]])
@@ -319,11 +324,13 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
     def transferMorphs(self, src, trg, context):
         from .load_morph import printName
+        from .morphing import MP
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
         scn = context.scene
         GS.setRootPaths()
         activateObject(context, src)
+        self.projection = MP.getProjection(trg)
         if not self.findMatch(src, trg):
             return False
         trg.select_set(True)

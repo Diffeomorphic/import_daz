@@ -28,6 +28,7 @@
 
 import os
 import bpy
+import numpy as np
 
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
@@ -644,6 +645,8 @@ class MorphPaths:
             return
         self.morphFiles = {}
         self.morphNames = {}
+        self.projectionFiles = {}
+        self.projection = {}
 
         folder = os.path.join(os.path.dirname(__file__), "data/paths/")
         charPaths = {}
@@ -659,6 +662,9 @@ class MorphPaths:
 
             for key,struct in charPaths[char].items():
                 if key in ["name", "hd-morphs"]:
+                    continue
+                elif key == "projection":
+                    self.projectionFiles[char] = struct
                     continue
                 type = key.capitalize()
                 if type not in charFiles.keys():
@@ -751,6 +757,35 @@ class MorphPaths:
         return files,msg
 
 
+    def getProjection(self, ob):
+        from .finger import getCharacter
+        from .load_json import loadJson
+        from .files import parseAssetFile
+        char = getCharacter(ob)
+        if not char:
+            return None
+        self.setupMorphPaths(False)
+        relpath = self.projectionFiles.get(char)
+        if not relpath:
+            return None
+        if char not in self.projection.keys():
+            filepath = GS.getAbsPath(relpath)
+            if not filepath:
+                return None
+            struct = loadJson(filepath)
+            proj = None
+            if struct:
+                deltas = struct["modifier_library"][0]["morph"]["deltas"]["values"]
+                scale = ob.DazScale
+                proj = np.zeros((len(ob.data.vertices), 3), float)
+                vnums = np.array([delta[0] for delta in deltas])
+                offsets = np.array([scale * d2bu(delta[1:]) for delta in deltas])
+                proj[vnums] = offsets
+                print("Projection for %s loaded" % char)
+            self.projection[char] = proj
+        return self.projection[char]
+
+
 MP = MorphPaths()
 
 #------------------------------------------------------------------
@@ -832,7 +867,6 @@ class MorphLoader(LoadMorph):
     category = ""
     adjuster = None
     bodypart = None
-    canTransferFace = True
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
@@ -984,11 +1018,8 @@ class MorphLoader(LoadMorph):
 
     def transferToLashes(self, context):
         from .main import getMatchingMeshes
-        from .finger import getCharacter
         keys = ["eyelash", "tear", "brow", "eyes", "mouth", "hair cap", "beard"]
         meshes = getMatchingMeshes(self.rig, self.mesh, "head", keys)
-        if not self.canTransferFace:
-            meshes = [mesh for mesh in meshes if not getCharacter(mesh)]
         if meshes:
             print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
             activateObject(context, self.mesh)
@@ -1159,7 +1190,6 @@ class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Facs"
     bodypart = "Face"
-    canTransferFace = False
 
 
 class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1170,7 +1200,6 @@ class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorph
 
     morphset = "Facsdetails"
     bodypart = "Face"
-    canTransferFace = False
 
 
 class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1181,7 +1210,6 @@ class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardM
 
     morphset = "Facsexpr"
     bodypart = "Face"
-    canTransferFace = False
 
 
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
@@ -1368,16 +1396,16 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
-        self.loadMorphType(context, self.units, "Units", "Face", True)
-        self.loadMorphType(context, self.head, "Head", "Face", True)
-        self.loadMorphType(context, self.expressions, "Expressions", "Face", True)
-        self.loadMorphType(context, self.visemes, "Visemes", "Face", True)
-        self.loadMorphType(context, self.facs, "Facs", "Face", False)
-        self.loadMorphType(context, self.facsdetails, "Facsdetails", "Face", False)
-        self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face", False)
-        self.loadMorphType(context, self.body, "Body", "Body", True)
-        self.loadMorphType(context, self.jcms, "Jcms", "Body", True)
-        self.loadMorphType(context, self.flexions, "Flexions", "Body", True)
+        self.loadMorphType(context, self.units, "Units", "Face")
+        self.loadMorphType(context, self.head, "Head", "Face")
+        self.loadMorphType(context, self.expressions, "Expressions", "Face")
+        self.loadMorphType(context, self.visemes, "Visemes", "Face")
+        self.loadMorphType(context, self.facs, "Facs", "Face")
+        self.loadMorphType(context, self.facsdetails, "Facsdetails", "Face")
+        self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face")
+        self.loadMorphType(context, self.body, "Body", "Body")
+        self.loadMorphType(context, self.jcms, "Jcms", "Body")
+        self.loadMorphType(context, self.flexions, "Flexions", "Body")
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
@@ -1385,11 +1413,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             raise DazError(self.message, warning=True)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart, canTransferFace):
+    def loadMorphType(self, context, use, morphset, bodypart):
         if use:
             self.morphset = morphset
             self.bodypart = bodypart
-            self.canTransferFace = canTransferFace
             print("Load %s" % morphset)
             self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
             self.loadStandardMorphs()
