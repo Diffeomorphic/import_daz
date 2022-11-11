@@ -923,7 +923,7 @@ class MorphLoader(LoadMorph):
             item.bodypart = bodypart
 
 
-    def getAllMorphs(self, namepaths, context, usePosable):
+    def getAllMorphs(self, namepaths, context):
         if self.meshes:
             ob = self.mesh = self.meshes[0]
             self.char = self.chars[0]
@@ -942,10 +942,10 @@ class MorphLoader(LoadMorph):
         else:
             raise DazError("No morphs selected")
         self.loadAllMorphs(namepaths)
-        self.finishLoading(namepaths, context, t1, usePosable)
+        self.finishLoading(namepaths, context, t1)
 
 
-    def finishLoading(self, namepaths, context, t1, usePosable):
+    def finishLoading(self, namepaths, context, t1):
         if not namepaths:
             return
         t2 = perf_counter()
@@ -963,7 +963,7 @@ class MorphLoader(LoadMorph):
             msg = "Found morphs that want to\nchange the rest pose"
         else:
             msg = None
-        if usePosable and self.useMakePosable and self.rig and activateObject(context, self.rig):
+        if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
         if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
@@ -1063,7 +1063,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
         self.meshes.reverse()
         t1 = perf_counter()
         namepaths = self.loadStandardMorphs()
-        self.finishLoading(namepaths, context, t1, False)
+        self.finishLoading(namepaths, context, t1)
 
 
     def loadStandardMorphs(self):
@@ -1580,7 +1580,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             addToCategories(self.mesh, props, self.category)
             self.mesh.DazMeshMorphs = True
         updateScrollbars(context.scene)
-        self.finishLoading(namepaths, context, t1, False)
+        self.finishLoading(namepaths, context, t1)
 
 
     def getNamePaths(self):
@@ -3348,7 +3348,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
             self.category = cat
             self.hideable = hide
             namepaths = [(name, unquote(ref), bodypart) for ref,name,bodypart in infos]
-            self.getAllMorphs(namepaths, context, False)
+            self.getAllMorphs(namepaths, context)
 
 
     def findPropGroup(self, prop):

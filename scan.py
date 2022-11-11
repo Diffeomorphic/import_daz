@@ -368,7 +368,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         mloader.category = ""
         mloader.hideable = True
         print("\nLoading missing %s morphs" % mset)
-        mloader.getAllMorphs(namepaths, context, True)
+        mloader.getAllMorphs(namepaths, context)
         again = True
     if customs:
         mloader = CustomMorphLoader()
@@ -377,7 +377,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         mloader.category = cat
         mloader.hideable = True
         print("\nLoading morphs in category %s" % cat)
-        mloader.getAllMorphs(customs, context, True)
+        mloader.getAllMorphs(customs, context)
         props = [prop for (prop,path,ref) in customs]
         addToCategories(rig, props, cat)
         again = True

@@ -1067,7 +1067,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         min = 1, max = 32,
         default = 3)
 
-    if bpy.app.version >= (3,3,0):
+    if bpy.app.version >= (3,4,0):
         createMeshCollection = False
     else:
         createMeshCollection : BoolProperty(
@@ -1082,7 +1082,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             self.layout.prop(self, "useSubrigsOnly")
         self.layout.prop(self, "useCreateDuplicates")
         self.layout.prop(self, "useMergeNonConforming")
-        if bpy.app.version < (3,3,0):
+        if bpy.app.version < (3,4,0):
             self.layout.prop(self, "createMeshCollection")
 
     def __init__(self):

@@ -582,7 +582,7 @@ class MorphOptions:
                 mloader.category = ""
                 mloader.hideable = True
                 print("\nLoading missing %s morphs" % morphset)
-                mloader.getAllMorphs(namepathTable[morphset], context, True)
+                mloader.getAllMorphs(namepathTable[morphset], context)
         if self.useLoadMissing and "Custom" in namepathTable.keys():
             customs = {}
             for namepath in namepathTable["Custom"]:
@@ -599,7 +599,7 @@ class MorphOptions:
                 mloader.category = cat
                 mloader.hideable = True
                 print("\nLoading morphs in category %s" % cat)
-                mloader.getAllMorphs(namepaths, context, True)
+                mloader.getAllMorphs(namepaths, context)
 
 
     def setupMorphTable(self, rig):
