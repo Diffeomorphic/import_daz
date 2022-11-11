@@ -820,7 +820,7 @@ class Texture:
             if colorSpace == "COLOR":
                 setColorSpace(img, ["sRGB", "sRGB OETF"])
             elif colorSpace == "NONE":
-                setColorSpace(img, ["Non-Color", "Linear", "Non-Colour Data"])
+                setColorSpace(img, ["Non-Color", "Linear", "Non-Colour Data", "Generic Data"])
         self.images[colorSpace] = img
         self.built[colorSpace] = True
         return img
