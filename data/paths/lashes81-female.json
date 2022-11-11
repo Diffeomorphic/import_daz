@@ -1,6 +1,8 @@
 {
 	"name" : "Lashes81-female",
 	"hd-morphs" : true,
+	"projection" : "data/DAZ 3D/Genesis 8/Female 8_1 Eyelashes/Morphs/DAZ 3D/Base/bs_EyelashesCollapsed.dsf",
+	"factor" : 1.0,
 	"head" : {
 		"prefix" : "phm",
 		"include" : ["phm"],

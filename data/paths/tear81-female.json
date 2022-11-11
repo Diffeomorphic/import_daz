@@ -1,6 +1,8 @@
 {
 	"name" : "Tear81-female",
 	"hd-morphs" : true,
+	"projection" : "data/DAZ 3D/Genesis 8/Female 8_1 Tear/Morphs/DAZ 3D/Base/bs_TearProjectionShape.dsf",
+	"factor" : 1.0,
 	"facs" : {
 		"prefix" : "facs_",
 		"include" : ["facs_"],

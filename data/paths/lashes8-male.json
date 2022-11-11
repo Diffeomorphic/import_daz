@@ -1,6 +1,8 @@
 {
 	"name" : "Lashes8-male",
 	"hd-morphs" : true,
+	"projection" : "data/DAZ 3D/Genesis 8/Male Eyelashes/Morphs/DAZ 3D/Base/PHMEyelashesExpand.dsf",
+	"factor" : -1.0,
 	"units" : {
 		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
 		"include" : ["ectrl", "ctrl", "phm", "ephm"],

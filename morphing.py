@@ -647,6 +647,7 @@ class MorphPaths:
         self.morphNames = {}
         self.projectionFiles = {}
         self.projection = {}
+        self.projectionFactor = {}
 
         folder = os.path.join(os.path.dirname(__file__), "data/paths/")
         charPaths = {}
@@ -665,6 +666,9 @@ class MorphPaths:
                     continue
                 elif key == "projection":
                     self.projectionFiles[char] = struct
+                    continue
+                elif key == "factor":
+                    self.projectionFactor[char] = struct
                     continue
                 type = key.capitalize()
                 if type not in charFiles.keys():
@@ -776,12 +780,12 @@ class MorphPaths:
             proj = None
             if struct:
                 deltas = struct["modifier_library"][0]["morph"]["deltas"]["values"]
-                scale = ob.DazScale
+                scale = self.projectionFactor[char] * ob.DazScale
                 proj = np.zeros((len(ob.data.vertices), 3), float)
                 vnums = np.array([delta[0] for delta in deltas])
                 offsets = np.array([scale * d2bu(delta[1:]) for delta in deltas])
                 proj[vnums] = offsets
-                print("Projection for %s loaded" % char)
+                print("Projection file %s loaded" % relpath)
             self.projection[char] = proj
         return self.projection[char]
 
