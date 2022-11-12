@@ -149,10 +149,7 @@ class Rigify:
             eb.use_connect = False
 
         for eb in meta.data.edit_bones:
-            try:
-                dname = self.rigifySkel[eb.name]
-            except KeyError:
-                dname = None
+            dname = self.rigifySkel.get(eb.name)
             if isinstance(dname, tuple):
                 dname,_vgrps = dname
             if isinstance(dname, str):
@@ -350,7 +347,7 @@ class Rigify:
         taken = []
         for dbone in self.spineBones.keys():
             taken.append(dbone)
-        for _rbone, dbone in self.rigifySkel.items():
+        for dbone in self.rigifySkel.values():
             if isinstance(dbone, tuple):
                 dbone = dbone[0]
                 if isinstance(dbone, tuple):
@@ -805,16 +802,13 @@ class Rigify:
             if isDrvBone(bname) or isFinal(bname):
                 continue
             assoc[bname] = bname
-        for dname in self.spineBones.keys():
-            rname = self.spineBones[dname]
-            if isinstance(rname, tuple):
-                rname = rname[0]
-            assoc[dname] = rname
         for rname,dname in self.rigifySkel.items():
             if isinstance(dname, tuple):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
             assoc[dname] = orgname
+        for dname,rnames in self.spineBones.items():
+            assoc[dname] = self.getOrgDefBone(rnames[0], gen)
 
         for fcu in getPropDrivers(rig):
             fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen)

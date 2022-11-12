@@ -348,6 +348,7 @@ class RigifyData:
             "l_pectoral" : "DEF-spine.004",
             "r_pectoral" : "DEF-spine.004",
         }
+        self.ExtraParents = {}
 
         self.CustomShapeFixGenesis38 = [
             (["head", "spine_fk.007"], 4)
