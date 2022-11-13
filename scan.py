@@ -277,7 +277,7 @@ def getCharData(context, error):
             raise DazError(msg)
         else:
             print(msg)
-            return rig, meshes[0], "Unknown", None
+            return rig, None, "Unknown", None
     mesh = meshes[0]
     relfile = mesh.DazUrl.rsplit("#",1)[0]
     relpath = os.path.dirname(relfile)

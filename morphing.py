@@ -894,6 +894,9 @@ class MorphLoader(LoadMorph):
         self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(bpy.context.object, GS.useModifiedMesh)
         if mesh:
             self.meshes = [mesh]
+        elif self.rig and not self.meshes:
+            self.meshes = [ob for ob in self.rig.children if ob.type == 'MESH']
+
 
     def getMorphSet(self, asset):
         return self.morphset
