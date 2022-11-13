@@ -364,6 +364,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
     again = False
     for mset,namepaths in standards.items():
         mloader = StandardMorphLoader()
+        mloader.getFingeredRigMeshes(context)
         mloader.morphset = mset
         mloader.category = ""
         mloader.hideable = True
@@ -372,10 +373,11 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         again = True
     if customs:
         mloader = CustomMorphLoader()
-        rig.DazCustomMorphs = True
+        mloader.getFingeredRigMeshes(context)
         mloader.morphset = "Custom"
         mloader.category = cat
         mloader.hideable = True
+        rig.DazCustomMorphs = True
         print("\nLoading morphs in category %s" % cat)
         mloader.getAllMorphs(customs, context)
         props = [prop for (prop,path,ref) in customs]

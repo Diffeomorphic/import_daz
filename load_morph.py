@@ -49,9 +49,9 @@ class LoadMorph(DriverUser):
     onMorphSuffix = 'NONE'
     useSearchAlias = True
 
-    def __init__(self, rig, mesh):
-        self.rig = rig
-        self.mesh = mesh
+    def __init__(self):
+        self.rig = None
+        self.mesh = None
         self.char = None
         self.initAmt()
         self.mult = []
@@ -1431,7 +1431,8 @@ class LoadMorph(DriverUser):
 def buildBoneFormula(asset, rig, errors):
 
     def buildChannel(exprs, pb, channel):
-        lm = LoadMorph(rig, None)
+        lm = LoadMorph()
+        lm.rig = rig
         for idx,expr in exprs.items():
             factor = expr["factor"]
             driver = expr["bone"]
@@ -1450,7 +1451,8 @@ def buildBoneFormula(asset, rig, errors):
 
 
     def buildValueDriver(exprs, raw):
-        lm = LoadMorph(rig, None)
+        lm = LoadMorph()
+        lm.rig = rig
         for idx,expr in exprs.items():
             bname = expr["bone"]
             if (bname not in rig.pose.bones.keys() and

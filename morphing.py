@@ -889,11 +889,12 @@ class MorphLoader(LoadMorph):
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
         default = True)
 
-    def __init__(self, rig=None, mesh=None):
+    def getFingeredRigMeshes(self, context):
         from .finger import getFingeredCharacters
-        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(bpy.context.object, GS.useModifiedMesh)
-        if mesh:
-            self.meshes = [mesh]
+        ob = context.object
+        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh)
+        if ob.type == 'MESH':
+            self.meshes = [ob]
         elif self.rig and not self.meshes:
             self.meshes = [ob for ob in self.rig.children if ob.type == 'MESH']
 
@@ -1046,6 +1047,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     useMakePosable = False
 
     def setupCharacter(self, context):
+        self.getFingeredRigMeshes(context)
         ob = context.object
         if not self.chars:
             msg = ("Can not add morphs to this mesh:\n %s" % ob.name)
@@ -1540,12 +1542,8 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def invoke(self, context, event):
-        from .fileutils import getFoldersFromObject
-        folders = getFoldersFromObject(self.meshes[0], ["Morphs/"])
-        if not folders:
-            folders = getFoldersFromObject(self.rig, ["Morphs/"])
-        if folders:
-            self.properties.filepath = folders[0]
+        self.getFingeredRigMeshes(context)
+        self.setPreferredFolder(self.rig, self.meshes, ["Morphs/"], False)
         return MultiFile.invoke(self, context, event)
 
 

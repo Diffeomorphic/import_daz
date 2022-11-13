@@ -578,6 +578,7 @@ class MorphOptions:
         for morphset in namepathTable.keys():
             if self.useLoadMissing:
                 mloader = StandardMorphLoader()
+                mloader.rig = rig
                 mloader.morphset = morphset
                 mloader.category = ""
                 mloader.hideable = True
@@ -595,6 +596,7 @@ class MorphOptions:
             for cat, namepaths in customs.items():
                 mloader = CustomMorphLoader()
                 rig.DazCustomMorphs = True
+                mloader.rig = rig
                 mloader.morphset = "Custom"
                 mloader.category = cat
                 mloader.hideable = True
@@ -734,6 +736,9 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
         if self.affectMorphs:
             MorphOptions.draw(self, context)
 
+    def invoke(self, context, event):
+        self.setPreferredFolder(context.object, [], self.preferredFolders, True)
+        return MultiFile.invoke(self, context, event)
 
     def getSingleAnimation(self, filepath, context, offset):
         from .load_json import loadJson
@@ -1404,6 +1409,7 @@ class DAZ_OT_ImportAction(HideOperator, AffectBonesOn, AffectMorphsOn, ActionOpt
     verbose = False
     useAction = True
     usePoseLib = False
+    preferredFolders = ["Poses/"]
 
     def draw(self, context):
         AnimatorBase.draw(self, context)
@@ -1430,6 +1436,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
     lastFrame = 1000
     affectBones = True
     affectMorphs = False
+    preferredFolders = ["Poses/"]
 
     makeNewPoseLib : BoolProperty(
         name = "New Pose Library",
@@ -1568,6 +1575,7 @@ class DAZ_OT_ImportPose(HideOperator, AffectMorphsOff, PoseBase, StandardAnimati
     bl_options = {'UNDO', 'PRESET'}
 
     affectBones = True
+    preferredFolders = ["Poses/"]
 
     def run(self, context):
         StandardAnimation.run(self, context)
@@ -1580,6 +1588,7 @@ class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAn
     bl_options = {'UNDO', 'PRESET'}
 
     affectMorphs = True
+    preferredFolders = ["Expressions/"]
 
     def run(self, context):
         StandardAnimation.run(self, context)
@@ -1591,8 +1600,14 @@ class DAZ_OT_ImportNodePose(HideOperator, NodePose, AffectBonesOn, AffectMorphsO
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
     bl_options = {'UNDO', 'PRESET'}
 
+    preferredFolders = [""]
+
     def run(self, context):
         StandardAnimation.run(self, context)
+
+    def invoke(self, context, event):
+        self.setPreferredFolder(context.object, [], ["Poses/"], True)
+        return PoseBase.invoke(self, context, event)
 
     def parseAnimations(self, struct, banims, vanims):
         NodePose.parseAnimations(self, struct, banims, vanims)

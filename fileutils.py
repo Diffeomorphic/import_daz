@@ -177,18 +177,33 @@ def getFolders(reldir, subdirs, match81=True):
     return preferred+others
 
 
-def getFoldersFromObject(ob, subdirs, match81=True):
-    reldir = getReldirFromObject(ob)
+def getFoldersFromObject(ob, subdirs, match81=True, usePeople=False):
+    reldir = getReldirFromObject(ob, usePeople)
     return getFolders(reldir, subdirs, match81)
 
 
-def getReldirFromObject(ob):
+def getReldirFromObject(ob, usePeople):
     if ob is None:
         return None
     fileref = ob.DazUrl.split("#")[0]
     if len(fileref) < 2:
         return None
-    return os.path.dirname(unquote(fileref))
+    reldir = os.path.dirname(unquote(fileref))
+    if usePeople:
+        table = {
+            "/data/DAZ 3D/Genesis/Base" : "/People/Genesis",
+            "/data/DAZ 3D/Genesis 2/Female" : "/People/Genesis 2 Female",
+            "/data/DAZ 3D/Genesis 2/Male" : "/People/Genesis 2 Male",
+            "/data/DAZ 3D/Genesis 3/Female" : "/People/Genesis 3 Female",
+            "/data/DAZ 3D/Genesis 3/Male" : "/People/Genesis 3 Male",
+            "/data/DAZ 3D/Genesis 8/Female" : "/People/Genesis 8 Female",
+            "/data/DAZ 3D/Genesis 8/Male" : "/People/Genesis 8 Male",
+            "/data/DAZ 3D/Genesis 9/Base" : "/People/Genesis 9",
+        }
+        for data,people in table.items():
+            if reldir.startswith(data):
+                return reldir.replace(data,people)
+    return reldir
 
 
 def findPathRecursive(files, relpath, subpath):
@@ -212,7 +227,7 @@ def findPathRecursive(files, relpath, subpath):
 
 
 def findPathRecursiveFromObject(files, ob, subpath):
-    reldir = getReldirFromObject(ob)
+    reldir = getReldirFromObject(ob, False)
     return findPathRecursive(files, reldir, subpath)
 
 #-------------------------------------------------------------
@@ -311,6 +326,16 @@ class MultiFile(ImportHelper):
         LS.theFilePaths = []
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+
+    def setPreferredFolder(self, rig, meshes, folders, usePeople):
+        dirs = []
+        if meshes:
+            dirs = getFoldersFromObject(meshes[0], folders, usePeople=usePeople)
+        if not dirs:
+            dirs = getFoldersFromObject(rig, folders, usePeople=usePeople)
+        if dirs:
+            self.properties.filepath = dirs[0]
 
 
     def getMultiFiles(self, extensions):
