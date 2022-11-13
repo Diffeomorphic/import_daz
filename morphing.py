@@ -3264,6 +3264,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
     bl_idname = "daz.load_favo_morphs"
     bl_label = "Load Favorite Morphs"
     bl_description = "Load favorite morphs"
+    bl_options = {'UNDO'}
 
     def draw(self, context):
         MorphSuffix.draw(self, context)
@@ -3288,7 +3289,6 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         self.loadPreset(rig, rig, struct, context)
         for ob in rig.children:
             if ob.type == 'MESH':
-                self.mesh = ob
                 self.loadPreset(ob, rig, struct, context)
 
 
@@ -3299,6 +3299,8 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
             return
         self.chars = getFingeredCharacters(ob, False, verbose=False)[2]
         self.char = self.chars[0]
+        self.meshes = [ob]
+        self.mesh = ob
         if self.ignoreUrl:
             for ustruct in struct.values():
                 if isinstance(ustruct, dict):

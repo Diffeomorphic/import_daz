@@ -136,7 +136,7 @@ def getFingerPrint(ob):
 
 def getFingeredCharacters(ob, useOrig, verbose=True):
     def getSingleChar(rig, char):
-        if isinstance(char, tuple):
+        if isinstance(char, tuple) and rig:
             url = rig.DazUrl.rsplit("#",1)[-1]
             if url.startswith("Genesis"):
                 if "Female" in url:
