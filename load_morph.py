@@ -286,7 +286,10 @@ class LoadMorph(DriverUser):
             self.shapekeys[prop] = skey
             if bodypart == "Face":
                 self.faceshapes[skey.name] = True
-            addSkeyToUrls(self.mesh, asset, skey)
+            try:
+                addSkeyToUrls(self.mesh, asset, skey)
+            except TypeError:
+                pass
             if self.rig:
                 final = self.addNewProp(prop)
                 adj = self.getStrengthAdjuster()
@@ -294,12 +297,15 @@ class LoadMorph(DriverUser):
                 if adj:
                     makePropDriver(propRef(adj), skey, "slider_max", self.rig, "x")
             pgs = self.mesh.data.DazBodyPart
-            if prop in pgs.keys():
-                item = pgs[prop]
-            else:
-                item = pgs.add()
-                item.name = prop
-            item.s = bodypart
+            try:
+                if prop in pgs.keys():
+                    item = pgs[prop]
+                else:
+                    item = pgs.add()
+                    item.name = prop
+                item.s = bodypart
+            except TypeError:
+                pass
             return skey,True
         else:
             return None,True

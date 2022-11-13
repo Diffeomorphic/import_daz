@@ -1605,10 +1605,6 @@ class DAZ_OT_ImportNodePose(HideOperator, NodePose, AffectBonesOn, AffectMorphsO
     def run(self, context):
         StandardAnimation.run(self, context)
 
-    def invoke(self, context, event):
-        self.setPreferredFolder(context.object, [], ["Poses/"], True)
-        return PoseBase.invoke(self, context, event)
-
     def parseAnimations(self, struct, banims, vanims):
         NodePose.parseAnimations(self, struct, banims, vanims)
 
