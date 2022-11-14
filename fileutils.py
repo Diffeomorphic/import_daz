@@ -190,19 +190,23 @@ def getReldirFromObject(ob, usePeople):
         return None
     reldir = os.path.dirname(unquote(fileref))
     if usePeople:
-        table = {
-            "/data/DAZ 3D/Genesis/Base" : "/People/Genesis",
-            "/data/DAZ 3D/Genesis 2/Female" : "/People/Genesis 2 Female",
-            "/data/DAZ 3D/Genesis 2/Male" : "/People/Genesis 2 Male",
-            "/data/DAZ 3D/Genesis 3/Female" : "/People/Genesis 3 Female",
-            "/data/DAZ 3D/Genesis 3/Male" : "/People/Genesis 3 Male",
-            "/data/DAZ 3D/Genesis 8/Female" : "/People/Genesis 8 Female",
-            "/data/DAZ 3D/Genesis 8/Male" : "/People/Genesis 8 Male",
-            "/data/DAZ 3D/Genesis 9/Base" : "/People/Genesis 9",
-        }
-        for data,people in table.items():
-            if reldir.startswith(data):
-                return reldir.replace(data,people)
+        table = [
+            ("/data/daz 3d/genesis/base", "/people/genesis"),
+            ("/data/daz 3d/genesis 2/female", "/people/genesis 2 female"),
+            ("/data/daz 3d/genesis 2/male", "/people/genesis 2 male"),
+            ("/data/daz 3d/genesis 3/female", "/people/genesis 3 female"),
+            ("/data/daz 3d/genesis 3/male", "/people/genesis 3 male"),
+            ("/data/daz 3d/genesis 8/female 8_1", "/people/genesis 8 female"),
+            ("/data/daz 3d/genesis 8/male 8_1", "/people/genesis 8 male"),
+            ("/data/daz 3d/genesis 8/female", "/people/genesis 8 female"),
+            ("/data/daz 3d/genesis 8/male", "/people/genesis 8 male"),
+            ("/data/daz 3d/genesis 9/base", "/people/genesis 9"),
+        ]
+        lreldir = reldir.lower()
+        for data,people in table:
+            if lreldir.startswith(data):
+                pdir = lreldir.replace(data,people)
+                return bpy.path.resolve_ncase(pdir)
     return reldir
 
 
