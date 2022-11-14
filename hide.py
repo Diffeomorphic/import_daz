@@ -316,7 +316,7 @@ class DAZ_OT_CreateMasks(DazOperator, MeshSelector, SingleGroup, IsMesh):
         else:
             vgrp = ob.vertex_groups.new(name=modname)
         if mod is None:
-            mod = ob.modifiers.new("Mask %s" % modname, 'MASK')
+            mod = ob.modifiers.new(modname, 'MASK')
         mod.vertex_group = modname
         mod.invert_vertex_group = True
 
