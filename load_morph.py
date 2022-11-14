@@ -76,6 +76,14 @@ class LoadMorph(DriverUser):
 
 
     def loadAllMorphs(self, namepaths):
+        try:
+            return self.loadAllMorphs1(namepaths)
+        except TypeError as err:
+            msg = "Loading morphs caused a type error:\n%s\nMorphs can not be loaded to linked characters." % err
+        raise DazError(msg)
+
+
+    def loadAllMorphs1(self, namepaths):
         DriverUser.__init__(self)
         self.alias = {}
         self.loaded = []
@@ -218,10 +226,7 @@ class LoadMorph(DriverUser):
             pg = pgs[alias]
             printName(" ==", "%s %s %s" % (prop, alias, pg.s))
         else:
-            try:
-                pg = pgs.add()
-            except TypeError:
-                return
+            pg = pgs.add()
             pg.name = alias
             printName(" =", "%s %s" % (prop, alias))
             pg.s = prop
@@ -286,10 +291,7 @@ class LoadMorph(DriverUser):
             self.shapekeys[prop] = skey
             if bodypart == "Face":
                 self.faceshapes[skey.name] = True
-            try:
-                addSkeyToUrls(self.mesh, asset, skey)
-            except TypeError:
-                pass
+            addSkeyToUrls(self.mesh, asset, skey)
             if self.rig:
                 final = self.addNewProp(prop)
                 adj = self.getStrengthAdjuster()
@@ -297,15 +299,12 @@ class LoadMorph(DriverUser):
                 if adj:
                     makePropDriver(propRef(adj), skey, "slider_max", self.rig, "x")
             pgs = self.mesh.data.DazBodyPart
-            try:
-                if prop in pgs.keys():
-                    item = pgs[prop]
-                else:
-                    item = pgs.add()
-                    item.name = prop
-                item.s = bodypart
-            except TypeError:
-                pass
+            if prop in pgs.keys():
+                item = pgs[prop]
+            else:
+                item = pgs.add()
+                item.name = prop
+            item.s = bodypart
             return skey,True
         else:
             return None,True
