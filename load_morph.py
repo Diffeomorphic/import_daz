@@ -51,9 +51,9 @@ class LoadMorph(DriverUser):
 
     def __init__(self):
         self.rig = None
+        self.amt = None
         self.mesh = None
         self.char = None
-        self.initAmt()
         self.mult = []
         self.mults = {}
         self.adjustable = {}
@@ -66,6 +66,11 @@ class LoadMorph(DriverUser):
 
     def addToMorphSet(self, prop, asset, hidden):
         return
+
+
+    def initRig(self, rig):
+        self.rig = rig
+        self.initAmt()
 
 
     def initAmt(self):
@@ -1437,7 +1442,7 @@ def buildBoneFormula(asset, rig, errors):
 
     def buildChannel(exprs, pb, channel):
         lm = LoadMorph()
-        lm.rig = rig
+        lm.initRig(rig)
         for idx,expr in exprs.items():
             factor = expr["factor"]
             driver = expr["bone"]
@@ -1457,7 +1462,7 @@ def buildBoneFormula(asset, rig, errors):
 
     def buildValueDriver(exprs, raw):
         lm = LoadMorph()
-        lm.rig = rig
+        lm.initRig(rig)
         for idx,expr in exprs.items():
             bname = expr["bone"]
             if (bname not in rig.pose.bones.keys() and
