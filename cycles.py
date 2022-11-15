@@ -1733,17 +1733,11 @@ class CyclesTree(Tree):
         node.image = img
         node.interpolation = GS.imageInterpolation
         node.label = imgname.rsplit("/",1)[-1]
-        self.setColorSpace(node, colorSpace)
         node.name = imgname
         if hasattr(node, "image_user"):
             node.image_user.frame_duration = 1
             node.image_user.frame_current = 1
         return node
-
-
-    def setColorSpace(self, node, colorSpace):
-        if hasattr(node, "color_space"):
-            node.color_space = colorSpace
 
 
     def addImageTexNode(self, filepath, tname, col):

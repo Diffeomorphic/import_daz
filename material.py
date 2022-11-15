@@ -777,8 +777,8 @@ class Texture:
     def __init__(self, map):
         self.rna = None
         self.map = map
-        self.built = {"COLOR":False, "NONE":False}
-        self.images = {"COLOR":None, "NONE":None}
+        self.built = {"COLOR":False, "NONE":False, "LINEAR":False}
+        self.images = {"COLOR":None, "NONE":None, "LINEAR":None}
 
     def __repr__(self):
         return ("<Texture %s %s %s>" % (self.map.url, self.map.image, self.rna))
@@ -804,23 +804,34 @@ class Texture:
             msg = "No matching color space in %s" % alts
             reportError(msg, trigger=(2,3))
 
+        def copyImage(cspaces):
+            for cspace in cspaces:
+                if self.images[cspace]:
+                    return self.images[cspace].copy()
+            return None
+
+        img = None
         if self.built[colorSpace]:
             return self.images[colorSpace]
-        elif colorSpace == "COLOR" and self.images["NONE"]:
-            img = self.images["NONE"].copy()
-        elif colorSpace == "NONE" and self.images["COLOR"]:
-            img = self.images["COLOR"].copy()
+        elif colorSpace == "COLOR":
+            img = copyImage(["NONE", "LINEAR"])
+        elif colorSpace == "NONE":
+            img = copyImage(["COLOR", "LINEAR"])
+        elif colorSpace == "LINEAR":
+            img = copyImage(["COLOR", "NONE"])
+        if img:
+            pass
         elif self.map.url:
             img = self.map.build()
         elif self.map.image:
             img = self.map.image
-        else:
-            img = None
         if img:
             if colorSpace == "COLOR":
                 setColorSpace(img, ["sRGB", "sRGB OETF", "srgb_texture"])
             elif colorSpace == "NONE":
-                setColorSpace(img, ["Non-Color", "Linear", "Non-Colour Data", "Generic Data", "Utilities - Raw"])
+                setColorSpace(img, ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities - Raw"])
+            elif colorSpace == "LINEAR":
+                setColorSpace(img, ["Linear", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709"])
         self.images[colorSpace] = img
         self.built[colorSpace] = True
         return img

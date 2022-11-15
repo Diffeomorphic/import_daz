@@ -228,11 +228,10 @@ class WorldTree(CyclesTree):
             texco = self.addMapping(mat.to_euler(), scale, texco, 2)
 
         value = self.owner.getChannelValue(envmap, 1)
-        img = self.getImage(envmap, "NONE")
+        img = self.getImage(envmap, "LINEAR")
         tex = None
         if img:
             tex = self.addNode("ShaderNodeTexEnvironment", 3)
-            self.setColorSpace(tex, "NONE")
             if img:
                 tex.image = img
                 tex.name = img.name
