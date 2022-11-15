@@ -64,8 +64,8 @@ MhxSkeleton = {
     "l_ear" : ("ear.L", L_HEAD),
     "r_ear" : ("ear.R", L_HEAD),
 
-    "lPectoral" : ("pectoral.L", L_LARMFK),
-    "l_pectoral" : ("pectoral.L", L_LARMFK),
+    "lPectoral" : ("pectoral.L", L_TWEAK),
+    "l_pectoral" : ("pectoral.L", L_TWEAK),
     "lCollar" : ("clavicle.L", L_LARMFK),
     "l_shoulder" : ("clavicle.L", L_LARMFK),
     "lShldr" : ("upper_arm.L", L_LARMFK),
@@ -83,8 +83,8 @@ MhxSkeleton = {
     "lHand" : ("hand.L", L_LARMFK),
     "l_hand" : ("hand.L", L_LARMFK),
 
-    "rPectoral" : ("pectoral.R", L_RARMFK),
-    "r_pectoral" : ("pectoral.R", L_RARMFK),
+    "rPectoral" : ("pectoral.R", L_TWEAK),
+    "r_pectoral" : ("pectoral.R", L_TWEAK),
     "rCollar" : ("clavicle.R", L_RARMFK),
     "r_shoulder" : ("clavicle.R", L_RARMFK),
     "rShldr" : ("upper_arm.R", L_RARMFK),
