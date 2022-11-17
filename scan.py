@@ -270,9 +270,11 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
 
 def getCharData(context, error):
     from .finger import getFingeredCharacters
-    rig,meshes = getFingeredCharacters(context.object, GS.useModifiedMesh)[0:2]
-    if not meshes or not meshes[0].DazUrl:
-        msg = "Cannot scan database because no DAZ mesh was found"
+    rig,meshes,chars,modded = getFingeredCharacters(context.object, GS.useModifiedMesh)
+    if not (meshes and
+            meshes[0].DazUrl and
+            chars[0].startswith("Genesis")):
+        msg = "Cannot scan database because no Genesis mesh was found"
         if error:
             raise DazError(msg)
         else:
