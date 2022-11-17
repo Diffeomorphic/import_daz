@@ -470,6 +470,9 @@ class SkinBinding(Modifier):
             weights = None
             if "node_weights" in joint.keys():
                 weights = joint["node_weights"]
+                if ("local_weights" in joint.keys() or
+                    "scale_weights" in joint.keys()):
+                    LS.triax[geonode.name] = True
             elif "local_weights" in joint.keys():
                 if bname in rig.data.bones.keys():
                     calc_weights = self.calcLocalWeights(bname, joint, rig)

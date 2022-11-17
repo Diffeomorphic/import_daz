@@ -239,60 +239,62 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
 
         LS.fixMappingNodes()
 
-        msg = ""
+        self.msg = ""
         if LS.legacySkin:
-            msg += ("Objects with legacy skin binding found:\n" +
+            self.msg += ("Objects with legacy skin binding found:\n" +
                    "Vertex groups are missing.\n" +
                    "Consider converting the figures to props in DAZ Studio.   \n")
             for ob,rig in LS.legacySkin:
-                msg += '  Mesh: "%s", Rig: "%s"\n' % (ob.name, rig.name)
+                self.msg += '  Mesh: "%s", Rig: "%s"\n' % (ob.name, rig.name)
         if LS.missingAssets:
-            msg += ("Some assets were not found.\n" +
-                   "Check that all Daz paths have been set up correctly.        \n" +
-                   "For details see\n'%s'" % getErrorPath())
+            self.msg += "Some assets were not found. Check that all Daz paths have been set up correctly.        \n"
+            self.addItems(LS.missingAssets.keys())
         if LS.invalidMeshes:
-            msg += "Invalid meshes found:\n"
-            for mename in LS.invalidMeshes:
-                msg += "  %s\n" % mename
+            self.msg += "Invalid meshes found:\n"
+            self.addItems(LS.invalidMeshes)
+        if LS.triax:
+            self.msg += "Meshes with triax weights found. Consider converting to general weights in DAZ Studio.\n"
+            self.addItems(LS.triax.keys())
         if LS.hasInstanceChildren:
-            msg += ("The following objects have instance children.\n" +
+            self.msg += ("The following objects have instance children.\n" +
                    "The result may be incorrect.\n")
-            for obname in LS.hasInstanceChildren.keys():
-                msg += ("  %s\n" % obname)
+            self.addItems(LS.hasInstanceChildren.keys())
         if LS.partialMaterials:
-            msg += "The following materials are only partial:\n"
-            for mname in LS.partialMaterials:
-                msg += ("  %s\n" % mname)
+            self.msg += "The following materials are only partial:\n"
+            self.addItems(LS.partialMaterials)
         if LS.shaders:
-            msg += "Unsupported shaders found:\n"
-            for shader in LS.shaders.keys():
-                msg += "  %s\n" % shader
+            self.msg += "Unsupported shaders found:\n"
+            self.addItems(LS.shaders.keys())
         if LS.hdFailures:
-            msg += "Could not rebuild subdivisions for the following HD objects:       \n"
-            for hdname in LS.hdFailures:
-                msg += ("  %s\n" % hdname)
+            self.msg += "Could not rebuild subdivisions for the following HD objects:       \n"
+            self.addItems(LS.hdFailures)
         if LS.hdWeights:
-            msg += "Could not copy vertex weights to the following HD objects:         \n"
-            for hdname in LS.hdWeights:
-                msg += ("  %s\n" % hdname)
+            self.msg += "Could not copy vertex weights to the following HD objects:         \n"
+            self.addItems(LS.hdWeights)
         if LS.hdUvMissing:
-            msg += "HD objects missing UV layers:\n"
-            for hdname in LS.hdUvMissing:
-                msg += ("  %s\n" % hdname)
-            msg += "Export from DAZ Studio with Multires disabled.        \n"
-        if msg:
+            self.msg += "HD objects missing UV layers:\n"
+            self.addItems(LS.hdUvMissing)
+            self.msg += "Export from DAZ Studio with Multires disabled.        \n"
+        if self.msg:
             clearErrorMessage()
             handleDazError(context, warning=True, dump=True)
-            print(msg)
+            print(self.msg)
             LS.warning = True
-            raise DazError(msg, warning=True)
+            raise DazError(self.msg, warning=True)
 
         from .material import checkRenderSettings
-        msg = checkRenderSettings(context, False)
-        if msg:
+        self.msg = checkRenderSettings(context, False)
+        if self.msg:
             LS.warning = True
-            raise DazError(msg, warning=True)
+            raise DazError(self.msg, warning=True)
         LS.reset()
+
+
+    def addItems(self, items):
+        for item in list(items)[0:10]:
+            self.msg += "  %s\n" % unquote(item)
+        if len(items) > 10:
+            self.msg += "  ... and %d more\n" % (len(items)-10)
 
 #------------------------------------------------------------------
 #   Import DAZ Materials
