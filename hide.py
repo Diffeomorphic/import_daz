@@ -481,18 +481,21 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
             raise DazError("Exactly two meshes must be selected")
         clo = clothes[0]
         props = self.getSelectedProps()
+        prop = getHidePropName(clo.name)
+        if prop not in rig.keys():
+            rig[prop] = 1.0
         for skey in hum.data.shape_keys.key_blocks:
             if skey.name in props:
                 skey.driver_remove("value")
                 fcu = skey.driver_add("value")
                 fcu.driver.type = 'SCRIPTED'
-                addDriverVar(fcu, "a", "hide_render", clo)
+                addDriverVar(fcu, "a", propRef(prop), rig)
                 final = finalProp(skey.name)
                 if rig and final in rig.data.keys():
                     addDriverVar(fcu, "b", propRef(final), rig.data)
-                    fcu.driver.expression = "a+b"
+                    fcu.driver.expression = "1-a+b"
                 else:
-                    fcu.driver.expression = "a"
+                    fcu.driver.expression = "1-a"
 
 
 #----------------------------------------------------------
