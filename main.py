@@ -247,7 +247,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             for ob,rig in LS.legacySkin:
                 self.msg += '  Mesh: "%s", Rig: "%s"\n' % (ob.name, rig.name)
         if LS.missingAssets:
-            self.msg += "Some assets were not found. Check that all Daz paths have been set up correctly.        \n"
+            self.msg += "Some assets were not found. Check that all DAZ root paths have been set up correctly.        \n"
             self.addItems(LS.missingAssets.keys())
         if LS.invalidMeshes:
             self.msg += "Invalid meshes found:\n"

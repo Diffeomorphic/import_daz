@@ -3295,7 +3295,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         from .finger import getFingeredCharacters
         if ob.type != 'MESH':
             return
-        self.chars = getFingeredCharacters(ob, False, verbose=False)[2]
+        _,_,self.chars,self.modded = getFingeredCharacters(ob, False, verbose=False)
         self.char = self.chars[0]
         self.meshes = [ob]
         self.mesh = ob
