@@ -132,11 +132,9 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
-            self.drawDatabase()
-            self.layout.separator()
-            self.layout.operator("daz.transfer_shapekeys")
-        else:
-            self.drawDatabase()
+        self.drawDatabase()
+        self.layout.separator()
+        self.layout.operator("daz.transfer_shapekeys")
 
 
 class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
