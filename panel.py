@@ -1108,7 +1108,6 @@ classes = [
     DAZ_PT_SimpleRig,
     DAZ_PT_Visibility,
     DAZ_PT_DazRigifyProps,
-
 ]
 
 def register():

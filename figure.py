@@ -59,7 +59,7 @@ class FigureInstance(Instance):
 
     def postbuild(self, context):
         Instance.postbuild(self, context)
-        if LS.fitFile:
+        if LS.fitFile and LS.useArmature:
             self.shiftBones(context, self.rna, self.worldmat.inverted())
 
 
@@ -127,6 +127,8 @@ class FigureInstance(Instance):
 
 
     def poseRig(self, context):
+        if not LS.useArmature:
+            return
         from .bone import BoneInstance
         rig = self.rna
         activateObject(context, rig)
@@ -240,28 +242,29 @@ class Figure(Node):
         for geonode in inst.geometries:
             geonode.buildObject(context, inst, center)
             geonode.rna.location = Zero
-        amt = self.data = bpy.data.armatures.new(inst.name)
-        self.buildObject(context, inst, center)
-        rig = self.rna
-        LS.rigs[LS.rigname].append(rig)
-        amt.display_type = 'STICK'
-        rig.show_in_front = True
-        rig.data.DazUnflipped = GS.unflipped
-        rig.DazInheritScale = False
+        if LS.useArmature:
+            amt = self.data = bpy.data.armatures.new(inst.name)
+            self.buildObject(context, inst, center)
+            rig = self.rna
+            LS.rigs[LS.rigname].append(rig)
+            amt.display_type = 'STICK'
+            rig.show_in_front = True
+            rig.data.DazUnflipped = GS.unflipped
+            rig.DazInheritScale = False
+        else:
+            rig = amt = None
         for geonode in inst.geometries:
             geonode.parent = geonode.figure = self
             geonode.rna.parent = rig
             geonode.addLSMesh(geonode.rna, inst, LS.rigname)
-
+        if not LS.useArmature:
+            return
         center = inst.attributes["center_point"]
-        #inst.setupPlanes()
         activateObject(context, rig)
-
         setMode('EDIT')
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
                 child.buildEdit(self, inst, rig, None, center, False)
-
         setMode('OBJECT')
         rig.DazRig = self.rigtype = getRigType1(inst.bones.keys(), True)
         for child in inst.children.values():

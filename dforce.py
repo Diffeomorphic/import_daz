@@ -464,8 +464,11 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         from .load_json import loadJson
         from .hide import makePermanentMaterial
         hum = self.human = context.object
+        if hum.parent and hum.parent.type == 'ARMATURE':
+            self.rig = hum.parent
+        else:
+            raise DazError("No armature found")
         selected = getSelectedMeshes(context)
-        self.rig = hum.parent
         folder = os.path.join(os.path.dirname(__file__), "data", "softbody")
         path = os.path.join(folder, "softbody-%s.json" % hum.DazMesh.lower())
         if not os.path.exists(path):

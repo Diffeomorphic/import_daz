@@ -101,6 +101,7 @@ class GlobalSettings:
         self.useStripCategory = False
         self.useModifiedMesh = False
 
+        self.useArmature = True
         self.useLockLoc = True
         self.useLimitLoc = True
         self.useLockRot = True
@@ -187,6 +188,7 @@ class GlobalSettings:
         "DazUseModifiedMesh" : "useModifiedMesh",
 
         # Rigging
+        "DazUseArmature" : "useArmature",
         "DazUnflipped" : "unflipped",
         "DazUseQuaternions" : "useQuaternions",
         "DazConnectClose" : "useConnectClose",
@@ -527,6 +529,7 @@ class LocalSettings:
         self.useMorphOnly = False
         self.useFormulas = False
         self.useHDObjects = False
+        self.useArmature = GS.useArmature
         self.applyMorphs = False
         self.useAnimations = False
         self.useUV = False

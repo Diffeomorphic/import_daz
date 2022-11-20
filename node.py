@@ -592,10 +592,11 @@ class Instance(Accessor, Channels, SimNode):
                 return
             rig = self.parent.figure.rna
             ob.parent = rig
-            bname = self.parent.node.name
-            if bname in rig.pose.bones.keys():
-                ob.parent_bone = bname
-                ob.parent_type = 'BONE'
+            if rig and rig.type == 'ARMATURE':
+                bname = self.parent.node.name
+                if bname in rig.pose.bones.keys():
+                    ob.parent_bone = bname
+                    ob.parent_type = 'BONE'
         elif isinstance(self.parent, Instance):
             ob.parent = self.parent.rna
             ob.parent_type = 'OBJECT'

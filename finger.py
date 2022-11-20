@@ -148,7 +148,7 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
         return char
 
     modded = False
-    char = None
+    char = ""
     if ob is None:
         return None,[],[],False
     elif ob.type == 'MESH':
@@ -162,7 +162,11 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
             if verbose:
                 print("Did not find fingerprint", finger)
         chars = [getSingleChar(ob.parent, char)]
-        return ob.parent,[ob],chars,modded
+        if ob.parent and ob.parent.type == 'ARMATURE':
+            rig = ob.parent
+        else:
+            rig = None
+        return rig,[ob],chars,modded
 
     elif ob.type == 'ARMATURE':
         def addChar(finger, mesh):

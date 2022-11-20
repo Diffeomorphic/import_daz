@@ -236,6 +236,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         col = split.column()
         box = col.box()
         box.label(text = "Rigging")
+        box.prop(scn, "DazUseArmature")
         box.prop(scn, "DazUseQuaternions")
         box.prop(scn, "DazConnectClose")
         box.prop(scn, "DazUseLockLoc")
@@ -604,6 +605,10 @@ def register():
     bpy.types.Scene.DazUnflipped = BoolProperty(
         name = "Unflipped Bones",
         description = "Don't flip bone axes.\nEnable for debugging only")
+
+    bpy.types.Scene.DazUseArmature = BoolProperty(
+        name = "Armature",
+        description = "Create armatures for imported figures")
 
     bpy.types.Scene.DazUseQuaternions = BoolProperty(
         name = "Quaternions",

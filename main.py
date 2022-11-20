@@ -814,7 +814,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             mainRig = rigs[0]
         else:
             mainRig = None
-        if len(meshes) > 0:
+        if meshes and meshes[0].DazMesh.startswith("Genesis"):
             mainMesh = meshes[0]
         else:
             mainMesh = None
@@ -823,10 +823,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         else:
             mainChar = None
         if mainChar:
-            print("Main character:", mainChar)
+            print("Main character: %s" % mainChar)
         elif mainMesh:
             try:
-                msg = ("Did not recognize main character", mainMesh.name)
+                msg = ("Main mesh: %s" % mainMesh.name)
             except ReferenceError:
                 msg = ("Main mesh has been deleted")
                 mainMesh = None
@@ -836,8 +836,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         lashes = []
         clothes = []
         widgetMesh = None
-        if mainMesh and mainRig:
-            lmeshes = self.getLashes(mainRig, mainMesh)
+        if mainMesh:
+            if mainRig:
+                lmeshes = self.getLashes(mainRig, mainMesh)
+            else:
+                lmeshes = []
             for ob in meshes[1:]:
                 finger = getFingerPrint(ob)
                 if ob.data.DazGraftGroup:
@@ -917,7 +920,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useTransferFace = self.useTransferFace)
 
         # Add softbody simulation
-        if self.useSoftbody and mainMesh and activateObject(context, mainMesh):
+        if self.useSoftbody and mainRig and mainMesh and activateObject(context, mainMesh):
             # Merge materials
             for ob in meshes[1:]:
                 selectSet(ob, True)
