@@ -29,12 +29,12 @@
 bl_info = {
     "name": "DAZ (.duf, .dsf) importer",
     "author": "Thomas Larsson",
-    "version": (1,6,2),
-    "blender": (2,93,0),
+    "version": (1,7,0),
+    "blender": (3,3,0),
     "location": "UI > Daz Importer",
     "description": "Import native DAZ files (.duf, .dsf)",
     "warning": "",
-    "wiki_url": "http://diffeomorphic.blogspot.se/p/daz-importer-version-16.html",
+    "doc_url": "https://bitbucket.org/Diffeomorphic/import_daz/wiki/Home",
     "tracker_url": "https://bitbucket.org/Diffeomorphic/import_daz/issues?status=new&status=open",
     "category": "Import-Export"}
 
