@@ -245,12 +245,15 @@ class DAZ_OT_GetFingerPrint(bpy.types.Operator, IsMeshArmature):
     def invoke(self, context, event):
         ob = context.object
         self.lines = ["Fingerprint for %s" % ob.name]
-        rig,mesh,char,modded = getFingeredCharacter(ob,False)
-        if mesh:
-            finger = getFingerPrint(mesh)
-            mesh = mesh.name
+        rig,meshes,chars,modded = getFingeredCharacters(ob,False)
+        if meshes:
+            finger = getFingerPrint(meshes[0])
+            mesh = meshes[0].name
+            char = chars[0]
         else:
             finger = None
+            mesh = None
+            char = None
         if rig:
             rig = rig.name
         self.lines += [
