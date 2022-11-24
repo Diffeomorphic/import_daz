@@ -259,7 +259,7 @@ class GeoNode(Node, SimNode):
             uvname = "UV Layer"
         uvloop = makeNewUvloop(hdob.data, uvname, True)
         if len(uvs) > len(uvloop.data):
-            print("%s has too many UVs: %d > %d" % (ob.name, len(uvs), len(uvloop.data)))
+            print("%s has too many UVs: %d > %d" % (hdob.name, len(uvs), len(uvloop.data)))
             LS.hdUvMismatch.append(hdob.name)
             return
         m = 0

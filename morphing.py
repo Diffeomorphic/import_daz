@@ -780,7 +780,7 @@ class MorphPaths:
             proj = None
             if struct:
                 deltas = struct["modifier_library"][0]["morph"]["deltas"]["values"]
-                scale = self.projectionFactor[char] * ob.DazScale
+                scale = self.projectionFactor.get(char, 1.0) * ob.DazScale
                 proj = np.zeros((len(ob.data.vertices), 3), float)
                 vnums = np.array([delta[0] for delta in deltas])
                 offsets = np.array([scale * d2bu(delta[1:]) for delta in deltas])
