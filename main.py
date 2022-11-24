@@ -275,6 +275,10 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             self.msg += "HD objects missing UV layers:\n"
             self.addItems(LS.hdUvMissing)
             self.msg += "Export from DAZ Studio with Multires disabled.        \n"
+        if LS.hdUvMismatch:
+            self.msg += "HD objects with UV mismatch:\n"
+            self.addItems(LS.hdUvMismatch)
+            self.msg += "Enter Geometry editor before exporting HD meshes with geografts"
         if self.msg:
             clearErrorMessage()
             handleDazError(context, warning=True, dump=True)

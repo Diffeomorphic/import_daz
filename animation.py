@@ -1731,7 +1731,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     useAction : BoolProperty(
         name = "Use Action",
-        description = "Import action instead of single pose",
+        description = "Save action instead of single pose",
         default = True)
 
     useObject : BoolProperty(

@@ -547,6 +547,7 @@ class LocalSettings:
         self.hdFailures = []
         self.hdWeights = []
         self.hdUvMissing = []
+        self.hdUvMismatch = []
         self.partialMaterials = []
         self.triax = {}
         self.legacySkin = []

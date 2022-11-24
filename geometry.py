@@ -247,7 +247,8 @@ class GeoNode(Node, SimNode):
 
 
     def addHDUvs(self, ob, hdob):
-        if not self.highdef.uvs:
+        uvs = self.highdef.uvs
+        if not uvs:
             if hdob.name not in LS.hdUvMissing:
                 LS.hdUvMissing.append(hdob.name)
             return
@@ -256,7 +257,16 @@ class GeoNode(Node, SimNode):
             uvname = ob.data.uv_layers[0].name
         else:
             uvname = "UV Layer"
-        addUvs(hdob.data, uvname, self.highdef.uvs, uvfaces)
+        uvloop = makeNewUvloop(hdob.data, uvname, True)
+        if len(uvs) > len(uvloop.data):
+            print("%s has too many UVs: %d > %d" % (ob.name, len(uvs), len(uvloop.data)))
+            LS.hdUvMismatch.append(hdob.name)
+            return
+        m = 0
+        for f in uvfaces:
+            for vn in f:
+                uvloop.data[m].uv = uvs[vn]
+                m += 1
 
 
     def addHDMaterials(self, mats, prefix):
@@ -1463,17 +1473,6 @@ def makeNewUvloop(me, name, setActive):
     if setActive:
         me.uv_layers.active_index = len(me.uv_layers) - 1
     return uvloop
-
-
-def addUvs(me, name, uvs, uvfaces):
-    if not uvs:
-        return
-    uvloop = makeNewUvloop(me, name, True)
-    m = 0
-    for f in uvfaces:
-        for vn in f:
-            uvloop.data[m].uv = uvs[vn]
-            m += 1
 
 #-------------------------------------------------------------
 #   Prune Uv textures
