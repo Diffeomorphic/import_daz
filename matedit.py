@@ -1554,6 +1554,61 @@ def fixMaterialUvs(mats, uvset):
         for texco in texcos:
             tree.nodes.remove(texco)
 
+#-------------------------------------------------------------
+#   Replace material node tree
+#-------------------------------------------------------------
+
+def getAllMaterials(scn, context):
+    return [(mat.name, mat.name, mat.name) for mat in bpy.data.materials]
+
+#----------------------------------------------------------
+#   Find missing textures
+#----------------------------------------------------------
+
+class DAZ_OT_FindMissingTextures(DazOperator):
+    bl_idname = "daz.find_missing_textures"
+    bl_label = "Find Missing Textures"
+    bl_description = "Search for missing textures of selected meshes in the DAZ database"
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            for mat in ob.data.materials:
+                for node in mat.node_tree.nodes:
+                    if node.type == 'TEX_IMAGE':
+                        img = node.image
+                        path = bpy.path.abspath(img.filepath)
+                        if not os.path.exists(path):
+                            newpath,res = self.findMissingPath(path)
+                            if newpath:
+                                img.filepath = newpath
+                                if res:
+                                    img.name = img.name.replace(res, "")
+                                    node.name = node.name.replace(res, "")
+                                    node.label = node.label.replace(res, "")
+
+
+    def findMissingPath(self, path):
+        path = path.lower().replace("\\", "/")
+        for folder,res in [("/textures/original/", ""),
+                           ("/textures/res1/", "-res1"),
+                           ("/textures/res2/", "-res2"),
+                           ("/textures/res3/", "-res3"),
+                           ("/textures/res4/", "-res4"),
+                           ("/textures/", "")]:
+            words = path.rsplit(folder, 1)
+            if len(words) == 1:
+                continue
+            if res:
+                file = words[1].replace(res, "")
+            else:
+                file = words[1]
+            for root in GS.getDazPaths():
+                newpath = bpy.path.resolve_ncase("%s/runtime/textures/%s" % (root, file))
+                if os.path.exists(newpath):
+                    print("New path: %s" % newpath)
+                    return newpath,res
+        return None,""
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1577,6 +1632,7 @@ classes = [
     DAZ_OT_ChangeUnitScale,
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,
+    DAZ_OT_FindMissingTextures,
 ]
 
 def register():

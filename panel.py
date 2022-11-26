@@ -245,6 +245,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
         self.layout.separator()
+        self.layout.operator("daz.find_missing_textures")
         self.layout.operator("daz.replace_materials")
         self.layout.operator("daz.load_uv")
         self.layout.operator("daz.save_uv")
@@ -703,7 +704,7 @@ class DAZ_UL_Facs(DAZ_UL_StandardMorphs):
     morphset = "Facs"
 
 class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
-    bl_label = "FACS Units"
+    bl_label = "FACS"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facs"
     ftype = "DazFacs"
