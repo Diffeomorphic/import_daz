@@ -37,7 +37,7 @@ from .asset import Asset
 from .channels import Channels
 from .utils import *
 from .error import *
-from .fileutils import MultiFile, ImageFile
+from .fileutils import SingleFile, MultiFile, ImageFile, JsonFile
 from .animation import theImageExtensions
 from mathutils import Vector, Matrix
 
@@ -1910,6 +1910,67 @@ class DAZ_OT_UpdateSettings(DazOperator):
         checkRenderSettings(context, True)
 
 #----------------------------------------------------------
+#   Save and load materials
+#----------------------------------------------------------
+
+class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
+    bl_idname = "daz.save_materials_to_file"
+    bl_label = "Save Materials To File"
+    bl_description = "Save materials of selected meshes as a .json file"
+
+    def run(self, context):
+        path = os.path.splitext(self.filepath)[0]
+        self.filepath = "%s.json" % bpy.path.abspath(path)
+        from .load_json import saveJson
+        from .tree import saveTree
+        struct = {
+            "type" : "material_nodetree",
+            "blender" : bpy.app.version,
+        }
+        oblist = []
+        struct["objects"] = oblist
+        for ob in getSelectedMeshes(context):
+            obstruct = {
+                "name" : ob.name,
+            }
+            oblist.append(obstruct)
+            matlist = []
+            obstruct["materials"] = matlist
+            for mat in ob.data.materials:
+                matstruct = {
+                    "name" : mat.name,
+                }
+                matlist.append(matstruct)
+                saveTree(mat.node_tree, matstruct)
+        saveJson(struct, self.filepath)
+
+
+class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
+    bl_idname = "daz.load_materials_from_file"
+    bl_label = "Load Materials From File"
+    bl_description = "Load materials from a .json file to the active mesh"
+
+    def run(self, context):
+        from .load_json import loadJson
+        from .tree import loadTree, pruneNodeTree
+        struct = loadJson(self.filepath)
+        type = struct.get("type")
+        if type != "material_nodetree":
+            raise DazError('"%s"\ndoes not contain a material node tree')
+        if struct["blender"] != list(bpy.app.version):
+            print("Warning: Wrong Blender version")
+        ob = context.object
+        ob.data.materials.clear()
+        for obstruct in struct["objects"]:
+            for matstruct in obstruct["materials"]:
+                mat = bpy.data.materials.new(matstruct["name"])
+                mat.use_nodes = True
+                ob.data.materials.append(mat)
+                loadTree(matstruct, mat.node_tree)
+        for mat in ob.data.materials:
+            pruneNodeTree(mat.node_tree)
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -1921,6 +1982,8 @@ classes = [
     DAZ_OT_ChangeResolution,
     DAZ_OT_ResizeTextures,
     DAZ_OT_UpdateSettings,
+    DAZ_OT_SaveMaterialsToFile,
+    DAZ_OT_LoadMaterialsFromFile,
 ]
 
 def register():

@@ -1669,13 +1669,7 @@ class LayeredGroup(CyclesGroup):
 #   Make shader group
 #----------------------------------------------------------
 
-class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
-    bl_idname = "daz.make_shader_groups"
-    bl_label = "Make Shader Groups"
-    bl_description = "Create shader groups for the active material"
-    bl_options = {'UNDO'}
-
-    groups = {
+ShaderGroups = {
         "useDiffuse" : (DiffuseGroup, "DAZ Diffuse", []),
         "useLogColor" : (LogColorGroup, "DAZ Log Color", []),
         "useColorEffect" : (ColorEffectGroup, "DAZ Color Effect", []),
@@ -1702,6 +1696,12 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         "useDisplacement" : (DisplacementGroup, "DAZ Displacement", []),
         "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
     }
+
+class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
+    bl_idname = "daz.make_shader_groups"
+    bl_label = "Make Shader Groups"
+    bl_description = "Create shader groups for the active material"
+    bl_options = {'UNDO'}
 
     useDiffuse : BoolProperty(name="Diffuse", default=False)
     useLogColor : BoolProperty(name="Log Color", default=False)
@@ -1730,7 +1730,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useDecal : BoolProperty(name="Decal", default=False)
 
     def draw(self, context):
-        for key in self.groups.keys():
+        for key in ShaderGroups.keys():
             self.layout.prop(self, key)
 
 
@@ -1747,9 +1747,9 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
         ctree.nodes = mat.node_tree.nodes
         ctree.links = mat.node_tree.links
         ctree.column = 0
-        for key in self.groups.keys():
+        for key in ShaderGroups.keys():
             if getattr(self, key):
-                group,gname,args = self.groups[key]
+                group,gname,args = ShaderGroups[key]
                 ctree.column += 1
                 node = ctree.addGroup(group, gname, args=args)
 

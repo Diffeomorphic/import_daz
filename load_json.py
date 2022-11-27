@@ -168,6 +168,8 @@ def encodeJsonData(data, pad=""):
             return string + "]"
         except:
             print(data)
+            print("Can't encode: %s" % data)
+            return str(data)
             print(data.type)
             raise DazError("Can't encode: %s %s" % (data, data.type))
 

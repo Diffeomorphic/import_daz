@@ -320,3 +320,140 @@ def copyNodeTree(src, trg):
     copy_nodes( src, trg )
     copy_links( src, trg )
 
+#-------------------------------------------------------------
+#   Save and load node trees
+#-------------------------------------------------------------
+
+def saveTree(tree, struct):
+    def getImage(img):
+        struct = {}
+        if img.filepath:
+            struct["filepath"] = img.filepath.replace("\\", "/")
+        include = ["alpha_mode"]
+        for attr in include:
+            if hasattr(img, attr):
+                struct[attr] = getattr(img, attr)
+        return struct
+
+    nodelist = []
+    struct["nodes"] = nodelist
+    ignore = ( "inputs", "outputs", "rna_type", "internal_links", "interface", "texture_mapping", "color_mapping", "image_user")
+    for node in tree.nodes:
+        nodestruct = {}
+        nodelist.append(nodestruct)
+        words = str(node.rna_type).split('"')
+        nodestruct["rna_type"] = words[1]
+        for attr in node.bl_rna.properties:
+            data = getattr(node, attr.identifier)
+            if (attr.identifier in ignore or
+                attr.identifier.split("_")[0] == "bl"):
+                pass
+            elif isinstance(data, bpy.types.Image):
+                nodestruct[attr.identifier] = getImage(data)
+            elif isinstance(data, bpy.types.ShaderNodeTree):
+                nodestruct[attr.identifier] = data.name
+            else:
+                nodestruct[attr.identifier] = data
+
+        inattrs = ["name", "default_value"]
+        instruct = {}
+        nodestruct["inputs"] = instruct
+        for socket in node.inputs:
+            sockstruct = {}
+            instruct[socket.identifier] = sockstruct
+            for attr in inattrs:
+                try:
+                    sockstruct[attr] = getattr(socket, attr)
+                except AttributeError:
+                    pass
+
+        outattrs = ["name", "default_value"]
+        outstruct = {}
+        nodestruct["outputs"] = outstruct
+        for socket in node.outputs:
+            sockstruct = {}
+            outstruct[socket.identifier] = sockstruct
+            for attr in outattrs:
+                try:
+                    sockstruct[attr] = getattr(socket, attr)
+                except AttributeError:
+                    pass
+
+    linklist = []
+    struct["links"] = linklist
+    for link in tree.links:
+        linkstruct = {}
+        linklist.append(linkstruct)
+        linkstruct["from_node"] = link.from_node.name
+        linkstruct["to_node"] = link.to_node.name
+        linkstruct["from_socket"] = link.from_socket.identifier
+        linkstruct["to_socket"] = link.to_socket.identifier
+
+
+def loadTree(struct, tree):
+    def getShaderGroup(gname):
+        from .cgroup import ShaderGroups
+        for key,data in ShaderGroups.items():
+            if gname == data[1]:
+                return key
+        return None
+
+    tree.nodes.clear()
+    nodes = {}
+    ignore = ["rna_type", "type", "dimensions"]
+    for nodestruct in struct["nodes"]:
+        node = tree.nodes.new(nodestruct["rna_type"])
+        nodes[nodestruct["name"]] = node
+        for key,data in nodestruct.items():
+            if key in ignore:
+                pass
+            elif key == "inputs":
+                for socket in node.inputs:
+                    info = data.get(socket.identifier)
+                    if info and "default_value" in info.keys():
+                        socket.default_value = info["default_value"]
+            elif key == "outputs":
+                for socket in node.outputs:
+                    info = data.get(socket.identifier)
+                    if info and "default_value" in info.keys():
+                        socket.default_value = info["default_value"]
+            elif key == "image":
+                filepath = data.get("filepath")
+                img = node.image = bpy.data.images.load(filepath)
+                if img:
+                    for key,value in data.items():
+                        setattr(img, key, value)
+            elif key == "node_tree":
+                group = bpy.data.node_groups.get(data)
+                if group:
+                    node.node_tree = group
+                elif data[0:3] == "DAZ":
+                    use = getShaderGroup(data)
+                    oper = "bpy.ops.daz.make_shader_groups(%s=True)" % use
+                    print(oper)
+                    # Yes, I know using eval is bad, but how else to change keyword dynamically?
+                    eval(oper)
+                    group = bpy.data.node_groups.get(data)
+                    if group:
+                        node.node_tree = group
+            else:
+                try:
+                    setattr(node, key, data)
+                except AttributeError:
+                    print("WRONG", key)
+
+    def getSocket(sockets, id):
+        for socket in sockets:
+            if socket.identifier == id:
+                return socket
+        return None
+
+    for linkstruct in struct["links"]:
+        from_node = nodes.get(linkstruct["from_node"])
+        to_node = nodes.get(linkstruct["to_node"])
+        if from_node and to_node:
+            from_socket = getSocket(from_node.outputs, linkstruct["from_socket"])
+            to_socket = getSocket(to_node.inputs, linkstruct["to_socket"])
+            if from_socket and to_socket:
+                tree.links.new(from_socket, to_socket)
+

@@ -1554,13 +1554,6 @@ def fixMaterialUvs(mats, uvset):
         for texco in texcos:
             tree.nodes.remove(texco)
 
-#-------------------------------------------------------------
-#   Replace material node tree
-#-------------------------------------------------------------
-
-def getAllMaterials(scn, context):
-    return [(mat.name, mat.name, mat.name) for mat in bpy.data.materials]
-
 #----------------------------------------------------------
 #   Find missing textures
 #----------------------------------------------------------
