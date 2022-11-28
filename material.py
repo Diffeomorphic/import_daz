@@ -1923,25 +1923,22 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
         self.filepath = "%s.json" % bpy.path.abspath(path)
         from .load_json import saveJson
         from .tree import saveTree
+        ob = context.object
+        matlist = []
+        treelist = []
+        taken = []
         struct = {
             "type" : "material_nodetree",
             "blender" : bpy.app.version,
+            "node_trees" : treelist,
+            "materials" : matlist
         }
-        oblist = []
-        struct["objects"] = oblist
-        for ob in getSelectedMeshes(context):
-            obstruct = {
-                "name" : ob.name,
+        for mat in ob.data.materials:
+            matstruct = {
+                "name" : mat.name,
             }
-            oblist.append(obstruct)
-            matlist = []
-            obstruct["materials"] = matlist
-            for mat in ob.data.materials:
-                matstruct = {
-                    "name" : mat.name,
-                }
-                matlist.append(matstruct)
-                saveTree(mat.node_tree, matstruct)
+            matlist.append(matstruct)
+            saveTree(mat.node_tree, matstruct, treelist, taken)
         saveJson(struct, self.filepath)
 
 
@@ -1952,7 +1949,7 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
 
     def run(self, context):
         from .load_json import loadJson
-        from .tree import loadTree, pruneNodeTree
+        from .tree import loadTree, loadNodeTrees, pruneNodeTree
         struct = loadJson(self.filepath)
         type = struct.get("type")
         if type != "material_nodetree":
@@ -1961,14 +1958,17 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
             print("Warning: Wrong Blender version")
         ob = context.object
         ob.data.materials.clear()
-        for obstruct in struct["objects"]:
-            for matstruct in obstruct["materials"]:
-                mat = bpy.data.materials.new(matstruct["name"])
-                mat.use_nodes = True
-                ob.data.materials.append(mat)
-                loadTree(matstruct, mat.node_tree)
-        for mat in ob.data.materials:
-            pruneNodeTree(mat.node_tree)
+        mat = bpy.data.materials.new("Dummy")
+        mat.use_nodes = True
+        ob.data.materials.append(mat)
+        loadNodeTrees(struct["node_trees"], mat.node_tree, "ShaderNodeTree")
+        return
+        ob.data.materials.clear()
+        for matstruct in struct["materials"]:
+            mat = bpy.data.materials.new(matstruct["name"])
+            mat.use_nodes = True
+            ob.data.materials.append(mat)
+            loadTree(matstruct, mat.node_tree)
 
 #----------------------------------------------------------
 #   Initialize
