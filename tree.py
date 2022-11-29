@@ -324,7 +324,7 @@ def copyNodeTree(src, trg):
 #   Save node trees
 #-------------------------------------------------------------
 
-def saveTree(tree, struct, treelist, taken):
+def saveTree(tree, struct, nodetrees, taken):
     def getImage(img):
         struct = {}
         if img.filepath:
@@ -394,25 +394,35 @@ def saveTree(tree, struct, treelist, taken):
     nodegroups = {}
     saveSingleTree(tree, struct, nodegroups)
     n = 5
-    while n > 0:
+    found = True
+    while found and n > 0:
         n -= 1
-        nodetrees = {}
+        found = False
         for gname,group in list(nodegroups.items()):
             if gname not in taken:
+                found = True
+                print("FOU", gname)
                 taken.append(gname)
                 gstruct = {"name" : gname}
                 nodetrees[gname] = gstruct
                 saveSingleTree(group, gstruct, nodegroups)
-        if nodetrees:
-            treelist.append(nodetrees)
-        else:
-            return
 
 #-------------------------------------------------------------
 #   Load node trees
 #-------------------------------------------------------------
 
-def loadTree(struct, tree):
+def loadTree(struct, tree, tree0, nodetrees, type, taken):
+    def loadNodeTree(gname, x):
+        gstruct = nodetrees[gname]
+        group = bpy.data.node_groups.new(gname, type)
+        print("DEF", gname, group.name)
+        loadTree(gstruct, group, tree0, nodetrees, type, taken)
+        node = tree0.nodes.new("ShaderNodeGroup")
+        node.location = (x, -600)
+        x += 200
+        node.node_tree = group
+        return group
+
     def getShaderGroup(gname):
         from .cgroup import ShaderGroups
         for key,data in ShaderGroups.items():
@@ -427,44 +437,58 @@ def loadTree(struct, tree):
         "VECTOR" : "NodeSocketVector",
     }
 
+    interface = []
+    for nodestruct in struct["nodes"]:
+        rna_type = nodestruct["rna_type"]
+        data = {}
+        if rna_type == "NodeGroupOutput":
+            data = nodestruct.get("inputs", {})
+        elif rna_type == "NodeGroupInput":
+            data = nodestruct.get("outputs", {})
+        if data:
+            for id,info in data.items():
+                words = id.split("_",1)
+                if len(words) == 2 and words[1].isdigit():
+                    interface.append((int(words[1]), id, info))
+    interface.sort()
+    for n,id,info in interface:
+        socket = None
+        stype = socketTypes.get(info["type"])
+        if not stype:
+            continue
+        elif id.startswith("Input"):
+            socket = tree.inputs.new(stype, info["name"])
+        elif id.startswith("Output"):
+            socket = tree.outputs.new(stype, info["name"])
+        if "default_value" in info.keys():
+            socket.default_value = info["default_value"]
+
     tree.nodes.clear()
+    x = 0
     nodes = {}
     ignore = ["rna_type", "type", "dimensions"]
     for nodestruct in struct["nodes"]:
         rna_type = nodestruct["rna_type"]
         node = tree.nodes.new(rna_type)
         nodes[nodestruct["name"]] = node
+
         for key,data in nodestruct.items():
             if key in ignore:
                 pass
             elif key == "inputs":
-                if rna_type == "NodeGroupOutput":
-                    for id,info in data.items():
-                        stype = socketTypes.get(info["type"])
-                        if stype:
-                            socket = node.inputs.new(stype, id)
-                            socket.name = info["name"]
-                    continue
-                for socket in node.inputs:
-                    info = data.get(socket.identifier)
-                    if info and "default_value" in info.keys():
-                        socket.default_value = info["default_value"]
+                if rna_type != "NodeGroupOutput":
+                    for socket in node.inputs:
+                        if socket.identifier != "__extend__":
+                            info = data.get(socket.identifier)
+                            if info and "default_value" in info.keys():
+                                socket.default_value = info["default_value"]
             elif key == "outputs":
-                if rna_type == "NodeGroupInput":
-                    for id,info in data.items():
-                        stype = socketTypes.get(info["type"])
-                        if stype:
-                            socket = node.outputs.new(stype, id)
-                            socket.name = info["name"]
-                            print("ADD", socket.identifier, socket.name)
+                if rna_type != "NodeGroupInput":
                     for socket in node.outputs:
-                        print("AA", socket.identifier, socket.name)
-                    print("NN", node)
-                    continue
-                for socket in node.outputs:
-                    info = data.get(socket.identifier)
-                    if info and "default_value" in info.keys():
-                        socket.default_value = info["default_value"]
+                        if socket.identifier != "__extend__":
+                            info = data.get(socket.identifier)
+                            if info and "default_value" in info.keys():
+                                socket.default_value = info["default_value"]
             elif key == "image":
                 filepath = data.get("filepath")
                 img = node.image = bpy.data.images.load(filepath)
@@ -473,17 +497,11 @@ def loadTree(struct, tree):
                         setattr(img, key, value)
             elif key == "node_tree":
                 group = bpy.data.node_groups.get(data)
-                if group:
-                    node.node_tree = group
-                elif data[0:3] == "DAZ":
-                    use = getShaderGroup(data)
-                    oper = "bpy.ops.daz.make_shader_groups(%s=True)" % use
-                    print(oper)
-                    # Yes, I know using eval is bad, but how else to change keyword dynamically?
-                    eval(oper)
-                    group = bpy.data.node_groups.get(data)
-                    if group:
-                        node.node_tree = group
+                if group is None and data not in taken:
+                    taken.append(data)
+                    group = loadNodeTree(data, x)
+                    x += 200
+                node.node_tree = group
             else:
                 try:
                     setattr(node, key, data)
@@ -496,7 +514,6 @@ def loadTree(struct, tree):
                 return socket
         return None
 
-    #return
     for linkstruct in struct["links"]:
         from_node = nodes.get(linkstruct["from_node"])
         to_node = nodes.get(linkstruct["to_node"])
@@ -506,26 +523,10 @@ def loadTree(struct, tree):
             if from_socket and to_socket:
                 tree.links.new(from_socket, to_socket)
             else:
-                continue
                 print("NN", from_node, to_node)
                 print("FF", linkstruct["from_socket"], from_socket)
                 print("TT", linkstruct["to_socket"], to_socket)
-                for socket in from_node.outputs:
-                    print("SS", socket.identifier, socket.name)
+                print("SS", [socket.identifier for socket in from_node.outputs])
+                print("RR", [socket.identifier for socket in to_node.inputs])
                 halt
 
-
-def loadNodeTrees(treelist, tree, type):
-    treelist.reverse()
-    x = 0
-    for nodetrees in treelist:
-        for gname,gstruct in nodetrees.items():
-            group = bpy.data.node_groups.get(gname)
-            if True or group is None:
-                group = bpy.data.node_groups.new(gname, type)
-                print("DEF", gname, group.name)
-                node = tree.nodes.new("ShaderNodeGroup")
-                node.location = (x, 0)
-                x += 200
-                loadTree(gstruct, group)
-                node.node_tree = group

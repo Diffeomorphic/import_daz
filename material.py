@@ -1925,12 +1925,12 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
         from .tree import saveTree
         ob = context.object
         matlist = []
-        treelist = []
+        nodetrees = {}
         taken = []
         struct = {
             "type" : "material_nodetree",
             "blender" : bpy.app.version,
-            "node_trees" : treelist,
+            "nodetrees" : nodetrees,
             "materials" : matlist
         }
         for mat in ob.data.materials:
@@ -1938,7 +1938,7 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
                 "name" : mat.name,
             }
             matlist.append(matstruct)
-            saveTree(mat.node_tree, matstruct, treelist, taken)
+            saveTree(mat.node_tree, matstruct, nodetrees, taken)
         saveJson(struct, self.filepath)
 
 
@@ -1949,7 +1949,7 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
 
     def run(self, context):
         from .load_json import loadJson
-        from .tree import loadTree, loadNodeTrees, pruneNodeTree
+        from .tree import loadTree, pruneNodeTree
         struct = loadJson(self.filepath)
         type = struct.get("type")
         if type != "material_nodetree":
@@ -1958,17 +1958,11 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
             print("Warning: Wrong Blender version")
         ob = context.object
         ob.data.materials.clear()
-        mat = bpy.data.materials.new("Dummy")
-        mat.use_nodes = True
-        ob.data.materials.append(mat)
-        loadNodeTrees(struct["node_trees"], mat.node_tree, "ShaderNodeTree")
-        return
-        ob.data.materials.clear()
         for matstruct in struct["materials"]:
             mat = bpy.data.materials.new(matstruct["name"])
             mat.use_nodes = True
             ob.data.materials.append(mat)
-            loadTree(matstruct, mat.node_tree)
+            loadTree(matstruct, mat.node_tree, mat.node_tree, struct["nodetrees"], "ShaderNodeTree", [])
 
 #----------------------------------------------------------
 #   Initialize
