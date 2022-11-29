@@ -115,12 +115,15 @@ class Rigify:
             self.rigifySkel["chestUpper"] = "chestUpper"
             self.rigifySkel["abdomen2"] = "abdomen2"
             self.spineBones = RF.Genesis38Spine
+            self.genesisFingers = RF.Genesis1238Fingers
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.rigifySkel = RF.RigifyGenesis38
             self.spineBones = RF.Genesis38Spine
+            self.genesisFingers = RF.Genesis1238Fingers
         elif rig.DazRig == "genesis9":
             self.rigifySkel = RF.RigifyGenesis9
             self.spineBones = RF.Genesis9Spine
+            self.genesisFingers = RF.Genesis9Fingers
 
         self.dazSkel = {}
         for rbone, dbone in self.rigifySkel.items():
@@ -1116,12 +1119,7 @@ class Rigify:
 
     def fixFingerIk(self, rig, gen):
         for suffix in ["L", "R"]:
-            for dfing,rfing in [
-                ("Thumb", "thumb"),
-                ("Index", "f_index"),
-                ("Mid", "f_middle"),
-                ("Ring", "f_ring"),
-                ("Pinky", "f_pinky")]:
+            for dfing,rfing in self.genesisFingers:
                 for link in range(1,4):
                     dname = "%s%s%d" % (suffix.lower(), dfing, link)
                     rname = "ORG-%s.%02d.%s" % (rfing, link, suffix)

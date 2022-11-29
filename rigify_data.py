@@ -358,3 +358,19 @@ class RigifyData:
             (["head", "spine_fk.007"], 4),
             (["neck"], 0.6),
         ]
+
+        self.Genesis1238Fingers = [
+            ("Thumb", "thumb"),
+            ("Index", "f_index"),
+            ("Mid", "f_middle"),
+            ("Ring", "f_ring"),
+            ("Pinky", "f_pinky")
+        ]
+
+        self.Genesis9Fingers = [
+            ("_thumb", "thumb"),
+            ("_index", "f_index"),
+            ("_mid", "f_middle"),
+            ("_ring", "f_ring"),
+            ("_pinky", "f_pinky")
+        ]
