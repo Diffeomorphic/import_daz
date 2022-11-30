@@ -1918,28 +1918,24 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
     bl_label = "Save Materials To File"
     bl_description = "Save materials of selected meshes as a .json file"
 
+    useRelativePaths : BoolProperty(
+        name = "Relative Paths",
+        description = "Save filepaths relative to DAZ root paths",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useRelativePaths")
+
     def run(self, context):
         path = os.path.splitext(self.filepath)[0]
         self.filepath = "%s.json" % bpy.path.abspath(path)
-        from .load_json import saveJson
-        from .tree import saveTree
+        from .tree import TreeSaver
         ob = context.object
-        matlist = []
-        nodetrees = {}
-        taken = []
-        struct = {
-            "type" : "material_nodetree",
-            "blender" : bpy.app.version,
-            "nodetrees" : nodetrees,
-            "materials" : matlist
-        }
+        tsaver = TreeSaver("material_nodetree", self.useRelativePaths)
         for mat in ob.data.materials:
-            matstruct = {
-                "name" : mat.name,
-            }
-            matlist.append(matstruct)
-            saveTree(mat.node_tree, matstruct, nodetrees, taken)
-        saveJson(struct, self.filepath)
+            tsaver.addEntry(mat.name)
+            tsaver.saveTree(mat.node_tree)
+        tsaver.saveFile(self.filepath)
 
 
 class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
@@ -1947,22 +1943,28 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
     bl_label = "Load Materials From File"
     bl_description = "Load materials from a .json file to the active mesh"
 
+    reuseNodegroups : BoolProperty(
+        name = "Reuse Node Groups",
+        description = "Use existing node groups instead of creating new ones",
+        default = True)
+
+
     def run(self, context):
-        from .load_json import loadJson
-        from .tree import loadTree, pruneNodeTree
-        struct = loadJson(self.filepath)
-        type = struct.get("type")
-        if type != "material_nodetree":
-            raise DazError('"%s"\ndoes not contain a material node tree')
-        if struct["blender"] != list(bpy.app.version):
-            print("Warning: Wrong Blender version")
+        from .tree import TreeLoader
+        tloader = TreeLoader("material_nodetree", self.reuseNodegroups)
+        tloader.loadFile(self.filepath)
         ob = context.object
         ob.data.materials.clear()
-        for matstruct in struct["materials"]:
-            mat = bpy.data.materials.new(matstruct["name"])
+        mat = bpy.data.materials.new("Dummy")
+        mat.use_nodes = True
+        ob.data.materials.append(mat)
+        tloader.loadNodeGroups(mat.node_tree)
+        ob.data.materials.clear()
+        for entry in tloader.entries:
+            mat = bpy.data.materials.new(entry["name"])
             mat.use_nodes = True
             ob.data.materials.append(mat)
-            loadTree(matstruct, mat.node_tree, mat.node_tree, struct["nodetrees"], "ShaderNodeTree", [])
+            tloader.loadSingleTree(entry, mat.node_tree)
 
 #----------------------------------------------------------
 #   Initialize

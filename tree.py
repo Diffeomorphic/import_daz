@@ -324,18 +324,49 @@ def copyNodeTree(src, trg):
 #   Save node trees
 #-------------------------------------------------------------
 
-def saveTree(tree, struct, nodetrees, taken):
-    def getImage(img):
+class TreeSaver:
+    def __init__(self, type, useRelativePaths):
+        self.type = type
+        if type == "material_nodetree":
+            self.entrykey = "materials"
+        self.useRelativePaths = useRelativePaths
+        self.taken = []
+        self.nodetrees = {}
+        self.nodegroups = {}
+        self.entries = []
+
+
+    def addEntry(self, name):
+        self.entry = { "name" : name }
+        self.entries.append(self.entry)
+
+
+    def saveFile(self, filepath):
+        from .load_json import saveJson
+        struct = {
+            "type" : self.type,
+            "blender" : bpy.app.version,
+            "nodetrees" : self.nodetrees,
+            self.entrykey : self.entries
+        }
+        saveJson(struct, filepath)
+
+
+    def getImage(self, img):
         struct = {}
         if img.filepath:
-            struct["filepath"] = img.filepath.replace("\\", "/")
+            if self.useRelativePaths:
+                struct["filepath"] = GS.getRelativePath(img.filepath)
+            else:
+                struct["filepath"] = img.filepath.replace("\\", "/")
         include = ["alpha_mode"]
         for attr in include:
             if hasattr(img, attr):
                 struct[attr] = getattr(img, attr)
         return struct
 
-    def saveSingleTree(tree, struct, nodegroups):
+
+    def saveSingleTree(self, tree, struct):
         nodelist = []
         struct["nodes"] = nodelist
         ignore = ( "inputs", "outputs", "rna_type", "internal_links", "interface", "texture_mapping", "color_mapping", "image_user")
@@ -350,10 +381,10 @@ def saveTree(tree, struct, nodetrees, taken):
                     attr.identifier.split("_")[0] == "bl"):
                     pass
                 elif isinstance(data, bpy.types.Image):
-                    nodestruct[attr.identifier] = getImage(data)
+                    nodestruct[attr.identifier] = self.getImage(data)
                 elif isinstance(data, bpy.types.ShaderNodeTree):
                     nodestruct[attr.identifier] = data.name
-                    nodegroups[data.name] = data
+                    self.nodegroups[data.name] = data
                 else:
                     nodestruct[attr.identifier] = data
 
@@ -391,142 +422,192 @@ def saveTree(tree, struct, nodetrees, taken):
             linkstruct["from_socket"] = link.from_socket.identifier
             linkstruct["to_socket"] = link.to_socket.identifier
 
-    nodegroups = {}
-    saveSingleTree(tree, struct, nodegroups)
-    n = 5
-    found = True
-    while found and n > 0:
-        n -= 1
-        found = False
-        for gname,group in list(nodegroups.items()):
-            if gname not in taken:
-                found = True
-                print("FOU", gname)
-                taken.append(gname)
-                gstruct = {"name" : gname}
-                nodetrees[gname] = gstruct
-                saveSingleTree(group, gstruct, nodegroups)
+
+    def saveTree(self, tree):
+        self.saveSingleTree(tree, self.entry)
+        n = 5
+        found = True
+        while found and n > 0:
+            n -= 1
+            found = False
+            for gname,group in list(self.nodegroups.items()):
+                if gname not in self.taken:
+                    found = True
+                    self.taken.append(gname)
+                    gstruct = {"name" : gname}
+                    self.nodetrees[gname] = gstruct
+                    self.saveSingleTree(group, gstruct)
 
 #-------------------------------------------------------------
 #   Load node trees
 #-------------------------------------------------------------
 
-def loadTree(struct, tree, tree0, nodetrees, type, taken):
-    def loadNodeTree(gname, x):
-        gstruct = nodetrees[gname]
-        group = bpy.data.node_groups.new(gname, type)
-        print("DEF", gname, group.name)
-        loadTree(gstruct, group, tree0, nodetrees, type, taken)
-        node = tree0.nodes.new("ShaderNodeGroup")
-        node.location = (x, -600)
-        x += 200
+class TreeLoader:
+    def __init__(self, type, reuseNodegroups):
+        self.type = type
+        if type == "material_nodetree":
+            self.treetype = "ShaderNodeTree"
+            self.grptype = "ShaderNodeGroup"
+            self.entrykey = "materials"
+        else:
+            raise DazError("Not yet imlemented: %s" % type)
+        self.reuseNodegroups = reuseNodegroups
+        self.nodetrees = []
+        self.entries = []
+        self.dummy = None
+        self.x = 0
+        self.taken = {}
+
+
+    def loadFile(self, filepath):
+        from .load_json import loadJson
+        struct = loadJson(filepath)
+        if struct.get("type") != self.type:
+            raise DazError("File does not contain a %s" % treetype)
+        if struct["blender"] != list(bpy.app.version):
+            print("Warning: Wrong Blender version")
+        self.nodetrees = struct["nodetrees"]
+        self.entries = struct[self.entrykey]
+
+
+    def loadNodeGroups(self, tree):
+        self.dummy = tree
+        for grpname,grpstruct in self.nodetrees.items():
+            self.loadNodeGroup(grpname)
+
+
+    def loadNodeGroup(self, gname):
+        if gname in self.taken.keys():
+            return self.taken[gname]
+        if self.reuseNodegroups:
+            group = bpy.data.node_groups.get(gname)
+            if group:
+                print("Reuse node group: %s" % group.name)
+                self.taken[gname] = group
+                return group
+        gstruct = self.nodetrees[gname]
+        group = bpy.data.node_groups.new(gname, self.treetype)
+        print("Define node group: %s" % gname)
+        self.loadInterface(gstruct, group)
+        self.loadSingleTree(gstruct, group)
+        node = self.dummy.nodes.new(self.grptype)
+        node.location = (self.x, -600)
+        self.x += 200
         node.node_tree = group
+        self.taken[gname] = group
         return group
 
-    def getShaderGroup(gname):
-        from .cgroup import ShaderGroups
-        for key,data in ShaderGroups.items():
-            if gname == data[1]:
-                return key
-        return None
 
-    socketTypes = {
+    SocketTypes = {
         "VALUE" : "NodeSocketFloat",
         "SHADER" : "NodeSocketShader",
         "RGBA" : "NodeSocketColor",
         "VECTOR" : "NodeSocketVector",
     }
 
-    interface = []
-    for nodestruct in struct["nodes"]:
-        rna_type = nodestruct["rna_type"]
-        data = {}
-        if rna_type == "NodeGroupOutput":
-            data = nodestruct.get("inputs", {})
-        elif rna_type == "NodeGroupInput":
-            data = nodestruct.get("outputs", {})
-        if data:
-            for id,info in data.items():
-                words = id.split("_",1)
-                if len(words) == 2 and words[1].isdigit():
-                    interface.append((int(words[1]), id, info))
-    interface.sort()
-    for n,id,info in interface:
-        socket = None
-        stype = socketTypes.get(info["type"])
-        if not stype:
-            continue
-        elif id.startswith("Input"):
-            socket = tree.inputs.new(stype, info["name"])
-        elif id.startswith("Output"):
-            socket = tree.outputs.new(stype, info["name"])
-        if "default_value" in info.keys():
-            socket.default_value = info["default_value"]
 
-    tree.nodes.clear()
-    x = 0
-    nodes = {}
-    ignore = ["rna_type", "type", "dimensions"]
-    for nodestruct in struct["nodes"]:
-        rna_type = nodestruct["rna_type"]
-        node = tree.nodes.new(rna_type)
-        nodes[nodestruct["name"]] = node
+    def loadInterface(self, struct, tree):
+        interface = []
+        for nodestruct in struct["nodes"]:
+            rna_type = nodestruct["rna_type"]
+            data = {}
+            if rna_type == "NodeGroupOutput":
+                data = nodestruct.get("inputs", {})
+            elif rna_type == "NodeGroupInput":
+                data = nodestruct.get("outputs", {})
+            if data:
+                for id,info in data.items():
+                    words = id.split("_",1)
+                    if len(words) == 2 and words[1].isdigit():
+                        interface.append((int(words[1]), id, info))
+        interface.sort()
+        for n,id,info in interface:
+            socket = None
+            stype = self.SocketTypes.get(info["type"])
+            if not stype:
+                continue
+            elif id.startswith("Input"):
+                socket = tree.inputs.new(stype, info["name"])
+            elif id.startswith("Output"):
+                socket = tree.outputs.new(stype, info["name"])
+            if "default_value" in info.keys():
+                socket.default_value = info["default_value"]
 
-        for key,data in nodestruct.items():
-            if key in ignore:
-                pass
-            elif key == "inputs":
-                if rna_type != "NodeGroupOutput":
-                    for socket in node.inputs:
-                        if socket.identifier != "__extend__":
-                            info = data.get(socket.identifier)
-                            if info and "default_value" in info.keys():
-                                socket.default_value = info["default_value"]
-            elif key == "outputs":
-                if rna_type != "NodeGroupInput":
-                    for socket in node.outputs:
-                        if socket.identifier != "__extend__":
-                            info = data.get(socket.identifier)
-                            if info and "default_value" in info.keys():
-                                socket.default_value = info["default_value"]
-            elif key == "image":
-                filepath = data.get("filepath")
-                img = node.image = bpy.data.images.load(filepath)
-                if img:
-                    for key,value in data.items():
-                        setattr(img, key, value)
-            elif key == "node_tree":
-                group = bpy.data.node_groups.get(data)
-                if group is None and data not in taken:
-                    taken.append(data)
-                    group = loadNodeTree(data, x)
-                    x += 200
-                node.node_tree = group
-            else:
-                try:
-                    setattr(node, key, data)
-                except AttributeError:
-                    print("WRONG", key)
 
-    def getSocket(sockets, id):
+    def getFilepath(self, data):
+        path = data.get("filepath")
+        if not path:
+            return ""
+        elif path[0:2] == "//":
+            return path
+        elif path[0] == "/":
+            return GS.getAbsPath(path)
+        else:
+            return path
+
+
+    def getSocket(self, sockets, id):
         for socket in sockets:
             if socket.identifier == id:
-                return socket
+               return socket
         return None
 
-    for linkstruct in struct["links"]:
-        from_node = nodes.get(linkstruct["from_node"])
-        to_node = nodes.get(linkstruct["to_node"])
-        if from_node and to_node:
-            from_socket = getSocket(from_node.outputs, linkstruct["from_socket"])
-            to_socket = getSocket(to_node.inputs, linkstruct["to_socket"])
-            if from_socket and to_socket:
-                tree.links.new(from_socket, to_socket)
-            else:
-                print("NN", from_node, to_node)
-                print("FF", linkstruct["from_socket"], from_socket)
-                print("TT", linkstruct["to_socket"], to_socket)
-                print("SS", [socket.identifier for socket in from_node.outputs])
-                print("RR", [socket.identifier for socket in to_node.inputs])
-                halt
+
+    def loadSingleTree(self, struct, tree):
+        tree.nodes.clear()
+        x = 0
+        nodes = {}
+        ignore = ["rna_type", "type", "dimensions"]
+        for nodestruct in struct["nodes"]:
+            rna_type = nodestruct["rna_type"]
+            node = tree.nodes.new(rna_type)
+            nodes[nodestruct["name"]] = node
+            for key,data in nodestruct.items():
+                if key in ignore:
+                    pass
+                elif key == "inputs":
+                    if rna_type != "NodeGroupOutput":
+                        for socket in node.inputs:
+                           info = data.get(socket.identifier)
+                           if info and "default_value" in info.keys():
+                               socket.default_value = info["default_value"]
+                elif key == "outputs":
+                    if rna_type != "NodeGroupInput":
+                        for socket in node.outputs:
+                            info = data.get(socket.identifier)
+                            if info and "default_value" in info.keys():
+                                socket.default_value = info["default_value"]
+                elif key == "image":
+                    filepath = self.getFilepath(data)
+                    img = node.image = bpy.data.images.load(filepath)
+                    if img:
+                        for key,value in data.items():
+                            if key != "filepath":
+                                setattr(img, key, value)
+                elif key == "node_tree":
+                    group = bpy.data.node_groups.get(data)
+                    if group is None and data not in self.taken:
+                        group = self.loadNodeGroup(data)
+                    node.node_tree = group
+                else:
+                    try:
+                        setattr(node, key, data)
+                    except AttributeError:
+                        print("WRONG", key)
+
+        for linkstruct in struct["links"]:
+            from_node = nodes.get(linkstruct["from_node"])
+            to_node = nodes.get(linkstruct["to_node"])
+            if from_node and to_node:
+                from_socket = self.getSocket(from_node.outputs, linkstruct["from_socket"])
+                to_socket = self.getSocket(to_node.inputs, linkstruct["to_socket"])
+                if from_socket and to_socket:
+                    tree.links.new(from_socket, to_socket)
+                else:
+                    print("NN", from_node, to_node)
+                    print("FF", linkstruct["from_socket"], from_socket)
+                    print("TT", linkstruct["to_socket"], to_socket)
+                    print("SS", [socket.identifier for socket in from_node.outputs])
+                    print("RR", [socket.identifier for socket in to_node.inputs])
+                    halt
 

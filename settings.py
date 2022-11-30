@@ -485,7 +485,7 @@ class GlobalSettings:
                 if lfile in lfiles:
                     return "%s/%s" % (folder, file)
         else:
-            for folder in self.rootPaths:
+            for folder in self.getDazPaths():
                 filepath = "%s/%s" % (folder, path)
                 filepath = filepath.replace("//", "/")
                 if os.path.exists(filepath):
@@ -496,6 +496,17 @@ class GlobalSettings:
                     if filepath:
                         return filepath
         return ""
+
+
+    def getRelativePath(self, path):
+        path = os.path.normpath(bpy.path.abspath(path)).replace("\\", "/")
+        lpath = path.lower()
+        for root in self.getDazPaths():
+            n = len(root)
+            if lpath[0:n] == root.lower():
+                return path[n:]
+        return path
+
 
 #-------------------------------------------------------------
 #   Local settings
