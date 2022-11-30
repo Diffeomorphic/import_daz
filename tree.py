@@ -330,9 +330,12 @@ class TreeSaver:
         self.type = type
         if type == "material_nodetree":
             self.entrykey = "materials"
+            self.libkey = "material_library"
         self.useRelativePaths = useRelativePaths
         self.taken = []
         self.nodetrees = {}
+        self.textures = {}
+        self.channels = {}
         self.nodegroups = {}
         self.entries = []
 
@@ -340,6 +343,7 @@ class TreeSaver:
     def addEntry(self, name):
         self.entry = { "name" : name }
         self.entries.append(self.entry)
+        return self.entry
 
 
     def saveFile(self, filepath):
@@ -347,6 +351,7 @@ class TreeSaver:
         struct = {
             "type" : self.type,
             "blender" : bpy.app.version,
+            "textures" : self.textures,
             "nodetrees" : self.nodetrees,
             self.entrykey : self.entries
         }
@@ -357,13 +362,16 @@ class TreeSaver:
         struct = {}
         if img.filepath:
             if self.useRelativePaths:
-                struct["filepath"] = GS.getRelativePath(img.filepath)
+                filepath = GS.getRelativePath(img.filepath)
             else:
-                struct["filepath"] = img.filepath.replace("\\", "/")
+                filepath = img.filepath.replace("\\", "/")
+        struct["filepath"] = filepath
         include = ["alpha_mode"]
         for attr in include:
             if hasattr(img, attr):
                 struct[attr] = getattr(img, attr)
+        if filepath in self.channels.keys():
+            struct["channel"] = self.channels[filepath]
         return struct
 
 
@@ -425,6 +433,8 @@ class TreeSaver:
 
 
     def saveTree(self, tree):
+        for channel,imgfile in self.textures.items():
+            self.channels[imgfile] = channel
         self.saveSingleTree(tree, self.entry)
         n = 5
         found = True
@@ -454,6 +464,7 @@ class TreeLoader:
             raise DazError("Not yet imlemented: %s" % type)
         self.reuseNodegroups = reuseNodegroups
         self.nodetrees = []
+        self.textures = {}
         self.entries = []
         self.dummy = None
         self.x = 0
@@ -537,6 +548,13 @@ class TreeLoader:
 
 
     def getFilepath(self, data):
+        channel = data.get("channel")
+        path = self.textures.get(channel)
+        if path:
+            filepath = GS.getAbsPath(path)
+            if os.path.exists(filepath):
+                return filepath
+
         path = data.get("filepath")
         if not path:
             return ""
@@ -589,7 +607,7 @@ class TreeLoader:
                     if filepath:
                         img = node.image = bpy.data.images.load(filepath)
                         for key,value in data.items():
-                            if key != "filepath":
+                            if key not in ["filepath", "channel"]:
                                 setattr(img, key, value)
                 elif key == "node_tree":
                     group = bpy.data.node_groups.get(data)

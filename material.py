@@ -971,7 +971,6 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
     bl_idname = "daz.save_local_textures"
     bl_label = "Save Local Textures"
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
-    bl_options = {'UNDO'}
 
     useKeepDirs : BoolProperty(
         name = "Keep Directories",
@@ -1932,16 +1931,48 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
         from .tree import TreeSaver
         ob = context.object
         tsaver = TreeSaver("material_nodetree", self.useRelativePaths)
+        tsaver.textures = readTextures(ob.DazScene, ob.DazId)
         for mat in ob.data.materials:
-            tsaver.addEntry(mat.name)
+            entry = tsaver.addEntry(mat.name)
+            entry["diffuse_color"] = mat.diffuse_color
             tsaver.saveTree(mat.node_tree)
         tsaver.saveFile(self.filepath)
+
+
+def readTextures(path, url):
+    def readChannelImage(mname, channel):
+        struct = channel.get("channel", {})
+        if "id" in struct.keys() and "image_file" in struct.keys():
+            textures["%s:%s" % (mname, struct["id"])] = struct["image_file"]
+
+    from .load_json import loadJson
+    struct = loadJson(path, silent=True)
+    if not struct:
+        print('Did not find "%s"' % path)
+        return {}
+    textures = {}
+    localUrl = "#%s" % url.rsplit("#",1)[-1]
+    scene = struct.get("scene", {})
+    for mstruct in scene.get("materials", {}):
+        if mstruct.get("geometry") == localUrl:
+            mname = mstruct.get("url", "").rsplit("#",1)[-1]
+            if not mname:
+                continue
+            for key,data in mstruct.items():
+                if isinstance(data, dict):
+                    readChannelImage(mname, data)
+            for extra in mstruct.get("extra", []):
+                if extra.get("type") == "studio_material_channels":
+                    for channel in extra.get("channels", []):
+                        readChannelImage(mname, channel)
+    return textures
 
 
 class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
     bl_idname = "daz.load_materials_from_file"
     bl_label = "Load Materials From File"
     bl_description = "Load materials from a .json file to the active mesh"
+    bl_options = {'UNDO'}
 
     reuseNodegroups : BoolProperty(
         name = "Reuse Node Groups",
@@ -1953,28 +1984,65 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
         description = "Keep material numbers",
         default = True)
 
+    keepTextures : BoolProperty(
+        name = "Keep Textures",
+        description = "Keep existing textures in matching channels",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "reuseNodegroups")
         self.layout.prop(self, "keepMaterialNumbers")
+        self.layout.prop(self, "keepTextures")
 
     def run(self, context):
         from .tree import TreeLoader
         tloader = TreeLoader("material_nodetree", self.reuseNodegroups)
         tloader.loadFile(self.filepath)
         ob = context.object
+        if self.keepTextures:
+            tloader.textures = readTextures(ob.DazScene, ob.DazId)
+        colors = []
         if self.keepMaterialNumbers:
             mnums = [f.material_index for f in ob.data.polygons]
+            mnames = []
+            colors = []
+            for mat in ob.data.materials:
+                if mat:
+                    mnames.append(self.getBaseName(mat.name))
+                    colors.append(mat.diffuse_color)
+                else:
+                    mnames.append(None)
+                    colors.append(None)
         ob.data.materials.clear()
         mat = bpy.data.materials.new("Dummy")
         mat.use_nodes = True
         ob.data.materials.append(mat)
         tloader.loadNodeGroups(mat.node_tree)
         ob.data.materials.clear()
-        for entry in tloader.entries:
-            mat = bpy.data.materials.new(entry["name"])
-            mat.use_nodes = True
-            ob.data.materials.append(mat)
-            tloader.loadSingleTree(entry, mat.node_tree)
+        if self.keepMaterialNumbers:
+            taken = []
+            entries = dict([(self.getBaseName(entry["name"]), entry) for entry in tloader.entries])
+            for mname,color in zip(mnames,colors):
+                if mname is None:
+                    ob.data.materials.append(None)
+                    continue
+                entry = entries.get(mname)
+                if entry:
+                    taken.append(mname)
+                    mat = self.loadEntry(tloader, entry, ob)
+                    mat.diffuse_color = color
+                    if not self.keepTextures and "diffuse_color" in entry.keys():
+                        mat.diffuse_color = entry["diffuse_color"]
+                else:
+                    print("MISS", mname)
+                    ob.data.materials.append(None)
+            for mname,entry in entries.items():
+                if mname not in taken:
+                    print("LOD", mname)
+                    self.loadEntry(tloader, entry, ob)
+        else:
+            for entry in tloader.entries:
+                self.loadEntry(tloader, entry, ob)
         if self.keepMaterialNumbers:
             for mnum,f in zip(mnums, ob.data.polygons):
                 f.material_index = mnum
@@ -1983,6 +2051,24 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
             for path in tloader.missing.keys():
                 msg += "  %s\n" % path
             raise DazError(msg, warning=True)
+
+
+    def loadEntry(self, tloader, entry, ob):
+        mat = bpy.data.materials.new(entry["name"])
+        mat.use_nodes = True
+        ob.data.materials.append(mat)
+        tloader.loadSingleTree(entry, mat.node_tree)
+        return mat
+
+
+    def getBaseName(self, mname):
+        if len(mname) > 5 and mname[-4] == "." and mname[-3:].isdigit():
+            mname = mname[:-4]
+        words = mname.rsplit("-",1)
+        if len(words) == 2 and words[1].isdigit():
+            return words[0]
+        else:
+            return mname
 
 #----------------------------------------------------------
 #   Initialize
