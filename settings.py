@@ -48,6 +48,7 @@ class GlobalSettings:
         self.errorPath = self.fixPath("~/Documents/daz_importer_errors.txt")
         self.scanPath = self.fixPath("~/Documents/Scanned DAZ Database")
         self.settingsPath = self.fixPath("~/import-daz-settings-28x.json")
+        self.scannedAbsPath = self.fixPath("~/import_daz_scanned_absolute_paths.json")
         self.rootPaths = []
         self.absPaths = {}
 
@@ -68,7 +69,8 @@ class GlobalSettings:
             self.sssMethod = 'RANDOM_WALK_FIXED_RADIUS'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
-        self.caseSensitivePaths = (platform != 'win32')
+        self.caseSensitivePaths = (platform not in ['win32', 'darwin'])
+        self.rescanOnChange = True
         self.shellMethod = 'MATERIAL'
         self.pruneNodes = True
 
@@ -143,6 +145,7 @@ class GlobalSettings:
         "DazErrorPath" : "errorPath",
         "DazScanPath" : "scanPath",
         "DazCaseSensitivePaths" : "caseSensitivePaths",
+        "DazRescanOnChange" : "rescanOnChange",
 
         # Debugging
         "DazDump" : "useDump",
@@ -255,7 +258,8 @@ class GlobalSettings:
             differ(mdlOld, self.mdlDirs) or
             differ(cloudOld, self.cloudDirs) or
             caseOld != self.caseSensitivePaths):
-            self.scanAbsPaths()
+            if self.caseSensitivePaths and self.rescanOnChange:
+                self.scanAbsPaths()
 
 
     def pathsFromScene(self, pgs):
@@ -467,11 +471,27 @@ class GlobalSettings:
                     npath = "%s/%s" % (path, file)
                     scanPath(nfolder, npath)
 
-        if self.caseSensitivePaths:
-            self.absPaths = {}
-            for path in self.getDazPaths():
-                print("Scanning", path)
-                scanPath(path, "")
+        from .load_json import saveJson
+        self.absPaths = {}
+        for path in self.getDazPaths():
+            print("Scanning", path)
+            scanPath(path, "")
+        struct = {
+            "type" : "scanned_absolute_paths",
+            "absolute_paths" : self.absPaths,
+        }
+        saveJson(struct, self.scannedAbsPath)
+        print("Scanned paths saved to %s" % self.scannedAbsPath)
+
+
+    def loadAbsPaths(self):
+        self.absPaths = {}
+        if os.path.exists(self.scannedAbsPath):
+            from .load_json import loadJson
+            struct = loadJson(self.scannedAbsPath)
+            if struct.get("type") == "scanned_absolute_paths":
+                self.absPaths = struct.get("absolute_paths", {})
+                print("Absolute paths loaded from %s" % self.scannedAbsPath)
 
 
     def getAbsPath(self, path):
@@ -506,7 +526,6 @@ class GlobalSettings:
             if lpath[0:n] == root.lower():
                 return path[n:]
         return filepath.replace("\\", "/")
-
 
 #-------------------------------------------------------------
 #   Local settings

@@ -393,6 +393,7 @@ class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
         layout.operator("daz.render_frames")
         layout.separator()
         layout.operator("daz.decode_file")
+        layout.operator("daz.scan_absolute_paths")
         layout.operator("daz.quote_unquote")
         layout.operator("daz.print_statistics")
         layout.operator("daz.update_all")
