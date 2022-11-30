@@ -180,7 +180,17 @@ class FrameConverter:
                     bonemap[bname] = bname
                 elif bname[0] in ["l", "r"] and bname[1].isupper():
                     rname1 = "%s%s.%s" % (bname[1].lower(), bname[2:], bname[0].upper())
-                    rname2 = "%s_%s" % (bname[0], bname[1:].lower())
+                    rname2 = "%s%s.%s" % (bname[1].lower(), bname[2:].lower(), bname[0].upper())
+                    rname3 = "%s_%s" % (bname[0], bname[1:].lower())
+                    if rname1 in rig.data.bones.keys():
+                        bonemap[bname] = rname1
+                    elif rname2 in rig.data.bones.keys():
+                        bonemap[bname] = rname2
+                    elif rname3 in rig.data.bones.keys():
+                        bonemap[bname] = rname2
+                elif bname[0:2] in ["l_", "r_"]:
+                    rname1 = "%s.%s" % (bname[2:], bname[0].upper())
+                    rname2 = "%s%s%s" % (bname[0], bname[2].upper(), bname[3:])
                     if rname1 in rig.data.bones.keys():
                         bonemap[bname] = rname1
                     elif rname2 in rig.data.bones.keys():
