@@ -2002,7 +2002,7 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
             colors = []
             for mat in ob.data.materials:
                 if mat:
-                    mnames.append(self.getBaseName(mat.name))
+                    mnames.append(stripName(mat.name))
                     colors.append(mat.diffuse_color)
                 else:
                     mnames.append(None)
@@ -2015,7 +2015,7 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
         ob.data.materials.clear()
         if self.keepMaterialNumbers:
             taken = []
-            entries = dict([(self.getBaseName(entry["name"]), entry) for entry in tloader.entries])
+            entries = dict([(stripName(entry["name"]), entry) for entry in tloader.entries])
             for mname,color in zip(mnames,colors):
                 if mname is None:
                     ob.data.materials.append(None)
@@ -2053,16 +2053,6 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
         ob.data.materials.append(mat)
         tloader.loadSingleTree(entry, mat.node_tree)
         return mat
-
-
-    def getBaseName(self, mname):
-        if len(mname) > 5 and mname[-4] == "." and mname[-3:].isdigit():
-            mname = mname[:-4]
-        words = mname.rsplit("-",1)
-        if len(words) == 2 and words[1].isdigit():
-            return words[0]
-        else:
-            return mname
 
 #----------------------------------------------------------
 #   Initialize
