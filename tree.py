@@ -27,6 +27,7 @@
 
 
 import bpy
+import os
 from .utils import *
 
 NCOLUMNS = 20
@@ -457,6 +458,7 @@ class TreeLoader:
         self.dummy = None
         self.x = 0
         self.taken = {}
+        self.missing = {}
 
 
     def loadFile(self, filepath):
@@ -539,11 +541,16 @@ class TreeLoader:
         if not path:
             return ""
         elif path[0:2] == "//":
-            return path
+            filepath = path
         elif path[0] == "/":
-            return GS.getAbsPath(path)
+            filepath = GS.getAbsPath(path)
         else:
-            return path
+            filepath = path
+        if os.path.exists(filepath):
+            return filepath
+        else:
+            self.missing[path] = filepath
+            return ""
 
 
     def getSocket(self, sockets, id):
@@ -579,8 +586,8 @@ class TreeLoader:
                                 socket.default_value = info["default_value"]
                 elif key == "image":
                     filepath = self.getFilepath(data)
-                    img = node.image = bpy.data.images.load(filepath)
-                    if img:
+                    if filepath:
+                        img = node.image = bpy.data.images.load(filepath)
                         for key,value in data.items():
                             if key != "filepath":
                                 setattr(img, key, value)

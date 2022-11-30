@@ -1948,12 +1948,22 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
         description = "Use existing node groups instead of creating new ones",
         default = True)
 
+    keepMaterialNumbers : BoolProperty(
+        name = "Keep Material Assignment",
+        description = "Keep material numbers",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "reuseNodegroups")
+        self.layout.prop(self, "keepMaterialNumbers")
 
     def run(self, context):
         from .tree import TreeLoader
         tloader = TreeLoader("material_nodetree", self.reuseNodegroups)
         tloader.loadFile(self.filepath)
         ob = context.object
+        if self.keepMaterialNumbers:
+            mnums = [f.material_index for f in ob.data.polygons]
         ob.data.materials.clear()
         mat = bpy.data.materials.new("Dummy")
         mat.use_nodes = True
@@ -1965,6 +1975,14 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
             mat.use_nodes = True
             ob.data.materials.append(mat)
             tloader.loadSingleTree(entry, mat.node_tree)
+        if self.keepMaterialNumbers:
+            for mnum,f in zip(mnums, ob.data.polygons):
+                f.material_index = mnum
+        if tloader.missing:
+            msg = "Missing textures:\n"
+            for path in tloader.missing.keys():
+                msg += "  %s\n" % path
+            raise DazError(msg, warning=True)
 
 #----------------------------------------------------------
 #   Initialize

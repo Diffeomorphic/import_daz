@@ -576,7 +576,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge identical materials",
-        default = True)
+        default = False)
 
     useMergeToes : BoolProperty(
         name = "Merge Toes",
