@@ -300,6 +300,15 @@ def baseName(name):
     else:
         return name
 
+
+def stripName(name):
+    if len(name) > 4 and name[-4] == "." and name[-3:].isdigit():
+        name = name[:-4]
+    if len(name) > 2 and name[-2] == "-" and name[-1].isdigit():
+        name = name[:-2]
+    return name
+
+
 def finalProp(prop):
     return "%s(fin)" % prop
 

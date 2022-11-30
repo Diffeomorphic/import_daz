@@ -358,7 +358,7 @@ class TreeSaver:
         saveJson(struct, filepath)
 
 
-    def getImage(self, img):
+    def getImage(self, name, img):
         struct = {}
         if img.filepath:
             if self.useRelativePaths:
@@ -370,12 +370,21 @@ class TreeSaver:
         for attr in include:
             if hasattr(img, attr):
                 struct[attr] = getattr(img, attr)
-        if filepath in self.channels.keys():
-            struct["channel"] = self.channels[filepath]
+        channels = self.channels.get(filepath, [])
+        if channels:
+            struct["channel"] = self.getMatch(name, channels)
         return struct
 
 
-    def saveSingleTree(self, tree, struct):
+    def getMatch(self, name, channels):
+        for channel in channels:
+            if name == channel.split(":",1)[0]:
+                return channel
+        return channels[0]
+
+
+    def saveSingleTree(self, name, tree, struct):
+        name = stripName(name)
         nodelist = []
         struct["nodes"] = nodelist
         ignore = ( "inputs", "outputs", "rna_type", "internal_links", "interface", "texture_mapping", "color_mapping", "image_user")
@@ -390,7 +399,7 @@ class TreeSaver:
                     attr.identifier.split("_")[0] == "bl"):
                     pass
                 elif isinstance(data, bpy.types.Image):
-                    nodestruct[attr.identifier] = self.getImage(data)
+                    nodestruct[attr.identifier] = self.getImage(name, data)
                 elif isinstance(data, bpy.types.ShaderNodeTree):
                     nodestruct[attr.identifier] = data.name
                     self.nodegroups[data.name] = data
@@ -432,10 +441,17 @@ class TreeSaver:
             linkstruct["to_socket"] = link.to_socket.identifier
 
 
-    def saveTree(self, tree):
-        for channel,imgfile in self.textures.items():
-            self.channels[imgfile] = channel
-        self.saveSingleTree(tree, self.entry)
+    def setTextures(self, textures):
+        self.textures = textures
+        self.channels = {}
+        for channel,imgfile in textures.items():
+            if imgfile not in self.channels.keys():
+                self.channels[imgfile] = []
+            self.channels[imgfile].append(channel)
+
+
+    def saveTree(self, name, tree):
+        self.saveSingleTree(name, tree, self.entry)
         n = 5
         found = True
         while found and n > 0:
@@ -447,7 +463,7 @@ class TreeSaver:
                     self.taken.append(gname)
                     gstruct = {"name" : gname}
                     self.nodetrees[gname] = gstruct
-                    self.saveSingleTree(group, gstruct)
+                    self.saveSingleTree(gname, group, gstruct)
 
 #-------------------------------------------------------------
 #   Load node trees

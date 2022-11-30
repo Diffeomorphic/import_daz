@@ -272,9 +272,9 @@ class DAZ_OT_AddShell(DazPropsOperator):
         mats = []
         shmats = []
         for mat in ob.data.materials:
-            mname = self.stripName(mat.name)
+            mname = stripName(mat.name)
             for shmat in shell.data.materials:
-                shname = self.stripName(shmat.name)
+                shname = stripName(shmat.name)
                 if mname == shname:
                     mnames.append(mname)
                     mats.append(mat)
@@ -289,10 +289,6 @@ class DAZ_OT_AddShell(DazPropsOperator):
             makeShellModifier(shell, ob, offset, mnames, mats, shmats)
             for src,trg in zip(mats, shmats):
                 copyMaterialAttributes(src, trg)
-
-
-    def stripName(self, mname):
-        return mname.rsplit(".", 1)[0].rsplit("-", 1)[0]
 
 
     def addMaterialShell(self, mat, shmat):

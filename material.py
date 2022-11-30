@@ -1402,17 +1402,10 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
 
 
     def getMatch(self, mname, mats):
-        def stripName(mname):
-            if len(mname) > 4 and mname[-4] == "." and mname[-3:].isdigit():
-                mname = mname[:-4]
-            if len(mname) > 2 and mname[-2] == "-" and mname[-1].isdigit():
-                mname = mname[:-2]
-            return mname.lower()
-
         sname = stripName(mname)
         for mn,mat in enumerate(mats):
             tname = stripName(mat.name)
-            if sname == tname:
+            if sname.lower() == tname.lower():
                 return mn
         return None
 
@@ -1931,11 +1924,12 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
         from .tree import TreeSaver
         ob = context.object
         tsaver = TreeSaver("material_nodetree", self.useRelativePaths)
-        tsaver.textures = readTextures(ob.DazScene, ob.DazId)
+        textures = readTextures(ob.DazScene, ob.DazId)
+        tsaver.setTextures(textures)
         for mat in ob.data.materials:
             entry = tsaver.addEntry(mat.name)
             entry["diffuse_color"] = mat.diffuse_color
-            tsaver.saveTree(mat.node_tree)
+            tsaver.saveTree(mat.name, mat.node_tree)
         tsaver.saveFile(self.filepath)
 
 

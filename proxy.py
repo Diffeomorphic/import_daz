@@ -36,20 +36,6 @@ from .morphing import Selector
 from .driver import DriverUser
 
 #-------------------------------------------------------------
-#   Make proxy
-#-------------------------------------------------------------
-
-def stripName(string):
-    if string[-5:] == "_Mesh":
-        return string[:-5]
-    elif (len(string) > 4 and
-        string[-4] == "." and
-        string[-3:].isdigit()):
-        return string[:-4]
-    else:
-        return string
-
-#-------------------------------------------------------------
 #   Find polys
 #-------------------------------------------------------------
 

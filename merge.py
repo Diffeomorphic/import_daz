@@ -1264,7 +1264,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):
-        from .proxy import stripName
         for ob,data in info.objects:
             partype, parbone = data
             if partype in ['VERTEX', 'VERTEX_3']:
