@@ -350,16 +350,15 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                     anims[mname] = []
                 anims[mname].append((key, type, mod, frames))
             taken = {}
-            if main.materials:
-                for dmat in main.materials:
-                    basename = self.getMatName(dmat.name)
-                    anim = anims.get(basename)
-                    if anim:
-                        self.setPartial(dmat, anim)
-                        self.fixMaterial(dmat, anims[basename])
-                        taken[basename] = True
+            for dmat in main.materials:
+                basename = stripName(dmat.name)
+                anim = anims.get(basename)
+                if anim:
+                    self.setPartial(dmat, anim)
+                    self.fixMaterial(dmat, anim)
+                    taken[basename] = True
             for mname,anim in anims.items():
-                basename = self.getMatName(mname)
+                basename = stripName(mname)
                 if basename not in taken.keys():
                     dmat = CyclesMaterial(main.fileref)
                     mstruct = {"id" : mname}
@@ -439,20 +438,12 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 
 
     def getMatch(self, dmat, mats):
-        dmname = self.getMatName(dmat.name)
+        dmname = stripName(dmat.name).lower()
         for n,mat in enumerate(mats):
-            mname = self.getMatName(mat.name)
+            mname = stripName(mat.name).lower()
             if dmname == mname:
                 return n,mat
         return 0,None
-
-
-    def getMatName(self, mname):
-        mname = baseName(mname)
-        if len(mname) > 2 and mname[-2] == "-" and mname[-1].isdigit():
-            return mname[:-2]
-        else:
-            return mname
 
 
     def splitUrl(self, url):

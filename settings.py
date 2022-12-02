@@ -48,7 +48,7 @@ class GlobalSettings:
         self.errorPath = self.fixPath("~/Documents/daz_importer_errors.txt")
         self.scanPath = self.fixPath("~/Documents/Scanned DAZ Database")
         self.settingsPath = self.fixPath("~/import-daz-settings-28x.json")
-        self.scannedAbsPath = self.fixPath("~/import_daz_scanned_absolute_paths.json")
+        self.absScanPath = self.fixPath("~/import_daz_scanned_absolute_paths.json")
         self.rootPaths = []
         self.absPaths = {}
 
@@ -144,6 +144,7 @@ class GlobalSettings:
         "DazVerbosity" : "verbosity",
         "DazErrorPath" : "errorPath",
         "DazScanPath" : "scanPath",
+        "DazAbsScanPath" : "absScanPath",
         "DazCaseSensitivePaths" : "caseSensitivePaths",
         "DazRescanOnChange" : "rescanOnChange",
 
@@ -253,6 +254,7 @@ class GlobalSettings:
         self.cloudDirs = self.pathsFromScene(scn.DazCloudDirs)
         self.errorPath = self.fixPath(getattr(scn, "DazErrorPath"))
         self.scanPath = self.fixPath(getattr(scn, "DazScanPath"))
+        self.absScanPath = self.fixPath(getattr(scn, "DazAbsScanPath"))
         self.eliminateDuplicates()
         if (differ(contentOld, self.contentDirs) or
             differ(mdlOld, self.mdlDirs) or
@@ -297,6 +299,8 @@ class GlobalSettings:
         setattr(scn, "DazErrorPath", path)
         path = self.fixPath(self.scanPath)
         setattr(scn, "DazScanPath", path)
+        path = self.fixPath(self.absScanPath)
+        setattr(scn, "DazAbsScanPath", path)
 
 
     def load(self, filepath):
@@ -480,18 +484,18 @@ class GlobalSettings:
             "type" : "scanned_absolute_paths",
             "absolute_paths" : self.absPaths,
         }
-        saveJson(struct, self.scannedAbsPath)
-        print("Scanned paths saved to %s" % self.scannedAbsPath)
+        saveJson(struct, self.absScanPath)
+        print("Scanned paths saved to %s" % self.absScanPath)
 
 
     def loadAbsPaths(self):
         self.absPaths = {}
-        if os.path.exists(self.scannedAbsPath):
+        if os.path.exists(self.absScanPath):
             from .load_json import loadJson
-            struct = loadJson(self.scannedAbsPath)
+            struct = loadJson(self.absScanPath)
             if struct.get("type") == "scanned_absolute_paths":
                 self.absPaths = struct.get("absolute_paths", {})
-                print("Absolute paths loaded from %s" % self.scannedAbsPath)
+                print("Absolute paths loaded from %s" % self.absScanPath)
 
 
     def getAbsPath(self, path):

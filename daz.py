@@ -217,6 +217,8 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazErrorPath", text="")
         box.label(text = "Path To Scanned Database:")
         box.prop(scn, "DazScanPath", text="")
+        box.label(text = "Path To Scanned Case-sensitive Paths:")
+        box.prop(scn, "DazAbsScanPath", text="")
 
         col = split.column()
         box = col.box()
@@ -374,8 +376,12 @@ def register():
         description = "Path to error report file")
 
     bpy.types.Scene.DazScanPath = StringProperty(
-        name = "Scan Path",
+        name = "Scanned Database Path",
         description = "Path to scanned database")
+
+    bpy.types.Scene.DazAbsScanPath = StringProperty(
+        name = "Absolute Paths File",
+        description = "Path to file with scanned absolute paths")
 
     bpy.types.Scene.DazUnitScale = FloatProperty(
         name = "Unit Scale",
