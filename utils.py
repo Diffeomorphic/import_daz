@@ -295,18 +295,20 @@ def getProp(path):
 
 
 def baseName(name):
-    if len(name) > 4 and name[-4] == "." and name[-3:].isdigit():
-        return name[:-4]
+    words = name.rsplit(".",1)
+    if len(words) == 2 and len(words[1]) >= 3 and words[1].isdigit():
+        return words[0]
     else:
         return name
 
 
 def stripName(name):
-    if len(name) > 4 and name[-4] == "." and name[-3:].isdigit():
-        name = name[:-4]
-    if len(name) > 2 and name[-2] == "-" and name[-1].isdigit():
-        name = name[:-2]
-    return name
+    name = baseName(name)
+    words = name.rsplit("-",1)
+    if len(words) == 2 and words[1].isdigit():
+        return words[0]
+    else:
+        return name
 
 
 def finalProp(prop):
