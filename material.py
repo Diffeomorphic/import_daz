@@ -1420,17 +1420,16 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
                 msg = "Material number mismatch.\n" + self.mismatch
                 raise DazError(msg)
         mnums = [(f,f.material_index) for f in trg.data.polygons]
-        srclist = [(mat.name, mn, mat) for mn,mat in enumerate(src.data.materials)]
-        trglist = [(mat.name, mn, mat) for mn,mat in enumerate(trg.data.materials)]
+        srclist = list(enumerate(src.data.materials))
+        trglist = list(enumerate(trg.data.materials))
         trgrest = trglist[nsrcmats:ntrgmats]
         trglist = trglist[:nsrcmats]
         srcrest = srclist[ntrgmats:nsrcmats]
         srclist = srclist[:ntrgmats]
-        trgmats = [data[1:3] for data in srclist]
         trg.data.materials.clear()
-        for _mn,mat in trgmats:
+        for _,mat in srclist:
             trg.data.materials.append(mat)
-        for _,_,mat in trgrest:
+        for _,mat in trgrest:
             trg.data.materials.append(mat)
         for f,mn in mnums:
             f.material_index = mn
