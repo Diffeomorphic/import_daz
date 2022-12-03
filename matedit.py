@@ -1402,8 +1402,7 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         bpy.ops.object.make_single_user(object=False, obdata=False, material=True, animation=False, obdata_animation=False)
         bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=False)
         for mat in palette.data.materials:
-            if len(mat.name) > 4 and mat.name[-4] == "." and mat.name[-3:].isdigit():
-                mat.name = mat.name[:-4]
+            mat.name = stripName(mat.name)
         bpy.ops.asset.mark()
 
 

@@ -2054,6 +2054,23 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
         return mat
 
 #----------------------------------------------------------
+#   Strip material names
+#----------------------------------------------------------
+
+class DAZ_OT_StripMaterialNames(DazOperator, IsMesh):
+    bl_idname = "daz.strip_material_names"
+    bl_label = "Strip Material Names"
+    bl_description = "Strip endings from material names"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            for mat in ob.data.materials:
+                if mat:
+                    mat.name = stripName(mat.name)
+                    mat.name = baseName(mat.name)
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -2067,6 +2084,7 @@ classes = [
     DAZ_OT_UpdateSettings,
     DAZ_OT_SaveMaterialsToFile,
     DAZ_OT_LoadMaterialsFromFile,
+    DAZ_OT_StripMaterialNames,
 ]
 
 def register():

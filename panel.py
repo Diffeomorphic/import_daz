@@ -85,6 +85,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.resize_textures")
         self.layout.operator("daz.change_resolution")
         self.layout.separator()
+        self.layout.operator("daz.strip_material_names")
         self.layout.operator("daz.change_colors")
         self.layout.operator("daz.change_skin_color")
         self.layout.operator("daz.merge_materials")

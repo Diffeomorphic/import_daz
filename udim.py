@@ -177,13 +177,9 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
     def fixTiles(self, mat, mn, ob):
         for node in self.nodes[mat.name].values():
             if node.image:
-                imgname = node.image.name
+                imgname = baseName(node.image.name)
                 if imgname[-4:].isdigit():
                     tile = int(imgname[-4:])
-                elif (imgname[-8:-4].isdigit() and
-                      imgname[-4] == "." and
-                      imgname[-3:].isdigit()):
-                    tile = int(imgname[-8:-4])
                 else:
                     continue
                 udim,vdim = getUVDims(tile)
