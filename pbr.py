@@ -53,7 +53,7 @@ class PbrTree(CyclesTree):
         if self.owner.useVolume:
             self.translucent = self.buildTranslucency(uvname)
         self.column = 5
-        self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
+        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
@@ -179,7 +179,7 @@ class PbrTree(CyclesTree):
             tex = None
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
         self.diffuseColor = color
-        self.diffuseTex = tex
+        self.diffuseTex = self.findTextureNode(tex)
         self.pbr.inputs["Subsurface"].default_value = 0
 
         if ((LS.materialMethod == 'SINGLE_PRINCIPLED' and not self.owner.isVoluSkinMaterial()) or

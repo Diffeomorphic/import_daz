@@ -117,6 +117,12 @@ class CyclesMaterial(Material):
 
     def postbuild(self):
         Material.postbuild(self)
+        self.correctAreas()
+        if self.tree:
+            self.tree.postbuild()
+
+
+    def correctAreas(self):
         geonode = self.geometry
         me = None
         if geonode and geonode.data and geonode.data.rna:
@@ -135,12 +141,6 @@ class CyclesMaterial(Material):
             if self.geobump:
                 area = geo.getBumpArea(me, self.geobump.keys())
                 self.correctBumpArea(area)
-
-        if self.tree:
-            if GS.pruneNodes:
-                marked = pruneNodeTree(self.tree)
-                if isinstance(self.tree, CyclesTree):
-                    self.tree.selectDiffuse(marked)
 
 
     def addGeoBump(self, tex, socket):
@@ -233,6 +233,7 @@ class CyclesTree(Tree):
 
         self.diffuseInput = None
         self.diffuseColor = WHITE
+        self.diffuse = None
         self.diffuseTex = None
         self.normal = None
         self.normalval = 0.0
@@ -786,7 +787,7 @@ class CyclesTree(Tree):
             return
         color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
         self.diffuseColor = color
-        self.diffuseTex = tex
+        self.diffuseTex = self.findTextureNode(tex)
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         effect = self.getValue(["Base Color Effect"], 0)
@@ -802,6 +803,19 @@ class CyclesTree(Tree):
         self.setRoughness(self.diffuse, "Roughness", roughness, roughtex)
         self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True
+
+
+    def findTextureNode(self, tex):
+        if tex is None:
+            return None
+        elif tex.type == "TEX_IMAGE":
+            return tex
+        for inp in tex.inputs:
+            if inp.type == "RGBA":
+                for link in inp.links:
+                    if link.from_node.type == "TEX_IMAGE":
+                        return link.from_node
+        return None
 
 
     def getFacFromTranslucency(self):
@@ -1978,14 +1992,26 @@ class CyclesTree(Tree):
             return tex2
 
 
-    def selectDiffuse(self, marked):
-        try:
-            if self.diffuseTex and marked.get(self.diffuseTex.name):
+    def postbuild(self):
+        if GS.pruneNodes:
+            marked = pruneNodeTree(self)
+            hasDiffuseTex = self.diffuseTex and marked.get(self.diffuseTex.name)
+            hasDiffuse = self.diffuse and marked.get(self.diffuse.name)
+        else:
+            hasDiffuseTex = self.diffuseTex
+            hasDiffuse = self.diffuse
+        for node in self.nodes:
+            node.select = False
+        if hasDiffuseTex:
+            try:
                 self.diffuseTex.select = True
                 self.nodes.active = self.diffuseTex
-        except UnicodeDecodeError:
-            print("Illegal diffuse texture in %s:\n %s" % (self.owner.name, self.diffuseTex))
-            self.diffuseTex = None
+            except UnicodeDecodeError:
+                print("Illegal diffuse texture in %s:\n %s" % (self.owner.name, self.diffuseTex))
+                self.diffuseTex = None
+        elif hasDiffuse:
+            self.diffuse.select = True
+            self.nodes.active = self.diffuse
 
 
     def getLink(self, node, slot):
@@ -2032,5 +2058,6 @@ def findTexco(tree, col=None):
         return nodes[0]
     elif col is not None:
         return tree.addNode("ShaderNodeTexCoord", col)
+
 
 
