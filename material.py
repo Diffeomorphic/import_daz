@@ -1058,73 +1058,134 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
     bl_description = "Merge identical materials"
     bl_options = {'UNDO'}
 
-    ignoreStrength : BoolProperty(
-        name = "Ignore Strength",
-        description = "Merge materials even if some scalar values differ.\nOften needed to merge materials with bump maps",
-        default = False)
+    mergeMode : EnumProperty(
+        items = [('IDENTIFY', "Identify Only", "Replace identical materials of all selected meshes with the same material"),
+                 ('MERGE', "Merge Only", "Merge identical materials for each object into a single material"),
+                 ('BOTH', "Identify And Merge", "Replace identical materials of all selected meshes\nand merge identical materials for each object")],
+        name = "Merging Mode",
+        description = "Merging mode",
+        default = 'BOTH')
 
-    ignoreColor : BoolProperty(
-        name = "Ignore Color",
-        description = "Merge materials even if some vector values differ",
-        default = False)
+    ignoreBump : BoolProperty(
+        name = "Ignore Bump Strength",
+        description = "Merge materials even if the bump strengths differ",
+        default = True)
+
 
     def draw(self, context):
-        self.layout.prop(self, "ignoreStrength")
-        self.layout.prop(self, "ignoreColor")
+        self.layout.prop(self, "mergeMode")
+        self.layout.prop(self, "ignoreBump")
 
 
     def run(self, context):
+        self.setupShells(context)
+        self.nReplaced = 0
+        self.nMerged = 0
+        if self.mergeMode == 'IDENTIFY':
+            table = self.setupTable(self.meshes)
+            for ob in self.meshes:
+                self.replaceMaterials(ob, table)
+        elif self.mergeMode == 'MERGE':
+            for ob in self.meshes:
+                table = self.setupTable([ob])
+                self.replaceMaterials(ob, table)
+                self.mergeMaterials(ob, table)
+        elif self.mergeMode == 'BOTH':
+            table = self.setupTable(self.meshes)
+            for ob in self.meshes:
+                self.replaceMaterials(ob, table)
+                self.mergeMaterials(ob, table)
+        print("Number of materials replaced: %d" % self.nReplaced)
+        print("Number of materials merged: %d" % self.nMerged)
+
+    def setupShells(self, context):
         shelled = []
         for shell in getVisibleMeshes(context):
             mod = getModifier(shell, 'NODES')
             if mod and "Input_1" in mod.keys() and isinstance(mod["Input_1"], bpy.types.Object):
                 shelled.append(mod["Input_1"])
+        self.meshes = []
         for ob in getSelectedMeshes(context):
             if ob in shelled:
                 print("Object with shell: %s" % ob.name)
-                continue
-            self.mergeMaterials(ob)
-            self.removeUnusedMaterials(ob)
-
-
-    def mergeMaterials(self, ob):
-        if ob.type != 'MESH':
-            return
-
-        self.matlist = []
-        self.assoc = {}
-        self.reindex = {}
-        self.matdists = {}
-        self.newname = {None : None}
-        m = 0
-        reduced = False
-        for n,mat in enumerate(ob.data.materials):
-            self.newname[mat.name] = mat.name
-            if self.keepMaterial(n, mat, ob):
-                self.matlist.append(mat)
-                self.reindex[n] = self.assoc[mat.name] = m
-                self.matdists[m] = [self.addToMatdists(mat, n)]
-                m += 1
             else:
+                self.meshes.append(ob)
+
+
+    def setupTable(self, meshes):
+        mats = []
+        for ob in meshes:
+            for mat in ob.data.materials:
+                if mat:
+                    mats.append(mat)
+        table = {}
+        mats2 = []
+        for mat in mats:
+            taken = False
+            for mat2 in mats2:
+                if self.areSameMaterial(mat, mat2):
+                    table[mat.name] = mat2
+                    taken = True
+                    break
+            if not taken:
+                table[mat.name] = mat
+                mats2.append(mat)
+        return table
+
+
+    def replaceMaterials(self, ob, table):
+        mats = list(ob.data.materials)
+        facenums,phairs = self.clearMaterials(ob)
+        for mat in mats:
+            if mat is None:
+                mat2 = None
+            else:
+                mat2 = table[mat.name]
+                ob.data.materials.append(mat2)
+                self.nReplaced += 1
+        for f,mn in zip(ob.data.polygons, facenums):
+            f.material_index = mn
+        for pset,matslot in phairs:
+            pset.material_slot = matslot
+
+
+    def clearMaterials(self, ob):
+        facenums = [f.material_index for f in ob.data.polygons]
+        phairs = []
+        for psys in ob.particle_systems:
+            pset = psys.settings
+            phairs.append((pset, pset.material_slot))
+        ob.data.materials.clear()
+        return facenums,phairs
+
+
+    def mergeMaterials(self, ob, table):
+        assoc = {}
+        reindex = {}
+        mats = []
+        mnum = 0
+        reduced = False
+        for mn,mat in enumerate(ob.data.materials):
+            if mat is None:
                 reduced = True
+            elif mat.name in assoc.keys():
+                reindex[mn] = assoc[mat.name]
+                self.nMerged += 1
+                reduced = True
+            else:
+                reindex[mn] = mnum
+                assoc[mat.name] = mnum
+                mats.append(mat)
+                mnum += 1
+
         if reduced:
-            phairs = []
-            for f in ob.data.polygons:
-                f.material_index = self.reindex[f.material_index]
-            for psys in ob.particle_systems:
-                pset = psys.settings
-                phairs.append((pset, pset.material_slot))
-            for n,mat in enumerate(self.matlist):
-                ob.data.materials[n] = mat
-                mlist = self.matdists[n]
-                mlist.sort()
-                mat1 = mlist[0][2]
-                mat.name = mat1.name
-                mat.diffuse_color = mat1.diffuse_color
-            for n in range(len(self.matlist), len(ob.data.materials)):
-                ob.data.materials.pop()
+            facenums,phairs = self.clearMaterials(ob)
+            for mnum,mat in enumerate(mats):
+                ob.data.materials.append(mat)
+            for f,mn in zip(ob.data.polygons, facenums):
+                f.material_index = reindex[mn]
             for pset,matslot in phairs:
-                pset.material_slot = self.newname[matslot]
+                pset.material_slot = table[matslot].name
 
 
     def keepMaterial(self, n, mat, ob):
@@ -1132,15 +1193,8 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             if self.areSameMaterial(mat, mat2):
                 m = self.reindex[n] = self.assoc[mat2.name]
                 self.newname[mat.name] = mat2.name
-                self.matdists[m].append(self.addToMatdists(mat, n))
                 return False
         return True
-
-
-    def addToMatdists(self, mat, n):
-        r,g,b,a = mat.diffuse_color
-        dist = (r-g)**2 + (r-b)**2 + (g-b)**2
-        return (dist, n, mat)
 
 
     def areSameMaterial(self, mat1, mat2):
@@ -1303,12 +1357,11 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
                 val2 = socket2.default_value
                 if (hasattr(val1, "__len__") and
                     hasattr(val2, "__len__")):
-                    if self.ignoreColor:
-                        continue
                     for m in range(len(val1)):
                         if val1[m] != val2[m]:
                             return False
-                elif val1 != val2 and not self.ignoreStrength:
+                elif (val1 != val2 and
+                      not (node1.type == "BUMP" and self.ignoreBump)):
                     return False
             elif hasattr(socket2, "default_value"):
                 return False
@@ -1332,21 +1385,6 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             if key2 not in struct2.keys():
                 return False
         return True
-
-
-    def removeUnusedMaterials(self, ob):
-        if not ob.data.polygons:
-            return
-        nmats = len(ob.data.materials)
-        used = dict([(mn,False) for mn in range(nmats)])
-        for f in ob.data.polygons:
-            used[f.material_index] = True
-        used = list(used.items())
-        used.sort()
-        used.reverse()
-        for n,use in used:
-            if not use:
-                ob.data.materials.pop(index=n)
 
 # ---------------------------------------------------------------------
 #   Copy materials

@@ -118,17 +118,22 @@ class HairOptions:
         name = "Hair Length",
         min = 3,
         max = 100,
-        default = 20,
-        description = "Hair length"
+        default = 50,
+        description = "Length of resized hair. Maximum length if Auto Resize is enabled."
     )
 
-    resizeHair : BoolProperty(
+    useResizeHair : BoolProperty(
         name = "Resize Hair",
         default = False,
         description = "Resize hair afterwards"
     )
 
-    resizeInBlocks : BoolProperty(
+    useAutoResize : BoolProperty(
+        name = "Auto Resize",
+        default = True,
+        description = "Resize hair to the length of the longest strand")
+
+    useResizeInBlocks : BoolProperty(
         name = "Resize In Blocks",
         default = False,
         description = "Resize hair in blocks of ten afterwards"
@@ -568,8 +573,17 @@ class CombineHair:
                 hsystems[key] = hsys
 
 
-    def hairResize(self, size, hsystems, hum):
-        print("Resize hair")
+    def hairResize(self, maxsize, hsystems, hum):
+        if self.useAutoResize:
+            size = 3
+            for hsys in hsystems.values():
+                length = max([len(strand) for strand in hsys.strands])
+                if length > size and length < maxsize:
+                    size = length
+        else:
+            size = maxsize
+
+        print("Resize hair to size %d" % size)
         nsystems = {}
         for hsys in hsystems.values():
             key,mnum = self.getHairKey(size, hsys.mnum)
@@ -606,9 +620,12 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
             box.prop(self, "useSinglePolyline")
         box.prop(self, "removeOldHairs")
         box.separator()
-        box.prop(self, "resizeHair")
-        box.prop(self, "size")
-        box.prop(self, "resizeInBlocks")
+        box.prop(self, "useResizeHair")
+        if self.useResizeHair:
+            box.prop(self, "useAutoResize")
+            box.prop(self, "size")
+            if not self.useAutoResize:
+                box.prop(self, "useResizeInBlocks")
         box.prop(self, "sparsity")
 
         col = row.column()
@@ -744,9 +761,9 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
         if haircount == 0:
             raise DazError("Conversion failed.\nNo hair strands created")
 
-        if self.resizeInBlocks:
+        if self.useResizeInBlocks and not self.useAutoResize:
             hsystems = self.blockResize(hsystems, hum)
-        elif self.resizeHair:
+        elif self.useResizeHair:
             hsystems = self.hairResize(self.size, hsystems, hum)
         t6 = perf_counter()
         self.clocks.append(("Resize", t6-t5))
