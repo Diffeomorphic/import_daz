@@ -1052,51 +1052,52 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
 #   Merge identical materials
 #-------------------------------------------------------------
 
-class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
-    bl_idname = "daz.merge_materials"
-    bl_label = "Merge Materials"
-    bl_description = "Merge identical materials"
-    bl_options = {'UNDO'}
-
-    mergeMode : EnumProperty(
+class MergeMaterialOptions:
+    mergeMethod : EnumProperty(
         items = [('IDENTIFY', "Identify Only", "Replace identical materials of all selected meshes with the same material"),
-                 ('MERGE', "Merge Only", "Merge identical materials for each object into a single material"),
+                 ('SEPARATE', "Merge Separate", "Merge identical materials for each object into a single material"),
                  ('BOTH', "Identify And Merge", "Replace identical materials of all selected meshes\nand merge identical materials for each object")],
-        name = "Merging Mode",
-        description = "Merging mode",
-        default = 'BOTH')
+        name = "Merge Method",
+        description = "Merging method",
+        default = 'IDENTIFY')
 
     ignoreBump : BoolProperty(
         name = "Ignore Bump Strength",
         description = "Merge materials even if the bump strengths differ",
         default = True)
 
-
     def draw(self, context):
-        self.layout.prop(self, "mergeMode")
+        self.layout.prop(self, "mergeMethod")
         self.layout.prop(self, "ignoreBump")
 
+
+class DAZ_OT_MergeMaterials(MergeMaterialOptions, DazPropsOperator, IsMesh):
+    bl_idname = "daz.merge_materials"
+    bl_label = "Merge Materials"
+    bl_description = "Merge identical materials"
+    bl_options = {'UNDO'}
 
     def run(self, context):
         self.setupShells(context)
         self.nReplaced = 0
         self.nMerged = 0
-        if self.mergeMode == 'IDENTIFY':
+        if self.mergeMethod == 'IDENTIFY':
             table = self.setupTable(self.meshes)
             for ob in self.meshes:
                 self.replaceMaterials(ob, table)
-        elif self.mergeMode == 'MERGE':
+        elif self.mergeMethod == 'SEPARATE':
             for ob in self.meshes:
                 table = self.setupTable([ob])
                 self.replaceMaterials(ob, table)
                 self.mergeMaterials(ob, table)
-        elif self.mergeMode == 'BOTH':
+        elif self.mergeMethod == 'BOTH':
             table = self.setupTable(self.meshes)
             for ob in self.meshes:
                 self.replaceMaterials(ob, table)
                 self.mergeMaterials(ob, table)
         print("Number of materials replaced: %d" % self.nReplaced)
         print("Number of materials merged: %d" % self.nMerged)
+
 
     def setupShells(self, context):
         shelled = []

@@ -32,6 +32,7 @@ from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions
+from .material import MergeMaterialOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
 from .daz import MaterialMethodItems
@@ -530,7 +531,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -567,7 +568,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge identical materials",
-        default = False)
+        default = True)
 
     useMergeToes : BoolProperty(
         name = "Merge Toes",
@@ -669,6 +670,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         ColorOptions.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "useMergeMaterials")
+        if self.useMergeMaterials:
+            self.subprop("mergeMethod")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -780,6 +783,20 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     selectSet(ob, True)
             bpy.ops.daz.eliminate_empties()
 
+        # Merge materials
+        if self.useMergeMaterials:
+            allMeshes = []
+            for meshes in self.meshes.values():
+                allMeshes += list(meshes)
+            for meshes in self.hdmeshes.values():
+                allMeshes += list(meshes)
+            if allMeshes:
+                activateObject(context, allMeshes[0])
+                for ob in allMeshes[1:]:
+                    selectSet(ob, True)
+            print("Merge materials")
+            bpy.ops.daz.merge_materials(mergeMethod=self.mergeMethod)
+
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
         GS.silentMode = False
@@ -871,13 +888,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 if self.useMergeToes:
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
-
-        if self.useMergeMaterials and mainMesh and activateObject(context, mainMesh):
-            # Merge materials
-            for ob in meshes[1:]:
-                selectSet(ob, True)
-            print("Merge materials")
-            bpy.ops.daz.merge_materials()
 
         if mainChar and mainRig and mainMesh:
             if self.useFavoMorphs:
