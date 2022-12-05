@@ -699,6 +699,7 @@ class Geometry(Asset, Channels):
         self.root_region = None
         self.SubDIALevel = 0
         self.SubDRenderLevel = 0
+        self.SubDEdgeInterpolateLevel = 0
         self.isShell = False
         self.shells = {}
 

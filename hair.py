@@ -131,7 +131,7 @@ class HairOptions:
     useAutoResize : BoolProperty(
         name = "Auto Resize",
         default = True,
-        description = "Resize hair to the length of the longest strand")
+        description = "Resize each material to the length of the longest strand")
 
     useResizeInBlocks : BoolProperty(
         name = "Resize In Blocks",
@@ -575,17 +575,18 @@ class CombineHair:
 
     def hairResize(self, maxsize, hsystems, hum):
         if self.useAutoResize:
-            size = 3
+            sizes = dict([(hsys.material,3) for hsys in hsystems.values()])
             for hsys in hsystems.values():
                 length = max([len(strand) for strand in hsys.strands])
-                if length > size and length < maxsize:
-                    size = length
+                if length > sizes[hsys.material] and length < maxsize:
+                    sizes[hsys.material] = length
         else:
-            size = maxsize
+            sizes = dict([(hsys.material,maxsize) for hsys in hsystems.values()])
 
-        print("Resize hair to size %d" % size)
+        print("Resize hair:\n%s" % sizes)
         nsystems = {}
         for hsys in hsystems.values():
+            size = sizes[hsys.material]
             key,mnum = self.getHairKey(size, hsys.mnum)
             if key not in nsystems.keys():
                 nsystems[key] = HairSystem(key, size, hum, hsys.mnum, self)
