@@ -153,6 +153,8 @@ class FrameConverter:
                     nname = bonemap.get(bname)
                     if nname:
                         nbanim[nname] = frames
+                    elif bname == "@selection":
+                        nbanim[bname] = frames
             else:
                 nbanim = banim
             nvanim = self.convertMorphAnim(vanim, rig)
