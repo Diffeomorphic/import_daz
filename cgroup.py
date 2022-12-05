@@ -1587,6 +1587,76 @@ class DecalGroup(CyclesGroup):
         self.links.new(mapping.outputs["Depth Mask"], self.outputs.inputs["Depth Mask"])
 
 # ---------------------------------------------------------------------
+#   Decal Group
+# ---------------------------------------------------------------------
+
+class PrincipledGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += [
+            "Base Color",
+            "Subsurface",
+            "Subsurface Radius",
+            "Subsurface Color",
+            "Subsurface IOR",
+            "Metallic",
+            "Specular",
+            "Specular Tint",
+            "Roughness",
+            "Anisotropic",
+            "Anisotropic Rotation",
+            "Sheen",
+            "Sheen Tint",
+            "Clearcoat",
+            "Clearcoat Roughness",
+            "IOR",
+            "Transmission",
+            "Transmission Roughness",
+            "Emission",
+            "Emission Strength",
+            "Alpha",
+            "Normal",
+            "Clearcoat Normal",
+            "Tangent"
+        ]
+        self.outsockets += ["BSDF"]
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 5)
+        self.group.inputs.new("NodeSocketColor", "Base Color")
+        self.group.inputs.new("NodeSocketFloat", "Subsurface")
+        self.group.inputs.new("NodeSocketVector", "Subsurface Radius")
+        self.hideSlot("Subsurface Radius")
+        self.group.inputs.new("NodeSocketColor", "Subsurface Color")
+        self.group.inputs.new("NodeSocketFloat", "Subsurface IOR")
+        self.group.inputs.new("NodeSocketFloat", "Metallic")
+        self.group.inputs.new("NodeSocketFloat", "Specular")
+        self.group.inputs.new("NodeSocketFloat", "Specular Tint")
+        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.group.inputs.new("NodeSocketFloat", "Anisotropic")
+        self.group.inputs.new("NodeSocketFloat", "Anisotropic Rotation")
+        self.group.inputs.new("NodeSocketFloat", "Sheen")
+        self.group.inputs.new("NodeSocketFloat", "Sheen Tint")
+        self.group.inputs.new("NodeSocketFloat", "Clearcoat")
+        self.group.inputs.new("NodeSocketFloat", "Clearcoat Roughness")
+        self.group.inputs.new("NodeSocketFloat", "IOR")
+        self.group.inputs.new("NodeSocketFloat", "Transmission")
+        self.group.inputs.new("NodeSocketFloat", "Transmission Roughness")
+        self.group.inputs.new("NodeSocketColor", "Emission")
+        self.group.inputs.new("NodeSocketFloat", "Emission Strength")
+        self.group.inputs.new("NodeSocketFloat", "Alpha")
+        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.hideSlot("Normal")
+        self.group.inputs.new("NodeSocketVector", "Clearcoat Normal")
+        self.hideSlot("Clearcoat Normal")
+        self.group.inputs.new("NodeSocketVector", "Tangent")
+        self.hideSlot("Tangent")
+        self.group.outputs.new("NodeSocketShader", "BSDF")
+
+    def addNodes(self, args):
+        pass
+
+# ---------------------------------------------------------------------
 #   Layered Group
 # ---------------------------------------------------------------------
 
@@ -1695,6 +1765,7 @@ ShaderGroups = {
         "useNormal" : (NormalGroup, "DAZ Normal", ["uvname"]),
         "useDisplacement" : (DisplacementGroup, "DAZ Displacement", []),
         "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
+        "usePrincipled" : (PrincipledGroup, "DAZ Principled", []),
     }
 
 class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
@@ -1728,6 +1799,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useNormal : BoolProperty(name="Normal", default=False)
     useDisplacement : BoolProperty(name="Displacement", default=False)
     useDecal : BoolProperty(name="Decal", default=False)
+    usePrincipled : BoolProperty(name="Principled", default=False)
 
     def draw(self, context):
         for key in ShaderGroups.keys():
