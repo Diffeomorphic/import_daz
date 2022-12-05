@@ -404,6 +404,11 @@ class HideOperator(DazOperator, IsArmature):
 #-------------------------------------------------------------
 
 class AffectOptions:
+    useClearPose : BoolProperty(
+        name = "Clear Pose",
+        description = "Clear the pose before loading a new one",
+        default = True)
+
     affectObject : EnumProperty(
         items = [('OBJECT', "Object", "Animate global object transformation"),
                  ('MASTER', "Master Bone", "Object transformations affect master/root bone instead of object.\nOnly for MHX and Rigify"),
@@ -442,6 +447,7 @@ class AffectOptions:
     def draw(self, context):
         self.drawBones(context)
         if self.affectBones:
+            self.layout.prop(self, "useClearPose")
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
@@ -937,7 +943,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     def clearPose(self, rig, frame):
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
-        if self.affectObject == 'OBJECT' and self.affectBones:
+        if self.useClearPose and self.affectObject == 'OBJECT' and self.affectBones:
             if not self.affectScale:
                 tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
@@ -945,7 +951,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 tfm.insertKeys(rig, None, frame, rig.name, self)
         if rig.type != 'ARMATURE':
             return
-        if self.affectBones:
+        if self.useClearPose and self.affectBones:
             for pb in rig.pose.bones:
                 if self.isAvailable(pb, rig):
                     scale = pb.scale.copy()
@@ -955,7 +961,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                     if self.useInsertKeys:
                         tfm.insertKeys(rig, pb, frame, pb.name, self)
             setChildofInverses(rig)
-        if self.affectMorphs and self.useClearMorphs:
+        if self.useClearMorphs and self.affectMorphs:
             if self.useShapekeys:
                 for ob in rig.children:
                     if ob.type == 'MESH' and ob.data.shape_keys:
