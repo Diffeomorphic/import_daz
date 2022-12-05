@@ -25,14 +25,12 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
 import os
 import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions
-from .material import MergeMaterialOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions
 from .dforce import SoftbodyOptions
 from .daz import MaterialMethodItems
@@ -531,7 +529,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -565,10 +563,15 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions,
         description = "Merge all rigs to the main character rig",
         default = True)
 
-    useMergeMaterials : BoolProperty(
-        name = "Merge Materials",
-        description = "Merge identical materials",
+    useCombineMaterials : BoolProperty(
+        name = "Combine Materials",
+        description = "Combine identical materials into a single material",
         default = True)
+
+    useMergeMaterialSlots : BoolProperty(
+        name = "Merge Material Slots",
+        description = "Merge slots with the same material into a single slot",
+        default = False)
 
     useMergeToes : BoolProperty(
         name = "Merge Toes",
@@ -669,9 +672,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions,
         FitOptions.draw(self, context)
         ColorOptions.draw(self, context)
         self.layout.separator()
-        self.layout.prop(self, "useMergeMaterials")
-        if self.useMergeMaterials:
-            self.subprop("mergeMethod")
+        self.layout.prop(self, "useCombineMaterials")
+        self.layout.prop(self, "useMergeMaterialSlots")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -784,7 +786,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions,
             bpy.ops.daz.eliminate_empties()
 
         # Merge materials
-        if self.useMergeMaterials:
+        if self.useCombineMaterials:
             allMeshes = []
             for meshes in self.meshes.values():
                 allMeshes += list(meshes)
@@ -794,8 +796,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions,
                 activateObject(context, allMeshes[0])
                 for ob in allMeshes[1:]:
                     selectSet(ob, True)
-            print("Merge materials")
-            bpy.ops.daz.merge_materials(mergeMethod=self.mergeMethod)
+            print("Combine materials")
+            bpy.ops.daz.combine_materials()
 
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
@@ -888,6 +890,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeMaterialOptions,
                 if self.useMergeToes:
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
+
+        if self.useMergeMaterialSlots and mainMesh and activateObject(context, mainMesh):
+            # Merge material slots
+            for ob in meshes[1:]:
+                selectSet(ob, True)
+            print("Merge materials")
+            bpy.ops.daz.merge_material_slots()
 
         if mainChar and mainRig and mainMesh:
             if self.useFavoMorphs:

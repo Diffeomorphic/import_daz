@@ -1049,17 +1049,14 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
                     self.saveImage(tex.image)
 
 #-------------------------------------------------------------
-#   Merge identical materials
+#   Combine identical materials
 #-------------------------------------------------------------
 
-class MergeMaterialOptions:
-    mergeMethod : EnumProperty(
-        items = [('IDENTIFY', "Identify Only", "Replace identical materials of all selected meshes with the same material"),
-                 ('SEPARATE', "Merge Separate", "Merge identical materials for each object into a single material"),
-                 ('BOTH', "Identify And Merge", "Replace identical materials of all selected meshes\nand merge identical materials for each object")],
-        name = "Merge Method",
-        description = "Merging method",
-        default = 'IDENTIFY')
+class DAZ_OT_CombineMaterials(DazPropsOperator, IsMesh):
+    bl_idname = "daz.combine_materials"
+    bl_label = "Combine Materials"
+    bl_description = "Combine identical materials into a single material"
+    bl_options = {'UNDO'}
 
     ignoreBump : BoolProperty(
         name = "Ignore Bump Strength",
@@ -1067,36 +1064,15 @@ class MergeMaterialOptions:
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "mergeMethod")
         self.layout.prop(self, "ignoreBump")
-
-
-class DAZ_OT_MergeMaterials(MergeMaterialOptions, DazPropsOperator, IsMesh):
-    bl_idname = "daz.merge_materials"
-    bl_label = "Merge Materials"
-    bl_description = "Merge identical materials"
-    bl_options = {'UNDO'}
 
     def run(self, context):
         self.setupShells(context)
-        self.nReplaced = 0
-        self.nMerged = 0
-        if self.mergeMethod == 'IDENTIFY':
-            table = self.setupTable(self.meshes)
-            for ob in self.meshes:
-                self.replaceMaterials(ob, table)
-        elif self.mergeMethod == 'SEPARATE':
-            for ob in self.meshes:
-                table = self.setupTable([ob])
-                self.replaceMaterials(ob, table)
-                self.mergeMaterials(ob, table)
-        elif self.mergeMethod == 'BOTH':
-            table = self.setupTable(self.meshes)
-            for ob in self.meshes:
-                self.replaceMaterials(ob, table)
-                self.mergeMaterials(ob, table)
-        print("Number of materials replaced: %d" % self.nReplaced)
-        print("Number of materials merged: %d" % self.nMerged)
+        self.nCombined = 0
+        table = self.setupTable(self.meshes)
+        for ob in self.meshes:
+            self.combineMaterials(ob, table)
+        print("Number of materials combined: %d" % self.nCombined)
 
 
     def setupShells(self, context):
@@ -1134,59 +1110,19 @@ class DAZ_OT_MergeMaterials(MergeMaterialOptions, DazPropsOperator, IsMesh):
         return table
 
 
-    def replaceMaterials(self, ob, table):
+    def combineMaterials(self, ob, table):
         mats = list(ob.data.materials)
-        facenums,phairs = self.clearMaterials(ob)
+        facenums,phairs = clearMaterials(ob)
         for mat in mats:
             if mat is None:
                 mat2 = None
             else:
                 mat2 = table[mat.name]
                 ob.data.materials.append(mat2)
-                self.nReplaced += 1
         for f,mn in zip(ob.data.polygons, facenums):
             f.material_index = mn
         for pset,matslot in phairs:
             pset.material_slot = matslot
-
-
-    def clearMaterials(self, ob):
-        facenums = [f.material_index for f in ob.data.polygons]
-        phairs = []
-        for psys in ob.particle_systems:
-            pset = psys.settings
-            phairs.append((pset, pset.material_slot))
-        ob.data.materials.clear()
-        return facenums,phairs
-
-
-    def mergeMaterials(self, ob, table):
-        assoc = {}
-        reindex = {}
-        mats = []
-        mnum = 0
-        reduced = False
-        for mn,mat in enumerate(ob.data.materials):
-            if mat is None:
-                reduced = True
-            elif mat.name in assoc.keys():
-                reindex[mn] = assoc[mat.name]
-                self.nMerged += 1
-                reduced = True
-            else:
-                reindex[mn] = mnum
-                assoc[mat.name] = mnum
-                mats.append(mat)
-                mnum += 1
-
-        if reduced:
-            facenums,phairs = self.clearMaterials(ob)
-            for mnum,mat in enumerate(mats):
-                ob.data.materials.append(mat)
-            for f,mn in zip(ob.data.polygons, facenums):
-                f.material_index = reindex[mn]
-            for pset,matslot in phairs:
-                pset.material_slot = table[matslot].name
 
 
     def keepMaterial(self, n, mat, ob):
@@ -1212,6 +1148,7 @@ class DAZ_OT_MergeMaterials(MergeMaterialOptions, DazPropsOperator, IsMesh):
         if mat1.use_nodes and mat2.use_nodes:
             if self.areSameCycles(mat1.node_tree, mat2.node_tree, mname1, mname2):
                 print(mat1.name, "=", mat2.name)
+                self.nCombined += 1
                 return True
             else:
                 return False
@@ -1386,6 +1323,63 @@ class DAZ_OT_MergeMaterials(MergeMaterialOptions, DazPropsOperator, IsMesh):
             if key2 not in struct2.keys():
                 return False
         return True
+
+#-------------------------------------------------------------
+#   Merge identical materials
+#-------------------------------------------------------------
+
+class DAZ_OT_MergeMaterialSlots(DazOperator, IsMesh):
+    bl_idname = "daz.merge_material_slots"
+    bl_label = "Merge Material Slots"
+    bl_description = "Merge slots with the same material into a single slot"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        self.nMerged = 0
+        for ob in getSelectedMeshes(context):
+            self.mergeSlots(ob)
+        print("Number of material slots merged: %d" % self.nMerged)
+
+
+    def mergeSlots(self, ob):
+        assoc = {}
+        reindex = {}
+        mats = []
+        mnum = 0
+        reduced = False
+        for mn,mat in enumerate(ob.data.materials):
+            if mat is None:
+                reduced = True
+            elif mat.name in assoc.keys():
+                reindex[mn] = assoc[mat.name]
+                print("%s: %d = %d" % (mat.name, mn, assoc[mat.name]))
+                self.nMerged += 1
+                reduced = True
+            else:
+                reindex[mn] = mnum
+                assoc[mat.name] = mnum
+                mats.append(mat)
+                mnum += 1
+
+        if reduced:
+            facenums,phairs = clearMaterials(ob)
+            for mnum,mat in enumerate(mats):
+                ob.data.materials.append(mat)
+            for f,mn in zip(ob.data.polygons, facenums):
+                f.material_index = reindex[mn]
+            for pset,matslot in phairs:
+                mnum2 = assoc[matslot]
+                pset.material_slot = mats[mnum2].name
+
+
+def clearMaterials(ob):
+    facenums = [f.material_index for f in ob.data.polygons]
+    phairs = []
+    for psys in ob.particle_systems:
+        pset = psys.settings
+        phairs.append((pset, pset.material_slot))
+    ob.data.materials.clear()
+    return facenums,phairs
 
 # ---------------------------------------------------------------------
 #   Copy materials
@@ -2115,7 +2109,8 @@ class DAZ_OT_StripMaterialNames(DazOperator, IsMesh):
 
 classes = [
     DAZ_OT_SaveLocalTextures,
-    DAZ_OT_MergeMaterials,
+    DAZ_OT_CombineMaterials,
+    DAZ_OT_MergeMaterialSlots,
     DAZ_OT_CopyMaterials,
     DAZ_OT_PruneNodeTrees,
     DAZ_OT_ChangeResolution,
