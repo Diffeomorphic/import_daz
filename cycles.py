@@ -787,7 +787,7 @@ class CyclesTree(Tree):
             return
         color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
         self.diffuseColor = color
-        self.diffuseTex = self.findTextureNode(tex)
+        self.diffuseTex = findTextureNode(tex)
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         effect = self.getValue(["Base Color Effect"], 0)
@@ -803,19 +803,6 @@ class CyclesTree(Tree):
         self.setRoughness(self.diffuse, "Roughness", roughness, roughtex)
         self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True
-
-
-    def findTextureNode(self, tex):
-        if tex is None:
-            return None
-        elif tex.type == "TEX_IMAGE":
-            return tex
-        for inp in tex.inputs:
-            if inp.type == "RGBA":
-                for link in inp.links:
-                    if link.from_node.type == "TEX_IMAGE":
-                        return link.from_node
-        return None
 
 
     def getFacFromTranslucency(self):
@@ -2058,6 +2045,20 @@ def findTexco(tree, col=None):
         return nodes[0]
     elif col is not None:
         return tree.addNode("ShaderNodeTexCoord", col)
+
+
+def findTextureNode(tex):
+    if tex is None:
+        return None
+    elif tex.type == "TEX_IMAGE":
+        return tex
+    for inp in tex.inputs:
+        if inp.type == "RGBA":
+            for link in inp.links:
+                tex2 = findTextureNode(link.from_node)
+                if tex2:
+                    return tex2
+    return None
 
 
 

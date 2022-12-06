@@ -1670,6 +1670,41 @@ class DAZ_OT_FindMissingTextures(DazOperator):
         return None,""
 
 #----------------------------------------------------------
+#   Activate diffuse texture
+#----------------------------------------------------------
+
+class DAZ_OT_ActivateDiffuse(DazOperator, IsMesh):
+    bl_idname = "daz.activate_diffuse"
+    bl_label = "Activate Diffuse"
+    bl_description = "Activate diffuse texture node,\nto make textured view work correctly"
+
+    def run(self, context):
+        from .cycles import findTextureNode
+        ob = context.object
+        for mat in ob.data.materials:
+            if mat.node_tree:
+                nodes = mat.node_tree.nodes
+                for node in nodes:
+                    node.select = False
+                links = self.findDiffuseLinks(nodes)
+                for link in links:
+                    tex = findTextureNode(link.from_node)
+                    if tex:
+                        nodes.active = tex
+                        tex.select = True
+
+    def findDiffuseLinks(self, nodes):
+        for node in nodes:
+            if (node.type == 'GROUP' and
+                node.node_tree.name.startswith("DAZ Diffuse")):
+                return node.inputs["Color"].links
+            elif node.type == 'BSDF_DIFFUSE':
+                return node.inputs["Color"].links
+            elif node.type == "BSDF_PRINCIPLED":
+                return node.inputs["Base Color"].links
+        return []
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -1694,6 +1729,7 @@ classes = [
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,
     DAZ_OT_FindMissingTextures,
+    DAZ_OT_ActivateDiffuse,
 ]
 
 def register():

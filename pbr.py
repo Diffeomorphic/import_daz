@@ -172,6 +172,7 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildBaseSubsurface(self):
+        from .cycles import findTextureNode
         if self.isEnabled("Diffuse"):
             color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
         else:
@@ -179,7 +180,7 @@ class PbrTree(CyclesTree):
             tex = None
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
         self.diffuseColor = color
-        self.diffuseTex = self.findTextureNode(tex)
+        self.diffuseTex = findTextureNode(tex)
         self.pbr.inputs["Subsurface"].default_value = 0
 
         if ((LS.materialMethod == 'SINGLE_PRINCIPLED' and not self.owner.isVoluSkinMaterial()) or
