@@ -289,7 +289,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazUseSssSkin")
         box.prop(scn, "DazUseSssFix")
-        box.prop(scn, "DazReuseMaterials")
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazBumpFactor")
@@ -571,10 +570,6 @@ def register():
                  ('NEVER', "Never", "Never create world material")],
         name = "World",
         description = "When to create a world material")
-
-    bpy.types.Scene.DazReuseMaterials = BoolProperty(
-        name = "Reuse Materials",
-        description = "Use existing materials if such exists.\nMay lead to incorrect materials")
 
     bpy.types.Scene.DazLowerResFolders = BoolProperty(
         name = "Lower Resolution Folders",

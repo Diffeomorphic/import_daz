@@ -566,7 +566,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useCombineMaterials : BoolProperty(
         name = "Combine Scene Materials",
         description = "Combine identical materials in scene across objects",
-        default = True)
+        default = False)
 
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
@@ -672,7 +672,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         FitOptions.draw(self, context)
         ColorOptions.draw(self, context)
         self.layout.separator()
-        self.layout.prop(self, "useCombineMaterials")
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
@@ -701,6 +700,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "useTransferFace")
             self.layout.prop(self, "useTransferShapes")
         self.layout.separator()
+        self.layout.prop(self, "useCombineMaterials")
         self.layout.prop(self, "useSoftbody")
         if self.useSoftbody:
             self.subprop("useChest")

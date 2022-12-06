@@ -334,9 +334,6 @@ class Material(Asset, Channels):
             return True
         elif self.force:
             return False
-        elif GS.reuseMaterials and self.name in bpy.data.materials.keys():
-            self.rna = bpy.data.materials[self.name]
-            return True
         elif self.geometry:
             return (not self.geometry.isVisibleMaterial(self))
         return False

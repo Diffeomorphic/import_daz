@@ -1673,25 +1673,25 @@ class DAZ_OT_FindMissingTextures(DazOperator):
 #   Activate diffuse texture
 #----------------------------------------------------------
 
-class DAZ_OT_ActivateDiffuse(DazOperator, IsMesh):
+class DAZ_OT_ActivateDiffuse(DazOperator):
     bl_idname = "daz.activate_diffuse"
     bl_label = "Activate Diffuse"
     bl_description = "Activate diffuse texture node,\nto make textured view work correctly"
 
     def run(self, context):
         from .cycles import findTextureNode
-        ob = context.object
-        for mat in ob.data.materials:
-            if mat.node_tree:
-                nodes = mat.node_tree.nodes
-                for node in nodes:
-                    node.select = False
-                links = self.findDiffuseLinks(nodes)
-                for link in links:
-                    tex = findTextureNode(link.from_node)
-                    if tex:
-                        nodes.active = tex
-                        tex.select = True
+        for ob in getVisibleMeshes(context):
+            for mat in ob.data.materials:
+                if mat.node_tree:
+                    nodes = mat.node_tree.nodes
+                    for node in nodes:
+                        node.select = False
+                    links = self.findDiffuseLinks(nodes)
+                    for link in links:
+                        tex = findTextureNode(link.from_node)
+                        if tex:
+                            nodes.active = tex
+                            tex.select = True
 
     def findDiffuseLinks(self, nodes):
         for node in nodes:

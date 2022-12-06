@@ -84,7 +84,6 @@ class GlobalSettings:
         self.useEmission = True
         self.useReflection = True
         self.useWorld = 'DOME'
-        self.reuseMaterials = False
         self.useLowerResFolders = True
         self.materialsByIndex = False
         self.imageInterpolation = 'Cubic'
@@ -162,7 +161,6 @@ class GlobalSettings:
         "DazSSSMethod" : "sssMethod",
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
-        "DazReuseMaterials" : "reuseMaterials",
         "DazLowerResFolders" : "useLowerResFolders",
         "DazMaterialsByIndex" : "materialsByIndex",
         "DazBumpFactor" : "bumpFactor",
