@@ -564,13 +564,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         default = True)
 
     useCombineMaterials : BoolProperty(
-        name = "Combine Materials",
-        description = "Combine identical materials into a single material",
+        name = "Combine Scene Materials",
+        description = "Combine identical materials in scene across objects",
         default = True)
 
-    useMergeMaterialSlots : BoolProperty(
-        name = "Merge Material Slots",
-        description = "Merge slots with the same material into a single slot",
+    useMergeMaterials : BoolProperty(
+        name = "Merge Materials",
+        description = "Merge identical materials",
         default = False)
 
     useMergeToes : BoolProperty(
@@ -673,7 +673,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         ColorOptions.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "useCombineMaterials")
-        self.layout.prop(self, "useMergeMaterialSlots")
+        self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -793,11 +793,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             for meshes in self.hdmeshes.values():
                 allMeshes += list(meshes)
             if allMeshes:
-                activateObject(context, allMeshes[0])
-                for ob in allMeshes[1:]:
-                    selectSet(ob, True)
-            print("Combine materials")
-            bpy.ops.daz.combine_materials()
+                print("Combine materials across objects")
+                bpy.ops.daz.combine_scene_materials()
 
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
@@ -891,12 +888,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
 
-        if self.useMergeMaterialSlots and mainMesh and activateObject(context, mainMesh):
+        if self.useMergeMaterials and mainMesh and activateObject(context, mainMesh):
             # Merge material slots
             for ob in meshes[1:]:
                 selectSet(ob, True)
             print("Merge materials")
-            bpy.ops.daz.merge_material_slots()
+            bpy.ops.daz.merge_materials()
 
         if mainChar and mainRig and mainMesh:
             if self.useFavoMorphs:
