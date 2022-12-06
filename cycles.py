@@ -310,7 +310,10 @@ class CyclesTree(Tree):
         group.create(node, nname, self)
         group.addNodes((shmat, shell.uv))
         node.inputs["Influence"].default_value = 1.0
-        shell.tree = shmat.tree = node.node_tree
+        shell.tree = node.node_tree
+        shmat.tree = CyclesTree(shmat)
+        shmat.tree.nodes = shell.tree.nodes
+        shmat.tree.links = shell.tree.links
         shmat.geometry = self.owner.geometry
         return node
 
