@@ -417,7 +417,7 @@ class DazExporter:
     author : StringProperty(
         name = "Author",
         description = "Author info in preset file",
-        default = os.getlogin())
+        default = "")
 
     email : StringProperty(
         name = "Email",
