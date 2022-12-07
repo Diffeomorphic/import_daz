@@ -1202,13 +1202,13 @@ class Geometry(Asset, Channels):
     def addMaterials(self, me, geonode, context):
         hasShells = False
         if GS.materialsByIndex:
-            for dmat in geonode.materials.values():
-                self.addMaterial(dmat, me, geonode)
+            for mnum,dmat in enumerate(geonode.materials.values()):
+                self.addMaterial(dmat, mnum, me, geonode)
                 if dmat.shells:
                     hasShells = True
             return hasShells
 
-        for mn,mname in enumerate(self.polygon_material_groups):
+        for mnum,mname in enumerate(self.polygon_material_groups):
             dmat = None
             if mname in geonode.materials.keys():
                 dmat = geonode.materials[mname]
@@ -1216,7 +1216,7 @@ class Geometry(Asset, Channels):
                 ref = self.fileref + "#" + mname
                 dmat = self.getAsset(ref)
             if dmat:
-                self.addMaterial(dmat, me, geonode)
+                self.addMaterial(dmat, mnum, me, geonode)
                 if dmat.shells:
                     hasShells = True
             else:
@@ -1229,12 +1229,13 @@ class Geometry(Asset, Channels):
         return hasShells
 
 
-    def addMaterial(self, dmat, me, geonode):
+    def addMaterial(self, dmat, mnum, me, geonode):
         if dmat.rna is None:
             msg = ("Material without rna:\n  %s\n  %s\n  %s" % (dmat, geonode, self))
             reportError(msg, trigger=(2,3))
         me.materials.append(dmat.rna)
         self.dmaterials.append(dmat)
+        dmat.correctAreas(self, me, mnum)
         if dmat.uv_set and dmat.uv_set.checkSize(me):
             self.uv_set = dmat.uv_set
         if GS.useAutoSmooth:

@@ -117,30 +117,18 @@ class CyclesMaterial(Material):
 
     def postbuild(self):
         Material.postbuild(self)
-        self.correctAreas()
+        #self.correctAreas()
         if self.tree:
             self.tree.postbuild()
 
 
-    def correctAreas(self):
-        geonode = self.geometry
-        me = None
-        if geonode and geonode.data and geonode.data.rna:
-            geo = geonode.data
-            me = geo.rna
-            mnum = -1
-            for mn,mat in enumerate(me.materials):
-                if mat == self.rna:
-                    mnum = mn
-                    break
-            if mnum < 0:
-                return
+    def correctAreas(self, geo, me, mnum):
+        if self.geoemit:
             nodes = list(geo.nodes.values())
-            if self.geoemit:
-                self.correctEmitArea(nodes, me, mnum)
-            if self.geobump:
-                area = geo.getBumpArea(me, self.geobump.keys())
-                self.correctBumpArea(area)
+            self.correctEmitArea(nodes, me, mnum)
+        if self.geobump:
+            area = geo.getBumpArea(me, self.geobump.keys())
+            self.correctBumpArea(area)
 
 
     def addGeoBump(self, tex, socket):
