@@ -267,6 +267,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.collapse_udims")
         self.layout.operator("daz.restore_udims")
         self.layout.operator("daz.udims_from_textures")
+        self.layout.operator("daz.fix_texture_tiles")
         self.layout.separator()
         if bpy.app.version >= (3,1,0):
             self.layout.operator("daz.add_shell")

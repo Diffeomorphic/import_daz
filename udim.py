@@ -32,12 +32,11 @@ from .utils import *
 from .fileutils import MultiFile, ImageFile
 from .matedit import MaterialSelector
 
-
 #----------------------------------------------------------
-#   Fix textures
+#   Fix texture tiles
 #----------------------------------------------------------
 
-class TextureFixer:
+class TextureTileFixer:
     def findMatTiles(self, ob):
         ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
         vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
@@ -122,6 +121,22 @@ class TextureFixer:
                         node.image = img
 
 
+class DAZ_OT_FixTextureTiles(DazOperator, TextureTileFixer):
+    bl_idname = "daz.fix_texture_tiles"
+    bl_label = "Fix Texture Tiles"
+    bl_description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and ob.active_material)
+
+    def run(self, context):
+        ob = context.object
+        self.findMatTiles(ob)
+        self.fixTextures(ob, ob.active_material.name)
+
 #----------------------------------------------------------
 #   Make UDIM materials
 #----------------------------------------------------------
@@ -131,7 +146,7 @@ def getTargetMaterial(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]
 
 
-class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureFixer):
+class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureTileFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material"
@@ -161,8 +176,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureFixer):
 
     def draw(self, context):
         self.layout.prop(self, "useFixTextures")
-        if self.useFixTextures:
-            self.layout.prop(self, "useOnlyFixTextures")
         self.layout.prop(self, "useFixTiles")
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "trgmat")
@@ -191,8 +204,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureFixer):
         if self.useFixTextures:
             self.findMatTiles(ob)
             self.fixTextures(ob, self.trgmat)
-            if self.useOnlyFixTextures:
-                return
 
         mats = []
         mnums = []
@@ -414,6 +425,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 #----------------------------------------------------------
 
 classes = [
+    DAZ_OT_FixTextureTiles,
     DAZ_OT_UdimizeMaterials,
     DAZ_OT_SetUDims,
 ]
