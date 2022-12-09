@@ -32,6 +32,96 @@ from .utils import *
 from .fileutils import MultiFile, ImageFile
 from .matedit import MaterialSelector
 
+
+#----------------------------------------------------------
+#   Fix textures
+#----------------------------------------------------------
+
+class TextureFixer:
+    def findMatTiles(self, ob):
+        ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
+        vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
+        uvloop = ob.data.uv_layers.active
+        m = 0
+        for fn,f in enumerate(ob.data.polygons):
+            mn = f.material_index
+            ucoord = ucoords[mn]
+            vcoord = vcoords[mn]
+            for n in range(len(f.vertices)):
+                uv = uvloop.data[m].uv
+                ucoord.append(uv[0])
+                vcoord.append(uv[1])
+                m += 1
+        self.mattiles = {}
+        for mn,mat in enumerate(ob.data.materials):
+            ucoord = ucoords[mn]
+            vcoord = vcoords[mn]
+            if ucoord and vcoord:
+                umax = max(ucoord)
+                umin = min(ucoord)
+                vmax = max(vcoord)
+                vmin = min(vcoord)
+                udim = math.floor((umax+umin)/2)
+                vdim = math.floor((vmax+vmin)/2)
+                tile = 1001 + udim + 10*vdim
+                mat.DazUDim = udim
+                mat.DazVDim = vdim
+                self.mattiles[mn] = tile
+        print("Tile assignment:")
+        for mn,mat in enumerate(ob.data.materials):
+            print("  %s: %d" % (mat.name, self.mattiles[mn]))
+
+
+    def fixTextures(self, ob, matname):
+        def getFolder(ob, matname):
+            for mat in ob.data.materials:
+                if mat.name == matname:
+                    if mat.node_tree:
+                        for node in mat.node_tree.nodes:
+                            if node.type == 'TEX_IMAGE' and node.image:
+                                path = bpy.path.abspath(node.image.filepath)
+                                return os.path.dirname(path)
+            return None
+
+        from shutil import copyfile
+        folder = getFolder(ob, matname)
+        images = {}
+        for mn,mat in enumerate(ob.data.materials):
+            tree = mat.node_tree
+            if tree is None:
+                continue
+            mattile = self.mattiles.get(mn)
+            if mattile is None:
+                continue
+            inform = True
+            for node in tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    path = bpy.path.abspath(node.image.filepath)
+                    file = os.path.basename(path)
+                    fname,ext = os.path.splitext(file)
+                    if len(fname) > 5 and fname[-4:].isdigit():
+                        tile = int(fname[-4:])
+                    else:
+                        continue
+                    if tile != mattile:
+                        if inform:
+                            print("Fix %s textures for tile %d" % (mat.name, mattile))
+                            inform = False
+                        newpath = os.path.join(folder, "%s%d%s" % (fname[:-4], mattile, ext))
+                        src = bpy.path.abspath(path)
+                        if src in images.keys():
+                            img = images[src]
+                        else:
+                            trg = bpy.path.abspath(newpath)
+                            print("Copy %s\n => %s" % (src, trg))
+                            copyfile(src, trg)
+                            img = bpy.data.images.load(trg)
+                            img.filepath = bpy.path.relpath(trg)
+                            node.label = "%s%d" % (node.label[:-4], mattile)
+                            images[src] = img
+                        node.image = img
+
+
 #----------------------------------------------------------
 #   Make UDIM materials
 #----------------------------------------------------------
@@ -41,7 +131,7 @@ def getTargetMaterial(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]
 
 
-class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
+class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material"
@@ -49,10 +139,20 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
 
     trgmat : EnumProperty(items=getTargetMaterial, name="Active")
 
-    useFixTiles : BoolProperty(
-        name = "Fix UV tiles",
-        description =  "Move UV vertices to the right tile automatically",
+    useFixTextures : BoolProperty(
+        name = "Fix Textures",
+        description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names",
         default = True)
+
+    useOnlyFixTextures : BoolProperty(
+        name = "Only Fix Textures",
+        description = "Only fix textures, don't make UDIM material.\nFor debugging",
+        default = False)
+
+    useFixTiles : BoolProperty(
+        name = "Fix UV Tiles",
+        description =  "Move UV vertices to the right tile automatically",
+        default = False)
 
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
@@ -60,6 +160,9 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
         default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "useFixTextures")
+        if self.useFixTextures:
+            self.layout.prop(self, "useOnlyFixTextures")
         self.layout.prop(self, "useFixTiles")
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "trgmat")
@@ -85,6 +188,12 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
         from shutil import copyfile
 
         ob = context.object
+        if self.useFixTextures:
+            self.findMatTiles(ob)
+            self.fixTextures(ob, self.trgmat)
+            if self.useOnlyFixTextures:
+                return
+
         mats = []
         mnums = []
         amat = None
@@ -106,8 +215,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
             self.nodes[mat.name] = self.getChannels(mat)
 
         if self.useFixTiles:
-            for f in ob.data.polygons:
-                f.select = False
             for mn,mat in zip(mnums, mats):
                 self.fixTiles(mat, mn, ob)
 
@@ -175,6 +282,8 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
 
 
     def fixTiles(self, mat, mn, ob):
+        for f in ob.data.polygons:
+            f.select = False
         for node in self.nodes[mat.name].values():
             if node.image:
                 imgname = baseName(node.image.name)
@@ -199,7 +308,7 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector):
     def getChannel(self, node, links):
         for link in links:
             if link.from_node == node:
-                if link.to_node.type in ["MIX_RGB", "MATH"]:
+                if link.to_node.type in ["MIX_RGB", "MATH", "GAMMA"]:
                     return self.getChannel(link.to_node, links)
                 elif link.to_node.type == "BSDF_PRINCIPLED":
                     return ("PBR_%s" % link.to_socket.name)
