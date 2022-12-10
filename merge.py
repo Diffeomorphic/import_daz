@@ -36,10 +36,80 @@ from .error import *
 from .driver import DriverUser
 
 #-------------------------------------------------------------
+#   Merge UV Layers
+#-------------------------------------------------------------
+
+class UVLayerMergerOptions:
+    useMergeUvs : BoolProperty(
+        name = "Merge UV Layers",
+        description = "Merge active render UV layers of all meshes",
+        default = True)
+
+    allowOverlap : BoolProperty(
+        name = "Allow Overlap",
+        description = "Allow merging overlapping UV layers",
+        default = False)
+
+
+class UVLayerMerger:
+    def draw(self, context):
+        self.layout.prop(self, "useMergeUvs")
+        if self.useMergeUvs:
+            self.layout.prop(self, "allowOverlap")
+
+
+    def getActiveUvLayer(self, ob):
+        def getUvMap(node):
+            socket = node.inputs.get("Vector")
+            if socket:
+                for link in socket.links:
+                    node = link.from_node
+                    if node.type in ['TEX_COORD', 'UVMAP']:
+                        return node
+                    elif "Vector" in node.inputs.keys():
+                        return getUvMap(node)
+            return None
+
+        def getMaterialUvs(ob):
+            for mat in ob.data.materials:
+                if not (mat and mat.node_tree):
+                    continue
+                for node in mat.node_tree.nodes:
+                    if node.type == 'TEX_IMAGE':
+                        uvmap = getUvMap(node)
+                        if uvmap:
+                            return uvmap
+            return None
+
+        node = getMaterialUvs(ob)
+        if node and node.type == 'UVMAP':
+            actname = node.uv_map
+        else:
+            actname = None
+        for uvlayer in ob.data.uv_layers:
+            if actname and uvlayer.name == actname:
+                return uvlayer.name
+            elif actname is None and uvlayer.active_render:
+                return uvlayer.name
+        return None
+
+
+    def mergeUvs(self, ob, uvnames):
+        idxs = []
+        for idx,uvlayer in enumerate(ob.data.uv_layers):
+            if uvlayer.name in uvnames:
+                idxs.append(idx)
+        idxs.reverse()
+        for idx in idxs:
+            mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
+        uvname0 = ob.data.uv_layers[0].name
+        print("UV layers %s merged to %s" % (list(uvnames), uvname0))
+
+#-------------------------------------------------------------
 #   Merge geografts
 #-------------------------------------------------------------
 
-class MergeGeograftOptions:
+class MergeGeograftOptions(UVLayerMergerOptions):
     useVertexTable : BoolProperty(
         name = "Add Vertex Table",
         description = (
@@ -52,18 +122,6 @@ class MergeGeograftOptions:
         name = "Fix UV Tiles",
         description = "Move geograft UVs to tile based on texture names",
         default = True)
-
-    useMergeUvs : BoolProperty(
-        name = "Merge UV Layers",
-        description = (
-            "Merge first UV layers of all meshes.\n" +
-            "Only works for geografts where the first layer is the base layer"),
-        default = False)
-
-    allowOverlap : BoolProperty(
-        name = "Allow Overlap",
-        description = "Allow merging overlapping UV layers",
-        default = False)
 
     useSubDDisplacement : BoolProperty(
         name = "SubD Displacement",
@@ -82,7 +140,7 @@ class MergeGeograftOptions:
 
 
 
-class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, IsMesh):
+class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerger, DriverUser, IsMesh):
     bl_idname = "daz.merge_geografts"
     bl_label = "Merge Geografts"
     bl_description = "Merge selected geografts to active object"
@@ -96,9 +154,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
         if not self.useGeoNodes:
             self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useFixTiles")
-        self.layout.prop(self, "useMergeUvs")
-        if self.useMergeUvs:
-            self.layout.prop(self, "allowOverlap")
+        UVLayerMerger.draw(self, context)
         self.layout.prop(self, "useSubDDisplacement")
 
 
@@ -157,11 +213,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
             print("No ref")
             return
 
-        self.auvnames = []
+        self.auvnames = {}
         subDLevels = 0
         for aob in anatomies:
-            uvname = self.getActiveUvLayer(aob)[1]
-            self.auvnames.append(uvname)
+            if self.useMergeUvs:
+                uvname = self.getActiveUvLayer(aob)
+                self.auvnames[uvname] = True
             if self.useFixTiles:
                 from .udim import TileFixer
                 fixer = TileFixer()
@@ -363,13 +420,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
 
         # Merge UV layers
         if self.useMergeUvs:
-            idxs = []
-            for idx,uvlayer in enumerate(cob.data.uv_layers):
-                if uvlayer.name in self.auvnames:
-                    idxs.append(idx)
-            idxs.reverse()
-            for idx in idxs:
-                mergeUvLayers(cob.data, 0, idx, self.allowOverlap)
+            self.mergeUvs(cob, self.auvnames.keys())
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
@@ -470,12 +521,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
                         aob = mod.get("Input_1")
                         if aob and aob in anatomies:
                             mod["Input_1"] = cob
-
-    def getActiveUvLayer(self, ob):
-        for idx,uvlayer in enumerate(ob.data.uv_layers):
-            if uvlayer.active_render:
-                return idx, uvlayer.name
-        return 0, None
 
 
     def replaceTexco(self, ob):
@@ -708,41 +753,29 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
         deselectAllVerts(ob)
 
 
-class DAZ_OT_MergeMeshes(DazPropsOperator, IsMesh):
+class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, IsMesh):
     bl_idname = "daz.merge_meshes"
     bl_label = "Merge Meshes"
     bl_description = ("Merge selected meshes to active mesh")
     bl_options = {'UNDO'}
 
-    useMergeUvs : BoolProperty(
-        name = "Merge UVs",
-        description = "Merge UV layers of merged meshes with first UV layer",
-        default = True)
-
-    allowOverlap : BoolProperty(
-        name = "Allow Overlap",
-        description = "Allow merging overlapping UV layers",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "useMergeUvs")
-        if self.useMergeUvs:
-            self.layout.prop(self, "allowOverlap")
-
     def run(self, context):
-        ob = context.object
-        for mod in ob.modifiers:
+        cob = context.object
+        if self.useMergeUvs:
+            auvnames = {}
+            for aob in getSelectedMeshes(context):
+                if aob != cob:
+                    uvname = self.getActiveUvLayer(aob)
+                    auvnames[uvname] = True
+        for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-        nlayers = len(ob.data.uv_layers)
+        nlayers = len(cob.data.uv_layers)
         bpy.ops.object.join()
         if self.useMergeUvs:
-            idxs = list(range(nlayers, len(ob.data.uv_layers)))
-            idxs.reverse()
-            for idx in idxs:
-                mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
-        deselectAllVerts(ob)
-        for mod in ob.modifiers:
+            self.mergeUvs(cob, auvnames.keys())
+        deselectAllVerts(cob)
+        for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
         print("Meshes merged")
@@ -793,7 +826,6 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
             replaceNodeNames(mat, mergeLayer.name, keepLayer.name)
     me.uv_layers.active_index = keepIdx
     me.uv_layers.remove(mergeLayer)
-    print("UV layers joined")
 
 #-------------------------------------------------------------
 #   Get selected rigs
