@@ -33,10 +33,10 @@ from .fileutils import MultiFile, ImageFile
 from .matedit import MaterialSelector
 
 #----------------------------------------------------------
-#   Fix texture tiles
+#   Tile Fixer
 #----------------------------------------------------------
 
-class TextureTileFixer:
+class TileFixer:
     def findMatTiles(self, ob):
         ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
         vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
@@ -121,7 +121,51 @@ class TextureTileFixer:
                         node.image = img
 
 
-class DAZ_OT_FixTextureTiles(DazOperator, TextureTileFixer):
+    def udimsFromTextures(self, ob):
+        dims = {}
+        print("Shift materials:")
+        for mn,mat in enumerate(ob.data.materials):
+            udim = vdim = 0
+            if mat.node_tree:
+                for node in mat.node_tree.nodes:
+                    if (node.type == 'TEX_IMAGE' and
+                        node.image):
+                        tile = node.image.name.rsplit("_", 1)[-1]
+                        if len(tile) == 4 and tile.isdigit():
+                            udim = (int(tile) - 1001) % 10
+                            vdim = (int(tile) - 1001) // 10
+            dims[mn] = (udim, vdim)
+            print("  %s: (%d, %d)" % (mat.name, udim, vdim))
+
+        for uvloop in ob.data.uv_layers:
+            m = 0
+            for fn,f in enumerate(ob.data.polygons):
+                udim,vdim = dims[f.material_index]
+                for _ in f.vertices:
+                    uvs = uvloop.data[m].uv
+                    uvs[0] += udim - int(uvs[0])
+                    uvs[1] += vdim - int(uvs[1])
+                    m += 1
+
+#----------------------------------------------------------
+#   Tiles From Textures
+#----------------------------------------------------------
+
+class DAZ_OT_TilesFromTextures(DazOperator, TileFixer, IsMesh):
+    bl_idname = "daz.tiles_from_textures"
+    bl_label = "Tiles From Textures"
+    bl_description = "Move UV coordinates to tiles based on texture names"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            self.udimsFromTextures(ob)
+
+#----------------------------------------------------------
+#   Fix Texture Tiles
+#----------------------------------------------------------
+
+class DAZ_OT_FixTextureTiles(DazOperator, TileFixer):
     bl_idname = "daz.fix_texture_tiles"
     bl_label = "Fix Texture Tiles"
     bl_description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names"
@@ -146,7 +190,7 @@ def getTargetMaterial(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]
 
 
-class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureTileFixer):
+class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material"
@@ -159,16 +203,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureTileFix
         description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names",
         default = True)
 
-    useOnlyFixTextures : BoolProperty(
-        name = "Only Fix Textures",
-        description = "Only fix textures, don't make UDIM material.\nFor debugging",
-        default = False)
-
-    useFixTiles : BoolProperty(
-        name = "Fix UV Tiles",
-        description =  "Move UV vertices to the right tile automatically",
-        default = False)
-
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge materials and not only textures.\nIf on, some info may be lost.\nIf off, Merge Materials must be called afterwards",
@@ -176,7 +210,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureTileFix
 
     def draw(self, context):
         self.layout.prop(self, "useFixTextures")
-        self.layout.prop(self, "useFixTiles")
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "trgmat")
         self.layout.label(text="Materials To Merge")
@@ -224,10 +257,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureTileFix
         self.nodes = {}
         for mat in mats:
             self.nodes[mat.name] = self.getChannels(mat)
-
-        if self.useFixTiles:
-            for mn,mat in zip(mnums, mats):
-                self.fixTiles(mat, mn, ob)
 
         for key,anode in self.nodes[amat.name].items():
             if anode.image.source == "TILED":
@@ -290,21 +319,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TextureTileFix
 
     def makeImageName(self, basename, tile, img):
         return "%s%s" % (basename, os.path.splitext(img.name)[1])
-
-
-    def fixTiles(self, mat, mn, ob):
-        for f in ob.data.polygons:
-            f.select = False
-        for node in self.nodes[mat.name].values():
-            if node.image:
-                imgname = baseName(node.image.name)
-                if imgname[-4:].isdigit():
-                    tile = int(imgname[-4:])
-                else:
-                    continue
-                udim,vdim = getUVDims(tile)
-                shiftUVs(mat, mn, ob, udim, vdim)
-                return
 
 
     def getChannels(self, mat):
@@ -425,6 +439,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 #----------------------------------------------------------
 
 classes = [
+    DAZ_OT_TilesFromTextures,
     DAZ_OT_FixTextureTiles,
     DAZ_OT_UdimizeMaterials,
     DAZ_OT_SetUDims,

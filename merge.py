@@ -48,6 +48,11 @@ class MergeGeograftOptions:
             "but affects viewport performance"),
         default = True)
 
+    useFixTiles : BoolProperty(
+        name = "Fix UV Tiles",
+        description = "Move geograft UVs to tile based on texture names",
+        default = True)
+
     useMergeUvs : BoolProperty(
         name = "Merge UV Layers",
         description = (
@@ -90,6 +95,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
                 self.layout.prop(self, "useNewMesh")
         if not self.useGeoNodes:
             self.layout.prop(self, "useVertexTable")
+        self.layout.prop(self, "useFixTiles")
         self.layout.prop(self, "useMergeUvs")
         if self.useMergeUvs:
             self.layout.prop(self, "allowOverlap")
@@ -156,6 +162,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, DriverUser, 
         for aob in anatomies:
             uvname = self.getActiveUvLayer(aob)[1]
             self.auvnames.append(uvname)
+            if self.useFixTiles:
+                from .udim import TileFixer
+                fixer = TileFixer()
+                fixer.udimsFromTextures(aob)
             self.copyBodyPart(aob, cob)
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':
