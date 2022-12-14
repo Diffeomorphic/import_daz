@@ -112,6 +112,10 @@ class TileFixer:
                             img = images[src]
                         else:
                             trg = bpy.path.abspath(newpath)
+                            if not os.path.exists(src):
+                                msg = "Missing texture file:\n%s" % src
+                                print(msg)
+                                raise DazError(msg)
                             print("Copy %s\n => %s" % (src, trg))
                             copyfile(src, trg)
                             img = bpy.data.images.load(trg)
@@ -294,8 +298,9 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
+        from .cycles import addSkipZeroUvs
         for mat in mats:
-            self.addSkipZeroUvs(mat)
+            addSkipZeroUvs(mat)
 
         if self.useMergeMaterials:
             for f in ob.data.polygons:
@@ -373,22 +378,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 print("Did not find %s" % src)
                 return
         img.filepath = bpy.path.relpath(trg)
-
-
-    def addSkipZeroUvs(self, mat):
-        from .cycles import makeCyclesTree
-        from .cgroup import SkipZeroUvGroup
-        ctree = makeCyclesTree(mat)
-        for node in list(ctree.nodes):
-            if (node.type == 'GROUP' and
-                "Influence" in node.inputs.keys() and
-                "UV" in node.inputs.keys()):
-                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
-                x,y = node.location
-                skip.location = (x-200, y+200)
-                for link in node.inputs["UV"].links:
-                    ctree.links.new(link.from_socket, skip.inputs["UV"])
-                ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
 
 #----------------------------------------------------------
 #   Shift UVs

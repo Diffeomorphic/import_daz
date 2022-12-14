@@ -47,15 +47,15 @@ class UVLayerMergerOptions:
 
     allowOverlap : BoolProperty(
         name = "Allow Overlap",
-        description = "Allow merging overlapping UV layers",
+        description = "Also merge overlapping UV layers.\nCan destroy UV assignment",
         default = False)
 
 
 class UVLayerMerger:
-    def draw(self, context):
-        self.layout.prop(self, "useMergeUvs")
+    def drawUVLayer(self, layout):
+        layout.prop(self, "useMergeUvs")
         if self.useMergeUvs:
-            self.layout.prop(self, "allowOverlap")
+            layout.prop(self, "allowOverlap")
 
 
     def getActiveUvLayer(self, ob):
@@ -153,9 +153,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 self.layout.prop(self, "useNewMesh")
         if not self.useGeoNodes:
             self.layout.prop(self, "useVertexTable")
-        self.layout.prop(self, "useFixTiles")
-        UVLayerMerger.draw(self, context)
         self.layout.prop(self, "useSubDDisplacement")
+        box = self.layout.box()
+        box.label(text="UDIM Materials")
+        box.prop(self, "useFixTiles")
+        self.drawUVLayer(box)
 
 
     def __init__(self):
@@ -758,6 +760,10 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, 
     bl_label = "Merge Meshes"
     bl_description = ("Merge selected meshes to active mesh")
     bl_options = {'UNDO'}
+
+    def draw(self, context):
+        self.drawUVLayer(self.layout)
+
 
     def run(self, context):
         cob = context.object

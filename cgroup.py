@@ -353,7 +353,7 @@ class SkipZeroUvGroup(CyclesGroup):
         comp = self.addNode("ShaderNodeMath", 2)
         comp.operation = 'GREATER_THAN'
         self.links.new(node.outputs["Value"], comp.inputs[0])
-        comp.inputs[1].default_value = 0.001
+        comp.inputs[1].default_value = 0
         self.links.new(comp.outputs[0], self.outputs.inputs["Influence"])
 
 # ---------------------------------------------------------------------
