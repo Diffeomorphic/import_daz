@@ -360,11 +360,15 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
         folder = os.path.dirname(src)
         fname,ext = os.path.splitext(bpy.path.basename(src))
         if fname[-6:] == '<UDIM>':
-            src = os.path.join(folder, "%s_%d%s" % (fname[-6], 1001+udim, ext))
+            src = os.path.join(folder, "%s%d%s" % (fname[:-6], 1001+udim, ext))
         trg = os.path.join(folder, "%s_%d%s" % (basename, 1001+udim, ext))
         if src != trg and not os.path.exists(trg):
-            print("Copy %s\n => %s" % (src, trg))
-            copyfile(src, trg)
+            if os.path.exists(src):
+                print("Copy %s\n => %s" % (src, trg))
+                copyfile(src, trg)
+            else:
+                print("Did not find %s" % src)
+                return
         img.filepath = bpy.path.relpath(trg)
 
 #----------------------------------------------------------
