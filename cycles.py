@@ -2052,4 +2052,10 @@ def findTextureNode(tex):
     return None
 
 
-
+def makeCyclesTree(mat):
+    cmat = CyclesMaterial("")
+    ctree = CyclesTree(cmat)
+    ctree.nodes = mat.node_tree.nodes
+    ctree.links = mat.node_tree.links
+    ctree.column = 0
+    return ctree

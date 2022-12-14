@@ -254,11 +254,11 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
         if amat is None:
             raise DazError("No materials selected")
 
-        self.nodes = {}
+        texnodes = {}
         for mat in mats:
-            self.nodes[mat.name] = self.getChannels(mat)
+            texnodes[mat.name] = self.getChannels(mat)
 
-        for key,anode in self.nodes[amat.name].items():
+        for key,anode in texnodes[amat.name].items():
             if anode.image.source == "TILED":
                 raise DazError("Material %s already UDIM  " % amat.name)
             anode.image.source = "TILED"
@@ -270,7 +270,7 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
             basename = "T_%s" % self.getBaseName(imgname, amat.DazUDim)
             udims = {}
             for mat in mats:
-                nodes = self.nodes[mat.name]
+                nodes = texnodes[mat.name]
                 if key in nodes.keys():
                     node = nodes[key]
                     img = node.image
@@ -294,6 +294,9 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
+        for mat in mats:
+            self.addSkipZeroUvs(mat)
+
         if self.useMergeMaterials:
             for f in ob.data.polygons:
                 if f.material_index in mnums:
@@ -304,10 +307,10 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 if mn != amnum:
                     ob.data.materials.pop(index=mn)
         else:
-            anodes = self.nodes[amat.name]
+            anodes = texnodes[amat.name]
             for mat in mats:
                 if mat != amat:
-                    nodes = self.nodes[mat.name]
+                    nodes = texnodes[mat.name]
                     for key,node in nodes.items():
                         if key in anodes.keys():
                             anode = anodes[key]
@@ -370,6 +373,22 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 print("Did not find %s" % src)
                 return
         img.filepath = bpy.path.relpath(trg)
+
+
+    def addSkipZeroUvs(self, mat):
+        from .cycles import makeCyclesTree
+        from .cgroup import SkipZeroUvGroup
+        ctree = makeCyclesTree(mat)
+        for node in list(ctree.nodes):
+            if (node.type == 'GROUP' and
+                "Influence" in node.inputs.keys() and
+                "UV" in node.inputs.keys()):
+                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                x,y = node.location
+                skip.location = (x-200, y+200)
+                for link in node.inputs["UV"].links:
+                    ctree.links.new(link.from_socket, skip.inputs["UV"])
+                ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
 
 #----------------------------------------------------------
 #   Shift UVs

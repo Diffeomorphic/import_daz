@@ -330,6 +330,33 @@ class LogColorGroup(CyclesGroup):
         return abs
 
 # ---------------------------------------------------------------------
+#   SkipZeroUv Group
+# ---------------------------------------------------------------------
+
+class SkipZeroUvGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["UV"]
+        self.outsockets += ["Influence"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 3)
+        self.group.inputs.new("NodeSocketVector", "UV")
+        self.group.outputs.new("NodeSocketFloat", "Influence")
+
+
+    def addNodes(self, args=None):
+        node = self.addNode("ShaderNodeVectorMath", 1)
+        node.operation = 'LENGTH'
+        self.links.new(self.inputs.outputs["UV"], node.inputs["Vector"])
+        comp = self.addNode("ShaderNodeMath", 2)
+        comp.operation = 'GREATER_THAN'
+        self.links.new(node.outputs["Value"], comp.inputs[0])
+        comp.inputs[1].default_value = 0.001
+        self.links.new(comp.outputs[0], self.outputs.inputs["Influence"])
+
+# ---------------------------------------------------------------------
 #   Mix Group.
 # ---------------------------------------------------------------------
 
@@ -1807,18 +1834,14 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
 
 
     def run(self, context):
-        from .cycles import CyclesMaterial, CyclesTree
+        from .cycles import makeCyclesTree
         ob = context.object
         if ob.active_material_index >= len(ob.data.materials):
             raise DazError("No material found")
         mat = ob.data.materials[ob.active_material_index]
         if mat is None:
             raise DazError("No active material")
-        cmat = CyclesMaterial("")
-        ctree = CyclesTree(cmat)
-        ctree.nodes = mat.node_tree.nodes
-        ctree.links = mat.node_tree.links
-        ctree.column = 0
+        ctree = makeCyclesTree(mat)
         for key in ShaderGroups.keys():
             if getattr(self, key):
                 group,gname,args = ShaderGroups[key]
