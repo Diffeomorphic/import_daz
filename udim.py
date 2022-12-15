@@ -151,6 +151,28 @@ class TileFixer:
                     uvs[1] += vdim - int(uvs[1])
                     m += 1
 
+
+    def addSkipZeroUvs(self, mat):
+        from .tree import getFromSocket, XSIZE, YSIZE
+        from .cycles import makeCyclesTree
+        from .cgroup import SkipZeroUvGroup
+        ctree = makeCyclesTree(mat)
+        for node in list(ctree.nodes):
+            if isShellNode(node):
+                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                x,y = node.location
+                skip.location = (x-XSIZE, y+YSIZE)
+                socket = getFromSocket(node.inputs["UV"])
+                if socket:
+                    ctree.links.new(socket, skip.inputs["UV"])
+                ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
+
+
+def isShellNode(node):
+    return (node.type == 'GROUP' and
+            "Influence" in node.inputs.keys() and
+            "UV" in node.inputs.keys())
+
 #----------------------------------------------------------
 #   Tiles From Textures
 #----------------------------------------------------------
@@ -212,9 +234,16 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
         description = "Merge materials and not only textures.\nIf on, some info may be lost.\nIf off, Merge Materials must be called afterwards",
         default = False)
 
+    useStackShells : BoolProperty(
+        name = "Stack Shells",
+        description = "Add shell groups to UDIM material",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useFixTextures")
         self.layout.prop(self, "useMergeMaterials")
+        if self.useMergeMaterials:
+            self.layout.prop(self, "useStackShells")
         self.layout.prop(self, "trgmat")
         self.layout.label(text="Materials To Merge")
         MaterialSelector.draw(self, context)
@@ -260,7 +289,14 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
 
         texnodes = {}
         for mat in mats:
-            texnodes[mat.name] = self.getChannels(mat)
+            texnodes[mat.name] = self.getTextureNodes(mat)
+        if self.useMergeMaterials and self.useStackShells:
+            shells0 = self.getShells(mats)
+            ashells = self.getShells([amat])
+            shells = {}
+            for tname,data in shells0.items():
+                if tname not in ashells.keys():
+                    shells[tname] = data
 
         for key,anode in texnodes[amat.name].items():
             if anode.image.source == "TILED":
@@ -298,9 +334,8 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
-        from .cycles import addSkipZeroUvs
         for mat in mats:
-            addSkipZeroUvs(mat)
+            self.addSkipZeroUvs(mat)
 
         if self.useMergeMaterials:
             for f in ob.data.polygons:
@@ -311,6 +346,8 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
             for mn in mnums:
                 if mn != amnum:
                     ob.data.materials.pop(index=mn)
+            if self.useStackShells:
+                self.addShells(amat, shells)
         else:
             anodes = texnodes[amat.name]
             for mat in mats:
@@ -329,27 +366,26 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
         return "%s%s" % (basename, os.path.splitext(img.name)[1])
 
 
-    def getChannels(self, mat):
-        channels = {}
+    def getTextureNodes(self, mat):
+        def getChannel(node, links):
+            for link in links:
+                if link.from_node == node:
+                    if link.to_node.type in ["MIX_RGB", "MATH", "GAMMA"]:
+                        return getChannel(link.to_node, links)
+                    elif link.to_node.type == "BSDF_PRINCIPLED":
+                        return ("PBR_%s" % link.to_socket.name)
+                    elif link.to_node.type == 'GROUP':
+                        return link.to_node.node_tree.name
+                    else:
+                        return link.to_node.type
+            return None
+
+        texnodes = {}
         for node in mat.node_tree.nodes:
             if node.type == "TEX_IMAGE":
-                channel = self.getChannel(node, mat.node_tree.links)
-                channels[channel] = node
-        return channels
-
-
-    def getChannel(self, node, links):
-        for link in links:
-            if link.from_node == node:
-                if link.to_node.type in ["MIX_RGB", "MATH", "GAMMA"]:
-                    return self.getChannel(link.to_node, links)
-                elif link.to_node.type == "BSDF_PRINCIPLED":
-                    return ("PBR_%s" % link.to_socket.name)
-                elif link.to_node.type == 'GROUP':
-                    return link.to_node.node_tree.name
-                else:
-                    return link.to_node.type
-        return None
+                channel = getChannel(node, mat.node_tree.links)
+                texnodes[channel] = node
+        return texnodes
 
 
     def getBaseName(self, string, udim):
@@ -378,6 +414,62 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                 print("Did not find %s" % src)
                 return
         img.filepath = bpy.path.relpath(trg)
+
+
+    def getShells(self, mats):
+        from .tree import getFromNode
+        nodes = {}
+        for mat in mats:
+            if mat.node_tree:
+                n = len(mat.name)
+                for node in mat.node_tree.nodes:
+                    if isShellNode(node):
+                        tree = node.node_tree
+                        if tree.name[-n:] == mat.name:
+                            shname = tree.name[:-n-1]
+                            uvmap = getFromNode(node.inputs["UV"])
+                            if uvmap:
+                                nodes[shname] = (node, uvmap.uv_map)
+        return nodes
+
+
+    def addShells(self, mat, shells):
+        if not shells:
+            return
+        from .tree import findNodes, getFromSocket, XSIZE, YSIZE
+        from .cycles import makeCyclesTree
+        from .cgroup import SkipZeroUvGroup
+        ctree = makeCyclesTree(mat)
+        for outp in findNodes(mat.node_tree, 'OUTPUT_MATERIAL'):
+            x,y = outp.location
+            outp.location = (x+3*XSIZE, y)
+            ssocket = getFromSocket(outp.inputs["Surface"])
+            dsocket = getFromSocket(outp.inputs["Displacement"])
+            for tname,data in shells.items():
+                template,uvname = data
+                uvmap = ctree.addNode("ShaderNodeUVMap")
+                uvmap.uv_map = uvname
+                uvmap.location = (x,y)
+                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                skip.location = (x+XSIZE, y)
+                ctree.links.new(uvmap.outputs["UV"], skip.inputs["UV"])
+                shell = ctree.addNode("ShaderNodeGroup")
+                shell.location = (x+2*XSIZE, y)
+                shell.node_tree = template.node_tree
+                shell.label = template.label
+                ctree.links.new(skip.outputs["Influence"], shell.inputs["Influence"])
+                ctree.links.new(uvmap.outputs["UV"], shell.inputs["UV"])
+                if ssocket:
+                    ctree.links.new(ssocket, shell.inputs["BSDF"])
+                if dsocket:
+                    ctree.links.new(dsocket, shell.inputs["Displacement"])
+                ssocket = shell.outputs["BSDF"]
+                dsocket = shell.outputs["Displacement"]
+                y -= YSIZE
+            if ssocket:
+               ctree.links.new(ssocket, outp.inputs["Surface"])
+            if dsocket:
+                ctree.links.new(dsocket, outp.inputs["Displacement"])
 
 #----------------------------------------------------------
 #   Shift UVs

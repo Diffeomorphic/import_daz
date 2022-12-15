@@ -206,6 +206,18 @@ def getSocket(sockets, id):
             return socket
     return None
 
+
+def getFromNode(socket):
+    for link in socket.links:
+        return link.from_node
+    return None
+
+
+def getFromSocket(socket):
+    for link in socket.links:
+        return link.from_socket
+    return None
+
 #-------------------------------------------------------------
 #   Prune node tree
 #-------------------------------------------------------------

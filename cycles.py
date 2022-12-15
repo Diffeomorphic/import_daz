@@ -2060,18 +2060,3 @@ def makeCyclesTree(mat):
     ctree.column = 0
     return ctree
 
-
-def addSkipZeroUvs(mat):
-    from .cgroup import SkipZeroUvGroup
-    ctree = makeCyclesTree(mat)
-    for node in list(ctree.nodes):
-        if (node.type == 'GROUP' and
-            "Influence" in node.inputs.keys() and
-            "UV" in node.inputs.keys()):
-            skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
-            x,y = node.location
-            skip.location = (x-200, y+200)
-            for link in node.inputs["UV"].links:
-                ctree.links.new(link.from_socket, skip.inputs["UV"])
-            ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
-
