@@ -946,6 +946,10 @@ class RigInfo:
     def __init__(self, rig, conforms, btn):
         self.name = rig.name
         self.rig = rig
+        if len(rig.name) < 20:
+            self.hash = rig.name
+        else:
+            self.hash = str(hash(rig.name))
         self.button = btn
         self.objects = []
         self.deletes = []
@@ -963,7 +967,7 @@ class RigInfo:
 
     def getBoneKey(self, bname):
         if self.button.useCreateDuplicates:
-            return "%s:%s" % (self.rig.name, bname)
+            return "%s:%s" % (self.hash, bname)
         else:
             return bname
 
