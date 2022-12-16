@@ -946,7 +946,7 @@ class RigInfo:
     def __init__(self, rig, conforms, btn):
         self.name = rig.name
         self.rig = rig
-        if len(rig.name) < 20:
+        if len(rig.name) < 64:
             self.hash = rig.name
         else:
             self.hash = str(hash(rig.name))
@@ -1174,6 +1174,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 findSubObjects(child, subobs)
 
         subobs = []
+        self.foundControl = False
         findSubObjects(rig, subobs)
         repars = []
         for ob in subobs:
@@ -1211,11 +1212,17 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     def isConforming(self, subrig, rig):
         if self.useMergeNonConforming == 'ALWAYS':
             return True
+        elif self.useMergeNonConforming == 'CONTROLS':
+            if (subrig.DazUrl == "/data/DAZ 3D/Genesis 8/Genesis 8_1 Face Controls/Genesis 8.1 Face Controls.dsf#Genesis 8.1 Face Controls"):
+                if self.foundControl:
+                    subrig.hide_viewport = True
+                    for child in subrig.children:
+                        child.hide_viewport = True
+                    return False
+                self.foundControl = True
+                return True
         for bname in subrig.data.bones.keys():
             if bname in rig.data.bones.keys():
-                return True
-            elif (self.useMergeNonConforming == 'CONTROLS' and
-                  "control" in bname.lower()):
                 return True
         return False
 
