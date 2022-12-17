@@ -144,11 +144,11 @@ class Formula:
                 return False
         elif rig:
             output1 = getMappedBone(output, rig)
-            if output1 is None:
+            if output1:
+                output = output1
+            else:
                 reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
                 return False
-            else:
-                output = output1
             if output in rig.pose.bones.keys():
                 pb = rig.pose.bones[output]
             elif output != "RIG":

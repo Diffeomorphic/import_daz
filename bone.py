@@ -44,19 +44,20 @@ def getMappedBone(bname, rig):
     if rig is None or bname is None:
         return None
     bname = unquote(bname)
-    if bname in rig.pose.bones.keys():
-        return bname
     pg = rig.data.DazBoneMap.get(bname)
-    if pg:
+    if pg and pg.s in rig.data.bones.keys():
         return pg.s
-    if bname in BD.BoneMap.keys():
-        return BD.BoneMap[bname]
+    elif bname in rig.pose.bones.keys():
+        return bname
+    bname1 = BD.BoneMap.get(bname)
+    if bname1 and bname1 in rig.data.bones.keys():
+        return bname1
     from .fix import getSuffixName
     sufname = getSuffixName(bname)
     if sufname in rig.pose.bones.keys():
         return sufname
     print("NO BONE FOUND", bname)
-    return None
+    return ""
 
 #-------------------------------------------------------------
 #   BoneInstance

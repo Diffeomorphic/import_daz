@@ -425,7 +425,10 @@ class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
         pb = context.active_pose_bone
         box = layout.box()
         if pb:
-            box.label(text = "Active Bone: %s" % pb.bone.name)
+            from .bone import getMappedBone
+            box.label(text = "Active Bone: %s" % pb.name)
+            mapname = getMappedBone(pb.name, ob)
+            box.label(text = "Mapped Bone: %s" % mapname)
             self.propRow(box, pb.bone, "DazHead")
             self.propRow(box, pb.bone, "DazTail")
             self.propRow(box, pb.bone, "DazOrient")

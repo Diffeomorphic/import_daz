@@ -527,18 +527,8 @@ class LoadMorph(DriverUser):
             self.drivers[output].append(("BONE", bname, expr))
 
 
-    def getDrivenBone(self, bname):
-        return bname
-        if bname:
-            dname = drvBone(bname)
-            if dname in self.rig.pose.bones.keys():
-                return dname
-        return bname
-
-
     def getBoneData(self, bname, expr):
         from .transform import Transform
-        bname = self.getDrivenBone(bname)
         if bname is None:
             return
         elif bname == "RIG":
@@ -598,9 +588,6 @@ class LoadMorph(DriverUser):
         vec = Vector((0,0,0))
         vec[idx] = factor
         self.setFcurves(pb, vec, prop, attr, "pose")
-        # Keyframes for "lCarpal4" missing for G8F
-        if bname == "lCarpal3":
-            self.makeOffsetFormula(attr, "lCarpal4", idx, expr)
 
     #-------------------------------------------------------------
     #   Add posebone driver
