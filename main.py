@@ -614,11 +614,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         name = "Beard",
         default = False)
 
-    useConvertWidgets : BoolProperty(
-        name = "Convert To Widgets",
-        description = "Convert widget mesh to bone custom shapes",
-        default = False)
-
     useMakeAllBonesPosable : BoolProperty(
         name = "Make All Bones Posable",
         description = "Add an extra layer of driven bones, to make them posable",
@@ -678,6 +673,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useMergeRigs:
             self.subprop("useCreateDuplicates")
             self.subprop("useMergeNonConforming")
+            self.subprop("useConvertWidgets")
         self.layout.prop(self, "useMakeAllBonesPosable")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
@@ -718,7 +714,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("useTear")
             self.subprop("useBrows")
             self.subprop("useBeard")
-        self.layout.prop(self, "useConvertWidgets")
         self.layout.prop(self, "useConvertHair")
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "rigType")
@@ -846,7 +841,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         geografts = {}
         lashes = []
         clothes = []
-        widgetMesh = None
         if mainMesh:
             if mainRig:
                 lmeshes = self.getLashes(mainRig, mainMesh)
@@ -862,8 +856,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         geografts[cob.name][0].append(ob)
                     else:
                         clothes.append(ob)
-                elif self.useConvertWidgets and finger == "1778-3059-1366":
-                    widgetMesh = ob
                 elif ob in lmeshes:
                     lashes.append(ob)
                 else:
@@ -978,11 +970,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Transfer shapekeys to clothes
         if self.useTransferShapes:
             self.transferShapes(context, mainMesh, clothes, False, "Body", False)
-
-        # Convert widget mesh to widgets
-        if widgetMesh and mainRig and activateObject(context, widgetMesh):
-            print("Convert to widgets")
-            bpy.ops.daz.convert_widgets()
 
         if mainRig and activateObject(context, mainRig):
             # Make all bones posable

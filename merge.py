@@ -955,6 +955,7 @@ class RigInfo:
         self.deletes = []
         self.addObjects(rig)
         self.conforms = conforms
+        self.foundControl = None
         if rig.parent and rig.parent_type == 'BONE':
             self.parbone = rig.parent_bone
         else:
@@ -1096,6 +1097,11 @@ class MergeRigsOptions:
         description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
         default = 'CONTROLS')
 
+    useConvertWidgets : BoolProperty(
+        name = "Convert To Widgets",
+        description = "Convert face controls to bone custom shapes",
+        default = True)
+
 
 class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
     bl_idname = "daz.merge_rigs"
@@ -1113,11 +1119,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         description = "Only merge armatures that are children of the active armature",
         default = False)
 
-    clothesLayer : IntProperty(
-        name = "Clothes Layer",
-        description = "Bone layer used for extra bones when merging clothes",
-        min = 1, max = 32,
-        default = 3)
+    clothesLayer = 2
+    widgetLayer = 3
 
     if bpy.app.version >= (3,4,0):
         createMeshCollection = False
@@ -1128,12 +1131,12 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "clothesLayer")
         self.layout.prop(self, "separateCharacters")
         if not self.separateCharacters:
             self.layout.prop(self, "useSubrigsOnly")
         self.layout.prop(self, "useCreateDuplicates")
         self.layout.prop(self, "useMergeNonConforming")
+        self.layout.prop(self, "useConvertWidgets")
         if bpy.app.version < (3,4,0):
             self.layout.prop(self, "createMeshCollection")
 
@@ -1174,7 +1177,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 findSubObjects(child, subobs)
 
         subobs = []
-        self.foundControl = False
         findSubObjects(rig, subobs)
         repars = []
         for ob in subobs:
@@ -1188,7 +1190,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         for subrig in subrigs:
             if subrig.parent and subrig.parent_type == 'BONE':
                 if subrig.parent == rig:
-                    conforms = self.isConforming(subrig, rig)
+                    conforms = self.isConforming(subrig, rig, info)
                 else:
                     continue
             elif subrig.parent in repars:
@@ -1209,17 +1211,17 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         return info, subinfos, repars
 
 
-    def isConforming(self, subrig, rig):
+    def isConforming(self, subrig, rig, info):
         if self.useMergeNonConforming == 'ALWAYS':
             return True
         elif self.useMergeNonConforming == 'CONTROLS':
             if (subrig.DazUrl == "/data/DAZ 3D/Genesis 8/Genesis 8_1 Face Controls/Genesis 8.1 Face Controls.dsf#Genesis 8.1 Face Controls"):
-                if self.foundControl:
+                if info.foundControl:
                     subrig.hide_viewport = True
                     for child in subrig.children:
                         child.hide_viewport = True
                     return False
-                self.foundControl = True
+                info.foundControl = list(subrig.children)
                 return True
         for bname in subrig.data.bones.keys():
             if bname in rig.data.bones.keys():
@@ -1266,7 +1268,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         finally:
             rig.data.layers = oldvis
             if success:
-                rig.data.layers[self.clothesLayer-1] = True
+                rig.data.layers[self.clothesLayer] = True
+            if info.foundControl:
+                rig.data.layers[self.widgetLayer] = True
             setActiveObject(context, rig)
             updateDrivers(rig)
             updateDrivers(rig.data)
@@ -1286,7 +1290,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             subinfo.getEditBones(mainbones, extrabones)
         adds, hdadds, removes = self.createNewCollections(rig)
 
-        layers = (self.clothesLayer-1)*[False] + [True] + (32-self.clothesLayer)*[False]
+        layers = self.clothesLayer*[False] + [True] + (31-self.clothesLayer)*[False]
         activateObject(context, rig)
         setMode('EDIT')
         for subinfo in subinfos:
@@ -1320,6 +1324,13 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         for ob,wmat in repars:
             ob.parent = rig
             setWorldMatrix(ob, wmat)
+        if self.useConvertWidgets and info.foundControl:
+            from .proxy import WidgetConverter
+            ob = info.foundControl[0]
+            print("Convert %s to widgets for %s" % (ob.name, rig.name))
+            wc = WidgetConverter()
+            wc.convertWidgets(context, rig, ob)
+            rig.data.layers[3] = True
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):

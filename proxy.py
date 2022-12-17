@@ -1920,41 +1920,16 @@ class DAZ_OT_CopyModifiers(DazPropsOperator, IsMesh):
 #   Make custom shapes from mesh
 #----------------------------------------------------------
 
-class DAZ_OT_ConvertWidgets(DazPropsOperator, IsMesh):
-    bl_idname = "daz.convert_widgets"
-    bl_label = "Convert To Widgets"
-    bl_description = "Convert the active mesh to custom shapes for the parent armature bones"
-    bl_options = {'UNDO'}
+class WidgetConverter:
+    usedLayer = 4
+    unusedLayer = 5
+    deleteUnused = True
 
-    usedLayer : IntProperty(
-        name = "Used Layer",
-        description = "Bone layer for bones with shapekeys",
-        min = 1, max = 32,
-        default = 4)
-
-    unusedLayer : IntProperty(
-        name = "Unused Layer",
-        description = "Bone layer for bones without shapekeys",
-        min = 1, max = 32,
-        default = 5)
-
-    deleteUnused : BoolProperty(
-        name = "Delete Unused",
-        description = "Delete unused bones",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "usedLayer")
-        self.layout.prop(self, "unusedLayer")
-        self.layout.prop(self, "deleteUnused")
-
-
-    def run(self, context):
+    def convertWidgets(self, context, rig, ob):
         from .node import createHiddenCollection
-        ob = context.object
-        rig = ob.parent
         if rig is None or not rig.type == 'ARMATURE':
             raise DazError("Object has no armature parent")
+
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
         rig.data.layers[self.usedLayer-1] = True
@@ -2135,6 +2110,40 @@ class DAZ_OT_ConvertWidgets(DazPropsOperator, IsMesh):
                     for trg in var.targets:
                         if trg.bone_target == bname:
                             trg.bone_target = bname1
+
+
+class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
+    bl_idname = "daz.convert_widgets"
+    bl_label = "Convert To Widgets"
+    bl_description = "Convert the active mesh to custom shapes for the parent armature bones"
+    bl_options = {'UNDO'}
+
+    usedLayer : IntProperty(
+        name = "Used Layer",
+        description = "Bone layer for bones with shapekeys",
+        min = 1, max = 32,
+        default = 4)
+
+    unusedLayer : IntProperty(
+        name = "Unused Layer",
+        description = "Bone layer for bones without shapekeys",
+        min = 1, max = 32,
+        default = 5)
+
+    deleteUnused : BoolProperty(
+        name = "Delete Unused",
+        description = "Delete unused bones",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "usedLayer")
+        self.layout.prop(self, "unusedLayer")
+        self.layout.prop(self, "deleteUnused")
+
+    def run(self, context):
+        ob = context.object
+        rig = ob.parent
+        self.convertWidgets(context, rig, ob)
 
 #----------------------------------------------------------
 #   Initialize
