@@ -1971,7 +1971,7 @@ class CyclesTree(Tree):
 
 
     def postbuild(self):
-        if GS.pruneNodes:
+        if GS.usePruneNodes:
             marked = pruneNodeTree(self)
             hasDiffuseTex = self.diffuseTex and marked.get(self.diffuseTex.name)
             hasDiffuse = self.diffuse and marked.get(self.diffuse.name)

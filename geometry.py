@@ -305,8 +305,12 @@ class GeoNode(Node, SimNode):
         if hdob:
             self.finishHD(context, self.rna, hdob, inst)
         if ob.type == 'MESH':
+            if GS.usePruneNodes:
+                pruneUvMaps(ob)
             scaleEyeMoisture(ob)
             if hdob and hdob != ob:
+                if GS.usePruneNodes:
+                    pruneUvMaps(hdob)
                 scaleEyeMoisture(hdob)
             if GS.shellMethod == 'GEONODES':
                 self.buildShells(context)
@@ -359,7 +363,6 @@ class GeoNode(Node, SimNode):
             self.setHideInfoMesh(ob)
             if hdob and hdob != ob:
                 self.setHideInfoMesh(hdob)
-            pruneUvMaps(ob)
             self.addLSMesh(ob, inst, None)
 
 
@@ -1483,22 +1486,28 @@ def makeNewUvloop(me, name, setActive):
 def pruneUvMaps(ob):
     if ob.data is None or len(ob.data.uv_layers) <= 1:
         return
-    print("Pruning UV maps")
-    uvtexs = {}
-    for uvtex in ob.data.uv_layers:
-        uvtexs[uvtex.name] = [uvtex, uvtex.active_render]
+    used = {}
+    active = None
+    for uvlayer in ob.data.uv_layers:
+        used[uvlayer.name] = False
+        if uvlayer.active_render:
+            active = uvlayer
     for mat in ob.data.materials:
         if mat:
             for node in mat.node_tree.nodes:
-                if (node.type == "ATTRIBUTE" and
-                    node.attribute_name in uvtexs.keys()):
-                    uvtexs[node.attribute_name][1] = True
-                elif (node.type == "UVMAP" and
-                    node.uv_map in uvtexs.keys()):
-                    uvtexs[node.uv_map][1] = True
-    for uvtex,used in uvtexs.values():
-        if not used:
-            ob.data.uv_layers.remove(uvtex)
+                if node.type == "ATTRIBUTE":
+                    used[node.attribute_name]= True
+                elif node.type == "UVMAP":
+                    used[node.uv_map] = True
+                elif node.type == "TEX_COORD":
+                    used[active.name] = True
+                elif node.type == "NORMAL_MAP":
+                    used[node.uv_map] = True
+    for uvname in used.keys():
+        if not used[uvname]:
+            uvlayer = ob.data.uv_layers[uvname]
+            print("Remove UV layer %s" % uvname)
+            ob.data.uv_layers.remove(uvlayer)
 
 
 class DAZ_OT_PruneUvMaps(DazOperator, IsMesh):

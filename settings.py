@@ -72,7 +72,7 @@ class GlobalSettings:
         self.caseSensitivePaths = (platform not in ['win32', 'darwin'])
         self.rescanOnChange = True
         self.shellMethod = 'MATERIAL'
-        self.pruneNodes = True
+        self.usePruneNodes = True
 
         self.bumpFactor = 1.0
         self.useFakeCaustics = True
@@ -154,7 +154,7 @@ class GlobalSettings:
         "DazShowHiddenObjects" : "showHiddenObjects",
         "DazIgnoreHiddenObjects" : "useIgnoreHiddenObjects",
         "DazShellMethod" : "shellMethod",
-        "DazPruneNodes" : "pruneNodes",
+        "DazPruneNodes" : "usePruneNodes",
 
         # Materials
         "DazMaterialMethod" : "materialMethod",

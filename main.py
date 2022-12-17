@@ -419,7 +419,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
             cycles = tree.getOutputs(["DAZ Overlay"])
             tree.buildOverlay()
             tree.linkToOutputs(cycles)
-        if GS.pruneNodes:
+        if GS.usePruneNodes:
             pruneNodeTree(mat.node_tree)
 
 
