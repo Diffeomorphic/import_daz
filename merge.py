@@ -59,46 +59,61 @@ class UVLayerMerger:
 
 
     def getActiveUvLayer(self, ob):
-        def getUvMap(node):
-            socket = node.inputs.get("Vector")
+        def getUvMap(socket):
             if socket:
                 for link in socket.links:
                     node = link.from_node
-                    if node.type in ['TEX_COORD', 'UVMAP']:
-                        return node
+                    if node.type == 'UVMAP':
+                        return node.uv_map, node
+                    elif node.type == 'ATTRIBUTE':
+                        return node.attribute_name, node
+                    elif node.type == 'TEX_COORD':
+                        return "TEXCO", node
                     elif "Vector" in node.inputs.keys():
-                        return getUvMap(node)
-            return None
+                        return getUvMap(node.inputs.get("Vector"))
+            return None, None
 
-        def getMaterialUvs(ob):
-            for mat in ob.data.materials:
-                if not (mat and mat.node_tree):
-                    continue
-                for node in mat.node_tree.nodes:
-                    if node.type == 'TEX_IMAGE':
-                        uvmap = getUvMap(node)
-                        if uvmap:
-                            return uvmap
-            return None
+        from .udim import isShellNode
+        uvmaps = {}
+        shellmaps = {}
+        for mat in ob.data.materials:
+            if not (mat and mat.node_tree):
+                continue
+            for node in mat.node_tree.nodes:
+                if node.type == 'TEX_IMAGE':
+                    uvname,uvmap = getUvMap(node.inputs.get("Vector"))
+                    if uvmap:
+                        uvmaps[uvname] = uvmap
+                elif isShellNode(node):
+                    uvname,uvmap = getUvMap(node.inputs.get("UV"))
+                    if uvmap:
+                        shellmaps[uvname] = uvmap
 
-        node = getMaterialUvs(ob)
-        if node and node.type == 'UVMAP':
-            actname = node.uv_map
-        else:
-            actname = None
-        for uvlayer in ob.data.uv_layers:
-            if actname and uvlayer.name == actname:
-                return uvlayer.name
-            elif actname is None and uvlayer.active_render:
-                return uvlayer.name
+        for uvname,node in uvmaps.items():
+            if uvname in shellmaps.keys():
+                continue
+            elif node.type == 'TEX_COORD':
+                for uvlayer in ob.data.uv_layers:
+                    if uvlayer.active_render:
+                        return uvlayer.name
+            elif uvname in ob.data.uv_layers.keys():
+                return uvname
         return None
 
 
     def mergeUvs(self, ob, uvnames):
+        active = None
+        for uvlayer in ob.data.uv_layers:
+            if uvlayer.active_render:
+                active = uvlayer
+                break
         idxs = []
         for idx,uvlayer in enumerate(ob.data.uv_layers):
-            if uvlayer.name in uvnames:
+            if uvlayer.name in uvnames and uvlayer != active:
                 idxs.append(idx)
+        if not idxs:
+            print("No UV layers to merge")
+            return
         idxs.reverse()
         for idx in idxs:
             mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
@@ -220,7 +235,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         for aob in anatomies:
             if self.useMergeUvs:
                 uvname = self.getActiveUvLayer(aob)
-                self.auvnames[uvname] = True
+                if uvname is not None:
+                    self.auvnames[uvname] = True
             if self.useFixTiles:
                 from .udim import TileFixer
                 fixer = TileFixer()
@@ -772,7 +788,8 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, 
             for aob in getSelectedMeshes(context):
                 if aob != cob:
                     uvname = self.getActiveUvLayer(aob)
-                    auvnames[uvname] = True
+                    if uvname is not None:
+                        auvnames[uvname] = True
         for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
