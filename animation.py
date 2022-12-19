@@ -544,7 +544,7 @@ class MorphOptions:
     useScanned : BoolProperty(
         name = "Use Scanned Database",
         description = "Use the scanned database to find morphs",
-        default = True)
+        default = False)
 
     useCheckUpdates : BoolProperty(
         name = "Check For Updates",
@@ -596,7 +596,7 @@ class MorphOptions:
         for morphset in namepathTable.keys():
             if self.useLoadMissing:
                 mloader = StandardMorphLoader()
-                mloader.rig = rig
+                mloader.getFingeredRigMeshes(context)
                 mloader.morphset = morphset
                 mloader.category = ""
                 mloader.hideable = True
@@ -614,7 +614,7 @@ class MorphOptions:
             for cat, namepaths in customs.items():
                 mloader = CustomMorphLoader()
                 rig.DazCustomMorphs = True
-                mloader.rig = rig
+                mloader.getFingeredRigMeshes(context)
                 mloader.morphset = "Custom"
                 mloader.category = cat
                 mloader.hideable = True
