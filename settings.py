@@ -80,6 +80,7 @@ class GlobalSettings:
         self.handleLightSettings = "WARN"
         self.useSssSkin = False
         self.useSssFix = False
+        self.useRefractiveShell = False
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
@@ -169,6 +170,7 @@ class GlobalSettings:
         "DazHandleLightSettings" : "handleLightSettings",
         "DazUseSssSkin" : "useSssSkin",
         "DazUseSssFix" : "useSssFix",
+        "DazRefractiveShell" : "useRefractiveShell",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
@@ -638,10 +640,11 @@ class LocalSettings:
 
     def fixMappingNodes(self):
         for node,data in self.mappingNodes:
-            dx,dy,sx,sy,rz = data
-            node.inputs["Location"].default_value = (dx,dy,0)
-            node.inputs["Rotation"].default_value = (0,0,rz)
-            node.inputs["Scale"].default_value = (sx,sy,1)
+            if "Location" in node.inputs.keys():
+                dx,dy,sx,sy,rz = data
+                node.inputs["Location"].default_value = (dx,dy,0)
+                node.inputs["Rotation"].default_value = (0,0,rz)
+                node.inputs["Scale"].default_value = (sx,sy,1)
 
 
     def getMaterialSettings(self, btn):

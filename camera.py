@@ -140,5 +140,5 @@ class CameraInstance(Instance):
                         ]:
                 #print("Unused", key, value)
                 pass
-            else:
+            elif GS.verbosity > 2:
                 print("Unknown camera channel '%s' %s" % (key, value))

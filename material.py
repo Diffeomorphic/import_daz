@@ -141,7 +141,7 @@ class Material(Asset, Channels):
                 self.uv_set = uvset
 
 
-    def copyBasics(self, dmat):
+    def copyShellBasics(self, dmat):
         self.basemix = dmat.basemix
         self.useVolume = dmat.useVolume
         self.shader = dmat.shader
