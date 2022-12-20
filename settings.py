@@ -500,13 +500,13 @@ class GlobalSettings:
 
     def getAbsPath(self, path):
         if self.caseSensitivePaths:
-            folder = os.path.dirname(path)
-            file = os.path.basename(path)
-            lfile = file.lower()
-            folders = self.absPaths.get(folder.lower(), [])
+            folder = os.path.dirname(path).lower()
+            lfile = os.path.basename(path).lower()
+            folders = self.absPaths.get(folder, [])
             for folder in folders:
-                lfiles = [file.lower() for file in os.listdir(folder)]
-                if lfile in lfiles:
+                files = dict([(file.lower(),file) for file in os.listdir(folder)])
+                file = files.get(lfile)
+                if file:
                     return "%s/%s" % (folder, file)
         else:
             for folder in self.getDazPaths():

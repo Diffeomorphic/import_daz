@@ -197,7 +197,7 @@ class Accessor:
         return
 
         if asset.caller:
-            ref2 = lowerPath(asset.caller.id) + "#" + struct["id"]
+            ref2 = "%s#%s" % (asset.caller.id, struct["id"])
             ref2 = normalizeRef(ref2)
             if ref2 in LS.theAssets.keys():
                 asset2 = LS.theAssets[ref2]
@@ -456,22 +456,9 @@ def getRef(id, fileref):
         return id
 
 
-def lowerPath(path):
-    return path
-    path = path.lower()
-    if len(path) > 0 and path[0] == "/":
-        words = path.split("#",1)
-        if len(words) == 1:
-            return words[0]
-        else:
-            return "%s#%s" % (words[0], words[1])
-    else:
-        return path
-
-
 def normalizeRef(id):
     from urllib.parse import quote
-    ref = lowerPath(undoQuote(quote(id)))
+    ref = undoQuote(quote(id))
     return ref.replace("//", "/")
 
 
