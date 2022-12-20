@@ -297,7 +297,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazHandleRenderSettings")
         box.prop(scn, "DazHandleLightSettings")
         box.separator()
-        box.prop(scn, "DazRefractiveShell")
         box.prop(scn, "DazUseDisplacement")
         box.prop(scn, "DazUseEmission")
         box.prop(scn, "DazGhostLights")
@@ -721,10 +720,6 @@ def register():
     bpy.types.Scene.DazFakeCaustics = BoolProperty(
         name = "Fake Caustics",
         description = "Use fake caustics")
-
-    bpy.types.Scene.DazRefractiveShell = BoolProperty(
-        name = "Refractive Shells",
-        description = "Use special groups for refractive shells")
 
     bpy.types.Scene.DazUseDisplacement = BoolProperty(
         name = "Displacement",

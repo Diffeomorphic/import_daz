@@ -308,7 +308,7 @@ class CyclesTree(Tree):
 
     def getShellGroup(self, shmat, push):
         from .cgroup import OpaqueShellCyclesGroup, RefractiveShellCyclesGroup
-        if shmat.isRefractive() and GS.useRefractiveShell:
+        if shmat.isRefractive():
             return RefractiveShellCyclesGroup(push)
         else:
             return OpaqueShellCyclesGroup(push)

@@ -80,7 +80,6 @@ class GlobalSettings:
         self.handleLightSettings = "WARN"
         self.useSssSkin = False
         self.useSssFix = False
-        self.useRefractiveShell = False
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
@@ -170,7 +169,6 @@ class GlobalSettings:
         "DazHandleLightSettings" : "handleLightSettings",
         "DazUseSssSkin" : "useSssSkin",
         "DazUseSssFix" : "useSssFix",
-        "DazRefractiveShell" : "useRefractiveShell",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",

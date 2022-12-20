@@ -116,7 +116,7 @@ class PbrTree(CyclesTree):
 
     def getShellGroup(self, shmat, push):
         from .cgroup import OpaqueShellPbrGroup, RefractiveShellPbrGroup
-        if shmat.isRefractive() and GS.useRefractiveShell:
+        if shmat.isRefractive():
             return RefractiveShellPbrGroup(push)
         else:
             return OpaqueShellPbrGroup(push)

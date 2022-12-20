@@ -53,7 +53,7 @@ class ShellGroup(NodeGroup):
 
 
     def create(self, node, name, parent):
-        NodeGroup.create(self, node, name, parent, 9)
+        NodeGroup.create(self, node, name, parent, 11)
         self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.inputs.new("NodeSocketShader", "BSDF")
         self.group.inputs.new("NodeSocketVector", "UV")
@@ -91,12 +91,7 @@ class ShellGroup(NodeGroup):
             self.links.new(self.clipsocket, mult.inputs[1])
         else:
             mult.inputs[1].default_value = 1.0
-
-        inv = self.addNode("ShaderNodeMath", 7)
-        inv.operation = 'SUBTRACT'
-        inv.inputs[0].default_value = 1.0
-        self.links.new(mult.outputs[0], inv.inputs[1])
-        self.addOutputs(inv)
+        self.addOutputs(mult)
 
         self.buildDisplacementNodes()
         if self.displacement:
@@ -112,11 +107,11 @@ class ShellGroup(NodeGroup):
 
 class OpaqueShellGroup(ShellGroup):
     def addOutput(self, mult, socket, slot):
-        mix = self.addNode("ShaderNodeMixShader", 8)
+        mix = self.addNode("ShaderNodeMixShader", 10)
         mix.inputs[0].default_value = 1
         self.links.new(mult.outputs[0], mix.inputs[0])
-        self.links.new(self.inputs.outputs[slot], mix.inputs[2])
-        self.links.new(socket, mix.inputs[1])
+        self.links.new(self.inputs.outputs[slot], mix.inputs[1])
+        self.links.new(socket, mix.inputs[2])
         self.links.new(mix.outputs[0], self.outputs.inputs[slot])
 
     def addOutputs(self, mult):
@@ -147,10 +142,10 @@ class RefractiveShellGroup(ShellGroup):
         mix = self.addNode("ShaderNodeMixShader", 8)
         mix.inputs[0].default_value = 1
         self.links.new(mult.outputs[0], mix.inputs[0])
-        self.links.new(transp.outputs[0], mix.inputs[2])
-        self.links.new(socket, mix.inputs[1])
+        self.links.new(transp.outputs[0], mix.inputs[1])
+        self.links.new(socket, mix.inputs[2])
 
-        add = self.addNode("ShaderNodeAddShader", 8)
+        add = self.addNode("ShaderNodeAddShader", 9)
         self.links.new(self.inputs.outputs[slot], add.inputs[0])
         self.links.new(mix.outputs[0], add.inputs[1])
         self.links.new(add.outputs[0], self.outputs.inputs[slot])
@@ -163,7 +158,7 @@ class RefractiveShellGroup(ShellGroup):
         self.links.new(add.outputs[0], mix.inputs[1])
         self.links.new(socket, mix.inputs[2])
 
-        mix2 = self.addNode("ShaderNodeMixShader", 9)
+        mix2 = self.addNode("ShaderNodeMixShader", 10)
         mix2.inputs[0].default_value = self.weight
         if self.wttex:
             self.links.new(self.wttex.outputs[0], mix2.inputs[0])
@@ -1706,7 +1701,7 @@ class LayeredGroup(CyclesGroup):
         self.outnode = None
         self.mask = None
         for asset,map in zip(assets, maps):
-            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, "COLOR")
+            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, "NONE")
             if innode:
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
             if self.outnode is None:
@@ -1719,7 +1714,7 @@ class LayeredGroup(CyclesGroup):
         self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
         self.links.new(firstnode.outputs[0], mix.inputs[1])
         self.links.new(self.outnode.outputs[0], mix.inputs[2])
-        if colorSpace == "NONE":
+        if False and colorSpace == "NONE":
             gamma = self.addNode("ShaderNodeGamma", 5)
             self.links.new(mix.outputs["Color"], gamma.inputs["Color"])
             gamma.inputs["Gamma"].default_value = 1/2.2
