@@ -201,12 +201,11 @@ def get_absolute_paths(paths):
     Returns:
     The corresponding absolute paths if they exist.
     """
-    from .asset import getDazPath
     GS.setRootPaths()
     abspaths = []
     for path in paths:
         path = path.replace("\\", "/")
-        abspath = getDazPath(path, False)
+        abspath = GS.getAbsPath(path)
         if abspath:
             abspaths.append(abspath)
     return abspaths

@@ -27,6 +27,7 @@
 
 import os
 import bpy
+from urllib.parse import unquote
 
 #-------------------------------------------------------------
 #   Global settings
@@ -496,7 +497,8 @@ class GlobalSettings:
                 print("Absolute paths loaded from %s" % self.absScanPath)
 
 
-    def getAbsPath(self, path):
+    def getAbsPath(self, ref):
+        path = unquote(ref)
         if self.caseSensitivePaths:
             folder = os.path.dirname(path).lower()
             lfile = os.path.basename(path).lower()
@@ -517,6 +519,11 @@ class GlobalSettings:
                     filepath = "%s/%s" % (words[0], words[2])
                     if filepath:
                         return filepath
+        if not path.startswith("name:/@selection"):
+            from .error import reportError
+            LS.missingAssets[ref] = True
+            msg = ("Did not find path:\n\"%s\"\nRef:\"%s\"" % (path, ref))
+            reportError(msg, trigger=(3,4))
         return ""
 
 

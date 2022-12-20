@@ -44,7 +44,7 @@ class Accessor:
         self.rna = None
 
 
-    def getAsset(self, id, strict=True):
+    def getAsset(self, id, strict=False):
         if isinstance(id, Asset):
             return id
 
@@ -89,7 +89,7 @@ class Accessor:
         from .load_json import loadJson
 
         fileref = id.split("#")[0]
-        filepath = getDazPath(fileref)
+        filepath = GS.getAbsPath(fileref)
         file = None
         if filepath:
             struct = loadJson(filepath)
@@ -102,7 +102,7 @@ class Accessor:
             ref = unquote(fileref)
             if ref.startswith("name:/@selection"):
                 return None
-            msg = ("Cannot open file:\n '%s'            " % ref)
+            msg = ('Cannot open file:\n "%s"' % ref)
             reportError(msg, warnPaths=True, trigger=(3,4))
             return None
 
@@ -492,32 +492,3 @@ def getRelativeRef(ref):
             return ref[n:]
     print("Not a relative path:\n  '%s'" % path)
     return ref
-
-
-def getDazPath(ref, strict=True):
-    def getExistingPath(filepath):
-        filepath = bpy.path.resolve_ncase(filepath)
-        if os.path.exists(filepath):
-            return filepath
-        return None
-
-    path = unquote(ref)
-    filepath = path
-    if path[2] == ":":
-        filepath = path[1:]
-        if GS.verbosity > 2:
-            print("Load", filepath)
-    elif path[0] == "/":
-        filepath = GS.getAbsPath(path)
-    if os.path.exists(filepath):
-        if GS.verbosity > 3:
-            print('Found "%s"' % filepath)
-        return filepath
-
-    if path.startswith("name:/@selection"):
-        return None
-    if strict:
-        LS.missingAssets[ref] = True
-        msg = ("Did not find path:\n\"%s\"\nRef:\"%s\"" % (path, ref))
-        reportError(msg, trigger=(3,4))
-    return None

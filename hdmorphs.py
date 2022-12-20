@@ -858,27 +858,19 @@ def getHDDirs(ob, attr):
 
 
 def addSkeyToUrls(ob, asset, skey):
-    def getPath(url):
-        from .asset import getDazPath
-        path = getDazPath(url)
-        if path:
-            return path
-        else:
-            return ""
-
     if asset.hd_url:
         pgs = ob.data.DazDhdmFiles
         if skey.name not in pgs.keys():
             item = pgs.add()
             item.name = skey.name
-            item.s = getPath(asset.hd_url)
+            item.s = GS.getAbsPath(asset.hd_url)
             item.b = False
 
     pgs = ob.data.DazMorphFiles
     if skey.name not in pgs.keys():
         item = pgs.add()
         item.name = skey.name
-        item.s = getPath(asset.fileref)
+        item.s = GS.getAbsPath(asset.fileref)
         item.b = False
 
 #-------------------------------------------------------------

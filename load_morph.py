@@ -693,7 +693,6 @@ class LoadMorph(DriverUser):
     def makeMissingMorphs(self, bodypart, level):
         newLine()
         print("Making missing morphs level %d" % level)
-        from .asset import getDazPath
         for fileref in self.loaded:
             self.referred[fileref] = False
         morphset = self.morphset
@@ -703,7 +702,7 @@ class LoadMorph(DriverUser):
         for ref,unloaded in self.referred.items():
             if unloaded:
                 someMissing = True
-                path = getDazPath(ref)
+                path = GS.getAbsPath(ref)
                 if path:
                     name = ref.rsplit("/",1)[-1]
                     data = (name,path,bodypart)

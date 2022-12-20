@@ -115,7 +115,7 @@ class FileAsset(Asset):
                         inst = asset.makeInstance(self.fileref, nstruct)
                         self.instances[inst.id] = inst
                         self.nodes.append((asset, inst))
-                    else:
+                    elif asset is not None:
                         msg = ("Expected node but got\n%s" % asset)
                         reportError(msg, trigger=(2,4))
 
@@ -264,7 +264,7 @@ class FileAsset(Asset):
 
 def getUrlPath(url):
     relpath = url.split("#")[0]
-    return relpath, getDazPath(relpath)
+    return relpath, GS.getAbsPath(relpath)
 
 
 def parseAssetFile(struct, toplevel=False, fileref=None):

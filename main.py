@@ -1129,7 +1129,6 @@ class DAZ_OT_DecodeFile(DazOperator, DazFile, SingleFile):
 
     def run(self, context):
         import gzip
-        from .asset import getDazPath
         from .fileutils import safeOpen
 
         print("Decode",  self.filepath)

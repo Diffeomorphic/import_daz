@@ -119,7 +119,7 @@ class Material(Asset, Channels):
         geo = geonode = None
         if LS.useGeometries and "geometry" in struct.keys():
             ref = struct["geometry"]
-            geo = self.getAsset(ref, True)
+            geo = self.getAsset(ref)
             if isinstance(geo, GeoNode):
                 geonode = geo
                 geo = geonode.data
@@ -234,6 +234,7 @@ class Material(Asset, Channels):
             (LS.materialMethod == 'BSDF' and not GS.useSssSkin) or
             (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
              not self.isVoluSkinMaterial()))
+        #print("AA", self.name, LS.materialMethod, self.useVolume)
 
 
     def isThinWall(self):
@@ -267,7 +268,9 @@ class Material(Asset, Channels):
             not self.enabled["Transmission"] or
             not self.enabled["Subsurface"] or
             self.getValue("getChannelCutoutOpacity", 1) != 1 or
-            self.getValue(["Thin Walled"], False)):
+            #self.getValue(["Thin Walled"], False) or
+            False
+            ):
             return False
         color = self.getValue(["Transmitted Color"], BLACK)
         dist = self.getValue(["Transmitted Measurement Distance"], 0)
@@ -704,9 +707,8 @@ def getImage(url):
 
 
 def loadImage(url):
-    from .asset import getDazPath
-    filepath = getDazPath(url)
-    if filepath is None:
+    filepath = GS.getAbsPath(url)
+    if not filepath:
         reportError('Image not found:  \n"%s"' % filepath, trigger=(3,4))
         return None
     else:
