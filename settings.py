@@ -500,9 +500,9 @@ class GlobalSettings:
     def getAbsPath(self, ref):
         path = unquote(ref)
         if self.caseSensitivePaths:
-            folder = os.path.dirname(path).lower()
+            lfolder = os.path.dirname(path).lower()
             lfile = os.path.basename(path).lower()
-            folders = self.absPaths.get(folder, [])
+            folders = self.absPaths.get(lfolder, [])
             for folder in folders:
                 files = dict([(file.lower(),file) for file in os.listdir(folder)])
                 file = files.get(lfile)
@@ -522,7 +522,15 @@ class GlobalSettings:
         if not path.startswith("name:/@selection"):
             from .error import reportError
             LS.missingAssets[ref] = True
-            msg = ("Did not find path:\n\"%s\"\nRef:\"%s\"" % (path, ref))
+            msg = ("Did not find path:" +
+                   '\nPath: "%s"' % path +
+                   '\nRef: "%s"' % ref +
+                   "\nCase-sensitive paths: %s" % self.caseSensitivePaths)
+            if self.caseSensitivePaths:
+                msg += ('\nFolder: "%s"' % lfolder +
+                        "\nFolders:")
+                for folder in folders:
+                    msg += "\n  %s" % folder
             reportError(msg, trigger=(3,4))
         return ""
 
