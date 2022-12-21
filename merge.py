@@ -245,9 +245,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':
                     aob.modifiers.remove(mod)
-                elif (self.useSubDDisplacement and
-                      mod.type == 'SUBSURF' and
-                      mod.subdivision_type == 'SIMPLE'):
+                elif self.useSubDDisplacement and mod.type == 'SUBSURF':
                     if mod.render_levels > subDLevels:
                         subDLevels = mod.render_levels
         cname = self.getUvName(cob.data)
@@ -369,16 +367,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-            elif (mod.type == 'SUBSURF' and
-                  mod.subdivision_type == 'SIMPLE'):
+            elif mod.type == 'SUBSURF':
                 if subDLevels > mod.render_levels:
                     mod.render_levels = subDLevels
                 subDLevels = 0
-        if self.useSubDDisplacement and subDLevels > 0:
-            mod = cob.modifiers.new("SubD Displacement", 'SUBSURF')
-            mod.subdivision_type = 'SIMPLE'
-            mod.render_levels = subDLevels
-            mod.levels = 0
 
 
     def deleteSelectedVerts(self):

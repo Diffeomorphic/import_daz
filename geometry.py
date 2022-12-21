@@ -204,9 +204,9 @@ class GeoNode(Node, SimNode):
             subDLevel = min(subDLevel, GS.maxSubdivs)
         if (self.type == "subdivision_surface" and
             self.data and
-            (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0)):
+            (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0 or subDLevel > 0)):
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
-            renderLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
+            renderLevel = max(self.data.SubDIALevel + self.data.SubDRenderLevel, subDLevel)
             renderLevel = min(renderLevel, GS.maxSubdivs)
             mod.render_levels = renderLevel
             mod.levels = min(self.data.SubDIALevel, GS.maxSubdivs)
@@ -217,7 +217,7 @@ class GeoNode(Node, SimNode):
                 mod.boundary_smooth = 'PRESERVE_CORNERS'
             self.data.creaseEdges(context, ob)
             ob.data.use_auto_smooth = False
-        if subDLevel > renderLevel:
+        if False and subDLevel > renderLevel:
             mod = ob.modifiers.new("SubD Displacement", 'SUBSURF')
             mod.subdivision_type = 'SIMPLE'
             mod.levels = 0
