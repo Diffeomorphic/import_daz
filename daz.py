@@ -97,6 +97,9 @@ class DAZ_OT_AddCloudDir(bpy.types.Operator):
         pg.name = ""
         return {'PASS_THROUGH'}
 
+#-------------------------------------------------------------
+#   Settings File
+#-------------------------------------------------------------
 
 class DAZ_OT_SaveSettingsFile(bpy.types.Operator, SingleFile, JsonExportFile):
     bl_idname = "daz.save_settings_file"
@@ -125,6 +128,9 @@ class DAZ_OT_LoadFactorySettings(DazOperator):
         GS.toScene(context.scene)
         return {'PASS_THROUGH'}
 
+#-------------------------------------------------------------
+#   Load Root Paths
+#-------------------------------------------------------------
 
 class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
     bl_idname = "daz.load_root_paths"
@@ -144,7 +150,6 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
         name = "Load Cloud Directories",
         default = True)
 
-
     def draw(self, context):
         self.layout.prop(self, "useContent")
         self.layout.prop(self, "useMDL")
@@ -163,6 +168,49 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
             print("No root paths found in", self.filepath)
         return {'PASS_THROUGH'}
 
+#-------------------------------------------------------------
+#   Add content dirs
+#-------------------------------------------------------------
+
+class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
+    bl_idname = "daz.add_content_dirs"
+    bl_label = "Add Content Directories"
+    bl_description = "Add DAZ root paths in directory"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        dirname = os.path.dirname(self.filepath)
+        self.folders = []
+        self.findContentDirs(dirname, 5)
+        change = False
+        for folder in self.folders:
+            if folder not in scn.DazContentDirs.keys():
+                print("Add", folder)
+                change = True
+                pg = scn.DazContentDirs.add()
+                pg.name = folder
+        GS.fromScene(scn)
+        #if GS.caseSensitivePaths and GS.rescanOnChange and change:
+        #    GS.scanAbsPaths()
+        return {'PASS_THROUGH'}
+
+
+    def findContentDirs(self, folder, level):
+        folder = folder.replace("\\", "/")
+        if folder.lower().endswith("/content"):
+            self.folders.append(folder)
+            return
+        if level == 0:
+            return
+        for file in os.listdir(folder):
+            path = "%s/%s" % (folder, file)
+            if os.path.isdir(path):
+                self.findContentDirs(path, level-1)
+
+#-------------------------------------------------------------
+#   Load settings file
+#-------------------------------------------------------------
 
 class DAZ_OT_LoadSettingsFile(DazOperator, SingleFile, JsonFile):
     bl_idname = "daz.load_settings_file"
@@ -309,6 +357,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
 
         row = self.layout.row()
         row.operator("daz.load_root_paths")
+        row.operator("daz.add_content_dirs")
         row.operator("daz.load_factory_settings")
         row.operator("daz.save_settings_file")
         row.operator("daz.load_settings_file")
@@ -336,6 +385,7 @@ classes = [
     DAZ_OT_AddCloudDir,
     DAZ_OT_LoadFactorySettings,
     DAZ_OT_LoadRootPaths,
+    DAZ_OT_AddContentDirs,
     DAZ_OT_SaveSettingsFile,
     DAZ_OT_LoadSettingsFile,
     DAZ_OT_GlobalSettings,
