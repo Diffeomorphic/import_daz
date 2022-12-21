@@ -142,7 +142,7 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
 
     useCloud : BoolProperty(
         name = "Load Cloud Directories",
-        default = False)
+        default = True)
 
 
     def draw(self, context):
