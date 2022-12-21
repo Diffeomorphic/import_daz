@@ -80,7 +80,7 @@ class GlobalSettings:
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
         self.useSssSkin = False
-        self.useSssFix = False
+        self.useAltSss = False
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
@@ -169,7 +169,7 @@ class GlobalSettings:
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",
         "DazUseSssSkin" : "useSssSkin",
-        "DazUseSssFix" : "useSssFix",
+        "DazAltSss" : "useAltSss",
         "DazUseDisplacement" : "useDisplacement",
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",

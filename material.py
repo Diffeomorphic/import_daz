@@ -230,11 +230,13 @@ class Material(Asset, Channels):
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
-        self.useVolume = (
-            (LS.materialMethod == 'BSDF' and not GS.useSssSkin) or
-            (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
-             not self.isVoluSkinMaterial()))
-        #print("AA", self.name, LS.materialMethod, self.useVolume)
+        if self.isThinWall():
+            self.useVolume = False
+        else:
+            self.useVolume = (
+                (LS.materialMethod == 'BSDF' and not GS.useSssSkin) or
+                (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
+                 not self.isVoluSkinMaterial()))
 
 
     def isThinWall(self):
@@ -267,10 +269,7 @@ class Material(Asset, Channels):
             not self.enabled["Translucency"] or
             not self.enabled["Transmission"] or
             not self.enabled["Subsurface"] or
-            self.getValue("getChannelCutoutOpacity", 1) != 1 or
-            #self.getValue(["Thin Walled"], False) or
-            False
-            ):
+            self.getValue("getChannelCutoutOpacity", 1) != 1):
             return False
         color = self.getValue(["Transmitted Color"], BLACK)
         dist = self.getValue(["Transmitted Measurement Distance"], 0)

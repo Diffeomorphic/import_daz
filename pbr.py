@@ -194,7 +194,7 @@ class PbrTree(CyclesTree):
         self.pbr.subsurface_method = GS.getSSSMethod()
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
-        if GS.useSssFix:
+        if GS.useAltSss:
             self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex)
         else:
             self.addSubsurfaceColor(transwt, wttex, transcolor, transtex)
@@ -217,8 +217,8 @@ class PbrTree(CyclesTree):
 
 
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
-        from .cgroup import SSSFixGroup
-        fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-1)
+        from .cgroup import AltSSSGroup
+        fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS", col=self.column-1)
         self.linkScalar(ssstex, fix, sss, "SSS Amount")
         fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
         if self.diffuseInput:

@@ -1288,9 +1288,9 @@ class CyclesTree(Tree):
         node.inputs["Anisotropy"].default_value = aniso
         node.width = 200
 
-        if GS.useSssFix:
-            from .cgroup import SSSFixGroup
-            fix = self.addGroup(SSSFixGroup, "DAZ SSS Fix", col=self.column-2)
+        if GS.useAltSss:
+            from .cgroup import AltSSSGroup
+            fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS", col=self.column-2)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
             if self.diffuseInput:
                 self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])

@@ -439,7 +439,7 @@ class BrickLayerGroup(FacMixGroup):
 #   https://bitbucket.org/Diffeomorphic/import_daz/issues/1082/better-eevee-principled-materials
 # ---------------------------------------------------------------------
 
-class SSSFixGroup(CyclesGroup):
+class AltSSSGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["SSS Amount", "Diffuse Color", "Translucent Color", "Translucency Weight"]

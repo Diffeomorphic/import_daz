@@ -225,10 +225,10 @@ TweakableChannels = OrderedDict([
     ("Dual Lobe PBR Strength", ("DAZ Dual Lobe PBR", "Fac", 1)),
 
     ("SSS Fix", None),
-    ("SSS Fix SSS Amount", ("DAZ SSS Fix", "SSS Amount", 1)),
-    ("SSS Fix Diffuse Color", ("DAZ SSS Fix", "Diffuse Color", 4)),
-    ("SSS Fix Translucent Color", ("DAZ SSS Fix", "Translucent Color", 4)),
-    ("SSS Fix Translucency Weight", ("DAZ SSS Fix", "Translucency Weight", 1)),
+    ("SSS Fix SSS Amount", ("DAZ Alt SSS", "SSS Amount", 1)),
+    ("SSS Fix Diffuse Color", ("DAZ Alt SSS", "Diffuse Color", 4)),
+    ("SSS Fix Translucent Color", ("DAZ Alt SSS", "Translucent Color", 4)),
+    ("SSS Fix Translucency Weight", ("DAZ Alt SSS", "Translucency Weight", 1)),
 
     ("Subsurface", None),
     ("Subsurface Strength", ("DAZ Subsurface", "Fac", 1)),

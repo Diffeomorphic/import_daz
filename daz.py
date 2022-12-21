@@ -288,7 +288,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazViewportColor")
         box.prop(scn, "DazUseWorld")
         box.prop(scn, "DazUseSssSkin")
-        box.prop(scn, "DazUseSssFix")
+        box.prop(scn, "DazAltSss")
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazBumpFactor")
@@ -744,8 +744,8 @@ def register():
             "Limited IRAY conversion but faster rendering and more conventional skin materials.\n" +
             "Works with both Cycles and Eevee but some screen effects may not work"))
 
-    bpy.types.Scene.DazUseSssFix = BoolProperty(
-        name = "SSS Fix",
+    bpy.types.Scene.DazAltSss = BoolProperty(
+        name = "Alternative SSS",
         description = "Use alternative handling of SSS suggested by Midnight Arrow")
 
     bpy.types.Scene.DazImageInterpolation = EnumProperty(
