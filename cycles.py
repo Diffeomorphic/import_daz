@@ -1577,56 +1577,51 @@ class CyclesTree(Tree):
             return
         self.volume = None
         if self.isEnabled("Translucency"):
-            transcolor,transtex = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
             if self.isEnabled("Transmission"):
-                self.buildVolumeTransmission(transcolor, transtex)
+                self.buildVolumeTransmission()
             if self.isEnabled("Subsurface"):
-                sssmode, ssscolor, ssstex = self.getSSSInfo()
-                print("SSS", self.owner.name, sssmode, ssscolor, ssstex)
-                self.buildVolumeSubSurface(ssscolor, ssstex)
+                self.buildVolumeSubSurface()
         if self.volume:
             self.volume.width = 240
             LS.usedFeatures["Volume"] = True
 
 
-    def getSSSInfo(self):
-        from .cgroup import LogColorGroup
-        if self.owner.shader == 'UBER_IRAY':
-            sssmode = self.getValue(["SSS Mode"], 0)
-        elif self.owner.shader == 'PBRSKIN':
-            sssmode = 1
-        else:
-            sssmode = 0
-        # [ "Mono", "Chromatic" ]
-        if sssmode == 1:
-            color,tex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
-            node = self.addGroup(LogColorGroup, "DAZ Log Color", col=self.column-1)
-            self.linkColor(tex, node, color, "Color")
-            return 1, color, node
-        else:
-            sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
-            return 0, (sss,sss,sss), tex
-
-
-    def buildVolumeTransmission(self, color, tex):
+    def buildVolumeTransmission(self):
         from .cgroup import VolumeGroup
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
-        if (isBlack(color) or
-            #(isWhite(color) and tex is None) or
-            dist == 0.0):
+        if dist == 0:
+            return
+        color,tex = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
+        if isBlack(color) or (isWhite(color) and tex is None):
             return
         self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
         self.volume.inputs["Absorbtion Density"].default_value = 100/dist
         self.linkColor(tex, self.volume, color, "Absorbtion Color")
 
 
-    def buildVolumeSubSurface(self, color, tex):
-        from .cgroup import VolumeGroup
+    def buildVolumeSubSurface(self):
+        from .cgroup import VolumeGroup, LogColorGroup
         dist = self.getValue(["Scattering Measurement Distance"], 0.0)
-        if (isBlack(color) or
-            #(isWhite(color) and tex is None) or
-            dist == 0.0):
+        if dist == 0:
             return
+        if self.owner.shader == 'UBER_IRAY':
+            sssmode = self.getValue(["SSS Mode"], 0)
+        elif self.owner.shader == 'PBRSKIN':
+            sssmode = 1
+        else:
+            sssmode = 0
+        if sssmode == 0:    # Mono
+            sss,tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
+            if sss == 0:
+                return
+            color = (sss,sss,sss)
+        elif sssmode == 1:  # Chromatic
+            color,tex = self.getColorTex("getChannelSSSColor", "COLOR", BLACK)
+            if isBlack(color) or (isWhite(color) and tex is None):
+                return
+            node = self.addGroup(LogColorGroup, "DAZ Log Color", col=self.column-1)
+            self.linkColor(tex, node, color, "Color")
+            tex = node
         if self.volume is None:
             self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
         self.volume.inputs["Scatter Color"].default_value[0:3] = color
