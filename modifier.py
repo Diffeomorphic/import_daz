@@ -309,23 +309,14 @@ class ChannelAsset(Modifier):
                     self.min = value
                 elif key == "max":
                     self.max = value
-            self.type = struct["channel"].get("type", "float")
-            self.setType()
-
-    def setType(self):
-        if self.type == "float":
-            self.value = float(self.value)
-        elif self.type == "bool":
-            self.value = bool(self.value)
-        elif self.type == "int":
-            self.value = int(self.value)
+                elif key == "type":
+                    self.type = value
 
     def update(self, struct):
         Modifier.update(self, struct)
         if ("channel" in struct.keys() and
             "current_value" in struct["channel"].keys()):
             self.value = struct["channel"]["current_value"]
-            self.setType()
 
 
 def stripPrefix(prop):
