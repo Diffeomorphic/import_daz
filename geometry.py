@@ -1411,6 +1411,11 @@ class Uvset(Asset):
     def getPolyVerts(self, me):
         polyverts = dict([(f.index, list(f.vertices)) for f in me.polygons])
         if self.polyverts:
+            fnums = [fn for fn,vn,uv in self.polyverts]
+            if max(fnums) > len(me.polygons):
+                msg = "Uvset set has %d faces but target mesh only has %d faces" % (max(fnums), len(me.polygons))
+                print(msg)
+                raise DazError(msg)
             for fn,vn,uv in self.polyverts:
                 f = me.polygons[fn]
                 for n,vn1 in enumerate(f.vertices):
