@@ -472,8 +472,8 @@ class LoadMorph(DriverUser):
                 self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, None, True)
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
             elif asset.type == "int":
-                self.rig[raw] = 0
-                self.amt[final] = 0
+                self.rig[raw] = asset.value
+                self.amt[final] = asset.value
             else:
                 self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, None, True)
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
@@ -489,17 +489,17 @@ class LoadMorph(DriverUser):
         if limits == 'DAZ':
             min = GS.morphMultiplier * asset.min
             max = GS.morphMultiplier * asset.max
-            setFloatProp(rna, prop, 0.0, min, max, ovr)
+            setFloatProp(rna, prop, asset.value, min, max, ovr)
             if skey:
                 skey.slider_min = min
                 skey.slider_max = max
         elif limits == 'CUSTOM':
-            setFloatProp(rna, prop, 0.0, GS.customMin, GS.customMax, ovr)
+            setFloatProp(rna, prop, asset.value, GS.customMin, GS.customMax, ovr)
             if skey:
                 skey.slider_min = GS.customMin
                 skey.slider_max = GS.customMax
         else:
-            setFloatProp(rna, prop, 0.0, None, None, ovr)
+            setFloatProp(rna, prop, asset.value, None, None, ovr)
             if skey:
                 skey.slider_min = -10
                 skey.slider_max = 10

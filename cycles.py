@@ -1582,6 +1582,7 @@ class CyclesTree(Tree):
                 self.buildVolumeTransmission(transcolor, transtex)
             if self.isEnabled("Subsurface"):
                 sssmode, ssscolor, ssstex = self.getSSSInfo()
+                print("SSS", self.owner.name, sssmode, ssscolor, ssstex)
                 self.buildVolumeSubSurface(ssscolor, ssstex)
         if self.volume:
             self.volume.width = 240
@@ -1611,7 +1612,7 @@ class CyclesTree(Tree):
         from .cgroup import VolumeGroup
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
         if (isBlack(color) or
-            (isWhite(color) and tex is None) or
+            #(isWhite(color) and tex is None) or
             dist == 0.0):
             return
         self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
@@ -1623,7 +1624,7 @@ class CyclesTree(Tree):
         from .cgroup import VolumeGroup
         dist = self.getValue(["Scattering Measurement Distance"], 0.0)
         if (isBlack(color) or
-            (isWhite(color) and tex is None) or
+            #(isWhite(color) and tex is None) or
             dist == 0.0):
             return
         if self.volume is None:
