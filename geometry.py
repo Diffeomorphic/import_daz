@@ -1413,7 +1413,7 @@ class Uvset(Asset):
         if self.polyverts:
             fnums = [fn for fn,vn,uv in self.polyverts]
             if max(fnums) > len(me.polygons):
-                msg = "Uvset set has %d faces but target mesh only has %d faces" % (max(fnums), len(me.polygons))
+                msg = "UV set has %d faces but target mesh only has %d faces" % (max(fnums), len(me.polygons))
                 print(msg)
                 raise DazError(msg)
             for fn,vn,uv in self.polyverts:

@@ -224,11 +224,11 @@ TweakableChannels = OrderedDict([
     ("Dual Lobe PBR Roughness 2", ("DAZ Dual Lobe PBR", "Roughness 2", 1)),
     ("Dual Lobe PBR Strength", ("DAZ Dual Lobe PBR", "Fac", 1)),
 
-    ("SSS Fix", None),
-    ("SSS Fix SSS Amount", ("DAZ Alt SSS", "SSS Amount", 1)),
-    ("SSS Fix Diffuse Color", ("DAZ Alt SSS", "Diffuse Color", 4)),
-    ("SSS Fix Translucent Color", ("DAZ Alt SSS", "Translucent Color", 4)),
-    ("SSS Fix Translucency Weight", ("DAZ Alt SSS", "Translucency Weight", 1)),
+    ("Alt SSS", None),
+    ("Alt SSS SSS Amount", ("DAZ Alt SSS", "SSS Amount", 1)),
+    ("Alt SSS Diffuse Color", ("DAZ Alt SSS", "Diffuse Color", 4)),
+    ("Alt SSS Translucent Color", ("DAZ Alt SSS", "Translucent Color", 4)),
+    ("Alt SSS Translucency Weight", ("DAZ Alt SSS", "Translucency Weight", 1)),
 
     ("Subsurface", None),
     ("Subsurface Strength", ("DAZ Subsurface", "Fac", 1)),
@@ -464,6 +464,8 @@ class ChannelSetter:
                     elif isGroupType(fromnode, ["DAZ Log Color"]):
                         return fromnode.inputs["Color"].default_value, ncomps
                     elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
+                        if slot.endswith("Color"):
+                            slot = "Color"
                         return fromnode.inputs[slot].default_value, ncomps
                 else:
                     return socket.default_value, ncomps

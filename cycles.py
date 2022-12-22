@@ -1293,7 +1293,7 @@ class CyclesTree(Tree):
             fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS", col=self.column-2)
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
             if self.diffuseInput:
-                self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+                self.links.new(self.diffuseInput.outputs["Color"], fix.inputs["Diffuse Color"])
             self.linkScalar(ssstex, fix, sss, "SSS Amount")
             self.linkColor(transtex, fix, transcolor, "Translucent Color")
             self.linkScalar(wttex, fix, transwt, "Translucency Weight")
