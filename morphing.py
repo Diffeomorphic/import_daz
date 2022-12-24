@@ -971,7 +971,7 @@ class MorphLoader(LoadMorph):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
         if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
-            self.transferToLashes(context)
+            self.transferToFaceMeshes(context)
         if msg:
             print(msg)
         return msg
@@ -1024,10 +1024,9 @@ class MorphLoader(LoadMorph):
                         par = par.parent
 
 
-    def transferToLashes(self, context):
-        from .main import getMatchingMeshes
-        keys = ["eyelash", "tear", "brow", "eyes", "mouth", "hair cap", "beard"]
-        meshes = getMatchingMeshes(self.rig, self.mesh, "head", keys)
+    def transferToFaceMeshes(self, context):
+        from .main import getFaceMeshes
+        meshes = getFaceMeshes(self.rig, self.mesh)
         if meshes:
             print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
             activateObject(context, self.mesh)
@@ -1418,6 +1417,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
+        if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
+            self.transferToFaceMeshes(context)
         if self.message:
             raise DazError(self.message, warning=True)
 

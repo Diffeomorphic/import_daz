@@ -76,7 +76,7 @@ class GlobalSettings:
         self.usePruneNodes = True
 
         self.bumpFactor = 1.0
-        self.useFakeCaustics = True
+        self.useFakeCaustics = False
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
         self.useSssSkin = False

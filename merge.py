@@ -910,18 +910,22 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
         for child in ob.children:
             self.eliminateEmpties(child, context, sub, coll)
         if elim:
-            deletes.append(ob)
             for child in ob.children:
                 wmat = child.matrix_world.copy()
                 if ob.parent_type == 'OBJECT':
                     child.parent = ob.parent
                     child.parent_type = 'OBJECT'
                     setWorldMatrix(child, wmat)
+                    deletes.append(ob)
                 elif ob.parent_type == 'BONE':
                     child.parent = ob.parent
                     child.parent_type = 'BONE'
                     child.parent_bone = ob.parent_bone
                     setWorldMatrix(child, wmat)
+                    deletes.append(ob)
+                elif ob.parent_type == 'VERTEX':
+                    print("Don't delete %s" % ob.name)
+                    pass
                 else:
                     raise DazError("Unknown parent type: %s %s" % (child.name, ob.parent_type))
         for empty in deletes:

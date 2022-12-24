@@ -568,6 +568,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Combine identical materials in scene across objects",
         default = False)
 
+    useApplyTransforms : BoolProperty(
+        name = "Apply Transforms",
+        description = "Apply all transforms to objects that are not bone parented",
+        default = True)
+
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge identical materials",
@@ -591,27 +596,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useMergeGeografts : BoolProperty(
         name = "Merge Geografts",
         description = "Merge selected geografts to active object.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
-        default = False)
-
-    useMergeFaceMeshes : BoolProperty(
-        name = "Merge Face Meshes",
-        description = "Merge separate face meshes (eyelash, brow, tear, beard) to character.\nIneffective if there are unmerged geografts.\nShapekeys are always transferred first",
-        default = False)
-
-    useLashes : BoolProperty(
-        name = "Lashes",
-        default = True)
-
-    useTear : BoolProperty(
-        name = "Tear",
-        default = False)
-
-    useBrows : BoolProperty(
-        name = "Brows",
-        default = False)
-
-    useBeard : BoolProperty(
-        name = "Beard",
         default = False)
 
     useMakeAllBonesPosable : BoolProperty(
@@ -674,6 +658,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("useCreateDuplicates")
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
+        self.layout.prop(self, "useApplyTransforms")
         self.layout.prop(self, "useMakeAllBonesPosable")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
@@ -687,14 +672,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useAdjusters")
-        if (self.useFavoMorphs or
-            self.facs or
-            self.facsdetails or
-            self.facsexpr or
-            self.jcms or
-            self.flexions):
-            self.layout.prop(self, "useTransferFace")
-            self.layout.prop(self, "useTransferShapes")
+        self.layout.prop(self, "useTransferFace")
+        self.layout.prop(self, "useTransferShapes")
         self.layout.separator()
         self.layout.prop(self, "useCombineMaterials")
         self.layout.prop(self, "useSoftbody")
@@ -708,12 +687,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
             self.subprop("useGeoNodes")
-        self.layout.prop(self, "useMergeFaceMeshes")
-        if self.useMergeFaceMeshes:
-            self.subprop("useLashes")
-            self.subprop("useTear")
-            self.subprop("useBrows")
-            self.subprop("useBeard")
         self.layout.prop(self, "useConvertHair")
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "rigType")
@@ -780,14 +753,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     selectSet(ob, True)
             bpy.ops.daz.eliminate_empties()
 
-        # Merge materials
-        if self.useCombineMaterials:
-            allMeshes = []
-            for meshes in self.meshes.values():
-                allMeshes += list(meshes)
-            for meshes in self.hdmeshes.values():
-                allMeshes += list(meshes)
-            if allMeshes:
+        allMeshes = []
+        for meshes in self.meshes.values():
+            allMeshes += list(meshes)
+        for meshes in self.hdmeshes.values():
+            allMeshes += list(meshes)
+        if allMeshes:
+            # Merge materials
+            if self.useCombineMaterials:
                 print("Combine materials across objects")
                 bpy.ops.daz.combine_scene_materials()
 
@@ -843,7 +816,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         clothes = []
         if mainMesh:
             if mainRig:
-                lmeshes = self.getLashes(mainRig, mainMesh)
+                lmeshes = getFaceMeshes(mainRig, mainMesh)
             else:
                 lmeshes = []
             for ob in meshes[1:]:
@@ -886,6 +859,23 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 selectSet(ob, True)
             print("Merge materials")
             bpy.ops.daz.merge_materials()
+
+        if self.useApplyTransforms:
+            # Apply transforms to meshes
+            print("Apply transforms")
+            bpy.ops.object.select_all(action='DESELECT')
+            wmats = []
+            for ob in objects:
+                try:
+                    if ob.parent and ob.parent_type == 'BONE':
+                        wmats.append((ob, ob.matrix_world.copy()))
+                    else:
+                        selectSet(ob, True)
+                except ReferenceError:
+                    pass
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            for ob,wmat in wmats:
+                setWorldMatrix(ob, wmat)
 
         if mainChar and mainRig and mainMesh:
             if self.useFavoMorphs:
@@ -956,16 +946,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     LS.skinColor = self.skinColor
                     for mat in mainMesh.data.materials:
                         guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
-
-        # Merge lashes
-        if lashes:
-            #if self.useTransferShapes or self.useMergeFaceMeshes:
-            #    self.transferShapes(context, mainMesh, lashes, self.useMergeFaceMeshes, "Face", True)
-            if self.useMergeFaceMeshes and activateObject(context, mainMesh):
-                for ob in lashes:
-                    selectSet(ob, True)
-                print("Merge lashes")
-                bpy.ops.daz.merge_meshes(useMergeUvs=True)
 
         # Transfer shapekeys to clothes
         if self.useTransferShapes:
@@ -1067,21 +1047,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         return not ishair
 
 
-    def getLashes(self, rig, ob):
-        keys = []
-        if self.useLashes:
-            keys.append("eyelash")
-        if self.useTear:
-            keys.append("tear")
-        if self.useBrows:
-            keys.append("brow")
-            keys.append("hair cap")
-        if self.useBeard:
-            keys.append("beard")
-        return getMatchingMeshes(rig, ob, "head", keys)
-
-
-def getMatchingMeshes(rig, ob, bname, keys):
+def getFaceMeshes(rig, ob):
     def isDeformBone(bone, mesh):
         if bone.name in mesh.vertex_groups.keys():
             return True
@@ -1091,15 +1057,16 @@ def getMatchingMeshes(rig, ob, bname, keys):
                     return True
         return False
 
-    bone = rig.data.bones.get(bname)
-    if bone is None:
+    head = rig.data.bones.get("head")
+    if head is None:
         return []
     matches = []
+    keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
     for mesh in getMeshChildren(rig):
         if mesh != ob:
             for key in keys:
                 if key in mesh.name.lower():
-                    if isDeformBone(bone, mesh):
+                    if isDeformBone(head, mesh):
                         matches.append(mesh)
     return matches
 
