@@ -1279,6 +1279,9 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
             cns1 = copyRotation(pb, winder, rig)
             cns1.use_offset = True
             cns1.influence = infl
+            cns2 = copyScale(pb, winder, rig)
+            cns2.use_offset = True
+            cns2.influence = infl
             pb.bone.layers = self.windedLayers
 
 #-------------------------------------------------------------
