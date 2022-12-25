@@ -217,7 +217,7 @@ class FrameConverter:
         if trgCharacter is None:
             return anims
 
-        parents = AF.loadEntry(self.srcCharacter, "parents").get("parents")
+        parents = AF.loadEntry(AF.ParentRigs[self.srcCharacter], "parents").get("parents")
         nparents = AF.loadEntry(trgCharacter, "parents").get("parents")
         core = {}
         for bname, parname in parents.items():

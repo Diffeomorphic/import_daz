@@ -480,6 +480,8 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
         if len(clothes) != 1:
             raise DazError("Exactly two meshes must be selected")
         clo = clothes[0]
+        if not clo.DazVisibilityDrivers:
+            raise DazError("Create visibility drivers first")
         props = self.getSelectedProps()
         prop = getHidePropName(clo.name)
         if prop not in rig.keys():

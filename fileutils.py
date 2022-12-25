@@ -70,6 +70,23 @@ class AnimationFolders:
             "michael_8" : "genesis8",
         }
 
+        self.ParentRigs = {
+            "genesis" : "genesis",
+            "genesis_2_female" : "genesis_2_female",
+            "genesis_2_male" : "genesis_2_male",
+            "genesis_3_female" : "genesis_3_female",
+            "genesis_3_male" : "genesis_3_male",
+            "genesis_8_female" : "genesis_8_female",
+            "genesis_8_male" : "genesis_8_male",
+            "genesis_9" : "genesis_9",
+            "victoria_4" : "genesis_3_female",
+            "victoria_7" : "genesis_3_female",
+            "victoria_8" : "genesis_8_female",
+            "michael_4" : "genesis_3_male",
+            "michael_7" : "genesis_3_male",
+            "michael_8" : "genesis_8_male",
+        }
+
         self.TwistBones = {}
         self.TwistBones["genesis3"] = [
             ("lShldrBend", "lShldrTwist"),
