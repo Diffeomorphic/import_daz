@@ -532,7 +532,7 @@ def addMultires(context, ob, hdob, strict):
         if hdfinger == finger:
             print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
             hdob.DazMultires = True
-            mod.levels = 0
+            mod.levels = mod.sculpt_levels = 0
             return 'MULTIRES'
 
     nhdverts = len(hdob.data.vertices)
@@ -554,7 +554,7 @@ def addMultires(context, ob, hdob, strict):
         if hdfinger == finger:
             print('Rebuilt %d subdiv levels for "%s"' % (mod.render_levels, hdob.name))
             hdob.DazMultires = True
-            mod.sculpt_levels = mod.render_levels
+            mod.levels = mod.sculpt_levels = 0
             return 'MULTIRES'
 
     msg = ('Cannot unsubdivide "%s"' % hdob.name)
