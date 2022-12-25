@@ -965,24 +965,12 @@ def srgbToLinearGamma22(srgb):
 #   Save local textures
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveLocalTextures(DazPropsOperator):
-    bl_idname = "daz.save_local_textures"
-    bl_label = "Save Local Textures"
-    bl_description = "Copy textures to the textures subfolder in the blend file's directory"
-
-    useKeepDirs : BoolProperty(
-        name = "Keep Directories",
-        description = "Keep the directory tree from Daz Studio, otherwise flatten the directory structure",
-        default = True)
-
+class LocalTextureSaver:
     @classmethod
     def poll(self, context):
-        return bpy.data.filepath
+        return (bpy.data.filepath and context.object and context.object.type == 'MESH')
 
-    def draw(self, context):
-        self.layout.prop(self, "useKeepDirs")
-
-    def run(self, context):
+    def saveLocalTextures(self, context):
         from shutil import copyfile
         folder = os.path.dirname(bpy.data.filepath).replace("\\", "/")
         if GS.useLowerResFolders:
@@ -1045,6 +1033,23 @@ class DAZ_OT_SaveLocalTextures(DazPropsOperator):
                 tex = mtex.texture
                 if hasattr(tex, "image") and tex.image:
                     self.saveImage(tex.image)
+
+
+class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
+    bl_idname = "daz.save_local_textures"
+    bl_label = "Save Local Textures"
+    bl_description = "Copy textures to the textures subfolder in the blend file's directory"
+
+    useKeepDirs : BoolProperty(
+        name = "Keep Directories",
+        description = "Keep the directory tree from Daz Studio, otherwise flatten the directory structure",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useKeepDirs")
+
+    def run(self, context):
+        self.saveLocalTextures(context)
 
 #-------------------------------------------------------------
 #   Combine identical materials

@@ -30,6 +30,7 @@ import os
 from .error import *
 from .utils import *
 from .fileutils import MultiFile, ImageFile
+from .material import LocalTextureSaver
 from .matedit import MaterialSelector
 
 #----------------------------------------------------------
@@ -216,13 +217,20 @@ def getTargetMaterial(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]
 
 
-class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
+class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSelector, TileFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material"
     bl_options = {'UNDO'}
 
     trgmat : EnumProperty(items=getTargetMaterial, name="Active")
+
+    useSaveLocalTextures : BoolProperty(
+        name = "Save Local Textures",
+        description = "Save local textures if not already done",
+        default = True)
+
+    useKeepDirs = True
 
     useFixTextures : BoolProperty(
         name = "Fix Textures",
@@ -240,6 +248,7 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "useSaveLocalTextures")
         self.layout.prop(self, "useFixTextures")
         self.layout.prop(self, "useMergeMaterials")
         if self.useMergeMaterials:
@@ -251,7 +260,7 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
 
     def invoke(self, context, event):
         ob = context.object
-        if not ob.DazLocalTextures:
+        if False and not ob.DazLocalTextures:
             from .error import invokeErrorMessage
             invokeErrorMessage("Save local textures first")
             return {'CANCELLED'}
@@ -267,6 +276,11 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
         from shutil import copyfile
 
         ob = context.object
+        if not ob.DazLocalTextures:
+            if self.useSaveLocalTextures:
+                self.saveLocalTextures(context)
+            else:
+                raise DazError("Save local textures first")
         if self.useFixTextures:
             self.findMatTiles(ob)
             self.fixTextures(ob, self.trgmat)
@@ -289,7 +303,8 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
 
         texnodes = {}
         for mat in mats:
-            texnodes[mat.name] = self.getTextureNodes(mat)
+            nodes = texnodes[mat.name] = self.getTextureNodes(mat)
+
         if self.useMergeMaterials and self.useStackShells:
             shells0 = self.getShells(mats)
             ashells = self.getShells([amat])
@@ -299,8 +314,6 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                     shells[tname] = data
 
         for key,anode in texnodes[amat.name].items():
-            if anode.image.source == "TILED":
-                raise DazError("Material %s already UDIM  " % amat.name)
             anode.image.source = "TILED"
             anode.extension = "CLIP"
             if anode.image:
@@ -311,8 +324,8 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
             udims = {}
             for mat in mats:
                 nodes = texnodes[mat.name]
-                if key in nodes.keys():
-                    node = nodes[key]
+                node = nodes.get(key)
+                if node and node.image:
                     img = node.image
                     self.updateImage(img, basename, mat.DazUDim)
                     if mat.DazUDim not in udims.keys():
@@ -373,16 +386,18 @@ class DAZ_OT_UdimizeMaterials(DazPropsOperator, MaterialSelector, TileFixer):
                     if link.to_node.type in ["MIX_RGB", "MATH", "GAMMA"]:
                         return getChannel(link.to_node, links)
                     elif link.to_node.type == "BSDF_PRINCIPLED":
-                        return ("PBR_%s" % link.to_socket.name)
+                        return "PBR:%s" % link.to_socket.name
                     elif link.to_node.type == 'GROUP':
-                        return link.to_node.node_tree.name
+                        return "%s:%s" % (link.to_node.node_tree.name, link.to_socket.name)
                     else:
-                        return link.to_node.type
+                        return "%s:%s" % (link.to_node.type, link.to_socket.name)
             return None
 
         texnodes = {}
         for node in mat.node_tree.nodes:
-            if node.type == "TEX_IMAGE":
+            if node.type == "TEX_IMAGE" and node.image:
+                if node.image.source == "TILED":
+                    raise DazError("Material %s already UDIM  " % mat.name)
                 channel = getChannel(node, mat.node_tree.links)
                 texnodes[channel] = node
         return texnodes
@@ -545,7 +560,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 classes = [
     DAZ_OT_TilesFromTextures,
     DAZ_OT_FixTextureTiles,
-    DAZ_OT_UdimizeMaterials,
+    DAZ_OT_MakeUdimMaterials,
     DAZ_OT_SetUDims,
 ]
 
