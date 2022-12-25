@@ -87,42 +87,14 @@ class Accessor:
     def getNewAsset(self, id, ref, strict=True):
         from .files import parseAssetFile
         from .load_json import loadJson
-
         fileref = id.split("#")[0]
         filepath = GS.getAbsPath(fileref)
-        file = None
         if filepath:
             struct = loadJson(filepath)
-            file = parseAssetFile(struct, fileref=fileref)
-            try:
-                return LS.theAssets[ref]
-            except KeyError:
-                pass
+            parseAssetFile(struct, fileref=fileref)
+            return LS.theAssets.get(ref, "")
         else:
-            ref = unquote(fileref)
-            if ref.startswith("name:/@selection"):
-                return None
-            msg = ('Cannot open file:\n "%s"' % ref)
-            reportError(msg, warnPaths=True, trigger=(3,4))
-            return None
-
-        LS.missingAssets[ref] = True
-        if strict and LS.useStrict:
-            msg =("Missing asset:\n  '%s'\n" % ref +
-                  "Fileref\n   %s\n" % fileref +
-                  "Filepath:\n  '%s'\n" % filepath +
-                  "File asset:\n  %s\n" % file )
-            reportError(msg, warnPaths=True, trigger=(3,4))
-        return None
-
-
-    def getOldAsset(self, id):
-        ref = getRef(id, self.fileref)
-        try:
-            return LS.theAssets[ref]
-        except KeyError:
-            pass
-        return self.getNewAsset(id, ref)
+            return ""
 
 
     def getTypedAsset(self, id, type):

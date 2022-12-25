@@ -499,7 +499,10 @@ class GlobalSettings:
 
     def getAbsPath(self, ref):
         path = unquote(ref)
-        if self.caseSensitivePaths:
+        if len(path) > 2 and path[0] == "/" and os.path.exists(path[1:]):
+            # Absolute path
+            return path[1:]
+        elif self.caseSensitivePaths:
             lfolder = os.path.dirname(path).lower()
             lfile = os.path.basename(path).lower()
             folders = self.absPaths.get(lfolder, [])
