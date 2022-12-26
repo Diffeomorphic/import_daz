@@ -71,7 +71,6 @@ class TileFixer:
         for mn,mat in enumerate(ob.data.materials):
             print("  %s: %d" % (mat.name, self.mattiles[mn]))
 
-
     def fixTextures(self, ob, matname):
         def getFolder(ob, matname):
             for mat in ob.data.materials:
@@ -99,15 +98,14 @@ class TileFixer:
                     path = bpy.path.abspath(node.image.filepath)
                     file = os.path.basename(path)
                     fname,ext = os.path.splitext(file)
-                    if len(fname) > 5 and fname[-4:].isdigit():
-                        tile = int(fname[-4:])
-                    else:
+                    tile,base = getTileBase(fname)
+                    if not tile:
                         continue
                     if tile != mattile:
                         if inform:
                             print("Fix %s textures for tile %d" % (mat.name, mattile))
                             inform = False
-                        newpath = os.path.join(folder, "%s%d%s" % (fname[:-4], mattile, ext))
+                        newpath = os.path.join(folder, "%s_%d%s" % (base, mattile, ext))
                         src = bpy.path.abspath(path)
                         if src in images.keys():
                             img = images[src]
@@ -121,7 +119,7 @@ class TileFixer:
                             copyfile(src, trg)
                             img = bpy.data.images.load(trg)
                             img.filepath = bpy.path.relpath(trg)
-                            node.label = "%s%d" % (node.label[:-4], mattile)
+                            node.label = "%s_%d" % (base, mattile)
                             images[src] = img
                         node.image = img
 
@@ -133,10 +131,9 @@ class TileFixer:
             udim = vdim = 0
             if mat.node_tree:
                 for node in mat.node_tree.nodes:
-                    if (node.type == 'TEX_IMAGE' and
-                        node.image):
-                        tile = node.image.name.rsplit("_", 1)[-1]
-                        if len(tile) == 4 and tile.isdigit():
+                    if node.type == 'TEX_IMAGE' and node.image:
+                        tile,base = getTileBase(node.image.name)
+                        if tile:
                             udim = (int(tile) - 1001) % 10
                             vdim = (int(tile) - 1001) // 10
             dims[mn] = (udim, vdim)
@@ -173,6 +170,26 @@ def isShellNode(node):
     return (node.type == 'GROUP' and
             "Influence" in node.inputs.keys() and
             "UV" in node.inputs.keys())
+
+
+def getTileBase(string):
+    def getTileBaseFromList(words):
+        words.reverse()
+        for n,word in enumerate(words[0:2]):
+            if len(word) == 4 and word.isdigit():
+                tile = int(word)
+                if tile >= 1001 and tile <= 1100:
+                    rest = words[0:n] + words[n+1:]
+                    rest.reverse()
+                    return tile, "_".join(rest)
+        return None, ""
+
+    words = string.split("_")
+    tile,base = getTileBaseFromList(words)
+    if tile:
+        return tile, base
+    words = string.split("-")
+    return getTileBaseFromList(words)
 
 #----------------------------------------------------------
 #   Tiles From Textures
@@ -338,7 +355,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             img = anode.image
             if bpy.app.version >= (3, 1, 0):
                 path2,ext2 = os.path.splitext(img.filepath)
-                img.filepath = "%s%s%s" % (path2[:-4],'<UDIM>',ext2)
+                tile,base = getTileBase(path2)
+                if tile:
+                    img.filepath = "%s_<UDIM>%s" % (base,ext2)
             tile0 = img.tiles[0]
             for udim,mname in udims.items():
                 if udim == 0:
@@ -398,7 +417,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         for node in mat.node_tree.nodes:
             if node.type == "TEX_IMAGE" and node.image:
                 if node.image.source == "TILED":
-                    raise DazError("Material %s already UDIM  " % mat.name)
+                    raise DazError("Material %s is already an UDIM material" % mat.name)
                 channel = getChannel(node, mat.node_tree.links)
                 if channel in texnodes.keys():
                     print("Duplicate channel: %s" % channel)
@@ -408,11 +427,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def getBaseName(self, string, udim):
-        du = str(1001 + udim)
-        if string[-4:] == du:
-            string = string[:-4]
-            if string[-1] in ["_", "-"]:
-                string = string[:-1]
+        tile,base = getTileBase(string)
+        if tile == 1001+udim:
+            return base
         return string
 
 
