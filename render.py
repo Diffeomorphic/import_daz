@@ -240,7 +240,7 @@ class WorldTree(CyclesTree):
 
         envnode = self.addNode("ShaderNodeBackground")
         envnode.inputs["Strength"].default_value = strength
-        self.linkColor(tex, envnode, WHITE)
+        self.linkColor(tex, envnode, WHITE, "Color")
         socket = envnode.outputs["Background"]
         return envnode, socket
 
@@ -274,7 +274,7 @@ class WorldTree(CyclesTree):
                 self.linkVector(texco, tex)
 
         bgnode = self.addGroup(BackgroundGroup, "DAZ Background")
-        self.linkColor(tex, bgnode, background)
+        self.linkColor(tex, bgnode, background, "Color")
         bgnode.inputs["Color"].default_value[0:3] = background
         socket = bgnode.outputs["Color"]
         return bgnode, socket

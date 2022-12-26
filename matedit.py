@@ -377,9 +377,12 @@ class ChannelSetter:
                 socket.default_value = self.getItemValue(ncomps, item)
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
                 if fromnode:
-                    if fromnode.type in 'MIX_RGB':
+                    if fromnode.type == 'MIX_RGB':
                         self.ensureColor(ncomps, item)
                         fromnode.inputs[1].default_value = self.getItemValue(4, item)
+                    elif fromnode.type == 'MIX':
+                        self.ensureColor(ncomps, item)
+                        fromnode.inputs[6].default_value = self.getItemValue(4, item)
                     elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
                         fromnode.inputs[0].default_value = self.getItemValue(1, item)
                     elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY_ADD':
@@ -455,6 +458,8 @@ class ChannelSetter:
                 if fromnode:
                     if fromnode.type == 'MIX_RGB':
                         return fromnode.inputs[1].default_value, ncomps
+                    elif fromnode.type == 'MIX':
+                        return fromnode.inputs[6].default_value, ncomps
                     elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
                         return fromnode.inputs[0].default_value, ncomps
                     elif fromnode.type == 'GAMMA':
@@ -767,7 +772,7 @@ class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
 
         for link in socket.links:
             node = link.to_node
-            if node.type in ['MIX_RGB', 'MATH', 'GAMMA', 'INVERT']:
+            if node.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA', 'INVERT']:
                 pass
             elif isGroupType(node, ["DAZ Log Color", "DAZ Color Effect", "DAZ Tinted Effect"]):
                 pass

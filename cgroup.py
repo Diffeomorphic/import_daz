@@ -252,23 +252,23 @@ class Fresnel2Group(CyclesGroup):
         self.links.new(self.inputs.outputs["Normal"], bump.inputs["Normal"])
         bump.inputs["Strength"].default_value = 0
 
-        mix1 = self.addNode("ShaderNodeMixRGB", 2)
-        self.links.new(geo.outputs["Backfacing"], mix1.inputs["Fac"])
-        self.links.new(self.inputs.outputs["IOR"], mix1.inputs[1])
-        self.links.new(divide.outputs["Value"], mix1.inputs[2])
+        mix1,a,b,out1 = self.addMixRgbNode('MIX', 2)
+        self.links.new(geo.outputs["Backfacing"], mix1.inputs[0])
+        self.links.new(self.inputs.outputs["IOR"], a)
+        self.links.new(divide.outputs["Value"], b)
 
-        mix2 = self.addNode("ShaderNodeMixRGB", 2)
-        self.links.new(power.outputs[0], mix2.inputs["Fac"])
-        self.links.new(bump.outputs[0], mix2.inputs[1])
-        self.links.new(geo.outputs["Incoming"], mix2.inputs[2])
+        mix2,a,b,out2 = self.addMixRgbNode('MIX', 2)
+        self.links.new(power.outputs[0], mix2.inputs[0])
+        self.links.new(bump.outputs[0], a)
+        self.links.new(geo.outputs["Incoming"], b)
 
         fresnel1 = self.addNode("ShaderNodeFresnel", 3)
-        self.links.new(mix1.outputs[0], fresnel1.inputs["IOR"])
-        self.links.new(mix2.outputs[0], fresnel1.inputs["Normal"])
+        self.links.new(out1, fresnel1.inputs["IOR"])
+        self.links.new(out2, fresnel1.inputs["Normal"])
         self.links.new(fresnel1.outputs["Fac"], self.outputs.inputs["Dielectric"])
 
         fresnel2 = self.addNode("ShaderNodeFresnel", 3)
-        self.links.new(mix1.outputs[0], fresnel2.inputs["IOR"])
+        self.links.new(out1, fresnel2.inputs["IOR"])
         self.links.new(geo.outputs["Incoming"], fresnel2.inputs["Normal"])
 
         sub = self.addNode("ShaderNodeMath", 4)
@@ -487,21 +487,19 @@ class AltSSSGroup(CyclesGroup):
         hsv2.inputs["Fac"].default_value = 1.0
         self.links.new(self.inputs.outputs["Translucent Color"], hsv2.inputs["Color"])
 
-        dodge1 = self.addNode("ShaderNodeMixRGB", 3)
-        dodge1.blend_type = 'DODGE'
-        self.links.new(self.inputs.outputs["Translucency Weight"], dodge1.inputs["Fac"])
-        self.links.new(hsv1.outputs["Color"], dodge1.inputs["Color1"])
-        self.links.new(self.inputs.outputs["Diffuse Color"], dodge1.inputs["Color2"])
+        dodge1,a,b,out1 = self.addMixRgbNode('DODGE', 3)
+        self.links.new(self.inputs.outputs["Translucency Weight"], dodge1.inputs[0])
+        self.links.new(hsv1.outputs["Color"], a)
+        self.links.new(self.inputs.outputs["Diffuse Color"], b)
 
-        dodge2 = self.addNode("ShaderNodeMixRGB", 3)
-        dodge2.blend_type = 'DODGE'
-        self.links.new(self.inputs.outputs["Translucency Weight"], dodge2.inputs["Fac"])
-        self.links.new(hsv2.outputs["Color"], dodge2.inputs["Color1"])
-        self.links.new(self.inputs.outputs["Translucent Color"], dodge2.inputs["Color2"])
+        dodge2,a,b,out2 = self.addMixRgbNode('DODGE', 3)
+        self.links.new(self.inputs.outputs["Translucency Weight"], dodge2.inputs[0])
+        self.links.new(hsv2.outputs["Color"], a)
+        self.links.new(self.inputs.outputs["Translucent Color"], b)
 
         self.links.new(maprange.outputs["Result"], self.outputs.inputs["Subsurface"])
-        self.links.new(dodge1.outputs["Color"], self.outputs.inputs["Base Color"])
-        self.links.new(dodge2.outputs["Color"], self.outputs.inputs["Subsurface Color"])
+        self.links.new(out1, self.outputs.inputs["Base Color"])
+        self.links.new(out2, self.outputs.inputs["Subsurface Color"])
 
 # ---------------------------------------------------------------------
 #   Color Effect Group
@@ -523,25 +521,23 @@ class ColorEffectGroup(CyclesGroup):
         self.group.outputs.new("NodeSocketColor", "Color")
 
     def getTint(self):
-        return self.inputs
+        return self.inputs.outputs["Color"]
 
     def addNodes(self, args=None):
-        mix = self.addNode("ShaderNodeMixRGB", 2)
-        mix.blend_type = 'MIX'
+        mix,a,b,mixout = self.addMixRgbNode('MIX', 2)
         self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
-        mix.inputs[1].default_value[0:3] = BLACK
+        a.default_value[0:3] = BLACK
         tint = self.getTint()
-        self.links.new(tint.outputs["Color"], mix.inputs[2])
+        self.links.new(tint, b)
 
-        rgb = self.addNode("ShaderNodeMixRGB", 2)
-        rgb.blend_type = 'COLOR'
+        rgb,a,b,rgbout = self.addMixRgbNode('COLOR', 2)
         rgb.inputs[0].default_value = 1.0
-        rgb.inputs[1].default_value[0:3] = WHITE
-        self.links.new(tint.outputs["Color"], rgb.inputs[2])
+        a.default_value[0:3] = WHITE
+        self.links.new(tint, b)
 
         scale = self.addNode("ShaderNodeVectorMath", 3)
         scale.operation = 'SCALE'
-        self.links.new(mix.outputs["Color"], scale.inputs["Vector"])
+        self.links.new(mixout, scale.inputs["Vector"])
         scale.inputs["Scale"].default_value = 1.0
 
         hsv2 = self.addNode("ShaderNodeHueSaturation", 3)
@@ -549,11 +545,11 @@ class ColorEffectGroup(CyclesGroup):
         hsv2.inputs["Saturation"].default_value = 0.0
         hsv2.inputs["Value"].default_value = 1.0
         hsv2.inputs["Fac"].default_value = 1.0
-        self.links.new(mix.outputs["Color"], hsv2.inputs["Color"])
+        self.links.new(mixout, hsv2.inputs["Color"])
 
         self.links.new(scale.outputs[0], self.outputs.inputs["Transmit Fac"])
         self.links.new(hsv2.outputs["Color"], self.outputs.inputs["Intensity Fac"])
-        self.links.new(rgb.outputs["Color"], self.outputs.inputs["Color"])
+        self.links.new(rgbout, self.outputs.inputs["Color"])
 
 
 class TintedEffectGroup(ColorEffectGroup):
@@ -566,12 +562,11 @@ class TintedEffectGroup(ColorEffectGroup):
         self.group.inputs.new("NodeSocketColor", "Tint")
 
     def getTint(self):
-        tint = self.addNode("ShaderNodeMixRGB", 1)
-        tint.blend_type = 'MULTIPLY'
+        tint,a,b,out = self.addMixRgbNode('MULTIPLY', 1)
         tint.inputs[0].default_value = 1.0
-        self.links.new(self.inputs.outputs["Color"], tint.inputs[1])
-        self.links.new(self.inputs.outputs["Tint"], tint.inputs[2])
-        return tint
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(self.inputs.outputs["Tint"], b)
+        return out
 
 # ---------------------------------------------------------------------
 #   Invert Normal Map Group
@@ -790,14 +785,14 @@ class MetalGroupUber(FacMixGroup):
         hsv.inputs["Fac"].default_value = 1.0
         self.links.new(self.inputs.outputs["Color"], hsv.inputs["Color"])
 
-        mix = self.addNode("ShaderNodeMixRGB", 2)
-        self.links.new(fresnel.outputs["Metal"], mix.inputs["Fac"])
-        self.links.new(self.inputs.outputs["Color"], mix.inputs[1])
-        self.links.new(hsv.outputs["Color"], mix.inputs[2])
+        mix,a,b,mixout = self.addMixRgbNode('MIX', 2)
+        self.links.new(fresnel.outputs["Metal"], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(hsv.outputs["Color"], b)
 
         node = self.addNode("ShaderNodeBsdfAnisotropic", 3)
         node.distribution = 'ASHIKHMIN_SHIRLEY'
-        self.links.new(mix.outputs["Color"], node.inputs["Color"])
+        self.links.new(mixout, node.inputs["Color"])
         self.links.new(self.inputs.outputs["Roughness"], node.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Anisotropy"], node.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Rotation"], node.inputs["Rotation"])
@@ -843,14 +838,14 @@ class MetalGroupPbrSkin(FacMixGroup):
         fresnel.inputs["Power"].default_value = 2
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
 
-        mix = self.addNode("ShaderNodeMixRGB", 2)
-        self.links.new(fresnel.outputs["Metal"], mix.inputs["Fac"])
-        self.links.new(self.inputs.outputs["Color"], mix.inputs[1])
-        mix.inputs[2].default_value[0:3] = WHITE
+        mix,a,b,mixout = self.addMixRgbNode('MIX', 2)
+        self.links.new(fresnel.outputs["Metal"], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], a)
+        b.default_value[0:3] = WHITE
 
         glossy = self.addNode("ShaderNodeBsdfGlossy", 3)
         glossy.distribution = 'ASHIKHMIN_SHIRLEY'
-        self.links.new(mix.outputs["Color"], glossy.inputs["Color"])
+        self.links.new(mixout, glossy.inputs["Color"])
         self.links.new(self.inputs.outputs[slot], glossy.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
         return glossy
@@ -1392,14 +1387,14 @@ class NormalGroup(CyclesGroup):
         frame = self.nodes.new("NodeFrame")
         frame.label = "Normal Map Processing"
 
-        rgb = self.addNode("ShaderNodeMixRGB", 3, parent=frame)
+        rgb,a,b,rgbout = self.addMixRgbNode('MIX', 3, parent=frame)
         self.links.new(self.inputs.outputs["Strength"], rgb.inputs[0])
-        rgb.inputs[1].default_value = (0.5, 0.5, 1.0, 1.0)
-        self.links.new(self.inputs.outputs["Color"], rgb.inputs[2])
+        a.default_value = (0.5, 0.5, 1.0, 1.0)
+        self.links.new(self.inputs.outputs["Color"], b)
 
         sub = self.addNode("ShaderNodeVectorMath", 4, parent=frame)
         sub.operation = 'SUBTRACT'
-        self.links.new(rgb.outputs["Color"], sub.inputs[0])
+        self.links.new(rgbout, sub.inputs[0])
         sub.inputs[1].default_value = (0.5, 0.5, 0.5)
 
         add = self.addNode("ShaderNodeVectorMath", 5, parent=frame)
@@ -1591,21 +1586,19 @@ class DecalGroup(CyclesGroup):
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])
         self.links.new(alpha, mult.inputs[1])
 
-        mix2 = self.addNode("ShaderNodeMixRGB", 4)
-        mix2.blend_type = 'MIX'
-        self.links.new(mapping.outputs["Depth Mask"], mix2.inputs[0])
-        self.links.new(self.inputs.outputs["Color"], mix2.inputs[1])
-
-        mix1 = self.addNode("ShaderNodeMixRGB", 4)
-        mix1.blend_type = blendType
+        mix1,a,b,out1 = self.addMixRgbNode(blendType, 4)
         self.links.new(mult.outputs[0], mix1.inputs[0])
-        self.links.new(self.inputs.outputs["Color"], mix1.inputs[1])
-        self.links.new(tex.outputs["Color"], mix1.inputs[2])
-        self.links.new(mix1.outputs["Color"], mix2.inputs[2])
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(tex.outputs["Color"], b)
+
+        mix2,a,b,out2 = self.addMixRgbNode('MIX', 4)
+        self.links.new(mapping.outputs["Depth Mask"], mix2.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(out1, b)
 
         self.links.new(tex.outputs["Color"], self.outputs.inputs["Color"])
         self.links.new(mult.outputs[0], self.outputs.inputs["Alpha"])
-        self.links.new(mix2.outputs[0], self.outputs.inputs["Combined"])
+        self.links.new(out2, self.outputs.inputs["Combined"])
         self.links.new(mapping.outputs["Depth Mask"], self.outputs.inputs["Depth Mask"])
 
 # ---------------------------------------------------------------------
@@ -1708,19 +1701,18 @@ class LayeredGroup(CyclesGroup):
                 self.outnode = firstnode = outnode
             else:
                 self.mixColor(map, texnode, outnode)
-        mix = self.addNode("ShaderNodeMixRGB", 5)
-        mix.blend_type = 'MIX'
+        mix,a,b,mixout = self.addMixRgbNode('MIX', 5)
         mix.inputs[0].default_value = 1.0
         self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
-        self.links.new(firstnode.outputs[0], mix.inputs[1])
-        self.links.new(self.outnode.outputs[0], mix.inputs[2])
+        self.links.new(self.colorOutput(firstnode), a)
+        self.links.new(self.colorOutput(self.outnode), b)
         if False and colorSpace == "NONE":
             gamma = self.addNode("ShaderNodeGamma", 5)
-            self.links.new(mix.outputs["Color"], gamma.inputs["Color"])
+            self.links.new(mixout, gamma.inputs["Color"])
             gamma.inputs["Gamma"].default_value = 1/2.2
             self.links.new(gamma.outputs[0], self.outputs.inputs["Color"])
         else:
-            self.links.new(mix.outputs[0], self.outputs.inputs["Color"])
+            self.links.new(mixout, self.outputs.inputs["Color"])
 
 
     def mixColor(self, map, texnode, outnode):
@@ -1731,12 +1723,11 @@ class LayeredGroup(CyclesGroup):
             elif slot in node.outputs.keys():
                 self.links.new(node.outputs[slot], mix.inputs[0])
             else:
-                mix.inputs[0].default_value = 1
+                fac.default_value = 1
 
         if map.ismask:
             self.mask = outnode
         else:
-            mix = self.addNode("ShaderNodeMixRGB", 4)
             blendType = {
                 "multiply" : 'MULTIPLY',
                 "add" : 'ADD',
@@ -1744,17 +1735,17 @@ class LayeredGroup(CyclesGroup):
                 "alpha_blend" : 'MIX',
                 "blend_source_over" : 'MIX',
             }
-            mix.blend_type = blendType[map.operation]
+            mix,a,b,out = self.addMixRgbNode(blendType[map.operation], 4)
             mix.inputs[0].default_value = map.transparency
             if self.mask:
                 setFactor(map.transparency, self.mask, "Color", mix)
                 self.mask = None
-                mix.use_alpha = False
+                #mix.use_alpha = False
             else:
                 setFactor(map.transparency, texnode, "Alpha", mix)
-                mix.use_alpha = False
-            self.links.new(self.outnode.outputs["Color"], mix.inputs[1])
-            self.links.new(outnode.outputs["Color"], mix.inputs[2])
+                #mix.use_alpha = False
+            self.links.new(self.outnode.outputs["Color"], a)
+            self.links.new(outnode.outputs["Color"], b)
             self.outnode = mix
 
 #----------------------------------------------------------

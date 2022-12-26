@@ -1632,18 +1632,16 @@ class HairTree(CyclesTree):
 
 
     def linkRamp(self, ramp, texs, node, slot):
-        src = ramp
+        out = ramp.outputs[0]
         for tex in texs:
             if tex:
-                mix = self.addNode("ShaderNodeMixRGB", col=self.column-1)
-                mix.blend_type = 'MULTIPLY'
+                mix,a,b,out = self.addMixRgbNode('MULTIPLY', col=self.column-1)
                 mix.inputs[0].default_value = 1.0
-                self.links.new(tex.outputs[0], mix.inputs[1])
-                self.links.new(ramp.outputs[0], mix.inputs[2])
-                src = mix
+                self.links.new(tex.outputs[0], a)
+                self.links.new(ramp.outputs[0], b)
                 break
-        self.links.new(src.outputs[0], node.inputs[slot])
-        return src
+        self.links.new(out, node.inputs[slot])
+        return out
 
 
     def setRoughness(self, diffuse, rough):

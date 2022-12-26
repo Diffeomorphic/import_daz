@@ -65,6 +65,37 @@ class Tree:
             node.parent = parent
         return node
 
+    if bpy.app.version < (3,4,0):
+        MixColor1 = 1
+        MixColor2 = 2
+        MixColorOut = 0
+    else:
+        MixColor1 = 6
+        MixColor2 = 7
+        MixColorOut = 2
+
+    def addMixRgbNode(self, blendtype, col=None, parent=None):
+        if bpy.app.version < (3,4,0):
+            node = self.addNode("ShaderNodeMixRGB", col, parent=parent)
+        else:
+            node = self.addNode("ShaderNodeMix", col, parent=parent)
+            node.data_type = 'RGBA'
+        node.blend_type = blendtype
+        a = node.inputs[self.MixColor1]
+        b = node.inputs[self.MixColor2]
+        out = node.outputs[self.MixColorOut]
+        return node,a,b,out
+
+
+    def colorOutput(self, node):
+        if node.type in ['TEX_IMAGE', 'MIX_RGB', 'INVERT', 'MATH', 'GROUP', 'TEX_ENVIRONMENT']:
+            return node.outputs[0]
+        elif node.type == 'MIX':
+            return node.outputs[2]
+        else:
+            print("COO", node.type)
+            halt
+
 
     def addColumn(self):
         self.column += 1

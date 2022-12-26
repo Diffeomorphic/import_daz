@@ -306,21 +306,20 @@ class MixNormalTextureGroup(CyclesGroup):
 
 
     def addNodes(self, args):
-        mix = self.addNode("ShaderNodeMixRGB", 1)
-        mix.blend_type = 'OVERLAY'
-        self.links.new(self.inputs.outputs["Fac"], mix.inputs["Fac"])
-        self.links.new(self.inputs.outputs["Color1"], mix.inputs["Color1"])
-        self.links.new(self.inputs.outputs["Color2"], mix.inputs["Color2"])
-        self.links.new(mix.outputs["Color"], self.outputs.inputs["Color"])
+        mix,a,b,out = self.addMixRgbNode('OVERLAY', 1)
+        self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Color1"], a)
+        self.links.new(self.inputs.outputs["Color2"], b)
+        self.links.new(out, self.outputs.inputs["Color"])
+
 
     def addNodes0(self, args):
         val1 = self.addNode("ShaderNodeValue", 1)
         val1.outputs[0].default_value = 2
-        vmult1 = self.addNode("ShaderNodeMixRGB", 2)
-        vmult1.blend_type = 'MULTIPLY'
+        vmult1,a,b,multout1 = self.addMixRgbNode('MULTIPLY', 2)
         vmult1.inputs[0].default_value = 1
-        self.links.new(val1.outputs[0], vmult1.inputs[1])
-        self.links.new(self.inputs.outputs["Color1"], vmult1.inputs[2])
+        self.links.new(val1.outputs[0], a)
+        self.links.new(self.inputs.outputs["Color1"], b)
 
         val2 = self.addNode("ShaderNodeValue", 1)
         val2.outputs[0].default_value = -1
@@ -351,70 +350,62 @@ class MixNormalTextureGroup(CyclesGroup):
         self.links.new(val5.outputs[0], comb3.inputs[1])
         self.links.new(val6.outputs[0], comb3.inputs[2])
 
-        vadd1 = self.addNode("ShaderNodeMixRGB", 3)
-        vadd1.blend_type = 'ADD'
+        vadd1,a,b,addout1 = self.addMixRgbNode('ADD', 3)
         vadd1.inputs[0].default_value = 1
-        self.links.new(vmult1.outputs[0], vadd1.inputs[1])
-        self.links.new(comb1.outputs[0], vadd1.inputs[2])
+        self.links.new(multout1, a)
+        self.links.new(comb1.outputs[0], b)
 
-        vmult2 = self.addNode("ShaderNodeMixRGB", 3)
-        vmult2.blend_type = 'MULTIPLY'
+        vmult2,a,b,multout2 = self.addMixRgbNode('MULTIPLY', 3)
         vmult2.inputs[0].default_value = 1
-        self.links.new(self.inputs.outputs["Color2"], vmult2.inputs[1])
-        self.links.new(comb2.outputs[0], vmult2.inputs[2])
+        self.links.new(self.inputs.outputs["Color2"], a)
+        self.links.new(comb2.outputs[0], b)
 
-        vadd2 = self.addNode("ShaderNodeMixRGB", 3)
-        vadd2.blend_type = 'ADD'
+        vadd2,a,b,addout2 = self.addMixRgbNode('ADD', 3)
         vadd2.inputs[0].default_value = 1
-        self.links.new(vmult2.outputs[0], vadd2.inputs[1])
-        self.links.new(comb3.outputs[0], vadd2.inputs[2])
+        self.links.new(multout2, a)
+        self.links.new(comb3.outputs[0], b)
 
         dot = self.addNode("ShaderNodeVectorMath", 4)
         dot.operation = 'DOT_PRODUCT'
-        self.links.new(vadd1.outputs[0], dot.inputs[0])
-        self.links.new(vadd2.outputs[0], dot.inputs[1])
+        self.links.new(addout1, dot.inputs[0])
+        self.links.new(addout2, dot.inputs[1])
 
         sep1 = self.addNode("ShaderNodeSeparateRGB", 4)
-        self.links.new(vadd1.outputs[0], sep1.inputs[0])
+        self.links.new(addout1, sep1.inputs[0])
 
-        vdiv = self.addNode("ShaderNodeMixRGB", 5)
-        vdiv.blend_type = 'DIVIDE'
+        vdiv,a,b,divout = self.addMixRgbNode('DIVIDE', 5)
         vdiv.inputs[0].default_value = 1
-        self.links.new(dot.outputs["Value"], vdiv.inputs[1])
-        self.links.new(sep1.outputs[2], vdiv.inputs[2])
+        self.links.new(dot.outputs["Value"], a)
+        self.links.new(sep1.outputs[2], b)
 
-        vmult3 = self.addNode("ShaderNodeMixRGB", 5)
-        vmult3.blend_type = 'MULTIPLY'
+        vmult3,a,b,multout3 = self.addMixRgbNode('MULTIPLY', 5)
         self.links.new(self.inputs.outputs["Fac"], vmult3.inputs[0])
-        self.links.new(vadd1.outputs[0], vmult3.inputs[1])
-        self.links.new(vdiv.outputs[0], vmult3.inputs[2])
+        self.links.new(addout1, a)
+        self.links.new(divout, b)
 
-        vsub2 = self.addNode("ShaderNodeMixRGB", 5)
-        vsub2.blend_type = 'SUBTRACT'
+        vsub2,a,b,subout2 = self.addMixRgbNode('SUBTRACT', 5)
         self.links.new(self.inputs.outputs["Fac"], vsub2.inputs[0])
-        self.links.new(vmult3.outputs[0], vsub2.inputs[1])
-        self.links.new(vadd2.outputs[0], vsub2.inputs[2])
+        self.links.new(multout3, a)
+        self.links.new(addout2, b)
 
         norm = self.addNode("ShaderNodeVectorMath", 6)
         norm.operation = 'NORMALIZE'
-        self.links.new(vsub2.outputs[0], norm.inputs[0])
+        self.links.new(subout2, norm.inputs[0])
 
         val7 = self.addNode("ShaderNodeValue", 6)
         val7.outputs[0].default_value = 0.5
 
-        vmult4 = self.addNode("ShaderNodeMixRGB", 7)
-        vmult4.blend_type = 'MULTIPLY'
+        vmult4,a,b,multout4 = self.addMixRgbNode('MULTIPLY', 7)
         vmult4.inputs[0].default_value = 1
-        self.links.new(norm.outputs["Vector"], vmult4.inputs[1])
-        self.links.new(val7.outputs[0], vmult4.inputs[2])
+        self.links.new(norm.outputs["Vector"], a)
+        self.links.new(val7.outputs[0], b)
 
-        vadd4 = self.addNode("ShaderNodeMixRGB", 7)
-        vadd4.blend_type = 'ADD'
+        vadd4,a,b,addout4 = self.addMixRgbNode('ADD', 7)
         vadd4.inputs[0].default_value = 1
-        self.links.new(vmult4.outputs[0], vadd4.inputs[1])
-        self.links.new(val7.outputs[0], vadd4.inputs[2])
+        self.links.new(multout4, a)
+        self.links.new(val7.outputs[0], b)
 
-        self.links.new(vadd4.outputs[0], self.outputs.inputs["Color"])
+        self.links.new(addout4, self.outputs.inputs["Color"])
 
 
 class NormalAdder:

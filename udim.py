@@ -409,7 +409,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             for link in links:
                 if link.from_node == node:
                     sname = link.to_socket.name
-                    if link.to_node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
+                    if link.to_node.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA']:
                         return "%s:%s" % (getChannel(link.to_node, links), sname)
                     elif link.to_node.type == 'BSDF_PRINCIPLED':
                         return "PBR:%s" % sname

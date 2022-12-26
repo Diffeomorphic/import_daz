@@ -133,7 +133,7 @@ class PbrTree(CyclesTree):
                 self.useCutout = True
             self.pbr.inputs["Alpha"].default_value = alpha
             if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Alpha"])
+                self.links.new(self.colorOutput(tex), self.pbr.inputs["Alpha"])
         else:
             CyclesTree.buildCutout(self)
 
@@ -282,7 +282,7 @@ class PbrTree(CyclesTree):
         if tex and useTex:
             tex = self.multiplyScalarTex(clamp(factor), tex)
             if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Specular"])
+                self.links.new(self.colorOutput(tex), self.pbr.inputs["Specular"])
 
     #-------------------------------------------------------------
     #   Anisotropy
@@ -359,7 +359,7 @@ class PbrTree(CyclesTree):
         if tex and useTex:
             tex = self.multiplyScalarTex(clamp(value), tex)
             if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Clearcoat"])
+                self.links.new(self.colorOutput(tex), self.pbr.inputs["Clearcoat"])
 
         rough,tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
         self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
@@ -496,7 +496,7 @@ class PbrTree(CyclesTree):
         mix = self.addNode("ShaderNodeMixShader")
         mix.inputs[0].default_value = weight
         if wttex:
-            self.links.new(wttex.outputs[0], mix.inputs[0])
+            self.links.new(self.colorOutput(wttex), mix.inputs[0])
         self.links.new(node1.outputs[0], mix.inputs[1])
         self.links.new(node2.outputs[0], mix.inputs[2])
         return mix
