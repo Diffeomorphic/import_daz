@@ -720,7 +720,7 @@ class CyclesTree(Tree):
             else:
                 self.normal = self.buildNormalMap(weight, tex, uvname)
                 if wttex:
-                    self.links.new(wtself.colorOutput(tex), self.normal.inputs["Strength"])
+                    self.links.new(self.colorOutput(wttex), self.normal.inputs["Strength"])
                 if self.bump:
                     self.links.new(self.normal.outputs["Normal"], self.bump.inputs["Normal"])
 
@@ -1811,7 +1811,7 @@ class CyclesTree(Tree):
         mix.use_alpha = False
         mix.inputs[0].default_value = fac
         if factex:
-            self.links.new(facself.colorOutput(tex), mix.inputs[0])
+            self.links.new(self.colorOutput(factex), mix.inputs[0])
         if color1:
             mix.inputs[1].default_value[0:3] = color1
         if tex1:
