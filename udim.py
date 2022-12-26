@@ -383,14 +383,15 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         def getChannel(node, links):
             for link in links:
                 if link.from_node == node:
+                    sname = link.to_socket.name
                     if link.to_node.type in ["MIX_RGB", "MATH", "GAMMA"]:
-                        return getChannel(link.to_node, links)
+                        return "%s:%s" % (getChannel(link.to_node, links), sname)
                     elif link.to_node.type == "BSDF_PRINCIPLED":
-                        return "PBR:%s" % link.to_socket.name
+                        return "PBR:%s" % sname
                     elif link.to_node.type == 'GROUP':
-                        return "%s:%s" % (link.to_node.node_tree.name, link.to_socket.name)
+                        return "%s:%s" % (link.to_node.node_tree.name, sname)
                     else:
-                        return "%s:%s" % (link.to_node.type, link.to_socket.name)
+                        return "%s:%s" % (link.to_node.type, sname)
             return None
 
         texnodes = {}
@@ -399,7 +400,10 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 if node.image.source == "TILED":
                     raise DazError("Material %s already UDIM  " % mat.name)
                 channel = getChannel(node, mat.node_tree.links)
-                texnodes[channel] = node
+                if channel in texnodes.keys():
+                    print("Duplicate channel: %s" % channel)
+                else:
+                    texnodes[channel] = node
         return texnodes
 
 
