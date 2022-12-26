@@ -319,10 +319,14 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             raise DazError("No materials selected")
 
         texnodes = {}
+        hasmapping = False
         for mat in mats:
-            nodes = texnodes[mat.name] = self.getTextureNodes(mat)
+            nodes,hasmaps = self.getTextureNodes(mat)
+            texnodes[mat.name] = nodes
+            if mat == amat:
+                hasmapping = hasmaps
 
-        if self.useMergeMaterials and self.useStackShells:
+        if self.useMergeMaterials and self.useStackShells and not hasmapping:
             shells0 = self.getShells(mats)
             ashells = self.getShells([amat])
             shells = {}
@@ -370,6 +374,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             self.addSkipZeroUvs(mat)
 
         if self.useMergeMaterials:
+            if hasmapping:
+                raise DazError("Cannot merge materials because %s has mapping nodes" % amat.name, warning=True)
             for f in ob.data.polygons:
                 if f.material_index in mnums:
                     f.material_index = amnum
@@ -403,9 +409,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             for link in links:
                 if link.from_node == node:
                     sname = link.to_socket.name
-                    if link.to_node.type in ["MIX_RGB", "MATH", "GAMMA"]:
+                    if link.to_node.type in ['MIX_RGB', 'MATH', 'GAMMA']:
                         return "%s:%s" % (getChannel(link.to_node, links), sname)
-                    elif link.to_node.type == "BSDF_PRINCIPLED":
+                    elif link.to_node.type == 'BSDF_PRINCIPLED':
                         return "PBR:%s" % sname
                     elif link.to_node.type == 'GROUP':
                         return "%s:%s" % (link.to_node.node_tree.name, sname)
@@ -414,16 +420,20 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             return None
 
         texnodes = {}
+        hasmaps = False
         for node in mat.node_tree.nodes:
-            if node.type == "TEX_IMAGE" and node.image:
+            if node.type == 'TEX_IMAGE' and node.image:
                 if node.image.source == "TILED":
                     raise DazError("Material %s is already an UDIM material" % mat.name)
                 channel = getChannel(node, mat.node_tree.links)
-                if channel in texnodes.keys():
+                links = node.inputs["Vector"].links
+                if links and links[0].from_node.type == 'MAPPING':
+                    hasmaps = True
+                elif channel in texnodes.keys():
                     print("Duplicate channel: %s" % channel)
                 else:
                     texnodes[channel] = node
-        return texnodes
+        return texnodes, hasmaps
 
 
     def getBaseName(self, string, udim):

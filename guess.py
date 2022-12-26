@@ -133,13 +133,13 @@ def hasDiffuseTexture(mat, enforce):
         color = (1,1,1,1)
         node = None
         for node1 in mat.node_tree.nodes.values():
-            if node1.type == "BSDF_DIFFUSE":
+            if node1.type == 'BSDF_DIFFUSE':
                 node = node1
                 name = "Color"
-            elif node1.type == "BSDF_PRINCIPLED":
+            elif node1.type == 'BSDF_PRINCIPLED':
                 node = node1
                 name = "Base Color"
-            elif node1.type in ["HAIR_INFO", "BSDF_HAIR", "BSDF_HAIR_PRINCIPLED"]:
+            elif node1.type in ['HAIR_INFO', 'BSDF_HAIR', 'BSDF_HAIR_PRINCIPLED']:
                 return False
         if node is None:
             return True

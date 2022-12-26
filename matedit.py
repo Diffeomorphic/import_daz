@@ -243,26 +243,26 @@ TweakableChannels = OrderedDict([
     ("Translucency Color", ("DAZ Translucent", "Color", 4)),
 
     ("Principled", None),
-    ("Principled Base Color", ("BSDF_PRINCIPLED", "Base Color", 4)),
-    ("Principled Subsurface", ("BSDF_PRINCIPLED", "Subsurface", 1)),
-    ("Principled Subsurface Radius", ("BSDF_PRINCIPLED", "Subsurface Radius", 3)),
-    ("Principled Subsurface Color", ("BSDF_PRINCIPLED", "Subsurface Color", 4)),
-    ("Principled Metallic", ("BSDF_PRINCIPLED", "Metallic", 1)),
-    ("Principled Specular", ("BSDF_PRINCIPLED", "Specular", 1)),
-    ("Principled Specular Tint", ("BSDF_PRINCIPLED", "Specular Tint", 1)),
-    ("Principled Roughness", ("BSDF_PRINCIPLED", "Roughness", 1)),
-    ("Principled Anisotropic", ("BSDF_PRINCIPLED", "Anisotropic", 1)),
-    ("Principled Anisotropic Rotation", ("BSDF_PRINCIPLED", "Anisotropic Rotation", 1)),
-    ("Principled Sheen", ("BSDF_PRINCIPLED", "Sheen", 1)),
-    ("Principled Sheen Tint", ("BSDF_PRINCIPLED", "Sheen Tint", 1)),
-    ("Principled Clearcoat", ("BSDF_PRINCIPLED", "Clearcoat", 1)),
-    ("Principled Clearcoat Roughness", ("BSDF_PRINCIPLED", "Clearcoat Roughness", 1)),
-    ("Principled IOR", ("BSDF_PRINCIPLED", "IOR", 1)),
-    ("Principled Transmission", ("BSDF_PRINCIPLED", "Transmission", 1)),
-    ("Principled Transmission Roughness", ("BSDF_PRINCIPLED", "Transmission Roughness", 1)),
-    ("Principled Emission", ("BSDF_PRINCIPLED", "Emission", 4)),
-    ("Principled Emission Strength", ("BSDF_PRINCIPLED", "Emission Strength", 1)),
-    ("Principled Alpha", ("BSDF_PRINCIPLED", "Alpha", 1)),
+    ("Principled Base Color", ('BSDF_PRINCIPLED', "Base Color", 4)),
+    ("Principled Subsurface", ('BSDF_PRINCIPLED', "Subsurface", 1)),
+    ("Principled Subsurface Radius", ('BSDF_PRINCIPLED', "Subsurface Radius", 3)),
+    ("Principled Subsurface Color", ('BSDF_PRINCIPLED', "Subsurface Color", 4)),
+    ("Principled Metallic", ('BSDF_PRINCIPLED', "Metallic", 1)),
+    ("Principled Specular", ('BSDF_PRINCIPLED', "Specular", 1)),
+    ("Principled Specular Tint", ('BSDF_PRINCIPLED', "Specular Tint", 1)),
+    ("Principled Roughness", ('BSDF_PRINCIPLED', "Roughness", 1)),
+    ("Principled Anisotropic", ('BSDF_PRINCIPLED', "Anisotropic", 1)),
+    ("Principled Anisotropic Rotation", ('BSDF_PRINCIPLED', "Anisotropic Rotation", 1)),
+    ("Principled Sheen", ('BSDF_PRINCIPLED', "Sheen", 1)),
+    ("Principled Sheen Tint", ('BSDF_PRINCIPLED', "Sheen Tint", 1)),
+    ("Principled Clearcoat", ('BSDF_PRINCIPLED', "Clearcoat", 1)),
+    ("Principled Clearcoat Roughness", ('BSDF_PRINCIPLED', "Clearcoat Roughness", 1)),
+    ("Principled IOR", ('BSDF_PRINCIPLED', "IOR", 1)),
+    ("Principled Transmission", ('BSDF_PRINCIPLED', "Transmission", 1)),
+    ("Principled Transmission Roughness", ('BSDF_PRINCIPLED', "Transmission Roughness", 1)),
+    ("Principled Emission", ('BSDF_PRINCIPLED', "Emission", 4)),
+    ("Principled Emission Strength", ('BSDF_PRINCIPLED', "Emission Strength", 1)),
+    ("Principled Alpha", ('BSDF_PRINCIPLED', "Alpha", 1)),
 
     ("Top Coat", None),
     ("Top Coat Color", ("DAZ Top Coat", "Color", 4)),
@@ -377,14 +377,14 @@ class ChannelSetter:
                 socket.default_value = self.getItemValue(ncomps, item)
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
                 if fromnode:
-                    if fromnode.type in "MIX_RGB":
+                    if fromnode.type in 'MIX_RGB':
                         self.ensureColor(ncomps, item)
                         fromnode.inputs[1].default_value = self.getItemValue(4, item)
-                    elif fromnode.type == "MATH" and fromnode.operation == 'MULTIPLY':
+                    elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
                         fromnode.inputs[0].default_value = self.getItemValue(1, item)
-                    elif fromnode.type == "MATH" and fromnode.operation == 'MULTIPLY_ADD':
+                    elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY_ADD':
                         fromnode.inputs[1].default_value = self.getItemValue(1, item)
-                    elif fromnode.type in ["TEX_IMAGE", "GAMMA"]:
+                    elif fromnode.type in ['TEX_IMAGE', 'GAMMA']:
                         self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
                     elif isGroupType(fromnode, ["DAZ Log Color"]):
                         self.ensureColor(ncomps, item)
@@ -453,13 +453,13 @@ class ChannelSetter:
                 socket = node.inputs[slot]
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
                 if fromnode:
-                    if fromnode.type == "MIX_RGB":
+                    if fromnode.type == 'MIX_RGB':
                         return fromnode.inputs[1].default_value, ncomps
-                    elif fromnode.type == "MATH" and fromnode.operation == 'MULTIPLY':
+                    elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
                         return fromnode.inputs[0].default_value, ncomps
-                    elif fromnode.type == "GAMMA":
+                    elif fromnode.type == 'GAMMA':
                         return fromnode.inputs[0].default_value, ncomps
-                    elif fromnode.type == "TEX_IMAGE":
+                    elif fromnode.type == 'TEX_IMAGE':
                         return WHITE, ncomps
                     elif isGroupType(fromnode, ["DAZ Log Color"]):
                         return fromnode.inputs["Color"].default_value, ncomps
@@ -985,12 +985,12 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
         default = "Diffuse")
 
     slots = {
-        "Diffuse" : ("BSDF_DIFFUSE", "Color"),
+        "Diffuse" : ('BSDF_DIFFUSE', "Color"),
         "Glossy" : ("DAZ Glossy", "Color"),
         "Translucency" : ("DAZ Translucent", "Color"),
         "SSS" : ("DAZ SSS", "Color"),
-        "PBase" : ("BSDF_PRINCIPLED", "Base Color"),
-        "PSSS" : ("BSDF_PRINCIPLED", "Subsurface Color"),
+        "PBase" : ('BSDF_PRINCIPLED', "Base Color"),
+        "PSSS" : ('BSDF_PRINCIPLED', "Subsurface Color"),
         "Bump" : ("BUMP", "Height"),
     }
 
@@ -1702,7 +1702,7 @@ class DAZ_OT_ActivateDiffuse(DazOperator):
                 return node.inputs["Color"].links
             elif node.type == 'BSDF_DIFFUSE':
                 return node.inputs["Color"].links
-            elif node.type == "BSDF_PRINCIPLED":
+            elif node.type == 'BSDF_PRINCIPLED':
                 return node.inputs["Base Color"].links
         return []
 

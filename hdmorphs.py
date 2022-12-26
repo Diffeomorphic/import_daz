@@ -230,7 +230,7 @@ class DispAdder:
         disp.inputs["Midlevel"].default_value = self.midlevel
         disp.inputs["Scale"].default_value = self.scale
         tree.links.new(texco.outputs["UV"], disp.inputs["UV"])
-        for node in findNodes(tree, "OUTPUT_MATERIAL"):
+        for node in findNodes(tree, 'OUTPUT_MATERIAL'):
             tree.links.new(disp.outputs["Displacement"], node.inputs["Displacement"])
         if self.usePrune:
             pruneNodeTree(tree)

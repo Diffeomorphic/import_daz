@@ -1803,11 +1803,11 @@ class FadeHairTree(HairTree):
         if mat.node_tree is None:
             print("Material %s has no nodes" % mat.name)
             return
-        elif findNode(mat.node_tree, "TRANSPARENCY"):
+        elif findNode(mat.node_tree, 'TRANSPARENCY'):
             print("Hair material %s already has fading roots" % mat.name)
             return
         self.recoverTree(mat)
-        links = findLinksTo(self.tree, "OUTPUT_MATERIAL")
+        links = findLinksTo(self.tree, 'OUTPUT_MATERIAL')
         if links:
             link = links[0]
             fade = self.addGroup(FadeGroup, "DAZ Fade Roots", col=5)
@@ -1823,7 +1823,7 @@ class FadeHairTree(HairTree):
         self.tree = mat.node_tree
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
-        self.info = findNode(self.tree, "HAIR_INFO")
+        self.info = findNode(self.tree, 'HAIR_INFO')
         for col in range(NCOLUMNS):
             self.ycoords[col] -= YSIZE
 
