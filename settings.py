@@ -592,6 +592,7 @@ class LocalSettings:
         self.fps = 30
         self.integerFrames = True
         self.mappingNodes = []
+        self.layeredGroups = {}
         self.missingAssets = {}
         self.hasInstanceChildren = {}
         self.hdFailures = []

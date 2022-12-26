@@ -1701,7 +1701,7 @@ class LayeredGroup(CyclesGroup):
         self.outnode = None
         self.mask = None
         for asset,map in zip(assets, maps):
-            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, "NONE")
+            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, colorSpace)
             if innode:
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
             if self.outnode is None:

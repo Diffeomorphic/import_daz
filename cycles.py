@@ -1777,21 +1777,26 @@ class CyclesTree(Tree):
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
             name = unquote(channel["image"])
+            if name in self.layeredGroups.keys():
+                return self.layeredGroups[name]
         else:
             name = "Layered"
-        if name in self.layeredGroups.keys() and name != "Layered":
-            return self.layeredGroups[name]
+        node = self.addNode("ShaderNodeGroup", col)
+        tree = LS.layeredGroups.get(name)
+        if tree:
+            node.node_tree = tree
         else:
-            node = self.addNode("ShaderNodeGroup", col)
-            node.width = 240
-            node.label = name
             group = LayeredGroup()
             group.create(node, name, self)
-            self.linkVector(self.texco, node)
             group.addTextureNodes(assets, maps, colorSpace, isMask)
-            node.inputs["Influence"].default_value = 1.0
-            self.layeredGroups[name] = node
-            return node
+            if name != "Layered":
+                LS.layeredGroups[name] = node.node_tree
+        node.width = 240
+        node.label = name
+        self.linkVector(self.texco, node)
+        node.inputs["Influence"].default_value = 1.0
+        self.layeredGroups[name] = node
+        return node
 
 
     def mixTexs(self, op, tex1, tex2, slot1=0, slot2=0, color1=None, color2=None, fac=1, factex=None):
