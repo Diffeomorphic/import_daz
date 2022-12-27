@@ -45,26 +45,30 @@ from .fileutils import DazExporter
 #   Morph sets
 #-------------------------------------------------------------
 
-theStandardMorphSets = ["Standard", "Units", "Expressions", "Head", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
-theCustomMorphSets = ["Custom"]
-theJCMMorphSets = ["Jcms", "Flexions"]
-theMorphSets = theStandardMorphSets + theCustomMorphSets + theJCMMorphSets + ["Visibility"]
+class MorphSets:
+    def __init__(self):
+        self.Standards = ["Standard", "Units", "Expressions", "Head", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
+        self.Customs = ["Custom"]
+        self.JCMs = ["Jcms", "Flexions"]
+        self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
-theAdjusters = {
-    "Standard" : "Adjust Standard",
-    "Custom" : "Adjust Custom",
-    "Units" : "Adjust Units",
-    "Expressions" : "Adjust Expressions",
-    "Head" : "Adjust Head",
-    "Visemes" : "Adjust Visemes",
-    "Facs" : "Adjust FACS",
-    "Facsdetails" : "Adjust FACS Details",
-    "Facsexpr" : "Adjust FACS Expressions",
-    "Body" : "Adjust Body Morphs",
-    "Head" : "Adjust Head Morphs",
-    "Jcms" : "Adjust JCMs",
-    "Flexions" : "Adjust Flexions",
-}
+        self.Adjusters = {
+            "Standard" : "Adjust Standard",
+            "Custom" : "Adjust Custom",
+            "Units" : "Adjust Units",
+            "Expressions" : "Adjust Expressions",
+            "Head" : "Adjust Head",
+            "Visemes" : "Adjust Visemes",
+            "Facs" : "Adjust FACS",
+            "Facsdetails" : "Adjust FACS Details",
+            "Facsexpr" : "Adjust FACS Expressions",
+            "Body" : "Adjust Body Morphs",
+            "Head" : "Adjust Head Morphs",
+            "Jcms" : "Adjust JCMs",
+            "Flexions" : "Adjust Flexions",
+        }
+
+MS = MorphSets()
 
 def getMorphs0(ob, morphset, sets, category):
     if morphset == "All":
@@ -96,7 +100,7 @@ def getMorphs0(ob, morphset, sets, category):
 
 
 def prunePropGroup(ob, pg, morphset):
-    if morphset in theJCMMorphSets:
+    if morphset in MS.JCMs:
         return
     idxs = [n for n,item in enumerate(pg.values()) if item.name not in ob.keys()]
     if idxs:
@@ -110,7 +114,7 @@ def getAllLowerMorphNames(rig):
     props = []
     for cat in rig.DazMorphCats:
         props += [morph.name.lower() for morph in cat.morphs]
-    for morphset in theStandardMorphSets:
+    for morphset in MS.Standards:
         pg = getattr(rig, "Daz"+morphset)
         props += [prop.lower() for prop in pg.keys()]
     return [prop for prop in props if "jcm" not in prop]
@@ -147,16 +151,16 @@ def getMorphsExternal(ob, morphset, category, activeOnly):
         raise DazError("get_morphs: First argument must be a Blender object, but got '%s'" % ob)
     morphset = morphset.capitalize()
     if morphset == "All":
-        morphset = theMorphSets
-    elif morphset not in theMorphSets:
-        raise DazError("get_morphs: Morphset must be 'All' or one of %s, not '%s'" % (theMorphSets, morphset))
+        morphset = MS.Morphsets
+    elif morphset not in MS.Morphsets:
+        raise DazError("get_morphs: Morphset must be 'All' or one of %s, not '%s'" % (MS.Morphsets, morphset))
     pgs = getMorphs0(ob, morphset, None, category)
     mdict = {}
     rig = None
     if ob.type == 'ARMATURE':
         if activeOnly:
             rig = ob
-        #if morphset in theJCMMorphSets:
+        #if morphset in MS.JCMs:
         #    raise DazError("JCM morphs are stored in the mesh object")
         for pg in pgs:
             for key in pg.keys():
@@ -165,7 +169,7 @@ def getMorphsExternal(ob, morphset, category, activeOnly):
     elif ob.type == 'MESH':
         if activeOnly:
             rig = ob.parent
-        #if morphset not in theJCMMorphSets:
+        #if morphset not in MS.JCMs:
         #    raise DazError("Only JCM morphs are stored in the mesh object")
         skeys = ob.data.shape_keys
         if skeys is None:
@@ -216,7 +220,7 @@ class MorphGroup:
                 if key[0:2] == "Dz":
                     raise DazError("OLD morphs", rig, key)
         elif self.morphset == "All":
-            for mset in theStandardMorphSets:
+            for mset in MS.Standards:
                 pgs = getattr(rig, "Daz%s" % mset)
                 morphs += [key for key in pgs.keys()]
             for cat in rig.DazMorphCats:
@@ -491,7 +495,7 @@ class GeneralMorphSelector(Selector):
 
 
     def getKeys(self, rig, ob):
-        morphs = getMorphList(rig, self.morphset, sets=theStandardMorphSets)
+        morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
         keys = [(item.name, item.text, "All") for item in morphs]
         for cat in rig.DazMorphCats:
             for item in cat.morphs:
@@ -516,7 +520,7 @@ class GeneralMorphSelector(Selector):
         self.morphset = "All"
         self.morphnames = {}
         self.morphnames["All"] = []
-        for morphset in theStandardMorphSets:
+        for morphset in MS.Standards:
             theMorphEnums.append((morphset, morphset, morphset))
             pg = getattr(self.rig, "Daz"+morphset)
             self.morphnames["All"] += list(pg.keys())
@@ -660,6 +664,7 @@ class MorphPaths:
 
         for char in charPaths.keys():
             charFiles = self.morphFiles[char] = {}
+            typeNames = self.morphNames[char] = {}
 
             for key,struct in charPaths[char].items():
                 if key in ["name", "hd-morphs"]:
@@ -674,9 +679,8 @@ class MorphPaths:
                 if type not in charFiles.keys():
                     charFiles[type] = OrderedDict()
                 typeFiles = charFiles[type]
-                if type not in self.morphNames.keys():
-                    self.morphNames[type] = OrderedDict()
-                typeNames = self.morphNames[type]
+                if type not in typeNames.keys():
+                    typeNames[type] = OrderedDict()
 
                 if isinstance(struct["prefix"], list):
                     prefixes = struct["prefix"]
@@ -697,8 +701,6 @@ class MorphPaths:
                 for dazpath in GS.getDazPaths():
                     folderpath = "%s/%s" % (dazpath, folder)
                     folderpath = bpy.path.resolve_ncase(folderpath)
-                    #if not os.path.exists(folderpath) and GS.caseSensitivePaths:
-                    #    folderpath = fixBrokenPath(folderpath)
                     if os.path.exists(folderpath):
                         files = list(os.listdir(folderpath))
                         files.sort()
@@ -707,12 +709,12 @@ class MorphPaths:
                             if ext not in [".duf", ".dsf"]:
                                 continue
                             isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
-                            if isright:
-                                fname = fname.lower()
+                            key = fname.lower()
+                            if isright and key not in typeNames.keys():
                                 string = "%s/%s" % (folderpath, file)
                                 string = string.replace("//", "/")
                                 typeFiles[name] = bpy.path.resolve_ncase(string)
-                                typeNames[fname] = name
+                                typeNames[key] = name
 
 
     def isRightType(self, fname, prefixes, strips, includes, excludes):
@@ -804,8 +806,6 @@ class DAZ_OT_Update(DazOperator):
 
     def run(self, context):
         MP.setupMorphPaths(True)
-        print(MP.morphFiles.items())
-        print("UU", MP.morphNames.items())
 
 
 class DAZ_OT_SelectAllMorphs(DazOperator):
@@ -1071,11 +1071,10 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
 
 
     def loadStandardMorphs(self):
-        global theAdjusters
         if self.rig:
             self.rig.DazMorphPrefixes = False
             self.findIked()
-        self.adjuster = theAdjusters[self.morphset]
+        self.adjuster = MS.Adjusters[self.morphset]
         namepaths = []
         for mesh in self.meshes:
             self.mesh = mesh
@@ -1659,7 +1658,7 @@ def removeFromPropGroup(pgs, prop):
 
 
 def removeFromAllMorphsets(rig, prop):
-    for morphset in theStandardMorphSets:
+    for morphset in MS.Standards:
         pgs = getattr(rig, "Daz" + morphset)
         removeFromPropGroup(pgs, prop)
     for cat in rig.DazMorphCats.values():
@@ -1791,7 +1790,7 @@ class MorphRemover:
 
 
     def removeFromPropGroups(self, rig, prop):
-        for morphset in theStandardMorphSets:
+        for morphset in MS.Standards:
             pgs = getattr(rig, "Daz" + morphset)
             removeFromPropGroup(pgs, prop)
 
@@ -2365,7 +2364,7 @@ class DAZ_OT_AddDrivenValueNodes(DazOperator, Selector, DriverUser, IsMesh):
     bl_description = "Add driven value nodes"
     bl_options = {'UNDO'}
 
-    allSets = theMorphSets
+    allSets = MS.Morphsets
 
     def getKeys(self, rig, ob):
         skeys = ob.data.shape_keys
@@ -3114,7 +3113,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
             raise DazError("No meshes with shapekeys selected")
 
         self.morphnames = {}
-        for morphset in theStandardMorphSets:
+        for morphset in MS.Standards:
             pgs = getattr(rig, "Daz"+morphset)
             for pg in pgs:
                 self.morphnames[pg.name] = pg.text
@@ -3329,11 +3328,11 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
                 return
         useSuffix = self.onMorphSuffix
         self.onMorphSuffix = 'NONE'
-        for morphset in theStandardMorphSets:
-            self.adjuster = theAdjusters[morphset]
+        for morphset in MS.Standards:
+            self.adjuster = MS.Adjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", True)
-        for morphset in theJCMMorphSets:
-            self.adjuster = theAdjusters[morphset]
+        for morphset in MS.JCMs:
+            self.adjuster = MS.Adjusters[morphset]
             self.loadMorphSet(context, morphset, ustruct, morphset, "", False)
         self.onMorphSuffix = useSuffix
         for key in ustruct["morphs"].keys():
@@ -3549,7 +3548,7 @@ def register():
     bpy.types.Object.DazMorphAuto = BoolProperty(default = False)
 
     bpy.types.Object.DazMorphPrefixes = BoolProperty(default = True)
-    for morphset in theMorphSets:
+    for morphset in MS.Morphsets:
         setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
         setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))
     bpy.types.Object.DazMorphUrls = CollectionProperty(type = DazMorphInfoGroup)

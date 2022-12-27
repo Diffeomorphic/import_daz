@@ -29,6 +29,8 @@ import bpy
 from .utils import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
+from .morphing import MS
+
 
 #----------------------------------------------------------
 #   Panels
@@ -554,16 +556,14 @@ class DAZ_PT_Morphs:
 
 
     def hasAdjustProp(self, rig):
-        from .morphing import theAdjusters
-        adj = theAdjusters[self.morphset]
+        adj = MS.Adjusters[self.morphset]
         return (adj in rig.keys())
 
 
     def draw(self, context):
         scn = context.scene
         rig = self.getCurrentRig(context)
-        from .morphing import theAdjusters
-        adj = theAdjusters[self.morphset]
+        adj = MS.Adjusters[self.morphset]
         if adj in rig.keys():
             self.layout.prop(rig, propRef(adj))
         if not self.hasTheseMorphs(rig):
