@@ -1077,7 +1077,7 @@ def getFaceMeshes(rig, ob):
 def makeRootCollection(grpname, context):
     root = bpy.data.collections.new(name=grpname)
     root.name = grpname
-    context.scene.collection.children.link(root)
+    context.collection.children.link(root)
     return root
 
 #------------------------------------------------------------------

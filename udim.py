@@ -271,7 +271,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         self.layout.prop(self, "useSaveLocalTextures")
         self.layout.prop(self, "useFixTextures")
         self.layout.prop(self, "mergeCase")
-        if self.mergeCase:
+        if self.mergeCase != 'NONE':
             self.layout.prop(self, "useStackShells")
         self.layout.prop(self, "trgmat")
         self.layout.label(text="Materials To Merge")
