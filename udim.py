@@ -254,10 +254,13 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names",
         default = True)
 
-    useMergeMaterials : BoolProperty(
+    mergeCase : EnumProperty(
+        items = [('NONE', "None", "Don't merge UDIM materials"),
+                 ('ALL', "All", "Merge all UDIM materials with the active material"),
+                 ('NOMAP', "No Mapping Nodes", "Merge UDIM materials unless the active material has a mapping node")],
         name = "Merge Materials",
-        description = "Merge materials and not only textures.\nIf on, some info may be lost.\nIf off, Merge Materials must be called afterwards",
-        default = False)
+        description = "Merge materials and not only textures.\nThis may cause some information loss.\nIf not, Merge Materials can be called afterwards",
+        default = 'NONE')
 
     useStackShells : BoolProperty(
         name = "Stack Shells",
@@ -267,8 +270,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
     def draw(self, context):
         self.layout.prop(self, "useSaveLocalTextures")
         self.layout.prop(self, "useFixTextures")
-        self.layout.prop(self, "useMergeMaterials")
-        if self.useMergeMaterials:
+        self.layout.prop(self, "mergeCase")
+        if self.mergeCase:
             self.layout.prop(self, "useStackShells")
         self.layout.prop(self, "trgmat")
         self.layout.label(text="Materials To Merge")
@@ -326,7 +329,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             if mat == amat:
                 hasmapping = hasmaps
 
-        if self.useMergeMaterials and self.useStackShells and not hasmapping:
+        useMerge = (self.mergeCase == 'ALL' or (self.mergeCase == 'NOMAP' and not hasmapping))
+        if useMerge and self.useStackShells:
             shells0 = self.getShells(mats)
             ashells = self.getShells([amat])
             shells = {}
@@ -373,8 +377,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         for mat in mats:
             self.addSkipZeroUvs(mat)
 
-        if self.useMergeMaterials:
-            if hasmapping:
+        if self.mergeCase != 'NONE':
+            if self.mergeCase == 'NOMAP' and hasmapping:
                 raise DazError("Cannot merge materials because %s has mapping nodes" % amat.name, warning=True)
             for f in ob.data.polygons:
                 if f.material_index in mnums:

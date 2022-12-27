@@ -81,10 +81,10 @@ class Accessor:
                 reportError(msg, trigger=(2,3))
             return None
         else:
-            return self.getNewAsset(id, ref, strict)
+            return self.getNewAsset(id, ref)
 
 
-    def getNewAsset(self, id, ref, strict=True):
+    def getNewAsset(self, id, ref):
         from .files import parseAssetFile
         from .load_json import loadJson
         fileref = id.split("#")[0]
@@ -92,9 +92,9 @@ class Accessor:
         if filepath:
             struct = loadJson(filepath)
             parseAssetFile(struct, fileref=fileref)
-            return LS.theAssets.get(ref, "")
+            return LS.theAssets.get(ref)
         else:
-            return ""
+            return None
 
 
     def getTypedAsset(self, id, type):
@@ -103,7 +103,7 @@ class Accessor:
             type is None or
             isinstance(asset,type)):
             return asset
-        if self.caller:
+        if self.caller and self.caller != self:
             asset = self.caller.getTypedAsset(id, type)
             if asset:
                 return asset
