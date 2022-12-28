@@ -1236,6 +1236,7 @@ class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
 
 
     def run(self, context):
+        from .driver import Driver
         ob = context.object
         mod = getModifier(ob, 'SUBSURF')
         if not mod:
@@ -1244,12 +1245,16 @@ class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
 
         startProgress("Apply Subsurf Modifier")
         coords = []
-        if ob.data.shape_keys:
+        drivers = []
+        skeys = ob.data.shape_keys
+        if skeys:
             # Store shapekey coordinates
-            for skey in ob.data.shape_keys.key_blocks:
+            for skey in skeys.key_blocks:
                 coord = [v.co.copy() for v in skey.data]
                 coords.append((skey.name, coord))
-
+            if skeys.animation_data:
+                for fcu in skeys.animation_data.drivers:
+                    drivers.append(Driver(fcu, True))
             # Remove shapekeys
             skeys = list(ob.data.shape_keys.key_blocks)
             skeys.reverse()
@@ -1289,6 +1294,18 @@ class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
         activateObject(context, ob)
         bpy.ops.object.delete(use_global=False)
         activateObject(context, nob)
+
+        # Restore drivers
+        nskeys = nob.data.shape_keys
+        if nskeys:
+            for driver in drivers:
+                words = driver.data_path.split('"')
+                if words[0] == "key_blocks[":
+                    nskey = nskeys.key_blocks.get(words[1])
+                    if nskey:
+                        channel = driver.data_path.rsplit(".",1)[-1]
+                        fcu = nskey.driver_add(channel)
+                        driver.fill(fcu)
 
 #-------------------------------------------------------------
 #   Print statistics
