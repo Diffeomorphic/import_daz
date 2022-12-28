@@ -340,7 +340,8 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazBumpFactor")
-        box.prop(scn, "DazFakeCaustics")
+        if bpy.app.version < (3,4,0):
+            box.prop(scn, "DazFakeCaustics")
         box.prop(scn, "DazImageInterpolation")
         box.prop(scn, "DazHandleRenderSettings")
         box.prop(scn, "DazHandleLightSettings")

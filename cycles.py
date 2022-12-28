@@ -1428,7 +1428,10 @@ class CyclesTree(Tree):
             return weight,wttex
         node,color = self.buildRefractionNode()
         self.mixWithActive(weight, wttex, node)
-        if GS.useFakeCaustics and not self.inShell and not self.owner.isThinWall():
+        if (GS.useFakeCaustics and
+            bpy.app.version < (3,4,0) and
+            not self.inShell and
+            not self.owner.isThinWall()):
             from .cgroup import FakeCausticsGroup
             self.addColumn()
             node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[color], force=True)
