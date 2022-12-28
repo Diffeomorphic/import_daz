@@ -1744,8 +1744,8 @@ class LayeredGroup(CyclesGroup):
             else:
                 setFactor(map.transparency, texnode, "Alpha", mix)
                 #mix.use_alpha = False
-            self.links.new(self.outnode.outputs["Color"], a)
-            self.links.new(outnode.outputs["Color"], b)
+            self.links.new(self.colorOutput(self.outnode), a)
+            self.links.new(self.colorOutput(outnode), b)
             self.outnode = mix
 
 #----------------------------------------------------------

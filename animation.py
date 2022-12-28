@@ -141,13 +141,14 @@ class FrameConverter:
     #   Convert animations
     #-------------------------------------------------------------
 
-    def prepareAnimations(self, anims, rig):
+    def prepareAnimations(self, anims, rig, first):
+        affectBones = (first and self.affectBones)
         locks = []
-        if self.affectBones:
+        if affectBones:
             bonemap,locks = self.setupBoneMap(anims, rig)
         nanims = []
         for banim,vanim in anims:
-            if self.affectBones:
+            if affectBones:
                 nbanim = {}
                 for bname,frames in banim.items():
                     nname = bonemap.get(bname)
@@ -159,7 +160,7 @@ class FrameConverter:
                 nbanim = banim
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
-        if self.affectBones and self.useConvert:
+        if affectBones and self.useConvert:
             self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
 
@@ -774,13 +775,13 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
         if rig.type == 'ARMATURE':
             setMode('POSE')
             self.prepareRig(rig)
-        nanims,locks = self.prepareAnimations(anims, rig)
+        nanims,locks = self.prepareAnimations(anims, rig, True)
         again = self.handleMissingMorphs(context, rig)
         if again:
             if self.useMakePosable:
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
-            nanims,locks = self.prepareAnimations(anims, rig)
+            nanims,locks = self.prepareAnimations(anims, rig, False)
         self.clearPose(rig, offset)
         prop = None
         result = self.animateBones(context, nanims, offset, prop, filepath)

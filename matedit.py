@@ -1197,7 +1197,10 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
                     for node in mat.node_tree.nodes:
                         if (node.type == 'GROUP' and
                             "Influence" in node.inputs.keys()):
-                            key = node.label
+                            if "Color" in node.outputs.keys():
+                                key = "%s Layers" % mat.name
+                            else:
+                                key = node.label
                             if key not in self.shells.keys():
                                self.shells[key] = []
                                item = scn.DazFloats.add()
