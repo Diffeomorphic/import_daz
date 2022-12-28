@@ -307,6 +307,9 @@ class GeoNode(Node, SimNode):
         if ob.type == 'MESH':
             if GS.usePruneNodes:
                 pruneUvMaps(ob)
+            for mnum,dmat in enumerate(self.materials.values()):
+                if dmat:
+                    dmat.correctEmitArea(ob, mnum)
             scaleEyeMoisture(ob)
             if hdob and hdob != ob:
                 if GS.usePruneNodes:
@@ -1238,7 +1241,7 @@ class Geometry(Asset, Channels):
             reportError(msg, trigger=(2,3))
         me.materials.append(dmat.rna)
         self.dmaterials.append(dmat)
-        dmat.correctAreas(self, me, mnum)
+        dmat.correctBumpArea(self, me)
         if dmat.uv_set and dmat.uv_set.checkSize(me):
             self.uv_set = dmat.uv_set
         if GS.useAutoSmooth:

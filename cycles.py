@@ -117,18 +117,8 @@ class CyclesMaterial(Material):
 
     def postbuild(self):
         Material.postbuild(self)
-        #self.correctAreas()
         if self.tree:
             self.tree.postbuild()
-
-
-    def correctAreas(self, geo, me, mnum):
-        if self.geoemit:
-            nodes = list(geo.nodes.values())
-            self.correctEmitArea(nodes, me, mnum)
-        if self.geobump:
-            area = geo.getBumpArea(me, self.geobump.keys())
-            self.correctBumpArea(area)
 
 
     def addGeoBump(self, tex, socket):
@@ -141,7 +131,10 @@ class CyclesMaterial(Material):
         self.geobump[key][1].append(socket)
 
 
-    def correctBumpArea(self, area):
+    def correctBumpArea(self, geo, me):
+        if not self.geobump:
+            return
+        area = geo.getBumpArea(me, self.geobump.keys())
         if area <= 0.0:
             return
         for tex,sockets in self.geobump.values():
@@ -165,9 +158,12 @@ class CyclesMaterial(Material):
                 socket.default_value = height
 
 
-    def correctEmitArea(self, nodes, me, mnum):
-        ob = nodes[0].rna
-        ob.data = me2 = me.copy()
+    def correctEmitArea(self, ob, mnum):
+        if not self.geoemit:
+            return
+        me = ob.data
+        me2 = me.copy()
+        ob.data = me2
         wmat = ob.matrix_world.copy()
         me2.transform(wmat)
         setWorldMatrix(ob, Matrix())
