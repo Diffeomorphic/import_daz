@@ -122,8 +122,7 @@ class FrameConverter:
                 conv = {}
         else:
             print("Could not auto-detect character in duf/dsf file")
-        bonemap = OrderedDict()
-        return conv, twists, bonemap
+        return conv, twists
 
 
     def getRigifyLocks(self, rig, conv):
@@ -141,13 +140,16 @@ class FrameConverter:
     #   Convert animations
     #-------------------------------------------------------------
 
-    def prepareAnimations(self, anims, rig, first):
+    def prepareAnimations(self, anims, oanims, rig, again):
         locks = []
-        if self.affectBones:
+        if self.affectBones and not again:
             bonemap,locks = self.setupBoneMap(anims, rig)
         nanims = []
-        for banim,vanim in anims:
-            if self.affectBones:
+        for anim,oanim in zip(anims, oanims):
+            banim,vanim = anim
+            if again:
+                nbanim,_ = oanim
+            elif self.affectBones:
                 nbanim = {}
                 for bname,frames in banim.items():
                     nname = bonemap.get(bname)
@@ -159,7 +161,7 @@ class FrameConverter:
                 nbanim = banim
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
-        if self.affectBones and self.useConvert:
+        if self.affectBones and not again and self.useConvert:
             self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
 
@@ -168,7 +170,8 @@ class FrameConverter:
     #-------------------------------------------------------------
 
     def setupBoneMap(self, anims, rig):
-        conv,twists,bonemap = self.getConv(anims[0][0], rig)
+        conv,twists = self.getConv(anims[0][0], rig)
+        bonemap = OrderedDict()
         locks = self.getRigifyLocks(rig, conv)
         for banim,vanim in anims:
             bonenames = list(banim.keys())
@@ -774,13 +777,13 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
         if rig.type == 'ARMATURE':
             setMode('POSE')
             self.prepareRig(rig)
-        nanims,locks = self.prepareAnimations(anims, rig, True)
+        nanims,locks = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
             if self.useMakePosable:
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
-            nanims,locks = self.prepareAnimations(anims, rig, False)
+            nanims,_ = self.prepareAnimations(anims, nanims, rig, True)
         self.clearPose(rig, offset)
         prop = None
         result = self.animateBones(context, nanims, offset, prop, filepath)
@@ -2034,9 +2037,10 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def setupConverter(self, rig):
-        conv,twists,bonemap = self.getConv(rig, rig)
+        conv,twists = self.getConv(rig, rig)
         self.conv = {}
         self.twists = []
+        bonemap = OrderedDict()
         if conv:
             self.twists = twists
             for mbone,dbone in conv.items():

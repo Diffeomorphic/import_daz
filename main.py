@@ -583,9 +583,22 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Merge separate toes into a single toe bone",
         default = False)
 
-    useTransferShapes : BoolProperty(
-        name = "Transfer Shapekeys",
+    useTransferClothes : BoolProperty(
+        name = "Transfer To Clothes",
         description = "Transfer shapekeys from character to clothes",
+        default = True)
+
+    useTransferGeografts : BoolProperty(
+        name = "Transfer To Geografts",
+        description = "Transfer shapekeys from character to geografts.\nAlways enabled if geografts are merged",
+        default = True)
+
+    useTransferFace : BoolProperty(
+        name = "Transfer To Face Meshes",
+        description = (
+            "Transfer shapekeys from character to face meshes\n" +
+            "like eyelashes, tears, brows and beards.\n" +
+            "Can be disabled if face meshes will be converted to particle hair"),
         default = True)
 
     useSoftbody : BoolProperty(
@@ -618,14 +631,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Dependence on FBM and FHM morphs is ignored.\n" +
                        "Useful if the character is baked"),
         default = False)
-
-    useTransferFace : BoolProperty(
-        name = "Transfer To Face Meshes",
-        description = (
-            "Automatically transfer shapekeys to face meshes\n" +
-            "like eyelashes, tears, brows and beards.\n" +
-            "Can be disabled if face meshes will be converted to particle hair"),
-        default = True)
 
     useConvertHair : BoolProperty(
         name = "Convert Hair",
@@ -673,7 +678,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useTransferFace")
-        self.layout.prop(self, "useTransferShapes")
+        self.layout.prop(self, "useTransferGeografts")
+        self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
         self.layout.prop(self, "useCombineMaterials")
         self.layout.prop(self, "useSoftbody")
@@ -910,7 +916,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         jcms = self.jcms,
                         flexions = self.flexions,
                         useAdjusters = self.useAdjusters,
-                        useTransferFace = self.useTransferFace)
+                        useTransferFace = False)
 
         # Add softbody simulation
         if self.useSoftbody and mainRig and mainMesh and activateObject(context, mainMesh):
@@ -928,7 +934,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Merge geografts
         if geografts:
-            if self.useTransferShapes or self.useMergeGeografts:
+            if self.useTransferGeografts or self.useMergeGeografts:
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
                         self.transferShapes(context, cob, aobs, self.useMergeGeografts, "Body", True)
@@ -947,9 +953,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     for mat in mainMesh.data.materials:
                         guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
 
-        # Transfer shapekeys to clothes
-        if self.useTransferShapes:
+        # Transfer shapekeys to clothes and lashes
+        if self.useTransferClothes:
             self.transferShapes(context, mainMesh, clothes, False, "Body", False)
+        if self.useTransferFace:
+            self.transferShapes(context, mainMesh, lashes, False, "Face", True)
 
         if mainRig and activateObject(context, mainRig):
             # Make all bones posable
