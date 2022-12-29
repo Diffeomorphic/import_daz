@@ -142,13 +142,12 @@ class FrameConverter:
     #-------------------------------------------------------------
 
     def prepareAnimations(self, anims, rig, first):
-        affectBones = (first and self.affectBones)
         locks = []
-        if affectBones:
+        if self.affectBones:
             bonemap,locks = self.setupBoneMap(anims, rig)
         nanims = []
         for banim,vanim in anims:
-            if affectBones:
+            if self.affectBones:
                 nbanim = {}
                 for bname,frames in banim.items():
                     nname = bonemap.get(bname)
@@ -160,7 +159,7 @@ class FrameConverter:
                 nbanim = banim
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
-        if affectBones and self.useConvert:
+        if self.affectBones and self.useConvert:
             self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
 
