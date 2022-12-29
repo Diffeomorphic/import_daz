@@ -88,13 +88,10 @@ class Tree:
 
 
     def colorOutput(self, node):
-        if node.type in ['TEX_IMAGE', 'MIX_RGB', 'INVERT', 'MATH', 'GROUP', 'TEX_ENVIRONMENT']:
-            return node.outputs[0]
-        elif node.type == 'MIX':
+        if node.type == 'MIX':
             return node.outputs[2]
         else:
-            print("COO", node.type)
-            halt
+            return node.outputs[0]
 
 
     def addColumn(self):
