@@ -129,7 +129,7 @@ class PbrTree(CyclesTree):
         if self.pbr and "Alpha" in self.pbr.inputs.keys() and not self.postPBR:
             alpha,tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1)
             if alpha < 1 or tex:
-                self.owner.setTransSettings(False, False, WHITE, alpha)
+                self.owner.setTransSettings(None, False, WHITE, alpha)
                 self.useCutout = True
             self.pbr.inputs["Alpha"].default_value = alpha
             if tex:
@@ -453,7 +453,7 @@ class PbrTree(CyclesTree):
             #  principled roughness = 0
             #  principled clearcoat = (iray refraction index - 1) * 10 * iray glossy layered weight
             #  principled clearcoat roughness = 0
-            self.owner.setTransSettings(True, False, color, 0.1)
+            self.owner.setTransSettings(True, True, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
             strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)

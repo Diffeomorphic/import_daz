@@ -185,12 +185,15 @@ class CyclesMaterial(Material):
     def setTransSettings(self, useRefraction, useBlend, color, alpha):
         LS.usedFeatures["Transparent"] = True
         mat = self.rna
-        if useBlend:
+        if useRefraction is None and mat.blend_method != 'OPAQUE':
+            pass
+        elif useBlend:
             mat.blend_method = 'BLEND'
             mat.show_transparent_back = False
         else:
             mat.blend_method = 'HASHED'
-        mat.use_screen_refraction = useRefraction
+        if useRefraction is not None:
+            mat.use_screen_refraction = useRefraction
         if hasattr(mat, "transparent_shadow_method"):
             mat.transparent_shadow_method = 'HASHED'
         else:
@@ -1461,7 +1464,7 @@ class CyclesTree(Tree):
         if (self.owner.isThinWall() or
             (ior == 1 and iortex is None)):
             node.inputs["Thin Wall"].default_value = 1
-            self.owner.setTransSettings(False, True, color, 0.1)
+            self.owner.setTransSettings(True, True, color, 0.1)
         else:
             node.inputs["Thin Wall"].default_value = 0
             self.owner.setTransSettings(True, False, color, 0.2)
@@ -1484,7 +1487,7 @@ class CyclesTree(Tree):
                 self.mixWithActive(alpha, tex, node)
             node.inputs["Color"].default_value[0:3] = WHITE
             if alpha < 1 or tex:
-                self.owner.setTransSettings(True, False, WHITE, alpha)
+                self.owner.setTransSettings(None, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
             if self.emit and GS.useGhostLight:
                 self.addColumn()
