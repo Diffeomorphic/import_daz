@@ -148,6 +148,9 @@ class PbrTree(CyclesTree):
             color = self.getColor("getChannelEmissionColor", BLACK)
             if not isBlack(color):
                 self.addEmitColor(self.pbr, "Emission")
+                socket = self.pbr.inputs["Emission Strength"]
+                strength = self.getLuminance(socket)
+                socket.default_value = strength
         else:
             CyclesTree.buildEmission(self)
             self.postPBR = True

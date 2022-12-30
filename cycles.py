@@ -1511,8 +1511,9 @@ class CyclesTree(Tree):
             self.addColumn()
             emit = self.addGroup(EmissionGroup, "DAZ Emission")
             self.addEmitColor(emit, "Color")
-            strength = self.getLuminance(emit)
-            emit.inputs["Strength"].default_value = strength
+            socket = emit.inputs["Strength"]
+            strength = self.getLuminance(socket)
+            socket.default_value = strength
             self.linkCycles(emit, "BSDF")
             self.cycles = self.emit = emit
             self.addOneSided()
@@ -1541,14 +1542,14 @@ class CyclesTree(Tree):
             self.links.new(mult.outputs[0], emit.inputs[slot])
 
 
-    def getLuminance(self, emit):
+    def getLuminance(self, socket):
         lum = self.getValue(["Luminance"], 1500)
         # "cd/m^2", "kcd/m^2", "cd/ft^2", "cd/cm^2", "lm", "W"
         units = self.getValue(["Luminance Units"], 3)
         factors = [1, 1000, 10.764, 10000, 1, 1]
         strength = lum/2 * factors[units] / 15000
         if units >= 4:
-            self.owner.geoemit.append(emit.inputs["Strength"])
+            self.owner.geoemit.append(socket)
             if units == 5:
                 strength *= self.getValue(["Luminous Efficacy"], 1)
         return strength
