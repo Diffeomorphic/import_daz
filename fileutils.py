@@ -52,6 +52,7 @@ class AnimationFolders:
         self.ikposes = {}
         self.presets = {}
         self.lowpoly = {}
+        self.altmorphs = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",
@@ -106,14 +107,17 @@ class AnimationFolders:
             self.RestPoseItems.append((fname, name, name))
 
 
-    def loadEntry(self, char, folder):
+    def loadEntry(self, char, folder, strict=True):
         table = getattr(self, folder)
         if char in table.keys():
             return table[char]
         filepath = os.path.join(os.path.dirname(__file__), "data", folder, char +  ".json")
         print("Load", filepath)
         if not os.path.exists(filepath):
-            raise DazError("File %s    \n does not exist" % filepath)
+            if strict:
+                raise DazError("File %s    \n does not exist" % filepath)
+            else:
+                data = {}
         else:
             with safeOpen(filepath, "r") as fp:
                 data = json.load(fp, object_pairs_hook=OrderedDict)

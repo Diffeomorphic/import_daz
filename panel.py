@@ -360,6 +360,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.copy_props")
         self.layout.operator("daz.copy_bone_drivers")
+        self.layout.operator("daz.save_morph_names")
         self.layout.separator()
         self.layout.operator("daz.update_slider_limits")
         self.layout.operator("daz.import_dbz")

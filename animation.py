@@ -311,6 +311,7 @@ class FrameConverter:
                     self.used[alias] = True
                 continue
             for nprop,factor in formulas.items():
+                factor *= self.multiplier
                 if nprop not in nstruct.keys():
                     nstruct[nprop] = {}
                 nframes = nstruct[nprop]
@@ -337,6 +338,10 @@ class FrameConverter:
 
     def getFormulas(self, rig, prop):
         alias = self.alias.get(prop)
+        if prop in self.altmorphs.keys():
+            alt,factor = self.altmorphs[prop]
+        else:
+            alt = "***"
         if alias and alias in rig.keys() or alias in self.shapekeys.keys():
             formula = {alias : 1.0}
         elif alias and alias in self.formulas.keys():
@@ -345,6 +350,8 @@ class FrameConverter:
             formula = self.formulas2[alias]
         elif prop in rig.keys() or prop in self.shapekeys.keys():
             formula = {prop : 1.0}
+        elif alt in rig.keys() or alt in self.shapekeys.keys():
+            formula = {prop : factor}
         elif prop in self.formulas.keys():
             formula = self.formulas[prop]
         elif prop in self.formulas2.keys():
@@ -534,6 +541,12 @@ class MorphOptions:
         description = "Load morphs to mesh shapekeys instead of rig properties",
         default = False)
 
+    multiplier : FloatProperty(
+        name = "Multiplier",
+        description = "Multiply all morphs with this factor",
+        min = 0.1, max = 10.0,
+        default = 1.0)
+
     useLoadMissing : BoolProperty(
         name = "Load Missing Morphs",
         description = "Load missing morphs",
@@ -566,6 +579,7 @@ class MorphOptions:
 
     def draw(self, context):
         self.layout.prop(self, "useClearMorphs")
+        self.layout.prop(self, "multiplier")
         self.layout.prop(self, "useShapekeys")
         if not self.useShapekeys:
             self.layout.prop(self, "useScanned")
@@ -1299,6 +1313,7 @@ class StandardAnimation:
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
+        self.altmorphs = {}
         if self.affectMorphs:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
@@ -1307,6 +1322,9 @@ class StandardAnimation:
                     if ob.type == 'MESH' and ob.data.shape_keys:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
+            struct = AF.loadEntry(rig.DazRig, "altmorphs", False)
+            if struct:
+                self.altmorphs = struct["morphs"]
 
         if self.affectMorphs and self.useScanned and relpath and not self.useShapekeys:
             if self.useCheckUpdates:

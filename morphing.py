@@ -3480,6 +3480,28 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         return struct
 
 #-------------------------------------------------------------
+#   Save morph names to file. For debugging
+#-------------------------------------------------------------
+
+class DAZ_OT_SaveMorphNames(SingleFile, DazOperator, JsonFile, IsArmature):
+    bl_idname = "daz.save_morph_names"
+    bl_label = "Save Morph Names"
+    bl_description = "Save morph names to file. For debugging"
+
+    def run(self, context):
+        from .load_json import saveJson
+        rig = context.object
+        struct = {"character" : rig.DazMesh}
+        mstruct = struct["morphs"] = {}
+        for morphset in MS.Standards + MS.JCMs:
+            pgs = getMorphs0(rig, morphset, None, None)[0]
+            if pgs:
+                sstruct = mstruct[morphset] = {}
+                for pg in pgs:
+                    sstruct[pg.name] = pg.text
+        saveJson(struct, bpy.path.ensure_ext(self.filepath, ".json"))
+
+#-------------------------------------------------------------
 #   Register
 #-------------------------------------------------------------
 
@@ -3537,6 +3559,7 @@ classes = [
     DAZ_OT_SaveFavoMorphs,
     DAZ_OT_LoadFavoMorphs,
     DAZ_OT_SaveMorphPreset,
+    DAZ_OT_SaveMorphNames,
 ]
 
 def register():
