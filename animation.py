@@ -311,6 +311,9 @@ class FrameConverter:
                     self.used[alias] = True
                 continue
             for nprop,factor in formulas.items():
+                if factor == 0:
+                    print("SKIP", nprop)
+                    return
                 factor *= self.multiplier
                 if nprop not in nstruct.keys():
                     nstruct[nprop] = {}
@@ -678,8 +681,14 @@ class MorphOptions:
     def handleMissingMorphs(self, context, rig):
         if self.useShapekeys or not self.useLoadMissing:
             return False
-        missing = [prop for prop in self.used if prop not in rig.keys()]
-        if self.useScanned:
+        missing = []
+        for prop in self.used:
+            alt = self.altmorphs.get(prop, "***")[0]
+            if prop not in rig.keys() and alt not in rig.keys():
+                missing.append(prop)
+        if not missing:
+            return False
+        elif self.useScanned:
             from .scan import loadMissingMorphs
             return loadMissingMorphs(self, context, rig, missing, self.category)
         else:
@@ -1322,7 +1331,8 @@ class StandardAnimation:
                     if ob.type == 'MESH' and ob.data.shape_keys:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
-            struct = AF.loadEntry(rig.DazRig, "altmorphs", False)
+            char = rig.DazMesh.split("-",1)[0].lower()
+            struct = AF.loadEntry(char, "altmorphs", False)
             if struct:
                 self.altmorphs = struct["morphs"]
 
