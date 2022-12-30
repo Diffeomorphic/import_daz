@@ -1484,7 +1484,7 @@ class CyclesTree(Tree):
                 self.mixWithActive(alpha, tex, node)
             node.inputs["Color"].default_value[0:3] = WHITE
             if alpha < 1 or tex:
-                self.owner.setTransSettings(False, False, WHITE, alpha)
+                self.owner.setTransSettings(True, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
             if self.emit and GS.useGhostLight:
                 self.addColumn()
