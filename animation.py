@@ -341,7 +341,11 @@ class FrameConverter:
 
     def getFormulas(self, rig, prop):
         alias = self.alias.get(prop)
-        alt,factor = self.altmorphs.get(prop, ("*", 0))
+        if prop in self.altmorphs.keys():
+            altformula = self.altmorphs[prop]
+            alt = list(altformula.keys())[0]
+        else:
+            alt = "*"
         if alias and alias in rig.keys() or alias in self.shapekeys.keys():
             formula = {alias : 1.0}
         elif alias and alias in self.formulas.keys():
@@ -351,7 +355,7 @@ class FrameConverter:
         elif prop in rig.keys() or prop in self.shapekeys.keys():
             formula = {prop : 1.0}
         elif alt in rig.keys() or alt in self.shapekeys.keys():
-            formula = {prop : factor}
+            formula = altformula
         elif prop in self.formulas.keys():
             formula = self.formulas[prop]
         elif prop in self.formulas2.keys():
@@ -680,8 +684,14 @@ class MorphOptions:
             return False
         missing = []
         for prop in self.used:
-            alt,factor = self.altmorphs.get(prop, ("*", 0))
-            if prop not in rig.keys() and alt not in rig.keys():
+            if prop in rig.keys():
+                pass
+            elif prop in self.altmorphs.keys():
+                altformula = self.altmorphs[prop]
+                alt = list(altformula.keys())[0]
+                if alt not in rig.keys():
+                    missing.append(prop)
+            else:
                 missing.append(prop)
         if not missing:
             return False

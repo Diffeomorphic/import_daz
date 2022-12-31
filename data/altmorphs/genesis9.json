@@ -1,0 +1,188 @@
+{
+    "character" : "Genesis9",
+    "morphs" : {
+        "facs_bs_BrowDownLeft_div2" : {
+            "facs_BrowDownLeft" : 1
+        },
+        "facs_bs_BrowDownRight_div2" : {
+            "facs_BrowDownRight" : 1
+        },
+        "facs_bs_BrowInnerUpLeft_div2" : {
+            "facs_bs_BrowInnerUpLeft" : 1
+        },
+        "facs_bs_BrowInnerUpRight_div2" : {
+            "facs_bs_BrowInnerUpRight" : 1
+        },
+        "facs_bs_BrowOuterUpLeft_div2" : {
+            "facs_BrowOuterUpLeft" : 1
+        },
+        "facs_bs_BrowOuterUpRight_div2" : {
+            "facs_BrowOuterUpRight" : 1
+        },
+        "facs_bs_CheekPuffLeft_div2" : {
+            "facs_bs_CheekPuffLeft" : 1
+        },
+        "facs_bs_CheekPuffRight_div2" : {
+            "facs_bs_CheekPuffRight" : 1
+        },
+        "facs_bs_CheekSquintLeft_div2" : {
+            "facs_bs_CheekSquintLeft" : 1
+        },
+        "facs_bs_CheekSquintRight_div2" : {
+            "facs_bs_CheekSquintRight" : 1
+        },
+        "facs_bs_EyeLookInLeft_div2" : {
+            "facs_bs_EyeLookInLeft" : 1
+        },
+        "facs_bs_EyeLookInRight_div2" : {
+            "facs_bs_EyeLookInRight" : 1
+        },
+        "facs_bs_EyeLookOutLeft_div2" : {
+            "facs_bs_EyeLookOutLeft" : 1
+        },
+        "facs_bs_EyeLookOutRight_div2" : {
+            "facs_bs_EyeLookOutRight" : 1
+        },
+        "facs_bs_EyeSquintLeft_div2" : {
+            "facs_bs_EyeSquintLeft" : 1
+        },
+        "facs_bs_EyeSquintRight_div2" : {
+            "facs_bs_EyeSquintRight" : 1
+        },
+        "facs_bs_MouthClose_div2" : {
+            "facs_ctrl_MouthClose" : 1
+        },
+        "facs_bs_MouthDimpleLeft_div2" : {
+            "facs_bs_MouthDimpleLeft" : 1
+        },
+        "facs_bs_MouthDimpleRight_div2" : {
+            "facs_bs_MouthDimpleRight" : 1
+        },
+        "facs_bs_MouthFrownLeft_div2" : {
+            "facs_bs_MouthFrownLeft" : 1
+        },
+        "facs_bs_MouthFrownRight_div2" : {
+            "facs_bs_MouthFrownRight" : 1
+        },
+        "facs_bs_MouthFunnel_div2" : {
+            "facs_ctrl_MouthFunnel" : 1
+        },
+        "facs_bs_MouthLeft_div2" : {
+            "facs_ctrl_MouthLeft-Right" : 1
+        },
+        "facs_bs_MouthLowerDownLeft_div2" : {
+            "facs_bs_MouthLowerDownLeft" : 1
+        },
+        "facs_bs_MouthLowerDownRight_div2" : {
+            "facs_bs_MouthLowerDownRight" : 1
+        },
+        "facs_bs_MouthPressLeft_div2" : {
+            "facs_ctrl_MouthPressLeft" : 1
+        },
+        "facs_bs_MouthPressRight_div2" : {
+            "facs_ctrl_MouthPressRight" : 1
+        },
+        "facs_bs_MouthPucker_div2" : {
+            "facs_ctrl_MouthPucker" : 1
+        },
+        "facs_bs_MouthRight_div2" : {
+            "facs_ctrl_MouthLeft-Right" : -1
+        },
+        "facs_bs_MouthRollLower_div2" : {
+            "facs_ctrl_MouthRollLower" : 1
+        },
+        "facs_bs_MouthRollUpper_div2" : {
+            "facs_ctrl_MouthRollUpper" : 1
+        },
+        "facs_bs_MouthShrugLower_div2" : {
+            "facs_ctrl_MouthShrugLower" : 1
+        },
+        "facs_bs_MouthShrugUpper_div2" : {
+            "facs_ctrl_MouthShrugUpper" : 1
+        },
+        "facs_bs_MouthSmileLeft_div2" : {
+            "facs_bs_MouthSmileLeft" : 1
+        },
+        "facs_bs_MouthSmileRight_div2" : {
+            "facs_bs_MouthSmileRight" : 1
+        },
+        "facs_bs_MouthStretchLeft_div2" : {
+            "facs_bs_MouthStretchLeft" : 1
+        },
+        "facs_bs_MouthStretchRight_div2" : {
+            "facs_bs_MouthStretchRight" : 1
+        },
+        "facs_bs_MouthUpperUpLeft_div2" : {
+            "facs_bs_MouthUpperUpLeft" : 1
+        },
+        "facs_bs_MouthUpperUpRight_div2" : {
+            "facs_bs_MouthUpperUpRight" : 1
+        },
+        "facs_bs_NasalFlare_div2" : {
+            "facs_ctrl_NasalFlare" : 1
+        },
+        "facs_bs_NoseSneerLeft_div2" : {
+            "facs_bs_NoseSneerLeft" : 1
+        },
+        "facs_bs_NoseSneerRight_div2" : {
+            "facs_bs_NoseSneerRight" : 1
+        },
+        "facs_jnt_EyeBlinkLeft" : {
+            "facs_bs_EyeBlinkLeft" : 1
+        },
+        "facs_jnt_EyeBlinkRight" : {
+            "facs_bs_EyeBlinkRight" : 1
+        },
+        "facs_jnt_EyeWideLeft" : {
+            "facs_ctrl_EyeWideLeft" : 1
+        },
+        "facs_jnt_EyeWideRight" : {
+            "facs_ctrl_EyeWideRight" : 1
+        },
+        "facs_jnt_EyeLookDownLeft" : {
+            "facs_bs_EyeLookDownLeft" : 1
+        },
+        "facs_jnt_EyeLookDownRight" : {
+            "facs_bs_EyeLookDownRight" : 1
+        },
+        "facs_jnt_EyeLookUpLeft" : {
+            "facs_bs_EyeLookUpLeft" : 1
+        },
+        "facs_jnt_EyeLookUpRight" : {
+            "facs_bs_EyeLookUpRight" : 1
+        },
+        "facs_jnt_EyesWideLeft" : {
+            "facs_ctrl_EyeWideLeft" : 1
+        },
+        "facs_jnt_EyesWideRight" : {
+            "facs_ctrl_EyeWideRight" : 1
+        },
+        "facs_jnt_JawForward" : {
+            "facs_ctrl_JawForward-Recess" : 1
+        },
+        "facs_jnt_JawLeft" : {
+            "facs_ctrl_JawLeft-Right" : 1
+        },
+        "facs_jnt_JawOpen" : {
+            "facs_bs_JawOpen" : 1
+        },
+        "facs_jnt_JawRecess" : {
+            "facs_ctrl_JawForward-Recess" : -1
+        },
+        "facs_jnt_JawRight" : {
+            "facs_ctrl_JawLeft-Right" : -1
+        },
+        "facs_jnt_TongueLeft" : {
+            "facs_ctrl_TongueLeft" : 1
+        },
+        "facs_jnt_TongueRight" : {
+            "facs_ctrl_TongueRight" : 1
+        },
+        "facs_jnt_TongueTipBend" : {
+            "facs_ctrl_TongueTipBend" : 1
+        },
+        "facs_jnt_TongueUp" : {
+            "facs_ctrl_TongueUp" : 1
+        }
+    }
+}
