@@ -1032,8 +1032,12 @@ class MorphLoader(LoadMorph):
             activateObject(context, self.mesh)
             for mesh in meshes:
                 selectSet(mesh, True)
-            LS.theFilePaths = self.faceshapes.keys()
-            bpy.ops.daz.transfer_shapekeys()
+            theFilePaths = LS.theFilePaths
+            try:
+                LS.theFilePaths = self.faceshapes.keys()
+                bpy.ops.daz.transfer_shapekeys()
+            finally:
+                LS.theFilePaths = theFilePaths
 
 #------------------------------------------------------------------
 #   Load standard morphs

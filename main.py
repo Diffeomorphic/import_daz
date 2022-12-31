@@ -891,7 +891,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters,
-                        useTransferFace = self.useTransferFace)
+                        useTransferFace = False)
             if (self.units or
                   self.expressions or
                   self.visemes or
@@ -1035,16 +1035,19 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 snames = [sname for sname,bpart in bodyparts.items() if bpart in [bodypart, "All"]]
             if not snames:
                 return
-            activateObject(context, ob)
-            selected = False
-            for mesh in meshes:
-                if force or self.useTransferTo(mesh):
-                    selectSet(mesh, True)
-                    selected = True
-            if not selected:
-                return
-            LS.theFilePaths = snames
-            bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers))
+            theFilePaths = LS.theFilePaths
+            try:
+                for mesh in meshes:
+                    if force or self.useTransferTo(mesh):
+                        try:
+                            activateObject(context, ob)
+                            selectSet(mesh, True)
+                            LS.theFilePaths = snames
+                            bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers))
+                        except DazError:
+                            pass
+            finally:
+                LS.theFilePaths = theFilePaths
 
 
     def useTransferTo(self, mesh):
