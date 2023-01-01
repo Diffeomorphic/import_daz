@@ -453,7 +453,7 @@ class PbrTree(CyclesTree):
             #  principled roughness = 0
             #  principled clearcoat = (iray refraction index - 1) * 10 * iray glossy layered weight
             #  principled clearcoat roughness = 0
-            self.owner.setTransSettings(True, True, color, 0.1)
+            self.owner.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
             strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
