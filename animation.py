@@ -1692,11 +1692,26 @@ class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
     def run(self, context):
         from .morphing import getRigFromObject
         rig = getRigFromObject(context.object)
+        auto =  context.scene.tool_settings.use_keyframe_insert_auto
         unit = Matrix()
         setWorldMatrix(rig, unit)
+        if auto:
+            self.insertKeys(rig, False)
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
+            if auto:
+                self.insertKeys(pb, True)
         setChildofInverses(rig)
+
+
+    def insertKeys(self, pb, isbone):
+        if not isbone or isLocationUnlocked(pb):
+            pb.keyframe_insert("location", group=pb.name)
+        if isbone and pb.rotation_mode == 'QUATERNION':
+            pb.keyframe_insert("rotation_quaternion", group=pb.name)
+        else:
+            pb.keyframe_insert("rotation_euler", group=pb.name)
+        pb.keyframe_insert("scale", group=pb.name)
 
 
 def setChildofInverses(rig):
