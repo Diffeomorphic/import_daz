@@ -230,6 +230,8 @@ class CyclesTree(Tree):
         self.bumptex = None
         self.texco = None
         self.texcos = {}
+        self.detrough = 0
+        self.detroughtex = None
         self.displacement = None
         self.volume = None
         self.emit = None
@@ -723,6 +725,7 @@ class CyclesTree(Tree):
                 if self.bump:
                     self.links.new(self.normal.outputs["Normal"], self.bump.inputs["Normal"])
 
+        self.detrough, self.detroughtex = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 0, False)
         self.texco = texco
 
     #-------------------------------------------------------------
@@ -787,9 +790,8 @@ class CyclesTree(Tree):
         self.cycles = self.diffuse
         roughness,roughtex = self.getColorTex(["Diffuse Roughness"], "NONE", 0, False)
         if self.isEnabled("Detail"):
-            detrough,dettex = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 0, False)
-            roughness *= detrough
-            roughtex = self.multiplyTexs(dettex, roughtex)
+            roughness *= self.detrough
+            roughtex = self.multiplyTexs(self.detroughtex, roughtex)
         self.setRoughness(self.diffuse, "Roughness", roughness, roughtex)
         self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True

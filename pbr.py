@@ -315,6 +315,9 @@ class PbrTree(CyclesTree):
                 self.replaceSlot(self.pbr, "Specular Tint", 0.0)
             rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
             roughness = rough1*(1-ratio) + rough2*ratio
+            if self.isEnabled("Detail"):
+                roughness *= self.detrough
+                roughtex = self.multiplyTexs(self.detroughtex, roughtex)
             self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
         else:
             if self.pureMetal:
