@@ -600,9 +600,9 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = context.object
-        self.renameFaceBones(rig)
-        rig.DazRig = ""
+        for rig in getSelectedArmatures(context):
+            self.renameFaceBones(rig)
+            rig.DazRig = ""
 
     def isFaceBone(self, pb):
         return True
@@ -1036,8 +1036,22 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         description = "Select IK chains from root bones",
         default = True)
 
+    onlyConnected : BoolProperty(
+        name = "Only Connected Bones",
+        description = "Stop IK chain at disconnected bones",
+        default = True)
+
+    threshold : FloatProperty(
+        name = "Threshold",
+        description = "Threshold for stopping the IK chain",
+        min = 0,
+        default = 0.01)
+
     def draw(self, context):
         self.layout.prop(self, "fromRoots")
+        self.layout.prop(self, "onlyConnected")
+        if self.onlyConnected:
+            self.layout.prop(self, "threshold")
         self.layout.separator()
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "hideBones")
@@ -1064,13 +1078,21 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
 
 
     def ikGoalsFromRoots(self, rig):
+        def nostop(pb):
+            if len(pb.children) != 1:
+                return False
+            elif self.onlyConnected:
+                child = pb.children[0]
+                return ((child.head-pb.tail).length < self.threshold)
+            return True
+
         ikgoals = []
         for root in rig.pose.bones:
             if root.bone.select:
                 clen = 0
                 pbones = []
                 pb = root
-                while pb and len(pb.children) == 1:
+                while pb and nostop(pb):
                     pb = pb.children[0]
                     pbones.append(pb)
                     clen += 1
