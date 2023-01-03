@@ -1981,6 +1981,7 @@ class CyclesTree(Tree):
 
     def postbuild(self):
         if GS.usePruneNodes:
+            self.pruneTexco()
             marked = pruneNodeTree(self)
             hasDiffuseTex = self.diffuseTex and marked.get(self.diffuseTex.name)
             hasDiffuse = self.diffuse and marked.get(self.diffuse.name)
@@ -1999,6 +2000,20 @@ class CyclesTree(Tree):
         elif hasDiffuse:
             self.diffuse.select = True
             self.nodes.active = self.diffuse
+
+
+    def pruneTexco(self):
+        texcos = []
+        for node in self.nodes:
+            if node.type == 'TEX_COORD':
+                ok = True
+                for link in node.outputs["UV"].links:
+                    if link.to_node.type != 'TEX_IMAGE':
+                        ok = False
+                if ok:
+                    texcos.append(node)
+        for node in texcos:
+            self.nodes.remove(node)
 
 
     def getLink(self, node, slot):
