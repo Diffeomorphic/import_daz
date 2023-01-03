@@ -922,7 +922,10 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildGlossyOrDualLobe(self):
-        dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
+        if self.isEnabled("Dual Lobe Specular"):
+            dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
+        else:
+            dualLobeWeight = 0
         if dualLobeWeight == 1:
             self.buildDualLobe()
         elif dualLobeWeight == 0:
