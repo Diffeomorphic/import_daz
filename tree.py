@@ -250,7 +250,15 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree, useDeleteUnusedNodes=True, useHideNodes=False, usePruneTexco=False, useHideOutputs=False):
+def pruneNodeTree(tree, useDeleteUnusedNodes=True, useHideTexNodes=False, usePruneTexco=False, useHideOutputs=False):
+    marked = {}
+    if not tree:
+        return marked
+
+    for node in tree.nodes:
+        if node.type == 'GROUP' and not node.name.startswith("DAZ "):
+            pruneNodeTree(node.node_tree, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs)
+
     if usePruneTexco:
         texcos = []
         for node in tree.nodes:
@@ -264,18 +272,15 @@ def pruneNodeTree(tree, useDeleteUnusedNodes=True, useHideNodes=False, usePruneT
         for node in texcos:
             tree.nodes.remove(node)
 
-    if useHideOutputs:
-        for node in tree.nodes:
-            for socket in node.outputs:
-                if not socket.links:
-                    socket.hide = True
+    for node in tree.nodes:
+        for socket in node.outputs:
+            if not socket.links:
+                socket.hide = useHideOutputs
 
-    if useHideNodes:
-        for node in tree.nodes:
-            if node.type in ['TEX_IMAGE']:
-                node.hide = True
+    for node in tree.nodes:
+        if node.type in ['TEX_IMAGE']:
+           node.hide = useHideTexNodes
 
-    marked = {}
     if useDeleteUnusedNodes:
         output = False
         for node in tree.nodes:

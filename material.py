@@ -1815,10 +1815,10 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
         description = "Delete nodes not connected to material output",
         default = True)
 
-    useHideNodes : BoolProperty(
-        name = "Hide Nodes",
-        description = "Hide some nodes (image textures)",
-        default = False)
+    useHideTexNodes : BoolProperty(
+        name = "Hide Texture Nodes",
+        description = "Hide all texture nodes",
+        default = True)
 
     usePruneTexco : BoolProperty(
         name = "Prune Texture Coordinates",
@@ -1832,7 +1832,7 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
 
     def draw(self, context):
         self.layout.prop(self, "useDeleteUnusedNodes")
-        self.layout.prop(self, "useHideNodes")
+        self.layout.prop(self, "useHideTexNodes")
         self.layout.prop(self, "usePruneTexco")
         self.layout.prop(self, "useHideOutputs")
 
@@ -1843,7 +1843,7 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
                 if mat:
                     pruneNodeTree(mat.node_tree,
                                   useDeleteUnusedNodes=self.useDeleteUnusedNodes,
-                                  useHideNodes=self.useHideNodes,
+                                  useHideTexNodes=self.useHideTexNodes,
                                   usePruneTexco=self.usePruneTexco,
                                   useHideOutputs=self.useHideOutputs)
 
