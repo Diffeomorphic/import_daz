@@ -60,9 +60,9 @@ class PbrTree(CyclesTree):
         if self.buildPureRefractive():
             return
 
-        self.checkTopCoat()
+        useTopCoatNode = self.checkTopCoat()
         self.buildDetail(uvname)
-        self.buildPBRNode()
+        self.buildPBRNode(useTopCoatNode)
         self.column = 5
         self.postPBR = False
         if self.translucent:
@@ -76,7 +76,7 @@ class PbrTree(CyclesTree):
             self.postPBR = True
         else:
             self.buildGlossyOrDualLobe()
-        if self.useTopCoat:
+        if useTopCoatNode:
             self.postPBR = True
             self.buildTopCoat(uvname)
         if self.owner.isRefractive():
@@ -159,14 +159,14 @@ class PbrTree(CyclesTree):
     #   PBR Node
     #-------------------------------------------------------------
 
-    def buildPBRNode(self):
+    def buildPBRNode(self, useTopCoatNode):
         self.buildBaseSubsurface()
         self.buildMetallic()
         useTex = not (self.owner.basemix == 0 and self.pureMetal)
         self.buildSpecular(useTex)
         anisotropy = self.buildAnisotropy()
         self.buildRoughness(anisotropy, useTex)
-        if not self.useTopCoat:
+        if not useTopCoatNode:
             self.addClearCoat(useTex)
         self.buildSheen()
 
@@ -334,22 +334,26 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def checkTopCoat(self):
-        self.useTopCoat = False
         if (LS.materialMethod == 'SINGLE_PRINCIPLED' or
-            self.owner.basemix == 1 or
+            self.owner.basemix == 1 or  # Specular/Glossiness
             not self.isEnabled("Top Coat")):
-            return
+            return False
         aniso = self.getValue(["Top Coat Anisotropy"], 0)
         anirot = self.getValue(["Top Coat Rotations"], 0)
         if (self.owner.basemix == 0 and
             aniso == 0 and
             anirot == 0):
-            return
-        self.useTopCoat = True
+            return False
+        return True
 
 
     def addClearCoat(self, useTex):
-        top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
+        if self.isEnabled("Top Coat"):
+            top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
+            rough,roughtex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
+            self.linkScalar(roughtex, self.pbr, rough, "Clearcoat Roughness")
+        else:
+            top,toptex = 0.0,None
         if self.owner.shader == 'UBER_IRAY':
             if self.owner.basemix == 0:    # Metallic/Roughness
                 refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
@@ -369,9 +373,6 @@ class PbrTree(CyclesTree):
             tex = self.multiplyScalarTex(clamp(value), tex)
             if tex:
                 self.links.new(self.colorOutput(tex), self.pbr.inputs["Clearcoat"])
-
-        rough,tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
-        self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
 
     #-------------------------------------------------------------
     #   Sheen
