@@ -1804,18 +1804,49 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
 #   Prune node tree
 #----------------------------------------------------------
 
-class DAZ_OT_PruneNodeTrees(DazOperator, IsMesh):
+class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
     bl_idname = "daz.prune_node_trees"
     bl_label = "Prune Node Trees"
     bl_description = "Prune all material node trees for selected meshes"
     bl_options = {'UNDO'}
+
+    useDeleteUnusedNodes : BoolProperty(
+        name = "Delete Unused Nodes",
+        description = "Delete nodes not connected to material output",
+        default = True)
+
+    useHideNodes : BoolProperty(
+        name = "Hide Nodes",
+        description = "Hide some nodes (image textures)",
+        default = False)
+
+    usePruneTexco : BoolProperty(
+        name = "Prune Texture Coordinates",
+        description = "Delete texture coordinates nodes not connected to mapping nodes",
+        default = True)
+
+    useHideOutputs : BoolProperty(
+        name = "Hide Unused Outputs",
+        description = "Hide unused output sockets",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useDeleteUnusedNodes")
+        self.layout.prop(self, "useHideNodes")
+        self.layout.prop(self, "usePruneTexco")
+        self.layout.prop(self, "useHideOutputs")
 
     def run(self, context):
         from .tree import pruneNodeTree
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
                 if mat:
-                    pruneNodeTree(mat.node_tree)
+                    pruneNodeTree(mat.node_tree,
+                                  useDeleteUnusedNodes=self.useDeleteUnusedNodes,
+                                  useHideNodes=self.useHideNodes,
+                                  usePruneTexco=self.usePruneTexco,
+                                  useHideOutputs=self.useHideOutputs)
+
 #----------------------------------------------------------
 #   Utility
 #----------------------------------------------------------

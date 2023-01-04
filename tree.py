@@ -250,31 +250,56 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree):
-    marked = {}
-    output = False
-    for node in tree.nodes:
-        marked[node.name] = False
-        if "Output" in node.name:
-            marked[node.name] = True
-            output = True
-    if not output:
-        print("No output node")
-        return marked
-    nmarked = 0
-    n = 1
-    while n > nmarked:
-        nmarked = n
-        n = 1
-        for link in tree.links:
-            if marked[link.to_node.name]:
-                marked[link.from_node.name] = True
-                n += 1
-
-    for node in tree.nodes:
-        node.select = False
-        if not marked[node.name]:
+def pruneNodeTree(tree, useDeleteUnusedNodes=True, useHideNodes=False, usePruneTexco=False, useHideOutputs=False):
+    if usePruneTexco:
+        texcos = []
+        for node in tree.nodes:
+            if node.type == 'TEX_COORD':
+                ok = True
+                for link in node.outputs["UV"].links:
+                    if link.to_node.type != 'TEX_IMAGE':
+                        ok = False
+                if ok:
+                    texcos.append(node)
+        for node in texcos:
             tree.nodes.remove(node)
+
+    if useHideOutputs:
+        for node in tree.nodes:
+            for socket in node.outputs:
+                if not socket.links:
+                    socket.hide = True
+
+    if useHideNodes:
+        for node in tree.nodes:
+            if node.type in ['TEX_IMAGE']:
+                node.hide = True
+
+    marked = {}
+    if useDeleteUnusedNodes:
+        output = False
+        for node in tree.nodes:
+            marked[node.name] = False
+            if "Output" in node.name:
+                marked[node.name] = True
+                output = True
+        if not output:
+            print("No output node")
+            return marked
+        nmarked = 0
+        n = 1
+        while n > nmarked:
+            nmarked = n
+            n = 1
+            for link in tree.links:
+                if marked[link.to_node.name]:
+                    marked[link.from_node.name] = True
+                    n += 1
+        for node in tree.nodes:
+            node.select = False
+            if not marked[node.name]:
+                tree.nodes.remove(node)
+
     return marked
 
 # ---------------------------------------------------------------------
