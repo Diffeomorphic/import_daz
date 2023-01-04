@@ -237,6 +237,7 @@ class Fresnel2Group(CyclesGroup):
 
     def addNodes(self, args=None):
         geo = self.addNode("ShaderNodeNewGeometry", 0)
+        self.hideAllBut(geo, ["Incoming", "Backfacing"])
 
         divide = self.addNode("ShaderNodeMath", 1)
         divide.operation = 'DIVIDE'
@@ -508,7 +509,7 @@ class AltSSSGroup(CyclesGroup):
 class ColorEffectGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Color"]
+        self.insockets += ["Fac", "Color", "Tint"]
         self.outsockets += ["Transmit Fac", "Intensity Fac", "Color"]
 
     def create(self, node, name, parent):
@@ -516,24 +517,27 @@ class ColorEffectGroup(CyclesGroup):
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketColor", "Tint")
+        self.group.inputs["Tint"].default_value = (1,1,1,1)
         self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
         self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
         self.group.outputs.new("NodeSocketColor", "Color")
 
-    def getTint(self):
-        return self.inputs.outputs["Color"]
-
     def addNodes(self, args=None):
+        mult,a,b,out = self.addMixRgbNode('MULTIPLY', 1)
+        mult.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(self.inputs.outputs["Tint"], b)
+
         mix,a,b,mixout = self.addMixRgbNode('MIX', 2)
         self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
         a.default_value[0:3] = BLACK
-        tint = self.getTint()
-        self.links.new(tint, b)
+        self.links.new(self.colorOutput(mult), b)
 
         rgb,a,b,rgbout = self.addMixRgbNode('COLOR', 2)
         rgb.inputs[0].default_value = 1.0
         a.default_value[0:3] = WHITE
-        self.links.new(tint, b)
+        self.links.new(self.colorOutput(mult), b)
 
         scale = self.addNode("ShaderNodeVectorMath", 3)
         scale.operation = 'SCALE'
@@ -550,23 +554,6 @@ class ColorEffectGroup(CyclesGroup):
         self.links.new(scale.outputs[0], self.outputs.inputs["Transmit Fac"])
         self.links.new(hsv2.outputs["Color"], self.outputs.inputs["Intensity Fac"])
         self.links.new(rgbout, self.outputs.inputs["Color"])
-
-
-class TintedEffectGroup(ColorEffectGroup):
-    def __init__(self):
-        ColorEffectGroup.__init__(self)
-        self.insockets += ["Tint"]
-
-    def create(self, node, name, parent):
-        ColorEffectGroup.create(self, node, name, parent)
-        self.group.inputs.new("NodeSocketColor", "Tint")
-
-    def getTint(self):
-        tint,a,b,out = self.addMixRgbNode('MULTIPLY', 1)
-        tint.inputs[0].default_value = 1.0
-        self.links.new(self.inputs.outputs["Color"], a)
-        self.links.new(self.inputs.outputs["Tint"], b)
-        return out
 
 # ---------------------------------------------------------------------
 #   Invert Normal Map Group
@@ -660,6 +647,7 @@ class OneSidedGroup(BSDFGroup):
 
     def addNodes(self, args=None):
         geo = self.addNode("ShaderNodeNewGeometry", 1)
+        self.hideAllBut(geo, ["Backfacing"])
         trans = self.addNode("ShaderNodeBsdfTransparent", 1)
         mix1 = self.addNode("ShaderNodeMixShader", 2)
         self.links.new(geo.outputs["Backfacing"], mix1.inputs[0])
@@ -970,13 +958,13 @@ class FakeCausticsGroup(FacMixGroup):
 
     def addNodes(self, args):
         FacMixGroup.addNodes(self, args)
-        normal = self.addNode("ShaderNodeNewGeometry", 1)
-        incoming = self.addNode("ShaderNodeNewGeometry", 1)
+        geo = self.addNode("ShaderNodeNewGeometry", 1)
+        self.hideAllBut(geo, ["Incoming", "Normal"])
 
         dot = self.addNode("ShaderNodeVectorMath", 2)
         dot.operation = 'DOT_PRODUCT'
-        self.links.new(normal.outputs["Normal"], dot.inputs[0])
-        self.links.new(incoming.outputs["Incoming"], dot.inputs[1])
+        self.links.new(geo.outputs["Normal"], dot.inputs[0])
+        self.links.new(geo.outputs["Incoming"], dot.inputs[1])
 
         ramp = self.addNode('ShaderNodeValToRGB', 3)
         self.links.new(dot.outputs["Value"], ramp.inputs['Fac'])
@@ -991,6 +979,7 @@ class FakeCausticsGroup(FacMixGroup):
         elt.color[0:3] = 10*color
 
         lightpath = self.addNode("ShaderNodeLightPath", 4, size=100)
+        self.hideAllBut(lightpath, ["Is Shadow Ray"])
         trans = self.addNode("ShaderNodeBsdfTransparent", 4)
         self.links.new(ramp.outputs["Color"], trans.inputs["Color"])
         self.mixCycles(lightpath.outputs["Is Shadow Ray"], 0)
@@ -1125,6 +1114,7 @@ class GhostLightGroup(CyclesGroup):
 
     def addNodes(self, args=None):
         lpath = self.addNode("ShaderNodeLightPath", 1)
+        self.hideAllBut(lpath, ["Is Camera Ray", "Is Shadow Ray"])
 
         max1 = self.addNode("ShaderNodeMath", 2)
         max1.operation = 'MAXIMUM'
@@ -1163,6 +1153,7 @@ class RayClipGroup(CyclesGroup):
 
     def addNodes(self, args=None):
         lpath = self.addNode("ShaderNodeLightPath", 1)
+        self.hideAllBut(lpath, ["Is Shadow Ray", "Is Reflection Ray"])
 
         max = self.addNode("ShaderNodeMath", 2)
         max.operation = 'MAXIMUM'
@@ -1756,7 +1747,6 @@ ShaderGroups = {
         "useDiffuse" : (DiffuseGroup, "DAZ Diffuse", []),
         "useLogColor" : (LogColorGroup, "DAZ Log Color", []),
         "useColorEffect" : (ColorEffectGroup, "DAZ Color Effect", []),
-        "useTintedEffect" : (TintedEffectGroup, "DAZ Tinted Effect", []),
         "useFresnel" : (Fresnel2Group, "DAZ Fresnel 2", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
         "useOneSided" : (OneSidedGroup, "DAZ One-Sided", []),

@@ -742,12 +742,11 @@ class CyclesTree(Tree):
             if colorslot:
                 return self.linkColor(tex, node, color, colorslot)
         else:
-            from .cgroup import ColorEffectGroup, TintedEffectGroup
+            from .cgroup import ColorEffectGroup
+            effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
             if tint is None:
-                effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
-            else:
-                effect = self.addGroup(TintedEffectGroup, "DAZ Tinted Effect", col=self.column-1)
-                effect.inputs["Tint"].default_value[0:3] = tint
+                tint = WHITE
+            effect.inputs["Tint"].default_value[0:3] = tint
             self.linkScalar(factex, effect, fac, "Fac")
             colorInput = self.linkColor(tex, effect, color, "Color")
             outfac = {
@@ -1981,7 +1980,14 @@ class CyclesTree(Tree):
 
     def postbuild(self):
         if GS.usePruneNodes:
+            from .geometry import getActiveUvLayer
+            active = None
+            if self.owner.geometry:
+                ob = self.owner.geometry.rna
+                if ob:
+                    active = getActiveUvLayer(ob)
             marked = pruneNodeTree(self,
+                                   active=active,
                                    useDeleteUnusedNodes=True,
                                    useHideTexNodes=True,
                                    usePruneTexco=True,

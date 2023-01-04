@@ -1495,11 +1495,9 @@ def pruneUvMaps(ob):
     if ob.data is None or len(ob.data.uv_layers) <= 1:
         return
     used = {}
-    active = None
     for uvlayer in ob.data.uv_layers:
         used[uvlayer.name] = False
-        if uvlayer.active_render:
-            active = uvlayer
+    active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
             for node in mat.node_tree.nodes:
@@ -1516,6 +1514,13 @@ def pruneUvMaps(ob):
             uvlayer = ob.data.uv_layers[uvname]
             print("Remove UV layer %s" % uvname)
             ob.data.uv_layers.remove(uvlayer)
+
+
+def getActiveUvLayer(ob):
+    for uvlayer in ob.data.uv_layers:
+        if uvlayer.active_render:
+            return uvlayer
+    return None
 
 
 class DAZ_OT_PruneUvMaps(DazOperator, IsMesh):

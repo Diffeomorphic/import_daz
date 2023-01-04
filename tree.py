@@ -138,6 +138,7 @@ class NodeGroup:
     def __repr__(self):
         return ("<Group %s %s>" % (self.nodeTreeType, self.nodeGroupType))
 
+
     def make(self, name, ncols):
         self.group = bpy.data.node_groups.new(name, self.nodeTreeType)
         self.nodes = self.group.nodes
@@ -146,11 +147,13 @@ class NodeGroup:
         self.outputs = self.addNode("NodeGroupOutput", ncols)
         self.ncols = ncols
 
+
     def create(self, node, name, parent, ncols):
         self.make(name, ncols)
         node.name = name
         node.node_tree = self.group
         self.parent = parent
+
 
     def checkSockets(self, tree):
         for socket in self.insockets:
@@ -163,14 +166,22 @@ class NodeGroup:
                 return False
         return True
 
+
     def hideSlot(self, slot):
         if bpy.app.version >= (2,90,0):
             self.group.inputs[slot].hide_value = True
+
 
     def setMinMax(self, slot, default, min, max):
         self.group.inputs[slot].default_value = default
         self.group.inputs[slot].min_value = min
         self.group.inputs[slot].max_value = max
+
+
+    def hideAllBut(self, node, sockets):
+        for socket in node.outputs:
+            if socket.name not in sockets:
+                socket.hide = True
 
 #-------------------------------------------------------------
 #   Utilities
@@ -250,7 +261,7 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree, useDeleteUnusedNodes=True, useHideTexNodes=False, usePruneTexco=False, useHideOutputs=False):
+def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=False, usePruneTexco=False, useHideOutputs=False):
     marked = {}
     if not tree:
         return marked
@@ -261,14 +272,21 @@ def pruneNodeTree(tree, useDeleteUnusedNodes=True, useHideTexNodes=False, usePru
 
     if usePruneTexco:
         texcos = []
+        links = []
         for node in tree.nodes:
-            if node.type == 'TEX_COORD':
+            if (node.type == 'TEX_COORD' or
+                (node.type == 'UVMAP' and node.uv_map == active.name) or
+                (node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
                 ok = True
                 for link in node.outputs["UV"].links:
-                    if link.to_node.type != 'TEX_IMAGE':
+                    if link.to_node.type == 'TEX_IMAGE':
+                        links.append(link)
+                    else:
                         ok = False
                 if ok:
                     texcos.append(node)
+        for link in links:
+            tree.links.remove(link)
         for node in texcos:
             tree.nodes.remove(node)
 
