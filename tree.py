@@ -33,6 +33,7 @@ from .utils import *
 NCOLUMNS = 20
 XSIZE = 300
 YSIZE = 250
+YSTEP = 25
 
 
 class Tree:
