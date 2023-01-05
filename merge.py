@@ -58,22 +58,24 @@ class UVLayerMerger:
             layout.prop(self, "allowOverlap")
 
 
-    def getActiveUvLayer(self, ob):
-        def getUvMap(socket):
+    def getBackgroundUvLayer(self, ob):
+        def getUvMap(socket, default):
             if socket:
                 for link in socket.links:
                     node = link.from_node
                     if node.type == 'UVMAP':
-                        return node.uv_map, node
+                        return node.uv_map
                     elif node.type == 'ATTRIBUTE':
-                        return node.attribute_name, node
+                        return node.attribute_name
                     elif node.type == 'TEX_COORD':
-                        return "TEXCO", node
+                        return default
                     elif "Vector" in node.inputs.keys():
                         return getUvMap(node.inputs.get("Vector"))
-            return None, None
+            return default
 
         from .udim import isShellNode
+        from .geometry import getActiveUvLayer
+        active = getActiveUvLayer(ob)
         uvmaps = {}
         shellmaps = {}
         for mat in ob.data.materials:
@@ -81,21 +83,15 @@ class UVLayerMerger:
                 continue
             for node in mat.node_tree.nodes:
                 if node.type == 'TEX_IMAGE':
-                    uvname,uvmap = getUvMap(node.inputs.get("Vector"))
-                    if uvmap:
-                        uvmaps[uvname] = uvmap
+                    uvname = getUvMap(node.inputs.get("Vector"), active.name)
+                    uvmaps[uvname] = True
                 elif isShellNode(node):
-                    uvname,uvmap = getUvMap(node.inputs.get("UV"))
-                    if uvmap:
-                        shellmaps[uvname] = uvmap
+                    uvname = getUvMap(node.inputs.get("UV"), "**")
+                    shellmaps[uvname] = True
 
-        for uvname,node in uvmaps.items():
+        for uvname in uvmaps.keys():
             if uvname in shellmaps.keys():
                 continue
-            elif node.type == 'TEX_COORD':
-                for uvlayer in ob.data.uv_layers:
-                    if uvlayer.active_render:
-                        return uvlayer.name
             elif uvname in ob.data.uv_layers.keys():
                 return uvname
         return None
@@ -234,7 +230,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         subDLevels = 0
         for aob in anatomies:
             if self.useMergeUvs:
-                uvname = self.getActiveUvLayer(aob)
+                uvname = self.getBackgroundUvLayer(aob)
                 if uvname is not None:
                     self.auvnames[uvname] = True
             if self.useFixTiles:
@@ -779,7 +775,7 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, 
             auvnames = {}
             for aob in getSelectedMeshes(context):
                 if aob != cob:
-                    uvname = self.getActiveUvLayer(aob)
+                    uvname = self.getBackgroundUvLayer(aob)
                     if uvname is not None:
                         auvnames[uvname] = True
         for mod in cob.modifiers:

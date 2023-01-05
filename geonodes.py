@@ -315,7 +315,8 @@ class DAZ_OT_AddShell(DazPropsOperator):
         group.create(node, nname, tree)
         group.addNodes((shdmat, self.uvset))
         node.inputs["Influence"].default_value = 1.0
-        tree.links.new(tree.getTexco(self.uvset), node.inputs["UV"])
+        uvnode,uvsocket = tree.getTexco(self.uvset)
+        tree.links.new(uvsocket, node.inputs["UV"])
         outputs = findNodes(tree, 'OUTPUT_MATERIAL')
         for output in outputs:
             x,y = output.location

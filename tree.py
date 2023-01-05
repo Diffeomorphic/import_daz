@@ -275,8 +275,8 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
         links = []
         for node in tree.nodes:
             if (node.type == 'TEX_COORD' or
-                (node.type == 'UVMAP' and node.uv_map == active.name) or
-                (node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
+                (active and node.type == 'UVMAP' and node.uv_map == active.name) or
+                (active and node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
                 ok = True
                 for link in node.outputs["UV"].links:
                     if link.to_node.type == 'TEX_IMAGE':

@@ -1498,6 +1498,7 @@ def pruneUvMaps(ob):
     for uvlayer in ob.data.uv_layers:
         used[uvlayer.name] = False
     active = getActiveUvLayer(ob)
+    used[active.name] = True
     for mat in ob.data.materials:
         if mat:
             for node in mat.node_tree.nodes:
@@ -1505,8 +1506,6 @@ def pruneUvMaps(ob):
                     used[node.attribute_name]= True
                 elif node.type == "UVMAP":
                     used[node.uv_map] = True
-                elif node.type == "TEX_COORD":
-                    used[active.name] = True
                 elif node.type == "NORMAL_MAP":
                     used[node.uv_map] = True
     for uvname in used.keys():

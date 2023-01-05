@@ -492,19 +492,21 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         ctree = makeCyclesTree(mat)
         for outp in findNodes(mat.node_tree, 'OUTPUT_MATERIAL'):
             x,y = outp.location
-            outp.location = (x+3*XSIZE, y)
+            outp.location = (x+2*XSIZE, y)
             ssocket = getFromSocket(outp.inputs["Surface"])
             dsocket = getFromSocket(outp.inputs["Displacement"])
             for tname,data in shells.items():
                 template,uvname = data
                 uvmap = ctree.addNode("ShaderNodeUVMap")
                 uvmap.uv_map = uvname
-                uvmap.location = (x,y)
+                uvmap.label = uvname
+                uvmap.hide = True
+                uvmap.location = (x,y-0.6*YSIZE)
                 skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
-                skip.location = (x+XSIZE, y)
+                skip.location = (x,y)
                 ctree.links.new(uvmap.outputs["UV"], skip.inputs["UV"])
                 shell = ctree.addNode("ShaderNodeGroup")
-                shell.location = (x+2*XSIZE, y)
+                shell.location = (x+XSIZE, y)
                 shell.node_tree = template.node_tree
                 shell.label = template.label
                 ctree.links.new(skip.outputs["Influence"], shell.inputs["Influence"])

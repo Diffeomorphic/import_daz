@@ -229,7 +229,7 @@ class CyclesTree(Tree):
         self.bumpval = 0
         self.bumptex = None
         self.texco = None
-        self.texcos = {}
+        self.uvnodes = {}
         self.detrough = 0
         self.detroughtex = None
         self.displacement = None
@@ -250,12 +250,13 @@ class CyclesTree(Tree):
 
 
     def getTexco(self, uv):
-        key = self.owner.getUvSet(uv, self.texcos)
+        key = self.owner.getUvSet(uv, self.uvnodes)
+        node = None
         if key is None:
-            return self.texco
-        elif key not in self.texcos.keys():
-            _node, self.texcos[key] = self.addUvNode(key)
-        return self.texcos[key]
+            return node,self.texco
+        elif key not in self.uvnodes.keys():
+            self.uvnodes[key] = self.addUvNode(key)
+        return self.uvnodes[key]
 
 
     def getCyclesSocket(self, node=None):
@@ -412,7 +413,11 @@ class CyclesTree(Tree):
             node = self.addShellGroup(shell, push)
             if node:
                 self.linkCycles(node, "BSDF")
-                self.links.new(self.getTexco(shell.uv), node.inputs["UV"])
+                uvnode,uvsocket = self.getTexco(shell.uv)
+                self.links.new(uvsocket, node.inputs["UV"])
+                if False and uvnode:
+                    x,y = node.location
+                    uvnode.location = (x, y-0.8*YSIZE)
                 if self.displacement:
                     self.links.new(self.displacement, node.inputs["Displacement"])
                 self.cycles = node
@@ -515,8 +520,8 @@ class CyclesTree(Tree):
         else:
             node, self.texco = self.addUvNode(self.owner.uv_set.name)
         self.tileTexco()
-        for key,uvset in self.owner.uv_sets.items():
-            _node, self.texcos[key] = self.addUvNode(uvset.name)
+        #for key,uvset in self.owner.uv_sets.items():
+        #    self.uvnodes[key] = self.addUvNode(uvset.name)
         return node
 
 
@@ -530,13 +535,17 @@ class CyclesTree(Tree):
 
     def addUvNode(self, uvname):
         if self.owner.uvNodeType == 'ATTRIBUTE':
-            node = self.addNode("ShaderNodeAttribute", 1)
+            node = self.addNode("ShaderNodeAttribute")
             node.attribute_type == 'OBJECT'
             node.attribute_name = uvname
+            node.label = uvname
+            node.hide = True
             return node, node.outputs["Vector"]
         else:
-            node = self.addNode("ShaderNodeUVMap", 1)
+            node = self.addNode("ShaderNodeUVMap")
             node.uv_map = uvname
+            node.label = uvname
+            node.hide = True
             return node, node.outputs["UV"]
 
 
