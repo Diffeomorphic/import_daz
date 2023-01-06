@@ -1928,6 +1928,7 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
     sparsity = 1
     binsize = 10
     length = 5
+    useIk = True
 
     def run(self, context):
         ob = context.object
@@ -1936,7 +1937,6 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
         if rig is None or rig.type != 'ARMATURE':
             raise DazError("Hair must have an armature")
         hairs = self.getMeshHairs(context, ob, None)
-        print("HH", len(hairs), hairs[0])
         datas = []
         for hair in hairs:
             data = self.getData(hair)
@@ -1950,11 +1950,19 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
             bins[key].append((hair,data))
         activateObject(context, rig)
         setMode('EDIT')
+        head = rig.data.edit_bones["head"]
         binbones = {}
         for key,bin in bins.items():
-            print("BB", key, len(bin))
-            binbones[key] = self.buildBones(key, bin, rig)
+            binbones[key] = self.buildBones(key, bin, head, rig)
+        if self.useIk:
+            for key,bones in binbones.items():
+                self.addIkBone(key, bones, head, rig)
         setMode('OBJECT')
+        if self.useIk:
+            empty = bpy.data.objects.new("CUBE", None)
+            empty.empty_display_type = 'CUBE'
+            for key,bones in binbones.items():
+                self.addIkConstraint(key, bones, rig, empty)
         for key,bones in binbones.items():
             self.buildVertexGroups(key, bins[key], bones)
         activateObject(context, hairs[0])
@@ -1974,7 +1982,7 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
         return angle,coord
 
 
-    def buildBones(self, key, bin, rig):
+    def buildBones(self, key, bin, head, rig):
         hair,data = bin[0]
         coord = data[1]
         for hair,data in bin[1:]:
@@ -1984,29 +1992,73 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
         rmin = coord[(coord[:,2] == zmax)][0]
         rmax = coord[(coord[:,2] == zmin)][0]
         r0 = rmin
-        bones = {}
+        bones = []
+        parent = head
         for n in range(self.length):
             s = (n+1)/self.length
-            r1 = s*rmin + (1-s)*rmax
+            r1 = (1-s)*rmin + s*rmax
             bname = "Hair_%d_%d" % (key, n)
             eb = rig.data.edit_bones.new(bname)
             eb.head = r0
             eb.tail = r1
-            bones[bname] = (r0, r1)
+            eb.parent = parent
+            if n > 0:
+                eb.use_connect = True
+            bones.append((bname, r0, r1))
             r0 = r1
+            parent = eb
         return bones
 
 
+    def addIkBone(self, key, bones, head, rig):
+        def normalize(v):
+            return v/np.linalg.norm(v)
+
+        ikname = "Hair_%d_IK" % key
+        lname,r0,r1 = bones[-1]
+        eb = rig.data.edit_bones.new(ikname)
+        eb.head = r1
+        eb.tail = r1 + rig.DazScale*normalize(r1-r0)
+        eb.parent = head
+
+
+    def addIkConstraint(self, key, bones, rig, empty):
+        ikname = "Hair_%d_IK" % key
+        lname,r0,r1 = bones[-1]
+        pb = rig.pose.bones[lname]
+        cns = pb.constraints.new('IK')
+        cns.name = "IK %s" % ikname
+        cns.target = rig
+        cns.subtarget = ikname
+        cns.chain_count = len(bones)
+        cns.use_location = True
+        cns.use_rotation = True
+        pb = rig.pose.bones[ikname]
+        pb.bone.show_wire = True
+        pb.custom_shape = empty
+        for bname,r0,r1 in bones:
+            bone = rig.data.bones[bname]
+            bone.hide = True
+
+
     def buildVertexGroups(self, key, bin, bones):
+        def getWeight(z, d, x0, x1, x2):
+            if z > x1:
+                return max(0, (x0-z)/d)
+            else:
+                return max(0, (z-x2)/d)
+
         for hair,data in bin:
             hair.vertex_groups.clear()
-            for bname,ends in bones.items():
+            for bname,r0,r1 in bones:
                 vgrp = hair.vertex_groups.new(name=bname)
-                r0,r1 = ends
                 z0 = r0[2]
                 z1 = r1[2]
-                print("ZZ", z0, z1)
-                vnums = [(v.index, float(v.co[2] < z0 and v.co[2] > z1)) for v in hair.data.vertices]
+                d = z0-z1
+                x0 = z0 + 0.5*d
+                x1 = 0.5*(z0+z1)
+                x2 = z1 - 0.5*d
+                vnums = [(v.index, getWeight(v.co[2],d,x0,x1,x2)) for v in hair.data.vertices]
                 for vn,w in vnums:
                     if w > 0.001:
                         vgrp.add([vn], w, 'REPLACE')
