@@ -1698,7 +1698,7 @@ class LayeredGroup(CyclesGroup):
         self.links.new(self.colorOutput(firstnode), a)
         self.links.new(self.colorOutput(self.outnode), b)
         if False and colorSpace == "NONE":
-            gamma = self.addNode("ShaderNodeGamma", 5)
+            gamma = self.addNode("ShaderNodeGamma", 5, size=7)
             self.links.new(mixout, gamma.inputs["Color"])
             gamma.inputs["Gamma"].default_value = 1/2.2
             self.links.new(gamma.outputs[0], self.outputs.inputs["Color"])

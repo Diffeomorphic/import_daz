@@ -32,6 +32,7 @@ from .utils import *
 from .fileutils import MultiFile, ImageFile
 from .material import LocalTextureSaver
 from .matedit import MaterialSelector
+from .tree import getFromSocket, XSIZE, YSIZE, YSTEP
 
 #----------------------------------------------------------
 #   Tile Fixer
@@ -151,7 +152,6 @@ class TileFixer:
 
 
     def addSkipZeroUvs(self, mat):
-        from .tree import getFromSocket, XSIZE, YSIZE
         from .cycles import makeCyclesTree
         from .cgroup import SkipZeroUvGroup
         ctree = makeCyclesTree(mat)
@@ -501,7 +501,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 uvmap.uv_map = uvname
                 uvmap.label = uvname
                 uvmap.hide = True
-                uvmap.location = (x,y-0.6*YSIZE)
+                uvmap.location = (x,y-6*YSTEP)
                 skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
                 skip.location = (x,y)
                 ctree.links.new(uvmap.outputs["UV"], skip.inputs["UV"])

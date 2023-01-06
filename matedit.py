@@ -34,10 +34,9 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .material import WHITE, isWhite
-from .cycles import XSIZE, YSIZE
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
-from .tree import TNode, getSocket
+from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP
 
 #-------------------------------------------------------------
 #   Material selector
@@ -658,7 +657,7 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, IsM
         x,y = node.location
         if item.ncomps == 4 and not isWhite(item.color):
             mix = tree.nodes.new(type = "ShaderNodeMixRGB")
-            mix.location = (x-XSIZE+50,y-YSIZE-50)
+            mix.location = (x-XSIZE+50,y-12*YSTEP)
             mix.blend_type = 'MULTIPLY'
             mix.inputs[0].default_value = 1.0
             mix.inputs[1].default_value = item.color
@@ -667,7 +666,7 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, IsM
             return mix
         elif item.ncomps == 1 and item.number != 1.0:
             mult = tree.nodes.new(type = "ShaderNodeMath")
-            mult.location = (x-XSIZE+50,y-YSIZE-50)
+            mult.location = (x-XSIZE+50,y-12*YSTEP)
             mult.operation = 'MULTIPLY'
             mult.inputs[0].default_value = item.number
             tree.links.new(fromsocket, mult.inputs[1])

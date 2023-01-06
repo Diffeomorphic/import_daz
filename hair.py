@@ -1851,8 +1851,7 @@ class HairEeveeTree(HairTree):
     def buildLayer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
-        pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
-        self.ycoords[self.column] -= 500
+        pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled", size=25)
         ramp = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
         self.linkRamp(ramp, [self.roottex, self.tiptex], pbr, "Base Color")
         pbr.inputs["Metallic"].default_value = 0.9

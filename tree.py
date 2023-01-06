@@ -53,13 +53,12 @@ class Tree:
         return self.owner.getValue(channel, default)
 
 
-    def addNode(self, stype, col=None, size=0, label=None, parent=None):
+    def addNode(self, stype, col=None, size=10, label=None, parent=None):
         if col is None:
             col = self.column
         col = max(0, min(col, NCOLUMNS-1))
         node = self.nodes.new(type = stype)
-        node.location = ((col-2)*XSIZE, self.ycoords[col])
-        self.ycoords[col] -= (YSIZE + size)
+        self.setLocation(node, col, size)
         if label:
             node.label = label
         if parent:
@@ -75,11 +74,12 @@ class Tree:
         MixColor2 = 7
         MixColorOut = 2
 
+
     def addMixRgbNode(self, blendtype, col=None, parent=None):
         if bpy.app.version < (3,4,0):
-            node = self.addNode("ShaderNodeMixRGB", col, parent=parent)
+            node = self.addNode("ShaderNodeMixRGB", col, size=10, parent=parent)
         else:
-            node = self.addNode("ShaderNodeMix", col, parent=parent)
+            node = self.addNode("ShaderNodeMix", col, size=12, parent=parent)
             node.data_type = 'RGBA'
         node.blend_type = blendtype
         a = node.inputs[self.MixColor1]
@@ -89,7 +89,9 @@ class Tree:
 
 
     def colorOutput(self, node):
-        if node.type == 'MIX':
+        if "Color" in node.outputs.keys():
+            return node.outputs["Color"]
+        elif node.type == 'MIX':
             return node.outputs[2]
         else:
             return node.outputs[0]
@@ -102,7 +104,22 @@ class Tree:
             self.column = NCOLUMNS-10
 
 
-    def addGroup(self, classdef, name, col=None, size=0, args=[], force=False):
+    def setLocation(self, node, col, size):
+        node.location = ((col-2)*XSIZE, self.ycoords[col])
+        self.ycoords[col] -= size*YSTEP
+
+
+    def moveTex(self, tex, node):
+        return
+        if tex is None:
+            return
+        x,y = node.location
+        x1,y1 = tex.location
+        if x == x1:
+            self.setLocation(tex, self.column-1, 2)
+
+
+    def addGroup(self, classdef, name, col=None, size=10, args=[], force=False):
         if col is None:
             col = self.column
         node = self.addNode(self.nodeGroupType, col, size=size)

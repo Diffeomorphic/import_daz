@@ -47,24 +47,24 @@ class PbrTree(CyclesTree):
 
 
     def buildLayer(self, uvname):
-        self.column = 4
+        self.column = 2
         self.buildNormal(uvname)
         self.buildBump(uvname)
         if self.owner.useVolume:
             self.translucent = self.buildTranslucency(uvname)
-        self.column = 5
-        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled")
-        self.ycoords[self.column] -= 500
+        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=4, size=30)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
             return
 
         useTopCoatNode = self.checkTopCoat()
+        self.column = 3
         self.buildDetail(uvname)
+        self.column = 4
         self.buildPBRNode(useTopCoatNode)
-        self.column = 5
         self.postPBR = False
+        self.column = 5
         if self.translucent:
             self.mixPbrTranslucency()
         if self.buildMakeup():
@@ -100,14 +100,14 @@ class PbrTree(CyclesTree):
             return
         effect = self.getValue(["Base Color Effect"], 0)
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-        mix = self.addNode("ShaderNodeMixShader", col=self.column+1)
+        mix = self.addNode("ShaderNodeMixShader", col=self.column+1, size=5)
         node = self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, mix, colorslot=None)
         self.addColumn()
         self.linkScalar(factex, mix, fac, "Fac")
         self.links.new(self.translucent.outputs["BSDF"], mix.inputs[1])
-        self.links.new(self.pbr.outputs[0], mix.inputs[2])
+        self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])
         if node:
-            self.links.new(node.outputs["Color"], self.pbr.inputs["Base Color"])
+            self.links.new(self.colorOutput(node), self.pbr.inputs["Base Color"])
         self.replaceSlot(self.pbr, "Subsurface", 0.0)
         self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
         self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
@@ -190,9 +190,11 @@ class PbrTree(CyclesTree):
             not self.isEnabled("Subsurface") or
             not self.checkTranslucency()):
             return
+        self.column -= 1
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         if isBlack(transcolor):
+            self.column += 1
             return
         self.pbr.subsurface_method = GS.getSSSMethod()
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
@@ -208,24 +210,25 @@ class PbrTree(CyclesTree):
         if bpy.app.version >= (3,0,0):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
+        self.column += 1
         self.endSSS()
 
 
     def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex):
-        gamma = self.addNode("ShaderNodeGamma", col=self.column-1)
+        gamma = self.addNode("ShaderNodeGamma", size=7)
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
-        self.links.new(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
+        self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
         self.linkScalar(wttex, self.pbr, transwt, "Subsurface")
 
 
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
         from .cgroup import AltSSSGroup
-        fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS", col=self.column-1)
+        fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS")
         self.linkScalar(ssstex, fix, sss, "SSS Amount")
         fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
         if self.diffuseInput:
-            self.links.new(self.diffuseInput.outputs[0], fix.inputs["Diffuse Color"])
+            self.links.new(self.colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight")
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
@@ -435,7 +438,7 @@ class PbrTree(CyclesTree):
             from .cgroup import RayClipGroup
             self.addColumn()
             clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
-            self.links.new(pbr.outputs[0], clip.inputs["Shader"])
+            self.links.new(pbr.outputs["BSDF"], clip.inputs["Shader"])
             self.linkColor(coltex, clip, color, "Color")
             self.cycles = clip
         else:
@@ -503,7 +506,7 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def mixShaders(self, weight, wttex, node1, node2):
-        mix = self.addNode("ShaderNodeMixShader")
+        mix = self.addNode("ShaderNodeMixShader", size=5)
         mix.inputs[0].default_value = weight
         if wttex:
             self.links.new(self.colorOutput(wttex), mix.inputs[0])
