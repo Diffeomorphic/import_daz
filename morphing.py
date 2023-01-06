@@ -1068,6 +1068,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     def run(self, context):
         MP.setupMorphPaths(False)
         self.errors = {}
+        self.faceshapes = {}
         self.meshes.reverse()
         t1 = perf_counter()
         namepaths = self.loadStandardMorphs()
@@ -1403,6 +1404,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             return
         MP.setupMorphPaths(False)
         self.errors = {}
+        self.allfaceshapes = {}
         self.meshes.reverse()
         if self.rig:
             self.rig.DazMorphPrefixes = False
@@ -1420,6 +1422,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
+        self.faceshapes = self.allfaceshapes
         if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
             self.transferToFaceMeshes(context)
         if self.message:
@@ -1430,9 +1433,12 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if use:
             self.morphset = morphset
             self.bodypart = bodypart
+            self.faceshapes = {}
             print("Load %s" % morphset)
             self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
             self.loadStandardMorphs()
+            for key,value in self.faceshapes.items():
+                self.allfaceshapes[key] = value
 
 
     def getActiveMorphFiles(self):
