@@ -907,7 +907,6 @@ def toggleLocks(self, context, attr, lock):
             setattr(pb, lock, getattr(pb, attr))
     else:
         for pb in self.pose.bones:
-            setattr(pb, attr, getattr(pb, lock))
             setattr(pb, lock, (False,False,False))
 
 def toggleRotLocks(self, context):
