@@ -27,9 +27,10 @@
 
 import sys
 import bpy
+import math
+import numpy as np
 
 from mathutils import Vector
-from math import floor
 from .error import *
 from .utils import *
 from .material import WHITE, GREY, BLACK, isWhite, isBlack
@@ -56,9 +57,26 @@ class ColorGroup(bpy.types.PropertyGroup):
         default = (0.2, 0.02, 0.01, 1)
     )
 
-class HairOptions:
-    # Create
 
+class Separator:
+    def getMeshHairs(self, context, hair, hum):
+        hairs = []
+        if self.useSeparateLoose:
+            #bpy.ops.mesh.separate(type='LOOSE')
+            bpy.ops.daz.separate_loose_parts()
+            print("Loose parts separated")
+        setMode('OBJECT')
+        hname = baseName(hair.name)
+        haircount = 0
+        hairs = [hair for hair in getSelectedMeshes(context)
+                 if (baseName(hair.name) == hname and
+                     hair != hum)]
+        if self.sparsity > 1:
+            hairs = [hair for n,hair in enumerate(hairs) if n % self.sparsity == 0]
+        return hairs
+
+
+class HairOptions:
     strandType : EnumProperty(
         items = [('SHEET', "Sheet", "For transmapped hair (mesh hair)"),
                  ('LINE', "Line", "For polyline hair (dForce guides and line tesselation = 1)"),
@@ -98,7 +116,6 @@ class HairOptions:
         default = False,
         description = "Remove existing particle systems from this mesh"
     )
-
     useSeparateLoose : BoolProperty(
         name = "Separate Loose Parts",
         default = True,
@@ -307,7 +324,7 @@ class HairSystem:
         step = (m-1)/(n-1)
         nstrand = []
         for i in range(n-1):
-            j = floor(i*step + 1e-4)
+            j = math.floor(i*step + 1e-4)
             x = strand[j]
             y = strand[j+1]
             eps = i*step - j
@@ -598,7 +615,7 @@ class CombineHair:
 #   Make Hair
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
+class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separator):
     bl_idname = "daz.make_hair"
     bl_label = "Make Hair"
     bl_description = "Make particle hair from mesh hair"
@@ -719,19 +736,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions):
         print("Start conversion")
         hsystems = {}
         if self.strandType == 'SHEET':
-            hairs = []
-            if self.useSeparateLoose:
-                #bpy.ops.mesh.separate(type='LOOSE')
-                bpy.ops.daz.separate_loose_parts()
-                print("Loose parts separated")
-            setMode('OBJECT')
-            hname = baseName(hair.name)
-            haircount = 0
-            hairs = [hair for hair in getSelectedMeshes(context)
-                     if (baseName(hair.name) == hname and
-                         hair != hum)]
-            if self.sparsity > 1:
-                hairs = [hair for n,hair in enumerate(hairs) if n % self.sparsity == 0]
+            hairs = self.getMeshHairs(context, hair, hum)
             count = 0
             for hair in hairs:
                 count += 1
@@ -1913,6 +1918,103 @@ class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
 #   Initialize
 # ---------------------------------------------------------------------
 
+class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
+    bl_idname = "daz.add_hair_rig"
+    bl_label = "Add Hair Rig"
+    bl_description = "Add an armature to mesh hair"
+    bl_options = {'UNDO'}
+
+    useSeparateLoose = True
+    sparsity = 1
+    binsize = 10
+    length = 5
+
+    def run(self, context):
+        ob = context.object
+        hairname = ob.name
+        rig = ob.parent
+        if rig is None or rig.type != 'ARMATURE':
+            raise DazError("Hair must have an armature")
+        hairs = self.getMeshHairs(context, ob, None)
+        print("HH", len(hairs), hairs[0])
+        datas = []
+        for hair in hairs:
+            data = self.getData(hair)
+            datas.append(data)
+        bins = {}
+        for hair,data in zip(hairs, datas):
+            angle = data[0]
+            key = int(math.floor(angle/self.binsize))
+            if key not in bins.keys():
+                bins[key] = []
+            bins[key].append((hair,data))
+        activateObject(context, rig)
+        setMode('EDIT')
+        binbones = {}
+        for key,bin in bins.items():
+            print("BB", key, len(bin))
+            binbones[key] = self.buildBones(key, bin, rig)
+        setMode('OBJECT')
+        for key,bones in binbones.items():
+            self.buildVertexGroups(key, bins[key], bones)
+        activateObject(context, hairs[0])
+        for hair in hairs:
+            hair.select_set(True)
+        bpy.ops.object.join()
+        ob = context.object
+        ob.name = hairname
+
+
+    def getData(self, hair):
+        coord = np.array([list(v.co) for v in hair.data.vertices])
+        ave = np.average(coord, axis=0)
+        angle = math.atan(ave[1]/ave[0])/D
+        if angle < 0:
+            angle += 360
+        return angle,coord
+
+
+    def buildBones(self, key, bin, rig):
+        hair,data = bin[0]
+        coord = data[1]
+        for hair,data in bin[1:]:
+            coord = np.append(coord, data[1], axis=0)
+        xmin,ymin,zmin = np.min(coord, axis=0)
+        xmax,ymax,zmax = np.max(coord, axis=0)
+        rmin = coord[(coord[:,2] == zmax)][0]
+        rmax = coord[(coord[:,2] == zmin)][0]
+        r0 = rmin
+        bones = {}
+        for n in range(self.length):
+            s = (n+1)/self.length
+            r1 = s*rmin + (1-s)*rmax
+            bname = "Hair_%d_%d" % (key, n)
+            eb = rig.data.edit_bones.new(bname)
+            eb.head = r0
+            eb.tail = r1
+            bones[bname] = (r0, r1)
+            r0 = r1
+        return bones
+
+
+    def buildVertexGroups(self, key, bin, bones):
+        for hair,data in bin:
+            hair.vertex_groups.clear()
+            for bname,ends in bones.items():
+                vgrp = hair.vertex_groups.new(name=bname)
+                r0,r1 = ends
+                z0 = r0[2]
+                z1 = r1[2]
+                print("ZZ", z0, z1)
+                vnums = [(v.index, float(v.co[2] < z0 and v.co[2] > z1)) for v in hair.data.vertices]
+                for vn,w in vnums:
+                    if w > 0.001:
+                        vgrp.add([vn], w, 'REPLACE')
+
+# ---------------------------------------------------------------------
+#   Initialize
+# ---------------------------------------------------------------------
+
 classes = [
     ColorGroup,
 
@@ -1922,6 +2024,7 @@ classes = [
     DAZ_OT_ColorHair,
     DAZ_OT_ConnectHair,
     DAZ_OT_MeshAddPinning,
+    DAZ_OT_AddHairRig,
 ]
 
 def register():

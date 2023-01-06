@@ -296,6 +296,7 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.find_seams")
         self.layout.operator("daz.separate_loose_parts")
         self.layout.operator("daz.mesh_add_pinning")
+        self.layout.operator("daz.add_hair_rig")
 
 
 class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
