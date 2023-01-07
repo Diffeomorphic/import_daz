@@ -1955,10 +1955,22 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         description = "Hide the deform bones if using IK",
         default = True)
 
+    useRoundedBones : BoolProperty(
+        name = "Rounded Bones",
+        description = "Make the hair bones arc-like rather than straight",
+        default = True)
+
     headName : StringProperty(
         name = "Head",
         description = "Name of the head bone",
         default = "head")
+
+    weightingMethod : EnumProperty(
+        items = [('REAL', "Real Space", "Use location in real space"),
+                 ('UV', "UV Space", "Use location in UV space")],
+        name = "Weighting Method",
+        description = "Method for weighting mesh",
+        default = 'UV')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
@@ -1982,12 +1994,22 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         self.layout.prop(self, "sectorSize")
         self.layout.prop(self, "hairLength")
         self.layout.prop(self, "boneLayer")
+        self.layout.prop(self, "weightingMethod")
+        self.layout.prop(self, "useRoundedBones")
         self.layout.prop(self, "useIk")
         self.layout.prop(self, "useHideBones")
         self.layout.prop(self, "headName")
-        self.layout.prop(self, "startHair")
-        self.layout.prop(self, "endHead")
-        self.layout.prop(self, "headBlend")
+        if self.weightingMethod == 'REAL':
+            self.layout.prop(self, "startHair")
+            self.layout.prop(self, "endHead")
+            self.layout.prop(self, "headBlend")
+
+    def invoke(self, context, event):
+        ob = context.object
+        rig = ob.parent
+        if rig and rig.DazRig == "mhx":
+            self.boneLayer = 17
+        return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
         ob = context.object
@@ -2074,9 +2096,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         for n in range(self.hairLength):
             s = (n+1)/self.hairLength
             r1 = (1-s)*rmin + s*rmax
-            d1 = (1-s)*dmin + s*dmax
-            f = d1/np.linalg.norm(r1-c)
-            r1 = c + f*(r1-c)
+            if self.useRoundedBones:
+                d1 = (1-s)*dmin + s*dmax
+                f = d1/np.linalg.norm(r1-c)
+                r1 = c + f*(r1-c)
             bname = "Hair_%d_%d" % (key, n)
             eb = rig.data.edit_bones.new(bname)
             eb.head = r0
@@ -2115,7 +2138,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         cns.subtarget = ikname
         cns.chain_count = len(bones)
         cns.use_location = True
-        cns.use_rotation = True
+        cns.use_rotation = False
         pb = rig.pose.bones[ikname]
         pb.bone.show_wire = True
         pb.custom_shape = empty
@@ -2139,42 +2162,83 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         for hair,data in sector:
             hair.vertex_groups.clear()
             hgrp = hair.vertex_groups.new(name=self.headName)
-            vgrps = []
+            vgrps = [hgrp]
             for bname,r0,r1 in bones:
                 vgrp = hair.vertex_groups.new(name=bname)
                 vgrps.append(vgrp)
-            vlocs = np.array([v.co for v in hair.data.vertices])
-            vecs = np.subtract(vlocs[:,None,:], blocs)
-            dists = np.linalg.norm(vecs, axis=2)
-            weights = 1.0/(dists + 0.0001)
-            norms = np.linalg.norm(weights, axis=1)
-            weights = np.divide(weights, norms[:,None])
+            heights = self.getUvHeights(hair)
+            if self.weightingMethod == 'REAL':
+                weights = self.getWeightsFromLocs(hair, blocs, heights)
+            elif self.weightingMethod == 'UV':
+                weights = self.getWeightsFromUvs(hair, heights)
             for gn,vgrp in enumerate(vgrps):
                 for vn,w in enumerate(weights[:,gn]):
                     if w > 0.001:
                         vgrp.add([vn], w, 'REPLACE')
 
-            uvlayer = hair.data.uv_layers[0]
-            heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
-                for f in hair.data.polygons
-                for i,vn in enumerate(f.vertices)
-                ])
-            ylist = list(heights.values())
-            ymin = min(ylist)
-            ymax = max(ylist)
-            dy = ymax - ymin
-            y1 = ymax - self.startHair*dy
-            y2 = ymax - self.endHead*dy
-            for vn,y in heights.items():
-                if y > y1:
-                    hgrp.add([vn], 1.0, 'REPLACE')
-                    for vgrp in vgrps:
-                        vgrp.remove([vn])
-                elif y > y2:
-                    w = (y-y2)/(y1-y2) + self.headBlend
-                    hgrp.add([vn], min(w, 1), 'REPLACE')
-                elif self.headBlend:
-                    hgrp.add([vn], self.headBlend, 'REPLACE')
+
+    def getUvHeights(self, hair):
+        uvlayer = hair.data.uv_layers[0]
+        heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
+            for f in hair.data.polygons
+            for i,vn in enumerate(f.vertices)
+            ])
+        ylist = list(heights.values())
+        ymin = min(ylist)
+        ymax = max(ylist)
+        k = 1/(ymax-ymin)
+        hlist = list()
+        hlist.sort()
+        heights = dict([(vn,k*(y-ymin)) for vn,y in heights.items()])
+        return heights
+
+
+    def getWeightsFromLocs(self, hair, blocs, heights):
+        vlocs = np.array([v.co for v in hair.data.vertices])
+        vecs = np.subtract(vlocs[:,None,:], blocs)
+        dists = np.linalg.norm(vecs, axis=2)
+        weights = 1.0/(dists + 0.0001)
+        norms = np.linalg.norm(weights, axis=1)
+        weights = np.divide(weights, norms[:,None])
+        nverts = vlocs.shape[0]
+
+        hweights = np.zeros([nverts], dtype=float)
+        y1 = 1 - self.startHair
+        y2 = 1 - self.endHead
+        for vn,y in heights.items():
+            if y > y1:
+                hweights[vn] = 1.0
+                weights[vn,:] = 0
+            elif y > y2:
+                w = (y-y2)/(y1-y2) + self.headBlend
+                hweights[vn] = min(w,1)
+            elif self.headBlend:
+                hweights[vn] = self.headBlend
+        weights = np.append(hweights[:,None], weights, axis=1)
+        return weights
+
+
+    def getWeightsFromUvs(self, hair, heights):
+        nverts = len(hair.data.vertices)
+        k = self.hairLength+1
+        weights = np.zeros([nverts, k+1], dtype=float)
+        for vn,y in heights.items():
+            s = k*(1-y)
+            m = int(math.floor(s))
+            a = s-m
+            if a < 0.5:
+                if m > 0:
+                    weights[vn,m] = a + 0.5
+                    weights[vn,m-1] = 0.5 - a
+                else:
+                    weights[vn,m] = 1.0
+            else:
+                if m < k:
+                    weights[vn,m] = 1.5 - a
+                    weights[vn,m+1] = a - 0.5
+                else:
+                    weights[vn,m] = 1.0
+        return weights
 
 # ---------------------------------------------------------------------
 #   Initialize
