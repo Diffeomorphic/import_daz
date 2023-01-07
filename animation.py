@@ -981,7 +981,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
             if self.useInsertKeys:
-                tfm.insertKeys(rig, None, frame, rig.name, self)
+                insertKeys(rig, False, frame, self)
         if rig.type != 'ARMATURE':
             return
         if self.useClearPose and self.affectBones:
@@ -992,7 +992,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                     if not self.affectScale:
                         pb.scale = scale
                     if self.useInsertKeys:
-                        tfm.insertKeys(rig, pb, frame, pb.name, self)
+                        insertKeys(pb, True, frame, self)
             setChildofInverses(rig)
         if self.useClearMorphs and self.affectMorphs:
             if self.useShapekeys:
@@ -1082,7 +1082,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                                 tfm.setScale(rig.scale, False)
                             tfm.setRna(rig)
                             if self.useInsertKeys:
-                                tfm.insertKeys(rig, None, n+offset, rig.name, self)
+                                insertKeys(rig, False, n+offset, self)
                     elif rig.type != 'ARMATURE':
                         continue
                     elif bname in rig.data.bones.keys():
@@ -1110,9 +1110,9 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         hand.location = foot.location = Zero
                         self.fixForearmFollow("MhaForearmFollow_" + suffix, rig, hand, forearm)
                         if self.useInsertKeys:
-                            tfm.insertKeys(rig, forearm, n+offset, forearm.name, self)
-                            tfm.insertKeys(rig, hand, n+offset, hand.name, self)
-                            tfm.insertKeys(rig, foot, n+offset, foot.name, self)
+                            insertKeys(forearm, True, n+offset, self)
+                            insertKeys(hand, True, n+offset, self)
+                            insertKeys(foot, True, n+offset, self)
 
                 self.saveScales(rig, n+offset)
 
@@ -1251,7 +1251,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             elif not self.unlimited.get(pb.name):
                 self.unlimit(pb)
             if self.useInsertKeys:
-                tfm.insertKeys(rig, pb, n+offset, bname, self)
+                insertKeys(pb, True, n+offset, self)
         else:
             pass
 
@@ -1692,26 +1692,29 @@ class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
     def run(self, context):
         from .morphing import getRigFromObject
         rig = getRigFromObject(context.object)
-        auto =  context.scene.tool_settings.use_keyframe_insert_auto
+        scn = context.scene
+        auto =  scn.tool_settings.use_keyframe_insert_auto
         unit = Matrix()
         setWorldMatrix(rig, unit)
         if auto:
-            self.insertKeys(rig, False)
+            insertKeys(rig, False, scn.frame_current)
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
             if auto:
-                self.insertKeys(pb, True)
+                insertKeys(pb, True, scn.frame_current)
         setChildofInverses(rig)
 
 
-    def insertKeys(self, pb, isbone):
-        if not isbone or isLocationUnlocked(pb):
-            pb.keyframe_insert("location", group=pb.name)
-        if isbone and pb.rotation_mode == 'QUATERNION':
-            pb.keyframe_insert("rotation_quaternion", group=pb.name)
-        else:
-            pb.keyframe_insert("rotation_euler", group=pb.name)
-        pb.keyframe_insert("scale", group=pb.name)
+def insertKeys(pb, isbone, frame, btn=None):
+    if btn and pb.name in btn.driven:
+        return
+    if not isbone or isLocationUnlocked(pb):
+        pb.keyframe_insert("location", group=pb.name, frame=frame)
+    if isbone and pb.rotation_mode == 'QUATERNION':
+        pb.keyframe_insert("rotation_quaternion", group=pb.name, frame=frame)
+    else:
+        pb.keyframe_insert("rotation_euler", group=pb.name, frame=frame)
+    pb.keyframe_insert("scale", group=pb.name, frame=frame)
 
 
 def setChildofInverses(rig):
@@ -2476,28 +2479,19 @@ class DAZ_OT_BakeToFkRig(HideOperator):
 
 
     def bake(self, mats, act, context):
+        frame = context.scene.frame_current
         for pb,bmats in mats:
             pb.matrix_basis = Matrix()
             if act:
-                self.insertKeys(pb)
+                insertKeys(pb, True, frame)
             context.view_layer.update()
             for pb,mat in bmats:
                 pb.matrix = mat
                 if act:
-                    self.insertKeys(pb)
+                    insertKeys(pb, True, frame)
                 context.view_layer.update()
                 if not isLocationUnlocked(pb):
                     pb.location = Zero
-
-
-    def insertKeys(self, pb):
-        if isLocationUnlocked(pb):
-            pb.keyframe_insert("location", group=pb.name)
-        if pb.rotation_mode == 'QUATERNION':
-            pb.keyframe_insert("rotation_quaternion", group=pb.name)
-        else:
-            pb.keyframe_insert("rotation_euler", group=pb.name)
-        pb.keyframe_insert("scale", group=pb.name)
 
 #----------------------------------------------------------
 #   Import locks and limits
