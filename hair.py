@@ -1918,7 +1918,7 @@ class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
 #   Initialize
 # ---------------------------------------------------------------------
 
-class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
+class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
     bl_idname = "daz.add_hair_rig"
     bl_label = "Add Hair Rig"
     bl_description = "Add an armature to mesh hair"
@@ -1926,9 +1926,68 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
 
     useSeparateLoose = True
     sparsity = 1
-    binsize = 10
-    length = 5
-    useIk = True
+
+    sectorSize : IntProperty(
+        name = "Sector Size",
+        description = "Opening angle in degrees",
+        min = 5, max = 180,
+        default = 30)
+
+    hairLength : IntProperty(
+        name = "Hair Length",
+        description = "Number of bones in a hair",
+        min = 2, max = 10,
+        default = 5)
+
+    boneLayer : IntProperty(
+        name = "Bone Layer",
+        description = "Bone layer for hair bones",
+        min = 1, max = 32,
+        default = 4)
+
+    useIk : BoolProperty(
+        name = "Add IK Controls",
+        description = "Control hair posing with IK controls",
+        default = True)
+
+    useHideBones : BoolProperty(
+        name = "Hide Bones",
+        description = "Hide the deform bones if using IK",
+        default = True)
+
+    headName : StringProperty(
+        name = "Head",
+        description = "Name of the head bone",
+        default = "head")
+
+    startHair : FloatProperty(
+        name = "Hair Start Location",
+        description = "Location in UV space where hair starts",
+        min = 0.0, max = 1.0,
+        default = 0.1)
+
+    endHead : FloatProperty(
+        name = "Head End Location",
+        description = "Location in UV space where head ends",
+        min = 0.0, max = 1.0,
+        default = 0.2)
+
+    headBlend : FloatProperty(
+        name = "Head Blend",
+        description = "Add extra weight for the head bone",
+        min = 0.0, max = 1.0,
+        default = 0.1)
+
+    def draw(self, context):
+        self.layout.prop(self, "sectorSize")
+        self.layout.prop(self, "hairLength")
+        self.layout.prop(self, "boneLayer")
+        self.layout.prop(self, "useIk")
+        self.layout.prop(self, "useHideBones")
+        self.layout.prop(self, "headName")
+        self.layout.prop(self, "startHair")
+        self.layout.prop(self, "endHead")
+        self.layout.prop(self, "headBlend")
 
     def run(self, context):
         ob = context.object
@@ -1936,35 +1995,48 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
         rig = ob.parent
         if rig is None or rig.type != 'ARMATURE':
             raise DazError("Hair must have an armature")
+        if self.startHair > self.endHead:
+            raise DazError("Hair start location cannot exceed head end location")
         hairs = self.getMeshHairs(context, ob, None)
         datas = []
         for hair in hairs:
             data = self.getData(hair)
             datas.append(data)
-        bins = {}
+        sectors = {}
         for hair,data in zip(hairs, datas):
             angle = data[0]
-            key = int(math.floor(angle/self.binsize))
-            if key not in bins.keys():
-                bins[key] = []
-            bins[key].append((hair,data))
+            key = int(math.floor(angle/self.sectorSize))
+            if key not in sectors.keys():
+                sectors[key] = []
+            sectors[key].append((hair,data))
         activateObject(context, rig)
         setMode('EDIT')
-        head = rig.data.edit_bones["head"]
+        head = rig.data.edit_bones[self.headName]
         binbones = {}
-        for key,bin in bins.items():
-            binbones[key] = self.buildBones(key, bin, head, rig)
+        for key,sector in sectors.items():
+            binbones[key] = self.buildBones(key, sector, head, rig)
         if self.useIk:
-            for key,bones in binbones.items():
-                self.addIkBone(key, bones, head, rig)
+            for key,data in binbones.items():
+                self.addIkBone(key, data, head, rig)
         setMode('OBJECT')
         if self.useIk:
             empty = bpy.data.objects.new("CUBE", None)
             empty.empty_display_type = 'CUBE'
-            for key,bones in binbones.items():
-                self.addIkConstraint(key, bones, rig, empty)
-        for key,bones in binbones.items():
-            self.buildVertexGroups(key, bins[key], bones)
+            for key,data in binbones.items():
+                self.addIkConstraint(key, data, rig, empty)
+        for key,data in binbones.items():
+            self.buildVertexGroups(key, sectors[key], data)
+        self.mergeObjects(context, hairs, hairname)
+        rig.data.layers[self.boneLayer-1] = True
+        return
+        for key,sector in sectors.items():
+            hairs = [hair for hair,data in sector]
+            sectorname = "%s_%d" % (hairname, key)
+            self.mergeObjects(context, hairs, sectorname)
+
+
+    def mergeObjects(self, context, hairs, hairname):
+        print("Merge %d objects to %s" % (len(hairs), hairs[0].name))
         activateObject(context, hairs[0])
         for hair in hairs:
             hair.select_set(True)
@@ -1975,28 +2047,36 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
 
     def getData(self, hair):
         coord = np.array([list(v.co) for v in hair.data.vertices])
-        ave = np.average(coord, axis=0)
-        angle = math.atan(ave[1]/ave[0])/D
+        x,y,z = np.average(coord, axis=0)
+        angle = math.atan2(y, x)/D
         if angle < 0:
             angle += 360
         return angle,coord
 
 
-    def buildBones(self, key, bin, head, rig):
-        hair,data = bin[0]
+    def buildBones(self, key, sector, head, rig):
+        hair,data = sector[0]
         coord = data[1]
-        for hair,data in bin[1:]:
+        for hair,data in sector[1:]:
             coord = np.append(coord, data[1], axis=0)
         xmin,ymin,zmin = np.min(coord, axis=0)
         xmax,ymax,zmax = np.max(coord, axis=0)
         rmin = coord[(coord[:,2] == zmax)][0]
         rmax = coord[(coord[:,2] == zmin)][0]
+        c = np.array(head.tail)
+        dmin = np.linalg.norm(rmin-c)
+        dmax = np.linalg.norm(rmax-c)
         r0 = rmin
+        d0 = dmin
         bones = []
         parent = head
-        for n in range(self.length):
-            s = (n+1)/self.length
+        locs = []
+        for n in range(self.hairLength):
+            s = (n+1)/self.hairLength
             r1 = (1-s)*rmin + s*rmax
+            d1 = (1-s)*dmin + s*dmax
+            f = d1/np.linalg.norm(r1-c)
+            r1 = c + f*(r1-c)
             bname = "Hair_%d_%d" % (key, n)
             eb = rig.data.edit_bones.new(bname)
             eb.head = r0
@@ -2005,15 +2085,17 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
             if n > 0:
                 eb.use_connect = True
             bones.append((bname, r0, r1))
+            locs.append((r0+r1)/2)
             r0 = r1
             parent = eb
-        return bones
+        return bones,np.array(locs)
 
 
-    def addIkBone(self, key, bones, head, rig):
+    def addIkBone(self, key, data, head, rig):
         def normalize(v):
             return v/np.linalg.norm(v)
 
+        bones,locs = data
         ikname = "Hair_%d_IK" % key
         lname,r0,r1 = bones[-1]
         eb = rig.data.edit_bones.new(ikname)
@@ -2022,7 +2104,8 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
         eb.parent = head
 
 
-    def addIkConstraint(self, key, bones, rig, empty):
+    def addIkConstraint(self, key, data, rig, empty):
+        bones,locs = data
         ikname = "Hair_%d_IK" % key
         lname,r0,r1 = bones[-1]
         pb = rig.pose.bones[lname]
@@ -2036,32 +2119,62 @@ class DAZ_OT_AddHairRig(DazOperator, Separator, IsMesh):
         pb = rig.pose.bones[ikname]
         pb.bone.show_wire = True
         pb.custom_shape = empty
-        for bname,r0,r1 in bones:
-            bone = rig.data.bones[bname]
-            bone.hide = True
+        pb.bone.use_deform = False
+        pb.bone.layers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
+        self.hideBones(bones, rig)
 
 
-    def buildVertexGroups(self, key, bin, bones):
-        def getWeight(z, d, x0, x1, x2):
-            if z > x1:
-                return max(0, (x0-z)/d)
-            else:
-                return max(0, (z-x2)/d)
+    def hideBones(self, bones, rig):
+        if self.useHideBones:
+            hidden = 31*[False] + [True]
+            for bname,r0,r1 in bones:
+                bone = rig.data.bones[bname]
+                bone.layers = hidden
+                #bone.hide = True
 
-        for hair,data in bin:
+
+    def buildVertexGroups(self, key, sector, data):
+        bones,blocs = data
+        blocs = blocs[None,:,:]
+        for hair,data in sector:
             hair.vertex_groups.clear()
+            hgrp = hair.vertex_groups.new(name=self.headName)
+            vgrps = []
             for bname,r0,r1 in bones:
                 vgrp = hair.vertex_groups.new(name=bname)
-                z0 = r0[2]
-                z1 = r1[2]
-                d = z0-z1
-                x0 = z0 + 0.5*d
-                x1 = 0.5*(z0+z1)
-                x2 = z1 - 0.5*d
-                vnums = [(v.index, getWeight(v.co[2],d,x0,x1,x2)) for v in hair.data.vertices]
-                for vn,w in vnums:
+                vgrps.append(vgrp)
+            vlocs = np.array([v.co for v in hair.data.vertices])
+            vecs = np.subtract(vlocs[:,None,:], blocs)
+            dists = np.linalg.norm(vecs, axis=2)
+            weights = 1.0/(dists + 0.0001)
+            norms = np.linalg.norm(weights, axis=1)
+            weights = np.divide(weights, norms[:,None])
+            for gn,vgrp in enumerate(vgrps):
+                for vn,w in enumerate(weights[:,gn]):
                     if w > 0.001:
                         vgrp.add([vn], w, 'REPLACE')
+
+            uvlayer = hair.data.uv_layers[0]
+            heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
+                for f in hair.data.polygons
+                for i,vn in enumerate(f.vertices)
+                ])
+            ylist = list(heights.values())
+            ymin = min(ylist)
+            ymax = max(ylist)
+            dy = ymax - ymin
+            y1 = ymax - self.startHair*dy
+            y2 = ymax - self.endHead*dy
+            for vn,y in heights.items():
+                if y > y1:
+                    hgrp.add([vn], 1.0, 'REPLACE')
+                    for vgrp in vgrps:
+                        vgrp.remove([vn])
+                elif y > y2:
+                    w = (y-y2)/(y1-y2) + self.headBlend
+                    hgrp.add([vn], min(w, 1), 'REPLACE')
+                elif self.headBlend:
+                    hgrp.add([vn], self.headBlend, 'REPLACE')
 
 # ---------------------------------------------------------------------
 #   Initialize
