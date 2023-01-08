@@ -1927,11 +1927,17 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
     useSeparateLoose = True
     sparsity = 1
 
-    sectorSize : IntProperty(
-        name = "Sector Size",
-        description = "Opening angle in degrees",
-        min = 5, max = 180,
-        default = 30)
+    nSectors : IntProperty(
+        name = "Sectors",
+        description = "Number of sectors",
+        min = 2, max = 36,
+        default = 12)
+
+    sectorOffset : IntProperty(
+        name = "Sector Offset",
+        description = "Angle to beginning of first sector",
+        min = 0, max = 90,
+        default = 0)
 
     hairLength : IntProperty(
         name = "Hair Length",
@@ -1945,20 +1951,24 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         min = 1, max = 32,
         default = 4)
 
-    useIk : BoolProperty(
-        name = "Add IK Controls",
-        description = "Control hair posing with IK controls",
-        default = True)
+    controlMethod : EnumProperty(
+        items = [('NONE', "None", "Don't add control bones"),
+                 ('IK', "IK", "IK controls"),
+                 ('WINDER', "Winder", "Winder")],
+        name = "Control Method",
+        description = "Method for controlling hair posing",
+        default = 'IK')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
         description = "Hide the deform bones if using IK",
         default = True)
 
-    useRoundedBones : BoolProperty(
-        name = "Rounded Bones",
-        description = "Make the hair bones arc-like rather than straight",
-        default = True)
+    roundness : FloatProperty(
+        name = "Roundness",
+        description = "Expand the joints radially from the head to make the bones rounder",
+        min = 0.0, max = 1.0,
+        default = 0.5)
 
     headName : StringProperty(
         name = "Head",
@@ -1991,13 +2001,15 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         default = 0.1)
 
     def draw(self, context):
-        self.layout.prop(self, "sectorSize")
+        self.layout.prop(self, "nSectors")
+        self.layout.prop(self, "sectorOffset")
         self.layout.prop(self, "hairLength")
         self.layout.prop(self, "boneLayer")
         self.layout.prop(self, "weightingMethod")
-        self.layout.prop(self, "useRoundedBones")
-        self.layout.prop(self, "useIk")
-        self.layout.prop(self, "useHideBones")
+        self.layout.prop(self, "roundness")
+        self.layout.prop(self, "controlMethod")
+        if self.controlMethod != 'NONE':
+            self.layout.prop(self, "useHideBones")
         self.layout.prop(self, "headName")
         if self.weightingMethod == 'REAL':
             self.layout.prop(self, "startHair")
@@ -2019,6 +2031,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
             raise DazError("Hair must have an armature")
         if self.startHair > self.endHead:
             raise DazError("Hair start location cannot exceed head end location")
+        self.boneLayers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
+        self.hiddenLayers = 31*[False] + [True]
         hairs = self.getMeshHairs(context, ob, None)
         datas = []
         for hair in hairs:
@@ -2027,7 +2041,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         sectors = {}
         for hair,data in zip(hairs, datas):
             angle = data[0]
-            key = int(math.floor(angle/self.sectorSize))
+            key = int(math.floor(self.nSectors*(angle + self.sectorOffset)/360))
+            if key >= self.nSectors:
+                key -= self.nSectors
+            elif key < 0:
+                key += self.nSectors
             if key not in sectors.keys():
                 sectors[key] = []
             sectors[key].append((hair,data))
@@ -2037,16 +2055,22 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         binbones = {}
         for key,sector in sectors.items():
             binbones[key] = self.buildBones(key, sector, head, rig)
-        if self.useIk:
+        if self.controlMethod == 'IK':
             for key,data in binbones.items():
                 self.addIkBone(key, data, head, rig)
         setMode('OBJECT')
-        if self.useIk:
+        if self.controlMethod == 'IK':
             empty = bpy.data.objects.new("CUBE", None)
             empty.empty_display_type = 'CUBE'
             for key,data in binbones.items():
                 self.addIkConstraint(key, data, rig, empty)
+        elif self.controlMethod == 'WINDER':
+            from .fix import addWinder
+            for key,data in binbones.items():
+                bones,locs = data
+                addWinder(rig, bones[0][0], None, True, self.boneLayers, self.hiddenLayers)
         for key,data in binbones.items():
+            self.hideBones(data, rig)
             self.buildVertexGroups(key, sectors[key], data)
         self.mergeObjects(context, hairs, hairname)
         rig.data.layers[self.boneLayer-1] = True
@@ -2065,6 +2089,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         bpy.ops.object.join()
         ob = context.object
         ob.name = hairname
+        bpy.ops.object.shade_smooth()
 
 
     def getData(self, hair):
@@ -2096,10 +2121,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         for n in range(self.hairLength):
             s = (n+1)/self.hairLength
             r1 = (1-s)*rmin + s*rmax
-            if self.useRoundedBones:
-                d1 = (1-s)*dmin + s*dmax
-                f = d1/np.linalg.norm(r1-c)
-                r1 = c + f*(r1-c)
+            d1 = (1-s)*dmin + s*dmax
+            f = d1/np.linalg.norm(r1-c)
+            r1 = (1-self.roundness)*r1 + self.roundness*(c + f*(r1-c))
             bname = "Hair_%d_%d" % (key, n)
             eb = rig.data.edit_bones.new(bname)
             eb.head = r0
@@ -2143,16 +2167,19 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         pb.bone.show_wire = True
         pb.custom_shape = empty
         pb.bone.use_deform = False
-        pb.bone.layers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
-        self.hideBones(bones, rig)
+        pb.bone.layers = self.boneLayers
 
 
-    def hideBones(self, bones, rig):
-        if self.useHideBones:
-            hidden = 31*[False] + [True]
+    def hideBones(self, data, rig):
+        bones,locs = data
+        if self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                bone.layers = hidden
+                bone.layers = self.boneLayers
+        elif self.useHideBones:
+            for bname,r0,r1 in bones:
+                bone = rig.data.bones[bname]
+                bone.layers = self.hiddenLayers
                 #bone.hide = True
 
 

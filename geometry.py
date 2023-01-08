@@ -1261,7 +1261,6 @@ class Geometry(Asset, Channels):
             reportError('Invalid mesh "%s". Correcting.' % me.name, trigger=(2,5))
             LS.invalidMeshes.append(me.name)
 
-
     def getBumpArea(self, me, bumps):
         bump = list(bumps)[0]
         if bump not in self.bumpareas.keys():

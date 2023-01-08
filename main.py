@@ -249,7 +249,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             self.msg += "Some assets were not found. Check that all DAZ root paths have been set up correctly.        \n"
             self.addItems(LS.missingAssets.keys())
         if LS.invalidMeshes:
-            self.msg += "Invalid meshes found:\n"
+            self.msg += "Invalid meshes found and corrected.\nImporting morphs may not work:\n"
             self.addItems(LS.invalidMeshes)
         if LS.triax:
             self.msg += "Meshes with triax weights found. Consider converting to general weights in DAZ Studio.\n"

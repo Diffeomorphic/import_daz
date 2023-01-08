@@ -1222,13 +1222,22 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         self.layout.prop(self, "windedLayer")
         self.layout.prop(self, "useLockLoc")
 
+    def invoke(self, context, event):
+        rig = context.object
+        if rig and rig.DazRig == "mhx":
+            self.winderLayer = 17
+            self.windedLayer = 18
+        return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
         rig = context.object
         self.winderLayers = (self.winderLayer-1)*[False] + [True] + (32-self.winderLayer)*[False]
         self.windedLayers = (self.windedLayer-1)*[False] + [True] + (32-self.windedLayer)*[False]
+        self.startGizmos(context, rig)
+        self.makeGizmos(["GZM_Knuckle"])
+        gizmo = self.gizmos["GZM_Knuckle"]
         for pb in self.findPoseRoots(rig):
-            self.addWinder(context, pb, rig)
+            addWinder(rig, pb.name, gizmo, self.useLockLoc, self.winderLayers, self.windedLayers)
 
 
     def findPoseRoots(self, rig):
@@ -1249,62 +1258,62 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
                 del proots[bname]
         return proots.values()
 
+#-------------------------------------------------------------
+#   addWinder used in hide.py
+#-------------------------------------------------------------
 
-    def addWinder(self, context, pb, rig):
-        from .mhx import copyRotation, copyScale, copyLocation
-        bname = pb.name
-        wname = "Wind"+bname
-        self.startGizmos(context, rig)
-        self.makeGizmos(["GZM_Knuckle"])
-        gizmo = self.gizmos["GZM_Knuckle"]
-
-        setMode('EDIT')
-        eb = rig.data.edit_bones[bname]
-        tarb = rig.data.edit_bones.new(wname)
-        tarb.head = eb.head
+def addWinder(rig, bname, gizmo, useLockLoc, winderLayers, windedLayers):
+    from .mhx import copyRotation, copyScale, copyLocation
+    wname = "Wind_%s" % bname
+    setMode('EDIT')
+    eb = rig.data.edit_bones[bname]
+    tarb = rig.data.edit_bones.new(wname)
+    tarb.head = eb.head
+    tarb.tail = eb.tail
+    tarb.roll = eb.roll
+    tarb.parent = eb.parent
+    tarb.layers = winderLayers
+    n = 1
+    length = eb.length
+    while eb.children and len(eb.children) == 1:
+        eb = eb.children[0]
         tarb.tail = eb.tail
-        tarb.roll = eb.roll
-        tarb.parent = eb.parent
-        tarb.layers = self.winderLayers
-        n = 1
-        length = eb.length
-        while eb.children and len(eb.children) == 1:
-            eb = eb.children[0]
-            tarb.tail = eb.tail
-            n += 1
-            length += eb.length
+        n += 1
+        length += eb.length
 
-        setMode('POSE')
-        winder = rig.pose.bones[wname]
+    setMode('POSE')
+    pb = rig.pose.bones[bname]
+    winder = rig.pose.bones[wname]
+    if gizmo:
         winder.custom_shape = gizmo
         winder.bone.show_wire = True
-        winder.rotation_mode = pb.rotation_mode
-        winder.matrix_basis = pb.matrix_basis
-        winder.lock_location = pb.lock_location
-        winder.lock_rotation = pb.lock_rotation
-        winder.lock_scale = pb.lock_scale
-        if self.useLockLoc:
-            winder.lock_location = (True, True, True)
+    winder.rotation_mode = pb.rotation_mode
+    winder.matrix_basis = pb.matrix_basis
+    winder.lock_location = pb.lock_location
+    winder.lock_rotation = pb.lock_rotation
+    winder.lock_scale = pb.lock_scale
+    if useLockLoc:
+        winder.lock_location = (True, True, True)
 
+    infl = 2*pb.bone.length/length
+    cns1 = copyRotation(pb, winder, rig)
+    cns1.influence = infl
+    cns2 = copyScale(pb, winder, rig)
+    cns2.influence = infl
+    if not useLockLoc:
+        cns3 = copyLocation(pb, winder, rig)
+        cns3.influence = infl
+    pb.bone.layers = windedLayers
+    while pb.children and len(pb.children) == 1:
+        pb = pb.children[0]
         infl = 2*pb.bone.length/length
         cns1 = copyRotation(pb, winder, rig)
+        cns1.use_offset = True
         cns1.influence = infl
         cns2 = copyScale(pb, winder, rig)
+        cns2.use_offset = True
         cns2.influence = infl
-        if not self.useLockLoc:
-            cns3 = copyLocation(pb, winder, rig)
-            cns3.influence = infl
-        pb.bone.layers = self.windedLayers
-        while pb.children and len(pb.children) == 1:
-            pb = pb.children[0]
-            infl = 2*pb.bone.length/length
-            cns1 = copyRotation(pb, winder, rig)
-            cns1.use_offset = True
-            cns1.influence = infl
-            cns2 = copyScale(pb, winder, rig)
-            cns2.use_offset = True
-            cns2.influence = infl
-            pb.bone.layers = self.windedLayers
+        pb.bone.layers = windedLayers
 
 #-------------------------------------------------------------
 #   Retarget armature
