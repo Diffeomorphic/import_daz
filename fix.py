@@ -398,7 +398,7 @@ class Fixer(DriverUser):
         drvname = drvBone("eye.%s" % suffix)
         if drvname not in rig.data.edit_bones.keys():
             eyegaze = deriveBone(drvname, eye, rig, helpLayer, eye.parent)
-            eye.parent = eyegaze
+            #eye.parent = eyegaze
         vec = eye.tail-eye.head
         vec.normalize()
         loc = eye.head + vec*rig.DazScale*30
