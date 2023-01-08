@@ -481,11 +481,12 @@ class GizmoUser:
         self.hidden = createHiddenCollection(context, ob)
 
 
-    def makeGizmos(self, gnames):
-        self.makeEmptyGizmo("GZM_Circle", 'CIRCLE')
-        self.makeEmptyGizmo("GZM_Ball", 'SPHERE')
-        self.makeEmptyGizmo("GZM_Cube", 'CUBE')
-        self.makeEmptyGizmo("GZM_Cone", 'CONE')
+    def makeGizmos(self, useEmpties, gnames):
+        if useEmpties:
+            self.makeEmptyGizmo("GZM_Circle", 'CIRCLE')
+            self.makeEmptyGizmo("GZM_Ball", 'SPHERE')
+            self.makeEmptyGizmo("GZM_Cube", 'CUBE')
+            self.makeEmptyGizmo("GZM_Cone", 'CONE')
 
         from .load_json import loadJson
         folder = os.path.dirname(__file__)
@@ -1234,7 +1235,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         self.winderLayers = (self.winderLayer-1)*[False] + [True] + (32-self.winderLayer)*[False]
         self.windedLayers = (self.windedLayer-1)*[False] + [True] + (32-self.windedLayer)*[False]
         self.startGizmos(context, rig)
-        self.makeGizmos(["GZM_Knuckle"])
+        self.makeGizmos(False, ["GZM_Knuckle"])
         gizmo = self.gizmos["GZM_Knuckle"]
         for pb in self.findPoseRoots(rig):
             addWinder(rig, pb.name, gizmo, self.useLockLoc, self.winderLayers, self.windedLayers)

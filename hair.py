@@ -37,6 +37,7 @@ from .material import WHITE, GREY, BLACK, isWhite, isBlack
 from .cycles import CyclesMaterial, CyclesTree
 from .morphing import Selector
 from .guess import ColorProp
+from .fix import GizmoUser
 
 #-------------------------------------------------------------
 #   Classes
@@ -1918,7 +1919,7 @@ class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
 #   Initialize
 # ---------------------------------------------------------------------
 
-class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
+class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
     bl_idname = "daz.add_hair_rig"
     bl_label = "Add Hair Rig"
     bl_description = "Add an armature to mesh hair"
@@ -1980,7 +1981,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
                  ('UV', "UV Space", "Use location in UV space")],
         name = "Weighting Method",
         description = "Method for weighting mesh",
-        default = 'UV')
+        default = 'REAL')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
@@ -1993,12 +1994,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         description = "Location in UV space where head ends",
         min = 0.0, max = 1.0,
         default = 0.2)
-
-    headBlend : FloatProperty(
-        name = "Head Blend",
-        description = "Add extra weight for the head bone",
-        min = 0.0, max = 1.0,
-        default = 0.1)
 
     def draw(self, context):
         self.layout.prop(self, "nSectors")
@@ -2014,7 +2009,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         if self.weightingMethod == 'REAL':
             self.layout.prop(self, "startHair")
             self.layout.prop(self, "endHead")
-            self.layout.prop(self, "headBlend")
 
     def invoke(self, context, event):
         ob = context.object
@@ -2033,6 +2027,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
             raise DazError("Hair start location cannot exceed head end location")
         self.boneLayers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
         self.hiddenLayers = 31*[False] + [True]
+        self.startGizmos(context, rig)
         hairs = self.getMeshHairs(context, ob, None)
         datas = []
         for hair in hairs:
@@ -2040,8 +2035,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
             datas.append(data)
         sectors = {}
         for hair,data in zip(hairs, datas):
-            angle = data[0]
-            key = int(math.floor(self.nSectors*(angle + self.sectorOffset)/360))
+            angle = data[0] - self.sectorOffset
+            key = int(math.floor(self.nSectors*angle/360 + 0.5))
             if key >= self.nSectors:
                 key -= self.nSectors
             elif key < 0:
@@ -2060,15 +2055,17 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
                 self.addIkBone(key, data, head, rig)
         setMode('OBJECT')
         if self.controlMethod == 'IK':
-            empty = bpy.data.objects.new("CUBE", None)
-            empty.empty_display_type = 'CUBE'
+            gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
             for key,data in binbones.items():
-                self.addIkConstraint(key, data, rig, empty)
+                self.addIkConstraint(key, data, rig, gizmo)
         elif self.controlMethod == 'WINDER':
             from .fix import addWinder
+            #self.makeGizmos(False, ["GZM_Knuckle"])
+            #gizmo = self.gizmos["GZM_Knuckle"]
+            gizmo = None
             for key,data in binbones.items():
                 bones,locs = data
-                addWinder(rig, bones[0][0], None, True, self.boneLayers, self.hiddenLayers)
+                addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers)
         for key,data in binbones.items():
             self.hideBones(data, rig)
             self.buildVertexGroups(key, sectors[key], data)
@@ -2106,11 +2103,19 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         coord = data[1]
         for hair,data in sector[1:]:
             coord = np.append(coord, data[1], axis=0)
-        xmin,ymin,zmin = np.min(coord, axis=0)
-        xmax,ymax,zmax = np.max(coord, axis=0)
-        rmin = coord[(coord[:,2] == zmax)][0]
-        rmax = coord[(coord[:,2] == zmin)][0]
+        zmin = np.min(coord[:,2])
+        zmax = np.max(coord[:,2])
         c = np.array(head.tail)
+        dr = coord-c
+        dr[:,2] = 0
+        norm = np.linalg.norm(dr, axis=1)
+        nmin = np.min(norm)
+        nmax = np.max(norm)
+        angle = (key*360/self.nSectors + self.sectorOffset)
+        x = math.cos(angle*D)
+        y = math.sin(angle*D)
+        rmin = np.array((nmin*x + c[0], nmin*y + c[1], zmax))
+        rmax = np.array((nmax*x + c[0], nmax*y + c[1], zmin))
         dmin = np.linalg.norm(rmin-c)
         dmax = np.linalg.norm(rmax-c)
         r0 = rmin
@@ -2151,7 +2156,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         eb.parent = head
 
 
-    def addIkConstraint(self, key, data, rig, empty):
+    def addIkConstraint(self, key, data, rig, gizmo):
         bones,locs = data
         ikname = "Hair_%d_IK" % key
         lname,r0,r1 = bones[-1]
@@ -2162,10 +2167,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
         cns.subtarget = ikname
         cns.chain_count = len(bones)
         cns.use_location = True
-        cns.use_rotation = False
+        cns.use_rotation = True
         pb = rig.pose.bones[ikname]
         pb.bone.show_wire = True
-        pb.custom_shape = empty
+        pb.custom_shape = gizmo
         pb.bone.use_deform = False
         pb.bone.layers = self.boneLayers
 
@@ -2237,10 +2242,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, IsMesh):
                 hweights[vn] = 1.0
                 weights[vn,:] = 0
             elif y > y2:
-                w = (y-y2)/(y1-y2) + self.headBlend
+                w = (y-y2)/(y1-y2)
                 hweights[vn] = min(w,1)
-            elif self.headBlend:
-                hweights[vn] = self.headBlend
         weights = np.append(hweights[:,None], weights, axis=1)
         return weights
 

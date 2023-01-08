@@ -295,8 +295,6 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.copy_modifiers")
         self.layout.operator("daz.find_seams")
         self.layout.operator("daz.separate_loose_parts")
-        self.layout.operator("daz.mesh_add_pinning")
-        self.layout.operator("daz.add_hair_rig")
 
 
 class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
@@ -387,6 +385,9 @@ class DAZ_PT_AdvancedHair(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.update_hair")
         self.layout.operator("daz.color_hair")
         self.layout.operator("daz.combine_hairs")
+        self.layout.separator()
+        self.layout.operator("daz.mesh_add_pinning")
+        self.layout.operator("daz.add_hair_rig")
 
 #----------------------------------------------------------
 #   Utilities panel

@@ -665,7 +665,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def addGizmos(self, rig, context):
         from .driver import isBoneDriven
         setMode('OBJECT')
-        self.makeGizmos(None)
+        self.makeGizmos(True, None)
 
         for pb in rig.pose.bones:
             if isDrvBone(pb.name) or isFinal(pb.name):

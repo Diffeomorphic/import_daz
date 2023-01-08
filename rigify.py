@@ -1080,7 +1080,7 @@ class Rigify:
             "gaze.R" :          ("GZM_Circle025", 1),
             "ik_tongue" :       ("GZM_Cone", 0.4),
         }
-        self.makeGizmos(["GZM_MJaw", "GZM_Circle025", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
+        self.makeGizmos(True, ["GZM_MJaw", "GZM_Circle025", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
         bgrp = gen.pose.bone_groups.new(name="DAZ")
         bgrp.color_set = 'CUSTOM'
         bgrp.colors.normal = (1.0, 0.5, 0)
