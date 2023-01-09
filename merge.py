@@ -1224,7 +1224,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         if self.useMergeNonConforming == 'ALWAYS':
             return True
         elif self.useMergeNonConforming == 'CONTROLS':
-            if (subrig.DazUrl == "/data/DAZ 3D/Genesis 8/Genesis 8_1 Face Controls/Genesis 8.1 Face Controls.dsf#Genesis 8.1 Face Controls"):
+            urls = ["/data/daz 3d/genesis 8/genesis 8_1 face controls/genesis 8.1 face controls.dsf#genesis 8.1 face controls",
+                   ]
+            if subrig.DazUrl.lower() in urls:
                 if info.foundControl:
                     subrig.hide_viewport = True
                     for child in subrig.children:
