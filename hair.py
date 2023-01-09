@@ -2060,12 +2060,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 self.addIkConstraint(key, data, rig, gizmo)
         elif self.controlMethod == 'WINDER':
             from .fix import addWinder
-            #self.makeGizmos(False, ["GZM_Knuckle"])
-            #gizmo = self.gizmos["GZM_Knuckle"]
-            gizmo = None
+            self.makeGizmos(False, ["GZM_Knuckle"])
+            gizmo = self.gizmos["GZM_Knuckle"]
             for key,data in binbones.items():
-                bones,locs = data
-                addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers)
+                bones,locs,xaxis = data
+                addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers, xaxis=xaxis)
         for key,data in binbones.items():
             self.hideBones(data, rig)
             self.buildVertexGroups(key, sectors[key], data)
@@ -2099,6 +2098,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def buildBones(self, key, sector, head, rig):
+        from .bone import setRoll
         hair,data = sector[0]
         coord = data[1]
         for hair,data in sector[1:]:
@@ -2116,8 +2116,12 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         y = math.sin(angle*D)
         rmin = np.array((nmin*x + c[0], nmin*y + c[1], zmax))
         rmax = np.array((nmax*x + c[0], nmax*y + c[1], zmin))
-        dmin = np.linalg.norm(rmin-c)
-        dmax = np.linalg.norm(rmax-c)
+        e1 = rmin - c
+        e2 = rmax - c
+        xaxis = Vector(np.cross(e1, e2))
+        xaxis.normalize()
+        dmin = np.linalg.norm(e1)
+        dmax = np.linalg.norm(e2)
         r0 = rmin
         d0 = dmin
         bones = []
@@ -2133,6 +2137,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             eb = rig.data.edit_bones.new(bname)
             eb.head = r0
             eb.tail = r1
+            if self.controlMethod == 'WINDER':
+                setRoll(eb, xaxis)
             eb.parent = parent
             if n > 0:
                 eb.use_connect = True
@@ -2140,14 +2146,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             locs.append((r0+r1)/2)
             r0 = r1
             parent = eb
-        return bones,np.array(locs)
+        return bones, np.array(locs), xaxis
 
 
     def addIkBone(self, key, data, head, rig):
         def normalize(v):
             return v/np.linalg.norm(v)
 
-        bones,locs = data
+        bones,locs,xaxis = data
         ikname = "Hair_%d_IK" % key
         lname,r0,r1 = bones[-1]
         eb = rig.data.edit_bones.new(ikname)
@@ -2157,7 +2163,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def addIkConstraint(self, key, data, rig, gizmo):
-        bones,locs = data
+        bones,locs,xaxis = data
         ikname = "Hair_%d_IK" % key
         lname,r0,r1 = bones[-1]
         pb = rig.pose.bones[lname]
@@ -2176,7 +2182,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def hideBones(self, data, rig):
-        bones,locs = data
+        bones,locs,xaxis = data
         if self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
@@ -2189,7 +2195,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def buildVertexGroups(self, key, sector, data):
-        bones,blocs = data
+        bones,blocs,xaxis = data
         blocs = blocs[None,:,:]
         for hair,data in sector:
             hair.vertex_groups.clear()

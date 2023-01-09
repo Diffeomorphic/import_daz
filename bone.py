@@ -537,7 +537,7 @@ class BoneInstance(Instance):
                 cns.mute = True
 
 #-------------------------------------------------------------
-#   Bone
+#   Utilities
 #-------------------------------------------------------------
 
 def eulerIsZero(euler):
@@ -552,23 +552,15 @@ def setRoll(eb, xaxis):
     xaxis.normalize()
     zaxis = xaxis.cross(yaxis)
     zaxis.normalize()
-    eb.roll = getRoll(xaxis, yaxis, zaxis)
-
-
-def getRoll(xaxis, yaxis, zaxis):
     mat = Matrix().to_3x3()
     mat.col[0] = xaxis
     mat.col[1] = yaxis
     mat.col[2] = zaxis
-    return getRollFromQuat(mat.to_quaternion())
-
-
-def getRollFromQuat(quat):
+    quat = mat.to_quaternion()
     if abs(quat.w) < 1e-4:
-        roll = pi
+        eb.roll = pi
     else:
-        roll = 2*math.atan(quat.y/quat.w)
-    return roll
+        eb.roll = 2*math.atan(quat.y/quat.w)
 
 #-------------------------------------------------------------
 #   Bone

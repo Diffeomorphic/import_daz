@@ -1263,7 +1263,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
 #   addWinder used in hide.py
 #-------------------------------------------------------------
 
-def addWinder(rig, bname, gizmo, useLockLoc, winderLayers, windedLayers):
+def addWinder(rig, bname, gizmo, useLockLoc, winderLayers, windedLayers, xaxis=None):
     from .mhx import copyRotation, copyScale, copyLocation
     wname = "Wind_%s" % bname
     setMode('EDIT')
@@ -1281,6 +1281,9 @@ def addWinder(rig, bname, gizmo, useLockLoc, winderLayers, windedLayers):
         tarb.tail = eb.tail
         n += 1
         length += eb.length
+    if xaxis is not None:
+        from .bone import setRoll
+        setRoll(tarb, xaxis)
 
     setMode('POSE')
     pb = rig.pose.bones[bname]
