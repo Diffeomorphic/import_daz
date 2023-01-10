@@ -34,6 +34,7 @@ from mathutils import Matrix
 from .utils import *
 from .error import *
 from .driver import DriverUser
+from .fileutils import AF
 
 #-------------------------------------------------------------
 #   Merge UV Layers
@@ -1220,14 +1221,11 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         return info, subinfos, repars
 
 
-    faceUrls = ["/data/daz 3d/genesis 8/genesis 8_1 face controls/genesis 8.1 face controls.dsf#genesis 8.1 face controls",
-                "/data/daz 3d/genesis 8/genesis 8_1 male face controls/genesis 8.1 male face controls.dsf#genesis 8.1 male face controls",
-               ]
     def isConforming(self, subrig, rig, info):
         if self.useMergeNonConforming == 'ALWAYS':
             return True
         elif self.useMergeNonConforming == 'CONTROLS':
-            if subrig.DazUrl.lower() in self.faceUrls:
+            if subrig.DazUrl.lower() in AF.FaceControls:
                 if info.foundControl:
                     subrig.hide_viewport = True
                     for child in subrig.children:

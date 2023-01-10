@@ -99,6 +99,11 @@ class AnimationFolders:
         ]
         self.TwistBones["genesis8"] = self.TwistBones["genesis3"]
 
+        self.FaceControls = [
+            "/data/daz 3d/genesis 8/genesis 8_1 face controls/genesis 8.1 face controls.dsf#genesis 8.1 face controls",
+            "/data/daz 3d/genesis 8/genesis 8_1 male face controls/genesis 8.1 male face controls.dsf#genesis 8.1 male face controls",
+        ]
+
         self.RestPoseItems = []
         folder = os.path.join(os.path.dirname(__file__), "data", "restposes")
         for file in os.listdir(folder):

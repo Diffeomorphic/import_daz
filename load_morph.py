@@ -1425,7 +1425,7 @@ class LoadMorph(DriverUser):
 #   For bone drivers
 #-------------------------------------------------------------
 
-def buildBoneFormula(asset, rig, errors):
+def buildBoneFormula(asset, rig, altmorphs, errors):
 
     def buildChannel(exprs, pb, channel):
         lm = LoadMorph()
@@ -1450,6 +1450,7 @@ def buildBoneFormula(asset, rig, errors):
     def buildValueDriver(exprs, raw):
         lm = LoadMorph()
         lm.initRig(rig)
+        #print("VD", raw)
         for idx,expr in exprs.items():
             bname = expr["bone"]
             if (bname not in rig.pose.bones.keys() and
@@ -1464,6 +1465,12 @@ def buildBoneFormula(asset, rig, errors):
                 rig.data[final] = 0.0
             lm.buildBoneDriver(raw, bname, expr, True)
 
+
+    def correctExprs(exprs, factor):
+        for idx,expr in exprs.items():
+            expr["factor"] *= factor
+
+
     exprs = asset.evalFormulas(rig, None, True)
     for driven,expr in exprs.items():
         if "rotation" in expr.keys():
@@ -1475,7 +1482,14 @@ def buildBoneFormula(asset, rig, errors):
                 pb = rig.pose.bones[driven]
                 buildChannel(expr["translation"], pb, "location")
         if "value" in expr.keys():
-            buildValueDriver(expr["value"], driven)
+            formulas = expr["value"]
+            if driven in altmorphs.keys():
+                for alt,factor in altmorphs[driven].items():
+                    if factor != 1:
+                        correctExprs(formulas, factor)
+                    buildValueDriver(formulas, alt)
+            else:
+                buildValueDriver(formulas, driven)
 
 #------------------------------------------------------------------
 #   Utilities

@@ -344,7 +344,7 @@ class BoneInstance(Instance):
             pb = rig.pose.bones[self.name]
             pb.rotation_mode = self.getRotationMode(pb, self.isRotMorph(self.node.formulas))
             errors = []
-            buildBoneFormula(self.node, rig, errors)
+            buildBoneFormula(self.node, rig, self.figure.altmorphs, errors)
         if hide or not self.getValue(["Visible"], True):
             self.figure.hiddenBones[self.name] = True
             bone = rig.data.bones[self.name]

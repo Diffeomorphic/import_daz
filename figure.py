@@ -140,9 +140,25 @@ class FigureInstance(Instance):
         rig.DazLocLimits = rig.DazHasLocLimits = GS.useLimitLoc
         self.fixDependencyLoops(rig)
         setMode('OBJECT')
+        self.loadAltMorphs()
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildFormulas(rig, False)
+
+
+    def loadAltMorphs(self):
+        from .bone import BoneInstance
+        from .fileutils import AF
+        self.altmorphs = {}
+        url = unquote(self.node.id)
+        if url.lower() in AF.FaceControls:
+            if (isinstance(self.parent, BoneInstance) and
+                isinstance(self.parent.figure, FigureInstance)):
+                    fig = unquote(self.parent.figure.node.id)
+                    if fig.lower() == "/data/daz 3d/genesis 9/base/genesis9.dsf#genesis9":
+                        struct = AF.loadEntry("genesis9", "altmorphs", False)
+                        if struct:
+                            self.altmorphs = struct["morphs"]
 
 
     def poseArmature(self, rig):
