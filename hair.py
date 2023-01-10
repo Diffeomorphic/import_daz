@@ -1954,11 +1954,12 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     controlMethod : EnumProperty(
         items = [('NONE', "None", "Don't add control bones"),
+                 ('AUTO IK', "Auto IK", "Auto IK"),
                  ('IK', "IK", "IK controls"),
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'IK')
+        default = 'AUTO IK')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
@@ -2054,10 +2055,18 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for key,data in binbones.items():
                 self.addIkBone(key, data, head, rig)
         setMode('OBJECT')
+        for key,data in binbones.items():
+            self.hideBones(data, rig)
+            self.buildVertexGroups(key, sectors[key], data)
         if self.controlMethod == 'IK':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
             for key,data in binbones.items():
                 self.addIkConstraint(key, data, rig, gizmo)
+        elif self.controlMethod == 'AUTO IK':
+            gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
+            rig.pose.use_auto_ik = True
+            for data in binbones.values():
+                self.addAutoIk(data, rig, gizmo)
         elif self.controlMethod == 'WINDER':
             from .fix import addWinder
             self.makeGizmos(False, ["GZM_Knuckle"])
@@ -2065,9 +2074,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for key,data in binbones.items():
                 bones,locs,xaxis = data
                 addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers, xaxis=xaxis)
-        for key,data in binbones.items():
-            self.hideBones(data, rig)
-            self.buildVertexGroups(key, sectors[key], data)
         self.mergeObjects(context, hairs, hairname)
         rig.data.layers[self.boneLayer-1] = True
         return
@@ -2160,6 +2166,19 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         eb.head = r1
         eb.tail = r1 + rig.DazScale*normalize(r1-r0)
         eb.parent = head
+
+
+    def addAutoIk(self, data, rig, gizmo):
+        bones,locs,xaxis = data
+        lname,r0,r1 = bones[-1]
+        pb = rig.pose.bones[lname]
+        pb.custom_shape = gizmo
+        s = self.hairLength/25
+        if hasattr(pb, "custom_shape_scale_xyz"):
+            pb.custom_shape_scale_xyz = (s,s,s)
+        else:
+            pb.custom_shape_scale = s
+        pb.bone.layers = self.boneLayers
 
 
     def addIkConstraint(self, key, data, rig, gizmo):
