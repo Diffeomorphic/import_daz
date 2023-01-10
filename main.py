@@ -915,8 +915,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useMhxOnly = self.useMhxOnly,
                         jcms = self.jcms,
                         flexions = self.flexions,
-                        useAdjusters = self.useAdjusters,
-                        useTransferFace = False)
+                        useAdjusters = self.useAdjusters)
 
         # Add softbody simulation
         if self.useSoftbody and mainRig and mainMesh and activateObject(context, mainMesh):
@@ -1035,17 +1034,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 snames = [sname for sname,bpart in bodyparts.items() if bpart in [bodypart, "All"]]
             if not snames:
                 return
+            activateObject(context, ob)
+            for mesh in meshes:
+                if force or self.useTransferTo(mesh):
+                    selectSet(mesh, True)
             theFilePaths = LS.theFilePaths
+            LS.theFilePaths = snames
             try:
-                for mesh in meshes:
-                    if force or self.useTransferTo(mesh):
-                        try:
-                            activateObject(context, ob)
-                            selectSet(mesh, True)
-                            LS.theFilePaths = snames
-                            bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers))
-                        except DazError:
-                            pass
+                bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers))
+            except DazError:
+                pass
             finally:
                 LS.theFilePaths = theFilePaths
 

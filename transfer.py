@@ -315,14 +315,15 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         if self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findTriangles(self.trihuman)
         failed = []
+        snames = self.getSelectedProps()
         for trg in targets:
-            if not self.transferMorphs(src, trg, context):
+            if not self.transferMorphs(snames, src, trg, context):
                 failed.append(trg)
             newLine()
         return failed
 
 
-    def transferMorphs(self, src, trg, context):
+    def transferMorphs(self, snames, src, trg, context):
         from .load_morph import printName
         from .morphing import MP
 
@@ -344,7 +345,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             src.active_shape_key_index = 0
         trg.active_shape_key_index = 0
 
-        snames = self.getSelectedProps()
         nskeys = len(snames)
         for idx,sname in enumerate(snames):
             showProgress(idx, nskeys)
