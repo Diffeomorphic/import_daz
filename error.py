@@ -209,8 +209,12 @@ theUseDumpErrors = False
 class DazOperator(bpy.types.Operator):
     def execute(self, context):
         self.prequel(context)
+        self.warnings = ""
         try:
             self.run(context)
+            if self.warnings:
+                print(self.warnings)
+                raise DazError(self.warnings, warning=True)
         except DazError:
             handleDazError(context)
         except KeyboardInterrupt:
@@ -261,20 +265,10 @@ class DazOperator(bpy.types.Operator):
             pass
 
 
-    def initWarnings(self):
-        self.warnings = ""
-
-
     def addWarning(self, msg):
         if self.warnings:
             self.warnings += "\n"
         self.warnings += msg
-
-
-    def printWarnings(self):
-        if self.warnings:
-            print(self.warnings)
-            raise DazError(self.warnings, warning=True)
 
 
 class DazPropsOperator(DazOperator):

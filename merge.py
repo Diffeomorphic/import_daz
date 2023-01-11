@@ -98,15 +98,38 @@ class UVLayerMerger:
         return None
 
 
-    def mergeUvs(self, ob, uvnames):
+    def initUvNames(self):
+        self.auvnames = {}
+
+
+    def storeUvName(self, ob):
+        uvname = self.getBackgroundUvLayer(ob)
+        if uvname is not None:
+            self.auvnames[uvname] = True
+
+
+    def mergeUvs(self, ob):
         active = None
         for uvlayer in ob.data.uv_layers:
             if uvlayer.active_render:
                 active = uvlayer
                 break
+
+        if not self.useMergeUvs:
+            actname = ""
+            msg = ""
+            if active:
+                actname = active.name
+                for uvname in self.auvnames:
+                    if uvname != actname:
+                        msg += "\n  %s" % uvname
+                if msg:
+                    self.addWarning("UV layers should be merged to %s:%s" % (actname, msg))
+            return
+
         idxs = []
         for idx,uvlayer in enumerate(ob.data.uv_layers):
-            if uvlayer.name in uvnames and uvlayer != active:
+            if uvlayer.name in self.auvnames and uvlayer != active:
                 idxs.append(idx)
         if not idxs:
             print("No UV layers to merge")
@@ -115,7 +138,7 @@ class UVLayerMerger:
         for idx in idxs:
             mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
         uvname0 = ob.data.uv_layers[0].name
-        print("UV layers %s merged to %s" % (list(uvnames), uvname0))
+        print("UV layers %s merged to %s" % (list(self.auvnames), uvname0))
 
 #-------------------------------------------------------------
 #   Merge geografts
@@ -227,13 +250,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             print("No ref")
             return
 
-        self.auvnames = {}
+        self.initUvNames()
         subDLevels = 0
         for aob in anatomies:
-            if self.useMergeUvs:
-                uvname = self.getBackgroundUvLayer(aob)
-                if uvname is not None:
-                    self.auvnames[uvname] = True
+            self.storeUvName(aob)
             if self.useFixTiles:
                 from .udim import TileFixer
                 fixer = TileFixer()
@@ -426,8 +446,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             cob.data.DazFingerPrint = ""
 
         # Merge UV layers
-        if self.useMergeUvs:
-            self.mergeUvs(cob, self.auvnames.keys())
+        self.mergeUvs(cob)
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
@@ -772,20 +791,16 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, 
 
     def run(self, context):
         cob = context.object
-        if self.useMergeUvs:
-            auvnames = {}
-            for aob in getSelectedMeshes(context):
-                if aob != cob:
-                    uvname = self.getBackgroundUvLayer(aob)
-                    if uvname is not None:
-                        auvnames[uvname] = True
+        self.initUvNames()
+        for aob in getSelectedMeshes(context):
+            if aob != cob:
+                self.storeUvName(aob)
         for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
         nlayers = len(cob.data.uv_layers)
         bpy.ops.object.join()
-        if self.useMergeUvs:
-            self.mergeUvs(cob, auvnames.keys())
+        self.mergeUvs(cob)
         deselectAllVerts(cob)
         for mod in cob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
