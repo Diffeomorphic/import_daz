@@ -71,7 +71,7 @@ class UVLayerMerger:
                     elif node.type == 'TEX_COORD':
                         return default
                     elif "Vector" in node.inputs.keys():
-                        return getUvMap(node.inputs.get("Vector"))
+                        return getUvMap(node.inputs.get("Vector"), default)
             return default
 
         from .udim import isShellNode
@@ -564,6 +564,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     texco = node
             uvmap = tree.nodes.new(type="ShaderNodeUVMap")
             uvmap.uv_map = uvname
+            uvmap.hide = True
             if texco:
                 uvmap.location = texco.location
                 for link in tree.links:
