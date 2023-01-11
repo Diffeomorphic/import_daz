@@ -559,25 +559,25 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 continue
             texco = None
             tree = mat.node_tree
+            location = (0,0)
             for node in tree.nodes:
                 if node.type == 'TEX_COORD':
                     texco = node
+                    location = texco.location
             uvmap = tree.nodes.new(type="ShaderNodeUVMap")
             uvmap.uv_map = uvname
             uvmap.label = uvname
             uvmap.hide = True
+            uvmap.location = location
             if texco:
-                uvmap.location = texco.location
                 for link in tree.links:
                     if link.from_node == texco:
                         mat.node_tree.links.new(uvmap.outputs["UV"], link.to_socket)
                 mat.node_tree.nodes.remove(texco)
-            else:
-                uvmap.location = (0,0)
-                for node in tree.nodes:
-                    socket = node.inputs.get("Vector")
-                    if socket and not socket.links:
-                        tree.links.new(uvmap.outputs["UV"], socket)
+            for node in tree.nodes:
+                socket = node.inputs.get("Vector")
+                if socket and not socket.links:
+                    tree.links.new(uvmap.outputs["UV"], socket)
 
 
     def copyBodyPart(self, aob, cob):
