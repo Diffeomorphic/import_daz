@@ -108,6 +108,9 @@ class FastMatcher:
             if ob != src:
                 objects.append(ob)
                 self.checkTransforms(ob)
+                if ob.parent and ob.parent != src.parent:
+                    msg = '"%s" parent is not same as\n"%s" parent' % (ob.name, src.name)
+                    self.addWarning(msg)
         if not objects:
             raise DazError("No target meshes selected")
         return objects
@@ -134,7 +137,13 @@ class FastMatcher:
         tverts = self.verts[tris]
         A = np.transpose(tverts, axes=(0,2,1))
         B = cverts - offsets
-        w = np.linalg.solve(A, B)
+        try:
+            w = np.linalg.solve(A, B)
+            msg = None
+        except np.linalg.LinAlgError:
+            msg = "Numerical error when finding match.\nConsider using the Legacy transfer method instead"
+        if msg:
+            raise DazError(msg)
         self.match = (tris, w, offsets)
 
 #----------------------------------------------------------
@@ -169,6 +178,7 @@ class DAZ_OT_TransferVertexGroups(DazPropsOperator, FastMatcher, IsMesh, Thresho
         from time import perf_counter
         t1 = perf_counter()
         targets = []
+        self.initWarnings()
         for trg in self.getTargets(src, context):
             targets.append(trg.name)
             trg.vertex_groups.clear()
@@ -180,6 +190,8 @@ class DAZ_OT_TransferVertexGroups(DazPropsOperator, FastMatcher, IsMesh, Thresho
             layers_select_dst = 'NAME')
         t2 = perf_counter()
         print("Vertex groups transferred in %.1f seconds" % (t2-t1))
+        self.printWarnings()
+
 
 
 class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
@@ -290,6 +302,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         src = context.object
         if not src.data.shape_keys:
             raise DazError("Cannot transfer because object    \n%s has no shapekeys   " % (src.name))
+        self.initWarnings()
         if not self.useDrivers:
             self.useStrength = False
         targets = self.getTargets(src, context)
@@ -302,6 +315,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             self.restore(context, src, data)
         t2 = perf_counter()
         print("Morphs transferred in %.1f seconds" % (t2-t1))
+        self.printWarnings()
         if failed:
             msg = ("Morph transfer to the following meshes\nfailed due to insufficient memory:")
             for trg in failed:

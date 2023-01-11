@@ -261,6 +261,22 @@ class DazOperator(bpy.types.Operator):
             pass
 
 
+    def initWarnings(self):
+        self.warnings = ""
+
+
+    def addWarning(self, msg):
+        if self.warnings:
+            self.warnings += "\n"
+        self.warnings += msg
+
+
+    def printWarnings(self):
+        if self.warnings:
+            print(self.warnings)
+            raise DazError(self.warnings, warning=True)
+
+
 class DazPropsOperator(DazOperator):
     dialogWidth = 300
     def invoke(self, context, event):
