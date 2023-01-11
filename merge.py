@@ -265,7 +265,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 elif self.useSubDDisplacement and mod.type == 'SUBSURF':
                     if mod.render_levels > subDLevels:
                         subDLevels = mod.render_levels
-        cname = self.getUvName(cob.data)
+        cuvname = self.getUvName(cob.data)
         drivers = {}
 
         # Select graft group for each anatomy
@@ -273,7 +273,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             activateObject(context, aob)
             self.moveGraftVerts(aob, cob)
             self.getShapekeyDrivers(aob, drivers)
-            self.replaceTexco(aob)
+            self.replaceTexco(aob, cuvname, self.useGeoNodes)
 
         # For the body, setup mask groups
         activateObject(context, cob)
@@ -472,7 +472,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 if amod.type in ['SUBSURF']:
                     amod.show_viewport = amod.show_render = False
                     aob.modifiers.remove(amod)
-        self.replaceTexco(cob)
+        cuvname = self.getUvName(cob.data)
+        self.replaceTexco(cob, cuvname, True)
 
         if self.useNewMesh:
             if cob.name[-5:] == " Mesh":
@@ -549,25 +550,32 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                             mod["Input_1"] = cob
 
 
-    def replaceTexco(self, ob):
-        for uvtex in ob.data.uv_layers:
-            if uvtex.active_render:
-                uvrender = uvtex
+    def replaceTexco(self, ob, cuvname, force):
+        uvname = self.getUvName(ob.data)
+        if (self.useMergeUvs or uvname == cuvname) and not force:
+            return
         for mat in ob.data.materials:
             if mat is None:
                 continue
             texco = None
-            for node in mat.node_tree.nodes:
+            tree = mat.node_tree
+            for node in tree.nodes:
                 if node.type == 'TEX_COORD':
                     texco = node
+            uvmap = tree.nodes.new(type="ShaderNodeUVMap")
+            uvmap.uv_map = uvname
             if texco:
-                uvmap = mat.node_tree.nodes.new(type="ShaderNodeUVMap")
-                uvmap.uv_map = uvrender.name
                 uvmap.location = texco.location
-                for link in mat.node_tree.links:
+                for link in tree.links:
                     if link.from_node == texco:
                         mat.node_tree.links.new(uvmap.outputs["UV"], link.to_socket)
                 mat.node_tree.nodes.remove(texco)
+            else:
+                uvmap.location = (0,0)
+                for node in tree.nodes:
+                    socket = node.inputs.get("Vector")
+                    if socket and not socket.links:
+                        tree.links.new(uvmap.outputs["UV"], socket)
 
 
     def copyBodyPart(self, aob, cob):
