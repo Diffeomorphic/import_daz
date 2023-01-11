@@ -564,6 +564,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     texco = node
             uvmap = tree.nodes.new(type="ShaderNodeUVMap")
             uvmap.uv_map = uvname
+            uvmap.label = uvname
             uvmap.hide = True
             if texco:
                 uvmap.location = texco.location

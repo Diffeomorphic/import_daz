@@ -212,7 +212,7 @@ class CyclesTree(Tree):
         self.nodeTreeType = "ShaderNodeTree"
         self.nodeGroupType = "ShaderNodeGroup"
         self.cycles = None
-        self.column = 4
+        self.column = 1
         self.texnodes = {}
         self.layeredGroups = {}
         self.inShell = False
@@ -318,6 +318,7 @@ class CyclesTree(Tree):
 
     def build(self):
         self.makeTree()
+        self.column = 3
         self.buildLayers()
         self.buildCutout()
         if self.owner.useVolume:
@@ -510,13 +511,11 @@ class CyclesTree(Tree):
 
     def addTexco(self, slot):
         if self.owner.uvNodeType == 'TEXCO' or not self.owner.uv_set:
-            node = self.addNode("ShaderNodeTexCoord", 1)
+            node = self.addNode("ShaderNodeTexCoord")
             self.texco = node.outputs[slot]
         else:
             node, self.texco = self.addUvNode(self.owner.uv_set.name)
         self.tileTexco()
-        #for key,uvset in self.owner.uv_sets.items():
-        #    self.uvnodes[key] = self.addUvNode(uvset.name)
         return node
 
 

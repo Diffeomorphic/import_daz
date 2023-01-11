@@ -286,7 +286,7 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
 
     for node in tree.nodes:
         if node.type == 'GROUP' and not node.name.startswith("DAZ "):
-            pruneNodeTree(node.node_tree, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs)
+            pruneNodeTree(node.node_tree, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs)
 
     if usePruneTexco:
         texcos = []
@@ -297,7 +297,7 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
                 (active and node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
                 ok = True
                 for link in node.outputs["UV"].links:
-                    if link.to_node.type == 'TEX_IMAGE':
+                    if link.to_node.type in ['TEX_IMAGE']:
                         links.append(link)
                     else:
                         ok = False
