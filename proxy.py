@@ -1563,7 +1563,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             nob = bpy.data.objects.new(name, me)
             coll.objects.link(nob)
             nob.location = head
-            nob.lock_location = nob.lock_rotation = nob.lock_scale = (True,True,True)
+            lockAllTransforms(nob)
             nobinfos.append((nob, rig, bone, me))
 
             if face_mats:

@@ -1176,9 +1176,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
                     pb.bone.hide = True
             if self.lockBones:
                 for pb in pbones:
-                    pb.lock_location = (True, True, True)
-                    pb.lock_rotation = (True, True, True)
-                    pb.lock_scale = (True, True, True)
+                    lockAllTransform(pb)
             if self.disableBones:
                 for pb in pbones:
                     pb.bone.hide_select = True

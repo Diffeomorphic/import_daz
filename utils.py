@@ -388,6 +388,10 @@ def isLocationUnlocked(pb):
             pb.lock_location[2] == False)
 
 
+def lockAllTransforms(pb):
+    pb.lock_location = pb.lock_rotation = pb.lock_scale = (True,True,True)
+
+
 def sorted(seq):
     slist = list(seq)
     slist.sort()

@@ -1956,10 +1956,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         items = [('NONE', "None", "Don't add control bones"),
                  ('AUTO IK', "Auto IK", "Auto IK"),
                  ('IK', "IK", "IK controls"),
+                 ('BENDY', "Bendy Bones", "Bendy bones"),
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'AUTO IK')
+        default = 'BENDY')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
@@ -2027,8 +2028,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.startHair > self.endHead:
             raise DazError("Hair start location cannot exceed head end location")
         self.boneLayers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
-        self.hiddenLayers = 31*[False] + [True]
+        self.hiddenLayers = 30*[False] + [True, False]
         self.startGizmos(context, rig)
+
         hairs = self.getMeshHairs(context, ob, None)
         datas = []
         for hair in hairs:
@@ -2046,6 +2048,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 sectors[key] = []
             sectors[key].append((hair,data))
         activateObject(context, rig)
+
         setMode('EDIT')
         head = rig.data.edit_bones[self.headName]
         binbones = {}
@@ -2054,6 +2057,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.controlMethod == 'IK':
             for key,data in binbones.items():
                 self.addIkBone(key, data, head, rig)
+        elif self.controlMethod == 'BENDY':
+            for key,data in binbones.items():
+                self.addBendyBones(key, data, head, rig)
+
         setMode('OBJECT')
         for key,data in binbones.items():
             self.hideBones(data, rig)
@@ -2062,6 +2069,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
             for key,data in binbones.items():
                 self.addIkConstraint(key, data, rig, gizmo)
+        elif self.controlMethod == 'BENDY':
+            for key,data in binbones.items():
+                self.addBendyConstraints(key, data, rig)
         elif self.controlMethod == 'AUTO IK':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
             rig.pose.use_auto_ik = True
@@ -2074,6 +2084,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for key,data in binbones.items():
                 bones,locs,xaxis = data
                 addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers, xaxis=xaxis)
+
         self.mergeObjects(context, hairs, hairname)
         rig.data.layers[self.boneLayer-1] = True
         return
@@ -2155,17 +2166,50 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         return bones, np.array(locs), xaxis
 
 
+    def getIkName(self, key):
+        return "Hair_%d_IK" % key
+
+
     def addIkBone(self, key, data, head, rig):
         def normalize(v):
             return v/np.linalg.norm(v)
 
         bones,locs,xaxis = data
-        ikname = "Hair_%d_IK" % key
-        lname,r0,r1 = bones[-1]
-        eb = rig.data.edit_bones.new(ikname)
+        lastname,r0,r1 = bones[-1]
+        eb = rig.data.edit_bones.new(self.getIkName(key))
         eb.head = r1
         eb.tail = r1 + rig.DazScale*normalize(r1-r0)
         eb.parent = head
+
+
+    def getHandleName(self, key, n):
+        return "Handle_%d_%d" % (key, n)
+
+
+    def addBendyBones(self, key, data, head, rig):
+        def addHandle(n):
+            handle = rig.data.edit_bones.new(self.getHandleName(key, n))
+            handle.head = r0 - eps*dr
+            handle.tail = r0 + eps*dr
+            handle.use_connect = False
+            handle.parent = None
+            return handle
+
+        #rig.data.display_type = 'BBONE'
+        bones,locs,xaxis = data
+        eps = 0.05
+        for n,bdata in enumerate(bones):
+            bname,r0,r1 = bdata
+            dr = r1 - r0
+            vec = dr/np.linalg.norm(dr)
+            bb = rig.data.edit_bones[bname]
+            handle = addHandle(n)
+            bb.use_connect = False
+            bb.parent = handle
+            bb.head = r0 + eps*dr
+            bb.tail = r1 - eps*dr
+        r0 = r1
+        handle = addHandle(len(bones))
 
 
     def addAutoIk(self, data, rig, gizmo):
@@ -2183,9 +2227,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     def addIkConstraint(self, key, data, rig, gizmo):
         bones,locs,xaxis = data
-        ikname = "Hair_%d_IK" % key
-        lname,r0,r1 = bones[-1]
-        pb = rig.pose.bones[lname]
+        ikname = self.getIkName(key)
+        lastname,r0,r1 = bones[-1]
+        pb = rig.pose.bones[lastname]
         cns = pb.constraints.new('IK')
         cns.name = "IK %s" % ikname
         cns.target = rig
@@ -2198,6 +2242,36 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         pb.custom_shape = gizmo
         pb.bone.use_deform = False
         pb.bone.layers = self.boneLayers
+
+
+    def addBendyConstraints(self, key, data, rig):
+        def getHandle(n):
+            handlename = self.getHandleName(key, n)
+            handle = rig.pose.bones[handlename]
+            handle.bone.bbone_x = handleSize
+            handle.bone.bbone_z = handleSize
+            handle.bone.use_deform = False
+            return handle
+
+        from .mhx import stretchTo
+        bones,locs,xaxis = data
+        bboneSize = 0.001
+        handleSize = 0.005
+        handle = getHandle(0)
+        for n,bdata in enumerate(bones):
+            bname,r0,r1 = bdata
+            pb = rig.pose.bones[bname]
+            lockAllTransforms(pb)
+            pb.bone.bbone_segments = 6
+            pb.bone.bbone_x = bboneSize
+            pb.bone.bbone_z = bboneSize
+            pb.bone.bbone_handle_type_start = 'ABSOLUTE'
+            pb.bone.bbone_custom_handle_start = handle.bone
+            handle = getHandle(n+1)
+            pb.bone.bbone_handle_type_end = 'ABSOLUTE'
+            pb.bone.bbone_custom_handle_end = handle.bone
+            stretchTo(pb, handle, rig)
+
 
 
     def hideBones(self, data, rig):
