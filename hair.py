@@ -1956,11 +1956,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         items = [('NONE', "None", "Don't add control bones"),
                  ('AUTO IK', "Auto IK", "Auto IK"),
                  ('IK', "IK", "IK controls"),
-                 ('BENDY', "Bendy Bones", "Bendy bones"),
+                 ('BBONES', "Bendy Bones", "Bendy bones"),
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'AUTO IK')
+        default = 'BBONES')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
@@ -1985,10 +1985,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     weightingMethod : EnumProperty(
         items = [('REAL', "Real Space", "Use location in real space"),
-                 ('UV', "UV Space", "Use location in UV space")],
+                 ('UV', "UV Space", "Use location in UV space"),
+                 ('AUTO', "Auto", "Use Blender automatic bone weighting")],
         name = "Weighting Method",
         description = "Method for weighting mesh",
-        default = 'REAL')
+        default = 'AUTO')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
@@ -2012,7 +2013,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.layout.prop(self, "controlMethod")
         if self.controlMethod != 'NONE':
             self.layout.prop(self, "useHideBones")
-        self.layout.prop(self, "useSeparateRig")
+        if self.controlMethod != 'BBONES':
+            self.layout.prop(self, "useSeparateRig")
         self.layout.prop(self, "headName")
         if self.weightingMethod == 'REAL':
             self.layout.prop(self, "startHair")
@@ -2039,7 +2041,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             raise DazError("Hair start location cannot exceed head end location")
         self.boneLayers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
         self.hiddenLayers = 30*[False] + [True, False]
-        if self.useSeparateRig:
+        if self.useSeparateRig or self.controlMethod == 'BBONES':
             rig = self.addSeparateRig(context, hairname, rig)
             activateObject(context, ob)
         self.startGizmos(context, rig)
@@ -2070,19 +2072,18 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.controlMethod == 'IK':
             for key,data in binbones.items():
                 self.addIkBone(key, data, head, rig)
-        elif self.controlMethod == 'BENDY':
+        elif self.controlMethod == 'BBONES':
             for key,data in binbones.items():
                 self.addBendyBones(key, data, head, rig)
 
         setMode('OBJECT')
         for key,data in binbones.items():
             self.hideBones(data, rig)
-            self.buildVertexGroups(key, sectors[key], data)
         if self.controlMethod == 'IK':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
             for key,data in binbones.items():
                 self.addIkConstraint(key, data, rig, gizmo)
-        elif self.controlMethod == 'BENDY':
+        elif self.controlMethod == 'BBONES':
             for key,data in binbones.items():
                 self.addBendyConstraints(key, data, rig)
         elif self.controlMethod == 'AUTO IK':
@@ -2098,13 +2099,23 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 bones,locs,xaxis = data
                 addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers, xaxis=xaxis)
 
-        self.mergeObjects(context, hairs, hairname, rig)
+        if self.weightingMethod != 'AUTO':
+            for key,data in binbones.items():
+                self.buildVertexGroups(key, sectors[key], data)
+        ob = self.mergeObjects(context, hairs, hairname, rig)
+        if self.weightingMethod == 'AUTO':
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                ob.modifiers.remove(mod)
+            activateObject(context, rig)
+            ob.select_set(True)
+            bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        elif self.useSeparateRig:
+            ob.parent = rig
+            mod = getModifier(ob, 'ARMATURE')
+            mod.object = rig
+            mod.name = "Armature Hair"
         rig.data.layers[self.boneLayer-1] = True
-        return
-        for key,sector in sectors.items():
-            hairs = [hair for hair,data in sector]
-            sectorname = "%s_%d" % (hairname, key)
-            self.mergeObjects(context, hairs, sectorname, rig)
 
 
     def mergeObjects(self, context, hairs, hairname, rig):
@@ -2116,11 +2127,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         ob = context.object
         ob.name = hairname
         bpy.ops.object.shade_smooth()
-        if self.useSeparateRig:
-            ob.parent = rig
-            mod = getModifier(ob, 'ARMATURE')
-            mod.object = rig
-            mod.name = "Armature Hair"
+        return ob
 
 
     def addSeparateRig(self, context, hairname, rig):
@@ -2145,6 +2152,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         eb.head = head
         eb.tail = tail
         eb.roll = roll
+        eb.hide_select = True
         setMode('OBJECT')
         setWorldMatrix(hairrig, rig.matrix_world)
         return hairrig
@@ -2268,6 +2276,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         else:
             pb.custom_shape_scale = s
         pb.bone.layers = self.boneLayers
+        pb.bone.hide_select = False
 
 
     def addIkConstraint(self, key, data, rig, gizmo):
@@ -2338,7 +2347,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
                 bone.layers = self.hiddenLayers
-                #bone.hide = True
+                bone.hide_select = True
 
 
     def buildVertexGroups(self, key, sector, data):
