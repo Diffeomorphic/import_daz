@@ -151,7 +151,7 @@ class MergeGeograftOptions(UVLayerMergerOptions):
             "Add a table with vertex numbers before and after merge.\n"+
             "Makes it possible to add morphs after merge,\n"+
             "but affects viewport performance"),
-        default = True)
+        default = False)
 
     useFixTiles : BoolProperty(
         name = "Fix UV Tiles",
@@ -161,7 +161,7 @@ class MergeGeograftOptions(UVLayerMergerOptions):
     useSubDDisplacement : BoolProperty(
         name = "SubD Displacement",
         description = "Add SubD Displacement to the merge mesh if some geograft has it.\nMay slow down rendering",
-        default = False)
+        default = True)
 
     useGeoNodes: BoolProperty(
         name = "Geometry Nodes (Experimental)",

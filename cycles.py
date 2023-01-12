@@ -1647,6 +1647,9 @@ class CyclesTree(Tree):
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
+            mat = self.owner.rna
+            mat.cycles.displacement_method = 'DISPLACEMENT'
+
 
     #-------------------------------------------------------------
     #   Displacment
@@ -1674,8 +1677,6 @@ class CyclesTree(Tree):
             node.inputs["Min"].default_value = LS.scale * dmin
             self.linkNormal(node)
             self.displacement = node.outputs["Displacement"]
-            mat = self.owner.rna
-            mat.cycles.displacement_method = 'DISPLACEMENT'
 
     #-------------------------------------------------------------
     #   Textures
