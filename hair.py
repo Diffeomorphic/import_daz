@@ -1960,7 +1960,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'BENDY')
+        default = 'AUTO IK')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
@@ -1972,6 +1972,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         description = "Expand the joints radially from the head to make the bones rounder",
         min = 0.0, max = 1.0,
         default = 0.5)
+
+    useSeparateRig : BoolProperty(
+        name = "Separate Hair Rig",
+        description = "Make a separate rig parented to the head bone,\ninstead of adding bones to the main rig",
+        default = True)
 
     headName : StringProperty(
         name = "Head",
@@ -2007,10 +2012,12 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.layout.prop(self, "controlMethod")
         if self.controlMethod != 'NONE':
             self.layout.prop(self, "useHideBones")
+        self.layout.prop(self, "useSeparateRig")
         self.layout.prop(self, "headName")
         if self.weightingMethod == 'REAL':
             self.layout.prop(self, "startHair")
             self.layout.prop(self, "endHead")
+
 
     def invoke(self, context, event):
         ob = context.object
@@ -2019,16 +2026,22 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             self.boneLayer = 17
         return DazPropsOperator.invoke(self, context, event)
 
+
     def run(self, context):
         ob = context.object
         hairname = ob.name
         rig = ob.parent
         if rig is None or rig.type != 'ARMATURE':
             raise DazError("Hair must have an armature")
+        if self.headName not in rig.data.bones.keys():
+            raise DazError('No head bone named "%s"' % self.headName)
         if self.startHair > self.endHead:
             raise DazError("Hair start location cannot exceed head end location")
         self.boneLayers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
         self.hiddenLayers = 30*[False] + [True, False]
+        if self.useSeparateRig:
+            rig = self.addSeparateRig(context, hairname, rig)
+            activateObject(context, ob)
         self.startGizmos(context, rig)
 
         hairs = self.getMeshHairs(context, ob, None)
@@ -2085,16 +2098,16 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 bones,locs,xaxis = data
                 addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers, xaxis=xaxis)
 
-        self.mergeObjects(context, hairs, hairname)
+        self.mergeObjects(context, hairs, hairname, rig)
         rig.data.layers[self.boneLayer-1] = True
         return
         for key,sector in sectors.items():
             hairs = [hair for hair,data in sector]
             sectorname = "%s_%d" % (hairname, key)
-            self.mergeObjects(context, hairs, sectorname)
+            self.mergeObjects(context, hairs, sectorname, rig)
 
 
-    def mergeObjects(self, context, hairs, hairname):
+    def mergeObjects(self, context, hairs, hairname, rig):
         print("Merge %d objects to %s" % (len(hairs), hairs[0].name))
         activateObject(context, hairs[0])
         for hair in hairs:
@@ -2103,6 +2116,38 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         ob = context.object
         ob.name = hairname
         bpy.ops.object.shade_smooth()
+        if self.useSeparateRig:
+            ob.parent = rig
+            mod = getModifier(ob, 'ARMATURE')
+            mod.object = rig
+            mod.name = "Armature Hair"
+
+
+    def addSeparateRig(self, context, hairname, rig):
+        rigname = "%s Rig" % hairname
+        amt = bpy.data.armatures.new(rigname)
+        hairrig = bpy.data.objects.new(rigname, amt)
+        hairrig.parent = rig
+        hairrig.parent_type = 'BONE'
+        hairrig.parent_bone = self.headName
+        hairrig.show_in_front = True
+        context.collection.objects.link(hairrig)
+        activateObject(context, rig)
+        setMode('EDIT')
+        eb = rig.data.edit_bones[self.headName]
+        head = eb.head.copy()
+        tail = eb.tail.copy()
+        roll = eb.roll
+        setMode('OBJECT')
+        activateObject(context, hairrig)
+        setMode('EDIT')
+        eb = amt.edit_bones.new(self.headName)
+        eb.head = head
+        eb.tail = tail
+        eb.roll = roll
+        setMode('OBJECT')
+        setWorldMatrix(hairrig, rig.matrix_world)
+        return hairrig
 
 
     def getData(self, hair):
@@ -2257,6 +2302,16 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         bones,locs,xaxis = data
         bboneSize = 0.001
         handleSize = 0.005
+        if self.useSeparateRig:
+            rig.data.display_type = 'BBONE'
+            head = rig.data.bones[self.headName]
+            head.bbone_x = handleSize
+            head.bbone_z = handleSize
+            for n,bdata in enumerate(bones):
+                bname,r0,r1 = bdata
+                bone = rig.data.bones[bname]
+                bone.layers = self.boneLayers
+
         handle = getHandle(0)
         for n,bdata in enumerate(bones):
             bname,r0,r1 = bdata
@@ -2271,7 +2326,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             pb.bone.bbone_handle_type_end = 'ABSOLUTE'
             pb.bone.bbone_custom_handle_end = handle.bone
             stretchTo(pb, handle, rig)
-
 
 
     def hideBones(self, data, rig):
