@@ -345,6 +345,11 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
         description = "Thickness of the surface",
         default = 2.0)
 
+    useAddVertexGroup : BoolProperty(
+        name = "Add Vertex Groups",
+        description = "Add influence vertex groups",
+        default = True)
+
     useApply : BoolProperty(
         name = "Apply Modifiers",
         description = "Apply modifiers afterwards",
@@ -355,7 +360,9 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
         self.layout.prop(self, "useSolidify")
         if self.useSolidify:
             self.layout.prop(self, "thickness")
-        self.layout.prop(self, "useApply")
+        self.layout.prop(self, "useAddVertexGroup")
+        if not self.useAddVertexGroup:
+            self.layout.prop(self, "useApply")
         MeshSelector.draw(self, context)
 
 
@@ -377,11 +384,18 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
                 break
         if mod is None:
             mod = ob.modifiers.new("Shrinkwrap %s" % hum.name, 'SHRINKWRAP')
+        modname = mod.name
         mod.target = hum
         mod.wrap_method = 'NEAREST_SURFACEPOINT'
         mod.wrap_mode = 'OUTSIDE'
         mod.offset = 0.1*hum.DazScale*self.offset
-        if self.useApply and not ob.data.shape_keys:
+        if self.useAddVertexGroup:
+            if modname in ob.vertex_groups.keys():
+                vgrp = ob.vertex_groups[modname]
+            else:
+                vgrp = ob.vertex_groups.new(name=modname)
+            mod.vertex_group = modname
+        elif self.useApply and not ob.data.shape_keys:
             bpy.ops.object.modifier_apply(modifier=mod.name)
 
 

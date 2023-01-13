@@ -1757,24 +1757,25 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
     bl_description = "Remove internal properties from meshes.\nDisables some tools but may improve performance"
     bl_options = {'UNDO'}
 
-    storeData : BoolProperty(
+    useStoreData : BoolProperty(
         name = "Store Data",
         description = "Store data in a file",
-        default = True)
+        default = False)
 
-    overwrite : BoolProperty(
+    useOverwrite : BoolProperty(
         name = "Overwrite",
         description = "Overwrite stored data",
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "storeData")
-        self.layout.prop(self, "overwrite")
+        self.layout.prop(self, "useStoreData")
+        if self.useStoreData:
+            self.layout.prop(self, "useOverwrite")
 
     def invoke(self, context, event):
         ob = context.object
         if (ob.DazBlendFile and ob.DazBlendFile != bpy.data.filepath):
-            self.storeData = False
+            self.useStoreData = False
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
@@ -1783,7 +1784,7 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
         ob = context.object
         rig = getRigFromObject(ob)
         self.nothing = True
-        if self.storeData:
+        if self.useStoreData:
             if not bpy.data.filepath:
                 raise DazError("Save the blend file first")
             struct = { "filetype" : "mesh_data", "meshes" : [] }
@@ -1797,19 +1798,19 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
             self.finalizeMesh(ob, struct)
         if self.nothing:
             print("Nothing to save.")
-        elif self.storeData:
+        elif self.useStoreData:
             rig.DazBlendFile = bpy.data.filepath
             folder,path = getMeshDataFile(bpy.data.filepath)
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            if self.overwrite or not os.path.exists(path):
+            if self.useOverwrite or not os.path.exists(path):
                 saveJson(struct, path)
                 print('Saved "%s"' % path)
 
 
     def finalizeMesh(self, ob, struct):
         from .finger import getFingerPrint
-        if self.storeData:
+        if self.useStoreData:
             ob.DazBlendFile = bpy.data.filepath
             mstruct = {}
             struct["meshes"].append(mstruct)

@@ -1960,7 +1960,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'BBONES')
+        default = 'AUTO IK')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
@@ -1976,7 +1976,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
     useSeparateRig : BoolProperty(
         name = "Separate Hair Rig",
         description = "Make a separate rig parented to the head bone,\ninstead of adding bones to the main rig",
-        default = True)
+        default = False)
 
     headName : StringProperty(
         name = "Head",
@@ -1989,7 +1989,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ('AUTO', "Auto", "Use Blender automatic bone weighting")],
         name = "Weighting Method",
         description = "Method for weighting mesh",
-        default = 'AUTO')
+        default = 'REAL')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
