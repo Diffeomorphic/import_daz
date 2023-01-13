@@ -60,6 +60,11 @@ class ColorGroup(bpy.types.PropertyGroup):
 
 
 class Separator:
+    useCheckStrips : BoolProperty(
+        name = "Check Strips",
+        description = "Check that the hair mesh consists of strips in UV space",
+        default = True)
+
     def getMeshHairs(self, context, hair, hum):
         hairs = []
         if self.useSeparateLoose:
@@ -69,12 +74,28 @@ class Separator:
         setMode('OBJECT')
         hname = baseName(hair.name)
         haircount = 0
-        hairs = [hair for hair in getSelectedMeshes(context)
-                 if (baseName(hair.name) == hname and
-                     hair != hum)]
+        hairs = []
+        for hair in getSelectedMeshes(context):
+            if baseName(hair.name) == hname and hair != hum:
+                if self.checkStrip(hair):
+                    hairs.append(hair)
         if self.sparsity > 1:
             hairs = [hair for n,hair in enumerate(hairs) if n % self.sparsity == 0]
         return hairs
+
+
+    def checkStrip(self, hair):
+        if not self.useCheckStrips:
+            return True
+        uvs = hair.data.uv_layers.active.data
+        xs = [uv.uv[0] for uv in uvs]
+        ys = [uv.uv[1] for uv in uvs]
+        dx = max(xs) - min(xs)
+        dy = max(ys) - min(ys)
+        isstrip = (dx > 2*dy or dy > 2*dx)
+        if not isstrip:
+            raise DazError('"%s" is not a strip.\nDid you separate the scalp from the rest of the hair?' % hair.name)
+        return True
 
 
 class HairOptions:
@@ -117,6 +138,7 @@ class HairOptions:
         default = False,
         description = "Remove existing particle systems from this mesh"
     )
+
     useSeparateLoose : BoolProperty(
         name = "Separate Loose Parts",
         default = True,
@@ -633,6 +655,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         if self.strandType == 'SHEET':
             box.prop(self, "strandOrientation")
             box.prop(self, "useSeparateLoose")
+            box.prop(self, "useCheckStrips")
         box.prop(self, "keepMesh")
         box.prop(self, "usePolylineHair")
         if self.usePolylineHair:
@@ -739,6 +762,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         if self.strandType == 'SHEET':
             hairs = self.getMeshHairs(context, hair, hum)
             count = 0
+            haircount = 0
             for hair in hairs:
                 count += 1
                 hsyss,hcount = self.makeHairSystems(context, hum, hair)
@@ -2015,6 +2039,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             self.layout.prop(self, "useHideBones")
         if self.controlMethod != 'BBONES':
             self.layout.prop(self, "useSeparateRig")
+        self.layout.prop(self, "useCheckStrips")
         self.layout.prop(self, "headName")
         if self.weightingMethod == 'REAL':
             self.layout.prop(self, "startHair")
