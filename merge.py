@@ -86,7 +86,7 @@ class UVLayerMerger:
                 if node.type == 'TEX_IMAGE':
                     uvname = getUvMap(node.inputs.get("Vector"), active.name)
                     uvmaps[uvname] = True
-                elif isShellNode(node):
+                elif False and isShellNode(node):
                     uvname = getUvMap(node.inputs.get("UV"), "**")
                     shellmaps[uvname] = True
 

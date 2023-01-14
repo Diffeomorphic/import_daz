@@ -1984,7 +1984,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'AUTO IK')
+        default = 'IK')
 
     useHideBones : BoolProperty(
         name = "Hide Bones",
