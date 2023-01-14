@@ -1414,6 +1414,11 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
     bl_description = "Copy materials from active mesh to selected meshes"
     bl_options = {'UNDO'}
 
+    useReplaceFaces : BoolProperty(
+        name = "Replace Face Assignment",
+        description = "Replace all materials and reassign face numbers.\nThe meshes must have identical topology",
+        default = False)
+
     useMatchNames : BoolProperty(
         name = "Match Names",
         description = "Match materials based on names rather than material slots",
@@ -1425,9 +1430,11 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useMatchNames")
-        if not self.useMatchNames:
-            self.layout.prop(self, "errorMismatch")
+        self.layout.prop(self, "useReplaceFaces")
+        if not self.useReplaceFaces:
+            self.layout.prop(self, "useMatchNames")
+            if not self.useMatchNames:
+                self.layout.prop(self, "errorMismatch")
 
 
     def run(self, context):
@@ -1436,7 +1443,9 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         found = False
         for trg in getSelectedMeshes(context):
            if trg != src:
-                if self.useMatchNames:
+                if self.useReplaceFaces:
+                    self.replaceFaces(src, trg)
+                elif self.useMatchNames:
                     self.copyByName(src, trg)
                 else:
                     self.copyByIndex(src, trg)
@@ -1446,6 +1455,17 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         if self.mismatch:
             msg = "Material number mismatch.\n" + self.mismatch
             raise DazError(msg, warning=True)
+
+
+    def replaceFaces(self, src, trg):
+        from .finger import getFingerPrint
+        if getFingerPrint(src) != getFingerPrint(trg):
+            raise DazError("Meshes have different topology")
+        trg.data.materials.clear()
+        for mat in src.data.materials:
+            trg.data.materials.append(mat)
+        for fsrc,ftrg in zip(src.data.polygons, trg.data.polygons):
+            ftrg.material_index = fsrc.material_index
 
 
     def copyByName(self, src, trg):

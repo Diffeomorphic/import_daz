@@ -928,9 +928,11 @@ class MorphLoader(LoadMorph):
 
 
     def getAllMorphs(self, namepaths, context):
+        self.char = None
         if self.meshes:
             ob = self.mesh = self.meshes[0]
-            self.char = self.chars[0]
+            if self.chars:
+                self.char = self.chars[0]
         elif self.rig:
             ob = self.rig
         else:
