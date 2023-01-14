@@ -554,7 +554,7 @@ class MorphOptions:
     useLoadMissing : BoolProperty(
         name = "Load Missing Morphs",
         description = "Load missing morphs",
-        default = True)
+        default = False)
 
     category : StringProperty(
         name = "Category",

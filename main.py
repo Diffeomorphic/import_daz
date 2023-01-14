@@ -859,7 +859,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
 
-        if self.useMergeMaterials and mainMesh and activateObject(context, mainMesh):
+        if self.useMergeMaterials and meshes and activateObject(context, meshes[0]):
             # Merge material slots
             for ob in meshes[1:]:
                 selectSet(ob, True)
