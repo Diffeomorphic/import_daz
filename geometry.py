@@ -1024,7 +1024,8 @@ class Geometry(Asset, Channels):
             url = getRelativeRef(url)
             asset = self.getAsset(url)
             if asset:
-                print("Found UV set '%s' in '%s'" % (uv, unquote(url)))
+                if GS.verbosity > 2:
+                    print("Found UV set '%s' in '%s'" % (uv, unquote(url)))
                 self.uv_sets[uv] = asset
             return asset
         return None

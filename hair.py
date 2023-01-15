@@ -1978,7 +1978,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     controlMethod : EnumProperty(
         items = [('NONE', "None", "Don't add control bones"),
-                 ('AUTO IK', "Auto IK", "Auto IK"),
                  ('IK', "IK", "IK controls"),
                  ('BBONES', "Bendy Bones", "Bendy bones"),
                  ('WINDER', "Winder", "Winder")],
@@ -2111,9 +2110,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         elif self.controlMethod == 'BBONES':
             for key,data in binbones.items():
                 self.addBendyConstraints(key, data, rig)
-        elif self.controlMethod == 'AUTO IK':
+        elif self.controlMethod == 'NONE':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
-            rig.pose.use_auto_ik = True
             for data in binbones.values():
                 self.addAutoIk(data, rig, gizmo)
         elif self.controlMethod == 'WINDER':
@@ -2300,8 +2298,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             pb.custom_shape_scale_xyz = (s,s,s)
         else:
             pb.custom_shape_scale = s
-        pb.bone.layers = self.boneLayers
-        pb.bone.hide_select = False
 
 
     def addIkConstraint(self, key, data, rig, gizmo):

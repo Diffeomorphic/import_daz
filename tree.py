@@ -195,15 +195,15 @@ class NodeGroup:
         self.group.inputs[slot].min_value = min
         self.group.inputs[slot].max_value = max
 
-
-    def hideAllBut(self, node, sockets):
-        for socket in node.outputs:
-            if socket.name not in sockets:
-                socket.hide = True
-
 #-------------------------------------------------------------
 #   Utilities
 #-------------------------------------------------------------
+
+def hideAllBut(node, sockets):
+    for socket in node.outputs:
+        if socket.name not in sockets:
+            socket.hide = True
+
 
 def findNodes(tree, nodeType):
     nodes = []

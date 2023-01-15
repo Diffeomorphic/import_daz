@@ -30,7 +30,7 @@ import bpy
 from .cycles import CyclesTree
 from .pbr import PbrTree
 from .material import WHITE, BLACK
-from .tree import NodeGroup
+from .tree import NodeGroup, hideAllBut
 from .utils import *
 from .error import *
 
@@ -237,7 +237,7 @@ class Fresnel2Group(CyclesGroup):
 
     def addNodes(self, args=None):
         geo = self.addNode("ShaderNodeNewGeometry", 0)
-        self.hideAllBut(geo, ["Incoming", "Backfacing"])
+        hideAllBut(geo, ["Incoming", "Backfacing"])
 
         divide = self.addNode("ShaderNodeMath", 1)
         divide.operation = 'DIVIDE'
@@ -647,7 +647,7 @@ class OneSidedGroup(BSDFGroup):
 
     def addNodes(self, args=None):
         geo = self.addNode("ShaderNodeNewGeometry", 1)
-        self.hideAllBut(geo, ["Backfacing"])
+        hideAllBut(geo, ["Backfacing"])
         trans = self.addNode("ShaderNodeBsdfTransparent", 1)
         mix1 = self.addNode("ShaderNodeMixShader", 2)
         self.links.new(geo.outputs["Backfacing"], mix1.inputs[0])
@@ -959,7 +959,7 @@ class FakeCausticsGroup(FacMixGroup):
     def addNodes(self, args):
         FacMixGroup.addNodes(self, args)
         geo = self.addNode("ShaderNodeNewGeometry", 1)
-        self.hideAllBut(geo, ["Incoming", "Normal"])
+        hideAllBut(geo, ["Incoming", "Normal"])
 
         dot = self.addNode("ShaderNodeVectorMath", 2)
         dot.operation = 'DOT_PRODUCT'
@@ -979,7 +979,7 @@ class FakeCausticsGroup(FacMixGroup):
         elt.color[0:3] = 10*color
 
         lightpath = self.addNode("ShaderNodeLightPath", 4, size=100)
-        self.hideAllBut(lightpath, ["Is Shadow Ray"])
+        hideAllBut(lightpath, ["Is Shadow Ray"])
         trans = self.addNode("ShaderNodeBsdfTransparent", 4)
         self.links.new(ramp.outputs["Color"], trans.inputs["Color"])
         self.mixCycles(lightpath.outputs["Is Shadow Ray"], 0)
@@ -1114,7 +1114,7 @@ class GhostLightGroup(CyclesGroup):
 
     def addNodes(self, args=None):
         lpath = self.addNode("ShaderNodeLightPath", 1)
-        self.hideAllBut(lpath, ["Is Camera Ray", "Is Shadow Ray"])
+        hideAllBut(lpath, ["Is Camera Ray", "Is Shadow Ray"])
 
         max1 = self.addNode("ShaderNodeMath", 2)
         max1.operation = 'MAXIMUM'
@@ -1153,7 +1153,7 @@ class RayClipGroup(CyclesGroup):
 
     def addNodes(self, args=None):
         lpath = self.addNode("ShaderNodeLightPath", 1)
-        self.hideAllBut(lpath, ["Is Shadow Ray", "Is Reflection Ray"])
+        hideAllBut(lpath, ["Is Shadow Ray", "Is Reflection Ray"])
 
         max = self.addNode("ShaderNodeMath", 2)
         max.operation = 'MAXIMUM'

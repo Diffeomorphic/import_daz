@@ -826,6 +826,7 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
                 raise DazError("UV layers overlap")
 
     def replaceUVMapNodes(me, mergeLayer):
+        from .tree import hideAllBut
         for mat in me.materials:
             if mat is None:
                 continue
@@ -842,6 +843,8 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
                     if texco is None:
                         texco = mat.node_tree.nodes.new(type="ShaderNodeTexCoord")
                         texco.location = node.location
+                        texco.hide = True
+                        hideAllBut(texco, ["UV"])
                     mat.node_tree.links.new(texco.outputs["UV"], link.to_socket)
             for node in deletes.values():
                 mat.node_tree.nodes.remove(node)
