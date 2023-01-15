@@ -570,6 +570,9 @@ def register():
     bpy.types.PoseBone.DazTailLocal = FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.PoseBone.TlOffset = FloatVectorProperty(size=3, default=(-1,-1,-1))
+    bpy.types.PoseBone.DazTranslation = FloatVectorProperty(size=3, default=(0,0,0))
+    bpy.types.PoseBone.DazRotation = FloatVectorProperty(size=3, default=(0,0,0))
+    bpy.types.PoseBone.DazScale = FloatVectorProperty(size=3, default=(1,1,1))
 
     bpy.types.PoseBone.DazRotLocks = BoolVectorProperty(
         name = "Rotation Locks",

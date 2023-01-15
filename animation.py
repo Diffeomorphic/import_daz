@@ -803,7 +803,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             raise DazError("Wrong type of file: %s" % filepath)
         if "scene" not in struct.keys():
             return offset,None
-        anims = self.parseScene(struct["scene"])
+        anims = self.parseScene(struct["scene"], rig)
         if rig.type == 'ARMATURE':
             setMode('POSE')
             self.prepareRig(rig)
@@ -847,12 +847,12 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             self.boneLayers = setSimpleToFk(rig, self.boneLayers)
 
 
-    def parseScene(self, struct):
+    def parseScene(self, struct, rig):
         anims = []
         banims = {}
         vanims = {}
         anims.append((banims, vanims))
-        self.parseAnimations(struct, banims, vanims)
+        self.parseAnimations(struct, banims, vanims, rig)
         self.completeAnimations(banims)
         return anims
 
@@ -860,7 +860,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     #
     #-------------------------------------------------------------
 
-    def parseAnimations(self, struct, banims, vanims):
+    def parseAnimations(self, struct, banims, vanims, rig):
         if "animations" in struct.keys():
             for anim in struct["animations"]:
                 if "url" in anim.keys():
@@ -1420,16 +1420,27 @@ class StandardAnimation:
 #-------------------------------------------------------------
 
 class NodePose:
-    def parseAnimations(self, struct, banims, vanims):
+    def parseAnimations(self, struct, banims, vanims, rig):
         if "nodes" in struct.keys() and self.affectBones:
             for node in struct["nodes"]:
                 key = node["id"]
-                self.addTransform(node, "translation", banims, key)
-                self.addTransform(node, "rotation", banims, key)
-                self.addTransform(node, "scale", banims, key)
+                if key in rig.pose.bones.keys():
+                    pb = rig.pose.bones[key]
+                    trans = pb.DazTranslation
+                    rot = pb.DazRotation
+                    scale = pb.DazScale
+                else:
+                    trans = Zero
+                    rot = Zero
+                    scale = One
+                self.addTransform(node, "translation", banims, key, trans)
+                self.addTransform(node, "rotation", banims, key, rot)
+                self.addTransform(node, "scale", banims, key, scale)
                 #self.addTransform(node, "general_scale", banims, key)
         elif self.verbose:
             print("No nodes in this file")
+
+
         if "modifiers" in struct.keys() and self.affectMorphs:
             for mod in struct["modifiers"]:
                 key = mod.get("id")
@@ -1440,17 +1451,20 @@ class NodePose:
                         vanims[key] = [[0, value]]
 
 
-    def addTransform(self, node, channel, banims, key):
-        if channel in node.keys():
-            if key not in banims.keys():
-                banims[key] = {}
-            banim = banims[key]
-            if channel not in banim.keys():
-                banim[channel] = {}
-            for struct in node[channel]:
-                comp = struct["id"]
-                value = struct["current_value"]
-                banim[channel][getIndex(comp)] = [[0, value]]
+    def addTransform(self, node, channel, banims, key, default):
+        if key not in banims.keys():
+            banims[key] = {}
+        banim = banims[key]
+        if channel not in banim.keys():
+            banim[channel] = {
+                0: [[0, default[0]]],
+                1: [[0, default[1]]],
+                2: [[0, default[2]]]
+            }
+        for struct in node.get(channel, []):
+            comp = struct["id"]
+            value = struct["current_value"]
+            banim[channel][getIndex(comp)] = [[0, value]]
 
 #-------------------------------------------------------------
 #   Import Action
@@ -1650,7 +1664,7 @@ class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAn
         StandardAnimation.run(self, context)
 
 
-class DAZ_OT_ImportNodePose(HideOperator, NodePose, AffectBonesOn, AffectMorphsOn, PoseBase, StandardAnimation):
+class DAZ_OT_ImportNodePose(NodePose, HideOperator, AffectBonesOn, AffectMorphsOn, PoseBase, StandardAnimation):
     bl_idname = "daz.import_node_pose"
     bl_label = "Import Pose From Scene"
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
@@ -1660,9 +1674,6 @@ class DAZ_OT_ImportNodePose(HideOperator, NodePose, AffectBonesOn, AffectMorphsO
 
     def run(self, context):
         StandardAnimation.run(self, context)
-
-    def parseAnimations(self, struct, banims, vanims):
-        NodePose.parseAnimations(self, struct, banims, vanims)
 
 #-------------------------------------------------------------
 #   Save current frame
