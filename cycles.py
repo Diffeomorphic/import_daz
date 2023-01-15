@@ -718,11 +718,12 @@ class CyclesTree(Tree):
                         self.normal.inputs["Strength"].default_value = 1.0
                     else:
                         socket = link.from_socket
-                    _,a,b,out = self.addOverlay(weight, wttex)
+                    node,a,b,out = self.addOverlay(weight, wttex)
                     self.links.new(socket, a)
                     if tex:
                         self.links.new(self.colorOutput(tex), b)
                     self.links.new(out, self.normal.inputs["Color"])
+                    self.normaltex = node
                 else:
                     self.links.new(self.colorOutput(tex), self.normal.inputs["Color"])
             else:
