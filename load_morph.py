@@ -172,7 +172,7 @@ class LoadMorph(DriverUser):
         skey,ok = self.buildShape(asset, bodypart)
         if not ok:
             return " #"
-        elif self.rig:
+        elif self.rig and self.usePropDrivers:
             self.makeFormulas(asset, skey)
         aliases = {}
         if self.useSearchAlias:
@@ -294,11 +294,13 @@ class LoadMorph(DriverUser):
             prop = self.getUniqueName(unquote(skey.name))
             self.alias[prop] = skey.name
             skey.name = prop
+            skey.slider_min = asset.min
+            skey.slider_max = asset.max
             self.shapekeys[prop] = skey
             if bodypart == "Face":
                 self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
-            if self.rig:
+            if self.rig and self.usePropDrivers:
                 final = self.addNewProp(prop)
                 adj = self.getStrengthAdjuster()
                 self.adjustShapekey(skey, adj, final)

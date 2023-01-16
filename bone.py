@@ -432,9 +432,12 @@ class BoneInstance(Instance):
                 scale = self.attributes["scale"])
             tchildren = {}
         setBoneTransform(tfm, pb)
-        pb.DazTranslation = tfm.trans
-        pb.DazRotation = tfm.rot
-        pb.DazScale = tfm.scale
+        if nonzero(tfm.trans):
+            pb.DazTranslation = tfm.trans
+        if nonzero(tfm.rot):
+            pb.DazRotation = tfm.rot
+        if nonzero(tfm.scale - One):
+            pb.DazScale = tfm.scale
         return tchildren
 
 

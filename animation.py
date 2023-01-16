@@ -995,14 +995,14 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                         insertKeys(pb, True, frame, self)
             setChildofInverses(rig)
         if self.useClearMorphs and self.affectMorphs:
-            if self.useShapekeys:
-                for ob in rig.children:
-                    if ob.type == 'MESH' and ob.data.shape_keys:
-                        for skey in ob.data.shape_keys.key_blocks:
+            for ob in rig.children:
+                if ob.type == 'MESH' and ob.data.shape_keys:
+                    for skey in ob.data.shape_keys.key_blocks:
+                        if self.useShapekeys or skey.name not in rig.keys():
                             skey.value = 0.0
                             if self.useInsertKeys:
                                 skey.keyframe_insert("value", frame=frame)
-            else:
+            if not self.useShapekeys:
                 from .morphing import clearAllMorphs
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
@@ -1092,12 +1092,11 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                     elif "value" in bframe.keys():
                         if self.affectMorphs:
                             prop = unquote(bname)
-                            if self.useShapekeys:
+                            key = self.getRigKey(prop, rig, value)
+                            if self.useShapekeys or key is None:
                                 self.setShapeValues(rig, prop, value, n, offset)
-                            else:
-                                key = self.getRigKey(prop, rig, value)
-                                if key:
-                                    self.setRigProp(rig, key, value, n, offset)
+                            elif key:
+                                self.setRigProp(rig, key, value, n, offset)
 
                 for (bname, tfm, value) in twists:
                     self.transformBone(rig, bname, tfm, value, n, offset, True)
