@@ -1427,14 +1427,12 @@ class NodePose:
                     pb = rig.pose.bones[key]
                     trans = pb.DazTranslation
                     rot = pb.DazRotation
-                    scale = pb.DazScale
                 else:
                     trans = Zero
                     rot = Zero
-                    scale = One
                 self.addTransform(node, "translation", banims, key, trans)
                 self.addTransform(node, "rotation", banims, key, rot)
-                self.addTransform(node, "scale", banims, key, scale)
+                self.addTransform(node, "scale", banims, key, One)
                 #self.addTransform(node, "general_scale", banims, key)
         elif self.verbose:
             print("No nodes in this file")

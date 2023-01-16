@@ -421,23 +421,19 @@ class BoneInstance(Instance):
             tinst = targets[tname]
             tfm = Transform(
                 trans = tinst.attributes["translation"],
-                rot = tinst.attributes["rotation"],
-                scale = tinst.attributes["scale"])
+                rot = tinst.attributes["rotation"])
             tchildren = tinst.children
         else:
             tinst = None
             tfm = Transform(
                 trans = self.attributes["translation"],
-                rot = self.attributes["rotation"],
-                scale = self.attributes["scale"])
+                rot = self.attributes["rotation"])
             tchildren = {}
         setBoneTransform(tfm, pb)
         if nonzero(tfm.trans):
             pb.DazTranslation = tfm.trans
         if nonzero(tfm.rot):
             pb.DazRotation = tfm.rot
-        if nonzero(tfm.scale - One):
-            pb.DazScale = tfm.scale
         return tchildren
 
 
