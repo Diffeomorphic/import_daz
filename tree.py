@@ -279,7 +279,7 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=False, usePruneTexco=False, useHideOutputs=False):
+def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True):
     marked = {}
     if not tree:
         return marked

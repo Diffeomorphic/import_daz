@@ -222,30 +222,30 @@ class DispAdder:
         self.layout.prop(self, "midlevel")
 
     def loadDispMaps(self, mat, args):
-        from .tree import findNodes, pruneNodeTree
+        from .tree import findNodes, pruneNodeTree, YSIZE
         from .cycles import findTree, findTexco
         tree = findTree(mat)
-        texco = findTexco(tree, 5)
-        disp = self.addDispGroup(tree, args)
+        texco = findTexco(tree, 1)
+        disp = self.addDispGroup(tree, args, mat)
         disp.inputs["Midlevel"].default_value = self.midlevel
         disp.inputs["Scale"].default_value = self.scale
         tree.links.new(texco.outputs["UV"], disp.inputs["UV"])
         for node in findNodes(tree, 'OUTPUT_MATERIAL'):
             tree.links.new(disp.outputs["Displacement"], node.inputs["Displacement"])
+            x,y = node.location
+            disp.location = (x,y-YSIZE)
         if self.usePrune:
             pruneNodeTree(tree)
 
 
 class ScalarDispAdder(DispAdder):
-    def addDispGroup(self, tree, args):
-        tree.ycoords[7] = 0
-        return tree.addGroup(ScalarDispGroup, "DAZ Scalar Disp", col=7, args=args, force=True)
+    def addDispGroup(self, tree, args, mat):
+        return tree.addGroup(ScalarDispGroup, "%s Scalar Disp" % mat.name, args=args, force=True)
 
 
 class VectorDispAdder(DispAdder):
-    def addDispGroup(self, tree, args):
-        tree.ycoords[7] = 0
-        return tree.addGroup(VectorDispGroup, "DAZ Vector Disp", col=7, args=args, force=True)
+    def addDispGroup(self, tree, args, mat):
+        return tree.addGroup(VectorDispGroup, "%s Vector Disp" % mat.name, args=args, force=True)
 
 
 class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, ScalarDispAdder):
