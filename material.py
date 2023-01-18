@@ -137,7 +137,7 @@ class Material(Asset, Channels):
                 uvset.material = self
                 if geo and uvset != geo.default_uv_set:
                     geo.uv_sets[uvset.name] = uvset
-                    #self.uvNodeType = 'UVMAP'
+                    self.uvNodeType = 'UVMAP'
                 self.uv_set = uvset
 
 
@@ -364,9 +364,9 @@ class Material(Asset, Channels):
                         path = url.replace("male/genesis8", "male%208_1/genesis8_1")
                     if path != url:
                         uvset = geo.findUvSet(key, path)
-            if False and not uvset:
+            if not uvset:
                 msg = ("Missing UV for '%s': '%s' not in %s" % (self.getLabel(), key, list(struct.keys())))
-                reportError(msg, trigger=(2,3))
+                reportError(msg, trigger=(3,4))
         return key
 
 
