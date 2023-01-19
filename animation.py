@@ -1576,6 +1576,13 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
         if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
             bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
             act = rig.animation_data.action
+            keep = ["location", "rotation_euler", "rotation_quaternion"]
+            if self.affectScale:
+                keep.append("scale")
+            for fcu in list(act.fcurves):
+                words = fcu.data_path.rsplit(".", 1)
+                if words[-1] not in keep:
+                    act.fcurves.remove(fcu)
             if self.usePreviewImages:
                 previewFile = self.getPreviewFile(filepath, name)
                 if previewFile:
