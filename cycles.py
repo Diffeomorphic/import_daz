@@ -1980,12 +1980,7 @@ class CyclesTree(Tree):
                 ob = self.owner.geometry.rna
                 if ob:
                     active = getActiveUvLayer(ob)
-            marked = pruneNodeTree(self,
-                                   active=active,
-                                   useDeleteUnusedNodes=True,
-                                   useHideTexNodes=True,
-                                   usePruneTexco=True,
-                                   useHideOutputs=True)
+            marked = pruneNodeTree(self, active=active)
             hasDiffuseTex = self.diffuseTex and marked.get(self.diffuseTex.name)
             hasDiffuse = self.diffuse and marked.get(self.diffuse.name)
         else:

@@ -1857,18 +1857,9 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useHideOutputs")
 
     def run(self, context):
-        from .tree import pruneNodeTree
-        from .geometry import getActiveUvLayer
+        from .tree import pruneMaterials
         for ob in getSelectedMeshes(context):
-            active = getActiveUvLayer(ob)
-            for mat in ob.data.materials:
-                if mat:
-                    pruneNodeTree(mat.node_tree,
-                                  active=active,
-                                  useDeleteUnusedNodes=self.useDeleteUnusedNodes,
-                                  useHideTexNodes=self.useHideTexNodes,
-                                  usePruneTexco=self.usePruneTexco,
-                                  useHideOutputs=self.useHideOutputs)
+            pruneMaterials(ob, self.useDeleteUnusedNodes, self.useHideTexNodes, self.usePruneTexco, self.useHideOutputs)
 
 #----------------------------------------------------------
 #   Utility

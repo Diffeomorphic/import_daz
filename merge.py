@@ -446,7 +446,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             cob.data.DazFingerPrint = ""
 
         # Merge UV layers
+        from .tree import pruneMaterials
         self.mergeUvs(cob)
+        pruneMaterials(cob)
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):

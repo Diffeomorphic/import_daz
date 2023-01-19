@@ -343,6 +343,14 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
 
     return marked
 
+
+def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True):
+    from .geometry import getActiveUvLayer
+    active = getActiveUvLayer(ob)
+    for mat in ob.data.materials:
+        if mat:
+            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs)
+
 # ---------------------------------------------------------------------
 #   TNode and TLink
 # ---------------------------------------------------------------------
