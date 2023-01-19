@@ -2172,6 +2172,34 @@ class DAZ_OT_StripMaterialNames(DazOperator, IsMesh):
                     mat.name = baseName(mat.name)
 
 #----------------------------------------------------------
+#   Sort materials by name
+#----------------------------------------------------------
+
+class DAZ_OT_SortMaterialsByName(DazOperator, IsMesh):
+    bl_idname = "daz.sort_materials_by_name"
+    bl_label = "Sort Materials By Name"
+    bl_description = "Reorder materials by name as in DAZ Studio"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            sortMaterialsByName(ob)
+
+
+def sortMaterialsByName(ob):
+    mnums = [f.material_index for f in ob.data.polygons]
+    mats = [(mat.name, n, mat) for n,mat in enumerate(ob.data.materials)]
+    mats.sort()
+    ob.data.materials.clear()
+    for data in mats:
+        ob.data.materials.append(data[2])
+    assoc = {}
+    for m,data in enumerate(mats):
+        assoc[data[1]] = m
+    for f in ob.data.polygons:
+        f.material_index = assoc.get(mnums[f.index],0)
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -2187,6 +2215,7 @@ classes = [
     DAZ_OT_SaveMaterialsToFile,
     DAZ_OT_LoadMaterialsFromFile,
     DAZ_OT_StripMaterialNames,
+    DAZ_OT_SortMaterialsByName,
 ]
 
 def register():

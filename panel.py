@@ -278,6 +278,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_decal")
         self.layout.prop(context.scene, "DazDecalMask")
         self.layout.separator()
+        self.layout.operator("daz.sort_materials_by_name")
         self.layout.operator("daz.make_shader_groups")
 
 
