@@ -1135,9 +1135,9 @@ class CyclesTree(Tree):
         fresnel = refltex = None
         refl = 0.5
         if lmode == 2:  # Fresnel
-            from .cgroup import Fresnel2Group
+            from .cgroup import FresnelGroup
             fac = 0.5
-            fresnel = self.addGroup(Fresnel2Group, "DAZ Fresnel 2", size=4)
+            fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel", size=4)
             fresnel.inputs["Power"].default_value = 1
             ior,iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
@@ -1447,7 +1447,7 @@ class CyclesTree(Tree):
     def buildRefractionNode(self):
         from .cgroup import RefractionGroup
         self.addColumn()
-        node = self.addGroup(RefractionGroup, "DAZ Refraction", size=6)
+        node = self.addGroup(RefractionGroup, "DAZ Refraction", size=15)
         node.width = 240
 
         color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
@@ -1599,7 +1599,7 @@ class CyclesTree(Tree):
         if isBlack(color) or (isWhite(color) and tex is None):
             return
         self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
-        self.volume.inputs["Absorbtion Density"].default_value = 100/dist
+        self.volume.inputs["Absorbtion Density"].default_value = 200/dist
         self.linkColor(tex, self.volume, color, "Absorbtion Color")
 
 
