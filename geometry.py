@@ -293,6 +293,7 @@ class GeoNode(Node, SimNode):
 
 
     def finalize(self, context, inst):
+        from .material import sortMaterialsByName
         geo = self.data
         ob = self.rna
         if ob is None:
@@ -311,10 +312,14 @@ class GeoNode(Node, SimNode):
                 if dmat:
                     dmat.correctEmitArea(ob, mnum)
             scaleEyeMoisture(ob)
+            if GS.useMaterialsByName:
+                sortMaterialsByName(ob)
             if hdob and hdob != ob:
                 if GS.usePruneNodes:
                     pruneUvMaps(hdob)
                 scaleEyeMoisture(hdob)
+                if GS.useMaterialsByName:
+                    sortMaterialsByName(hdob)
             if GS.shellMethod == 'GEONODES':
                 self.buildShells(context)
         if LS.fitFile and ob.type == 'MESH':
@@ -950,7 +955,7 @@ class Geometry(Asset, Channels):
 
 
     def getGeoMaterials(self, geonode, shgeonode):
-        if GS.materialsByIndex:
+        if GS.useMaterialsByIndex:
             geomats = dict([(skipName(mname),shmat) for mname,shmat in geonode.materials.items()])
             shgeomats = dict([(skipName(mname),shmat) for mname,shmat in shgeonode.materials.items()])
         else:
@@ -1221,7 +1226,7 @@ class Geometry(Asset, Channels):
 
     def addMaterials(self, me, geonode, context):
         hasShells = False
-        if GS.materialsByIndex:
+        if GS.useMaterialsByIndex:
             for mnum,dmat in enumerate(geonode.materials.values()):
                 self.addMaterial(dmat, mnum, me, geonode)
                 if dmat.shells:
@@ -1487,7 +1492,7 @@ class Uvset(Asset):
                 dmat = geonode.materials[key]
                 dmat.fixUdim(context, udim)
                 fixed = True
-        if not (fixed or GS.materialsByIndex):
+        if not (fixed or GS.useMaterialsByIndex):
             print("Material \"%s\" not found" % key)
 
 

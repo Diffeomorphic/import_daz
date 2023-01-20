@@ -86,7 +86,8 @@ class GlobalSettings:
         self.useReflection = True
         self.useWorld = 'DOME'
         self.useLowerResFolders = True
-        self.materialsByIndex = False
+        self.useMaterialsByIndex = False
+        self.useMaterialsByName = False
         self.imageInterpolation = 'Cubic'
         self.useGhostLight = False
 
@@ -163,7 +164,8 @@ class GlobalSettings:
         "DazViewportColor" : "viewportColors",
         "DazUseWorld" : "useWorld",
         "DazLowerResFolders" : "useLowerResFolders",
-        "DazMaterialsByIndex" : "materialsByIndex",
+        "DazMaterialsByIndex" : "useMaterialsByIndex",
+        "DazMaterialsByName" : "useMaterialsByName",
         "DazBumpFactor" : "bumpFactor",
         "DazFakeCaustics" : "useFakeCaustics",
         "DazHandleRenderSettings" : "handleRenderSettings",

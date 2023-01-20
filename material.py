@@ -91,7 +91,7 @@ class Material(Asset, Channels):
     def getMatName(self, id):
         id = unquote(id)
         key = id.split("#")[-1]
-        if GS.materialsByIndex:
+        if GS.useMaterialsByIndex:
             return key
         else:
             return skipName(key)
