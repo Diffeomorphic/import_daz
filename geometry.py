@@ -899,7 +899,8 @@ class Geometry(Asset, Channels):
             shname = shinst.name
             shmats = {}
             visibles = {}
-            for mname,shmat in shgeonode.materials.items():
+            geomats,shgeomats = self.getGeoMaterials(geonode, shgeonode)
+            for mname,shmat in shgeomats.items():
                 vis = self.material_group_vis.get(mname)
                 if vis is None:
                     print("Warning: no visibility for material %s" % mname)
@@ -911,15 +912,15 @@ class Geometry(Asset, Channels):
                 visibles[mname] = vis
 
             if GS.shellMethod == 'GEONODES':
-                for mname in geonode.materials.keys():
+                for mname in geomats.keys():
                     if mname in shmats.keys() and visibles[mname]:
                         geonode.shellGeos.append((shgeonode,visibles))
                         uv = self.uvs.get(mname)
                         if uv:
                             uvset = self.addNewUvset(uv, geo, inst)
-                            for dmat in geonode.materials.values():
+                            for dmat in geomats.values():
                                 dmat.uvNodeType = 'ATTRIBUTE'
-                            for dmat in shgeonode.materials.values():
+                            for dmat in shgeomats.values():
                                 dmat.uvNodeType = 'ATTRIBUTE'
                                 dmat.uv_set = uvset
                         return []
@@ -933,8 +934,8 @@ class Geometry(Asset, Channels):
                 if not visibles[mname]:
                     continue
                 uv = self.uvs.get(mname)
-                if uv and mname in geonode.materials.keys():
-                    dmat = geonode.materials[mname]
+                if uv and mname in geomats.keys():
+                    dmat = geomats[mname]
                     if shname not in dmat.shells.keys():
                         dmat.shells[shname] = self.makeShell(shname, shmat, uv)
                     shmat.ignore = True
@@ -948,22 +949,33 @@ class Geometry(Asset, Channels):
         return [miss for miss in missing if miss[0] not in self.matused]
 
 
+    def getGeoMaterials(self, geonode, shgeonode):
+        if GS.materialsByIndex:
+            geomats = dict([(skipName(mname),shmat) for mname,shmat in geonode.materials.items()])
+            shgeomats = dict([(skipName(mname),shmat) for mname,shmat in shgeonode.materials.items()])
+        else:
+            geomats = geonode.materials
+            shgeomats = shgeonode.materials
+        return geomats, shgeomats
+
+
     def addShellGeo(self, inst, shmats, shgeonode, visibles, pprefix):
         if not inst.geometries:
             return False
         geonode = inst.geometries[0]
         geo = geonode.data
+        geomats,shgeomats = self.getGeoMaterials(geonode, shgeonode)
         prefix = "%s%s_" % (pprefix, inst.node.name)
         for mname in shmats.keys():
             mname1 = self.unprefixName(prefix, inst, mname)
-            if mname1 in geonode.materials.keys() and visibles[mname]:
+            if mname1 in geomats.keys() and visibles[mname]:
                 geonode.shellGeos.append((shgeonode,visibles))
                 geonode.shellPrefix = prefix
                 uv = self.uvs.get(mname)
                 uvset = self.addNewUvset(uv, geo, inst)
-                for dmat in geonode.materials.values():
+                for dmat in geomats.values():
                     dmat.uvNodeType = 'ATTRIBUTE'
-                for dmat in shgeonode.materials.values():
+                for dmat in shgeomats.values():
                     dmat.uvNodeType = 'ATTRIBUTE'
                     dmat.uv_set = uvset
                 return True
@@ -981,10 +993,11 @@ class Geometry(Asset, Channels):
             return
         geonode = inst.geometries[0]
         geo = geonode.data
+        geomats,_shgeomats = self.getGeoMaterials(geonode, geonode)
         prefix = "%s%s_" % (pprefix, inst.node.name)
         mname1 = self.unprefixName(prefix, inst, mname)
-        if mname1 and mname1 in geonode.materials.keys():
-            dmat = geonode.materials[mname1]
+        if mname1 and mname1 in geomats.keys():
+            dmat = geomats[mname1]
             mshells = dmat.shells
             if shname not in mshells.keys():
                 mshells[shname] = self.makeShell(shname, shmat, uv)

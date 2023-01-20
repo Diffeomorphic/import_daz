@@ -303,13 +303,16 @@ def baseName(name):
         return name
 
 
-def stripName(name):
-    name = baseName(name)
+def skipName(name):
     words = name.rsplit("-",1)
     if len(words) == 2 and words[1].isdigit():
         return words[0]
     else:
         return name
+
+
+def stripName(name):
+    return skipName(baseName(name))
 
 
 def finalProp(prop):

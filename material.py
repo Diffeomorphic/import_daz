@@ -93,12 +93,8 @@ class Material(Asset, Channels):
         key = id.split("#")[-1]
         if GS.materialsByIndex:
             return key
-        words = key.rsplit("-",1)
-        if (len(words) == 2 and
-            words[1].isdigit()):
-            return words[0]
         else:
-            return key
+            return skipName(key)
 
 
     def addToGeoNode(self, geonode, key):
