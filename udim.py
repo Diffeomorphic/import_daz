@@ -254,13 +254,10 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names",
         default = True)
 
-    mergeCase : EnumProperty(
-        items = [('NONE', "None", "Don't merge UDIM materials"),
-                 ('ALL', "All", "Merge all UDIM materials with the active material"),
-                 ('NOMAP', "No Mapping Nodes", "Merge UDIM materials unless the active material has a mapping node")],
+    useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge materials and not only textures.\nThis may cause some information loss.\nIf not, Merge Materials can be called afterwards",
-        default = 'NONE')
+        default = False)
 
     useStackShells : BoolProperty(
         name = "Stack Shells",
@@ -270,8 +267,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
     def draw(self, context):
         self.layout.prop(self, "useSaveLocalTextures")
         self.layout.prop(self, "useFixTextures")
-        self.layout.prop(self, "mergeCase")
-        if self.mergeCase != 'NONE':
+        self.layout.prop(self, "useMergeMaterials")
+        if self.useMergeMaterials:
             self.layout.prop(self, "useStackShells")
         self.layout.prop(self, "trgmat")
         self.layout.label(text="Materials To Merge")
@@ -307,18 +304,18 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
         mats = []
         mnums = []
-        amat = None
+        actmat = None
         for mn,umat in enumerate(self.umats):
             if umat.bool:
                 mat = ob.data.materials[umat.name]
                 mats.append(mat)
                 mnums.append(mn)
-                if amat is None or mat.name == self.trgmat:
-                    amat = mat
+                if actmat is None or mat.name == self.trgmat:
+                    actmat = mat
                     amnum = mn
-                    atile = 1001 + mat.DazUDim
+                    acttile = 1001 + mat.DazUDim
 
-        if amat is None:
+        if actmat is None:
             raise DazError("No materials selected")
 
         texnodes = {}
@@ -326,26 +323,25 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         for mat in mats:
             nodes,hasmaps = self.getTextureNodes(mat)
             texnodes[mat.name] = nodes
-            if mat == amat:
+            if mat == actmat:
                 hasmapping = hasmaps
 
-        useMerge = (self.mergeCase == 'ALL' or (self.mergeCase == 'NOMAP' and not hasmapping))
-        if useMerge and self.useStackShells:
+        if self.useMergeMaterials and self.useStackShells:
             shells0 = self.getShells(mats)
-            ashells = self.getShells([amat])
+            actshells = self.getShells([actmat])
             shells = {}
             for tname,data in shells0.items():
-                if tname not in ashells.keys():
+                if tname not in actshells.keys():
                     shells[tname] = data
 
-        for key,anode in texnodes[amat.name].items():
-            anode.image.source = "TILED"
-            anode.extension = "CLIP"
-            if anode.image:
-                imgname = anode.image.name
+        for key,actnode in texnodes[actmat.name].items():
+            actnode.image.source = "TILED"
+            actnode.extension = "CLIP"
+            if actnode.image:
+                imgname = actnode.image.name
             else:
-                imgname = anode.name
-            basename = "T_%s" % self.getBaseName(imgname, amat.DazUDim)
+                imgname = actnode.name
+            basename = "T_%s" % self.getBaseName(imgname, actmat.DazUDim)
             udims = {}
             for mat in mats:
                 nodes = texnodes[mat.name]
@@ -355,12 +351,12 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                     self.updateImage(img, basename, mat.DazUDim)
                     if mat.DazUDim not in udims.keys():
                         udims[mat.DazUDim] = mat.name
-                    if mat == amat:
-                        img.name = self.makeImageName(basename, atile, img)
+                    if mat == actmat:
+                        img.name = self.makeImageName(basename, acttile, img)
                         node.label = basename
                         node.name = basename
 
-            img = anode.image
+            img = actnode.image
             if bpy.app.version >= (3, 1, 0):
                 path2,ext2 = os.path.splitext(img.filepath)
                 tile,base = getTileBase(path2)
@@ -377,9 +373,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         for mat in mats:
             self.addSkipZeroUvs(mat)
 
-        if self.mergeCase != 'NONE':
-            if self.mergeCase == 'NOMAP' and hasmapping:
-                raise DazError("Cannot merge materials because %s has mapping nodes" % amat.name, warning=True)
+        if self.useMergeMaterials:
             for f in ob.data.polygons:
                 if f.material_index in mnums:
                     f.material_index = amnum
@@ -389,19 +383,19 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 if mn != amnum:
                     ob.data.materials.pop(index=mn)
             if self.useStackShells:
-                self.addShells(amat, shells)
+                self.addShells(actmat, shells)
         else:
-            anodes = texnodes[amat.name]
+            anodes = texnodes[actmat.name]
             for mat in mats:
-                if mat != amat:
+                if mat != actmat:
                     nodes = texnodes[mat.name]
                     for key,node in nodes.items():
                         if key in anodes.keys():
-                            anode = anodes[key]
-                            img = node.image = anode.image
+                            actnode = anodes[key]
+                            img = node.image = actnode.image
                             node.extension = "CLIP"
-                            node.label = anode.label
-                            node.name = anode.name
+                            node.label = actnode.label
+                            node.name = actnode.name
 
 
     def makeImageName(self, basename, tile, img):

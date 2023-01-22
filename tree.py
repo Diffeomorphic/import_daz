@@ -52,7 +52,6 @@ class Tree:
     def getValue(self, channel, default):
         return self.owner.getValue(channel, default)
 
-
     def addNode(self, stype, col=None, size=10, label=None, parent=None):
         if col is None:
             col = self.column
@@ -64,6 +63,17 @@ class Tree:
         if parent:
             node.parent = parent
         return node
+
+    def skipSteps(self, col, size):
+        self.ycoords[col] -= size*YSTEP
+
+    def below(self, node, size):
+        return node.location[1] - 2*YSIZE - size*YSTEP
+
+    def shiftNodes(self, nodes, dx, dy):
+        for node in nodes:
+            x,y = node.location
+            node.location = (x+dx, y+dy)
 
     if bpy.app.version < (3,4,0):
         MixColor1 = 1

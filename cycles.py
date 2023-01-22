@@ -1651,7 +1651,6 @@ class CyclesTree(Tree):
             mat = self.owner.rna
             mat.cycles.displacement_method = 'DISPLACEMENT'
 
-
     #-------------------------------------------------------------
     #   Displacment
     #-------------------------------------------------------------
@@ -1731,13 +1730,6 @@ class CyclesTree(Tree):
             node.image_user.frame_duration = 1
             node.image_user.frame_current = 1
         return node
-
-
-    def addImageTexNode(self, filepath, tname, col, size=2):
-        img = bpy.data.images.load(filepath)
-        img.name = os.path.splitext(os.path.basename(filepath))[0]
-        img.colorspace_settings.name = "Non-Color"
-        return self.addTextureNode(col, img, tname, "NONE", size=size)
 
 
     def getTexNode(self, key, colorSpace):

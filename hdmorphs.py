@@ -40,6 +40,8 @@ from .morphing import Selector
 #-------------------------------------------------------------
 
 class Layouter:
+    loadedImages = {}
+
     usePrune : BoolProperty(
         name = "Prune Node Tree",
         description = "Prune the node tree",
@@ -54,13 +56,18 @@ class Layouter:
         self.layout.prop(self, "useCompact")
         self.layout.prop(self, "usePrune")
 
-    def shiftNodes(self, tree, nodes, dx, dy):
-        for node in nodes:
-            x,y = node.location
-            node.location = (x+dx, y+dy)
+    def getImage(self, filepath):
+        if filepath in self.loadedImages.keys():
+            return self.loadedImages[filepath]
+        else:
+            img = bpy.data.images.load(filepath)
+            img.name = os.path.splitext(os.path.basename(filepath))[0]
+            img.colorspace_settings.name = "Non-Color"
+            self.loadedImages[filepath] = img
+            return img
 
 #-------------------------------------------------------------
-#   Load HD Vector Displacement Map
+#   Load Maps
 #-------------------------------------------------------------
 
 class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
@@ -108,6 +115,7 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
 
 
     def getArgs(self, ob):
+        self.loadedImages = {}
         rig = ob.parent
         amt = None
         if rig and rig.type == 'ARMATURE':
@@ -183,7 +191,7 @@ class DispAdder:
         self.layout.prop(self, "midlevel")
 
     def loadDispMaps(self, mat, args):
-        from .tree import findNodes, pruneNodeTree, XSIZE, YSIZE, YSTEP
+        from .tree import findNodes, pruneNodeTree, XSIZE
         from .cycles import findTree, findTexco
         from .driver import makePropDriver
         if self.useCompact:
@@ -199,13 +207,14 @@ class DispAdder:
             for link in outputs[0].inputs["Displacement"].links:
                 last = link.from_node
                 frame = last.parent
-                dy = last.location[1] - 2*YSIZE - size*YSTEP
+                dy = tree.below(last, size)
         else:
             frame = tree.nodes.new("NodeFrame")
             frame.label = "Displacement Maps"
         nodes = []
         for ob,amt,sname,prop,filepath in args:
-            tex = tree.addImageTexNode(filepath, sname, col=0, size=size)
+            img = self.getImage(filepath)
+            tex = tree.addTextureNode(0, img, sname, "NONE", size)
             tex.parent = frame
             nodes.append(tex)
             disp = tree.addNode(self.shaderNode, col=1, label=sname, size=size)
@@ -220,7 +229,7 @@ class DispAdder:
                 disp.hide = True
             if last is None:
                 last = disp
-                tree.ycoords[2] -= size*YSTEP
+                tree.skipSteps(2, size)
             else:
                 add = tree.addNode("ShaderNodeVectorMath", col=2, size=size)
                 add.parent = frame
@@ -234,7 +243,7 @@ class DispAdder:
         if last:
             for node in outputs:
                 tree.links.new(last.outputs[0], node.inputs["Displacement"])
-        self.shiftNodes(tree, nodes, -XSIZE, dy)
+        tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
             pruneNodeTree(tree)
 
@@ -285,7 +294,7 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, DispAdder):
 class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from .driver import makePropDriver
-        from .tree import findNode, findLinksTo, XSIZE, YSIZE, YSTEP, pruneNodeTree
+        from .tree import findNode, findLinksTo, XSIZE, pruneNodeTree
         from .cycles import findTree, findTexco
         from .material import NORMAL
 
@@ -299,14 +308,14 @@ class NormalAdder:
         socket = None
         frame = None
         if normal is None:
-            tree.ycoords[2] -= YSIZE
+            tree.skipSteps(2, size)
             normal = tree.addNode("ShaderNodeNormalMap", col=2)
         else:
             links = findLinksTo(tree, "NORMAL_MAP")
             for link in links:
                 socket = link.from_socket
                 node = link.from_node
-                dy = node.location[1] - 2*YSIZE - size*YSTEP
+                dy = tree.below(node, size)
                 frame = node.parent
         if frame is None:
             frame = tree.nodes.new("NodeFrame")
@@ -325,7 +334,8 @@ class NormalAdder:
             if not os.path.exists(filepath):
                 print("No such file: %s" % filepath)
                 continue
-            tex = tree.addImageTexNode(filepath, fname, 0, size=size)
+            img = self.getImage(filepath)
+            tex = tree.addTextureNode(0, img, fname, "NONE", size)
             tex.parent = frame
             nodes.append(tex)
             mix,a,b,out = tree.addMixRgbNode('OVERLAY', 1, size=size)
@@ -345,7 +355,7 @@ class NormalAdder:
             tree.links.new(socket, normal.inputs["Color"])
         else:
             print("No link to normal map node")
-        self.shiftNodes(tree, nodes, -XSIZE, dy)
+        tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
             pruneNodeTree(tree)
 
@@ -427,20 +437,21 @@ class Baker:
     def getBaseName(self, ob):
         if self.basename:
             return self.basename
-        elif ob.name[-3:] == "_HD":
-            obname = ob.name[:-3]
+        obname = baseName(ob.name)
+        if obname[-3:] == "_HD":
+            obname = obname[:-3]
         else:
-            obname = ob.name
-        if ob.name[-5:] == " Mesh":
+            obname = obname
+        if obname[-5:] == " Mesh":
             obname = obname[:-5]
         return bpy.path.clean_name(obname.lower())
 
 
     def getImageName(self, basename, tile):
         if self.bakeType == 'NORMALS':
-            return ("%s_NM_%d_%s.png" % (basename, tile, self.imageSize))
+            return ("%s_NM_%s_%d.png" % (basename, self.imageSize, tile))
         elif self.bakeType == 'DISPLACEMENT':
-            return ("%s_DISP_%d_%s.png" % (basename, tile, self.imageSize))
+            return ("%s_DISP_%s_%d.png" % (basename, self.imageSize, tile))
 
 
     def getImagePath(self, imgname, create):
@@ -683,6 +694,7 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
 
 
     def loadObjectMaps(self, ob):
+        self.loadedImages = {}
         mod = getModifier(ob, 'MULTIRES')
         if mod:
             mod.show_viewport = mod.show_render = False
