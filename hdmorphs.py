@@ -36,10 +36,34 @@ from .propgroups import DazBoolGroup, DazStringBoolGroup
 from .morphing import Selector
 
 #-------------------------------------------------------------
+#   Node tree layout
+#-------------------------------------------------------------
+
+class Layouter:
+    usePrune : BoolProperty(
+        name = "Prune Node Tree",
+        description = "Prune the node tree",
+        default = True)
+
+    useCompact : BoolProperty(
+        name = "Compact Layout",
+        description = "Compact",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useCompact")
+        self.layout.prop(self, "usePrune")
+
+    def shiftNodes(self, tree, nodes, dx, dy):
+        for node in nodes:
+            x,y = node.location
+            node.location = (x+dx, y+dy)
+
+#-------------------------------------------------------------
 #   Load HD Vector Displacement Map
 #-------------------------------------------------------------
 
-class LoadMaps(MultiFile, ImageFile, IsMesh):
+class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
     materials : CollectionProperty(type = DazBoolGroup)
 
     useDriver : BoolProperty(
@@ -53,15 +77,10 @@ class LoadMaps(MultiFile, ImageFile, IsMesh):
         min = 1001, max = 1009,
         default = 1001)
 
-    usePrune : BoolProperty(
-        name = "Prune Node Tree",
-        description = "Prune the node tree",
-        default = True)
-
     def draw(self, context):
         self.layout.prop(self, "useDriver")
         self.layout.prop(self, "tile")
-        self.layout.prop(self, "usePrune")
+        Layouter.draw(self, context)
         self.layout.label(text="Add Maps To Materials:")
         box = self.layout.box()
         for item in self.materials:
@@ -143,68 +162,10 @@ class LoadMaps(MultiFile, ImageFile, IsMesh):
 #   Scalar and Vector Displacement groups
 #-------------------------------------------------------------
 
-class DispGroup(CyclesGroup):
-
-    def __init__(self):
-        CyclesGroup.__init__(self)
-        self.insockets += ["Scale", "Midlevel", "UV"]
-        self.outsockets += ["Displacement"]
-
-
-    def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Midlevel")
-        self.group.inputs.new("NodeSocketFloat", "Scale")
-        self.group.inputs.new("NodeSocketVector", "UV")
-        self.group.outputs.new("NodeSocketVector", "Displacement")
-
-
-    def addNodes(self, args):
-        from .driver import makePropDriver
-        last = None
-        for ob,amt,sname,prop,filepath in args:
-            tex = self.addImageTexNode(filepath, sname, 1)
-            self.links.new(self.inputs.outputs["UV"], tex.inputs["Vector"])
-
-            disp = self.addDispNode(sname, tex)
-            self.links.new(self.inputs.outputs["Midlevel"], disp.inputs["Midlevel"])
-            self.links.new(self.inputs.outputs["Scale"], disp.inputs["Scale"])
-            if amt and prop:
-                makePropDriver(propRef(prop), disp.inputs["Scale"], "default_value", amt, "%g*x" % ob.DazScale)
-
-            if last is None:
-                last = disp
-            else:
-                add = self.addMathNode()
-                add.operation = 'ADD'
-                self.links.new(last.outputs[0], add.inputs[0])
-                self.links.new(disp.outputs[0], add.inputs[1])
-                last = add
-        if last:
-            self.links.new(last.outputs[0], self.outputs.inputs["Displacement"])
-
-
-class ScalarDispGroup(DispGroup):
-    def addDispNode(self, sname, tex):
-        disp = self.addNode("ShaderNodeDisplacement", col=2, label=sname)
-        self.links.new(tex.outputs["Color"], disp.inputs["Height"])
-        return disp
-
-    def addMathNode(self):
-        return self.addNode("ShaderNodeVectorMath", col=3)
-
-
-class VectorDispGroup(DispGroup):
-    def addDispNode(self, sname, tex):
-        disp = self.addNode("ShaderNodeVectorDisplacement", col=2, label=sname)
-        self.links.new(tex.outputs["Color"], disp.inputs["Vector"])
-        return disp
-
-    def addMathNode(self):
-        return self.addNode("ShaderNodeVectorMath", col=3)
-
-
 class DispAdder:
+    shaderNode = "ShaderNodeDisplacement"
+    heightInput = "Height"
+
     scale : FloatProperty(
         name = "Scale",
         description = "Scale value for displacement node",
@@ -222,42 +183,72 @@ class DispAdder:
         self.layout.prop(self, "midlevel")
 
     def loadDispMaps(self, mat, args):
-        from .tree import findNodes, pruneNodeTree, YSIZE
+        from .tree import findNodes, pruneNodeTree, XSIZE, YSIZE, YSTEP
         from .cycles import findTree, findTexco
+        from .driver import makePropDriver
+        if self.useCompact:
+            size = 2
+        else:
+            size = 8
         tree = findTree(mat)
-        texco = findTexco(tree, 1)
-        disp = self.addDispGroup(tree, args, mat)
-        disp.inputs["Midlevel"].default_value = self.midlevel
-        disp.inputs["Scale"].default_value = self.scale
-        tree.links.new(texco.outputs["UV"], disp.inputs["UV"])
-        for node in findNodes(tree, 'OUTPUT_MATERIAL'):
-            tree.links.new(disp.outputs["Displacement"], node.inputs["Displacement"])
-            x,y = node.location
-            disp.location = (x,y-YSIZE)
+        outputs = findNodes(tree, 'OUTPUT_MATERIAL')
+        last = None
+        frame = None
+        dy = 0
+        if outputs:
+            for link in outputs[0].inputs["Displacement"].links:
+                last = link.from_node
+                frame = last.parent
+                dy = last.location[1] - 2*YSIZE - size*YSTEP
+        else:
+            frame = tree.nodes.new("NodeFrame")
+            frame.label = "Displacement Maps"
+        nodes = []
+        for ob,amt,sname,prop,filepath in args:
+            tex = tree.addImageTexNode(filepath, sname, col=0, size=size)
+            tex.parent = frame
+            nodes.append(tex)
+            disp = tree.addNode(self.shaderNode, col=1, label=sname, size=size)
+            disp.parent = frame
+            nodes.append(disp)
+            tree.links.new(tex.outputs["Color"], disp.inputs[self.heightInput])
+            disp.inputs["Midlevel"].default_value = self.midlevel
+            disp.inputs["Scale"].default_value = self.scale
+            if amt and prop:
+                makePropDriver(propRef(prop), disp.inputs["Scale"], "default_value", amt, "%g*x" % ob.DazScale)
+            if self.useCompact:
+                disp.hide = True
+            if last is None:
+                last = disp
+                tree.ycoords[2] -= size*YSTEP
+            else:
+                add = tree.addNode("ShaderNodeVectorMath", col=2, size=size)
+                add.parent = frame
+                nodes.append(add)
+                if self.useCompact:
+                    add.hide = True
+                add.operation = 'ADD'
+                tree.links.new(last.outputs[0], add.inputs[0])
+                tree.links.new(disp.outputs[0], add.inputs[1])
+                last = add
+        if last:
+            for node in outputs:
+                tree.links.new(last.outputs[0], node.inputs["Displacement"])
+        self.shiftNodes(tree, nodes, -XSIZE, dy)
         if self.usePrune:
             pruneNodeTree(tree)
 
 
-class ScalarDispAdder(DispAdder):
-    def addDispGroup(self, tree, args, mat):
-        return tree.addGroup(ScalarDispGroup, "%s Scalar Disp" % mat.name, args=args, force=True)
-
-
-class VectorDispAdder(DispAdder):
-    def addDispGroup(self, tree, args, mat):
-        return tree.addGroup(VectorDispGroup, "%s Vector Disp" % mat.name, args=args, force=True)
-
-
-class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, ScalarDispAdder):
+class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, DispAdder):
     bl_idname = "daz.load_scalar_disp"
     bl_label = "Load Scalar Disp Maps"
-    bl_description = "Load scalar displacement map to active material"
+    bl_description = "Load scalar displacement map to selected materials"
     bl_options = {'UNDO'}
 
     type = "DISP"
 
     def draw(self, context):
-        ScalarDispAdder.draw(self, context)
+        DispAdder.draw(self, context)
         LoadMaps.draw(self, context)
 
     def run(self, context):
@@ -267,16 +258,18 @@ class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, ScalarDispAdder):
             self.loadDispMaps(mat, args)
 
 
-class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, VectorDispAdder):
+class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, DispAdder):
     bl_idname = "daz.load_vector_disp"
     bl_label = "Load Vector Disp Maps"
-    bl_description = "Load vector displacement map to active material"
+    bl_description = "Load vector displacement map to selected materials"
     bl_options = {'UNDO'}
 
     type = "VDISP"
+    shaderNode = "ShaderNodeVectorDisplacement"
+    heightInput = "Vector"
 
     def draw(self, context):
-        VectorDispAdder.draw(self, context)
+        DispAdder.draw(self, context)
         LoadMaps.draw(self, context)
 
     def run(self, context):
@@ -289,143 +282,35 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, VectorDispAdder):
 #   Load HD Normal Map
 #-------------------------------------------------------------
 
-class MixNormalTextureGroup(CyclesGroup):
-
-    def __init__(self):
-        CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Color1", "Color2"]
-        self.outsockets += ["Color"]
-
-
-    def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 8)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
-        self.group.inputs.new("NodeSocketColor", "Color1")
-        self.group.inputs.new("NodeSocketColor", "Color2")
-        self.group.outputs.new("NodeSocketColor", "Color")
-
-
-    def addNodes(self, args):
-        mix,a,b,out = self.addMixRgbNode('OVERLAY', 1)
-        self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
-        self.links.new(self.inputs.outputs["Color1"], a)
-        self.links.new(self.inputs.outputs["Color2"], b)
-        self.links.new(out, self.outputs.inputs["Color"])
-
-
-    def addNodes0(self, args):
-        val1 = self.addNode("ShaderNodeValue", 1)
-        val1.outputs[0].default_value = 2
-        vmult1,a,b,multout1 = self.addMixRgbNode('MULTIPLY', 2)
-        vmult1.inputs[0].default_value = 1
-        self.links.new(val1.outputs[0], a)
-        self.links.new(self.inputs.outputs["Color1"], b)
-
-        val2 = self.addNode("ShaderNodeValue", 1)
-        val2.outputs[0].default_value = -1
-        comb1 = self.addNode("ShaderNodeCombineRGB", 2)
-        self.links.new(val2.outputs[0], comb1.inputs[0])
-        self.links.new(val2.outputs[0], comb1.inputs[1])
-        add1 = self.addNode("ShaderNodeMath", 2)
-        add1.operation = 'ADD'
-        self.links.new(val2.outputs[0], add1.inputs[0])
-        self.links.new(self.inputs.outputs["Fac"], add1.inputs[1])
-        self.links.new(add1.outputs[0], comb1.inputs[2])
-
-        val3 = self.addNode("ShaderNodeValue", 1)
-        val3.outputs[0].default_value = -2
-        val4 = self.addNode("ShaderNodeValue", 1)
-        val4.outputs[0].default_value = 2
-        comb2 = self.addNode("ShaderNodeCombineRGB", 2)
-        self.links.new(val3.outputs[0], comb2.inputs[0])
-        self.links.new(val3.outputs[0], comb2.inputs[1])
-        self.links.new(val4.outputs[0], comb2.inputs[2])
-
-        val5 = self.addNode("ShaderNodeValue", 1)
-        val5.outputs[0].default_value = 1
-        val6 = self.addNode("ShaderNodeValue", 1)
-        val6.outputs[0].default_value = -1
-        comb3 = self.addNode("ShaderNodeCombineRGB", 2)
-        self.links.new(val5.outputs[0], comb3.inputs[0])
-        self.links.new(val5.outputs[0], comb3.inputs[1])
-        self.links.new(val6.outputs[0], comb3.inputs[2])
-
-        vadd1,a,b,addout1 = self.addMixRgbNode('ADD', 3)
-        vadd1.inputs[0].default_value = 1
-        self.links.new(multout1, a)
-        self.links.new(comb1.outputs[0], b)
-
-        vmult2,a,b,multout2 = self.addMixRgbNode('MULTIPLY', 3)
-        vmult2.inputs[0].default_value = 1
-        self.links.new(self.inputs.outputs["Color2"], a)
-        self.links.new(comb2.outputs[0], b)
-
-        vadd2,a,b,addout2 = self.addMixRgbNode('ADD', 3)
-        vadd2.inputs[0].default_value = 1
-        self.links.new(multout2, a)
-        self.links.new(comb3.outputs[0], b)
-
-        dot = self.addNode("ShaderNodeVectorMath", 4)
-        dot.operation = 'DOT_PRODUCT'
-        self.links.new(addout1, dot.inputs[0])
-        self.links.new(addout2, dot.inputs[1])
-
-        sep1 = self.addNode("ShaderNodeSeparateRGB", 4)
-        self.links.new(addout1, sep1.inputs[0])
-
-        vdiv,a,b,divout = self.addMixRgbNode('DIVIDE', 5)
-        vdiv.inputs[0].default_value = 1
-        self.links.new(dot.outputs["Value"], a)
-        self.links.new(sep1.outputs[2], b)
-
-        vmult3,a,b,multout3 = self.addMixRgbNode('MULTIPLY', 5)
-        self.links.new(self.inputs.outputs["Fac"], vmult3.inputs[0])
-        self.links.new(addout1, a)
-        self.links.new(divout, b)
-
-        vsub2,a,b,subout2 = self.addMixRgbNode('SUBTRACT', 5)
-        self.links.new(self.inputs.outputs["Fac"], vsub2.inputs[0])
-        self.links.new(multout3, a)
-        self.links.new(addout2, b)
-
-        norm = self.addNode("ShaderNodeVectorMath", 6)
-        norm.operation = 'NORMALIZE'
-        self.links.new(subout2, norm.inputs[0])
-
-        val7 = self.addNode("ShaderNodeValue", 6)
-        val7.outputs[0].default_value = 0.5
-
-        vmult4,a,b,multout4 = self.addMixRgbNode('MULTIPLY', 7)
-        vmult4.inputs[0].default_value = 1
-        self.links.new(norm.outputs["Vector"], a)
-        self.links.new(val7.outputs[0], b)
-
-        vadd4,a,b,addout4 = self.addMixRgbNode('ADD', 7)
-        vadd4.inputs[0].default_value = 1
-        self.links.new(multout4, a)
-        self.links.new(val7.outputs[0], b)
-
-        self.links.new(addout4, self.outputs.inputs["Color"])
-
-
 class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from .driver import makePropDriver
-        from .tree import findNode, findLinksTo, YSIZE, pruneNodeTree
+        from .tree import findNode, findLinksTo, XSIZE, YSIZE, YSTEP, pruneNodeTree
         from .cycles import findTree, findTexco
-        tree = findTree(mat)
-        texco = findTexco(tree, 1)
-        tree.ycoords[-1] = tree.ycoords[0] = YSIZE*(2-row)
+        from .material import NORMAL
 
+        tree = findTree(mat)
+        if self.useCompact:
+            size = 2
+        else:
+            size = 10
+        dy = 0
         normal = findNode(tree, "NORMAL_MAP")
         socket = None
+        frame = None
         if normal is None:
-            tree.ycoords[1] -= YSIZE
-            normal = tree.addNode("ShaderNodeNormalMap", col=1)
+            tree.ycoords[2] -= YSIZE
+            normal = tree.addNode("ShaderNodeNormalMap", col=2)
         else:
             links = findLinksTo(tree, "NORMAL_MAP")
-            if links:
-                socket = links[0].from_socket
+            for link in links:
+                socket = link.from_socket
+                node = link.from_node
+                dy = node.location[1] - 2*YSIZE - size*YSTEP
+                frame = node.parent
+        if frame is None:
+            frame = tree.nodes.new("NodeFrame")
+            frame.label = "Normal Maps"
 
         bump = findNode(tree, "BUMP")
         if bump:
@@ -435,26 +320,32 @@ class NormalAdder:
                 if "Normal" in node.inputs.keys():
                     tree.links.new(normal.outputs["Normal"], node.inputs["Normal"])
 
+        nodes = []
         for ob,amt,fname,prop,filepath in args:
             if not os.path.exists(filepath):
                 print("No such file: %s" % filepath)
                 continue
-            tex = tree.addImageTexNode(filepath, fname, -1)
-            tree.links.new(texco.outputs["UV"], tex.inputs["Vector"])
-
-            mix = tree.addGroup(MixNormalTextureGroup, "DAZ Mix Normal Texture", col=0, force=True)
-            mix.inputs["Fac"].default_value = 1
-            mix.inputs["Color1"].default_value = (0.5,0.5,1,1)
+            tex = tree.addImageTexNode(filepath, fname, 0, size=size)
+            tex.parent = frame
+            nodes.append(tex)
+            mix,a,b,out = tree.addMixRgbNode('OVERLAY', 1, size=size)
+            mix.parent = frame
+            nodes.append(mix)
+            if self.useCompact:
+                mix.hide = True
+            mix.inputs[0].default_value = 1
+            a.default_value = NORMAL
             if socket:
-                tree.links.new(socket, mix.inputs["Color1"])
-            tree.links.new(tex.outputs["Color"], mix.inputs["Color2"])
+                tree.links.new(socket, a)
+            tree.links.new(tex.outputs["Color"], b)
             if amt and prop:
-                makePropDriver(propRef(prop), mix.inputs["Fac"], "default_value", amt, "x")
-            socket = mix.outputs["Color"]
+                makePropDriver(propRef(prop), mix.inputs[0], "default_value", amt, "x")
+            socket = out
         if socket:
             tree.links.new(socket, normal.inputs["Color"])
         else:
             print("No link to normal map node")
+        self.shiftNodes(tree, nodes, -XSIZE, dy)
         if self.usePrune:
             pruneNodeTree(tree)
 
@@ -462,7 +353,7 @@ class NormalAdder:
 class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):
     bl_idname = "daz.load_normal_map"
     bl_label = "Load Normal Maps"
-    bl_description = "Load normal maps to active material"
+    bl_description = "Load normal maps to selected materials"
     bl_options = {'UNDO'}
 
     type = "mrNM"
@@ -762,7 +653,7 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
 #   Load normal/displacement maps
 #----------------------------------------------------------
 
-class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, ScalarDispAdder, IsMesh):
+class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layouter, IsMesh):
     bl_idname = "daz.load_baked_maps"
     bl_label = "Load Baked Maps"
     bl_description = "Load baked normal/displacement maps for the selected meshes"
@@ -774,16 +665,11 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, ScalarDispAdder
         min = 0.001, max = 10,
         default = 0.01)
 
-    usePrune : BoolProperty(
-        name = "Prune Node Tree",
-        description = "Prune the node tree",
-        default = True)
-
     def draw(self, context):
         Baker.draw(self, context)
         if self.bakeType == 'DISPLACEMENT':
             self.layout.prop(self, "dispScale")
-        self.layout.prop(self, "usePrune")
+        Layouter.draw(self, context)
 
     def invoke(self, context, event):
         self.setDefaultNames(context)
@@ -819,7 +705,9 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, ScalarDispAdder
         imgname = self.getImageName(basename, tile)
         filepath = self.getImagePath(imgname, False)
         args = [(ob, None, imgname, None, filepath)]
-        if self.bakeType == 'NORMALS':
+        if filepath is None:
+            print("Texture not found: %s" % imgname)
+        elif self.bakeType == 'NORMALS':
             self.loadNormalMaps(mat, args, 0)
         elif self.bakeType == 'DISPLACEMENT':
             self.loadDispMaps(mat, args)

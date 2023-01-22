@@ -44,6 +44,7 @@ from mathutils import Vector, Matrix
 WHITE = Vector((1.0,1.0,1.0))
 GREY = Vector((0.5,0.5,0.5))
 BLACK = Vector((0.0,0.0,0.0))
+NORMAL = (0.5, 0.5, 1, 1)
 
 #-------------------------------------------------------------
 #   Materials

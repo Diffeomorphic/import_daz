@@ -75,11 +75,11 @@ class Tree:
         MixColorOut = 2
 
 
-    def addMixRgbNode(self, blendtype, col=None, parent=None):
+    def addMixRgbNode(self, blendtype, col=None, parent=None, size=12):
         if bpy.app.version < (3,4,0):
-            node = self.addNode("ShaderNodeMixRGB", col, size=10, parent=parent)
+            node = self.addNode("ShaderNodeMixRGB", col, size=size, parent=parent)
         else:
-            node = self.addNode("ShaderNodeMix", col, size=12, parent=parent)
+            node = self.addNode("ShaderNodeMix", col, size=size, parent=parent)
             node.data_type = 'RGBA'
         node.blend_type = blendtype
         a = node.inputs[self.MixColor1]

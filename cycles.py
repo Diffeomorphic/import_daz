@@ -615,7 +615,7 @@ class CyclesTree(Tree):
 
 
     def addOverlay(self, fac, factex, col=None):
-        NORMAL = (0.5, 0.5, 1, 1)
+        from .material import NORMAL
         if col is None:
             col = self.column-1
         mix,a,b,out = self.addMixRgbNode('OVERLAY', col)
@@ -1720,8 +1720,8 @@ class CyclesTree(Tree):
             return texnode, texnode, texnode, True
 
 
-    def addTextureNode(self, col, img, imgname, colorSpace):
-        node = self.addNode("ShaderNodeTexImage", col, size=2)
+    def addTextureNode(self, col, img, imgname, colorSpace, size=2):
+        node = self.addNode("ShaderNodeTexImage", col, size=size)
         node.image = img
         node.interpolation = GS.imageInterpolation
         node.label = imgname.rsplit("/",1)[-1]
@@ -1733,11 +1733,11 @@ class CyclesTree(Tree):
         return node
 
 
-    def addImageTexNode(self, filepath, tname, col):
+    def addImageTexNode(self, filepath, tname, col, size=2):
         img = bpy.data.images.load(filepath)
         img.name = os.path.splitext(os.path.basename(filepath))[0]
         img.colorspace_settings.name = "Non-Color"
-        return self.addTextureNode(col, img, tname, "NONE")
+        return self.addTextureNode(col, img, tname, "NONE", size=size)
 
 
     def getTexNode(self, key, colorSpace):
