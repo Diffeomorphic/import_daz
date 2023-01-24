@@ -323,7 +323,7 @@ def parseRenderOptions(renderSettings, sceneSettings, backdrop, fileref):
 #   Utility for rendering a range of frames.
 #-------------------------------------------------------------
 
-class DAZ_OT_RenderFrames(DazPropsOperator):
+class DAZ_OT_RenderFrames(bpy.types.Operator):
     bl_idname = "daz.render_frames"
     bl_label = "Render Frames"
     bl_description = "Render a range of frames as still images.\nTo overcome problems with morphing armatures and rendering"
@@ -342,9 +342,65 @@ class DAZ_OT_RenderFrames(DazPropsOperator):
         self.layout.prop(self, "useOpenGl")
         self.layout.prop(self, "useAllArmatures")
 
-    def run(self, context):
-        from .runtime.morph_armature import renderFrames
-        renderFrames(None, None, self.useOpenGl, self.useAllArmatures)
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+    def execute(self, context):
+        scn = context.scene
+        self.filepath = scn.render.filepath
+        self.frame = scn.frame_current
+        scn.frame_current = scn.frame_start
+        self.rigs = []
+        for ob in context.view_layer.objects:
+            if (ob.type == 'ARMATURE' and
+                not (ob.hide_get() or ob.hide_viewport)):
+                self.rigs.append(ob)
+        if self.useAllArmatures:
+            for rig in self.rigs:
+                rig.select_set(True)
+        ob = context.object
+        if self.rigs and not (ob and ob.type == 'ARMATURE'):
+            vly.objects.active = self.rigs[0]
+        wm = context.window_manager
+        self.timer = wm.event_timer_add(0.1, window=context.window)
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+
+    def modal(self, context, event):
+        scn = context.scene
+        wm = context.window_manager
+        if event.type in {'ESC'}:
+            wm.event_timer_remove(self.timer)
+            scn.render.filepath = self.filepath
+            print("Rendering cancelled")
+            return {'CANCELLED'}
+        elif event.type != 'TIMER':
+            return {'PASS_THROUGH'}
+        wm.event_timer_remove(self.timer)
+        context.evaluated_depsgraph_get().update()
+        scn.render.filepath = "%s%04d" % (self.filepath, scn.frame_current)
+        try:
+            if self.rigs:
+                from .runtime.morph_armature import onFrameChangeDaz
+                onFrameChangeDaz(scn)
+            if self.useOpenGl:
+                bpy.ops.render.opengl(animation=False, write_still=True)
+            else:
+                bpy.ops.render.render(animation=False, write_still=True, use_viewport=True)
+            success = True
+        except RuntimeError as err:
+            success = False
+        scn.frame_current += 1
+        if scn.frame_current > scn.frame_end or not success:
+            scn.render.filepath = self.filepath
+            return {'FINISHED'}
+        self.timer = wm.event_timer_add(0.1, window=context.window)
+        return {'PASS_THROUGH'}
+
 
 #-------------------------------------------------------------
 #   Register
