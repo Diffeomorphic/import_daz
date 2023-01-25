@@ -488,7 +488,7 @@ class TreeSaver:
             if self.useRelativePaths:
                 filepath = GS.getRelativePath(img.filepath)
             else:
-                filepath = img.filepath.replace("\\", "/")
+                filepath = normalizePath(img.filepath)
         struct["filepath"] = filepath
         include = ["alpha_mode"]
         for attr in include:

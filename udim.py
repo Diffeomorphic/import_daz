@@ -83,7 +83,6 @@ class TileFixer:
                                 return os.path.dirname(path)
             return None
 
-        from shutil import copyfile
         folder = getFolder(ob, matname)
         images = {}
         for mn,mat in enumerate(ob.data.materials):
@@ -112,14 +111,7 @@ class TileFixer:
                             img = images[src]
                         else:
                             trg = bpy.path.abspath(newpath)
-                            if not os.path.exists(src):
-                                msg = "Missing texture file:\n%s" % src
-                                print(msg)
-                                raise DazError(msg)
-                            print("Copy %s\n => %s" % (src, trg))
-                            copyfile(src, trg)
-                            img = bpy.data.images.load(trg)
-                            img.filepath = bpy.path.relpath(trg)
+                            img = self.changeImage(src, trg, None)
                             node.label = "%s_%d" % (base, mattile)
                             images[src] = img
                         node.image = img
@@ -290,8 +282,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def run(self, context):
-        from shutil import copyfile
-
         ob = context.object
         if not ob.DazLocalTextures:
             if self.useSaveLocalTextures:
@@ -442,7 +432,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def updateImage(self, img, basename, udim):
-        from shutil import copyfile
         src = bpy.path.abspath(img.filepath)
         src = bpy.path.reduce_dirs([src])[0]
         folder = os.path.dirname(src)
@@ -450,14 +439,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         if fname[-6:] == '<UDIM>':
             src = os.path.join(folder, "%s%d%s" % (fname[:-6], 1001+udim, ext))
         trg = os.path.join(folder, "%s_%d%s" % (basename, 1001+udim, ext))
-        if src != trg and not os.path.exists(trg):
-            if os.path.exists(src):
-                print("Copy %s\n => %s" % (src, trg))
-                copyfile(src, trg)
-            else:
-                print("Did not find %s" % src)
-                return
-        img.filepath = bpy.path.relpath(trg)
+        self.changeImage(src, trg, img)
 
 
     def getShells(self, mats):

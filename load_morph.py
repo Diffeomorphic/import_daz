@@ -1510,7 +1510,7 @@ def newLine():
 
 
 def getCanonicalFilePath(filepath):
-    filepath = filepath.replace("\\", "/").lower()
+    filepath = normalizePath(filepath).lower()
     words = filepath.rsplit("/data/",1)
     if len(words) == 2:
         return "/data/%s" % words[1]

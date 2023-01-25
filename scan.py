@@ -389,7 +389,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
 
 
 def getMorphSet(path):
-    lpath = path.lower().replace("\\", "/")
+    lpath = normalizePath(path).lower()
     for subdir,mgrps in [
         ("/daz 3d/base correctives/", "Jcms"),
         ("/daz 3d/base flexions/", "Flexions"),

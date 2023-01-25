@@ -324,7 +324,7 @@ class CsvFile:
 
 def getExistingFilePath(filepath, ext):
     filepath = bpy.path.ensure_ext(bpy.path.abspath(filepath), ext)
-    filepath = os.path.expanduser(filepath).replace("\\", "/")
+    filepath = normalizePath(os.path.expanduser(filepath))
     filepath = bpy.path.resolve_ncase(filepath)
     if os.path.exists(filepath):
         return filepath
@@ -471,8 +471,7 @@ class DazExporter:
         from .asset import normalizeUrl
         from datetime import datetime
         file,ext = os.path.splitext(filepath)
-        filepath = "%s.duf" % file
-        filepath = filepath.replace("\\", "/")
+        filepath = normalizePath("%s.duf" % file)
         struct = OrderedDict()
         struct["file_version"] = "0.6.0.0"
         astruct = {}

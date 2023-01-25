@@ -222,7 +222,7 @@ def replaceHomeDir(path0, char0, char):
     if char0 and char:
         homedir0 = HomeDirs[char0].lower()
         homedir = HomeDirs[char].lower()
-        path0 = path0.lower().replace("\\", "/")
+        path0 = normalizePath(path0).lower()
         if homedir0 in path0:
             path = path0.replace(homedir0, homedir)
             if os.path.exists(path):

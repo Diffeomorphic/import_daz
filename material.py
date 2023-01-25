@@ -968,8 +968,7 @@ class LocalTextureSaver:
         return (bpy.data.filepath and context.object and context.object.type == 'MESH')
 
     def saveLocalTextures(self, context):
-        from shutil import copyfile
-        folder = os.path.dirname(bpy.data.filepath).replace("\\", "/")
+        folder = normalizePath(os.path.dirname(bpy.data.filepath))
         if GS.useLowerResFolders:
             self.subdir = "/textures/original"
         else:
@@ -990,8 +989,11 @@ class LocalTextureSaver:
             ob.DazLocalTextures = True
 
         for src,img in self.images:
+            if src.startswith(self.texpath):
+                print("Already local: %s" % src)
+                continue
             file = bpy.path.basename(src)
-            srclower = src.lower().replace("\\", "/")
+            srclower = normalizePath(src).lower()
             if (self.useKeepDirs and
                 "/textures/" in srclower and
                 "/textures/original/" not in srclower):
@@ -1003,17 +1005,32 @@ class LocalTextureSaver:
                 trg = "%s/%s" % (folder, file)
             else:
                 trg = "%s/%s" % (self.texpath, file)
-            if src != trg and not os.path.exists(trg):
-                print("Copy %s\n => %s" % (src, trg))
-                copyfile(src, trg)
-            img.filepath = bpy.path.relpath(trg)
+            self.changeImage(src, trg, img)
+
+
+    def changeImage(self, src, trg, img):
+        from shutil import copyfile
+        if not os.path.exists(src):
+            msg = "Missing texture file:\n%s" % src
+            print(msg)
+            raise DazError(msg)
+        if src != trg and not os.path.exists(trg):
+            print("Copy %s\n => %s" % (src, trg))
+            copyfile(src, trg)
+        if img is None:
+            if trg in bpy.data.images.keys():
+                img = bpy.data.images[trg]
+            else:
+                img = bpy.data.images.load(trg)
+        img.filepath = bpy.path.relpath(trg)
+        return img
 
 
     def saveImage(self, img):
         if img:
             path = bpy.path.abspath(img.filepath)
             path = bpy.path.reduce_dirs([path])[0]
-            self.images.append((path, img))
+            self.images.append((normalizePath(path), img))
 
 
     def saveNodesInTree(self, tree):
@@ -1610,8 +1627,7 @@ class ChangeResolution():
 
 
     def getBasePath(self, path):
-        path = path.replace("\\", "/")
-        path = self.getBasePathNames(path)
+        path = self.getBasePathNames(normalizePath(path))
         if GS.useLowerResFolders:
             words = path.split("/textures/res", 1)
             if len(words) == 2:

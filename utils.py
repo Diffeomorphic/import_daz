@@ -302,7 +302,6 @@ def baseName(name):
     else:
         return name
 
-
 def skipName(name):
     words = name.rsplit("-",1)
     if len(words) == 2 and words[1].isdigit():
@@ -310,10 +309,11 @@ def skipName(name):
     else:
         return name
 
-
 def stripName(name):
     return skipName(baseName(name))
 
+def normalizePath(path):
+    return path.replace("\\", "/")
 
 def finalProp(prop):
     return "%s(fin)" % prop

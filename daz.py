@@ -197,7 +197,7 @@ class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
 
 
     def findContentDirs(self, folder, level):
-        folder = folder.replace("\\", "/")
+        folder = normalizePath(folder)
         if folder.lower().endswith("/content"):
             self.folders.append(folder)
             return

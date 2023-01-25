@@ -1657,7 +1657,7 @@ class DAZ_OT_FindMissingTextures(DazOperator):
 
 
     def findMissingPath(self, path):
-        path = path.lower().replace("\\", "/")
+        path = normalizePath(path).lower()
         for folder,res in [("/textures/original/", ""),
                            ("/textures/res1/", "-res1"),
                            ("/textures/res2/", "-res2"),
