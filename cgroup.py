@@ -1725,14 +1725,26 @@ class LayeredGroup(CyclesGroup):
         if map.ismask:
             self.mask = outnode
         else:
-            blendType = {
+            BlendType = {
                 "multiply" : 'MULTIPLY',
                 "add" : 'ADD',
                 "subtract" : 'SUBTRACT',
                 "alpha_blend" : 'MIX',
                 "blend_source_over" : 'MIX',
+                "blend_color_burn" : 'BURN',
+                "blend_color_dodge" : 'DODGE',
+                "blend_darken" : 'DARKEN',
+                "blend_difference" : 'DIFFERENCE',
+                "blend_exclusion" : 'DIFFERENCE', # eh...
+                "blend_hard_light" : 'LINEAR_LIGHT', # eh...
+                "blend_lighten": 'LIGHTEN',
+                "blend_multiply" : 'MULTIPLY',
+                "blend_overlay": 'OVERLAY',
+                "blend_plus" : 'ADD',
+                "blend_screen" : 'SCREEN',
+                "blend_soft_light": 'SOFT_LIGHT',
             }
-            mix,a,b,out = self.addMixRgbNode(blendType[map.operation], 4)
+            mix,a,b,out = self.addMixRgbNode(BlendType.get(map.operation, 'MIX'), 4)
             mix.inputs[0].default_value = map.transparency
             if self.mask:
                 setFactor(map.transparency, self.mask, "Color", mix)
