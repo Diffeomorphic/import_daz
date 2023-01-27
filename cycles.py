@@ -1685,7 +1685,7 @@ class CyclesTree(Tree):
     def addSingleTexture(self, col, asset, map, colorSpace):
         if asset is None:
             from .material import srgbToLinearCorrect
-            texnode = self.addNode("ShaderNodeRGB", col, size=5)
+            texnode = self.addNode("ShaderNodeRGB", col, size=10)
             if colorSpace == "COLOR":
                 color = srgbToLinearCorrect(map.color)
             else:
@@ -1896,7 +1896,7 @@ class CyclesTree(Tree):
         return value,tex
 
 
-    def multiplyVectorTex(self, color, tex, col=None, slot=None):
+    def multiplyVectorTex(self, color, tex, slot=None, col=None):
         if isWhite(color):
             return tex
         elif isBlack(color):
@@ -1920,7 +1920,7 @@ class CyclesTree(Tree):
             self.links.new(tex.outputs[slot], socket)
 
 
-    def multiplyScalarTex(self, value, tex, col=None, slot=None):
+    def multiplyScalarTex(self, value, tex, slot=None, col=None):
         if value == 1:
             return tex
         elif value == 0:
