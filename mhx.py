@@ -727,7 +727,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addBack(self, rig):
         BackBones = ["spine", "spine-1", "chest", "chest-1"]
-        NeckBones = ["neck", "neckLower", "neckUpper", "head"]
+        NeckBones = ["neck", "neck-1", "head"]
 
         setMode('EDIT')
         if "spine" in rig.data.edit_bones:
@@ -743,8 +743,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         makeBone("back", rig, spine.head, chest.tail, 0, L_MAIN, spine.parent)
         if "neck" in rig.data.edit_bones:
             neck = rig.data.edit_bones["neck"]
-        elif "neckLower" in rig.data.edit_bones:
-            neck = rig.data.edit_bones["neckLower"]
         else:
             return self.raiseError("neck")
         if "head" in rig.data.edit_bones:
