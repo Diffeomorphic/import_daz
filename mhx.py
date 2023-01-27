@@ -321,6 +321,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Split the shin bone into bend and twist parts",
         default = False)
 
+    useBack : BoolProperty(
+        name = "Add Back And NeckHead Bones",
+        description = "Add back and neckhead bones which rotate\nthe spine and neck/head bones together",
+        default = True)
+
     useChildOfConstraints : BoolProperty(
         name = "ChildOf Constraints (Experimental)",
         description = ("Use childOf constraints for parents of elbow and knee pole targets.\n" +
@@ -370,6 +375,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "addTweakBones")
         self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useSplitShin")
+        self.layout.prop(self, "useBack")
         self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
         self.layout.prop(self, "useChildOfConstraints")
@@ -527,8 +533,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addLongFingers(rig)
         showProgress(13, 25, "  Add tweak bones")
         self.addTweaks(rig)
-        showProgress(14, 25, "  Add backbone")
-        self.addBack(rig)
+        if self.useBack:
+            showProgress(14, 25, "  Add backbone")
+            self.addBack(rig)
         showProgress(15, 25, "  Add master bone")
         self.addMaster(rig)
         showProgress(16, 25, "  Setup FK-IK")
