@@ -553,17 +553,21 @@ class CyclesTree(Tree):
             if ky != 0:
                 sy = 1/ky
                 dy = oy/ky
-            mapping = self.addMappingNode((dx,dy,sx,sy,0), None)
+            modulo,mapping = self.addMappingNode((dx,dy,sx,sy,0), None)
             if mapping:
-                self.linkVector(self.texco, mapping, 0)
+                self.linkVector(self.texco, modulo, 0)
                 self.texco = mapping
 
 
     def addMappingNode(self, data, map):
         dx,dy,sx,sy,rz = data
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
+            modulo = self.addNode("ShaderNodeVectorMath", 0)
+            modulo.operation = 'MODULO'
+            modulo.inputs[1].default_value = (1,1,1)
             mapping = self.addNode("ShaderNodeMapping", 1)
             mapping.vector_type = 'TEXTURE'
+            self.links.new(modulo.outputs[0], mapping.inputs[0])
             if hasattr(mapping, "translation"):
                 mapping.translation = (dx,dy,0)
                 mapping.scale = (sx,sy,1)
@@ -575,8 +579,8 @@ class CyclesTree(Tree):
             if map and not map.invert and hasattr(mapping, "use_min"):
                 mapping.use_min = mapping.use_max = 1
             LS.mappingNodes.append((mapping, data))
-            return mapping
-        return None
+            return modulo,mapping
+        return None,None
 
     #-------------------------------------------------------------
     #   Normal Map
@@ -1703,11 +1707,11 @@ class CyclesTree(Tree):
         if asset.hasMapping(map):
             innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.owner, map)
-            mapping = self.addMappingNode(data, None)
+            modulo,mapping = self.addMappingNode(data, None)
             if mapping:
                 innode.extension = 'CLIP'
                 self.linkVector(mapping, innode)
-                innode = mapping
+                innode = modulo
             if map.invert:
                 color,outnode = self.invertColor(map.color, outnode, col+1)
             return innode, texnode, outnode, True
