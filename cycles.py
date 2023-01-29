@@ -921,7 +921,7 @@ class CyclesTree(Tree):
             return
         from .cgroup import MakeupGroup
         self.addColumn()
-        node = self.addGroup(MakeupGroup, "DAZ Makeup", size=4)
+        node = self.addGroup(MakeupGroup, "DAZ Makeup", size=10)
         color,tex = self.getColorTex(["Makeup Base Color"], "COLOR", WHITE, False)
         self.linkColor(tex, node, color, "Color")
         roughness,roughtex = self.getColorTex(["Makeup Roughness Mult"], "NONE", 0.0, False)
@@ -1976,9 +1976,14 @@ class CyclesTree(Tree):
                 ob = self.owner.geometry.rna
                 if ob:
                     active = getActiveUvLayer(ob)
+            difftexname = diffname = None
+            if self.diffuseTex:
+                difftexname = self.diffuseTex.name
+            if self.diffuse:
+                diffname = self.diffuse.name
             marked = pruneNodeTree(self, active=active)
-            hasDiffuseTex = self.diffuseTex and marked.get(self.diffuseTex.name)
-            hasDiffuse = self.diffuse and marked.get(self.diffuse.name)
+            hasDiffuseTex = difftexname and marked.get(difftexname)
+            hasDiffuse = diffname and marked.get(diffname)
         else:
             hasDiffuseTex = self.diffuseTex
             hasDiffuse = self.diffuse
