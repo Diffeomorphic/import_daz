@@ -861,9 +861,9 @@ class BendTwists:
                 pass
             elif vgbend:
                 vgbend.name = bname
-                return
+                continue
             elif not vgtwists:
-                return
+                continue
 
             vgrp = ob.vertex_groups.new(name=bname)
             indices = [vgtwist.index for vgtwist in vgtwists]
