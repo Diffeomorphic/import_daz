@@ -2178,9 +2178,9 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def getTwistBone(self, bname):
         if "TWIST-" + bname in self.conv.keys():
             twname = self.conv["TWIST-" + bname][0]
-            return twname, BD.TwistDxs[twname]
-        else:
-            return None, 0
+            if twname in BD.TwistDxs.keys():
+                return twname, BD.TwistDxs[twname]
+        return None, 0
 
 
     def saveFile(self, rig):
