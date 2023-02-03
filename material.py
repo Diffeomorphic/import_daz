@@ -290,11 +290,12 @@ class Material(Asset, Channels):
         if struct["type"] == "studio/material/uber_iray":
             self.shader = 'UBER_IRAY'
         elif struct["type"] == "studio/material/daz_brick":
-            if self.url.split("#")[-1] == "PBRSkin":
+            shadername = unquote(self.url.rsplit("#",1)[-1])
+            if shadername == "PBRSkin":
                 self.shader = 'PBRSKIN'
             else:
                 self.shader = 'BRICK'
-                LS.shaders[struct["type"]] = True
+                LS.shaders[shadername] = True
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
             if "definition" in struct.keys():
