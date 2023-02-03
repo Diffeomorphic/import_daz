@@ -262,7 +262,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             self.msg += "The following materials are only partial:\n"
             self.addItems(LS.partialMaterials)
         if LS.shaders:
-            self.msg += "Unsupported shaders found:\n"
+            self.msg += "Unsupported or partially supported shaders found:\n"
             self.addItems(LS.shaders.keys())
         if LS.hdFailures:
             self.msg += "Could not rebuild subdivisions for the following HD objects:       \n"
