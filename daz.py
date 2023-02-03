@@ -344,6 +344,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         if bpy.app.version < (3,4,0):
             box.prop(scn, "DazFakeCaustics")
         box.prop(scn, "DazImageInterpolation")
+        box.prop(scn, "DazUnusedTextures")
         box.prop(scn, "DazHandleRenderSettings")
         box.prop(scn, "DazHandleLightSettings")
         box.separator()
@@ -813,6 +814,10 @@ def register():
                  ('Smart', "Smart", "Smart")],
         name = "Interpolation",
         description = "Image interpolation")
+
+    bpy.types.Scene.DazUnusedTextures = BoolProperty(
+        name = "Build Unused Textures",
+        description = "Build texture found in unused channels")
 
     bpy.types.Scene.DazPreferredRoot = EnumProperty(
         items = getRootEnums,

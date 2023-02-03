@@ -111,6 +111,7 @@ class Instance(Accessor, Channels, SimNode):
         from .asset import normalizeRef
 
         Accessor.__init__(self, fileref)
+        Channels.__init__(self)
         self.node = node
         self.index = node.ninstances
         node.ninstances += 1

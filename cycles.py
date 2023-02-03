@@ -327,6 +327,8 @@ class CyclesTree(Tree):
         self.buildDecals()
         self.buildShells()
         self.buildOutput()
+        if GS.useUnusedTextures:
+            self.buildUnusedTextures()
 
 
     def buildLayers(self):
@@ -1681,6 +1683,38 @@ class CyclesTree(Tree):
             node.inputs["Min"].default_value = LS.scale * dmin
             self.linkNormal(node)
             self.displacement = node.outputs["Displacement"]
+
+    #-------------------------------------------------------------
+    #   Unused Textures
+    #-------------------------------------------------------------
+
+    def buildUnusedTextures(self):
+        def getColorSpace(key):
+            noncolor = ["bump", "weight", "normal"]
+            for word in noncolor:
+                if word in key:
+                    return "NONE"
+            return "COLOR"
+
+        self.column += 2
+        texnodes = {}
+        for key,channel in self.owner.channels.items():
+            if key not in self.owner.usedChannels.keys():
+                colorspace = getColorSpace(key.lower())
+                texnode = self.addTexImageNode(channel, colorspace, False)
+                if texnode:
+                    texnodes[key] = texnode
+        if texnodes:
+            node = self.addNode("ShaderNodeGroup", size=2*len(texnodes))
+            node.width = 400
+            name = "Unused Textures %s" % self.owner.name
+            group = bpy.data.node_groups.new(name, "ShaderNodeTree")
+            for key in texnodes.keys():
+                group.inputs.new("NodeSocketColor", key)
+            node.node_tree = group
+            node.name = node.label = name
+            for key,texnode in texnodes.items():
+                self.links.new(texnode.outputs["Color"], node.inputs[key])
 
     #-------------------------------------------------------------
     #   Textures

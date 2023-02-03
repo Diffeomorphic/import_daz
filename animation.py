@@ -2479,7 +2479,6 @@ class DAZ_OT_BakeToFkRig(HideOperator):
         maxdiff = max([row.length for row in diff])
         if maxdiff < 1e-5:
             del self.banims[bname]
-            print("REM", bname)
 
 
     def removeFromAction(self, act, rig):

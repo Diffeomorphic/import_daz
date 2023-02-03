@@ -38,6 +38,7 @@ class Channels:
     def __init__(self):
         self.channels = {}
         self.extra = []
+        self.usedChannels = {}
 
 
     def parse(self, struct):
@@ -113,6 +114,7 @@ class Channels:
         for key in attr:
             if key in self.channels.keys():
                 channel = self.channels[key]
+                self.usedChannels[key] = True
                 if ("visible" not in channel.keys() or
                     channel["visible"] or
                     not onlyVisible):

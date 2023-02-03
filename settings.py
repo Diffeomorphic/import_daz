@@ -90,6 +90,7 @@ class GlobalSettings:
         self.useMaterialsByName = False
         self.imageInterpolation = 'Cubic'
         self.useGhostLight = False
+        self.useUnusedTextures = False
 
         self.useStrengthAdjusters = False
         self.customMin = -1.0
@@ -176,6 +177,7 @@ class GlobalSettings:
         "DazUseEmission" : "useEmission",
         "DazUseReflection" : "useReflection",
         "DazGhostLights" : "useGhostLight",
+        "DazUnusedTextures" : "useUnusedTextures",
         "DazImageInterpolation" : "imageInterpolation",
 
         # Properties

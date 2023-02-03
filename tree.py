@@ -289,14 +289,15 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True):
+def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True):
     marked = {}
     if not tree:
         return marked
 
     for node in tree.nodes:
-        if node.type == 'GROUP' and not node.name.startswith("DAZ "):
-            pruneNodeTree(node.node_tree, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs)
+        if (node.type == 'GROUP' and
+            not node.name.startswith(("DAZ ", "Unused Textures"))):
+            pruneNodeTree(node.node_tree, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
 
     if usePruneTexco:
         texcos = []
@@ -331,7 +332,8 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
         output = False
         for node in tree.nodes:
             marked[node.name] = False
-            if "Output" in node.name:
+            if ("Output" in node.name or
+                ("Unused Textures" in node.name and keepUnusedTextures)):
                 marked[node.name] = True
                 output = True
         if not output:
@@ -354,12 +356,12 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
     return marked
 
 
-def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True):
+def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True):
     from .geometry import getActiveUvLayer
     active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
-            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs)
+            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
 
 # ---------------------------------------------------------------------
 #   TNode and TLink
