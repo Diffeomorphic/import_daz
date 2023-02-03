@@ -296,7 +296,8 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
 
     for node in tree.nodes:
         if (node.type == 'GROUP' and
-            not node.name.startswith(("DAZ ", "Unused Textures"))):
+            not node.name.startswith("DAZ ") and
+            node.outputs):
             pruneNodeTree(node.node_tree, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
 
     if usePruneTexco:
@@ -332,10 +333,11 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
         output = False
         for node in tree.nodes:
             marked[node.name] = False
-            if ("Output" in node.name or
-                ("Unused Textures" in node.name and keepUnusedTextures)):
-                marked[node.name] = True
-                output = True
+            if not node.outputs:
+                if (keepUnusedTextures or
+                    not node.name.startswith("Unused Textures")):
+                    marked[node.name] = True
+                    output = True
         if not output:
             print("No output node")
             return marked

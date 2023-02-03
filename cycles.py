@@ -1696,6 +1696,23 @@ class CyclesTree(Tree):
                     return "NONE"
             return "COLOR"
 
+        def foundMatch(texnodes, inputs):
+            for key in texnodes.keys():
+                if key not in inputs.keys():
+                    return False
+            return True
+
+        def getNodeGroup(texnodes):
+            name = "Unused Textures"
+            for group in bpy.data.node_groups:
+                if (group.name.startswith(name) and
+                    foundMatch(texnodes, group.inputs)):
+                    return group
+            group = bpy.data.node_groups.new(name, "ShaderNodeTree")
+            for key in texnodes.keys():
+                group.inputs.new("NodeSocketColor", key)
+            return group
+
         self.column += 2
         texnodes = {}
         for key,channel in self.owner.channels.items():
@@ -1707,12 +1724,9 @@ class CyclesTree(Tree):
         if texnodes:
             node = self.addNode("ShaderNodeGroup", size=2*len(texnodes))
             node.width = 400
-            name = "Unused Textures %s" % self.owner.name
-            group = bpy.data.node_groups.new(name, "ShaderNodeTree")
-            for key in texnodes.keys():
-                group.inputs.new("NodeSocketColor", key)
+            group = getNodeGroup(texnodes)
             node.node_tree = group
-            node.name = node.label = name
+            node.name = node.label = group.name
             for key,texnode in texnodes.items():
                 self.links.new(texnode.outputs["Color"], node.inputs[key])
 
