@@ -130,11 +130,7 @@ class Formula:
     def evalFormula(self, formula, exprs, rig, mesh, force):
         from .bone import getMappedBone
         from .modifier import ChannelAsset
-
-        words = unquote(formula["output"]).split("#")
-        fileref = words[0].split(":",1)[-1]
-        driven = words[-1]
-        output,channel = driven.split("?")
+        output,channel,fileref = self.getPropAndType(formula["output"], rig)
         pb = None
         if channel == "value":
             if mesh is None and rig is None and force:
@@ -154,27 +150,26 @@ class Formula:
             elif output != "RIG":
                 return False
 
-
         path,idx,default = self.parseChannel(channel)
         expr = setFormulaExpr(exprs, output, path, channel, idx, fileref)
         if "stage" in formula.keys():
-            self.evalStage(formula, expr)
+            self.evalStage(formula, expr, rig)
         else:
             self.evalOperations(formula, expr, rig)
 
 
-    def evalStage(self, formula, expr):
+    def evalStage(self, formula, expr, rig):
         if formula["stage"] == "mult":
             opers = formula["operations"]
-            prop,type,path,comp = self.evalUrl(opers[0])
+            prop,type,path,comp = self.evalUrl(opers[0], rig)
             if type == "value":
-                expr["mult"] = prop
+                expr["mults"].append(prop)
 
 
     def evalOperations(self, formula, expr, rig):
         from .bone import getMappedBone
         opers = formula["operations"]
-        prop,type,path,comp = self.evalUrl(opers[0])
+        prop,type,path,comp = self.evalUrl(opers[0], rig)
         factor = "factor"
         if type == "value":
             if expr["prop"] is None:
@@ -190,15 +185,22 @@ class Formula:
         self.evalMainOper(opers, expr, factor)
 
 
-    def evalUrl(self, oper):
+    def evalUrl(self, oper, rig):
         if "url" not in oper.keys():
             print(oper)
             raise RuntimeError("BUG: Operation without URL")
-        url = oper["url"].split("#")[-1]
-        prop,type = url.split("?")
-        prop = unquote(prop)
+        prop,type,_fileref = self.getPropAndType(oper["url"], rig)
         path,comp,default = self.parseChannel(type)
         return prop,type,path,comp
+
+
+    def getPropAndType(self, string, rig):
+        before,after = unquote(string).split("#")
+        prop,type = after.split("?")
+        bname,fileref = before.split(":")
+        if type == "value" and bname in rig.data.bones.keys():
+            prop = "%s:%s" % (bname, prop)
+        return unquote(prop),type,fileref
 
 
     def evalMainOper(self, opers, expr, factor):
@@ -271,5 +273,5 @@ def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
             "path" : None,
             "comp" : -1,
             "comp2" : -1,
-            "mult" : None}
+            "mults" : []}
     return exprs[output][path][idx]

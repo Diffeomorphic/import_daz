@@ -516,8 +516,8 @@ class LoadMorph(DriverUser):
             if "points" in expr.keys():
                 factor = self.cheatSplineTCB(expr["points"], factor)
             self.drivers[output].append(("PROP", prop, factor))
-        if expr["mult"]:
-            mult = self.getUniqueName(expr["mult"])
+        for mult in expr["mults"]:
+            mult = self.getUniqueName(mult)
             if output not in self.mults.keys():
                 self.mults[output] = []
             self.mults[output].append(mult)
@@ -822,7 +822,7 @@ class LoadMorph(DriverUser):
                 print("Keep old driver: %s" % raw)
                 return True
             else:
-                print("Empty string: %s" % raw)
+                print("Remove driver: %s" % raw)
                 rna.driver_remove(channel)
                 return False
         if self.getMultipliers(raw):
