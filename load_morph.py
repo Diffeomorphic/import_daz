@@ -759,8 +759,12 @@ class LoadMorph(DriverUser):
                             self.buildBoneDriver(output, bname, expr, False)
                 elif self.isDriverType('PROP', drivers):
                     self.buildPropDriver(output, drivers)
-            else:
+            elif self.visible[output]:
                 self.buildPropDriver(output, drivers)
+            else:
+                final = finalProp(output)
+                if final not in self.amt.keys():
+                    self.amt[final] = 0.0
 
 
     def isDriverType(self, dtype, drivers):
@@ -794,6 +798,7 @@ class LoadMorph(DriverUser):
                 bvars.append(Variable(var0))
             for vname,_,var0 in vtargets:
                 vvars[vname] = Variable(var0)
+
         rna.driver_remove(channel)
         fcu = rna.driver_add(channel)
         fcu.driver.type = 'SCRIPTED'
