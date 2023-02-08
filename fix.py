@@ -333,12 +333,11 @@ class Fixer(DriverUser):
         if not self.useTongueIk:
             return
         from .mhx import makeBone
-        self.tongueBones = [bone.name for bone in rig.data.bones if "tongue" in bone.name]
+        self.tongueBones = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
         if len(self.tongueBones) < 3:
             print("Did not find tongue")
-            print("Tongue bones:", self.tongueBones)
-            #print("All bones:", list(rig.data.bones.keys()))
             return
+        print("Tongue bones:", self.tongueBones)
         self.tongueBones.sort()
         root = rig.data.edit_bones[self.tongueBones[0]]
         tip = rig.data.edit_bones[self.tongueBones[-1]]
@@ -358,10 +357,11 @@ class Fixer(DriverUser):
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
             pb.ik_stretch = 0.1
-            cns = getConstraint(pb, 'LIMIT_ROTATION')
-            if cns:
-                self.setIkLimits(cns, pb, pb)
-                addDriver(cns, "mute", rig, prop, "x")
+            for cns in pb.constraints:
+                if cns.type == 'LIMIT_ROTATION':
+                    self.setIkLimits(cns, pb, pb)
+                if cns.type in ['LIMIT_ROTATION', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+                    addDriver(cns, "mute", rig, prop, "x")
         bname = self.tongueBones[-1]
         pb = rig.pose.bones[bname]
         target = rig.pose.bones["ik_tongue"]
