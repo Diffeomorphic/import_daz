@@ -197,7 +197,7 @@ class Formula:
     def getPropAndType(self, string, rig):
         before,after = unquote(string).split("#")
         prop,type = after.split("?")
-        bname,fileref = before.split(":")
+        bname,fileref = before.split(":",1)
         if type == "value" and bname in rig.data.bones.keys():
             prop = "%s:%s" % (bname, prop)
         return unquote(prop),type,fileref
