@@ -42,12 +42,12 @@ class Fixer(DriverUser):
 
     useFingerIk : BoolProperty(
         name = "Finger IK",
-        description = "Generate IK controls for fingers",
+        description = "Generate IK controls for fingers.\nFinger morphs will be removed",
         default = False)
 
     useTongueIk : BoolProperty(
         name = "Tongue IK",
-        description = "Generate IK controls for tongue",
+        description = "Generate IK controls for tongue.\nTongue morphs will be removed",
         default = False)
 
     useKeepRig : BoolProperty(
@@ -356,12 +356,14 @@ class Fixer(DriverUser):
             return
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
+            self.deletePoseConstraints(bname)
             pb.ik_stretch = 0.1
-            for cns in pb.constraints:
+            for cns in list(pb.constraints):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
-                if cns.type in ['LIMIT_ROTATION', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
                     addDriver(cns, "mute", rig, prop, "x")
+                elif cns.type in ['COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+                    pb.constraints.remove(cns)
         bname = self.tongueBones[-1]
         pb = rig.pose.bones[bname]
         target = rig.pose.bones["ik_tongue"]

@@ -924,6 +924,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 long.lock_location = (True,True,True)
                 long.lock_rotation = (False,True,False)
                 fing = rig.pose.bones[self.linkName(m, n0, suffix)]
+                if self.useFingerIk:
+                    self.deletePoseConstraints(fing.name)
                 fing.lock_rotation = (False,True,False)
                 long.rotation_mode = fing.rotation_mode
                 cns = copyRotation(fing, long, rig)
@@ -932,11 +934,21 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 addDriver(long.bone, "hide", rig, props, expr)
                 for n in range(n0+1,3):
                     fing = rig.pose.bones[self.linkName(m, n, suffix)]
+                    if self.useFingerIk:
+                        self.deletePoseConstraints(fing.name)
                     fing.lock_rotation = (False,True,True)
                     cns = copyRotation(fing, long, rig)
                     cns.use_y = cns.use_z = False
                     cns.use_offset = True
                     addDriver(cns, "mute", rig, props, expr)
+
+
+    def deletePoseConstraints(self, bname):
+        ncnss = []
+        for cns in self.constraints.get(bname, []):
+            if cns["type"] not in ['COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+                ncnss.append(cns)
+        self.constraints[bname] = ncnss
 
     #-------------------------------------------------------------
     #   FK/IK
