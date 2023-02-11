@@ -161,10 +161,16 @@ class FACSImporter(SingleFile, ActionOptions):
             raise DazError(msg)
 
         from time import perf_counter
+        from .animation import loadAltMorphs
         self.setupBones(rig)
         self.skipped = {}
-        self.facsShapes = self.setupFacsProps(self.shapekeys.keys())
-        self.facsProps = self.setupFacsProps(rig.keys())
+        self.altmorphs = loadAltMorphs(rig)
+        if self.useShapekeys:
+            self.facsShapes = self.setupFacsProps(self.shapekeys.keys())
+            self.facsProps = {}
+        else:
+            self.facsShapes = {}
+            self.facsProps = self.setupFacsProps(rig.keys())
         missingShapes = {}
         self.scale = rig.DazScale
         warned = []
@@ -174,13 +180,13 @@ class FACSImporter(SingleFile, ActionOptions):
             frame = self.getFrame(t)
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
-                prop = self.facsShapes.get(bshape)
-                if prop:
+                if bshape in self.facsShapes.keys():
+                    prop,factor = self.facsShapes[bshape]
                     for ob in rig.children:
                         if ob.type == 'MESH' and ob.data.shape_keys:
                             if prop in ob.data.shape_keys.key_blocks.keys():
                                 skey = ob.data.shape_keys.key_blocks[prop]
-                                skey.value = value
+                                skey.value = value*factor
                                 skey.keyframe_insert("value", frame=frame)
                             else:
                                 if ob.name not in missingShapes.keys():
@@ -188,9 +194,9 @@ class FACSImporter(SingleFile, ActionOptions):
                                 missingShapes[ob.name][prop] = True
                     continue
 
-                prop = self.facsProps.get(bshape)
-                if prop:
-                    rig[prop] = value
+                if bshape in self.facsProps.keys():
+                    prop,factor = self.facsProps[bshape]
+                    rig[prop] = value*factor
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
                     continue
 
@@ -215,8 +221,12 @@ class FACSImporter(SingleFile, ActionOptions):
                     for base in bases:
                         prop = "%s%s%s" % (prefix, base, suffix)
                         if prop in props:
-                            return prop
-            return None
+                            return prop,1
+                        elif prop in self.altmorphs.keys():
+                            alt,factor = list(self.altmorphs[prop].items())[0]
+                            if alt in props:
+                                return alt,factor
+            return None,0
 
         table = {}
         for bshape,bases in self.facstable.items():

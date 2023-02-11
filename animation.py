@@ -1337,11 +1337,7 @@ class StandardAnimation:
                     if ob.type == 'MESH' and ob.data.shape_keys:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
-            char = rig.DazMesh.split("-",1)[0].lower()
-            struct = AF.loadEntry(char, "altmorphs", False)
-            if struct:
-                self.altmorphs = struct["morphs"]
-
+            self.altmorphs = loadAltMorphs(rig)
         if self.affectMorphs and self.useScanned and relpath and not self.useShapekeys:
             if self.useCheckUpdates:
                 needs = checkNeedUpdates(name, relpath)
@@ -1413,6 +1409,15 @@ class StandardAnimation:
             else:
                 bone.select = (bone.name in select)
         return selected
+
+
+def loadAltMorphs(rig):
+    char = rig.DazMesh.split("-",1)[0].lower()
+    struct = AF.loadEntry(char, "altmorphs", False)
+    if struct:
+        return struct["morphs"]
+    else:
+        return {}
 
 #-------------------------------------------------------------
 #   Import Node Pose
