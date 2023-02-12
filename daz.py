@@ -340,7 +340,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazLowerResFolders")
         box.prop(scn, "DazMaterialsByIndex")
         box.prop(scn, "DazMaterialsByName")
-        box.prop(scn, "DazBumpFactor")
         if bpy.app.version < (3,4,0):
             box.prop(scn, "DazFakeCaustics")
         box.prop(scn, "DazImageInterpolation")
@@ -770,11 +769,6 @@ def register():
     bpy.types.Scene.DazPruneNodes = BoolProperty(
         name = "Prune Node Tree",
         description = "Prune material node-tree.\nDisable for debugging only")
-
-    bpy.types.Scene.DazBumpFactor = FloatProperty(
-        name = "Bump Factor",
-        description = "Multiplier for bump strength",
-        min = 0.1, max = 10)
 
     bpy.types.Scene.DazFakeCaustics = BoolProperty(
         name = "Fake Caustics",

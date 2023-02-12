@@ -75,7 +75,6 @@ class GlobalSettings:
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
-        self.bumpFactor = 1.0
         self.useFakeCaustics = False
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
@@ -167,7 +166,6 @@ class GlobalSettings:
         "DazLowerResFolders" : "useLowerResFolders",
         "DazMaterialsByIndex" : "useMaterialsByIndex",
         "DazMaterialsByName" : "useMaterialsByName",
-        "DazBumpFactor" : "bumpFactor",
         "DazFakeCaustics" : "useFakeCaustics",
         "DazHandleRenderSettings" : "handleRenderSettings",
         "DazHandleLightSettings" : "handleLightSettings",

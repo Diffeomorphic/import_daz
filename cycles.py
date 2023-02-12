@@ -653,7 +653,7 @@ class CyclesTree(Tree):
         if col == None:
             col = self.column
         bump = self.addNode("ShaderNodeBump", size=8)
-        bump.inputs["Strength"].default_value = bumpval * GS.bumpFactor
+        bump.inputs["Strength"].default_value = bumpval
         self.links.new(self.colorOutput(bumptex), bump.inputs["Height"])
         self.owner.addGeoBump(bumptex, bump.inputs["Distance"])
         return bump
