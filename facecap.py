@@ -177,27 +177,28 @@ class FACSImporter(SingleFile, ActionOptions):
         nframes = len(self.bskeys)
         t1 = perf_counter()
         for n,t in enumerate(self.bskeys.keys()):
+            prev = {}
             frame = self.getFrame(t)
             self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
-                if bshape in self.facsShapes.keys():
-                    prop,factor = self.facsShapes[bshape]
+                formulas = self.facsShapes.get(bshape, {})
+                for prop,factor in formulas.items():
                     for ob in rig.children:
                         if ob.type == 'MESH' and ob.data.shape_keys:
                             if prop in ob.data.shape_keys.key_blocks.keys():
                                 skey = ob.data.shape_keys.key_blocks[prop]
-                                skey.value = value*factor
+                                prev[prop] = skey.value = value*factor + prev.get(prop, 0)
                                 skey.keyframe_insert("value", frame=frame)
                             else:
                                 if ob.name not in missingShapes.keys():
                                     missingShapes[ob.name] = {}
                                 missingShapes[ob.name][prop] = True
-                    continue
 
-                if bshape in self.facsProps.keys():
-                    prop,factor = self.facsProps[bshape]
-                    rig[prop] = value*factor
+                formulas = self.facsProps.get(bshape, {})
+                for prop,factor in formulas.items():
+                    prev[prop] = rig[prop] = value*factor + prev.get(prop, 0)
                     rig.keyframe_insert(propRef(prop), frame=frame, group="FACS")
+                if formulas:
                     continue
 
                 if bshape not in warned and bshape not in self.skipped.keys():
@@ -221,12 +222,10 @@ class FACSImporter(SingleFile, ActionOptions):
                     for base in bases:
                         prop = "%s%s%s" % (prefix, base, suffix)
                         if prop in props:
-                            return prop,1
+                            return {prop : 1}
                         elif prop in self.altmorphs.keys():
-                            alt,factor = list(self.altmorphs[prop].items())[0]
-                            if alt in props:
-                                return alt,factor
-            return None,0
+                            return self.altmorphs[prop]
+            return {}
 
         table = {}
         for bshape,bases in self.facstable.items():
