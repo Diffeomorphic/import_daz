@@ -522,8 +522,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.storeAllConstraints(rig)
             self.createBendTwists(rig, bendTwistBones)
             self.fixBoneDrivers(rig, MhxBoneDrivers)
+        elif rig.DazRig.endswith(".suffix"):
+            raise DazError("%s has suffix bones.\nConvert to prefix before converting to MHX" % rig.name)
         else:
-            raise DazError("Cannot convert %s to Mhx" % rig.name)
+            raise DazError("Cannot convert %s to MHX" % rig.name)
 
         #-------------------------------------------------------------
         #   Add MHX stuff

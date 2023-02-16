@@ -548,7 +548,7 @@ class GizmoUser:
     def renameFaceBones(self, rig, extra=[]):
         def renameFaceBone(bone):
             bname = bone.name
-            newname = getSuffixName(bname)
+            newname = self.getOtherName(bname)
             if newname:
                 renamed[bname] = newname
                 bone.name = newname
@@ -563,6 +563,10 @@ class GizmoUser:
                 if (hasattr(cns, "subtarget") and
                     cns.subtarget in renamed.keys()):
                     cns.subtarget = renamed[cns.subtarget]
+
+
+    def getOtherName(self, bname):
+        return getSuffixName(bname)
 
 
 def getSuffixName(bname):
@@ -604,11 +608,48 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
 
     def run(self, context):
         for rig in getSelectedArmatures(context):
+            if rig.DazRig[-7:] == ".suffix":
+                raise DazError("%s already has suffix bones" % rig.name)
+            if rig.DazRig.startswith(("mhx", "rigify")):
+                raise DazError("Cannot change a %s rig to suffix" % rig.DazRig)
             self.renameFaceBones(rig)
-            rig.DazRig = ""
+            rig.DazRig = "%s.suffix" % rig.DazRig
 
     def isFaceBone(self, pb):
         return True
+
+
+class DAZ_OT_ChangeSuffixToPrefix(DazOperator, GizmoUser, IsArmature):
+    bl_idname = "daz.change_suffix_to_prefix"
+    bl_label = "Change Suffix To Prefix"
+    bl_description = "Change .L/.R suffix to l/r prefix,\nto prepare rig for MHX or Rigify"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for rig in getSelectedArmatures(context):
+            if rig.DazRig[-7:] != ".suffix":
+                raise DazError("%s does not have suffix bones" % rig.name)
+            self.rigtype = rig.DazRig = rig.DazRig[:-7]
+            self.renameFaceBones(rig)
+
+    def isFaceBone(self, pb):
+        return True
+
+    def getOtherName(self, bname):
+        if len(bname) < 2:
+            return bname
+        elif bname[-2:] in [".L", "_L"]:
+            if self.rigtype == "genesis9":
+                return "l_%s" % bname[0:-2]
+            else:
+                return "l%s%s" % (bname[0].upper(), bname[1:-2])
+        elif bname[-2:] in [".R", "_R"]:
+            if self.rigtype == "genesis9":
+                return "r_%s" % bname[0:-2]
+            else:
+                return "r%s%s" % (bname[0].upper(), bname[1:-2])
+        else:
+            return bname
 
 #-------------------------------------------------------------
 #   Constraints class
@@ -1406,6 +1447,7 @@ classes = [
     DAZ_OT_AddIkGoals,
     DAZ_OT_AddWinders,
     DAZ_OT_ChangePrefixToSuffix,
+    DAZ_OT_ChangeSuffixToPrefix,
     DAZ_OT_ChangeArmature,
 ]
 
