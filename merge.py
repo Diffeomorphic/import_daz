@@ -1074,8 +1074,11 @@ class RigInfo:
     def copyPose(self, context, rig):
         from .figure import copyBoneInfo
         from .fix import copyConstraints
-        for key in self.rig.data.keys():
-            rig.data[key] = self.rig.data[key]
+        for key,pg0 in self.rig.data.DazBoneMap.items():
+            if key not in rig.data.DazBoneMap.keys():
+                pg = rig.data.DazBoneMap.add()
+                pg.name = pg0.name
+                pg.s = pg0.s
         self.copyProps(self.rig, rig, True)
         self.copyProps(self.rig.data, rig.data, False)
         self.button.copyDrivers(self.rig.data, rig.data, self.rig, rig)
