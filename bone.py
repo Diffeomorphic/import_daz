@@ -56,7 +56,7 @@ def getMappedBone(bname, rig):
     sufname = getSuffixName(bname)
     if sufname in rig.pose.bones.keys():
         return sufname
-    print("NO BONE FOUND", bname)
+    #print("NO BONE FOUND", bname)
     return ""
 
 #-------------------------------------------------------------
@@ -578,7 +578,7 @@ class Bone(Node):
 
 
     def __repr__(self):
-        return ("<Bone %s %s>" % (self.id, self.rna))
+        return ("<Bone %s %s>" % (self.id, self.instances))
 
 
     def getSelfId(self):

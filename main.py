@@ -251,6 +251,9 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
         if LS.invalidMeshes:
             self.msg += "Invalid meshes found and corrected.\nImporting morphs may not work:\n"
             self.addItems(LS.invalidMeshes)
+        if LS.otherRigBones:
+            self.msg += "Found formulas for other rigs:\n"
+            self.addItems(LS.otherRigBones.keys())
         if LS.triax:
             self.msg += "Meshes with triax weights found. Consider converting to general weights in DAZ Studio.\n"
             self.addItems(LS.triax.keys())

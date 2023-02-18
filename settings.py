@@ -603,6 +603,7 @@ class LocalSettings:
         self.hdUvMismatch = []
         self.partialMaterials = []
         self.triax = {}
+        self.otherRigBones = {}
         self.legacySkin = []
         self.invalidMeshes = []
         self.deflectors = {}

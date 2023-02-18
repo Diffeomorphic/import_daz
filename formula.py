@@ -128,9 +128,9 @@ class Formula:
 
 
     def evalFormula(self, formula, exprs, rig, mesh, force):
-        from .bone import getMappedBone
+        from .bone import getMappedBone, Bone
         from .modifier import ChannelAsset
-        output,channel,fileref = self.getPropAndType(formula["output"], rig)
+        output,channel,fileref,url = self.getPropAndType(formula["output"], rig)
         pb = None
         if channel == "value":
             if mesh is None and rig is None and force:
@@ -140,15 +140,22 @@ class Formula:
                 return False
         elif rig:
             output1 = getMappedBone(output, rig)
-            if output1:
+            if output1 and output1 in rig.pose.bones.keys():
+                output = output1
+            elif output1 == "RIG":
                 output = output1
             else:
-                reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
-                return False
-            if output in rig.pose.bones.keys():
-                pb = rig.pose.bones[output]
-            elif output != "RIG":
-                return False
+                asset = self.getAsset(url)
+                if isinstance(asset, Bone) and asset.instances:
+                    inst = list(asset.instances.values())[0]
+                    rig2 = inst.figure.rna
+                    pb = inst.rna
+                    LS.otherRigBones["%s => %s" % (rig.name, rig2.name)] = True
+                    reportError("Found bone in other rig: %s/%s (%s)" % (rig2.name, pb.name, output), trigger=(3,5))
+                    return False
+                else:
+                    reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
+                    return False
 
         path,idx,default = self.parseChannel(channel)
         expr = setFormulaExpr(exprs, output, path, channel, idx, fileref)
@@ -189,18 +196,20 @@ class Formula:
         if "url" not in oper.keys():
             print(oper)
             raise RuntimeError("BUG: Operation without URL")
-        prop,type,_fileref = self.getPropAndType(oper["url"], rig)
+        prop,type,_fileref,_url = self.getPropAndType(oper["url"], rig)
         path,comp,default = self.parseChannel(type)
         return prop,type,path,comp
 
 
     def getPropAndType(self, string, rig):
-        before,after = unquote(string).split("#")
-        prop,type = after.split("?")
-        bname,fileref = before.split(":",1)
+        before,type = string.rsplit("?",1)
+        bname,url = before.split(":",1)
+        fileref,prop = url.split("#")
+        bname = unquote(bname)
+        prop = unquote(prop)
         if type == "value" and bname in rig.data.bones.keys():
             prop = "%s:%s" % (bname, prop)
-        return unquote(prop),type,fileref
+        return prop,type,unquote(fileref),url
 
 
     def evalMainOper(self, opers, expr, factor):
