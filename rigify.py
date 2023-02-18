@@ -463,7 +463,7 @@ class Rigify:
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
         from .figure import getRigType
-        from .merge import mergeBonesAndVgroups, reparentToes
+        from .merge import mergeBonesAndVgroups
         from .rigify_data import RigifyData
 
         print("Create metarig")
@@ -517,11 +517,9 @@ class Rigify:
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
             mergeBonesAndVgroups(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
-            reparentToes(rig, context, True)
             self.renameBones(rig, RF.Genesis38Renames)
         elif rig.DazRig == "genesis9":
             mergeBonesAndVgroups(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
-            reparentToes(rig, context, True)
             #self.renameBones(rig, RF.Genesis9Renames)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)

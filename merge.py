@@ -1633,61 +1633,6 @@ def applyArmatureModifier(ob):
 #   Merge toes
 #-------------------------------------------------------------
 
-GenesisToes = {
-    "lFoot" : ["lMetatarsals"],
-    "rFoot" : ["rMetatarsals"],
-    "lToe" : ["lBigToe", "lSmallToe1", "lSmallToe2", "lSmallToe3", "lSmallToe4",
-              "lBigToe_2", "lSmallToe1_2", "lSmallToe2_2", "lSmallToe3_2", "lSmallToe4_2"],
-    "rToe" : ["rBigToe", "rSmallToe1", "rSmallToe2", "rSmallToe3", "rSmallToe4",
-              "rBigToe_2", "rSmallToe1_2", "rSmallToe2_2", "rSmallToe3_2", "rSmallToe4_2"],
-    "l_foot" : ["l_metatarsal"],
-    "r_foot" : ["r_metatarsal"],
-    "l_toes" : ["l_bigtoe1", "l_indextoe1", "l_midtoe1", "l_ringtoe1", "l_pinkytoe1",
-                "l_bigtoe2", "l_indextoe2", "l_midtoe2", "l_ringtoe2", "l_pinkytoe2"],
-    "r_toes" : ["r_bigtoe1", "r_indextoe1", "r_midtoe1", "r_ringtoe1", "r_pinkytoe1",
-                "r_bigtoe2", "r_indextoe2", "r_midtoe2", "r_ringtoe2", "r_pinkytoe2"],
-}
-
-NewParent = {
-    "lToe" : "lFoot",
-    "rToe" : "rFoot",
-    "l_toes" : "l_foot",
-    "r_toes" : "r_foot",
-}
-
-def reparentToes(rig, context, useParent):
-    setActiveObject(context, rig)
-    toenames = GenesisToes["lToe"] + GenesisToes["rToe"]
-    drvnames = [drvBone(toename) for toename in toenames]
-    if rig.animation_data:
-        for fcu in list(rig.animation_data.drivers):
-            words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[" and words[1] in drvnames:
-                rig.animation_data.drivers.remove(fcu)
-    for bname in toenames:
-        pb = rig.pose.bones.get(bname)
-        if pb:
-            cns = getConstraint(pb, 'COPY_ROTATION')
-            if cns:
-                pb.constraints.remove(cns)
-
-    setMode('EDIT')
-    for bname in drvnames:
-        eb = rig.data.edit_bones.get(bname)
-        if eb:
-            rig.data.edit_bones.remove(eb)
-    for parname in ["lToe", "rToe"]:
-        if useParent and parname in rig.data.edit_bones.keys():
-            parb = rig.data.edit_bones[parname]
-            for bname in GenesisToes[parname]:
-                if bname[-2:] == "_2":
-                    continue
-                if bname in rig.data.edit_bones.keys():
-                    eb = rig.data.edit_bones[bname]
-                    eb.parent = parb
-    setMode('OBJECT')
-
-
 def mergeBonesAndVgroups(rig, mergers, parents, context):
     from .driver import removeBoneSumDrivers
 
@@ -1752,8 +1697,29 @@ class DAZ_OT_MergeToes(DazOperator, IsArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        genesisToes = {
+            "lFoot" : ["lMetatarsals"],
+            "rFoot" : ["rMetatarsals"],
+            "lToe" : ["lBigToe", "lSmallToe1", "lSmallToe2", "lSmallToe3", "lSmallToe4",
+                      "lBigToe_2", "lSmallToe1_2", "lSmallToe2_2", "lSmallToe3_2", "lSmallToe4_2"],
+            "rToe" : ["rBigToe", "rSmallToe1", "rSmallToe2", "rSmallToe3", "rSmallToe4",
+                      "rBigToe_2", "rSmallToe1_2", "rSmallToe2_2", "rSmallToe3_2", "rSmallToe4_2"],
+            "l_foot" : ["l_metatarsal"],
+            "r_foot" : ["r_metatarsal"],
+            "l_toes" : ["l_bigtoe1", "l_indextoe1", "l_midtoe1", "l_ringtoe1", "l_pinkytoe1",
+                        "l_bigtoe2", "l_indextoe2", "l_midtoe2", "l_ringtoe2", "l_pinkytoe2"],
+            "r_toes" : ["r_bigtoe1", "r_indextoe1", "r_midtoe1", "r_ringtoe1", "r_pinkytoe1",
+                        "r_bigtoe2", "r_indextoe2", "r_midtoe2", "r_ringtoe2", "r_pinkytoe2"],
+        }
+
+        newParents = {
+            "lToe" : "lFoot",
+            "rToe" : "rFoot",
+            "l_toes" : "l_foot",
+            "r_toes" : "r_foot",
+        }
         rig = context.object
-        mergeBonesAndVgroups(rig, GenesisToes, NewParent, context)
+        mergeBonesAndVgroups(rig, genesisToes, newParents, context)
 
 #----------------------------------------------------------
 #   Initialize

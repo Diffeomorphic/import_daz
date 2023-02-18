@@ -441,7 +441,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def convertMhx(self, context):
-        from .merge import reparentToes
         from .figure import finalizeArmature
         if self.useKeepRig:
             self.saveExistingRig(context)
@@ -470,8 +469,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if rig.DazRig in ["genesis3", "genesis8"]:
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
-            showProgress(3, 25, "  Reparent toes")
-            reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
             if not self.reuseBendTwists:
@@ -492,8 +489,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         elif rig.DazRig == "genesis9":
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
-            showProgress(3, 25, "  Reparent toes")
-            reparentToes(rig, context, False)
             showProgress(4, 25, "  Rename bones")
             if not self.reuseBendTwists:
                 self.deleteBendTwistDrvBones(rig)
@@ -514,7 +509,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
-            reparentToes(rig, context, False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
             self.fixKnees(rig)
