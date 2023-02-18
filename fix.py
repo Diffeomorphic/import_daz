@@ -993,17 +993,12 @@ class BendTwists:
                             twistgrp.name = tvgname
 
 
-    def getVertexGroup(self, ob, vgname):
-        for vgrp in ob.vertex_groups:
-            if vgrp.name == vgname:
-                return vgrp
-        return None
-
-
     def splitVertexGroup(self, ob, vgname, bvgname, tvgname, head, tail):
         vgrp = ob.vertex_groups.get(vgname)
         bendgrp = ob.vertex_groups.new(name=bvgname)
+        bendgrp.name = bvgname
         twistgrp = ob.vertex_groups.new(name=tvgname)
+        twistgrp.name = tvgname
         vec = tail-head
         vec /= vec.dot(vec)
         for v in ob.data.vertices:
