@@ -765,6 +765,22 @@ class Rigify:
                 print("Did not find bone parent %s" % dname)
                 setParent(context, ob, gen, None)
 
+        # Limbs
+        if rig.DazRig == "genesis9":
+            self.limbs = {
+                "_upperarm" : "upper_arm",
+                "_forearm" : "forearm",
+                "_thigh" : "thigh",
+                "_shin" : "shin",
+            }
+        else:
+            self.limbs = {
+                "Shldr" : "upper_arm",
+                "ForeArm" : "forearm",
+                "Thigh" : "thigh",
+                "Shin" : "shin",
+            }
+
         # Change vertex groups
         print("  Change vertex groups")
         activateObject(context, gen)
@@ -780,7 +796,7 @@ class Rigify:
                         vgrp.name = "DEF-" + rname
 
                 for rname,dname in self.rigifySkel.items():
-                    if dname[1:] in ["Thigh", "Shin", "Shldr", "ForeArm"]:
+                    if str(dname[1:]) in self.limbs.keys():
                         self.rigifySplitGroup(rname, dname, ob, rig, True, meta)
                     elif isinstance(dname, str):
                         if dname in ob.vertex_groups.keys():
@@ -825,21 +841,7 @@ class Rigify:
 
         # Fix bend and twist drivers
         print("  Fix bend and twist drivers")
-        if rig.DazRig == "genesis9":
-            specials = {
-                "_upperarm" : "upper_arm",
-                "_forearm" : "forearm",
-                "_thigh" : "thigh",
-                "_shin" : "shin",
-            }
-        else:
-            specials = {
-                "Shldr" : "upper_arm",
-                "ForeArm" : "forearm",
-                "Thigh" : "thigh",
-                "Shin" : "shin",
-            }
-        for dname0,rname0 in specials.items():
+        for dname0,rname0 in self.limbs.items():
             for prefix,suffix in [("l","L"), ("r","R")]:
                 dname = "%s%s" % (prefix, dname0)
                 rname = "%s.%s" % (rname0, suffix)
