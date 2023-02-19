@@ -31,7 +31,7 @@ from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions
-from .merge import MergeRigsOptions, MergeGeograftOptions
+from .merge import MergeRigsOptions, MergeGeograftOptions, UVLayerMergerOptions
 from .dforce import SoftbodyOptions
 from .daz import MaterialMethodItems
 
@@ -532,7 +532,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -695,6 +695,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
+            if self.useMergeUvs:
+                self.subprop("allowOverlap")
             self.subprop("useGeoNodes")
         self.layout.prop(self, "useConvertHair")
         self.layout.prop(self, "useOptimizePose")
@@ -948,7 +950,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     for aob in aobs:
                         selectSet(aob, True)
                 print("Merge geografts")
-                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs, useGeoNodes = self.useGeoNodes)
+                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs, allowOverlap = self.allowOverlap, useGeoNodes = self.useGeoNodes)
                 if GS.viewportColors == 'GUESS':
                     from .guess import guessMaterialColor
                     LS.skinColor = self.skinColor
