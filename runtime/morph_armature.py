@@ -51,6 +51,13 @@ def getEditBones(rig):
     def isOutlier(vec):
         return (vec[0] == -1 and vec[1] == -1 and vec[2] == -1)
 
+    def copyTables(bname1, bname2):
+        if bname1 in heads.keys():
+            heads[bname2] = heads[bname1]
+            tails[bname2]= tails[bname1]
+            hdoffsets[bname2] = hdoffsets[bname1]
+            tloffsets[bname2] = tloffsets[bname1]
+
     scale = rig.DazScale
     heads = {}
     tails = {}
@@ -70,12 +77,9 @@ def getEditBones(rig):
             tloffsets[pb.name] = d2b90(pb.TlOffset)
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
-            bname = pb.name[:-5]
-            finname = "%s(fin)" % bname
-            heads[bname] = heads[finname] = heads[pb.name]
-            tails[bname] = tails[finname] = tails[pb.name]
-            hdoffsets[bname] = hdoffsets[finname] = hdoffsets[pb.name]
-            tloffsets[bname] = tloffsets[finname] = tloffsets[pb.name]
+            copyTables(pb.name[:-5], pb.name)
+        elif pb.name[-2:] == "IK":
+            copyTables(pb.name[:-2], pb.name)
 
     processed_bonenames = []
     skeys = None
@@ -107,12 +111,7 @@ def getEditBones(rig):
                 tails[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (tails[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(tails[bone.name]+ tloffsets[parent.name]))
                 hdoffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ hdoffsets[bone.name]) + ((1-bone.weight)*hdoffsets[bone.name])
                 tloffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ tloffsets[bone.name]) + ((1-bone.weight)*tloffsets[bone.name])
-                finname = "%s(fin)" % bone.name
-                drvname = "%s(drv)" % bone.name
-                heads[drvname] = heads[finname] = heads[bone.name]
-                tails[drvname] = tails[finname] = tails[bone.name]
-                hdoffsets[drvname] = hdoffsets[finname] = hdoffsets[bone.name]
-                tloffsets[drvname] = tloffsets[finname] = tloffsets[bone.name]
+                copyTables(bone.name, "%s(drv)" % bone.name)
                 processed_bonenames.append(bone.name)
 
     for pb in rig.pose.bones:
@@ -131,12 +130,10 @@ def morphArmature(data):
     for eb in rig.data.edit_bones:
         head = heads[eb.name] + hdoffsets[eb.name]
         tail = tails[eb.name] + tloffsets[eb.name]
-        mat = eb.matrix.copy()
-        mat.col[3][0:3] = head
         if eb.use_connect and eb.parent:
             eb.parent.tail = head
-        eb.matrix = mat
-        eb.length = (tail-head).length
+        eb.head = head
+        eb.tail = tail
 
 #----------------------------------------------------------
 #   Render a sequence of frames, morphing armatures before rendering each frame
