@@ -245,7 +245,7 @@ class DispAdder:
                 tree.links.new(last.outputs[0], node.inputs["Displacement"])
         tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
-            pruneNodeTree(tree)
+            pruneNodeTree(tree, mat)
 
 
 class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, DispAdder):
@@ -357,7 +357,7 @@ class NormalAdder:
             print("No link to normal map node")
         tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
-            pruneNodeTree(tree)
+            pruneNodeTree(tree, mat)
 
 
 class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):

@@ -580,7 +580,8 @@ class CyclesTree(Tree):
                 mapping.inputs['Rotation'].default_value = (0,0,rz)
             if map and not map.invert and hasattr(mapping, "use_min"):
                 mapping.use_min = mapping.use_max = 1
-            LS.mappingNodes.append((mapping, data))
+            key = "%s:%s" % (self.owner.name, mapping.name)
+            LS.mappingNodes[key] = (mapping, data)
             return modulo,mapping
         return None,None
 
@@ -2029,7 +2030,7 @@ class CyclesTree(Tree):
                 difftexname = self.diffuseTex.name
             if self.diffuse:
                 diffname = self.diffuse.name
-            marked = pruneNodeTree(self, active=active)
+            marked = pruneNodeTree(self, self.owner, active)
             hasDiffuseTex = difftexname and marked.get(difftexname)
             hasDiffuse = diffname and marked.get(diffname)
         else:

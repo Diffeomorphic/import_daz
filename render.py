@@ -206,7 +206,7 @@ class WorldTree(CyclesTree):
         output = self.addNode("ShaderNodeOutputWorld")
         if socket:
             self.links.new(socket, output.inputs["Surface"])
-        pruneNodeTree(self)
+        pruneNodeTree(self, self.owner)
 
 
     def buildEnvmap(self, envmap):
