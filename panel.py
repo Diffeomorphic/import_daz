@@ -320,16 +320,11 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.change_unit_scale")
         self.layout.operator("daz.remove_custom_shapes")
-        self.layout.operator("daz.copy_daz_props")
-        self.layout.operator("daz.convert_rig")
         self.layout.operator("daz.add_extra_face_bones")
-        self.layout.separator()
         self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.change_suffix_to_prefix")
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
-        self.layout.operator("daz.lock_bones")
-        self.layout.separator()
         self.layout.operator("daz.fix_legacy_posable")
         self.layout.operator("daz.categorize_objects")
 

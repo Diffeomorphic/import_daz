@@ -124,73 +124,6 @@ def optimizePose(context, useApplyRestPose):
         applyRestPoses(context, rig, [])
 
 #-------------------------------------------------------------
-#   Convert Rig
-#-------------------------------------------------------------
-
-class DAZ_OT_ConvertRigPose(DazPropsOperator):
-    bl_idname = "daz.convert_rig"
-    bl_label = "Convert DAZ Rig"
-    bl_description = "Convert current DAZ rig to other DAZ rig"
-    bl_options = {'UNDO'}
-
-    newRig : EnumProperty(
-        items = AF.RestPoseItems,
-        name = "New Rig",
-        description = "Convert active rig to this",
-        default = "genesis_3_female")
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig[0:7] == "genesis")
-
-    def draw(self, context):
-        self.layout.prop(self, "newRig")
-
-    def run(self, context):
-        rig = context.object
-        scn = context.scene
-        scale = 1.0
-        if self.newRig in AF.SourceRigs.keys():
-            modify = False
-            src = AF.SourceRigs[self.newRig]
-            conv,twists = getConverter(src, rig)
-            if conv:
-                self.renameBones(rig, conv)
-        else:
-            modify = True
-            src = self.newRig
-            table = AF.restposes[src]
-            if "translate" in table.keys():
-                self.renameBones(rig, table["translate"])
-            if "scale" in table.keys():
-                scale = table["scale"] * rig.DazScale
-        entry = AF.loadEntry(self.newRig, "restposes")
-        loadPose(context, rig, entry)
-        rig.DazRig = src
-        print("Rig converted to %s" % self.newRig)
-        if scale != 1.0:
-            raise DazError("Use scale = %.5f when loading BVH files.       " % scale, True)
-
-
-    def renameBones(self, rig, conv):
-        setMode('EDIT')
-        for eb in rig.data.edit_bones:
-            if eb.name in conv.keys():
-                data = conv[eb.name]
-                if isinstance(data, list):
-                    eb.name = data[0]
-                    if data[1] == "reverse":
-                        head = tuple(eb.head)
-                        tail = tuple(eb.tail)
-                        eb.head = (1,2,3)
-                        eb.tail = head
-                        eb.head = tail
-                else:
-                    eb.name = data
-        setMode('OBJECT')
-
-#-------------------------------------------------------------
 #   Bone conversion
 #-------------------------------------------------------------
 
@@ -231,7 +164,6 @@ def getConverter(stype, trg):
 
 classes = [
     DAZ_OT_OptimizePose,
-    DAZ_OT_ConvertRigPose,
 ]
 
 def register():

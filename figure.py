@@ -1866,94 +1866,8 @@ def toggleLayer(rig, fk, prefix, type, on):
     rig.data.layers[layer] = on
 
 #----------------------------------------------------------
-#   Lock stuff
+#   Set custom shape
 #----------------------------------------------------------
-
-class DAZ_OT_LockBones(DazPropsOperator, IsArmature):
-    bl_idname = "daz.lock_bones"
-    bl_label = "Lock Bones"
-    bl_description = "Lock location, rotation, scale for selected bones"
-    bl_options = {'UNDO'}
-
-    useLocation : BoolProperty(
-        name = "Location",
-        description = "Lock location",
-        default = True
-    )
-
-    useRotation : BoolProperty(
-        name = "Rotation",
-        description = "Lock rotation",
-        default = True
-    )
-
-    useScale : BoolProperty(
-        name = "Scale",
-        description = "Lock scale",
-        default = True
-    )
-
-    useZeroOnly : BoolProperty(
-        name = "Only Zero Channels",
-        description = "Don't lock channels with transformations",
-        default = True
-    )
-
-    def draw(self, context):
-        self.layout.prop(self, "useLocation")
-        self.layout.prop(self, "useRotation")
-        self.layout.prop(self, "useScale")
-        self.layout.prop(self, "useZeroOnly")
-
-    def run(self, context):
-        rig = context.object
-        for pb in rig.pose.bones:
-            if pb.bone.select:
-                self.lock(pb, "lock_location", "location", self.useLocation, 0.0, 0.01*rig.DazScale)
-                self.lock(pb, "lock_rotation", "rotation_euler", self.useRotation, 0.0, 1e-3)
-                self.lock(pb, "lock_scale", "scale", self.useScale, 1.0, 1e-3)
-
-    def lock(self, pb, lock, channel, use, default, eps):
-        if self.useZeroOnly and use:
-            vals = getattr(pb, channel)
-            locks = [(abs(vals[n]-default) < eps) for n in range(3)]
-            setattr(pb, lock, locks)
-        else:
-            setattr(pb, lock, (use,use,use))
-
-#----------------------------------------------------------
-#   Update for 1.5
-#----------------------------------------------------------
-
-class DAZ_OT_CopyDazProps(DazOperator, IsObject):
-    bl_idname = "daz.copy_daz_props"
-    bl_label = "Copy DAZ Properties"
-    bl_description = ("Copy DAZ properties from active object to selected objects.\n" +
-                      "Only properties that are not already set")
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        src = context.object
-        for trg in getSelectedObjects(context):
-            if trg.type == src.type and trg != src:
-                self.copyObjectProps(src, trg)
-                print("DAZ properties copied from %s to %s" % (src.name, trg.name))
-
-
-    def copyObjectProps(self, src, trg):
-        self.copyInfo(src, trg)
-        if src.type == 'ARMATURE':
-            for srcpb in src.pose.bones:
-                if srcpb.name in trg.pose.bones.keys():
-                    trgpb = trg.pose.bones[srcpb.name]
-                    copyBoneInfo(srcpb, trgpb)
-
-
-    def copyInfo(self, src, trg):
-        for key,value in src.items():
-            if key[0:3] == "Daz" and key not in trg.keys():
-                trg[key] = value
-
 
 def setCustomShape(pb, shape, scale=None, offset=None):
     if offset and not hasattr(pb, "custom_shape_translation"):
@@ -2061,8 +1975,6 @@ classes = [
     DAZ_OT_AddSimpleIK,
     DAZ_OT_SnapSimpleFK,
     DAZ_OT_SnapSimpleIK,
-    DAZ_OT_LockBones,
-    DAZ_OT_CopyDazProps,
     DAZ_OT_CategorizeObjects,
     DAZ_OT_MorphArmature,
     DAZ_OT_InspectWorldMatrix,
