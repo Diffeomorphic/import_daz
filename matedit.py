@@ -1401,15 +1401,20 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
     NodeScale = {
         "BUMP" : ["Distance"],
         "PRINCIPLED" : ["Subsurface Radius"],
+        "DAZ Principled" : ["Subsurface Radius"],
         "DAZ Translucent" : ["Radius"],
+        "DAZ Subsurface" : ["Radius"],
         "DAZ Top Coat" : ["Distance"],
+        "DAZ Displacement" : ["Max", "Min"],
     }
 
     def fixNode(self, node, nodetype, scale):
         if nodetype in self.NodeScale.keys():
             for sname in self.NodeScale[nodetype]:
-                socket = node.inputs[sname]
-                if isinstance(socket.default_value, float):
+                socket = node.inputs.get(sname)
+                if socket is None:
+                    pass
+                elif isinstance(socket.default_value, float):
                     socket.default_value *= scale
                 else:
                     socket.default_value = scale*Vector(socket.default_value)
