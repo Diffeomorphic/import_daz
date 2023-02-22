@@ -2320,10 +2320,20 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMesh
         self.targets = {}
         meshes = getSelectedMeshes(context)
         rigs = getSelectedArmatures(context)
+        for rig in rigs:
+            for ob in rig.children:
+                if ob.type == 'MESH' and ob not in meshes:
+                    meshes.append(ob)
         for ob in meshes:
             skeys = ob.data.shape_keys
             if skeys:
                 self.removeDrivers(skeys)
+                if self.useDeleteShapekeys:
+                    skeylist = list(skeys.key_blocks)
+                    skeylist.reverse()
+                    for skey in skeylist:
+                        ob.shape_key_remove(skey)
+
         for rig in rigs:
             self.removeDrivers(rig.data)
             self.removeDrivers(rig)
@@ -2357,7 +2367,7 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMesh
             self.removePropGroup(rig.DazMorphCats)
             rig.DazCustomMorphs = False
             for prop in list(rig.keys()):
-                if prop.lower().startswith(("ectrl")):
+                if prop.lower().startswith(("ectrl", "ejcm", "pbm", "phm")):
                     del rig[prop]
 
 
