@@ -1803,8 +1803,15 @@ class MorphRemover:
 
     def removeFromPropGroups(self, rig, prop):
         for morphset in MS.Standards:
-            pgs = getattr(rig, "Daz" + morphset)
+            pgs = getattr(rig, "Daz%s" % morphset)
             removeFromPropGroup(pgs, prop)
+
+
+    def removePropGroup(self, pgs):
+        idxs = list(range(len(pgs)))
+        idxs.reverse()
+        for idx in idxs:
+            pgs.remove(idx)
 
 
     def selectCondition(self, item):
@@ -1850,6 +1857,7 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
         props = [pg.name for pg in pgs]
         for prop in props:
             self.removeRigProp(rig, prop)
+        self.removePropGroup(pgs)
 
 #------------------------------------------------------------------------
 #   Remove category
@@ -2295,7 +2303,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 #   Remove all morph drivers
 #------------------------------------------------------------------
 
-class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, IsMeshArmature):
+class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, MorphRemover, IsMeshArmature):
     bl_idname = "daz.remove_all_drivers"
     bl_label = "Remove All Drivers"
     bl_description = "Remove all drivers from selected objects"
@@ -2306,15 +2314,8 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, IsMeshArmature):
         description = "Also remove driving properties",
         default = True)
 
-    useRemoveAllProps : BoolProperty(
-        name = "Remove All Properties",
-        description = "Also remove other properties",
-        default = False)
-
     def draw(self, context):
         self.layout.prop(self, "useRemoveProps")
-        if self.useRemoveProps:
-            self.layout.prop(self, "useRemoveAllProps")
 
 
     def run(self, context):
@@ -2331,6 +2332,7 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, IsMeshArmature):
 
         if not self.useRemoveProps:
             return
+
         for path,rna in self.targets.items():
             words = path.split('"')
             if len(words) == 5 and words[0] == "pose.bones[" and words[4] == "]":
@@ -2344,15 +2346,21 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, IsMeshArmature):
                 if prop in rna.keys():
                     del rna[prop]
 
-        if not self.useRemoveAllProps:
-            return
         for rig in rigs:
-            for key in list(rig.keys()):
-                if not (key[0] == "_" or hasattr(rig, key)):
-                    del rig[key]
-            for key in list(rig.data.keys()):
-                if not (key[0] == "_" or hasattr(rig.data, key)):
-                    del rig.data[key]
+            for morphset in MS.Morphsets:
+                pgs = getattr(rig, "Daz%s" % morphset)
+                props = [pg.name for pg in pgs]
+                for prop in props:
+                    self.removeRigProp(rig, prop)
+                self.removePropGroup(pgs)
+            for cat in rig.DazMorphCats.values():
+                for pg in cat.morphs:
+                    self.removeRigProp(rig, pg.name)
+            self.removePropGroup(rig.DazMorphCats)
+            rig.DazCustomMorphs = False
+            for prop in list(rig.keys()):
+                if prop.lower().startswith(("ectrl")):
+                    del rig[prop]
 
 
     def removeDrivers(self, rna):
@@ -2360,6 +2368,8 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, IsMeshArmature):
             return
         for fcu in list(rna.animation_data.drivers):
             if fcu.driver:
+                if getProp(fcu.data_path):
+                    self.targets[fcu.data_path] = rna
                 for var in fcu.driver.variables:
                     for trg in var.targets:
                         self.targets[trg.data_path] = trg.id

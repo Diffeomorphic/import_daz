@@ -31,7 +31,6 @@ from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
 from .morphing import MS
 
-
 #----------------------------------------------------------
 #   Panels
 #----------------------------------------------------------
@@ -551,7 +550,7 @@ class DAZ_PT_Morphs:
 
 
     def hasTheseMorphs(self, rig):
-        return getattr(rig, "Daz"+self.morphset)
+        return getattr(rig, "Daz%s" % self.morphset)
 
 
     def hasAdjustProp(self, rig):
