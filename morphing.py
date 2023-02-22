@@ -2303,20 +2303,18 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 #   Remove all morph drivers
 #------------------------------------------------------------------
 
-class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, MorphRemover, IsMeshArmature):
+class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMeshArmature):
     bl_idname = "daz.remove_all_drivers"
     bl_label = "Remove All Drivers"
     bl_description = "Remove all drivers from selected objects"
     bl_options = {'UNDO'}
 
-    useRemoveProps : BoolProperty(
-        name = "Remove Properties",
-        description = "Also remove driving properties",
-        default = True)
+    useDeleteDrivers = True
 
     def draw(self, context):
-        self.layout.prop(self, "useRemoveProps")
-
+        self.layout.prop(self, "useDeleteProps")
+        if self.useDeleteProps:
+            self.layout.prop(self, "useDeleteShapekeys")
 
     def run(self, context):
         self.targets = {}
@@ -2330,7 +2328,7 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, DriverUser, MorphRemover, IsMesh
             self.removeDrivers(rig.data)
             self.removeDrivers(rig)
 
-        if not self.useRemoveProps:
+        if not self.useDeleteProps:
             return
 
         for path,rna in self.targets.items():
