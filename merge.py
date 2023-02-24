@@ -206,6 +206,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         chars = {ncverts : cob}
         prio = {ncverts : False}
         for ob in getSelectedMeshes(context):
+            ob.active_shape_key_index = 0
             nverts = len(ob.data.vertices)
             if nverts not in chars.keys() or isGenesis(ob):
                 chars[nverts] = ob
