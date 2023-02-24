@@ -1061,18 +1061,16 @@ class SimpleIK:
                 pb.keyframe_insert("rotation_euler", frame=frame, group=bname)
 
 
-    def limitBone(self, pb, twist, rig, prop, stiffness=(0,0,0)):
+    def limitBone(self, pb, bend, twist, rig, prop, stiffness=(0,0,0)):
         pb.lock_ik_x = pb.lock_rotation[0]
         pb.lock_ik_y = pb.lock_rotation[1]
         pb.lock_ik_z = pb.lock_rotation[2]
 
+        if bend:
+            pb.lock_ik_y = True
         if twist:
-            pb.use_ik_limit_x = True
-            pb.use_ik_limit_z = True
-            pb.ik_min_x = 0
-            pb.ik_max_x = 0
-            pb.ik_min_z = 0
-            pb.ik_max_z = 0
+            pb.lock_ik_x = True
+            pb.lock_ik_z = True
 
         pb.ik_stiffness_x = stiffness[0]
         pb.ik_stiffness_y = stiffness[1]
@@ -1182,8 +1180,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 }
                 footname, fikname, shinname, hipname, kneename = table[genesis]
                 foot = ebones[footname]
-                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 0, None)
                 shin = ebones[shinname]
+                vec = foot.tail - foot.head
+                footIK = makeBone(fikname, rig, shin.tail, shin.tail+vec, foot.roll, 0, None)
                 hip = ebones[hipname]
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
@@ -1213,21 +1212,21 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useArms:
                     setCustomShape(handIK, csHandIk, 1.5)
                     shldrBend = rpbs[prefix+"ShldrBend"]
-                    IK.limitBone(shldrBend, False, rig, armProp)
+                    IK.limitBone(shldrBend, True, False, rig, armProp)
                     shldrTwist = rpbs[prefix+"ShldrTwist"]
-                    IK.limitBone(shldrTwist, True, rig, armProp)
+                    IK.limitBone(shldrTwist, False, True, rig, armProp)
                     forearmBend = rpbs[prefix+"ForearmBend"]
-                    IK.limitBone(forearmBend, False, rig, armProp)
+                    IK.limitBone(forearmBend, True, False, rig, armProp)
                     forearmTwist = rpbs[prefix+"ForearmTwist"]
-                    IK.limitBone(forearmTwist, True, rig, armProp)
+                    IK.limitBone(forearmTwist, False, True, rig, armProp)
                 if self.useLegs:
                     setCustomShape(footIK, csFootIk, 3.0)
                     thighBend = rpbs[prefix+"ThighBend"]
-                    IK.limitBone(thighBend, False, rig, legProp)    #, stiffness=(0,0,0.326))
+                    IK.limitBone(thighBend, True, False, rig, legProp)    #, stiffness=(0,0,0.326))
                     thighTwist = rpbs[prefix+"ThighTwist"]
-                    IK.limitBone(thighTwist, True, rig, legProp)    #, stiffness=(0,0.160,0))
+                    IK.limitBone(thighTwist, False, True, rig, legProp)    #, stiffness=(0,0.160,0))
                     shin = rpbs[prefix+"Shin"]
-                    IK.limitBone(shin, False, rig, legProp)         #, stiffness=(0.068,0,0.517))
+                    IK.limitBone(shin, False, False, rig, legProp)         #, stiffness=(0.068,0,0.517))
                     fixIk(rig, [shin.name])
                     shin.lock_ik_z = True
 
@@ -1235,15 +1234,15 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useArms:
                     setCustomShape(handIK, csHandIk, 3.0)
                     shldr = rpbs[prefix+"_upperarm"]
-                    IK.limitBone(shldr, False, rig, armProp)
+                    IK.limitBone(shldr, False, False, rig, armProp)
                     forearm = rpbs[prefix+"_forearm"]
-                    IK.limitBone(forearm, False, rig, armProp)
+                    IK.limitBone(forearm, False, False, rig, armProp)
                 if self.useLegs:
                     setCustomShape(footIK, csFootIk, 1.5)
                     thigh = rpbs[prefix+"_thigh"]
-                    IK.limitBone(thigh, False, rig, legProp)
+                    IK.limitBone(thigh, False, False, rig, legProp)
                     shin = rpbs[prefix+"_shin"]
-                    IK.limitBone(shin, False, rig, legProp)
+                    IK.limitBone(shin, False, False, rig, legProp)
                     fixIk(rig, [shin.name])
                     shin.lock_ik_z = True
 
@@ -1251,15 +1250,15 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useArms:
                     setCustomShape(handIK, csHandIk, 3.0)
                     shldr = rpbs[prefix+"Shldr"]
-                    IK.limitBone(shldr, False, rig, armProp)
+                    IK.limitBone(shldr, False, False, rig, armProp)
                     forearm = rpbs[prefix+"ForeArm"]
-                    IK.limitBone(forearm, False, rig, armProp)
+                    IK.limitBone(forearm, False, False, rig, armProp)
                 if self.useLegs:
                     setCustomShape(footIK, csFootIk, 1.5)
                     thigh = rpbs[prefix+"Thigh"]
-                    IK.limitBone(thigh, False, rig, legProp)
+                    IK.limitBone(thigh, False, False, rig, legProp)
                     shin = rpbs[prefix+"Shin"]
-                    IK.limitBone(shin, False, rig, legProp)
+                    IK.limitBone(shin, False, False, rig, legProp)
                     fixIk(rig, [shin.name])
                     shin.lock_ik_z = True
 
