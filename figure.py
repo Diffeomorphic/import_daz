@@ -995,18 +995,17 @@ class SimpleIK:
     def storeProps(self, rig):
         self.ikprops = (rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R)
 
-
     def setProps(self, rig, onoff):
         rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = onoff
-
 
     def restoreProps(self, rig):
         rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R = self.ikprops
 
-
     def getIKProp(self, prefix, type):
         return ("Daz%sIK_%s" % (type, prefix.upper()))
 
+    def updatePose(self):
+        bpy.context.view_layer.update()
 
     def getGenesisType(self, rig):
         if (self.hasAllBones(rig, self.G38Arm+self.G38Leg, "l") and
@@ -1147,7 +1146,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
 
         rig.DazSimpleIK = True
-        rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 1.0
+        rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = True
 
         LS.customShapes = []
         csHandIk = makeCustomShape("CS_HandIk", "RectX")
@@ -1155,34 +1154,57 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         if IK.usePoleTargets:
             csCube = makeCustomShape("CS_Cube", "Cube", scale=0.3)
 
+        armTable = {
+            "G12" : ("Hand", "HandIK", "Shldr", "ForeArm", "ForeArm", "", "", "Collar", "Elbow"),
+            "G38" : ("Hand", "HandIK", "ShldrBend", "ForearmBend", "ForearmTwist", "ShldrIK", "ForearmIK", "Collar", "Elbow"),
+            "G9" : ("_hand", "_handIK", "_shldr", "_forearm", "_forearm", "", "", "_shoulder", "_elbow"),
+        }
+
+        legTable = {
+            "G12" : ("Foot", "FootIK", "Thigh", "Shin", "", "hip", "Knee"),
+            "G38" : ("Foot", "FootIK", "ThighBend", "Shin", "ThighIK", "hip", "Knee"),
+            "G9" : ("_foot", "_footIK", "_thigh", "_shin", "", "hip", "_knee"),
+        }
+
+        def getEntry(table, key, prefix):
+            entry = []
+            for bname in table[key]:
+                if bname and bname in rig.data.bones.keys():
+                    entry.append(bname)
+                elif bname:
+                    entry.append("%s%s" % (prefix, bname))
+                else:
+                    entry.append(None)
+            return entry
+
         setMode('EDIT')
         ebones = rig.data.edit_bones
         for prefix in ["l", "r"]:
             if self.useArms:
-                table = {
-                    "G12" : (prefix+"Hand", prefix+"HandIK", prefix+"ForeArm", prefix+"Collar", prefix+"Elbow"),
-                    "G38" : (prefix+"Hand", prefix+"HandIK", prefix+"ForearmBend", prefix+"Collar", prefix+"Elbow"),
-                    "G9" : (prefix+"_hand", prefix+"_handIK", prefix+"_forearm", prefix+"_shoulder", prefix+"_elbow"),
-                }
-                handname, hikname, forearmname, collarname, elbowname = table[genesis]
+                handname, hikname, shldrname, forebendname, foretwistname, shikname, foreikname, collarname, elbowname = getEntry(armTable, genesis, prefix)
                 hand = ebones[handname]
                 handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, 0, None)
-                forearm = ebones[forearmname]
+                forebend = ebones[forebendname]
+                foretwist = ebones[foretwistname]
+                foretwist.tail = hand.head
+                if shikname:
+                    shldr = ebones[shldrname]
+                    shldrIK = makeBone(shikname, rig, shldr.head, shldr.tail, shldr.roll, 31, shldr.parent)
+                    forebend.parent = shldrIK
                 collar = ebones[collarname]
                 if IK.usePoleTargets:
-                    elbow = makePole(elbowname, rig, forearm, collar)
+                    elbow = makePole(elbowname, rig, foretwist, collar)
 
             if self.useLegs:
-                table = {
-                    "G12" : (prefix+"Foot", prefix+"FootIK", prefix+"Shin", "hip", prefix+"Knee"),
-                    "G38" : (prefix+"Foot", prefix+"FootIK", prefix+"Shin", "hip", prefix+"Knee"),
-                    "G9" : (prefix+"_foot", prefix+"_footIK", prefix+"_shin", "hip", prefix+"_knee"),
-                }
-                footname, fikname, shinname, hipname, kneename = table[genesis]
+                footname, fikname, thighname, shinname, thikname, hipname, kneename = getEntry(legTable, genesis, prefix)
                 foot = ebones[footname]
                 shin = ebones[shinname]
-                vec = foot.tail - foot.head
-                footIK = makeBone(fikname, rig, shin.tail, shin.tail+vec, foot.roll, 0, None)
+                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 0, None)
+                shin.tail = foot.head
+                if thikname:
+                    thigh = ebones[thighname]
+                    thighIK = makeBone(thikname, rig, thigh.head, thigh.tail, thigh.roll, 31, thigh.parent)
+                    shin.parent = thighIK
                 hip = ebones[hipname]
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
@@ -1222,11 +1244,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useLegs:
                     setCustomShape(footIK, csFootIk, 3.0)
                     thighBend = rpbs[prefix+"ThighBend"]
-                    IK.limitBone(thighBend, True, False, rig, legProp)    #, stiffness=(0,0,0.326))
+                    IK.limitBone(thighBend, True, False, rig, legProp)
                     thighTwist = rpbs[prefix+"ThighTwist"]
-                    IK.limitBone(thighTwist, False, True, rig, legProp)    #, stiffness=(0,0.160,0))
+                    IK.limitBone(thighTwist, False, True, rig, legProp)
                     shin = rpbs[prefix+"Shin"]
-                    IK.limitBone(shin, False, False, rig, legProp)         #, stiffness=(0.068,0,0.517))
+                    IK.limitBone(shin, False, False, rig, legProp)
                     fixIk(rig, [shin.name])
                     shin.lock_ik_z = True
 
@@ -1286,9 +1308,25 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
             if genesis == "G38":
                 if self.useArms:
-                    ikConstraint(forearmTwist, handIK, elbow, -90, 4, rig, prop=armProp)
+                    ikConstraint(forearmTwist, handIK, elbow, -90, 3, rig, prop=armProp)
+                    shldrIK = rpbs[prefix+"ShldrIK"]
+                    shldrIK.rotation_mode = shldrBend.rotation_mode
+                    cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp)
+                    cns.euler_order = shldrBend.rotation_mode
+                    cns.use_y = False
+                    cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp)
+                    cns.euler_order = shldrTwist.rotation_mode
+                    cns.use_x = cns.use_z = False
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp)
+                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
+                    thighIK = rpbs[prefix+"ThighIK"]
+                    thighIK.rotation_mode = thighBend.rotation_mode
+                    cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
+                    cns.euler_order = thighBend.rotation_mode
+                    cns.use_y = False
+                    cns = copyRotation(thighTwist, thighIK, rig, prop=legProp)
+                    cns.euler_order = thighTwist.rotation_mode
+                    cns.use_x = cns.use_z = False
             else:
                 if self.useArms:
                     ikConstraint(forearm, handIK, elbow, -90, 2, rig, prop=armProp)
@@ -1753,37 +1791,26 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
         bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
-            setattr(rig, prop, 1.0)
+            setattr(rig, prop, True)
+            self.updatePose()
             self.snapSimpleFK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, True)
             toggleLayer(rig, "IK", self.prefix, self.type, False)
-            setattr(rig, prop, 0.0)
+            setattr(rig, prop, False)
 
 
     def snapSimpleFK(self, rig, bnames, prop):
         from .fix import getPreSufName
-        mats = {}
+        mats = []
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
-                mats[bname] = (pb, pb.matrix.copy())
+                mats.append((pb, pb.matrix.copy()))
         setattr(rig, prop, False)
-        for pb,mat in mats.values():
+        self.updatePose()
+        for pb,mat in mats:
             pb.matrix = mat
-        for bname in bnames:
-            if bname[-5:] == "Twist":
-                twist = rig.pose.bones.get(getPreSufName(bname, rig))
-                if twist:
-                    bend = rig.pose.bones.get(getPreSufName("%sBend" % bname[:-5], rig))
-                    loc,rot,scale = bend.matrix_basis.decompose()
-                    bendeuler = rot.to_euler(bend.rotation_mode)
-                    twisteuler = Euler((0,bendeuler.y,0), bend.rotation_mode)
-                    bendeuler.y = 0
-                    bendmat = Matrix.Translation(loc) @ bendeuler.to_matrix().to_4x4() @ Matrix.Diagonal(scale).to_4x4()
-                    bend.matrix_basis = bendmat
-                    twist.location = Zero
-                    twist.rotation_euler = twisteuler
-                    twist.scale = One
+            self.updatePose()
 
 #----------------------------------------------------------
 #   IK Snap
@@ -1804,11 +1831,12 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
         bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
-            setattr(rig, prop, 0.0)
+            setattr(rig, prop, False)
+            self.updatePose()
             self.snapSimpleIK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, False)
             toggleLayer(rig, "IK", self.prefix, self.type, True)
-            setattr(rig, prop, 1.0)
+            setattr(rig, prop, True)
 
 
     def snapSimpleIK(self, rig, bnames, prop):
@@ -1830,12 +1858,15 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
         handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
         if handik:
             handik.matrix = handmat
+            self.updatePose()
         if pole:
             poleik.matrix = polemat
+            self.updatePose()
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
                 pb.matrix_basis = Matrix()
+                self.updatePose()
 
 
     def getPoleMatrix(self, above, below):
@@ -1986,10 +2017,10 @@ def register():
     bpy.types.Object.DazCustomShapes = BoolProperty(default=False)
     bpy.types.Armature.DazFinalized = BoolProperty(default=False)
     bpy.types.Object.DazSimpleIK = BoolProperty(default=False)
-    bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazArmIK_L = BoolProperty(name="Left Arm IK", default=False)
+    bpy.types.Object.DazArmIK_R = BoolProperty(name="Right Arm IK", default=False)
+    bpy.types.Object.DazLegIK_L = BoolProperty(name="Left Leg IK", default=False)
+    bpy.types.Object.DazLegIK_R = BoolProperty(name="Right Leg IK", default=False)
 
     bpy.types.Object.DazRotLocks = BoolPropOVR(
         name = "Rotation Locks",
