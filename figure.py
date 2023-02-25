@@ -939,7 +939,10 @@ def toggleLimits(self, context, attr, type):
     for pb in self.pose.bones:
         for cns in pb.constraints:
             if cns.type == type:
-                cns.mute = not getattr(self, attr)
+                if cns.name == "Hint":
+                    cns.mute = False
+                else:
+                    cns.mute = not getattr(self, attr)
 
 def toggleRotLimits(self, context):
     toggleLimits(self, context, "DazRotLimits", "LIMIT_ROTATION")
@@ -1105,10 +1108,16 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         description = "Add pole targets to the IK chains.\nPoses will not be loaded correctly.",
         default = False)
 
+    useCopyRotation : BoolProperty(
+        name = "Copy Rotation",
+        description = "Add copy rotation constraints for bend and twist bones",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
+        self.layout.prop(self, "useCopyRotation")
 
 
     def run(self, context):
@@ -1136,6 +1145,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         def copyBoneProps(src, trg):
             trg.DazRotMode = src.DazRotMode
             trg.rotation_mode = src.rotation_mode
+            trg.custom_shape = src.custom_shape
 
         rig = context.object
         if rig.DazSimpleIK:
@@ -1143,7 +1153,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         if not rig.DazCustomShapes:
             raise DazError("Make custom shapes first")
 
-        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, stretchTo, fixIk
+        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, hintRotation, stretchTo, fixIk
         IK = SimpleIK(self)
         genesis = IK.getGenesisType(rig)
         if not genesis:
@@ -1170,6 +1180,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
             "G9" : ("_foot", "_footIK", "_thigh", "_thigh", "_shin", "hip", "_knee"),
         }
 
+        armTable2 = {
+            "G38" : ("ShldrIK", "ForearmIK"),
+        }
+
+        legTable2 = {
+            "G38" : ("ThighIK", "ShinIK"),
+        }
+
         def getEntry(table, key, prefix, bones):
             entry = []
             for bname in table[key]:
@@ -1182,24 +1200,28 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
         setMode('EDIT')
         ebones = rig.data.edit_bones
-        for prefix in ["l", "r"]:
+        for prefix,dl in [("l",0), ("r",1)]:
             if self.useArms:
-                hand, hikname, shldrbend, shldrtwist, forebend, foretwist, collar, elbowname = getEntry(armTable, genesis, prefix, ebones)
+                hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = getEntry(armTable, genesis, prefix, ebones)
                 handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, 0, None)
-                foretwist.tail = hand.head
-                if False:
-                    shldrIK = makeBone(shikname, rig, shldrbend.head, shldrbend.tail, shldrbend.roll, 31, shldrbend.parent)
-                    forebend.parent = shldrIK
+                foreTwist.tail = hand.head
+                if genesis == "G38" and self.useCopyRotation:
+                    layer = 26+dl
+                    shikname, foreikname = getEntry(armTable2, genesis, prefix, ebones)
+                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrBend.tail, shldrBend.roll, layer, shldrBend.parent)
+                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, layer, shldrIK)
                 if IK.usePoleTargets:
-                    elbow = makePole(elbowname, rig, forebend, collar)
+                    elbow = makePole(elbowname, rig, foreBend, collar)
 
             if self.useLegs:
-                foot, fikname, thighbend, thightwist, shin, hip, kneename = getEntry(legTable, genesis, prefix, ebones)
+                foot, fikname, thighBend, thighTwist, shin, hip, kneename = getEntry(legTable, genesis, prefix, ebones)
                 footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 0, None)
                 shin.tail = foot.head
-                if False:
-                    thighIK = makeBone(thikname, rig, thigh.head, thigh.tail, thigh.roll, 31, thigh.parent)
-                    shin.parent = thighIK
+                if genesis == "G38" and self.useCopyRotation:
+                    layer = 28+dl
+                    thikname, shinikname = getEntry(legTable2, genesis, prefix, ebones)
+                    thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, layer, thighBend.parent)
+                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, layer, thighIK)
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
 
@@ -1281,27 +1303,39 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
             else:
                 elbow = knee = None
 
-            if genesis == "G38" and False:
+            if genesis == "G38" and self.useCopyRotation:
                 if self.useArms:
-                    ikConstraint(foreTwist, handIK, elbow, -90, 3, rig, prop=armProp)
-                    shldrIK = rpbs[prefix+"ShldrIK"]
-                    shldrIK.rotation_mode = shldrBend.rotation_mode
+                    shldrIK, foreIK = getEntry(armTable2, genesis, prefix, rpbs)
+                    copyBoneProps(shldrBend, shldrIK)
+                    copyBoneProps(foreBend, foreIK)
+                    hintRotation(foreIK, rig)
+                    ikConstraint(foreIK, handIK, elbow, -90, 2, rig, prop=armProp)
                     cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp)
                     cns.euler_order = shldrBend.rotation_mode
                     cns.use_y = False
                     cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp)
                     cns.euler_order = shldrTwist.rotation_mode
                     cns.use_x = cns.use_z = False
+                    cns = copyRotation(foreBend, foreIK, rig, prop=armProp)
+                    cns.euler_order = foreBend.rotation_mode
+                    cns.use_y = False
+                    cns = copyRotation(foreTwist, foreIK, rig, prop=armProp)
+                    cns.euler_order = foreTwist.rotation_mode
+                    cns.use_x = cns.use_z = False
                 if self.useLegs:
-                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
-                    thighIK = rpbs[prefix+"ThighIK"]
-                    thighIK.rotation_mode = thighBend.rotation_mode
+                    thighIK, shinIK = getEntry(legTable2, genesis, prefix, rpbs)
+                    copyBoneProps(thighBend, thighIK)
+                    copyBoneProps(shin, shinIK)
+                    hintRotation(shinIK, rig)
+                    ikConstraint(shinIK, footIK, knee, -90, 2, rig, prop=legProp)
                     cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
                     cns.euler_order = thighBend.rotation_mode
                     cns.use_y = False
                     cns = copyRotation(thighTwist, thighIK, rig, prop=legProp)
                     cns.euler_order = thighTwist.rotation_mode
                     cns.use_x = cns.use_z = False
+                    cns = copyRotation(shin, shinIK, rig, prop=legProp)
+                    cns.euler_order = shin.rotation_mode
             elif genesis == "G38":
                 if self.useArms:
                     ikConstraint(foreTwist, handIK, elbow, -90, 4, rig, prop=armProp)
