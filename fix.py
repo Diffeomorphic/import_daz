@@ -751,10 +751,6 @@ class ConstraintStore:
                 setattr(cns, attr, value)
         if target and hasattr(cns, "target"):
             cns.target = target
-        if ((ctype == 'LIMIT_LOCATION' and not GS.useLimitLoc) or
-            (ctype == 'LIMIT_ROTATION' and not GS.useLimitRot) or
-            (ctype == 'LIMIT_SCALE' and not GS.useLimitRot)):
-            cns.mute = True
 
 
     def removeConstraints(self, pb):

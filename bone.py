@@ -482,7 +482,7 @@ class BoneInstance(Instance):
             for n,lock in enumerate(locks):
                 idx = self.axes[n]
                 pb.lock_rotation[idx] = lock
-        if useLimits and not self.isPosed:
+        if useLimits and GS.useLimitRot and not self.isPosed:
             cns = pb.constraints.new('LIMIT_ROTATION')
             cns.owner_space = 'LOCAL'
             for n,limit in enumerate(limits):
@@ -507,8 +507,6 @@ class BoneInstance(Instance):
                         setattr(pb, "use_ik_limit_%s" % xyz, True)
                         setattr(pb, "ik_min_%s" % xyz, minr)
                         setattr(pb, "ik_max_%s" % xyz, maxr)
-            if not GS.useLimitRot:
-                cns.mute = True
 
 
     def setLocationLockDaz(self, pb):
@@ -521,7 +519,7 @@ class BoneInstance(Instance):
             for n,lock in enumerate(locks):
                 idx = self.axes[n]
                 pb.lock_location[idx] = lock
-        if useLimits:
+        if useLimits and GS.useLimitLoc:
             cns = pb.constraints.new('LIMIT_LOCATION')
             cns.owner_space = 'LOCAL'
             for n,limit in enumerate(limits):
@@ -537,8 +535,6 @@ class BoneInstance(Instance):
                     setattr(cns, "use_max_%s" % xyz, True)
                     setattr(cns, "min_%s" % xyz, mind*LS.scale)
                     setattr(cns, "max_%s" % xyz, maxd*LS.scale)
-            if not GS.useLimitLoc:
-                cns.mute = True
 
 #-------------------------------------------------------------
 #   Utilities
