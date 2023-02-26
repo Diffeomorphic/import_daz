@@ -214,7 +214,10 @@ class GeoNode(Node, SimNode):
                 mod.use_limit_surface = False
             if self.data.SubDEdgeInterpolateLevel == 1:
                 # [ "Soft Corners And Edges", "Sharp Edges and Corners", "Sharp Edges" ]
-                mod.boundary_smooth = 'PRESERVE_CORNERS'
+                try:
+                    mod.boundary_smooth = 'PRESERVE_CORNERS'
+                except AttributeError:
+                    pass
             self.data.creaseEdges(context, ob)
             ob.data.use_auto_smooth = False
         if False and subDLevel > renderLevel:

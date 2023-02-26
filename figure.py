@@ -939,10 +939,11 @@ def toggleLimits(self, context, attr, type):
     for pb in self.pose.bones:
         for cns in pb.constraints:
             if cns.type == type:
+                cns.mute = False
                 if cns.name == "Hint":
-                    cns.mute = False
+                    cns.influence = 1.0
                 else:
-                    cns.mute = not getattr(self, attr)
+                    cns.influence = getattr(self, attr)
 
 def toggleRotLimits(self, context):
     toggleLimits(self, context, "DazRotLimits", "LIMIT_ROTATION")
@@ -1075,16 +1076,16 @@ def register():
         default = True,
         update = toggleLocLocks)
 
-    bpy.types.Object.DazRotLimits = BoolPropOVR(
+    bpy.types.Object.DazRotLimits = FloatPropOVR(1.0,
         name = "Rotation Limits",
         description = "Rotation Limits",
-        default = True,
+        min = 0.0, max = 1.0,
         update = toggleRotLimits)
 
-    bpy.types.Object.DazLocLimits = BoolPropOVR(
+    bpy.types.Object.DazLocLimits = FloatPropOVR(1.0,
         name = "Location Limits",
         description = "Location Limits",
-        default = True,
+        min = 0.0, max = 1.0,
         update = toggleLocLimits)
 
     bpy.types.Object.DazInheritScale = BoolPropOVR(

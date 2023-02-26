@@ -664,7 +664,7 @@ class DAZ_OT_ChangeSuffixToPrefix(DazOperator, GizmoUser, IsArmature):
 #-------------------------------------------------------------
 
 ConstraintAttributes = [
-    "type", "name", "mute", "target", "subtarget", "mix_mode",
+    "type", "name", "mute", "target", "subtarget", "mix_mode", "use_transform_limit",
     "head_tail", "use_offset", "owner_space", "target_space",
     "use_x", "use_y", "use_z",
     "invert_x", "invert_y", "invert_z",

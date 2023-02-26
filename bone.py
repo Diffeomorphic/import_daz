@@ -485,6 +485,7 @@ class BoneInstance(Instance):
         if useLimits and GS.useLimitRot and not self.isPosed:
             cns = pb.constraints.new('LIMIT_ROTATION')
             cns.owner_space = 'LOCAL'
+            cns.use_transform_limit = True
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
                 if limit is not None:
@@ -522,6 +523,7 @@ class BoneInstance(Instance):
         if useLimits and GS.useLimitLoc:
             cns = pb.constraints.new('LIMIT_LOCATION')
             cns.owner_space = 'LOCAL'
+            cns.use_transform_limit = True
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
                 if limit is not None:

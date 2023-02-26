@@ -148,6 +148,7 @@ def limitRotation(bone, rig, prop=None, expr="x"):
     cns = bone.constraints.new('LIMIT_ROTATION')
     cns.owner_space = 'LOCAL'
     cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = False
+    cns.use_transform_limit = True
     if prop is not None:
         cns.influence = 0.0
         addDriver(cns, "influence", rig, prop, expr)
