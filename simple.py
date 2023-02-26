@@ -370,7 +370,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     copyBoneProps(shldrBend, shldrIK)
                     copyBoneProps(foreBend, foreIK)
                     hintRotation(foreIK, rig)
-                    ikConstraint(foreIK, handIK, elbow, -90, 2, rig, prop=armProp)
+                    ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
                     cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp)
                     cns.euler_order = shldrBend.rotation_mode
                     cns.use_y = False
@@ -388,7 +388,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     copyBoneProps(thighBend, thighIK)
                     copyBoneProps(shin, shinIK)
                     hintRotation(shinIK, rig)
-                    ikConstraint(shinIK, footIK, knee, -90, 2, rig, prop=legProp)
+                    ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
                     cns.euler_order = thighBend.rotation_mode
                     cns.use_y = False

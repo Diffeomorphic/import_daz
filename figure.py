@@ -940,9 +940,7 @@ def toggleLimits(self, context, attr, type):
         for cns in pb.constraints:
             if cns.type == type:
                 cns.mute = False
-                if cns.name == "Hint":
-                    cns.influence = 1.0
-                else:
+                if cns.name != "Hint":
                     cns.influence = getattr(self, attr)
 
 def toggleRotLimits(self, context):
