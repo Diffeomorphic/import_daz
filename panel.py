@@ -911,26 +911,54 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 #------------------------------------------------------------------------
-#    Simple IK Panel
+#    Simple IK Panels
 #------------------------------------------------------------------------
 
-class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
-    bl_label = "Simple Rig"
+class DAZ_PT_DazRig:
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "DAZ Rig"
+    bl_options = {'DEFAULT_CLOSED'}
+
+
+class DAZ_PT_DazLayers(DAZ_PT_DazRig, bpy.types.Panel):
+    bl_label = "Layers"
 
     @classmethod
     def poll(cls, context):
         return (context.object and context.object.DazCustomShapes)
 
     def draw(self, context):
+        from .simple import BoneLayers
         rig = context.object
-        self.drawLayers(rig)
-        if rig.DazSimpleIK:
-            self.drawSimpleIK(rig)
-
-
-    def drawSimpleIK(self, rig):
         layout = self.layout
+        layout.label(text="Layers")
+        row = layout.row()
+        row.operator("daz.select_named_layers")
+        row.operator("daz.unselect_named_layers")
         layout.separator()
+        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot"]:
+            row = layout.row()
+            if isinstance(lnames, str):
+                first,second = "Left "+lnames, "Right "+lnames
+            else:
+                first,second = lnames
+            m = BoneLayers[first]
+            n = BoneLayers[second]
+            row.prop(rig.data, "layers", index=m, toggle=True, text=first)
+            row.prop(rig.data, "layers", index=n, toggle=True, text=second)
+
+
+class DAZ_PT_DazIK(DAZ_PT_DazRig, bpy.types.Panel):
+    bl_label = "Simple IK"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object and context.object.DazSimpleIK)
+
+    def draw(self, context):
+        rig = context.object
+        layout = self.layout
         layout.label(text="IK Influence")
         split = layout.split(factor=0.2)
         split.label(text="")
@@ -981,25 +1009,8 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
         op.type = "Leg"
         op.pole = "rKnee"
 
-
-    def drawLayers(self, rig):
-        from .simple import BoneLayers
-        layout = self.layout
-        layout.label(text="Layers")
-        row = layout.row()
-        row.operator("daz.select_named_layers")
-        row.operator("daz.unselect_named_layers")
         layout.separator()
-        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot"]:
-            row = layout.row()
-            if isinstance(lnames, str):
-                first,second = "Left "+lnames, "Right "+lnames
-            else:
-                first,second = lnames
-            m = BoneLayers[first]
-            n = BoneLayers[second]
-            row.prop(rig.data, "layers", index=m, toggle=True, text=first)
-            row.prop(rig.data, "layers", index=n, toggle=True, text=second)
+        layout.prop(rig, "DazRotLimits")
 
 #------------------------------------------------------------------------
 #   Visibility panels
@@ -1116,9 +1127,11 @@ classes = [
 
     DAZ_PT_CustomMorphs,
     DAZ_PT_CustomMeshMorphs,
-    DAZ_PT_SimpleRig,
     DAZ_PT_Visibility,
     DAZ_PT_DazRigifyProps,
+
+    DAZ_PT_DazLayers,
+    DAZ_PT_DazIK,
 ]
 
 def register():
