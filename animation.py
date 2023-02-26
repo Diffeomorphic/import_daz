@@ -843,7 +843,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             from .mhx import setToFk
             self.boneLayers = setToFk(rig, self.boneLayers, self.keepLimits)
         elif rig.DazSimpleIK:
-            from .figure import setSimpleToFk
+            from .simple import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers)
 
 

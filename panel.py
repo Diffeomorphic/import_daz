@@ -983,7 +983,7 @@ class DAZ_PT_SimpleRig(DAZ_PT_Base, bpy.types.Panel):
 
 
     def drawLayers(self, rig):
-        from .figure import BoneLayers
+        from .simple import BoneLayers
         layout = self.layout
         layout.label(text="Layers")
         row = layout.row()
