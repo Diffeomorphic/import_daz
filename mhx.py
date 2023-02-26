@@ -938,14 +938,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     cns.use_offset = True
                     addDriver(cns, "mute", rig, props, expr)
 
-
-    def deletePoseConstraints(self, bname):
-        ncnss = []
-        for cns in self.constraints.get(bname, []):
-            if cns["type"] not in ['COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
-                ncnss.append(cns)
-        self.constraints[bname] = ncnss
-
     #-------------------------------------------------------------
     #   FK/IK
     #-------------------------------------------------------------

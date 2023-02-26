@@ -97,7 +97,7 @@ class Fixer(DriverUser):
 
 
     def fixCustomShape(self, rig, bnames, factor, offset=0):
-        from .figure import setCustomShape
+        from .simple import setCustomShape
         for bname in bnames:
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
@@ -382,6 +382,14 @@ class Fixer(DriverUser):
             #if fkbone.lock_rotation[n]:
             #    setattr(ikbone, "ik_stiffness_%s" % x, 0.99)
 
+
+    def deletePoseConstraints(self, bname):
+        ncnss = []
+        for cns in self.constraints.get(bname, []):
+            if cns["type"] not in ['COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+                ncnss.append(cns)
+        self.constraints[bname] = ncnss
+
     #-------------------------------------------------------------
     #   Gaze Bones
     #-------------------------------------------------------------
@@ -537,7 +545,7 @@ class GizmoUser:
 
 
     def addGizmo(self, pb, gname, scale, blen=None):
-        from .figure import setCustomShape
+        from .simple import setCustomShape
         gizmo = self.gizmos[gname]
         pb.bone.show_wire = True
         if blen:
