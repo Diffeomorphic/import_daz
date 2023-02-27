@@ -758,10 +758,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.hairs = self.getTypedObjects(visibles, LS.hairs)
 
         if self.useEliminateEmpties:
-            bpy.ops.object.select_all(action='DESELECT')
-            for objects in LS.objects.values():
-                for ob in objects:
-                    selectSet(ob, True)
             bpy.ops.daz.eliminate_empties()
 
         allMeshes = []

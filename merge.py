@@ -894,6 +894,11 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
     bl_description = "Delete empties, parenting its children to its parent instead"
     bl_options = {'UNDO'}
 
+    useAllEmpties : BoolProperty(
+        name = "Eliminate All Empties",
+        description = "Eliminate all empties in the scene,\nnot only those associated with selected objects",
+        default = True)
+
     useCollections : BoolProperty(
         name = "Create Collections",
         description = "Replace empties with collections",
@@ -905,13 +910,18 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "useCollections")
+        self.layout.prop(self, "useAllEmpties")
         self.layout.prop(self, "useHidden")
+        self.layout.prop(self, "useCollections")
 
 
     def run(self, context):
         roots = []
-        for ob in getSelectedObjects(context):
+        if self.useAllEmpties:
+            objects = getVisibleObjects(context)
+        else:
+            objects = getSelectedObjects(context)
+        for ob in objects:
             if ob.parent is None:
                 roots.append(ob)
         for root in roots:
@@ -937,7 +947,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                 coll.objects.link(ob)
         for child in ob.children:
             self.eliminateEmpties(child, context, sub, coll)
-        if elim and ob.parent:
+        if elim and ob.type == 'EMPTY' and ob.parent:
             for child in ob.children:
                 wmat = child.matrix_world.copy()
                 if ob.parent_type == 'OBJECT':
