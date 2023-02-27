@@ -404,8 +404,8 @@ class BoneInstance(Instance):
         pb.DazRotMode = self.rotation_order
 
         tchildren = self.targetTransform(pb, node, targets, rig)
-        self.setRotationLockDaz(pb)
-        self.setLocationLockDaz(pb)
+        self.setRotationLockDaz(pb, rig)
+        self.setLocationLockDaz(pb, rig)
 
         for child in self.children.values():
             if isinstance(child, BoneInstance):
@@ -470,7 +470,7 @@ class BoneInstance(Instance):
 
     IndexComp = { 0 : "x", 1 : "y", 2 : "z" }
 
-    def setRotationLockDaz(self, pb):
+    def setRotationLockDaz(self, pb, rig):
         locks,limits,useLimits = self.getLocksLimits(pb, self.node.rotation)
         if pb.rotation_mode == 'QUATERNION':
             return
@@ -483,9 +483,8 @@ class BoneInstance(Instance):
                 idx = self.axes[n]
                 pb.lock_rotation[idx] = lock
         if useLimits and GS.useLimitRot and not self.isPosed:
-            cns = pb.constraints.new('LIMIT_ROTATION')
-            cns.owner_space = 'LOCAL'
-            cns.use_transform_limit = True
+            from .mhx import limitRotation
+            cns = limitRotation(pb, rig)
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
                 if limit is not None:
@@ -510,7 +509,7 @@ class BoneInstance(Instance):
                         setattr(pb, "ik_max_%s" % xyz, maxr)
 
 
-    def setLocationLockDaz(self, pb):
+    def setLocationLockDaz(self, pb, rig):
         locks,limits,useLimits = self.getLocksLimits(pb, self.node.translation)
         # DazLocLocks used to update lock_location
         for n,lock in enumerate(locks):
@@ -521,9 +520,8 @@ class BoneInstance(Instance):
                 idx = self.axes[n]
                 pb.lock_location[idx] = lock
         if useLimits and GS.useLimitLoc:
-            cns = pb.constraints.new('LIMIT_LOCATION')
-            cns.owner_space = 'LOCAL'
-            cns.use_transform_limit = True
+            from .mhx import limitLocation
+            cns = limitLocation(pb, rig)
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
                 if limit is not None:

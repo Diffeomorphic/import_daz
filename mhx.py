@@ -144,6 +144,16 @@ def hintRotation(ikbone, rig):
     cns.use_limit_x = True
 
 
+def limitLocation(bone, rig, prop=None, expr="x"):
+    cns = bone.constraints.new('LIMIT_LOCATION')
+    cns.owner_space = 'LOCAL'
+    cns.use_transform_limit = True
+    if prop is not None:
+        cns.influence = 0.0
+        addDriver(cns, "influence", rig, prop, expr)
+    return cns
+
+
 def limitRotation(bone, rig, prop=None, expr="x"):
     cns = bone.constraints.new('LIMIT_ROTATION')
     cns.owner_space = 'LOCAL'

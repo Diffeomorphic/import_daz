@@ -936,12 +936,15 @@ def toggleLocLocks(self, context):
 #----------------------------------------------------------
 
 def toggleLimits(self, context, attr, type):
+    auto = context.scene.tool_settings.use_keyframe_insert_auto
     for pb in self.pose.bones:
         for cns in pb.constraints:
             if cns.type == type:
                 cns.mute = False
                 if cns.name != "Hint":
                     cns.influence = getattr(self, attr)
+                    if auto:
+                        cns.keyframe_insert("influence")
 
 def toggleRotLimits(self, context):
     toggleLimits(self, context, "DazRotLimits", "LIMIT_ROTATION")
