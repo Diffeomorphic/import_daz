@@ -30,6 +30,7 @@ import math
 from mathutils import *
 from .utils import *
 from .error import *
+from .bone_data import BD
 
 #-------------------------------------------------------------
 #   Simple IK
@@ -372,10 +373,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     hintRotation(foreIK, rig)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
                     cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp)
-                    cns.euler_order = shldrBend.rotation_mode
+                    cns.euler_order = BD.getDefaultMode(shldrBend)
                     cns.use_y = False
                     cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp)
-                    cns.euler_order = shldrTwist.rotation_mode
+                    cns.euler_order = BD.getDefaultMode(shldrTwist)
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(foreBend, foreIK, rig, prop=armProp)
                     cns.euler_order = foreBend.rotation_mode
@@ -390,10 +391,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     hintRotation(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
-                    cns.euler_order = thighBend.rotation_mode
+                    cns.euler_order = BD.getDefaultMode(thighBend)
                     cns.use_y = False
                     cns = copyRotation(thighTwist, thighIK, rig, prop=legProp)
-                    cns.euler_order = thighTwist.rotation_mode
+                    cns.euler_order = BD.getDefaultMode(thighTwist)
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode

@@ -363,20 +363,14 @@ class BoneInstance(Instance):
 
 
     def getRotationMode(self, pb, useEulers):
-        def getDefaultMode(pb):
-            if pb.name in BD.RotationModes.keys():
-                return BD.RotationModes[pb.name][0]
-            else:
-                return 'YZX'
-
         if GS.unflipped:
             return self.rotation_order
         elif useEulers:
-            return getDefaultMode(pb)
+            return BD.getDefaultMode(pb)
         elif GS.useQuaternions and pb.name in BD.SocketBones:
             return 'QUATERNION'
         else:
-            return getDefaultMode(pb)
+            return BD.getDefaultMode(pb)
 
 
     def buildPose(self, figure, inFace, targets, missing):

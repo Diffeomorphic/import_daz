@@ -203,4 +203,12 @@ class BoneData:
             "r_thightwist1" : 1,
         }
 
+
+    def getDefaultMode(self, pb):
+        if pb.name in self.RotationModes.keys():
+            return self.RotationModes[pb.name][0]
+        else:
+            return 'YZX'
+
+
 BD = BoneData()
