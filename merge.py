@@ -897,7 +897,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
     useCollections : BoolProperty(
         name = "Create Collections",
         description = "Replace empties with collections",
-        default = True)
+        default = False)
 
     useHidden : BoolProperty(
         name = "Delete Hidden Empties",
@@ -937,7 +937,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                 coll.objects.link(ob)
         for child in ob.children:
             self.eliminateEmpties(child, context, sub, coll)
-        if elim:
+        if elim and ob.parent:
             for child in ob.children:
                 wmat = child.matrix_world.copy()
                 if ob.parent_type == 'OBJECT':
@@ -952,8 +952,11 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                     setWorldMatrix(child, wmat)
                     deletes.append(ob)
                 elif ob.parent_type == 'VERTEX':
-                    print("Don't delete %s" % ob.name)
-                    pass
+                    activateObject(context, ob.parent)
+                    child.select_set(True)
+                    bpy.ops.object.parent_set(type='VERTEX')
+                    print("Vertex parent: %s > %s" % (ob.parent.name, child.name))
+                    deletes.append(ob)
                 else:
                     raise DazError("Unknown parent type: %s %s" % (child.name, ob.parent_type))
         for empty in deletes:
