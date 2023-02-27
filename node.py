@@ -27,6 +27,7 @@
 
 import bpy
 import math
+import numpy as np
 from mathutils import Matrix, Vector, Euler
 from collections import OrderedDict
 from .asset import Accessor, Asset
@@ -489,10 +490,10 @@ class Instance(Accessor, Channels, SimNode):
             if par and riggrp and vcount and len(par.data.vertices) == vcount:
                 refverts = riggrp["reference_vertices"]["values"]
                 ob.parent = par
-                if False and len(refverts) >= 3:
+                if len(refverts) >= 3:
                     vnums = [refverts[n] for n in [0,1,-1]]
                     xs = [par.data.vertices[vn].co for vn in vnums]
-                    x = (xs[0] + xs[1] + xs[2])/3
+                    x = (xs[0] + xs[1] + xs[-1])/3
                     ob.parent_type = 'VERTEX_3'
                     ob.parent_vertices = vnums
                 else:

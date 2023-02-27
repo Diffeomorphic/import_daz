@@ -951,11 +951,20 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                     child.parent_bone = ob.parent_bone
                     setWorldMatrix(child, wmat)
                     deletes.append(ob)
-                elif ob.parent_type == 'VERTEX':
+                elif ob.parent_type in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
                     activateObject(context, ob.parent)
+                    deselectAllVerts(ob.parent)
+                    for vn in ob.parent_vertices:
+                        ob.parent.data.vertices[vn].select = True
                     child.select_set(True)
-                    bpy.ops.object.parent_set(type='VERTEX')
-                    print("Vertex parent: %s > %s" % (ob.parent.name, child.name))
+                    partypes = {
+                        'VERTEX' : 'VERTEX',
+                        'VERTEX_3' : 'VERTEX_TRI',
+                        'VERTEX_TRI' : 'VERTEX_TRI',
+                    }
+                    partype = partypes[ob.parent_type]
+                    bpy.ops.object.parent_set(type=partype)
+                    print("%s parent: %s > %s" % (ob.parent_type, ob.parent.name, child.name))
                     deletes.append(ob)
                 else:
                     raise DazError("Unknown parent type: %s %s" % (child.name, ob.parent_type))
@@ -1019,7 +1028,8 @@ class RigInfo:
 
     def addObjects(self, ob):
         for child in ob.children:
-            if getHideViewport(child) or child.parent_type in ['VERTEX', 'VERTEX_3']:
+            if (getHideViewport(child) or
+                child.parent_type in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']):
                 continue
             elif child.type != 'ARMATURE':
                 partype = child.parent_type
@@ -1383,7 +1393,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     def reparentObjects(self, info, rig, adds, hdadds, removes):
         for ob,data in info.objects:
             partype, parbone = data
-            if partype in ['VERTEX', 'VERTEX_3']:
+            if partype in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
                 continue
             wmat = ob.matrix_world
             ob.parent = rig

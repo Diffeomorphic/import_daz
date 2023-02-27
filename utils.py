@@ -174,9 +174,6 @@ def setattrOVR(rna, attr, value):
 #-------------------------------------------------------------
 
 def deselectAllVerts(ob):
-    #setMode('EDIT')
-    #bpy.ops.mesh.select_all(action='DESELECT')
-    #setMode('OBJECT')
     for f in ob.data.polygons:
         f.select = False
     for e in ob.data.edges:
@@ -196,7 +193,7 @@ def deleteObjects(context, objects):
 
 def setWorldMatrix(ob, wmat):
     if ob.parent:
-        if ob.parent_type in ['OBJECT', 'VERTEX', 'VERTEX_3']:
+        if ob.parent_type in ['OBJECT', 'VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
             ob.matrix_parent_inverse = ob.parent.matrix_world.inverted()
         elif ob.parent_type == 'BONE':
             pb = ob.parent.pose.bones.get(ob.parent_bone)

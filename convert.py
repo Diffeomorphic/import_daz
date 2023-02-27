@@ -103,7 +103,7 @@ class DAZ_OT_OptimizePose(DazPropsOperator, IsArmature):
     useApplyRestPose : BoolProperty(
         name = "Apply Rest Pose",
         description = "Apply current pose as rest pose for all armatures",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useApplyRestPose")
