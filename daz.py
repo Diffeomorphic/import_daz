@@ -304,7 +304,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.label(text = "Rigging")
         box.prop(scn, "DazUseArmature")
         box.prop(scn, "DazUseQuaternions")
-        box.prop(scn, "DazConnectClose")
         box.prop(scn, "DazUseLockLoc")
         box.prop(scn, "DazUseLimitLoc")
         box.prop(scn, "DazUseLockRot")
@@ -636,10 +635,6 @@ def register():
     bpy.types.Scene.DazMaterialsByName = BoolProperty(
         name = "Sort Materials Alphabetically",
         description = "Materials are sorted in alphabetical order.\nIf disabled the order in the duf file is used")
-
-    bpy.types.Scene.DazConnectClose = BoolProperty(
-        name = "Connect Close",
-        description = "Connect bones to their parent if the head is close to the parent's tail")
 
     bpy.types.Scene.DazUseLockLoc = BoolProperty(
         name = "Location Locks",

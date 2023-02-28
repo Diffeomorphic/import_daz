@@ -111,7 +111,6 @@ class GlobalSettings:
         self.useLimitRot = True
         self.useInheritScale = False
         self.displayLimitRot = False
-        self.useConnectClose = False
 
         self.useInstancing = True
         self.useHairGuides = False
@@ -196,7 +195,6 @@ class GlobalSettings:
         "DazUseArmature" : "useArmature",
         "DazUnflipped" : "unflipped",
         "DazUseQuaternions" : "useQuaternions",
-        "DazConnectClose" : "useConnectClose",
         "DazUseLockLoc" : "useLockLoc",
         "DazUseLimitLoc" : "useLimitLoc",
         "DazUseLockRot" : "useLockRot",

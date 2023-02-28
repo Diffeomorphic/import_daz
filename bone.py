@@ -174,11 +174,6 @@ class BoneInstance(Instance):
             self.correctRoll(eb, figure)
         self.correctLength(eb, length)
 
-        if GS.useConnectClose and parent:
-            dist = parent.tail - eb.head
-            if dist.length < 1e-4*LS.scale:
-                eb.use_connect = True
-
         if self.name in ["upperFaceRig", "lowerFaceRig"]:
             isFace = True
         for child in self.children.values():
