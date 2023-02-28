@@ -205,7 +205,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         description = "Add copy rotation constraints for bend and twist bones",
         default = True)
 
+    useRootBone : BoolProperty(
+        name = "Root Bone",
+        description = "Add a root bone which is the parent of all other bones",
+        default = True)
+
     def draw(self, context):
+        self.layout.prop(self, "useRootBone")
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
@@ -292,10 +298,19 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
         setMode('EDIT')
         ebones = rig.data.edit_bones
+        if self.useRootBone:
+            roots = [eb for eb in ebones if eb.parent is None]
+            root = makeBone("Root", rig, (0,0,0), (0,0,10*rig.DazScale), 0, 16, None)
+            for eb in roots:
+                eb.parent = root
+            csRoot = makeCustomShape("CS_Root", "CircleY")
+        else:
+            root = None
+
         for prefix,dl in [("l",0), ("r",1)]:
             if self.useArms:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = getEntry(armTable, genesis, prefix, ebones)
-                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, 0, None)
+                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, 0, root)
                 foreTwist.tail = hand.head
                 if genesis == "G38" and self.useCopyRotation:
                     layer = 26+dl
@@ -307,7 +322,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
             if self.useLegs:
                 foot, fikname, thighBend, thighTwist, shin, hip, kneename = getEntry(legTable, genesis, prefix, ebones)
-                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 0, None)
+                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 0, root)
                 shin.tail = foot.head
                 if genesis == "G38" and self.useCopyRotation:
                     layer = 28+dl
@@ -319,6 +334,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
 
         setMode('OBJECT')
         rpbs = rig.pose.bones
+        if self.useRootBone:
+            root = rpbs["Root"]
+            setCustomShape(root, csRoot, 7)
+
         for prefix in ["l", "r"]:
             suffix = prefix.upper()
             if self.useArms:
@@ -412,8 +431,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     cns = copyRotation(foreBend, foreIK, rig, prop=armProp)
                     cns.euler_order = foreBend.rotation_mode
                     cns.use_y = False
-                    cns = copyRotation(foreTwist, hand, rig, prop=armProp)
-                    cns.euler_order = foreTwist.rotation_mode
+                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL_WITH_PARENT')
                     cns.use_x = cns.use_z = False
                 if self.useLegs:
                     thighIK, shinIK = getEntry(legTable2, genesis, prefix, rpbs)
