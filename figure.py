@@ -506,47 +506,26 @@ class ExtraBones(DriverUser):
 
 
     def addCopyConstraint(self, rig, bname, boneDrivers, sumDrivers):
-        def addFields(cns, rig, bname):
+        if (self.hasBoneDriver(bname, boneDrivers) or
+            self.hasBoneDriver(bname, sumDrivers)):
+            pb = rig.pose.bones[bname]
+            cns = pb.constraints.new('COPY_TRANSFORMS')
+            cns.name = "Copy %s" % bname
             cns.target = rig
             cns.subtarget = drvBone(bname)
             cns.target_space = 'LOCAL'
             cns.owner_space = 'LOCAL'
             cns.influence = 1.0
-
-        pb = rig.pose.bones[bname]
-        isLoc1,isRot1,isScale1 = self.isSuchDriver(bname, boneDrivers)
-        isLoc2,isRot2,isScale2 = self.isSuchDriver(bname, sumDrivers)
-        if isLoc1 or isLoc2:
-            cns = pb.constraints.new('COPY_LOCATION')
-            cns.name = "Copy Location %s" % bname
-            addFields(cns, rig, bname)
-            cns.use_offset = True
-        if isRot1 or isRot2:
-            cns = pb.constraints.new('COPY_ROTATION')
-            cns.name = "Copy Rotation %s" % bname
-            if pb.parent and pb.parent.rotation_mode != 'QUATERNION':
-                cns.euler_order = pb.parent.rotation_mode
-            addFields(cns, rig, bname)
-            cns.mix_mode = 'ADD'
-        if isScale1 or isScale2:
-            cns = pb.constraints.new('COPY_SCALE')
-            cns.name = "Copy Scale %s" % bname
-            addFields(cns, rig, bname)
-            cns.use_offset = True
+            cns.mix_mode = 'AFTER'
 
 
-    def isSuchDriver(self, bname, drivers):
-        isLoc = isRot = isScale = False
+    def hasBoneDriver(self, bname, drivers):
         if bname in drivers.keys():
             for drv in drivers[bname]:
                 channel = drv.data_path.rsplit(".",1)[-1]
-                if channel == "location":
-                    isLoc = True
-                elif channel in ["rotation_euler", "rotation_quaternion"]:
-                    isRot = True
-                elif channel == "scale":
-                    isScale = True
-        return isLoc, isRot, isScale
+                if channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
+                    return True
+        return False
 
 
     def updateScriptedDrivers(self, rna):
@@ -773,8 +752,8 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
         elif rig.DazRig[0:6] == "rigify":
             eb.layers = 2*[False] + [True] + 29*[False]
 
-    def isSuchDriver(self, bname, drivers):
-        return True, True, False
+    def hasBoneDriver(self, bname, drivers):
+        return True
 
 
 def getAnchoredBoneNames(rig, anchors):
@@ -828,9 +807,8 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
     def changeLayer(self, eb, rig):
         pass
 
-    def isSuchDriver(self, bname, drivers):
-        #isLoc,isRot,isScale = ExtraBones.isSuchDriver(self, bname, drivers)
-        return True, True, True
+    def hasBoneDriver(self, bname, drivers):
+        return True
 
 #-------------------------------------------------------------
 #   Fix legacy posable bones
@@ -864,8 +842,8 @@ class DAZ_OT_FixLegacyPosable(DazOperator, ExtraBones, IsArmature):
             self.addCopyConstraint(rig, bname, [], [])
 
 
-    def isSuchDriver(self, bname, drivers):
-        return True, True, True
+    def hasBoneDriver(self, bname, drivers):
+        return True
 
 #-------------------------------------------------------------
 #   Finalize bones
@@ -881,16 +859,12 @@ def finalizeArmature(rig):
             isLoc = isRot = isScale = False
             if db:
                 drivers = {drvname : getBoneDrivers(rig, db)}
-                isLoc,isRot,isScale = extras.isSuchDriver(drvname, drivers)
-                for test,ctype,cname in [
-                    (isLoc, 'COPY_LOCATION', "Copy Location %s" % pb.name),
-                    (isRot, 'COPY_ROTATION', "Copy Rotation %s" % pb.name),
-                    (isScale, 'COPY_SCALE', "Copy Scale %s" % pb.name)]:
-                    if not test:
-                        for cns in pb.constraints:
-                            if cns.type == ctype and cns.name == cname:
-                                pb.constraints.remove(cns)
-                                break
+                if not extras.hasBoneDriver(drvname, drivers):
+                    cname = "Copy %s" % pb.name
+                    for cns in pb.constraints:
+                        if cns.type == 'COPY_TRANSFORMS' and cns.name == cname:
+                            pb.constraints.remove(cns)
+                            break
     rig.data.DazFinalized = True
 
 
