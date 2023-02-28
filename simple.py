@@ -43,19 +43,49 @@ class SimpleIK:
         else:
             self.usePoleTargets = False
 
-
     G38Arm = ["ShldrBend", "ShldrTwist", "ForearmBend", "ForearmTwist", "Hand"]
     G38Leg = ["ThighBend", "ThighTwist", "Shin", "Foot"]
-    G38Spine = ["hip", "abdomenLower", "abdomenUpper", "chestLower", "chestUpper"]
-    G38Neck = ["neckLower", "neckUpper"]
+    G38Spine = ["abdomenLower", "abdomenUpper", "chestLower", "chestUpper"]
+    G38Neck = ["neckLower", "neckUpper", "head"]
+    G38Thumb = ["Thumb1", "Thumb2", "Thumb3"]
+    G38Index = ["Index1", "Index2", "Index3"]
+    G38Mid = ["Mid1", "Mid2", "Mid3"]
+    G38Ring = ["Ring1", "Ring2", "Ring3"]
+    G38Pinky = ["Pinky1", "Pinky2", "Pinky3"]
+    G38BigToe = ["BigToe", "BigToe_2"]
+    G38SmallToe1 = ["SmallToe1", "SmallToe1_2"]
+    G38SmallToe2 = ["SmallToe2", "SmallToe2_2"]
+    G38SmallToe3 = ["SmallToe3", "SmallToe3_2"]
+    G38SmallToe4 = ["SmallToe4", "SmallToe4_2"]
+    G38Tongue = ["tongue01", "tongue02", "tongue03", "tongue04"]
+
     G12Arm = ["Shldr", "ForeArm", "Hand"]
     G12Leg = ["Thigh", "Shin", "Foot"]
-    G12Spine = ["hip", "abdomen", "abdomen2", "spine", "chest"]
-    G12Neck = ["neck"]
+    G12Spine = ["abdomen", "abdomen2", "spine", "chest"]
+    G12Neck = ["neck", "head"]
+    G12Thumb = G38Thumb
+    G12Index = G38Index
+    G12Mid = G38Mid
+    G12Ring = G38Ring
+    G12Pinky = G38Pinky
+    G12BigToe = G12SmallToe1 = G12SmallToe2 = G12SmallToe3 = G12SmallToe4 = []
+    G12Tongue = ["tongueBase", "tongue01", "tongue02", "tongue03", "tongue04", "tongue05", "tongueTip"]
+
     G9Arm = ["_upperarm", "_forearm", "_hand"]
     G9Leg = ["_thigh", "_shin", "_foot"]
-    G9Spine = ["hip", "spine1", "spine2", "spine3", "spine4"]
-    G9Neck = ["neck1", "neck2"]
+    G9Spine = ["spine1", "spine2", "spine3", "spine4"]
+    G9Neck = ["neck1", "neck2", "head"]
+    G9Thumb = ["_thumb1", "_thumb2", "_thumb3"]
+    G9Index = ["_index1", "_index2", "_index3"]
+    G9Mid = ["_mid1", "_mid2", "_mid3"]
+    G9Ring = ["_ring1", "_ring2", "_ring3"]
+    G9Pinky = ["_pinky1", "_pinky2", "_pinky3"]
+    G9BigToe = ["_bigtoe1", "_bigtoe2"]
+    G9SmallToe1 = ["_indextoe1", "_indextoe2"]
+    G9SmallToe2 = ["_midtoe1", "_midtoe2"]
+    G9SmallToe3 = ["_ringtoe1", "_ringtoe2"]
+    G9SmallToe4 = ["_pinkytoe1", "_pinkytoe2"]
+    G9Tongue = ["tongue01", "tongue02", "tongue03", "tongue04", "tongue05"]
 
     def storeProps(self, rig):
         self.ikprops = (rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R)
@@ -382,7 +412,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     cns = copyRotation(foreBend, foreIK, rig, prop=armProp)
                     cns.euler_order = foreBend.rotation_mode
                     cns.use_y = False
-                    cns = copyRotation(foreTwist, foreIK, rig, prop=armProp)
+                    cns = copyRotation(foreTwist, hand, rig, prop=armProp)
                     cns.euler_order = foreTwist.rotation_mode
                     cns.use_x = cns.use_z = False
                 if self.useLegs:
@@ -589,13 +619,13 @@ class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
             elif pb.name in IK.G38Spine + IK.G12Spine + IK.G9Spine:
                 self.makeSpine(pb, spineWidth)
                 addToLayer(pb, "Spine", rig, "Spine")
-            elif pb.name in IK.G38Neck + IK.G12Neck + IK.G9Neck:
-                self.makeSpine(pb, 0.5*spineWidth)
-                addToLayer(pb, "Spine", rig, "Spine")
             elif pb.name == "head":
                 self.makeSpine(pb, 0.7*spineWidth, 1)
                 addToLayer(pb, "Spine", rig, "Spine")
                 addToLayer(pb, "Face")
+            elif pb.name in IK.G38Neck + IK.G12Neck + IK.G9Neck:
+                self.makeSpine(pb, 0.5*spineWidth)
+                addToLayer(pb, "Spine", rig, "Spine")
             elif "toe" in lname:
                 setCustomShape(pb, circleY2)
                 addToLayer(pb, "Foot", rig, "Limb")
@@ -796,23 +826,54 @@ def setCustomShape(pb, shape, scale=None, offset=None):
         pb.custom_shape_translation.y = offset*pb.bone.length
 
 #----------------------------------------------------------
-#   Connect bones in IK chains
+#   Connect bone chains
 #----------------------------------------------------------
 
-class DAZ_OT_ConnectIKChains(DazPropsOperator, SimpleIK, IsArmature):
-    bl_idname = "daz.connect_ik_chains"
-    bl_label = "Connect IK Chains"
-    bl_description = "Connect all bones in IK chains to their parents"
+class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
+    bl_idname = "daz.connect_bone_chains"
+    bl_label = "Connect Bone Chains"
+    bl_description = "Connect all bones in chains to their parents"
     bl_options = {'UNDO'}
 
-    type : EnumProperty(
-        items = [('ARMS', "Arms Only", "Connect arms only"),
-                 ('LEGS', "Legs Only", "Connect legs only"),
-                 ('ARMSLEGS', "Arms And Legs", "Connect both arms and legs"),
-                 ('SELECTED', "Selected", "Connect selected bones")],
-        name = "Chain Types",
-        description = "Connect the specified types of chains",
-        default = 'ARMSLEGS')
+    useArms : BoolProperty(
+        name = "Arms",
+        description = "Connect arm bones",
+        default = True)
+
+    useLegs : BoolProperty(
+        name = "Legs",
+        description = "Connect leg bones",
+        default = True)
+
+    useSpine : BoolProperty(
+        name = "Spine",
+        description = "Connect spine bones",
+        default = False)
+
+    useNeck : BoolProperty(
+        name = "Neck",
+        description = "Connect neck bones",
+        default = False)
+
+    useFingers : BoolProperty(
+        name = "Fingers",
+        description = "Connect finger bones",
+        default = True)
+
+    useToes : BoolProperty(
+        name = "Toes",
+        description = "Connect toe bones",
+        default = True)
+
+    useTongue : BoolProperty(
+        name = "Tongue",
+        description = "Connect tongue bones",
+        default = True)
+
+    useSelected : BoolProperty(
+        name = "Selected",
+        description = "Connect selected bones",
+        default = False)
 
     unlock : BoolProperty(
         name = "Unlock Last Bone",
@@ -828,7 +889,15 @@ class DAZ_OT_ConnectIKChains(DazPropsOperator, SimpleIK, IsArmature):
         default = 'HEAD')
 
     def draw(self, context):
-        self.layout.prop(self, "type")
+        self.layout.prop(self, "useSelected")
+        if not self.useSelected:
+            self.layout.prop(self, "useArms")
+            self.layout.prop(self, "useLegs")
+            self.layout.prop(self, "useSpine")
+            self.layout.prop(self, "useNeck")
+            self.layout.prop(self, "useFingers")
+            self.layout.prop(self, "useToes")
+            self.layout.prop(self, "useTongue")
         self.layout.prop(self, "location")
         self.layout.prop(self, "unlock")
 
@@ -868,26 +937,42 @@ class DAZ_OT_ConnectIKChains(DazPropsOperator, SimpleIK, IsArmature):
 
     def getBoneNames(self, rig):
         self.chains = []
-        if self.type == 'ARMS':
-            for prefix in ["l", "r"]:
-                chain = self.getLimbBoneNames(rig, prefix, "Arm")
-                self.chains.append(chain)
-        elif self.type == 'LEGS':
-            for prefix in ["l", "r"]:
-                chain = self.getLimbBoneNames(rig, prefix, "Leg")
-                self.chains.append(chain)
-        elif self.type == 'ARMSLEGS':
-            for prefix in ["l", "r"]:
-                for type in ["Arm", "Leg"]:
-                    chain = self.getLimbBoneNames(rig, prefix, type)
-                    self.chains.append(chain)
-        elif self.type == 'SELECTED':
+        if self.useSelected:
             roots = []
             for bone in rig.data.bones:
                 if bone.parent is None:
                     roots.append(bone)
             for root in roots:
                 self.getChildNames(rig, root)
+            return self.chains
+        if self.useArms:
+            for prefix in ["l", "r"]:
+                chain = self.getLimbBoneNames(rig, prefix, "Arm")
+                self.chains.append(chain)
+        if self.useLegs:
+            for prefix in ["l", "r"]:
+                chain = self.getLimbBoneNames(rig, prefix, "Leg")
+                self.chains.append(chain)
+        if self.useFingers:
+            for prefix in ["l", "r"]:
+                for finger in ["Thumb", "Index", "Mid", "Ring", "Pinky"]:
+                    chain = self.getLimbBoneNames(rig, prefix, finger)
+                    self.chains.append(chain)
+        if self.useToes:
+            for prefix in ["l", "r"]:
+                for toe in ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]:
+                    chain = self.getLimbBoneNames(rig, prefix, toe)
+                    if chain:
+                        self.chains.append(chain)
+        if self.useTongue:
+            chain = self.getLimbBoneNames(rig, "", "Tongue")
+            self.chains.append(chain)
+        if self.useSpine:
+            chain = self.getLimbBoneNames(rig, "", "Spine")
+            self.chains.append(chain)
+        if self.useNeck:
+            chain = self.getLimbBoneNames(rig, "", "Neck")
+            self.chains.append(chain)
         return self.chains
 
 
@@ -1000,7 +1085,7 @@ classes = [
     DAZ_OT_AddSimpleIK,
     DAZ_OT_SnapSimpleFK,
     DAZ_OT_SnapSimpleIK,
-    DAZ_OT_ConnectIKChains,
+    DAZ_OT_ConnectBoneChains,
     DAZ_OT_SelectNamedLayers,
     DAZ_OT_UnSelectNamedLayers,
 ]
