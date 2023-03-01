@@ -923,7 +923,11 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
     def run(self, context):
         rig = context.object
         self.getBoneNames(rig)
-        setMode("EDIT")
+        wmats = []
+        for ob in rig.children:
+            if ob.parent_type == 'BONE':
+                wmats.append((ob, ob.matrix_world.copy()))
+        setMode('EDIT')
         for chain in self.chains:
             parb = rig.data.edit_bones[chain[0]]
             for child in chain[1:]:
@@ -937,10 +941,12 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
                     eb.use_connect = True
                 parb = eb
         if self.unlock:
-            setMode("EDIT")
             for chain in self.chains:
                 pb = rig.pose.bones[chain[-1]]
                 pb.lock_location = (False,False,False)
+        setMode('OBJECT')
+        for ob,wmat in wmats:
+            setWorldMatrix(ob, wmat)
 
 
     def relocate(self, parb, eb):

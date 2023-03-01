@@ -853,16 +853,14 @@ def finalizeArmature(rig):
     from .driver import getBoneDrivers
     extras = ExtraBones()
     for pb in rig.pose.bones:
-        if not isDrvBone(pb.name) and not isFinal(pb.name):
+        if not isDrvBone(pb.name):
             drvname = drvBone(pb.name)
             db = rig.pose.bones.get(drvname)
-            isLoc = isRot = isScale = False
             if db:
                 drivers = {drvname : getBoneDrivers(rig, db)}
                 if not extras.hasBoneDriver(drvname, drivers):
-                    cname = "Copy %s" % pb.name
                     for cns in pb.constraints:
-                        if cns.type == 'COPY_TRANSFORMS' and cns.name == cname:
+                        if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
                             pb.constraints.remove(cns)
                             break
     rig.data.DazFinalized = True
