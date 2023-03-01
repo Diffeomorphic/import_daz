@@ -68,8 +68,9 @@ class Separator:
     def getMeshHairs(self, context, hair, hum):
         hairs = []
         if self.useSeparateLoose:
-            bpy.ops.mesh.separate(type='LOOSE')
-            #bpy.ops.daz.separate_loose_parts()
+            print("Separate loose parts")
+            #bpy.ops.mesh.separate(type='LOOSE')
+            bpy.ops.daz.separate_loose_parts()
             print("Loose parts separated")
         setMode('OBJECT')
         hname = baseName(hair.name)
