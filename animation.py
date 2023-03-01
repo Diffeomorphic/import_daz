@@ -2031,66 +2031,82 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         for frame in range(self.first, self.last+1):
             L = self.Ls[frame] = {}
             smats = {}
-
-            rot = rig.rotation_euler.copy()
-            for idx,fcu in enumerate(self.rots[""]):
-                if fcu:
-                    rot[idx] = fcu.evaluate(frame)
-            mat = rot.to_matrix().to_4x4()
-
-            if self.useScale:
-                scale = rig.scale.copy()
-                for idx,fcu in enumerate(self.scales[""]):
-                    if fcu:
-                        scale[idx] = fcu.evaluate(frame)
-                smat = Matrix.Diagonal(scale)
-                mat = mat @ smat.to_4x4()
-
-            loc = rig.location.copy()
-            for idx,fcu in enumerate(self.locs[""]):
-                if fcu:
-                    loc[idx] = fcu.evaluate(frame)
-            mat.col[3][0:3] = loc
+            mat = self.getRigMatrix(rig, frame)
+            root = rig.pose.bones.get("Root")
+            if root is None:
+                root = rig.pose.bones.get("master")
+            if root and root.parent is None:
+                rmat = self.getBoneMatrix(root, root.name, smats, frame)
+                rmat = root.bone.matrix_local @ rmat @ root.bone.matrix_local.inverted()
+                mat = rmat @ mat
             L[""] = self.Finv[""] @ mat @ self.F[""]
 
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
-                    if bname in self.quats.keys():
-                        quat = pb.rotation_quaternion.copy()
-                        for idx,fcu in enumerate(self.quats[bname]):
-                            if fcu:
-                                quat[idx] = fcu.evaluate(frame)
-                        mat = quat.to_matrix().to_4x4()
-                    elif bname in self.rots.keys():
-                        rot = pb.rotation_euler.copy()
-                        for idx,fcu in enumerate(self.rots[bname]):
-                            if fcu:
-                                rot[idx] = fcu.evaluate(frame)
-                        mat = rot.to_matrix().to_4x4()
-                    else:
+                    mat = self.getBoneMatrix(pb, bname, smats, frame)
+                    if mat is None:
                         continue
-
-                    if self.useScale and bname in self.scales.keys():
-                        scale = pb.scale.copy()
-                        for idx,fcu in enumerate(self.scales[bname]):
-                            if fcu:
-                                scale[idx] = fcu.evaluate(frame)
-                        smat = Matrix.Diagonal(scale)
-                        if (pb.parent and
-                            pb.parent.name in smats.keys() and
-                            inheritsScale(pb)):
-                            psmat = smats[pb.parent.name]
-                            smat = smat @ psmat
-                        mat = mat @ smat.to_4x4()
-                        smats[pb.name] = smat
-
-                    if bname in self.locs.keys():
-                        loc = pb.location.copy()
-                        for idx,fcu in enumerate(self.locs[bname]):
-                            if fcu:
-                                loc[idx] = fcu.evaluate(frame)
-                        mat.col[3][0:3] = loc
                     L[bname] = self.Finv[bname] @ mat @ self.F[bname]
+
+
+    def getRigMatrix(self, rig, frame):
+        rot = rig.rotation_euler.copy()
+        for idx,fcu in enumerate(self.rots[""]):
+            if fcu:
+                rot[idx] = fcu.evaluate(frame)
+        mat = rot.to_matrix().to_4x4()
+        if self.useScale:
+            scale = rig.scale.copy()
+            for idx,fcu in enumerate(self.scales[""]):
+                if fcu:
+                    scale[idx] = fcu.evaluate(frame)
+            smat = Matrix.Diagonal(scale)
+            mat = mat @ smat.to_4x4()
+        loc = rig.location.copy()
+        for idx,fcu in enumerate(self.locs[""]):
+            if fcu:
+                loc[idx] = fcu.evaluate(frame)
+        mat.col[3][0:3] = loc
+        return mat
+
+
+    def getBoneMatrix(self, pb, bname, smats, frame):
+        if bname in self.quats.keys():
+            quat = pb.rotation_quaternion.copy()
+            for idx,fcu in enumerate(self.quats[bname]):
+                if fcu:
+                    quat[idx] = fcu.evaluate(frame)
+            mat = quat.to_matrix().to_4x4()
+        elif bname in self.rots.keys():
+            rot = pb.rotation_euler.copy()
+            for idx,fcu in enumerate(self.rots[bname]):
+                if fcu:
+                    rot[idx] = fcu.evaluate(frame)
+            mat = rot.to_matrix().to_4x4()
+        else:
+            return None
+
+        if self.useScale and bname in self.scales.keys():
+            scale = pb.scale.copy()
+            for idx,fcu in enumerate(self.scales[bname]):
+                if fcu:
+                    scale[idx] = fcu.evaluate(frame)
+            smat = Matrix.Diagonal(scale)
+            if (pb.parent and
+                pb.parent.name in smats.keys() and
+                inheritsScale(pb)):
+                psmat = smats[pb.parent.name]
+                smat = smat @ psmat
+            mat = mat @ smat.to_4x4()
+            smats[pb.name] = smat
+
+        if bname in self.locs.keys():
+            loc = pb.location.copy()
+            for idx,fcu in enumerate(self.locs[bname]):
+                if fcu:
+                    loc[idx] = fcu.evaluate(frame)
+            mat.col[3][0:3] = loc
+        return mat
 
 
     def setupDriven(self, rig):
@@ -2176,6 +2192,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def getBoneNames(self, bname):
         if bname in self.conv.keys():
             return self.conv[bname]
+        elif bname.lower() in ["root", "master"]:
+            return [bname]
         else:
             return []
 
@@ -2210,6 +2228,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         anims = []
         if self.useBones:
             for pb in rig.pose.bones:
+                if pb.name.lower() in ["root", "master"]:
+                    continue
                 for bname in self.getBoneNames(pb.name):
                     Ls = [self.Ls[frame][bname] for frame in range(self.first, self.last+1)]
                     if self.isLocUnlocked(pb, bname):
