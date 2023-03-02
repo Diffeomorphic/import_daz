@@ -1809,6 +1809,9 @@ class FakeCurve:
     def __init__(self, value):
         self.value = value
 
+    def __repr__(self):
+        return "%g" % self.value
+
     def evaluate(self, frame):
         return self.value
 
@@ -1919,7 +1922,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.getFakeCurves(rig)
         if self.useBones:
             self.setupFlipper(rig)
-            self.setupFrames(rig)
+            self.setupFrames(context, rig)
         self.saveFile(rig)
 
 
@@ -2006,10 +2009,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         self.loclocks = {}
         self.rotlocks = {}
 
-        Fn = rig.matrix_local.inverted() @ self.Z
-        self.F[""] = Fn
-        self.Finv[""] = Fn.inverted()
-
         for pb in rig.pose.bones:
             euler = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ')
             dmat = euler.to_matrix().to_4x4()
@@ -2026,9 +2025,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.loclocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_location) @ Fn.to_3x3()]
 
 
-    def setupFrames(self, rig):
+    def setupFrames(self, context, rig):
         self.Ls = {}
         for frame in range(self.first, self.last+1):
+            context.scene.frame_current = frame
+            updateScene(context)
             L = self.Ls[frame] = {}
             smats = {}
             mat = self.getRigMatrix(rig, frame)
@@ -2039,7 +2040,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 rmat = self.getBoneMatrix(root, root.name, smats, frame)
                 rmat = root.bone.matrix_local @ rmat @ root.bone.matrix_local.inverted()
                 mat = rmat @ mat
-            L[""] = self.Finv[""] @ mat @ self.F[""]
+            Fn = rig.matrix_local.inverted() @ self.Z
+            L[""] = Fn.inverted() @ mat @ Fn
 
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
@@ -2066,8 +2068,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         for idx,fcu in enumerate(self.locs[""]):
             if fcu:
                 loc[idx] = fcu.evaluate(frame)
-        mat.col[3][0:3] = loc
-        return mat
+        return Matrix.Translation(loc) @ mat
 
 
     def getBoneMatrix(self, pb, bname, smats, frame):
@@ -2105,7 +2106,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             for idx,fcu in enumerate(self.locs[bname]):
                 if fcu:
                     loc[idx] = fcu.evaluate(frame)
-            mat.col[3][0:3] = loc
+            mat = Matrix.Translation(loc) @ mat
         return mat
 
 
