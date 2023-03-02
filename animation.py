@@ -1922,7 +1922,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.getFakeCurves(rig)
         if self.useBones:
             self.setupFlipper(rig)
-            self.setupFrames(context, rig)
+            self.setupFrames(rig)
         self.saveFile(rig)
 
 
@@ -2025,11 +2025,9 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.loclocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_location) @ Fn.to_3x3()]
 
 
-    def setupFrames(self, context, rig):
+    def setupFrames(self, rig):
         self.Ls = {}
         for frame in range(self.first, self.last+1):
-            context.scene.frame_current = frame
-            updateScene(context)
             L = self.Ls[frame] = {}
             smats = {}
             mat = self.getRigMatrix(rig, frame)
@@ -2039,9 +2037,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             if root and root.parent is None:
                 rmat = self.getBoneMatrix(root, root.name, smats, frame)
                 rmat = root.bone.matrix_local @ rmat @ root.bone.matrix_local.inverted()
-                mat = rmat @ mat
-            Fn = rig.matrix_local.inverted() @ self.Z
-            L[""] = Fn.inverted() @ mat @ Fn
+                mat = mat @ rmat
+            L[""] = self.Z.inverted() @ mat @ self.Z
 
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
