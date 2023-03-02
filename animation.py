@@ -2024,16 +2024,21 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.rotlocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_rotation) @ Fn.to_3x3()]
                 self.loclocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_location) @ Fn.to_3x3()]
 
+    RootNames = ["Root", "master", "root"]
 
     def setupFrames(self, rig):
+        def getRoot(rig):
+            for bname in self.RootNames:
+                if bname in rig.pose.bones.keys():
+                    return rig.pose.bones[bname]
+            return None
+
         self.Ls = {}
         for frame in range(self.first, self.last+1):
             L = self.Ls[frame] = {}
             smats = {}
             mat = self.getRigMatrix(rig, frame)
-            root = rig.pose.bones.get("Root")
-            if root is None:
-                root = rig.pose.bones.get("master")
+            root = getRoot(rig)
             if root and root.parent is None:
                 rmat = self.getBoneMatrix(root, root.name, smats, frame)
                 rmat = root.bone.matrix_local @ rmat @ root.bone.matrix_local.inverted()
@@ -2190,7 +2195,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def getBoneNames(self, bname):
         if bname in self.conv.keys():
             return self.conv[bname]
-        elif bname.lower() in ["root", "master"]:
+        elif bname in self.RootNames:
             return [bname]
         else:
             return []
@@ -2226,7 +2231,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         anims = []
         if self.useBones:
             for pb in rig.pose.bones:
-                if pb.name.lower() in ["root", "master"]:
+                if pb.name in self.RootNames:
                     continue
                 for bname in self.getBoneNames(pb.name):
                     Ls = [self.Ls[frame][bname] for frame in range(self.first, self.last+1)]
