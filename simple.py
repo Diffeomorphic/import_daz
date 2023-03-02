@@ -269,7 +269,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         armTable = {
             "G12" : ("Hand", "HandIK", "Shldr", "Shldr", "ForeArm", "ForeArm", "Collar", "Elbow"),
             "G38" : ("Hand", "HandIK", "ShldrBend", "ShldrTwist", "ForearmBend", "ForearmTwist", "Collar", "Elbow"),
-            "G9" : ("_hand", "_handIK", "_shldr", "_shldr", "_forearm", "_forearm", "_shoulder", "_elbow"),
+            "G9" : ("_hand", "_handIK", "_upperarm", "_upperarm", "_forearm", "_forearm", "_shoulder", "_elbow"),
         }
 
         legTable = {
