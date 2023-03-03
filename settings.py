@@ -591,7 +591,7 @@ class LocalSettings:
         self.refObjects = {}
         self.fps = 30
         self.integerFrames = True
-        self.mappingNodes = {}
+        self.mappingNodes = []
         self.layeredGroups = {}
         self.missingAssets = {}
         self.hasInstanceChildren = {}
@@ -657,7 +657,8 @@ class LocalSettings:
 
 
     def fixMappingNodes(self):
-        for node,data in self.mappingNodes.values():
+        for key,node,data in self.mappingNodes:
+            print("Fix mapping", key)
             if "Location" in node.inputs.keys():
                 dx,dy,sx,sy,rz = data
                 node.inputs["Location"].default_value = (dx,dy,0)

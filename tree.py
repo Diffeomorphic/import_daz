@@ -352,11 +352,7 @@ def pruneNodeTree(tree, owner, active=None, useDeleteUnusedNodes=True, useHideTe
                     n += 1
         for node in tree.nodes:
             node.select = False
-            if not marked[node.name]:
-                key = "%s:%s" % (owner.name, node.name)
-                if key in LS.mappingNodes.keys():
-                    print("DEL", key)
-                    del LS.mappingNodes[key]
+            if not marked[node.name] and node.type != "MAPPING":
                 tree.nodes.remove(node)
 
     return marked

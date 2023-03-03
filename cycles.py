@@ -556,16 +556,12 @@ class CyclesTree(Tree):
                 sy = 1/ky
                 dy = oy/ky
             modulo,mapping = self.addMappingNode((dx,dy,sx,sy,0), None)
-            if modolo:
+            if mapping:
                 self.linkVector(self.texco, modulo, 0)
                 self.texco = mapping
-            elif mapping:
-                self.linkVector(self.texco, mapping, 0)
-                self.texco = mapping
 
 
-    def addMappingNode(self, data, map):
-        modulo = mapping = None
+    def addMappingNode(self, data, map, imgname=""):
         dx,dy,sx,sy,rz = data
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
             mapping = self.addNode("ShaderNodeMapping", 1)
@@ -584,9 +580,11 @@ class CyclesTree(Tree):
                 mapping.inputs['Rotation'].default_value = (0,0,rz)
             if map and not map.invert and hasattr(mapping, "use_min"):
                 mapping.use_min = mapping.use_max = 1
-            key = "%s:%s" % (self.owner.name, mapping.name)
-            LS.mappingNodes[key] = (mapping, data)
-        return modulo,mapping
+            key = "%s:%s:%s" % (self.owner.name, mapping.name, imgname)
+            LS.mappingNodes.append((key, mapping, data))
+            return modulo,mapping
+        else:
+            return None,None
 
     #-------------------------------------------------------------
     #   Normal Map
@@ -1759,16 +1757,11 @@ class CyclesTree(Tree):
         if asset.hasMapping(map):
             innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.owner, map)
-            modulo,mapping = self.addMappingNode(data, None)
-            if modulo:
-                if img and img.size[0] == img.size[1]:
-                    print("IM", list(img.size))
-                    innode.extension = 'CLIP'
+            modulo,mapping = self.addMappingNode(data, None, imgname)
+            if mapping:
+                innode.extension = 'CLIP'
                 self.linkVector(mapping, innode)
                 innode = modulo
-            elif mapping:
-                self.linkVector(mapping, innode)
-                innode = mapping
             if map.invert:
                 color,outnode = self.invertColor(map.color, outnode, col+1)
             return innode, texnode, outnode, True
@@ -1835,10 +1828,13 @@ class CyclesTree(Tree):
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
             name = unquote(channel["image"])
+            if name[0] == "#":
+                name = name[1:]
+            name = "LIE %s" % name
             if name in self.layeredGroups.keys():
                 return self.layeredGroups[name]
         else:
-            name = "Layered"
+            name = "LIE Layered"
         node = self.addNode("ShaderNodeGroup", col)
         tree = LS.layeredGroups.get(name)
         if tree:
@@ -1847,7 +1843,7 @@ class CyclesTree(Tree):
             group = LayeredGroup()
             group.create(node, name, self)
             group.addTextureNodes(assets, maps, colorSpace, isMask)
-            if name != "Layered":
+            if name != "LIE Layered":
                 LS.layeredGroups[name] = node.node_tree
         node.width = 240
         node.label = name
