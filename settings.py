@@ -591,7 +591,6 @@ class LocalSettings:
         self.refObjects = {}
         self.fps = 30
         self.integerFrames = True
-        self.mappingNodes = []
         self.layeredGroups = {}
         self.missingAssets = {}
         self.hasInstanceChildren = {}
@@ -654,16 +653,6 @@ class LocalSettings:
         GS.setRootPaths()
         self.useStrict = False
         self.scene = ""
-
-
-    def fixMappingNodes(self):
-        for key,node,data in self.mappingNodes:
-            print("Fix mapping", key)
-            if "Location" in node.inputs.keys():
-                dx,dy,sx,sy,rz = data
-                node.inputs["Location"].default_value = (dx,dy,0)
-                node.inputs["Rotation"].default_value = (0,0,rz)
-                node.inputs["Scale"].default_value = (sx,sy,1)
 
 
     def getMaterialSettings(self, btn):

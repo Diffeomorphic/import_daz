@@ -289,7 +289,7 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree, owner, active=None, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True):
+def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True):
     marked = {}
     if not tree:
         return marked
@@ -298,7 +298,7 @@ def pruneNodeTree(tree, owner, active=None, useDeleteUnusedNodes=True, useHideTe
         if (node.type == 'GROUP' and
             not node.name.startswith("DAZ ") and
             node.outputs):
-            pruneNodeTree(node.node_tree, owner, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
+            pruneNodeTree(node.node_tree, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
 
     if usePruneTexco:
         texcos = []
@@ -352,7 +352,7 @@ def pruneNodeTree(tree, owner, active=None, useDeleteUnusedNodes=True, useHideTe
                     n += 1
         for node in tree.nodes:
             node.select = False
-            if not marked[node.name] and node.type != "MAPPING":
+            if not marked[node.name]:
                 tree.nodes.remove(node)
 
     return marked
@@ -363,7 +363,7 @@ def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePrune
     active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
-            pruneNodeTree(mat.node_tree, mat, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
+            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
 
 # ---------------------------------------------------------------------
 #   TNode and TLink

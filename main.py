@@ -178,13 +178,12 @@ class DazLoader:
 
         # Need to update scene before calculating object areas
         updateScene(context)
-        for asset in main.materials:
-            asset.postbuild()
-
         for asset,inst in main.modifiers:
             asset.postbuild(context, inst)
         for _,inst in main.nodes:
             inst.finalize(context)
+        for asset in main.materials:
+            asset.postbuild()
 
         from .node import finishNodeInstances
         finishNodeInstances(context)
@@ -235,8 +234,6 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
         if len(filepaths) > 1:
             t2 = perf_counter()
             print("Total load time: %.3f seconds" % (t2-t1))
-
-        LS.fixMappingNodes()
 
         self.msg = ""
         if LS.legacySkin:

@@ -45,6 +45,7 @@ class CyclesMaterial(Material):
     def __init__(self, fileref):
         Material.__init__(self, fileref)
         self.tree = None
+        self.mappingNodes = []
 
 
     def __repr__(self):
@@ -117,6 +118,13 @@ class CyclesMaterial(Material):
 
     def postbuild(self):
         Material.postbuild(self)
+        for key,node,data in self.mappingNodes:
+            print("Fix mapping", key)
+            if "Location" in node.inputs.keys():
+                dx,dy,sx,sy,rz = data
+                node.inputs["Location"].default_value = (dx,dy,0)
+                node.inputs["Rotation"].default_value = (0,0,rz)
+                node.inputs["Scale"].default_value = (sx,sy,1)
         if self.tree:
             self.tree.postbuild()
 
@@ -581,7 +589,7 @@ class CyclesTree(Tree):
             if map and not map.invert and hasattr(mapping, "use_min"):
                 mapping.use_min = mapping.use_max = 1
             key = "%s:%s:%s" % (self.owner.name, mapping.name, imgname)
-            LS.mappingNodes.append((key, mapping, data))
+            self.owner.mappingNodes.append((key, mapping, data))
             return modulo,mapping
         else:
             return None,None
@@ -2034,7 +2042,7 @@ class CyclesTree(Tree):
                 difftexname = self.diffuseTex.name
             if self.diffuse:
                 diffname = self.diffuse.name
-            marked = pruneNodeTree(self, self.owner, active)
+            marked = pruneNodeTree(self, active)
             hasDiffuseTex = difftexname and marked.get(difftexname)
             hasDiffuse = diffname and marked.get(diffname)
         else:
