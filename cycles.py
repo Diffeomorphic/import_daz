@@ -238,6 +238,7 @@ class CyclesTree(Tree):
         self.clipsocket = None
         self.useCutout = False
         self.useTranslucency = False
+        self.useModulo = False
         self.pureMetal = False
 
 
@@ -556,20 +557,25 @@ class CyclesTree(Tree):
                 sy = 1/ky
                 dy = oy/ky
             modulo,mapping = self.addMappingNode((dx,dy,sx,sy,0), None)
-            if mapping:
+            if modolo:
                 self.linkVector(self.texco, modulo, 0)
+                self.texco = mapping
+            elif mapping:
+                self.linkVector(self.texco, mapping, 0)
                 self.texco = mapping
 
 
     def addMappingNode(self, data, map):
+        modulo = mapping = None
         dx,dy,sx,sy,rz = data
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
-            modulo = self.addNode("ShaderNodeVectorMath", 0)
-            modulo.operation = 'MODULO'
-            modulo.inputs[1].default_value = (1,1,1)
             mapping = self.addNode("ShaderNodeMapping", 1)
             mapping.vector_type = 'TEXTURE'
-            self.links.new(modulo.outputs[0], mapping.inputs[0])
+            if self.useModulo:
+                modulo = self.addNode("ShaderNodeVectorMath", 0)
+                modulo.operation = 'MODULO'
+                modulo.inputs[1].default_value = (1,1,1)
+                self.links.new(modulo.outputs[0], mapping.inputs[0])
             if hasattr(mapping, "translation"):
                 mapping.translation = (dx,dy,0)
                 mapping.scale = (sx,sy,1)
@@ -582,8 +588,7 @@ class CyclesTree(Tree):
                 mapping.use_min = mapping.use_max = 1
             key = "%s:%s" % (self.owner.name, mapping.name)
             LS.mappingNodes[key] = (mapping, data)
-            return modulo,mapping
-        return None,None
+        return modulo,mapping
 
     #-------------------------------------------------------------
     #   Normal Map
@@ -1757,10 +1762,13 @@ class CyclesTree(Tree):
             innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.owner, map)
             modulo,mapping = self.addMappingNode(data, None)
-            if mapping:
+            if modulo:
                 innode.extension = 'CLIP'
                 self.linkVector(mapping, innode)
                 innode = modulo
+            elif mapping:
+                self.linkVector(mapping, innode)
+                innode = mapping
             if map.invert:
                 color,outnode = self.invertColor(map.color, outnode, col+1)
             return innode, texnode, outnode, True

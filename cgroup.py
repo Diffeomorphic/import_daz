@@ -1690,6 +1690,7 @@ class LayeredGroup(CyclesGroup):
     def addTextureNodes(self, assets, maps, colorSpace, isMask):
         self.outnode = None
         self.mask = None
+        self.useModulo = True
         for asset,map in zip(assets, maps):
             innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, colorSpace)
             if innode:

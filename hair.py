@@ -68,9 +68,11 @@ class Separator:
     def getMeshHairs(self, context, hair, hum):
         hairs = []
         if self.useSeparateLoose:
+            from .geometry import clearMeshProps
             print("Separate loose parts")
-            #bpy.ops.mesh.separate(type='LOOSE')
-            bpy.ops.daz.separate_loose_parts()
+            clearMeshProps(hair.data)
+            bpy.ops.mesh.separate(type='LOOSE')
+            #bpy.ops.daz.separate_loose_parts()
             print("Loose parts separated")
         setMode('OBJECT')
         hname = baseName(hair.name)
@@ -78,14 +80,14 @@ class Separator:
         hairs = []
         for hair in getSelectedMeshes(context):
             if baseName(hair.name) == hname and hair != hum:
-                if self.checkStrip(hair):
+                if self.checkStrip(context, hair):
                     hairs.append(hair)
         if self.sparsity > 1:
             hairs = [hair for n,hair in enumerate(hairs) if n % self.sparsity == 0]
         return hairs
 
 
-    def checkStrip(self, hair):
+    def checkStrip(self, context, hair):
         if not self.useCheckStrips:
             return True
         uvs = hair.data.uv_layers.active.data
@@ -95,7 +97,10 @@ class Separator:
         dy = max(ys) - min(ys)
         isstrip = (dx > 2*dy or dy > 2*dx)
         if not isstrip:
-            raise DazError('"%s" is not a strip.\nDid you separate the scalp from the rest of the hair?' % hair.name)
+            activateObject(context, hair)
+            msg = '"%s" is not a strip.\nDid you separate the scalp from the rest of the hair?' % hair.name
+            print(msg)
+            raise DazError(msg)
         return True
 
 
