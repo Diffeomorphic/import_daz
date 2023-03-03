@@ -238,7 +238,6 @@ class CyclesTree(Tree):
         self.clipsocket = None
         self.useCutout = False
         self.useTranslucency = False
-        self.useModulo = False
         self.pureMetal = False
 
 
@@ -571,11 +570,10 @@ class CyclesTree(Tree):
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
             mapping = self.addNode("ShaderNodeMapping", 1)
             mapping.vector_type = 'TEXTURE'
-            if self.useModulo:
-                modulo = self.addNode("ShaderNodeVectorMath", 0)
-                modulo.operation = 'MODULO'
-                modulo.inputs[1].default_value = (1,1,1)
-                self.links.new(modulo.outputs[0], mapping.inputs[0])
+            modulo = self.addNode("ShaderNodeVectorMath", 0)
+            modulo.operation = 'MODULO'
+            modulo.inputs[1].default_value = (1,1,1)
+            self.links.new(modulo.outputs[0], mapping.inputs[0])
             if hasattr(mapping, "translation"):
                 mapping.translation = (dx,dy,0)
                 mapping.scale = (sx,sy,1)
@@ -1763,7 +1761,9 @@ class CyclesTree(Tree):
             data = asset.getImageMapping(img, self.owner, map)
             modulo,mapping = self.addMappingNode(data, None)
             if modulo:
-                innode.extension = 'CLIP'
+                if img and img.size[0] == img.size[1]:
+                    print("IM", list(img.size))
+                    innode.extension = 'CLIP'
                 self.linkVector(mapping, innode)
                 innode = modulo
             elif mapping:
