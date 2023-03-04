@@ -293,7 +293,6 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.apply_subsurf")
         self.layout.operator("daz.copy_modifiers")
         self.layout.operator("daz.find_seams")
-        self.layout.operator("daz.separate_loose_parts")
 
 
 class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):

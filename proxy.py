@@ -1680,111 +1680,6 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
             raise DazError(msg, True)
 
 #-------------------------------------------------------------
-#   Separate loose parts
-#-------------------------------------------------------------
-
-def separateLoose(ob):
-    def deref(cn):
-        while cn in trail.keys():
-            cn = trail[cn]
-        return cn
-
-    verts = ob.data.vertices
-    nverts = len(verts)
-    clusters = dict([(vn,-1) for vn in range(nverts)])
-    trail = {}
-    cn = 0
-    for e in ob.data.edges:
-        vn1,vn2 = e.vertices
-        cn1 = deref(clusters[vn1])
-        cn2 = deref(clusters[vn2])
-        if cn1 < 0 and cn2 < 0:
-            clusters[vn1] = clusters[vn2] = cn
-            cn += 1
-        elif cn1 < 0:
-            clusters[vn1] = cn2
-        elif cn2 < 0:
-            clusters[vn2] = cn1
-        elif cn1 != cn2:
-            if cn1 < cn2:
-                trail[cn2] = cn1
-                clusters[vn2] = cn1
-            else:
-                trail[cn1] = cn2
-                clusters[vn1] = cn2
-
-    uvlayer = ob.data.uv_layers.active
-    fclusters = {}
-    un = 0
-    for f in ob.data.polygons:
-        vn = f.vertices[0]
-        cn = deref(clusters[vn])
-        if cn not in fclusters.keys():
-            fclusters[cn] = ({}, [], [], [], f.material_index)
-        assoc = fclusters[cn][0]
-        vcoord = fclusters[cn][1]
-        fcluster = fclusters[cn][2]
-        uvcoord = fclusters[cn][3]
-        nf = []
-        nv = len(vcoord)
-        for vn in f.vertices:
-            if vn in assoc.keys():
-                wn = assoc[vn]
-            else:
-                wn = assoc[vn] = nv
-                vcoord.append(verts[vn].co)
-                nv += 1
-            nf.append(wn)
-            uvcoord.append(uvlayer.data[un].uv)
-            un += 1
-        fcluster.append(nf)
-    return fclusters.values()
-
-
-class DAZ_OT_SeparateLooseParts(DazOperator, IsMesh):
-    bl_idname = "daz.separate_loose_parts"
-    bl_label = "Separate Loose Parts"
-    bl_description = "Separate loose parts as separate meshes"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        def getCollections(ob, scn):
-            colls = []
-            if ob.name in scn.collection.objects.keys():
-                colls.append(scn.collection)
-            for coll in bpy.data.collections:
-                if ob.name in coll.objects.keys():
-                    colls.append(coll)
-            return colls
-
-        ob = context.object
-        colls = getCollections(ob, context.scene)
-        if not colls:
-            return
-        fclusters = separateLoose(ob)
-        idx = -1
-        for _assoc,verts,faces,uvcoord,mnum in fclusters:
-            idx += 1
-            me = bpy.data.meshes.new(ob.name)
-            me.from_pydata(verts, [], faces)
-            uvlayer = me.uv_layers.new(name="Default")
-            for n,uv in enumerate(uvcoord):
-                uvlayer.data[n].uv = uv
-            for mat in ob.data.materials:
-                me.materials.append(mat)
-            for f in me.polygons:
-                f.material_index = mnum
-            if idx == 0:
-                nob = ob
-                ob.data = me
-            else:
-                nob = bpy.data.objects.new(ob.name, me)
-                for coll in colls:
-                    coll.objects.link(nob)
-                nob.parent = ob.parent
-            selectSet(nob, True)
-
-#-------------------------------------------------------------
 #   Make deflection
 #-------------------------------------------------------------
 
@@ -2181,7 +2076,6 @@ classes = [
     DAZ_OT_PrintStatistics,
     DAZ_OT_AddMannequin,
     DAZ_OT_AddPush,
-    DAZ_OT_SeparateLooseParts,
     DAZ_OT_MakeDeflection,
     DAZ_OT_CopyModifiers,
     DAZ_OT_ConvertWidgets,

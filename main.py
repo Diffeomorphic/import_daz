@@ -632,11 +632,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Useful if the character is baked"),
         default = False)
 
-    useConvertHair : BoolProperty(
-        name = "Convert Hair",
-        description = "Convert strand-based hair to particle hair",
-        default = False)
-
     addTweakBones : BoolProperty(
         name = "Tweak Bones",
         description = "Add tweak bones",
@@ -695,7 +690,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useMergeUvs:
                 self.subprop("allowOverlap")
             self.subprop("useGeoNodes")
-        self.layout.prop(self, "useConvertHair")
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "rigType")
         if self.rigType == 'MHX':
@@ -961,17 +955,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useMakeAllBonesPosable:
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
-
-        # Convert hairs
-        if (hairs and
-            mainMesh and
-            self.useConvertHair and
-            activateObject(context, mainMesh)):
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-            for hair in hairs:
-                if activateObject(context, hair):
-                    selectSet(mainMesh, True)
-                    bpy.ops.daz.make_hair(strandType='TUBE')
 
         # Change rig
         if mainRig and activateObject(context, mainRig):
