@@ -120,11 +120,10 @@ class CyclesMaterial(Material):
         Material.postbuild(self)
         for key,node,data in self.mappingNodes:
             print("Fix mapping", key)
-            if "Location" in node.inputs.keys():
-                dx,dy,sx,sy,rz = data
-                node.inputs["Location"].default_value = (dx,dy,0)
-                node.inputs["Rotation"].default_value = (0,0,rz)
-                node.inputs["Scale"].default_value = (sx,sy,1)
+            dx,dy,sx,sy,rz = data
+            node.inputs["Location"].default_value = (dx,dy,0)
+            node.inputs["Rotation"].default_value = (0,0,rz)
+            node.inputs["Scale"].default_value = (sx,sy,1)
         if self.tree:
             self.tree.postbuild()
 
@@ -578,17 +577,12 @@ class CyclesTree(Tree):
             modulo.operation = 'MODULO'
             modulo.inputs[1].default_value = (1,1,1)
             self.links.new(modulo.outputs[0], mapping.inputs[0])
-            if hasattr(mapping, "translation"):
-                mapping.translation = (dx,dy,0)
-                mapping.scale = (sx,sy,1)
-                mapping.rotation = (0,0,rz)
-            else:
-                mapping.inputs['Location'].default_value = (dx,dy,0)
-                mapping.inputs['Scale'].default_value = (sx,sy,1)
-                mapping.inputs['Rotation'].default_value = (0,0,rz)
+            mapping.inputs['Location'].default_value = (dx,dy,0)
+            mapping.inputs['Scale'].default_value = (sx,sy,1)
+            mapping.inputs['Rotation'].default_value = (0,0,rz)
             if map and not map.invert and hasattr(mapping, "use_min"):
                 mapping.use_min = mapping.use_max = 1
-            key = "%s:%s:%s" % (self.owner.name, mapping.name, imgname)
+            key = "%s:%s" % (self.owner.name, imgname)
             self.owner.mappingNodes.append((key, mapping, data))
             return modulo,mapping
         else:
