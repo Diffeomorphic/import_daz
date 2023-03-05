@@ -47,7 +47,7 @@ class PbrTree(CyclesTree):
 
 
     def buildLayer(self, uvname):
-        self.column = 2
+        self.column = 3
         self.buildNormal(uvname)
         self.buildBump(uvname)
         if self.owner.useVolume:
@@ -59,12 +59,12 @@ class PbrTree(CyclesTree):
             return
 
         useTopCoatNode = self.checkTopCoat()
-        self.column = 3
-        self.buildDetail(uvname)
         self.column = 4
+        self.buildDetail(uvname)
+        self.column = 5
         self.buildPBRNode(useTopCoatNode)
         self.postPBR = False
-        self.column = 5
+        self.column = 6
         if self.translucent:
             self.mixPbrTranslucency()
         if self.buildMakeup():

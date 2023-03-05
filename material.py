@@ -774,8 +774,7 @@ class Texture:
     def __init__(self, map):
         self.rna = None
         self.map = map
-        self.built = {"COLOR":False, "NONE":False, "LINEAR":False}
-        self.images = {"COLOR":None, "NONE":None, "LINEAR":None}
+        self.images = {}
 
     def __repr__(self):
         return ("<Texture %s %s %s>" % (self.map.url, self.map.image, self.rna))
@@ -790,7 +789,7 @@ class Texture:
             return ""
 
 
-    def buildCycles(self, colorSpace):
+    def buildImage(self, colorSpace):
         def setColorSpace(img, alts):
             for alt in alts:
                 try:
@@ -803,13 +802,14 @@ class Texture:
 
         def copyImage(cspaces):
             for cspace in cspaces:
-                if self.images[cspace]:
-                    return self.images[cspace].copy()
+                img = self.images.get(cspace)
+                if img:
+                    return img.copy()
             return None
 
-        img = None
-        if self.built[colorSpace]:
-            return self.images[colorSpace]
+        img = self.images.get(colorSpace)
+        if img:
+            return img
         elif colorSpace == "COLOR":
             img = copyImage(["NONE", "LINEAR"])
         elif colorSpace == "NONE":
@@ -830,8 +830,22 @@ class Texture:
             elif colorSpace == "LINEAR":
                 setColorSpace(img, ["Linear", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709"])
         self.images[colorSpace] = img
-        self.built[colorSpace] = True
         return img
+
+
+    def getBuiltImage(self, colorSpace):
+        img = self.images.get(colorSpace)
+        if img:
+            return img,None,None
+        elif colorSpace == "COLOR":
+            linear = self.images.get("NONE")
+            if linear:
+                return linear,None,linear
+        elif colorSpace == "NONE":
+            srgb = self.images.get("COLOR")
+            if srgb:
+                return srgb,srgb,None
+        return None,None,None
 
 
     def hasMapping(self, map):

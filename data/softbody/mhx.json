@@ -2,26 +2,50 @@
     "name" : "mhx",
     "bones" : {
     	"pelvis" : "pelvis",
+    	
         "lPectoral" : "pectoral.L",
         "lShldrBend" : "upper_arm.bend.L",
         "lShldrTwist" : "upper_arm.twist.L",
         "lForearmBend" : "forearm.bend.L",
         "lForearmTwist" : "forearm.twist.L",
         "lHand" : "hand.L",
+        "lThighBend" : "thigh.bend.L",
+        "lThighTwist" : "thigh.twist.L",
+        "lShin" : "shin.bend.L",
+        "lFoot" : "foot.L",
+
         "rPectoral" : "pectoral.R",
         "rShldrBend" : "upper_arm.bend.R",
         "rShldrTwist" : "upper_arm.twist.R",
         "rForearmBend" : "forearm.bend.R",
         "rForearmTwist" : "forearm.twist.R",
         "rHand" : "hand.R",
-        "lThighBend" : "thigh.bend.L",
-        "lThighTwist" : "thigh.twist.L",
-        "lShin" : "shin.bend.L",
-        "lFoot" : "foot.L",
         "rThighBend" : "thigh.bend.R",
         "rThighTwist" : "thigh.twist.R",
         "rShin" : "shin.bend.R",
-        "rFoot" : "foot.R"
+        "rFoot" : "foot.R",
+        
+        "l_pectoral" : "pectoral.L",
+        "l_upperarmtwist1" : "upper_arm.bend.L",
+        "l_upperarmtwist2" : "upper_arm.twist.L",
+        "l_forearmtwist1" : "forearm.bend.L",
+        "l_forearmtwist2" : "forearm.twist.L",
+        "l_hand" : "hand.L",
+        "l_thightwist1" : "thigh.bend.L",
+        "l_thightwist2" : "thigh.twist.L",
+        "l_shin" : "shin.bend.L",
+        "l_foot" : "foot.L",
+
+        "r_pectoral" : "pectoral.R",
+        "r_upperarmtwist1" : "upper_arm.bend.R",
+        "r_upperarmtwist2" : "upper_arm.twist.R",
+        "r_forearmtwist1" : "forearm.bend.R",
+        "r_forearmtwist2" : "forearm.twist.R",
+        "r_hand" : "hand.R",
+        "r_thightwist1" : "thigh.bend.R",
+        "r_thightwist2" : "thigh.twist.R",
+        "r_shin" : "shin.bend.R",
+        "r_foot" : "foot.R"        
     }
 }
         

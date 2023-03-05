@@ -1749,15 +1749,29 @@ class CyclesTree(Tree):
             texnode.outputs["Color"].default_value[0:3] = color
             return None, texnode, texnode, False
 
-        isnew = False
-        img = asset.buildCycles(colorSpace)
+        img,srgb,linear = asset.getBuiltImage(colorSpace)
+        if img is None:
+            img = asset.buildImage(colorSpace)
         if img:
             imgname = img.name
         else:
             imgname = asset.getName()
-        texnode = self.getTexNode(imgname, colorSpace)
+        texnode,outnode = self.getTexNode(imgname, colorSpace)
+        if texnode:
+            isnew = False
+        else:
+            texnode = outnode = self.addTextureNode(col, img, imgname, colorSpace)
+            self.setTexNode(imgname, texnode, outnode, colorSpace)
+            if colorSpace == "COLOR":
+                gamma = self.addGamma(col, texnode, "Linear", 1/2.2)
+                self.setTexNode(imgname, texnode, gamma, "NONE")
+            elif colorSpace == "NONE":
+                gamma = self.addGamma(col, texnode, "sRGB", 2.2)
+                self.setTexNode(imgname, texnode, gamma, "COLOR")
+            isnew = True
+
+        innode = texnode
         if asset.hasMapping(map):
-            innode = texnode = outnode = self.addTextureNode(col, img, map.label, colorSpace)
             data = asset.getImageMapping(img, self.owner, map)
             modulo,mapping = self.addMappingNode(data, None, imgname)
             if mapping:
@@ -1766,13 +1780,16 @@ class CyclesTree(Tree):
                 innode = modulo
             if map.invert:
                 color,outnode = self.invertColor(map.color, outnode, col+1)
-            return innode, texnode, outnode, True
-        elif texnode:
-            return texnode, texnode, texnode, False
-        else:
-            texnode = self.addTextureNode(col, img, imgname, colorSpace)
-            self.setTexNode(imgname, texnode, colorSpace)
-            return texnode, texnode, texnode, True
+        return innode, texnode, outnode, isnew
+
+
+    def addGamma(self, col, texnode, label, value):
+        gamma = self.addNode("ShaderNodeGamma", col=col, size=2)
+        gamma.label = label
+        gamma.inputs["Gamma"].default_value = value
+        self.links.new(texnode.outputs["Color"], gamma.inputs["Color"])
+        gamma.hide = True
+        return gamma
 
 
     def addTextureNode(self, col, img, imgname, colorSpace, size=2):
@@ -1789,17 +1806,14 @@ class CyclesTree(Tree):
 
 
     def getTexNode(self, key, colorSpace):
-        if key in self.texnodes.keys():
-            for texnode,colorSpace1 in self.texnodes[key]:
-                if colorSpace1 == colorSpace:
-                    return texnode
-        return None
+        nodes = self.texnodes.get(key, {})
+        return nodes.get(colorSpace, (None,None))
 
 
-    def setTexNode(self, key, texnode, colorSpace):
+    def setTexNode(self, key, texnode, outnode, colorSpace):
         if key not in self.texnodes.keys():
-            self.texnodes[key] = []
-        self.texnodes[key].append((texnode, colorSpace))
+            self.texnodes[key] = {}
+        self.texnodes[key][colorSpace] = (texnode, outnode)
 
 
     def linkVector(self, texco, node, slot="Vector"):

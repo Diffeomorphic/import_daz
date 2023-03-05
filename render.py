@@ -169,7 +169,9 @@ class BackgroundGroup(CyclesGroup):
         self.group.outputs.new("NodeSocketColor", "Color")
 
     def addNodes(self, args=None):
+        from .tree import hideAllBut
         lightpath = self.addNode("ShaderNodeLightPath", 1)
+        hideAllBut(lightpath, ["Is Camera Ray"])
         self.links.new(lightpath.outputs["Is Camera Ray"], self.outputs.inputs["Fac"])
         self.links.new(self.inputs.outputs["Color"], self.outputs.inputs["Color"])
 
@@ -271,6 +273,7 @@ class WorldTree(CyclesTree):
             img = self.getImage(backdrop, "COLOR")
             if img:
                 tex = self.addTextureNode(3, img, img.name, "COLOR")
+                self.setTexNode(img.name, tex, tex, "COLOR")
                 self.linkVector(texco, tex)
 
         bgnode = self.addGroup(BackgroundGroup, "DAZ Background")
@@ -298,9 +301,9 @@ class WorldTree(CyclesTree):
         if not assets:
             return None
         asset = assets[0]
-        img = asset.images[colorSpace]
+        img = asset.images.get(colorSpace)
         if img is None:
-            img = asset.buildCycles(colorSpace)
+            img = asset.buildImage(colorSpace)
         return img
 
 #-------------------------------------------------------------
