@@ -1051,10 +1051,11 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 
 
     def run(self, context):
+        from .material import setColorSpaceSRGB, setColorSpaceNone
         img = bpy.data.images.load(self.filepath)
         if img is None:
             raise DazError("Unable to load file %s" % self.filepath)
-        img.colorspace_settings.name = "sRGB"
+        setColorSpaceSRGB(img)
 
         mask = None
         if self.useMask:
@@ -1065,7 +1066,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
                 mask = bpy.data.images.load(self.decalMask)
             if mask is None:
                 raise DazError("Unable to load mask file %s" % self.decalMask)
-            mask.colorspace_settings.name = "Non-Color"
+            setColorSpaceNone(mask)
 
         ob = context.object
         ob.DazVisibilityDrivers = True

@@ -34,6 +34,7 @@ from .fileutils import MultiFile, ImageFile, theImageExtensions
 from .cgroup import CyclesGroup
 from .propgroups import DazBoolGroup, DazStringBoolGroup
 from .morphing import Selector
+from .material import setColorSpaceNone
 
 #-------------------------------------------------------------
 #   Node tree layout
@@ -62,7 +63,7 @@ class Layouter:
         else:
             img = bpy.data.images.load(filepath)
             img.name = os.path.splitext(os.path.basename(filepath))[0]
-            img.colorspace_settings.name = "Non-Color"
+            setColorSpaceNone(img)
             self.loadedImages[filepath] = img
             return img
 
@@ -214,7 +215,7 @@ class DispAdder:
         nodes = []
         for ob,amt,sname,prop,filepath in args:
             img = self.getImage(filepath)
-            tex = tree.addTextureNode(0, img, sname, "NONE", size)
+            tex = tree.addTextureNode(0, img, sname, size)
             tex.parent = frame
             nodes.append(tex)
             disp = tree.addNode(self.shaderNode, col=1, label=sname, size=size)
@@ -335,7 +336,7 @@ class NormalAdder:
                 print("No such file: %s" % filepath)
                 continue
             img = self.getImage(filepath)
-            tex = tree.addTextureNode(0, img, fname, "NONE", size)
+            tex = tree.addTextureNode(0, img, fname, size)
             tex.parent = frame
             nodes.append(tex)
             mix,a,b,out = tree.addMixRgbNode('OVERLAY', 1, size=size)
@@ -610,20 +611,23 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         imgname = self.getImageName(basename, tile)
         size = int(self.imageSize)
         img = bpy.data.images.new(imgname, size, size)
-        img.colorspace_settings.name = "Non-Color"
+        setColorSpaceNone(img)
         img.filepath = self.getImagePath(imgname, True)
         return img
 
 
     def makeMaterial(self, ob, img):
+        from .tree import hideAllBut
         mat = bpy.data.materials.new(img.name)
         ob.data.materials.append(mat)
         ob.active_material = mat
         mat.use_nodes = True
         tree = mat.node_tree
         tree.nodes.clear()
-        texco = tree.nodes.new(type = "ShaderNodeTexCoord")
+        texco = tree.nodes.new(type = "ShaderNodeTexCoord", size=2)
         texco.location = (0, 0)
+        texco.hide = True
+        hideAllBut(texco, ["UV"])
         node = tree.nodes.new(type = "ShaderNodeTexImage")
         node.location = (200,0)
         node.image = img

@@ -289,7 +289,14 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True):
+def pruneNodeTree(tree,
+                  active=None,
+                  useDeleteUnusedNodes=True,
+                  useHideTexNodes=True,
+                  usePruneTexco=True,
+                  useHideOutputs=True,
+                  keepUnusedTextures=True,
+                  useFixColorSpace=True):
     marked = {}
     if not tree:
         return marked
@@ -298,7 +305,14 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
         if (node.type == 'GROUP' and
             not node.name.startswith("DAZ ") and
             node.outputs):
-            pruneNodeTree(node.node_tree, None, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
+            pruneNodeTree(node.node_tree,
+                          None,
+                          useDeleteUnusedNodes,
+                          useHideTexNodes,
+                          usePruneTexco,
+                          useHideOutputs,
+                          keepUnusedTextures,
+                          useFixColorSpace)
 
     if usePruneTexco:
         texcos = []
@@ -325,9 +339,18 @@ def pruneNodeTree(tree, active=None, useDeleteUnusedNodes=True, useHideTexNodes=
             if not socket.links:
                 socket.hide = useHideOutputs
 
-    for node in tree.nodes:
-        if node.type in ['TEX_IMAGE']:
-           node.hide = useHideTexNodes
+    from .material import setColorSpaceNone
+    for node in list(tree.nodes):
+        if node.type == 'TEX_IMAGE':
+            links = node.outputs["Color"].links
+            if len(links) == 1 and node.image:
+                gamma = links[0].to_node
+                if (gamma.label == "Linear" and
+                    gamma.type == 'GAMMA'):
+                    setColorSpaceNone(node.image)
+                    for link in gamma.outputs["Color"].links:
+                        tree.links.new(node.outputs["Color"], link.to_socket)
+            node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:
         output = False

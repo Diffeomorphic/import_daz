@@ -774,7 +774,7 @@ class Texture:
     def __init__(self, map):
         self.rna = None
         self.map = map
-        self.images = {}
+        self.image = None
 
     def __repr__(self):
         return ("<Texture %s %s %s>" % (self.map.url, self.map.image, self.rna))
@@ -790,62 +790,18 @@ class Texture:
 
 
     def buildImage(self, colorSpace):
-        def setColorSpace(img, alts):
-            for alt in alts:
-                try:
-                    img.colorspace_settings.name = alt
-                    return
-                except TypeError:
-                    pass
-            msg = "No matching color space in %s" % alts
-            reportError(msg, trigger=(2,3))
-
-        def copyImage(cspaces):
-            for cspace in cspaces:
-                img = self.images.get(cspace)
-                if img:
-                    return img.copy()
-            return None
-
-        img = self.images.get(colorSpace)
-        if img:
-            return img
-        elif colorSpace == "COLOR":
-            img = copyImage(["NONE", "LINEAR"])
-        elif colorSpace == "NONE":
-            img = copyImage(["COLOR", "LINEAR"])
-        elif colorSpace == "LINEAR":
-            img = copyImage(["COLOR", "NONE"])
-        if img:
-            pass
+        if self.image:
+            return self.image
         elif self.map.url:
-            img = self.map.build()
+            self.image = self.map.build()
         elif self.map.image:
-            img = self.map.image
-        if img:
-            if colorSpace == "COLOR":
-                setColorSpace(img, ["sRGB", "sRGB OETF", "srgb_texture"])
-            elif colorSpace == "NONE":
-                setColorSpace(img, ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities - Raw"])
-            elif colorSpace == "LINEAR":
-                setColorSpace(img, ["Linear", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709"])
-        self.images[colorSpace] = img
-        return img
-
-
-    def getBuiltImage(self, colorSpace):
-        img = self.images.get(colorSpace)
-        if img:
-            return img,None,None
-        elif colorSpace == "COLOR":
-            linear = self.images.get("NONE")
-            if linear:
-                return linear,None,linear
-        elif colorSpace == "NONE":
-            srgb = self.images.get("COLOR")
-            if srgb:
-                return srgb,srgb,None
-        return None,None,None
+            self.image = self.map.image
+        if self.image:
+            if colorSpace == "LINEAR":
+                setColorSpaceLinear(self.image)
+            else:
+                setColorSpaceSRGB(self.image)
+        return self.image
 
 
     def hasMapping(self, map):
@@ -944,6 +900,25 @@ class Texture:
 #-------------------------------------------------------------z
 #   Utilities
 #-------------------------------------------------------------
+
+def setColorSpace(img, alts):
+    for alt in alts:
+        try:
+            img.colorspace_settings.name = alt
+            return
+        except TypeError:
+            pass
+    msg = "No matching color space in %s" % alts
+    reportError(msg, trigger=(2,3))
+
+def setColorSpaceSRGB(img):
+    setColorSpace(img, ["sRGB", "sRGB OETF", "srgb_texture"])
+
+def setColorSpaceNone(img):
+    setColorSpace(img, ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities - Raw"])
+
+def setColorSpaceLinear(img):
+    setColorSpace(img, ["Linear", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709"])
 
 def isWhite(color):
     return (tuple(color[0:3]) == (1.0,1.0,1.0))

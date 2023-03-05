@@ -301,7 +301,7 @@ class WorldTree(CyclesTree):
         if not assets:
             return None
         asset = assets[0]
-        img = asset.images.get(colorSpace)
+        img = asset.image
         if img is None:
             img = asset.buildImage(colorSpace)
         return img

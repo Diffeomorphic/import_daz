@@ -52,16 +52,15 @@ class PbrTree(CyclesTree):
         self.buildBump(uvname)
         if self.owner.useVolume:
             self.translucent = self.buildTranslucency(uvname)
-        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=4, size=30)
+        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5, size=30)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
             return
-
-        useTopCoatNode = self.checkTopCoat()
         self.column = 4
         self.buildDetail(uvname)
         self.column = 5
+        useTopCoatNode = self.checkTopCoat()
         self.buildPBRNode(useTopCoatNode)
         self.postPBR = False
         self.column = 6

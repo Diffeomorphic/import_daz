@@ -32,7 +32,7 @@ import os
 from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .tree import Tree, NCOLUMNS, XSIZE, YSIZE
-from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree
+from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree, hideAllBut
 from .error import DazError
 from .utils import *
 
@@ -520,7 +520,9 @@ class CyclesTree(Tree):
 
     def addTexco(self, slot):
         if self.owner.uvNodeType == 'TEXCO' or not self.owner.uv_set:
-            node = self.addNode("ShaderNodeTexCoord")
+            node = self.addNode("ShaderNodeTexCoord", size=2)
+            node.hide = True
+            hideAllBut(node, ["UV"])
             self.texco = node.outputs[slot]
         else:
             node, self.texco = self.addUvNode(self.owner.uv_set.name)
@@ -571,11 +573,12 @@ class CyclesTree(Tree):
     def addMappingNode(self, data, map, imgname=""):
         dx,dy,sx,sy,rz = data
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
+            modulo = self.addNode("ShaderNodeVectorMath", 1, size=2)
+            modulo.operation = 'MODULO'
+            modulo.hide = True
+            modulo.inputs[1].default_value = (1,1,1)
             mapping = self.addNode("ShaderNodeMapping", 1)
             mapping.vector_type = 'TEXTURE'
-            modulo = self.addNode("ShaderNodeVectorMath", 0)
-            modulo.operation = 'MODULO'
-            modulo.inputs[1].default_value = (1,1,1)
             self.links.new(modulo.outputs[0], mapping.inputs[0])
             mapping.inputs['Location'].default_value = (dx,dy,0)
             mapping.inputs['Scale'].default_value = (sx,sy,1)
@@ -1749,9 +1752,7 @@ class CyclesTree(Tree):
             texnode.outputs["Color"].default_value[0:3] = color
             return None, texnode, texnode, False
 
-        img,srgb,linear = asset.getBuiltImage(colorSpace)
-        if img is None:
-            img = asset.buildImage(colorSpace)
+        img = asset.buildImage(colorSpace)
         if img:
             imgname = img.name
         else:
@@ -1760,14 +1761,13 @@ class CyclesTree(Tree):
         if texnode:
             isnew = False
         else:
-            texnode = outnode = self.addTextureNode(col, img, imgname, colorSpace)
-            self.setTexNode(imgname, texnode, outnode, colorSpace)
-            if colorSpace == "COLOR":
+            texnode = outnode = self.addTextureNode(col, img, imgname)
+            self.setTexNode(imgname, texnode, outnode, "COLOR")
+            if colorSpace in ["COLOR", "NONE"]:
                 gamma = self.addGamma(col, texnode, "Linear", 1/2.2)
                 self.setTexNode(imgname, texnode, gamma, "NONE")
-            elif colorSpace == "NONE":
-                gamma = self.addGamma(col, texnode, "sRGB", 2.2)
-                self.setTexNode(imgname, texnode, gamma, "COLOR")
+                if colorSpace == "NONE":
+                    outnode = gamma
             isnew = True
 
         innode = texnode
@@ -1792,7 +1792,7 @@ class CyclesTree(Tree):
         return gamma
 
 
-    def addTextureNode(self, col, img, imgname, colorSpace, size=2):
+    def addTextureNode(self, col, img, imgname, size=2):
         node = self.addNode("ShaderNodeTexImage", col, size=size)
         node.image = img
         node.interpolation = GS.imageInterpolation
@@ -2113,7 +2113,10 @@ def findTexco(tree, col=None):
     if nodes:
         return nodes[0]
     elif col is not None:
-        return tree.addNode("ShaderNodeTexCoord", col)
+        node = tree.addNode("ShaderNodeTexCoord", col, size=2)
+        node.hide = True
+        hideAllBut(node, ["UV"])
+        return node
 
 
 def findTextureNode(tex):
