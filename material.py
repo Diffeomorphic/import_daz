@@ -1066,8 +1066,14 @@ class MaterialCombiner:
         description = "Merge materials even if the bump strengths differ",
         default = True)
 
+    ignoreViewport : BoolProperty(
+        name = "Ignore Viewport Color",
+        description = "Merge materials if the viewport colors differ",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "ignoreBump")
+        self.layout.prop(self, "ignoreViewport")
 
     def combine(self, context):
         self.setupShells(context)
@@ -1149,7 +1155,8 @@ class MaterialCombiner:
             "texture_slots", "node_tree",
             "name", "name_full", "active_texture",
         ]
-        deadMatProps.append("diffuse_color")
+        if self.ignoreViewport:
+            deadMatProps.append("diffuse_color")
         matProps = self.getRelevantProps(mat1, deadMatProps)
         if not self.haveSameAttrs(mat1, mat2, matProps, mname1, mname2):
             return False
