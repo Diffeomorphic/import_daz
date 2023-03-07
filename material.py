@@ -1066,26 +1066,20 @@ class MaterialCombiner:
         description = "Merge materials even if the bump strengths differ",
         default = True)
 
-    ignoreViewport : BoolProperty(
-        name = "Ignore Viewport Color",
-        description = "Merge materials if the viewport colors differ",
-        default = False)
-
     def draw(self, context):
         self.layout.prop(self, "ignoreBump")
-        self.layout.prop(self, "ignoreViewport")
 
     def combine(self, context):
         self.setupShells(context)
         self.nCombined = 0
         if self.acrossObjects:
-            table = self.setupTable(self.meshes)
+            table,diffuse = self.setupTable(self.meshes)
             for ob in self.meshes:
-                self.combineMaterials(ob, table)
+                self.combineMaterials(ob, table, diffuse)
         else:
             for ob in self.meshes:
-                table = self.setupTable([ob])
-                self.combineMaterials(ob, table)
+                table,diffuse = self.setupTable([ob])
+                self.combineMaterials(ob, table, diffuse)
         print("Number of materials combined: %d" % self.nCombined)
 
 
@@ -1104,35 +1098,48 @@ class MaterialCombiner:
 
 
     def setupTable(self, meshes):
+        def norm(color):
+            r,g,b,a = color
+            return max((abs(r-g), abs(r-b), abs(g-b)))
+
         mats = []
         for ob in meshes:
             for mat in ob.data.materials:
                 if mat:
                     mats.append(mat)
         table = {}
+        diffuse = {}
         mats2 = []
         for mat in mats:
             taken = False
             for mat2 in mats2:
                 if self.areSameMaterial(mat, mat2):
                     table[mat.name] = mat2
+                    if norm(mat.diffuse_color) < norm(mat2.diffuse_color):
+                        diffuse[mat2.name] = (mat.name, mat.diffuse_color)
                     taken = True
                     break
             if not taken:
                 table[mat.name] = mat
                 mats2.append(mat)
-        return table
+        return table,diffuse
 
 
-    def combineMaterials(self, ob, table):
+    def combineMaterials(self, ob, table, diffuse):
         mats = list(ob.data.materials)
         facenums,phairs = clearMaterials(ob)
+        mdatas = []
         for mat in mats:
             if mat is None:
                 mat2 = None
+                mdatas.append(None)
             else:
                 mat2 = table[mat.name]
+                mdatas.append( diffuse.get(mat.name, (mat.name, mat.diffuse_color)) )
                 ob.data.materials.append(mat2)
+        for mat,mdata in zip(mats, mdatas):
+            if mat:
+                mat.name, mat.diffuse_color = mdata
         for f,mn in zip(ob.data.polygons, facenums):
             f.material_index = mn
         for pset,matslot in phairs:
@@ -1154,9 +1161,8 @@ class MaterialCombiner:
         deadMatProps = [
             "texture_slots", "node_tree",
             "name", "name_full", "active_texture",
+            "diffuse_color"
         ]
-        if self.ignoreViewport:
-            deadMatProps.append("diffuse_color")
         matProps = self.getRelevantProps(mat1, deadMatProps)
         if not self.haveSameAttrs(mat1, mat2, matProps, mname1, mname2):
             return False
