@@ -867,7 +867,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 try:
                     if ob.parent and ob.parent_type == 'BONE':
                         wmats.append((ob, ob.matrix_world.copy()))
-                    else:
+                    elif ob.type in ['MESH', 'ARMATURE', 'EMPTY']:
                         selectSet(ob, True)
                 except ReferenceError:
                     pass
