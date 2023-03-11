@@ -395,6 +395,8 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
             else:
                 vgrp = ob.vertex_groups.new(name=modname)
             mod.vertex_group = modname
+            mod.invert_vertex_group = True
+
         elif self.useApply and not ob.data.shape_keys:
             bpy.ops.object.modifier_apply(modifier=mod.name)
 

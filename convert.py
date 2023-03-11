@@ -127,35 +127,37 @@ def optimizePose(context, useApplyRestPose):
 #   Bone conversion
 #-------------------------------------------------------------
 
-def getConverter(stype, trg):
-    if stype == "genesis8":
-        stype = "genesis3"
+def getConverter(srctype, trg):
+    if srctype == "genesis8":
+        srctype = "genesis3"
     trgtype = trg.DazRig
+    if trgtype[-7:] == ".suffix":
+        trgtype = trgtype[:-7]
     if trgtype == "genesis8":
         trgtype = "genesis3"
 
-    if stype == "" or trgtype == "":
+    if srctype == "" or trgtype == "":
         return {},[]
-    if (stype in AF.TwistBones.keys() and
+    if (srctype in AF.TwistBones.keys() and
         trgtype not in AF.TwistBones.keys()):
-        twists = AF.TwistBones[stype]
+        twists = AF.TwistBones[srctype]
     else:
         twists = []
 
-    if stype == trgtype:
+    if srctype == trgtype:
         return {},twists
     if trgtype == "mhx":
-        char = stype[:-1] + "-mhx"
+        char = srctype[:-1] + "-mhx"
     elif trgtype[0:6] == "rigify":
-        char = stype[:-1] + "-" + trgtype
+        char = srctype[:-1] + "-" + trgtype
     elif trgtype == "genesis9":
         char = "genesis1238-genesis9"
     else:
-        char = stype + "-" + trgtype
+        char = srctype + "-" + trgtype
 
     conv = AF.loadEntry(char, "converters")
     if not conv:
-        print("No converter", stype, trg.DazRig)
+        print("No converter", srctype, trg.DazRig)
     return conv, twists
 
 #----------------------------------------------------------
