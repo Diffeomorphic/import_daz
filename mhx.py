@@ -1713,14 +1713,20 @@ LRGizmos = {
 #   Used by load pose etc.
 #-------------------------------------------------------------
 
-def setToFk(rig, layers, keepLimits):
+def setToFk(rig, layers, keepLimits, useInsertKeys, frame):
     def setValue(rig, prop, value):
         if hasattr(rig, prop):
             setattr(rig, prop, value)
+            if useInsertKeys:
+                rig.keyframe_insert(prop, frame=frame)
         elif prop in rig.keys():
             rig[prop] = value
+            if useInsertKeys:
+                rig.keyframe_insert(propRef(prop), frame=frame)
         elif prop in rig.data.keys():
             rig.data[prop] = value
+            if useInsertKeys:
+                rig.data.keyframe_insert(propRef(prop), frame=frame)
 
     for prop in ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]:
         setValue(rig, prop, 0.0)

@@ -909,7 +909,7 @@ class Rigify:
                         layer.exclude = True
                     break
 
-        setFkIk2(gen, False, gen.data.layers)
+        setFkIk2(gen, False, gen.data.layers, False, 0)
         if activateObject(context, rig):
             deleteObjects(context, [rig])
         if self.useDeleteMeta:
@@ -1262,41 +1262,61 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwist
 #   Set rigify to FK. For load pose.
 #-------------------------------------------------------------
 
-def setFkIk1(rig, ik, layers):
+def setFkIk1(rig, ik, layers, useInsertKeys, frame):
     value = float(ik)
     for bname in ["hand.ik.L", "hand.ik.R", "foot.ik.L", "foot.ik.R"]:
         pb = rig.pose.bones[bname]
         pb["ik_fk_switch"] = pb["ikfk_switch"] = value
+        if useInsertKeys:
+            pb.keyframe_insert(propRef("ik_fk_switch"), frame=frame)
+            pb.keyframe_insert(propRef("ikfk_switch"), frame=frame)
     if "head.001" in rig.pose.bones.keys():
         pb = rig.pose.bones["head.001"]
         pb["neck_follow"] = value
+        if useInsertKeys:
+            pb.keyframe_insert(propRef("neck_follow"), frame=frame)
     for pname in ["MhaTongueIk"]:
         if pname in rig.keys():
             rig[pname] = 0.0
+            if useInsertKeys:
+                rig.keyframe_insert(propRef(pname), frame=frame)
         if pname in rig.data.keys():
             rig.data[pname] = 0.0
+            if useInsertKeys:
+                rig.data.keyframe_insert(propRef(pname), frame=frame)
     return layers
 
 
-def setFkIk2(rig, fk, layers):
+def setFkIk2(rig, fk, layers, useInsertKeys, frame):
     value = float(fk)
     for bname in ["upper_arm_parent.L", "upper_arm_parent.R", "thigh_parent.L", "thigh_parent.R"]:
         pb = rig.pose.bones[bname]
         pb["IK_FK"] = value
+        if useInsertKeys:
+            pb.keyframe_insert(propRef("IK_FK"), frame=frame)
     if "torso" in rig.pose.bones.keys():
         pb = rig.pose.bones["torso"]
         pb["neck_follow"] = 1.0
         pb["head_follow"] = 1.0
+        if useInsertKeys:
+            pb.keyframe_insert(propRef("neck_follow"), frame=frame)
+            pb.keyframe_insert(propRef("head_follow"), frame=frame)
     for suffix in ["L", "R"]:
         for fing in ["thumb", "f_index", "f_middle", "f_ring", "f_pinky"]:
-            bname = "%s.01_ik.%s" % (fing, suffix)
-            if bname in rig.pose.bones.keys():
-                rig.pose.bones[bname]["FK_IK"] = 0.0
+            pb = rig.pose.bones.get("%s.01_ik.%s" % (fing, suffix))
+            if pb:
+                pb["FK_IK"] = 0.0
+                if useInsertKeys:
+                    pb.keyframe_insert(propRef("neck_follow"), frame=frame)
     for pname in ["MhaTongueIk"]:
         if pname in rig.keys():
             rig[pname] = 0.0
+            if useInsertKeys:
+                rig.keyframe_insert(propRef(pname), frame=frame)
         if pname in rig.data.keys():
             rig.data[pname] = 0.0
+            if useInsertKeys:
+                rig.data.keyframe_insert(propRef(pname), frame=frame)
     for n in [8, 11, 14, 17]:
         layers[n] = fk
     for n in [7, 10, 13, 16]:

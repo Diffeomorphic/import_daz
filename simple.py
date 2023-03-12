@@ -87,20 +87,30 @@ class SimpleIK:
     G9SmallToe4 = ["_pinkytoe1", "_pinkytoe2"]
     G9Tongue = ["tongue01", "tongue02", "tongue03", "tongue04", "tongue05"]
 
-    def storeProps(self, rig):
-        self.ikprops = (rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R)
-
-    def setProps(self, rig, onoff):
-        rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = onoff
-
-    def restoreProps(self, rig):
-        rig.DazArmIK_L, rig.DazArmIK_R, rig.DazLegIK_L, rig.DazLegIK_R = self.ikprops
-
     def getIKProp(self, prefix, type):
         return ("Daz%sIK_%s" % (type, prefix.upper()))
 
     def updatePose(self):
         bpy.context.view_layer.update()
+
+    def keyPose(self, pb):
+        if self.auto:
+            pb.keyframe_insert("location", frame=self.frame)
+            if pb.rotation_mode == 'QUATERNION':
+                pb.keyframe_insert("rotation_quaternion", frame=self.frame)
+            else:
+                pb.keyframe_insert("rotation_euler", frame=self.frame)
+            pb.keyframe_insert("scale", frame=self.frame)
+
+    def initAuto(self, context):
+        scn = context.scene
+        self.auto = scn.tool_settings.use_keyframe_insert_auto
+        self.frame = scn.frame_current
+
+    def setProp(self, rna, prop, value):
+        setattr(rna, prop, value)
+        if self.auto:
+            rna.keyframe_insert(prop, frame=self.frame)
 
     def getGenesisType(self, rig):
         if (self.hasAllBones(rig, self.G38Arm+self.G38Leg, "l") and
@@ -696,12 +706,15 @@ class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
             pb.custom_shape = None
 
 
-def setSimpleToFk(rig, layers):
+def setSimpleToFk(rig, layers, useInsertKeys, frame):
     for lname in ["Left FK Arm", "Right FK Arm", "Left FK Leg", "Right FK Leg"]:
         layers[BoneLayers[lname]] = True
     for lname in ["Left IK Arm", "Right IK Arm", "Left IK Leg", "Right IK Leg"]:
         layers[BoneLayers[lname]] = False
-    rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 0
+    for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]:
+        setattr(rig, attr, 0)
+        if useInsertKeys:
+            rig.keyframe_insert(attr, frame=frame)
     return layers
 
 #----------------------------------------------------------
@@ -719,15 +732,16 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
 
     def run(self, context):
         rig = context.object
+        self.initAuto(context)
         bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
-            setattr(rig, prop, True)
+            self.setProp(rig, prop, True)
             self.updatePose()
             self.snapSimpleFK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, True)
             toggleLayer(rig, "IK", self.prefix, self.type, False)
-            setattr(rig, prop, False)
+            self.setProp(rig, prop, False)
 
 
     def snapSimpleFK(self, rig, bnames, prop):
@@ -737,11 +751,12 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
                 mats.append((pb, pb.matrix.copy()))
-        setattr(rig, prop, False)
+        self.setProp(rig, prop, 0.0)
         self.updatePose()
         for pb,mat in mats:
             pb.matrix = mat
             self.updatePose()
+            self.keyPose(pb)
 
 #----------------------------------------------------------
 #   IK Snap
@@ -759,15 +774,16 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
 
     def run(self, context):
         rig = context.object
+        self.initAuto(context)
         bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
-            setattr(rig, prop, False)
+            self.setProp(rig, prop, 0.0)
             self.updatePose()
             self.snapSimpleIK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, False)
             toggleLayer(rig, "IK", self.prefix, self.type, True)
-            setattr(rig, prop, True)
+            self.setProp(rig, prop, 1.0)
 
 
     def snapSimpleIK(self, rig, bnames, prop):
@@ -785,19 +801,22 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
             uparmfk = rig.pose.bones.get(getPreSufName(uparm, rig))
             loarmfk = rig.pose.bones.get(getPreSufName(loarm, rig))
             polemat = self.getPoleMatrix(uparmfk, loarmfk)
-        setattr(rig, prop, True)
+        self.setProp(rig, prop, 1.0)
         handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
         if handik:
             handik.matrix = handmat
             self.updatePose()
+            self.keyPose(handik)
         if pole:
             poleik.matrix = polemat
             self.updatePose()
+            self.keyPose(poleik)
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
                 pb.matrix_basis = Matrix()
                 self.updatePose()
+                self.keyPose(pb)
 
 
     def getPoleMatrix(self, above, below):

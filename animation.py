@@ -794,6 +794,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     def getSingleAnimation(self, filepath, context, offset):
         from .load_json import loadJson
         rig = context.object
+        scn = context.scene
         if filepath is None:
             return offset,None
         ext = os.path.splitext(filepath)[1]
@@ -806,7 +807,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
         anims = self.parseScene(struct["scene"], rig)
         if rig.type == 'ARMATURE':
             setMode('POSE')
-            self.prepareRig(rig)
+            self.prepareRig(rig, scn.frame_current)
         nanims,locks = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
@@ -830,21 +831,21 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
     def nameAnimation(self, ob):
         pass
 
-    def prepareRig(self, rig):
+    def prepareRig(self, rig, frame):
         if not self.affectBones:
             return
         if rig.DazRig == "rigify":
             from .rigify import setFkIk1
-            self.boneLayers = setFkIk1(rig, False, self.boneLayers)
+            self.boneLayers = setFkIk1(rig, False, self.boneLayers, self.useInsertKeys, frame)
         elif rig.DazRig == "rigify2":
             from .rigify import setFkIk2
-            self.boneLayers = setFkIk2(rig, True, self.boneLayers)
+            self.boneLayers = setFkIk2(rig, True, self.boneLayers, self.useInsertKeys, frame)
         elif rig.MhxRig or rig.DazRig == "mhx":
             from .mhx import setToFk
-            self.boneLayers = setToFk(rig, self.boneLayers, self.keepLimits)
+            self.boneLayers = setToFk(rig, self.boneLayers, self.keepLimits, self.useInsertKeys, frame)
         elif rig.DazSimpleIK:
             from .simple import setSimpleToFk
-            self.boneLayers = setSimpleToFk(rig, self.boneLayers)
+            self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)
 
 
     def parseScene(self, struct, rig):
