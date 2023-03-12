@@ -1789,7 +1789,14 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
         description = "Overwrite stored data",
         default = False)
 
+    maxSubsurf : IntProperty(
+        name = "Maximal Subsurf Level",
+        description = "Maximal subsurf level",
+        min = 0,
+        default = 2)
+
     def draw(self, context):
+        self.layout.prop(self, "maxSubsurf")
         self.layout.prop(self, "useStoreData")
         if self.useStoreData:
             self.layout.prop(self, "useOverwrite")
@@ -1844,6 +1851,12 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
             mstruct["orig_verts"] = origverts
             if origverts:
                 self.nothing = False
+        for mod in ob.modifiers:
+            if mod.type == 'SUBSURF':
+                if mod.levels > self.maxSubsurf:
+                    mod.levels = self.maxSubsurf
+                if mod.render_levels > self.maxSubsurf:
+                    mod.render_levels = self.maxSubsurf
         clearMeshProps(ob.data)
 
 
