@@ -1974,7 +1974,7 @@ class CyclesTree(Tree):
             return tex
         elif isBlack(color):
             return None
-        elif (tex and tex.type not in ['TEX_IMAGE', 'GROUP']):
+        elif (tex and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
         if col is None:
             col = self.column-1
@@ -1998,7 +1998,7 @@ class CyclesTree(Tree):
             return tex
         elif value == 0:
             return None
-        elif (tex and tex.type not in ['TEX_IMAGE', 'GROUP']):
+        elif (tex and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
         if col is None:
             col = self.column-1
