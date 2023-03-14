@@ -403,8 +403,6 @@ class BoneInstance(Instance):
 
     def targetTransform(self, pb, node, targets, rig):
         from .node import setBoneTransform
-        if LS.fitFile:
-            return {}
         tname = getMappedBone(node.name, rig)
         if tname and tname in targets.keys():
             tinst = targets[tname]
@@ -418,11 +416,15 @@ class BoneInstance(Instance):
                 trans = self.attributes["translation"],
                 rot = self.attributes["rotation"])
             tchildren = {}
-        setBoneTransform(tfm, pb)
-        if nonzero(tfm.trans):
-            pb.DazTranslation = tfm.trans
-        if nonzero(tfm.rot):
-            pb.DazRotation = tfm.rot
+        if LS.fitFile:
+            if nonzero(tfm.rot):
+                pb.DazRestRotation = tfm.rot
+        else:
+            setBoneTransform(tfm, pb)
+            if nonzero(tfm.trans):
+                pb.DazTranslation = tfm.trans
+            if nonzero(tfm.rot):
+                pb.DazRotation = tfm.rot
         return tchildren
 
 

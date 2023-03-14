@@ -159,11 +159,30 @@ class FrameConverter:
                         nbanim[bname] = frames
             else:
                 nbanim = banim
+            if self.affectBones and self.useSubtractRestpose and not again:
+                self.subtractRestpose(rig, nbanim)
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
-        if self.affectBones and not again and self.useConvert:
-            self.convertAllFrames(nanims, rig, bonemap)
+        if self.affectBones and not again:
+            if self.useConvert:
+                self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
+
+    #-------------------------------------------------------------
+    #   Subtract rest pose
+    #-------------------------------------------------------------
+
+    def subtractRestpose(self, rig, banim):
+        for bname,frames in banim.items():
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                restrot = Vector(pb.DazRestRotation)
+                if restrot.length > 0 and "rotation" in frames.keys():
+                    rotframes = {}
+                    for idx,kpts in frames["rotation"].items():
+                        offset = restrot[idx]
+                        rotframes[idx] = [[t,y-offset] for t,y in kpts]
+                    frames["rotation"] = rotframes
 
     #-------------------------------------------------------------
     #   Convert bone animations
@@ -447,6 +466,11 @@ class AffectOptions:
         description = "Keep locks and limits.\nDisable for better matching",
         default = False)
 
+    useSubtractRestpose : BoolProperty(
+        name = "Subtract Rest Pose",
+        description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
+        default = True)
+
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -463,6 +487,7 @@ class AffectOptions:
         if self.affectBones:
             self.layout.prop(self, "useClearPose")
             self.layout.prop(self, "affectScale")
+            self.layout.prop(self, "useSubtractRestpose")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.label(text="Object Transformations Affect:")
@@ -1246,6 +1271,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
                 setBoneTransform(tfm, pb)
+            self.clearBendTwist(pb)
             if self.keepLimits:
                 self.imposeLocks(pb)
             elif not self.unlimited.get(pb.name):
@@ -1254,6 +1280,13 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 insertKeys(pb, True, n+offset, self)
         else:
             pass
+
+
+    def clearBendTwist(self, pb):
+        if pb.name.endswith("Bend"):
+            pb.rotation_euler[1] = 0
+        elif pb.name.endswith("Twist"):
+            pb.rotation_euler[0] = pb.rotation_euler[2] = 0
 
 
     def imposeLocks(self, pb):

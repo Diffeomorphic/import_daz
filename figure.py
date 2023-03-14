@@ -420,8 +420,7 @@ def copyBoneInfo(srcpb, trgpb):
     trgpb.bone.DazAngle = srcpb.bone.DazAngle
     trgpb.bone.DazNormal = Vector(srcpb.bone.DazNormal)
     trgpb.DazRotMode = srcpb.DazRotMode
-    #if "DazAltName" in srcpb.keys():
-    #    trgpb.DazAltName = srcpb.DazAltName
+    trgpb.DazRestRotation = Vector(srcpb.DazRestRotation)
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
         for x in ["x", "y", "z"]:
             attr = "%s_%s" % (key, x)
