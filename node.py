@@ -1012,6 +1012,32 @@ def setBoneTransform(tfm, pb):
     pb.matrix_basis = mat
 
 
+def setFlippedTransform(tfm, pb):
+    if pb.rotation_mode == 'QUATERNION':
+        return setBoneTransform(tfm, pb)
+
+    def flipit(vec, pb):
+        fvec = []
+        for idx in range(3):
+            idx2 = pb.DazAxes[idx]
+            fvec.append(pb.DazFlips[idx2] * vec[idx2])
+        return Vector(fvec)
+
+    trans = flipit(tfm.evalTrans(), pb)
+    pb.location = d2b00(trans)
+    rot = tfm.evalRot()
+    if pb.name in []:
+        print("TT", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
+        print("  ", rot/D)
+        rot = flipit(rot, pb)
+        print("  ", rot/D)
+    else:
+        rot = flipit(rot, pb)
+    pb.rotation_euler = rot
+    scale = flipit(tfm.evalScale(), pb)
+    #pb.scale = scale
+
+
 def setBoneTwist(tfm, pb):
     mat = getBoneMatrix(tfm, pb)
     _,quat,_ = mat.decompose()

@@ -391,11 +391,11 @@ class BoneInstance(Instance):
         else:
             pb.rotation_mode = self.getRotationMode(pb, False)
         pb.DazRotMode = self.rotation_order
-
+        pb.DazAxes = self.axes
+        pb.DazFlips = [(-1 if flip else +1) for flip in self.flipped]
         tchildren = self.targetTransform(pb, node, targets, rig)
         self.setRotationLockDaz(pb, rig)
         self.setLocationLockDaz(pb, rig)
-
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildPose(figure, inFace, tchildren, missing)

@@ -471,6 +471,11 @@ class AffectOptions:
         description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
         default = True)
 
+    useDazOrientation : BoolProperty(
+        name = "DAZ Orientation",
+        description = "Assume that bones are oriented as in DAZ Studio when loading poses",
+        default = False)
+
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -495,6 +500,8 @@ class AffectOptions:
             self.layout.prop(self, "useConvert")
             if self.useConvert:
                 self.layout.prop(self, "srcCharacter")
+            else:
+                self.layout.prop(self, "useDazOrientation")
         self.drawMorphs(context)
 
     def drawBones(self, context):
@@ -1258,7 +1265,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
 
     def transformBone(self, rig, bname, tfm, value, n, offset, useTwist):
-        from .node import setBoneTransform, setBoneTwist
+        from .node import setBoneTransform, setBoneTwist, setFlippedTransform
         from .driver import isFaceBoneDriven
 
         if not self.affectBones:
@@ -1270,8 +1277,11 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             else:
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
-                setBoneTransform(tfm, pb)
-            self.clearBendTwist(pb)
+                if self.useDazOrientation and not self.useConvert:
+                    setFlippedTransform(tfm, pb)
+                else:
+                    setBoneTransform(tfm, pb)
+            #self.clearBendTwist(pb)
             if self.keepLimits:
                 self.imposeLocks(pb)
             elif not self.unlimited.get(pb.name):
