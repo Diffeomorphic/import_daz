@@ -134,7 +134,8 @@ class Transform:
         elif isinstance(self.rot, Matrix):
             mat = self.rot
         else:
-            mat = Euler(Vector(self.rot)*D, pb.DazRotMode).to_matrix()
+            rot = Vector(self.rot) - Vector(pb.DazRestRotation)
+            mat = Euler(rot*D, pb.DazRotMode).to_matrix()
         return mat.to_4x4()
 
 

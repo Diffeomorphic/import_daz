@@ -266,6 +266,7 @@ class Figure(Node):
             amt.display_type = 'STICK'
             rig.show_in_front = True
             rig.data.DazUnflipped = GS.unflipped
+            rig.data.DazHasAxes = True
             rig.DazInheritScale = False
         else:
             rig = amt = None
@@ -421,6 +422,8 @@ def copyBoneInfo(srcpb, trgpb):
     trgpb.bone.DazNormal = Vector(srcpb.bone.DazNormal)
     trgpb.DazRotMode = srcpb.DazRotMode
     trgpb.DazRestRotation = Vector(srcpb.DazRestRotation)
+    trgpb.DazAxes = tuple(srcpb.DazAxes)
+    trgpb.DazFlips = tuple(srcpb.DazFlips)
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
         for x in ["x", "y", "z"]:
             attr = "%s_%s" % (key, x)

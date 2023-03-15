@@ -159,30 +159,12 @@ class FrameConverter:
                         nbanim[bname] = frames
             else:
                 nbanim = banim
-            if self.affectBones and self.useSubtractRestpose and not again:
-                self.subtractRestpose(rig, nbanim)
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
         if self.affectBones and not again:
             if self.useConvert:
                 self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
-
-    #-------------------------------------------------------------
-    #   Subtract rest pose
-    #-------------------------------------------------------------
-
-    def subtractRestpose(self, rig, banim):
-        for bname,frames in banim.items():
-            pb = rig.pose.bones.get(bname)
-            if pb:
-                restrot = Vector(pb.DazRestRotation)
-                if restrot.length > 0 and "rotation" in frames.keys():
-                    rotframes = {}
-                    for idx,kpts in frames["rotation"].items():
-                        offset = restrot[idx]
-                        rotframes[idx] = [[t,y-offset] for t,y in kpts]
-                    frames["rotation"] = rotframes
 
     #-------------------------------------------------------------
     #   Convert bone animations
@@ -471,11 +453,6 @@ class AffectOptions:
         description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
         default = True)
 
-    useDazOrientation : BoolProperty(
-        name = "DAZ Orientation",
-        description = "Assume that bones are oriented as in DAZ Studio when loading poses",
-        default = False)
-
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -500,8 +477,6 @@ class AffectOptions:
             self.layout.prop(self, "useConvert")
             if self.useConvert:
                 self.layout.prop(self, "srcCharacter")
-            else:
-                self.layout.prop(self, "useDazOrientation")
         self.drawMorphs(context)
 
     def drawBones(self, context):
@@ -1265,7 +1240,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
 
 
     def transformBone(self, rig, bname, tfm, value, n, offset, useTwist):
-        from .node import setBoneTransform, setBoneTwist, setFlippedTransform
+        from .node import setBoneTransform, setBoneTwist
         from .driver import isFaceBoneDriven
 
         if not self.affectBones:
@@ -1277,10 +1252,10 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             else:
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
-                if self.useDazOrientation and not self.useConvert:
-                    setFlippedTransform(tfm, pb)
-                else:
-                    setBoneTransform(tfm, pb)
+                oldStyle = (self.useConvert or
+                            not rig.data.DazHasAxes or
+                            rig.DazRig.startswith("rigify"))
+                setBoneTransform(tfm, pb, oldStyle)
             #self.clearBendTwist(pb)
             if self.keepLimits:
                 self.imposeLocks(pb)

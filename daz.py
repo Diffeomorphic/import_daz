@@ -303,6 +303,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box = col.box()
         box.label(text = "Rigging")
         box.prop(scn, "DazUseArmature")
+        box.prop(scn, "DazUseDazOrientation")
         box.prop(scn, "DazUseQuaternions")
         box.prop(scn, "DazUseLockLoc")
         box.prop(scn, "DazUseLimitLoc")
@@ -555,6 +556,7 @@ def register():
     bpy.types.PoseBone.DazRotMode = StringProperty(default = 'XYZ')
     bpy.types.PoseBone.DazAxes = IntVectorProperty(size=3, default=(0,1,2))
     bpy.types.PoseBone.DazFlips = IntVectorProperty(size=3, default=(1,1,1))
+    bpy.types.Armature.DazHasAxes = BoolProperty(default=False)
     bpy.types.Armature.DazUnflipped = BoolProperty(name = "Unflipped", default=False)
     bpy.types.Object.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
@@ -682,6 +684,10 @@ def register():
     bpy.types.Scene.DazUseArmature = BoolProperty(
         name = "Armature",
         description = "Create armatures for imported figures")
+
+    bpy.types.Scene.DazUseDazOrientation = BoolProperty(
+        name = "DAZ Orientation",
+        description = "Assume that bones are oriented as in DAZ Studio when loading poses")
 
     bpy.types.Scene.DazUseQuaternions = BoolProperty(
         name = "Quaternions",

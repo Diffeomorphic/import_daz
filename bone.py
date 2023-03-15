@@ -420,7 +420,7 @@ class BoneInstance(Instance):
             if nonzero(tfm.rot):
                 pb.DazRestRotation = tfm.rot
         else:
-            setBoneTransform(tfm, pb)
+            setBoneTransform(tfm, pb, False)
             if nonzero(tfm.trans):
                 pb.DazTranslation = tfm.trans
             if nonzero(tfm.rot):

@@ -1001,33 +1001,37 @@ def getBoneMatrix(tfm, pb, test=False):
     return mat
 
 
-def setBoneTransform(tfm, pb):
-    mat = getBoneMatrix(tfm, pb)
-    if tfm.trans is None or tfm.trans.length == 0.0:
-        mat.col[3] = (0,0,0,1)
-    if tfm.hasNoScale():
-        trans = mat.col[3].copy()
-        mat = mat.to_quaternion().to_matrix().to_4x4()
-        mat.col[3] = trans
-    pb.matrix_basis = mat
-
-
-def setFlippedTransform(tfm, pb):
-    if pb.rotation_mode == 'QUATERNION':
-        return setBoneTransform(tfm, pb)
+def setBoneTransform(tfm, pb, oldStyle):
+    if (not GS.useDazOrientation or
+        pb.rotation_mode == 'QUATERNION' or
+        oldStyle):
+        mat = getBoneMatrix(tfm, pb)
+        if tfm.trans is None or tfm.trans.length == 0.0:
+            mat.col[3] = (0,0,0,1)
+        if tfm.hasNoScale():
+            trans = mat.col[3].copy()
+            mat = mat.to_quaternion().to_matrix().to_4x4()
+            mat.col[3] = trans
+        if pb.name in []: #["lShldrBend", "lForearmBend", "lThighBend"]:
+            rot = Vector(mat.to_euler(pb.rotation_mode))/D
+            print("SBT", pb.name, rot)
+        pb.matrix_basis = mat
+        return
 
     def flipit(vec, pb):
-        fvec = []
+        fvec = Vector((0,0,0))
         for idx in range(3):
             idx2 = pb.DazAxes[idx]
-            fvec.append(pb.DazFlips[idx2] * vec[idx2])
-        return Vector(fvec)
+            fvec[idx2] = pb.DazFlips[idx] * vec[idx]
+        return fvec
 
     trans = flipit(tfm.evalTrans(), pb)
     pb.location = d2b00(trans)
-    rot = tfm.evalRot()
+    rot = tfm.evalRot() - Vector(pb.DazRestRotation)*D
     if pb.name in []:
-        print("TT", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
+        #"lShldrBend", "lShldrTwist", "lForearmBend", "lForearmTwist", "lThighBend", "lThighTwist",
+        #"upper_arm.fk.L", "forearm.fk.L", "thigh.fk.L"]:
+        print("FFF", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
         print("  ", rot/D)
         rot = flipit(rot, pb)
         print("  ", rot/D)
