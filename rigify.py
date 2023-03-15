@@ -784,6 +784,7 @@ class Rigify:
         # Change vertex groups
         print("  Change vertex groups")
         activateObject(context, gen)
+        self.bendTwistNames = {}
         for ob in getArmatureChildren(context, rig):
             if ob.type == 'MESH':
                 ob.parent = gen
@@ -797,7 +798,7 @@ class Rigify:
 
                 for rname,dname in self.rigifySkel.items():
                     if str(dname[1:]) in self.limbs.keys():
-                        self.rigifySplitGroup(rname, dname, ob, rig, True, meta)
+                        self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
                     elif isinstance(dname, str):
                         if dname in ob.vertex_groups.keys():
                             vgrp = ob.vertex_groups[dname]
@@ -850,6 +851,7 @@ class Rigify:
                 assoc["%sBend" % dname] = bname
                 self.fixIkBone(dname, rig, (rname0, suffix), gen)
         self.fixBoneDrivers(gen, assoc)
+        self.renameBendTwistDrivers(gen.data)
 
         # Unlock bend locks
         for rname in ["upper_arm", "forearm", "thigh"]:
@@ -979,6 +981,13 @@ class Rigify:
             return bname
 
 
+    def renameBendTwistDrivers(self, rna):
+        for fcu in list(rna.animation_data.drivers):
+            words = fcu.data_path.split('"', 2)
+            if words[1] in self.bendTwistNames.keys():
+                fcu.data_path = '%s"%s"%s' % (words[0], self.bendTwistNames[words[1]], words[2])
+
+
     def fixIkBone(self, dname, rig, rname, gen):
         pb = rig.pose.bones.get(dname)
         if pb:
@@ -1010,17 +1019,27 @@ class Rigify:
         return chlist
 
 
-    def rigifySplitGroup(self, rname, dname, ob, rig, before, meta):
+    def rigifySplitGroup(self, rname, dname, ob, rig, before, meta, gen):
+        def changeName(oldname, newname):
+            bone = gen.data.bones[oldname]
+            bone.name = newname
+            self.bendTwistNames[oldname] = newname
+
         if dname not in ob.vertex_groups.keys():
             return
         bone = rig.data.bones[dname]
         if before:
-            bendname = "DEF-" + rname
-            twistname = "DEF-" + rname + ".001"
+            bendname = "DEF-%s" % rname
+            twistname = "DEF-%s.001" % rname
         else:
-            bendname = "DEF-" + rname + ".01"
-            twistname = "DEF-" + rname + ".02"
-        self.splitVertexGroup(ob, dname, bendname, twistname, bone.head_local, bone.tail_local)
+            bendname = "DEF-%s.01" % rname
+            twistname = "DEF-%s.02" % rname
+        nbendname = "DEF-%s.bend%s" % (rname[:-2], rname[-2:])
+        ntwistname = "DEF-%s.twist%s" % (rname[:-2], rname[-2:])
+        if bendname not in self.bendTwistNames.keys():
+            changeName(bendname, nbendname)
+            changeName(twistname, ntwistname)
+        self.splitVertexGroup(ob, dname, nbendname, ntwistname, bone.head_local, bone.tail_local)
 
 
     def mergeVertexGroups(self, rname, dnames, ob):
