@@ -1012,7 +1012,7 @@ def setBoneTransform(tfm, pb, oldStyle):
             trans = mat.col[3].copy()
             mat = mat.to_quaternion().to_matrix().to_4x4()
             mat.col[3] = trans
-        if pb.name in []: #["lShldrBend", "lForearmBend", "lThighBend"]:
+        if False and pb.name in ["rFoot", "rMetatarsals", "rToe"]:
             rot = Vector(mat.to_euler(pb.rotation_mode))/D
             print("SBT", pb.name, rot)
         pb.matrix_basis = mat
@@ -1028,9 +1028,7 @@ def setBoneTransform(tfm, pb, oldStyle):
     trans = flipit(tfm.evalTrans(), pb)
     pb.location = d2b00(trans)
     rot = tfm.evalRot() - Vector(pb.DazRestRotation)*D
-    if pb.name in []:
-        #"lShldrBend", "lShldrTwist", "lForearmBend", "lForearmTwist", "lThighBend", "lThighTwist",
-        #"upper_arm.fk.L", "forearm.fk.L", "thigh.fk.L"]:
+    if False and pb.name in ["rFoot", "rMetatarsals", "rToe"]:
         print("FFF", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
         print("  ", rot/D)
         rot = flipit(rot, pb)

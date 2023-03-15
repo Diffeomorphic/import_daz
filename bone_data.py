@@ -79,6 +79,11 @@ class BoneData:
             "rEye" : 180,
         }
 
+        self.FlipCorrection = {
+            "lCollar" : (False, False, False),
+            "l_shoulder" : (False, False, False),
+        }
+
         self.SocketBones = [
             "lShldr", "lShldrBend", "l_upperarm",
             "rShldr", "rShldrBend", "r_upperarm",
