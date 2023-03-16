@@ -1001,6 +1001,8 @@ def getBoneMatrix(tfm, pb, test=False):
     return mat
 
 
+TestBones = []
+
 def setBoneTransform(tfm, pb, oldStyle):
     if (not GS.useDazOrientation or
         pb.rotation_mode == 'QUATERNION' or
@@ -1012,7 +1014,7 @@ def setBoneTransform(tfm, pb, oldStyle):
             trans = mat.col[3].copy()
             mat = mat.to_quaternion().to_matrix().to_4x4()
             mat.col[3] = trans
-        if False and pb.name in ["rFoot", "rMetatarsals", "rToe"]:
+        if pb.name in TestBones:
             rot = Vector(mat.to_euler(pb.rotation_mode))/D
             print("SBT", pb.name, rot)
         pb.matrix_basis = mat
@@ -1027,8 +1029,8 @@ def setBoneTransform(tfm, pb, oldStyle):
 
     trans = flipit(tfm.evalTrans(), pb)
     pb.location = d2b00(trans)
-    rot = tfm.evalRot() - Vector(pb.DazRestRotation)*D
-    if False and pb.name in ["rFoot", "rMetatarsals", "rToe"]:
+    rot = tfm.evalRot()
+    if pb.name in TestBones:
         print("FFF", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
         print("  ", rot/D)
         rot = flipit(rot, pb)
