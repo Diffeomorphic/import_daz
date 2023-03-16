@@ -159,35 +159,12 @@ class FrameConverter:
                         nbanim[bname] = frames
             else:
                 nbanim = banim
-            if self.affectBones and self.useSubtractRestpose and not again:
-                self.subtractRestpose(rig, nbanim)
             nvanim = self.convertMorphAnim(vanim, rig)
             nanims.append((nbanim,nvanim))
         if self.affectBones and not again:
             if self.useConvert:
                 self.convertAllFrames(nanims, rig, bonemap)
         return nanims, locks
-
-    #-------------------------------------------------------------
-    #   Subtract rest pose
-    #-------------------------------------------------------------
-
-    def subtractRestpose(self, rig, banim):
-        from .node import TestBones
-        for bname,frames in banim.items():
-            pb = rig.pose.bones.get(bname)
-            if pb:
-                restrot = Vector(pb.DazRestRotation)
-                if restrot.length > 0 and "rotation" in frames.keys():
-                    rotframes = {}
-                    for idx,kpts in frames["rotation"].items():
-                        offset = restrot[idx]
-                        rotframes[idx] = [[t,y-offset] for t,y in kpts]
-                    if bname in TestBones:
-                        print("BB", bname, restrot)
-                        print("FF", frames["rotation"])
-                        print("NN", rotframes)
-                    frames["rotation"] = rotframes
 
     #-------------------------------------------------------------
     #   Convert bone animations

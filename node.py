@@ -1016,7 +1016,11 @@ def setBoneTransform(tfm, pb, oldStyle):
             mat.col[3] = trans
         if pb.name in TestBones:
             rot = Vector(mat.to_euler(pb.rotation_mode))/D
-            print("SBT", pb.name, rot)
+            drot = Vector(tfm.getRotMat(pb).to_euler(pb.rotation_mode))/D
+            print("SBT", pb.name, tfm.rot)
+            print("REST", Vector(pb.DazRestRotation))
+            print("DAZ", drot)
+            print("BBL", rot)
         pb.matrix_basis = mat
         return
 
@@ -1030,6 +1034,12 @@ def setBoneTransform(tfm, pb, oldStyle):
     trans = flipit(tfm.evalTrans(), pb)
     pb.location = d2b00(trans)
     rot = tfm.evalRot()
+    restrot = Vector(pb.DazRestRotation)
+    if restrot.length > 0:
+        restmat = Euler(restrot*D, pb.DazRotMode).to_matrix()
+        rotmat = Euler(rot, pb.DazRotMode).to_matrix()
+        newmat = restmat.inverted() @ rotmat
+        rot = Vector(newmat.to_euler(pb.DazRotMode))
     if pb.name in TestBones:
         print("FFF", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
         print("  ", rot/D)
