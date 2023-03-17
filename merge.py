@@ -1657,7 +1657,7 @@ def applyArmatureModifier(ob):
 #   Merge toes
 #-------------------------------------------------------------
 
-def mergeBonesAndVgroups(rig, mergers, parents, context):
+def mergeBones(rig, mergers, parents, context):
     from .driver import removeBoneSumDrivers
 
     deletes = []
@@ -1679,6 +1679,9 @@ def mergeBonesAndVgroups(rig, mergers, parents, context):
     for eb in rig.data.edit_bones:
         if eb.name in deletes:
             rig.data.edit_bones.remove(eb)
+
+
+def mergeVertexGroups(rig, mergers):
     setMode('OBJECT')
     for toe in mergers.keys():
         bone = rig.data.bones.get(toe)
@@ -1743,7 +1746,8 @@ class DAZ_OT_MergeToes(DazOperator, IsArmature):
             "r_toes" : "r_foot",
         }
         rig = context.object
-        mergeBonesAndVgroups(rig, genesisToes, newParents, context)
+        mergeBones(rig, genesisToes, newParents, context)
+        mergeVertexGroups(rig, mergers)
 
 #----------------------------------------------------------
 #   Initialize

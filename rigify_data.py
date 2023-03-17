@@ -342,6 +342,8 @@ class RigifyData:
             "rThighBend" : "rThigh",
         }
 
+        self.Genesis9Removes = ["l_upperarm", "r_upperarm"]
+
         self.ExtraParents = {
             "lPectoral" : "DEF-spine.004",
             "rPectoral" : "DEF-spine.004",

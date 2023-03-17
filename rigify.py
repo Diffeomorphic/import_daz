@@ -463,7 +463,7 @@ class Rigify:
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
         from .figure import getRigType
-        from .merge import mergeBonesAndVgroups
+        from .merge import mergeBones, mergeVertexGroups
         from .rigify_data import RigifyData
 
         print("Create metarig")
@@ -516,11 +516,17 @@ class Rigify:
             self.splitBone(rig, "chest", "chestUpper")
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            mergeBonesAndVgroups(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
+            self.deleteBendTwistDrvBones(rig)
+            mergeBones(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
+            if not self.reuseBendTwists:
+                mergeVertexGroups(rig, RF.Genesis38Mergers)
             self.renameBones(rig, RF.Genesis38Renames)
         elif rig.DazRig == "genesis9":
-            mergeBonesAndVgroups(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
-            #self.renameBones(rig, RF.Genesis9Renames)
+            if self.reuseBendTwists:
+                self.removeVertexGroups(rig, RF.Genesis9Removes)
+            else:
+                mergeBones(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
+                mergeVertexGroups(rig, RF.Genesis9Mergers)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
             activateObject(context, meta)
@@ -1020,26 +1026,33 @@ class Rigify:
 
 
     def rigifySplitGroup(self, rname, dname, ob, rig, before, meta, gen):
-        def changeName(oldname, newname):
-            bone = gen.data.bones[oldname]
-            bone.name = newname
-            self.bendTwistNames[oldname] = newname
+        def splitBone():
+            bone = rig.data.bones[dname]
+            if dname in ob.vertex_groups.keys():
+                self.splitVertexGroup(ob, dname, bendname, twistname, bone.head_local, bone.tail_local)
 
-        if dname not in ob.vertex_groups.keys():
-            return
-        bone = rig.data.bones[dname]
         if before:
             bendname = "DEF-%s" % rname
             twistname = "DEF-%s.001" % rname
         else:
             bendname = "DEF-%s.01" % rname
             twistname = "DEF-%s.02" % rname
-        nbendname = "DEF-%s.bend%s" % (rname[:-2], rname[-2:])
-        ntwistname = "DEF-%s.twist%s" % (rname[:-2], rname[-2:])
-        if bendname not in self.bendTwistNames.keys():
-            changeName(bendname, nbendname)
-            changeName(twistname, ntwistname)
-        self.splitVertexGroup(ob, dname, nbendname, ntwistname, bone.head_local, bone.tail_local)
+        ldname = dname.lower()
+        if self.useSplitShin and "shin" in ldname:
+            splitBone()
+        elif self.reuseBendTwists or "shin" in ldname:
+            vgrps = [(vgrp.name.lower(),vgrp) for vgrp in ob.vertex_groups
+                      if vgrp.name.lower().startswith(ldname)]
+            for vname,vgrp in vgrps:
+                if vname.endswith(("twist", "twist2")):
+                    vgrp.name = twistname
+                elif vname.endswith("twist1"):
+                    vgrp.name = bendname
+                else:
+                    vgrp.name = bendname
+        else:
+            splitBone()
+
 
 
     def mergeVertexGroups(self, rname, dnames, ob):

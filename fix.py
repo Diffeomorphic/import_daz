@@ -50,12 +50,24 @@ class Fixer(DriverUser):
         description = "Generate IK controls for tongue.\nTongue morphs will be removed",
         default = False)
 
+    reuseBendTwists : BoolProperty(
+        name = "Reuse Bend And Twist Bones",
+        description = "Use the original bend-twist bones and vertex groups",
+        default = True)
+
+    useSplitShin : BoolProperty(
+        name = "Split Shin Bone",
+        description = "Split the shin bone into bend and twist parts",
+        default = False)
+
     useKeepRig : BoolProperty(
         name = "Keep DAZ Rig",
         description = "Keep existing armature and meshes in a new collection",
         default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "reuseBendTwists")
+        self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useKeepRig")
@@ -184,6 +196,20 @@ class Fixer(DriverUser):
             eb1.tail = eb2.head = knee
             setRoll(eb1, xaxis)
             eb2.roll = eb1.roll
+
+
+    def removeVertexGroups(self, rig, grpnames):
+        for ob in rig.children:
+            if ob.type == 'MESH':
+                for gname in grpnames:
+                    vgrp = ob.vertex_groups.get(gname)
+                    if vgrp:
+                        #weights = []
+                        #for v in ob.data.vertices:
+                        #    for g in v.groups:
+                        #        if g.group == vgrp.index:
+                        #            weights.append(g.weight)
+                        ob.vertex_groups.remove(vgrp)
 
 
     def fixBoneDrivers(self, rig, assoc0):
