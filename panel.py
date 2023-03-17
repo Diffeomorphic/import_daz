@@ -493,6 +493,7 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
             layout.operator("daz.clear_pose")
             op = layout.operator("daz.clear_morphs")
             op.morphset = "All"
+            layout.operator("daz.copy_absolute_pose")
             if rig.DazDriversDisabled:
                 layout.operator("daz.enable_drivers")
             else:

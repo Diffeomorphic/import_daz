@@ -1729,10 +1729,17 @@ class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        from .morphing import getRigFromObject
-        rig = getRigFromObject(context.object)
+        ob = context.object
         scn = context.scene
-        auto =  scn.tool_settings.use_keyframe_insert_auto
+        if ob.type == 'ARMATURE':
+            for rig in getSelectedArmatures(context):
+                self.clearPose(rig, scn)
+        elif ob.parent and ob.parent.type == 'ARMATURE':
+            self.clearPose(ob.parent, scn)
+
+
+    def clearPose(self, rig, scn):
+        auto = scn.tool_settings.use_keyframe_insert_auto
         unit = Matrix()
         setWorldMatrix(rig, unit)
         if auto:

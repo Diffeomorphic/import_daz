@@ -32,6 +32,9 @@ from .utils import *
 from .error import *
 from .bone_data import BD
 
+def updatePose():
+    bpy.context.view_layer.update()
+
 #-------------------------------------------------------------
 #   Simple IK
 #-------------------------------------------------------------
@@ -89,9 +92,6 @@ class SimpleIK:
 
     def getIKProp(self, prefix, type):
         return ("Daz%sIK_%s" % (type, prefix.upper()))
-
-    def updatePose(self):
-        bpy.context.view_layer.update()
 
     def keyPose(self, pb):
         if self.auto:
@@ -737,7 +737,7 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
             self.setProp(rig, prop, True)
-            self.updatePose()
+            updatePose()
             self.snapSimpleFK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, True)
             toggleLayer(rig, "IK", self.prefix, self.type, False)
@@ -752,10 +752,10 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
             if pb:
                 mats.append((pb, pb.matrix.copy()))
         self.setProp(rig, prop, 0.0)
-        self.updatePose()
+        updatePose()
         for pb,mat in mats:
             pb.matrix = mat
-            self.updatePose()
+            updatePose()
             self.keyPose(pb)
 
 #----------------------------------------------------------
@@ -779,7 +779,7 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
         if bnames:
             prop = self.getIKProp(self.prefix, self.type)
             self.setProp(rig, prop, 0.0)
-            self.updatePose()
+            updatePose()
             self.snapSimpleIK(rig, bnames, prop)
             toggleLayer(rig, "FK", self.prefix, self.type, False)
             toggleLayer(rig, "IK", self.prefix, self.type, True)
@@ -805,17 +805,17 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
         handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
         if handik:
             handik.matrix = handmat
-            self.updatePose()
+            updatePose()
             self.keyPose(handik)
         if pole:
             poleik.matrix = polemat
-            self.updatePose()
+            updatePose()
             self.keyPose(poleik)
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
                 pb.matrix_basis = Matrix()
-                self.updatePose()
+                updatePose()
                 self.keyPose(pb)
 
 
@@ -1119,6 +1119,32 @@ class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
         rig.data.layers = m*[False] + [True] + (31-m)*[False]
 
 #----------------------------------------------------------
+#   Copy Absolute Pose
+#----------------------------------------------------------
+
+class DAZ_OT_CopyAbsolutePose(DazOperator, IsArmature):
+    bl_idname = "daz.copy_absolute_pose"
+    bl_label = "Copy Absolute Pose"
+    bl_description = "Copy pose in world space from active to selected armatures"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        src = context.object
+        roots = [pb for pb in src.pose.bones if pb.parent is None]
+        for trg in getSelectedArmatures(context):
+            if trg != src:
+                for root in roots:
+                    self.copyPose(root, trg)
+
+    def copyPose(self, pb, trg):
+        trgpb = trg.pose.bones.get(pb.name)
+        if trgpb:
+            trgpb.matrix = pb.matrix.copy()
+            updatePose()
+            for child in pb.children:
+                self.copyPose(child, trg)
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -1131,6 +1157,7 @@ classes = [
     DAZ_OT_ConnectBoneChains,
     DAZ_OT_SelectNamedLayers,
     DAZ_OT_UnSelectNamedLayers,
+    DAZ_OT_CopyAbsolutePose,
 ]
 
 def register():
