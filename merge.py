@@ -1747,7 +1747,7 @@ class DAZ_OT_MergeToes(DazOperator, IsArmature):
         }
         rig = context.object
         mergeBones(rig, genesisToes, newParents, context)
-        mergeVertexGroups(rig, mergers)
+        mergeVertexGroups(rig, genesisToes)
 
 #----------------------------------------------------------
 #   Initialize
