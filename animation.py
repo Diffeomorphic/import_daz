@@ -1258,7 +1258,7 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
                 setBoneTransform(tfm, pb, oldStyle)
             #self.clearBendTwist(pb)
             if self.keepLimits:
-                self.imposeLocks(pb)
+                imposeLocks(pb)
             elif not self.unlimited.get(pb.name):
                 self.unlimit(pb)
             if self.useInsertKeys:
@@ -1272,24 +1272,6 @@ class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
             pb.rotation_euler[1] = 0
         elif pb.name.endswith("Twist"):
             pb.rotation_euler[0] = pb.rotation_euler[2] = 0
-
-
-    def imposeLocks(self, pb):
-        for n in range(3):
-            if pb.lock_location[n]:
-                pb.location[n] = 0
-            if pb.lock_scale[n]:
-                pb.scale[n] = 1
-        if pb.rotation_mode == 'QUATERNION':
-            if pb.lock_rotation_w:
-                pb.rotation_quaternion[0] = 0
-            for n in range(3):
-                if pb.lock_rotation[n]:
-                    pb.rotation_quaternion[n+1] = 0
-        else:
-            for n in range(3):
-                if pb.lock_rotation[n]:
-                    pb.rotation_euler[n] = 0
 
 
     def unlimit(self, pb):
@@ -1771,6 +1753,24 @@ def setChildofInverses(rig):
                 print("SET INV", pb.name, cns.name)
                 bpy.ops.constraint.childof_set_inverse(constraint=cns.name, owner='BONE')
                 print("DONE")
+
+
+def imposeLocks(pb):
+    for n in range(3):
+        if pb.lock_location[n]:
+            pb.location[n] = 0
+        if pb.lock_scale[n]:
+            pb.scale[n] = 1
+    if pb.rotation_mode == 'QUATERNION':
+        if pb.lock_rotation_w:
+            pb.rotation_quaternion[0] = 0
+        for n in range(3):
+            if pb.lock_rotation[n]:
+                pb.rotation_quaternion[n+1] = 0
+    else:
+        for n in range(3):
+            if pb.lock_rotation[n]:
+                pb.rotation_euler[n] = 0
 
 #----------------------------------------------------------
 #   Prune action
