@@ -743,7 +743,7 @@ class Rigify:
 
         # Add DAZ properties
         print("  Add DAZ properties")
-        for key in rig.keys():
+        for key in list(rig.keys()):
             copyProp(key, rig, gen, True)
         for key in rig.data.keys():
             copyProp(key, rig.data, gen.data, False)

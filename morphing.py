@@ -1051,6 +1051,11 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     hideable = True
     useMakePosable = False
 
+    useHdMorphs : BoolProperty(
+        name = "HD Morphs",
+        description = "Include HD morphs",
+        default = True)
+
     def setupCharacter(self, context):
         self.getFingeredRigMeshes(context)
         ob = context.object
@@ -1094,6 +1099,10 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
         return namepaths
 
 
+    def isHdOk(self, string):
+        return (self.useHdMorphs or not string.endswith("div2"))
+
+
     def getActiveMorphFiles(self):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
@@ -1119,6 +1128,7 @@ class StandardMorphSelector(Selector):
     def draw(self, context):
         Selector.draw(self, context)
         row = self.layout.row()
+        row.prop(self, "useHdMorphs")
         row.prop(self, "useMakePosable")
         if self.bodypart == "Face":
             row.prop(self, "useTransferFace")
@@ -1133,7 +1143,7 @@ class StandardMorphSelector(Selector):
         return True
 
     def selectCondition(self, item):
-        return True
+        return self.isHdOk(item.text)
 
     def invoke(self, context, event):
         scn = context.scene
@@ -1365,6 +1375,12 @@ class MorphTypeOptions:
         description = "Import all flexions",
         default = False)
 
+    useHdMorphs : BoolProperty(
+        name = "HD Morphs",
+        description = "Include HD morphs",
+        default = True)
+
+
     def draw(self, context):
         self.layout.prop(self, "units")
         self.layout.prop(self, "expressions")
@@ -1378,6 +1394,8 @@ class MorphTypeOptions:
             self.subprop("useMhxOnly")
         self.layout.prop(self, "jcms")
         self.layout.prop(self, "flexions")
+        self.layout.separator()
+        self.layout.prop(self, "useHdMorphs")
 
     def subprop(self, prop):
         split = self.layout.split(factor=0.05)
@@ -1395,11 +1413,11 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
     def draw(self, context):
         MorphTypeOptions.draw(self, context)
-        self.layout.separator()
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useMakePosable")
+
 
     def run(self, context):
         if not self.setupCharacter(context):
@@ -1452,7 +1470,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             if self.morphset == "Body" and self.useMhxOnly:
                 morphFiles = self.selectMhxMorphs(morphFiles)
             for key,path in morphFiles.items():
-                namepaths.append((key, path, self.bodypart))
+                if self.isHdOk(key):
+                    namepaths.append((key, path, self.bodypart))
         return namepaths
 
 

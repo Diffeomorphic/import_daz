@@ -884,7 +884,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters,
                         useTransferFace = False)
-            if (self.units or
+            if (  self.units or
                   self.expressions or
                   self.visemes or
                   self.head or
@@ -907,6 +907,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useMhxOnly = self.useMhxOnly,
                         jcms = self.jcms,
                         flexions = self.flexions,
+                        useHdMorphs = self.useHdMorphs,
                         useAdjusters = self.useAdjusters)
 
         # Add softbody simulation
