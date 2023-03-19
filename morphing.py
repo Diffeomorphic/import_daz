@@ -1059,8 +1059,12 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     def setupCharacter(self, context):
         self.getFingeredRigMeshes(context)
         ob = context.object
-        if not self.chars:
+        msg = ""
+        if not self.meshes:
+            msg = ('No mesh associated with "%s"' % context.object.name)
+        elif not self.chars:
             msg = ("Can not add morphs to this mesh:\n %s" % ob.name)
+        if msg:
             invokeErrorMessage(msg)
             return False
         return True
@@ -1418,10 +1422,12 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useMakePosable")
 
+    def invoke(self, context, event):
+        if not self.setupCharacter(context):
+            return {'FINISHED'}
+        return StandardMorphLoader.invoke(self, context, event)
 
     def run(self, context):
-        if not self.setupCharacter(context):
-            return
         MP.setupMorphPaths(False)
         self.errors = {}
         self.allfaceshapes = {}
@@ -1574,6 +1580,10 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
     def invoke(self, context, event):
         self.getFingeredRigMeshes(context)
+        if not self.meshes:
+            msg = ('No mesh associated with "%s"' % context.object.name)
+            invokeErrorMessage(msg)
+            return {'FINISHED'}
         self.setPreferredFolder(self.rig, self.meshes, ["Morphs/"], False)
         return MultiFile.invoke(self, context, event)
 

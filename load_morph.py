@@ -53,6 +53,7 @@ class LoadMorph(DriverUser):
         self.rig = None
         self.amt = None
         self.mesh = None
+        self.meshes = []
         self.char = None
         self.modded = False
         self.mult = []
