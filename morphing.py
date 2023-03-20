@@ -1050,11 +1050,18 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
     ignoreHD = False
     hideable = True
     useMakePosable = False
+    useHdMorphs = False
 
-    useHdMorphs : BoolProperty(
-        name = "HD Morphs",
-        description = "Include HD morphs",
-        default = True)
+    def drawOptions(self, layout):
+        layout.prop(self, "useMakePosable")
+        if self.bodypart == "Face":
+            layout.prop(self, "useTransferFace")
+        layout.prop(self, "useAdjusters")
+        layout.prop(self, "onMorphSuffix")
+        if self.onMorphSuffix == 'ALL':
+            layout.prop(self, "morphSuffix")
+        else:
+            layout.label(text="")
 
     def setupCharacter(self, context):
         self.getFingeredRigMeshes(context)
@@ -1104,7 +1111,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
 
 
     def isHdOk(self, string):
-        return (self.useHdMorphs or not string.endswith("div2"))
+        return True
 
 
     def getActiveMorphFiles(self):
@@ -1124,6 +1131,20 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
                     namepaths.append((item.text, path, self.bodypart))
         return namepaths
 
+
+class StandardHdLoader(StandardMorphLoader):
+    useHdMorphs : BoolProperty(
+        name = "HD Morphs",
+        description = "Include HD morphs",
+        default = True)
+
+    def drawOptions(self, layout):
+        layout.prop(self, "useHdMorphs")
+        StandardMorphLoader.drawOptions(self, layout)
+
+    def isHdOk(self, string):
+        return (self.useHdMorphs or not string.endswith("div2"))
+
 #------------------------------------------------------------------------
 #   Import general morph or driven pose
 #------------------------------------------------------------------------
@@ -1132,16 +1153,7 @@ class StandardMorphSelector(Selector):
     def draw(self, context):
         Selector.draw(self, context)
         row = self.layout.row()
-        row.prop(self, "useHdMorphs")
-        row.prop(self, "useMakePosable")
-        if self.bodypart == "Face":
-            row.prop(self, "useTransferFace")
-        row.prop(self, "useAdjusters")
-        row.prop(self, "onMorphSuffix")
-        if self.onMorphSuffix == 'ALL':
-            row.prop(self, "morphSuffix")
-        else:
-            row.label(text="")
+        self.drawOptions(row)
 
     def isActive(self, name, scn):
         return True
@@ -1170,7 +1182,7 @@ class StandardMorphSelector(Selector):
         return self.invokeDialog(context)
 
 
-class DAZ_OT_ImportUnits(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+class DAZ_OT_ImportUnits(DazOperator, StandardMorphSelector, StandardHdLoader, IsMeshArmature):
     bl_idname = "daz.import_units"
     bl_label = "Import Units"
     bl_description = "Import selected face unit morphs"
@@ -1180,7 +1192,7 @@ class DAZ_OT_ImportUnits(DazOperator, StandardMorphSelector, StandardMorphLoader
     bodypart = "Face"
 
 
-class DAZ_OT_ImportExpressions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+class DAZ_OT_ImportExpressions(DazOperator, StandardMorphSelector, StandardHdLoader, IsMeshArmature):
     bl_idname = "daz.import_expressions"
     bl_label = "Import Expressions"
     bl_description = "Import selected expression morphs"
@@ -1190,7 +1202,7 @@ class DAZ_OT_ImportExpressions(DazOperator, StandardMorphSelector, StandardMorph
     bodypart = "Face"
 
 
-class DAZ_OT_ImportVisemes(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+class DAZ_OT_ImportVisemes(DazOperator, StandardMorphSelector, StandardHdLoader, IsMeshArmature):
     bl_idname = "daz.import_visemes"
     bl_label = "Import Visemes"
     bl_description = "Import selected visemes morphs"
@@ -1407,7 +1419,7 @@ class MorphTypeOptions:
         split.prop(self, prop)
 
 
-class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTypeOptions, IsMeshArmature):
+class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardHdLoader, MorphTypeOptions, IsMeshArmature):
     bl_idname = "daz.import_standard_morphs"
     bl_label = "Import Standard Morphs"
     bl_description = "Import all standard morphs of selected types.\nDoing this once is faster than loading individual types"
@@ -1425,7 +1437,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     def invoke(self, context, event):
         if not self.setupCharacter(context):
             return {'FINISHED'}
-        return StandardMorphLoader.invoke(self, context, event)
+        return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
         MP.setupMorphPaths(False)
@@ -1496,7 +1508,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
     def addToMorphSet(self, prop, asset, hidden):
         self.hideable = (self.morphset in ["Jcms", "Flexions"])
-        StandardMorphLoader.addToMorphSet(self, prop, asset, hidden)
+        StandardHdLoader.addToMorphSet(self, prop, asset, hidden)
 
 #------------------------------------------------------------------------
 #   Import general morph or driven pose
