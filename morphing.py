@@ -2316,6 +2316,8 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
                     if skey.name.lower() in self.props:
                         skey.slider_min = self.min
                         skey.slider_max = self.max
+                        skey.driver_remove("slider_min")
+                        skey.driver_remove("slider_max")
         amt = rig.data
         for raw in rig.keys():
             if raw.lower() in self.props:
