@@ -907,7 +907,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useMhxOnly = self.useMhxOnly,
                         jcms = self.jcms,
                         flexions = self.flexions,
-                        useHdMorphs = self.useHdMorphs,
                         useAdjusters = self.useAdjusters)
 
         # Add softbody simulation
