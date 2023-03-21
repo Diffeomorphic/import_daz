@@ -643,9 +643,10 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         else:
             self.layout.operator("daz.disable_drivers")
         self.preamble(self.layout, rig)
-        row = self.layout.row()
-        row.operator("daz.morph_armature")
-        row.prop(context.scene, "DazAutoMorphArmatures")
+        if GS.useERC:
+            row = self.layout.row()
+            row.operator("daz.morph_armature")
+            row.prop(context.scene, "DazAutoMorphArmatures")
         prop = "Adjust Morph Strength"
         if prop in rig.keys():
             self.layout.prop(rig, propRef(prop))

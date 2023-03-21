@@ -247,6 +247,7 @@ class GlobalSettings:
                 setattr(self, key, value)
             else:
                 print("MIS", prop, key)
+        self.toggleMorphArmatures(scn)
         contentOld = self.contentDirs
         mdlOld = self.mdlDirs
         cloudOld = self.cloudDirs
@@ -263,6 +264,13 @@ class GlobalSettings:
             caseOld != self.caseSensitivePaths):
             if self.caseSensitivePaths and self.rescanOnChange:
                 self.scanAbsPaths()
+
+
+    def toggleMorphArmatures(self, scn):
+        from .runtime.morph_armature import onFrameChangeDaz, unregister
+        unregister()
+        if scn.DazAutoMorphArmatures and self.useERC:
+            bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 
 
     def pathsFromScene(self, pgs):

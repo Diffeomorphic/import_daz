@@ -940,10 +940,7 @@ def toggleInheritScale(self, context):
 #----------------------------------------------------------
 
 def toggleMorphArmatures(self, context):
-    from .runtime.morph_armature import onFrameChangeDaz, unregister
-    unregister()
-    if context.scene.DazAutoMorphArmatures:
-        bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
+    GS.toggleMorphArmatures(context.scene)
 
 #-------------------------------------------------------------
 #   Categorize
