@@ -885,19 +885,16 @@ class TopCoatGroup(FacMixGroup):
 #   Refraction Group
 # ---------------------------------------------------------------------
 
-class RefractionGroup(FacMixGroup):
+class RefractionThinWallGroup(FacMixGroup):
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += [
-            "Thin Wall",
             "Refraction Color", "Refraction Roughness", "IOR",
             "Glossy Color", "Glossy Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 5)
-        self.group.inputs.new("NodeSocketFloat", "Thin Wall")
-        self.setMinMax("Thin Wall", 0, 0, 1)
         self.group.inputs.new("NodeSocketColor", "Refraction Color")
         self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
         self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
@@ -916,23 +913,10 @@ class RefractionGroup(FacMixGroup):
 
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
-        refr = self.addNode("ShaderNodeBsdfRefraction", 1)
-        self.links.new(self.inputs.outputs["Refraction Color"], refr.inputs["Color"])
-        self.links.new(self.inputs.outputs["Refraction Roughness"], refr.inputs["Roughness"])
-        self.links.new(self.inputs.outputs["IOR"], refr.inputs["IOR"])
-        self.links.new(self.inputs.outputs["Normal"], refr.inputs["Normal"])
-
-        trans = self.addNode("ShaderNodeBsdfTransparent", 1)
-        self.links.new(self.inputs.outputs["Refraction Color"], trans.inputs["Color"])
-
-        thin = self.addNode("ShaderNodeMixShader", 2)
-        thin.label = "Thin Wall"
-        self.links.new(self.inputs.outputs["Thin Wall"], thin.inputs["Fac"])
-        self.links.new(refr.outputs[0], thin.inputs[1])
-        self.links.new(trans.outputs[0], thin.inputs[2])
+        node = self.AddRefractionTransparent()
 
         fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel", 2)
-        fresnel.inputs["Power"].default_value = 3
+        fresnel.inputs["Power"].default_value = self.power
         self.links.new(self.inputs.outputs["IOR"], fresnel.inputs["IOR"])
         self.links.new(self.inputs.outputs["Glossy Roughness"], fresnel.inputs["Roughness"])
         self.links.new(self.inputs.outputs["Normal"], fresnel.inputs["Normal"])
@@ -946,11 +930,35 @@ class RefractionGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
 
         mix = self.addNode("ShaderNodeMixShader", 3)
-        self.links.new(fresnel.outputs["Refraction"], mix.inputs[0])
-        self.links.new(thin.outputs[0], mix.inputs[1])
+        self.links.new(fresnel.outputs[self.fresnelType], mix.inputs[0])
+        self.links.new(node.outputs[0], mix.inputs[1])
         self.links.new(aniso.outputs[0], mix.inputs[2])
 
         self.mixCycles(mix.outputs[0], 2)
+
+
+class RefractionGroup(RefractionThinWallGroup):
+    power = 3
+    fresnelType = "Refraction"
+
+    def AddRefractionTransparent(self):
+        node = self.addNode("ShaderNodeBsdfRefraction", 1)
+        self.links.new(self.inputs.outputs["Refraction Color"], node.inputs["Color"])
+        self.links.new(self.inputs.outputs["Refraction Roughness"], node.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["IOR"], node.inputs["IOR"])
+        self.links.new(self.inputs.outputs["Normal"], node.inputs["Normal"])
+        return node
+
+
+class ThinWallGroup(RefractionThinWallGroup):
+    power = 2
+    fresnelType = "Dielectric"
+
+    def AddRefractionTransparent(self):
+        node = self.addNode("ShaderNodeBsdfTransparent", 1)
+        self.links.new(self.inputs.outputs["Refraction Color"], node.inputs["Color"])
+        return node
+
 
 # ---------------------------------------------------------------------
 #   Fake Caustics Group
@@ -1772,6 +1780,7 @@ ShaderGroups = {
         "useGlossy" : (GlossyGroup, "DAZ Glossy", []),
         "useTopCoat" : (TopCoatGroup, "DAZ Top Coat", []),
         "useRefraction" : (RefractionGroup, "DAZ Refraction", []),
+        "useThinWall" : (ThinWallGroup, "DAZ Thin Wall", []),
         "useFakeCaustics" : (FakeCausticsGroup, "DAZ Fake Caustics", [WHITE]),
         "useTransparent" : (TransparentGroup, "DAZ Transparent", []),
         "useInvertNormalMap" : (InvertNormalMapGroup, "DAZ Invert NMap", []),
@@ -1806,6 +1815,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useGlossy : BoolProperty(name="Glossy", default=False)
     useTopCoat : BoolProperty(name="Top Coat", default=False)
     useRefraction : BoolProperty(name="Refraction", default=False)
+    useThinWall : BoolProperty(name="Thin Wall", default=False)
     useFakeCaustics : BoolProperty(name="Fake Caustics", default=False)
     useTransparent : BoolProperty(name="Transparent", default=False)
     useInvertNormalMap : BoolProperty(name="Invert Normal Map", default=False)

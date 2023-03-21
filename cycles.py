@@ -1458,9 +1458,14 @@ class CyclesTree(Tree):
 
 
     def buildRefractionNode(self):
-        from .cgroup import RefractionGroup
+        from .cgroup import RefractionGroup, ThinWallGroup
         self.addColumn()
-        node = self.addGroup(RefractionGroup, "DAZ Refraction", size=15)
+        ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
+        thin = (self.owner.isThinWall() or (ior == 1 and iortex is None))
+        if thin:
+            node = self.addGroup(ThinWallGroup, "DAZ Thin Wall", size=15)
+        else:
+            node = self.addGroup(RefractionGroup, "DAZ Refraction", size=15)
         node.width = 240
 
         color,tex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
@@ -1469,7 +1474,6 @@ class CyclesTree(Tree):
         self.linkScalar(roughtex, node, roughness, "Glossy Roughness")
 
         color,coltex,roughness,roughtex = self.getRefractionColor()
-        ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
         aniso,anisotex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
         if aniso > 0:
             roughness = roughness ** (1/(1+aniso))
@@ -1480,12 +1484,9 @@ class CyclesTree(Tree):
         self.linkScalar(iortex, node, ior, "IOR")
         self.linkScalar(anisotex, node, aniso, "Anisotropy")
         self.linkScalar(rottex, node, 1 - anirot, "Rotation")
-        if (self.owner.isThinWall() or
-            (ior == 1 and iortex is None)):
-            node.inputs["Thin Wall"].default_value = 1
+        if thin:
             self.owner.setTransSettings(True, True, color, 0.1)
         else:
-            node.inputs["Thin Wall"].default_value = 0
             self.owner.setTransSettings(True, False, color, 0.2)
         self.linkBumpNormal(node)
         return node, color
