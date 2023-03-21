@@ -208,7 +208,7 @@ class MorphGroup:
             return 50*[True]
 
 
-    def getRelevantMorphs(self, scn, rig):
+    def getRelevantMorphs(self, scn, rig, adjusters=False):
         filtered = self.getFiltered()
         morphs = []
         if rig is None:
@@ -220,12 +220,20 @@ class MorphGroup:
                 if key[0:2] == "Dz":
                     raise DazError("OLD morphs", rig, key)
         elif self.morphset == "All":
+            if adjusters:
+                adj = "Adjust Morph Strength"
+                if adj in rig.keys():
+                    morphs.append(adj)
             for mset in MS.Standards:
                 pgs = getattr(rig, "Daz%s" % mset)
                 morphs += [key for key in pgs.keys()]
             for cat in rig.DazMorphCats:
                 morphs += [morph.name for morph in cat.morphs]
         else:
+            if adjusters:
+                adj = "Adjust %s" % self.morphset
+                if adj in rig.keys():
+                    morphs.append(adj)
             pgs = getattr(rig, "Daz%s" % self.morphset)
             morphs += [key for key,on in zip(pgs.keys(), filtered) if on]
         return morphs
@@ -2182,7 +2190,7 @@ class DAZ_OT_KeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
         rig = getRigFromObject(context.object)
         if rig:
             scn = context.scene
-            morphs = self.getRelevantMorphs(scn, rig)
+            morphs = self.getRelevantMorphs(scn, rig, adjusters=True)
             for morph in morphs:
                 if getActivated(rig, rig, morph):
                     keyProp(rig, morph, scn.frame_current)
@@ -2219,7 +2227,7 @@ class DAZ_OT_UnkeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
         rig = getRigFromObject(context.object)
         if rig and rig.animation_data and rig.animation_data.action:
             scn = context.scene
-            morphs = self.getRelevantMorphs(scn, rig)
+            morphs = self.getRelevantMorphs(scn, rig, adjusters=True)
             for morph in morphs:
                 if getActivated(rig, rig, morph):
                     unkeyProp(rig, morph, scn.frame_current)

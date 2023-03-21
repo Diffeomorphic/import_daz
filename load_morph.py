@@ -305,8 +305,8 @@ class LoadMorph(DriverUser):
                 final = self.addNewProp(prop)
                 adj = self.getStrengthAdjuster()
                 self.adjustShapekey(skey, adj, final)
-                if adj:
-                    makePropDriver(propRef(adj), skey, "slider_max", self.rig, "x")
+                #if adj:
+                #    makePropDriver(propRef(adj), skey, "slider_max", self.rig, "x")
             pgs = self.mesh.data.DazBodyPart
             if prop in pgs.keys():
                 item = pgs[prop]
@@ -418,12 +418,13 @@ class LoadMorph(DriverUser):
                     self.adjustedBones[words[1]] = True
 
 
-    def adjustTranslation(self, adj, pb, string, vars):
+    def adjustStrength(self, adj, pb, string, vars):
         if pb is None or adj is None:
             return string
         from .driver import makePropDriver
         string = "L*(%s)" % string
         vars.append(("L", finalProp(adj)))
+        return string
         if pb.name in self.adjustedBones.keys():
             return string
         cns = getConstraint(pb, 'LIMIT_LOCATION')
@@ -1365,7 +1366,9 @@ class LoadMorph(DriverUser):
         adj = None
         pb = None
         bname = prefix[:-6]
-        if prefix[-6:-1] in [":Loc:", ":Hdo:", ":Tlo:"] and bname in self.rig.pose.bones.keys():
+        if (bname in self.rig.pose.bones.keys()
+            # and prefix[-6:-1] in [":Loc:", ":Hdo:", ":Tlo:"]
+            ):
             adj = self.getStrengthAdjuster()
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():
@@ -1377,14 +1380,14 @@ class LoadMorph(DriverUser):
             varname = nextLetter(varname)
             if (nterms > MAX_TERMS or
                 len(string) > MAX_EXPR_LEN):
-                string = self.adjustTranslation(adj, pb, string, vars)
+                string = self.adjustStrength(adj, pb, string, vars)
                 batches.append((string, vars))
                 string = ""
                 nterms = 0
                 varname = "a"
                 vars = []
         if vars:
-            string = self.adjustTranslation(adj, pb, string, vars)
+            string = self.adjustStrength(adj, pb, string, vars)
             batches.append((string, vars))
         return batches
 
