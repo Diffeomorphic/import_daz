@@ -891,13 +891,16 @@ class RefractionThinWallGroup(FacMixGroup):
         self.insockets += [
             "Refraction Color", "Refraction Roughness", "IOR",
             "Glossy Color", "Glossy Roughness", "Anisotropy", "Rotation", "Normal"]
+        if self.useRoughness:
+            self.insockets += ["Refraction Roughness"]
 
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketColor", "Refraction Color")
-        self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
-        self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
+        if self.useRoughness:
+            self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
+            self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketColor", "Glossy Color")
@@ -938,6 +941,7 @@ class RefractionThinWallGroup(FacMixGroup):
 
 
 class RefractionGroup(RefractionThinWallGroup):
+    useRoughness = True
     power = 3
     fresnelType = "Refraction"
 
@@ -951,6 +955,7 @@ class RefractionGroup(RefractionThinWallGroup):
 
 
 class ThinWallGroup(RefractionThinWallGroup):
+    useRoughness = False
     power = 2
     fresnelType = "Dielectric"
 

@@ -1480,7 +1480,8 @@ class CyclesTree(Tree):
         anirot,rottex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
         self.linkColor(coltex, node, color, "Refraction Color")
 
-        self.linkScalar(roughtex, node, roughness, "Refraction Roughness")
+        if not thin:
+            self.linkScalar(roughtex, node, roughness, "Refraction Roughness")
         self.linkScalar(iortex, node, ior, "IOR")
         self.linkScalar(anisotex, node, aniso, "Anisotropy")
         self.linkScalar(rottex, node, 1 - anirot, "Rotation")
