@@ -136,14 +136,6 @@ def copyScale(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     return cns
 
 
-def hintRotation(ikbone, rig):
-    cns = limitRotation(ikbone, rig)
-    cns.name = "Hint"
-    cns.min_x = 18*D
-    cns.max_x = 18*D
-    cns.use_limit_x = True
-
-
 def limitLocation(bone, rig, prop=None, expr="x"):
     cns = bone.constraints.new('LIMIT_LOCATION')
     cns.owner_space = 'LOCAL'
@@ -439,6 +431,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def convertMhx(self, context):
         from .figure import finalizeArmature
+        from .simple import improveIk
         if self.useKeepRig:
             self.saveExistingRig(context)
         rig = context.object
@@ -557,9 +550,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
-        if self.useImproveIk:
-            from .simple import improveIk
-            improveIk(rig)
+        improveIk(rig)
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
         rig.data.display_type = 'WIRE'
@@ -1175,7 +1166,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if not self.useChildOfConstraints:
                 setMhxProp(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
 
-            #hintRotation(forearmIk, rig)
             ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
             stretchTo(elbowLink, elbowPt, rig)
             elbowPt.rotation_euler[0] = -90*D

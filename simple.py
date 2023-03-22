@@ -220,18 +220,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         description = "Add a root bone which is the parent of all other bones",
         default = True)
 
-    useImproveIk : BoolProperty(
-        name = "Improve IK",
-        description = "Improve IK behaviour by prebending bones",
-        default = True)
-
     def draw(self, context):
         self.layout.prop(self, "useRootBone")
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useCopyRotation")
-        self.layout.prop(self, "useImproveIk")
 
 
     def run(self, context):
@@ -267,7 +261,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         if not rig.DazCustomShapes:
             raise DazError("Make custom shapes first")
 
-        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, hintRotation, stretchTo
+        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, stretchTo
         IK = SimpleIK(self)
         genesis = IK.getGenesisType(rig)
         if not genesis:
@@ -448,7 +442,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     copyBoneProps(thighBend, thighIK)
                     copyBoneProps(shin, shinIK)
                     shinIK.lock_ik_y = shinIK.lock_ik_z = True
-                    #hintRotation(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
                     cns.euler_order = BD.getDefaultMode(thighBend)
@@ -469,9 +462,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useLegs:
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
 
-        if self.useImproveIk:
-            from .simple import improveIk
-            improveIk(rig)
+        improveIk(rig)
         from .node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
         for ob in LS.customShapes:
@@ -1180,17 +1171,15 @@ def improveIk(rig):
     for pb in rig.pose.bones:
         for cns in pb.constraints:
             if cns.type == 'IK':
-                ikconstraints.append((pb, cns, pb.lock_rotation[0]))
+                ikconstraints.append((pb, cns, cns.mute))
                 cns.mute = True
                 pb.lock_rotation[0] = False
                 pb.rotation_euler[0] = 25*D
-    for pb,cns,lock in ikconstraints:
-        pb.lock_rotation[0] = lock
-        cns.mute = False
-        pb.use_ik_limit_x = True
-        pb.ik_min_x = 0
-        pb.ik_max_x = 160*D
-        pb.lock_ik_z = True
+    for pb,cns,mute in ikconstraints:
+        pb.lock_rotation = (False, True, True)
+        cns.mute = mute
+        pb.use_ik_limit_x = pb.use_ik_limit_y = pb.use_ik_limit_z = False
+        pb.lock_ik_y = pb.lock_ik_z = True
 
 #----------------------------------------------------------
 #   Initialize

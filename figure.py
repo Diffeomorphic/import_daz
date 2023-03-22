@@ -915,10 +915,9 @@ def toggleLimits(self, context, attr, type):
         for cns in pb.constraints:
             if cns.type == type:
                 cns.mute = False
-                if cns.name != "Hint":
-                    cns.influence = getattr(self, attr)
-                    if auto:
-                        cns.keyframe_insert("influence")
+                cns.influence = getattr(self, attr)
+                if auto:
+                    cns.keyframe_insert("influence")
 
 def toggleRotLimits(self, context):
     toggleLimits(self, context, "DazRotLimits", "LIMIT_ROTATION")
