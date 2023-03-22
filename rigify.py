@@ -92,11 +92,6 @@ class Rigify:
         description = "Display layers for face and custom bones.\nNot for Rigify legacy",
         default = True)
 
-    useIkFix : BoolProperty(
-        name = "IK Fix",
-        description = "Add limits to IK bones, to prevent poor bending",
-        default = True)
-
     if bpy.app.version >= (3,3,0):
         useSeparateIkToe : BoolProperty(
             name = "Separate IK Toes",
@@ -637,9 +632,6 @@ class Rigify:
             coll.objects.link(gen)
         self.startGizmos(context, gen)
         print("Fix generated rig", gen.name)
-        if self.useIkFix:
-            from .mhx import fixIk
-            fixIk(gen, ["MCH-shin_ik.L", "MCH-shin_ik.R"])
 
         print("  Setup DAZ Skeleton")
         setActiveObject(context, rig)
@@ -1212,7 +1204,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "useAutoAlign")
         self.layout.prop(self, "useDeleteMeta")
-        self.layout.prop(self, "useIkFix")
         if bpy.app.version >= (3,3,0):
             self.layout.prop(self, "useSeparateIkToe")
         Fixer.draw(self, context)

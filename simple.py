@@ -267,7 +267,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         if not rig.DazCustomShapes:
             raise DazError("Make custom shapes first")
 
-        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, hintRotation, stretchTo, fixIk
+        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, hintRotation, stretchTo
         IK = SimpleIK(self)
         genesis = IK.getGenesisType(rig)
         if not genesis:
@@ -383,8 +383,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     IK.limitBone(thighBend, True, False, rig, legProp)
                     IK.limitBone(thighTwist, False, True, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
-                    fixIk(rig, [shin.name])
-                    shin.lock_ik_z = True
 
             elif genesis == "G9":
                 if self.useArms:
@@ -395,8 +393,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     setCustomShape(footIK, csFootIk, 1.5)
                     IK.limitBone(thighBend, False, False, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
-                    fixIk(rig, [shin.name])
-                    shin.lock_ik_z = True
 
             elif genesis == "G12":
                 if self.useArms:
@@ -407,8 +403,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     setCustomShape(footIK, csFootIk, 1.5)
                     IK.limitBone(thighBend, False, False, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
-                    fixIk(rig, [shin.name])
-                    shin.lock_ik_z = True
 
             if IK.usePoleTargets:
                 if self.useArms:
@@ -1193,6 +1187,10 @@ def improveIk(rig):
     for pb,cns,lock in ikconstraints:
         pb.lock_rotation[0] = lock
         cns.mute = False
+        pb.use_ik_limit_x = True
+        pb.ik_min_x = 0
+        pb.ik_max_x = 160*D
+        pb.lock_ik_z = True
 
 #----------------------------------------------------------
 #   Initialize
