@@ -916,7 +916,7 @@ class MorphLoader(LoadMorph):
     def findPropGroup(self, prop):
         return None
 
-    def addUrl(self, asset, aliases, filepath, bodypart):
+    def addUrl(self, asset, aliases, filepath):
         if self.mesh:
             pgs = self.mesh.DazMorphUrls
         elif self.rig:
@@ -932,7 +932,7 @@ class MorphLoader(LoadMorph):
             else:
                 item.text = asset.name
             item.category = self.category
-            item.bodypart = bodypart
+            item.bodypart = self.bodypart
 
 
     def getAllMorphs(self, namepaths, context):

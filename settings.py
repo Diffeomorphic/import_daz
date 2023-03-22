@@ -92,7 +92,7 @@ class GlobalSettings:
         self.useGhostLight = False
         self.useUnusedTextures = False
 
-        self.useStrengthAdjusters = False
+        self.useStrengthAdjusters = 'NONE'
         self.customMin = -1.0
         self.customMax = 1.0
         self.morphMultiplier = 1.0

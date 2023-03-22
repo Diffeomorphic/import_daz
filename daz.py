@@ -446,12 +446,15 @@ def register():
         description = "Controls the number of warning messages when loading files",
         min=1, max = 5)
 
-    bpy.types.Scene.DazStrengthAdjusters = BoolProperty(
+    bpy.types.Scene.DazStrengthAdjusters = EnumProperty(
+        items = [('NONE', "None", "Never add adjusters"),
+                 ('Face', "Face", "Add adjusters to face morphs"),
+                 ('Body', "Body", "Add adjusters to body morphs.\nNot recommended because if affects JCMs"),
+                 ('Custom', "Custom", "Add adjusters to custom morphs"),
+                 ('ALL', "All", "Add adjusters to all morphs")],
         name = "Adjust Strength",
-        description = (
-            "Add extra sliders to adjust the overall strength of translation channels (shapekeys and locations).\n" +
-            "May be useful if the character size or proportions deviate far from the default"),
-        default = False)
+        description = "Add extra sliders to adjust the overall strength",
+        default = 'NONE')
 
     bpy.types.Scene.DazCustomMin = FloatProperty(
         name = "Custom Min",

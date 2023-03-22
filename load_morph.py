@@ -108,15 +108,13 @@ class LoadMorph(DriverUser):
         self.origRestored = []
         self.initAmt()
         self.adjustable = {}
-        if GS.useStrengthAdjusters:
-            self.getAdjustedBones()
 
         print("Making morphs")
         self.makeAllMorphs(namepaths, True)
         adjustable = self.adjustable
         self.adjustable = {}
-        bodypart = namepaths[0][2]
-        self.makeMissingMorphs(bodypart, 0)
+        self.bodypart = namepaths[0][2]
+        self.makeMissingMorphs(0)
         self.adjustable = adjustable
         if self.rig:
             self.createTmp()
@@ -170,7 +168,8 @@ class LoadMorph(DriverUser):
             return " -"
         elif isinstance(asset, Alias) and self.useSearchAlias:
             return " _"
-        skey,ok = self.buildShape(asset, bodypart)
+        self.bodypart = bodypart
+        skey,ok = self.buildShape(asset)
         if not ok:
             return " #"
         elif self.rig and self.usePropDrivers:
@@ -180,7 +179,7 @@ class LoadMorph(DriverUser):
             aliaspath = self.getAliasFile(filepath)
             if aliaspath is not None:
                 aliases = self.loadAlias(aliaspath)
-        self.addUrl(asset, aliases, filepath, bodypart)
+        self.addUrl(asset, aliases, filepath)
         if force:
             LS.returnValue[fileref] = name
         return " *"
@@ -246,7 +245,7 @@ class LoadMorph(DriverUser):
             item.text = label
 
 
-    def buildShape(self, asset, bodypart, useBuild=True):
+    def buildShape(self, asset, useBuild=True):
         from .modifier import Morph
         if not (isinstance(asset, Morph) and
                 self.mesh and
@@ -298,22 +297,20 @@ class LoadMorph(DriverUser):
             skey.slider_min = asset.min
             skey.slider_max = asset.max
             self.shapekeys[prop] = skey
-            if bodypart == "Face":
+            if self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
             if self.rig and self.usePropDrivers:
                 final = self.addNewProp(prop)
                 adj = self.getStrengthAdjuster()
                 self.adjustShapekey(skey, adj, final)
-                #if adj:
-                #    makePropDriver(propRef(adj), skey, "slider_max", self.rig, "x")
             pgs = self.mesh.data.DazBodyPart
             if prop in pgs.keys():
                 item = pgs[prop]
             else:
                 item = pgs.add()
                 item.name = prop
-            item.s = bodypart
+            item.s = self.bodypart
             return skey,True
         else:
             return None,True
@@ -377,7 +374,8 @@ class LoadMorph(DriverUser):
 
 
     def getStrengthAdjuster(self):
-        if GS.useStrengthAdjusters:
+        if (GS.useStrengthAdjusters == 'ALL' or
+            GS.useStrengthAdjusters == self.bodypart):
             adj = "Adjust Morph Strength"
             return self.getAdjuster(adj)
         else:
@@ -408,32 +406,11 @@ class LoadMorph(DriverUser):
             fcu.driver.expression = "a"
 
 
-    def getAdjustedBones(self):
-        self.adjustedBones = {}
-        if self.rig and self.rig.animation_data:
-            for fcu in self.rig.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if (len(words) > 3 and
-                    words[3] == "Limit Location"):
-                    self.adjustedBones[words[1]] = True
-
-
     def adjustStrength(self, adj, pb, string, vars):
         if pb is None or adj is None:
             return string
-        from .driver import makePropDriver
-        string = "L*(%s)" % string
         vars.append(("L", finalProp(adj)))
-        return string
-        if pb.name in self.adjustedBones.keys():
-            return string
-        cns = getConstraint(pb, 'LIMIT_LOCATION')
-        if cns:
-            self.adjustedBones[pb.name] = True
-            for channel in ["min_x", "min_y", "min_z", "max_x", "max_y", "max_z"]:
-                factor = getattr(cns, channel)
-                makePropDriver(propRef(adj), cns, channel, self.rig, "%g*x" % factor)
-        return string
+        return "L*(%s)" % string
 
 
     def getFileRef(self, filepath):
@@ -694,7 +671,7 @@ class LoadMorph(DriverUser):
     #   Second pass: Load missing morphs
     #------------------------------------------------------------------
 
-    def makeMissingMorphs(self, bodypart, level):
+    def makeMissingMorphs(self, level):
         newLine()
         print("Making missing morphs level %d" % level)
         for fileref in self.loaded:
@@ -709,7 +686,7 @@ class LoadMorph(DriverUser):
                 path = GS.getAbsPath(ref)
                 if path:
                     name = ref.rsplit("/",1)[-1]
-                    data = (name,path,bodypart)
+                    data = (name, path, self.bodypart)
                     morphset = self.getPathMorphSet(path, morphfiles)
                     if morphset:
                         groupedpaths[morphset].append(data)
@@ -724,7 +701,7 @@ class LoadMorph(DriverUser):
                     self.morphset = mset
                     self.makeAllMorphs(namepaths, False)
             if level < 5:
-                self.makeMissingMorphs(bodypart, level+1)
+                self.makeMissingMorphs(level+1)
         self.morphset = morphset
 
 
