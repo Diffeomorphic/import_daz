@@ -888,19 +888,15 @@ class TopCoatGroup(FacMixGroup):
 class RefractionThinWallGroup(FacMixGroup):
     def __init__(self):
         FacMixGroup.__init__(self)
-        self.insockets += [
+        self.insockets += self.extra + [
             "Refraction Color", "Refraction Roughness", "IOR",
             "Glossy Color", "Glossy Roughness", "Anisotropy", "Rotation", "Normal"]
-        if self.useRoughness:
-            self.insockets += ["Refraction Roughness"]
 
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 5)
         self.group.inputs.new("NodeSocketColor", "Refraction Color")
-        if self.useRoughness:
-            self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
-            self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
+        self.addArgs()
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
         self.group.inputs.new("NodeSocketColor", "Glossy Color")
@@ -933,7 +929,7 @@ class RefractionThinWallGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
 
         mix = self.addNode("ShaderNodeMixShader", 3)
-        self.links.new(fresnel.outputs[self.fresnelType], mix.inputs[0])
+        self.links.new(fresnel.outputs[self.fresnel], mix.inputs[0])
         self.links.new(node.outputs[0], mix.inputs[1])
         self.links.new(aniso.outputs[0], mix.inputs[2])
 
@@ -943,7 +939,12 @@ class RefractionThinWallGroup(FacMixGroup):
 class RefractionGroup(RefractionThinWallGroup):
     useRoughness = True
     power = 3
-    fresnelType = "Refraction"
+    fresnel = "Refraction"
+    extra = ["Refraction Roughness"]
+
+    def addArgs(self):
+        self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
+        self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
 
     def AddRefractionTransparent(self):
         node = self.addNode("ShaderNodeBsdfRefraction", 1)
@@ -957,7 +958,11 @@ class RefractionGroup(RefractionThinWallGroup):
 class ThinWallGroup(RefractionThinWallGroup):
     useRoughness = False
     power = 2
-    fresnelType = "Dielectric"
+    fresnel = "Dielectric"
+    extra = []
+
+    def addArgs(self):
+        return
 
     def AddRefractionTransparent(self):
         node = self.addNode("ShaderNodeBsdfTransparent", 1)
