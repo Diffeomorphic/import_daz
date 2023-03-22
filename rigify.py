@@ -77,6 +77,11 @@ def addDicts(structs):
 
 
 class Rigify:
+    useOptimizePose : BoolProperty(
+        name = "Optimize Pose For IK",
+        description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
+        default = True)
+
     useAutoAlign : BoolProperty(
         name = "Auto Align Hand/Foot",
         description = "Auto align hand and foot (Rigify parameter)",
@@ -478,6 +483,10 @@ class Rigify:
             pb = rig.pose.bones.get(bname)
             if pb:
                 self.storeConstraints(bname, pb)
+
+        if self.useOptimizePose:
+            from .convert import optimizePose
+            optimizePose(context, True)
 
         # Create metarig
         setMode('OBJECT')
@@ -892,6 +901,11 @@ class Rigify:
         if self.useFingerIk:
             self.fixFingerIk(rig, gen)
 
+        # Improve IK
+        if self.useImproveIk:
+            from .simple import improveIk
+            improveIk(gen)
+
         #Clean up
         print("  Clean up")
         gen.data.display_type = 'WIRE'
@@ -916,7 +930,6 @@ class Rigify:
                     if layer:
                         layer.exclude = True
                     break
-
         setFkIk2(gen, False, gen.data.layers, False, 0)
         if activateObject(context, rig):
             deleteObjects(context, [rig])
@@ -1196,6 +1209,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         ConstraintStore.__init__(self)
 
     def draw(self, context):
+        self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "useAutoAlign")
         self.layout.prop(self, "useDeleteMeta")
         self.layout.prop(self, "useIkFix")
@@ -1251,6 +1265,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintS
         ConstraintStore.__init__(self)
 
     def draw(self, context):
+        self.layout.prop(self, "useOptimizePose")
         Fixer.draw(self, context)
         self.layout.prop(self, "useCustomLayers")
         self.layout.prop(self, "useRecalcRoll")

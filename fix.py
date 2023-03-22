@@ -65,7 +65,13 @@ class Fixer(DriverUser):
         description = "Keep existing armature and meshes in a new collection",
         default = False)
 
+    useImproveIk : BoolProperty(
+        name = "Improve IK",
+        description = "Improve IK behaviour by prebending bones",
+        default = True)
+
     def draw(self, context):
+        self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useFingerIk")

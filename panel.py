@@ -154,7 +154,6 @@ class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.make_all_bones_posable")
         self.layout.operator("daz.finalize_armature")
-        self.layout.operator("daz.optimize_pose")
         self.layout.operator("daz.apply_rest_pose")
         self.layout.operator("daz.connect_bone_chains")
 
@@ -323,6 +322,8 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.change_suffix_to_prefix")
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
+        self.layout.operator("daz.optimize_pose")
+        self.layout.operator("daz.improve_ik")
         self.layout.operator("daz.fix_legacy_posable")
         self.layout.operator("daz.categorize_objects")
 

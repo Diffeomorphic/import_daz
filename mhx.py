@@ -313,14 +313,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     addTweakBones : BoolProperty(
         name = "Tweak Bones",
         description = "Add tweak bones",
-        default = False
-    )
+        default = False)
 
     showLinks : BoolProperty(
         name = "Show Link Bones",
         description = "Show link bones",
-        default = True
-    )
+        default = True)
 
     useBack : BoolProperty(
         name = "Add Back And NeckHead Bones",
@@ -559,6 +557,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
+        if self.useImproveIk:
+            from .simple import improveIk
+            improveIk(rig)
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
         rig.data.display_type = 'WIRE'

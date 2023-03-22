@@ -220,12 +220,18 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         description = "Add a root bone which is the parent of all other bones",
         default = True)
 
+    useImproveIk : BoolProperty(
+        name = "Improve IK",
+        description = "Improve IK behaviour by prebending bones",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useRootBone")
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useCopyRotation")
+        self.layout.prop(self, "useImproveIk")
 
 
     def run(self, context):
@@ -448,7 +454,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                     copyBoneProps(thighBend, thighIK)
                     copyBoneProps(shin, shinIK)
                     shinIK.lock_ik_y = shinIK.lock_ik_z = True
-                    hintRotation(shinIK, rig)
+                    #hintRotation(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
                     cns.euler_order = BD.getDefaultMode(thighBend)
@@ -469,6 +475,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useLegs:
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
 
+        if self.useImproveIk:
+            from .simple import improveIk
+            improveIk(rig)
         from .node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
         for ob in LS.customShapes:
@@ -1158,6 +1167,33 @@ class DAZ_OT_CopyAbsolutePose(DazOperator, IsArmature):
             for child in pb.children:
                 self.copyPose(child, trg)
 
+#-------------------------------------------------------------
+#   Improve IK
+#-------------------------------------------------------------
+
+class DAZ_OT_ImproveIK(DazOperator, IsArmature):
+    bl_idname = "daz.improve_ik"
+    bl_label = "Improve IK"
+    bl_description = "Improve IK behaviour"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        improveIk(context.object)
+
+
+def improveIk(rig):
+    ikconstraints = []
+    for pb in rig.pose.bones:
+        for cns in pb.constraints:
+            if cns.type == 'IK':
+                ikconstraints.append((pb, cns, pb.lock_rotation[0]))
+                cns.mute = True
+                pb.lock_rotation[0] = False
+                pb.rotation_euler[0] = 25*D
+    for pb,cns,lock in ikconstraints:
+        pb.lock_rotation[0] = lock
+        cns.mute = False
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1172,6 +1208,7 @@ classes = [
     DAZ_OT_SelectNamedLayers,
     DAZ_OT_UnSelectNamedLayers,
     DAZ_OT_CopyAbsolutePose,
+    DAZ_OT_ImproveIK,
 ]
 
 def register():
