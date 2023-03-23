@@ -1174,7 +1174,7 @@ def improveIk(rig):
                 ikconstraints.append((pb, cns, cns.mute))
                 cns.mute = True
                 pb.lock_rotation[0] = False
-                pb.rotation_euler[0] = 25*D
+                pb.rotation_euler[0] = 15*D
     for pb,cns,mute in ikconstraints:
         pb.lock_rotation = (False, True, True)
         cns.mute = mute
