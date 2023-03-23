@@ -393,7 +393,7 @@ def getMorphSet(path):
     for subdir,mgrps in [
         ("/daz 3d/base correctives/", "Jcms"),
         ("/daz 3d/base flexions/", "Flexions"),
-        ("/daz 3d/base pose/", [("ectrlv", "Visemes"), ("ectrl", "Units"), "BODY"]),
+        ("/daz 3d/base pose/", [("ectrlv", "Visemes"), ("ectrl", "Units"), "Body"]),
         ("/daz 3d/base pose head/", [("ectrlv", "Visemes"), "Units"]),
         ("/daz 3d/expressions/", "Expressions"),
         ("/daz 3d/facs/", "Facs"),
