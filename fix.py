@@ -40,6 +40,11 @@ from .driver import DriverUser
 
 class Fixer(DriverUser):
 
+    useImproveIk : BoolProperty(
+        name = "Improve IK",
+        description = "Improve IK by prebending IK bones",
+        default = True)
+
     useFingerIk : BoolProperty(
         name = "Finger IK",
         description = "Generate IK controls for fingers.\nFinger morphs will be removed",
@@ -66,6 +71,7 @@ class Fixer(DriverUser):
         default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useFingerIk")

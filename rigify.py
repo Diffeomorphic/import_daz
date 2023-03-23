@@ -894,8 +894,9 @@ class Rigify:
             self.fixFingerIk(rig, gen)
 
         # Improve IK
-        from .simple import improveIk
-        improveIk(gen)
+        if self.useImproveIk:
+            from .simple import improveIk
+            improveIk(gen)
 
         #Clean up
         print("  Clean up")

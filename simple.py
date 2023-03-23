@@ -210,6 +210,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         description = "Add pole targets to the IK chains.\nPoses will not be loaded correctly.",
         default = False)
 
+    useImproveIk : BoolProperty(
+        name = "Improve IK",
+        description = "Improve IK by prebending IK bones",
+        default = True)
+
     useCopyRotation : BoolProperty(
         name = "Copy Rotation",
         description = "Add copy rotation constraints for bend and twist bones",
@@ -225,6 +230,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
+        self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "useCopyRotation")
 
 
@@ -462,7 +468,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
                 if self.useLegs:
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
 
-        improveIk(rig)
+        if self.useImproveIk:
+            improveIk(rig)
         from .node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
         for ob in LS.customShapes:

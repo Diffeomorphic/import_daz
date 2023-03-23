@@ -431,7 +431,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def convertMhx(self, context):
         from .figure import finalizeArmature
-        from .simple import improveIk
         if self.useKeepRig:
             self.saveExistingRig(context)
         rig = context.object
@@ -550,7 +549,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
-        improveIk(rig)
+        if self.useImproveIk:
+            from .simple import improveIk
+            improveIk(rig)
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
         rig.data.display_type = 'WIRE'
