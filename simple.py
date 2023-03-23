@@ -244,11 +244,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         def stretchName(bname):
             return (bname+"_STR")
 
-        def driveConstraint(pb, type, rig, prop, expr):
+        def driveConstraint(pb, type, rig, prop):
             from .mhx import addDriver
             for cns in pb.constraints:
                 if cns.type == type:
-                    addDriver(cns, "influence", rig, prop, expr)
+                    addDriver(cns, "influence", rig, (prop, "DazRotLimits"), "(1-x1)*x2")
 
         def copyBoneProps(src, trg):
             trg.DazRotMode = src.DazRotMode
@@ -353,14 +353,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
             if self.useArms:
                 armProp = "DazArmIK_" + suffix
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = getEntry(armTable, genesis, prefix, rpbs)
-                driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp, "1-x")
+                driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
                 copyBoneProps(hand, handIK)
                 copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_" + suffix
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = getEntry(legTable, genesis, prefix, rpbs)
-                driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp, "1-x")
+                driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
                 copyBoneProps(foot, footIK)
                 copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
                 addToLayer(footIK, "IK Leg", rig, "IK")

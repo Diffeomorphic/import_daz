@@ -1574,10 +1574,24 @@ def applyRestPoses(context, rig, subrigs):
                 xmin = 0
             setattr(cns, min, xmin)
 
+    def setRestRotation(rig):
+        for pb in rig.pose.bones:
+            if pb.rotation_mode == 'QUATERNION':
+                rot = pb.rotation_quaternion.to_euler()
+            else:
+                rot = pb.rotation_euler
+            if nonzero(rot):
+                fvec = Vector((0,0,0))
+                for idx in range(3):
+                    idx2 = pb.DazAxes[idx]
+                    fvec[idx] = pb.DazFlips[idx2] * rot[idx2]
+                pb.DazRestRotation = Vector(pb.DazRestRotation) + fvec/D
+
     LS.forAnimation(None, rig)
     rigs = [rig] + subrigs
     applyAllObjectTransforms(rigs)
     for subrig in rigs:
+        setRestRotation(subrig)
         for ob in subrig.children:
             if ob.type == 'MESH':
                 setRestPose(ob, subrig, context)

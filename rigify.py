@@ -80,7 +80,7 @@ class Rigify:
     useOptimizePose : BoolProperty(
         name = "Optimize Pose For IK",
         description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
-        default = True)
+        default = False)
 
     useAutoAlign : BoolProperty(
         name = "Auto Align Hand/Foot",
