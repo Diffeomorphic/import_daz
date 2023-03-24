@@ -998,8 +998,6 @@ class MorphLoader(LoadMorph):
             item = pgs.add()
             item.name = prop
         if asset:
-            #if self.getUniqueName(asset.name) == prop:
-            #    label = self.getUniqueName(asset.label)
             if asset.label:
                 label = asset.label
             elif asset.name:
@@ -2048,7 +2046,7 @@ def getActivateGroup(rig, key):
 class DAZ_OT_ActivateAll(DazOperator, Activator):
     bl_idname = "daz.activate_all"
     bl_label = "All"
-    bl_description = "Select all unprotected morphs of this type"
+    bl_description = "Activate all unprotected morphs of this type"
     bl_options = {'UNDO'}
 
     def getActivate(self, ob, prop):
@@ -2059,7 +2057,7 @@ class DAZ_OT_ActivateAll(DazOperator, Activator):
 class DAZ_OT_ActivateProtected(DazOperator, Activator):
     bl_idname = "daz.activate_protected"
     bl_label = "Protected"
-    bl_description = "Select all protected morphs of this type"
+    bl_description = "Activate all protected morphs of this type"
     bl_options = {'UNDO'}
 
     def getActivate(self, ob, prop):
@@ -2069,8 +2067,8 @@ class DAZ_OT_ActivateProtected(DazOperator, Activator):
 
 class DAZ_OT_DeactivateAll(DazOperator, Activator):
     bl_idname = "daz.deactivate_all"
-    bl_label = "Unselect"
-    bl_description = "Unselect all morphs of this type"
+    bl_label = "None"
+    bl_description = "Deactivate all morphs of this type"
     bl_options = {'UNDO'}
 
     def getActivate(self, ob, prop):

@@ -325,6 +325,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazShowInTerminal")
         box.prop(scn, "DazUseShapekeys")
         box.prop(scn, "DazUseERC")
+        box.prop(scn, "DazProtect")
         box.prop(scn, "DazStripCategory")
         box.prop(scn, "DazUseModifiedMesh")
 
@@ -500,6 +501,10 @@ def register():
     bpy.types.Scene.DazUseERC = BoolProperty(
         name = "ERC Morphs",
         description = "Load support for ERC morphs that change the rest pose")
+
+    bpy.types.Scene.DazProtect = BoolProperty(
+        name = "Protect Multipliers",
+        description = "Make multipliers into protected morphs")
 
     bpy.types.Scene.DazStripCategory = BoolProperty(
         name = "Strip Category",

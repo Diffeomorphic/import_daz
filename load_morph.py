@@ -62,6 +62,7 @@ class LoadMorph(DriverUser):
         self.mults = {}
         self.adjustable = {}
         self.currentAsset = None
+        self.origMorphset = ""
 
 
     def getAdjustProp(self):
@@ -110,6 +111,7 @@ class LoadMorph(DriverUser):
         self.origRestored = []
         self.initAmt()
         self.adjustable = {}
+        self.origMorphset = self.morphset
 
         print("Making morphs")
         self.makeAllMorphs(namepaths, True)
@@ -977,11 +979,15 @@ class LoadMorph(DriverUser):
             return
         if raw not in self.rig.keys():
             self.rig[raw] = default
-            print("NEW", raw)
-            if protect:
+            if protect and GS.useProtect:
                 setProtected(self.rig, raw)
                 setActivated(self.rig, raw, False)
+                morphset = self.morphset
+                self.morphset = self.origMorphset
+                print("NEW", raw, self.morphset)
                 self.addToMorphSet(raw, None, False, True)
+                self.morphset = morphset
+
         if final not in self.amt.keys():
             self.amt[final] = default
             fcu = self.amt.driver_add(propRef(final))
