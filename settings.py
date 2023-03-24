@@ -689,6 +689,7 @@ class LocalSettings:
         self.useImages = True
         self.useMaterials = True
         self.useModifiers = True
+        self.useFormulas = True
         self.useUV = True
         self.useWorld = GS.useWorld
 

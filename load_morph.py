@@ -984,7 +984,6 @@ class LoadMorph(DriverUser):
                 setActivated(self.rig, raw, False)
                 morphset = self.morphset
                 self.morphset = self.origMorphset
-                print("NEW", raw, self.morphset)
                 self.addToMorphSet(raw, None, False, True)
                 self.morphset = morphset
 

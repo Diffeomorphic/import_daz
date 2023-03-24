@@ -48,13 +48,14 @@ from .fileutils import DazExporter
 class MorphSets:
     def __init__(self):
         self.Standards = ["Standard", "Units", "Expressions", "Head", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
-        self.Customs = ["Custom"]
+        self.Customs = ["Custom", "Baked"]
         self.JCMs = ["Jcms", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
         self.Adjusters = {
             "Standard" : "Adjust Standard",
             "Custom" : "Adjust Custom",
+            "Baked" : "Adjust Baked",
             "Units" : "Adjust Units",
             "Expressions" : "Adjust Expressions",
             "Head" : "Adjust Head",

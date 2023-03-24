@@ -299,8 +299,8 @@ class ChannelAsset(Modifier):
 
     def parse(self, struct):
         Modifier.parse(self, struct)
-        if not LS.useMorph:
-            return
+        #if not LS.useMorph:
+        #    return
         if "channel" in struct.keys():
             for key,value in struct["channel"].items():
                 if key == "value":
@@ -638,7 +638,7 @@ class FormulaAsset(Formula, ChannelAsset):
 
     def parse(self, struct):
         ChannelAsset.parse(self, struct)
-        if not LS.useMorphOnly:
+        if not (LS.useMorphOnly or LS.fitFile):
             return
         if "group" in struct.keys():
             words = struct["group"].split("/")
@@ -657,6 +657,8 @@ class FormulaAsset(Formula, ChannelAsset):
     def postbuild(self, context, inst):
         if LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
+        elif LS.fitFile:
+            Formula.buildBaked(self, context, inst)
 
 #-------------------------------------------------------------
 #   Morph
@@ -737,10 +739,6 @@ class Morph(FormulaAsset):
 
 
     def build(self, context, inst, value=-1):
-        from .geometry import GeoNode, Geometry
-        from .figure import FigureInstance
-        from .bone import BoneInstance
-
         if not LS.useMorph:
             return self
         if len(self.deltas) == 0:
@@ -748,6 +746,10 @@ class Morph(FormulaAsset):
             return self
         Formula.build(self, context, inst)
         Modifier.build(self, context)
+
+        from .geometry import GeoNode, Geometry
+        from .figure import FigureInstance
+        from .bone import BoneInstance
 
         if isinstance(inst, FigureInstance):
             geonodes = inst.geometries

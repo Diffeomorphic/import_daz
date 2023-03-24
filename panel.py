@@ -787,6 +787,17 @@ class DAZ_PT_Flexions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     ftype = "DazFlexions"
     uilist = "DAZ_UL_Flexions"
 
+
+class DAZ_UL_Baked(DAZ_UL_StandardMorphs):
+    morphset = "Baked"
+
+class DAZ_PT_Baked(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+    bl_label = "Baked"
+    bl_parent_id = "DAZ_PT_MorphGroup"
+    morphset = "Baked"
+    ftype = "DazBaked"
+    uilist = "DAZ_UL_Baked"
+
 #------------------------------------------------------------------------
 #    Custom panels
 #------------------------------------------------------------------------
@@ -1118,6 +1129,7 @@ classes = [
     DAZ_UL_Body,
     DAZ_UL_JCMs,
     DAZ_UL_Flexions,
+    DAZ_UL_Baked,
 
     DAZ_PT_MorphGroup,
     DAZ_PT_Standard,
@@ -1131,6 +1143,7 @@ classes = [
     DAZ_PT_Body,
     DAZ_PT_JCMs,
     DAZ_PT_Flexions,
+    DAZ_PT_Baked,
 
     DAZ_PT_CustomMorphs,
     DAZ_PT_CustomMeshMorphs,

@@ -64,6 +64,31 @@ class Formula:
                 asset.build(context, inst, value)
 
 
+    def buildBaked(self, context, inst):
+        from .driver import removeModifiers, setProtected, addDriverVar
+        from .morphing import setActivated
+        for formula in self.formulas:
+            ref,key,value = self.computeFormula(formula)
+            rig = inst.rna
+            if key == "value" and rig and value != 0:
+                value = float(value)
+                raw = ref.rsplit("#",1)[-1]
+                rig[raw] = value
+                final = finalProp(raw)
+                rig.data[final] = value
+                print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
+                setProtected(rig, raw)
+                setActivated(rig, raw, False)
+                item = rig.DazBaked.add()
+                item.name = raw
+                item.text = "* %s" % unquote(raw)
+                fcu = rig.data.driver_add(propRef(final))
+                fcu.driver.type = 'SCRIPTED'
+                removeModifiers(fcu)
+                fcu.driver.expression = "a"
+                addDriverVar(fcu, "a",  propRef(raw), rig)
+
+
     def postbuild(self, context, inst):
         from .modifier import Morph
         from .node import Node
