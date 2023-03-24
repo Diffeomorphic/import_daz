@@ -578,8 +578,13 @@ class DAZ_PT_Morphs:
 
 
     def activateLayout(self, layout, category, ftype, rig):
-        split = layout.split(factor=0.333)
+        split = layout.split(factor=0.25)
         op = split.operator("daz.activate_all")
+        op.morphset = self.morphset
+        op.category = category
+        op.useMesh = self.useMesh
+        op.ftype = ftype
+        op = split.operator("daz.activate_protected")
         op.morphset = self.morphset
         op.category = category
         op.useMesh = self.useMesh

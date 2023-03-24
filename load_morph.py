@@ -48,6 +48,8 @@ class LoadMorph(DriverUser):
     useAdjusters = False
     onMorphSuffix = 'NONE'
     useSearchAlias = True
+    onlyProperties = False
+    useProtected = False
 
     def __init__(self):
         self.rig = None
@@ -66,7 +68,7 @@ class LoadMorph(DriverUser):
         return None
 
 
-    def addToMorphSet(self, prop, asset, hidden):
+    def addToMorphSet(self, prop, asset, hidden, protected):
         return
 
 
@@ -250,7 +252,8 @@ class LoadMorph(DriverUser):
         if not (isinstance(asset, Morph) and
                 self.mesh and
                 asset.deltas and
-                GS.useShapekeys):
+                GS.useShapekeys and
+                not self.onlyProperties):
             return None,True
 
         from .driver import makePropDriver
@@ -347,6 +350,8 @@ class LoadMorph(DriverUser):
                 for idx,expr in data1.items():
                     if key == "value":
                         self.makeValueFormula(output, expr)
+                    elif self.onlyProperties:
+                        continue
                     elif key == "rotation":
                         self.makeRotFormula(output, idx, expr)
                     elif key == "translation":
@@ -361,8 +366,6 @@ class LoadMorph(DriverUser):
                         self.erc = True
                         if GS.useERC:
                             self.makeOffsetFormula("TlOffset", output, idx, expr)
-                    elif key == "end_point":
-                        self.erc = True
 
 
     def getTypeAdjuster(self, raw):
@@ -423,7 +426,7 @@ class LoadMorph(DriverUser):
 
 
     def addNewProp(self, raw, asset=None, skey=None):
-        from .driver import setBoolProp, setFloatProp, getPropMinMax
+        from .driver import setBoolProp, setFloatProp, getPropMinMax, setProtected
         from .morphing import setActivated
         from .modifier import Alias
         final = finalProp(raw)
@@ -460,8 +463,10 @@ class LoadMorph(DriverUser):
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset), trigger=(2,3))
             if visible:
-                setActivated(self.rig, raw, True)
-                self.addToMorphSet(raw, asset, False)
+                if self.useProtected:
+                    setProtected(self.rig, raw)
+                setActivated(self.rig, raw, (not self.useProtected))
+                self.addToMorphSet(raw, asset, False, self.useProtected)
         return final
 
 
@@ -677,6 +682,8 @@ class LoadMorph(DriverUser):
         for fileref in self.loaded:
             self.referred[fileref] = False
         morphset = self.morphset
+        protected = self.useProtected
+        self.useProtected = False
         namepaths = []
         groupedpaths,morphfiles = self.setupMorphGroups()
         someMissing = False
@@ -703,6 +710,7 @@ class LoadMorph(DriverUser):
             if level < 5:
                 self.makeMissingMorphs(level+1)
         self.morphset = morphset
+        self.useProtected = protected
 
 
     def setupMorphGroups(self):
@@ -943,7 +951,7 @@ class LoadMorph(DriverUser):
                 multfinal = finalProp(mult)
                 if propRef(multfinal) not in targets:
                     mstring += "%s*" % varname
-                    self.ensureExists(mult, multfinal, 1)
+                    self.ensureExists(mult, multfinal, 1.0, True)
                     self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
                     varname = nextLetter(varname)
             return "%s%s" % (mstring, string)
@@ -962,12 +970,18 @@ class LoadMorph(DriverUser):
             fcu.driver.expression = string
 
 
-    def ensureExists(self, raw, final, default):
-        from .driver import removeModifiers
+    def ensureExists(self, raw, final, default, protect=False):
+        from .driver import removeModifiers, setProtected
+        from .morphing import setActivated
         if self.rig is None:
             return
         if raw not in self.rig.keys():
             self.rig[raw] = default
+            print("NEW", raw)
+            if protect:
+                setProtected(self.rig, raw)
+                setActivated(self.rig, raw, False)
+                self.addToMorphSet(raw, None, False, True)
         if final not in self.amt.keys():
             self.amt[final] = default
             fcu = self.amt.driver_add(propRef(final))
@@ -1115,7 +1129,7 @@ class LoadMorph(DriverUser):
                     string = "u+%s" % string
                 self.rig[raw] = 0.0
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
-                self.addToMorphSet(raw, None, True)
+                self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
         fcu.driver.expression = string
         if channel == "rotation":

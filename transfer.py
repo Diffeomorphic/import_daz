@@ -415,7 +415,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                                 setFloatProp(trg, prop, 0.0, GS.customMin, GS.customMax, True)
                             fcu.driver.expression = "w+%s" % fcu.driver.expression
                             addDriverVar(fcu, "w", propRef(prop), trg)
-                            #addToMorphSet(trg, "AutoFollow", prop, None)
+                            #addToMorphSet(trg, "AutoFollow", prop, None, False, False)
                             trg.DazMorphAuto = True
             else:
                 printName(" -", sname)

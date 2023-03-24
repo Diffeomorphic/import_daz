@@ -987,7 +987,7 @@ class MorphLoader(LoadMorph):
         return msg
 
 
-    def addToMorphSet(self, prop, asset, hidden):
+    def addToMorphSet(self, prop, asset, hidden, protected):
         from .modifier import getCanonicalKey
         pgs = self.findPropGroup(prop)
         if pgs is None:
@@ -1013,7 +1013,9 @@ class MorphLoader(LoadMorph):
         n = len(self.category)
         if GS.useStripCategory and self.category and label[0:n] == self.category:
             label = label[n:]
-        if self.hideable and (hidden or not visible):
+        if protected:
+            item.text = "* %s" % label
+        elif self.hideable and (hidden or not visible):
             item.text = "[%s]" % label
         else:
             item.text = label
@@ -1495,9 +1497,9 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         return nstruct
 
 
-    def addToMorphSet(self, prop, asset, hidden):
+    def addToMorphSet(self, prop, asset, hidden, protected):
         self.hideable = (self.morphset in ["Jcms", "Flexions"])
-        StandardMorphLoader.addToMorphSet(self, prop, asset, hidden)
+        StandardMorphLoader.addToMorphSet(self, prop, asset, hidden, protected)
 
 #------------------------------------------------------------------------
 #   Import general morph or driven pose
@@ -1560,6 +1562,16 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         default = 'ERROR'
     )
 
+    useProtected : BoolProperty(
+        name = "Protect Morphs",
+        description = "Protect rig properties from being accidentally set",
+        default = False)
+
+    onlyProperties : BoolProperty(
+        name = "Only Properties",
+        description = "Only load properties and property drivers",
+        default = False)
+
     useSearchAlias = False
 
     def draw(self, context):
@@ -1575,6 +1587,8 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         self.layout.prop(self, "bodypart")
         if self.bodypart == "Face":
             self.layout.prop(self, "useTransferFace")
+        self.layout.prop(self, "onlyProperties")
+        self.layout.prop(self, "useProtected")
         self.layout.prop(self, "treatHD")
         self.layout.prop(self, "useMakePosable")
 
@@ -1984,12 +1998,13 @@ class Activator(MorphGroup):
         scn = context.scene
         if self.useMesh:
             ob = context.object
-            morphs = self.getCustomMorphs(scn, ob)
+            props = self.getCustomMorphs(scn, ob)
         else:
             ob = getRigFromObject(context.object)
-            morphs = self.getRelevantMorphs(scn, ob)
-        for morph in morphs:
-           setActivated(ob, morph, self.activate)
+            props = self.getRelevantMorphs(scn, ob)
+        for prop in props:
+            activate = self.getActivate(ob, prop)
+            setActivated(ob, prop, activate)
 
 
 def setActivated(ob, key, value):
@@ -2032,20 +2047,34 @@ def getActivateGroup(rig, key):
 
 class DAZ_OT_ActivateAll(DazOperator, Activator):
     bl_idname = "daz.activate_all"
-    bl_label = "Select All"
-    bl_description = "Select all morphs of this type"
+    bl_label = "All"
+    bl_description = "Select all unprotected morphs of this type"
     bl_options = {'UNDO'}
 
-    activate = True
+    def getActivate(self, ob, prop):
+        from .driver import isProtected
+        return (not isProtected(ob, prop))
+
+
+class DAZ_OT_ActivateProtected(DazOperator, Activator):
+    bl_idname = "daz.activate_protected"
+    bl_label = "Protected"
+    bl_description = "Select all protected morphs of this type"
+    bl_options = {'UNDO'}
+
+    def getActivate(self, ob, prop):
+        from .driver import isProtected
+        return isProtected(ob, prop)
 
 
 class DAZ_OT_DeactivateAll(DazOperator, Activator):
     bl_idname = "daz.deactivate_all"
-    bl_label = "Unselect All"
+    bl_label = "Unselect"
     bl_description = "Unselect all morphs of this type"
     bl_options = {'UNDO'}
 
-    activate = False
+    def getActivate(self, ob, prop):
+        return False
 
 #------------------------------------------------------------------
 #   Clear morphs
@@ -3574,6 +3603,7 @@ classes = [
     DAZ_OT_RemoveStandardMorphs,
     DAZ_OT_RemoveCategories,
     DAZ_OT_ActivateAll,
+    DAZ_OT_ActivateProtected,
     DAZ_OT_DeactivateAll,
     DAZ_OT_ClearMorphs,
     DAZ_OT_SetMorphs,

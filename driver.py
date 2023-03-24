@@ -446,34 +446,58 @@ def removeModifiers(fcu):
         fcu.modifiers.remove(mod)
 
 #-------------------------------------------------------------
-#   Overridable properties
+#   Property UI
 #-------------------------------------------------------------
 
-def setPropMinMax(rna, prop, default, min, max, ovr):
-    if bpy.app.version < (3,0,0):
+if bpy.app.version < (3,0,0):
+    def getRnaUi(rna):
         rna_ui = rna.get('_RNA_UI')
         if rna_ui is None:
             rna_ui = rna['_RNA_UI'] = {}
+        return rna_ui
+
+    def setPropMinMax(rna, prop, default, min, max, ovr):
+        rna_ui = getRnaUi(rna)
         struct = { "min": min, "max": max, "soft_min": min, "soft_max": max}
         rna_ui[prop] = struct
-    else:
-        from rna_prop_ui import rna_idprop_ui_create
+
+    def getPropUi(rna, prop):
+        rna_ui = getRnaUi(rna)
+        return rna_ui.get(prop)
+
+    def setProtected(rna, prop):
+        rna_ui = getRnaUi(rna)
+        struct = rna_ui.get(prop, {})
+        struct["description"] = "***"
+        rna_ui[prop] = struct
+
+    def isProtected(rna, prop):
+        struct = getPropUi(rna, prop)
+        return (struct.get("description") == "***")
+else:
+    from rna_prop_ui import rna_idprop_ui_create
+
+    def setPropMinMax(rna, prop, default, min, max, ovr):
         rna_idprop_ui_create(rna, prop, default=default, min=min, max=max, soft_min=min, soft_max=max, description=None, overridable=ovr)
 
+    def getPropUi(rna, prop):
+        prop_ui = rna.id_properties_ui(prop)
+        return prop_ui.as_dict()
+
+    def setProtected(rna, prop):
+        prop_ui = rna.id_properties_ui(prop)
+        prop_ui.update(description = "***")
+
+    def isProtected(rna, prop):
+        prop_ui = getPropUi(rna, prop)
+        return (prop_ui.get("description") == "***")
+
+#-------------------------------------------------------------
+#   Properties
+#-------------------------------------------------------------
 
 def getPropMinMax(rna, prop, ovr):
-    struct = None
-    if bpy.app.version < (3,0,0):
-        rna_ui = rna.get('_RNA_UI')
-        if rna_ui:
-            struct = rna_ui.get(prop)
-    else:
-        try:
-            prop_ui = rna.id_properties_ui(prop)
-        except KeyError:
-            prop_ui = None
-        if prop_ui:
-            struct = prop_ui.as_dict()
+    struct = getPropUi(rna, prop)
     min = GS.customMin
     max = GS.customMax
     default = 0.0
@@ -487,7 +511,6 @@ def getPropMinMax(rna, prop, ovr):
         if "overridable" in struct.keys():
             ovr = struct["overridable"]
     return min,max,default,ovr
-
 
 def copyProp(prop, src, trg, ovr):
     if (prop[0] == "_" or
