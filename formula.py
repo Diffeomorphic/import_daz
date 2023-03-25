@@ -72,7 +72,9 @@ class Formula:
             rig = inst.rna
             if key == "value" and rig and value != 0:
                 value = float(value)
-                raw = ref.rsplit("#",1)[-1]
+                file,raw = ref.rsplit("#",1)
+                file = unquote(file)
+                raw = unquote(raw)
                 rig[raw] = value
                 final = finalProp(raw)
                 rig.data[final] = value
@@ -81,7 +83,11 @@ class Formula:
                 setActivated(rig, raw, False)
                 item = rig.DazBaked.add()
                 item.name = raw
-                item.text = "* %s" % unquote(raw)
+                item.text = raw
+                if file not in rig.DazBakedFiles.keys():
+                    item = rig.DazBakedFiles.add()
+                    item.name = file
+                    item.f = value
                 fcu = rig.data.driver_add(propRef(final))
                 fcu.driver.type = 'SCRIPTED'
                 removeModifiers(fcu)

@@ -583,6 +583,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Merge separate toes into a single toe bone",
         default = False)
 
+    useBakedCorrections : BoolProperty(
+        name = "Baked Corrections",
+        description = "Import all custom corrections for baked morphs",
+        default = False)
+
     useTransferClothes : BoolProperty(
         name = "Transfer To Clothes",
         description = "Transfer shapekeys from character to clothes",
@@ -671,6 +676,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.onMorphSuffix == 'ALL':
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
+        self.layout.prop(self, "useBakedCorrections")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "useTransferGeografts")
@@ -908,6 +914,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         jcms = self.jcms,
                         flexions = self.flexions,
                         useAdjusters = self.useAdjusters)
+            if self.useBakedCorrections:
+                expressions = (self.units or self.expressions or self.visemes)
+                if (expressions or self.jcms):
+                    bpy.ops.daz.import_corrections(
+                        expressions = expressions,
+                        jcms = self.jcms)
+
+
 
         # Add softbody simulation
         if self.useSoftbody and mainRig and mainMesh and activateObject(context, mainMesh):

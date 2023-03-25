@@ -3570,6 +3570,67 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         return struct
 
 #-------------------------------------------------------------
+#   Import baked
+#-------------------------------------------------------------
+
+class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArmature):
+    bl_idname = "daz.import_corrections"
+    bl_label = "Import Corrections"
+    bl_description = "Import all custom corrections for baked morphs"
+
+    expressions : BoolProperty(
+        name = "Expressions",
+        description = "Import eJCM files",
+        default = True)
+
+    jcms : BoolProperty(
+        name = "JCMs",
+        description = "Import pJCM files",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "expressions")
+        self.layout.prop(self, "jcms")
+
+    def run(self, context):
+        self.getFingeredRigMeshes(context)
+        used = []
+        self.namepaths = {}
+        for path,pg in self.rig.DazBakedFiles.items():
+            folder = os.path.dirname(path)
+            lfolder = folder.lower()
+            if lfolder in used:
+                continue
+            used.append(lfolder)
+            cat = folder.rsplit("/", 1)[-1]
+            absfolder = GS.getAbsPath(folder)
+            if not absfolder:
+                print("Folder not found: %s" % folder)
+                continue
+            for file in os.listdir(absfolder):
+                lfile = file.lower()
+                if os.path.splitext(file)[-1] in [".dsf", ".duf"]:
+                    path = "%s/%s" % (absfolder, file)
+                    if self.expressions and lfile.startswith("ejcm"):
+                        self.addPath(path, cat, "Face")
+                    elif self.jcms and lfile.startswith(("pjcm", "jcm")):
+                        self.addPath(path, cat, "Body")
+        for cat,namepaths in self.namepaths.items():
+            print("Load %s corrections" % cat)
+            self.morphset = "Custom"
+            self.category = cat
+            self.hideable = False
+            self.getAllMorphs(namepaths, context)
+
+
+    def addPath(self, path, cat, bodypart):
+        if cat not in self.namepaths.keys():
+            self.namepaths[cat] = []
+        text = os.path.splitext(os.path.basename(path))[0]
+        self.namepaths[cat].append((text, path, bodypart))
+
+
+#-------------------------------------------------------------
 #   Register
 #-------------------------------------------------------------
 
@@ -3628,6 +3689,7 @@ classes = [
     DAZ_OT_SaveFavoMorphs,
     DAZ_OT_LoadFavoMorphs,
     DAZ_OT_SaveMorphPreset,
+    DAZ_OT_ImportCorrections,
 ]
 
 def register():
@@ -3642,6 +3704,7 @@ def register():
     for morphset in MS.Morphsets:
         setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
         setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))
+    bpy.types.Object.DazBakedFiles = CollectionProperty(type = DazFloatGroup)
     bpy.types.Object.DazMorphUrls = CollectionProperty(type = DazMorphInfoGroup)
     bpy.types.Object.DazAutoFollow = CollectionProperty(type = DazTextGroup)
     bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)

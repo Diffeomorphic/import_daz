@@ -355,8 +355,9 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.copy_props")
         self.layout.operator("daz.copy_bone_drivers")
-        self.layout.separator()
         self.layout.operator("daz.update_slider_limits")
+        self.layout.separator()
+        self.layout.operator("daz.import_corrections")
         self.layout.operator("daz.import_dbz")
         self.layout.operator("daz.update_morph_paths")
 
@@ -797,6 +798,13 @@ class DAZ_PT_Baked(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
     morphset = "Baked"
     ftype = "DazBaked"
     uilist = "DAZ_UL_Baked"
+
+    def draw(self, context):
+        rig = self.getCurrentRig(context)
+        if not self.hasTheseMorphs(rig):
+            return
+        for item in rig.DazBaked.values():
+            self.layout.prop(rig, propRef(item.name), text=item.text)
 
 #------------------------------------------------------------------------
 #    Custom panels
