@@ -151,6 +151,8 @@ class Instance(Accessor, Channels, SimNode):
         node.nodeExtra = {}
         self.channels = node.channels
         node.channels = {}
+        self.favorites = node.favorites
+        node.favorites = []
         self.isShell = False
         self.center = Vector((0,0,0))
         self.cpoint = Vector((0,0,0))
@@ -346,6 +348,9 @@ class Instance(Accessor, Channels, SimNode):
     def postbuild(self, context):
         from .cycles import findTexco
         self.parentObject(context, self.rna)
+        for favo in self.favorites:
+            item = self.rna.DazFavorites.add()
+            item.name = favo
         for geonode in self.geometries:
             geonode.postbuild(context, self)
         if GS.useInstancing:
@@ -704,6 +709,7 @@ class Node(Asset, Formula, Channels):
         self.data = None
         self.center = None
         self.geometries = []
+        self.favorites = []
         self.rotation_order = 'XYZ'
         self.attributes = self.defaultAttributes()
         self.origAttrs = self.defaultAttributes()
@@ -792,7 +798,9 @@ class Node(Asset, Formula, Channels):
 
     def setExtra(self, extra):
         for key,value in extra.items():
-            if key in ["instance_items", "vertex_count", "rigidity_group"]:
+            if key == "favorites":
+                self.favorites = value
+            elif key in ["instance_items", "vertex_count", "rigidity_group"]:
                 self.nodeExtra[key] = extra[key]
 
 

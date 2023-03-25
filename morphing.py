@@ -1523,6 +1523,14 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
             cat = cats[self.category]
         return cat.morphs
 
+    def addCategory(self, cat):
+        self.morphset = "Custom"
+        self.category = cat
+        if cat not in self.rig.DazMorphCats.keys():
+            pg = self.rig.DazMorphCats.add()
+            pg.name = cat
+        self.rig.DazCustomMorphs = True
+
 
 class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_custom_morphs"
@@ -1649,10 +1657,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def getAdjustProp(self):
-        self.rig.DazCustomMorphs = True
-        if self.category not in self.rig.DazMorphCats.keys():
-            cat = self.rig.DazMorphCats.add()
-            cat.name = self.category
+        self.addCategory(self.category)
         return "Adjust Custom/%s" % self.category
 
 #------------------------------------------------------------------------
@@ -3573,7 +3578,7 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 #   Import baked
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArmature):
+class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
     bl_idname = "daz.import_corrections"
     bl_label = "Import Corrections"
     bl_description = "Import all custom corrections for baked morphs"
@@ -3627,9 +3632,7 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArm
                         self.addPath(path, cat, "Body")
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)
-            self.morphset = "Custom"
-            self.category = cat
-            self.hideable = False
+            self.addCategory(cat)
             self.getAllMorphs(namepaths, context)
 
 
@@ -3638,6 +3641,32 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArm
             self.namepaths[cat] = []
         text = os.path.splitext(os.path.basename(path))[0]
         self.namepaths[cat].append((text, path, bodypart))
+
+#-------------------------------------------------------------
+#   Import DAZ Favorites
+#-------------------------------------------------------------
+
+class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader):
+    bl_idname = "daz.import_daz_favorites"
+    bl_label = "Import DAZ Favorites"
+    bl_description = "Import favorite morphs defined in DAZ Studio"
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and len(ob.DazFavorites) > 0)
+
+    def run(self, context):
+        from .fileutils import findPathRecursiveFromObject
+        self.getFingeredRigMeshes(context)
+        namepaths = []
+        for favo in self.rig.DazFavorites.keys():
+            morph,channel = favo.split("/",1)
+            files = ["%s.dsf" % morph]
+            path = findPathRecursiveFromObject(files, self.rig, ["Morphs/"])
+            namepaths.append((morph, path, "Custom"))
+        self.addCategory("Favorites")
+        self.getAllMorphs(namepaths, context)
 
 #-------------------------------------------------------------
 #   Register
@@ -3699,6 +3728,7 @@ classes = [
     DAZ_OT_LoadFavoMorphs,
     DAZ_OT_SaveMorphPreset,
     DAZ_OT_ImportCorrections,
+    DAZ_OT_ImportDazFavoMorphs,
 ]
 
 def register():

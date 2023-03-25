@@ -358,6 +358,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.update_slider_limits")
         self.layout.separator()
         self.layout.operator("daz.import_corrections")
+        self.layout.operator("daz.import_daz_favorites")
         self.layout.operator("daz.import_dbz")
         self.layout.operator("daz.update_morph_paths")
 
