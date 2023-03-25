@@ -3745,6 +3745,7 @@ def register():
     bpy.types.Object.DazMorphUrls = CollectionProperty(type = DazMorphInfoGroup)
     bpy.types.Object.DazAutoFollow = CollectionProperty(type = DazTextGroup)
     bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
+    bpy.types.Object.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
 
     if bpy.app.version < (2,90,0):
         bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup)
