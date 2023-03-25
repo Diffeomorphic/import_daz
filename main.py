@@ -890,36 +890,37 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters,
                         useTransferFace = False)
-            if (  self.units or
-                  self.expressions or
-                  self.visemes or
-                  self.head or
-                  self.facs or
-                  self.facsdetails or
-                  self.facsexpr or
-                  self.body or
-                  self.jcms or
-                  self.flexions):
+            if (  self.useUnits or
+                  self.useExpressions or
+                  self.useVisemes or
+                  self.useHead or
+                  self.useFacs or
+                  self.useFacsdetails or
+                  self.useFacsexpr or
+                  self.useBody or
+                  self.useJcms or
+                  self.useFlexions):
                 if activateObject(context, mainRig):
                     bpy.ops.daz.import_standard_morphs(
-                        units = self.units,
-                        expressions = self.expressions,
-                        visemes = self.visemes,
-                        head = self.head,
-                        facs = self.facs,
-                        facsdetails = self.facsdetails,
-                        facsexpr = self.facsexpr,
-                        body = self.body,
+                        useUnits = self.useUnits,
+                        useExpressions = self.useExpressions,
+                        useVisemes = self.useVisemes,
+                        useHead = self.useHead,
+                        useFacs = self.useFacs,
+                        useFacsdetails = self.useFacsdetails,
+                        useFacsexpr = self.useFacsexpr,
+                        useBody = self.useBody,
                         useMhxOnly = self.useMhxOnly,
-                        jcms = self.jcms,
-                        flexions = self.flexions,
+                        useJcms = self.useJcms,
+                        useFlexions = self.useFlexions,
                         useAdjusters = self.useAdjusters)
             if self.useBakedCorrections:
-                expressions = (self.units or self.expressions or self.visemes)
-                if (expressions or self.jcms):
+                useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
+                if (useExpressions or self.useJcms):
                     bpy.ops.daz.import_corrections(
-                        expressions = expressions,
-                        jcms = self.jcms)
+                        useExpressions = useExpressions,
+                        useFacs = self.useFacs,
+                        useJcms = self.useJcms)
 
 
 

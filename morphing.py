@@ -1330,42 +1330,42 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 class MorphTypeOptions:
     isMhxAware = True
 
-    units : BoolProperty(
+    useUnits : BoolProperty(
         name = "Face Units",
         description = "Import all face units",
         default = False)
 
-    expressions : BoolProperty(
+    useExpressions : BoolProperty(
         name = "Expressions",
         description = "Import all expressions",
         default = False)
 
-    visemes : BoolProperty(
+    useVisemes : BoolProperty(
         name = "Visemes",
         description = "Import all visemes",
         default = False)
 
-    head : BoolProperty(
+    useHead : BoolProperty(
         name = "Head",
         description = "Import all head morphs",
         default = False)
 
-    facs : BoolProperty(
+    useFacs : BoolProperty(
         name = "FACS",
         description = "Import all FACS morphs",
         default = False)
 
-    facsdetails : BoolProperty(
+    useFacsdetails : BoolProperty(
         name = "FACS Details",
         description = "Import all FACS details",
         default = False)
 
-    facsexpr : BoolProperty(
+    useFacsexpr : BoolProperty(
         name = "FACS Expressions",
         description = "Import all FACS expressions",
         default = False)
 
-    body : BoolProperty(
+    useBody : BoolProperty(
         name = "Body",
         description = "Import all body morphs",
         default = False)
@@ -1375,30 +1375,30 @@ class MorphTypeOptions:
         description = "Only import MHX compatible body morphs",
         default = False)
 
-    jcms : BoolProperty(
+    useJcms : BoolProperty(
         name = "JCMs",
         description = "Import all JCMs",
         default = False)
 
-    flexions : BoolProperty(
+    useFlexions : BoolProperty(
         name = "Flexions",
         description = "Import all flexions",
         default = False)
 
 
     def draw(self, context):
-        self.layout.prop(self, "units")
-        self.layout.prop(self, "expressions")
-        self.layout.prop(self, "visemes")
-        self.layout.prop(self, "head")
-        self.layout.prop(self, "facs")
-        self.layout.prop(self, "facsdetails")
-        self.layout.prop(self, "facsexpr")
-        self.layout.prop(self, "body")
-        if self.body and self.isMhxAware:
+        self.layout.prop(self, "useUnits")
+        self.layout.prop(self, "useExpressions")
+        self.layout.prop(self, "useVisemes")
+        self.layout.prop(self, "useHead")
+        self.layout.prop(self, "useFacs")
+        self.layout.prop(self, "useFacsdetails")
+        self.layout.prop(self, "useFacsexpr")
+        self.layout.prop(self, "useBody")
+        if self.useBody and self.isMhxAware:
             self.subprop("useMhxOnly")
-        self.layout.prop(self, "jcms")
-        self.layout.prop(self, "flexions")
+        self.layout.prop(self, "useJcms")
+        self.layout.prop(self, "useFlexions")
 
 
     def subprop(self, prop):
@@ -1437,16 +1437,16 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
-        self.loadMorphType(context, self.units, "Units", "Face")
-        self.loadMorphType(context, self.head, "Head", "Face")
-        self.loadMorphType(context, self.expressions, "Expressions", "Face")
-        self.loadMorphType(context, self.visemes, "Visemes", "Face")
-        self.loadMorphType(context, self.facs, "Facs", "Face")
-        self.loadMorphType(context, self.facsdetails, "Facsdetails", "Face")
-        self.loadMorphType(context, self.facsexpr, "Facsexpr", "Face")
-        self.loadMorphType(context, self.body, "Body", "Body")
-        self.loadMorphType(context, self.jcms, "Jcms", "Body")
-        self.loadMorphType(context, self.flexions, "Flexions", "Body")
+        self.loadMorphType(context, self.useUnits, "Units", "Face")
+        self.loadMorphType(context, self.useHead, "Head", "Face")
+        self.loadMorphType(context, self.useExpressions, "Expressions", "Face")
+        self.loadMorphType(context, self.useVisemes, "Visemes", "Face")
+        self.loadMorphType(context, self.useFacs, "Facs", "Face")
+        self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
+        self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
+        self.loadMorphType(context, self.useBody, "Body", "Body")
+        self.loadMorphType(context, self.useJcms, "Jcms", "Body")
+        self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
@@ -1882,16 +1882,16 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
 
     def run(self, context):
         rig = context.object
-        self.removeMorphType(rig, self.units, "Units")
-        self.removeMorphType(rig, self.expressions, "Expressions")
-        self.removeMorphType(rig, self.visemes, "Visemes")
-        self.removeMorphType(rig, self.head, "Head")
-        self.removeMorphType(rig, self.facs, "Facs")
-        self.removeMorphType(rig, self.facsdetails, "Facsdetails")
-        self.removeMorphType(rig, self.facsexpr, "Facsexpr")
-        self.removeMorphType(rig, self.body, "Body")
-        self.removeMorphType(rig, self.jcms, "Jcms")
-        self.removeMorphType(rig, self.flexions, "Flexions")
+        self.removeMorphType(rig, self.useUnits, "Units")
+        self.removeMorphType(rig, self.useExpressions, "Expressions")
+        self.removeMorphType(rig, self.useVisemes, "Visemes")
+        self.removeMorphType(rig, self.useHead, "Head")
+        self.removeMorphType(rig, self.useFacs, "Facs")
+        self.removeMorphType(rig, self.useFacsdetails, "Facsdetails")
+        self.removeMorphType(rig, self.useFacsexpr, "Facsexpr")
+        self.removeMorphType(rig, self.useBody, "Body")
+        self.removeMorphType(rig, self.useJcms, "Jcms")
+        self.removeMorphType(rig, self.useFlexions, "Flexions")
 
     def removeMorphType(self, rig, use, morphset):
         if not use:
@@ -3578,19 +3578,25 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArm
     bl_label = "Import Corrections"
     bl_description = "Import all custom corrections for baked morphs"
 
-    expressions : BoolProperty(
+    useExpressions : BoolProperty(
         name = "Expressions",
         description = "Import eJCM files",
         default = True)
 
-    jcms : BoolProperty(
+    useFacs : BoolProperty(
+        name = "FACS",
+        description = "Import FACS files",
+        default = True)
+
+    useJcms : BoolProperty(
         name = "JCMs",
         description = "Import pJCM files",
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "expressions")
-        self.layout.prop(self, "jcms")
+        self.layout.prop(self, "useExpressions")
+        self.layout.prop(self, "useFacs")
+        self.layout.prop(self, "useJcms")
 
     def run(self, context):
         self.getFingeredRigMeshes(context)
@@ -3607,13 +3613,17 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArm
             if not absfolder:
                 print("Folder not found: %s" % folder)
                 continue
+            print("CAT", cat, folder)
             for file in os.listdir(absfolder):
+                print(" * ", file)
                 lfile = file.lower()
                 if os.path.splitext(file)[-1] in [".dsf", ".duf"]:
                     path = "%s/%s" % (absfolder, file)
-                    if self.expressions and lfile.startswith("ejcm"):
+                    if self.useExpressions and lfile.startswith("ejcm"):
                         self.addPath(path, cat, "Face")
-                    elif self.jcms and lfile.startswith(("pjcm", "jcm")):
+                    elif self.useFacs and lfile.startswith("facs"):
+                        self.addPath(path, cat, "Face")
+                    elif self.useJcms and lfile.startswith(("pjcm", "jcm")):
                         self.addPath(path, cat, "Body")
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)
@@ -3628,7 +3638,6 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, MorphLoader, MorphSuffix, IsArm
             self.namepaths[cat] = []
         text = os.path.splitext(os.path.basename(path))[0]
         self.namepaths[cat].append((text, path, bodypart))
-
 
 #-------------------------------------------------------------
 #   Register
