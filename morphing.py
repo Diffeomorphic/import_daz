@@ -1523,7 +1523,7 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
             cat = cats[self.category]
         return cat.morphs
 
-    def addCategory(self, cat):
+    def setCategory(self, cat):
         self.morphset = "Custom"
         self.category = cat
         if cat not in self.rig.DazMorphCats.keys():
@@ -1657,7 +1657,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def getAdjustProp(self):
-        self.addCategory(self.category)
+        self.setCategory(self.category)
         return "Adjust Custom/%s" % self.category
 
 #------------------------------------------------------------------------
@@ -3618,9 +3618,7 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
             if not absfolder:
                 print("Folder not found: %s" % folder)
                 continue
-            print("CAT", cat, folder)
             for file in os.listdir(absfolder):
-                print(" * ", file)
                 lfile = file.lower()
                 if os.path.splitext(file)[-1] in [".dsf", ".duf"]:
                     path = "%s/%s" % (absfolder, file)
@@ -3632,7 +3630,7 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
                         self.addPath(path, cat, "Body")
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)
-            self.addCategory(cat)
+            self.setCategory(cat)
             self.getAllMorphs(namepaths, context)
 
 
@@ -3665,7 +3663,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader):
             files = ["%s.dsf" % morph]
             path = findPathRecursiveFromObject(files, self.rig, ["Morphs/"])
             namepaths.append((morph, path, "Custom"))
-        self.addCategory("Favorites")
+        self.setCategory("Favorites")
         self.getAllMorphs(namepaths, context)
 
 #-------------------------------------------------------------

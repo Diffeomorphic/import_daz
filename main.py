@@ -588,6 +588,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Import all custom corrections for baked morphs",
         default = False)
 
+    useDazFavorites : BoolProperty(
+        name = "DAZ Favorites",
+        description = "Import DAZ favorite morphs",
+        default = False)
+
     useTransferClothes : BoolProperty(
         name = "Transfer To Clothes",
         description = "Transfer shapekeys from character to clothes",
@@ -677,6 +682,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useBakedCorrections")
+        self.layout.prop(self, "useDazFavorites")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "useTransferGeografts")
@@ -914,14 +920,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useJcms = self.useJcms,
                         useFlexions = self.useFlexions,
                         useAdjusters = self.useAdjusters)
-            if self.useBakedCorrections:
+            if self.useBakedCorrections and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
-                if (useExpressions or self.useJcms):
+                if (useExpressions or self.useFacs or self.useJcms):
                     bpy.ops.daz.import_corrections(
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms)
-
+            if (self.useDazFavorites and
+                len(mainRig.DazFavorites) > 0 and
+                activateObject(context, mainRig)):
+                bpy.ops.daz.import_daz_favorites()
 
 
         # Add softbody simulation
