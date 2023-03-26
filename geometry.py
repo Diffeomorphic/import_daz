@@ -375,6 +375,11 @@ class GeoNode(Node, SimNode):
             if hdob and hdob != ob:
                 self.setHideInfoMesh(hdob)
             self.addLSMesh(ob, inst, None)
+            for extra in self.extra:
+                for favo in extra.get("favorites", []):
+                    print("FF", ob.name, favo)
+                    item = ob.data.DazFavorites.add()
+                    item.name = favo
 
 
     def copyHDMaterials(self, ob, hdob, context, inst):

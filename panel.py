@@ -131,6 +131,8 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.import_standard_morphs")
             self.layout.operator("daz.import_custom_morphs")
             self.layout.separator()
+            self.layout.operator("daz.import_corrections")
+            self.layout.operator("daz.import_daz_favorites")
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
@@ -357,8 +359,6 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.copy_bone_drivers")
         self.layout.operator("daz.update_slider_limits")
         self.layout.separator()
-        self.layout.operator("daz.import_corrections")
-        self.layout.operator("daz.import_daz_favorites")
         self.layout.operator("daz.import_dbz")
         self.layout.operator("daz.update_morph_paths")
 

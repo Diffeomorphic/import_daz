@@ -907,7 +907,6 @@ class MorphLoader(LoadMorph):
         elif self.rig and not self.meshes:
             self.meshes = [ob for ob in self.rig.children if ob.type == 'MESH']
 
-
     def getMorphSet(self, asset):
         return self.morphset
 
@@ -3644,27 +3643,29 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
 #   Import DAZ Favorites
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader):
+class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import favorite morphs defined in DAZ Studio"
 
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and len(ob.DazFavorites) > 0)
-
     def run(self, context):
         from .fileutils import findPathRecursiveFromObject
-        self.getFingeredRigMeshes(context)
-        namepaths = []
-        for favo in self.rig.DazFavorites.keys():
-            morph,channel = favo.split("/",1)
-            files = ["%s.dsf" % morph]
-            path = findPathRecursiveFromObject(files, self.rig, ["Morphs/"])
-            namepaths.append((morph, path, "Custom"))
-        self.setCategory("Favorites")
-        self.getAllMorphs(namepaths, context)
+        self.rig = getRigFromObject(context.object)
+        for ob in self.rig.children:
+            if ob.type == 'MESH' and len(ob.data.DazFavorites) > 0:
+                namepaths = []
+                self.mesh = ob
+                self.meshes = [ob]
+                for favo in ob.data.DazFavorites.keys():
+                    morph,channel = favo.split("/",1)
+                    morph = unquote(morph)
+                    files = ["%s.dsf" % morph]
+                    path = findPathRecursiveFromObject(files, ob, ["Morphs/"])
+                    if path:
+                        namepaths.append((morph, path, "Custom"))
+                if namepaths:
+                    self.setCategory("Favorites %s" % ob.name)
+                    self.getAllMorphs(namepaths, context)
 
 #-------------------------------------------------------------
 #   Register
@@ -3745,7 +3746,7 @@ def register():
     bpy.types.Object.DazMorphUrls = CollectionProperty(type = DazMorphInfoGroup)
     bpy.types.Object.DazAutoFollow = CollectionProperty(type = DazTextGroup)
     bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
-    bpy.types.Object.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
+    bpy.types.Mesh.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
 
     if bpy.app.version < (2,90,0):
         bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup)

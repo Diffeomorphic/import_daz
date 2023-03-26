@@ -927,9 +927,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms)
-            if (self.useDazFavorites and
-                len(mainRig.DazFavorites) > 0 and
-                activateObject(context, mainRig)):
+            if self.useDazFavorites and activateObject(context, mainRig):
                 bpy.ops.daz.import_daz_favorites()
 
 
