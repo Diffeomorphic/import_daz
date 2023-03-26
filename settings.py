@@ -102,7 +102,7 @@ class GlobalSettings:
         self.showInTerminal = True
         self.useShapekeys = True
         self.useERC = False
-        self.useProtect = False
+        self.useProtect = True
         self.useStripCategory = False
         self.useModifiedMesh = False
 

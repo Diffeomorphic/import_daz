@@ -3605,6 +3605,12 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         self.layout.prop(self, "useJcms")
 
     def run(self, context):
+        def match(strings):
+            for string in strings:
+                if string in lfile:
+                    return True
+            return False
+
         self.getFingeredRigMeshes(context)
         used = []
         self.namepaths = {}
@@ -3623,11 +3629,11 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                 lfile = file.lower()
                 if os.path.splitext(file)[-1] in [".dsf", ".duf"]:
                     path = "%s/%s" % (absfolder, file)
-                    if self.useExpressions and "ejcm" in lfile:
+                    if self.useExpressions and match(["ejcm"]):
                         self.addPath(path, cat, "Face")
-                    elif self.useFacs and "facs" in lfile:
+                    elif self.useFacs and match(["facs"]):
                         self.addPath(path, cat, "Face")
-                    elif self.useJcms and "pjcm" in lfile:
+                    elif self.useJcms and match(["pjcm", "body_cbs"]):
                         self.addPath(path, cat, "Body")
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)
