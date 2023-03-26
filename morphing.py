@@ -1522,13 +1522,15 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
             cat = cats[self.category]
         return cat.morphs
 
+
     def setCategory(self, cat):
         self.morphset = "Custom"
         self.category = cat
-        if cat not in self.rig.DazMorphCats.keys():
-            pg = self.rig.DazMorphCats.add()
-            pg.name = cat
-        self.rig.DazCustomMorphs = True
+        if self.rig:
+            if cat not in self.rig.DazMorphCats.keys():
+                pg = self.rig.DazMorphCats.add()
+                pg.name = cat
+            self.rig.DazCustomMorphs = True
 
 
 class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
@@ -3649,23 +3651,29 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
     def run(self, context):
-        from .fileutils import findPathRecursiveFromObject
         self.rig = getRigFromObject(context.object)
-        for ob in self.rig.children:
-            if ob.type == 'MESH' and len(ob.data.DazFavorites) > 0:
-                namepaths = []
-                self.mesh = ob
-                self.meshes = [ob]
-                for favo in ob.data.DazFavorites.keys():
-                    morph,channel = favo.split("/",1)
-                    morph = unquote(morph)
-                    files = ["%s.dsf" % morph]
-                    path = findPathRecursiveFromObject(files, ob, ["Morphs/"])
-                    if path:
-                        namepaths.append((morph, path, "Custom"))
-                if namepaths:
-                    self.setCategory("Favorites %s" % ob.name)
-                    self.getAllMorphs(namepaths, context)
+        if self.rig:
+            for ob in self.rig.children:
+                self.addFavoMorphs(ob, context)
+        else:
+            self.addFavoMorphs(context.object, context)
+
+
+    def addFavoMorphs(self, ob, context):
+        from .fileutils import findPathRecursiveFromObject
+        if ob.type == 'MESH' and len(ob.data.DazFavorites) > 0:
+            namepaths = []
+            self.mesh = ob
+            self.meshes = [ob]
+            for favo in ob.data.DazFavorites.keys():
+                morph = unquote(favo.split("/",1)[0])
+                files = ["%s.dsf" % morph]
+                path = findPathRecursiveFromObject(files, ob, ["Morphs/", "Base/Morphs/"])
+                if path:
+                    namepaths.append((morph, path, "Custom"))
+            if namepaths:
+                self.setCategory("Favorites %s" % ob.name)
+                self.getAllMorphs(namepaths, context)
 
 #-------------------------------------------------------------
 #   Register
