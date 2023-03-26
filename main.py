@@ -583,9 +583,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Merge separate toes into a single toe bone",
         default = False)
 
-    useBakedCorrections : BoolProperty(
-        name = "Baked Corrections",
-        description = "Import all custom corrections for baked morphs",
+    useBakedCorrectives : BoolProperty(
+        name = "Baked Correctives",
+        description = "Import all custom correctives for baked morphs",
         default = False)
 
     useDazFavorites : BoolProperty(
@@ -681,7 +681,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.onMorphSuffix == 'ALL':
                 self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
-        self.layout.prop(self, "useBakedCorrections")
+        self.layout.prop(self, "useBakedCorrectives")
         self.layout.prop(self, "useDazFavorites")
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "useTransferFace")
@@ -920,10 +920,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useJcms = self.useJcms,
                         useFlexions = self.useFlexions,
                         useAdjusters = self.useAdjusters)
-            if self.useBakedCorrections and activateObject(context, mainRig):
+            if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
                 if (useExpressions or self.useFacs or self.useJcms):
-                    bpy.ops.daz.import_corrections(
+                    bpy.ops.daz.import_baked_correctives(
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms)

@@ -3579,10 +3579,10 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 #   Import baked
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsMeshArmature):
-    bl_idname = "daz.import_corrections"
-    bl_label = "Import Corrections"
-    bl_description = "Import all custom corrections for baked morphs"
+class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshArmature):
+    bl_idname = "daz.import_baked_correctives"
+    bl_label = "Import Baked Correctives"
+    bl_description = "Import all custom correctives for baked morphs"
 
     useExpressions : BoolProperty(
         name = "Expressions",
@@ -3734,7 +3734,7 @@ classes = [
     DAZ_OT_SaveFavoMorphs,
     DAZ_OT_LoadFavoMorphs,
     DAZ_OT_SaveMorphPreset,
-    DAZ_OT_ImportCorrections,
+    DAZ_OT_ImportBakedCorrectives,
     DAZ_OT_ImportDazFavoMorphs,
 ]
 

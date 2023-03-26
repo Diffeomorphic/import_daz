@@ -131,7 +131,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
             self.layout.operator("daz.import_standard_morphs")
             self.layout.operator("daz.import_custom_morphs")
             self.layout.separator()
-            self.layout.operator("daz.import_corrections")
+            self.layout.operator("daz.import_baked_correctives")
             self.layout.operator("daz.import_daz_favorites")
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
