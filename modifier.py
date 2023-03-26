@@ -658,7 +658,7 @@ class FormulaAsset(Formula, ChannelAsset):
         if LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
         elif LS.fitFile:
-            Formula.buildBaked(self, context, inst)
+            self.buildBakedFormulas(context, inst)
 
 #-------------------------------------------------------------
 #   Morph
@@ -842,6 +842,13 @@ class Morph(FormulaAsset):
         self.rna = (skey, ob, sname)
         if useBuild:
             buildShapeKey(ob, skey, strength)
+
+
+    def postbuild(self, context, inst):
+        if LS.useMorphOnly:
+            Formula.postbuild(self, context, inst)
+        elif LS.fitFile:
+            self.buildBakedMorph(inst, self.id, self.value)
 
 
 def addShapekey(ob, sname):

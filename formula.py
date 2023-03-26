@@ -64,35 +64,40 @@ class Formula:
                 asset.build(context, inst, value)
 
 
-    def buildBaked(self, context, inst):
-        from .driver import removeModifiers, setProtected, addDriverVar
-        from .morphing import setActivated
+    def buildBakedFormulas(self, context, inst):
         for formula in self.formulas:
             ref,key,value = self.computeFormula(formula)
-            rig = inst.rna
-            if key == "value" and rig and value != 0:
-                value = float(value)
-                file,raw = ref.rsplit("#",1)
-                file = unquote(file)
-                raw = unquote(raw)
-                rig[raw] = value
-                final = finalProp(raw)
-                rig.data[final] = value
-                print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
-                setProtected(rig, raw)
-                setActivated(rig, raw, False)
-                item = rig.DazBaked.add()
-                item.name = raw
-                item.text = raw
-                if file not in rig.DazBakedFiles.keys():
-                    item = rig.DazBakedFiles.add()
-                    item.name = file
-                    item.f = value
-                fcu = rig.data.driver_add(propRef(final))
-                fcu.driver.type = 'SCRIPTED'
-                removeModifiers(fcu)
-                fcu.driver.expression = "a"
-                addDriverVar(fcu, "a",  propRef(raw), rig)
+            if key == "value":
+                self.buildBakedMorph(inst, ref, value)
+
+
+    def buildBakedMorph(self, inst, ref, value):
+        from .driver import removeModifiers, setProtected, addDriverVar
+        from .morphing import setActivated
+        rig = inst.getRig()
+        if rig and value != 0:
+            value = float(value)
+            file,raw = ref.rsplit("#",1)
+            file = unquote(file)
+            raw = unquote(raw)
+            rig[raw] = value
+            final = finalProp(raw)
+            rig.data[final] = value
+            print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
+            setProtected(rig, raw)
+            setActivated(rig, raw, False)
+            item = rig.DazBaked.add()
+            item.name = raw
+            item.text = raw
+            if file not in rig.DazBakedFiles.keys():
+                item = rig.DazBakedFiles.add()
+                item.name = file
+                item.f = value
+            fcu = rig.data.driver_add(propRef(final))
+            fcu.driver.type = 'SCRIPTED'
+            removeModifiers(fcu)
+            fcu.driver.expression = "a"
+            addDriverVar(fcu, "a",  propRef(raw), rig)
 
 
     def postbuild(self, context, inst):

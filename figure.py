@@ -52,10 +52,11 @@ class FigureInstance(Instance):
     def __repr__(self):
         return "<FigureInstance %s %d P: %s R: %s>" % (self.node.name, self.index, self.node.parent, self.rna)
 
-
     def buildExtra(self, context):
         pass
 
+    def getRig(self):
+        return self.rna
 
     def postbuild(self, context):
         Instance.postbuild(self, context)

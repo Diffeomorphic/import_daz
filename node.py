@@ -178,16 +178,16 @@ class Instance(Accessor, Channels, SimNode):
         pname = (self.parent.id if self.parent else None)
         return "<Instance %s L:%s %d N: %s P: %s R: %s>" % (self.id, self.label, self.index, self.node.name, pname, self.rna)
 
-
     def errorWrite(self, ref, fp):
         fp.write('  "%s": %s\n' % (ref, self))
         for geonode in self.geometries:
             geonode.errorWrite("     ", fp)
 
-
     def getSelfId(self):
         return self.id
 
+    def getRig(self):
+        return None
 
     def isMainFigure(self, level):
         from .figure import FigureInstance

@@ -3646,7 +3646,7 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
 class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
-    bl_description = "Import favorite morphs defined in DAZ Studio"
+    bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
     def run(self, context):
         from .fileutils import findPathRecursiveFromObject

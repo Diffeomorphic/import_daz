@@ -92,16 +92,19 @@ class GeoNode(Node, SimNode):
     def __repr__(self):
         return ("<GeoNode %s %d M:%d C: %s R: %s>" % (self.id, self.index, len(self.materials), self.center, self.rna))
 
-
     def errorWrite(self, ref, fp):
         fp.write('   G: %s\n' % (self))
-
 
     def isVisibleMaterial(self, dmat):
         if isinstance(self.data, Geometry):
             return self.data.isVisibleMaterial(dmat)
         return True
 
+    def getRig(self):
+        ob = self.rna
+        if ob and ob.parent and ob.parent.type == 'ARMATURE':
+            return ob.parent
+        return None
 
     def preprocess(self, context, inst):
         if isinstance(self.data, Geometry):
@@ -377,7 +380,6 @@ class GeoNode(Node, SimNode):
             self.addLSMesh(ob, inst, None)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
-                    print("FF", ob.name, favo)
                     item = ob.data.DazFavorites.add()
                     item.name = favo
 
