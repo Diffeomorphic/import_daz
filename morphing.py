@@ -3579,7 +3579,7 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 #   Import baked
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
+class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_corrections"
     bl_label = "Import Corrections"
     bl_description = "Import all custom corrections for baked morphs"
@@ -3623,11 +3623,11 @@ class DAZ_OT_ImportCorrections(DazPropsOperator, CustomMorphLoader, IsArmature):
                 lfile = file.lower()
                 if os.path.splitext(file)[-1] in [".dsf", ".duf"]:
                     path = "%s/%s" % (absfolder, file)
-                    if self.useExpressions and lfile.startswith("ejcm"):
+                    if self.useExpressions and "ejcm" in lfile:
                         self.addPath(path, cat, "Face")
-                    elif self.useFacs and lfile.startswith("facs"):
+                    elif self.useFacs and "facs" in lfile:
                         self.addPath(path, cat, "Face")
-                    elif self.useJcms and lfile.startswith(("pjcm", "jcm")):
+                    elif self.useJcms and "pjcm" in lfile:
                         self.addPath(path, cat, "Body")
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)
