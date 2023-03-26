@@ -981,12 +981,13 @@ class LoadMorph(DriverUser):
         if raw not in self.rig.keys():
             self.rig[raw] = default
             if protect and GS.useProtect:
-                setProtected(self.rig, raw)
-                setActivated(self.rig, raw, False)
                 morphset = self.morphset
                 self.morphset = self.origMorphset
                 self.addToMorphSet(raw, None, False, True)
                 self.morphset = morphset
+        if protect and GS.useProtect:
+            setProtected(self.rig, raw)
+            setActivated(self.rig, raw, False)
 
         if final not in self.amt.keys():
             self.amt[final] = default
