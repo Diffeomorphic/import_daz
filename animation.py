@@ -1351,7 +1351,9 @@ class StandardAnimation:
         else:
             from .driver import getPropMinMax
             rig = context.object
-            self.alias = dict([(key, pg.s) for key,pg in rig.DazAlias.items()])
+            alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
+            alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
+            self.alias = dict(alias1 + alias2)
             for prop in rig.data.keys():
                 if isFinal(prop):
                     key = baseProp(prop)
