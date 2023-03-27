@@ -79,11 +79,6 @@ class BoneData:
             "rEye" : 180,
         }
 
-        self.FlipCorrection = {
-            "lCollar" : (False, False, False),
-            "l_shoulder" : (False, False, False),
-        }
-
         self.SocketBones = [
             "lShldr", "lShldrBend", "l_upperarm",
             "rShldr", "rShldrBend", "r_upperarm",
@@ -92,28 +87,24 @@ class BoneData:
         ]
 
         self.RotationModes = {
+            "lCollar" : ("YXZ", False),
             "lShldr" : ("YXZ", False),
             "lShldrBend" : ("YXZ", False),
             "lShldrTwist" : ("YXZ", False),
-            "lForearmTwist" : ("YZX", False),
             "lHand" : ("YXZ", False),
 
             "rShldr" : ("YXZ", True),
             "rShldrBend" : ("YXZ", True),
             "rShldrTwist" : ("YXZ", True),
-            "rForearmTwist" : ("YZX", True),
             "rHand" : ("YXZ", True),
 
+            "l_shoulder" : ("YXZ", False),
             "l_upperarm" : ("YXZ", False),
             "l_upperarmtwist1" : ("YXZ", False),
             "l_upperarmtwist2" : ("YXZ", False),
-            "l_forearmtwist1" : ("YZX", False),
-            "l_forearmtwist2" : ("YZX", False),
             "l_hand" : ("YXZ", False),
 
-            "r_upperarm" : ("YXZ", True),
-            "r_upperarmtwist1" : ("YXZ", True),
-            "r_upperarmtwist2" : ("YXZ", True),
+            "r_forearm" : ("YZX", True),
             "r_forearmtwist1" : ("YZX", True),
             "r_forearmtwist2" : ("YZX", True),
             "r_hand" : ("YXZ", True),
