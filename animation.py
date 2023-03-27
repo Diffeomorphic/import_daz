@@ -291,12 +291,6 @@ class FrameConverter:
     #-------------------------------------------------------------
 
     def convertMorphAnim(self, vanim, rig):
-        def nonzero(frames):
-            for value in frames.values():
-                if value != 0:
-                    return True
-            return False
-
         if not self.affectMorphs:
             return vanim
 
@@ -308,8 +302,7 @@ class FrameConverter:
         for prop,frames in struct.items():
             formulas,alias = self.getFormulas(rig, prop)
             if formulas is None:
-                if nonzero(frames):
-                    self.used[alias] = True
+                self.used[alias] = True
                 continue
             for nprop,factor in formulas.items():
                 if factor == 0:
@@ -334,8 +327,7 @@ class FrameConverter:
 
         nvanim = {}
         for nprop,nframes in nstruct.items():
-            if nonzero(nframes):
-                self.used[nprop] = True
+            self.used[nprop] = True
             nvanim[nprop] = nframes.items()
         return nvanim
 
@@ -545,7 +537,7 @@ class MorphOptions:
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
         description = "Clear all morph properties before loading new ones",
-        default = True)
+        default = False)
 
     useShapekeys : BoolProperty(
         name = "Load To Shapekeys",
