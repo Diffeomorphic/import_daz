@@ -3662,7 +3662,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
             for ob in self.rig.children:
                 self.addFavoMorphs(ob, context)
         else:
-            self.addFavoMorphs(context.object, context)
+            for ob in getSelectedMeshes(context):
+                self.addFavoMorphs(ob, context)
 
 
     def addFavoMorphs(self, ob, context):

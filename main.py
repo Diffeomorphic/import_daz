@@ -927,9 +927,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms)
-            if self.useDazFavorites and activateObject(context, mainRig):
-                bpy.ops.daz.import_daz_favorites()
 
+        # Import DAZ favorites
+        if self.useDazFavorites and meshes:
+            if mainRig:
+                activateObject(context, mainRig)
+            else:
+                activateObject(context, meshes[0])
+            for ob in meshes[1:]:
+                selectSet(ob, True)
+            bpy.ops.daz.import_daz_favorites()
 
         # Add softbody simulation
         if self.useSoftbody and mainRig and mainMesh and activateObject(context, mainMesh):
