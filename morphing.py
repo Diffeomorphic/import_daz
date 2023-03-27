@@ -3606,6 +3606,9 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useJcms")
 
+    excluded = [folder.lower() for folder in
+        ["/data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Proportion"]]
+
     def run(self, context):
         def match(strings):
             for string in strings:
@@ -3622,6 +3625,8 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
             if lfolder in used:
                 continue
             used.append(lfolder)
+            if lfolder in self.excluded:
+                continue
             cat = folder.rsplit("/", 1)[-1]
             absfolder = GS.getAbsPath(folder)
             if not absfolder:
@@ -3635,7 +3640,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                         self.addPath(path, cat, "Face")
                     elif self.useFacs and match(["facs"]):
                         self.addPath(path, cat, "Face")
-                    elif self.useJcms and match(["pjcm", "body_cbs"]):
+                    elif self.useJcms and match(["pjcm", "body_cbs", "ctrlmd_n"]):
                         self.addPath(path, cat, "Body")
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)

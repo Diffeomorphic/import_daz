@@ -849,6 +849,7 @@ class Morph(FormulaAsset):
             Formula.postbuild(self, context, inst)
         elif LS.fitFile:
             self.buildBakedMorph(inst, self.id, self.value)
+            self.buildBakedFormulas(context, inst)
 
 
 def addShapekey(ob, sname):
