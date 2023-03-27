@@ -93,6 +93,7 @@ class Formula:
                 item = rig.DazBakedFiles.add()
                 item.name = file
                 item.f = value
+                print("Baked morph file (%s): %s" % (rig.name, file))
             fcu = rig.data.driver_add(propRef(final))
             fcu.driver.type = 'SCRIPTED'
             removeModifiers(fcu)

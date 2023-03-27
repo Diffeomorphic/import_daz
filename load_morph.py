@@ -50,6 +50,7 @@ class LoadMorph(DriverUser):
     useSearchAlias = True
     onlyProperties = False
     useProtected = False
+    defaultMultiplier = 1.0
 
     def __init__(self):
         self.rig = None
@@ -954,7 +955,7 @@ class LoadMorph(DriverUser):
                 multfinal = finalProp(mult)
                 if propRef(multfinal) not in targets:
                     mstring += "%s*" % varname
-                    self.ensureExists(mult, multfinal, 1.0, True)
+                    self.ensureExists(mult, multfinal, self.defaultMultiplier, True)
                     self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
                     varname = nextLetter(varname)
             return "%s%s" % (mstring, string)
