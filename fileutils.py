@@ -237,20 +237,21 @@ def getReldirFromObject(ob, usePeople):
 
 
 def findPathRecursive(files, relpath, subpath):
-    def findFileRecursive(folder, files):
+    def findFileRecursive(folder, lfiles):
         for file in os.listdir(folder):
             path = os.path.join(folder, file)
-            if file in files:
+            if file.lower() in lfiles:
                 return path
             elif os.path.isdir(path):
-                tpath = findFileRecursive(path, files)
+                tpath = findFileRecursive(path, lfiles)
                 if tpath:
                     return tpath
         return None
 
     folders = getFolders(relpath, subpath, match81=True)
+    lfiles = [file.lower() for file in files]
     for folder in folders:
-        path = findFileRecursive(folder, files)
+        path = findFileRecursive(folder, lfiles)
         if path:
             return path
     return None
