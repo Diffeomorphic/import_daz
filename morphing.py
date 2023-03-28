@@ -1533,6 +1533,11 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
             self.rig.DazCustomMorphs = True
 
 
+    def updateScrollbars(self, context):
+        from .uilist import updateScrollbars
+        updateScrollbars(context.scene)
+
+
 class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_custom_morphs"
     bl_label = "Import Custom Morphs"
@@ -1612,7 +1617,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
 
 
     def run(self, context):
-        from .uilist import updateScrollbars
         from .finger import replaceHomeDir
         self.findIked()
         self.errors = {}
@@ -1644,8 +1648,8 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             props = self.shapekeys.keys()
             addToCategories(self.mesh, props, self.category)
             self.mesh.DazMeshMorphs = True
-        updateScrollbars(context.scene)
         self.finishLoading(namepaths, context, t1)
+        self.updateScrollbars(context)
 
 
     def getNamePaths(self):
@@ -3646,6 +3650,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
             print("Load %s corrections" % cat)
             self.setCategory(cat)
             self.getAllMorphs(namepaths, context)
+        self.updateScrollbars(context)
 
 
     def addPath(self, path, cat, bodypart):
@@ -3671,6 +3676,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
         else:
             for ob in getSelectedMeshes(context):
                 self.addFavoMorphs(ob, context)
+        self.updateScrollbars(context)
 
 
     def addFavoMorphs(self, ob, context):
