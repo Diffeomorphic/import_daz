@@ -651,7 +651,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
         else:
             self.layout.operator("daz.disable_drivers")
         self.preamble(self.layout, rig)
-        if GS.useERC:
+        if GS.useERC and rig.DazRig.startswith("genesis"):
             row = self.layout.row()
             row.operator("daz.morph_armature")
             row.prop(context.scene, "DazAutoMorphArmatures")

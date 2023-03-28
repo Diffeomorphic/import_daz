@@ -324,7 +324,7 @@ def baseProp(string):
     return string
 
 def isDrvBone(string):
-    return (string[-3:] == "Drv" or string[-5:] == "(drv)")
+    return string.endswith(("(drv)", "twist1", "twist2"))
 
 def baseBone(string):
     if string[-5:] in ["(fin)", "(drv)"]:
@@ -341,13 +341,6 @@ def drvBone(string):
     if isDrvBone(string):
         return string
     return string + "(drv)"
-
-def baseBone(string):
-    if (string[-3:] in ["Drv","Fin"]):
-        return string[:-3]
-    elif (string[-5:] in ["(drv)", "(fin)"]):
-        return string[:-5]
-    return string
 
 def nextLetter(char):
     return chr(ord(char) + 1)

@@ -344,6 +344,9 @@ class BoneInstance(Instance):
             self.figure.hiddenBones[self.name] = True
             bone = rig.data.bones[self.name]
             bone.hide = True
+        if self.name.endswith(("twist1", "twist2")):
+            bone = rig.data.bones[self.name]
+            bone.layers = 31*[False] + [True]
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildFormulas(rig, hide)
