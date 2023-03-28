@@ -3606,8 +3606,8 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useJcms")
 
-    excluded = [folder.lower() for folder in
-        ["/data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Proportion"]]
+    excluded = [folder.lower() for folder in []]
+        #["/data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Proportion"]]
 
     def run(self, context):
         def match(strings):
