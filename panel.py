@@ -1038,6 +1038,8 @@ class DAZ_PT_DazIK(DAZ_PT_DazRig, bpy.types.Panel):
         op.pole = "rKnee"
 
         layout.separator()
+        layout.operator("daz.snap_all_simple_fk")
+        layout.operator("daz.snap_all_simple_ik")
         layout.prop(rig, "DazRotLimits")
 
 #------------------------------------------------------------------------

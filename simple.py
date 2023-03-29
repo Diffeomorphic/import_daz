@@ -722,30 +722,20 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
 #   FK Snap
 #----------------------------------------------------------
 
-class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
-    bl_idname = "daz.snap_simple_fk"
-    bl_label = "Snap FK"
-    bl_description = "Snap FK bones to IK bones"
-    bl_options = {'UNDO'}
-
-    prefix : StringProperty()
-    type : StringProperty()
-
-    def run(self, context):
-        rig = context.object
-        self.initAuto(context)
-        bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
+class SimpleFKSnapper(SimpleIK):
+    def snapSimpleFK(self, rig, prefix, type):
+        bnames = self.getLimbBoneNames(rig, prefix, type)
         if bnames:
-            prop = self.getIKProp(self.prefix, self.type)
+            prop = self.getIKProp(prefix, type)
             self.setProp(rig, prop, True)
             updatePose()
-            self.snapSimpleFK(rig, bnames, prop)
-            toggleLayer(rig, "FK", self.prefix, self.type, True)
-            toggleLayer(rig, "IK", self.prefix, self.type, False)
+            self.snapBones(rig, bnames, prop)
+            toggleLayer(rig, "FK", prefix, type, True)
+            toggleLayer(rig, "IK", prefix, type, False)
             self.setProp(rig, prop, False)
 
 
-    def snapSimpleFK(self, rig, bnames, prop):
+    def snapBones(self, rig, bnames, prop):
         from .fix import getPreSufName
         mats = []
         for bname in bnames:
@@ -759,42 +749,60 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleIK):
             updatePose()
             self.keyPose(pb)
 
-#----------------------------------------------------------
-#   IK Snap
-#----------------------------------------------------------
 
-class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
-    bl_idname = "daz.snap_simple_ik"
-    bl_label = "Snap IK"
-    bl_description = "Snap IK bones to FK bones"
+class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
+    bl_idname = "daz.snap_simple_fk"
+    bl_label = "Snap FK"
+    bl_description = "Snap FK bones to IK bones"
     bl_options = {'UNDO'}
 
     prefix : StringProperty()
     type : StringProperty()
-    pole : StringProperty()
 
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        bnames = self.getLimbBoneNames(rig, self.prefix, self.type)
+        self.snapSimpleFK(rig, self.prefix, self.type)
+
+
+class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
+    bl_idname = "daz.snap_all_simple_fk"
+    bl_label = "Snap FK All"
+    bl_description = "Snap all FK bones to IK bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        self.initAuto(context)
+        for prefix,type in [("l", "Arm"), ("r", "Arm"), ("l", "Leg"), ("r", "Leg")]:
+            self.snapSimpleFK(rig, prefix, type)
+
+#----------------------------------------------------------
+#   IK Snap
+#----------------------------------------------------------
+
+class SimpleIKSnapper(SimpleIK):
+
+    def snapSimpleIK(self, rig, prefix, type, pole):
+        bnames = self.getLimbBoneNames(rig, prefix, type)
         if bnames:
-            prop = self.getIKProp(self.prefix, self.type)
+            prop = self.getIKProp(prefix, type)
             self.setProp(rig, prop, 0.0)
             updatePose()
-            self.snapSimpleIK(rig, bnames, prop)
-            toggleLayer(rig, "FK", self.prefix, self.type, False)
-            toggleLayer(rig, "IK", self.prefix, self.type, True)
+            self.snapBones(rig, bnames, prop, pole)
+            toggleLayer(rig, "FK", prefix, type, False)
+            toggleLayer(rig, "IK", prefix, type, True)
             self.setProp(rig, prop, 1.0)
 
 
-    def snapSimpleIK(self, rig, bnames, prop):
+    def snapBones(self, rig, bnames, prop, pole):
         from .fix import getPreSufName
         hand = bnames[-1]
         handfk = rig.pose.bones.get(getPreSufName(hand, rig))
         if handfk is None:
             return
         handmat = handfk.matrix.copy()
-        pole = getPreSufName(self.pole, rig)
+        pole = getPreSufName(pole, rig)
         if pole:
             poleik = rig.pose.bones.get(pole)
             uparm = bnames[0]
@@ -839,6 +847,44 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIK):
             p = p0
         return Matrix.Translation(p)
 
+
+class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
+    bl_idname = "daz.snap_simple_ik"
+    bl_label = "Snap IK"
+    bl_description = "Snap IK bones to FK bones"
+    bl_options = {'UNDO'}
+
+    prefix : StringProperty()
+    type : StringProperty()
+    pole : StringProperty()
+
+    def run(self, context):
+        rig = context.object
+        self.initAuto(context)
+        self.snapSimpleIK(rig, self.prefix, self.type, self.pole)
+
+
+class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
+    bl_idname = "daz.snap_all_simple_ik"
+    bl_label = "Snap IK All"
+    bl_description = "Snap all IK bones to FK bones"
+    bl_options = {'UNDO'}
+
+    pole : StringProperty()
+
+    def run(self, context):
+        rig = context.object
+        self.initAuto(context)
+        for prefix,type,pole in [
+            ("l", "Arm", "lElbow"),
+            ("r", "Arm", "rElbow"),
+            ("l", "Leg", "lKnee"),
+            ("r", "Leg", "rKnee")]:
+            self.snapSimpleIK(rig, prefix, type, pole)
+
+#----------------------------------------------------------
+#   Utility
+#----------------------------------------------------------
 
 def toggleLayer(rig, fk, prefix, type, on):
     side = {"l" : "Left", "r" : "Right"}
@@ -1198,6 +1244,8 @@ classes = [
     DAZ_OT_AddSimpleIK,
     DAZ_OT_SnapSimpleFK,
     DAZ_OT_SnapSimpleIK,
+    DAZ_OT_SnapAllSimpleFK,
+    DAZ_OT_SnapAllSimpleIK,
     DAZ_OT_ConnectBoneChains,
     DAZ_OT_SelectNamedLayers,
     DAZ_OT_UnSelectNamedLayers,
