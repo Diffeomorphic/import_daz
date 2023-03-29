@@ -38,7 +38,7 @@ from .fileutils import SingleFile, MultiFile, DazImageFile, DatFile, JsonFile
 from .animation import ActionOptions
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup
 from .load_morph import LoadMorph
-from .driver import DriverUser
+from .driver import DriverUser, isProtected
 from .fileutils import DazExporter
 
 #-------------------------------------------------------------
@@ -125,7 +125,7 @@ def clearAllMorphs(rig, frame, useInsertKeys):
     lprops = getAllLowerMorphNames(rig)
     for prop in rig.keys():
         if (prop.lower() in lprops and
-            isinstance(rig[prop], float)):
+            not isProtected(rig, prop)):
             rig[prop] = 0.0
             if useInsertKeys:
                 rig.keyframe_insert(propRef(prop), frame=frame, group=prop)
@@ -2087,7 +2087,6 @@ class DAZ_OT_ActivateAll(DazOperator, Activator):
     bl_options = {'UNDO'}
 
     def getActivate(self, ob, prop):
-        from .driver import isProtected
         return (not isProtected(ob, prop))
 
 
@@ -2098,7 +2097,6 @@ class DAZ_OT_ActivateProtected(DazOperator, Activator):
     bl_options = {'UNDO'}
 
     def getActivate(self, ob, prop):
-        from .driver import isProtected
         return isProtected(ob, prop)
 
 

@@ -471,9 +471,6 @@ if bpy.app.version < (3,0,0):
         struct["description"] = ("***" if on else "")
         rna_ui[prop] = struct
 
-    def isProtected(rna, prop):
-        struct = getPropUi(rna, prop)
-        return (struct.get("description") == "***")
 else:
     from rna_prop_ui import rna_idprop_ui_create
 
@@ -489,9 +486,13 @@ else:
         desc = ("***" if on else "")
         prop_ui.update(description = desc)
 
-    def isProtected(rna, prop):
+
+def isProtected(rna, prop):
+    if isinstance(rna[prop], float):
         prop_ui = getPropUi(rna, prop)
         return (prop_ui.get("description") == "***")
+    else:
+        return True
 
 #-------------------------------------------------------------
 #   Properties

@@ -536,7 +536,7 @@ class MorphOptions:
 
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
-        description = "Clear all morph properties before loading new ones",
+        description = "Clear all unprotected morph properties before loading new ones",
         default = False)
 
     useShapekeys : BoolProperty(
