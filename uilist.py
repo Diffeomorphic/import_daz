@@ -28,6 +28,7 @@
 import bpy
 from bpy.app.handlers import persistent
 from .utils import *
+from .driver import isProtected
 
 #----------------------------------------------------------
 #   Morphs UIList
@@ -35,6 +36,13 @@ from .utils import *
 
 theFilterFlags = {}
 theFilterInvert = {}
+
+def morphText(rig, morph):
+    if isProtected(rig, morph.name):
+        return "* %s" % morph.text
+    else:
+        return morph.text
+
 
 class DAZ_UL_MorphList(bpy.types.UIList):
     def draw_item(self, context, layout, data, morph, icon, active, indexProp):
@@ -46,10 +54,10 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         final = finalProp(key)
         if GS.showFinalProps and final in amt.keys():
             split2 = split.split(factor=0.8)
-            split2.prop(rig, propRef(key), text=morph.text)
+            split2.prop(rig, propRef(key), text=morphText(rig, morph))
             split2.label(text = "%.3f" % amt[final])
         else:
-            split.prop(rig, propRef(key), text=morph.text)
+            split.prop(rig, propRef(key), text=morphText(rig, morph))
         row = split.row()
         self.showBool(row, rig, key)
         op = row.operator("daz.pin_prop", icon='UNPINNED')

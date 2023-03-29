@@ -468,7 +468,7 @@ class LoadMorph(DriverUser):
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset), trigger=(2,3))
             if visible:
                 if self.useProtected:
-                    setProtected(self.rig, raw)
+                    setProtected(self.rig, raw, True)
                 setActivated(self.rig, raw, (not self.useProtected))
                 self.addToMorphSet(raw, asset, False, self.useProtected)
         return final
@@ -987,7 +987,7 @@ class LoadMorph(DriverUser):
                 self.addToMorphSet(raw, None, False, True)
                 self.morphset = morphset
         if protect and GS.useProtect:
-            setProtected(self.rig, raw)
+            setProtected(self.rig, raw, True)
             setActivated(self.rig, raw, False)
 
         if final not in self.amt.keys():

@@ -465,10 +465,10 @@ if bpy.app.version < (3,0,0):
         rna_ui = getRnaUi(rna)
         return rna_ui.get(prop)
 
-    def setProtected(rna, prop):
+    def setProtected(rna, prop, on):
         rna_ui = getRnaUi(rna)
         struct = rna_ui.get(prop, {})
-        struct["description"] = "***"
+        struct["description"] = ("***" if on else "")
         rna_ui[prop] = struct
 
     def isProtected(rna, prop):
@@ -484,9 +484,10 @@ else:
         prop_ui = rna.id_properties_ui(prop)
         return prop_ui.as_dict()
 
-    def setProtected(rna, prop):
+    def setProtected(rna, prop, on):
         prop_ui = rna.id_properties_ui(prop)
-        prop_ui.update(description = "***")
+        desc = ("***" if on else "")
+        prop_ui.update(description = desc)
 
     def isProtected(rna, prop):
         prop_ui = getPropUi(rna, prop)

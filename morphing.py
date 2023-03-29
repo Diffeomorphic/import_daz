@@ -1011,9 +1011,7 @@ class MorphLoader(LoadMorph):
         n = len(self.category)
         if GS.useStripCategory and self.category and label[0:n] == self.category:
             label = label[n:]
-        if protected:
-            item.text = "* %s" % label
-        elif self.hideable and (hidden or not visible):
+        if self.hideable and (hidden or not visible) and not protected:
             item.text = "[%s]" % label
         else:
             item.text = label
@@ -1949,6 +1947,34 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, MorphRemover, IsArmature):
             ob.DazMorphCats.remove(idx)
         if len(ob.DazMorphCats) == 0:
             ob.DazMeshMorphs = False
+
+#------------------------------------------------------------------------
+#   Protect category
+#------------------------------------------------------------------------
+
+class DAZ_OT_ProtectCategories(DazOperator, Selector, MorphRemover, IsArmature):
+    bl_idname = "daz.protect_categories"
+    bl_label = "Protect Categories"
+    bl_description = "Protect/unprotect all morphs in selected categories"
+    bl_options = {'UNDO'}
+
+    useProtect : BoolProperty(
+        name = "Protect Morphs",
+        description = "Protect morphs if enabled, otherwise unprotect them",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useProtect")
+        Selector.draw(self, context)
+
+    def run(self, context):
+        from .driver import setProtected
+        items = [(item.index, item.name) for item in self.getSelectedItems()]
+        ob = context.object
+        for idx,key in items:
+            cat = ob.DazMorphCats[key]
+            for pg in cat.morphs:
+                setProtected(ob, pg.name, self.useProtect)
 
 #------------------------------------------------------------------------
 #   Apply morphs
@@ -3727,6 +3753,7 @@ classes = [
     DAZ_OT_RenameCategory,
     DAZ_OT_RemoveStandardMorphs,
     DAZ_OT_RemoveCategories,
+    DAZ_OT_ProtectCategories,
     DAZ_OT_ActivateAll,
     DAZ_OT_ActivateProtected,
     DAZ_OT_DeactivateAll,

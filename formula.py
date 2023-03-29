@@ -84,7 +84,7 @@ class Formula:
             final = finalProp(raw)
             rig.data[final] = value
             print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
-            setProtected(rig, raw)
+            setProtected(rig, raw, True)
             setActivated(rig, raw, False)
             item = rig.DazBaked.add()
             item.name = raw
