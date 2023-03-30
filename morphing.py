@@ -1960,7 +1960,7 @@ class DAZ_OT_ProtectCategories(DazOperator, Selector, MorphRemover, IsArmature):
 
     useProtect : BoolProperty(
         name = "Protect Morphs",
-        description = "Protect morphs if enabled, otherwise unprotect them",
+        description = "Protect all morphs in selected categories if enabled, otherwise unprotect them",
         default = True)
 
     def draw(self, context):
@@ -1975,6 +1975,8 @@ class DAZ_OT_ProtectCategories(DazOperator, Selector, MorphRemover, IsArmature):
             cat = ob.DazMorphCats[key]
             for pg in cat.morphs:
                 setProtected(ob, pg.name, self.useProtect)
+                if self.useProtect:
+                    setActivated(ob, pg.name, False)
 
 #------------------------------------------------------------------------
 #   Apply morphs

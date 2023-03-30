@@ -133,21 +133,10 @@ class HairOptions:
                  ('HAIR CURVES', "Hair Curves", "Hair curves"),
                  ('CURVES', "Curves", "Ordinary curves"),
                  ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
-                 ('MESH', "Mesh", "Single mesh")],
+                 ('MESH', "Mesh", "Single line mesh")],
         name = "Output",
         description = "",
         default = 'PARTICLES')
-
-
-    usePolylineHair : BoolProperty(
-        name = "Make Polyline Hair",
-        description = "Output the result to a polyline mesh",
-        default = False)
-
-    useSinglePolyline : BoolProperty(
-        name = "Single Polyline",
-        description = "Make a single polyline mesh rather than separate ones for each strand",
-        default = False)
 
     removeOldHairs : BoolProperty(
         name = "Remove Particle Hair",

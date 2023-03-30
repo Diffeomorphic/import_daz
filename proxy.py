@@ -1100,7 +1100,7 @@ class DAZ_OT_SelectRandomStrands(DazPropsOperator, IsMesh):
 class DAZ_OT_SelectStrandsByWidth(DazPropsOperator, IsMesh):
     bl_idname = "daz.select_strands_by_width"
     bl_label = "Select Strands By Width"
-    bl_description = "Select strands no wider than threshold"
+    bl_description = "Select strands not wider than threshold"
     bl_options = {'UNDO'}
 
     width : FloatProperty(
