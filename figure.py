@@ -878,7 +878,7 @@ class DAZ_OT_FinalizeArmature(DazPropsOperator, IsArmature):
     useOptimizeDrivers : BoolProperty(
         name = "Optimize Drivers",
         description = "Optimize the web of drivers.\nNew morphs can not be loaded afterwards",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useOptimizeDrivers")

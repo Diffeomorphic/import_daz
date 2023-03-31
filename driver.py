@@ -686,42 +686,65 @@ def removeBoneSumDrivers(rig, bones):
 #----------------------------------------------------------
 
 def optimizeDrivers(rig):
-    def collectDrivers(amt):
-        for fcu in amt.animation_data.drivers:
-            final = getProp(fcu.data_path)
+    def match(keys, string):
+        for key in keys:
+            if key in string:
+                return True
+        return False
+
+    def collectDrivers(rna):
+        for fcu in rna.animation_data.drivers:
             drv = fcu.driver
-            if (final and
-                isFinal(final) and
-                drv.type == 'SCRIPTED' and
-                drv.expression == "a" and
-                len(drv.variables) == 1):
-                var = fcu.driver.variables[0]
+            prop = getProp(fcu.data_path)
+            if prop is None:
+                pass
+            elif match([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
+                sumdrivers[fcu.data_path] = fcu, prop
+            elif (drv.type == 'SCRIPTED' and
+                  isFinal(prop) and
+                  len(drv.variables) == 1 and
+                  drv.expression in ["a", "+b"]):
+                var = drv.variables[0]
                 if len(var.targets) == 1:
                     trg = var.targets[0]
-                    prop = getProp(trg.data_path)
-                    if prop == baseProp(final) and trg.id == rig:
-                        drivers[propRef(final)] = fcu, prop
+                    raw = getProp(trg.data_path)
+                    if raw == baseProp(prop) and trg.id == rig:
+                        findrivers[propRef(prop)] = fcu, raw
+                        deldrivers.append((fcu, prop))
 
     def replaceTargets(rna):
         if rna.animation_data is None:
             return
+        for fcu in list(rna.animation_data.drivers):
+            drv = fcu.driver
+            if drv.type == 'SUM' and len(drv.variables) == 1:
+                var = drv.variables[0]
+                trg = var.targets[0]
+                if trg.data_path in sumdrivers.keys():
+                    srcfcu,prop = sumdrivers[trg.data_path]
+                    path,idx = fcu.data_path, fcu.array_index
+                    rna.driver_remove(fcu.data_path, fcu.array_index)
+                    nfcu = rna.animation_data.drivers.from_existing(src_driver=srcfcu)
+                    nfcu.data_path = path
+                    nfcu.array_index = idx
+                    deldrivers.append((srcfcu, prop))
         for fcu in rna.animation_data.drivers:
             for var in list(fcu.driver.variables):
                 trg = var.targets[0]
-                if (trg.id == amt and
-                    trg.data_path in drivers.keys()):
+                if trg.id == amt and trg.data_path in findrivers.keys():
                     vname = var.name
                     fcu.driver.variables.remove(var)
-                    prop = drivers[trg.data_path][1]
+                    prop = findrivers[trg.data_path][1]
                     addDriverVar(fcu, vname, propRef(prop), rig)
 
     amt = rig.data
     if not amt.animation_data:
         print("No drivers to optimize")
         return
-    drivers = {}
+    sumdrivers = {}
+    findrivers = {}
+    deldrivers = []
     collectDrivers(amt)
-
     replaceTargets(rig)
     replaceTargets(amt)
     for ob in rig.children:
@@ -729,13 +752,14 @@ def optimizeDrivers(rig):
             skeys = ob.data.shape_keys
             if skeys:
                 replaceTargets(skeys)
-    for fcu,prop in drivers.values():
-        amt.animation_data.drivers.remove(fcu)
-        final = finalProp(prop)
-        if final in amt.keys():
-            del amt[final]
+    ndrivers = len(amt.animation_data.drivers)
+    for fcu,prop in deldrivers:
+        if fcu.data_path:
+            amt.animation_data.drivers.remove(fcu)
+            if prop in amt.keys():
+                del amt[prop]
     amt.DazOptimizedDrivers = True
-    print("Removed %d drivers" % len(drivers))
+    print("Removed %d out of %d drivers" % (len(deldrivers), ndrivers))
 
 #----------------------------------------------------------
 #   Update button
