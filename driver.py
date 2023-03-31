@@ -685,6 +685,62 @@ def removeBoneSumDrivers(rig, bones):
 #   Update button
 #----------------------------------------------------------
 
+def optimizeDrivers(rig):
+    def collectDrivers(amt):
+        for fcu in amt.animation_data.drivers:
+            final = getProp(fcu.data_path)
+            drv = fcu.driver
+            if (final and
+                isFinal(final) and
+                drv.type == 'SCRIPTED' and
+                drv.expression == "a" and
+                len(drv.variables) == 1):
+                var = fcu.driver.variables[0]
+                if len(var.targets) == 1:
+                    trg = var.targets[0]
+                    prop = getProp(trg.data_path)
+                    if prop == baseProp(final) and trg.id == rig:
+                        drivers[propRef(final)] = fcu, prop
+
+    def replaceTargets(rna):
+        if rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            for var in list(fcu.driver.variables):
+                trg = var.targets[0]
+                if (trg.id == amt and
+                    trg.data_path in drivers.keys()):
+                    vname = var.name
+                    fcu.driver.variables.remove(var)
+                    prop = drivers[trg.data_path][1]
+                    addDriverVar(fcu, vname, propRef(prop), rig)
+
+    amt = rig.data
+    if not amt.animation_data:
+        print("No drivers to optimize")
+        return
+    drivers = {}
+    collectDrivers(amt)
+
+    replaceTargets(rig)
+    replaceTargets(amt)
+    for ob in rig.children:
+        if ob.type == 'MESH':
+            skeys = ob.data.shape_keys
+            if skeys:
+                replaceTargets(skeys)
+    for fcu,prop in drivers.values():
+        amt.animation_data.drivers.remove(fcu)
+        final = finalProp(prop)
+        if final in amt.keys():
+            del amt[final]
+    amt.DazOptimizedDrivers = True
+    print("Removed %d drivers" % len(drivers))
+
+#----------------------------------------------------------
+#   Update button
+#----------------------------------------------------------
+
 class DAZ_OT_UpdateAll(DazOperator):
     bl_idname = "daz.update_all"
     bl_label = "Update All"
@@ -841,6 +897,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Object.DazDriversDisabled = BoolProperty(default=False)
+    bpy.types.Armature.DazOptimizedDrivers = BoolProperty(default=False)
 
 
 def unregister():

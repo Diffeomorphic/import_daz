@@ -291,7 +291,6 @@ def getProp(path):
     else:
         return None
 
-
 def baseName(name):
     words = name.rsplit(".",1)
     if len(words) == 2 and len(words[1]) >= 3 and words[1].isdigit():

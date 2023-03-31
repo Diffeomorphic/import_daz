@@ -115,6 +115,9 @@ class LoadMorph(DriverUser):
         self.adjustable = {}
         self.origMorphset = self.morphset
 
+        if self.amt and self.amt.DazOptimizedDrivers:
+            raise DazError("Cannot add new morphs to an armature with optimized drivers")
+
         print("Making morphs")
         self.makeAllMorphs(namepaths, True)
         adjustable = self.adjustable
