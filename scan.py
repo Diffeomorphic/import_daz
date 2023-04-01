@@ -383,7 +383,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         print("\nLoading morphs in category %s" % cat)
         mloader.getAllMorphs(customs, context)
         props = [prop for (prop,path,ref) in customs]
-        addToCategories(rig, props, cat)
+        addToCategories(rig, props, None, cat)
         again = True
     return again
 

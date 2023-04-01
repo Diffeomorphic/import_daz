@@ -340,6 +340,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.add_shape_to_category")
         self.layout.operator("daz.remove_shape_from_category")
         self.layout.operator("daz.rename_category")
+        self.layout.operator("daz.join_categories")
         self.layout.operator("daz.protect_categories")
         self.layout.operator("daz.remove_categories")
         self.layout.operator("daz.remove_standard_morphs")
