@@ -40,6 +40,7 @@ from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInf
 from .load_morph import LoadMorph
 from .driver import DriverUser, isProtected
 from .fileutils import DazExporter
+from .uilist import updateScrollbars
 
 #-------------------------------------------------------------
 #   Morph sets
@@ -1531,10 +1532,6 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
             self.rig.DazCustomMorphs = True
 
 
-    def updateScrollbars(self, context):
-        from .uilist import updateScrollbars
-        updateScrollbars(context.scene)
-
 
 class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_custom_morphs"
@@ -1647,7 +1644,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             addToCategories(self.mesh, props, self.category)
             self.mesh.DazMeshMorphs = True
         self.finishLoading(namepaths, context, t1)
-        self.updateScrollbars(context)
+        updateScrollbars(context)
 
 
     def getNamePaths(self):
@@ -1708,6 +1705,7 @@ class DAZ_OT_RenameCategory(DazPropsOperator, CustomEnums, CategoryString, IsMes
             raise DazError("Cannot rename all categories")
         cat = rig.DazMorphCats[self.custom]
         cat.name = self.category
+        updateScrollbars(context)
 
 
 def removeFromPropGroup(pgs, prop):
@@ -1900,6 +1898,7 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
         self.removeMorphType(rig, self.useBody, "Body")
         self.removeMorphType(rig, self.useJcms, "Jcms")
         self.removeMorphType(rig, self.useFlexions, "Flexions")
+        updateScrollbars(context)
 
     def removeMorphType(self, rig, use, morphset):
         if not use:
@@ -1929,6 +1928,7 @@ class DAZ_OT_RemoveCategories(DazOperator, Selector, MorphRemover, IsArmature):
             self.runRig(context, ob, items)
         elif ob.type == 'MESH':
             self.runMesh(context, ob, items)
+        updateScrollbars(context)
 
 
     def runRig(self, context, rig, items):
@@ -1977,6 +1977,7 @@ class DAZ_OT_ProtectCategories(DazOperator, Selector, MorphRemover, IsArmature):
                 setProtected(ob, pg.name, self.useProtect)
                 if self.useProtect:
                     setActivated(ob, pg.name, False)
+        updateScrollbars(context)
 
 #------------------------------------------------------------------------
 #   Apply morphs
@@ -2371,6 +2372,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
             self.updatePropLimits(rig, context)
         if ob != rig:
             self.updatePropLimits(ob, context)
+        updateScrollbars(context)
 
 
     def updatePropLimits(self, rig, context):
@@ -2465,6 +2467,7 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMesh
             for prop in list(rig.keys()):
                 if prop.lower().startswith(("ectrl", "ejcm", "pbm", "phm")):
                     del rig[prop]
+        updateScrollbars(context)
 
 
     def removeDrivers(self, rna):
@@ -2610,6 +2613,7 @@ class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEn
             skey = ob.data.shape_keys.key_blocks[sname]
             addToCategories(ob, [sname], cat)
             ob.DazMeshMorphs = True
+        updateScrollbars(context)
 
 
     def includeShapekey(self, skeys, sname):
@@ -2674,6 +2678,7 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
         else:
             self.removeFromCategory(ob, snames, self.custom)
         updateDrivers(ob.data.shape_keys)
+        updateScrollbars(context)
 
 
     def includeShapekey(self, skeys, sname):
@@ -3414,6 +3419,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         for ob in rig.children:
             if ob.type == 'MESH':
                 self.loadPreset(ob, rig, struct, context)
+        updateScrollbars(context)
 
 
     def loadPreset(self, ob, rig, struct, context):
@@ -3676,7 +3682,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
             print("Load %s corrections" % cat)
             self.setCategory(cat)
             self.getAllMorphs(namepaths, context)
-        self.updateScrollbars(context)
+        updateScrollbars(context)
 
 
     def addPath(self, path, cat, bodypart):
@@ -3702,7 +3708,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
         else:
             for ob in getSelectedMeshes(context):
                 self.addFavoMorphs(ob, context)
-        self.updateScrollbars(context)
+        updateScrollbars(context)
 
 
     def addFavoMorphs(self, ob, context):

@@ -1386,7 +1386,7 @@ class StandardAnimation:
         t2 = perf_counter()
         print("File %s imported in %.3f seconds" % (self.filepath, t2-t1))
         scn.frame_current = startframe
-        updateScrollbars(scn)
+        updateScrollbars(context)
         self.nameAnimation(rig)
         if not self.affectSelectedOnly:
             self.selectAll(rig, selected)
