@@ -48,7 +48,7 @@ from .uilist import updateScrollbars
 
 class MorphSets:
     def __init__(self):
-        self.Standards = ["Standard", "Units", "Expressions", "Head", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
+        self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
         self.Customs = ["Custom", "Baked"]
         self.JCMs = ["Jcms", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
@@ -575,13 +575,16 @@ class JCMSelector(Selector):
         items = [("All", "All", "All. Easy import transfers these shapekeys to all meshes"),
                  ("Face", "Face", "Face. Easy import transfers these shapekeys to lashes"),
                  ("Body", "Body", "Body. Easy import transfers these shapekeys to clothes and geografts"),
-                 ("Custom", "Custom", "Custom. Easy import does not transfer these shapekeys")],
+                 ("Custom", "Custom", "Custom. Easy import does not transfer these shapekeys"),
+                 ("NoFace", "Body Or Custom", "Body or custom")],
         name = "Body part",
         description = "Part of character that the morphs affect",
         default = "All")
 
     def selectCondition(self, item):
-        return (self.bodypart == "All" or item.category == self.bodypart)
+        return (self.bodypart == "All" or
+                item.category == self.bodypart or
+                (self.bodypart == "NoFace" and item.category != "Face"))
 
     def drawSelectionRow(self):
         row = self.layout.row()

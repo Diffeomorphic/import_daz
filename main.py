@@ -957,7 +957,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useTransferGeografts or self.useMergeGeografts:
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
-                        self.transferShapes(context, cob, aobs, self.useMergeGeografts, "Body", True)
+                        self.transferShapes(context, cob, aobs, self.useMergeGeografts, "NoFace", True)
                 for aobs,cob in geografts.values():
                     if cob != mainMesh:
                         self.transferShapes(context, cob, aobs, self.useMergeGeografts, "All", True)
@@ -975,7 +975,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Transfer shapekeys to clothes and lashes
         if self.useTransferClothes:
-            self.transferShapes(context, mainMesh, clothes, False, "Body", False)
+            self.transferShapes(context, mainMesh, clothes, False, "NoFace", False)
         if self.useTransferFace:
             self.transferShapes(context, mainMesh, lashes, False, "Face", True)
 
@@ -1040,8 +1040,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             bodyparts = classifyShapekeys(ob, skeys)
             if bodypart == "All":
                 snames = [sname for sname,bpart in bodyparts.items()]
+            elif bodypart == "NoFace":
+                snames = [sname for sname,bpart in bodyparts.items() if bpart != "Face"]
             else:
-                snames = [sname for sname,bpart in bodyparts.items() if bpart in [bodypart, "All"]]
+                snames = [sname for sname,bpart in bodyparts.items() if bpart != bodypart]
             if not snames:
                 return
             activateObject(context, ob)

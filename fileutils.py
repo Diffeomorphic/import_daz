@@ -237,23 +237,37 @@ def getReldirFromObject(ob, usePeople):
 
 
 def findPathRecursive(files, relpath, subpath):
-    def findFileRecursive(folder, lfiles):
+    def findFilesRecursive(folder):
         for file in os.listdir(folder):
-            path = os.path.join(folder, file)
+            path = "%s/%s" % (folder, file)
             if file.lower() in lfiles:
-                return path
+                paths.append(path)
             elif os.path.isdir(path):
-                tpath = findFileRecursive(path, lfiles)
-                if tpath:
-                    return tpath
-        return None
+                findFilesRecursive(path)
+
+    def checkContent(path, files):
+        from .load_json import loadJson
+        names = [os.path.splitext(file)[0] for file in files]
+        struct = loadJson(path, silent=True)
+        for modlib in struct.get("modifier_library", []):
+            modname = modlib.get("name")
+            if modname in names:
+                return True
+        return False
 
     folders = getFolders(relpath, subpath, match81=True)
     lfiles = [file.lower() for file in files]
+    paths = []
     for folder in folders:
-        path = findFileRecursive(folder, lfiles)
-        if path:
-            return path
+        folder = folder.rstrip("/")
+        findFilesRecursive(folder)
+        if len(paths) == 1:
+            return paths[0]
+        elif len(paths) > 1:
+            for path in paths:
+                if checkContent(path, files):
+                    return path
+            return paths[0]
     return None
 
 
