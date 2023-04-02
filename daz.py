@@ -508,7 +508,7 @@ def register():
 
     bpy.types.Scene.DazStripCategory = BoolProperty(
         name = "Strip Category",
-        description = "Strip category from morph names")
+        description = "Strip the category name from the beginning of the morph name if they are the same")
 
     bpy.types.Scene.DazUseModifiedMesh = BoolProperty(
         name = "Load To Modified Meshes",
