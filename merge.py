@@ -612,24 +612,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         askeys = aob.data.shape_keys
         cskeys = cob.data.shape_keys
-        if cskeys:
-            if askeys:
-                ablocks = askeys.key_blocks
-            else:
-                ablocks = {}
-            for cskey in cskeys.key_blocks:
-                if cskey not in ablocks.keys() and cskey.name != "Basic":
-                    askey = addShapekey(aob, cskey.name)
-        askeys = aob.data.shape_keys
         if askeys:
             for askey in askeys.key_blocks:
                 if cskeys and askey.name in cskeys.key_blocks.keys():
-                    cskey = cskeys.key_blocks[askey.name]
-                    for pair in aob.data.DazGraftGroup:
-                        askey.data[pair.a].co = cskey.data[pair.b].co
+                    cdata = cskeys.key_blocks[askey.name].data
                 else:
-                    for pair in aob.data.DazGraftGroup:
-                        askey.data[pair.a].co = cverts[pair.b].co
+                    cdata = cverts
+                for pair in aob.data.DazGraftGroup:
+                    askey.data[pair.a].co = cdata[pair.b].co
 
 
     def joinUvTextures(self, me):
