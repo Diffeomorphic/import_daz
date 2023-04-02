@@ -37,11 +37,15 @@ from .driver import isProtected
 theFilterFlags = {}
 theFilterInvert = {}
 
-def morphText(rig, morph):
+def morphText(rig, morph, prefix):
+    label = morph.text
+    n = len(prefix)
+    if label.lower()[0:n] == prefix:
+        label = label[n:]
     if isProtected(rig, morph.name):
-        return "* %s" % morph.text
+        return "* %s" % label
     else:
-        return morph.text
+        return label
 
 
 class DAZ_UL_MorphList(bpy.types.UIList):
@@ -50,19 +54,25 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         key = morph.name
         if rig is None or key not in rig.keys():
             return
+        morphset, category = self.getMorphCat(data)
+        if morphset == "Custom" and GS.useStripCategory:
+            prefix = category.lower()
+        else:
+            prefix = ""
         split = layout.split(factor=0.8)
         final = finalProp(key)
         if GS.showFinalProps and final in amt.keys():
             split2 = split.split(factor=0.8)
-            split2.prop(rig, propRef(key), text=morphText(rig, morph))
+            split2.prop(rig, propRef(key), text=morphText(rig, morph, prefix))
             split2.label(text = "%.3f" % amt[final])
         else:
-            split.prop(rig, propRef(key), text=morphText(rig, morph))
+            split.prop(rig, propRef(key), text=morphText(rig, morph, prefix))
         row = split.row()
         self.showBool(row, rig, key)
         op = row.operator("daz.pin_prop", icon='UNPINNED')
         op.key = key
-        op.morphset, op.category = self.getMorphCat(data)
+        op.morphset = morphset
+        op.category = category
         op.ftype = self.getFilterType(data)
 
 
