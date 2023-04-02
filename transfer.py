@@ -387,8 +387,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             filepath = None
             if self.useVendorMorphs:
                 from .fileutils import findPathRecursiveFromObject
-                files = ["%s.dsf" % sname]
-                filepath = findPathRecursiveFromObject(files, trg, ["Morphs/", "Base/Morphs/"])
+                filepath = findPathRecursiveFromObject(sname, trg, ["Morphs/", "Base/Morphs/"])
             if filepath is not None:
                 cskey = self.loadMorph(filepath, src, trg, scn)
             if cskey:

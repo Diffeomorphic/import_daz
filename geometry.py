@@ -1044,9 +1044,8 @@ class Geometry(Asset, Channels):
     def findUvSet(self, uv, url):
         from .asset import getRelativeRef
         from .fileutils import findPathRecursive
-        files = ["%s.dsf" % uv]
         relpath = os.path.dirname(url)
-        filepath = findPathRecursive(files, relpath, ["UV Sets/"])
+        filepath = findPathRecursive(uv, relpath, ["UV Sets/"])
         if filepath:
             url = unquote("%s#%s" % (filepath, uv))
             url = getRelativeRef(url)

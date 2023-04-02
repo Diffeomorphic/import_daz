@@ -3747,8 +3747,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
             self.meshes = [ob]
             for favo in ob.data.DazFavorites.keys():
                 morph = unquote(favo.split("/",1)[0])
-                files = ["%s.dsf" % morph]
-                path = findPathRecursiveFromObject(files, ob, ["Morphs/", "Base/Morphs/"])
+                path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
                 if path:
                     namepaths.append((morph, path, "Custom"))
             if namepaths:

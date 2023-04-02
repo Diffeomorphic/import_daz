@@ -236,27 +236,26 @@ def getReldirFromObject(ob, usePeople):
     return reldir
 
 
-def findPathRecursive(files, relpath, subpath):
+def findPathRecursive(pattern, relpath, subpath, library="modifier_library"):
     def findFilesRecursive(folder):
         for file in os.listdir(folder):
             path = "%s/%s" % (folder, file)
-            if file.lower() in lfiles:
+            words = os.path.splitext(file.lower())
+            if lpattern.endswith(words[0]) and words[-1] in [".dsf", ".duf"]:
                 paths.append(path)
             elif os.path.isdir(path):
                 findFilesRecursive(path)
 
-    def checkContent(path, files):
+    def checkContent(path):
         from .load_json import loadJson
-        names = [os.path.splitext(file)[0] for file in files]
         struct = loadJson(path, silent=True)
-        for modlib in struct.get("modifier_library", []):
-            modname = modlib.get("name")
-            if modname in names:
+        for lib in struct.get(library, []):
+            if lib.get("name") == pattern:
                 return True
         return False
 
     folders = getFolders(relpath, subpath, match81=True)
-    lfiles = [file.lower() for file in files]
+    lpattern = pattern.lower()
     paths = []
     for folder in folders:
         folder = folder.rstrip("/")
@@ -265,15 +264,15 @@ def findPathRecursive(files, relpath, subpath):
             return paths[0]
         elif len(paths) > 1:
             for path in paths:
-                if checkContent(path, files):
+                if checkContent(path):
                     return path
             return paths[0]
     return None
 
 
-def findPathRecursiveFromObject(files, ob, subpath):
+def findPathRecursiveFromObject(pattern, ob, subpath):
     reldir = getReldirFromObject(ob, False)
-    return findPathRecursive(files, reldir, subpath)
+    return findPathRecursive(pattern, reldir, subpath)
 
 #-------------------------------------------------------------
 #    File extensions
