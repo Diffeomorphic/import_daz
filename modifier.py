@@ -456,6 +456,8 @@ class SkinBinding(Modifier):
                     LS.hdWeights.append(hdob.name)
 
 
+    Removes = {"genesis9" : ["l_upperarm", "r_upperarm"]}
+
     def addVertexGroups(self, ob, geonode, rig):
         for bone in rig.data.bones:
             bone.use_deform = False
@@ -487,9 +489,11 @@ class SkinBinding(Modifier):
                 reportError("No weights for %s in %s" % (bname, ob.name), trigger=(3,5))
                 continue
 
-            buildVertexGroup(ob, vgname, weights["values"])
-            if bname in rig.data.bones.keys() and len(weights["values"]) > 0:
-                rig.data.bones[bname].use_deform = True
+            removes = self.Removes.get(rig.DazRig, [])
+            if bname not in removes:
+                buildVertexGroup(ob, vgname, weights["values"])
+                if bname in rig.data.bones.keys() and len(weights["values"]) > 0:
+                    rig.data.bones[bname].use_deform = True
 
 
 
