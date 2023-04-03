@@ -266,13 +266,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 elif self.useSubDDisplacement and mod.type == 'SUBSURF':
                     if mod.render_levels > subDLevels:
                         subDLevels = mod.render_levels
-        cuvname = self.getUvName(cob.data)
-        drivers = {}
 
         # Select graft group for each anatomy
+        cuvname = self.getUvName(cob.data)
+        drivers = {}
+        cvgrps = dict([(vgrp.index, vgrp.name) for vgrp in cob.vertex_groups])
         for aob in anatomies:
             activateObject(context, aob)
-            self.moveGraftVerts(aob, cob)
+            self.moveGraftVerts(aob, cob, cvgrps)
             self.getShapekeyDrivers(aob, drivers)
             self.replaceTexco(aob, cuvname, self.useGeoNodes)
 
@@ -593,7 +594,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 cpg.s = apg.s
 
 
-    def moveGraftVerts(self, aob, cob):
+    def moveGraftVerts(self, aob, cob, cvgrps):
         from .modifier import addShapekey
         cvgroups = dict([(vgrp.index, vgrp.name) for vgrp in cob.vertex_groups])
         averts = aob.data.vertices
@@ -610,6 +611,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     avgrp = aob.vertex_groups.new(name=vgname)
                 avgrp.add([pair.a], cg.weight, 'REPLACE')
 
+        # Move shapekey positions
         askeys = aob.data.shape_keys
         cskeys = cob.data.shape_keys
         if askeys:
@@ -620,6 +622,18 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     cdata = cverts
                 for pair in aob.data.DazGraftGroup:
                     askey.data[pair.a].co = cdata[pair.b].co
+
+        # Copy vertex groups
+        for pair in aob.data.DazGraftGroup:
+            for agrp in aob.vertex_groups:
+                agrp.remove([pair.a])
+            cv = cverts[pair.b]
+            for g in cv.groups:
+                vname = cvgrps[g.group]
+                if vname not in aob.vertex_groups.keys():
+                    aob.vertex_groups.new(name=vname)
+                agrp = aob.vertex_groups[vname]
+                agrp.add([pair.a], g.weight, 'REPLACE')
 
 
     def joinUvTextures(self, me):
