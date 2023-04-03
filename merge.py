@@ -344,9 +344,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         # Select nothing
         for aob in anatomies:
-            #activateObject(context, aob)
             deselectAllVerts(aob)
-        #activateObject(context, cob)
         deselectAllVerts(cob)
 
         # Select verts on common boundary
@@ -611,9 +609,18 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     avgrp = aob.vertex_groups.new(name=vgname)
                 avgrp.add([pair.a], cg.weight, 'REPLACE')
 
+        # Create empty shapekeys
+        cskeys = cob.data.shape_keys
+        if cskeys:
+            if aob.data.shape_keys is None:
+                aob.shape_key_add(name="Basic")
+            askeys = aob.data.shape_keys
+            for cskey in cskeys.key_blocks:
+                if cskey.name not in askeys.key_blocks.keys():
+                    aob.shape_key_add(name = cskey.name)
+
         # Move shapekey positions
         askeys = aob.data.shape_keys
-        cskeys = cob.data.shape_keys
         if askeys:
             for askey in askeys.key_blocks:
                 if cskeys and askey.name in cskeys.key_blocks.keys():
