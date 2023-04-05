@@ -72,6 +72,7 @@ class GeneralMorphSelector(Selector):
 
 
     def getKeys(self, rig, ob):
+        from .morphing import getMorphList
         morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
         keys = [(item.name, item.text, "All") for item in morphs]
         for cat in rig.DazMorphCats:
@@ -734,6 +735,7 @@ class AddRemoveDriver:
                 self.handleShapekey(sname, rig, ob)
             updateRigDrivers(context, rig)
         updateDrivers(ob.data.shape_keys)
+        updateScrollbars(context)
 
 
     def invoke(self, context, event):
@@ -850,11 +852,6 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
     bl_description = "Remove selected shapekeys from mesh category"
     bl_options = {'UNDO'}
 
-    def draw(self, context):
-        self.layout.prop(self, "custom")
-        Selector.draw(self, context)
-
-
     def run(self, context):
         ob = context.object
         snames = []
@@ -894,6 +891,10 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
     bl_label = "Remove Shapekey Drivers"
     bl_description = "Remove rig drivers from shapekeys"
     bl_options = {'UNDO'}
+
+    def draw(self, context):
+        #self.layout.prop(self, "custom")
+        Selector.draw(self, context)
 
     def handleShapekey(self, sname, rig, ob):
         skey = ob.data.shape_keys.key_blocks[sname]

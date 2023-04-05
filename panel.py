@@ -357,10 +357,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.apply_all_shapekeys")
         self.layout.operator("daz.mix_shapekeys")
         self.layout.separator()
-        self.layout.operator("daz.copy_props")
-        self.layout.operator("daz.copy_bone_drivers")
         self.layout.operator("daz.update_slider_limits")
-        self.layout.separator()
         self.layout.operator("daz.import_dbz")
         self.layout.operator("daz.update_morph_paths")
 

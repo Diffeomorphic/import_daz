@@ -32,6 +32,9 @@ from mathutils import Vector, Quaternion, Matrix
 from .error import *
 from .utils import *
 from .fileutils import MultiFile, DbzFile
+from .morphing import PropDrivers
+from .category import addToCategories
+from .uilist import updateScrollbars
 
 #------------------------------------------------------------------
 #   DBZ fitting
@@ -376,11 +379,14 @@ def fitToFile(filepath, nodes):
 #   Import DBZ as morph
 #----------------------------------------------------------
 
-class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
+class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmature):
     bl_idname = "daz.import_dbz"
     bl_label = "Import DBZ Morphs"
     bl_description = "Import DBZ or JSON file(s) (*.dbz, *.json) as morphs"
     bl_options = {'UNDO'}
+
+    hasAdjusters = False
+    useAdjusters = False
 
     useERC : BoolProperty(
         name = "ERC Morphs",
@@ -388,12 +394,13 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
         default = True)
 
     def draw(self, context):
+        PropDrivers.draw(self, context)
         self.layout.prop(self, "useERC")
-
 
     def run(self, context):
         from .driver import setFloatProp
-        rig = context.object
+        from .selector import getRigFromObject
+        rig = getRigFromObject(context.object)
         LS.scale = rig.DazScale
         if rig.type == 'ARMATURE':
             meshes = [ob for ob in rig.children if ob.type == 'MESH']
@@ -401,14 +408,24 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
             meshes = getSelectedMeshes(context)
             rig = None
         paths = self.getMultiFiles(["dbz", "json"])
+        props = []
         for path in paths:
             dbz = loadDbzFile(path)
-            if rig:
+            props.append(dbz.name)
+            if self.usePropDrivers and rig:
                 setFloatProp(rig, dbz.name, 0.0, GS.customMin, GS.customMax, True)
                 if self.useERC:
                     self.buildRigMorph(rig, dbz)
             for ob in meshes:
                 self.buildMeshMorph(ob, rig, dbz)
+        if self.usePropDrivers and rig:
+            addToCategories(rig, props, None, self.category)
+            rig.DazCustomMorphs = True
+        elif self.useMeshCats:
+            for ob in meshes:
+                addToCategories(ob, props, None, self.category)
+                ob.DazMeshMorphs = True
+        updateScrollbars(context)
 
 
     def buildRigMorph(self, rig, dbz):
@@ -451,6 +468,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
         skeys = ob.data.shape_keys
         if not skeys:
             basic = ob.shape_key_add(name="Basic")
+            skeys = ob.data.shape_keys
         else:
             basic = skeys.key_blocks[0]
         sname = dbz.name
@@ -474,7 +492,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, IsMeshArmature):
                 for vn,co in enumerate(verts):
                     skey.data[vn].co = co
                 print("Morph %s created" % sname)
-                if rig:
+                if self.usePropDrivers and rig:
                     fcu = skey.driver_add("value")
                     self.setDriver(fcu, rig, dbz.name, "a")
                 return True

@@ -775,61 +775,6 @@ class DAZ_OT_UpdateAll(DazOperator):
         updateAll(context)
 
 #----------------------------------------------------------
-#   Copy props
-#----------------------------------------------------------
-
-class DAZ_OT_CopyProps(DazOperator, IsObject):
-    bl_idname = "daz.copy_props"
-    bl_label = "Copy Props"
-    bl_description = "Copy properties from selected objects to active object"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        rig = context.object
-        for ob in getSelectedObjects(context):
-            if ob != rig:
-                for key in ob.keys():
-                    if key not in rig.keys():
-                        rig[key] = ob[key]
-
-#----------------------------------------------------------
-#   Copy drivers
-#----------------------------------------------------------
-
-class DAZ_OT_CopyBoneDrivers(DazOperator, DriverUser, IsArmature):
-    bl_idname = "daz.copy_bone_drivers"
-    bl_label = "Copy Bone Drivers"
-    bl_description = "Copy bone drivers from selected rig to active rig"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        rig = context.object
-        for ob in getSelectedArmatures(context):
-            if ob != rig:
-                self.createTmp()
-                try:
-                    self.copyBoneDrivers(ob, rig)
-                finally:
-                    self.deleteTmp()
-                return
-        raise DazError("Need two selected armatures")
-
-
-    def copyBoneDrivers(self, rig1, rig2):
-        if rig1.animation_data:
-            struct = {}
-            for fcu in rig1.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if (len(words) == 3 and
-                    words[0] == "pose.bones["):
-                    bname = words[1]
-                    if bname not in rig2.data.bones.keys():
-                        print("Missing bone (copyBoneDrivers):", bname)
-                        continue
-                    fcu2 = self.copyDriver(fcu, rig2)
-                    self.setId(fcu2, rig1, rig2)
-
-#----------------------------------------------------------
 #   Disable and enable drivers
 #----------------------------------------------------------
 
@@ -910,8 +855,6 @@ class DAZ_OT_EnableDrivers(DazOperator):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_CopyProps,
-    DAZ_OT_CopyBoneDrivers,
     DAZ_OT_UpdateAll,
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,

@@ -1076,7 +1076,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         StandardMorphLoader.addToMorphSet(self, prop, asset, hidden, protected)
 
 #------------------------------------------------------------------------
-#   Import general morph or driven pose
+#   Custom Morph Loader
 #------------------------------------------------------------------------
 
 class CustomMorphLoader(MorphLoader, MorphSuffix):
@@ -1108,13 +1108,12 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
                 pg.name = cat
             self.rig.DazCustomMorphs = True
 
+#------------------------------------------------------------------------
+#   PropDrivers
+#------------------------------------------------------------------------
 
-
-class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
-    bl_idname = "daz.import_custom_morphs"
-    bl_label = "Import Custom Morphs"
-    bl_description = "Import selected morphs from native DAZ files (*.duf, *.dsf)"
-    bl_options = {'UNDO', 'PRESET'}
+class PropDrivers:
+    hasAdjusters = True
 
     category : StringProperty(
         name = "Category",
@@ -1129,6 +1128,35 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
         name = "Use Mesh Categories",
         description = "Mesh categories",
         default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "usePropDrivers")
+        if self.usePropDrivers:
+            self.layout.prop(self, "category")
+            if self.hasAdjusters:
+                self.layout.prop(self, "useAdjusters")
+        else:
+            self.layout.prop(self, "useMeshCats")
+            if self.useMeshCats:
+                self.layout.prop(self, "category")
+
+    def addPropDrivers(self):
+        if self.usePropDrivers and self.rig:
+            self.rig.DazCustomMorphs = True
+        elif self.useMeshCats and self.shapekeys:
+            props = self.shapekeys.keys()
+            addToCategories(self.mesh, props, None, self.category)
+            self.mesh.DazMeshMorphs = True
+
+#------------------------------------------------------------------------
+#   Import custom morphs
+#------------------------------------------------------------------------
+
+class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
+    bl_idname = "daz.import_custom_morphs"
+    bl_label = "Import Custom Morphs"
+    bl_description = "Import selected morphs from native DAZ files (*.duf, *.dsf)"
+    bl_options = {'UNDO', 'PRESET'}
 
     bodypart : EnumProperty(
         items = [("Face", "Face", "Face"),
@@ -1160,14 +1188,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
     useSearchAlias = False
 
     def draw(self, context):
-        self.layout.prop(self, "usePropDrivers")
-        if self.usePropDrivers:
-            self.layout.prop(self, "category")
-            self.layout.prop(self, "useAdjusters")
-        else:
-            self.layout.prop(self, "useMeshCats")
-            if self.useMeshCats:
-                self.layout.prop(self, "category")
+        PropDrivers.draw(self, context)
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "bodypart")
         if self.bodypart == "Face":
@@ -1215,12 +1236,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, CustomMorphLoader, DazImageFile, Mu
             if namepaths:
                 self.loadAllMorphs(namepaths)
 
-        if self.usePropDrivers and self.rig:
-            self.rig.DazCustomMorphs = True
-        elif self.useMeshCats and self.shapekeys:
-            props = self.shapekeys.keys()
-            addToCategories(self.mesh, props, None, self.category)
-            self.mesh.DazMeshMorphs = True
+        self.addPropDrivers()
         self.finishLoading(namepaths, context, t1)
         updateScrollbars(context)
 

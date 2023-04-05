@@ -57,8 +57,8 @@ def importModules():
         print("\nLoading DAZ")
         modnames = ["buildnumber", "settings", "utils", "error", "driver", "uilist", "selector",
                     "propgroups", "daz", "fileutils", "load_json", "asset", "channels", "formula",
-                    "bone_data", "transform", "node", "figure", "bone", "geometry", "objfile",
-                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "category", "panel",
+                    "bone_data", "transform", "node", "figure", "bone", "geometry",
+                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "category", "objfile", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "hide", "store",
