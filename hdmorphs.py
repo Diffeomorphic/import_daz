@@ -81,7 +81,7 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
 
     tile : IntProperty(
         name = "Tile",
-        description = "Only load textures in this tile",
+        description = "Load textures in this tile.\nSelected materials should match the tile",
         min = 1001, max = 1009,
         default = 1001)
 
@@ -122,6 +122,7 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
         if rig and rig.type == 'ARMATURE':
             amt = rig.data
         filepaths = self.getMultiFiles(theImageExtensions)
+        filepaths = [path for path in filepaths if os.path.splitext(path)[0].endswith(str(self.tile))]
         self.props = {}
         for item in ob.data.DazDhdmFiles:
             key = os.path.splitext(os.path.basename(item.s))[0].lower()
@@ -130,13 +131,8 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
         if self.useDriver and amt:
             for filepath in filepaths:
                 fname = os.path.splitext(os.path.basename(filepath))[0]
-                key = fname.lower().split("_dsf",1)[0]
-                if key not in self.props.keys():
-                    args.append((ob, amt, fname, None, filepath))
-                    continue
-                final = finalProp(self.props[key])
-                amt[final] = 0.0
-                args.append((ob, amt, fname, final, filepath))
+                prop,final = self.getPropFinal(fname, rig, amt)
+                args.append((ob, amt, prop, final, filepath))
         else:
             for filepath in filepaths:
                 fname = os.path.splitext(os.path.basename(filepath))[0]
@@ -146,6 +142,18 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
         if not args:
             raise DazError("No file selected")
         return args
+
+
+    def getPropFinal(self, fname, rig, amt):
+        for key,prop in self.props.items():
+            if fname.lower().startswith(key):
+                if prop not in rig.keys():
+                    rig[prop] = 0.0
+                final = finalProp(prop)
+                if final not in amt.keys():
+                    amt[final] = 0.0
+                return prop, final
+        return fname, None
 
 
     def getArgFromFile(self, fname, filepath, ob, shapes):
