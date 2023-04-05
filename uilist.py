@@ -88,7 +88,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
 
 
     def showBool(self, layout, ob, key, text=""):
-        from .morphing import getExistingActivateGroup
+        from .selector import getExistingActivateGroup
         pg = getExistingActivateGroup(ob, key)
         if pg is not None:
             layout.prop(pg, "active", text=text)

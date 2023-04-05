@@ -33,7 +33,7 @@ from .utils import *
 from .fileutils import MultiFile, ImageFile, theImageExtensions
 from .cgroup import CyclesGroup
 from .propgroups import DazBoolGroup, DazStringBoolGroup
-from .morphing import Selector
+from .selector import Selector
 from .material import setColorSpaceNone
 
 #-------------------------------------------------------------

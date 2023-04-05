@@ -479,7 +479,7 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Posing"
 
     def draw(self, context):
-        from .morphing import getRigFromObject
+        from .selector import getRigFromObject
         ob = context.object
         rig = None
         if ob:

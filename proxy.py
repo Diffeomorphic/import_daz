@@ -32,7 +32,7 @@ from .error import *
 from .tables import *
 from .utils import *
 from .fileutils import AF
-from .morphing import Selector
+from .selector import Selector
 from .driver import DriverUser
 
 #-------------------------------------------------------------
@@ -1192,7 +1192,7 @@ class DAZ_OT_SelectStrandsBySize(DazOperator, IsMesh, Selector):
 #-------------------------------------------------------------
 
 def applyShapeKeys(ob):
-    from .morphing import getShapeKeyCoords
+    from .category import getShapeKeyCoords
     if ob.type != 'MESH':
         return
     if ob.data.shape_keys:

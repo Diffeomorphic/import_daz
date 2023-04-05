@@ -344,7 +344,8 @@ def loadMissingMorphs(self, context, rig, missing, cat):
                 return fullpath
         return None
 
-    from .morphing import CustomMorphLoader, StandardMorphLoader, addToCategories
+    from .morphing import CustomMorphLoader, StandardMorphLoader
+    from .category import addToCategories
     if not missing:
         return False
     standards = {}

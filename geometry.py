@@ -1814,7 +1814,7 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
-        from .morphing import getRigFromObject
+        from .selector import getRigFromObject
         from .load_json import saveJson
         ob = context.object
         rig = getRigFromObject(ob)

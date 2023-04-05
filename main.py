@@ -1034,7 +1034,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     def transferShapes(self, context, ob, meshes, skipDrivers, bodypart, force):
         if not (ob and meshes):
             return
-        from .morphing import classifyShapekeys
+        from .selector import classifyShapekeys
         skeys = ob.data.shape_keys
         if skeys:
             bodyparts = classifyShapekeys(ob, skeys)

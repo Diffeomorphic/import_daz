@@ -30,7 +30,7 @@ import bpy
 from bpy.props import *
 from .utils import *
 from .error import *
-from .morphing import Selector
+from .selector import Selector
 
 def getMaskName(string):
     return "Mask_" + string.split(".",1)[0]
@@ -229,7 +229,7 @@ class SetAllVisibility:
     prefix : StringProperty()
 
     def run(self, context):
-        from .morphing import autoKeyProp, getRigFromObject
+        from .selector import autoKeyProp, getRigFromObject
         rig = getRigFromObject(context.object)
         scn = context.scene
         if rig is None:
@@ -266,7 +266,7 @@ class DAZ_OT_ToggleVis(DazOperator, IsMeshArmature):
     name : StringProperty()
 
     def run(self, context):
-        from .morphing import getRigFromObject, autoKeyProp
+        from .selector import getRigFromObject, autoKeyProp
         rig = getRigFromObject(context.object)
         scn = context.scene
         if rig:
@@ -489,7 +489,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
 
     def run(self, context):
         from .driver import addDriverVar
-        from .morphing import getRigFromObject
+        from .selector import getRigFromObject
         hum = context.object
         rig = getRigFromObject(hum)
         clothes = [ob for ob in getSelectedMeshes(context) if ob != hum]

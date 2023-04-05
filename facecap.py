@@ -108,7 +108,7 @@ class FACSImporter(SingleFile, ActionOptions):
 
 
     def run(self, context):
-        from .morphing import getRigFromObject
+        from .selector import getRigFromObject
         rig = getRigFromObject(context.object)
         if rig is None:
             raise DazError("No rig selected")

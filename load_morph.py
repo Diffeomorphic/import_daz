@@ -434,7 +434,7 @@ class LoadMorph(DriverUser):
 
     def addNewProp(self, raw, asset=None, skey=None):
         from .driver import setBoolProp, setFloatProp, getPropMinMax, setProtected
-        from .morphing import setActivated
+        from .selector import setActivated
         from .modifier import Alias
         final = finalProp(raw)
         if raw not in self.drivers.keys():
@@ -979,7 +979,7 @@ class LoadMorph(DriverUser):
 
     def ensureExists(self, raw, final, default, protect=False):
         from .driver import removeModifiers, setProtected
-        from .morphing import setActivated
+        from .selector import setActivated
         if self.rig is None:
             return
         if raw not in self.rig.keys():

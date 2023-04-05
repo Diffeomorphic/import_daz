@@ -1213,7 +1213,7 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
 #   Remove shells from materials
 # ---------------------------------------------------------------------
 
-from .morphing import Selector
+from .selector import Selector
 
 class ShellRemover:
     def getShells(self, context):
@@ -1749,7 +1749,6 @@ classes = [
 
 def register():
     from .propgroups import DazFloatGroup
-    from .morphing import DazActiveGroup
 
     for cls in classes:
         bpy.utils.register_class(cls)

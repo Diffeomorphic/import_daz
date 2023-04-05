@@ -30,7 +30,7 @@ import os
 import bpy
 from .utils import *
 from .error import *
-from .morphing import MorphGroup
+from .selector import MorphGroup
 
 #------------------------------------------------------------------
 #   Save and Load pose to action
@@ -88,7 +88,7 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
 
 
     def run(self, context):
-        from .morphing import getActivated, keyProp
+        from .selector import getActivated, keyProp
         if not bpy.data.filepath:
             raise DazError("Save the blend file first")
         struct = {}

@@ -35,7 +35,7 @@ from .error import *
 from .utils import *
 from .material import WHITE, GREY, BLACK, isWhite, isBlack
 from .cycles import CyclesMaterial, CyclesTree
-from .morphing import Selector
+from .selector import Selector
 from .guess import ColorProp
 from .fix import GizmoUser
 

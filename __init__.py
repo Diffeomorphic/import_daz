@@ -55,15 +55,15 @@ def importModules():
             importlib.reload(mod)
     else:
         print("\nLoading DAZ")
-        modnames = ["buildnumber", "settings", "utils", "error", "driver", "uilist",
+        modnames = ["buildnumber", "settings", "utils", "error", "driver", "uilist", "selector",
                     "propgroups", "daz", "fileutils", "load_json", "asset", "channels", "formula",
                     "bone_data", "transform", "node", "figure", "bone", "geometry", "objfile",
-                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "panel",
+                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "category", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "hide", "store",
                     "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
-                    "udim", "hdmorphs", "facecap", "scan", "api",
+                    "udim", "hdmorphs", "preset", "moho", "facecap", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
             modnames.append("geonodes")
@@ -82,14 +82,14 @@ from .api import *
 #   Register
 #----------------------------------------------------------
 
-regnames = ["propgroups", "daz", "uilist", "driver",
+regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "figure", "geometry", "objfile", "simple",
-            "fix", "animation", "morphing", "panel",
+            "fix", "animation", "morphing", "category", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
             "matedit", "proxy", "rigify", "merge", "hide", "store",
             "mhx", "hair", "transfer", "dforce",
-            "hdmorphs", "facecap", "udim", "geonodes", "scan"]
+            "hdmorphs", "facecap", "preset", "moho", "udim", "geonodes", "scan"]
 
 def register():
     for mod in theModules:

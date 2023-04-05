@@ -73,7 +73,7 @@ class Formula:
 
     def buildBakedMorph(self, inst, ref, value):
         from .driver import removeModifiers, setProtected, addDriverVar
-        from .morphing import setActivated
+        from .selector import setActivated
         rig = inst.getRig()
         if rig and value != 0:
             value = float(value)

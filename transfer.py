@@ -31,13 +31,12 @@ import bpy
 import numpy as np
 from .error import *
 from .utils import *
-from .morphing import JCMSelector
+from .selector import JCMSelector
 from .driver import DriverUser
 
 #-------------------------------------------------------------
 #
 #-------------------------------------------------------------
-
 
 class FastMatcher:
     def checkTransforms(self, ob):
@@ -990,7 +989,7 @@ class DAZ_OT_MixShapekeys(DazOperator):
 
 
     def deleteShape(self, ob, skeys, skey, sname):
-        from .morphing import removeShapeDriversAndProps
+        from .category import removeShapeDriversAndProps
         skey.driver_remove("value")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")

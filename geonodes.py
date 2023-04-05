@@ -29,7 +29,7 @@ import bpy
 from .error import *
 from .utils import *
 from .tree import Tree, NodeGroup, XSIZE, YSIZE, addNodeGroup
-from .morphing import Selector
+from .selector import Selector
 
 VECTOR = 1
 VALUE = 2
