@@ -33,8 +33,8 @@ from .utils import *
 from .fileutils import MultiFile, ImageFile, theImageExtensions
 from .cgroup import CyclesGroup
 from .propgroups import DazBoolGroup, DazStringBoolGroup
-from .selector import Selector
 from .material import setColorSpaceNone
+from .matedit import MaterialSelector
 
 #-------------------------------------------------------------
 #   Node tree layout
@@ -71,12 +71,15 @@ class Layouter:
 #   Load Maps
 #-------------------------------------------------------------
 
-class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
-    materials : CollectionProperty(type = DazBoolGroup)
-
+class LoadMaps(MultiFile, ImageFile, Layouter, MaterialSelector):
     useDriver : BoolProperty(
         name = "Use Drivers",
         description = "Drive maps with armature properties",
+        default = True)
+
+    useSmartTiles : BoolProperty(
+        name = "Smart Tiles",
+        description = "Identify tiles from materials",
         default = True)
 
     tile : IntProperty(
@@ -87,32 +90,23 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
 
     def draw(self, context):
         self.layout.prop(self, "useDriver")
-        self.layout.prop(self, "tile")
+        self.layout.prop(self, "useSmartTiles")
+        if not self.useSmartTiles:
+            self.layout.prop(self, "tile")
         Layouter.draw(self, context)
         self.layout.label(text="Add Maps To Materials:")
-        box = self.layout.box()
-        for item in self.materials:
-            row = box.row()
-            row.prop(item, "t", text="")
-            row.label(text=item.name)
+        MaterialSelector.draw(self, context)
 
 
     def invoke(self, context, event):
-        self.materials.clear()
-        ob = context.object
-        for n,mat in enumerate(ob.data.materials):
-            item = self.materials.add()
-            item.t = (n == ob.active_material_index)
-            item.name = mat.name
+        self.setupMaterials(context.object)
         return MultiFile.invoke(self, context, event)
 
-
     def getMaterials(self, ob):
-        mats = []
-        for item in self.materials:
-            if item.t:
-                mats.append(ob.data.materials[item.name])
-        return mats
+        return [mat for mat in ob.data.materials if self.useMaterial(mat)]
+
+    def isDefaultActive(self, mat, ob):
+        return self.isSkinRedMaterial(mat)
 
 
     def getArgs(self, ob):
@@ -122,7 +116,9 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
         if rig and rig.type == 'ARMATURE':
             amt = rig.data
         filepaths = self.getMultiFiles(theImageExtensions)
-        filepaths = [path for path in filepaths if os.path.splitext(path)[0].endswith(str(self.tile))]
+        if not self.useSmartTiles:
+            filepaths = [path for path in filepaths
+                         if os.path.splitext(path)[0].endswith(str(self.tile))]
         self.props = {}
         for item in ob.data.DazDhdmFiles:
             key = os.path.splitext(os.path.basename(item.s))[0].lower()
@@ -131,8 +127,8 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
         if self.useDriver and amt:
             for filepath in filepaths:
                 fname = os.path.splitext(os.path.basename(filepath))[0]
-                prop,final = self.getPropFinal(fname, rig, amt)
-                args.append((ob, amt, prop, final, filepath))
+                final = self.getFinal(fname, rig, amt)
+                args.append((ob, amt, fname, final, filepath))
         else:
             for filepath in filepaths:
                 fname = os.path.splitext(os.path.basename(filepath))[0]
@@ -144,7 +140,7 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
         return args
 
 
-    def getPropFinal(self, fname, rig, amt):
+    def getFinal(self, fname, rig, amt):
         for key,prop in self.props.items():
             if fname.lower().startswith(key):
                 if prop not in rig.keys():
@@ -152,28 +148,39 @@ class LoadMaps(MultiFile, ImageFile, Layouter, IsMesh):
                 final = finalProp(prop)
                 if final not in amt.keys():
                     amt[final] = 0.0
-                return prop, final
-        return fname, None
+                return final
+        return None
 
 
-    def getArgFromFile(self, fname, filepath, ob, shapes):
-        words = fname.rsplit("-", 3)
-        if len(words) != 4:
-            print("Wrong file name: %s" % fname)
-            return None
-        elif words[1] != self.type:
-            print("Not a %s file: %s" % (self.type, fname))
-            return None
-        elif not words[2].isdigit() or int(words[2]) != self.tile:
-            print("Wrong tile %s != %d: %s" % (words[2], self.tile, fname))
-            return None
+    def useFileInTile(self, fname, mat):
+        if fname[-4:].isdigit():
+            tile = int(fname[-4:])
         else:
-            sname = words[0].rstrip("_dhdm")
-            if sname in shapes.keys():
-                skey = shapes[sname]
-                return (ob, skey.name, skey, filepath)
-            else:
-                return (ob, sname, None, filepath)
+            tile = None
+        if self.useSmartTiles:
+            mattile = self.getMaterialTile(mat)
+            return (mattile is None or tile == mattile)
+        else:
+            return (tile == self.tile)
+
+
+    def getMaterialTile(self, mat):
+        for node in mat.node_tree.nodes:
+            if node.type == 'TEX_IMAGE' and node.image:
+                imgname = baseName(node.image.name)
+                if imgname[-4:].isdigit():
+                    tile = int(imgname[-4:])
+                    if tile >= 1001 and tile < 1100:
+                        return tile
+        return None
+
+
+    def checkTileUsed(self, mat, args):
+        for ob,amt,fname,prop,filepath in args:
+            if (os.path.exists(filepath) and
+                self.useFileInTile(fname, mat)):
+                return True
+        return False
 
 #-------------------------------------------------------------
 #   Scalar and Vector Displacement groups
@@ -203,6 +210,8 @@ class DispAdder:
         from .tree import findNodes, pruneNodeTree, XSIZE
         from .cycles import findTree, findTexco
         from .driver import makePropDriver
+        if not self.checkTileUsed(mat, args):
+            return
         if self.useCompact:
             size = 2
         else:
@@ -217,11 +226,13 @@ class DispAdder:
                 last = link.from_node
                 frame = last.parent
                 dy = tree.below(last, size)
-        else:
+        if frame is None:
             frame = tree.nodes.new("NodeFrame")
             frame.label = "Displacement Maps"
         nodes = []
         for ob,amt,sname,prop,filepath in args:
+            if not self.useFileInTile(sname, mat):
+                continue
             img = self.getImage(filepath)
             tex = tree.addTextureNode(0, img, sname, size)
             tex.parent = frame
@@ -307,6 +318,8 @@ class NormalAdder:
         from .cycles import findTree, findTexco
         from .material import NORMAL
 
+        if not self.checkTileUsed(mat, args):
+            return
         tree = findTree(mat)
         if self.useCompact:
             size = 2
@@ -342,6 +355,8 @@ class NormalAdder:
         for ob,amt,fname,prop,filepath in args:
             if not os.path.exists(filepath):
                 print("No such file: %s" % filepath)
+                continue
+            if not self.useFileInTile(fname, mat):
                 continue
             img = self.getImage(filepath)
             tex = tree.addTextureNode(0, img, fname, size)
@@ -704,6 +719,11 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
             activateObject(context, ob)
             self.loadObjectMaps(ob)
 
+    def useFileInTile(self, fname, mat):
+        return True
+
+    def checkTileUsed(self, mat, args):
+        return True
 
     def loadObjectMaps(self, ob):
         self.loadedImages = {}
