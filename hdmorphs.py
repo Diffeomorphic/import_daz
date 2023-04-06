@@ -153,26 +153,12 @@ class LoadMaps(MultiFile, ImageFile, Layouter, MaterialSelector):
 
 
     def useFileInTile(self, fname, mat):
-        if fname[-4:].isdigit():
-            tile = int(fname[-4:])
-        else:
-            tile = None
+        tile = getTile(fname)
         if self.useSmartTiles:
-            mattile = self.getMaterialTile(mat)
+            mattile = getMaterialTile(mat)
             return (mattile is None or tile == mattile)
         else:
             return (tile == self.tile)
-
-
-    def getMaterialTile(self, mat):
-        for node in mat.node_tree.nodes:
-            if node.type == 'TEX_IMAGE' and node.image:
-                imgname = baseName(node.image.name)
-                if imgname[-4:].isdigit():
-                    tile = int(imgname[-4:])
-                    if tile >= 1001 and tile < 1100:
-                        return tile
-        return None
 
 
     def checkTileUsed(self, mat, args):
@@ -181,6 +167,24 @@ class LoadMaps(MultiFile, ImageFile, Layouter, MaterialSelector):
                 self.useFileInTile(fname, mat)):
                 return True
         return False
+
+
+def getMaterialTile(mat):
+    for node in mat.node_tree.nodes:
+        if node.type == 'TEX_IMAGE' and node.image:
+            tile = getTile(node.image.name)
+            if tile:
+                return tile
+    return None
+
+
+def getTile(string):
+    string = baseName(string)
+    if len(string) > 5 and string[-5] == "_" and string[-4:].isdigit():
+        tile = int(string[-4:])
+        if tile >= 1001 and tile <= 1100:
+            return tile
+    return None
 
 #-------------------------------------------------------------
 #   Scalar and Vector Displacement groups
