@@ -1939,18 +1939,12 @@ class CyclesTree(Tree):
         node.inputs[slot].default_value = value
         tex = self.addTexImageNode(channel, "NONE", isMask)
         if tex:
-            tex = self.fixTex(tex, value0, invert)
+            _,tex = self.multiplySomeTex(value0, tex)
+            if invert:
+                tex = self.invertTex(tex, 3)
             if tex:
                 self.links.new(self.colorOutput(tex), node.inputs[slot])
         return tex
-
-
-    def fixTex(self, tex, value, invert):
-        _,tex = self.multiplySomeTex(value, tex)
-        if invert:
-            return self.invertTex(tex, 3)
-        else:
-            return tex
 
 
     def invertTex(self, tex, col):
@@ -1989,10 +1983,12 @@ class CyclesTree(Tree):
 
 
     def linkSlot(self, tex, slot, socket):
-        if slot is None:
-            self.links.new(self.colorOutput(tex), socket)
+        if slot == "Alpha":
+            if tex.type == "GAMMA":
+                tex = tex.inputs["Color"].links[0].from_node
+            self.links.new(tex.outputs["Alpha"], socket)
         else:
-            self.links.new(tex.outputs[slot], socket)
+            self.links.new(self.colorOutput(tex), socket)
 
 
     def multiplyScalarTex(self, value, tex, slot=None, col=None):
