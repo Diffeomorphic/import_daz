@@ -85,6 +85,7 @@ def getChannel(url):
     else:
         return None,None,None
 
+    key = unquote(key)
     words = url.rsplit("?", 2)
     if len(words) != 2:
         return None,None,None
