@@ -569,6 +569,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
+        self.warnBadMorphs()
 
 
     def fixGenesis2Problems(self, rig):
@@ -884,6 +885,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     makeBone("ik_" + self.longName(m, suffix), rig, fing3.tail, fing3.tail+vec, fing3.roll, L_LHAND+dlayer, hand)
 
         setMode('POSE')
+        self.drvBones = {}
         for suffix,dlayer in [("L",0), ("R",16)]:
             prop1 = "MhaFingerControl_%s" % suffix
             setMhxProp(rig, prop1, True)
@@ -905,6 +907,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             for m in range(5):
                 if m == 0:
                     n0 = 1
+                    if self.useFingerIk:
+                        thumb0 = self.linkName(0, 0, suffix)
+                        self.deletePoseConstraints(thumb0)
                 else:
                     n0 = 0
                 long = rig.pose.bones[self.longName(m, suffix)]
@@ -928,6 +933,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     cns.use_y = cns.use_z = False
                     cns.use_offset = True
                     addDriver(cns, "mute", rig, props, expr)
+            if self.useFingerIk:
+                for fname in ["index", "middle", "ring", "pinky"]:
+                    carpal = "palm_%s.%s" % (fname, suffix)
+                    self.deletePoseConstraints(carpal)
+        self.deleteDrvBones(rig)
 
     #-------------------------------------------------------------
     #   FK/IK
