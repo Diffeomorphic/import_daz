@@ -398,7 +398,7 @@ class Fixer(DriverUser):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
                     addDriver(cns, "mute", rig, prop, "x")
-                elif cns.type in ['COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+                elif cns.type in ['COPY_TRANSFORMS', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
                     pb.constraints.remove(cns)
         bname = self.tongueBones[-1]
         pb = rig.pose.bones[bname]
@@ -422,7 +422,7 @@ class Fixer(DriverUser):
     def deletePoseConstraints(self, bname):
         ncnss = []
         for cns in self.constraints.get(bname, []):
-            if cns["type"] not in ['COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+            if cns["type"] not in ['COPY_TRANSFORMS', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
                 ncnss.append(cns)
         self.constraints[bname] = ncnss
 
