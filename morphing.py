@@ -35,7 +35,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .selector import Selector, getRigFromObject
-from .fileutils import SingleFile, MultiFile, DazImageFile, JsonFile
+from .fileutils import SingleFile, MultiFile, DazImageFile, JsonFile, ensureExt
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup
 from .load_morph import LoadMorph
 from .driver import isProtected
@@ -1273,7 +1273,7 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
         self.addMorphUrls(rig, struct)
         for ob in rig.children:
             self.addMorphUrls(ob, struct)
-        filepath = bpy.path.ensure_ext(self.filepath, ".json")
+        filepath = ensureExt(self.filepath, ".json")
         saveJson(struct, filepath)
 
 
@@ -1339,7 +1339,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
 
     def run(self, context):
         from .load_json import loadJson
-        filepath = bpy.path.ensure_ext(self.filepath, ".json")
+        filepath = ensureExt(self.filepath, ".json")
         struct = loadJson(filepath)
         if ("filetype" not in struct.keys() or
             struct["filetype"] != "favo_morphs"):

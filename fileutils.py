@@ -336,8 +336,12 @@ class CsvFile:
 #   SingleFile and MultiFile
 #-------------------------------------------------------------
 
+def ensureExt(filepath, ext):
+    return bpy.path.ensure_ext(os.path.splitext(filepath)[0], ext)
+
+
 def getExistingFilePath(filepath, ext):
-    filepath = bpy.path.ensure_ext(bpy.path.abspath(filepath), ext)
+    filepath = ensureExt(bpy.path.abspath(filepath), ext)
     filepath = normalizePath(os.path.expanduser(filepath))
     filepath = bpy.path.resolve_ncase(filepath)
     if os.path.exists(filepath):

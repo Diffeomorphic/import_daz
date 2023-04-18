@@ -35,6 +35,7 @@ from .utils import *
 from .fileutils import SingleFile, DufFile, DazExporter
 from .selector import Selector, getRigFromObject
 from .animation import HideOperator, FrameConverter
+from .bone_data import BD
 
 #----------------------------------------------------------
 #   Save pose preset
