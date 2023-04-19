@@ -427,6 +427,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         t2 = perf_counter()
         showProgress(25, 25, "MHX rig created in %.1f seconds" % (t2-t1))
         endProgress()
+        self.printMessages()
 
 
     def convertMhx(self, context):
@@ -569,7 +570,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
-        self.warnBadMorphs()
 
 
     def fixGenesis2Problems(self, rig):
@@ -622,6 +622,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.bone.layers = layer*[False] + [True] + (31-layer)*[False]
             if False and unlock:
                 pb.lock_location = (False,False,False)
+        self.checkTongueIk(rig)
+        self.checkFingerIk(rig)
 
 
     def restoreBoneChildren(self, bchildren, context, rig):
@@ -852,6 +854,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         return "%s.%s" % (self.PalmNames[m], suffix)
 
 
+    def checkFingerIk(self, rig):
+        if self.useFingerIk:
+            bnames = [self.linkName(m, n, suffix) for m in range(5) for n in range(3) for suffix in ["L", "R"]]
+            if self.checkDriven(rig, bnames, "Finger IK"):
+                self.useFingerIk = False
+
+
     def addLongFingers(self, rig):
         setMode('EDIT')
         for suffix,dlayer in [("L",0), ("R",16)]:
@@ -907,17 +916,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             for m in range(5):
                 if m == 0:
                     n0 = 1
-                    if self.useFingerIk:
-                        thumb0 = self.linkName(0, 0, suffix)
-                        self.deletePoseConstraints(thumb0)
                 else:
                     n0 = 0
                 long = rig.pose.bones[self.longName(m, suffix)]
                 long.lock_location = (True,True,True)
                 long.lock_rotation = (False,True,False)
                 fing = rig.pose.bones[self.linkName(m, n0, suffix)]
-                if self.useFingerIk:
-                    self.deletePoseConstraints(fing.name)
                 fing.lock_rotation = (False,True,False)
                 long.rotation_mode = fing.rotation_mode
                 cns = copyRotation(fing, long, rig)
@@ -926,18 +930,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 addDriver(long.bone, "hide", rig, props, expr)
                 for n in range(n0+1,3):
                     fing = rig.pose.bones[self.linkName(m, n, suffix)]
-                    if self.useFingerIk:
-                        self.deletePoseConstraints(fing.name)
                     fing.lock_rotation = (False,True,True)
                     cns = copyRotation(fing, long, rig)
                     cns.use_y = cns.use_z = False
                     cns.use_offset = True
                     addDriver(cns, "mute", rig, props, expr)
-            if self.useFingerIk:
-                for fname in ["index", "middle", "ring", "pinky"]:
-                    carpal = "palm_%s.%s" % (fname, suffix)
-                    self.deletePoseConstraints(carpal)
-        self.deleteDrvBones(rig)
 
     #-------------------------------------------------------------
     #   FK/IK

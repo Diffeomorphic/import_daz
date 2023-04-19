@@ -40,10 +40,6 @@ from .driver import DriverUser
 
 class Fixer(DriverUser):
 
-    def __init__(self):
-        DriverUser.__init__(self)
-        self.badMorphBones = {}
-
     useImproveIk : BoolProperty(
         name = "Improve IK",
         description = "Improve IK by prebending IK bones",
@@ -81,6 +77,17 @@ class Fixer(DriverUser):
         self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useKeepRig")
+
+
+    def __init__(self):
+        DriverUser.__init__(self)
+        self.messages = []
+
+
+    def printMessages(self):
+        if self.messages:
+            msg = "\n".join(self.messages)
+            raise DazError(msg, warning=True)
 
 
     def copyLocksLimits(self, rig, srcname, trgname, suffix):
@@ -369,16 +376,43 @@ class Fixer(DriverUser):
     #   Tongue IK
     #-------------------------------------------------------------
 
+    def checkTongueIk(self, rig):
+        if not self.useTongueIk:
+            self.tongueBones = []
+            return
+        self.tongueBones = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
+        if len(self.tongueBones) < 3:
+            print("Did not find tongue")
+            self.useTongueIk = False
+            return
+        print("Tongue bones:", self.tongueBones)
+        self.tongueBones.sort()
+        if self.checkDriven(rig, self.tongueBones, "Tongue IK"):
+            self.useTongueIk = False
+
+
+    def checkDriven(self, rig, bnames, string):
+        for bname in bnames:
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                for cns in pb.constraints:
+                    if cns.type in ['COPY_TRANSFORMS', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
+                        self.messages.append("%s is disabled because\n%s has copy transforms constraint" % (string, pb.name))
+                        return True
+        if rig.animation_data:
+            for fcu in rig.animation_data.drivers:
+                words = fcu.data_path.split('"')
+                if (words[0] == "pose.bones[" and
+                    words[1] in bnames):
+                    self.messages.append("%s is disabled because\n%s has drivers" % (string, words[1]))
+                    return True
+        return False
+
+
     def addTongueIkBone(self, rig, layer):
         if not self.useTongueIk:
             return
         from .mhx import makeBone
-        self.tongueBones = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
-        if len(self.tongueBones) < 3:
-            print("Did not find tongue")
-            return
-        print("Tongue bones:", self.tongueBones)
-        self.tongueBones.sort()
         root = rig.data.edit_bones[self.tongueBones[0]]
         tip = rig.data.edit_bones[self.tongueBones[-1]]
         vec = tip.tail - tip.head
@@ -391,51 +425,21 @@ class Fixer(DriverUser):
         setMhxProp(rig, prop, False)
         if not self.useTongueIk:
             return
-        n = len(self.tongueBones)
-        if n < 3:
-            return
-        self.drvBones = {}
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
-            self.deletePoseConstraints(bname)
             pb.ik_stretch = 0.1
             for cns in list(pb.constraints):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
                     addDriver(cns, "mute", rig, prop, "x")
-                elif cns.type in ['COPY_TRANSFORMS', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
-                    pb.constraints.remove(cns)
         bname = self.tongueBones[-1]
         pb = rig.pose.bones[bname]
         target = rig.pose.bones["ik_tongue"]
+        n = len(self.tongueBones)
         cns = ikConstraint(pb, target, None, 0, n, rig)
         cns.use_rotation = True
         addDriver(cns, "mute", rig, prop, "not(x)")
         addDriver(target.bone, "hide", rig, prop, "not(x)")
-        self.deleteDrvBones(rig)
-
-
-    def deleteDrvBones(self, rig):
-        adata = rig.animation_data
-        if adata:
-            for fcu in list(adata.drivers):
-                words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[" and words[1] in self.drvBones.keys():
-                    adata.drivers.remove(fcu)
-        adata = rig.data.animation_data
-        if adata:
-            for fcu in list(adata.drivers):
-                prop = getProp(fcu.data_path)
-                if prop:
-                    words = prop.split(":")
-                    if (drvBone(words[0]) in self.drvBones.keys() and
-                        words[1] in ["Rot", "Loc", "Sca", "Hdo", "Tlo"]):
-                        adata.drivers.remove(fcu)
-        setMode('EDIT')
-        for bname in self.drvBones.keys():
-            eb = rig.data.edit_bones.get(bname)
-            if eb:
-                rig.data.edit_bones.remove(eb)
 
 
     def setIkLimits(self, cns, fkbone, ikbone):
@@ -446,32 +450,6 @@ class Fixer(DriverUser):
             setattr(ikbone, "lock_ik_%s" % x, fkbone.lock_rotation[n])
             #if fkbone.lock_rotation[n]:
             #    setattr(ikbone, "ik_stiffness_%s" % x, 0.99)
-
-
-    def deletePoseConstraints(self, bname):
-        ncnss = []
-        for cns in self.constraints.get(bname, []):
-            if cns["type"] in ['COPY_TRANSFORMS', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
-                subtrg = cns["subtarget"]
-                self.drvBones[subtrg] = True
-                self.badMorphBones[bname] = True
-            else:
-                ncnss.append(cns)
-        self.constraints[bname] = ncnss
-
-
-    def warnBadMorphs(self):
-        if self.badMorphBones:
-            msg = "Some morphs have been disabled because they conflict with tongue or finger IK."
-            msg += "\nThe following bones are affected:"
-            bnames = list(self.badMorphBones.keys())
-            bnames.sort()
-            while bnames:
-                msg += "\n"
-                for bname in bnames[0:3]:
-                    msg += "     %s" % bname
-                bnames = bnames[3:]
-            raise DazError(msg, warning=True)
 
     #-------------------------------------------------------------
     #   Gaze Bones

@@ -708,6 +708,7 @@ class Rigify:
         self.addCombinedGazeBone(gen, R_FACE, R_HELP)
         print(" Create tongue IK")
         setMode('OBJECT')
+        self.checkTongueIk(rig)
         setMode('EDIT')
         self.addTongueIkBone(gen, R_FACE)
 
@@ -1240,6 +1241,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         gen = self.rigifyMeta(context)
         t2 = perf_counter()
         print("DAZ rig %s successfully rigified in %.3f seconds" % (rname, t2-t1))
+        self.printMessages()
 
 
 class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintStore):
@@ -1257,8 +1259,6 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintS
 
     def draw(self, context):
         self.layout.prop(self, "useOptimizePose")
-        Fixer.draw(self, context)
-        self.layout.prop(self, "useCustomLayers")
         self.layout.prop(self, "useRecalcRoll")
 
     @classmethod
@@ -1270,6 +1270,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintS
         if self.useKeepRig:
             self.saveExistingRig(context)
         self.createMeta(context)
+        self.printMessages()
 
 
 class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists, ConstraintStore):
@@ -1286,6 +1287,7 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwist
         ConstraintStore.__init__(self)
 
     def draw(self, context):
+        Fixer.draw(self, context)
         self.layout.prop(self, "useAutoAlign")
         self.layout.prop(self, "useCustomLayers")
 
@@ -1295,6 +1297,7 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwist
 
     def run(self, context):
         self.rigifyMeta(context)
+        self.printMessages()
 
 #-------------------------------------------------------------
 #   Set rigify to FK. For load pose.
