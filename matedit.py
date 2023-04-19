@@ -1313,15 +1313,10 @@ class DAZ_OT_ReplaceShells(DazPropsOperator, ShellRemover, IsMesh):
         return DazPropsOperator.invoke(self, context, event)
 
 #-------------------------------------------------------------
-#   Change unit scale
+#   Scale materials
 #-------------------------------------------------------------
 
-class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
-    bl_idname = "daz.change_unit_scale"
-    bl_label = "Change Unit Scale"
-    bl_description = "Safely change the unit scale of selected object and children"
-    bl_options = {'UNDO'}
-
+class MaterialScaler:
     unit : FloatProperty(
         name = "New Unit Scale",
         description = "Scale used to convert between DAZ and Blender units. Default unit meters",
@@ -1335,8 +1330,67 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
     def invoke(self, context, event):
         if context.object:
             self.unit = context.object.DazScale
+        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
         return DazPropsOperator.invoke(self, context, event)
 
+    def scaleMaterials(self, ob):
+        for mat in ob.data.materials:
+            if mat:
+                if mat.DazScale == 0:
+                    mat.DazScale = ob.DazScale
+                scale = self.unit / mat.DazScale
+                for node in mat.node_tree.nodes:
+                    if node.type == 'GROUP':
+                        self.fixNode(node, node.node_tree.name, scale)
+                    else:
+                        self.fixNode(node, node.type, scale)
+                mat.DazScale = self.unit
+                if self.auto:
+                    mat.keyframe_insert("DazScale")
+
+    NodeScale = {
+        "BUMP" : ["Distance"],
+        "PRINCIPLED" : ["Subsurface Radius"],
+        "DAZ Principled" : ["Subsurface Radius"],
+        "DAZ Translucent" : ["Radius"],
+        "DAZ Subsurface" : ["Radius"],
+        "DAZ Top Coat" : ["Distance"],
+        "DAZ Displacement" : ["Max", "Min"],
+    }
+
+    def fixNode(self, node, nodetype, scale):
+        if nodetype in self.NodeScale.keys():
+            for sname in self.NodeScale[nodetype]:
+                socket = node.inputs.get(sname)
+                if socket is None:
+                    continue
+                elif isinstance(socket.default_value, float):
+                    socket.default_value *= scale
+                else:
+                    socket.default_value = scale*Vector(socket.default_value)
+                if self.auto:
+                    socket.keyframe_insert("default_value")
+
+
+class DAZ_OT_ScaleMaterials(MaterialScaler, DazPropsOperator, IsMesh):
+    bl_idname = "daz.scale_materials"
+    bl_label = "Scale Materials"
+    bl_description = "Scale material properties with dimension of length\n(bump distance, subsurface radius, etc.)"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            self.scaleMaterials(ob)
+
+#-------------------------------------------------------------
+#   Change unit scale
+#-------------------------------------------------------------
+
+class DAZ_OT_ChangeUnitScale(MaterialScaler, DazPropsOperator, IsMeshArmature):
+    bl_idname = "daz.change_unit_scale"
+    bl_label = "Change Unit Scale"
+    bl_description = "Safely change the unit scale of selected object and children"
+    bl_options = {'UNDO'}
 
     def run(self, context):
         ob = context.object
@@ -1348,7 +1402,7 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
         self.addObjects(ob)
         for ob in self.meshes:
             self.applyScale(context, ob)
-            self.fixMesh(ob)
+            self.scaleMaterials(ob)
         for rig in self.rigs:
             self.applyScale(context, rig)
             self.fixRig(rig)
@@ -1386,39 +1440,6 @@ class DAZ_OT_ChangeUnitScale(DazPropsOperator, IsMeshArmature):
             for cns in pb.constraints:
                 if cns.type == 'STRETCH_TO':
                     cns.rest_length *= scale
-
-
-    def fixMesh(self, ob):
-        scale = self.unit / ob.DazScale
-        for mat in ob.data.materials:
-            if mat:
-                for node in mat.node_tree.nodes:
-                    if node.type == 'GROUP':
-                        self.fixNode(node, node.node_tree.name, scale)
-                    else:
-                        self.fixNode(node, node.type, scale)
-
-
-    NodeScale = {
-        "BUMP" : ["Distance"],
-        "PRINCIPLED" : ["Subsurface Radius"],
-        "DAZ Principled" : ["Subsurface Radius"],
-        "DAZ Translucent" : ["Radius"],
-        "DAZ Subsurface" : ["Radius"],
-        "DAZ Top Coat" : ["Distance"],
-        "DAZ Displacement" : ["Max", "Min"],
-    }
-
-    def fixNode(self, node, nodetype, scale):
-        if nodetype in self.NodeScale.keys():
-            for sname in self.NodeScale[nodetype]:
-                socket = node.inputs.get(sname)
-                if socket is None:
-                    pass
-                elif isinstance(socket.default_value, float):
-                    socket.default_value *= scale
-                else:
-                    socket.default_value = scale*Vector(socket.default_value)
 
 
     def restoreParent(self, context, ob):
@@ -1741,6 +1762,7 @@ classes = [
     DAZ_OT_RemoveShells,
     DAZ_OT_ReplaceShells,
     DAZ_OT_ChangeUnitScale,
+    DAZ_OT_ScaleMaterials,
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,
     DAZ_OT_FindMissingTextures,

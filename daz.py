@@ -553,6 +553,8 @@ def register():
         default = 0.01,
         precision = 4)
 
+    bpy.types.Material.DazScale = FloatProperty(default = 0)
+
     bpy.types.Object.DazUnits = StringProperty(default = "")
     bpy.types.Object.DazExpressions = StringProperty(default = "")
     bpy.types.Object.DazVisemes = StringProperty(default = "")

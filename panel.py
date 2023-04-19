@@ -257,6 +257,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.find_missing_textures")
         self.layout.operator("daz.activate_diffuse")
         #self.layout.operator("daz.replace_materials")
+        self.layout.operator("daz.scale_materials")
         self.layout.separator()
         self.layout.operator("daz.load_uv")
         self.layout.operator("daz.save_uv")
