@@ -618,7 +618,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     useMergeGeografts : BoolProperty(
         name = "Merge Geografts",
-        description = "Merge selected geografts to active object.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
+        description = "Merge selected geografts to active object.\nGeometry nodes are not used.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
         default = False)
 
     useMakeAllBonesPosable : BoolProperty(
@@ -699,9 +699,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
-            if self.useMergeUvs:
-                self.subprop("allowOverlap")
-            self.subprop("useGeoNodes")
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "rigType")
         if self.rigType == 'MHX':
@@ -966,7 +963,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     for aob in aobs:
                         selectSet(aob, True)
                 print("Merge geografts")
-                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs, allowOverlap = self.allowOverlap, useGeoNodes = self.useGeoNodes)
+                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs)
                 if GS.viewportColors == 'GUESS':
                     from .guess import guessMaterialColor
                     LS.skinColor = self.skinColor
