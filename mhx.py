@@ -552,7 +552,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addBoneGroups(rig)
         if self.useImproveIk:
             from .simple import improveIk
-            improveIk(rig)
+            improveIk(rig, exclude=self.tongueBones)
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
         rig.data.display_type = 'WIRE'
@@ -1096,7 +1096,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.rolls["%s.%s" % (bname,suffix)] = rig.data.edit_bones["%s.%s" % (bname,suffix)].roll
 
         self.addCombinedGazeBone(rig, L_HEAD, L_HELP)
-        self.addTongueIkBone(rig, L_HEAD)
+        self.addTongueIkBone(rig, L_HEAD, L_DEF)
 
         from .figure import copyBoneInfo
         setMode('OBJECT')

@@ -710,7 +710,7 @@ class Rigify:
         setMode('OBJECT')
         self.checkTongueIk(rig)
         setMode('EDIT')
-        self.addTongueIkBone(gen, R_FACE)
+        self.addTongueIkBone(gen, R_FACE, R_DEFORM)
 
         setMode('POSE')
 
@@ -897,7 +897,7 @@ class Rigify:
         # Improve IK
         if self.useImproveIk:
             from .simple import improveIk
-            improveIk(gen)
+            improveIk(gen, exclude=self.tongueBones)
 
         #Clean up
         print("  Clean up")
@@ -1392,10 +1392,10 @@ def register():
         min = 0, max = 1,
         description = "eye tracking the right gaze bone amount")
 
-    bpy.types.Object.MhaTongueIk = BoolPropOVR(
+    bpy.types.Object.MhaTongueIk = FloatPropOVR(0.0,
         name = "Tongue IK",
-        description = "Tongue bones controlled by IK",
-        default = False)
+        min = 0, max = 1,
+        description = "Tongue bones controlled by IK")
 
     bpy.types.Object.DazMeta = BoolProperty(default=False)
     bpy.types.Object.DazRigifyType = StringProperty(default="")

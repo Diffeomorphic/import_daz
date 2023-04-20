@@ -1219,9 +1219,11 @@ class DAZ_OT_ImproveIK(DazOperator, IsArmature):
         improveIk(context.object)
 
 
-def improveIk(rig):
+def improveIk(rig, exclude=[]):
     ikconstraints = []
     for pb in rig.pose.bones:
+        if pb.name in exclude:
+            continue
         for cns in pb.constraints:
             if cns.type == 'IK':
                 ikconstraints.append((pb, cns, cns.mute))

@@ -409,7 +409,7 @@ class Fixer(DriverUser):
         return False
 
 
-    def addTongueIkBone(self, rig, layer):
+    def addTongueIkBone(self, rig, layer, deflayer):
         if not self.useTongueIk:
             return
         from .mhx import makeBone
@@ -417,29 +417,44 @@ class Fixer(DriverUser):
         tip = rig.data.edit_bones[self.tongueBones[-1]]
         vec = tip.tail - tip.head
         eb = makeBone("ik_tongue", rig, tip.tail, tip.tail+vec, tip.roll, layer, root.parent)
+        for bname in self.tongueBones:
+            eb = rig.data.edit_bones[bname]
+            defb = makeBone("DEF-%s" % bname, rig, eb.head, eb.tail, eb.roll, deflayer, root.parent)
 
 
     def addTongueIk(self, rig):
-        from .mhx import addDriver, ikConstraint, setMhxProp
+        from .mhx import addDriver, ikConstraint, copyLocation, stretchTo, setMhxProp
         prop = "MhaTongueIk"
-        setMhxProp(rig, prop, False)
+        setMhxProp(rig, prop, 0.0)
         if not self.useTongueIk:
             return
+        target = rig.pose.bones["ik_tongue"]
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
-            pb.ik_stretch = 0.1
+            pb.ik_stretch = 0.5
+            pb.bone.use_deform = False
             for cns in list(pb.constraints):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
-                    addDriver(cns, "mute", rig, prop, "x")
+                    addDriver(cns, "influence", rig, prop, "1-x")
+            defb = rig.pose.bones["DEF-%s" % bname]
+            defb.bone.use_deform = True
+            cns = copyLocation(defb, pb, rig)
+            cns = stretchTo(defb, pb, rig)
+            cns.head_tail = 1.0
+            cns.volume = 'VOLUME_XZX'
         bname = self.tongueBones[-1]
         pb = rig.pose.bones[bname]
-        target = rig.pose.bones["ik_tongue"]
         n = len(self.tongueBones)
-        cns = ikConstraint(pb, target, None, 0, n, rig)
+        cns = ikConstraint(pb, target, None, 0, n, rig, prop)
         cns.use_rotation = True
-        addDriver(cns, "mute", rig, prop, "not(x)")
-        addDriver(target.bone, "hide", rig, prop, "not(x)")
+        addDriver(target.bone, "hide", rig, prop, "x==0")
+        for ob in rig.children:
+            if ob.type == 'MESH':
+                for bname in self.tongueBones:
+                    vgrp = ob.vertex_groups.get(bname)
+                    if vgrp:
+                        vgrp.name = "DEF-%s" % bname
 
 
     def setIkLimits(self, cns, fkbone, ikbone):
