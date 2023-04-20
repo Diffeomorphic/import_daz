@@ -233,18 +233,6 @@ def armatureConstraint(pb, rig, drivers):
     return cns
 
 
-def setMhxProp(rig, prop, value):
-    setattr(rig, prop, value)
-    return
-    if not isinstance(value, str):
-        rig[prop] = value
-    from .driver import setFloatProp, setBoolProp
-    if isinstance(value, float):
-        setFloatProp(rig, prop, value, 0.0, 1.0, True)
-    elif isinstance(value, bool):
-        setBoolProp(rig, prop, value, True)
-
-
 def addDriver(rna, channel, rig, prop, expr, index=-1):
     from .driver import addDriverVar
     fcu = rna.driver_add(channel, index)
@@ -897,9 +885,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.drvBones = {}
         for suffix,dlayer in [("L",0), ("R",16)]:
             prop1 = "MhaFingerControl_%s" % suffix
-            setMhxProp(rig, prop1, True)
+            setattr(rig, prop1, True)
             prop2 = "MhaFingerIk_%s" % suffix
-            setMhxProp(rig, prop2, False)
+            setattr(rig, prop2, False)
             if self.useFingerIk:
                 props = (prop1,prop2)
                 expr = "(x2 or not(x1))"
@@ -1150,14 +1138,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowLink = rpbs["elbow.link.%s" % suffix]
 
             prop = "MhaArmHinge_%s" % suffix
-            setMhxProp(rig, prop, 0.0)
+            setattr(rig, prop, 0.0)
             cns = copyTransform(armParent, armSocket, rig)
             addDriver(cns, "influence", rig, prop, "1-x")
             cns = copyLocation(armParent, armSocket, rig)
             addDriver(cns, "influence", rig, prop, "x")
 
             ikprop = "MhaArmIk_%s" % suffix
-            setMhxProp(rig, ikprop, 1.0)
+            setattr(rig, ikprop, 1.0)
             copyTransformFkIk(upper_arm, upper_armFk, upper_armIkTwist, rig, ikprop)
             copyTransformFkIk(forearm, forearmFk, forearmIkTwist, rig, ikprop)
             copyTransformFkIk(hand, handFk, handIk, rig, ikprop)
@@ -1172,7 +1160,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns.influence = elbowFac
             copyTransform(elbowPoleP, elbowPoleA, rig)
             if not self.useChildOfConstraints:
-                setMhxProp(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
+                setattr(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
 
             ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
             stretchTo(elbowLink, elbowPt, rig)
@@ -1180,7 +1168,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elbowPt.lock_rotation = (True,True,True)
 
             prop = "MhaForearmFollow_%s" % suffix
-            setMhxProp(rig, prop, True)
+            setattr(rig, prop, True)
             cns1 = copyRotation(forearm, handFk, rig, space='LOCAL')
             cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, space='LOCAL')
             cns1.use_x = cns1.use_z = cns2.use_x = cns2.use_z = False
@@ -1216,16 +1204,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             toeInvIk = rpbs["toe.inv.ik.%s" % suffix]
 
             prop = "MhaLegHinge_%s" % suffix
-            setMhxProp(rig, prop, 0.0)
+            setattr(rig, prop, 0.0)
             cns = copyTransform(legParent, legSocket, rig)
             addDriver(cns, "influence", rig, prop, "1-x")
             cns = copyLocation(legParent, legSocket, rig)
             addDriver(cns, "influence", rig, prop, "x")
 
             prop1 = "MhaLegIk_%s" % suffix
-            setMhxProp(rig, prop1, 1.0)
+            setattr(rig, prop1, 1.0)
             prop2 = "MhaLegIkToAnkle_%s" % suffix
-            setMhxProp(rig, prop2, 0.0)
+            setattr(rig, prop2, 0.0)
 
             footRev.lock_rotation = (False,True,True)
 
@@ -1243,7 +1231,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns.influence = kneeFac
             copyTransform(kneePoleP, kneePoleA, rig)
             if not self.useChildOfConstraints:
-                setMhxProp(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
+                setattr(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
 
             ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
             stretchTo(kneeLink, kneePt, rig)
@@ -1263,10 +1251,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 thighIk, shinIk, thighIkTwist, shinIkTwist, kneeLink, footRev, toeRev,
             ])
             handFk.lock_location = footFk.lock_location = (False,False,False)
-            setMhxProp(rig, "MhaToeTarsal_%s" % suffix, False)
+            setattr(rig, "MhaToeTarsal_%s" % suffix, False)
 
         self.addGazeFollowsHead(rig)
-        setMhxProp(rig, "MhaLimitsOn", True)
+        setattr(rig, "MhaLimitsOn", True)
 
 
     def lockLocations(self, bones):
@@ -1286,7 +1274,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ("foot", "Leg"),
                 ("foot.fk", "Leg")]:
                 prop = "Mha%sStretch_%s" % (part, suffix)
-                setMhxProp(rig, prop, 0.0)
+                setattr(rig, prop, 0.0)
                 pb = rig.pose.bones["%s.%s" % (bname, suffix)]
                 cns = copyLocation(pb, pb.parent, rig, prop, "1-x")
                 cns.head_tail = 1.0
@@ -1323,8 +1311,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for suffix in ["L", "R"]:
             handprop = "MhaElbowHand_%s" % suffix
             shoulderprop = "MhaElbowShoulder_%s" % suffix
-            setMhxProp(rig, handprop, (float)(self.elbowParent=='HAND'))
-            setMhxProp(rig, shoulderprop, (float)(self.elbowParent=='SHOULDER'))
+            setattr(rig, handprop, (float)(self.elbowParent=='HAND'))
+            setattr(rig, shoulderprop, (float)(self.elbowParent=='SHOULDER'))
             pb = rig.pose.bones["elbow.pt.ik.%s" % suffix]
             cns = childOf(pb, "master", rig, (handprop, shoulderprop), "1-min(1,x1+x2)")
             cns.name = "ChildOf Master"
@@ -1335,8 +1323,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             footprop = "MhaKneeFoot_%s" % suffix
             hipprop = "MhaKneeHip_%s" % suffix
-            setMhxProp(rig, footprop, (float)(self.kneeParent=='FOOT'))
-            setMhxProp(rig, hipprop, (float)(self.kneeParent=='HIP'))
+            setattr(rig, footprop, (float)(self.kneeParent=='FOOT'))
+            setattr(rig, hipprop, (float)(self.kneeParent=='HIP'))
             pb = rig.pose.bones["knee.pt.ik.%s" % suffix]
             cns = childOf(pb, "master", rig, (footprop, hipprop), "1-min(1,x1+x2)")
             cns.name = "ChildOf Master"
@@ -1371,6 +1359,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.driveYrot(rig, "hand.fk.%s" % suffix, "MhaForearmFollow_%s" % suffix)
             if self.useFingerIk:
                 self.addFingerIk(rig, suffix)
+                rig.data.MhaFeatures |= F_FINGER
             self.copyToeRotation(rig, True, suffix, ["big_toe.01", "small_toe_1.01", "small_toe_2.01", "small_toe_3.01", "small_toe_4.01"])
 
 

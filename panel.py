@@ -1097,11 +1097,13 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
                 ob.DazRig in ["rigify", "rigify2"])
 
     def draw(self, context):
+        from .layers import F_TONGUE
         rig = context.object
         self.layout.prop(rig, "MhaGazeFollowsHead", text="Gaze Follows Head")
         self.layout.prop(rig, "MhaGaze_L", text="Left Gaze")
         self.layout.prop(rig, "MhaGaze_R", text="Right Gaze")
-        self.layout.prop(rig, "MhaTongueIk", text="Tongue IK")
+        if rig.data.MhaFeatures & F_TONGUE:
+            self.layout.prop(rig, "MhaTongueIk", text="Tongue IK")
 
 #-------------------------------------------------------------
 #   Initialize

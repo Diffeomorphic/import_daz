@@ -1397,6 +1397,8 @@ def register():
         min = 0, max = 1,
         description = "Tongue bones controlled by IK")
 
+    bpy.types.Armature.MhaFeatures = IntProperty(default = 0)
+
     bpy.types.Object.DazMeta = BoolProperty(default=False)
     bpy.types.Object.DazRigifyType = StringProperty(default="")
     bpy.types.Object.DazUseSplitNeck = BoolProperty(default=False)

@@ -414,47 +414,31 @@ class Fixer(DriverUser):
             return
         from .mhx import makeBone
         root = rig.data.edit_bones[self.tongueBones[0]]
-        tip = rig.data.edit_bones[self.tongueBones[-1]]
-        vec = tip.tail - tip.head
-        eb = makeBone("ik_tongue", rig, tip.tail, tip.tail+vec, tip.roll, layer, root.parent)
         for bname in self.tongueBones:
             eb = rig.data.edit_bones[bname]
-            defb = makeBone("DEF-%s" % bname, rig, eb.head, eb.tail, eb.roll, deflayer, root.parent)
+            eb.use_connect = False
+            trgb = makeBone("trg_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, root.parent)
 
 
     def addTongueIk(self, rig):
-        from .mhx import addDriver, ikConstraint, copyLocation, stretchTo, setMhxProp
+        from .mhx import addDriver, ikConstraint, copyLocation, stretchTo
         prop = "MhaTongueIk"
-        setMhxProp(rig, prop, 0)
+        rig.MhaTongueIk = 0
         if not self.useTongueIk:
             return
-        target = rig.pose.bones["ik_tongue"]
+        rig.data.MhaFeatures |= F_TONGUE
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
-            pb.ik_stretch = 0.5
-            pb.bone.use_deform = False
+            pb.lock_location = (True, True, True)
             for cns in list(pb.constraints):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
                     addDriver(cns, "influence", rig, prop, "1-x")
-            defb = rig.pose.bones["DEF-%s" % bname]
-            defb.bone.use_deform = True
-            cns = copyLocation(defb, pb, rig)
-            cns = stretchTo(defb, pb, rig)
-            cns.head_tail = 1.0
-            cns.volume = 'VOLUME_XZX'
-        bname = self.tongueBones[-1]
-        pb = rig.pose.bones[bname]
-        n = len(self.tongueBones)
-        cns = ikConstraint(pb, target, None, 0, n, rig, prop)
-        cns.use_rotation = True
-        addDriver(target.bone, "hide", rig, prop, "x==0")
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                for bname in self.tongueBones:
-                    vgrp = ob.vertex_groups.get(bname)
-                    if vgrp:
-                        vgrp.name = "DEF-%s" % bname
+            trgb = rig.pose.bones["trg_%s" % bname]
+            trgb.bone.use_deform = False
+            self.addGizmo(trgb, "GZM_Ball", 0.2)
+            addDriver(trgb.bone, "hide", rig, prop, "x==0")
+            cns = stretchTo(pb, trgb, rig, prop)
 
 
     def setIkLimits(self, cns, fkbone, ikbone):
@@ -514,7 +498,7 @@ class Fixer(DriverUser):
                         return True
             return False
 
-        from .mhx import setMhxProp, dampedTrack, copyRotation
+        from .mhx import dampedTrack, copyRotation
         eye = rig.pose.bones.get("eye.%s" % suffix)
         eyedrv = rig.pose.bones.get(drvBone("eye.%s" % suffix))
         gaze = rig.pose.bones.get("gaze.%s" % suffix)
@@ -522,7 +506,7 @@ class Fixer(DriverUser):
             print("Cannot add gaze constraint")
             return
         prop = "MhaGaze_%s" % suffix
-        setMhxProp(rig, prop, 1.0)
+        setattr(rig, prop, 1.0)
         if not constraintExists(eye, eyedrv):
             cns = copyRotation(eye, eyedrv, rig)
             cns.mix_mode = 'ADD'
@@ -530,12 +514,12 @@ class Fixer(DriverUser):
 
 
     def addGazeFollowsHead(self, rig):
-        from .mhx import setMhxProp, copyTransform
+        from .mhx import copyTransform
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
         if gaze0 and gaze1:
             prop = "MhaGazeFollowsHead"
-            setMhxProp(rig, prop, 1.0)
+            setattr(rig, prop, 1.0)
             copyTransform(gaze1, gaze0, rig, prop)
 
     #-------------------------------------------------------------
@@ -1095,7 +1079,7 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig, bendTwistBones):
-        from .mhx import dampedTrack, copyTransform, stretchTo, addDriver, setMhxProp
+        from .mhx import dampedTrack, copyTransform, stretchTo, addDriver
         setMode('POSE')
         gizmo = "GZM_Ball025"
         for bname,trgname,stretch,prop in bendTwistBones:
