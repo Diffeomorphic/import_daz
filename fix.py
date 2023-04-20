@@ -425,7 +425,7 @@ class Fixer(DriverUser):
     def addTongueIk(self, rig):
         from .mhx import addDriver, ikConstraint, copyLocation, stretchTo, setMhxProp
         prop = "MhaTongueIk"
-        setMhxProp(rig, prop, 0.0)
+        setMhxProp(rig, prop, 0)
         if not self.useTongueIk:
             return
         target = rig.pose.bones["ik_tongue"]
