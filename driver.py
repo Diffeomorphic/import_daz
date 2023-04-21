@@ -514,6 +514,7 @@ def getPropMinMax(rna, prop, ovr):
             ovr = struct["overridable"]
     return min,max,default,ovr
 
+
 def copyProp(prop, src, trg, ovr):
     if (prop[0] == "_" or
         prop in trg.keys()):
@@ -526,16 +527,15 @@ def copyProp(prop, src, trg, ovr):
             ok = False
         if not ok:
             trg[prop] = src[prop]
-            pass
         return
     value = src[prop]
     if isinstance(value,float):
         min,max,default,ovr = getPropMinMax(src, prop, ovr)
-        setFloatProp(trg, prop, default, min, max, ovr)
+        setFloatProp(trg, prop, value, min, max, ovr)
     elif isinstance(value,int):
         min,max,default,ovr = getPropMinMax(src, prop, ovr)
-        setPropMinMax(trg, prop, default, min, max, ovr)
-        trg[prop] = value
+        setPropMinMax(trg, prop, value, min, max, ovr)
+        #trg[prop] = value
     elif isinstance(value,bool):
         setBoolProp(trg, prop, value, ovr)
     elif isinstance(value,str):
