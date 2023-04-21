@@ -528,6 +528,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
         self.addTongueIk(rig)
+        if self.useFingerIk:
+            self.addFingerIk(rig)
         self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
@@ -838,7 +840,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             return "%s.%s" % (fname, suffix)
 
 
-    def palmName(self, m, suffix):
+    def palmname(self, m, suffix):
         return "%s.%s" % (self.PalmNames[m], suffix)
 
 
@@ -855,31 +857,33 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             hand = rig.data.edit_bones["hand.%s" % suffix]
             for m in range(5):
                 if m == 0:
-                    fing1Name = self.linkName(0, 1, suffix)
-                    palmName = self.linkName(0, 0, suffix)
+                    fing1name = self.linkName(0, 1, suffix)
+                    palmname = self.linkName(0, 0, suffix)
                 else:
-                    fing1Name = self.linkName(m, 0, suffix)
-                    palmName = self.palmName(m, suffix)
-                if fing1Name in rig.data.edit_bones.keys():
-                    fing1 = rig.data.edit_bones[fing1Name]
+                    fing1name = self.linkName(m, 0, suffix)
+                    palmname = self.palmname(m, suffix)
+                if fing1name in rig.data.edit_bones.keys():
+                    fing1 = rig.data.edit_bones[fing1name]
                 else:
-                    self.raiseError(fing1Name)
+                    self.raiseError(fing1name)
                     continue
-                if palmName in rig.data.edit_bones.keys():
-                    palm = rig.data.edit_bones[palmName]
+                if palmname in rig.data.edit_bones.keys():
+                    palm = rig.data.edit_bones[palmname]
                 else:
-                    self.raiseError(palmName)
+                    self.raiseError(palmname)
                     continue
-                fing3Name = self.linkName(m, 2, suffix)
-                if fing3Name in rig.data.edit_bones.keys():
-                    fing3 = rig.data.edit_bones[fing3Name]
+                fing3name = self.linkName(m, 2, suffix)
+                if fing3name in rig.data.edit_bones.keys():
+                    fing3 = rig.data.edit_bones[fing3name]
                 else:
-                    self.raiseError(fing3Name)
+                    self.raiseError(fing3name)
                     continue
                 makeBone(self.longName(m, suffix), rig, fing1.head, fing3.tail, fing1.roll, L_LHAND+dlayer, palm)
                 if self.useFingerIk:
-                    vec = fing3.tail - fing3.head
-                    makeBone("ik_" + self.longName(m, suffix), rig, fing3.tail, fing3.tail+vec, fing3.roll, L_LHAND+dlayer, hand)
+                    for n in range(3):
+                        bname = self.linkName(m, n, suffix)
+                        fing = rig.data.edit_bones[bname]
+                        makeBone("ik_%s" % bname, rig, fing.tail, 2*fing.tail-fing.head, fing.roll, L_LHAND+dlayer, fing.parent)
 
         setMode('POSE')
         self.drvBones = {}
@@ -890,7 +894,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             setattr(rig, prop2, False)
             if self.useFingerIk:
                 props = (prop1,prop2)
-                expr = "(x2 or not(x1))"
+                expr = "(x2==1 or not(x1))"
             else:
                 props = prop1
                 expr = "not(x)"
@@ -923,6 +927,28 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     cns.use_y = cns.use_z = False
                     cns.use_offset = True
                     addDriver(cns, "mute", rig, props, expr)
+
+
+    def addFingerIk(self, rig):
+        for suffix in ["L", "R"]:
+            prop = "MhaFingerIk_%s" % suffix
+            for m in range(5):
+                for n in range(3):
+                    bname = self.linkName(m, n, suffix)
+                    pb = rig.pose.bones[bname]
+                    cns = getConstraint(pb, 'LIMIT_ROTATION')
+                    if cns:
+                        self.setIkLimits(cns, pb, pb)
+                        addDriver(cns, "mute", rig, prop, "x")
+                    bname = self.linkName(m, n, suffix)
+                    pb = rig.pose.bones[bname]
+                    ikname = "ik_%s" % bname
+                    trgb = rig.pose.bones[ikname]
+                    trgb.bone.use_deform = False
+                    self.addGizmo(trgb, "GZM_Ball", 0.2)
+                    cns = stretchTo(pb, trgb, rig, prop)
+                    addDriver(trgb.bone, "hide", rig, prop, "x==0")
+                    rig.data.MhaFeatures |= F_FINGER
 
     #-------------------------------------------------------------
     #   FK/IK
@@ -1357,9 +1383,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.flipLimits(rig, "foot.fk.%s" % suffix, "foot.%s" % suffix)
             self.flipLimits(rig, "toe.fk.%s" % suffix, "toe.%s" % suffix)
             self.driveYrot(rig, "hand.fk.%s" % suffix, "MhaForearmFollow_%s" % suffix)
-            if self.useFingerIk:
-                self.addFingerIk(rig, suffix)
-                rig.data.MhaFeatures |= F_FINGER
             self.copyToeRotation(rig, True, suffix, ["big_toe.01", "small_toe_1.01", "small_toe_2.01", "small_toe_3.01", "small_toe_4.01"])
 
 
@@ -1415,26 +1438,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             ikcns.use_limit_y = True
             ikcns.min_y = cns.min_y
             ikcns.max_y = cns.max_y
-
-
-    def addFingerIk(self, rig, suffix):
-        prop = "MhaFingerIk_%s" % suffix
-        n0 = 1
-        for m in range(5):
-            for n in range(n0,3):
-                bname = self.linkName(m, n, suffix)
-                pb = rig.pose.bones[bname]
-                cns = getConstraint(pb, 'LIMIT_ROTATION')
-                if cns:
-                    self.setIkLimits(cns, pb, pb)
-                    addDriver(cns, "mute", rig, prop, "x")
-            bname = "ik_%s" % self.longName(m, suffix)
-            target = rig.pose.bones[bname]
-            cns = ikConstraint(pb, target, None, 0, 3-n0, rig)
-            cns.use_rotation = True
-            addDriver(cns, "mute", rig, prop, "not(x)")
-            addDriver(target.bone, "hide", rig, prop, "not(x)")
-            n0 = 0
 
     #-------------------------------------------------------------
     #   Fix drivers
@@ -1705,7 +1708,7 @@ def setToFk(rig, layers, keepLimits, useInsertKeys, frame):
     for prop in ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]:
         setValue(rig, prop, 0.0)
     for prop in ["MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R"]:
-        setValue(rig, prop, False)
+        setValue(rig, prop, 0)
     if not keepLimits:
         for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
             setValue(rig, prop, False)
