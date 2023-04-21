@@ -651,7 +651,7 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         mat.use_nodes = True
         tree = mat.node_tree
         tree.nodes.clear()
-        texco = tree.nodes.new(type = "ShaderNodeTexCoord", size=2)
+        texco = tree.nodes.new(type = "ShaderNodeTexCoord")
         texco.location = (0, 0)
         texco.hide = True
         hideAllBut(texco, ["UV"])
