@@ -48,7 +48,7 @@ class Fixer(DriverUser):
     useFingerIk : BoolProperty(
         name = "Finger IK",
         description = "Generate IK controls for fingers.\nIK controls are not generated if there are finger morphs",
-        default = True)
+        default = False)
 
     useTongueIk : BoolProperty(
         name = "Tongue IK",
@@ -417,7 +417,7 @@ class Fixer(DriverUser):
         for bname in self.tongueBones:
             eb = rig.data.edit_bones[bname]
             eb.use_connect = False
-            trgb = makeBone("trg_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, root.parent)
+            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, root.parent)
 
 
     def addTongueIk(self, rig):
@@ -434,7 +434,7 @@ class Fixer(DriverUser):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
                     addDriver(cns, "influence", rig, prop, "1-x")
-            trgb = rig.pose.bones["trg_%s" % bname]
+            trgb = rig.pose.bones["ik_%s" % bname]
             trgb.bone.use_deform = False
             self.addGizmo(trgb, "GZM_Ball", 0.2)
             addDriver(trgb.bone, "hide", rig, prop, "x==0")
