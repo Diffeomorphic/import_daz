@@ -535,11 +535,12 @@ def copyProp(prop, src, trg, ovr):
     elif isinstance(value,int):
         min,max,default,ovr = getPropMinMax(src, prop, ovr)
         setPropMinMax(trg, prop, value, min, max, ovr)
-        #trg[prop] = value
+        trg[prop] = value
     elif isinstance(value,bool):
         setBoolProp(trg, prop, value, ovr)
     elif isinstance(value,str):
         trg[prop] = value
+    setProtected(trg, prop, isProtected(src, prop))
 
 
 def truncateProp(prop):

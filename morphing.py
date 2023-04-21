@@ -242,7 +242,6 @@ class MorphPaths:
 
         from collections import OrderedDict
         from .load_json import loadJson
-        from .modifier import getCanonicalKey
 
         if self.morphFiles and not force:
             return

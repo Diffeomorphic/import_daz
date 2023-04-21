@@ -334,7 +334,7 @@ def stripPrefix(prop):
 
 
 def getCanonicalKey(key):
-    key = stripPrefix(key)
+    #key = stripPrefix(key)
     lkey = key.lower()
     if lkey[-5:] == "_div2":
         key = key[:-5]
