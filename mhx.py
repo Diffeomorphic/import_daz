@@ -883,7 +883,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     for n in range(3):
                         bname = self.linkName(m, n, suffix)
                         fing = rig.data.edit_bones[bname]
-                        makeBone("ik_%s" % bname, rig, fing.tail, 2*fing.tail-fing.head, fing.roll, L_LHAND+dlayer, fing.parent)
+                        makeBone("ik_%s" % bname, rig, fing.tail, 2*fing.tail-fing.head, fing.roll, L_LHAND+dlayer, hand)
 
         setMode('POSE')
         self.drvBones = {}
