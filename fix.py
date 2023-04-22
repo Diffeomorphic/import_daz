@@ -392,13 +392,6 @@ class Fixer(DriverUser):
 
 
     def checkDriven(self, rig, bnames, string):
-        for bname in bnames:
-            pb = rig.pose.bones.get(bname)
-            if pb:
-                for cns in pb.constraints:
-                    if cns.type in ['COPY_TRANSFORMS', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE']:
-                        self.messages.append("%s is disabled because\n%s has copy transforms constraint" % (string, pb.name))
-                        return True
         if rig.animation_data:
             for fcu in rig.animation_data.drivers:
                 words = fcu.data_path.split('"')
