@@ -30,181 +30,191 @@
 #-------------------------------------------------------------
 
 class BoneData:
-    def __init__(self):
-        self.RollCorrection = {
-            "lCollar" : 180,
-            "lShldr" : -90,
-            "lShldrBend" : -90,
-            "lShldrTwist" : -90,
-            "lHand" : -90,
-            "lThumb1" : 180,
-            "lThumb2" : 180,
-            "lThumb3" : 180,
+    RollCorrection = {
+        "lCollar" : 180,
+        "lShldr" : -90,
+        "lShldrBend" : -90,
+        "lShldrTwist" : -90,
+        "lHand" : -90,
+        "lThumb1" : 180,
+        "lThumb2" : 180,
+        "lThumb3" : 180,
 
-            "rCollar" : 180,
-            "rShldr" : 90,
-            "rShldrBend" : 90,
-            "rShldrTwist" : 90,
-            "rHand" : 90,
-            "rThumb1" : 180,
-            "rThumb2" : 180,
-            "rThumb3" : 180,
+        "rCollar" : 180,
+        "rShldr" : 90,
+        "rShldrBend" : 90,
+        "rShldrTwist" : 90,
+        "rHand" : 90,
+        "rThumb1" : 180,
+        "rThumb2" : 180,
+        "rThumb3" : 180,
 
-            "l_shoulder" : 180,
-            "l_upperarm" : -90,
-            "l_upperarmtwist1" : -90,
-            "l_upperarmtwist2" : -90,
-            "l_hand" : -90,
-            "l_thumb1" : 180,
-            "l_thumb2" : 180,
-            "l_thumb3" : 180,
+        "l_shoulder" : 180,
+        "l_upperarm" : -90,
+        "l_upperarmtwist1" : -90,
+        "l_upperarmtwist2" : -90,
+        "l_hand" : -90,
+        "l_thumb1" : 180,
+        "l_thumb2" : 180,
+        "l_thumb3" : 180,
 
-            "r_shoulder" : 180,
-            "r_upperarm" : 90,
-            "r_upperarmtwist1" : 90,
-            "r_upperarmtwist2" : 90,
-            "r_hand" : 90,
-            "r_thumb1" : 180,
-            "r_thumb2" : 180,
-            "r_thumb3" : 180,
+        "r_shoulder" : 180,
+        "r_upperarm" : 90,
+        "r_upperarmtwist1" : 90,
+        "r_upperarmtwist2" : 90,
+        "r_hand" : 90,
+        "r_thumb1" : 180,
+        "r_thumb2" : 180,
+        "r_thumb3" : 180,
 
-            "lEar" : -90,
-            "rEar" : 90,
-            "l_ear" : -90,
-            "r_ear" : 90,
-        }
+        "lEar" : -90,
+        "rEar" : 90,
+        "l_ear" : -90,
+        "r_ear" : 90,
+    }
 
-        self.RollCorrectionG12 = {
-            "lEye" : 180,
-            "rEye" : 180,
-        }
+    RollCorrectionG12 = {
+        "lEye" : 180,
+        "rEye" : 180,
+    }
 
-        self.SocketBones = [
-            "lShldr", "lShldrBend", "l_upperarm",
-            "rShldr", "rShldrBend", "r_upperarm",
-            "lThigh", "lThighBend", "l_thigh",
-            "rThigh", "rThighBend", "r_thigh",
-        ]
+    SocketBones = [
+        "lShldr", "lShldrBend", "l_upperarm",
+        "rShldr", "rShldrBend", "r_upperarm",
+        "lThigh", "lThighBend", "l_thigh",
+        "rThigh", "rThighBend", "r_thigh",
+    ]
 
-        self.RotationModes = {
-            "lCollar" : ("YXZ", False),
-            "lShldr" : ("YXZ", False),
-            "lShldrBend" : ("YXZ", False),
-            "lShldrTwist" : ("YXZ", False),
-            "lHand" : ("YXZ", False),
+    RotationModes = {
+        "lCollar" : "YZX",
+        "lShldr" : "YXZ",
+        "lShldrBend" : "YXZ",
+        "lShldrTwist" : "YXZ",
+        "lHand" : "YXZ",
 
-            "rShldr" : ("YXZ", True),
-            "rShldrBend" : ("YXZ", True),
-            "rShldrTwist" : ("YXZ", True),
-            "rHand" : ("YXZ", True),
+        "rCollar" : "YZX",
+        "rShldr" : "YXZ",
+        "rShldrBend" : "YXZ",
+        "rShldrTwist" : "YXZ",
+        "rHand" : "YXZ",
 
-            "l_shoulder" : ("YXZ", False),
-            "l_upperarm" : ("YXZ", False),
-            "l_upperarmtwist1" : ("YXZ", False),
-            "l_upperarmtwist2" : ("YXZ", False),
-            "l_hand" : ("YXZ", False),
+        "l_shoulder" : "YZX",
+        "l_upperarm" : "YXZ",
+        "l_upperarmtwist1" : "YXZ",
+        "l_upperarmtwist2" : "YXZ",
+        "l_hand" : "YXZ",
 
-            "r_forearm" : ("YZX", True),
-            "r_forearmtwist1" : ("YZX", True),
-            "r_forearmtwist2" : ("YZX", True),
-            "r_hand" : ("YXZ", True),
-        }
+        "r_upperarm" : "YXZ",
+        "r_upperarmtwist1" : "YXZ",
+        "r_upperarmtwist2" : "YXZ",
+        "r_forearm" : "YZX",
+        "r_forearmtwist1" : "YZX",
+        "r_forearmtwist2" : "YZX",
+        "r_hand" : "YXZ",
+        "r_thumb1" : "YZX",
+        "r_thumb2" : "YZX",
+        "r_thumb3" : "YZX",
+    }
 
-        #-------------------------------------------------------------
-        #   Alternative bone names
-        #-------------------------------------------------------------
+    UnFlips = ("lCollar", "lShldr", "lForearm", "lHand",
+               "lThumb", "lIndex", "lMid", "lRing", "lPinky",
+               "l_shoulder", "l_upperarm", "l_forearm", "l_hand",
+               "l_thumb", "l_index", "l_mid", "l_ring", "l_pinky",
+               )
 
-        self.BoneMap = {
-            "Genesis9" : "RIG",
+    Flips = ("rCollar", "rShldr", "rForearm", "rHand",
+             "rThumb", "rIndex", "rMid", "rRing", "rPinky",
+             "r_shoulder", "r_upperarm", "r_forearm", "r_hand",
+             "r_thumb", "r_index", "r_mid", "r_ring", "r_pinky",
+             )
 
-            "abdomen" : "abdomenLower",
-            "abdomen2" : "abdomenUpper",
-            "chest" : "chestLower",
-            "chest_2" : "chestUpper",
-            "neck" : "neckLower",
-            "neck_2" : "neckUpper",
+    #-------------------------------------------------------------
+    #   Alternative bone names
+    #-------------------------------------------------------------
 
-            "lShldr" : "lShldrBend",
-            "lForeArm" : "lForearmBend",
-            "lWrist" : "lForearmTwist",
-            "lCarpal2-1" : "lCarpal2",
-            "lCarpal2" : "lCarpal4",
+    BoneMap = {
+        "Genesis9" : "RIG",
 
-            "rShldr" : "rShldrBend",
-            "rForeArm" : "rForearmBend",
-            "rWrist" : "rForearmTwist",
-            "rCarpal2-1" : "rCarpal2",
-            "rCarpal2" : "rCarpal4",
+        "abdomen" : "abdomenLower",
+        "abdomen2" : "abdomenUpper",
+        "chest" : "chestLower",
+        "chest_2" : "chestUpper",
+        "neck" : "neckLower",
+        "neck_2" : "neckUpper",
 
-            "upperJaw" : "upperTeeth",
-            "tongueBase" : "tongue01",
-            "tongue01" : "tongue02",
-            "tongue02" : "tongue03",
-            "tongue03" : "tongue04",
-            "MidBrowUpper" : "CenterBrow",
+        "lShldr" : "lShldrBend",
+        "lForeArm" : "lForearmBend",
+        "lWrist" : "lForearmTwist",
+        "lCarpal2-1" : "lCarpal2",
+        "lCarpal2" : "lCarpal4",
 
-            "lLipCorver" : "lLipCorner",
-            "lCheekLowerInner" : "lCheekLower",
-            "lCheekUpperInner" : "lCheekUpper",
-            "lEyelidTop" : "lEyelidUpper",
-            "lEyelidLower_2" : "lEyelidLowerInner",
-            "lNoseBirdge" : "lNasolabialUpper",
+        "rShldr" : "rShldrBend",
+        "rForeArm" : "rForearmBend",
+        "rWrist" : "rForearmTwist",
+        "rCarpal2-1" : "rCarpal2",
+        "rCarpal2" : "rCarpal4",
 
-            "rCheekLowerInner" : "rCheekLower",
-            "rCheekUpperInner" : "rCheekUpper",
+        "upperJaw" : "upperTeeth",
+        "tongueBase" : "tongue01",
+        "tongue01" : "tongue02",
+        "tongue02" : "tongue03",
+        "tongue03" : "tongue04",
+        "MidBrowUpper" : "CenterBrow",
 
-            "lThigh" : "lThighBend",
-            "lBigToe2" : "lBigToe_2",
+        "lLipCorver" : "lLipCorner",
+        "lCheekLowerInner" : "lCheekLower",
+        "lCheekUpperInner" : "lCheekUpper",
+        "lEyelidTop" : "lEyelidUpper",
+        "lEyelidLower_2" : "lEyelidLowerInner",
+        "lNoseBirdge" : "lNasolabialUpper",
 
-            "rThigh" : "rThighBend",
-            "rBigToe2" : "rBigToe_2",
+        "rCheekLowerInner" : "rCheekLower",
+        "rCheekUpperInner" : "rCheekUpper",
 
-            "Shaft 1" : "shaft1",
-            "Shaft 2" : "shaft2",
-            "Shaft 3" : "shaft3",
-            "Shaft 4" : "shaft4",
-            "Shaft 5" : "shaft5",
-            "Shaft5" : "shaft5",
-            "Shaft 6" : "shaft6",
-            "Shaft 7" : "shaft7",
-            "Left Testicle" : "lTesticle",
-            "Right Testicle" : "rTesticle",
-            "Scortum" : "scrotum",
-            "Legs Crease" : "legsCrease",
-            "Rectum" : "rectum1",
-            "Rectum 1" : "rectum1",
-            "Rectum 2" : "rectum2",
-            "Colon" : "colon",
-            "Root" : "shaftRoot",
-            "root" : "shaftRoot",
-        }
+        "lThigh" : "lThighBend",
+        "lBigToe2" : "lBigToe_2",
 
-        #-------------------------------------------------------------
-        #   animation.py
-        #-------------------------------------------------------------
+        "rThigh" : "rThighBend",
+        "rBigToe2" : "rBigToe_2",
 
-        self.TwistDxs = {
-            "lShldrTwist" : 0,
-            "lForearmTwist" : 0,
-            "lThighTwist" : 1,
-            "rShldrTwist" : 0,
-            "rForearmTwist" : 0,
-            "rThighTwist" : 1,
+        "Shaft 1" : "shaft1",
+        "Shaft 2" : "shaft2",
+        "Shaft 3" : "shaft3",
+        "Shaft 4" : "shaft4",
+        "Shaft 5" : "shaft5",
+        "Shaft5" : "shaft5",
+        "Shaft 6" : "shaft6",
+        "Shaft 7" : "shaft7",
+        "Left Testicle" : "lTesticle",
+        "Right Testicle" : "rTesticle",
+        "Scortum" : "scrotum",
+        "Legs Crease" : "legsCrease",
+        "Rectum" : "rectum1",
+        "Rectum 1" : "rectum1",
+        "Rectum 2" : "rectum2",
+        "Colon" : "colon",
+        "Root" : "shaftRoot",
+        "root" : "shaftRoot",
+    }
 
-            "l_upperarmtwist1" : 0,
-            "l_forearmtwist1" : 0,
-            "l_thightwist1" : 1,
-            "r_upperarmtwist1" : 0,
-            "r_forearmtwist1" : 0,
-            "r_thightwist1" : 1,
-        }
+    #-------------------------------------------------------------
+    #   animation.py
+    #-------------------------------------------------------------
 
+    TwistDxs = {
+        "lShldrTwist" : 0,
+        "lForearmTwist" : 0,
+        "lThighTwist" : 1,
+        "rShldrTwist" : 0,
+        "rForearmTwist" : 0,
+        "rThighTwist" : 1,
 
-    def getDefaultMode(self, pb):
-        if pb.name in self.RotationModes.keys():
-            return self.RotationModes[pb.name][0]
-        else:
-            return 'YZX'
-
+        "l_upperarmtwist1" : 0,
+        "l_forearmtwist1" : 0,
+        "l_thightwist1" : 1,
+        "r_upperarmtwist1" : 0,
+        "r_forearmtwist1" : 0,
+        "r_thightwist1" : 1,
+    }
 
 BD = BoneData()

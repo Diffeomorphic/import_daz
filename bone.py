@@ -81,7 +81,7 @@ class BoneInstance(Instance):
         self.flopped = [False,False,False]
         self.isPosed = False
         self.isBuilt = False
-        self.test = False
+        self.test = (self.name in ["l_shoulder", "l_upperarm", "l_forearm", "l_hand"])
 
 
     def __repr__(self):
@@ -165,8 +165,7 @@ class BoneInstance(Instance):
             eb.matrix = omat
         else:
             omat = self.flipBone(omat, head, tail, flip)
-            if self.name in BD.RotationModes.keys():
-                self.flipped[0] = BD.RotationModes[self.name][1]
+            self.setFlip()
             if self.test:
                 print("FBONE", self.name, self.rotation_order, self.axes, self.flipped)
             omat.col[3][0:3] = head
@@ -364,11 +363,25 @@ class BoneInstance(Instance):
         if GS.unflipped:
             return self.rotation_order
         elif useEulers:
-            return BD.getDefaultMode(pb)
+            return self.getDefaultMode(pb)
         elif GS.useQuaternions and pb.name in BD.SocketBones:
             return 'QUATERNION'
         else:
-            return BD.getDefaultMode(pb)
+            return self.getDefaultMode(pb)
+
+
+    def getDefaultMode(self, pb):
+        if pb.name in BD.RotationModes.keys():
+            return BD.RotationModes[pb.name]
+        else:
+            return 'YZX'
+
+
+    def setFlip(self):
+        if self.name.startswith(BD.UnFlips):
+            self.flipped[0] = False
+        elif self.name.startswith(BD.Flips):
+            self.flipped[0] = True
 
 
     def buildPose(self, figure, inFace, targets, missing):
