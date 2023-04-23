@@ -390,6 +390,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             if filepath is not None:
                 cskey = self.loadMorph(filepath, src, trg, scn)
             if cskey:
+                cskey.name = sname
                 printName(" *", sname)
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
