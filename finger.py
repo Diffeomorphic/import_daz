@@ -206,7 +206,7 @@ def isGenesis(ob):
     chars = getFingeredCharacters(ob, False, verbose=False)[2]
     if chars:
         char = chars[0]
-        return (char and char.startswith("Genesis"))
+        return (isinstance(char, str) and char.startswith("Genesis"))
     return False
 
 

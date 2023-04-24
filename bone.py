@@ -81,7 +81,7 @@ class BoneInstance(Instance):
         self.flopped = [False,False,False]
         self.isPosed = False
         self.isBuilt = False
-        self.test = (self.name in ["l_shoulder", "l_upperarm", "l_forearm", "l_hand"])
+        self.test = False
 
 
     def __repr__(self):

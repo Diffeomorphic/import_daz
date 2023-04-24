@@ -133,6 +133,10 @@ def selectObjects(context, objects):
 
 
 def unlinkAll(ob):
+    try:
+        ob.parent = None
+    except ReferenceError:
+        pass
     for coll in bpy.data.collections:
         if ob in coll.objects.values():
             coll.objects.unlink(ob)
