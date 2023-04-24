@@ -1326,6 +1326,7 @@ class MaterialScaler:
 
     def draw(self, context):
         self.layout.prop(self, "unit")
+        self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
 
     def invoke(self, context, event):
         if context.object:
@@ -1350,7 +1351,7 @@ class MaterialScaler:
 
     NodeScale = {
         "BUMP" : ["Distance"],
-        "PRINCIPLED" : ["Subsurface Radius"],
+        "BSDF_PRINCIPLED" : ["Subsurface Radius"],
         "DAZ Principled" : ["Subsurface Radius"],
         "DAZ Translucent" : ["Radius"],
         "DAZ Subsurface" : ["Radius"],
