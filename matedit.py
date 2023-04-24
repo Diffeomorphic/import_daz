@@ -1331,7 +1331,6 @@ class MaterialScaler:
     def invoke(self, context, event):
         if context.object:
             self.unit = context.object.DazScale
-        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
         return DazPropsOperator.invoke(self, context, event)
 
     def scaleMaterials(self, ob):
@@ -1380,6 +1379,7 @@ class DAZ_OT_ScaleMaterials(MaterialScaler, DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
         for ob in getSelectedMeshes(context):
             self.scaleMaterials(ob)
 
@@ -1394,6 +1394,7 @@ class DAZ_OT_ChangeUnitScale(MaterialScaler, DazPropsOperator, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
         ob = context.object
         while ob.parent:
             ob = ob.parent
