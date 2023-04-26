@@ -47,12 +47,12 @@ class Fixer(DriverUser):
 
     useFingerIk : BoolProperty(
         name = "Finger IK",
-        description = "Generate IK controls for fingers.\nIK controls are not generated if there are finger morphs",
+        description = "Generate IK controls for fingers",
         default = False)
 
     useTongueIk : BoolProperty(
         name = "Tongue IK",
-        description = "Generate IK controls for tongue.\nIK controls are not generated if there are tongue morphs",
+        description = "Generate IK controls for tongue",
         default = False)
 
     reuseBendTwists : BoolProperty(

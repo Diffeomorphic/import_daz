@@ -363,18 +363,11 @@ class BoneInstance(Instance):
         if GS.unflipped:
             return self.rotation_order
         elif useEulers:
-            return self.getDefaultMode(pb)
+            return BD.getDefaultMode(pb)
         elif GS.useQuaternions and pb.name in BD.SocketBones:
             return 'QUATERNION'
         else:
-            return self.getDefaultMode(pb)
-
-
-    def getDefaultMode(self, pb):
-        if pb.name in BD.RotationModes.keys():
-            return BD.RotationModes[pb.name]
-        else:
-            return 'YZX'
+            return BD.getDefaultMode(pb)
 
 
     def setFlip(self):

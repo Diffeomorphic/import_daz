@@ -463,7 +463,7 @@ if bpy.app.version < (3,0,0):
 
     def getPropUi(rna, prop):
         rna_ui = getRnaUi(rna)
-        return rna_ui.get(prop)
+        return rna_ui.get(prop, {})
 
     def setProtected(rna, prop, on):
         rna_ui = getRnaUi(rna)

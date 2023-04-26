@@ -889,7 +889,7 @@ class RefractionThinWallGroup(FacMixGroup):
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += self.extra + [
-            "Refraction Color", "Refraction Roughness", "IOR",
+            "Refraction Color", "IOR",
             "Glossy Color", "Glossy Roughness", "Anisotropy", "Rotation", "Normal"]
 
 

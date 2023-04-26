@@ -824,7 +824,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         mod.falloff = 4.0
         mod.strength = 1.0
         mod.vertex_group = softbody.name
-        mod.use_sparse_bind = True
+        if hasattr(mod, "use_sparse_bind"):
+            mod.use_sparse_bind = True
         bpy.ops.object.surfacedeform_bind(modifier=softbody.name)
         return True
 
