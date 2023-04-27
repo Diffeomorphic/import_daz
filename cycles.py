@@ -441,6 +441,7 @@ class CyclesTree(Tree):
         if not self.owner.useVolume:
             self.buildSubsurface()
         self.buildMakeup()
+        self.buildFlakes()
         self.buildOverlay()
         self.prepareWeighted()
         self.buildGlossyOrDualLobe()
@@ -938,6 +939,41 @@ class CyclesTree(Tree):
         self.linkBumpNormal(node)
         wt,wttex = self.getColorTex(["Makeup Weight"], "NONE", 0.0, False, isMask=True)
         self.mixWithActive(wt, wttex, node)
+        return True
+
+    #-------------------------------------------------------------
+    #  Flakes
+    #-------------------------------------------------------------
+
+    def buildFlakes(self):
+        if (not self.isEnabled("Metallic Flakes") or
+            not self.getValue(["Metallic Flakes Weight"], 0) or
+            LS.materialMethod == 'SINGLE_PRINCIPLED'):
+            return False
+        from .cgroup import FlakesGroup
+        self.addColumn()
+        node = self.addGroup(FlakesGroup, "DAZ Flakes", size=10)
+        color,tex = self.getColorTex(["Metallic Flakes Color"], "COLOR", WHITE, False)
+        fac,factex = self.getColorTex(["Metallic Flakes Weight"], "NONE", 0.0, False, isMask=True)
+        effect = self.getValue(["Metallic Flakes Color Effect"], 0)
+        self.buildColorEffect(effect, color, tex, None, fac, factex, node)
+        roughness,roughtex = self.getColorTex(["Metallic Flakes Roughness"], "NONE", 0.0, False)
+        self.linkScalar(roughtex, node, roughness, "Roughness")
+        size = self.getValue(["Metallic Flakes Size"], 1)
+        density = self.getValue(["Metallic Flakes Density"], 0)
+        if self.owner.shader == 'PBRSKIN':
+            node.inputs["Strength"].default_value = 1
+            node.inputs["Distance"].default_value = (size*0.005)/100
+            node.inputs["Scale"].default_value = 20/(size*0.005)
+            node.inputs["From Min"].default_value = (1-density)**2
+
+        else:
+            node.inputs["Strength"].default_value = self.getValue(["Metallic Flakes Strength"], 0)
+            node.inputs["Distance"].default_value = size/100
+            node.inputs["Scale"].default_value = 20/size
+            node.inputs["From Min"].default_value = (1-density)**2
+        self.linkBumpNormal(node)
+        self.mixWithActive(fac, factex, node, effect=effect, keep=True)
         return True
 
     #-------------------------------------------------------------

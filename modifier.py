@@ -849,7 +849,9 @@ class Morph(FormulaAsset):
 
 
     def postbuild(self, context, inst):
-        if LS.useMorphOnly:
+        if inst is None:
+            return
+        elif LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
         elif LS.fitFile:
             self.buildBakedMorph(inst, self.id, self.value)

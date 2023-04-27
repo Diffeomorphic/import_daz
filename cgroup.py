@@ -34,10 +34,26 @@ from .tree import NodeGroup, hideAllBut
 from .utils import *
 from .error import *
 
+# ---------------------------------------------------------------------
+#   Cycles Group
+# ---------------------------------------------------------------------
+
 class CyclesGroup(NodeGroup, CyclesTree):
     def create(self, node, name, parent, ncols):
         CyclesTree.__init__(self, parent.owner)
         NodeGroup.create(self, node, name, parent, ncols)
+
+
+    def addMapRange(self, col):
+        node = self.addNode("ShaderNodeMapRange", col)
+        if hasattr(node, "data_type"):
+            node.data_type = 'FLOAT'
+        node.interpolation_type = 'LINEAR'
+        node.inputs["From Min"].default_value = 0.0
+        node.inputs["From Max"].default_value = 1.0
+        node.inputs["To Min"].default_value = 0.0
+        node.inputs["To Max"].default_value = 1.0
+        return node
 
 # ---------------------------------------------------------------------
 #   Shell Group
@@ -466,13 +482,8 @@ class AltSSSGroup(CyclesGroup):
 
 
     def addNodes(self, args=None):
-        maprange = self.addNode("ShaderNodeMapRange", 1)
-        maprange.data_type = 'FLOAT'
-        maprange.interpolation_type = 'LINEAR'
+        maprange = self.addMapRange(1)
         self.links.new(self.inputs.outputs["SSS Amount"], maprange.inputs["Value"])
-        maprange.inputs["From Min"].default_value = 0.0
-        maprange.inputs["From Max"].default_value = 1.0
-        maprange.inputs["To Min"].default_value = 0.0
         maprange.inputs["To Max"].default_value = 0.5
 
         inv = self.addNode("ShaderNodeMath", 1)
@@ -1118,6 +1129,82 @@ class MakeupGroup(FacMixGroup):
         self.mixCycles(diffuse.outputs[0], 2)
 
 # ---------------------------------------------------------------------
+#   Flakes Group
+# ---------------------------------------------------------------------
+
+class FlakesGroup(FacMixGroup):
+
+    def __init__(self):
+        FacMixGroup.__init__(self)
+        self.insockets += ["Color", "Roughness", "Strength", "Distance", "Scale", "From Min", "Normal"]
+
+
+    def create(self, node, name, parent):
+        FacMixGroup.create(self, node, name, parent, 6)
+        self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        self.setMinMax("Roughness", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Strength")
+        self.setMinMax("Strength", 1.0, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Distance")
+        self.group.inputs.new("NodeSocketFloat", "Scale")
+        self.group.inputs.new("NodeSocketFloat", "From Min")
+        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.hideSlot("Normal")
+
+
+    def addNodes(self, args=None):
+        FacMixGroup.addNodes(self, args)
+
+        noise = self.addNode("ShaderNodeTexNoise", 0)
+        self.links.new(self.inputs.outputs["Scale"], noise.inputs["Scale"])
+        noise.inputs["Detail"].default_value = 0.0
+        noise.inputs["Roughness"].default_value = 0.0
+        noise.inputs["Distortion"].default_value = 0.0
+
+        maprange = self.addMapRange(1)
+        self.links.new(noise.outputs["Fac"], maprange.inputs["Value"])
+        self.links.new(self.inputs.outputs["From Min"], maprange.inputs["From Min"])
+
+        mult = self.addNode("ShaderNodeMath", 2)
+        mult.operation = 'MULTIPLY'
+        self.links.new(self.inputs.outputs["Fac"], mult.inputs[0])
+        self.links.new(maprange.outputs["Result"], mult.inputs[1])
+
+        bump = self.addNode("ShaderNodeBump", 2)
+        self.links.new(self.inputs.outputs["Strength"], bump.inputs["Strength"])
+        self.links.new(self.inputs.outputs["Distance"], bump.inputs["Distance"])
+        self.links.new(self.inputs.outputs["Normal"], bump.inputs["Normal"])
+        self.links.new(maprange.outputs["Result"], bump.inputs["Height"])
+
+        fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel", 3)
+        fresnel.inputs["IOR"].default_value = 1.5
+        fresnel.inputs["Power"].default_value = 2
+        self.links.new(self.inputs.outputs["Roughness"], fresnel.inputs["Roughness"])
+        self.links.new(bump.outputs["Normal"], fresnel.inputs["Normal"])
+
+        hsv = self.addNode("ShaderNodeHueSaturation", 3)
+        hsv.inputs["Hue"].default_value = 0.5
+        hsv.inputs["Saturation"].default_value = 0.0
+        hsv.inputs["Value"].default_value = 1.0
+        hsv.inputs["Fac"].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], hsv.inputs["Color"])
+
+        mix,a,b,out = self.addMixRgbNode('MIX', 4)
+        self.links.new(fresnel.outputs["Metal"], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(hsv.outputs["Color"], b)
+
+        glossy = self.addNode("ShaderNodeBsdfGlossy", 5)
+        glossy.distribution = 'ASHIKHMIN_SHIRLEY'
+        self.links.new(out, glossy.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
+        self.links.new(bump.outputs["Normal"], glossy.inputs["Normal"])
+
+        self.mixCycles(mult.outputs[0], 0)
+        self.mixCycles(glossy.outputs["BSDF"], 2)
+
+# ---------------------------------------------------------------------
 #   Ghost Light Group
 # ---------------------------------------------------------------------
 
@@ -1334,15 +1421,10 @@ class NormalGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 8)
-
-        strength = self.group.inputs.new("NodeSocketFloat", "Strength")
-        strength.default_value = 1.0
-        strength.min_value = 0.0
-        strength.max_value = 1.0
-
+        self.group.inputs.new("NodeSocketFloat", "Strength")
+        self.setMinMax("Strength", 1.0, 0.0, 1.0)
         color = self.group.inputs.new("NodeSocketColor", "Color")
         color.default_value = ((0.5, 0.5, 1.0, 1.0))
-
         self.group.outputs.new("NodeSocketVector", "Normal")
 
 
@@ -1796,6 +1878,7 @@ ShaderGroups = {
         "useInvertNormalMap" : (InvertNormalMapGroup, "DAZ Invert NMap", []),
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
         "useSubsurface" : (SubsurfaceGroup, "DAZ Subsurface", []),
+        "useFlakes" : (FlakesGroup, "DAZ Flakes", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
         "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe", []),
         "useDualLobePBR" : (DualLobeGroupPbrSkin, "DAZ Dual Lobe PBR", []),
@@ -1831,6 +1914,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useInvertNormalMap : BoolProperty(name="Invert Normal Map", default=False)
     useTranslucent : BoolProperty(name="Translucent", default=False)
     useSubsurface : BoolProperty(name="Subsurface", default=False)
+    useFlakes : BoolProperty(name="Metallic Flakes", default=False)
     useRayClip : BoolProperty(name="Ray Clip", default=False)
     useDualLobeUber : BoolProperty(name="Dual Lobe (Uber Shader)", default=False)
     useDualLobePBR : BoolProperty(name="Dual Lobe (PBR Skin)", default=False)

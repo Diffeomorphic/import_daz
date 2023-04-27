@@ -68,6 +68,8 @@ class PbrTree(CyclesTree):
             self.mixPbrTranslucency()
         if self.buildMakeup():
             self.postPBR = True
+        if self.buildFlakes():
+            self.postPBR = True
         if self.buildOverlay():
             self.postPBR = True
         if self.prepareWeighted():
