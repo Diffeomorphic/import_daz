@@ -441,8 +441,8 @@ class CyclesTree(Tree):
         if not self.owner.useVolume:
             self.buildSubsurface()
         self.buildMakeup()
-        self.buildFlakes()
         self.buildOverlay()
+        self.buildFlakes()
         self.prepareWeighted()
         self.buildGlossyOrDualLobe()
         self.buildMetal()
@@ -840,29 +840,28 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildOverlay(self):
-        if (self.getValue(["Diffuse Overlay Weight"], 0) and
-            LS.materialMethod != 'SINGLE_PRINCIPLED'):
-            self.addColumn()
-            slot = self.getImageSlot(["Diffuse Overlay Weight"])
-            fac,factex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
-            if self.getValue(["Diffuse Overlay Weight Squared"], False):
-                power = 4
-            else:
-                power = 2
-            if factex:
-                factex = self.raiseToPower(factex, power, slot)
-            color,tex = self.getColorTex(["Diffuse Overlay Color"], "COLOR", WHITE)
-            from .cgroup import DiffuseGroup
-            node = self.addGroup(DiffuseGroup, "DAZ Overlay")
-            effect = self.getValue(["Diffuse Overlay Color Effect"], 0)
-            self.buildColorEffect(effect, color, tex, None, fac, factex, node)
-            roughness,roughtex = self.getColorTex(["Diffuse Overlay Roughness"], "NONE", 0, False)
-            self.setRoughness(node, "Roughness", roughness, roughtex)
-            self.linkBumpNormal(node)
-            self.mixWithActive(fac**power, factex, node, effect=effect)
-            return True
-        else:
+        if (not self.getValue(["Diffuse Overlay Weight"], 0) or
+            LS.materialMethod == 'SINGLE_PRINCIPLED'):
             return False
+        self.addColumn()
+        slot = self.getImageSlot(["Diffuse Overlay Weight"])
+        fac,factex = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, slot=slot, isMask=True)
+        if self.getValue(["Diffuse Overlay Weight Squared"], False):
+            power = 4
+        else:
+            power = 2
+        if factex:
+            factex = self.raiseToPower(factex, power, slot)
+        color,tex = self.getColorTex(["Diffuse Overlay Color"], "COLOR", WHITE)
+        from .cgroup import DiffuseGroup
+        node = self.addGroup(DiffuseGroup, "DAZ Overlay")
+        effect = self.getValue(["Diffuse Overlay Color Effect"], 0)
+        self.buildColorEffect(effect, color, tex, None, fac, factex, node)
+        roughness,roughtex = self.getColorTex(["Diffuse Overlay Roughness"], "NONE", 0, False)
+        self.setRoughness(node, "Roughness", roughness, roughtex)
+        self.linkBumpNormal(node)
+        self.mixWithActive(fac**power, factex, node, effect=effect)
+        return True
 
 
     def getImageSlot(self, attr):
@@ -872,8 +871,10 @@ class CyclesTree(Tree):
             return 0
 
 
-    def raiseToPower(self, tex, power, slot):
-        node = self.addNode("ShaderNodeMath", col=self.column-2, size=8)
+    def raiseToPower(self, tex, power, slot, col=None):
+        if col is None:
+            col = self.column-1
+        node = self.addNode("ShaderNodeMath", col, size=8)
         node.operation = 'POWER'
         node.inputs[1].default_value = power
         if slot in tex.outputs.keys():
@@ -952,7 +953,7 @@ class CyclesTree(Tree):
             return False
         from .cgroup import FlakesGroup
         self.addColumn()
-        node = self.addGroup(FlakesGroup, "DAZ Flakes", size=10)
+        node = self.addGroup(FlakesGroup, "DAZ Flakes", size=12)
         color,tex = self.getColorTex(["Metallic Flakes Color"], "COLOR", WHITE, False)
         fac,factex = self.getColorTex(["Metallic Flakes Weight"], "NONE", 0.0, False, isMask=True)
         effect = self.getValue(["Metallic Flakes Color Effect"], 0)
@@ -1102,7 +1103,7 @@ class CyclesTree(Tree):
             value = 1 - anirot
             self.linkScalar(tex, glossy, value, "Rotation")
         self.linkBumpNormal(glossy)
-        self.mixWithActive(fac, factex, glossy, effect=True)
+        self.mixWithActive(fac, factex, glossy, effect=effect, keep=True)
         LS.usedFeatures["Glossy"] = True
 
 
@@ -1930,26 +1931,21 @@ class CyclesTree(Tree):
         return mix
 
 
-    def mixWithActive(self, fac, tex, node, useAlpha=False, keep=False, effect=False):
+    def mixWithActive(self, fac, factex, node, keep=False, effect=0):
         if node.type != 'GROUP':
             raise RuntimeError("BUG: mixWithActive", node.type)
         node.inputs["Fac"].default_value = 1.0
-        if effect:
+        if effect or factex or keep:
             pass
-        elif tex:
-            if useAlpha and "Alpha" in tex.outputs.keys():
-                texsocket = tex.outputs["Alpha"]
-            else:
-                texsocket = self.colorOutput(tex)
-            self.links.new(texsocket, node.inputs["Fac"])
-        elif fac == 0 and not keep:
+        elif fac == 0:
             return
-        elif fac == 1 and not keep:
+        elif fac == 1:
             self.cycles = node
             return
         if self.cycles:
             self.links.new(self.getCyclesSocket(), node.inputs["BSDF"])
-            node.inputs["Fac"].default_value = fac
+            if not effect:
+                self.linkScalar(factex, node, fac, "Fac")
         self.cycles = node
 
 
