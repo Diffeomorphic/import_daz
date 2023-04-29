@@ -70,6 +70,13 @@ class Fixer(DriverUser):
         description = "Keep existing armature and meshes in a new collection",
         default = False)
 
+    useDazForDeform : BoolProperty(
+        name = "Use DAZ Rig For Deform",
+        description = "Add copy transform constraints to the DAZ rig and use it for deforming the meshes",
+        default = False)
+
+    useRigify = True
+
     def draw(self, context):
         self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "reuseBendTwists")
@@ -77,6 +84,8 @@ class Fixer(DriverUser):
         self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useKeepRig")
+        if self.useRigify and self.useKeepRig:
+            self.layout.prop(self, "useDazForDeform")
 
 
     def __init__(self):
@@ -221,11 +230,6 @@ class Fixer(DriverUser):
                 for gname in grpnames:
                     vgrp = ob.vertex_groups.get(gname)
                     if vgrp:
-                        #weights = []
-                        #for v in ob.data.vertices:
-                        #    for g in v.groups:
-                        #        if g.group == vgrp.index:
-                        #            weights.append(g.weight)
                         ob.vertex_groups.remove(vgrp)
 
 
@@ -326,16 +330,19 @@ class Fixer(DriverUser):
 
         rig = context.object
         scn = context.scene
-        activateObject(context, rig)
-        objects = []
-        findChildrenRecursive(rig, objects)
-        for ob in objects:
-            selectSet(ob, True)
-        bpy.ops.object.duplicate()
         coll = bpy.data.collections.new(name=dazName(rig.name))
-        mcoll = bpy.data.collections.new(name=dazName(rig.name) + " Meshes")
         scn.collection.children.link(coll)
-        coll.children.link(mcoll)
+        activateObject(context, rig)
+        if self.useDazForDeform:
+            bpy.ops.object.duplicate()
+        else:
+            objects = []
+            findChildrenRecursive(rig, objects)
+            for ob in objects:
+                selectSet(ob, True)
+            bpy.ops.object.duplicate()
+            mcoll = bpy.data.collections.new(name=dazName(rig.name) + " Meshes")
+            coll.children.link(mcoll)
 
         newObjects = getSelectedObjects(context)
         nrig = None
@@ -351,6 +358,7 @@ class Fixer(DriverUser):
             else:
                 coll.objects.link(ob)
         activateObject(context, rig)
+        return nrig
 
     #-------------------------------------------------------------
     #   Face Bone

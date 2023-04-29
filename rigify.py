@@ -76,7 +76,7 @@ def addDicts(structs):
     return joined
 
 
-class Rigify:
+class Rigifier:
     useOptimizePose : BoolProperty(
         name = "Optimize Pose For IK",
         description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
@@ -141,6 +141,7 @@ class Rigify:
             if dname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[dname]
                 eb.name = rname
+                self.renamedBones[rname] = dname
             else:
                 msg = ("Did not find bone %s     " % dname)
                 raise DazError(msg)
@@ -340,13 +341,13 @@ class Rigify:
 
 
     def setupExtras(self, context, rig):
-        def addRecursive(pb, extras):
-            if pb.name not in extras.keys():
-                extras[pb.name] = pb.name
+        def addRecursive(pb):
+            if pb.name not in self.extras.keys():
+                self.extras[pb.name] = pb.name
             for child in pb.children:
-                addRecursive(child, extras)
+                addRecursive(child)
 
-        extras = OrderedDict()
+        self.extras = OrderedDict()
         taken = []
         for dbone in self.spineBones.keys():
             taken.append(dbone)
@@ -360,23 +361,22 @@ class Rigify:
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
-                    extras[vgrp.name] = vgrp.name
+                    self.extras[vgrp.name] = vgrp.name
         for bname in ["Face_Controls_XYZ"]:
             pb = rig.pose.bones.get(bname)
             if pb:
-                addRecursive(pb, extras)
-        for dbone in list(extras.keys()):
+                addRecursive(pb)
+        for dbone in list(self.extras.keys()):
             bone = rig.data.bones[dbone]
             while bone.parent:
                 pname = bone.parent.name
-                if pname in extras.keys() or pname in taken:
+                if pname in self.extras.keys() or pname in taken:
                     break
-                extras[pname] = pname
+                self.extras[pname] = pname
                 bone = bone.parent
         for pb in rig.data.bones:
             if isDrvBone(pb.name):
-                extras[pb.name] = pb.name
-        return extras
+                self.extras[pb.name] = pb.name
 
 
     def splitBone(self, rig, bname, upname):
@@ -424,7 +424,7 @@ class Rigify:
         return False
 
 
-    def getRigifyBone(self, bname, extras, bones):
+    def getRigifyBone(self, bname, bones):
         if bname in RF.DeformBones:
             rname = RF.DeformBones[bname]
         elif bname[1:] in RF.DeformBones:
@@ -439,11 +439,22 @@ class Rigify:
                 rname = "DEF-%s" % RF.MetaBones[rname]
             else:
                 rname = "DEF-%s" % rname
-        elif bname in extras.keys():
-            rname = extras[bname]
-        if rname and rname in bones.keys():
+        elif bname in self.extras.keys():
+            rname = self.extras[bname]
+        else:
+            rname = bname
+        if rname in bones.keys():
             return rname
-        print("MISS", bname, rname)
+        if len(bname) > 2:
+            pname = "%s%s" % (bname[0].lower(), bname[1:])
+            if pname in bones.keys():
+                return pname
+            pname = "%s%s.%s" % (bname[1].lower(), bname[2:], bname[0].upper())
+            if pname in bones.keys():
+                return pname
+        else:
+            pname = ""
+        print("MISS", bname, rname, pname)
         return None
 
 
@@ -588,7 +599,7 @@ class Rigify:
     def rigifyMeta(self, context):
         self.createTmp()
         try:
-            self.rigifyMeta1(context)
+            return self.rigifyMeta1(context)
         finally:
             self.deleteTmp()
 
@@ -639,7 +650,7 @@ class Rigify:
         self.getDazBones(rig)
 
         print("  Setup extras")
-        extras = self.setupExtras(context, rig)
+        self.setupExtras(context, rig)
         print("  Get driven bones")
         driven = {}
         for pb in rig.pose.bones:
@@ -653,7 +664,7 @@ class Rigify:
         helpLayers = R_HELP*[False] + [True] + (31-R_HELP)*[False]
         setActiveObject(context, gen)
         setMode('EDIT')
-        for dname,rname in extras.items():
+        for dname,rname in self.extras.items():
             if dname not in self.dazBones.keys():
                 continue
             dbone = self.dazBones[dname]
@@ -679,7 +690,7 @@ class Rigify:
 
         # Add parents to extra bones
         print("  Add parents to extra bones")
-        for dname,rname in extras.items():
+        for dname,rname in self.extras.items():
             if dname not in self.dazBones.keys():
                 continue
             dbone = self.dazBones[dname]
@@ -687,7 +698,7 @@ class Rigify:
             if dbone.parent:
                 parname = RF.ExtraParents.get(dbone.name)
                 if parname not in gen.data.edit_bones.keys():
-                    parname = self.getRigifyBone(dbone.parent, extras, gen.data.edit_bones)
+                    parname = self.getRigifyBone(dbone.parent, gen.data.edit_bones)
                 if parname:
                     eb.parent = gen.data.edit_bones[parname]
                     eb.use_connect = (eb.parent != None and eb.parent.tail == eb.head)
@@ -716,7 +727,7 @@ class Rigify:
 
         # Lock extras
         print("  Lock extras")
-        for dname,rname in extras.items():
+        for dname,rname in self.extras.items():
             if dname not in self.dazBones.keys():
                 continue
             if rname in gen.pose.bones.keys():
@@ -764,7 +775,7 @@ class Rigify:
                 clearParent(ob)
 
         for ob,dname in boneParents:
-            rname = self.getRigifyBone(dname, extras, gen.data.bones)
+            rname = self.getRigifyBone(dname, gen.data.bones)
             if rname:
                 print("Parent %s to bone %s" % (ob.name, rname))
                 bone = gen.data.bones[rname]
@@ -790,36 +801,13 @@ class Rigify:
             }
 
         # Change vertex groups
-        print("  Change vertex groups")
         activateObject(context, gen)
         self.bendTwistNames = {}
-        for ob in getArmatureChildren(context, rig):
-            if ob.type == 'MESH':
-                ob.parent = gen
-
-                self.spineBones["pelvis"] = ("spine", None)
-                for dname in self.spineBones.keys():
-                    rname,_pname = self.spineBones[dname]
-                    if dname in ob.vertex_groups.keys():
-                        vgrp = ob.vertex_groups[dname]
-                        vgrp.name = "DEF-" + rname
-
-                for rname,dname in self.rigifySkel.items():
-                    if str(dname[1:]) in self.limbs.keys():
-                        self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
-                    elif isinstance(dname, str):
-                        if dname in ob.vertex_groups.keys():
-                            vgrp = ob.vertex_groups[dname]
-                            vgrp.name = "DEF-" + rname
-                    else:
-                        self.mergeVertexGroups(rname, dname[1], ob)
-
-                for dname,rname in extras.items():
-                    if dname in ob.vertex_groups.keys():
-                        vgrp = ob.vertex_groups[dname]
-                        vgrp.name = rname
-
-                self.changeAllTargets(ob, rig, gen)
+        self.spineBones["pelvis"] = ("spine", None)
+        self.meshes = [ob for ob in getArmatureChildren(context, rig)
+                       if ob.type == 'MESH']
+        if not (self.useKeepRig and self.useDazForDeform):
+            self.changeVertexGroups(context, rig, meta, gen)
 
         # Fix drivers
         print("  Fix drivers")
@@ -937,6 +925,7 @@ class Rigify:
             F,T,F,T, F,F,F,T, F,F,T,F, F,T,F,F,
             T,F,F,F, F,F,F,F, F,F,F,F, T,F,F,F)
         print("Rigify created")
+        return gen
 
 
     def copyBoneProp(self, fcu, rig, gen, pb):
@@ -998,6 +987,34 @@ class Rigify:
             words = fcu.data_path.split('"', 2)
             if words[1] in self.bendTwistNames.keys():
                 fcu.data_path = '%s"%s"%s' % (words[0], self.bendTwistNames[words[1]], words[2])
+
+
+    def changeVertexGroups(self, context, rig, meta, gen):
+        print("  Change vertex groups")
+        for ob in self.meshes:
+            ob.parent = gen
+            for dname in self.spineBones.keys():
+                rname,_pname = self.spineBones[dname]
+                if dname in ob.vertex_groups.keys():
+                    vgrp = ob.vertex_groups[dname]
+                    vgrp.name = "DEF-%s" % rname
+
+            for rname,dname in self.rigifySkel.items():
+                if str(dname[1:]) in self.limbs.keys():
+                    self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
+                elif isinstance(dname, str):
+                    if dname in ob.vertex_groups.keys():
+                        vgrp = ob.vertex_groups[dname]
+                        vgrp.name = "DEF-%s" % rname
+                else:
+                    self.mergeVertexGroups(rname, dname[1], ob)
+
+            for dname,rname in self.extras.items():
+                if dname in ob.vertex_groups.keys():
+                    vgrp = ob.vertex_groups[dname]
+                    vgrp.name = rname
+
+            self.changeAllTargets(ob, rig, gen)
 
 
     def fixIkBone(self, dname, rig, rname, gen):
@@ -1176,11 +1193,45 @@ class Rigify:
                                 setattr(pb, "ik_min_%s" % comp, dmin)
                                 setattr(pb, "ik_max_%s" % comp, dmax)
 
+
+    def tieBones(self, rig, gen):
+        from .mhx import copyLocation, copyRotation, copyTransform
+        print("Tie bones of %s to %s" % (rig.name, gen.name))
+        for pb in rig.pose.bones:
+            for cns in list(pb.constraints):
+                pb.constraints.remove(cns)
+            rname = self.getRigifyBone(pb.name, gen.data.bones)
+            if pb.name == "hip":
+                rb = gen.pose.bones[rname]
+                cns = copyLocation(pb, rb, gen, space='WORLD')
+                cns.head_tail = 1.0
+                cns = copyRotation(pb, rb, gen, space='LOCAL')
+                cns.invert_x = False
+                cns.invert_y = True
+                cns.invert_z = True
+            elif pb.name == "pelvis":
+                rb = gen.pose.bones[rname]
+                cns = copyRotation(pb, rb, gen, space='LOCAL')
+            elif rname:
+                rb = gen.pose.bones[rname]
+                x,y,z = rb.lock_location
+                if not (x or y or z or rb.bone.use_connect):
+                    cns = copyLocation(pb, rb, gen, space='LOCAL')
+                cns = copyRotation(pb, rb, gen, space='WORLD')
+        for ob in self.meshes:
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                mod.object = rig
+            for rname,dname in self.renamedBones.items():
+                vgrp = ob.vertex_groups.get(rname)
+                if vgrp:
+                    vgrp.name = dname
+
 #-------------------------------------------------------------
 #  Buttons
 #-------------------------------------------------------------
 
-class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists, ConstraintStore):
+class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwists, ConstraintStore):
     bl_idname = "daz.convert_to_rigify"
     bl_label = "Convert To Rigify"
     bl_description = "Convert active rig to rigify"
@@ -1235,16 +1286,19 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwi
         rig = context.object
         rname = rig.name
         if self.useKeepRig:
-            self.saveExistingRig(context)
+            nrig = self.saveExistingRig(context)
         finalizeArmature(rig)
+        self.renamedBones = {}
         self.createMeta(context)
         gen = self.rigifyMeta(context)
+        if self.useKeepRig and self.useDazForDeform:
+            self.tieBones(nrig, gen)
         t2 = perf_counter()
         print("DAZ rig %s successfully rigified in %.3f seconds" % (rname, t2-t1))
         self.printMessages()
 
 
-class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintStore):
+class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, ConstraintStore):
     bl_idname = "daz.create_meta"
     bl_label = "Create Metarig"
     bl_description = "Create a metarig from the active rig"
@@ -1269,11 +1323,12 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigify, Fixer, BendTwists, ConstraintS
     def run(self, context):
         if self.useKeepRig:
             self.saveExistingRig(context)
+        self.renamedBones = {}
         self.createMeta(context)
         self.printMessages()
 
 
-class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigify, Fixer, GizmoUser, BendTwists, ConstraintStore):
+class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwists, ConstraintStore):
     bl_idname = "daz.rigify_meta"
     bl_label = "Rigify Metarig"
     bl_description = "Convert metarig to rigify"

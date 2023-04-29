@@ -74,6 +74,10 @@ class RigifyData:
         }
 
         self.DeformBones = {
+            "abdomenLower" : "DEF-spine.001",
+            "abdomenUpper" : "DEF-spine.002",
+            "chestLower" : "DEF-spine.003",
+            "chestUpper" : "DEF-spine.004",
             "neckLower" : "DEF-spine.005",
             "neckUpper" : "DEF-spine.006",
             "ShldrBend" : "DEF-upper_arm.%s",
@@ -82,7 +86,7 @@ class RigifyData:
             "ShldrTwist" : "DEF-upper_arm.%s.001",
             "ForearmTwist" : "DEF-forearm.%s.001",
             "ThighTwist" : "DEF-thigh.%s.001",
-            "Shin" : "DEF-shin.%s.001",
+            "Shin" : "DEF-shin.%s",
         }
 
 

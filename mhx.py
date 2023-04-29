@@ -97,13 +97,15 @@ def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
             addDriver(cnsIk, "mute", rig, prop2, "x")
 
 
-def copyLocation(bone, target, rig, prop=None, expr="x"):
+def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
     cns = bone.constraints.new('COPY_LOCATION')
     cns.name = "Copy Location %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     if prop is not None:
         addDriver(cns, "influence", rig, prop, expr)
+    cns.owner_space = space
+    cns.target_space = space
     return cns
 
 
@@ -340,6 +342,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Raise error for missing bones",
         default = True
     )
+
+    useRigify = False
+    useDazForDeform = False
 
     @classmethod
     def poll(self, context):
