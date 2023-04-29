@@ -267,6 +267,9 @@ def updateAll(context):
     for ob in context.scene.collection.all_objects:
         updateDrivers(ob)
 
+def updatePose():
+    bpy.context.view_layer.update()
+
 #-------------------------------------------------------------
 #   More utility functions
 #-------------------------------------------------------------

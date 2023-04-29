@@ -745,12 +745,142 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         return struct
 
 #-------------------------------------------------------------
+#   Bake poses to DAZ rig
+#-------------------------------------------------------------
+
+class DazBaker:
+    useCurrentFrame : BoolProperty(
+        name = "Current Frame",
+        description = "Bake current frame only",
+        default = True)
+
+    firstFrame : IntProperty(
+        name = "First Frame",
+        default = 1)
+
+    lastFrame : IntProperty(
+        name = "Last Frame",
+        default = 1)
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'ARMATURE' and ob.DazRig not in ["mhx", "rigify", "rigify2"])
+
+    def draw(self, context):
+        self.layout.prop(self, "useCurrentFrame")
+        if self.useCurrentFrame:
+            self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
+        else:
+            self.layout.prop(self, "firstFrame")
+            self.layout.prop(self, "lastFrame")
+
+    def setAuto(self, context):
+        self.auto = (context.scene.tool_settings.use_keyframe_insert_auto or not self.useCurrentFrame)
+
+    def insertKeys(self, pb, frame):
+        if self.auto:
+            pb.keyframe_insert("location", frame=frame, group=pb.name)
+            if pb.rotation_mode == 'QUATERNION':
+                pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
+            else:
+                pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
+            pb.keyframe_insert("scale", frame=frame, group=pb.name)
+
+
+class DAZ_OT_BakeDazRig(DazBaker, DazPropsOperator):
+    bl_idname = "daz.bake_daz_rig"
+    bl_label = "Bake DAZ Rig"
+    bl_description = "Bake poses to current rig and disable constraints"
+    bl_options = {'UNDO'}
+
+    useImposeLocks : BoolProperty(
+        name = "Impose Locks",
+        description = "Impose locks",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useImposeLocks")
+        DazBaker.draw(self, context)
+
+
+    def run(self, context):
+        rig = context.object
+        scn = context.scene
+        self.setAuto(context)
+        self.frmats = []
+        if self.useCurrentFrame:
+            self.storeMatrices(rig)
+        else:
+            for frame in range(self.firstFrame, self.lastFrame+1):
+                scn.frame_set(frame)
+                updatePose()
+                self.storeMatrices(rig)
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                cns.mute = True
+        if self.useCurrentFrame:
+            self.restoreMatrices(context, rig, self.frmats[0], scn.frame_current)
+        else:
+            for n,mats in enumerate(self.frmats):
+                frame = self.firstFrame + n
+                scn.frame_set(frame)
+                self.restoreMatrices(context, rig, mats, frame)
+
+
+    def storeMatrices(self, rig):
+        self.frmats.append( [pb.matrix.copy() for pb in rig.pose.bones] )
+
+
+    def restoreMatrices(self, context, rig, mats, frame):
+        from .animation import imposeLocks
+        for pb,mat in zip(rig.pose.bones, mats):
+            pb.matrix = mat
+            if self.useImposeLocks:
+                imposeLocks(pb)
+            updatePose()
+            self.insertKeys(pb, frame)
+
+#-------------------------------------------------------------
+#   Unbake DAZ rig
+#-------------------------------------------------------------
+
+class DAZ_OT_UnbakeDazRig(DazBaker, DazPropsOperator):
+    bl_idname = "daz.unbake_daz_rig"
+    bl_label = "Unbake DAZ Rig"
+    bl_description = "Clear poses and enable constraints"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        scn = context.scene
+        self.setAuto(context)
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                cns.mute = False
+        if self.useCurrentFrame:
+            self.clearMatrices(context, rig, scn.frame_current)
+        else:
+            for frame in range(self.firstFrame, self.lastFrame+1):
+                scn.frame_set(frame)
+                self.clearMatrices(context, rig, frame)
+
+
+    def clearMatrices(self, context, rig, frame):
+        unit = Matrix()
+        for pb in rig.pose.bones:
+            pb.matrix_basis = unit
+            self.insertKeys(pb, frame)
+
+#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
 classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPreset,
+    DAZ_OT_BakeDazRig,
+    DAZ_OT_UnbakeDazRig,
 ]
 
 def register():

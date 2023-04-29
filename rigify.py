@@ -1214,8 +1214,7 @@ class Rigifier:
                 cns = copyRotation(pb, rb, gen, space='LOCAL')
             elif rname:
                 rb = gen.pose.bones[rname]
-                x,y,z = rb.lock_location
-                if not (x or y or z or rb.bone.use_connect):
+                if isLocationUnlocked(rb):
                     cns = copyLocation(pb, rb, gen, space='LOCAL')
                 cns = copyRotation(pb, rb, gen, space='WORLD')
         for ob in self.meshes:

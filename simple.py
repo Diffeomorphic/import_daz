@@ -32,9 +32,6 @@ from .utils import *
 from .error import *
 from .bone_data import BD
 
-def updatePose():
-    bpy.context.view_layer.update()
-
 #-------------------------------------------------------------
 #   Simple IK
 #-------------------------------------------------------------

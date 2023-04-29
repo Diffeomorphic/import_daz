@@ -505,6 +505,8 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
             layout.separator()
             layout.operator("daz.impose_locks_limits")
             layout.operator("daz.bake_pose_to_fk_rig")
+            layout.operator("daz.bake_daz_rig")
+            layout.operator("daz.unbake_daz_rig")
             layout.operator("daz.save_pose_preset")
             layout.operator("daz.transfer_to_gaze")
             layout.operator("daz.transfer_from_gaze")
