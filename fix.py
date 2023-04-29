@@ -75,8 +75,6 @@ class Fixer(DriverUser):
         description = "Add copy transform constraints to the DAZ rig and use it for deforming the meshes",
         default = False)
 
-    useRigify = True
-
     def draw(self, context):
         self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "reuseBendTwists")
@@ -84,13 +82,19 @@ class Fixer(DriverUser):
         self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useKeepRig")
-        if self.useRigify and self.useKeepRig:
+        if self.useKeepRig:
             self.layout.prop(self, "useDazForDeform")
 
 
     def __init__(self):
         DriverUser.__init__(self)
         self.messages = []
+        self.renamedBones = {}
+
+
+    def setupFixer(self, context, rig):
+        self.meshes = [ob for ob in getArmatureChildren(context, rig)
+                       if ob.type == 'MESH']
 
 
     def printMessages(self):
@@ -541,6 +545,26 @@ class Fixer(DriverUser):
                     cns.use_y = False
                     cns.mix_mode = 'BEFORE'
 
+    #-------------------------------------------------------------
+    #   Tie bones
+    #-------------------------------------------------------------
+
+    def tieBones(self, rig, gen):
+        print("Tie bones of %s to %s" % (rig.name, gen.name))
+        assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
+        for pb in rig.pose.bones:
+            for cns in list(pb.constraints):
+                pb.constraints.remove(cns)
+            self.tieBone(pb, gen, assoc)
+        for ob in self.meshes:
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                mod.object = rig
+            for rname,dname in self.renamedBones.items():
+                vgrp = ob.vertex_groups.get(rname)
+                if vgrp:
+                    vgrp.name = dname
+
 #-------------------------------------------------------------
 #   Gizmos (custom shapes)
 #-------------------------------------------------------------
@@ -621,6 +645,7 @@ class GizmoUser:
             if newname:
                 renamed[bname] = newname
                 bone.name = newname
+                self.renamedBones[newname] = bname
 
         renamed = {}
         for pb in rig.pose.bones:

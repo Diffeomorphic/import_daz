@@ -343,9 +343,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         default = True
     )
 
-    useRigify = False
-    useDazForDeform = False
-
     @classmethod
     def poll(self, context):
         ob = context.object
@@ -426,9 +423,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def convertMhx(self, context):
         from .figure import finalizeArmature
         if self.useKeepRig:
-            self.saveExistingRig(context)
+            nrig = self.saveExistingRig(context)
         rig = context.object
         rig.DazMhxLegacy = False
+        self.setupFixer(context, rig)
         finalizeArmature(rig)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
@@ -565,6 +563,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
+        if self.useKeepRig and self.useDazForDeform:
+            self.tieBones(nrig, rig)
 
 
     def fixGenesis2Problems(self, rig):
@@ -602,13 +602,23 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for bone in rig.data.bones:
             bname = bone.name
             if bone.name in self.sacred:
-                bone.name = bname + ".1"
+                bone.name = mname = bname + ".1"
             elif bname in MhxSkeleton.keys():
                 mname,layer = MhxSkeleton[bname]
                 if bname != mname:
                     bone.name = mname
                 bone.layers = layer*[False] + [True] + (31-layer)*[False]
                 fixed.append(mname)
+            else:
+                continue
+            if bname.endswith("Bend"):
+                mname = mname.replace("Bend", ".bend")
+            elif bname.endswith("Twist"):
+                mname = mname.replace("Twist", ".twist")
+            self.renamedBones[mname] = bname
+
+        self.renamedBones["hand0.L"] = self.renamedBones["hand.L"]
+        self.renamedBones["hand0.R"] = self.renamedBones["hand.R"]
 
         for pb in rig.pose.bones:
             if pb.name in fixed:
@@ -1539,6 +1549,22 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             clavicle = rig.data.bones["clavicle.%s" % suffix]
             clavicle.layers[L_SPINE] = True
             clavicle.layers[L_LARMIK+dlayer] = True
+
+    #-------------------------------------------------------------
+    #   Tie bone
+    #-------------------------------------------------------------
+
+    def tieBone(self, pb, gen, assoc):
+        if isDrvBone(pb.name):
+            rname = pb.name
+        else:
+            rname = assoc.get(pb.name, pb.name)
+        rb = gen.pose.bones.get(rname)
+        if rb is None:
+            print("MISS", pb.name)
+        elif isLocationUnlocked(rb):
+            cns = copyLocation(pb, rb, gen, space='LOCAL')
+        cns = copyRotation(pb, rb, gen, space='WORLD')
 
     #-------------------------------------------------------------
     #   Error on missing bone

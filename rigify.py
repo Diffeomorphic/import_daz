@@ -623,6 +623,7 @@ class Rigifier:
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)
+        self.setupFixer(context, rig)
 
         setMode('POSE')
         for pb in meta.pose.bones:
@@ -804,8 +805,6 @@ class Rigifier:
         activateObject(context, gen)
         self.bendTwistNames = {}
         self.spineBones["pelvis"] = ("spine", None)
-        self.meshes = [ob for ob in getArmatureChildren(context, rig)
-                       if ob.type == 'MESH']
         if not (self.useKeepRig and self.useDazForDeform):
             self.changeVertexGroups(context, rig, meta, gen)
 
@@ -1194,37 +1193,25 @@ class Rigifier:
                                 setattr(pb, "ik_max_%s" % comp, dmax)
 
 
-    def tieBones(self, rig, gen):
+    def tieBone(self, pb, gen, assoc):
         from .mhx import copyLocation, copyRotation, copyTransform
-        print("Tie bones of %s to %s" % (rig.name, gen.name))
-        for pb in rig.pose.bones:
-            for cns in list(pb.constraints):
-                pb.constraints.remove(cns)
-            rname = self.getRigifyBone(pb.name, gen.data.bones)
-            if pb.name == "hip":
-                rb = gen.pose.bones[rname]
-                cns = copyLocation(pb, rb, gen, space='WORLD')
-                cns.head_tail = 1.0
-                cns = copyRotation(pb, rb, gen, space='LOCAL')
-                cns.invert_x = False
-                cns.invert_y = True
-                cns.invert_z = True
-            elif pb.name == "pelvis":
-                rb = gen.pose.bones[rname]
-                cns = copyRotation(pb, rb, gen, space='LOCAL')
-            elif rname:
-                rb = gen.pose.bones[rname]
-                if isLocationUnlocked(rb):
-                    cns = copyLocation(pb, rb, gen, space='LOCAL')
-                cns = copyRotation(pb, rb, gen, space='WORLD')
-        for ob in self.meshes:
-            mod = getModifier(ob, 'ARMATURE')
-            if mod:
-                mod.object = rig
-            for rname,dname in self.renamedBones.items():
-                vgrp = ob.vertex_groups.get(rname)
-                if vgrp:
-                    vgrp.name = dname
+        rname = self.getRigifyBone(pb.name, gen.data.bones)
+        if pb.name == "hip":
+            rb = gen.pose.bones[rname]
+            cns = copyLocation(pb, rb, gen, space='WORLD')
+            cns.head_tail = 1.0
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns.invert_x = False
+            cns.invert_y = True
+            cns.invert_z = True
+        elif pb.name == "pelvis":
+            rb = gen.pose.bones[rname]
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
+        elif rname:
+            rb = gen.pose.bones[rname]
+            if isLocationUnlocked(rb):
+                cns = copyLocation(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='WORLD')
 
 #-------------------------------------------------------------
 #  Buttons
@@ -1287,7 +1274,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         if self.useKeepRig:
             nrig = self.saveExistingRig(context)
         finalizeArmature(rig)
-        self.renamedBones = {}
         self.createMeta(context)
         gen = self.rigifyMeta(context)
         if self.useKeepRig and self.useDazForDeform:
@@ -1322,7 +1308,6 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
     def run(self, context):
         if self.useKeepRig:
             self.saveExistingRig(context)
-        self.renamedBones = {}
         self.createMeta(context)
         self.printMessages()
 

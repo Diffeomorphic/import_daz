@@ -745,10 +745,10 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         return struct
 
 #-------------------------------------------------------------
-#   Bake poses to DAZ rig
+#   Bake constraints
 #-------------------------------------------------------------
 
-class DazBaker:
+class ConstraintBaker:
     useCurrentFrame : BoolProperty(
         name = "Current Frame",
         description = "Bake current frame only",
@@ -788,9 +788,9 @@ class DazBaker:
             pb.keyframe_insert("scale", frame=frame, group=pb.name)
 
 
-class DAZ_OT_BakeDazRig(DazBaker, DazPropsOperator):
-    bl_idname = "daz.bake_daz_rig"
-    bl_label = "Bake DAZ Rig"
+class DAZ_OT_BakeConstraints(ConstraintBaker, DazPropsOperator):
+    bl_idname = "daz.bake_constraints"
+    bl_label = "Bake Constraints"
     bl_description = "Bake poses to current rig and disable constraints"
     bl_options = {'UNDO'}
 
@@ -801,7 +801,7 @@ class DAZ_OT_BakeDazRig(DazBaker, DazPropsOperator):
 
     def draw(self, context):
         self.layout.prop(self, "useImposeLocks")
-        DazBaker.draw(self, context)
+        ConstraintBaker.draw(self, context)
 
 
     def run(self, context):
@@ -842,12 +842,12 @@ class DAZ_OT_BakeDazRig(DazBaker, DazPropsOperator):
             self.insertKeys(pb, frame)
 
 #-------------------------------------------------------------
-#   Unbake DAZ rig
+#   Unbake Constraints
 #-------------------------------------------------------------
 
-class DAZ_OT_UnbakeDazRig(DazBaker, DazPropsOperator):
-    bl_idname = "daz.unbake_daz_rig"
-    bl_label = "Unbake DAZ Rig"
+class DAZ_OT_UnbakeConstraints(ConstraintBaker, DazPropsOperator):
+    bl_idname = "daz.unbake_constraints"
+    bl_label = "Unbake Constraints"
     bl_description = "Clear poses and enable constraints"
     bl_options = {'UNDO'}
 
@@ -879,8 +879,8 @@ class DAZ_OT_UnbakeDazRig(DazBaker, DazPropsOperator):
 classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPreset,
-    DAZ_OT_BakeDazRig,
-    DAZ_OT_UnbakeDazRig,
+    DAZ_OT_BakeConstraints,
+    DAZ_OT_UnbakeConstraints,
 ]
 
 def register():
