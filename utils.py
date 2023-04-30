@@ -387,6 +387,10 @@ def isLocationUnlocked(pb):
             pb.lock_location[2] == False)
 
 
+def clearEpsilon(vec, default, eps):
+    return [x0 if abs(x-x0) < eps else x for x,x0 in zip(vec, default)]
+
+
 def lockAllTransforms(pb):
     pb.lock_location = pb.lock_rotation = pb.lock_scale = (True,True,True)
 

@@ -446,6 +446,10 @@ class Rigifier:
         if rname in bones.keys():
             return rname
         if len(bname) > 2:
+            if bname[1] == "_":
+                pname = "%s.%s" % (bname[2:], bname[0].upper())
+                if pname in bones.keys():
+                    return pname
             pname = "%s%s" % (bname[0].lower(), bname[1:])
             if pname in bones.keys():
                 return pname
@@ -1193,7 +1197,9 @@ class Rigifier:
                                 setattr(pb, "ik_max_%s" % comp, dmax)
 
 
-    def tieBone(self, pb, gen, assoc):
+    def tieBone(self, pb, gen, assoc, rigtype):
+        if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
+            return
         from .mhx import copyLocation, copyRotation, copyTransform
         rname = self.getRigifyBone(pb.name, gen.data.bones)
         if pb.name == "hip":
@@ -1207,11 +1213,14 @@ class Rigifier:
         elif pb.name == "pelvis":
             rb = gen.pose.bones[rname]
             cns = copyRotation(pb, rb, gen, space='LOCAL')
+        elif rigtype == "genesis9" and rname.startswith(("DEF-spine", "DEF-toe")):
+            rb = gen.pose.bones[rname]
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif rname:
             rb = gen.pose.bones[rname]
             if isLocationUnlocked(rb):
                 cns = copyLocation(pb, rb, gen, space='LOCAL')
-            cns = copyRotation(pb, rb, gen, space='WORLD')
+            cns = copyRotation(pb, rb, gen, space='POSE')
 
 #-------------------------------------------------------------
 #  Buttons

@@ -551,12 +551,14 @@ class Fixer(DriverUser):
 
     def tieBones(self, rig, gen):
         print("Tie bones of %s to %s" % (rig.name, gen.name))
+        rig.parent = gen
         assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
         for pb in rig.pose.bones:
             for cns in list(pb.constraints):
                 pb.constraints.remove(cns)
-            self.tieBone(pb, gen, assoc)
+            self.tieBone(pb, gen, assoc, rig.DazRig)
         for ob in self.meshes:
+            ob.parent = rig
             mod = getModifier(ob, 'ARMATURE')
             if mod:
                 mod.object = rig

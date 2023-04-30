@@ -322,6 +322,11 @@ MhxKnees = [
     ("upper_arm.R", "forearm.R", Vector((0,1,0))),
 ]
 
+MhxExtraRenames = [
+    ("hand0.L", "hand.L"),
+    ("hand0.R", "hand.R"),
+]
+
 MhxBoneDrivers = {
     "upper_armBend.L" : "upper_arm.bend.L",
     "forearmBend.L" : "forearm.bend.L",

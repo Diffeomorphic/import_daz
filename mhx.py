@@ -617,8 +617,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 mname = mname.replace("Twist", ".twist")
             self.renamedBones[mname] = bname
 
-        self.renamedBones["hand0.L"] = self.renamedBones["hand.L"]
-        self.renamedBones["hand0.R"] = self.renamedBones["hand.R"]
+        for mname, bname in MhxExtraRenames:
+            self.renamedBones[mname] = self.renamedBones[bname]
 
         for pb in rig.pose.bones:
             if pb.name in fixed:
@@ -1554,7 +1554,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #   Tie bone
     #-------------------------------------------------------------
 
-    def tieBone(self, pb, gen, assoc):
+    def tieBone(self, pb, gen, assoc, rigtype):
         if isDrvBone(pb.name):
             rname = pb.name
         else:
@@ -1562,6 +1562,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         rb = gen.pose.bones.get(rname)
         if rb is None:
             print("MISS", pb.name)
+            return
         elif isLocationUnlocked(rb):
             cns = copyLocation(pb, rb, gen, space='LOCAL')
         cns = copyRotation(pb, rb, gen, space='WORLD')
