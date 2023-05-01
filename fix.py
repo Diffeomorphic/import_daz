@@ -368,15 +368,28 @@ class Fixer(DriverUser):
     #   Face Bone
     #-------------------------------------------------------------
 
-    def isFaceBone(self, pb):
+    def setupFaceBones(self, rig):
+        def addFaceBones(pb):
+            for child in pb.children:
+                facebones.append(child.name)
+                addFaceBones(child)
+
+        facebones = []
+        head = rig.pose.bones.get("head")
+        if head:
+            addFaceBones(head)
+        return facebones
+
+
+    def isFaceBone(self, pb, rig):
         if pb.parent:
             par = pb.parent
-            faces = ["upperFaceRig", "lowerFaceRig", "upperfacerig", "lowerfacerig"]
+            faces = ["head", "upperfacerig", "lowerfacerig"]
             if par.name.lower() in faces:
                 return True
             elif (isDrvBone(par.name) and
                   par.parent and
-                  par.parent.name in faces):
+                  par.parent.name.lower() in faces):
                 return True
         return False
 
@@ -551,11 +564,12 @@ class Fixer(DriverUser):
 
     def tieBones(self, rig, gen):
         print("Tie bones of %s to %s" % (rig.name, gen.name))
+        facebones = self.setupFaceBones(rig)
         assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
         for pb in rig.pose.bones:
             for cns in list(pb.constraints):
                 pb.constraints.remove(cns)
-            self.tieBone(pb, gen, assoc, rig.DazRig)
+            self.tieBone(pb, gen, assoc, facebones, rig.DazRig)
         cns = rig.constraints.new('COPY_TRANSFORMS')
         cns.name = "Copy Transform %s" % gen.name
         cns.target = gen
@@ -653,7 +667,7 @@ class GizmoUser:
 
         renamed = {}
         for pb in rig.pose.bones:
-            if (self.isFaceBone(pb) or
+            if (self.isFaceBone(pb, rig) or
                 pb.name[1:] in extra):
                 renameFaceBone(pb.bone)
         for pb in rig.pose.bones:
@@ -713,7 +727,7 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
             self.renameFaceBones(rig)
             rig.DazRig = "%s.suffix" % rig.DazRig
 
-    def isFaceBone(self, pb):
+    def isFaceBone(self, pb, rig):
         return True
 
 
@@ -730,7 +744,7 @@ class DAZ_OT_ChangeSuffixToPrefix(DazOperator, GizmoUser, IsArmature):
             self.rigtype = rig.DazRig = rig.DazRig[:-7]
             self.renameFaceBones(rig)
 
-    def isFaceBone(self, pb):
+    def isFaceBone(self, pb, rig):
         return True
 
     def getOtherName(self, bname):

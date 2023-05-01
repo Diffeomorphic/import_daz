@@ -682,7 +682,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.addGizmo(pb, "GZM_Ellipse", 1)
             elif pb.name[0:6] == "tongue":
                 self.addGizmo(pb, "GZM_MTongue", 1)
-            elif self.isFaceBone(pb) and not self.isEyeLid(pb):
+            elif self.isFaceBone(pb, rig) and not self.isEyeLid(pb):
                 self.addGizmo(pb, "GZM_Circle", 0.2)
             else:
                 for pname in self.FingerNames + ["big_toe", "small_toe"]:
@@ -1554,7 +1554,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #   Tie bone
     #-------------------------------------------------------------
 
-    def tieBone(self, pb, gen, assoc, rigtype):
+    def tieBone(self, pb, gen, assoc, facebones, rigtype):
         if isDrvBone(pb.name):
             rname = pb.name
         else:
@@ -1563,9 +1563,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if rb is None:
             print("MISS", pb.name)
             return
-        elif isLocationUnlocked(rb):
+        elif pb.name == "hip":
             cns = copyLocation(pb, rb, gen, space='LOCAL')
-        cns = copyRotation(pb, rb, gen, space='WORLD')
+        elif isLocationUnlocked(rb) and pb.name in facebones:
+            cns = copyLocation(pb, rb, gen, space='LOCAL')
+        cns = copyRotation(pb, rb, gen, space='LOCAL')
 
     #-------------------------------------------------------------
     #   Error on missing bone

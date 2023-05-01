@@ -1145,7 +1145,7 @@ class Rigifier:
         bgrp.colors.select = (0.596, 0.898, 1.0)
         bgrp.colors.active = (0.769, 1, 1)
         for pb in gen.pose.bones:
-            if self.isFaceBone(pb):
+            if self.isFaceBone(pb, gen):
                 if not self.isEyeLid(pb):
                     self.addGizmo(pb, "GZM_Circle", 0.2)
                 pb.bone_group = bgrp
@@ -1197,13 +1197,15 @@ class Rigifier:
                                 setattr(pb, "ik_max_%s" % comp, dmax)
 
 
-    def tieBone(self, pb, gen, assoc, rigtype):
+    def tieBone(self, pb, gen, assoc, facebones, rigtype):
         if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
             return
         from .mhx import copyLocation, copyRotation, copyTransform
         rname = self.getRigifyBone(pb.name, gen.data.bones)
-        if pb.name == "hip":
-            rb = gen.pose.bones[rname]
+        rb = gen.pose.bones.get(rname)
+        if rb is None:
+            return
+        elif pb.name == "hip":
             cns = copyLocation(pb, rb, gen, space='WORLD')
             cns.head_tail = 1.0
             cns = copyRotation(pb, rb, gen, space='LOCAL')
@@ -1211,15 +1213,19 @@ class Rigifier:
             cns.invert_y = True
             cns.invert_z = True
         elif pb.name == "pelvis":
-            rb = gen.pose.bones[rname]
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif rigtype == "genesis9" and rname.startswith(("DEF-spine", "DEF-toe")):
-            rb = gen.pose.bones[rname]
+        elif rname.startswith("DEF-toe"):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif rname:
-            rb = gen.pose.bones[rname]
-            if isLocationUnlocked(rb):
+            cns.invert_x = True
+            cns.invert_y = False
+            cns.invert_z = True
+        elif rname.startswith("DEF-spine"):
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
+        elif pb.name in facebones:
+            if isLocationUnlocked(pb):
                 cns = copyLocation(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
+        else:
             cns = copyRotation(pb, rb, gen, space='POSE')
 
 #-------------------------------------------------------------
