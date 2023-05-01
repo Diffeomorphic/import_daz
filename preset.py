@@ -780,14 +780,18 @@ class ConstraintBaker:
 
     def insertKeys(self, pb, frame, scale):
         pb.location = clearEpsilon(pb.location, Zero, 1e-3*scale)
-        if pb.rotation_mode == 'QUATERNION':
+        if isinstance(pb, bpy.types.Object):
+            pb.rotation_euler = clearEpsilon(pb.rotation_euler, Zero, 1e-3)
+        elif pb.rotation_mode == 'QUATERNION':
             pb.rotation_quaternion = clearEpsilon(pb.rotation_quaternion, (1,0,0,0), 1e-3)
         else:
             pb.rotation_euler = clearEpsilon(pb.rotation_euler, Zero, 1e-3)
         pb.scale = clearEpsilon(pb.scale, Zero, 1e-3)
         if self.auto:
             pb.keyframe_insert("location", frame=frame, group=pb.name)
-            if pb.rotation_mode == 'QUATERNION':
+            if isinstance(pb, bpy.types.Object):
+                pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
+            elif pb.rotation_mode == 'QUATERNION':
                 pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
             else:
                 pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
@@ -823,6 +827,9 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 scn.frame_set(frame)
                 updatePose()
                 self.storeMatrices(rig)
+        cns = getConstraint(rig, 'COPY_TRANSFORMS')
+        if cns:
+            cns.mute = True
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type.startswith("COPY"):
@@ -831,20 +838,26 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
         if self.useCurrentFrame:
             self.restoreMatrices(context, rig, self.frmats[0], scn.frame_current)
         else:
-            for n,mats in enumerate(self.frmats):
+            for n,frmat in enumerate(self.frmats):
                 frame = self.firstFrame + n
                 scn.frame_set(frame)
-                self.restoreMatrices(context, rig, mats, frame)
+                self.restoreMatrices(context, rig, frmat, frame)
         if gen:
             gen.hide_set(True)
 
 
     def storeMatrices(self, rig):
-        self.frmats.append( [pb.matrix.copy() for pb in rig.pose.bones] )
+        wmat = rig.matrix_world.copy()
+        mats = [pb.matrix.copy() for pb in rig.pose.bones]
+        self.frmats.append((wmat,mats))
 
 
-    def restoreMatrices(self, context, rig, mats, frame):
+    def restoreMatrices(self, context, rig, frmat, frame):
         from .animation import imposeLocks
+        wmat,mats = frmat
+        setWorldMatrix(rig, wmat)
+        updatePose()
+        self.insertKeys(rig, frame, rig.DazScale)
         for pb,mat in zip(rig.pose.bones, mats):
             pb.matrix = mat
             if self.useImposeLocks:
@@ -872,6 +885,10 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 if cns.type.startswith("COPY"):
                     cns.mute = False
                     gen = cns.target
+        cns = getConstraint(rig, 'COPY_TRANSFORMS')
+        if cns:
+            cns.mute = False
+            gen = cns.target
         if self.useCurrentFrame:
             self.clearMatrices(context, rig, scn.frame_current)
         else:
@@ -884,6 +901,8 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
 
     def clearMatrices(self, context, rig, frame):
         unit = Matrix()
+        rig.matrix_world = unit
+        self.insertKeys(rig, frame, rig.DazScale)
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
             self.insertKeys(pb, frame, rig.DazScale)
