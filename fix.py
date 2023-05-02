@@ -334,19 +334,17 @@ class Fixer(DriverUser):
 
         rig = context.object
         scn = context.scene
-        coll = bpy.data.collections.new(name=dazName(rig.name))
-        scn.collection.children.link(coll)
+        coll = getCollection(context, rig)
         activateObject(context, rig)
         if self.useDazForDeform:
             bpy.ops.object.duplicate()
         else:
+            scn.collection.children.link(coll)
             objects = []
             findChildrenRecursive(rig, objects)
             for ob in objects:
                 selectSet(ob, True)
             bpy.ops.object.duplicate()
-            mcoll = bpy.data.collections.new(name=dazName(rig.name) + " Meshes")
-            coll.children.link(mcoll)
 
         newObjects = getSelectedObjects(context)
         nrig = None
@@ -357,10 +355,7 @@ class Fixer(DriverUser):
             if ob.name == dazName(baseName(rig.name)):
                 nrig = ob
             unlinkAll(ob)
-            if ob.type == 'MESH':
-                mcoll.objects.link(ob)
-            else:
-                coll.objects.link(ob)
+            coll.objects.link(ob)
         activateObject(context, rig)
         return nrig
 
@@ -563,7 +558,7 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def getTweakBoneName(self, bname):
-        return "__UNDEF__"
+        return "NONE"
 
 
     def tieBones(self, rig, gen):
@@ -588,8 +583,8 @@ class Fixer(DriverUser):
                     vgrp.name = dname
                     continue
                 tname = self.getTweakBoneName(rname)
-                vgrp = ob.vertex_groups.get(tname)
-                if vgrp:
+                if tname and tname in ob.vertex_groups.keys():
+                    vgrp = ob.vertex_groups[tname]
                     vgrp.name = dname
 
 #-------------------------------------------------------------

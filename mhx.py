@@ -425,6 +425,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.useKeepRig:
             nrig = self.saveDazRig(context)
         rig = context.object
+        self.rigname = rig.name
         rig.DazMhxLegacy = False
         self.setupFixer(context, rig)
         finalizeArmature(rig)
@@ -562,8 +563,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
-        if self.useKeepRig and self.useDazForDeform:
-            self.tieBones(nrig, rig)
+        if self.useKeepRig:
+            if self.useDazForDeform:
+                self.tieBones(nrig, rig)
+            rig.name = "%s_MHX" % self.rigname
+            nrig.name = self.rigname
 
 
     def fixGenesis2Problems(self, rig):

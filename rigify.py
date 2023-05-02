@@ -459,7 +459,7 @@ class Rigifier:
         else:
             pname = ""
         print("MISS", bname, rname, pname)
-        return None
+        return "NONE"
 
 
     def getDazBones(self, rig):
@@ -1281,7 +1281,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         t1 = perf_counter()
         print("Modifying DAZ rig to Rigify")
         rig = context.object
-        rname = rig.name
+        self.rigname = rig.name
         if self.useOptimizePose:
             from .convert import optimizePose
             optimizePose(context, True)
@@ -1292,8 +1292,10 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         gen = self.rigifyMeta(context)
         if self.useKeepRig and self.useDazForDeform:
             self.tieBones(nrig, gen)
+            gen.name = "%s_RIGIFY" % self.rigname
+            nrig.name = self.rigname
         t2 = perf_counter()
-        print("DAZ rig %s successfully rigified in %.3f seconds" % (rname, t2-t1))
+        print("DAZ rig %s successfully rigified in %.3f seconds" % (self.rigname, t2-t1))
         self.printMessages()
 
 
