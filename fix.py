@@ -322,7 +322,7 @@ class Fixer(DriverUser):
                     mod.object = newrig
 
 
-    def saveExistingRig(self, context):
+    def saveDazRig(self, context):
         def dazName(string):
             return (string + "_DAZ")
 
@@ -363,6 +363,22 @@ class Fixer(DriverUser):
                 coll.objects.link(ob)
         activateObject(context, rig)
         return nrig
+
+
+    def correctDazRig(self, context, rig, nrig):
+        meta = context.object
+        data = {}
+        activateObject(context, rig)
+        setMode('EDIT')
+        for eb in rig.data.edit_bones:
+            data[eb.name] = (eb.head.copy(), eb.tail.copy(), eb.roll)
+        setMode('OBJECT')
+        activateObject(context, nrig)
+        setMode('EDIT')
+        for eb in nrig.data.edit_bones:
+            eb.head, eb.tail, eb.roll = data[eb.name]
+        setMode('OBJECT')
+        activateObject(context, meta)
 
     #-------------------------------------------------------------
     #   Face Bone
@@ -562,6 +578,10 @@ class Fixer(DriverUser):
     #   Tie bones
     #-------------------------------------------------------------
 
+    def getTweakBoneName(self, bname):
+        return "__UNDEF__"
+
+
     def tieBones(self, rig, gen):
         print("Tie bones of %s to %s" % (rig.name, gen.name))
         facebones = self.setupFaceBones(rig)
@@ -580,6 +600,11 @@ class Fixer(DriverUser):
                 mod.object = rig
             for rname,dname in self.renamedBones.items():
                 vgrp = ob.vertex_groups.get(rname)
+                if vgrp:
+                    vgrp.name = dname
+                    continue
+                tname = self.getTweakBoneName(rname)
+                vgrp = ob.vertex_groups.get(tname)
                 if vgrp:
                     vgrp.name = dname
 

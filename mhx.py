@@ -423,7 +423,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def convertMhx(self, context):
         from .figure import finalizeArmature
         if self.useKeepRig:
-            nrig = self.saveExistingRig(context)
+            nrig = self.saveDazRig(context)
         rig = context.object
         rig.DazMhxLegacy = False
         self.setupFixer(context, rig)
@@ -1564,7 +1564,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             print("MISS", pb.name)
             return
         elif pb.name == "hip":
-            cns = copyLocation(pb, rb, gen, space='LOCAL')
+            cns = copyLocation(pb, rb, gen, space='WORLD')
         elif isLocationUnlocked(rb) and pb.name in facebones:
             cns = copyLocation(pb, rb, gen, space='LOCAL')
         cns = copyRotation(pb, rb, gen, space='LOCAL')

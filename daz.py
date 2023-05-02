@@ -193,6 +193,7 @@ class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
         GS.fromScene(scn)
         #if GS.caseSensitivePaths and GS.rescanOnChange and change:
         #    GS.scanAbsPaths()
+        GS.saveDefaults()
         return {'PASS_THROUGH'}
 
 

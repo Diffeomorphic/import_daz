@@ -494,10 +494,6 @@ class Rigifier:
             if pb:
                 self.storeConstraints(bname, pb)
 
-        if self.useOptimizePose:
-            from .convert import optimizePose
-            optimizePose(context, True)
-
         # Create metarig
         setMode('OBJECT')
         try:
@@ -1287,8 +1283,13 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         rig = context.object
         rname = rig.name
         if self.useKeepRig:
-            nrig = self.saveExistingRig(context)
+            nrig = self.saveDazRig(context)
         finalizeArmature(rig)
+        if self.useOptimizePose:
+            from .convert import optimizePose
+            optimizePose(context, True)
+        if self.useKeepRig:
+            self.correctDazRig(context, rig, nrig)
         self.createMeta(context)
         gen = self.rigifyMeta(context)
         if self.useKeepRig and self.useDazForDeform:
@@ -1314,6 +1315,9 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
     def draw(self, context):
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "useRecalcRoll")
+        self.layout.prop(self, "useKeepRig")
+        if self.useKeepRig:
+            self.layout.prop(self, "useDazForDeform")
 
     @classmethod
     def poll(self, context):
@@ -1321,8 +1325,14 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
         return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis"))
 
     def run(self, context):
+        rig = context.object
         if self.useKeepRig:
-            self.saveExistingRig(context)
+            nrig = self.saveDazRig(context)
+        if self.useOptimizePose:
+            from .convert import optimizePose
+            optimizePose(context, True)
+        if self.useKeepRig:
+            self.correctDazRig(context, rig, nrig)
         self.createMeta(context)
         self.printMessages()
 
