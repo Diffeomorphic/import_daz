@@ -332,6 +332,11 @@ class Fixer(DriverUser):
                 if not getHideViewport(child):
                     findChildrenRecursive(child, objects)
 
+        def enableDrivers(rna):
+            if rna.animation_data:
+                for fcu in rna.animation_data.drivers:
+                    fcu.mute = False
+
         rig = context.object
         scn = context.scene
         coll = getCollection(context, rig)
@@ -351,6 +356,8 @@ class Fixer(DriverUser):
         newObjects = getSelectedObjects(context)
         nrig = None
         for ob in newObjects:
+            enableDrivers(ob)
+            enableDrivers(ob.data)
             ob.name = dazName(baseName(ob.name))
             if ob.data:
                 ob.data.name = dazName(baseName(ob.data.name))

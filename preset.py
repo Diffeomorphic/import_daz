@@ -782,10 +782,8 @@ class ConstraintBaker:
 
     def retarget(self, rig, src, trg):
         from .fix import retargetDrivers
-        print("KKK", rig.name, len(rig.children))
         for ob in rig.children:
             if ob.type == 'MESH':
-                print("RET", ob.name, src.name, trg.name)
                 retargetDrivers(ob.data.shape_keys, src, trg)
 
 
