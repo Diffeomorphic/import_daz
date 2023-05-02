@@ -506,6 +506,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #   Add MHX stuff
         #-------------------------------------------------------------
 
+        if self.useKeepRig:
+            self.retargetDazDrivers(rig, nrig)
         showProgress(12, 25, "  Add long fingers")
         self.addLongFingers(rig)
         showProgress(13, 25, "  Add tweak bones")
@@ -566,8 +568,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.useKeepRig:
             if self.useDazForDeform:
                 self.tieBones(nrig, rig)
-            rig.name = "%s_MHX" % self.rigname
-            nrig.name = self.rigname
+            self.setRigName(rig, nrig, "MHX")
 
 
     def fixGenesis2Problems(self, rig):
@@ -1566,11 +1567,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if rb is None:
             print("MISS", pb.name)
             return
-        elif pb.name == "hip":
+        elif rname == "hip":
             cns = copyLocation(pb, rb, gen, space='WORLD')
         elif isLocationUnlocked(rb) and pb.name in facebones:
             cns = copyLocation(pb, rb, gen, space='LOCAL')
-        cns = copyRotation(pb, rb, gen, space='LOCAL')
+        if rname in ["hand0.L", "hand0.R"]:
+            cns = copyRotation(pb, rb, gen, space='WORLD')
+        else:
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
 
     #-------------------------------------------------------------
     #   Error on missing bone

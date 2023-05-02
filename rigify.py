@@ -1292,8 +1292,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         gen = self.rigifyMeta(context)
         if self.useKeepRig and self.useDazForDeform:
             self.tieBones(nrig, gen)
-            gen.name = "%s_RIGIFY" % self.rigname
-            nrig.name = self.rigname
+            self.setRigName(gen, nrig, "RIGIFY")
         t2 = perf_counter()
         print("DAZ rig %s successfully rigified in %.3f seconds" % (self.rigname, t2-t1))
         self.printMessages()

@@ -339,7 +339,9 @@ class Fixer(DriverUser):
         if self.useDazForDeform:
             bpy.ops.object.duplicate()
         else:
-            scn.collection.children.link(coll)
+            ncoll = bpy.data.collections.new(dazName(coll.name))
+            coll.children.link(ncoll)
+            coll = ncoll
             objects = []
             findChildrenRecursive(rig, objects)
             for ob in objects:
@@ -358,6 +360,27 @@ class Fixer(DriverUser):
             coll.objects.link(ob)
         activateObject(context, rig)
         return nrig
+
+
+    def retargetDazDrivers(self, rig, nrig):
+        if self.useDazForDeform:
+            for ob in rig.children:
+                 if ob.type == 'MESH':
+                    retargetDrivers(ob.data.shape_keys, rig, nrig)
+        else:
+            return
+            for ob in newObjects:
+                 if ob.type == 'MESH':
+                    retargetDrivers(ob.data.shape_keys, rig, nrig)
+
+
+
+    def setRigName(self, rig, nrig, suffix):
+        mhx = "%s_%s" % (self.rigname, suffix)
+        rig.name = mhx
+        rig.data.name = mhx
+        nrig.name = self.rigname
+        nrig.data.name = self.rigname
 
     #-------------------------------------------------------------
     #   Face Bone
@@ -1496,7 +1519,7 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                     subrigs[subrig.name] = subrig
                 mod.object = rig
                 if self.useRetarget:
-                    self.retargetDrivers(ob, subrig, rig)
+                    retargetDrivers(ob.data.shape_keys, subrig, rig)
             if ob.parent and ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()
                 bname = ob.parent_bone
@@ -1532,19 +1555,18 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
             setMode('OBJECT')
 
 
-    def retargetDrivers(self, ob, subrig, rig):
-        skeys = ob.data.shape_keys
-        if not (skeys and skeys.animation_data):
-            return
-        for fcu in skeys.animation_data.drivers:
-            for var in fcu.driver.variables:
-                for trg in var.targets:
-                    if trg.id_type == 'OBJECT' and trg.id == subrig:
-                        trg.id = rig
-                    elif trg.id_type == 'ARMATURE' and trg.id == subrig.data:
-                        trg.id = rig.data
-                    else:
-                        print("Unexpected id: %s %s" % (trg.id_type, trg.id))
+def retargetDrivers(rna, orig, nrig):
+    if not (rna and rna.animation_data):
+        return
+    for fcu in rna.animation_data.drivers:
+        for var in fcu.driver.variables:
+            for trg in var.targets:
+                if trg.id_type == 'OBJECT' and trg.id == orig:
+                    trg.id = nrig
+                elif trg.id_type == 'ARMATURE' and trg.id == orig.data:
+                    trg.id = nrig.data
+                else:
+                    print("Unexpected id: %s %s" % (trg.id_type, trg.id))
 
 #----------------------------------------------------------
 #   Initialize
