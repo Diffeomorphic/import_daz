@@ -1282,14 +1282,12 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         print("Modifying DAZ rig to Rigify")
         rig = context.object
         rname = rig.name
-        if self.useKeepRig:
-            nrig = self.saveDazRig(context)
-        finalizeArmature(rig)
         if self.useOptimizePose:
             from .convert import optimizePose
             optimizePose(context, True)
         if self.useKeepRig:
-            self.correctDazRig(context, rig, nrig)
+            nrig = self.saveDazRig(context)
+        finalizeArmature(rig)
         self.createMeta(context)
         gen = self.rigifyMeta(context)
         if self.useKeepRig and self.useDazForDeform:
@@ -1326,13 +1324,11 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
 
     def run(self, context):
         rig = context.object
-        if self.useKeepRig:
-            nrig = self.saveDazRig(context)
         if self.useOptimizePose:
             from .convert import optimizePose
             optimizePose(context, True)
         if self.useKeepRig:
-            self.correctDazRig(context, rig, nrig)
+            nrig = self.saveDazRig(context)
         self.createMeta(context)
         self.printMessages()
 

@@ -364,22 +364,6 @@ class Fixer(DriverUser):
         activateObject(context, rig)
         return nrig
 
-
-    def correctDazRig(self, context, rig, nrig):
-        meta = context.object
-        data = {}
-        activateObject(context, rig)
-        setMode('EDIT')
-        for eb in rig.data.edit_bones:
-            data[eb.name] = (eb.head.copy(), eb.tail.copy(), eb.roll)
-        setMode('OBJECT')
-        activateObject(context, nrig)
-        setMode('EDIT')
-        for eb in nrig.data.edit_bones:
-            eb.head, eb.tail, eb.roll = data[eb.name]
-        setMode('OBJECT')
-        activateObject(context, meta)
-
     #-------------------------------------------------------------
     #   Face Bone
     #-------------------------------------------------------------
