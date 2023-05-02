@@ -775,8 +775,19 @@ class ConstraintBaker:
             self.layout.prop(self, "firstFrame")
             self.layout.prop(self, "lastFrame")
 
+
     def setAuto(self, context):
         self.auto = (context.scene.tool_settings.use_keyframe_insert_auto or not self.useCurrentFrame)
+
+
+    def retarget(self, rig, src, trg):
+        from .fix import retargetDrivers
+        print("KKK", rig.name, len(rig.children))
+        for ob in rig.children:
+            if ob.type == 'MESH':
+                print("RET", ob.name, src.name, trg.name)
+                retargetDrivers(ob.data.shape_keys, src, trg)
+
 
     def insertKeys(self, pb, frame, scale):
         pb.location = clearEpsilon(pb.location, Zero, 1e-3*scale)
@@ -827,14 +838,15 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 scn.frame_set(frame)
                 updatePose()
                 self.storeMatrices(rig)
-        cns = getConstraint(rig, 'COPY_TRANSFORMS')
-        if cns:
-            cns.mute = True
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type.startswith("COPY"):
                     cns.mute = True
                     gen = cns.target
+        cns = getConstraint(rig, 'COPY_TRANSFORMS')
+        if cns:
+            cns.mute = True
+            gen = cns.target
         if self.useCurrentFrame:
             self.restoreMatrices(context, rig, self.frmats[0], scn.frame_current)
         else:
@@ -844,6 +856,7 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 self.restoreMatrices(context, rig, frmat, frame)
         if gen:
             gen.hide_set(True)
+            self.retarget(rig, gen, rig)
 
 
     def storeMatrices(self, rig):
@@ -897,6 +910,7 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 self.clearMatrices(context, rig, frame)
         if gen:
             gen.hide_set(False)
+            self.retarget(rig, rig, gen)
 
 
     def clearMatrices(self, context, rig, frame):

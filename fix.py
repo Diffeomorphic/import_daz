@@ -362,19 +362,6 @@ class Fixer(DriverUser):
         return nrig
 
 
-    def retargetDazDrivers(self, rig, nrig):
-        if self.useDazForDeform:
-            for ob in rig.children:
-                 if ob.type == 'MESH':
-                    retargetDrivers(ob.data.shape_keys, rig, nrig)
-        else:
-            return
-            for ob in newObjects:
-                 if ob.type == 'MESH':
-                    retargetDrivers(ob.data.shape_keys, rig, nrig)
-
-
-
     def setRigName(self, rig, nrig, suffix):
         mhx = "%s_%s" % (self.rigname, suffix)
         rig.name = mhx

@@ -506,8 +506,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #   Add MHX stuff
         #-------------------------------------------------------------
 
-        if self.useKeepRig:
-            self.retargetDazDrivers(rig, nrig)
         showProgress(12, 25, "  Add long fingers")
         self.addLongFingers(rig)
         showProgress(13, 25, "  Add tweak bones")
