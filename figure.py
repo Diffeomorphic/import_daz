@@ -412,19 +412,14 @@ class DAZ_OT_RotateBones(DazPropsOperator, IsArmature):
 #-------------------------------------------------------------
 
 def copyBoneInfo(srcpb, trgpb):
-    trgpb.rotation_mode = srcpb.rotation_mode
-    trgpb.lock_location = srcpb.lock_location
-    trgpb.lock_rotation = srcpb.lock_rotation
-    trgpb.lock_scale = srcpb.lock_scale
-    trgpb.bone.DazOrient = Vector(srcpb.bone.DazOrient)
-    trgpb.bone.DazHead = Vector(srcpb.bone.DazHead)
-    trgpb.bone.DazTail = Vector(srcpb.bone.DazTail)
-    trgpb.bone.DazAngle = srcpb.bone.DazAngle
-    trgpb.bone.DazNormal = Vector(srcpb.bone.DazNormal)
-    trgpb.DazRotMode = srcpb.DazRotMode
-    trgpb.DazRestRotation = Vector(srcpb.DazRestRotation)
-    trgpb.DazAxes = tuple(srcpb.DazAxes)
-    trgpb.DazFlips = tuple(srcpb.DazFlips)
+    for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale", "DazRotMode"]:
+        setattr(trgpb, attr, getattr(srcpb, attr))
+    for attr in ["use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale", "DazAngle"]:
+        setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
+    for attr in ["DazOrient", "DazHead", "DazTail", "DazNormal"]:
+        setattr(trgpb.bone, attr, tuple(getattr(srcpb.bone, attr)))
+    for attr in ["DazRestRotation", "DazAxes", "DazFlips"]:
+        setattr(trgpb, attr, tuple(getattr(srcpb, attr)))
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
         for x in ["x", "y", "z"]:
             attr = "%s_%s" % (key, x)

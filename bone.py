@@ -76,6 +76,7 @@ class BoneInstance(Instance):
         self.name = self.node.name
         self.roll = 0.0
         self.useRoll = False
+        node.inherits_scale = False
         self.axes = [0,1,2]
         self.flipped = [False,False,False]
         self.flopped = [False,False,False]
@@ -300,11 +301,15 @@ class BoneInstance(Instance):
         eb.tail = eb.head + length*vec
 
 
+    def defaultInherit(self):
+        return ('FULL' if (self.inherits_scale or GS.useInheritScale) else 'NONE')
+
+
     def buildBoneProps(self, rig, center):
         if self.name not in rig.data.bones.keys():
             return
         bone = rig.data.bones[self.name]
-        bone.inherit_scale = GS.defaultInherit()
+        bone.inherit_scale = self.defaultInherit()
         bone.DazOrient = self.attributes["orientation"]
 
         head,tail,orient,xyz,wsmat = self.getHeadTail(center)
@@ -386,7 +391,7 @@ class BoneInstance(Instance):
             return
         pb = rig.pose.bones[node.name]
         self.rna = pb
-        pb.bone.inherit_scale = GS.defaultInherit()
+        pb.bone.inherit_scale = self.defaultInherit()
         mapped = self.node.mapped
         if (mapped and
             self.name != mapped and
@@ -571,6 +576,7 @@ class Bone(Node):
     def __init__(self, fileref):
         Node.__init__(self, fileref)
         self.mapped = None
+        self.inherits_scale = False
 
 
     def __repr__(self):

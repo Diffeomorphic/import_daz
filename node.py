@@ -127,6 +127,8 @@ class Instance(Accessor, Channels, SimNode):
         self.geometries = node.geometries
         node.geometries = []
         self.rotation_order = node.rotation_order
+        self.inherits_scale = node.inherits_scale
+        node.inherits_scale = True
         self.collection = LS.collection
         if "parent" in struct.keys() and node.parent is not None:
             self.parent = node.parent.getInstance(struct["parent"], node.caller)
@@ -540,7 +542,7 @@ class Instance(Accessor, Channels, SimNode):
         cpoint = d2b00(attributes["center_point"])
 
         lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
-        lscale = Matrix()
+        lscale = self.lscale = Matrix()
         for i in range(3):
             lscale[i][i] = scale[i]
         ormat = Euler(orient).to_matrix().to_4x4()
@@ -550,7 +552,7 @@ class Instance(Accessor, Channels, SimNode):
             wtrans = parent.wmat @ (coffset + trans)
             wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
             oscale = ormat @ lscale @ ormat.inverted()
-            if True:  # self.inherits_scale:
+            if self.inherits_scale:
                 wscale = parent.wscale @ oscale
             else:
                 wscale = parent.wscale @ parent.lscale.inverted() @ oscale
@@ -705,6 +707,7 @@ class Node(Asset, Formula, Channels):
         self.center = None
         self.geometries = []
         self.rotation_order = 'XYZ'
+        self.inherits_scale = True
         self.attributes = self.defaultAttributes()
         self.origAttrs = self.defaultAttributes()
         self.figure = None
@@ -779,7 +782,7 @@ class Node(Asset, Formula, Channels):
             if key == "formulas":
                 self.formulas = data
             elif key == "inherits_scale":
-                pass
+                self.inherits_scale = data
             elif key == "rotation_order":
                 self.rotation_order = data
             elif key in self.attributes.keys():

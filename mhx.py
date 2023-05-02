@@ -557,7 +557,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         for pb in rig.pose.bones:
             pb.bone.select = False
-            pb.bone.inherit_scale = GS.defaultInherit()
             if pb.custom_shape:
                 pb.bone.show_wire = True
 

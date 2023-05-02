@@ -136,10 +136,6 @@ class GlobalSettings:
             return self.sssMethod
 
 
-    def defaultInherit(self):
-        return ('FULL' if self.useInheritScale else 'NONE')
-
-
     SceneTable = {
         # General
         "DazUnitScale" : "unitScale",
