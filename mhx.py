@@ -76,13 +76,15 @@ def normalizeRoll(roll):
 #   Constraints
 #-------------------------------------------------------------
 
-def copyTransform(bone, target, rig, prop=None, expr="x", space='LOCAL'):
+def copyTransform(bone, target, rig, prop=None, expr="x", space='WORLD'):
     cns = bone.constraints.new('COPY_TRANSFORMS')
     cns.name = "Copy Transform %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
     if prop is not None:
         addDriver(cns, "influence", rig, prop, expr)
+    cns.owner_space = space
+    cns.target_space = space
     return cns
 
 
@@ -1565,14 +1567,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if rb is None:
             print("MISS", pb.name)
             return
-        elif rname == "hip":
-            cns = copyLocation(pb, rb, gen, space='WORLD')
-        elif isLocationUnlocked(rb) and pb.name in facebones:
-            cns = copyLocation(pb, rb, gen, space='LOCAL')
-        if rname in ["hand0.L", "hand0.R"]:
-            cns = copyRotation(pb, rb, gen, space='WORLD')
-        else:
+        elif ".twist" in rb.name:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
+        else:
+            cns = copyTransform(pb, rb, gen, space='WORLD')
 
     #-------------------------------------------------------------
     #   Error on missing bone
