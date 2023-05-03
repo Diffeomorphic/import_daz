@@ -780,13 +780,6 @@ class ConstraintBaker:
         self.auto = (context.scene.tool_settings.use_keyframe_insert_auto or not self.useCurrentFrame)
 
 
-    def retarget(self, rig, src, trg):
-        from .fix import retargetDrivers
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                retargetDrivers(ob.data.shape_keys, src, trg)
-
-
     def insertKeys(self, pb, frame, scale):
         pb.location = clearEpsilon(pb.location, Zero, 1e-3*scale)
         if isinstance(pb, bpy.types.Object):
@@ -854,7 +847,6 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 self.restoreMatrices(context, rig, frmat, frame)
         if gen:
             gen.hide_set(True)
-            self.retarget(rig, gen, rig)
 
 
     def storeMatrices(self, rig):
@@ -908,7 +900,6 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                 self.clearMatrices(context, rig, frame)
         if gen:
             gen.hide_set(False)
-            self.retarget(rig, rig, gen)
 
 
     def clearMatrices(self, context, rig, frame):

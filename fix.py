@@ -591,6 +591,7 @@ class Fixer(DriverUser):
         cns.target = gen
         for ob in self.meshes:
             ob.parent = rig
+            retargetDrivers(ob.data.shape_keys, gen, rig, True)
             mod = getModifier(ob, 'ARMATURE')
             if mod:
                 mod.object = rig
@@ -1549,15 +1550,16 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
             setMode('OBJECT')
 
 
-def retargetDrivers(rna, orig, nrig):
+def retargetDrivers(rna, orig, nrig, force=False):
     if not (rna and rna.animation_data):
         return
     for fcu in rna.animation_data.drivers:
+        fcu.mute = False
         for var in fcu.driver.variables:
             for trg in var.targets:
-                if trg.id_type == 'OBJECT' and trg.id == orig:
+                if trg.id_type == 'OBJECT' and (force or trg.id == orig):
                     trg.id = nrig
-                elif trg.id_type == 'ARMATURE' and trg.id == orig.data:
+                elif trg.id_type == 'ARMATURE' and (force or trg.id == orig.data):
                     trg.id = nrig.data
                 else:
                     print("Unexpected id: %s %s" % (trg.id_type, trg.id))
