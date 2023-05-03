@@ -183,7 +183,7 @@ class SimpleIK:
 #   Add Simple IK
 #-------------------------------------------------------------
 
-class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
+class DAZ_OT_AddSimpleIK(DazPropsOperator):
     bl_idname = "daz.add_simple_ik"
     bl_label = "Add Simple IK"
     bl_description = (
@@ -191,6 +191,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator, IsArmature):
         "This will not work if the rig has body morphs affecting arms and legs,\n" +
         "and the bones have been made posable")
     bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and ob.DazCustomShapes and not ob.DazSimpleIK)
 
     useArms : BoolProperty(
         name = "Arm IK",
@@ -537,11 +542,16 @@ def getGenesisName(genesis, bnames):
         return bnames[1]
 
 
-class DAZ_OT_AddCustomShapes(DazOperator, IsArmature):
+class DAZ_OT_AddCustomShapes(DazOperator):
     bl_idname = "daz.add_custom_shapes"
     bl_label = "Add Custom Shapes"
     bl_description = "Add custom shapes to the bones of the active rig"
     bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.DazCustomShapes)
 
     def run(self, context):
         rig = context.object

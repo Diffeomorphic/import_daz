@@ -1243,7 +1243,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis"))
+        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.DazSimpleIK)
 
     def __init__(self):
         Fixer.__init__(self)
@@ -1321,7 +1321,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis"))
+        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.DazSimpleIK)
 
     def run(self, context):
         rig = context.object
