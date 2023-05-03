@@ -203,11 +203,16 @@ class Formula:
 
 
     def evalStage(self, formula, expr, rig):
+        from .bone import getMappedBone
         if formula["stage"] == "mult":
             opers = formula["operations"]
             prop,type,path,comp = self.evalUrl(opers[0], rig)
             if type == "value":
                 expr["mults"].append(prop)
+            elif comp >= 0:
+                bname = getMappedBone(prop, rig)
+                if bname in rig.pose.bones.keys():
+                    expr["mults"].append((bname,path,comp))
 
 
     def evalOperations(self, formula, expr, rig):

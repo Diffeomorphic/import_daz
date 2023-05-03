@@ -1147,6 +1147,8 @@ class LoadMorph(DriverUser):
             ttypes = ["ROT_X", "ROT_Y", "ROT_Z"]
         elif channel == "translation":
             ttypes = ["LOC_X", "LOC_Y", "LOC_Z"]
+        elif channel == "scale":
+            ttypes = ["SCALE_X", "SCALE_Y", "SCALE_Z"]
         else:
             reportError("Unknown channel: %s" % channel, trigger=(2,3))
         for j,vname,bname in vars:
@@ -1439,26 +1441,31 @@ class LoadMorph(DriverUser):
 #-------------------------------------------------------------
 
 def buildBoneFormula(asset, rig, altmorphs, errors):
-
     def buildChannel(exprs, pb, channel):
         lm = LoadMorph()
         lm.initRig(rig)
         for idx,expr in exprs.items():
-            factor = expr["factor"]
             driver = expr["bone"]
-            path = expr["path"]
-            comp = expr["comp"]
+            if driver:
+                factor = expr["factor"]
+                path = expr["path"]
+                comp = expr["comp"]
+            elif expr["mults"]:
+                driver,path,comp = expr["mults"][0]
+                factor = 1.0
+            else:
+                continue
             unit = getUnit(path, rig)
-            if factor and driver in rig.pose.bones.keys():
+            if driver in rig.pose.bones.keys():
                 pbDriver = rig.pose.bones[driver]
                 if pbDriver.parent == pb:
                     print("Dependency loop: %s %s" % (pbDriver.name, pb.name))
-                else:
+                    continue
+                if factor:
                     uvec = getBoneVector(factor, comp, pbDriver)
                     dvec = getBoneVector(1.0, idx, pb)
                     idx2,sign,x = getDrivenComp(dvec)
                     lm.makeSimpleBoneDriver(path, sign*uvec, pb, channel, idx2, driver, False)
-
 
     def buildValueDriver(exprs, raw):
         lm = LoadMorph()
@@ -1478,11 +1485,9 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                 rig.data[final] = 0.0
             lm.buildBoneDriver(raw, bname, expr, True)
 
-
     def correctExprs(exprs, factor):
         for idx,expr in exprs.items():
             expr["factor"] *= factor
-
 
     exprs = asset.evalFormulas(rig, None, True)
     for driven,expr in exprs.items():
@@ -1494,6 +1499,10 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
             if driven in rig.pose.bones.keys():
                 pb = rig.pose.bones[driven]
                 buildChannel(expr["translation"], pb, "location")
+        if "scale" in expr.keys() and not GS.useInheritScale:
+            if driven in rig.pose.bones.keys():
+                pb = rig.pose.bones[driven]
+                buildChannel(expr["scale"], pb, "scale")
         if "value" in expr.keys():
             formulas = expr["value"]
             if driven in altmorphs.keys():
