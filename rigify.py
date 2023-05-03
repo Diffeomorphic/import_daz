@@ -1209,13 +1209,18 @@ class Rigifier:
             cns.invert_y = True
             cns.invert_z = True
         elif pb.name == "pelvis":
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            pass
+            #cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif rname.startswith("DEF-toe"):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             cns.invert_x = True
             cns.invert_y = False
             cns.invert_z = True
         elif rname.startswith("DEF-spine"):
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
+        elif rname.startswith(("DEF-foot", "DEF-hand")):
+            cns = copyTransform(pb, rb, gen, space='POSE')
+        elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
             if isLocationUnlocked(pb):
@@ -1290,8 +1295,9 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         finalizeArmature(rig)
         self.createMeta(context)
         gen = self.rigifyMeta(context)
-        if self.useKeepRig and self.useDazForDeform:
-            self.tieBones(nrig, gen)
+        if self.useKeepRig:
+            if self.useDazForDeform:
+                self.tieBones(nrig, gen)
             self.setRigName(gen, nrig, "RIGIFY")
         t2 = perf_counter()
         print("DAZ rig %s successfully rigified in %.3f seconds" % (self.rigname, t2-t1))

@@ -591,7 +591,11 @@ class Fixer(DriverUser):
         cns.target = gen
         for ob in self.meshes:
             ob.parent = rig
-            retargetDrivers(ob.data.shape_keys, gen, rig, True)
+            skeys = ob.data.shape_keys
+            if skeys:
+                retargetDrivers(skeys, gen, rig, True)
+                for skey in skeys.key_blocks:
+                    skey.mute = False
             mod = getModifier(ob, 'ARMATURE')
             if mod:
                 mod.object = rig
