@@ -157,6 +157,7 @@ class Instance(Accessor, Channels, SimNode):
         self.center = Vector((0,0,0))
         self.cpoint = Vector((0,0,0))
         self.wmat = self.wrot = self.wscale = Matrix()
+        self.lscale = Matrix()
         self.refcoll = None
         self.isGroupNode = False
         self.rigidFollow = None
@@ -542,16 +543,14 @@ class Instance(Accessor, Channels, SimNode):
         cpoint = d2b00(attributes["center_point"])
 
         lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
-        lscale = self.lscale = Matrix()
-        for i in range(3):
-            lscale[i][i] = scale[i]
+        self.lscale = Matrix.Diagonal(scale).to_4x4()
         ormat = Euler(orient).to_matrix().to_4x4()
 
         if parent:
             coffset = cpoint - parent.cpoint
             wtrans = parent.wmat @ (coffset + trans)
             wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
-            oscale = ormat @ lscale @ ormat.inverted()
+            oscale = ormat @ self.lscale @ ormat.inverted()
             if self.inherits_scale:
                 wscale = parent.wscale @ oscale
             else:
@@ -559,7 +558,7 @@ class Instance(Accessor, Channels, SimNode):
         else:
             wtrans = cpoint + trans
             wrot = ormat @ lrot @ ormat.inverted()
-            wscale = ormat @ lscale @ ormat.inverted()
+            wscale = ormat @ self.lscale @ ormat.inverted()
 
         transmat = Matrix.Translation(wtrans)
         wmat = transmat @ wrot @ wscale
