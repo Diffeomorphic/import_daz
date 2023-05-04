@@ -1080,7 +1080,6 @@ def register():
         update = toggleMorphArmatures)
 
     bpy.types.Armature.DazBoneMap = CollectionProperty(type=DazStringGroup)
-    bpy.types.Armature.DazDeformRig = StringProperty(default="")
 
 
     for cls in classes:

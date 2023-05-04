@@ -340,10 +340,12 @@ class Fixer(DriverUser):
         def removeDrivers(rna):
             if rna.animation_data:
                 for fcu in list(rna.animation_data.drivers):
-                    prop = getProp(fcu.data_path)
-                    rna.animation_data.drivers.remove(fcu)
-                    if prop and prop in rna.keys():
-                        del rna[prop]
+                    if not isJcmDriver(fcu):
+                        prop = getProp(fcu.data_path)
+                        print("DEL", fcu.data_path)
+                        rna.animation_data.drivers.remove(fcu)
+                        if prop and prop in rna.keys():
+                            del rna[prop]
 
         rig = context.object
         scn = context.scene
@@ -351,8 +353,6 @@ class Fixer(DriverUser):
         activateObject(context, rig)
         if self.useDazForDeform:
             bpy.ops.object.duplicate()
-            removeDrivers(rig)
-            removeDrivers(rig.data)
         else:
             ncoll = bpy.data.collections.new(dazName(coll.name))
             coll.children.link(ncoll)
@@ -375,6 +375,9 @@ class Fixer(DriverUser):
                 nrig = ob
             unlinkAll(ob)
             coll.objects.link(ob)
+        if nrig:
+            removeDrivers(nrig)
+            removeDrivers(nrig.data)
         activateObject(context, rig)
         return nrig
 
@@ -385,7 +388,6 @@ class Fixer(DriverUser):
         rig.data.name = mhx
         nrig.name = self.rigname
         nrig.data.name = self.rigname
-        rig.data.DazDeformRig = nrig.name
 
     #-------------------------------------------------------------
     #   Face Bone
@@ -600,8 +602,6 @@ class Fixer(DriverUser):
         facebones = self.setupFaceBones(rig)
         assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
         for pb in rig.pose.bones:
-            if isDrvBone(pb.name) or hasCopyConstraint(pb):
-                continue
             for cns in list(pb.constraints):
                 pb.constraints.remove(cns)
             self.tieBone(pb, gen, assoc, facebones, rig.DazRig)
@@ -612,7 +612,7 @@ class Fixer(DriverUser):
             ob.parent = rig
             skeys = ob.data.shape_keys
             if skeys:
-                retargetDrivers(skeys, gen, rig, True)
+                retargetDrivers(skeys, gen, rig, onlyJcms=True)
                 for skey in skeys.key_blocks:
                     skey.mute = False
             mod = getModifier(ob, 'ARMATURE')
@@ -1573,16 +1573,23 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
             setMode('OBJECT')
 
 
-def retargetDrivers(rna, orig, nrig, force=False):
+def isJcmDriver(fcu):
+    return True
+    return fcu.data_path.lower().startswith(('key_blocks["pjcm', '["pjcm'))
+
+
+def retargetDrivers(rna, orig, nrig, onlyJcms=False):
     if not (rna and rna.animation_data):
         return
     for fcu in rna.animation_data.drivers:
         fcu.mute = False
+        if onlyJcms and not isJcmDriver(fcu):
+            continue
         for var in fcu.driver.variables:
             for trg in var.targets:
-                if trg.id_type == 'OBJECT' and (force or trg.id == orig):
+                if trg.id_type == 'OBJECT' and (onlyJcms or trg.id == orig):
                     trg.id = nrig
-                elif trg.id_type == 'ARMATURE' and (force or trg.id == orig.data):
+                elif trg.id_type == 'ARMATURE' and (onlyJcms or trg.id == orig.data):
                     trg.id = nrig.data
                 else:
                     print("Unexpected id: %s %s" % (trg.id_type, trg.id))
