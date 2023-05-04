@@ -1559,10 +1559,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
-        if isDrvBone(pb.name):
-            rname = pb.name
-        else:
-            rname = assoc.get(pb.name, pb.name)
+        rname = assoc.get(pb.name, pb.name)
         rb = gen.pose.bones.get(rname)
         if rb is None:
             print("MISS", pb.name)

@@ -549,6 +549,8 @@ class DAZ_PT_Morphs:
         elif rig.type == 'MESH':
             rig = rig.parent
         if rig and rig.type == 'ARMATURE':
+            if rig.data.DazDeformRig in bpy.data.objects.keys():
+                rig = bpy.data.objects[rig.data.DazDeformRig]
             return rig
         else:
             return None

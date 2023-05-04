@@ -81,8 +81,9 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         while rig.type != 'ARMATURE' and rig.parent:
             rig = rig.parent
         if rig.type == 'ARMATURE':
-            amt = rig.data
-            return rig, amt
+            if rig.data.DazDeformRig in bpy.data.objects.keys():
+                rig = bpy.data.objects[rig.data.DazDeformRig]
+            return rig, rig.data
         else:
             return None, None
 

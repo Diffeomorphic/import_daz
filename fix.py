@@ -337,12 +337,22 @@ class Fixer(DriverUser):
                 for fcu in rna.animation_data.drivers:
                     fcu.mute = False
 
+        def removeDrivers(rna):
+            if rna.animation_data:
+                for fcu in list(rna.animation_data.drivers):
+                    prop = getProp(fcu.data_path)
+                    rna.animation_data.drivers.remove(fcu)
+                    if prop and prop in rna.keys():
+                        del rna[prop]
+
         rig = context.object
         scn = context.scene
         coll = getCollection(context, rig)
         activateObject(context, rig)
         if self.useDazForDeform:
             bpy.ops.object.duplicate()
+            removeDrivers(rig)
+            removeDrivers(rig.data)
         else:
             ncoll = bpy.data.collections.new(dazName(coll.name))
             coll.children.link(ncoll)
@@ -375,6 +385,7 @@ class Fixer(DriverUser):
         rig.data.name = mhx
         nrig.name = self.rigname
         nrig.data.name = self.rigname
+        rig.data.DazDeformRig = nrig.name
 
     #-------------------------------------------------------------
     #   Face Bone
@@ -579,10 +590,18 @@ class Fixer(DriverUser):
 
 
     def tieBones(self, rig, gen):
+        def hasCopyConstraint(pb):
+            for cns in list(pb.constraints):
+                if cns.type.startswith("COPY"):
+                    return True
+            return False
+
         print("Tie bones of %s to %s" % (rig.name, gen.name))
         facebones = self.setupFaceBones(rig)
         assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
         for pb in rig.pose.bones:
+            if isDrvBone(pb.name) or hasCopyConstraint(pb):
+                continue
             for cns in list(pb.constraints):
                 pb.constraints.remove(cns)
             self.tieBone(pb, gen, assoc, facebones, rig.DazRig)
