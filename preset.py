@@ -749,18 +749,13 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 #-------------------------------------------------------------
 
 class ConstraintBaker:
-    useCurrentFrame : BoolProperty(
-        name = "Current Frame",
-        description = "Bake current frame only",
-        default = True)
-
-    firstFrame : IntProperty(
-        name = "First Frame",
+    frame_start : IntProperty(
+        name = "Start",
         default = 1)
 
-    lastFrame : IntProperty(
-        name = "Last Frame",
-        default = 1)
+    frame_end : IntProperty(
+        name = "End",
+        default = 250)
 
     @classmethod
     def poll(self, context):
@@ -768,36 +763,23 @@ class ConstraintBaker:
         return (ob and ob.type == 'ARMATURE' and ob.DazRig not in ["mhx", "rigify", "rigify2"])
 
     def draw(self, context):
-        self.layout.prop(self, "useCurrentFrame")
-        if self.useCurrentFrame:
-            self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
-        else:
-            self.layout.prop(self, "firstFrame")
-            self.layout.prop(self, "lastFrame")
-
-
-    def setAuto(self, context):
-        self.auto = (context.scene.tool_settings.use_keyframe_insert_auto or not self.useCurrentFrame)
-
+        self.layout.prop(self, "frame_start")
+        self.layout.prop(self, "frame_end")
 
     def insertKeys(self, pb, frame, scale):
         pb.location = clearEpsilon(pb.location, Zero, 1e-3*scale)
+        pb.keyframe_insert("location", frame=frame, group=pb.name)
         if isinstance(pb, bpy.types.Object):
             pb.rotation_euler = clearEpsilon(pb.rotation_euler, Zero, 1e-3)
+            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
         elif pb.rotation_mode == 'QUATERNION':
             pb.rotation_quaternion = clearEpsilon(pb.rotation_quaternion, (1,0,0,0), 1e-3)
+            pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
         else:
             pb.rotation_euler = clearEpsilon(pb.rotation_euler, Zero, 1e-3)
+            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
         pb.scale = clearEpsilon(pb.scale, Zero, 1e-3)
-        if self.auto:
-            pb.keyframe_insert("location", frame=frame, group=pb.name)
-            if isinstance(pb, bpy.types.Object):
-                pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
-            elif pb.rotation_mode == 'QUATERNION':
-                pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
-            else:
-                pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
-            pb.keyframe_insert("scale", frame=frame, group=pb.name)
+        pb.keyframe_insert("scale", frame=frame, group=pb.name)
 
 
 class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
@@ -806,29 +788,10 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
     bl_description = "Bake poses to current rig and\ndisable copy location/rotation constraints"
     bl_options = {'UNDO'}
 
-    useImposeLocks : BoolProperty(
-        name = "Impose Locks",
-        description = "Impose locks",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useImposeLocks")
-        ConstraintBaker.draw(self, context)
-
-
     def run(self, context):
         rig = context.object
         gen = None
-        scn = context.scene
-        self.setAuto(context)
-        self.frmats = []
-        if self.useCurrentFrame:
-            self.storeMatrices(rig)
-        else:
-            for frame in range(self.firstFrame, self.lastFrame+1):
-                scn.frame_set(frame)
-                updatePose()
-                self.storeMatrices(rig)
+        bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type.startswith("COPY"):
@@ -837,36 +800,8 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
         cns = getConstraint(rig, 'COPY_TRANSFORMS')
         if cns:
             cns.mute = True
-            gen = cns.target
-        if self.useCurrentFrame:
-            self.restoreMatrices(context, rig, self.frmats[0], scn.frame_current)
-        else:
-            for n,frmat in enumerate(self.frmats):
-                frame = self.firstFrame + n
-                scn.frame_set(frame)
-                self.restoreMatrices(context, rig, frmat, frame)
         if gen:
             gen.hide_set(True)
-
-
-    def storeMatrices(self, rig):
-        wmat = rig.matrix_world.copy()
-        mats = [pb.matrix.copy() for pb in rig.pose.bones]
-        self.frmats.append((wmat,mats))
-
-
-    def restoreMatrices(self, context, rig, frmat, frame):
-        from .animation import imposeLocks
-        wmat,mats = frmat
-        setWorldMatrix(rig, wmat)
-        updatePose()
-        self.insertKeys(rig, frame, rig.DazScale)
-        for pb,mat in zip(rig.pose.bones, mats):
-            pb.matrix = mat
-            if self.useImposeLocks:
-                imposeLocks(pb)
-            updatePose()
-            self.insertKeys(pb, frame, rig.DazScale)
 
 #-------------------------------------------------------------
 #   Unbake Constraints
@@ -880,9 +815,8 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
 
     def run(self, context):
         rig = context.object
-        gen = None
         scn = context.scene
-        self.setAuto(context)
+        gen = None
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type.startswith("COPY"):
@@ -892,15 +826,10 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
         if cns:
             cns.mute = False
             gen = cns.target
-        if self.useCurrentFrame:
-            self.clearMatrices(context, rig, scn.frame_current)
-        else:
-            for frame in range(self.firstFrame, self.lastFrame+1):
-                scn.frame_set(frame)
-                self.clearMatrices(context, rig, frame)
+        for frame in range(self.frame_start, self.frame_end+1):
+            self.clearMatrices(context, rig, frame)
         if gen:
             gen.hide_set(False)
-
 
     def clearMatrices(self, context, rig, frame):
         unit = Matrix()
