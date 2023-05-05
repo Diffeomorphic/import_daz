@@ -34,6 +34,7 @@ from .error import *
 from .utils import *
 from .layers import *
 from .propgroups import DazPairGroup
+from .driver import addDriver
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
 from .mhx_data import *
 
@@ -235,20 +236,6 @@ def armatureConstraint(pb, rig, drivers):
         target.subtarget = bone
         addDriver(target, "weight", rig, prop, expr)
     return cns
-
-
-def addDriver(rna, channel, rig, prop, expr, index=-1):
-    from .driver import addDriverVar
-    fcu = rna.driver_add(channel, index)
-    fcu.driver.type = 'SCRIPTED'
-    if isinstance(prop, str):
-        fcu.driver.expression = expr
-        addDriverVar(fcu, "x", prop, rig)
-    else:
-        prop1,prop2 = prop
-        fcu.driver.expression = expr
-        addDriverVar(fcu, "x1", prop1, rig)
-        addDriverVar(fcu, "x2", prop2, rig)
 
 
 def getPropString(prop, x):

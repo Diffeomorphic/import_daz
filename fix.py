@@ -32,7 +32,7 @@ from mathutils import *
 from .error import *
 from .utils import *
 from .layers import *
-from .driver import DriverUser
+from .driver import DriverUser, addDriver
 
 #-------------------------------------------------------------
 #   Fixer class
@@ -337,16 +337,6 @@ class Fixer(DriverUser):
                 for fcu in rna.animation_data.drivers:
                     fcu.mute = False
 
-        def removeDrivers(rna):
-            if rna.animation_data:
-                for fcu in list(rna.animation_data.drivers):
-                    if not isJcmDriver(fcu):
-                        prop = getProp(fcu.data_path)
-                        print("DEL", fcu.data_path)
-                        rna.animation_data.drivers.remove(fcu)
-                        if prop and prop in rna.keys():
-                            del rna[prop]
-
         rig = context.object
         scn = context.scene
         coll = getCollection(context, rig)
@@ -375,9 +365,6 @@ class Fixer(DriverUser):
                 nrig = ob
             unlinkAll(ob)
             coll.objects.link(ob)
-        if nrig:
-            removeDrivers(nrig)
-            removeDrivers(nrig.data)
         activateObject(context, rig)
         return nrig
 
@@ -464,7 +451,7 @@ class Fixer(DriverUser):
 
 
     def addTongueIk(self, rig):
-        from .mhx import addDriver, ikConstraint, copyLocation, stretchTo
+        from .mhx import ikConstraint, copyLocation, stretchTo
         prop = "MhaTongueIk"
         rig.MhaTongueIk = 0
         if not self.useTongueIk:
@@ -608,11 +595,17 @@ class Fixer(DriverUser):
         cns = rig.constraints.new('COPY_TRANSFORMS')
         cns.name = "Copy Transform %s" % gen.name
         cns.target = gen
+
+        for prop in rig.keys():
+            final = finalProp(prop)
+            if final in gen.data.keys():
+                addDriver(rig, propRef(prop), gen.data, propRef(final), "x")
+
         for ob in self.meshes:
             ob.parent = rig
             skeys = ob.data.shape_keys
             if skeys:
-                retargetDrivers(skeys, gen, rig, onlyJcms=True)
+                retargetDrivers(skeys, gen, rig, True)
                 for skey in skeys.key_blocks:
                     skey.mute = False
             mod = getModifier(ob, 'ARMATURE')
@@ -1168,7 +1161,7 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig, bendTwistBones):
-        from .mhx import dampedTrack, copyTransform, stretchTo, addDriver
+        from .mhx import dampedTrack, copyTransform, stretchTo
         setMode('POSE')
         gizmo = "GZM_Ball025"
         for bname,trgname,stretch,prop in bendTwistBones:
@@ -1537,7 +1530,7 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                     subrigs[subrig.name] = subrig
                 mod.object = rig
                 if self.useRetarget:
-                    retargetDrivers(ob.data.shape_keys, subrig, rig)
+                    retargetDrivers(ob.data.shape_keys, subrig, rig, False)
             if ob.parent and ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()
                 bname = ob.parent_bone
@@ -1573,23 +1566,16 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
             setMode('OBJECT')
 
 
-def isJcmDriver(fcu):
-    return True
-    return fcu.data_path.lower().startswith(('key_blocks["pjcm', '["pjcm'))
-
-
-def retargetDrivers(rna, orig, nrig, onlyJcms=False):
+def retargetDrivers(rna, orig, nrig, force):
     if not (rna and rna.animation_data):
         return
     for fcu in rna.animation_data.drivers:
         fcu.mute = False
-        if onlyJcms and not isJcmDriver(fcu):
-            continue
         for var in fcu.driver.variables:
             for trg in var.targets:
-                if trg.id_type == 'OBJECT' and (onlyJcms or trg.id == orig):
+                if trg.id_type == 'OBJECT' and (force or trg.id == orig):
                     trg.id = nrig
-                elif trg.id_type == 'ARMATURE' and (onlyJcms or trg.id == orig.data):
+                elif trg.id_type == 'ARMATURE' and (force or trg.id == orig.data):
                     trg.id = nrig.data
                 else:
                     print("Unexpected id: %s %s" % (trg.id_type, trg.id))

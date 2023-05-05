@@ -253,7 +253,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             return (bname+"_STR")
 
         def driveConstraint(pb, type, rig, prop):
-            from .mhx import addDriver
+            from .driver import addDriver
             for cns in pb.constraints:
                 if cns.type == type:
                     addDriver(cns, "influence", rig, (prop, "DazRotLimits"), "(1-x1)*x2")

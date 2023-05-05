@@ -579,6 +579,19 @@ def setBoolProp(rna, prop, value, ovr, desc=""):
 #
 #-------------------------------------------------------------
 
+def addDriver(rna, channel, rig, prop, expr, index=-1):
+    fcu = rna.driver_add(channel, index)
+    fcu.driver.type = 'SCRIPTED'
+    if isinstance(prop, str):
+        fcu.driver.expression = expr
+        addDriverVar(fcu, "x", prop, rig)
+    else:
+        prop1,prop2 = prop
+        fcu.driver.expression = expr
+        addDriverVar(fcu, "x1", prop1, rig)
+        addDriverVar(fcu, "x2", prop2, rig)
+
+
 def addDriverVar(fcu, vname, path, rna):
     var = fcu.driver.variables.new()
     var.name = vname

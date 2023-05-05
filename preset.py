@@ -755,7 +755,7 @@ class ConstraintBaker:
 
     frame_end : IntProperty(
         name = "End",
-        default = 250)
+        default = 1)
 
     @classmethod
     def poll(self, context):
@@ -781,6 +781,29 @@ class ConstraintBaker:
         pb.scale = clearEpsilon(pb.scale, Zero, 1e-3)
         pb.keyframe_insert("scale", frame=frame, group=pb.name)
 
+    def getProps(self, rig, gen):
+        props = {}
+        for prop in rig.keys():
+            final = finalProp(prop)
+            if final in gen.data.keys():
+                props[prop] = gen.data[final]
+        return props
+
+    def muteConstraints(self, rig, mute):
+        gen = None
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                if cns.type.startswith("COPY"):
+                    cns.mute = mute
+                    gen = cns.target
+        cns = getConstraint(rig, 'COPY_TRANSFORMS')
+        if cns:
+            cns.mute = mute
+            gen = cns.target
+        if gen:
+            gen.hide_set(mute)
+        return gen
+
 
 class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
     bl_idname = "daz.bake_copy_constraints"
@@ -792,16 +815,36 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
         rig = context.object
         gen = None
         bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
-        for pb in rig.pose.bones:
-            for cns in pb.constraints:
-                if cns.type.startswith("COPY"):
-                    cns.mute = True
-                    gen = cns.target
-        cns = getConstraint(rig, 'COPY_TRANSFORMS')
-        if cns:
-            cns.mute = True
-        if gen:
-            gen.hide_set(True)
+        gen = self.muteConstraints(rig, True)
+        props = self.getProps(rig, gen)
+        fcurves = self.getFcurves(gen, props)
+        for prop,value in props.items():
+            rig.driver_remove(propRef(prop))
+            rig[prop] = value
+        for prop,fcu in fcurves.items():
+            self.setFcurve(rig, prop, fcu)
+
+    def getFcurves(self, gen, props):
+        fcurves = {}
+        act = None
+        if gen.animation_data:
+            act = gen.animation_data.action
+        if act:
+            for fcu in act.fcurves:
+                prop = getProp(fcu.data_path)
+                if prop in props:
+                    fcurves[prop] = fcu
+        return fcurves
+
+    def setFcurve(self, rig, prop, fcu):
+        rig[prop] = fcu.evaluate(self.frame_start)
+        rig.keyframe_insert(propRef(prop), frame=self.frame_start)
+        act = rig.animation_data.action
+        fcu2 = act.fcurves.find(propRef(prop))
+        fcu2.keyframe_points.clear()
+        for frame in range(self.frame_start, self.frame_end+1):
+            value = fcu.evaluate(frame)
+            kp = fcu2.keyframe_points.insert(frame, value, options={'FAST'})
 
 #-------------------------------------------------------------
 #   Unbake Constraints
@@ -814,22 +857,16 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        from .driver import addDriver
         rig = context.object
-        scn = context.scene
-        gen = None
-        for pb in rig.pose.bones:
-            for cns in pb.constraints:
-                if cns.type.startswith("COPY"):
-                    cns.mute = False
-                    gen = cns.target
-        cns = getConstraint(rig, 'COPY_TRANSFORMS')
-        if cns:
-            cns.mute = False
-            gen = cns.target
+        gen = self.muteConstraints(rig, False)
         for frame in range(self.frame_start, self.frame_end+1):
             self.clearMatrices(context, rig, frame)
-        if gen:
-            gen.hide_set(False)
+        props = self.getProps(rig, gen)
+        self.removeFcurves(rig, props)
+        for prop in props.keys():
+            final = finalProp(prop)
+            addDriver(rig, propRef(prop), gen.data, propRef(final), "x")
 
     def clearMatrices(self, context, rig, frame):
         unit = Matrix()
@@ -838,6 +875,16 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
             self.insertKeys(pb, frame, rig.DazScale)
+
+    def removeFcurves(self, rig, props):
+        act = None
+        if rig.animation_data:
+            act = rig.animation_data.action
+        if act:
+            for fcu in list(act.fcurves):
+                prop = getProp(fcu.data_path)
+                if prop and prop in props:
+                    act.fcurves.remove(fcu)
 
 #-------------------------------------------------------------
 #   Initialize
