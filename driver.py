@@ -593,7 +593,9 @@ def addDriver(rna, channel, rig, prop, expr, index=-1):
 
 
 def addDriverVar(fcu, vname, path, rna):
-    var = fcu.driver.variables.new()
+    var = fcu.driver.variables.get(vname)
+    if var is None:
+        var = fcu.driver.variables.new()
     var.name = vname
     var.type = 'SINGLE_PROP'
     trg = var.targets[0]
