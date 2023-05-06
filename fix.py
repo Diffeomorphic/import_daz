@@ -598,8 +598,8 @@ class Fixer(DriverUser):
 
         for prop in rig.keys():
             final = finalProp(prop)
-            if final in gen.data.keys():
-                addDriver(rig, propRef(prop), gen.data, propRef(final), "x")
+            if prop in gen.keys() and final in gen.data.keys():
+                addDriver(rig, propRef(prop), gen, propRef(prop), "x")
 
         for ob in self.meshes:
             ob.parent = rig
