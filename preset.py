@@ -748,26 +748,45 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 #   Bake deform rig
 #-------------------------------------------------------------
 
-class DeformRigBaker:
+class Framer:
+    frame_start : IntProperty(
+        name = "Start",
+        default = 1)
+
+    frame_end : IntProperty(
+        name = "End",
+        default = 1)
+
+    def draw(self, context):
+        self.layout.prop(self, "frame_start")
+        self.layout.prop(self, "frame_end")
+
+    def bakeShapekeys(self, context, meshes):
+        scn = context.scene
+        for frame in range(self.frame_start, self.frame_end+1):
+            scn.frame_current = frame
+            updateScene(context)
+            for ob in meshes:
+                for skey in ob.data.shape_keys.key_blocks:
+                    skey.value = skey.value
+                    if abs(skey.value) < 1e-4:
+                        skey.value = 0
+                    skey.keyframe_insert("value", frame=frame)
+
+
+class ControlRigBaker:
+    useShapekeys : BoolProperty(
+        name = "Shapekeys",
+        description = "Mute/unmute shapekeys too",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useShapekeys")
+
     @classmethod
     def poll(self, context):
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazRig not in ["mhx", "rigify", "rigify2"])
-
-    def insertKeys(self, pb, frame, scale):
-        pb.location = clearEpsilon(pb.location, Zero, 1e-3*scale)
-        pb.keyframe_insert("location", frame=frame, group=pb.name)
-        if isinstance(pb, bpy.types.Object):
-            pb.rotation_euler = clearEpsilon(pb.rotation_euler, Zero, 1e-3)
-            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
-        elif pb.rotation_mode == 'QUATERNION':
-            pb.rotation_quaternion = clearEpsilon(pb.rotation_quaternion, (1,0,0,0), 1e-3)
-            pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
-        else:
-            pb.rotation_euler = clearEpsilon(pb.rotation_euler, Zero, 1e-3)
-            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
-        pb.scale = clearEpsilon(pb.scale, Zero, 1e-3)
-        pb.keyframe_insert("scale", frame=frame, group=pb.name)
 
     def getProps(self, rig, gen):
         props = {}
@@ -796,57 +815,59 @@ class DeformRigBaker:
         return gen
 
 
-class DAZ_OT_BakeDeformRig(DeformRigBaker, DazPropsOperator):
-    bl_idname = "daz.bake_deform_rig"
-    bl_label = "Bake Deform Rig"
-    bl_description = "Bake poses to current rig and disable\ndrivers and copy location/rotation constraints"
+class DAZ_OT_BakeShapekeys(Framer, DazPropsOperator, IsMesh):
+    bl_idname = "daz.bake_shapekeys"
+    bl_label = "Bake Shapekeys"
+    bl_description = "Bake shapekey values to current action.\nMute control rig afterwards"
     bl_options = {'UNDO'}
 
-    bakeShapekeys : BoolProperty(
-        name = "Bake Shapekeys",
-        description = "Bake shapekeys instead of keeping drivers.\nExperimental",
-        default = False)
+    def run(self, context):
+        t1 = perf_counter()
+        scn = context.scene
+        meshes = getSelectedMeshes(context)
+        self.bakeShapekeys(context, meshes)
+        t2 = perf_counter()
+        print("Shapekeys baked in %3f seconds." % (t2-t1))
 
-    frame_start : IntProperty(
-        name = "Start",
-        default = 1)
 
-    frame_end : IntProperty(
-        name = "End",
-        default = 1)
+class DAZ_OT_MuteControlRig(ControlRigBaker, Framer, DazPropsOperator):
+    bl_idname = "daz.mute_control_rig"
+    bl_label = "Mute Deform Rig"
+    bl_description = "Disable drivers and copy location/rotation constraints"
+    bl_options = {'UNDO'}
+
+    useBake : BoolProperty(
+        name = "Bake action",
+        description = "Bake visual transform to an action",
+        default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "bakeShapekeys")
-        self.layout.prop(self, "frame_start")
-        self.layout.prop(self, "frame_end")
+        ControlRigBaker.draw(self, context)
+        self.layout.prop(self, "useBake")
+        if self.useBake:
+            Framer.draw(self, context)
 
     def run(self, context):
         rig = context.object
         meshes = self.getMeshes(rig)
+        if self.useBake:
+            bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
+            if self.useShapekeys:
+                self.bakeShapekeys(context, meshes)
         gen = None
-        bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
+        if self.useShapekeys:
+            for ob in meshes:
+                for skey in ob.data.shape_keys.key_blocks:
+                    skey.driver_remove("value")
         gen = self.muteConstraints(rig, True)
         props = self.getProps(rig, gen)
         fcurves = self.getFcurves(gen, props)
-        if self.bakeShapekeys:
-            for ob in meshes:
-                skeys = ob.data.shape_keys
-                for skey in ob.data.shape_keys.key_blocks:
-                    skey.value = skey.value
-                    skey.driver_remove("value")
         for prop,value in props.items():
             rig.driver_remove(propRef(prop))
             rig[prop] = value
-        for prop,fcu in fcurves.items():
-            self.setFcurve(rig, propRef(prop), fcu)
-        if self.bakeShapekeys:
-            for ob in meshes:
-                skeys = ob.data.shape_keys
-                for skey in skeys.key_blocks:
-                    fcu = fcurves.get(skey.name)
-                    if fcu:
-                        self.setFcurve(skeys, 'key_blocks["%s"].value' % skey.name, fcu)
-
+        if self.useBake:
+            for prop,fcu in fcurves.items():
+                self.setFcurve(rig, propRef(prop), fcu)
 
     def getFcurves(self, gen, props):
         fcurves = {}
@@ -860,25 +881,32 @@ class DAZ_OT_BakeDeformRig(DeformRigBaker, DazPropsOperator):
                     fcurves[prop] = fcu
         return fcurves
 
-
     def setFcurve(self, rna, path, fcu):
-        rna.keyframe_insert(path, frame=self.frame_start)
+        rna.keyframe_insert(path)
         act = rna.animation_data.action
         fcu2 = act.fcurves.find(path)
         fcu2.keyframe_points.clear()
         for frame in range(self.frame_start, self.frame_end+1):
             value = fcu.evaluate(frame)
-            kp = fcu2.keyframe_points.insert(frame, value, options={'FAST'})
+            fcu2.keyframe_points.insert(frame, value, options={'FAST'})
 
 #-------------------------------------------------------------
 #   Unbake Constraints
 #-------------------------------------------------------------
 
-class DAZ_OT_UnbakeDeformRig(DeformRigBaker, DazOperator):
-    bl_idname = "daz.unbake_deform_rig"
-    bl_label = "Unbake Deform Rig"
-    bl_description = "Clear poses and enable drivers and copy location/rotation constraints"
+class DAZ_OT_UnmuteControlRig(ControlRigBaker, Framer, DazPropsOperator):
+    bl_idname = "daz.unmute_control_rig"
+    bl_label = "Unmute Deform Rig"
+    bl_description = "Enable drivers and copy location/rotation constraints"
     bl_options = {'UNDO'}
+
+    useClear : BoolProperty(
+        name = "Clear action",
+        description = "Clear the current action",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useClear")
 
     def run(self, context):
         from .driver import addDriver
@@ -886,30 +914,24 @@ class DAZ_OT_UnbakeDeformRig(DeformRigBaker, DazOperator):
         meshes = self.getMeshes(rig)
         gen = self.muteConstraints(rig, False)
         props = self.getProps(rig, gen)
-        self.removeFcurves(rig)
-        for ob in meshes:
-            self.removeFcurves(ob.data.shape_keys)
-        unit = Matrix()
-        rig.matrix_world = unit
-        for pb in rig.pose.bones:
-            pb.matrix_basis = unit
+        if self.useClear and rig.animation_data:
+            rig.animation_data.action = None
+            unit = Matrix()
+            rig.matrix_world = unit
+            for pb in rig.pose.bones:
+                pb.matrix_basis = unit
         for prop in props.keys():
             final = finalProp(prop)
             addDriver(rig, propRef(prop), gen, propRef(prop), "x")
-        for ob in meshes:
-            skeys = ob.data.shape_keys
-            for skey in skeys.key_blocks:
-                final = finalProp(skey.name)
-                if final in rig.data.keys():
-                    addDriver(skeys, 'key_blocks["%s"].value' % skey.name, rig.data, propRef(final), "x")
-
-
-    def removeFcurves(self, rna):
-        if rna and rna.animation_data:
-            act = rna.animation_data.action
-            if act:
-                for fcu in list(act.fcurves):
-                    act.fcurves.remove(fcu)
+        if self.useShapekeys:
+            for ob in meshes:
+                skeys = ob.data.shape_keys
+                if self.useClear and skeys.animation_data:
+                    skeys.animation_data.action = None
+                for skey in skeys.key_blocks:
+                    final = finalProp(skey.name)
+                    if final in rig.data.keys():
+                        addDriver(skeys, 'key_blocks["%s"].value' % skey.name, rig.data, propRef(final), "x")
 
 #-------------------------------------------------------------
 #   Initialize
@@ -918,8 +940,9 @@ class DAZ_OT_UnbakeDeformRig(DeformRigBaker, DazOperator):
 classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPreset,
-    DAZ_OT_BakeDeformRig,
-    DAZ_OT_UnbakeDeformRig,
+    DAZ_OT_BakeShapekeys,
+    DAZ_OT_MuteControlRig,
+    DAZ_OT_UnmuteControlRig,
 ]
 
 def register():
