@@ -745,26 +745,14 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         return struct
 
 #-------------------------------------------------------------
-#   Bake constraints
+#   Bake deform rig
 #-------------------------------------------------------------
 
-class ConstraintBaker:
-    frame_start : IntProperty(
-        name = "Start",
-        default = 1)
-
-    frame_end : IntProperty(
-        name = "End",
-        default = 1)
-
+class DeformRigBaker:
     @classmethod
     def poll(self, context):
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazRig not in ["mhx", "rigify", "rigify2"])
-
-    def draw(self, context):
-        self.layout.prop(self, "frame_start")
-        self.layout.prop(self, "frame_end")
 
     def insertKeys(self, pb, frame, scale):
         pb.location = clearEpsilon(pb.location, Zero, 1e-3*scale)
@@ -789,6 +777,9 @@ class ConstraintBaker:
                 props[prop] = gen.data[final]
         return props
 
+    def getMeshes(self, rig):
+        return [ob for ob in rig.children if (ob.type == 'MESH' and ob.data.shape_keys)]
+
     def muteConstraints(self, rig, mute):
         gen = None
         for pb in rig.pose.bones:
@@ -805,24 +796,57 @@ class ConstraintBaker:
         return gen
 
 
-class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
-    bl_idname = "daz.bake_copy_constraints"
-    bl_label = "Bake Copy Constraints"
-    bl_description = "Bake poses to current rig and\ndisable copy location/rotation constraints"
+class DAZ_OT_BakeDeformRig(DeformRigBaker, DazPropsOperator):
+    bl_idname = "daz.bake_deform_rig"
+    bl_label = "Bake Deform Rig"
+    bl_description = "Bake poses to current rig and disable\ndrivers and copy location/rotation constraints"
     bl_options = {'UNDO'}
+
+    bakeShapekeys : BoolProperty(
+        name = "Bake Shapekeys",
+        description = "Bake shapekeys instead of keeping drivers.\nExperimental",
+        default = False)
+
+    frame_start : IntProperty(
+        name = "Start",
+        default = 1)
+
+    frame_end : IntProperty(
+        name = "End",
+        default = 1)
+
+    def draw(self, context):
+        self.layout.prop(self, "bakeShapekeys")
+        self.layout.prop(self, "frame_start")
+        self.layout.prop(self, "frame_end")
 
     def run(self, context):
         rig = context.object
+        meshes = self.getMeshes(rig)
         gen = None
         bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
         gen = self.muteConstraints(rig, True)
         props = self.getProps(rig, gen)
         fcurves = self.getFcurves(gen, props)
+        if self.bakeShapekeys:
+            for ob in meshes:
+                skeys = ob.data.shape_keys
+                for skey in ob.data.shape_keys.key_blocks:
+                    skey.value = skey.value
+                    skey.driver_remove("value")
         for prop,value in props.items():
             rig.driver_remove(propRef(prop))
             rig[prop] = value
         for prop,fcu in fcurves.items():
-            self.setFcurve(rig, prop, fcu)
+            self.setFcurve(rig, propRef(prop), fcu)
+        if self.bakeShapekeys:
+            for ob in meshes:
+                skeys = ob.data.shape_keys
+                for skey in skeys.key_blocks:
+                    fcu = fcurves.get(skey.name)
+                    if fcu:
+                        self.setFcurve(skeys, 'key_blocks["%s"].value' % skey.name, fcu)
+
 
     def getFcurves(self, gen, props):
         fcurves = {}
@@ -836,11 +860,11 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
                     fcurves[prop] = fcu
         return fcurves
 
-    def setFcurve(self, rig, prop, fcu):
-        rig[prop] = fcu.evaluate(self.frame_start)
-        rig.keyframe_insert(propRef(prop), frame=self.frame_start)
-        act = rig.animation_data.action
-        fcu2 = act.fcurves.find(propRef(prop))
+
+    def setFcurve(self, rna, path, fcu):
+        rna.keyframe_insert(path, frame=self.frame_start)
+        act = rna.animation_data.action
+        fcu2 = act.fcurves.find(path)
         fcu2.keyframe_points.clear()
         for frame in range(self.frame_start, self.frame_end+1):
             value = fcu.evaluate(frame)
@@ -850,40 +874,41 @@ class DAZ_OT_BakeCopyConstraints(ConstraintBaker, DazPropsOperator):
 #   Unbake Constraints
 #-------------------------------------------------------------
 
-class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
-    bl_idname = "daz.unbake_copy_constraints"
-    bl_label = "Unbake Copy Constraints"
-    bl_description = "Clear poses and enable copy location/rotation constraints"
+class DAZ_OT_UnbakeDeformRig(DeformRigBaker, DazOperator):
+    bl_idname = "daz.unbake_deform_rig"
+    bl_label = "Unbake Deform Rig"
+    bl_description = "Clear poses and enable drivers and copy location/rotation constraints"
     bl_options = {'UNDO'}
 
     def run(self, context):
         from .driver import addDriver
         rig = context.object
+        meshes = self.getMeshes(rig)
         gen = self.muteConstraints(rig, False)
-        for frame in range(self.frame_start, self.frame_end+1):
-            self.clearMatrices(context, rig, frame)
         props = self.getProps(rig, gen)
-        self.removeFcurves(rig, props)
-        for prop in props.keys():
-            final = finalProp(prop)
-            addDriver(rig, propRef(prop), gen.data, propRef(final), "x")
-
-    def clearMatrices(self, context, rig, frame):
+        self.removeFcurves(rig)
+        for ob in meshes:
+            self.removeFcurves(ob.data.shape_keys)
         unit = Matrix()
         rig.matrix_world = unit
-        self.insertKeys(rig, frame, rig.DazScale)
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
-            self.insertKeys(pb, frame, rig.DazScale)
+        for prop in props.keys():
+            final = finalProp(prop)
+            addDriver(rig, propRef(prop), gen, propRef(prop), "x")
+        for ob in meshes:
+            skeys = ob.data.shape_keys
+            for skey in skeys.key_blocks:
+                final = finalProp(skey.name)
+                if final in rig.data.keys():
+                    addDriver(skeys, 'key_blocks["%s"].value' % skey.name, rig.data, propRef(final), "x")
 
-    def removeFcurves(self, rig, props):
-        act = None
-        if rig.animation_data:
-            act = rig.animation_data.action
-        if act:
-            for fcu in list(act.fcurves):
-                prop = getProp(fcu.data_path)
-                if prop and prop in props:
+
+    def removeFcurves(self, rna):
+        if rna and rna.animation_data:
+            act = rna.animation_data.action
+            if act:
+                for fcu in list(act.fcurves):
                     act.fcurves.remove(fcu)
 
 #-------------------------------------------------------------
@@ -893,8 +918,8 @@ class DAZ_OT_UnbakeCopyConstraints(ConstraintBaker, DazPropsOperator):
 classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPreset,
-    DAZ_OT_BakeCopyConstraints,
-    DAZ_OT_UnbakeCopyConstraints,
+    DAZ_OT_BakeDeformRig,
+    DAZ_OT_UnbakeDeformRig,
 ]
 
 def register():
