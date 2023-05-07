@@ -37,6 +37,12 @@ from .fileutils import AF
 from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
 
 
+def setupRigifyData(meta):
+    global RF
+    from .rigify_data import RigifyData
+    RF = RigifyData(meta)
+
+
 class DazBone:
     def __init__(self, eb):
         self.name = eb.name
@@ -474,12 +480,10 @@ class Rigifier:
 
 
     def createMeta(self, context):
-        global RF
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
         from .figure import getRigType
         from .merge import mergeBones, mergeVertexGroups
-        from .rigify_data import RigifyData
 
         print("Create metarig")
         rig = context.object
@@ -518,7 +522,7 @@ class Rigifier:
         meta.DazUseSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
         if meta.DazUseSplitNeck:
             self.splitNeck(meta)
-        RF = RigifyData(meta)
+        setupRigifyData(meta)
 
         activateObject(context, rig)
         rig.select_set(True)
@@ -612,6 +616,7 @@ class Rigifier:
         print("Rigify metarig")
         meta = context.object
         setMode('OBJECT')
+        setupRigifyData(meta)
         rig = None
         for cns in meta.constraints:
             if cns.type == 'COPY_SCALE' and cns.name == "Rigify Source":
