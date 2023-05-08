@@ -1120,10 +1120,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         from .figure import copyBoneInfo
         setMode('OBJECT')
-        #setMode('POSE')
         rpbs = rig.pose.bones
         master = rpbs["master"]
         for suffix in ["L", "R"]:
+            for b0name,bname in [("hand0", "hand")]:
+                pb0 = rpbs["%s.%s" % (b0name, suffix)]
+                pb = rpbs["%s.%s" % (bname, suffix)]
+                copyBoneInfo(pb0, pb)
             for bname in ["upper_arm", "forearm", "hand",
                           "thigh", "shin", "foot", "toe"]:
                 bone = rpbs["%s.%s" % (bname, suffix)]
@@ -1400,6 +1403,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.flips[bname.replace(".fk", "")] = flip
             print("FLIP", bname, flip)
             pb = rig.pose.bones[bname]
+            x,y,z = pb.DazAxes
+            fx,fy,fz = pb.DazFlips
+            if x == 1 and y == 0 and z == 2:
+                pb.DazAxes = (x,z,y)
+                pb.DazFlips = (-fx,fz,-fy)
+            else:
+                raise DazError("BUG when flipping hands:\n%s %s %s" % (bname, pb.DazAxes, pb.DazFlips))
             cns = getConstraint(pb, 'LIMIT_ROTATION')
             if cns:
                 usex, minx, maxx = cns.use_limit_x, cns.min_x, cns.max_x
