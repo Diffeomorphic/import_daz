@@ -1462,15 +1462,33 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                     print("Dependency loop: %s %s" % (pbDriver.name, pb.name))
                     continue
                 if factor:
-                    uvec = getBoneVector(factor, comp, pbDriver)
-                    dvec = getBoneVector(1.0, idx, pb)
-                    idx2,sign,x = getDrivenComp(dvec)
-                    lm.makeSimpleBoneDriver(path, sign*uvec, pb, channel, idx2, driver, False)
+                    tvec,idx2 = getTransformVector(factor, channel, comp, pbDriver, pb, idx)
+                    lm.makeSimpleBoneDriver(path, tvec, pb, channel, idx2, driver, False)
+
+
+    def getTransformVector(factor, channel, comp, pbDriver, pb, idx):
+        if (not GS.useDazOrientation or
+            pb.rotation_mode == 'QUATERNION'):
+            uvec = getBoneVector(factor, comp, pbDriver)
+            dvec = getBoneVector(1.0, idx, pb)
+            idx2,sign,x = getDrivenComp(dvec)
+            if channel == "scale":
+                tvec = Vector([abs(y) for y in uvec])
+            else:
+                tvec = sign*uvec
+        else:
+            idx2 = pb.DazAxes[idx]
+            tvec = Vector((0,0,0))
+            if channel == "scale":
+                tvec[idx2] = factor
+            else:
+                tvec[idx2] = pb.DazFlips[idx2] * factor
+        return tvec, idx2
+
 
     def buildValueDriver(exprs, raw):
         lm = LoadMorph()
         lm.initRig(rig)
-        #print("VD", raw)
         for idx,expr in exprs.items():
             bname = expr["bone"]
             if (bname not in rig.pose.bones.keys() and

@@ -32,6 +32,7 @@
 class BoneData:
     RollCorrection = {
         "lCollar" : 180,
+        "lPectoral" : 180,
         "lShldr" : -90,
         "lShldrBend" : -90,
         "lShldrTwist" : -90,
@@ -40,7 +41,8 @@ class BoneData:
         "lThumb2" : 180,
         "lThumb3" : 180,
 
-        "rCollar" : 180,
+        #"rCollar" : 180,
+        #"rPectoral" : 180,
         "rShldr" : 90,
         "rShldrBend" : 90,
         "rShldrTwist" : 90,
