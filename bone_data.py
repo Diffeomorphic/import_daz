@@ -41,8 +41,8 @@ class BoneData:
         "lThumb2" : 180,
         "lThumb3" : 180,
 
-        #"rCollar" : 180,
-        #"rPectoral" : 180,
+        "rCollar" : 180,
+        "rPectoral" : 180,
         "rShldr" : 90,
         "rShldrBend" : 90,
         "rShldrTwist" : 90,
@@ -118,15 +118,15 @@ class BoneData:
         "r_thumb3" : "YZX",
     }
 
-    UnFlips = ("lCollar", "lShldr", "lForearm", "lHand",
+    UnFlips = ("lCollar", "lPectoral", "lShldr", "lForearm", "lHand",
                "lThumb", "lIndex", "lMid", "lRing", "lPinky",
-               "l_shoulder", "l_upperarm", "l_forearm", "l_hand",
+               "l_shoulder", "l_pectoral", "l_upperarm", "l_forearm", "l_hand",
                "l_thumb", "l_index", "l_mid", "l_ring", "l_pinky",
                )
 
-    Flips = ("rCollar", "rShldr", "rForearm", "rHand",
+    Flips = ("rCollar", "rPectoral", "rShldr", "rForearm", "rHand",
              "rThumb", "rIndex", "rMid", "rRing", "rPinky",
-             "r_shoulder", "r_upperarm", "r_forearm", "r_hand",
+             "r_shoulder", "r_pectoral", "r_upperarm", "r_forearm", "r_hand",
              "r_thumb", "r_index", "r_mid", "r_ring", "r_pinky",
              )
 
