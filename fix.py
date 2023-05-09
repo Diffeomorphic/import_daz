@@ -923,6 +923,13 @@ class BendTwists:
                 bnames[bone.name] = True
 
         removeBoneSumDrivers(rig, bnames.keys())
+        for pb in rig.pose.bones:
+            if pb.name.endswith(("Bend", "Twist")):
+                pb.driver_remove("location")
+                pb.driver_remove("rotation_euler")
+                pb.driver_remove("scale")
+                for cns in list(pb.constraints):
+                    pb.constraints.remove(cns)
         setMode('EDIT')
         for bname in btnames:
             eb = rig.data.edit_bones[bname]
