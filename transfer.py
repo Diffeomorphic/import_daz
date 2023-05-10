@@ -374,14 +374,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                     cskey = cskeys.key_blocks[sname]
                     trg.shape_key_remove(cskey)
 
-            fcus = []
-            if self.useDrivers:
-                from .driver import getRnaDriver
-                for channel in ["value", "slider_min", "slider_max"]:
-                    fcu = getRnaDriver(hskeys, 'key_blocks["%s"].%s' % (sname, channel), None)
-                    if fcu:
-                        fcus.append(fcu)
-
             cskey = None
             filepath = None
             if self.useVendorMorphs:
@@ -399,23 +391,12 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                     self.correctForRigidity(trg, cskey)
 
             if cskey:
+                from .driver import addGeneralDriver
                 cskey.slider_min = hskey.slider_min
                 cskey.slider_max = hskey.slider_max
                 cskey.value = self.svalues[sname]
-                if fcus:
-                    for fcu in fcus:
-                        fcu = self.copyDriver(fcu, cskeys)
-                        if self.useStrength:
-                            from .driver import addDriverVar, copyProp, setFloatProp
-                            prop = cskey.name
-                            if prop in src.keys():
-                                copyProp(prop, src, trg, True)
-                            else:
-                                setFloatProp(trg, prop, 0.0, GS.customMin, GS.customMax, True)
-                            fcu.driver.expression = "w+%s" % fcu.driver.expression
-                            addDriverVar(fcu, "w", propRef(prop), trg)
-                            #addToMorphSet(trg, "AutoFollow", prop, None, False, False)
-                            trg.DazMorphAuto = True
+                if self.useDrivers:
+                    addGeneralDriver(cskey, "value", hskeys, 'key_blocks["%s"].value' % hskey.name, "x")
             else:
                 printName(" -", sname)
 

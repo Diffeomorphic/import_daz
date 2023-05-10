@@ -592,12 +592,19 @@ def addDriver(rna, channel, rig, prop, expr, index=-1):
         addDriverVar(fcu, "x2", prop2, rig)
 
 
-def addDriverVar(fcu, vname, path, rna):
+def addGeneralDriver(rna, channel, rig, path, expr, index=-1):
+    fcu = rna.driver_add(channel, index)
+    fcu.driver.type = 'SCRIPTED'
+    fcu.driver.expression = expr
+    addDriverVar(fcu, "x", path, rig)
+
+
+def addDriverVar(fcu, vname, path, rna, vartype='SINGLE_PROP'):
     var = fcu.driver.variables.get(vname)
     if var is None:
         var = fcu.driver.variables.new()
     var.name = vname
-    var.type = 'SINGLE_PROP'
+    var.type = vartype
     trg = var.targets[0]
     trg.id_type = getIdType(rna)
     trg.id = rna
@@ -612,6 +619,8 @@ def getIdType(rna):
         return 'OBJECT'
     elif isinstance(rna, bpy.types.Mesh):
         return 'MESH'
+    elif isinstance(rna, bpy.types.Key):
+        return 'KEY'
     else:
         raise RuntimeError("BUG addDriverVar", rna)
 
