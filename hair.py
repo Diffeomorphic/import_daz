@@ -87,7 +87,7 @@ class Separator:
 
 
     def checkStrip(self, context, hair):
-        if not self.useCheckStrips:
+        if not self.useCheckStrips or len(hair.data.polygons) < 50:
             return True
         uvs = hair.data.uv_layers.active.data
         xs = [uv.uv[0] for uv in uvs]
@@ -97,7 +97,7 @@ class Separator:
         isstrip = (dx > 2*dy or dy > 2*dx)
         if not isstrip:
             activateObject(context, hair)
-            msg = '"%s" is not a strip.\nDid you separate the scalp from the rest of the hair?' % hair.name
+            msg = '"%s" is not a strip.\nDid you separate the scalp from the rest of the hair?\nDisable Check Strips to avoid this error' % hair.name
             print(msg)
             raise DazError(msg)
         return True
