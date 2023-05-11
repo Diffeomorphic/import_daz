@@ -707,24 +707,52 @@ def removeBoneSumDrivers(rig, bones):
     removeDriverFCurves(sumFcus.values(), rig)
 
 #----------------------------------------------------------
-#   Update button
+#   Optimize drivers
 #----------------------------------------------------------
 
-def optimizeDrivers(rig):
-    def match(keys, string):
-        for key in keys:
-            if key in string:
-                return True
-        return False
+class DAZ_OT_OptimizeDrivers(DazOperator, IsMeshArmature):
+    bl_idname = "daz.optimize_drivers"
+    bl_label = "Optimize Drivers"
+    bl_description = "Optimize the web of drivers.\nNew morphs can not be loaded afterwards"
+    bl_options = {'UNDO'}
 
-    def collectDrivers(rna):
+    def run(self, context):
+        from .finger import getRigMeshes
+        self.rig, self.meshes = getRigMeshes(context)
+        if self.rig:
+            self.amt = self.rig.data
+        self.sumdrivers = {}
+        self.findrivers = {}
+        self.deldrivers = []
+        self.shapedrivers = {}
+        self.collectDrivers(self.amt)
+        self.replaceTargets(self.rig)
+        self.replaceTargets(self.amt)
+        for ob in self.meshes:
+            skeys = ob.data.shape_keys
+            if skeys:
+                self.replaceTargets(skeys)
+                self.replaceFinalDrivers(skeys)
+        self.deleteDrivers(self.amt)
+
+
+    def collectDrivers(self, rna):
+        def match(keys, string):
+            for key in keys:
+                if key in string:
+                    return True
+            return False
+
+        if rna is None or rna.animation_data is None:
+            print("No drivers: %s" % rna)
+            return
         for fcu in rna.animation_data.drivers:
             drv = fcu.driver
             prop = getProp(fcu.data_path)
             if prop is None:
                 pass
             elif match([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
-                sumdrivers[fcu.data_path] = fcu, prop
+                self.sumdrivers[fcu.data_path] = fcu, prop
             elif (drv.type == 'SCRIPTED' and
                   isFinal(prop) and
                   len(drv.variables) == 1 and
@@ -733,58 +761,55 @@ def optimizeDrivers(rig):
                 if len(var.targets) == 1:
                     trg = var.targets[0]
                     raw = getProp(trg.data_path)
-                    if raw == baseProp(prop) and trg.id == rig:
-                        findrivers[propRef(prop)] = fcu, raw
-                        deldrivers.append((fcu, prop))
+                    if raw == baseProp(prop) and trg.id == self.rig:
+                        self.findrivers[propRef(prop)] = fcu, raw
+                        self.deldrivers.append((fcu, prop))
 
-    def replaceTargets(rna):
-        if rna.animation_data is None:
+
+    def replaceTargets(self, rna):
+        if rna is None or rna.animation_data is None:
             return
         for fcu in list(rna.animation_data.drivers):
             drv = fcu.driver
             if drv.type == 'SUM' and len(drv.variables) == 1:
                 var = drv.variables[0]
                 trg = var.targets[0]
-                if trg.data_path in sumdrivers.keys():
-                    srcfcu,prop = sumdrivers[trg.data_path]
+                if trg.data_path in self.sumdrivers.keys():
+                    srcfcu,prop = self.sumdrivers[trg.data_path]
                     path,idx = fcu.data_path, fcu.array_index
                     rna.driver_remove(fcu.data_path, fcu.array_index)
                     nfcu = rna.animation_data.drivers.from_existing(src_driver=srcfcu)
                     nfcu.data_path = path
                     nfcu.array_index = idx
-                    deldrivers.append((srcfcu, prop))
+                    self.deldrivers.append((srcfcu, prop))
         for fcu in rna.animation_data.drivers:
             for var in list(fcu.driver.variables):
                 trg = var.targets[0]
-                if trg.id == amt and trg.data_path in findrivers.keys():
+                if trg.id == self.amt and trg.data_path in self.findrivers.keys():
                     vname = var.name
                     fcu.driver.variables.remove(var)
-                    prop = findrivers[trg.data_path][1]
-                    addDriverVar(fcu, vname, propRef(prop), rig)
+                    prop = self.findrivers[trg.data_path][1]
+                    addDriverVar(fcu, vname, propRef(prop), self.rig)
 
-    amt = rig.data
-    if not amt.animation_data:
-        print("No drivers to optimize")
-        return
-    sumdrivers = {}
-    findrivers = {}
-    deldrivers = []
-    collectDrivers(amt)
-    replaceTargets(rig)
-    replaceTargets(amt)
-    for ob in rig.children:
-        if ob.type == 'MESH':
-            skeys = ob.data.shape_keys
-            if skeys:
-                replaceTargets(skeys)
-    ndrivers = len(amt.animation_data.drivers)
-    for fcu,prop in deldrivers:
-        if fcu.data_path:
-            amt.animation_data.drivers.remove(fcu)
-            if prop in amt.keys():
-                del amt[prop]
-    amt.DazOptimizedDrivers = True
-    print("Removed %d out of %d drivers" % (len(deldrivers), ndrivers))
+
+    def deleteDrivers(self, rna):
+        ndrivers = len(rna.animation_data.drivers)
+        for fcu,prop in self.deldrivers:
+            if fcu.data_path:
+                rna.animation_data.drivers.remove(fcu)
+                if prop in rna.keys():
+                    del rna[prop]
+        rna.DazOptimizedDrivers = True
+        print("Removed %d out of %d drivers" % (len(self.deldrivers), ndrivers))
+
+
+    def replaceFinalDrivers(self, rna):
+        if rna is None or rna.animation_data is None:
+            return
+        for fcu in list(rna.animation_data.drivers):
+            if fcu.data_path in self.findrivers.keys():
+                pass
+
 
 #----------------------------------------------------------
 #   Update button
@@ -883,6 +908,7 @@ classes = [
     DAZ_OT_UpdateAll,
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,
+    DAZ_OT_OptimizeDrivers,
 ]
 
 def register():

@@ -864,26 +864,15 @@ def finalizeArmature(rig):
     rig.data.DazFinalized = True
 
 
-class DAZ_OT_FinalizeArmature(DazPropsOperator, IsArmature):
+class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):
     bl_idname = "daz.finalize_armature"
     bl_label = "Finalize Armature"
     bl_description = "Remove unused bone constraints"
     bl_options = {'UNDO'}
 
-    useOptimizeDrivers : BoolProperty(
-        name = "Optimize Drivers",
-        description = "Optimize the web of drivers.\nNew morphs can not be loaded afterwards",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useOptimizeDrivers")
-
     def run(self, context):
         rig = context.object
         finalizeArmature(rig)
-        if self.useOptimizeDrivers:
-            from .driver import optimizeDrivers
-            optimizeDrivers(rig)
 
 #-------------------------------------------------------------
 #   Toggle locks and constraints
