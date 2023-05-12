@@ -710,17 +710,32 @@ def removeBoneSumDrivers(rig, bones):
 #   Optimize drivers
 #----------------------------------------------------------
 
-class DAZ_OT_OptimizeDrivers(DazOperator, IsMeshArmature):
+class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsMeshArmature):
     bl_idname = "daz.optimize_drivers"
     bl_label = "Optimize Drivers"
     bl_description = "Optimize the web of drivers.\nNew morphs can not be loaded afterwards"
     bl_options = {'UNDO'}
+
+    useRemoveMultipliers : BoolProperty(
+        name = "Remove Multipliers",
+        description = "Remove multipliers from drivers",
+        default = True)
+
+
+    def draw(self, context):
+        self.layout.prop(self, "useRemoveMultipliers")
 
     def run(self, context):
         from .finger import getRigMeshes
         self.rig, self.meshes = getRigMeshes(context)
         if self.rig:
             self.amt = self.rig.data
+        if self.useRemoveMultipliers:
+            self.removeMultipliers(self.amt)
+        self.obskeys = [(ob, ob.data.shape_keys) for ob in self.meshes if ob.data.shape_keys]
+        self.removeInvalid(self.amt)
+        for ob,skeys in self.obskeys:
+            self.removeInvalid(skeys)
         self.sumdrivers = {}
         self.findrivers = {}
         self.deldrivers = []
@@ -728,11 +743,9 @@ class DAZ_OT_OptimizeDrivers(DazOperator, IsMeshArmature):
         self.collectDrivers(self.amt)
         self.replaceTargets(self.rig)
         self.replaceTargets(self.amt)
-        for ob in self.meshes:
-            skeys = ob.data.shape_keys
-            if skeys:
-                self.replaceTargets(skeys)
-                self.replaceFinalDrivers(skeys)
+        for ob,skeys in self.obskeys:
+            self.replaceTargets(skeys)
+            self.replaceFinalDrivers(skeys)
         self.deleteDrivers(self.amt)
 
 
@@ -810,6 +823,36 @@ class DAZ_OT_OptimizeDrivers(DazOperator, IsMeshArmature):
             if fcu.data_path in self.findrivers.keys():
                 pass
 
+
+    def removeInvalid(self, rna):
+        if rna is None or rna.animation_data is None:
+            return
+        for fcu in list(rna.animation_data.drivers):
+            prop = getProp(fcu.data_path)
+            if prop and prop not in rna.keys():
+                rna.animation_data.drivers.remove(fcu)
+
+
+    def removeMultipliers(self, rna):
+        if rna is None or rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            drv = fcu.driver
+            if drv.type == 'SCRIPTED':
+                vars = []
+                string = drv.expression
+                while len(string) > 2 and string[1] == "*":
+                    vars.append(string[0])
+                    string = string[2:]
+                if vars:
+                    while string[0] == "(" and string[-1] == ")":
+                        string = string[1:-1]
+                    if string[0] == "+":
+                        string = string[1:]
+                    drv.expression = string
+                    for var in list(drv.variables):
+                        if var.name in vars:
+                            drv.variables.remove(var)
 
 #----------------------------------------------------------
 #   Update button

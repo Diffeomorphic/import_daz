@@ -398,7 +398,7 @@ class DAZ_OT_RemoveCategories(DazOperator, CategorySelector, MorphRemover, IsArm
             ob.DazMorphCats.remove(idx)
             if not isMesh:
                 for pg in cat.morphs:
-                    self.removeRigProp(rig, pg.name)
+                    self.removeRigProp(ob, pg.name)
         if len(ob.DazMorphCats) == 0:
             ob.DazMeshMorphs = False
 
