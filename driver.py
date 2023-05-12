@@ -746,6 +746,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         if self.useRemoveHiddenVars:
             self.removeHiddenVars(self.amt)
         self.obskeys = [(ob, ob.data.shape_keys) for ob in self.rig.children if ob.data.shape_keys]
+        self.modernizeShapekeys()
         self.ndeleted = 0
         ndrivers = len(self.amt.animation_data.drivers)
         self.sumdrivers = {}
@@ -813,6 +814,40 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             if len(var.targets) == 1:
                 return var.targets[0]
         return None
+
+
+    def modernizeShapekeys(self):
+        def isModern(skeys):
+            for fcu in skeys.animation_data.drivers:
+                words = fcu.data_path.split('"')
+                if words[0] == "key_blocks[":
+                    for var in fcu.driver.variables:
+                        for trg in var.targets:
+                            if trg.id_type == 'KEY':
+                                return True
+                            elif trg.id_type == 'ARMATURE':
+                                return False
+                            else:
+                                raise DazError("Unexpected target type: %s" % trg.id_type)
+
+        hum = None
+        for ob,skeys in self.obskeys:
+            if ob.DazMesh.startswith("Genesis"):
+                hum = ob
+                hskeys = skeys
+                break
+        if hum is None:
+            print("No main mesh")
+            return
+        for ob,skeys in self.obskeys:
+            if ob != hum and not isModern(skeys):
+                for skey in skeys.key_blocks:
+                    hskey = hskeys.key_blocks.get(skey.name)
+                    if hskey:
+                        skey.driver_remove("value")
+                        skey.driver_remove("slider_min")
+                        skey.driver_remove("slider_max")
+                        addGeneralDriver(skey, "value", hskeys, 'key_blocks["%s"].value' % hskey.name, "x")
 
 
     def replaceTargets(self, rna):
@@ -937,7 +972,7 @@ class DAZ_OT_UpdateAll(DazOperator):
 #   Disable and enable drivers
 #----------------------------------------------------------
 
-def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True):
+def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True, useShapekeys=True):
     def isDazFcurve(path):
         for string in ["(fin)", "(rst)", ":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"]:
             if string in path:
@@ -960,6 +995,8 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True)
                     channel in ["HdOffset", "TlOffset"]):
                     fcu.mute = mute
 
+    if not useShapekeys:
+        return
     for ob in rig.children:
         if ob.type == 'MESH':
             skeys = ob.data.shape_keys
@@ -974,7 +1011,7 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True)
                             skey.mute = mute
 
 
-class DAZ_OT_DisableDrivers(DazOperator):
+class DAZ_OT_DisableDrivers(DazPropsOperator):
     bl_idname = "daz.disable_drivers"
     bl_label = "Disable Drivers"
     bl_description = "Disable all drivers to improve performance"
@@ -985,10 +1022,18 @@ class DAZ_OT_DisableDrivers(DazOperator):
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and not ob.DazDriversDisabled)
 
+    useShapekeys : BoolProperty(
+        name = "Shapekeys",
+        description = "Also mute shapekeys of child meshes",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useShapekeys")
+
     def run(self, context):
         setMode('OBJECT')
         for rig in getSelectedArmatures(context):
-            muteDazFcurves(rig, True)
+            muteDazFcurves(rig, True, useShapekeys=self.useShapekeys)
             rig.DazDriversDisabled = True
 
 
