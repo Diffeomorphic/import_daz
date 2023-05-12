@@ -710,7 +710,7 @@ def removeBoneSumDrivers(rig, bones):
 #   Optimize drivers
 #----------------------------------------------------------
 
-class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsMeshArmature):
+class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
     bl_idname = "daz.optimize_drivers"
     bl_label = "Optimize Drivers"
     bl_description = "Optimize the web of drivers.\nNew morphs can not be loaded afterwards"
@@ -718,35 +718,64 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsMeshArmature):
 
     useRemoveMultipliers : BoolProperty(
         name = "Remove Multipliers",
-        description = "Remove multipliers from drivers",
+        description = "Remove multipliers from drivers.\nCan change how drivers work",
         default = True)
 
+    useRemoveHiddenVars : BoolProperty(
+        name = "Remove Hidden Variable",
+        description = "Remove hidden variables from drivers.\nCan change how drivers work",
+        default = True)
+
+    useRemoveERC : BoolProperty(
+        name = "Remove ERC Morphs",
+        description = "Remove ERC morphs from drivers.\nArmatures can no longer be morphed",
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useRemoveMultipliers")
+        self.layout.prop(self, "useRemoveHiddenVars")
+        self.layout.prop(self, "useRemoveERC")
 
     def run(self, context):
-        from .finger import getRigMeshes
-        self.rig, self.meshes = getRigMeshes(context)
-        if self.rig:
-            self.amt = self.rig.data
+        self.rig = context.object
+        self.amt = self.rig.data
+        if self.useRemoveHiddenVars:
+            self.removeHiddenVars(self.amt)
         if self.useRemoveMultipliers:
             self.removeMultipliers(self.amt)
-        self.obskeys = [(ob, ob.data.shape_keys) for ob in self.meshes if ob.data.shape_keys]
-        self.removeInvalid(self.amt)
-        for ob,skeys in self.obskeys:
-            self.removeInvalid(skeys)
+        if self.useRemoveHiddenVars:
+            self.removeHiddenVars(self.amt)
+        self.obskeys = [(ob, ob.data.shape_keys) for ob in self.rig.children if ob.data.shape_keys]
+        self.ndeleted = 0
+        ndrivers = len(self.amt.animation_data.drivers)
         self.sumdrivers = {}
         self.findrivers = {}
         self.deldrivers = []
-        self.shapedrivers = {}
         self.collectDrivers(self.amt)
         self.replaceTargets(self.rig)
         self.replaceTargets(self.amt)
         for ob,skeys in self.obskeys:
             self.replaceTargets(skeys)
-            self.replaceFinalDrivers(skeys)
         self.deleteDrivers(self.amt)
+        self.getDrivers(self.amt)
+        self.deldrivers = []
+        for ob,skeys in self.obskeys:
+            self.replaceDrivers(skeys)
+        self.deleteDrivers(self.amt)
+        self.removeInvalid(self.amt)
+        msg = "Deleted %d out of %d drivers" % (self.ndeleted, ndrivers)
+        print(msg)
+        raise DazError(msg, warning=True)
+
+
+    def getDrivers(self, rna):
+        self.drivers = {}
+        if rna is None or rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            prop = getProp(fcu.data_path)
+            if prop and fcu.driver.type == 'SCRIPTED':
+                self.drivers[prop] = fcu
 
 
     def collectDrivers(self, rna):
@@ -760,23 +789,30 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsMeshArmature):
             print("No drivers: %s" % rna)
             return
         for fcu in rna.animation_data.drivers:
-            drv = fcu.driver
             prop = getProp(fcu.data_path)
             if prop is None:
-                pass
+                continue
             elif match([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
                 self.sumdrivers[fcu.data_path] = fcu, prop
-            elif (drv.type == 'SCRIPTED' and
-                  isFinal(prop) and
-                  len(drv.variables) == 1 and
-                  drv.expression in ["a", "+b"]):
-                var = drv.variables[0]
-                if len(var.targets) == 1:
-                    trg = var.targets[0]
+            elif isFinal(prop):
+                trg = self.getSingleTarget(fcu.driver)
+                if trg:
                     raw = getProp(trg.data_path)
                     if raw == baseProp(prop) and trg.id == self.rig:
                         self.findrivers[propRef(prop)] = fcu, raw
                         self.deldrivers.append((fcu, prop))
+            if self.useRemoveERC and match([":Hdo:", ":Tlo:"], fcu.data_path):
+                self.deldrivers.append((fcu, prop))
+
+
+    def getSingleTarget(self, drv):
+        if (drv.type == 'SCRIPTED' and
+            len(drv.variables) == 1 and
+            drv.expression in ["a", "+b"]):
+            var = drv.variables[0]
+            if len(var.targets) == 1:
+                return var.targets[0]
+        return None
 
 
     def replaceTargets(self, rna):
@@ -806,31 +842,27 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsMeshArmature):
 
 
     def deleteDrivers(self, rna):
-        ndrivers = len(rna.animation_data.drivers)
         for fcu,prop in self.deldrivers:
             if fcu.data_path:
                 rna.animation_data.drivers.remove(fcu)
                 if prop in rna.keys():
                     del rna[prop]
         rna.DazOptimizedDrivers = True
-        print("Removed %d out of %d drivers" % (len(self.deldrivers), ndrivers))
-
-
-    def replaceFinalDrivers(self, rna):
-        if rna is None or rna.animation_data is None:
-            return
-        for fcu in list(rna.animation_data.drivers):
-            if fcu.data_path in self.findrivers.keys():
-                pass
+        self.ndeleted += len(self.deldrivers)
+        print("Deleted %d drivers from %s" % (len(self.deldrivers), rna.name))
 
 
     def removeInvalid(self, rna):
         if rna is None or rna.animation_data is None:
             return
+        ninvalids = 0
         for fcu in list(rna.animation_data.drivers):
             prop = getProp(fcu.data_path)
-            if prop and prop not in rna.keys():
-                rna.animation_data.drivers.remove(fcu)
+            if prop and prop not in self.amt.keys():
+                self.amt.animation_data.drivers.remove(fcu)
+                ninvalids += 1
+        self.ndeleted += ninvalids
+        print("Removed %d invalid drivers" % ninvalids)
 
 
     def removeMultipliers(self, rna):
@@ -853,6 +885,40 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsMeshArmature):
                     for var in list(drv.variables):
                         if var.name in vars:
                             drv.variables.remove(var)
+
+
+    def removeHiddenVars(self, rna):
+        if rna is None or rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            drv = fcu.driver
+            if (drv.type == 'SCRIPTED' and
+                drv.expression[0:2] == "u+"):
+                drv.expression = drv.expression[2:]
+                for var in list(drv.variables):
+                    if var.name == "u":
+                        trg = var.targets[0]
+                        prop = getProp(trg.data_path)
+                        drv.variables.remove(var)
+                        if prop in rna.keys():
+                            del rna[prop]
+
+
+    def replaceDrivers(self, rna):
+        if rna is None or rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            trg = self.getSingleTarget(fcu.driver)
+            if trg:
+                prop = getProp(trg.data_path)
+                fcu2 = self.drivers.get(prop)
+                if fcu2:
+                    path = fcu.data_path
+                    rna.driver_remove(path)
+                    fcu3 = rna.animation_data.drivers.from_existing(src_driver=fcu2)
+                    fcu3.data_path = path
+                    removeModifiers(fcu3)
+                    self.deldrivers.append((fcu2, prop))
 
 #----------------------------------------------------------
 #   Update button
