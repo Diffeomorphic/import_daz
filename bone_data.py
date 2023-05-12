@@ -118,17 +118,26 @@ class BoneData:
         "r_thumb3" : "YZX",
     }
 
-    UnFlips = ("lCollar", "lPectoral", "lShldr", "lForearm", "lHand",
-               "lThumb", "lIndex", "lMid", "lRing", "lPinky",
-               "l_shoulder", "l_pectoral", "l_upperarm", "l_forearm", "l_hand",
-               "l_thumb", "l_index", "l_mid", "l_ring", "l_pinky",
-               )
+    UnFlips = [
+        ("lCollar", "lPectoral", "lShldr", "lForearm", "lHand",
+         "lThumb", "lIndex", "lMid", "lRing", "lPinky",
+         "l_shoulder", "l_pectoral", "l_upperarm", "l_forearm", "l_hand",
+         "l_thumb", "l_index", "l_mid", "l_ring", "l_pinky",
+        ),
+        ("l_thightwist1", "l_thightwist2",
+         "r_thightwist1", "r_thightwist2"),
+        "___"
+        ]
 
-    Flips = ("rCollar", "rPectoral", "rShldr", "rForearm", "rHand",
-             "rThumb", "rIndex", "rMid", "rRing", "rPinky",
-             "r_shoulder", "r_pectoral", "r_upperarm", "r_forearm", "r_hand",
-             "r_thumb", "r_index", "r_mid", "r_ring", "r_pinky",
-             )
+    Flips = [
+        ("rCollar", "rPectoral", "rShldr", "rForearm", "rHand",
+         "rThumb", "rIndex", "rMid", "rRing", "rPinky",
+         "r_shoulder", "r_pectoral", "r_upperarm", "r_forearm", "r_hand",
+         "r_thumb", "r_index", "r_mid", "r_ring", "r_pinky",
+        ),
+        "___",
+        "___"
+        ]
 
     #-------------------------------------------------------------
     #   Alternative bone names

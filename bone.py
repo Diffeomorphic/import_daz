@@ -376,10 +376,11 @@ class BoneInstance(Instance):
 
 
     def setFlip(self):
-        if self.name.startswith(BD.UnFlips):
-            self.flipped[0] = False
-        elif self.name.startswith(BD.Flips):
-            self.flipped[0] = True
+        for n in range(3):
+            if self.name.startswith(BD.UnFlips[n]):
+                self.flipped[n] = False
+            elif self.name.startswith(BD.Flips[n]):
+                self.flipped[n] = True
 
 
     def buildPose(self, figure, inFace, targets, missing):
