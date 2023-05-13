@@ -719,11 +719,11 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
     useRemoveMultipliers : BoolProperty(
         name = "Remove Multipliers",
         description = "Remove multipliers from drivers.\nCan change how drivers work",
-        default = True)
+        default = False)
 
-    useRemoveHiddenVars : BoolProperty(
-        name = "Remove Hidden Variable",
-        description = "Remove hidden variables from drivers.\nCan change how drivers work",
+    useRemoveHiddenSliders : BoolProperty(
+        name = "Remove Hidden Sliders",
+        description = "Remove sliders for hidden variables from drivers.\nCan change how drivers work",
         default = True)
 
     useRemoveERC : BoolProperty(
@@ -733,18 +733,20 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 
     def draw(self, context):
         self.layout.prop(self, "useRemoveMultipliers")
-        self.layout.prop(self, "useRemoveHiddenVars")
+        self.layout.prop(self, "useRemoveHiddenSliders")
         self.layout.prop(self, "useRemoveERC")
 
     def run(self, context):
         self.rig = context.object
         self.amt = self.rig.data
-        if self.useRemoveHiddenVars:
+        self.collectHidden()
+        if self.useRemoveHiddenSliders:
             self.removeHiddenVars(self.amt)
         if self.useRemoveMultipliers:
             self.removeMultipliers(self.amt)
-        if self.useRemoveHiddenVars:
+        if self.useRemoveHiddenSliders:
             self.removeHiddenVars(self.amt)
+            self.removeHiddenSliders()
         self.obskeys = [(ob, ob.data.shape_keys) for ob in self.rig.children if ob.data.shape_keys]
         self.modernizeShapekeys()
         self.ndeleted = 0
@@ -767,6 +769,42 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         msg = "Deleted %d out of %d drivers" % (self.ndeleted, ndrivers)
         print(msg)
         raise DazError(msg, warning=True)
+
+
+    def collectHidden(self):
+        def collect(pg, pgname):
+            self.hiddenGroups[pgname] = pg
+            for item in pg:
+                if item.text[0] == "[" and item.text[-1] == "]":
+                    self.hidden[item.name] = pgname
+
+        from .morphing import MS
+        self.hidden = {}
+        self.hiddenGroups = {}
+        for morphset in MS.Standards:
+            pgname = "Daz%s" % morphset
+            pg = getattr(self.rig, pgname)
+            collect(pg, pgname)
+        for morphset in MS.JCMs:
+            pgname = "Daz%s" % morphset
+            pg = getattr(self.rig, pgname)
+            collect(pg, pgname)
+        for cat in self.rig.DazMorphCats:
+            collect(cat.morphs, cat.name)
+
+
+    def removeHiddenSliders(self):
+        for pgname,pg in self.hiddenGroups.items():
+            props = [prop for prop,name in self.hidden.items() if name == pgname]
+            idxs = [n for n,item in enumerate(pg.values()) if item.name in props]
+            if idxs:
+                print("Prune %s" % pgname)
+                idxs.reverse()
+                for idx in idxs:
+                    pg.remove(idx)
+            for prop in props:
+                if prop in self.rig.keys():
+                    del self.rig[prop]
 
 
     def getDrivers(self, rna):
@@ -923,20 +961,24 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 
 
     def removeHiddenVars(self, rna):
+        def removeVar(drv):
+            for var in list(drv.variables):
+                if var.name == "u":
+                    trg = var.targets[0]
+                    prop = getProp(trg.data_path)
+                    if prop in self.hidden.keys():
+                        drv.variables.remove(var)
+                        string = drv.expression
+                        n = (1 if string[1] == "-" else 2)
+                        drv.expression = string[n:]
+                    return
+
         if rna is None or rna.animation_data is None:
             return
         for fcu in rna.animation_data.drivers:
-            drv = fcu.driver
-            if (drv.type == 'SCRIPTED' and
-                drv.expression[0:2] == "u+"):
-                drv.expression = drv.expression[2:]
-                for var in list(drv.variables):
-                    if var.name == "u":
-                        trg = var.targets[0]
-                        prop = getProp(trg.data_path)
-                        drv.variables.remove(var)
-                        if prop in rna.keys():
-                            del rna[prop]
+            if (fcu.driver.type == 'SCRIPTED' and
+                fcu.driver.expression[0:2] in ["u+", "u-"]):
+                removeVar(fcu.driver)
 
 
     def replaceDrivers(self, rna):
