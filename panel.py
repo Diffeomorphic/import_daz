@@ -514,8 +514,8 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
             layout.operator("daz.transfer_from_gaze")
             layout.separator()
 
-        #layout.operator("daz.save_poses_to_file")
-        #layout.operator("daz.load_poses_from_file")
+        layout.operator("daz.save_poses_to_file")
+        layout.operator("daz.load_poses_from_file")
 
         if rig:
             layout.separator()

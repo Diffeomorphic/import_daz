@@ -31,26 +31,17 @@ import bpy
 from .utils import *
 from .error import *
 from .selector import MorphGroup
+from .fileutils import SingleFile, JsonFile, DazExporter
 
 #------------------------------------------------------------------
 #   Save and Load pose to action
 #------------------------------------------------------------------
 
-class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
+class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, MorphGroup):
     bl_idname = "daz.save_poses_to_file"
     bl_label = "Save Poses To File"
     bl_description = "Save the current scene poses as a json file"
     bl_options = {'UNDO'}
-
-    name : StringProperty(
-        name = "Scene Name",
-        description = "Name of the file to save the scene in",
-        default = "scene")
-
-    useOverwrite : BoolProperty(
-        name = "Overwrite",
-        description = "Overwrite existing action with the same name",
-        default = False)
 
     useArmature : BoolProperty(
         name = "Armatures",
@@ -78,8 +69,6 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "name")
-        self.layout.prop(self, "useOverwrite")
         self.layout.prop(self, "useArmature")
         self.layout.prop(self, "useMesh")
         self.layout.prop(self, "useEmpty")
@@ -88,9 +77,16 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
 
 
     def run(self, context):
+        from .load_json import saveJson
+        struct = self.collectData(context)
+        file = os.path.splitext(self.filepath)[0]
+        filepath = normalizePath("%s.json" % file)
+        saveJson(struct, filepath)
+        print("%s saved" % filepath)
+
+
+    def collectData(self, context):
         from .selector import getActivated, keyProp
-        if not bpy.data.filepath:
-            raise DazError("Save the blend file first")
         struct = {}
         scn = context.scene
         self.exclude = []
@@ -131,15 +127,7 @@ class DAZ_OT_SavePosesToFile(DazPropsOperator, MorphGroup):
                     if key[0] != '_':
                         value = getattr(ob.data, key)
                         self.addValue(dstruct, key, value)
-
-        from .load_json import saveJson
-        folder = os.path.join(os.path.dirname(bpy.data.filepath), "scenes")
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        path = os.path.join(folder, "%s.json" % self.name)
-        if os.path.exists(path) and not self.useOverwrite:
-            raise DazError("File already exists:\n%s" % path)
-        saveJson(struct, path)
+        return struct
 
 
     def excludeChildren(self, ob):
@@ -232,25 +220,15 @@ def getSceneFile(scn, context):
     return enums
 
 
-class DAZ_OT_LoadPosesFromFile(DazPropsOperator):
+class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
     bl_idname = "daz.load_poses_from_file"
     bl_label = "Load Poses From File"
     bl_description = "Load poses for all objects from json file"
     bl_options = {'UNDO'}
 
-    file : EnumProperty(
-        items = getSceneFile,
-        name = "File",
-        description = "Name of the file containing the scene")
-
-    def draw(self, context):
-        self.layout.prop(self, "file")
-
     def run(self, context):
-        if self.file == "-":
-            return
         from .load_json import loadJson
-        struct = loadJson(self.file)
+        struct = loadJson(self.filepath)
         for oname,ostruct in struct.items():
             ob = bpy.data.objects.get(oname)
             if ob is None:
