@@ -70,7 +70,7 @@ class GlobalSettings:
             self.sssMethod = 'RANDOM_WALK_FIXED_RADIUS'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
-        self.useDazOrientation = True
+        self.useDazOrientation = False
         self.caseSensitivePaths = (platform not in ['win32', 'darwin'])
         self.rescanOnChange = True
         self.shellMethod = 'MATERIAL'

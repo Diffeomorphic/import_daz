@@ -339,7 +339,7 @@ class GeoNode(Node, SimNode):
                 hdob.name = "%s_HD" % ob.name
                 LS.hdmeshes[LS.rigname].append(hdob)
             else:
-                unlinkAll(ob)
+                unlinkAll(ob, True)
             if hdob.parent and hdob.parent.name in LS.collection.objects:
                 LS.collection.objects.unlink(hdob.parent)
 

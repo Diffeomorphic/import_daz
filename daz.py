@@ -697,8 +697,8 @@ def register():
         description = "Create armatures for imported figures")
 
     bpy.types.Scene.DazUseDazOrientation = BoolProperty(
-        name = "DAZ Orientation",
-        description = "Assume that bones are oriented as in DAZ Studio when loading poses")
+        name = "DAZ Orientation (Experimental)",
+        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
 
     bpy.types.Scene.DazUseQuaternions = BoolProperty(
         name = "Quaternions",
