@@ -666,7 +666,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         if self.useRemoveOld:
             for ob in coll.objects.values():
                 if baseName(ob.name) == name:
-                    unlinkAll(ob)
+                    unlinkAll(ob, True)
 
         # Create mesh and vertex groups
         me = bpy.data.meshes.new(name)

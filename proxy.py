@@ -1892,7 +1892,7 @@ class WidgetConverter:
                 if len(pb.children) == 1:
                     self.inheritLimits(pb, pb.children[0], rig)
             coll.objects.unlink(gzm)
-        unlinkAll(ob)
+        unlinkAll(ob, False)
 
         if self.deleteUnused:
             activateObject(context, rig)

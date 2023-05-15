@@ -964,7 +964,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                 coll = subcoll
         elif sub and coll:
             if ob.name not in coll.objects:
-                self.unlinkAll(ob)
+                unlinkAll(ob, False)
                 coll.objects.link(ob)
         for child in ob.children:
             self.eliminateEmpties(child, context, sub, coll)
@@ -1015,12 +1015,6 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
             else:
                 return False
         return True
-
-
-    def unlinkAll(self, ob):
-        for coll in bpy.data.collections:
-            if ob.name in coll.objects:
-                coll.objects.unlink(ob)
 
 #-------------------------------------------------------------
 #   Merge rigs

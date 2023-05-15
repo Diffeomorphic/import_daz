@@ -363,7 +363,7 @@ class Fixer(DriverUser):
                 ob.data.name = dazName(baseName(ob.data.name))
             if ob.name == dazName(baseName(rig.name)):
                 nrig = ob
-            unlinkAll(ob)
+            unlinkAll(ob, False)
             coll.objects.link(ob)
         activateObject(context, rig)
         return nrig

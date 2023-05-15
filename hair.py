@@ -835,8 +835,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         else:
             print("Not yet implemented")
         for hair in hairs:
-            hair.parent = None
-            unlinkAll(hair)
+            unlinkAll(hair, True)
         #deleteObjects(context, hairs)
         t7 = perf_counter()
         self.clocks.append(("Make Hair", t7-t6))

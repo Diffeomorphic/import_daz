@@ -382,7 +382,7 @@ class Instance(Accessor, Channels, SimNode):
         empty.instance_collection = self.refcoll
         self.collection.objects.link(empty)
         LS.refObjects[ob.name] = (self, empty, self.refcoll)
-        unlinkAll(ob)
+        unlinkAll(ob, False)
         self.refcoll.objects.link(ob)
         return self.refcoll
 
@@ -391,7 +391,7 @@ class Instance(Accessor, Channels, SimNode):
         for geonode in self.geometries:
             ob = geonode.rna
             if ob:
-                unlinkAll(ob)
+                unlinkAll(ob, False)
                 refcoll.objects.link(ob)
         for child in self.children.values():
             ob = child.rna
@@ -417,7 +417,7 @@ class Instance(Accessor, Channels, SimNode):
                         print('Warning: "%s" has instance children' % ob.name)
                     LS.hasInstanceChildren[ob.name] = True
                 else:
-                    unlinkAll(ob)
+                    unlinkAll(ob, False)
                     refcoll.objects.link(ob)
                     child.linkRefChildren(refcoll, ob, context, wmats)
 

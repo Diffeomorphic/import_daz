@@ -132,11 +132,12 @@ def selectObjects(context, objects):
         selectSet(ob, True)
 
 
-def unlinkAll(ob):
-    try:
-        ob.parent = None
-    except ReferenceError:
-        pass
+def unlinkAll(ob, clearParent):
+    if clearParent:
+        try:
+            ob.parent = None
+        except ReferenceError:
+            pass
     for coll in bpy.data.collections:
         if ob in coll.objects.values():
             coll.objects.unlink(ob)
@@ -190,7 +191,7 @@ def deleteObjects(context, objects):
     selectObjects(context, objects)
     bpy.ops.object.delete(use_global=False)
     for ob in objects:
-        unlinkAll(ob)
+        unlinkAll(ob, True)
         if ob:
             del ob
 
