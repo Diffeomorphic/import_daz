@@ -86,6 +86,11 @@ class Rigifier:
     useOptimizePose : BoolProperty(
         name = "Optimize Pose For IK",
         description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
+        default = True)
+
+    useImproveIk : BoolProperty(
+        name = "Improve IK",
+        description = "Improve IK by storing a bending angle.\This is compatible with daz poses but does not work with rigify poles so they can not be used.\nNot needed if Optimize Pose for IK is used",
         default = False)
 
     useAutoAlign : BoolProperty(
@@ -293,6 +298,8 @@ class Rigifier:
                 else:
                     pass
                     #print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
+            if hasattr (pb.rigify_parameters, "roll_alignment"):
+                pb.rigify_parameters.roll_alignment = "manual"
         for rname,prop,value in RF.RigifyParams:
             if rname in meta.pose.bones:
                 pb = meta.pose.bones[rname]
@@ -595,7 +602,6 @@ class Rigifier:
         self.setConnected(meta, connect, disconnect)
         self.recalcRoll(rig.DazRig, meta)
         setMode('OBJECT')
-
         print("Metarig created")
         return meta
 
@@ -631,11 +637,6 @@ class Rigifier:
         self.setupFixer(context, rig)
 
         setMode('POSE')
-        for pb in meta.pose.bones:
-            if hasattr(pb, "rigify_parameters"):
-                if hasattr (pb.rigify_parameters, "roll_alignment"):
-                    pb.rigify_parameters.roll_alignment = "manual"
-
         try:
             bpy.ops.pose.rigify_generate()
         except:
