@@ -67,12 +67,7 @@ class Fixer(DriverUser):
 
     useKeepRig : BoolProperty(
         name = "Keep DAZ Rig",
-        description = "Keep existing armature and meshes in a new collection",
-        default = False)
-
-    useDazForDeform : BoolProperty(
-        name = "Use DAZ Rig For Deform",
-        description = "Add copy transform constraints to the DAZ rig and use it for deforming the meshes",
+        description = "Keep the original DAZ rig for deformation",
         default = False)
 
     def draw(self, context):
@@ -81,9 +76,11 @@ class Fixer(DriverUser):
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useTongueIk")
+        self.drawKeepRig()
+
+
+    def drawKeepRig(self):
         self.layout.prop(self, "useKeepRig")
-        if self.useKeepRig:
-            self.layout.prop(self, "useDazForDeform")
 
 
     def __init__(self):
@@ -341,17 +338,7 @@ class Fixer(DriverUser):
         scn = context.scene
         coll = getCollection(context, rig)
         activateObject(context, rig)
-        if self.useDazForDeform:
-            bpy.ops.object.duplicate()
-        else:
-            ncoll = bpy.data.collections.new(dazName(coll.name))
-            coll.children.link(ncoll)
-            coll = ncoll
-            objects = []
-            findChildrenRecursive(rig, objects)
-            for ob in objects:
-                selectSet(ob, True)
-            bpy.ops.object.duplicate()
+        bpy.ops.object.duplicate()
 
         newObjects = getSelectedObjects(context)
         nrig = None

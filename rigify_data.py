@@ -46,7 +46,7 @@ class RigifyData:
         chest = "spine.003"
         chest1 = "spine.004"
         neck = "spine.005"
-        if meta.DazUseSplitNeck:
+        if meta.get("DazUseSplitNeck"):
             neck1= "spine.006"
             self.head = "spine.007"
         else:
@@ -265,7 +265,7 @@ class RigifyData:
             "neck1" : (neck, chest1),
         }
 
-        if meta.DazUseSplitNeck:
+        if meta.get("DazUseSplitNeck"):
             self.Genesis38Spine["neckUpper"] = (neck1, neck)
             self.Genesis38Spine["head"] = (self.head, neck1)
             self.Genesis9Spine["neck2"] = (neck1, neck)
@@ -292,7 +292,7 @@ class RigifyData:
             "r_forearm" : ["r_forearmtwist1", "r_forearmtwist2"],
             "r_thigh" : ["r_thightwist1", "r_thightwist2"],
         }
-        if not meta.DazUseSplitNeck:
+        if not meta.get("DazUseSplitNeck"):
             self.Genesis38Mergers["neckLower"] = ["neckUpper"]
             self.Genesis9Mergers["neck1"] = ["neck2"]
 
@@ -324,7 +324,7 @@ class RigifyData:
             "r_shin" : "r_thigh",
             "r_toes" : "r_foot",
         }
-        if meta.DazUseSplitNeck:
+        if meta.get("DazUseSplitNeck"):
             self.Genesis38Parents["head"] = "neckUpper"
             self.Genesis38Parents["neckUpper"] = "neckLower"
             self.Genesis9Parents["head"] = "neck2"

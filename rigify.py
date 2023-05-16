@@ -144,7 +144,7 @@ class Rigifier:
                 self.dazSkel[dbone] = rbone
 
 
-    def renameBones(self, rig, bones):
+    def renameBones(self, rig, bones, dazrig):
         for dname,rname in bones.items():
             self.deleteBoneDrivers(rig, dname)
         setMode('EDIT')
@@ -157,6 +157,13 @@ class Rigifier:
                 msg = ("Did not find bone %s     " % dname)
                 raise DazError(msg)
         setMode('OBJECT')
+        if dazrig:
+            for ob in rig.children:
+                if ob.type == 'MESH':
+                    for dname,rname in bones.items():
+                        vgrp = ob.vertex_groups.get(rname)
+                        if vgrp:
+                            vgrp.name = dname
 
 
     def fitToDaz(self, meta):
@@ -288,6 +295,9 @@ class Rigifier:
                     pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
                 elif pb["rigify_type"] == "limbs.leg":
                     pb.rigify_parameters.extra_ik_toe = self.useSeparateIkToe
+                    pb.rigify_parameters.rotation_axis = 'x'
+                elif pb["rigify_type"] == "limbs.arm":
+                    pb.rigify_parameters.rotation_axis = 'x'
                 elif pb["rigify_type"] in [
                     "spines.super_spine",
                     "spines.basic_spine",
@@ -297,7 +307,7 @@ class Rigifier:
                     pass
                 else:
                     pass
-                    #print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
+                    print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
             if hasattr (pb.rigify_parameters, "roll_alignment"):
                 pb.rigify_parameters.roll_alignment = "manual"
         for rname,prop,value in RF.RigifyParams:
@@ -489,7 +499,7 @@ class Rigifier:
     def createMeta(self, context):
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
-        from .figure import getRigType
+        from .figure import getRigType, finalizeArmature
         from .merge import mergeBones, mergeVertexGroups
 
         print("Create metarig")
@@ -498,6 +508,15 @@ class Rigifier:
         scn = context.scene
         if not(rig and rig.type == 'ARMATURE'):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
+
+        if self.useOptimizePose:
+            from .convert import optimizePose
+            optimizePose(context, True)
+        if self.useKeepRig:
+            dazrig = self.saveDazRig(context)
+        else:
+            dazrig = None
+        finalizeArmature(rig)
 
         unhideAllObjects(context, rig)
         for bname in ["lEye", "rEye", "l_eye", "r_eye"]:
@@ -524,11 +543,12 @@ class Rigifier:
         cns.target = rig
         cns.mute = True
 
-        meta.DazMeta = True
+        meta["DazMetaRig"] = True
         meta.DazRig = "metarig"
-        meta.DazUseSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
-        if meta.DazUseSplitNeck:
+        useSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
+        if useSplitNeck:
             self.splitNeck(meta)
+        meta["DazUseSplitNeck"] = useSplitNeck
         setupRigifyData(meta)
 
         activateObject(context, rig)
@@ -544,9 +564,9 @@ class Rigifier:
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.deleteBendTwistDrvBones(rig)
             mergeBones(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
-            if not self.reuseBendTwists:
+            if not self.reuseBendTwists and not dazrig:
                 mergeVertexGroups(rig, RF.Genesis38Mergers)
-            self.renameBones(rig, RF.Genesis38Renames)
+            self.renameBones(rig, RF.Genesis38Renames, dazrig)
         elif rig.DazRig == "genesis9":
             if self.reuseBendTwists:
                 self.removeVertexGroups(rig, RF.Genesis9Removes)
@@ -603,33 +623,25 @@ class Rigifier:
         self.recalcRoll(rig.DazRig, meta)
         setMode('OBJECT')
         print("Metarig created")
-        return meta
+        return rig, meta, dazrig
 
 
-    def rigifyMeta(self, context):
+    def rigifyMeta(self, context, rig, meta, dazrig):
         self.createTmp()
         try:
-            return self.rigifyMeta1(context)
+            return self.rigifyMeta1(context, rig, meta, dazrig)
         finally:
             self.deleteTmp()
 
 
-    def rigifyMeta1(self, context):
+    def rigifyMeta1(self, context, rig, meta, dazrig):
         from .driver import getBoneDrivers, getPropDrivers, copyProp
         from .node import setParent, clearParent
         from .mhx import unhideAllObjects, getBoneLayer
 
         print("Rigify metarig")
-        meta = context.object
         setMode('OBJECT')
         setupRigifyData(meta)
-        rig = None
-        for cns in meta.constraints:
-            if cns.type == 'COPY_SCALE' and cns.name == "Rigify Source":
-                rig = cns.target
-
-        if rig is None:
-            raise DazError("Original rig not found")
         coll = getCollection(context, rig)
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
@@ -811,7 +823,7 @@ class Rigifier:
         activateObject(context, gen)
         self.bendTwistNames = {}
         self.spineBones["pelvis"] = ("spine", None)
-        if not (self.useKeepRig and self.useDazForDeform):
+        if not dazrig:
             self.changeVertexGroups(context, rig, meta, gen)
 
         # Fix drivers
@@ -929,6 +941,10 @@ class Rigifier:
         gen.data.layers = (
             F,T,F,T, F,F,F,T, F,F,T,F, F,T,F,F,
             T,F,F,F, F,F,F,F, F,F,F,F, T,F,F,F)
+
+        if dazrig:
+            self.tieBones(dazrig, gen)
+            self.setRigName(gen, dazrig, "RIGIFY")
         print("Rigify created")
         return gen
 
@@ -1288,23 +1304,11 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
 
     def run(self, context):
         from time import perf_counter
-        from .figure import finalizeArmature
         t1 = perf_counter()
         print("Modifying DAZ rig to Rigify")
-        rig = context.object
+        rig,meta,dazrig = self.createMeta(context)
         self.rigname = rig.name
-        if self.useOptimizePose:
-            from .convert import optimizePose
-            optimizePose(context, True)
-        if self.useKeepRig:
-            nrig = self.saveDazRig(context)
-        finalizeArmature(rig)
-        self.createMeta(context)
-        gen = self.rigifyMeta(context)
-        if self.useKeepRig:
-            if self.useDazForDeform:
-                self.tieBones(nrig, gen)
-            self.setRigName(gen, nrig, "RIGIFY")
+        gen = self.rigifyMeta(context, rig, meta, dazrig)
         t2 = perf_counter()
         print("DAZ rig %s successfully rigified in %.3f seconds" % (self.rigname, t2-t1))
         self.printMessages()
@@ -1327,8 +1331,6 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "useRecalcRoll")
         self.layout.prop(self, "useKeepRig")
-        if self.useKeepRig:
-            self.layout.prop(self, "useDazForDeform")
 
     @classmethod
     def poll(self, context):
@@ -1336,13 +1338,10 @@ class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, Constrain
         return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.DazSimpleIK)
 
     def run(self, context):
-        rig = context.object
-        if self.useOptimizePose:
-            from .convert import optimizePose
-            optimizePose(context, True)
-        if self.useKeepRig:
-            nrig = self.saveDazRig(context)
-        self.createMeta(context)
+        rig,meta,dazrig = self.createMeta(context)
+        meta.data["DazOrigRig"] = rig.name
+        if dazrig:
+            meta.data["DazKeptRig"] = dazrig.name
         self.printMessages()
 
 
@@ -1364,12 +1363,27 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
         self.layout.prop(self, "useAutoAlign")
         self.layout.prop(self, "useCustomLayers")
 
+    def drawKeepRig(self):
+        pass
+
     @classmethod
     def poll(self, context):
-        return (context.object and context.object.DazMeta)
+        rig = context.object
+        return (rig and rig.get("DazMetaRig"))
 
     def run(self, context):
-        self.rigifyMeta(context)
+        meta = context.object
+        rig = None
+        self.rigname = meta.data.get("DazOrigRig")
+        if self.rigname:
+            rig = bpy.data.objects.get(self.rigname)
+        if rig is None:
+            raise DazError("Original rig not found")
+        dazrig = None
+        nrigname = meta.data.get("DazKeptRig")
+        if nrigname:
+            dazrig = bpy.data.objects.get(nrigname)
+        self.rigifyMeta(context, rig, meta, dazrig)
         self.printMessages()
 
 #-------------------------------------------------------------
@@ -1472,9 +1486,7 @@ def register():
 
     bpy.types.Armature.MhaFeatures = IntProperty(default = 0)
 
-    bpy.types.Object.DazMeta = BoolProperty(default=False)
     bpy.types.Object.DazRigifyType = StringProperty(default="")
-    bpy.types.Object.DazUseSplitNeck = BoolProperty(default=False)
 
     for cls in classes:
         bpy.utils.register_class(cls)
