@@ -1053,7 +1053,7 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
                             skey.mute = mute
 
 
-class DAZ_OT_DisableDrivers(DazPropsOperator):
+class DAZ_OT_DisableDrivers(DazOperator):
     bl_idname = "daz.disable_drivers"
     bl_label = "Disable Drivers"
     bl_description = "Disable all drivers to improve performance"
@@ -1064,18 +1064,10 @@ class DAZ_OT_DisableDrivers(DazPropsOperator):
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and not ob.DazDriversDisabled)
 
-    useShapekeys : BoolProperty(
-        name = "Shapekeys",
-        description = "Also mute shapekeys of child meshes",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useShapekeys")
-
     def run(self, context):
         setMode('OBJECT')
         for rig in getSelectedArmatures(context):
-            muteDazFcurves(rig, True, useShapekeys=self.useShapekeys)
+            muteDazFcurves(rig, True)
             rig.DazDriversDisabled = True
 
 
