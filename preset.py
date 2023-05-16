@@ -804,9 +804,6 @@ class ControlRigMuter:
                 props[prop] = gen.data[final]
         return props
 
-    def getMeshes(self, rig):
-        return [ob for ob in rig.children if (ob.type == 'MESH' and ob.data.shape_keys)]
-
     def muteConstraints(self, rig, mute):
         for pb in rig.pose.bones:
             for cns in pb.constraints:
@@ -875,7 +872,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
             actname = act.name
         else:
             actname = "Action"
-        meshes = self.getMeshes(rig)
+        meshes = getShapeChildren(rig)
         if self.useBake:
             bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
             act = getCurrentAction(rig)
@@ -948,7 +945,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
             raise DazError("No control rig found")
         gen.hide_set(False)
         self.muteConstraints(rig, False)
-        meshes = self.getMeshes(rig)
+        meshes = getShapeChildren(rig)
         props = self.getProps(rig, gen)
         if self.useClear and rig.animation_data:
             rig.animation_data.action = None

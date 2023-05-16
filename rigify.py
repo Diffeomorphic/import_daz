@@ -158,12 +158,11 @@ class Rigifier:
                 raise DazError(msg)
         setMode('OBJECT')
         if dazrig:
-            for ob in rig.children:
-                if ob.type == 'MESH':
-                    for dname,rname in bones.items():
-                        vgrp = ob.vertex_groups.get(rname)
-                        if vgrp:
-                            vgrp.name = dname
+            for ob in getMeshChildren(rig):
+                for dname,rname in bones.items():
+                    vgrp = ob.vertex_groups.get(rname)
+                    if vgrp:
+                        vgrp.name = dname
 
 
     def fitToDaz(self, meta):

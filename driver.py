@@ -747,7 +747,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         if self.useRemoveHiddenSliders:
             self.removeHiddenVars(self.amt)
             self.removeHiddenSliders()
-        self.obskeys = [(ob, ob.data.shape_keys) for ob in self.rig.children if ob.data.shape_keys]
+        self.obskeys = [(ob, ob.data.shape_keys) for ob in getShapeChildren(self.rig)]
         self.modernizeShapekeys()
         self.ndeleted = 0
         ndrivers = len(self.amt.animation_data.drivers)
@@ -1039,18 +1039,17 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
 
     if not useShapekeys:
         return
-    for ob in rig.children:
-        if ob.type == 'MESH':
-            skeys = ob.data.shape_keys
-            if skeys and skeys.animation_data:
-                for fcu in skeys.animation_data.drivers:
-                    words = fcu.data_path.split('"')
-                    if words[0] == "key_blocks[":
-                        fcu.mute = mute
-                        sname = words[1]
-                        if sname in skeys.key_blocks.keys():
-                            skey = skeys.key_blocks[sname]
-                            skey.mute = mute
+    for ob in getShapeChildren(rig):
+        skeys = ob.data.shape_keys
+        if skeys.animation_data:
+            for fcu in skeys.animation_data.drivers:
+                words = fcu.data_path.split('"')
+                if words[0] == "key_blocks[":
+                    fcu.mute = mute
+                    sname = words[1]
+                    if sname in skeys.key_blocks.keys():
+                        skey = skeys.key_blocks[sname]
+                        skey.mute = mute
 
 
 class DAZ_OT_DisableDrivers(DazOperator):

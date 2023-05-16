@@ -114,10 +114,9 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
             for ob in selected:
                 self.createObjectVisibility(rig, ob, ob.name)
                 obnames.append(ob.name)
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                self.createMaskVisibility(rig, ob, obnames)
-                ob.DazVisibilityDrivers = True
+        for ob in getMeshChildren(rig):
+            self.createMaskVisibility(rig, ob, obnames)
+            ob.DazVisibilityDrivers = True
         rig.DazVisibilityDrivers = True
         updateDrivers(rig)
 
@@ -202,7 +201,7 @@ class DAZ_OT_RemoveVisibility(DazOperator):
 
     def run(self, context):
         rig = context.object
-        for ob in rig.children:
+        for ob in getMeshChildren(rig):
             ob.driver_remove("hide_viewport")
             ob.driver_remove("hide_render")
             ob.hide_set(False)

@@ -1607,9 +1607,8 @@ def applyRestPoses(context, rig, subrigs):
     applyAllObjectTransforms(rigs)
     for subrig in rigs:
         setRestRotation(subrig)
-        for ob in subrig.children:
-            if ob.type == 'MESH':
-                setRestPose(ob, subrig, context)
+        for ob in getMeshChildren(subrig):
+            setRestPose(ob, subrig, context)
         if not setActiveObject(context, subrig):
             continue
         constraints = applyLimitConstraints(subrig)
@@ -1628,9 +1627,8 @@ def applyAllObjectTransforms(rigs):
     bpy.ops.object.select_all(action='DESELECT')
     try:
         for rig in rigs:
-            for ob in rig.children:
-                if ob.type == 'MESH':
-                    selectSet(ob, True)
+            for ob in getMeshChildren(rig):
+                selectSet(ob, True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         return True
     except RuntimeError:
@@ -1717,31 +1715,30 @@ def mergeVertexGroups(rig, mergers):
         if bone:
             bone.use_deform = True
 
-    for ob in rig.children:
-        if ob.type == 'MESH':
-            for toe,subtoes in mergers.items():
-                subgrps = []
-                for subtoe in subtoes:
-                    if subtoe in ob.vertex_groups.keys():
-                        subgrps.append(ob.vertex_groups[subtoe])
-                if toe in ob.vertex_groups.keys():
-                    vgrp = ob.vertex_groups[toe]
-                elif subgrps:
-                    vgrp = ob.vertex_groups.new(name=toe)
-                else:
-                    continue
-                idxs = [vg.index for vg in subgrps]
-                idxs.append(vgrp.index)
-                weights = dict([(vn,0) for vn in range(len(ob.data.vertices))])
-                for v in ob.data.vertices:
-                    for g in v.groups:
-                        if g.group in idxs:
-                            weights[v.index] += g.weight
-                for subgrp in subgrps:
-                    ob.vertex_groups.remove(subgrp)
-                for vn,w in weights.items():
-                    if w > 1e-3:
-                        vgrp.add([vn], w, 'REPLACE')
+    for ob in getMeshChildren(rig):
+        for toe,subtoes in mergers.items():
+            subgrps = []
+            for subtoe in subtoes:
+                if subtoe in ob.vertex_groups.keys():
+                    subgrps.append(ob.vertex_groups[subtoe])
+            if toe in ob.vertex_groups.keys():
+                vgrp = ob.vertex_groups[toe]
+            elif subgrps:
+                vgrp = ob.vertex_groups.new(name=toe)
+            else:
+                continue
+            idxs = [vg.index for vg in subgrps]
+            idxs.append(vgrp.index)
+            weights = dict([(vn,0) for vn in range(len(ob.data.vertices))])
+            for v in ob.data.vertices:
+                for g in v.groups:
+                    if g.group in idxs:
+                         weights[v.index] += g.weight
+            for subgrp in subgrps:
+                ob.vertex_groups.remove(subgrp)
+            for vn,w in weights.items():
+                if w > 1e-3:
+                    vgrp.add([vn], w, 'REPLACE')
 
     updateDrivers(rig)
 

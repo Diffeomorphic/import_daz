@@ -403,7 +403,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         rig = getRigFromObject(context.object)
         LS.scale = rig.DazScale
         if rig.type == 'ARMATURE':
-            meshes = [ob for ob in rig.children if ob.type == 'MESH']
+            meshes = getMeshChildren(rig)
         else:
             meshes = getSelectedMeshes(context)
             rig = None

@@ -123,18 +123,17 @@ class FACSImporter(SingleFile, ActionOptions):
         self.reyekeys = {}
         self.shapekeys = {}
         if self.useShapekeys:
-            for ob in rig.children:
-                if ob.type == 'MESH' and ob.data.shape_keys:
-                    for skey in ob.data.shape_keys.key_blocks:
-                        self.shapekeys[skey.name] = True
+            for ob in getShapeChildren(rig):
+                for skey in ob.data.shape_keys.key_blocks:
+                    self.shapekeys[skey.name] = True
         self.parse()
         first = list(self.bskeys.values())[0]
         print("Blendshapes: %d\nKeys: %d" % (len(self.bshapes), len(first)))
         if self.makeNewAction and rig.animation_data:
             rig.animation_data.action = None
         if self.makeNewAction and self.useShapekeys:
-            for ob in rig.children:
-                if ob.type == 'MESH' and ob.data.shape_keys and ob.data.shape_keys.animation_data:
+            for ob in getShapeChildren(rig):
+                if ob.data.shape_keys.animation_data:
                     ob.data.shape_keys.animation_data.action = None
         self.build(rig, context)
         if self.makeNewAction and rig.animation_data:
@@ -183,16 +182,15 @@ class FACSImporter(SingleFile, ActionOptions):
             for bshape,value in zip(self.bshapes,self.bskeys[t]):
                 formulas = self.facsShapes.get(bshape, {})
                 for prop,factor in formulas.items():
-                    for ob in rig.children:
-                        if ob.type == 'MESH' and ob.data.shape_keys:
-                            if prop in ob.data.shape_keys.key_blocks.keys():
-                                skey = ob.data.shape_keys.key_blocks[prop]
-                                prev[prop] = skey.value = value*factor + prev.get(prop, 0)
-                                skey.keyframe_insert("value", frame=frame)
-                            else:
-                                if ob.name not in missingShapes.keys():
-                                    missingShapes[ob.name] = {}
-                                missingShapes[ob.name][prop] = True
+                    for ob in getShapeChildren(rig):
+                        if prop in ob.data.shape_keys.key_blocks.keys():
+                            skey = ob.data.shape_keys.key_blocks[prop]
+                            prev[prop] = skey.value = value*factor + prev.get(prop, 0)
+                            skey.keyframe_insert("value", frame=frame)
+                        else:
+                            if ob.name not in missingShapes.keys():
+                                missingShapes[ob.name] = {}
+                            missingShapes[ob.name][prop] = True
 
                 formulas = self.facsProps.get(bshape, {})
                 for prop,factor in formulas.items():

@@ -1826,9 +1826,8 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
         else:
             struct = None
         if rig:
-            for ob1 in rig.children:
-                if ob1.type == 'MESH':
-                    self.finalizeMesh(ob1, struct)
+            for ob1 in getMeshChildren(rig):
+                self.finalizeMesh(ob1, struct)
         if ob.type == 'MESH':
             self.finalizeMesh(ob, struct)
         if self.nothing:

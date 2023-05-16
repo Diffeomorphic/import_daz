@@ -231,20 +231,19 @@ class MorphRemover(CategoryBasic):
             self.removePropDrivers(rig, raw, rig)
             self.removePropDrivers(amt, final, amt)
             self.removePropDrivers(amt, rest, amt)
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                skeys = ob.data.shape_keys
-                self.removePropDrivers(skeys, raw, rig)
-                self.removePropDrivers(skeys, final, amt)
-                if ob.data.shape_keys:
-                    if raw in skeys.key_blocks.keys():
-                        skey = skeys.key_blocks[raw]
-                        if self.useDeleteShapekeys or self.useDeleteDrivers:
-                            skey.driver_remove("value")
-                            skey.driver_remove("slider_min")
-                            skey.driver_remove("slider_max")
-                        if self.useDeleteShapekeys:
-                            ob.shape_key_remove(skey)
+        for ob in getShapeChildren(rig):
+            skeys = ob.data.shape_keys
+            self.removePropDrivers(skeys, raw, rig)
+            self.removePropDrivers(skeys, final, amt)
+            if ob.data.shape_keys:
+                if raw in skeys.key_blocks.keys():
+                    skey = skeys.key_blocks[raw]
+                    if self.useDeleteShapekeys or self.useDeleteDrivers:
+                        skey.driver_remove("value")
+                        skey.driver_remove("slider_min")
+                        skey.driver_remove("slider_max")
+                    if self.useDeleteShapekeys:
+                        ob.shape_key_remove(skey)
         if raw in rig.keys():
             self.removeFromPropGroups(rig, raw)
         if self.useDeleteProps and self.useDeleteDrivers:
@@ -474,7 +473,7 @@ def getShapeKeyCoords(ob):
 
 
 def applyMorphs(rig, props):
-    for ob in rig.children:
+    for ob in getShapeChildren(rig):
         basic = ob.data.shape_keys.key_blocks[0]
         skeys,coords = getShapeKeyCoords(ob)
         for skey in skeys:
@@ -567,8 +566,8 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 
     def updatePropLimits(self, rig, context):
         from .driver import setFloatProp
-        for ob in rig.children:
-            if ob.type == 'MESH' and ob.data.shape_keys and self.useShapekeys:
+        if self.useShapekeys:
+            for ob in getShapeChildren(rig):
                 for skey in ob.data.shape_keys.key_blocks:
                     if skey.name.lower() in self.props:
                         skey.slider_min = self.min
@@ -1047,7 +1046,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
         if not (rig and rig.animation_data and rig.animation_data.action):
             raise DazError("No action found")
         actrig = rig.animation_data.action
-        meshes = [ob for ob in rig.children if ob.type == 'MESH' and ob.data.shape_keys]
+        meshes = getShapeChildren(rig)
         if not meshes:
             raise DazError("No meshes with shapekeys selected")
 

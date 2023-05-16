@@ -188,12 +188,11 @@ class Fixer(DriverUser):
                     child.parent = eb
                     child.use_connect = True
         setMode('OBJECT')
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                for prefix in ["l", "r"]:
-                    for vgrp in ob.vertex_groups:
-                        if vgrp.name == prefix+"Carpal2":
-                            vgrp.name = prefix+"Carpal4"
+        for ob in getMeshChildren(rig):
+            for prefix in ["l", "r"]:
+                for vgrp in ob.vertex_groups:
+                    if vgrp.name == prefix+"Carpal2":
+                        vgrp.name = prefix+"Carpal4"
 
 
     def fixKnees(self, rig):
@@ -226,12 +225,11 @@ class Fixer(DriverUser):
 
 
     def removeVertexGroups(self, rig, grpnames):
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                for gname in grpnames:
-                    vgrp = ob.vertex_groups.get(gname)
-                    if vgrp:
-                        ob.vertex_groups.remove(vgrp)
+        for ob in getMeshChildren(rig):
+            for gname in grpnames:
+                vgrp = ob.vertex_groups.get(gname)
+                if vgrp:
+                    ob.vertex_groups.remove(vgrp)
 
 
     def fixBoneDrivers(self, rig, assoc0):
@@ -1028,7 +1026,7 @@ class BendTwists:
 
 
     def joinBendTwistVGroups(self, rig, info):
-        for ob in rig.children:
+        for ob in getMeshChildren(rig):
             self.joinVertexGroups(ob, info)
 
 
@@ -1119,18 +1117,17 @@ class BendTwists:
                 bvgname = bend.name
                 tvgname = twist.name
 
-            for ob in rig.children:
-                if ob.type == 'MESH':
-                    if bname in ob.vertex_groups.keys():
-                        self.splitVertexGroup(ob, bname, bvgname, tvgname, eb.head, eb.tail)
-                    else:
-                        base,suffix = bname.split(".",1)
-                        bendgrp = ob.vertex_groups.get("%sBend.%s" % (base, suffix))
-                        if bendgrp:
-                            bendgrp.name = bvgname
-                        twistgrp = ob.vertex_groups.get("%sTwist.%s" % (base, suffix))
-                        if twistgrp:
-                            twistgrp.name = tvgname
+            for ob in getMeshChildren(rig):
+                if bname in ob.vertex_groups.keys():
+                    self.splitVertexGroup(ob, bname, bvgname, tvgname, eb.head, eb.tail)
+                else:
+                    base,suffix = bname.split(".",1)
+                    bendgrp = ob.vertex_groups.get("%sBend.%s" % (base, suffix))
+                    if bendgrp:
+                        bendgrp.name = bvgname
+                    twistgrp = ob.vertex_groups.get("%sTwist.%s" % (base, suffix))
+                    if twistgrp:
+                        twistgrp.name = tvgname
 
 
     def splitVertexGroup(self, ob, vgname, bvgname, tvgname, head, tail):

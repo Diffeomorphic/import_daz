@@ -223,17 +223,6 @@ def getRigParent(ob):
         par = par.parent
     return par
 
-
-def getMeshChildren(rig):
-    meshes = []
-    for ob in rig.children:
-        if ob.type == 'MESH':
-            meshes.append(ob)
-        else:
-            meshes += getMeshChildren(ob)
-    return meshes
-
-
 def isModifiedMesh(ob):
     return (len(ob.data.DazOrigVerts) > 0)
 
@@ -421,6 +410,12 @@ def getArmatureChildren(context, rig):
             if mod and mod.object == rig:
                 children.append(ob)
     return children
+
+def getMeshChildren(rig):
+    return [ob for ob in rig.children if ob.type == 'MESH']
+
+def getShapeChildren(rig):
+    return [ob for ob in rig.children if ob.type == 'MESH' and ob.data.shape_keys]
 
 def getConstraint(ob, type):
     for cns in ob.constraints:

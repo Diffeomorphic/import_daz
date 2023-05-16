@@ -281,12 +281,10 @@ def getRigMeshes(context):
         elif ob.type == 'MESH' and ob.parent and ob.parent.type == 'ARMATURE':
             rig = ob.parent
             break
-    meshes = []
     if rig:
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                meshes.append(ob)
-    return rig, meshes
+        return rig, getMeshChildren(rig)
+    else:
+        return rig, []
 
 #----------------------------------------------------------
 #   Initialize

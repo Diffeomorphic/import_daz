@@ -494,7 +494,7 @@ class MorphLoader(LoadMorph):
         if ob.type == 'MESH':
             self.meshes = [ob]
         elif self.rig and not self.meshes:
-            self.meshes = [ob for ob in self.rig.children if ob.type == 'MESH']
+            self.meshes = getMeshChildren(rig)
 
     def getMorphSet(self, asset):
         return self.morphset
@@ -1270,7 +1270,7 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
         rig = self.rig = getRigFromObject(context.object)
         struct = { "filetype" : "favo_morphs" }
         self.addMorphUrls(rig, struct)
-        for ob in rig.children:
+        for ob in getMeshChildren(rig):
             self.addMorphUrls(ob, struct)
         filepath = ensureExt(self.filepath, ".json")
         saveJson(struct, filepath)
@@ -1347,9 +1347,8 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         rig = self.rig = getRigFromObject(context.object)
         rig.DazMorphUrls.clear()
         self.loadPreset(rig, rig, struct, context)
-        for ob in rig.children:
-            if ob.type == 'MESH':
-                self.loadPreset(ob, rig, struct, context)
+        for ob in getMeshChildren(rig):
+            self.loadPreset(ob, rig, struct, context)
         updateScrollbars(context)
 
 
@@ -1523,7 +1522,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
     def run(self, context):
         self.rig = getRigFromObject(context.object)
         if self.rig:
-            for ob in self.rig.children:
+            for ob in getMeshChildren(self.rig):
                 self.addFavoMorphs(ob, context)
         else:
             for ob in getSelectedMeshes(context):
