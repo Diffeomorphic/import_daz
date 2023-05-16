@@ -297,11 +297,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         }
 
         armTable2 = {
-            "G38" : ("ShldrIK", "ForearmIK"),
+            "G38" : ("ShldrIKTwist", "ForearmIKTwist"),
         }
 
         legTable2 = {
-            "G38" : ("ThighIK", "ShinIK"),
+            "G38" : ("ThighIKTwist", "ShinIKTwist"),
         }
 
         def getEntry(table, key, prefix, bones):
@@ -325,16 +325,16 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         else:
             root = None
 
-        for prefix,dl in [("l",0), ("r",1)]:
+        for prefix,dlayer in [("l",0), ("r",1)]:
             if self.useArms:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = getEntry(armTable, genesis, prefix, ebones)
                 handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, 0, root)
                 foreTwist.tail = hand.head
                 if genesis == "G38" and self.useCopyRotation:
-                    layer = 26+dl
                     shikname, foreikname = getEntry(armTable2, genesis, prefix, ebones)
+                    layer = (30 if self.usePoleTargets else 26+dlayer)
                     shldrIK = makeBone(shikname, rig, shldrBend.head, shldrBend.tail, shldrBend.roll, layer, shldrBend.parent)
-                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, layer, shldrIK)
+                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, 30, shldrIK)
                 if IK.usePoleTargets:
                     elbow = makePole(elbowname, rig, foreBend, collar)
 
@@ -343,10 +343,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 0, root)
                 shin.tail = foot.head
                 if genesis == "G38" and self.useCopyRotation:
-                    layer = 28+dl
                     thikname, shinikname = getEntry(legTable2, genesis, prefix, ebones)
+                    layer = (30 if self.usePoleTargets else 28+dlayer)
                     thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, layer, thighBend.parent)
-                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, layer, thighIK)
+                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, 30, thighIK)
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
 
@@ -426,13 +426,15 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             else:
                 elbow = knee = None
 
+            foreIK = shinIK = None
             if genesis == "G38" and self.useCopyRotation:
                 if self.useArms:
                     shldrIK, foreIK = getEntry(armTable2, genesis, prefix, rpbs)
                     copyBoneProps(shldrBend, shldrIK)
                     copyBoneProps(foreBend, foreIK)
                     foreIK.lock_ik_z = True
-                    foreIK.lock_rotation = (True, False, True)
+                    shldrIK.lock_rotation = (True, False, True)
+                    shldrIK.lock_location = foreIK.lock_location = (True, True, True)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
                     cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp)
                     cns.euler_order = BD.getDefaultMode(shldrBend)
@@ -450,6 +452,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     copyBoneProps(thighBend, thighIK)
                     copyBoneProps(shin, shinIK)
                     shinIK.lock_ik_y = shinIK.lock_ik_z = True
+                    thighIK.lock_rotation = (True, False, True)
+                    thighIK.lock_location = shinIK.lock_location = (True, True, True)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
                     cns.euler_order = BD.getDefaultMode(thighBend)
@@ -1239,6 +1243,7 @@ def improveIk(rig, exclude=[]):
                 pb.rotation_euler[0] = 15*D
     for pb,cns,mute in ikconstraints:
         pb.lock_rotation = (False, True, True)
+        pb.lock_location = (True, True, True)
         cns.mute = mute
         pb.use_ik_limit_x = pb.use_ik_limit_y = pb.use_ik_limit_z = False
         pb.lock_ik_y = pb.lock_ik_z = True
