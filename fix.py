@@ -60,27 +60,23 @@ class Fixer(DriverUser):
         description = "Use the original bend-twist bones and vertex groups",
         default = True)
 
-    useSplitShin : BoolProperty(
-        name = "Split Shin Bone",
-        description = "Split the shin bone into bend and twist parts",
-        default = False)
-
     useKeepRig : BoolProperty(
         name = "Keep DAZ Rig",
         description = "Keep the original DAZ rig for deformation",
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "useImproveIk")
-        self.layout.prop(self, "reuseBendTwists")
-        self.layout.prop(self, "useSplitShin")
-        self.layout.prop(self, "useFingerIk")
-        self.layout.prop(self, "useTongueIk")
-        self.drawKeepRig()
+        self.drawMeta()
+        self.drawRigify()
 
-
-    def drawKeepRig(self):
+    def drawMeta(self):
         self.layout.prop(self, "useKeepRig")
+        self.layout.prop(self, "reuseBendTwists")
+        self.layout.prop(self, "useFingerIk")
+
+    def drawRigify(self):
+        self.layout.prop(self, "useTongueIk")
+        self.layout.prop(self, "useImproveIk")
 
 
     def __init__(self):

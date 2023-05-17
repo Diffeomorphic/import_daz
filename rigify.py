@@ -36,12 +36,18 @@ from .layers import *
 from .fileutils import AF
 from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
 
+#-------------------------------------------------------------
+#
+#-------------------------------------------------------------
 
 def setupRigifyData(meta):
     global RF
     from .rigify_data import RigifyData
     RF = RigifyData(meta)
 
+#-------------------------------------------------------------
+#   DazBone
+#-------------------------------------------------------------
 
 class DazBone:
     def __init__(self, eb):
@@ -81,44 +87,21 @@ def addDicts(structs):
             joined[key] = value
     return joined
 
+#-------------------------------------------------------------
+#   RigifyCommon
+#-------------------------------------------------------------
 
-class Rigifier:
-    useOptimizePose : BoolProperty(
-        name = "Optimize Pose For IK",
-        description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
-        default = True)
-
-    useImproveIk : BoolProperty(
-        name = "Improve IK",
-        description = "Improve IK by storing a bending angle.\This is compatible with daz poses but does not work with rigify poles so they can not be used.\nNot needed if Optimize Pose for IK is used",
-        default = False)
-
-    useAutoAlign : BoolProperty(
-        name = "Auto Align Hand/Foot",
-        description = "Auto align hand and foot (Rigify parameter)",
-        default = False)
+class RigifyCommon:
 
     useCustomLayers : BoolProperty(
         name = "Custom Layers",
         description = "Display layers for face and custom bones.\nNot for Rigify legacy",
         default = True)
 
-    if bpy.app.version >= (3,3,0):
-        useSeparateIkToe : BoolProperty(
-            name = "Separate IK Toes",
-            description = "Create separate IK toe controls for better IK/FK snapping",
-            default = True)
-    else:
-        useSeparateIkToe = False
-
-    useRecalcRoll : BoolProperty(
-        name = "Recalc Roll",
-        description = "Recalculate the roll angles of the thigh and shin bones,\nso they are aligned with the global Z axis.\nFor Genesis 1,2, and 3 characters",
-        default = False)
-
-    GroupBones = [("Face ", R_FACE, 2, 6),
-                  ("Face (detail) ", R_DETAIL, 2, 3),
-                  ("Custom ", R_CUSTOM, 13, 6)]
+    GroupBones = [
+        ("Face ", R_FACE, 2, 6),
+        ("Face (detail) ", R_DETAIL, 2, 3),
+        ("Custom ", R_CUSTOM, 13, 6)]
 
     def setupDazSkeleton(self, rig):
         if rig.DazRig in ["genesis1", "genesis2"]:
@@ -142,6 +125,310 @@ class Rigifier:
                 dbone = dbone[0]
             if isinstance(dbone, str):
                 self.dazSkel[dbone] = rbone
+
+
+    def getDazBones(self, rig):
+        # Setup info about DAZ bones
+        self.dazBones = OrderedDict()
+        setMode('EDIT')
+        for eb in rig.data.edit_bones:
+            self.dazBones[eb.name] = DazBone(eb)
+        setMode('OBJECT')
+        for pb in rig.pose.bones:
+            self.dazBones[pb.name].getPose(pb)
+
+#-------------------------------------------------------------
+#   MetaMaker
+#-------------------------------------------------------------
+
+class MetaMaker(RigifyCommon):
+    useOptimizePose : BoolProperty(
+        name = "Optimize Pose For IK",
+        description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
+        default = True)
+
+    useAutoAlign : BoolProperty(
+        name = "Auto Align Hand/Foot",
+        description = "Auto align hand and foot (Rigify parameter)",
+        default = True)
+
+    useRecalcRoll : BoolProperty(
+        name = "Recalc Roll",
+        description = "Recalculate the roll angles of the thigh and shin bones,\nso they are aligned with the global Z axis.\nFor Genesis 1,2, and 3 characters",
+        default = False)
+
+    useSplitShin : BoolProperty(
+        name = "Split Shin Bone",
+        description = "Split the shin bone into bend and twist parts",
+        default = False)
+
+    if bpy.app.version >= (3,3,0):
+        useSeparateIkToe : BoolProperty(
+            name = "Separate IK Toes",
+            description = "Create separate IK toe controls for better IK/FK snapping",
+            default = True)
+    else:
+        useSeparateIkToe = False
+
+
+    def draw(self, context):
+        self.layout.prop(self, "useOptimizePose")
+        self.layout.prop(self, "useAutoAlign")
+        self.layout.prop(self, "useRecalcRoll")
+        self.layout.prop(self, "useSplitShin")
+        self.layout.prop(self, "useCustomLayers")
+
+
+    def createMeta(self, context):
+        from collections import OrderedDict
+        from .mhx import connectToParent, unhideAllObjects
+        from .figure import getRigType, finalizeArmature
+        from .merge import mergeBones, mergeVertexGroups
+
+        print("Create metarig")
+        rig = context.object
+        scale = rig.DazScale
+        scn = context.scene
+        if not(rig and rig.type == 'ARMATURE'):
+            raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
+
+        if self.useOptimizePose:
+            from .convert import optimizePose
+            optimizePose(context, True)
+        if self.useKeepRig:
+            dazrig = self.saveDazRig(context)
+        else:
+            dazrig = None
+        finalizeArmature(rig)
+
+        unhideAllObjects(context, rig)
+        for bname in ["lEye", "rEye", "l_eye", "r_eye"]:
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                self.storeConstraints(bname, pb)
+
+        # Create metarig
+        setMode('OBJECT')
+        try:
+            bpy.ops.object.armature_human_metarig_add()
+        except AttributeError:
+            raise DazError("The Rigify add-on is not enabled. It is found under rigging.")
+        bpy.ops.object.location_clear()
+        bpy.ops.object.rotation_clear()
+        bpy.ops.object.scale_clear()
+        bpy.ops.transform.resize(value=(100*scale, 100*scale, 100*scale))
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+        print("  Fix metarig")
+        meta = context.object
+        cns = meta.constraints.new('COPY_SCALE')
+        cns.name = "Rigify Source"
+        cns.target = rig
+        cns.mute = True
+
+        meta["DazMetaRig"] = True
+        meta.DazRig = "metarig"
+        useSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
+        if useSplitNeck:
+            self.splitNeck(meta)
+        meta["DazUseSplitNeck"] = useSplitNeck
+        meta["DazSplitShin"] = self.useSplitShin
+        meta["DazReuseBendTwists"] = self.reuseBendTwists
+        meta["DazFingerIk"] = self.useFingerIk
+
+        setupRigifyData(meta)
+
+        activateObject(context, rig)
+        rig.select_set(True)
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        print("  Fix bones", rig.DazRig)
+        if rig.DazRig in ["genesis1", "genesis2"]:
+            self.fixPelvis(rig)
+            self.fixCarpals(rig)
+            self.splitBone(rig, "chest", "chestUpper")
+            self.splitBone(rig, "abdomen", "abdomen2")
+        elif rig.DazRig in ["genesis3", "genesis8"]:
+            self.deleteBendTwistDrvBones(rig)
+            mergeBones(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
+            if not meta["DazReuseBendTwists"] and not dazrig:
+                mergeVertexGroups(rig, RF.Genesis38Mergers)
+            self.renameBones(rig, RF.Genesis38Renames, dazrig)
+        elif rig.DazRig == "genesis9":
+            if meta["DazReuseBendTwists"]:
+                self.removeVertexGroups(rig, RF.Genesis9Removes)
+            else:
+                mergeBones(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
+                mergeVertexGroups(rig, RF.Genesis9Mergers)
+        else:
+            msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
+            activateObject(context, meta)
+            deleteObjects(context, [meta])
+            raise DazError(msg)
+
+        print("  Connect to parent")
+        connectToParent(rig, connectAll=True, useSplitShin=self.useSplitShin)
+        print("  Setup DAZ skeleton")
+        self.setupDazSkeleton(rig)
+        self.getDazBones(rig)
+
+        # Fit metarig to default DAZ rig
+        print("  Fit to DAZ")
+        #setActiveObject(context, meta)
+        meta.select_set(True)
+        activateObject(context, meta)
+        setMode('EDIT')
+        self.fitToDaz(meta)
+        hip = self.fitHip(meta)
+
+        if rig.DazRig in ["genesis3", "genesis8", "genesis9"]:
+            eb = meta.data.edit_bones[RF.head]
+            eb.tail = eb.head + 1.0*(eb.tail - eb.head)
+
+        self.fixHands(meta)
+        self.fitLimbs(meta, hip)
+        if self.useCustomLayers:
+            self.addGroupBones(meta, rig)
+
+        for eb in meta.data.edit_bones:
+            if (eb.parent and
+                eb.head == eb.parent.tail and
+                eb.name not in RF.MetaDisconnect):
+                eb.use_connect = True
+
+        self.fitSpine(meta)
+        print("  Reparent bones")
+        self.reparentBones(meta, RF.MetaParents)
+        print("  Add props to rigify")
+        connect,disconnect = self.addRigifyProps(meta)
+        if self.useCustomLayers:
+            self.setupGroupBones(meta)
+
+        print("  Set connected")
+        setMode('EDIT')
+        self.setConnected(meta, connect, disconnect)
+        self.recalcRoll(rig.DazRig, meta)
+        setMode('OBJECT')
+        print("Metarig created")
+        return rig, meta, dazrig
+
+
+    def addRigifyProps(self, meta):
+        # Add rigify properties to spine bones
+        setMode('OBJECT')
+        disconnect = []
+        connect = []
+        for pb in meta.pose.bones:
+            if "rigify_type" in pb.keys():
+                if pb["rigify_type"] == "":
+                    pass
+                elif pb["rigify_type"] == "spines.super_head":
+                    disconnect.append(pb.name)
+                elif pb["rigify_type"] == "limbs.super_finger":
+                    connect += self.getChildren(pb)
+                    pb.rigify_parameters.primary_rotation_axis = 'X'
+                    pb.rigify_parameters.make_extra_ik_control = self.useFingerIk
+                elif pb["rigify_type"] == "limbs.super_limb":
+                    pb.rigify_parameters.rotation_axis = 'x'
+                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+                elif pb["rigify_type"] == "limbs.leg":
+                    pb.rigify_parameters.extra_ik_toe = self.useSeparateIkToe
+                    pb.rigify_parameters.rotation_axis = 'x'
+                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+                elif pb["rigify_type"] == "limbs.arm":
+                    pb.rigify_parameters.rotation_axis = 'x'
+                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+                elif pb["rigify_type"] in [
+                    "spines.super_spine",
+                    "spines.basic_spine",
+                    "basic.super_copy",
+                    "limbs.super_palm",
+                    "limbs.simple_tentacle"]:
+                    pass
+                else:
+                    pass
+                    print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
+            if hasattr (pb.rigify_parameters, "roll_alignment"):
+                pb.rigify_parameters.roll_alignment = "manual"
+        for rname,prop,value in RF.RigifyParams:
+            if rname in meta.pose.bones:
+                pb = meta.pose.bones[rname]
+                setattr(pb.rigify_parameters, prop, value)
+        return connect, disconnect
+
+
+    def addGroupBones(self, meta, rig):
+        tail = (0,0,10*rig.DazScale)
+        for bname,layer,row,group in self.GroupBones:
+            eb = meta.data.edit_bones.new(bname)
+            eb.head = (0,0,0)
+            eb.tail = tail
+            eb.layers = layer*[False] + [True] + (31-layer)*[False]
+
+
+    def setupGroupBones(self, meta):
+        for bname,layer,row,group in self.GroupBones:
+            pb = meta.pose.bones[bname]
+            pb["rigify_type"] = "basic.pivot"
+            meta.data.layers[layer] = True
+            rlayer = meta.data.rigify_layers[layer]
+            rlayer.name = bname
+            rlayer.row = row
+            rlayer.group = group
+        meta.data.layers[0] = False
+        rlayer = meta.data.rigify_layers[0]
+        rlayer.name = ""
+        rlayer.group = 6
+
+
+    def getChildren(self, pb):
+        chlist = []
+        for child in pb.children:
+            chlist.append(child.name)
+            chlist += self.getChildren(child)
+        return chlist
+
+
+    def setConnected(self, meta, connect, disconnect):
+        # Connect and disconnect bones that have to be so
+        for rname in disconnect:
+            eb = meta.data.edit_bones[rname]
+            eb.use_connect = False
+        for rname in connect:
+            eb = meta.data.edit_bones[rname]
+            eb.use_connect = True
+
+
+    def recalcRoll(self, dazrig, meta):
+        if not self.useRecalcRoll or dazrig in ["genesis8", "genesis9"]:
+            return
+        # https://bitbucket.org/Diffeomorphic/import_daz/issues/199/rigi-fy-thigh_ik_targetl-and
+        for eb in meta.data.edit_bones:
+            eb.select = False
+        for rname in ["thigh.L", "thigh.R", "shin.L", "shin.R"]:
+            eb = meta.data.edit_bones[rname]
+            eb.select = True
+        bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Y')
+
+
+    def splitNeck(self, meta):
+        setMode('EDIT')
+        spine = meta.data.edit_bones["spine"]
+        spine3 = meta.data.edit_bones["spine.003"]
+        bonelist={}
+        bpy.ops.armature.select_all(action='DESELECT')
+        spine3.select = True
+        bpy.ops.armature.subdivide()
+        spinebones = spine.children_recursive_basename
+        chainlength = len(spinebones)
+        for x in range(chainlength):
+            y = str(x)
+            spinebones[x].name = "spine" + "." + y
+        for x in range(chainlength):
+            y = str(x+1)
+            spinebones[x].name = "spine" + ".00" + y
+        bpy.ops.armature.select_all(action='DESELECT')
+        setMode('OBJECT')
 
 
     def renameBones(self, rig, bones, dazrig):
@@ -273,93 +560,18 @@ class Rigifier:
                 eb.parent = parb
         setMode('OBJECT')
 
+#-------------------------------------------------------------
+#   Rigifier
+#-------------------------------------------------------------
 
-    def addRigifyProps(self, meta):
-        # Add rigify properties to spine bones
-        setMode('OBJECT')
-        disconnect = []
-        connect = []
-        for pb in meta.pose.bones:
-            if "rigify_type" in pb.keys():
-                if pb["rigify_type"] == "":
-                    pass
-                elif pb["rigify_type"] == "spines.super_head":
-                    disconnect.append(pb.name)
-                elif pb["rigify_type"] == "limbs.super_finger":
-                    connect += self.getChildren(pb)
-                    pb.rigify_parameters.primary_rotation_axis = 'X'
-                    pb.rigify_parameters.make_extra_ik_control = self.useFingerIk
-                elif pb["rigify_type"] == "limbs.super_limb":
-                    pb.rigify_parameters.rotation_axis = 'x'
-                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
-                elif pb["rigify_type"] == "limbs.leg":
-                    pb.rigify_parameters.extra_ik_toe = self.useSeparateIkToe
-                    pb.rigify_parameters.rotation_axis = 'x'
-                elif pb["rigify_type"] == "limbs.arm":
-                    pb.rigify_parameters.rotation_axis = 'x'
-                elif pb["rigify_type"] in [
-                    "spines.super_spine",
-                    "spines.basic_spine",
-                    "basic.super_copy",
-                    "limbs.super_palm",
-                    "limbs.simple_tentacle"]:
-                    pass
-                else:
-                    pass
-                    print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
-            if hasattr (pb.rigify_parameters, "roll_alignment"):
-                pb.rigify_parameters.roll_alignment = "manual"
-        for rname,prop,value in RF.RigifyParams:
-            if rname in meta.pose.bones:
-                pb = meta.pose.bones[rname]
-                setattr(pb.rigify_parameters, prop, value)
-        return connect, disconnect
+class Rigifier(RigifyCommon):
+    useImproveIk : BoolProperty(
+        name = "Improve IK",
+        description = "Improve IK by storing a bending angle.\nThis is compatible with daz poses but does not work with rigify poles so they can not be used.\nNot needed if Optimize Pose for IK is used",
+        default = False)
 
-
-    def addGroupBones(self, meta, rig):
-        tail = (0,0,10*rig.DazScale)
-        for bname,layer,row,group in self.GroupBones:
-            eb = meta.data.edit_bones.new(bname)
-            eb.head = (0,0,0)
-            eb.tail = tail
-            eb.layers = layer*[False] + [True] + (31-layer)*[False]
-
-
-    def setupGroupBones(self, meta):
-        for bname,layer,row,group in self.GroupBones:
-            pb = meta.pose.bones[bname]
-            pb["rigify_type"] = "basic.pivot"
-            meta.data.layers[layer] = True
-            rlayer = meta.data.rigify_layers[layer]
-            rlayer.name = bname
-            rlayer.row = row
-            rlayer.group = group
-        meta.data.layers[0] = False
-        rlayer = meta.data.rigify_layers[0]
-        rlayer.name = ""
-        rlayer.group = 6
-
-
-    def setConnected(self, meta, connect, disconnect):
-        # Connect and disconnect bones that have to be so
-        for rname in disconnect:
-            eb = meta.data.edit_bones[rname]
-            eb.use_connect = False
-        for rname in connect:
-            eb = meta.data.edit_bones[rname]
-            eb.use_connect = True
-
-
-    def recalcRoll(self, dazrig, meta):
-        if not self.useRecalcRoll or dazrig in ["genesis8", "genesis9"]:
-            return
-        # https://bitbucket.org/Diffeomorphic/import_daz/issues/199/rigi-fy-thigh_ik_targetl-and
-        for eb in meta.data.edit_bones:
-            eb.select = False
-        for rname in ["thigh.L", "thigh.R", "shin.L", "shin.R"]:
-            eb = meta.data.edit_bones[rname]
-            eb.select = True
-        bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Y')
+    def draw(self, context):
+        self.layout.prop(self, "useCustomLayers")
 
 
     def setupExtras(self, context, rig):
@@ -419,26 +631,6 @@ class Rigifier:
         setMode('OBJECT')
 
 
-    def splitNeck(self, meta):
-        setMode('EDIT')
-        spine = meta.data.edit_bones["spine"]
-        spine3 = meta.data.edit_bones["spine.003"]
-        bonelist={}
-        bpy.ops.armature.select_all(action='DESELECT')
-        spine3.select = True
-        bpy.ops.armature.subdivide()
-        spinebones = spine.children_recursive_basename
-        chainlength = len(spinebones)
-        for x in range(chainlength):
-            y = str(x)
-            spinebones[x].name = "spine" + "." + y
-        for x in range(chainlength):
-            y = str(x+1)
-            spinebones[x].name = "spine" + ".00" + y
-        bpy.ops.armature.select_all(action='DESELECT')
-        setMode('OBJECT')
-
-
     def checkRigifyEnabled(self, context):
         for addon in context.user_preferences.addons:
             if addon.module == "rigify":
@@ -482,147 +674,6 @@ class Rigifier:
             pname = ""
         print("MISS", bname, rname, pname)
         return "NONE"
-
-
-    def getDazBones(self, rig):
-        # Setup info about DAZ bones
-        self.dazBones = OrderedDict()
-        setMode('EDIT')
-        for eb in rig.data.edit_bones:
-            self.dazBones[eb.name] = DazBone(eb)
-        setMode('OBJECT')
-        for pb in rig.pose.bones:
-            self.dazBones[pb.name].getPose(pb)
-
-
-    def createMeta(self, context):
-        from collections import OrderedDict
-        from .mhx import connectToParent, unhideAllObjects
-        from .figure import getRigType, finalizeArmature
-        from .merge import mergeBones, mergeVertexGroups
-
-        print("Create metarig")
-        rig = context.object
-        scale = rig.DazScale
-        scn = context.scene
-        if not(rig and rig.type == 'ARMATURE'):
-            raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
-
-        if self.useOptimizePose:
-            from .convert import optimizePose
-            optimizePose(context, True)
-        if self.useKeepRig:
-            dazrig = self.saveDazRig(context)
-        else:
-            dazrig = None
-        finalizeArmature(rig)
-
-        unhideAllObjects(context, rig)
-        for bname in ["lEye", "rEye", "l_eye", "r_eye"]:
-            pb = rig.pose.bones.get(bname)
-            if pb:
-                self.storeConstraints(bname, pb)
-
-        # Create metarig
-        setMode('OBJECT')
-        try:
-            bpy.ops.object.armature_human_metarig_add()
-        except AttributeError:
-            raise DazError("The Rigify add-on is not enabled. It is found under rigging.")
-        bpy.ops.object.location_clear()
-        bpy.ops.object.rotation_clear()
-        bpy.ops.object.scale_clear()
-        bpy.ops.transform.resize(value=(100*scale, 100*scale, 100*scale))
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
-        print("  Fix metarig")
-        meta = context.object
-        cns = meta.constraints.new('COPY_SCALE')
-        cns.name = "Rigify Source"
-        cns.target = rig
-        cns.mute = True
-
-        meta["DazMetaRig"] = True
-        meta.DazRig = "metarig"
-        useSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
-        if useSplitNeck:
-            self.splitNeck(meta)
-        meta["DazUseSplitNeck"] = useSplitNeck
-        setupRigifyData(meta)
-
-        activateObject(context, rig)
-        rig.select_set(True)
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-
-        print("  Fix bones", rig.DazRig)
-        if rig.DazRig in ["genesis1", "genesis2"]:
-            self.fixPelvis(rig)
-            self.fixCarpals(rig)
-            self.splitBone(rig, "chest", "chestUpper")
-            self.splitBone(rig, "abdomen", "abdomen2")
-        elif rig.DazRig in ["genesis3", "genesis8"]:
-            self.deleteBendTwistDrvBones(rig)
-            mergeBones(rig, RF.Genesis38Mergers, RF.Genesis38Parents, context)
-            if not self.reuseBendTwists and not dazrig:
-                mergeVertexGroups(rig, RF.Genesis38Mergers)
-            self.renameBones(rig, RF.Genesis38Renames, dazrig)
-        elif rig.DazRig == "genesis9":
-            if self.reuseBendTwists:
-                self.removeVertexGroups(rig, RF.Genesis9Removes)
-            else:
-                mergeBones(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
-                mergeVertexGroups(rig, RF.Genesis9Mergers)
-        else:
-            msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
-            activateObject(context, meta)
-            deleteObjects(context, [meta])
-            raise DazError(msg)
-
-        print("  Connect to parent")
-        connectToParent(rig, connectAll=True)
-        print("  Setup DAZ skeleton")
-        self.setupDazSkeleton(rig)
-        self.getDazBones(rig)
-
-        # Fit metarig to default DAZ rig
-        print("  Fit to DAZ")
-        #setActiveObject(context, meta)
-        meta.select_set(True)
-        activateObject(context, meta)
-        setMode('EDIT')
-        self.fitToDaz(meta)
-        hip = self.fitHip(meta)
-
-        if rig.DazRig in ["genesis3", "genesis8", "genesis9"]:
-            eb = meta.data.edit_bones[RF.head]
-            eb.tail = eb.head + 1.0*(eb.tail - eb.head)
-
-        self.fixHands(meta)
-        self.fitLimbs(meta, hip)
-        if self.useCustomLayers:
-            self.addGroupBones(meta, rig)
-
-        for eb in meta.data.edit_bones:
-            if (eb.parent and
-                eb.head == eb.parent.tail and
-                eb.name not in RF.MetaDisconnect):
-                eb.use_connect = True
-
-        self.fitSpine(meta)
-        print("  Reparent bones")
-        self.reparentBones(meta, RF.MetaParents)
-        print("  Add props to rigify")
-        connect,disconnect = self.addRigifyProps(meta)
-        if self.useCustomLayers:
-            self.setupGroupBones(meta)
-
-        print("  Set connected")
-        setMode('EDIT')
-        self.setConnected(meta, connect, disconnect)
-        self.recalcRoll(rig.DazRig, meta)
-        setMode('OBJECT')
-        print("Metarig created")
-        return rig, meta, dazrig
 
 
     def rigifyMeta(self, context, rig, meta, dazrig):
@@ -895,7 +946,7 @@ class Rigifier:
         self.addTongueIk(gen)
 
         # Finger IK
-        if self.useFingerIk:
+        if meta["DazFingerIk"]:
             self.fixFingerIk(rig, gen)
 
         # Improve IK
@@ -1060,14 +1111,6 @@ class Rigifier:
             setattr(pb, "lock_ik_%s" % x, locks[n])
 
 
-    def getChildren(self, pb):
-        chlist = []
-        for child in pb.children:
-            chlist.append(child.name)
-            chlist += self.getChildren(child)
-        return chlist
-
-
     def rigifySplitGroup(self, rname, dname, ob, rig, before, meta, gen):
         def splitBone():
             bone = rig.data.bones[dname]
@@ -1081,9 +1124,9 @@ class Rigifier:
             bendname = "DEF-%s.01" % rname
             twistname = "DEF-%s.02" % rname
         ldname = dname.lower()
-        if self.useSplitShin and "shin" in ldname:
+        if meta["DazSplitShin"] and "shin" in ldname:
             splitBone()
-        elif self.reuseBendTwists or "shin" in ldname:
+        elif meta["DazReuseBendTwists"] or "shin" in ldname:
             vgrps = [(vgrp.name.lower(),vgrp) for vgrp in ob.vertex_groups
                       if vgrp.name.lower().startswith(ldname)]
             for vname,vgrp in vgrps:
@@ -1254,7 +1297,7 @@ class Rigifier:
 #  Buttons
 #-------------------------------------------------------------
 
-class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwists, ConstraintStore):
+class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, GizmoUser, BendTwists, ConstraintStore):
     bl_idname = "daz.convert_to_rigify"
     bl_label = "Convert To Rigify"
     bl_description = "Convert active rig to rigify"
@@ -1276,14 +1319,11 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         ConstraintStore.__init__(self)
 
     def draw(self, context):
-        self.layout.prop(self, "useOptimizePose")
-        self.layout.prop(self, "useAutoAlign")
+        MetaMaker.draw(self, context)
         self.layout.prop(self, "useDeleteMeta")
         if bpy.app.version >= (3,3,0):
             self.layout.prop(self, "useSeparateIkToe")
         Fixer.draw(self, context)
-        self.layout.prop(self, "useCustomLayers")
-        self.layout.prop(self, "useRecalcRoll")
 
 
     def storeState(self, context):
@@ -1313,23 +1353,22 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendT
         self.printMessages()
 
 
-class DAZ_OT_CreateMeta(DazPropsOperator, Rigifier, Fixer, BendTwists, ConstraintStore):
+class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists, ConstraintStore):
     bl_idname = "daz.create_meta"
     bl_label = "Create Metarig"
     bl_description = "Create a metarig from the active rig"
     bl_options = {'UNDO'}
 
-    useAutoAlign = False
-    useDeleteMeta = False
+    def draw(self, context):
+        MetaMaker.draw(self, context)
+        Fixer.draw(self, context)
+
+    def drawRigify(self):
+        pass
 
     def __init__(self):
         Fixer.__init__(self)
         ConstraintStore.__init__(self)
-
-    def draw(self, context):
-        self.layout.prop(self, "useOptimizePose")
-        self.layout.prop(self, "useRecalcRoll")
-        self.layout.prop(self, "useKeepRig")
 
     @classmethod
     def poll(self, context):
@@ -1350,7 +1389,6 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
     bl_description = "Convert metarig to rigify"
     bl_options = {'UNDO'}
 
-    useKeepRig = False
     useDeleteMeta = False
 
     def __init__(self):
@@ -1359,10 +1397,9 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
 
     def draw(self, context):
         Fixer.draw(self, context)
-        self.layout.prop(self, "useAutoAlign")
-        self.layout.prop(self, "useCustomLayers")
+        Rigifier.draw(self, context)
 
-    def drawKeepRig(self):
+    def drawMeta(self):
         pass
 
     @classmethod

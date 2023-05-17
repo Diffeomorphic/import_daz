@@ -427,10 +427,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #-------------------------------------------------------------
 
         showProgress(1, 25, "  Fix DAZ rig")
-        if self.useSplitShin:
-            bendTwistBones = MhxShinBendTwists + MhxBendTwistBones
-        else:
-            bendTwistBones = list(MhxBendTwistBones)
+        bendTwistBones = list(MhxBendTwistBones)
         self.constraints = {}
         rig.data.layers = 32*[True]
         bchildren = applyBoneChildren(context, rig)
@@ -439,7 +436,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
             showProgress(2, 25, "  Connect to parent")
-            connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
+            connectToParent(rig, connectAll=False)
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
             if not self.reuseBendTwists:
@@ -459,7 +456,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixBoneDrivers(rig, MhxBoneDrivers)
         elif rig.DazRig == "genesis9":
             showProgress(2, 25, "  Connect to parent")
-            connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
+            connectToParent(rig, connectAll=False)
             showProgress(4, 25, "  Rename bones")
             if not self.reuseBendTwists:
                 self.deleteBendTwistDrvBones(rig)
@@ -478,7 +475,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
-            connectToParent(rig, connectAll=False, useSplitShin=self.useSplitShin)
+            connectToParent(rig, connectAll=False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
             self.fixKnees(rig)
@@ -1603,7 +1600,7 @@ def getBoneLayer(pb, rig):
     return L_CUSTOM, True
 
 
-def connectToParent(rig, connectAll=False, useSplitShin=True):
+def connectToParent(rig, connectAll=False, useSplitShin=False):
     setMode('EDIT')
     if useSplitShin:
         shinBones = ConnectShin
