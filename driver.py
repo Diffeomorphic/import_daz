@@ -856,17 +856,20 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 
     def modernizeShapekeys(self):
         def isModern(skeys):
+            if skeys.animation_data is None:
+                return True
             for fcu in skeys.animation_data.drivers:
                 words = fcu.data_path.split('"')
                 if words[0] == "key_blocks[":
                     for var in fcu.driver.variables:
                         for trg in var.targets:
-                            if trg.id_type == 'KEY':
+                            if trg.id_type in ['KEY', 'OBJECT']:
                                 return True
                             elif trg.id_type == 'ARMATURE':
                                 return False
                             else:
-                                raise DazError("Unexpected target type: %s" % trg.id_type)
+                                msg = 'Unexpected target type: %s\n"%s"\n%s' % (trg.id_type, ob.name, trg.id)
+                                raise DazError(msg)
 
         hum = None
         for ob,skeys in self.obskeys:
