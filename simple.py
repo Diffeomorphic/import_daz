@@ -217,10 +217,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         description = "Improve IK by prebending IK bones",
         default = True)
 
-    useCopyRotation : BoolProperty(
-        name = "Copy Rotation",
-        description = "Add copy rotation constraints for bend and twist bones",
-        default = True)
+    useCopyRotation = True
 
     useRootBone : BoolProperty(
         name = "Root Bone",
@@ -233,7 +230,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useImproveIk")
-        self.layout.prop(self, "useCopyRotation")
 
 
     def run(self, context):
