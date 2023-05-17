@@ -960,7 +960,7 @@ class CyclesTree(Tree):
         self.buildColorEffect(effect, color, tex, None, fac, factex, node)
         roughness,roughtex = self.getColorTex(["Metallic Flakes Roughness"], "NONE", 0.0, False)
         self.linkScalar(roughtex, node, roughness, "Roughness")
-        size = self.getValue(["Metallic Flakes Size"], 1)
+        size = max(0.01, self.getValue(["Metallic Flakes Size"], 1))
         density = self.getValue(["Metallic Flakes Density"], 0)
         if self.owner.shader == 'PBRSKIN':
             node.inputs["Strength"].default_value = 1
