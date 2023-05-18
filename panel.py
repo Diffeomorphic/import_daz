@@ -326,10 +326,12 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.change_suffix_to_prefix")
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
+        self.layout.operator("daz.batch_set_custom_shape")
         self.layout.operator("daz.optimize_pose")
         self.layout.operator("daz.improve_ik")
         self.layout.operator("daz.fix_legacy_posable")
         self.layout.operator("daz.categorize_objects")
+
 
 
 class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
