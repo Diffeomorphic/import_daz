@@ -753,17 +753,13 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         ndrivers = len(self.amt.animation_data.drivers)
         self.sumdrivers = {}
         self.findrivers = {}
-        self.deldrivers = []
+        self.restdrivers = {}
+        self.deldrivers = {}
         self.collectDrivers(self.amt)
         self.replaceTargets(self.rig)
         self.replaceTargets(self.amt)
         for ob,skeys in self.obskeys:
             self.replaceTargets(skeys)
-        self.deleteDrivers(self.amt)
-        self.getDrivers(self.amt)
-        self.deldrivers = []
-        for ob,skeys in self.obskeys:
-            self.replaceDrivers(skeys)
         self.deleteDrivers(self.amt)
         self.removeInvalid(self.amt)
         msg = "Deleted %d out of %d drivers" % (self.ndeleted, ndrivers)
@@ -833,18 +829,29 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                 continue
             elif match([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
                 self.sumdrivers[fcu.data_path] = fcu, prop
+            elif prop.endswith("(rst):01"):
+                self.restdrivers[propRef(prop[:-3])] = fcu, prop
             elif isFinal(prop):
-                trg = self.getSingleTarget(fcu.driver)
+                trg = self.getScriptedTarget(fcu.driver)
                 if trg:
                     raw = getProp(trg.data_path)
                     if raw == baseProp(prop) and trg.id == self.rig:
                         self.findrivers[propRef(prop)] = fcu, raw
-                        self.deldrivers.append((fcu, prop))
+                        self.deldrivers[prop] = fcu
             if self.useRemoveERC and match([":Hdo:", ":Tlo:"], fcu.data_path):
-                self.deldrivers.append((fcu, prop))
+                self.deldrivers[prop] = fcu
 
 
-    def getSingleTarget(self, drv):
+    def getSumTarget(self, drv):
+        if (drv.type == 'SUM' and
+            len(drv.variables) == 1):
+            var = drv.variables[0]
+            if len(var.targets) == 1:
+                return var.targets[0]
+        return None
+
+
+    def getScriptedTarget(self, drv):
         if (drv.type == 'SCRIPTED' and
             len(drv.variables) == 1 and
             drv.expression in ["a", "+b"]):
@@ -901,12 +908,17 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                 trg = var.targets[0]
                 if trg.data_path in self.sumdrivers.keys():
                     srcfcu,prop = self.sumdrivers[trg.data_path]
-                    path,idx = fcu.data_path, fcu.array_index
-                    rna.driver_remove(fcu.data_path, fcu.array_index)
-                    nfcu = rna.animation_data.drivers.from_existing(src_driver=srcfcu)
-                    nfcu.data_path = path
-                    nfcu.array_index = idx
-                    self.deldrivers.append((srcfcu, prop))
+                elif fcu.data_path in self.restdrivers.keys():
+                    srcfcu,prop = self.restdrivers[fcu.data_path]
+                else:
+                    continue
+                path,idx = fcu.data_path, fcu.array_index
+                rna.driver_remove(fcu.data_path, fcu.array_index)
+                nfcu = rna.animation_data.drivers.from_existing(src_driver=srcfcu)
+                nfcu.data_path = path
+                nfcu.array_index = idx
+                self.deldrivers[prop] = srcfcu
+
         for fcu in rna.animation_data.drivers:
             for var in list(fcu.driver.variables):
                 trg = var.targets[0]
@@ -918,7 +930,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 
 
     def deleteDrivers(self, rna):
-        for fcu,prop in self.deldrivers:
+        for prop,fcu in self.deldrivers.items():
             if fcu.data_path:
                 rna.animation_data.drivers.remove(fcu)
                 if prop in rna.keys():
@@ -988,7 +1000,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         if rna is None or rna.animation_data is None:
             return
         for fcu in rna.animation_data.drivers:
-            trg = self.getSingleTarget(fcu.driver)
+            trg = self.getScriptedTarget(fcu.driver)
             if trg:
                 prop = getProp(trg.data_path)
                 fcu2 = self.drivers.get(prop)
@@ -998,7 +1010,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                     fcu3 = rna.animation_data.drivers.from_existing(src_driver=fcu2)
                     fcu3.data_path = path
                     removeModifiers(fcu3)
-                    self.deldrivers.append((fcu2, prop))
+                    self.deldrivers[prop] = fcu2
 
 #----------------------------------------------------------
 #   Update button
