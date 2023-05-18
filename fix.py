@@ -1564,7 +1564,7 @@ def retargetDrivers(rna, orig, nrig, force):
                     trg.id = nrig
                 elif trg.id_type == 'ARMATURE' and (force or trg.id == orig.data):
                     trg.id = nrig.data
-                else:
+                elif trg.id_type not in ['KEY']:
                     print("Unexpected id: %s %s" % (trg.id_type, trg.id))
 
 #----------------------------------------------------------

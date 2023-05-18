@@ -93,11 +93,6 @@ def addDicts(structs):
 
 class RigifyCommon:
 
-    useCustomLayers : BoolProperty(
-        name = "Custom Layers",
-        description = "Display layers for face and custom bones.\nNot for Rigify legacy",
-        default = True)
-
     GroupBones = [
         ("Face ", R_FACE, 2, 6),
         ("Face (detail) ", R_DETAIL, 2, 3),
@@ -161,6 +156,11 @@ class MetaMaker(RigifyCommon):
         name = "Split Shin Bone",
         description = "Split the shin bone into bend and twist parts",
         default = False)
+
+    useCustomLayers : BoolProperty(
+        name = "Custom Layers",
+        description = "Display layers for face and custom bones.\nNot for Rigify legacy",
+        default = True)
 
     if bpy.app.version >= (3,3,0):
         useSeparateIkToe : BoolProperty(
@@ -235,6 +235,7 @@ class MetaMaker(RigifyCommon):
         meta["DazSplitShin"] = self.useSplitShin
         meta["DazReuseBendTwists"] = self.reuseBendTwists
         meta["DazFingerIk"] = self.useFingerIk
+        meta["DazCustomLayers"] = self.useCustomLayers
 
         setupRigifyData(meta)
 
@@ -287,7 +288,7 @@ class MetaMaker(RigifyCommon):
 
         self.fixHands(meta)
         self.fitLimbs(meta, hip)
-        if self.useCustomLayers:
+        if meta["DazCustomLayers"]:
             self.addGroupBones(meta, rig)
 
         for eb in meta.data.edit_bones:
@@ -301,7 +302,7 @@ class MetaMaker(RigifyCommon):
         self.reparentBones(meta, RF.MetaParents)
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
-        if self.useCustomLayers:
+        if meta["DazCustomLayers"]:
             self.setupGroupBones(meta)
 
         print("  Set connected")
@@ -570,10 +571,6 @@ class Rigifier(RigifyCommon):
         description = "Improve IK by storing a bending angle.\nThis is compatible with daz poses but does not work with rigify poles so they can not be used.\nNot needed if Optimize Pose for IK is used",
         default = False)
 
-    def draw(self, context):
-        self.layout.prop(self, "useCustomLayers")
-
-
     def setupExtras(self, context, rig):
         def addRecursive(pb):
             if pb.name not in self.extras.keys():
@@ -672,7 +669,8 @@ class Rigifier(RigifyCommon):
                 return pname
         else:
             pname = ""
-        print("MISS", bname, rname, pname)
+        if not isDrvBone(bname):
+            print("MISS", bname, rname, pname)
         return "NONE"
 
 
@@ -752,7 +750,7 @@ class Rigifier(RigifyCommon):
 
         # Group bones
         print("  Create group bones")
-        if self.useCustomLayers:
+        if meta["DazCustomLayers"]:
             for data in self.GroupBones:
                 eb = gen.data.edit_bones[data[0]]
                 eb.layers = helpLayers
@@ -1397,7 +1395,6 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
 
     def draw(self, context):
         Fixer.draw(self, context)
-        Rigifier.draw(self, context)
 
     def drawMeta(self):
         pass
