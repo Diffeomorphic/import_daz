@@ -1820,7 +1820,7 @@ class LayeredGroup(CyclesGroup):
             elif slot in node.outputs.keys():
                 self.links.new(node.outputs[slot], mix.inputs[0])
             else:
-                fac.default_value = 1
+                self.links.new(node.outputs[0], mix.inputs[0])
 
         if map.ismask:
             self.mask = outnode
@@ -1849,10 +1849,8 @@ class LayeredGroup(CyclesGroup):
             if self.mask:
                 setFactor(map.transparency, self.mask, "Color", mix)
                 self.mask = None
-                #mix.use_alpha = False
             else:
                 setFactor(map.transparency, texnode, "Alpha", mix)
-                #mix.use_alpha = False
             self.links.new(self.colorOutput(self.outnode), a)
             self.links.new(self.colorOutput(outnode), b)
             self.outnode = mix
