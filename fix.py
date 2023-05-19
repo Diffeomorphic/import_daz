@@ -911,6 +911,24 @@ class BendTwists:
                 pb.driver_remove("scale")
                 for cns in list(pb.constraints):
                     pb.constraints.remove(cns)
+
+        for ob in rig.children:
+            if ob.parent and ob.parent_type == 'BONE':
+                bname = ob.parent_bone
+                if bname in btnames:
+                    wmat = ob.matrix_world.copy()
+                    if isDrvBone(bname):
+                        bone = rig.data.bones[baseBone(bname)]
+                    else:
+                        bone = rig.data.bones[ob.parent_bone]
+                    if bone.parent:
+                        ob.parent = rig
+                        ob.parent_type = 'BONE'
+                        ob.parent_bone = bone.name
+                    else:
+                        ob.parent_type = 'OBJECT'
+                    setWorldMatrix(ob, wmat)
+
         setMode('EDIT')
         for bname in btnames:
             eb = rig.data.edit_bones[bname]

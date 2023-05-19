@@ -1608,7 +1608,8 @@ def applyRestPoses(context, rig, subrigs):
     for subrig in rigs:
         setRestRotation(subrig)
         for ob in getMeshChildren(subrig):
-            setRestPose(ob, subrig, context)
+            if not ob.parent_type == 'BONE':
+                setRestPose(ob, subrig, context)
         if not setActiveObject(context, subrig):
             continue
         constraints = applyLimitConstraints(subrig)
@@ -1628,7 +1629,8 @@ def applyAllObjectTransforms(rigs):
     try:
         for rig in rigs:
             for ob in getMeshChildren(rig):
-                selectSet(ob, True)
+                if ob.parent_type != 'BONE':
+                    selectSet(ob, True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         return True
     except RuntimeError:
@@ -1692,6 +1694,16 @@ def mergeBones(rig, mergers, parents, context):
         deletes += bones + [drvBone(bone) for bone in bones]
     activateObject(context, rig)
     removeBoneSumDrivers(rig, deletes)
+
+    swapped = {}
+    for key,bnames in mergers.items():
+        for bname in bnames:
+            swapped[bname] = key
+    for ob in rig.children:
+        if ob.parent_type == 'BONE' and ob.parent_bone in swapped.keys():
+            wmat = ob.matrix_world.copy()
+            ob.parent_bone = swapped[ob.parent_bone]
+            setWorldMatrix(ob, wmat)
 
     setMode('EDIT')
     for bname,pname in parents.items():

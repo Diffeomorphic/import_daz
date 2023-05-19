@@ -624,10 +624,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         rig.data.layers = 32*[True]
         for (ob, bname) in bchildren:
             bone = self.getMhxBone(rig, bname)
+            if bone is None and isDrvBone(bname):
+                bone = self.getMhxBone(rig, baseBone(bname))
             if bone:
                 setParent(context, ob, rig, bone.name)
             else:
-                print("Could not restore bone parent for %s", ob.name)
+                print("Could not restore bone parent %s for %s" % (bname, ob.name))
         rig.data.layers = layers
 
 

@@ -684,7 +684,6 @@ class Rigifier(RigifyCommon):
 
     def rigifyMeta1(self, context, rig, meta, dazrig):
         from .driver import getBoneDrivers, getPropDrivers, copyProp
-        from .node import setParent, clearParent
         from .mhx import unhideAllObjects, getBoneLayer
 
         print("Rigify metarig")
@@ -809,7 +808,6 @@ class Rigifier(RigifyCommon):
                 if isFinal(dname):
                     pb.bone.layers = R_FIN*[False] + [True] + (31-R_FIN)*[False]
 
-
         # Rescale custom shapes
         if rig.DazRig in ["genesis3", "genesis8"]:
             customfix = RF.CustomShapeFixGenesis38
@@ -834,22 +832,20 @@ class Rigifier(RigifyCommon):
             self.copyBoneInfo(srcname, trgname, rig, gen)
 
         # Handle bone parents
-        print("  Handle bone parents")
-        boneParents = []
+        print("  Reparent bones")
         for ob in getArmatureChildren(context, rig):
             if ob.parent_type == 'BONE':
-                boneParents.append((ob, ob.parent_bone))
-                clearParent(ob)
-
-        for ob,dname in boneParents:
-            rname = self.getRigifyBone(dname, gen.data.bones)
-            if rname:
-                print("Parent %s to bone %s" % (ob.name, rname))
-                bone = gen.data.bones[rname]
-                setParent(context, ob, gen, bone.name)
-            else:
-                print("Did not find bone parent %s" % dname)
-                setParent(context, ob, gen, None)
+                wmat = ob.matrix_world.copy()
+                rname = self.getRigifyBone(ob.parent_bone, gen.data.bones)
+                ob.parent = gen
+                if rname:
+                    print("    Parent %s to bone %s" % (ob.name, rname))
+                    ob.parent_type = 'BONE'
+                    ob.parent_bone = rname
+                else:
+                    print("    Did not find bone parent %s" % dname)
+                    ob.parent_type = 'OBJECT'
+                setWorldMatrix(ob, wmat)
 
         # Limbs
         if rig.DazRig == "genesis9":
@@ -1061,6 +1057,8 @@ class Rigifier(RigifyCommon):
     def changeVertexGroups(self, context, rig, meta, gen):
         print("  Change vertex groups")
         for ob in self.meshes:
+            if ob.parent == gen and ob.parent_type == 'BONE':
+                continue
             ob.parent = gen
             for dname in self.spineBones.keys():
                 rname,_pname = self.spineBones[dname]
