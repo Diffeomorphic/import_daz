@@ -346,6 +346,12 @@ class Fixer(DriverUser):
                 nrig = ob
             unlinkAll(ob, False)
             coll.objects.link(ob)
+
+        for ob in rig.children:
+            if ob.parent_type == 'BONE':
+                wmat = ob.matrix_world.copy()
+                ob.parent = nrig
+                setWorldMatrix(ob, wmat)
         activateObject(context, rig)
         return nrig
 
