@@ -1459,11 +1459,36 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
             if driver in rig.pose.bones.keys():
                 pbDriver = rig.pose.bones[driver]
                 if pbDriver.parent == pb:
-                    print("Dependency loop: %s %s" % (pbDriver.name, pb.name))
+                    if channel == "scale":
+                        pbDriver.bone.inherit_scale = pb.bone.inherit_scale = 'FULL'
+                    else:
+                        print("Dependency loop: %s %s" % (pbDriver.name, pb.name))
                     continue
                 if factor:
                     tvec,idx2 = getTransformVector(factor, channel, comp, pbDriver, pb, idx)
                     lm.makeSimpleBoneDriver(path, tvec, pb, channel, idx2, driver, False)
+
+
+    def canOptimizeScale(exprs, pb, rig):
+        from .bone import getMappedBone
+        parent = pb.parent
+        if parent:
+            parents = [parent.name]
+        else:
+            return False
+        while parent and parent.bone.inherit_scale == 'FULL':
+            parent = parent.parent
+            parents.append(parent.name)
+        for idx,expr in exprs.items():
+            if idx < 0:
+                pass
+            elif not expr["bone"] and expr["mults"]:
+                driver,path,comp = expr["mults"][0]
+                if not (driver in parents and path == "scale" and comp == idx):
+                    return False
+            else:
+                return False
+        return True
 
 
     def getTransformVector(factor, channel, comp, pbDriver, pb, idx):
@@ -1520,7 +1545,11 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         if "scale" in expr.keys() and not GS.useInheritScale:
             if driven in rig.pose.bones.keys():
                 pb = rig.pose.bones[driven]
-                buildChannel(expr["scale"], pb, "scale")
+                if canOptimizeScale(expr["scale"], pb, rig):
+                    pb.bone.inherit_scale = 'FULL'
+                else:
+                    buildChannel(expr["scale"], pb, "scale")
+
         if "value" in expr.keys():
             formulas = expr["value"]
             if driven in altmorphs.keys():
