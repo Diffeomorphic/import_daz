@@ -85,9 +85,11 @@ class Fixer(DriverUser):
         self.renamedBones = {}
 
 
-    def setupFixer(self, context, rig):
-        self.meshes = [ob for ob in getArmatureChildren(context, rig)
-                       if ob.type == 'MESH']
+    def makeRealParents(self, context, rig):
+        for ob in getVisibleMeshes(context):
+            mod = getModifier(ob, 'ARMATURE')
+            if mod and mod.object == rig:
+                ob.parent = rig
 
 
     def printMessages(self):
@@ -348,10 +350,12 @@ class Fixer(DriverUser):
             coll.objects.link(ob)
 
         for ob in rig.children:
-            if ob.parent_type == 'BONE':
-                wmat = ob.matrix_world.copy()
-                ob.parent = nrig
-                setWorldMatrix(ob, wmat)
+            wmat = ob.matrix_world.copy()
+            ob.parent = nrig
+            setWorldMatrix(ob, wmat)
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                mod.object = nrig
         activateObject(context, rig)
         return nrig
 

@@ -411,12 +411,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def convertMhx(self, context):
         from .figure import finalizeArmature
-        if self.useKeepRig:
-            nrig = self.saveDazRig(context)
         rig = context.object
         self.rigname = rig.name
         rig.DazMhxLegacy = False
-        self.setupFixer(context, rig)
+        self.makeRealParents(context, rig)
+        if self.useKeepRig:
+            nrig = self.saveDazRig(context)
+        self.meshes = getMeshChildren(rig)
         finalizeArmature(rig)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)

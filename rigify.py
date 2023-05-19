@@ -191,6 +191,7 @@ class MetaMaker(RigifyCommon):
         scn = context.scene
         if not(rig and rig.type == 'ARMATURE'):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
+        self.makeRealParents(context, rig)
 
         if self.useOptimizePose:
             from .convert import optimizePose
@@ -588,7 +589,7 @@ class Rigifier(RigifyCommon):
                 if isinstance(dbone, tuple):
                     dbone = dbone[0]
             taken.append(dbone)
-        for ob in getArmatureChildren(context, rig):
+        for ob in rig.children:
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
@@ -671,7 +672,7 @@ class Rigifier(RigifyCommon):
             pname = ""
         if not isDrvBone(bname):
             print("MISS", bname, rname, pname)
-        return "NONE"
+        return None
 
 
     def rigifyMeta(self, context, rig, meta, dazrig):
@@ -693,7 +694,7 @@ class Rigifier(RigifyCommon):
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)
-        self.setupFixer(context, rig)
+        self.meshes = getMeshChildren(rig)
 
         setMode('POSE')
         try:
@@ -785,7 +786,7 @@ class Rigifier(RigifyCommon):
         self.addCombinedGazeBone(gen, R_FACE, R_HELP)
         print(" Create tongue IK")
         setMode('OBJECT')
-        self.checkTongueIk(rig)
+        self.checkTongueIk(gen)
         setMode('EDIT')
         self.addTongueIkBone(gen, R_FACE, R_DEFORM)
 
@@ -833,7 +834,7 @@ class Rigifier(RigifyCommon):
 
         # Handle bone parents
         print("  Reparent bones")
-        for ob in getArmatureChildren(context, rig):
+        for ob in rig.children:
             if ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()
                 rname = self.getRigifyBone(ob.parent_bone, gen.data.bones)
@@ -1258,6 +1259,8 @@ class Rigifier(RigifyCommon):
             return
         from .mhx import copyLocation, copyRotation, copyTransform
         rname = self.getRigifyBone(pb.name, gen.data.bones)
+        if rname is None:
+            return
         rb = gen.pose.bones.get(rname)
         if rb is None:
             return

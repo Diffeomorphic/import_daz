@@ -400,17 +400,6 @@ def getModifier(ob, type):
             return mod
     return None
 
-def getArmatureChildren(context, rig):
-    children = []
-    for ob in getVisibleMeshes(context):
-        if ob.parent == rig:
-            children.append(ob)
-        else:
-            mod = getModifier(ob, 'ARMATURE')
-            if mod and mod.object == rig:
-                children.append(ob)
-    return children
-
 def getMeshChildren(rig):
     return [ob for ob in rig.children if ob.type == 'MESH']
 
