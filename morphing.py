@@ -676,7 +676,12 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
 
 
     def run(self, context):
-        MP.setupMorphPaths(False)
+        if self.rig is None and not self.meshes:
+            self.setupCharacter(context)
+            MP.setupMorphPaths(False)
+            self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
+        else:
+            MP.setupMorphPaths(False)
         self.errors = {}
         self.faceshapes = {}
         self.meshes.reverse()
@@ -1214,6 +1219,8 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         self.findIked()
         self.errors = {}
         t1 = perf_counter()
+        if not self.meshes:
+            self.getFingeredRigMeshes(context)
         namepaths0 = self.getNamePaths()
         mesh0 = self.meshes[0]
         char0 = mesh0.DazMesh
