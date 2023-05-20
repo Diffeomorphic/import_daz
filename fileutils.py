@@ -37,12 +37,7 @@ from .utils import *
 #   Global variables
 #-------------------------------------------------------------
 
-theImagedDefaults = ";*.png;*.jpeg;*.jpg;*.bmp"
 theImageExtensions = ["png", "jpeg", "jpg", "bmp", "tif", "tiff"]
-
-theDazExtensions = ["dsf", "duf"]
-theDazUpcaseExtensions = [ext.upper() for ext in theDazExtensions]
-theDazDefaults = ";".join(["*.%s" % ext for ext in theDazExtensions+theDazUpcaseExtensions])
 
 class AnimationFolders:
     def __init__(self):

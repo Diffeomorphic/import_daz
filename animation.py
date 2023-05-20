@@ -774,9 +774,7 @@ class ActionOptions:
 #   AnimatorBase
 #-------------------------------------------------------------
 
-class AnimatorBase(MultiFile, FrameConverter, AffectOptions, MorphOptions):
-    filename_ext = ".duf"
-    filter_glob : StringProperty(default = theDazDefaults + theImagedDefaults, options={'HIDDEN'})
+class AnimatorBase(MultiFile, DazImageFile, FrameConverter, AffectOptions, MorphOptions):
     lockMeshes = False
 
     def __init__(self):
@@ -1318,6 +1316,12 @@ class StandardAnimation:
         from time import perf_counter
         from .uilist import updateScrollbars
         from .scan import getCharData, loadScannedInfo, checkNeedUpdates
+        dazfiles = self.getMultiFiles(["dsf", "duf"])
+        nfiles = len(dazfiles)
+        if nfiles == 0:
+            raise DazError("No corresponding DAZ file selected")
+        self.verbose = (nfiles == 1)
+
         rig, mesh, name, relpath = getCharData(context, False)
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
@@ -1369,12 +1373,6 @@ class StandardAnimation:
         props = []
         t1 = perf_counter()
         print("\n--------------------")
-
-        dazfiles = self.getMultiFiles(theDazExtensions)
-        nfiles = len(dazfiles)
-        if nfiles == 0:
-            raise DazError("No corresponding DAZ file selected")
-        self.verbose = (nfiles == 1)
 
         for filepath in dazfiles:
             if self.atFrameOne and len(dazfiles) == 1:

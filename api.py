@@ -145,7 +145,6 @@ def set_selection(files):
         except:
             pass
 
-
 def update_drivers(ob):
     """update_drivers(ob)
 
