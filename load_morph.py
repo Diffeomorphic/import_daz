@@ -1489,7 +1489,6 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
 
 
     def canOptimizeScale(exprs, pb, rig):
-        from .bone import getMappedBone
         parent = pb.parent
         if parent:
             parents = [parent.name]

@@ -432,7 +432,7 @@ class MorphSuffix:
                  ('ALL', "All", "Add custom morph suffixes to all morphs")],
         name = "Use Suffix",
         description = "Add morph suffixes",
-        default = 'NONE')
+        default = 'GEOGRAFT')
 
     morphSuffix : StringProperty(
         name = "Suffix",
@@ -1467,6 +1467,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         self.layout.prop(self, "useExpressions")
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useJcms")
+        MorphSuffix.draw(self, context)
 
     excluded = [folder.lower() for folder in []]
         #["/data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Proportion"]]

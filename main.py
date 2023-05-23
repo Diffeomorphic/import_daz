@@ -677,13 +677,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("favoPath")
             self.subprop("ignoreUrl"),
             self.subprop("ignoreFinger")
-            self.subprop("onMorphSuffix")
-            if self.onMorphSuffix == 'ALL':
-                self.subprop("morphSuffix")
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useBakedCorrectives")
         self.layout.prop(self, "useDazFavorites")
+        self.layout.separator()
         self.layout.prop(self, "useAdjusters")
+        self.layout.prop(self, "onMorphSuffix")
+        if self.onMorphSuffix == 'ALL':
+            self.layout.prop(self, "morphSuffix")
         self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "useTransferGeografts")
         self.layout.prop(self, "useTransferClothes")
@@ -921,6 +922,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
                 if (useExpressions or self.useFacs or self.useJcms):
                     bpy.ops.daz.import_baked_correctives(
+                        onMorphSuffix = self.onMorphSuffix,
+                        morphSuffix = self.morphSuffix,
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms)

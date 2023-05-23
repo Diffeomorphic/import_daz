@@ -40,23 +40,31 @@ from .bone_data import BD
 #   Alternative bone names
 #-------------------------------------------------------------
 
-def getMappedBone(bname, rig):
+def getMappedBone(bname, rig, mesh=None):
+    def getBone(bname):
+        bname = unquote(bname)
+        pg = rig.data.DazBoneMap.get(bname)
+        if pg and pg.s in rig.data.bones.keys():
+            return pg.s
+        elif bname in rig.pose.bones.keys():
+            return bname
+        bname1 = BD.BoneMap.get(bname)
+        if bname1 and bname1 in rig.data.bones.keys():
+            return bname1
+        from .fix import getSuffixName
+        sufname = getSuffixName(bname)
+        if sufname in rig.pose.bones.keys():
+            return sufname
+        return ""
+
     if rig is None or bname is None:
         return None
-    bname = unquote(bname)
-    pg = rig.data.DazBoneMap.get(bname)
-    if pg and pg.s in rig.data.bones.keys():
-        return pg.s
-    elif bname in rig.pose.bones.keys():
-        return bname
-    bname1 = BD.BoneMap.get(bname)
-    if bname1 and bname1 in rig.data.bones.keys():
+    bname1 = getBone(bname)
+    if bname1:
         return bname1
-    from .fix import getSuffixName
-    sufname = getSuffixName(bname)
-    if sufname in rig.pose.bones.keys():
-        return sufname
-    #print("NO BONE FOUND", bname)
+    elif mesh and ":" not in bname:
+        bname1 = "%s:%s" % (mesh.name, bname)
+        return getBone(bname1)
     return ""
 
 #-------------------------------------------------------------

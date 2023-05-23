@@ -176,7 +176,7 @@ class Formula:
                     print("  ", unquote(formula["output"]))
                 return False
         elif rig:
-            output1 = getMappedBone(output, rig)
+            output1 = getMappedBone(output, rig, mesh)
             if output1 and output1 in rig.pose.bones.keys():
                 output = output1
             elif output1 == "RIG":
@@ -197,12 +197,12 @@ class Formula:
         path,idx,default = self.parseChannel(channel)
         expr = setFormulaExpr(exprs, output, path, channel, idx, fileref)
         if "stage" in formula.keys():
-            self.evalStage(formula, expr, rig)
+            self.evalStage(formula, expr, rig, mesh)
         else:
-            self.evalOperations(formula, expr, rig)
+            self.evalOperations(formula, expr, rig, mesh)
 
 
-    def evalStage(self, formula, expr, rig):
+    def evalStage(self, formula, expr, rig, mesh):
         from .bone import getMappedBone
         if formula["stage"] == "mult":
             opers = formula["operations"]
@@ -210,12 +210,12 @@ class Formula:
             if type == "value":
                 expr["mults"].append(prop)
             elif comp >= 0:
-                bname = getMappedBone(prop, rig)
+                bname = getMappedBone(prop, rig, mesh)
                 if bname in rig.pose.bones.keys():
                     expr["mults"].append((bname,path,comp))
 
 
-    def evalOperations(self, formula, expr, rig):
+    def evalOperations(self, formula, expr, rig, mesh):
         from .bone import getMappedBone
         opers = formula["operations"]
         prop,type,path,comp = self.evalUrl(opers[0], rig)
@@ -224,10 +224,10 @@ class Formula:
             if expr["prop"] is None:
                 expr["prop"] = prop
         elif expr["bone"] is None:
-            expr["bone"] = getMappedBone(prop, rig)
+            expr["bone"] = getMappedBone(prop, rig, mesh)
             expr["comp"] = comp
         else:
-            expr["bone2"] = getMappedBone(prop, rig)
+            expr["bone2"] = getMappedBone(prop, rig, mesh)
             factor = "factor2"
             expr["comp2"] = comp
         expr["path"] = path
