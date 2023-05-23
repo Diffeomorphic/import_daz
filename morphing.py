@@ -513,7 +513,7 @@ class MorphLoader(LoadMorph):
         else:
             return
         if filepath not in pgs.keys():
-            item = pgs.add()
+            item = addItem(pgs)
             item.name = filepath
             item.morphset = self.getMorphSet(asset)
             if asset.name in aliases.keys():
@@ -584,7 +584,7 @@ class MorphLoader(LoadMorph):
         if prop in pgs.keys():
             item = pgs[prop]
         else:
-            item = pgs.add()
+            item = addItem(pgs)
             item.name = prop
         if asset:
             if asset.label:

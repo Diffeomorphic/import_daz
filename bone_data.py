@@ -124,7 +124,8 @@ class BoneData:
          "l_shoulder", "l_pectoral", "l_upperarm", "l_forearm", "l_hand",
          "l_thumb", "l_index", "l_mid", "l_ring", "l_pinky",
         ),
-        ("l_thightwist1", "l_thightwist2",
+        ("rThigh", "rShin",
+         "l_thightwist1", "l_thightwist2",
          "r_thightwist1", "r_thightwist2"),
         "___"
         ]

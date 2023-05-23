@@ -30,7 +30,7 @@ import sys
 import bpy
 from .driver import DriverUser
 from .utils import *
-from .error import reportError, DazError
+from .error import reportError, DazError, addItem
 
 MAX_EXPRESSION_SIZE = 255
 MAX_TERMS = 12
@@ -88,14 +88,6 @@ class LoadMorph(DriverUser):
 
 
     def loadAllMorphs(self, namepaths):
-        try:
-            return self.loadAllMorphs1(namepaths)
-        except TypeError as err:
-            msg = "Loading morphs caused a type error:\n%s\nMorphs can not be loaded to linked characters." % err
-        raise DazError(msg)
-
-
-    def loadAllMorphs1(self, namepaths):
         DriverUser.__init__(self)
         self.alias = {}
         self.loaded = []
@@ -241,7 +233,7 @@ class LoadMorph(DriverUser):
             pg = pgs[alias]
             printName(" ==", "%s %s %s" % (prop, alias, pg.s))
         else:
-            pg = pgs.add()
+            pg = addItem(pgs)
             pg.name = alias
             printName(" =", "%s %s" % (prop, alias))
             pg.s = prop
@@ -318,7 +310,7 @@ class LoadMorph(DriverUser):
             if prop in pgs.keys():
                 item = pgs[prop]
             else:
-                item = pgs.add()
+                item = addItem(pgs)
                 item.name = prop
             item.s = self.bodypart
             return skey,True
@@ -508,11 +500,12 @@ class LoadMorph(DriverUser):
                 factor = self.cheatSplineTCB(expr["points"], factor)
             self.drivers[output].append(("PROP", prop, factor))
         for mult in expr["mults"]:
-            mult = self.getUniqueName(mult)
+            if isinstance(mult, str):
+                mult = self.getUniqueName(mult)
+                self.addNewProp(mult)
             if output not in self.mults.keys():
                 self.mults[output] = []
             self.mults[output].append(mult)
-            self.addNewProp(mult)
         if expr["bone"]:
             bname = expr["bone"]
             if output not in self.drivers.keys():
@@ -946,6 +939,10 @@ class LoadMorph(DriverUser):
     def multiplyMults(self, fcu, string):
         if self.mult:
             mstring = ""
+            clamp = None
+            if string[0:6] == "clamp(":
+                clamp = string.rsplit(",", 2)
+                string = clamp[0][6:]
             if len(string) == 0:
                 reportError("Trying to multiply empty string", trigger=(1,1))
             elif len(string) > 1 and string[1] == '*' and string[0].isupper():
@@ -955,13 +952,28 @@ class LoadMorph(DriverUser):
                 string = "(%s)" % string
             targets = self.getDriverTargets(fcu)
             for mult in self.mult:
-                multfinal = finalProp(mult)
-                if propRef(multfinal) not in targets:
-                    mstring += "%s*" % varname
-                    self.ensureExists(mult, multfinal, self.defaultMultiplier, True)
-                    self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
-                    varname = nextLetter(varname)
-            return "%s%s" % (mstring, string)
+                if isinstance(mult, str):
+                    multfinal = finalProp(mult)
+                    if propRef(multfinal) not in targets:
+                        mstring += "%s*" % varname
+                        self.ensureExists(mult, multfinal, self.defaultMultiplier, True)
+                        self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
+                        varname = nextLetter(varname)
+                elif isinstance(mult, tuple):
+                    from .driver import addTransformVar
+                    bname,channel,idx = mult
+                    ttypes = self.getTransformTypes(channel)
+                    if ttypes and bname in self.rig.pose.bones:
+                        pb = self.rig.pose.bones[bname]
+                        idx2,sign = d2bBone(pb, channel, idx)
+                        signchar = ("" if sign == 1 else "-")
+                        mstring += "%s%s*" % (signchar, varname)
+                        addTransformVar(fcu, varname, ttypes[idx2], self.rig, bname)
+                        varname = nextLetter(varname)
+            if clamp:
+                return "clamp(%s%s,%s,%s" % (mstring, string, clamp[1], clamp[2])
+            else:
+                return "%s%s" % (mstring, string)
         else:
             return string
 
@@ -1143,18 +1155,25 @@ class LoadMorph(DriverUser):
                 self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
         fcu.driver.expression = string
-        if channel == "rotation":
-            ttypes = ["ROT_X", "ROT_Y", "ROT_Z"]
-        elif channel == "translation":
-            ttypes = ["LOC_X", "LOC_Y", "LOC_Z"]
-        elif channel == "scale":
-            ttypes = ["SCALE_X", "SCALE_Y", "SCALE_Z"]
-        else:
-            reportError("Unknown channel: %s" % channel, trigger=(2,3))
+        ttypes = self.getTransformTypes(channel)
+        if ttypes is None:
+            return None
         for j,vname,bname in vars:
             addTransformVar(fcu, vname, ttypes[j], self.rig, bname)
         self.addMissingVars(fcu, vvars)
         return fcu
+
+
+    def getTransformTypes(self, channel):
+        if channel == "rotation":
+            return ["ROT_X", "ROT_Y", "ROT_Z"]
+        elif channel == "translation":
+            return ["LOC_X", "LOC_Y", "LOC_Z"]
+        elif channel == "scale":
+            return ["SCALE_X", "SCALE_Y", "SCALE_Z"]
+        else:
+            reportError("Unknown channel: %s" % channel, trigger=(2,3))
+            return None
 
     #------------------------------------------------------------------
     #   Build sum drivers
@@ -1502,12 +1521,9 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
             else:
                 tvec = sign*uvec
         else:
-            idx2 = pb.DazAxes[idx]
             tvec = Vector((0,0,0))
-            if channel == "scale":
-                tvec[idx2] = factor
-            else:
-                tvec[idx2] = pb.DazFlips[idx2] * factor
+            idx2,sign = d2bBone(pb, channel, idx)
+            tvec[idx2] = factor*sign
         return tvec, idx2
 
 
@@ -1563,6 +1579,11 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
 #------------------------------------------------------------------
 #   Utilities
 #------------------------------------------------------------------
+
+def d2bBone(pb, channel, idx):
+    idx2 = pb.DazAxes[idx]
+    return idx2, (1 if channel == "scale" else pb.DazFlips[idx2])
+
 
 def printName(char, name):
     if GS.showInTerminal:
