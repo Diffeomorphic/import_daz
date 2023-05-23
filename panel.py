@@ -481,40 +481,40 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         from .selector import getRigFromObject
-        ob = context.object
-        rig = None
+        ob = rig = context.object
         if ob:
             rig = getRigFromObject(ob)
+        if rig is None:
+            rig = ob
         scn = context.scene
         layout = self.layout
 
-        if rig:
-            layout.operator("daz.import_pose")
-            layout.operator("daz.import_expression")
-            layout.operator("daz.import_poselib")
-            layout.operator("daz.import_action")
-            layout.separator()
-            layout.operator("daz.import_node_pose")
-            layout.separator()
-            layout.operator("daz.clear_pose")
-            op = layout.operator("daz.clear_morphs")
-            op.morphset = "All"
-            layout.operator("daz.copy_absolute_pose")
-            if rig.DazDriversDisabled:
-                layout.operator("daz.enable_drivers")
-            else:
-                layout.operator("daz.disable_drivers")
-            layout.operator("daz.prune_action")
-            layout.separator()
-            layout.operator("daz.impose_locks_limits")
-            layout.operator("daz.bake_pose_to_fk_rig")
-            layout.operator("daz.bake_shapekeys")
-            layout.operator("daz.mute_control_rig")
-            layout.operator("daz.unmute_control_rig")
-            layout.operator("daz.save_pose_preset")
-            layout.operator("daz.transfer_to_gaze")
-            layout.operator("daz.transfer_from_gaze")
-            layout.separator()
+        layout.operator("daz.import_pose")
+        layout.operator("daz.import_expression")
+        layout.operator("daz.import_poselib")
+        layout.operator("daz.import_action")
+        layout.separator()
+        layout.operator("daz.import_node_pose")
+        layout.separator()
+        layout.operator("daz.clear_pose")
+        op = layout.operator("daz.clear_morphs")
+        op.morphset = "All"
+        layout.operator("daz.copy_absolute_pose")
+        if rig.DazDriversDisabled:
+            layout.operator("daz.enable_drivers")
+        else:
+            layout.operator("daz.disable_drivers")
+        layout.operator("daz.prune_action")
+        layout.separator()
+        layout.operator("daz.impose_locks_limits")
+        layout.operator("daz.bake_pose_to_fk_rig")
+        layout.operator("daz.bake_shapekeys")
+        layout.operator("daz.mute_control_rig")
+        layout.operator("daz.unmute_control_rig")
+        layout.operator("daz.save_pose_preset")
+        layout.operator("daz.transfer_to_gaze")
+        layout.operator("daz.transfer_from_gaze")
+        layout.separator()
 
         layout.operator("daz.save_poses_to_file")
         layout.operator("daz.load_poses_from_file")

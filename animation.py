@@ -143,6 +143,8 @@ class FrameConverter:
 
     def prepareAnimations(self, anims, oanims, rig, again):
         locks = []
+        if rig.type != 'ARMATURE':
+            return anims, locks
         if self.affectBones and not again:
             bonemap,locks = self.setupBoneMap(anims, rig)
         nanims = []
@@ -365,13 +367,14 @@ class FrameConverter:
 #   HideOperator class
 #-------------------------------------------------------------
 
-class HideOperator(DazOperator, IsArmature):
+class HideOperator(DazOperator, IsObject):
     def storeState(self, context):
         from .driver import muteDazFcurves
         DazOperator.storeState(self, context)
         rig = context.object
-        self.boneLayers = list(rig.data.layers)
-        rig.data.layers = 32*[True]
+        if rig.type == 'ARMATURE':
+            self.boneLayers = list(rig.data.layers)
+            rig.data.layers = 32*[True]
         self.layerColls = []
         self.obhides = []
         for ob in context.view_layer.objects:
@@ -400,7 +403,8 @@ class HideOperator(DazOperator, IsArmature):
         from .driver import muteDazFcurves
         DazOperator.restoreState(self, context)
         rig = context.object
-        rig.data.layers = self.boneLayers
+        if rig.type == 'ARMATURE':
+            rig.data.layers = self.boneLayers
         for layer in self.layerColls:
             layer.exclude = False
         for ob,hide in self.obhides:
@@ -983,7 +987,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, AffectOptions, Morph
                 insertKeys(rig, False, frame, self)
         if rig.type != 'ARMATURE':
             return
-        if self.useClearPose and self.affectBones:
+        if self.useClearPose and self.affectBones and rig.pose:
             for pb in rig.pose.bones:
                 if self.isAvailable(pb, rig):
                     scale = pb.scale.copy()
@@ -1330,7 +1334,7 @@ class StandardAnimation:
         if self.affectMorphs:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
-            else:
+            elif rig:
                 for ob in rig.children:
                     if ob.type == 'MESH' and ob.data.shape_keys:
                         for sname in ob.data.shape_keys.key_blocks.keys():
@@ -1406,6 +1410,8 @@ class StandardAnimation:
 
 
 def loadAltMorphs(rig):
+    if rig is None:
+        return {}
     char = rig.DazMesh.split("-",1)[0].lower()
     struct = AF.loadEntry(char, "altmorphs", False)
     if struct:
@@ -1419,7 +1425,7 @@ def loadAltMorphs(rig):
 
 class NodePose:
     def parseAnimations(self, struct, banims, vanims, rig):
-        if "nodes" in struct.keys() and self.affectBones:
+        if "nodes" in struct.keys() and self.affectBones and rig and rig.pose:
             for node in struct["nodes"]:
                 key = node["id"]
                 if key in rig.pose.bones.keys():
@@ -1571,6 +1577,8 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
 
 
     def addToPoseLib(self, rig, filepath):
+        if rig.type != 'ARMATURE':
+            return
         name = os.path.splitext(os.path.basename(filepath))[0]
         if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
             bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
@@ -1697,7 +1705,7 @@ def findAction(aname):
 #   Clear pose
 #----------------------------------------------------------
 
-class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
+class DAZ_OT_ClearPose(DazOperator, IsObject):
     bl_idname = "daz.clear_pose"
     bl_label = "Clear Pose"
     bl_description = "Clear all bones and object transformations"
@@ -1706,10 +1714,9 @@ class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
     def run(self, context):
         ob = context.object
         scn = context.scene
-        if ob.type == 'ARMATURE':
-            for rig in getSelectedArmatures(context):
-                self.clearPose(rig, scn)
-        elif ob.parent and ob.parent.type == 'ARMATURE':
+        for ob in getSelectedObjects(context):
+            self.clearPose(ob, scn)
+        if ob.parent and ob.parent.type == 'ARMATURE':
             self.clearPose(ob.parent, scn)
 
 
@@ -1719,11 +1726,12 @@ class DAZ_OT_ClearPose(DazOperator, IsMeshArmature):
         setWorldMatrix(rig, unit)
         if auto:
             insertKeys(rig, False, scn.frame_current)
-        for pb in rig.pose.bones:
-            pb.matrix_basis = unit
-            if auto:
-                insertKeys(pb, True, scn.frame_current)
-        setChildofInverses(rig)
+        if rig.pose:
+            for pb in rig.pose.bones:
+                pb.matrix_basis = unit
+                if auto:
+                    insertKeys(pb, True, scn.frame_current)
+            setChildofInverses(rig)
 
 
 def insertKeys(pb, isbone, frame, btn=None):
