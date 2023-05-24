@@ -367,7 +367,7 @@ class FrameConverter:
 #   HideOperator class
 #-------------------------------------------------------------
 
-class HideOperator(DazOperator, IsObject):
+class HideOperator(DazOperator):
     def storeState(self, context):
         from .driver import muteDazFcurves
         DazOperator.storeState(self, context)
@@ -415,7 +415,7 @@ class HideOperator(DazOperator, IsObject):
 #   AffectOptions
 #-------------------------------------------------------------
 
-class AffectOptions:
+class BoneOptions:
     useClearPose : BoolProperty(
         name = "Clear Pose",
         description = "Clear the pose before loading a new one",
@@ -464,13 +464,13 @@ class AffectOptions:
     def draw(self, context):
         self.drawBones(context)
         if self.affectBones:
+            self.layout.label(text="Object Transformations Affect:")
+            self.layout.prop(self, "affectObject", expand=True)
             self.layout.prop(self, "useClearPose")
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "useSubtractRestpose")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
-            self.layout.label(text="Object Transformations Affect:")
-            self.layout.prop(self, "affectObject", expand=True)
             self.layout.prop(self, "useConvert")
             if self.useConvert:
                 self.layout.prop(self, "srcCharacter")
@@ -778,24 +778,28 @@ class ActionOptions:
 #   AnimatorBase
 #-------------------------------------------------------------
 
-class AnimatorBase(MultiFile, DazImageFile, FrameConverter, AffectOptions, MorphOptions):
+class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOptions):
     lockMeshes = False
 
     def __init__(self):
         pass
 
     def draw(self, context):
-        AffectOptions.draw(self, context)
-        if self.affectMorphs:
+        ob = context.object
+        if self.affectBones and not self.onlyObject:
+            BoneOptions.draw(self, context)
+        if self.affectMorphs and not self.onlyObject:
             MorphOptions.draw(self, context)
 
     def invoke(self, context, event):
-        self.setPreferredFolder(context.object, [], self.preferredFolders, True)
+        ob = context.object
+        self.setPreferredFolder(ob, [], self.preferredFolders, True)
+        self.onlyObject = (ob.type not in ['ARMATURE','MESH'])
         return MultiFile.invoke(self, context, event)
 
     def getSingleAnimation(self, filepath, context, offset):
         from .load_json import loadJson
-        rig = context.object
+        rig = getRigFromContext(context, strict=False, activate=True)
         scn = context.scene
         if filepath is None:
             return offset,None
@@ -979,7 +983,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, AffectOptions, Morph
     def clearPose(self, rig, frame):
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
-        if self.useClearPose and self.affectObject == 'OBJECT' and self.affectBones:
+        if (self.onlyObject or
+            (self.useClearPose and self.affectObject == 'OBJECT' and self.affectBones)):
             if not self.affectScale:
                 tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
@@ -1074,7 +1079,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, AffectOptions, Morph
                     if (bname == "@selection" or
                         bname in self.KnownRigs):
                         master = self.getMasterBone(rig)
-                        if self.affectObject == 'NONE' or not self.affectBones:
+                        if self.onlyObject:
+                            tfm.setRna(rig)
+                            if self.useInsertKeys:
+                                insertKeys(rig, False, n+offset, self)
+                        elif self.affectObject == 'NONE' or not self.affectBones:
                             pass
                         elif (self.affectObject == 'MASTER' and
                               master and
@@ -1472,7 +1481,7 @@ class NodePose:
 #   Import Action
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportAction(HideOperator, AffectBonesOn, AffectMorphsOn, ActionOptions, AnimatorBase, StandardAnimation):
+class DAZ_OT_ImportAction(HideOperator, AffectBonesOn, AffectMorphsOn, ActionOptions, AnimatorBase, StandardAnimation, IsObject):
     bl_idname = "daz.import_action"
     bl_label = "Import Action"
     bl_description = "Import poses from DAZ pose preset file(s) to action"
@@ -1494,7 +1503,7 @@ class DAZ_OT_ImportAction(HideOperator, AffectBonesOn, AffectMorphsOn, ActionOpt
 #   Import Poselib
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation):
+class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArmature):
     bl_idname = "daz.import_poselib"
     bl_label = "Import Pose Library"
     bl_description = "Import poses from DAZ pose preset file(s) to pose library"
@@ -1649,7 +1658,7 @@ class PoseBase(AnimatorBase):
         self.layout.prop(toolset, "use_keyframe_insert_auto")
 
 
-class DAZ_OT_ImportPose(HideOperator, AffectMorphsOff, PoseBase, StandardAnimation):
+class DAZ_OT_ImportPose(HideOperator, AffectMorphsOff, PoseBase, StandardAnimation, IsObject):
     bl_idname = "daz.import_pose"
     bl_label = "Import Pose"
     bl_description = "Import a pose from DAZ pose preset file(s)"
@@ -1662,7 +1671,7 @@ class DAZ_OT_ImportPose(HideOperator, AffectMorphsOff, PoseBase, StandardAnimati
         StandardAnimation.run(self, context)
 
 
-class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAnimation):
+class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAnimation, IsMeshArmature):
     bl_idname = "daz.import_expression"
     bl_label = "Import Expression"
     bl_description = "Import an expression from DAZ pose preset file(s)"
@@ -1675,7 +1684,7 @@ class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAn
         StandardAnimation.run(self, context)
 
 
-class DAZ_OT_ImportNodePose(NodePose, HideOperator, AffectBonesOn, AffectMorphsOn, PoseBase, StandardAnimation):
+class DAZ_OT_ImportNodePose(NodePose, HideOperator, AffectBonesOn, AffectMorphsOn, PoseBase, StandardAnimation, IsMeshArmature):
     bl_idname = "daz.import_node_pose"
     bl_label = "Import Pose From Scene"
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
@@ -1832,7 +1841,7 @@ class DAZ_OT_PruneAction(DazOperator):
 #   Bake to FK
 #----------------------------------------------------------
 
-class DAZ_OT_BakeToFkRig(HideOperator):
+class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
     bl_idname = "daz.bake_pose_to_fk_rig"
     bl_label = "Bake Pose To FK Rig"
     bl_description = "Bake pose to the FK rig before saving pose preset.\nIK arms and legs must be baked separately"

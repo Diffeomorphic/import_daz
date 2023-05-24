@@ -30,7 +30,7 @@ import bpy
 
 from .error import *
 from .utils import *
-from .selector import Selector, CustomSelector, getRigFromObject, CustomEnums
+from .selector import Selector, CustomSelector, CustomEnums
 from .uilist import updateScrollbars
 from .driver import DriverUser
 from .morphing import MS, MorphTypeOptions
@@ -90,8 +90,7 @@ class GeneralMorphSelector(Selector):
 
     def invoke(self, context, event):
         global theMorphEnums, theCatEnums
-        ob = context.object
-        rig = self.rig = getRigFromObject(ob)
+        rig = self.rig = getRigFromContext(context)
         self.invoked = True
         theMorphEnums = [("All", "All", "All")]
         theCatEnums = [("All", "All", "All")]
@@ -552,7 +551,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 
     def run(self, context):
         ob = context.object
-        rig = getRigFromObject(ob)
+        rig = getRigFromContext(context)
         if self.invoked:
             self.props = [item.name.lower() for item in self.getSelectedItems()]
         if rig:
@@ -705,7 +704,7 @@ class DAZ_OT_AddDrivenValueNodes(DazOperator, Selector, DriverUser, IsMesh):
         skeys = ob.data.shape_keys
         if skeys is None:
             raise DazError("Object %s has not shapekeys" % ob.name)
-        rig = getRigFromObject(ob)
+        rig = getRigFromContext(context)
         mat = ob.data.materials[ob.active_material_index]
         props = self.getSelectedProps()
         nprops = len(props)
@@ -1042,7 +1041,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if not (rig and rig.animation_data and rig.animation_data.action):
             raise DazError("No action found")
         actrig = rig.animation_data.action

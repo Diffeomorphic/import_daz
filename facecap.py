@@ -108,8 +108,7 @@ class FACSImporter(SingleFile, ActionOptions):
 
 
     def run(self, context):
-        from .selector import getRigFromObject
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if rig is None:
             raise DazError("No rig selected")
         if "MhaGaze_L" in rig.data.keys():

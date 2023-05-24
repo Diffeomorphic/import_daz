@@ -480,12 +480,7 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
     bl_label = "Posing"
 
     def draw(self, context):
-        from .selector import getRigFromObject
-        ob = rig = context.object
-        if ob:
-            rig = getRigFromObject(ob)
-        if rig is None:
-            rig = ob
+        rig = getRigFromContext(context, strict=False)
         scn = context.scene
         layout = self.layout
 

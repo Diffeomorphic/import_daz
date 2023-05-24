@@ -33,7 +33,6 @@ from mathutils import *
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, JsonFile, JsonExportFile, AF
-from .animation import HideOperator
 
 #-------------------------------------------------------------
 #   Load pose

@@ -33,7 +33,7 @@ from collections import OrderedDict
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, DufFile, DazExporter
-from .selector import Selector, getRigFromObject
+from .selector import Selector
 from .animation import HideOperator, FrameConverter
 from .bone_data import BD
 

@@ -195,7 +195,7 @@ class Selector():
     def invoke(self, context, event):
         scn = context.scene
         ob = context.object
-        rig = self.rig = getRigFromObject(ob)
+        rig = self.rig = getRigFromContext(context)
         self.selection.clear()
         for idx,data in enumerate(self.getKeys(rig, ob)):
             prop,text,cat = data
@@ -406,7 +406,7 @@ class Activator(MorphGroup):
             ob = context.object
             props = self.getCustomMorphs(scn, ob)
         else:
-            ob = getRigFromObject(context.object)
+            ob = getRigFromContext(context)
             props = self.getRelevantMorphs(scn, ob)
         for prop in props:
             activate = self.getActivate(ob, prop)
@@ -511,7 +511,8 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
+        print("MM", rig)
         if rig:
             scn = context.scene
             setMorphs(0.0, rig, self, scn, scn.frame_current, False)
@@ -549,7 +550,7 @@ class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
             context.scene.tool_settings.use_keyframe_insert_auto = self.useAuto
 
     def run(self, context):
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if rig:
             scn = context.scene
             setMorphs(self.value, rig, self, scn, scn.frame_current, False)
@@ -596,7 +597,7 @@ class DAZ_OT_AddKeysets(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if rig:
             scn = context.scene
             aksi = scn.keying_sets.active_index
@@ -620,7 +621,7 @@ class DAZ_OT_KeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if rig:
             scn = context.scene
             morphs = self.getRelevantMorphs(scn, rig, adjusters=True)
@@ -657,7 +658,7 @@ class DAZ_OT_UnkeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if rig and rig.animation_data and rig.animation_data.action:
             scn = context.scene
             morphs = self.getRelevantMorphs(scn, rig, adjusters=True)
@@ -687,18 +688,6 @@ class DAZ_OT_UnkeyShapes(DazOperator, MorphGroup, IsMesh):
 #
 #-------------------------------------------------------------
 
-def getRigFromObject(ob, useMesh=False):
-    if ob.type == 'ARMATURE':
-        return ob
-    elif useMesh and ob.type == 'MESH':
-        return ob
-    else:
-        ob = ob.parent
-        if ob is None or ob.type != 'ARMATURE':
-            return None
-        return ob
-
-
 class DAZ_OT_ToggleAllCats(DazOperator, IsMeshArmature):
     bl_idname = "daz.toggle_all_cats"
     bl_label = "Toggle All Categories"
@@ -709,7 +698,7 @@ class DAZ_OT_ToggleAllCats(DazOperator, IsMeshArmature):
     useOpen : BoolProperty()
 
     def run(self, context):
-        rig = getRigFromObject(context.object, self.useMesh)
+        rig = getRigFromContext(context, self.useMesh)
         if rig:
             for cat in rig.DazMorphCats:
                 cat["active"] = self.useOpen
@@ -783,7 +772,7 @@ class DAZ_OT_PinProp(DazOperator, MorphGroup, IsMeshArmature):
 
     def run(self, context):
         from .morphing import MP
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         scn = context.scene
         MP.setupMorphPaths(False)
         pinProp(rig, scn, self.key, self, scn.frame_current)

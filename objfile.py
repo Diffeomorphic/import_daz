@@ -399,8 +399,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
 
     def run(self, context):
         from .driver import setFloatProp
-        from .selector import getRigFromObject
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         LS.scale = rig.DazScale
         if rig.type == 'ARMATURE':
             meshes = getMeshChildren(rig)

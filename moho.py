@@ -30,7 +30,6 @@ import bpy
 
 from .error import *
 from .utils import *
-from .selector import getRigFromObject
 from .fileutils import SingleFile, DatFile
 from .animation import ActionOptions
 
@@ -183,7 +182,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
     def run(self, context):
         from .selector import MorphGroup, setMorphs, pinProp
         scn = context.scene
-        rig = getRigFromObject(context.object)
+        rig = getRigFromContext(context)
         if rig is None:
             raise DazError("No armature found")
         self.phonemes = self.phonemeConverters[self.phonemeSet]

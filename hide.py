@@ -228,8 +228,8 @@ class SetAllVisibility:
     prefix : StringProperty()
 
     def run(self, context):
-        from .selector import autoKeyProp, getRigFromObject
-        rig = getRigFromObject(context.object)
+        from .selector import autoKeyProp
+        rig = getRigFromContext(context)
         scn = context.scene
         if rig is None:
             return
@@ -265,8 +265,8 @@ class DAZ_OT_ToggleVis(DazOperator, IsMeshArmature):
     name : StringProperty()
 
     def run(self, context):
-        from .selector import getRigFromObject, autoKeyProp
-        rig = getRigFromObject(context.object)
+        from .selector import autoKeyProp
+        rig = getRigFromContext(context)
         scn = context.scene
         if rig:
             rig[self.name] = not rig[self.name]
@@ -488,9 +488,8 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
 
     def run(self, context):
         from .driver import addDriverVar
-        from .selector import getRigFromObject
         hum = context.object
-        rig = getRigFromObject(hum)
+        rig = getRigFromContext(context)
         clothes = [ob for ob in getSelectedMeshes(context) if ob != hum]
         if len(clothes) != 1:
             raise DazError("Exactly two meshes must be selected")

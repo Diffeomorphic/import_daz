@@ -34,7 +34,7 @@ from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
 from .error import *
 from .utils import *
-from .selector import Selector, getRigFromObject
+from .selector import Selector
 from .fileutils import SingleFile, MultiFile, DazImageFile, JsonFile, ensureExt
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup
 from .load_morph import LoadMorph
@@ -1274,7 +1274,7 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
 
     def run(self, context):
         from .load_json import saveJson
-        rig = self.rig = getRigFromObject(context.object)
+        rig = self.rig = getRigFromContext(context)
         struct = { "filetype" : "favo_morphs" }
         self.addMorphUrls(rig, struct)
         for ob in getMeshChildren(rig):
@@ -1351,7 +1351,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
             struct["filetype"] != "favo_morphs"):
             raise DazError("This file does not contain favorite morphs")
         self.useTransferFace = False
-        rig = self.rig = getRigFromObject(context.object)
+        rig = self.rig = getRigFromContext(context)
         rig.DazMorphUrls.clear()
         self.loadPreset(rig, rig, struct, context)
         for ob in getMeshChildren(rig):
@@ -1528,7 +1528,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
     def run(self, context):
-        self.rig = getRigFromObject(context.object)
+        self.rig = getRigFromContext(context)
         if self.rig:
             for ob in getMeshChildren(self.rig):
                 self.addFavoMorphs(ob, context)

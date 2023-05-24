@@ -400,6 +400,25 @@ def getModifier(ob, type):
             return mod
     return None
 
+
+def getRigFromContext(context, useMesh=False, strict=True, activate=False):
+    ob = context.object
+    if ob.type == 'ARMATURE':
+        return ob
+    elif ob.type == 'MESH':
+        if useMesh:
+            return ob
+        mod = getModifier(ob, 'ARMATURE')
+        if mod and mod.object:
+            rig = mod.object
+            if not activate or activateObject(context, rig):
+                return rig
+    if strict:
+        return None
+    else:
+        return ob
+
+
 def getMeshChildren(rig):
     return [ob for ob in rig.children if ob.type == 'MESH']
 
