@@ -416,30 +416,30 @@ class HideOperator(DazOperator):
 #-------------------------------------------------------------
 
 class ObjectOptions:
-    affectObject : EnumProperty(
-        items = [('OBJECT', "Object", "Animate global object transformation"),
-                 ('MASTER', "Master Bone", "Object transformations affect master/root bone instead of object.\nOnly for MHX and Rigify"),
-                 ('NONE', "None", "Don't animate global object transformations"),
-                ],
+    affectObject : BoolProperty(
         name = "Affect Object",
-        description = "How to animate global object transformation",
-        default = 'OBJECT')
+        description = "Animate object transformations",
+        default = True)
 
     useClearPose : BoolProperty(
         name = "Clear Pose",
         description = "Clear the pose before loading a new one",
-        default = True)
+        default = False)
 
     def draw(self, context):
-        self.layout.label(text="Object Transformations Affect:")
-        self.layout.prop(self, "affectObject", expand=True)
         self.layout.prop(self, "useClearPose")
+        self.layout.prop(self, "affectObject", expand=True)
 
 
 class BoneOptions:
+    useMaster: BoolProperty(
+        name = "Master Bone",
+        description = "Object animations affect master bone rather than object transformations",
+        default = False)
+
     affectScale : BoolProperty(
         name = "Affect Scale",
-        description = "Include bone scale in animation",
+        description = "Include bone scale in animation.\nObject scale is always included",
         default = False)
 
     affectSelectedOnly : BoolProperty(
@@ -469,6 +469,8 @@ class BoneOptions:
         default = "genesis_8_female")
 
     def draw(self, context):
+        if self.affectObject:
+            self.layout.prop(self, "useMaster")
         self.layout.prop(self, "affectScale")
         self.layout.prop(self, "useSubtractRestpose")
         self.layout.prop(self, "keepLimits")
@@ -722,7 +724,7 @@ class ActionOptions:
     makeNewAction : BoolProperty(
         name = "New Action",
         description = "Unlink current action and make a new one",
-        default = True)
+        default = False)
 
     actionName : StringProperty(
         name = "Action Name",
@@ -737,7 +739,7 @@ class ActionOptions:
     integerFrames : BoolProperty(
         name = "Integer Frames",
         description = "Round all keyframes to intergers",
-        default = True)
+        default = False)
 
     atFrameOne : BoolProperty(
         name = "Start At Frame 1",
@@ -960,8 +962,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
 
 
     def isAvailable(self, pb, rig):
-        if (pb.name == self.getMasterBone(rig) and
-              self.affectObject != 'MASTER'):
+        if pb.name == self.getMasterBone(rig) and not self.useMaster:
             return False
         elif self.affectSelectedOnly:
             if pb.bone.select:
@@ -975,11 +976,12 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
 
     def getMasterBone(self, rig):
         if rig.DazRig == "mhx":
-            return "master"
+            master = "master"
         elif rig.DazRig[0:6] == "rigify":
-            return "root"
+            master = "root"
         else:
-            return None
+            return False
+        return (master in rig.pose.bones.keys())
 
 
     #-------------------------------------------------------------
@@ -989,9 +991,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
     def clearPose(self, rig, frame):
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
-        if self.useClearPose and self.affectObject == 'OBJECT':
-            #if not self.affectScale:
-            #    tfm.setScale(rig.scale, False)
+        if self.useClearPose and self.affectObject:
             tfm.setRna(rig)
             if self.useInsertKeys:
                 insertKeys(rig, False, frame, self)
@@ -1046,9 +1046,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
                 for key,channel in channels.items():
                     if key in ["rotation", "translation"]:
                         self.addFrames(bname, channel, 3, key, frames, default=(0,0,0))
-                    elif key == "scale" and self.affectScale:
+                    elif key == "scale":
                         self.addFrames(bname, channel, 3, key, frames, default=(1,1,1))
-                    elif key == "general_scale" and self.affectScale:
+                    elif key == "general_scale":
                         self.addFrames(bname, channel, 1, key, frames)
 
             for vname, channels in vanim.items():
@@ -1084,15 +1084,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
 
                     if isObject:
                         master = self.getMasterBone(rig)
-                        if self.affectObject == 'NONE' or (not self.onlyObject and not self.affectBones):
+                        if not self.affectObject:
                             pass
-                        elif (self.affectObject == 'MASTER' and
-                              master and
-                              master in rig.pose.bones.keys()):
+                        elif self.useMaster and master:
                             self.transformBone(rig, master, tfm, value, n, offset, False)
                         else:
-                            if self.affectScale:
-                                tfm.setScale(rig.scale, False)
                             tfm.setRna(rig)
                             if self.useInsertKeys:
                                 insertKeys(rig, False, n+offset, self)
@@ -1290,9 +1286,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
 
 
     def mergeHipObject(self, rig):
-        if self.affectObject == 'MASTER' and self.affectBones and rig.type == 'ARMATURE':
+        if self.affectObject and self.useMaster and self.affectBones and rig.type == 'ARMATURE':
             master = self.getMasterBone(rig)
-            if master in rig.pose.bones.keys():
+            if master:
                 pb = rig.pose.bones[master]
                 wmat = rig.matrix_world.copy()
                 setWorldMatrix(rig, self.worldMatrix)
