@@ -401,6 +401,14 @@ def getModifier(ob, type):
     return None
 
 
+def getRigFromMesh(ob):
+    if ob.type == 'MESH':
+        mod = getModifier(ob, 'ARMATURE')
+        if mod:
+            return mod.object
+    return None
+
+
 def getRigFromContext(context, useMesh=False, strict=True, activate=False):
     ob = context.object
     if ob.type == 'ARMATURE':
@@ -408,11 +416,9 @@ def getRigFromContext(context, useMesh=False, strict=True, activate=False):
     elif ob.type == 'MESH':
         if useMesh:
             return ob
-        mod = getModifier(ob, 'ARMATURE')
-        if mod and mod.object:
-            rig = mod.object
-            if not activate or activateObject(context, rig):
-                return rig
+        rig = getRigFromMesh(ob)
+        if rig and (not activate or activateObject(context, rig)):
+            return rig
     if strict:
         return None
     else:

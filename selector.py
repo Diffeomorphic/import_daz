@@ -512,7 +512,6 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
 
     def run(self, context):
         rig = getRigFromContext(context)
-        print("MM", rig)
         if rig:
             scn = context.scene
             setMorphs(0.0, rig, self, scn, scn.frame_current, False)

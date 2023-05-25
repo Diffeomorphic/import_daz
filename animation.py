@@ -415,12 +415,7 @@ class HideOperator(DazOperator):
 #   AffectOptions
 #-------------------------------------------------------------
 
-class BoneOptions:
-    useClearPose : BoolProperty(
-        name = "Clear Pose",
-        description = "Clear the pose before loading a new one",
-        default = True)
-
+class ObjectOptions:
     affectObject : EnumProperty(
         items = [('OBJECT', "Object", "Animate global object transformation"),
                  ('MASTER', "Master Bone", "Object transformations affect master/root bone instead of object.\nOnly for MHX and Rigify"),
@@ -430,14 +425,26 @@ class BoneOptions:
         description = "How to animate global object transformation",
         default = 'OBJECT')
 
-    affectSelectedOnly : BoolProperty(
-        name = "Selected Bones Only",
-        description = "Only animate selected bones",
-        default = False)
+    useClearPose : BoolProperty(
+        name = "Clear Pose",
+        description = "Clear the pose before loading a new one",
+        default = True)
 
+    def draw(self, context):
+        self.layout.label(text="Object Transformations Affect:")
+        self.layout.prop(self, "affectObject", expand=True)
+        self.layout.prop(self, "useClearPose")
+
+
+class BoneOptions:
     affectScale : BoolProperty(
         name = "Affect Scale",
         description = "Include bone scale in animation",
+        default = False)
+
+    affectSelectedOnly : BoolProperty(
+        name = "Selected Bones Only",
+        description = "Only animate selected bones",
         default = False)
 
     keepLimits : BoolProperty(
@@ -462,19 +469,13 @@ class BoneOptions:
         default = "genesis_8_female")
 
     def draw(self, context):
-        self.drawBones(context)
-        if self.affectBones:
-            self.layout.label(text="Object Transformations Affect:")
-            self.layout.prop(self, "affectObject", expand=True)
-            self.layout.prop(self, "useClearPose")
-            self.layout.prop(self, "affectScale")
-            self.layout.prop(self, "useSubtractRestpose")
-            self.layout.prop(self, "keepLimits")
-            self.layout.prop(self, "affectSelectedOnly")
-            self.layout.prop(self, "useConvert")
-            if self.useConvert:
-                self.layout.prop(self, "srcCharacter")
-        self.drawMorphs(context)
+        self.layout.prop(self, "affectScale")
+        self.layout.prop(self, "useSubtractRestpose")
+        self.layout.prop(self, "keepLimits")
+        self.layout.prop(self, "affectSelectedOnly")
+        self.layout.prop(self, "useConvert")
+        if self.useConvert:
+            self.layout.prop(self, "srcCharacter")
 
     def drawBones(self, context):
         pass
@@ -778,33 +779,38 @@ class ActionOptions:
 #   AnimatorBase
 #-------------------------------------------------------------
 
-class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOptions):
+class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneOptions, MorphOptions):
     lockMeshes = False
 
     def __init__(self):
         pass
 
     def draw(self, context):
-        ob = context.object
-        if self.affectBones and not self.onlyObject:
+        rig = getRigFromContext(context, strict=False)
+        if rig.type != 'ARMATURE':
+            ObjectOptions.draw(self, context)
+            return
+        self.drawBones(context)
+        if self.affectBones:
+            ObjectOptions.draw(self, context)
             BoneOptions.draw(self, context)
-        if self.affectMorphs and not self.onlyObject:
+        self.drawMorphs(context)
+        if self.affectMorphs:
             MorphOptions.draw(self, context)
 
     def invoke(self, context, event):
-        ob = context.object
-        self.setPreferredFolder(ob, [], self.preferredFolders, True)
-        self.onlyObject = (ob.type not in ['ARMATURE','MESH'])
+        self.setPreferredFolder(context.object, [], self.preferredFolders, True)
         return MultiFile.invoke(self, context, event)
 
     def getSingleAnimation(self, filepath, context, offset):
-        from .load_json import loadJson
-        rig = getRigFromContext(context, strict=False, activate=True)
-        scn = context.scene
         if filepath is None:
             return offset,None
+        rig = getRigFromContext(context, strict=False, activate=True)
+        self.onlyObject = (rig.type not in ['ARMATURE','MESH'])
+        scn = context.scene
         ext = os.path.splitext(filepath)[1]
         if ext in [".duf", ".dsf"]:
+            from .load_json import loadJson
             struct = loadJson(filepath, False)
         else:
             raise DazError("Wrong type of file: %s" % filepath)
@@ -983,10 +989,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def clearPose(self, rig, frame):
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
-        if (self.onlyObject or
-            (self.useClearPose and self.affectObject == 'OBJECT' and self.affectBones)):
-            if not self.affectScale:
-                tfm.setScale(rig.scale, False)
+        if self.useClearPose and self.affectObject == 'OBJECT':
+            #if not self.affectScale:
+            #    tfm.setScale(rig.scale, False)
             tfm.setRna(rig)
             if self.useInsertKeys:
                 insertKeys(rig, False, frame, self)
@@ -1057,6 +1062,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             for n,frame in lframes:
                 twists = []
                 for bname in frame.keys():
+                    isObject = (bname == "@selection" or bname in self.KnownRigs)
                     bframe = frame[bname]
                     tfm = Transform()
                     value = 0.0
@@ -1066,31 +1072,26 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         elif key == "rotation":
                             tfm.setRot(bframe["rotation"], prop)
                         elif key == "scale":
-                            if self.affectScale:
+                            if self.affectScale or isObject:
                                 tfm.setScale(bframe["scale"], False, prop)
                         elif key == "general_scale":
-                            if self.affectScale:
+                            if self.affectScale or isObject:
                                 tfm.setGeneral(bframe["general_scale"], False, prop)
                         elif key == "value":
                             value = bframe["value"][0]
                         else:
                             print("Unknown key:", bname, key)
 
-                    if (bname == "@selection" or
-                        bname in self.KnownRigs):
+                    if isObject:
                         master = self.getMasterBone(rig)
-                        if self.onlyObject:
-                            tfm.setRna(rig)
-                            if self.useInsertKeys:
-                                insertKeys(rig, False, n+offset, self)
-                        elif self.affectObject == 'NONE' or not self.affectBones:
+                        if self.affectObject == 'NONE' or (not self.onlyObject and not self.affectBones):
                             pass
                         elif (self.affectObject == 'MASTER' and
                               master and
                               master in rig.pose.bones.keys()):
                             self.transformBone(rig, master, tfm, value, n, offset, False)
                         else:
-                            if not self.affectScale:
+                            if self.affectScale:
                                 tfm.setScale(rig.scale, False)
                             tfm.setRna(rig)
                             if self.useInsertKeys:
@@ -1205,7 +1206,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def clearScales(self, rig, frame):
-        if not self.affectScale:
+        if not self.affectScale or rig.type != 'ARMATURE':
             return
         self.scales = {}
         for pb in rig.pose.bones:
@@ -1216,13 +1217,13 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def saveScales(self, rig, frame):
-        if not self.affectScale:
+        if not self.affectScale or rig.type != 'ARMATURE':
             return
         self.scales[frame] = dict([(pb.name, Matrix.Diagonal(pb.scale)) for pb in rig.pose.bones])
 
 
     def fixScales(self, rig):
-        if not self.affectScale:
+        if not self.affectScale or rig.type != 'ARMATURE':
             return
         for frame,smats in self.scales.items():
             for pb in rig.pose.bones:
@@ -1289,7 +1290,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def mergeHipObject(self, rig):
-        if self.affectObject == 'MASTER' and self.affectBones:
+        if self.affectObject == 'MASTER' and self.affectBones and rig.type == 'ARMATURE':
             master = self.getMasterBone(rig)
             if master in rig.pose.bones.keys():
                 pb = rig.pose.bones[master]
@@ -1724,9 +1725,10 @@ class DAZ_OT_ClearPose(DazOperator, IsObject):
         ob = context.object
         scn = context.scene
         for ob in getSelectedObjects(context):
+            rig = getRigFromMesh(ob)
+            if rig:
+                ob = rig
             self.clearPose(ob, scn)
-        if ob.parent and ob.parent.type == 'ARMATURE':
-            self.clearPose(ob.parent, scn)
 
 
     def clearPose(self, rig, scn):
