@@ -29,6 +29,7 @@
 import os
 import bpy
 from mathutils import *
+from math import pi
 from collections import OrderedDict
 from .error import *
 from .utils import *
@@ -52,7 +53,7 @@ class FakeCurve:
         return self.value
 
 
-class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, FrameConverter, IsArmature):
+class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, FrameConverter, IsObject):
     bl_idname = "daz.save_pose_preset"
     bl_label = "Save Pose Preset"
     bl_description = "Save the active action as a pose preset,\nto be used in DAZ Studio"
@@ -120,12 +121,13 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def draw(self, context):
         DazExporter.draw(self, context)
-        self.layout.prop(self, "useBones")
-        if self.useBones:
-            self.layout.prop(self, "useObject")
-            self.layout.prop(self, "includeLocks")
-            self.layout.prop(self, "useScale")
-            self.layout.prop(self, "useFaceBones")
+        self.layout.prop(self, "useObject")
+        if not self.onlyObject:
+            self.layout.prop(self, "useBones")
+            if self.useBones:
+                self.layout.prop(self, "includeLocks")
+                self.layout.prop(self, "useScale")
+                self.layout.prop(self, "useFaceBones")
         self.layout.prop(self, "useMorphs")
         if self.useMorphs:
             self.layout.prop(self, "useUnusedMorphs")
@@ -136,29 +138,38 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.layout.prop(self, "fps")
 
 
+    def invoke(self, context, event):
+        rig = getRigFromContext(context, strict=False)
+        self.onlyObject = (rig.type != 'ARMATURE')
+        return SingleFile.invoke(self, context, event)
+
+
     def run(self, context):
-        from math import pi
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
-        rig = context.object
-        self.setupDriven(rig)
-        self.setupConverter(rig)
+        rig = getRigFromContext(context, strict=False, activate=True)
+        self.driven = {}
+        if rig.type == 'ARMATURE' and self.useBones:
+            self.setupDriven(rig)
+            self.setupConverter(rig)
         self.alias = dict([(key, pg.s) for key,pg in rig.DazAlias.items()])
-        act = None
         self.morphs = {}
         self.locs = {}
         self.rots = {}
         self.quats = {}
         self.scales = {}
-        if self.useAction:
-            if rig.animation_data:
-                act = rig.animation_data.action
-            if act:
-                self.getFcurves(rig, act)
-        if not act:
+        act = None
+        if self.useAction and rig.animation_data:
+            act = rig.animation_data.action
+        if act:
+            self.getFcurves(rig, act)
+        else:
             self.getFakeCurves(rig)
-        if self.useBones:
+        self.Ls = {}
+        if rig.type == 'ARMATURE' and self.useBones:
             self.setupFlipper(rig)
-            self.setupFrames(rig)
+            self.setupBoneFrames(rig)
+        elif self.useObject:
+            self.setupObjectFrames(rig)
         self.saveFile(rig)
 
 
@@ -173,15 +184,16 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         self.rots[""] = 3*[None]
         self.locs[""] = 3*[None]
         self.scales[""] = 3*[None]
-        for pb in rig.pose.bones:
-            for bname in self.getBoneNames(pb.name):
-                if pb.rotation_mode == 'QUATERNION':
-                    self.quats[bname] = 4*[None]
-                else:
-                    self.rots[bname] = 3*[None]
-                self.scales[bname] = 3*[None]
-                if self.isLocUnlocked(pb, bname):
-                    self.locs[bname] = 3*[None]
+        if rig.type == 'ARMATURE':
+            for pb in rig.pose.bones:
+                for bname in self.getBoneNames(pb.name):
+                    if pb.rotation_mode == 'QUATERNION':
+                        self.quats[bname] = 4*[None]
+                    else:
+                        self.rots[bname] = 3*[None]
+                    self.scales[bname] = 3*[None]
+                    if self.isLocUnlocked(pb, bname):
+                        self.locs[bname] = 3*[None]
 
         for fcu in act.fcurves:
             channel = fcu.data_path.rsplit(".",1)[-1]
@@ -260,16 +272,23 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.rotlocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_rotation) @ Fn.to_3x3()]
                 self.loclocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_location) @ Fn.to_3x3()]
 
+
+    def setupObjectFrames(self, rig):
+        for frame in range(self.first, self.last+1):
+            L = self.Ls[frame] = {}
+            mat = self.getRigMatrix(rig, frame)
+            L[""] = self.Z.inverted() @ mat @ self.Z
+
+
     RootNames = ["Root", "master", "root"]
 
-    def setupFrames(self, rig):
+    def setupBoneFrames(self, rig):
         def getRoot(rig):
             for bname in self.RootNames:
                 if bname in rig.pose.bones.keys():
                     return rig.pose.bones[bname]
             return None
 
-        self.Ls = {}
         for frame in range(self.first, self.last+1):
             L = self.Ls[frame] = {}
             smats = {}
@@ -349,7 +368,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def setupDriven(self, rig):
-        self.driven = {}
         if rig.animation_data:
             for fcu in rig.animation_data.drivers:
                 words = fcu.data_path.split('"')
@@ -465,7 +483,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             'ZYX' : 'YZX',
         }
         anims = []
-        if self.useBones:
+        if self.useBones and rig.type == 'ARMATURE':
             for pb in rig.pose.bones:
                 if pb.name in self.RootNames:
                     continue

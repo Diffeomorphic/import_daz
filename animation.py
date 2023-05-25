@@ -788,8 +788,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
         pass
 
     def draw(self, context):
-        rig = getRigFromContext(context, strict=False)
-        if rig.type != 'ARMATURE':
+        if not self.onlyObject:
             ObjectOptions.draw(self, context)
             return
         self.drawBones(context)
@@ -801,6 +800,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
             MorphOptions.draw(self, context)
 
     def invoke(self, context, event):
+        rig = getRigFromContext(context, strict=False)
+        self.onlyObject = (rig.type != 'ARMATURE')
         self.setPreferredFolder(context.object, [], self.preferredFolders, True)
         return MultiFile.invoke(self, context, event)
 
@@ -808,7 +809,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
         if filepath is None:
             return offset,None
         rig = getRigFromContext(context, strict=False, activate=True)
-        self.onlyObject = (rig.type not in ['ARMATURE','MESH'])
         scn = context.scene
         ext = os.path.splitext(filepath)[1]
         if ext in [".duf", ".dsf"]:
