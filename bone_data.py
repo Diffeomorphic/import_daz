@@ -125,9 +125,10 @@ class BoneData:
          "l_thumb", "l_index", "l_mid", "l_ring", "l_pinky",
         ),
         ("rThigh", "rShin",
+         "l_forearmtwist1", "l_forearmtwist2",
          "l_thightwist1", "l_thightwist2",
          "r_thightwist1", "r_thightwist2"),
-        "___"
+        ("l_upperarmtwist1", "l_upperarmtwist2"),
         ]
 
     Flips = [

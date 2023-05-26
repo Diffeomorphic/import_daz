@@ -479,7 +479,7 @@ class BoneOptions:
         if self.affectBones:
             self.layout.prop(self, "useMaster")
             self.layout.prop(self, "affectScale")
-            self.layout.prop(self, "useSubtractRestpose")
+            #self.layout.prop(self, "useSubtractRestpose")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
