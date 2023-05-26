@@ -371,17 +371,17 @@ class HideOperator(DazOperator):
     def storeState(self, context):
         from .driver import muteDazFcurves
         DazOperator.storeState(self, context)
-        rig = context.object
-        if rig.type == 'ARMATURE':
-            self.boneLayers = list(rig.data.layers)
-            rig.data.layers = 32*[True]
         self.layerColls = []
         self.obhides = []
         for ob in context.view_layer.objects:
             self.obhides.append((ob, ob.hide_get()))
             ob.hide_set(False)
-        self.hideLayerColls(rig, context.view_layer.layer_collection)
-        muteDazFcurves(rig, True)
+        self.rig = getRigFromContext(context, strict=True)
+        if self.rig:
+            self.boneLayers = list(self.rig.data.layers)
+            self.rig.data.layers = 32*[True]
+            self.hideLayerColls(self.rig, context.view_layer.layer_collection)
+            muteDazFcurves(self.rig, True)
 
 
     def hideLayerColls(self, rig, layer):
@@ -402,23 +402,27 @@ class HideOperator(DazOperator):
     def restoreState(self, context):
         from .driver import muteDazFcurves
         DazOperator.restoreState(self, context)
-        rig = context.object
-        if rig.type == 'ARMATURE':
-            rig.data.layers = self.boneLayers
+        if self.rig:
+            self.rig.data.layers = self.boneLayers
+            muteDazFcurves(self.rig, self.rig.DazDriversDisabled)
         for layer in self.layerColls:
             layer.exclude = False
         for ob,hide in self.obhides:
             ob.hide_set(hide)
-        muteDazFcurves(rig, rig.DazDriversDisabled)
 
 #-------------------------------------------------------------
 #   AffectOptions
 #-------------------------------------------------------------
 
-class ObjectOptions:
+class BoneOptions:
     affectObject : BoolProperty(
         name = "Affect Object",
         description = "Animate object transformations",
+        default = True)
+
+    affectBones : BoolProperty(
+        name = "Affect Bones",
+        description = "Animate bones",
         default = True)
 
     useClearPose : BoolProperty(
@@ -426,15 +430,9 @@ class ObjectOptions:
         description = "Clear the pose before loading a new one",
         default = False)
 
-    def draw(self, context):
-        self.layout.prop(self, "useClearPose")
-        self.layout.prop(self, "affectObject", expand=True)
-
-
-class BoneOptions:
     useMaster: BoolProperty(
         name = "Master Bone",
-        description = "Object animations affect master bone rather than object transformations",
+        description = "Object animations affect master bone rather than object transformations.\nOnly for MHX and Rigify",
         default = False)
 
     affectScale : BoolProperty(
@@ -468,62 +466,25 @@ class BoneOptions:
         description = "Character this file was made for",
         default = "genesis_8_female")
 
-    def draw(self, context):
+    def drawProp(self, context):
+        self.layout.prop(self, "affectObject")
         if self.affectObject:
+            self.layout.prop(self, "useClearPose")
+
+    def drawFigure(self, context):
+        self.layout.prop(self, "affectObject")
+        self.layout.prop(self, "affectBones")
+        if self.affectBones or self.affectObject:
+            self.layout.prop(self, "useClearPose")
+        if self.affectBones:
             self.layout.prop(self, "useMaster")
-        self.layout.prop(self, "affectScale")
-        self.layout.prop(self, "useSubtractRestpose")
-        self.layout.prop(self, "keepLimits")
-        self.layout.prop(self, "affectSelectedOnly")
-        self.layout.prop(self, "useConvert")
-        if self.useConvert:
-            self.layout.prop(self, "srcCharacter")
-
-    def drawBones(self, context):
-        pass
-
-    def drawMorphs(self, context):
-        pass
-
-
-class AffectBonesOn:
-    affectBones : BoolProperty(
-        name = "Affect Bones",
-        description = "Animate bones",
-        default = True)
-
-    def drawBones(self, context):
-        self.layout.prop(self, "affectBones")
-
-
-class AffectBonesOff:
-    affectBones : BoolProperty(
-        name = "Affect Bones",
-        description = "Animate bones",
-        default = False)
-
-    def drawBones(self, context):
-        self.layout.prop(self, "affectBones")
-
-
-class AffectMorphsOn:
-    affectMorphs : BoolProperty(
-        name = "Affect Morphs",
-        description = "Animate morph properties",
-        default = True)
-
-    def drawMorphs(self, context):
-        self.layout.prop(self, "affectMorphs")
-
-
-class AffectMorphsOff:
-    affectMorphs : BoolProperty(
-        name = "Affect Morphs",
-        description = "Animate morph properties",
-        default = False)
-
-    def drawMorphs(self, context):
-        self.layout.prop(self, "affectMorphs")
+            self.layout.prop(self, "affectScale")
+            self.layout.prop(self, "useSubtractRestpose")
+            self.layout.prop(self, "keepLimits")
+            self.layout.prop(self, "affectSelectedOnly")
+            self.layout.prop(self, "useConvert")
+            if self.useConvert:
+                self.layout.prop(self, "srcCharacter")
 
 #-------------------------------------------------------------
 #   MorphOptions
@@ -541,6 +502,11 @@ def getGeograftItems(scn, context):
 
 class MorphOptions:
     onMorphSuffix = 'NONE'
+
+    affectMorphs : BoolProperty(
+        name = "Affect Morphs",
+        description = "Animate morph properties",
+        default = True)
 
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
@@ -588,19 +554,23 @@ class MorphOptions:
         description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
-    def draw(self, context):
-        self.layout.prop(self, "useClearMorphs")
-        self.layout.prop(self, "multiplier")
-        self.layout.prop(self, "useShapekeys")
-        if not self.useShapekeys:
-            self.layout.prop(self, "useScanned")
-            if self.useScanned:
-                self.layout.prop(self, "useCheckUpdates")
-            self.layout.prop(self, "useLoadMissing")
-            if self.useLoadMissing:
-                self.layout.prop(self, "category")
-                self.layout.prop(self, "useMakePosable")
-        self.layout.prop(self, "affectGeograft")
+    def drawMorphs(self, context):
+        self.layout.prop(self, "affectMorphs")
+        if self.affectMorphs:
+            self.layout.prop(self, "useClearMorphs")
+            if not self.isFigure:
+                return
+            self.layout.prop(self, "multiplier")
+            self.layout.prop(self, "useShapekeys")
+            if not self.useShapekeys:
+                self.layout.prop(self, "useScanned")
+                if self.useScanned:
+                    self.layout.prop(self, "useCheckUpdates")
+                self.layout.prop(self, "useLoadMissing")
+                if self.useLoadMissing:
+                    self.layout.prop(self, "category")
+                    self.layout.prop(self, "useMakePosable")
+            self.layout.prop(self, "affectGeograft")
 
 
     def loadMissingOld(self, context, rig, missing):
@@ -687,7 +657,7 @@ class MorphOptions:
 
 
     def handleMissingMorphs(self, context, rig):
-        if self.useShapekeys or not self.useLoadMissing:
+        if not self.isFigure or self.useShapekeys or not self.useLoadMissing:
             return False
         missing = []
         for prop in self.used:
@@ -781,27 +751,22 @@ class ActionOptions:
 #   AnimatorBase
 #-------------------------------------------------------------
 
-class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneOptions, MorphOptions):
+class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOptions):
     lockMeshes = False
 
     def __init__(self):
         pass
 
     def draw(self, context):
-        if not self.onlyObject:
-            ObjectOptions.draw(self, context)
-            return
-        self.drawBones(context)
-        if self.affectBones:
-            ObjectOptions.draw(self, context)
-            BoneOptions.draw(self, context)
+        if self.isFigure:
+            self.drawFigure(context)
+        else:
+            self.drawProp(context)
         self.drawMorphs(context)
-        if self.affectMorphs:
-            MorphOptions.draw(self, context)
 
     def invoke(self, context, event):
         rig = getRigFromContext(context, strict=False)
-        self.onlyObject = (rig.type != 'ARMATURE')
+        self.isFigure = (rig.type == 'ARMATURE')
         self.setPreferredFolder(context.object, [], self.preferredFolders, True)
         return MultiFile.invoke(self, context, event)
 
@@ -1015,7 +980,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
                             skey.value = 0.0
                             if self.useInsertKeys:
                                 skey.keyframe_insert("value", frame=frame)
-            if not self.useShapekeys:
+            if not self.isFigure or not self.useShapekeys:
                 from .morphing import clearAllMorphs
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
@@ -1077,51 +1042,18 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
                         elif key == "general_scale":
                             if self.affectScale or isObject:
                                 tfm.setGeneral(bframe["general_scale"], False, prop)
-                        elif key == "value":
+                        elif key == "value" and self.affectMorphs:
                             value = bframe["value"][0]
+                            self.makeValueFrame(bname, rig, bframe, value, n, offset)
                         else:
                             print("Unknown key:", bname, key)
-
                     if isObject:
-                        master = self.getMasterBone(rig)
-                        if not self.affectObject:
-                            pass
-                        elif self.useMaster and master:
-                            self.transformBone(rig, master, tfm, value, n, offset, False)
-                        else:
-                            tfm.setRna(rig)
-                            if self.useInsertKeys:
-                                insertKeys(rig, False, n+offset, self)
-                    elif rig.type != 'ARMATURE':
-                        continue
-                    elif bname in rig.data.bones.keys():
-                        self.transformBone(rig, bname, tfm, value, n, offset, False)
-                    elif bname[0:6] == "TWIST-":
-                        twists.append((bname[6:], tfm, value))
-                    elif "value" in bframe.keys():
-                        if self.affectMorphs:
-                            prop = unquote(bname)
-                            key = self.getRigKey(prop, rig, value)
-                            if self.useShapekeys or key is None:
-                                self.setShapeValues(rig, prop, value, n, offset)
-                            elif key:
-                                self.setRigProp(rig, key, value, n, offset)
+                        self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
+                    elif rig.type == 'ARMATURE':
+                        self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
 
-                for (bname, tfm, value) in twists:
-                    self.transformBone(rig, bname, tfm, value, n, offset, True)
-
-                if ((rig.DazRig == "mhx" or rig.MhxRig) and self.affectBones and False):
-                    for suffix in ["L", "R"]:
-                        forearm = rig.pose.bones["forearm.fk."+suffix]
-                        hand = rig.pose.bones["hand.fk."+suffix]
-                        foot = rig.pose.bones["foot.fk."+suffix]
-                        hand.location = foot.location = Zero
-                        self.fixForearmFollow("MhaForearmFollow_" + suffix, rig, hand, forearm)
-                        if self.useInsertKeys:
-                            insertKeys(forearm, True, n+offset, self)
-                            insertKeys(hand, True, n+offset, self)
-                            insertKeys(foot, True, n+offset, self)
-
+                for (bname, tfm) in twists:
+                    self.transformBone(rig, bname, tfm, n, offset, True)
                 self.saveScales(rig, n+offset)
 
             self.fixScales(rig)
@@ -1130,26 +1062,55 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
         return offset,prop
 
 
-    def setRigProp(self, rig, key, value, n, offset):
-        if key:
-            oldval = rig[key]
-            if isinstance(oldval, int):
-                value = int(value)
-            elif isinstance(oldval, float):
-                value = float(value)
-            rig[key] = value
+    def makeObjectFrame(self, bname, rig, bframe, tfm, n, offset):
+        master = self.getMasterBone(rig)
+        if not self.affectObject:
+            pass
+        elif self.useMaster and master:
+            self.transformBone(rig, master, tfm, n, offset, False)
+        else:
+            tfm.setRna(rig)
             if self.useInsertKeys:
-                rig.keyframe_insert(propRef(key), frame=n+offset, group="Morphs")
+                insertKeys(rig, False, n+offset, self)
 
 
-    def setShapeValues(self, rig, key, value, n, offset):
-        for ob in rig.children:
+    def makeBoneFrame(self, bname, rig, bframe, tfm, n, offset, twists):
+        if bname in rig.data.bones.keys():
+            self.transformBone(rig, bname, tfm, n, offset, False)
+        elif bname[0:6] == "TWIST-":
+            twists.append((bname[6:], tfm))
+
+
+    def makeValueFrame(self, bname, rig, bframe, value, n, offset):
+        def setRigProp(rig, key, value, n, offset):
+            if key:
+                oldval = rig[key]
+                if isinstance(oldval, int):
+                    value = int(value)
+                elif isinstance(oldval, float):
+                    value = float(value)
+                rig[key] = value
+                if self.useInsertKeys:
+                    rig.keyframe_insert(propRef(key), frame=n+offset, group="Morphs")
+
+        def setShapeValue(ob, key, value, n, offset):
             if ob.type == 'MESH' and ob.data.shape_keys:
-                skey = ob.data.shape_keys.key_blocks.get(key)
-                if skey:
-                    skey.value = value
-                    if self.useInsertKeys:
+               skey = ob.data.shape_keys.key_blocks.get(key)
+               if skey:
+                   skey.value = value
+                   if self.useInsertKeys:
                         skey.keyframe_insert("value", frame=n+offset)
+
+        prop = unquote(bname)
+        if rig.type == 'MESH':
+            setShapeValue(rig, prop, value, n, offset)
+        elif rig.type == 'ARMATURE':
+            key = self.getRigKey(prop, rig, value)
+            if self.useShapekeys or key is None:
+                for ob in rig.children:
+                    setShapeValue(ob, prop, value, n, offset)
+            elif key:
+                setRigProp(rig, key, value, n, offset)
 
 
     def addToPoseLib(self, rig, filepath):
@@ -1240,7 +1201,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, ObjectOptions, BoneO
         return None
 
 
-    def transformBone(self, rig, bname, tfm, value, n, offset, useTwist):
+    def transformBone(self, rig, bname, tfm, n, offset, useTwist):
         from .node import setBoneTransform, setBoneTwist
         from .driver import isFaceBoneDriven
 
@@ -1346,7 +1307,7 @@ class StandardAnimation:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
-        if self.affectMorphs and self.useScanned and relpath and not self.useShapekeys:
+        if self.affectMorphs and self.useScanned and relpath and self.isFigure and not self.useShapekeys:
             if self.useCheckUpdates:
                 needs = checkNeedUpdates(name, relpath)
                 if needs:
@@ -1478,7 +1439,7 @@ class NodePose:
 #   Import Action
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportAction(HideOperator, AffectBonesOn, AffectMorphsOn, ActionOptions, AnimatorBase, StandardAnimation, IsObject):
+class DAZ_OT_ImportAction(HideOperator, ActionOptions, AnimatorBase, StandardAnimation, IsObject):
     bl_idname = "daz.import_action"
     bl_label = "Import Action"
     bl_description = "Import poses from DAZ pose preset file(s) to action"
@@ -1655,39 +1616,50 @@ class PoseBase(AnimatorBase):
         self.layout.prop(toolset, "use_keyframe_insert_auto")
 
 
-class DAZ_OT_ImportPose(HideOperator, AffectMorphsOff, PoseBase, StandardAnimation, IsObject):
+class DAZ_OT_ImportPose(HideOperator, PoseBase, StandardAnimation, IsObject):
     bl_idname = "daz.import_pose"
     bl_label = "Import Pose"
     bl_description = "Import a pose from DAZ pose preset file(s)"
     bl_options = {'UNDO', 'PRESET'}
 
-    affectBones = True
     preferredFolders = ["Poses/"]
+
+    def invoke(self, context, event):
+        self.affectMorphs = False
+        return AnimatorBase.invoke(self, context, event)
 
     def run(self, context):
         StandardAnimation.run(self, context)
 
 
-class DAZ_OT_ImportExpression(HideOperator, AffectBonesOff, PoseBase, StandardAnimation, IsMeshArmature):
+class DAZ_OT_ImportExpression(HideOperator, PoseBase, StandardAnimation, IsMeshArmature):
     bl_idname = "daz.import_expression"
     bl_label = "Import Expression"
     bl_description = "Import an expression from DAZ pose preset file(s)"
     bl_options = {'UNDO', 'PRESET'}
 
-    affectMorphs = True
     preferredFolders = ["Expressions/"]
+
+    def invoke(self, context, event):
+        self.affectBones = False
+        self.affectObject = False
+        return AnimatorBase.invoke(self, context, event)
 
     def run(self, context):
         StandardAnimation.run(self, context)
 
 
-class DAZ_OT_ImportNodePose(NodePose, HideOperator, AffectBonesOn, AffectMorphsOn, PoseBase, StandardAnimation, IsMeshArmature):
+class DAZ_OT_ImportNodePose(NodePose, HideOperator, PoseBase, StandardAnimation, IsMeshArmature):
     bl_idname = "daz.import_node_pose"
     bl_label = "Import Pose From Scene"
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
     bl_options = {'UNDO', 'PRESET'}
 
     preferredFolders = [""]
+
+    def invoke(self, context, event):
+        self.affectMorphs = False
+        return AnimatorBase.invoke(self, context, event)
 
     def run(self, context):
         StandardAnimation.run(self, context)

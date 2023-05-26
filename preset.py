@@ -122,7 +122,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def draw(self, context):
         DazExporter.draw(self, context)
         self.layout.prop(self, "useObject")
-        if not self.onlyObject:
+        if self.isFigure:
             self.layout.prop(self, "useBones")
             if self.useBones:
                 self.layout.prop(self, "includeLocks")
@@ -140,7 +140,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def invoke(self, context, event):
         rig = getRigFromContext(context, strict=False)
-        self.onlyObject = (rig.type != 'ARMATURE')
+        self.isFigure = (rig.type == 'ARMATURE')
         return SingleFile.invoke(self, context, event)
 
 
