@@ -479,7 +479,7 @@ class BoneOptions:
         if self.affectBones:
             self.layout.prop(self, "useMaster")
             self.layout.prop(self, "affectScale")
-            #self.layout.prop(self, "useSubtractRestpose")
+            self.layout.prop(self, "useSubtractRestpose")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
@@ -1222,7 +1222,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 oldStyle = (self.useConvert or
                             not rig.data.DazHasAxes or
                             rig.DazRig.startswith("rigify"))
-                setBoneTransform(tfm, pb, oldStyle)
+                setBoneTransform(tfm, pb, oldStyle, useSubtractRestpose=self.useSubtractRestpose)
             #self.clearBendTwist(pb)
             if self.keepLimits:
                 imposeLocks(pb)

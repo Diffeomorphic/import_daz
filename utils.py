@@ -402,7 +402,7 @@ def getModifier(ob, type):
 
 
 def getRigFromMesh(ob):
-    if ob.type == 'MESH':
+    if ob and ob.type == 'MESH':
         mod = getModifier(ob, 'ARMATURE')
         if mod:
             return mod.object
@@ -411,7 +411,9 @@ def getRigFromMesh(ob):
 
 def getRigFromContext(context, useMesh=False, strict=True, activate=False):
     ob = context.object
-    if ob.type == 'ARMATURE':
+    if ob is None:
+        return None
+    elif ob.type == 'ARMATURE':
         return ob
     elif ob.type == 'MESH':
         if useMesh:

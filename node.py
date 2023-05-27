@@ -1005,7 +1005,7 @@ def getBoneMatrix(tfm, pb, test=False):
 
 TestBones = []
 
-def setBoneTransform(tfm, pb, oldStyle):
+def setBoneTransform(tfm, pb, oldStyle, useSubtractRestpose=True):
     if (not GS.useDazOrientation or
         pb.rotation_mode == 'QUATERNION' or
         oldStyle):
@@ -1037,7 +1037,7 @@ def setBoneTransform(tfm, pb, oldStyle):
     pb.location = d2b00(trans)
     rot = tfm.evalRot()
     restrot = Vector(pb.DazRestRotation)
-    if restrot.length > 0:
+    if restrot.length > 0 and useSubtractRestpose:
         restmat = Euler(restrot*D, pb.DazRotMode).to_matrix()
         rotmat = Euler(rot, pb.DazRotMode).to_matrix()
         newmat = restmat.inverted() @ rotmat
@@ -1050,7 +1050,7 @@ def setBoneTransform(tfm, pb, oldStyle):
     else:
         rot = flipit(rot, pb)
     pb.rotation_euler = rot
-    scale = flipit(tfm.evalScale(), pb)
+    #scale = flipit(tfm.evalScale(), pb)
     #pb.scale = scale
 
 

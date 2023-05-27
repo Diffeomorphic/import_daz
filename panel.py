@@ -481,6 +481,8 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
 
     def draw(self, context):
         rig = getRigFromContext(context, strict=False)
+        if rig is None:
+            return
         scn = context.scene
         layout = self.layout
 
