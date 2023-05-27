@@ -141,6 +141,7 @@ class Material(Asset, Channels):
     def copyShellBasics(self, dmat):
         self.basemix = dmat.basemix
         self.useVolume = dmat.useVolume
+        self.useTranslucency = dmat.useTranslucency
         self.shader = dmat.shader
         self.enabled = dmat.enabled
         self.rna = dmat.rna
@@ -227,13 +228,11 @@ class Material(Asset, Channels):
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
-        if self.isThinWall():
-            self.useVolume = False
-        else:
-            self.useVolume = (
-                (LS.materialMethod == 'BSDF' and not GS.useSssSkin) or
-                (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
-                 not self.isVoluSkinMaterial()))
+        self.useTranslucency = (
+            (LS.materialMethod == 'BSDF' and not GS.useSssSkin) or
+            (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
+             not self.isVoluSkinMaterial()))
+        self.useVolume = (self.useTranslucency and not self.isThinWall())
 
 
     def isThinWall(self):

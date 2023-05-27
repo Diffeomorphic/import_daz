@@ -435,10 +435,10 @@ class CyclesTree(Tree):
         self.buildBump(uvname)
         self.buildDetail(uvname)
         self.column = 4
-        if self.owner.useVolume:
+        if self.owner.useTranslucency:
             self.buildTranslucency(uvname)
         self.buildDiffuse()
-        if not self.owner.useVolume:
+        if not self.owner.useTranslucency:
             self.buildSubsurface()
         self.buildMakeup()
         self.buildOverlay()
@@ -820,7 +820,7 @@ class CyclesTree(Tree):
 
 
     def getFacFromTranslucency(self):
-        if self.owner.useVolume:
+        if self.owner.useTranslucency:
             wt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
             if wt == 1.0 and not wttex:
                 return 0,None

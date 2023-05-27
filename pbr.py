@@ -50,7 +50,7 @@ class PbrTree(CyclesTree):
         self.column = 3
         self.buildNormal(uvname)
         self.buildBump(uvname)
-        if self.owner.useVolume:
+        if self.owner.useTranslucency:
             self.translucent = self.buildTranslucency(uvname)
         self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5, size=30)
         self.cycles = self.pbr
