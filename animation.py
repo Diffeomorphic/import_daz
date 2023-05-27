@@ -657,7 +657,7 @@ class MorphOptions:
 
 
     def handleMissingMorphs(self, context, rig):
-        if not self.isFigure or self.useShapekeys or not self.useLoadMissing:
+        if rig.type == 'ARMATURE' or self.useShapekeys or not self.useLoadMissing:
             return False
         missing = []
         for prop in self.used:
@@ -954,12 +954,22 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     #-------------------------------------------------------------
 
     def clearPose(self, rig, frame):
+        def clearShapes(ob):
+            if ob.type == 'MESH' and ob.data.shape_keys:
+                for skey in ob.data.shape_keys.key_blocks:
+                    if self.useShapekeys or skey.name not in rig.keys():
+                        skey.value = 0.0
+                        if self.useInsertKeys:
+                            skey.keyframe_insert("value", frame=frame)
+
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
         if self.useClearPose and self.affectObject:
             tfm.setRna(rig)
             if self.useInsertKeys:
                 insertKeys(rig, False, frame, self)
+        if self.useClearMorphs and self.affectMorphs:
+            clearShapes(rig)
         if rig.type != 'ARMATURE':
             return
         if self.useClearPose and self.affectBones and rig.pose:
@@ -974,13 +984,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             setChildofInverses(rig)
         if self.useClearMorphs and self.affectMorphs:
             for ob in rig.children:
-                if ob.type == 'MESH' and ob.data.shape_keys:
-                    for skey in ob.data.shape_keys.key_blocks:
-                        if self.useShapekeys or skey.name not in rig.keys():
-                            skey.value = 0.0
-                            if self.useInsertKeys:
-                                skey.keyframe_insert("value", frame=frame)
-            if not self.isFigure or not self.useShapekeys:
+                clearShapes(ob)
+            if not self.useShapekeys:
                 from .morphing import clearAllMorphs
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
@@ -1307,7 +1312,7 @@ class StandardAnimation:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
-        if self.affectMorphs and self.useScanned and relpath and self.isFigure and not self.useShapekeys:
+        if self.affectMorphs and self.useScanned and relpath and rig and not self.useShapekeys:
             if self.useCheckUpdates:
                 needs = checkNeedUpdates(name, relpath)
                 if needs:

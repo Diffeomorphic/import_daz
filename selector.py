@@ -383,6 +383,12 @@ class MorphGroup:
 
 
     def getRelevantShapes(self, ob):
+        skeys = ob.data.shape_keys
+        if skeys is None:
+            return [], []
+        if self.morphset == "All":
+            morphs = [skey for skey in skeys.key_blocks if skey.name != "Basic"]
+            return morphs, skeys
         filtered = self.getFiltered()
         if self.category:
             cats = [ob.DazMorphCats[self.category]]
@@ -391,7 +397,7 @@ class MorphGroup:
         morphs = []
         for cat in cats:
             morphs += [morph for morph,on in zip(cat.morphs, filtered) if on]
-        return morphs
+        return morphs, skeys
 
 #------------------------------------------------------------------------
 #   Select and unselect all
@@ -494,10 +500,7 @@ def setMorphs(value, rig, mgrp, scn, frame, force):
 
 
 def setShapes(value, ob, mgrp, scn, frame):
-    skeys = ob.data.shape_keys
-    if skeys is None:
-        return
-    morphs = mgrp.getRelevantShapes(ob)
+    morphs,skeys = mgrp.getRelevantShapes(ob)
     for morph in morphs:
         if getActivated(ob, skeys.key_blocks, morph.name):
             skeys.key_blocks[morph.name].value = value
@@ -511,11 +514,15 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromContext(context)
-        if rig:
-            scn = context.scene
+        rig = getRigFromContext(context, strict=False)
+        scn = context.scene
+        if rig is None:
+            return
+        elif rig.type == 'ARMATURE':
             setMorphs(0.0, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
+        elif rig.type == 'MESH':
+            setShapes(0.0, rig, self, scn, scn.frame_current)
 
 
 class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
@@ -638,13 +645,11 @@ class DAZ_OT_KeyShapes(DazOperator, MorphGroup, IsMesh):
 
     def run(self, context):
         ob = context.object
-        skeys = ob.data.shape_keys
-        if skeys:
-            scn = context.scene
-            morphs = self.getRelevantShapes(ob)
-            for morph in morphs:
-                if getActivated(ob, skeys.key_blocks, morph.name):
-                    keyShape(skeys, morph.name, scn.frame_current)
+        scn = context.scene
+        morphs,skeys = self.getRelevantShapes(ob)
+        for morph in morphs:
+            if getActivated(ob, skeys.key_blocks, morph.name):
+                keyShape(skeys, morph.name, scn.frame_current)
 
 #------------------------------------------------------------------
 #   Remove morph keys
@@ -675,10 +680,9 @@ class DAZ_OT_UnkeyShapes(DazOperator, MorphGroup, IsMesh):
 
     def run(self, context):
         ob = context.object
-        skeys = ob.data.shape_keys
+        scn = context.scene
+        morphs,skeys = self.getRelevantShapes(ob)
         if skeys and skeys.animation_data and skeys.animation_data.action:
-            scn = context.scene
-            morphs = self.getRelevantShapes(ob)
             for morph in morphs:
                 if getActivated(ob, skeys.key_blocks, morph.name):
                     unkeyShape(skeys, morph.name, scn.frame_current)

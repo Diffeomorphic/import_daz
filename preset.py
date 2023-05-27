@@ -164,6 +164,16 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.getFcurves(rig, act)
         else:
             self.getFakeCurves(rig)
+        if self.useMorphs and rig.type == 'MESH':
+            skeys = rig.data.shape_keys
+            if skeys:
+                act = None
+                if self.useAction and skeys.animation_data:
+                    act = skeys.animation_data.action
+                if act:
+                    self.getShapeFcurves(act)
+                else:
+                    self.getShapeFakeCurves(skeys)
         self.Ls = {}
         if rig.type == 'ARMATURE' and self.useBones:
             self.setupFlipper(rig)
@@ -224,16 +234,24 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     self.scales[""][idx] = fcu
 
 
+    def getShapeFcurves(self, act):
+        for fcu in act.fcurves:
+            words = fcu.data_path.split('"')
+            if words[0] == "key_blocks[" and words[1] != "Basic":
+                self.morphs[words[1]] = fcu
+
+
     def isValidMorph(self, rig, prop):
         return (isinstance(rig[prop], float) and
                 prop[0:3] not in ["Daz", "Mha", "Mhh"])
 
 
     def getFakeCurves(self, rig):
-        if self.useBones:
+        if self.useObject:
             self.rots[""] = [FakeCurve(t) for t in rig.rotation_euler]
             self.locs[""] = [FakeCurve(t) for t in rig.location]
             self.scales[""] = [FakeCurve(t) for t in rig.scale]
+        if self.useBones and rig.type == 'ARMATURE':
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
                     if pb.rotation_mode == 'QUATERNION':
@@ -244,10 +262,16 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                         self.scales[bname] = [FakeCurve(t) for t in pb.scale]
                     if self.isLocUnlocked(pb, bname):
                         self.locs[bname] = [FakeCurve(t) for t in pb.location]
-        if self.useMorphs:
+        if self.useMorphs and rig.type == 'ARMATURE':
             for prop in rig.keys():
                 if self.isValidMorph(rig, prop):
                     self.morphs[prop]= FakeCurve(rig[prop])
+
+
+    def getShapeFakeCurves(self, skeys):
+        for skey in skeys.key_blocks:
+            if skey.name != "Basic":
+                self.morphs[skey.name] = FakeCurve(skey.value)
 
 
     def setupFlipper(self, rig):
