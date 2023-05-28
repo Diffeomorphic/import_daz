@@ -143,10 +143,9 @@ class FrameConverter:
 
     def prepareAnimations(self, anims, oanims, rig, again):
         locks = []
-        if rig.type != 'ARMATURE':
-            return anims, locks
-        if self.affectBones and not again:
-            bonemap,locks = self.setupBoneMap(anims, rig)
+        bonemap = {}
+        if rig.type == 'ARMATURE' and self.affectBones and not again:
+           bonemap,locks = self.setupBoneMap(anims, rig)
         nanims = []
         for anim,oanim in zip(anims, oanims):
             banim,vanim = anim
@@ -657,7 +656,7 @@ class MorphOptions:
 
 
     def handleMissingMorphs(self, context, rig):
-        if rig.type == 'ARMATURE' or self.useShapekeys or not self.useLoadMissing:
+        if self.useShapekeys or not self.useLoadMissing:
             return False
         missing = []
         for prop in self.used:
@@ -790,9 +789,13 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         nanims,locks = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
-            if self.useMakePosable:
+            if rig.type == 'ARMATURE' and self.useMakePosable:
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
+            elif rig.type == 'MESH':
+                skeys = rig.data.shape_keys
+                if skeys and self.shapekeys != skeys.key_blocks:
+                    self.shapekeys = skeys.key_blocks
             nanims,_ = self.prepareAnimations(anims, nanims, rig, True)
         self.clearPose(rig, offset)
         prop = None

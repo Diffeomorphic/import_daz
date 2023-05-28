@@ -1148,6 +1148,7 @@ class PropDrivers:
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True
         elif self.useMeshCats and self.shapekeys:
+            from .category import addToCategories
             props = self.shapekeys.keys()
             addToCategories(self.mesh, props, None, self.category)
             self.mesh.DazMeshMorphs = True
@@ -1215,7 +1216,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
 
     def run(self, context):
         from .finger import replaceHomeDir
-        from .category import addToCategories
         self.findIked()
         self.errors = {}
         t1 = perf_counter()
