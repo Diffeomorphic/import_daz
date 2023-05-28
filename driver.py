@@ -487,9 +487,11 @@ else:
         prop_ui.update(description = desc)
 
 
-def isProtected(rna, prop):
-    if isinstance(rna[prop], float):
-        prop_ui = getPropUi(rna, prop)
+def isProtected(ob, prop):
+    if ob.type != 'ARMATURE':
+        return False
+    elif isinstance(ob[prop], float):
+        prop_ui = getPropUi(ob, prop)
         return (prop_ui.get("description") == "***")
     else:
         return True
