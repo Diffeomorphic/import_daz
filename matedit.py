@@ -1427,7 +1427,7 @@ class DAZ_OT_ChangeUnitScale(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
     def applyScale(self, context, ob):
         scale = self.unit / ob.DazScale
-        if activateObject(context, ob):
+        if ob.type in ['MESH', 'ARMATURE'] and activateObject(context, ob):
             self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)
             bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
             lock = list(ob.lock_scale)

@@ -1319,7 +1319,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 selectSet(subinfo.rig, True)
                 for ob,data in subinfo.objects:
                     partype,parbone = data
-                    if partype != 'BONE':
+                    if partype != 'BONE' and ob.type in ['MESH', 'ARMATURE']:
                         selectSet(ob, True)
         try:
             bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
