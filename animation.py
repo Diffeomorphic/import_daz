@@ -444,9 +444,14 @@ class BoneOptions:
         description = "Only animate selected bones",
         default = False)
 
+    keepLocks : BoolProperty(
+        name = "Keep Locks",
+        description = "Keep locks",
+        default = True)
+
     keepLimits : BoolProperty(
         name = "Keep Limits",
-        description = "Keep locks and limits.\nDisable for better matching",
+        description = "Keep limits.\nDisable for better matching",
         default = False)
 
     useSubtractRestpose : BoolProperty(
@@ -479,6 +484,7 @@ class BoneOptions:
             self.layout.prop(self, "useMaster")
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "useSubtractRestpose")
+            self.layout.prop(self, "keepLocks")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
@@ -1227,7 +1233,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             rig.DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, oldStyle, useSubtractRestpose=self.useSubtractRestpose)
             #self.clearBendTwist(pb)
-            if self.keepLimits:
+            if self.keepLocks:
                 imposeLocks(pb)
             elif not self.unlimited.get(pb.name):
                 self.unlimit(pb)
