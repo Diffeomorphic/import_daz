@@ -462,7 +462,7 @@ class BoneInstance(Instance):
         tfm = Transform(
             trans=self.attributes["translation"],
             rot=self.attributes["rotation"])
-        setBoneTransform(tfm, pb)
+        setBoneTransform(tfm, pb, False)
 
 
     def getLocksLimits(self, pb, structs):

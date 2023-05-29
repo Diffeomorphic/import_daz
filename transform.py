@@ -136,7 +136,7 @@ class Transform:
         else:
             mat = Euler(Vector(self.rot)*D, pb.DazRotMode).to_matrix()
         restrot = Vector(pb.DazRestRotation)
-        if restrot.length > 0:
+        if GS.useSubtractRestpose and restrot.length > 0:
             restmat = Euler(restrot*D, pb.DazRotMode).to_matrix()
             mat = mat @ restmat.inverted()
         return mat.to_4x4()

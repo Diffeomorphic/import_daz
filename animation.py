@@ -454,11 +454,6 @@ class BoneOptions:
         description = "Keep limits.\nDisable for better matching",
         default = False)
 
-    useSubtractRestpose : BoolProperty(
-        name = "Subtract Rest Pose",
-        description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
-        default = True)
-
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -483,7 +478,6 @@ class BoneOptions:
         if self.affectBones:
             self.layout.prop(self, "useMaster")
             self.layout.prop(self, "affectScale")
-            self.layout.prop(self, "useSubtractRestpose")
             self.layout.prop(self, "keepLocks")
             self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
@@ -1231,7 +1225,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 oldStyle = (self.useConvert or
                             not rig.data.DazHasAxes or
                             rig.DazRig.startswith("rigify"))
-                setBoneTransform(tfm, pb, oldStyle, useSubtractRestpose=self.useSubtractRestpose)
+                setBoneTransform(tfm, pb, oldStyle)
             #self.clearBendTwist(pb)
             if self.keepLocks:
                 imposeLocks(pb)

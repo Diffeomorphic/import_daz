@@ -305,6 +305,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.label(text = "Rigging")
         box.prop(scn, "DazUseArmature")
         box.prop(scn, "DazUseDazOrientation")
+        box.prop(scn, "DazSubtractRestpose")
         box.prop(scn, "DazUseQuaternions")
         box.prop(scn, "DazUseLockLoc")
         box.prop(scn, "DazUseLimitLoc")
@@ -699,6 +700,15 @@ def register():
     bpy.types.Scene.DazUseDazOrientation = BoolProperty(
         name = "DAZ Orientation (Experimental)",
         description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
+
+    bpy.types.Scene.DazUseDazOrientation = BoolProperty(
+        name = "DAZ Orientation (Experimental)",
+        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
+
+    bpy.types.Scene.DazSubtractRestpose = BoolProperty(
+        name = "Subtract Rest Pose",
+        description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
+        default = True)
 
     bpy.types.Scene.DazUseQuaternions = BoolProperty(
         name = "Quaternions",

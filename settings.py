@@ -71,6 +71,7 @@ class GlobalSettings:
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.useDazOrientation = False
+        self.useSubtractRestpose = True
         self.caseSensitivePaths = (platform not in ['win32', 'darwin'])
         self.rescanOnChange = True
         self.shellMethod = 'MATERIAL'
@@ -194,6 +195,7 @@ class GlobalSettings:
         "DazUseArmature" : "useArmature",
         "DazUnflipped" : "unflipped",
         "DazUseDazOrientation" : "useDazOrientation",
+        "DazSubtractRestpose" : "useSubtractRestpose",
         "DazUseQuaternions" : "useQuaternions",
         "DazUseLockLoc" : "useLockLoc",
         "DazUseLimitLoc" : "useLimitLoc",
