@@ -1469,7 +1469,7 @@ def setFkIk2(rig, fk, layers, useInsertKeys, frame):
             if pb:
                 pb["FK_IK"] = 0.0
                 if useInsertKeys:
-                    pb.keyframe_insert(propRef("neck_follow"), frame=frame)
+                    pb.keyframe_insert(propRef("FK_IK"), frame=frame)
     for pname in ["MhaTongueIk"]:
         if pname in rig.keys():
             rig[pname] = 0.0
