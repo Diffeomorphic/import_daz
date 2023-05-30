@@ -494,7 +494,7 @@ class MorphLoader(LoadMorph):
         if ob.type == 'MESH':
             self.meshes = [ob]
         elif self.rig and not self.meshes:
-            self.meshes = getMeshChildren(rig)
+            self.meshes = getMeshChildren(self.rig)
 
     def getMorphSet(self, asset):
         return self.morphset
