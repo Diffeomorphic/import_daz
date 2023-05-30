@@ -166,7 +166,7 @@ class FrameConverter:
         if self.affectBones and not again:
             if self.useConvert:
                 self.convertAllFrames(nanims, rig, bonemap)
-        return nanims, locks
+        return nanims, locks, bonemap
 
     #-------------------------------------------------------------
     #   Convert bone animations
@@ -784,7 +784,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if rig.type == 'ARMATURE':
             setMode('POSE')
             self.prepareRig(rig, scn.frame_current)
-        nanims,locks = self.prepareAnimations(anims, anims, rig, False)
+        nanims,locks,self.bonemap = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
             if rig.type == 'ARMATURE' and self.useMakePosable:
@@ -794,7 +794,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 skeys = rig.data.shape_keys
                 if skeys and self.shapekeys != skeys.key_blocks:
                     self.shapekeys = skeys.key_blocks
-            nanims,_ = self.prepareAnimations(anims, nanims, rig, True)
+            nanims,_,_ = self.prepareAnimations(anims, nanims, rig, True)
         self.clearPose(rig, offset)
         prop = None
         result = self.animateBones(context, nanims, offset, prop, filepath)
@@ -1211,7 +1211,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def transformBone(self, rig, bname, tfm, n, offset, useTwist):
-        from .node import setBoneTransform, setBoneTwist
+        from .node import setBoneTransform
         from .driver import isFaceBoneDriven
 
         if not self.affectBones:
@@ -1219,14 +1219,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         pb = rig.pose.bones[bname]
         if self.isAvailable(pb, rig):
             if useTwist:
-                setBoneTwist(tfm, pb)
+                self.setBoneTwist(tfm, pb, rig)
             else:
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
                 oldStyle = (self.useConvert or
                             not rig.data.DazHasAxes or
                             rig.DazRig.startswith("rigify"))
-                setBoneTransform(tfm, pb, oldStyle)
+                setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             #self.clearBendTwist(pb)
             if self.keepLocks:
                 imposeLocks(pb)
@@ -1236,6 +1236,20 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 insertKeys(pb, True, n+offset, self)
         else:
             pass
+
+
+    def setBoneTwist(self, tfm, pb, rig):
+        from .node import getBoneMatrix
+        mat = getBoneMatrix(tfm, pb, rig, bonemap=self.bonemap)
+        _,quat,_ = mat.decompose()
+        if pb.rotation_mode == 'QUATERNION':
+            euler = pb.matrix_basis.to_3x3().to_euler('YXZ')
+            euler.y += quat.to_euler('YXZ').y
+            pb.rotation_quaternion = euler.to_quaternion()
+        else:
+            euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
+            euler.y += quat.to_euler(pb.rotation_mode).y
+            pb.rotation_euler = euler
 
 
     def clearBendTwist(self, pb):

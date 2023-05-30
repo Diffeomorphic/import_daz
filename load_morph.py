@@ -594,7 +594,7 @@ class LoadMorph(DriverUser):
         if pb == self.rig:
             return self.addObjectDriver(tfm)
         from .node import getBoneMatrix
-        mat = getBoneMatrix(tfm, pb)
+        mat = getBoneMatrix(tfm, pb, self.rig)
         loc,quat,scale = mat.decompose()
         success = False
         if (tfm.transProp and loc.length > 0.01*self.rig.DazScale):
@@ -1022,7 +1022,7 @@ class LoadMorph(DriverUser):
                 points.reverse()
 
             diff = points[n-1][0] - points[0][0]
-            uvec = getBoneVector(unit/diff, comp, pb)
+            uvec = self.getBoneVector(unit/diff, comp, pb)
             xys = []
             for k in range(n):
                 x = points[k][0]/diff
@@ -1045,14 +1045,14 @@ class LoadMorph(DriverUser):
             self.makeSplineBoneDriver(path, uvec, xys, rna, channel, -1, bname, keep)
         else:
             factor = expr["factor"]
-            uvec = unit*getBoneVector(factor, comp, pb)
+            uvec = unit*self.getBoneVector(factor, comp, pb)
             bname2 = expr.get("bone2")
             uvec2 = None
             if bname2 and bname2 in self.rig.pose.bones.keys():
                 pb2 = self.rig.pose.bones[bname2]
                 factor2 = expr["factor2"]
                 comp2 = expr["comp2"]
-                uvec2 = unit*getBoneVector(factor2, comp2, pb2)
+                uvec2 = unit*self.getBoneVector(factor2, comp2, pb2)
             self.makeSimpleBoneDriver(path, uvec, rna, channel, -1, bname, keep, bname2, uvec2)
 
     #-------------------------------------------------------------
@@ -1454,6 +1454,14 @@ class LoadMorph(DriverUser):
             skey.name = sname
         return skey, ob, sname
 
+
+    def getBoneVector(self, factor, comp, pb):
+        from .node import getTransformMatrix
+        tmat = getTransformMatrix(pb, self.rig)
+        uvec = Vector((0,0,0))
+        uvec[comp] = factor
+        return uvec @ tmat
+
 #-------------------------------------------------------------
 #   Build bone formula
 #   For bone drivers
@@ -1512,8 +1520,8 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
     def getTransformVector(factor, channel, comp, pbDriver, pb, idx):
         if (not GS.useDazOrientation or
             pb.rotation_mode == 'QUATERNION'):
-            uvec = getBoneVector(factor, comp, pbDriver)
-            dvec = getBoneVector(1.0, idx, pb)
+            uvec = self.getBoneVector(factor, comp, pbDriver)
+            dvec = self.getBoneVector(1.0, idx, pb)
             idx2,sign,x = getDrivenComp(dvec)
             if channel == "scale":
                 tvec = Vector([abs(y) for y in uvec])
@@ -1617,13 +1625,6 @@ def unPath(path):
         return path[6,-2]
     else:
         return path
-
-def getBoneVector(factor, comp, pb):
-    from .node import getTransformMatrix
-    tmat = getTransformMatrix(pb)
-    uvec = Vector((0,0,0))
-    uvec[comp] = factor
-    return uvec @ tmat
 
 def getDrivenComp(vec):
     for n,x in enumerate(vec):

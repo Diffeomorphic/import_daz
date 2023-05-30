@@ -443,7 +443,7 @@ class BoneInstance(Instance):
             if nonzero(tfm.rot):
                 pb.DazRestRotation = tfm.rot
         else:
-            setBoneTransform(tfm, pb, False)
+            setBoneTransform(tfm, pb, rig)
             if nonzero(tfm.trans):
                 pb.DazTranslation = tfm.trans
             if nonzero(tfm.rot):
@@ -458,11 +458,11 @@ class BoneInstance(Instance):
         channel,comp = key.split("/")
         self.attributes[channel][getIndex(comp)] = value
         pb = self.rna
-        node = self.node
+        rig = self.figure.rna
         tfm = Transform(
             trans=self.attributes["translation"],
             rot=self.attributes["rotation"])
-        setBoneTransform(tfm, pb, False)
+        setBoneTransform(tfm, pb, rig)
 
 
     def getLocksLimits(self, pb, structs):

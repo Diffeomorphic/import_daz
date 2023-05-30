@@ -601,7 +601,6 @@ class LocalSettings:
         self.refObjects = {}
         self.fps = 30
         self.integerFrames = True
-        self.corrMats = {}
         self.layeredGroups = {}
         self.missingAssets = {}
         self.hasInstanceChildren = {}
