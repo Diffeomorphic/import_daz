@@ -177,9 +177,7 @@ class FrameConverter:
         bonemap = OrderedDict()
         locks = self.getRigifyLocks(rig, conv)
         for banim,vanim in anims:
-            bonenames = list(banim.keys())
-            bonenames.reverse()
-            for bname in bonenames:
+            for bname in banim.keys():
                 if bname in rig.data.bones.keys():
                     bonemap[bname] = bname
                 elif bname in conv.keys():
@@ -832,11 +830,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
     def parseScene(self, struct, rig):
         anims = []
-        banims = {}
+        banims = OrderedDict()
         vanims = {}
-        anims.append((banims, vanims))
         self.parseAnimations(struct, banims, vanims, rig)
         self.completeAnimations(banims)
+        blist = list(banims.items())
+        blist.reverse()
+        banims = OrderedDict(blist)
+        anims.append((banims, vanims))
         return anims
 
     #-------------------------------------------------------------

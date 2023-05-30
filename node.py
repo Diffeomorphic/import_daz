@@ -985,9 +985,36 @@ def getTransformMatrix(pb):
 
 
 def getBoneMatrix(tfm, pb, test=False):
+    def getRotMatrix(pb, sub):
+        rmat = dmat @ tfm.getRotMat(pb, sub) @ tfm.getScaleMat() @ dmat.inverted()
+        return rmat
+
+    def getCorrMatrix(pb):
+        if True or pb is None:
+            return Matrix()
+        cmat = LS.corrMats.get(pb.name)
+        if cmat:
+            return cmat
+        return getCorrMatrix(pb.parent)
+
     from .transform import roundMatrix
     dmat,bmat,rmat = getTransformMatrices(pb)
-    wmat = dmat @ tfm.getRotMat(pb) @ tfm.getScaleMat() @ dmat.inverted()
+    if GS.useSubtractRestpose:
+        amat2 = getRotMatrix(pb, True)
+        amat = getRotMatrix(pb, False)
+        cmat = getCorrMatrix(pb.parent)
+        wmat = amat2 @ cmat
+        cmat2 = amat2 @ cmat @ amat.inverted()
+        LS.corrMats[pb.name] = cmat2
+        if False and pb.name in ["lShldrBend", "lShldrTwist"]:
+            print("\nCORR", pb.name)
+            print("A", amat)
+            print("A2", amat2)
+            print("Cp", cmat)
+            print("Cb", LS.corrMats[pb.name])
+            print("W", wmat)
+    else:
+        wmat = getRotMatrix(pb, False)
     wmat = rmat.inverted() @ tfm.getTransMat() @ rmat @ wmat
     mat = bmat.inverted() @ wmat @ bmat
     roundMatrix(mat, 1e-4)
@@ -1018,10 +1045,12 @@ def setBoneTransform(tfm, pb, oldStyle):
             mat.col[3] = trans
         if pb.name in TestBones:
             rot = Vector(mat.to_euler(pb.rotation_mode))/D
-            drot = Vector(tfm.getRotMat(pb).to_euler(pb.rotation_mode))/D
+            drot = Vector(tfm.getRotMat(pb, False).to_euler(pb.rotation_mode))/D
+            drot2 = Vector(tfm.getRotMat(pb, True).to_euler(pb.rotation_mode))/D
             print("SBT", pb.name, tfm.rot)
             print("REST", Vector(pb.DazRestRotation))
             print("DAZ", drot)
+            print("DAZ2", drot2)
             print("BBL", rot)
         pb.matrix_basis = mat
         return
