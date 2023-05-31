@@ -968,70 +968,64 @@ def getTransformMatrices(pb, rig, bonemap):
 
     def getBlenderMatrix(bone):
         if GS.zup:
-            return Matrix.Rotation(-90*D, 4, 'X') @ pb.bone.matrix_local
+            return Matrix.Rotation(-90*D, 4, 'X') @ bone.matrix_local
         else:
-            return pb.bone.matrix_local
+            return bone.matrix_local
 
-    def getParentBone(pb):
+    def getParent(pb):
         for cns in pb.constraints:
             if (cns.type == 'COPY_TRANSFORMS' and
                 cns.influence == 1 and
                 not cns.mute):
                 pb2 = rig.pose.bones.get(cns.subtarget)
                 if pb2:
-                    return getParentBone(pb2)
+                    return getParent(pb2)
         if pb.parent:
             if pb.parent.name in bonemap.values():
-                return pb.bone.parent
+                return pb.parent
             else:
-                return getParentBone(pb.parent)
-        return pb.bone.parent
+                return getParent(pb.parent)
+        return pb.parent
 
     dmat = getDazMatrix(pb.bone)
     bmat = getBlenderMatrix(pb.bone)
-    parbone = getParentBone(pb)
-    if parbone:
-        print("BB", pb.name, parbone.name)
-    elif pb.name not in ["hip", "torso"]:
-        print("GG", pb.name)
-        halt
-    if parbone:
-        pdmat = getDazMatrix(parbone)
-        pbmat = getBlenderMatrix(parbone)
-        rmat = Matrix.Rotation(parbone.DazAngle, 4, parbone.DazNormal)
+    if bonemap:
+        parent = getParent(pb)
     else:
-        pdmat = pbmat = rmat = Matrix()
-    return dmat,pdmat,bmat,pbmat,rmat
+        parent = pb.parent
+    if parent:
+        rmat = Matrix.Rotation(parent.bone.DazAngle, 4, parent.bone.DazNormal)
+    else:
+        rmat = Matrix()
+    return dmat,bmat,rmat,parent
 
 
 def getTransformMatrix(pb, rig):
-    dmat,pdmat,bmat,pbmat,rmat = getTransformMatrices(pb, rig, {})
+    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, {})
     tmat = dmat.inverted() @ bmat
     return tmat.to_3x3()
 
 
-def getBoneMatrix(tfm, pb, rig, bonemap={}, test=False):
-    def getRotMatrix(pb):
-        mat = dmat @ tfm.getRotMat(pb) @ tfm.getScaleMat() @ pdmat.inverted()
-        return mat
-
-    def getTransMatrix():
-        return rmat.inverted() @ tfm.getTransMat() @ rmat
-
+def getBoneMatrix(tfm, pb, rig, bonemap={}):
     from .transform import roundMatrix
-    dmat,pdmat,bmat,pbmat,rmat = getTransformMatrices(pb, rig, bonemap)
-    rotmat = getRotMatrix(pb)
-    transmat = getTransMatrix()
-    mat = bmat.inverted() @ transmat @ rotmat @ pbmat
+    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap)
+    rot = tfm.getRotation()
+    if GS.useSubtractRestpose:
+        rot -= Vector(pb.DazRestRotation)
+        if False and parent:
+            rot += Vector(parent.DazRestRotation)
+    rotmat = Euler(Vector(rot)*D, pb.DazRotMode).to_matrix().to_4x4()
+    wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
+    tmat = rmat.inverted() @ tfm.getTransMat() @ rmat
+    mat = bmat.inverted() @ tmat @ wmat @ bmat
     roundMatrix(mat, 1e-4)
 
-    if test:
-        print("GGT", pb.name)
+    if pb.name in TestBones:
+        print("GGT", pb.name, parent.name)
         print("D", dmat)
         print("B", bmat)
-        print("R", tfm.rotmat)
-        print("RR", rmat)
-        print("W", wmat)
+        print("R0", tfm.getRotation())
+        print("RR", rot)
         print("M", mat)
     return mat
 
@@ -1052,7 +1046,7 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
         if pb.name in TestBones:
             rot = Vector(mat.to_euler(pb.rotation_mode))/D
             drot = Vector(tfm.getRotMat(pb).to_euler(pb.rotation_mode))/D
-            print("SBT", pb.name, tfm.rot)
+            print("\nSBT", pb.name, tfm.rot)
             print("REST", Vector(pb.DazRestRotation))
             print("DAZ", drot)
             print("BBL", rot)

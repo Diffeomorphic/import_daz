@@ -126,6 +126,15 @@ class Transform:
         return Matrix.Translation(d2b00(self.evalTrans()))
 
 
+    def getRotation(self):
+        if self.rot is None:
+            return Zero
+        elif isinstance(self.rot, Quaternion) or isinstance(self.rot, Matrix):
+            return Vector(self.rot.to_euler(pb.DazRotMode))/D
+        else:
+            return Vector(self.rot)
+
+
     def getRotMat(self, pb):
         if self.rot is None:
             return Matrix()
@@ -135,10 +144,6 @@ class Transform:
             mat = self.rot
         else:
             mat = Euler(Vector(self.rot)*D, pb.DazRotMode).to_matrix()
-        restrot = Vector(pb.DazRestRotation)
-        if False and restrot.length > 0:
-            restmat = Euler(restrot*D, pb.DazRotMode).to_matrix()
-            mat = mat @ restmat.inverted()
         return mat.to_4x4()
 
 
