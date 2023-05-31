@@ -1016,40 +1016,22 @@ def getBoneMatrix(tfm, pb, rig, bonemap={}):
         rest = getEulerMatrix(pb.DazRestRotation, pb.DazRotMode)
         rotmat = rotmat @ rest.inverted()
         if pb.name in TestBones:
-            print("AA", pb.name, parent.name)
+            print("\nAA", pb.name, parent.name)
             print(getAngle(tfm.getRotMat(pb), pb.DazRotMode))
             print(getAngle(rest, pb.DazRotMode))
             print(getAngle(rotmat, pb.DazRotMode))
-            halt
-
-        if parent:
-            pdmat = getDazMatrix(parent.bone)
-            prest = getEulerMatrix(parent.DazRestRotation, parent.DazRotMode)
-            rotmat = rotmat @ pdmat.inverted() @ prest.inverted() @ pdmat
-            if pb.name in TestBones:
-                print(getAngle(pdmat, parent.DazRotMode))
-                print(getAngle(prest, parent.DazRotMode))
-                print(getAngle(rotmat, pb.DazRotMode))
     wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
     tmat = rmat.inverted() @ tfm.getTransMat() @ rmat
     mat = bmat.inverted() @ tmat @ wmat @ bmat
     roundMatrix(mat, 1e-4)
-
-    if False and pb.name in TestBones:
-        print("GGT", pb.name, parent.name)
-        print("D", dmat)
-        print("B", bmat)
-        print("R0", tfm.getRotation())
-        print("RR", rot)
-        print("M", mat)
     return mat
 
 
-#TestBones = ["clavicle.L", "upper_arm.fk.L", "forearm.fk.L", "lCollar", "lShldrBend", "lShldrTwist", "lForearmBend"]
 TestBones = []
 
 def getAngle(mat, xyz):
     return Vector(mat.to_euler(xyz))/D
+
 
 def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
     if (not GS.useDazOrientation or
@@ -1063,12 +1045,10 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
             mat = mat.to_quaternion().to_matrix().to_4x4()
             mat.col[3] = trans
         if pb.name in TestBones:
-            rot = Vector(mat.to_euler(pb.rotation_mode))/D
-            drot = Vector(tfm.getRotMat(pb).to_euler(pb.rotation_mode))/D
-            print("\nSBT", pb.name, tfm.rot)
+            print("SBT", pb.name, tfm.rot)
+            print("ROT", getAngle(tfm.getRotMat(pb), pb.DazRotMode))
             print("REST", Vector(pb.DazRestRotation))
-            print("DAZ", drot)
-            print("BBL", rot)
+            print("BBB", getAngle(mat, pb.rotation_mode))
         pb.matrix_basis = mat
         return
 

@@ -1243,11 +1243,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         vec = flipAxes(tfm.rot*D, pb)
         if pb.rotation_mode == 'QUATERNION':
             euler = pb.matrix_basis.to_3x3().to_euler('YXZ')
-            euler.y += vec[1]
+            euler.y = vec[1]
             pb.rotation_quaternion = euler.to_quaternion()
         else:
             euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
-            euler.y += vec[1]
+            euler.y = vec[1]
             pb.rotation_euler = euler
 
 
