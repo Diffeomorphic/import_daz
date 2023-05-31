@@ -27,7 +27,7 @@
 
 import bpy
 import math
-from mathutils import Vector
+from mathutils import Vector, Euler
 from urllib.parse import unquote
 from bpy.props import *
 from .settings import GS, LS
@@ -215,6 +215,10 @@ def setWorldMatrix(ob, wmat):
 
 def nonzero(vec):
     return (max([abs(x) for x in vec]) > 1e-6)
+
+
+def getEulerMatrix(vec, xyz):
+    return Euler(Vector(vec)*D, xyz).to_matrix().to_4x4()
 
 
 def getRigParent(ob):

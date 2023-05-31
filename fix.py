@@ -193,35 +193,6 @@ class Fixer(DriverUser):
                         vgrp.name = prefix+"Carpal4"
 
 
-    def fixKnees(self, rig):
-        from .bone import setRoll
-        from .mhx_data import MhxKnees
-        eps = 0.5
-        setMode('EDIT')
-        for thigh,shin,zaxis in MhxKnees:
-            eb1 = rig.data.edit_bones[thigh]
-            eb2 = rig.data.edit_bones[shin]
-            hip = eb1.head
-            knee = eb2.head
-            ankle = eb2.tail
-            dankle = ankle-hip
-            vec = ankle-hip
-            vec.normalize()
-            dknee = knee-hip
-            dmid = vec.dot(dknee)*vec
-            offs = dknee-dmid
-            if offs.length/dknee.length < eps:
-                knee = hip + dmid + zaxis*offs.length
-                xaxis = zaxis.cross(vec)
-            else:
-                xaxis = vec.cross(dknee)
-                xaxis.normalize()
-
-            eb1.tail = eb2.head = knee
-            setRoll(eb1, xaxis)
-            eb2.roll = eb1.roll
-
-
     def removeVertexGroups(self, rig, grpnames):
         for ob in getMeshChildren(rig):
             for gname in grpnames:

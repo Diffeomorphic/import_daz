@@ -960,18 +960,20 @@ def clearParent(ob):
     setWorldMatrix(ob, wmat)
 
 
+def getDazMatrix(bone):
+    dmat = Euler(Vector(bone.DazOrient)*D, 'XYZ').to_matrix().to_4x4()
+    dmat.col[3][0:3] = d2b00(bone.DazHead)
+    return dmat
+
+
+def getBlenderMatrix(bone):
+    if GS.zup:
+        return Matrix.Rotation(-90*D, 4, 'X') @ bone.matrix_local
+    else:
+        return bone.matrix_local
+
+
 def getTransformMatrices(pb, rig, bonemap):
-    def getDazMatrix(bone):
-        dmat = Euler(Vector(bone.DazOrient)*D, 'XYZ').to_matrix().to_4x4()
-        dmat.col[3][0:3] = d2b00(bone.DazHead)
-        return dmat
-
-    def getBlenderMatrix(bone):
-        if GS.zup:
-            return Matrix.Rotation(-90*D, 4, 'X') @ bone.matrix_local
-        else:
-            return bone.matrix_local
-
     def getParent(pb):
         for cns in pb.constraints:
             if (cns.type == 'COPY_TRANSFORMS' and
@@ -1009,18 +1011,31 @@ def getTransformMatrix(pb, rig):
 def getBoneMatrix(tfm, pb, rig, bonemap={}):
     from .transform import roundMatrix
     dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap)
-    rot = tfm.getRotation()
+    rotmat = tfm.getRotMat(pb)
     if GS.useSubtractRestpose:
-        rot -= Vector(pb.DazRestRotation)
-        if False and parent:
-            rot += Vector(parent.DazRestRotation)
-    rotmat = Euler(Vector(rot)*D, pb.DazRotMode).to_matrix().to_4x4()
+        rest = getEulerMatrix(pb.DazRestRotation, pb.DazRotMode)
+        rotmat = rotmat @ rest.inverted()
+        if pb.name in TestBones:
+            print("AA", pb.name, parent.name)
+            print(getAngle(tfm.getRotMat(pb), pb.DazRotMode))
+            print(getAngle(rest, pb.DazRotMode))
+            print(getAngle(rotmat, pb.DazRotMode))
+            halt
+
+        if parent:
+            pdmat = getDazMatrix(parent.bone)
+            prest = getEulerMatrix(parent.DazRestRotation, parent.DazRotMode)
+            rotmat = rotmat @ pdmat.inverted() @ prest.inverted() @ pdmat
+            if pb.name in TestBones:
+                print(getAngle(pdmat, parent.DazRotMode))
+                print(getAngle(prest, parent.DazRotMode))
+                print(getAngle(rotmat, pb.DazRotMode))
     wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
     tmat = rmat.inverted() @ tfm.getTransMat() @ rmat
     mat = bmat.inverted() @ tmat @ wmat @ bmat
     roundMatrix(mat, 1e-4)
 
-    if pb.name in TestBones:
+    if False and pb.name in TestBones:
         print("GGT", pb.name, parent.name)
         print("D", dmat)
         print("B", bmat)
@@ -1030,7 +1045,11 @@ def getBoneMatrix(tfm, pb, rig, bonemap={}):
     return mat
 
 
+#TestBones = ["clavicle.L", "upper_arm.fk.L", "forearm.fk.L", "lCollar", "lShldrBend", "lShldrTwist", "lForearmBend"]
 TestBones = []
+
+def getAngle(mat, xyz):
+    return Vector(mat.to_euler(xyz))/D
 
 def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
     if (not GS.useDazOrientation or
@@ -1053,14 +1072,7 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
         pb.matrix_basis = mat
         return
 
-    def flipit(vec, pb):
-        fvec = Vector((0,0,0))
-        for idx in range(3):
-            idx2 = pb.DazAxes[idx]
-            fvec[idx2] = pb.DazFlips[idx] * vec[idx]
-        return fvec
-
-    trans = flipit(tfm.evalTrans(), pb)
+    trans = flipAxes(tfm.evalTrans(), pb)
     pb.location = d2b00(trans)
     rot = tfm.evalRot()
     restrot = Vector(pb.DazRestRotation)
@@ -1072,13 +1084,21 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
     if pb.name in TestBones:
         print("FFF", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
         print("  ", rot/D)
-        rot = flipit(rot, pb)
+        rot = flipAxes(rot, pb)
         print("  ", rot/D)
     else:
-        rot = flipit(rot, pb)
+        rot = flipAxes(rot, pb)
     pb.rotation_euler = rot
     #scale = flipit(tfm.evalScale(), pb)
     #pb.scale = scale
+
+
+def flipAxes(vec, pb):
+    fvec = Vector((0,0,0))
+    for idx in range(3):
+        idx2 = pb.DazAxes[idx]
+        fvec[idx2] = pb.DazFlips[idx] * vec[idx]
+    return fvec
 
 
 def isUnitMatrix(mat):

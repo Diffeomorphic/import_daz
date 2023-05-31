@@ -139,12 +139,11 @@ class Transform:
         if self.rot is None:
             return Matrix()
         elif isinstance(self.rot, Quaternion):
-            mat = self.rot.to_matrix()
+            return self.rot.to_matrix().to_4x4()
         elif isinstance(self.rot, Matrix):
-            mat = self.rot
+            return self.rot.to_4x4()
         else:
-            mat = Euler(Vector(self.rot)*D, pb.DazRotMode).to_matrix()
-        return mat.to_4x4()
+            return getEulerMatrix(self.rot, pb.DazRotMode)
 
 
     def getScaleMat(self):
