@@ -226,8 +226,12 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
     bl_description = "Load poses for all objects from json file"
     bl_options = {'UNDO'}
 
+    def draw(self, context):
+        self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
+
     def run(self, context):
         from .load_json import loadJson
+        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
         struct = loadJson(self.filepath)
         for oname,ostruct in struct.items():
             ob = bpy.data.objects.get(oname)
@@ -264,6 +268,8 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
                             elif isinstance(value0, int):
                                 value = int(value)
                         rig[prop] = value
+                        if self.auto:
+                            rig.keyframe_insert(propRef(prop))
 
 
     def setTransform(self, pb, struct):
@@ -271,6 +277,8 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
             value = struct.get(key)
             if value is not None:
                 setattr(pb, key, value)
+                if self.auto:
+                    pb.keyframe_insert(key)
 
 #-------------------------------------------------------------
 #   Register
