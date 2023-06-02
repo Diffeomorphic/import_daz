@@ -300,8 +300,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         name = "ChildOf Constraints (Experimental)",
         description = ("Use childOf constraints for parents of elbow and knee pole targets.\n" +
                        "May cause problems for FK-IK snapping"),
-        default = False
-    )
+        default = False)
+
+    useFixKnees : BoolProperty(
+        name = "Fix Elbows And Knees",
+        description = "Change elbow and knee location for better IK",
+        default = True)
 
     elbowParent : EnumProperty(
         items = [('HAND', "Hand", "Parent elbow pole target to IK hand"),
@@ -346,6 +350,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "useBack")
         self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
+        self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "useChildOfConstraints")
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
@@ -445,6 +450,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
             self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
+            showProgress(6, 25, "  Fix knees")
+            self.fixKnees(rig)
             showProgress(7, 25, "  Fix hands")
             self.fixHands(rig)
             showProgress(8, 25, "  Store all constraints")
@@ -707,6 +714,38 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 for layer in layers:
                     if pb.bone.layers[layer]:
                         pb.bone_group = bgrp
+    #-------------------------------------------------------------
+    #   Fix knees
+    #-------------------------------------------------------------
+
+    def fixKnees(self, rig):
+        if not self.useFixKnees:
+            return
+        from .bone import setRoll
+        from .mhx_data import MhxKnees
+        eps = 0.5
+        setMode('EDIT')
+        for thigh,shin,zaxis in MhxKnees:
+            eb1 = rig.data.edit_bones[thigh]
+            eb2 = rig.data.edit_bones[shin]
+            hip = eb1.head
+            knee = eb2.head
+            ankle = eb2.tail
+            dankle = ankle-hip
+            vec = ankle-hip
+            vec.normalize()
+            dknee = knee-hip
+            dmid = vec.dot(dknee)*vec
+            offs = dknee-dmid
+            if offs.length/dknee.length < eps:
+                knee = hip + dmid + zaxis*offs.length
+                xaxis = zaxis.cross(vec)
+            else:
+                xaxis = vec.cross(dknee)
+                xaxis.normalize()
+            eb1.tail = eb2.head = knee
+            setRoll(eb1, xaxis)
+            eb2.roll = eb1.roll
 
     #-------------------------------------------------------------
     #   Backbone
