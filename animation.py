@@ -370,15 +370,18 @@ class HideOperator(DazOperator):
         DazOperator.storeState(self, context)
         self.layerColls = []
         self.obhides = []
-        for ob in context.view_layer.objects:
-            self.obhides.append((ob, ob.hide_get()))
-            ob.hide_set(False)
+        self.activeObject = context.object
         self.rig = getRigFromContext(context, strict=True)
         if self.rig:
             self.boneLayers = list(self.rig.data.layers)
             self.rig.data.layers = 32*[True]
             self.hideLayerColls(self.rig, context.view_layer.layer_collection)
             muteDazFcurves(self.rig, True)
+            context.view_layer.objects.active = self.rig
+        for ob in context.view_layer.objects:
+            if ob != self.rig:
+                self.obhides.append((ob, ob.hide_get()))
+                ob.hide_set(False)
 
 
     def hideLayerColls(self, rig, layer):
@@ -406,6 +409,7 @@ class HideOperator(DazOperator):
             layer.exclude = False
         for ob,hide in self.obhides:
             ob.hide_set(hide)
+        context.view_layer.objects.active = self.activeObject
 
 #-------------------------------------------------------------
 #   AffectOptions
@@ -1338,9 +1342,8 @@ class StandardAnimation:
                         msg += "    %s\n" % name
                     raise DazError(msg)
             loadScannedInfo(self, name)
-        else:
+        elif rig:
             from .driver import getPropMinMax
-            rig = context.object
             alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
             alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
             self.alias = dict(alias1 + alias2)
