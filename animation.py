@@ -372,16 +372,16 @@ class HideOperator(DazOperator):
         self.obhides = []
         self.activeObject = context.object
         self.rig = getRigFromContext(context, strict=True)
+        for ob in context.view_layer.objects:
+            if ob != self.rig:
+                self.obhides.append((ob, ob.hide_get()))
+                ob.hide_set(False)
         if self.rig:
             self.boneLayers = list(self.rig.data.layers)
             self.rig.data.layers = 32*[True]
             self.hideLayerColls(self.rig, context.view_layer.layer_collection)
             muteDazFcurves(self.rig, True)
             context.view_layer.objects.active = self.rig
-        for ob in context.view_layer.objects:
-            if ob != self.rig:
-                self.obhides.append((ob, ob.hide_get()))
-                ob.hide_set(False)
 
 
     def hideLayerColls(self, rig, layer):
@@ -1320,6 +1320,10 @@ class StandardAnimation:
         self.verbose = (nfiles == 1)
 
         rig, mesh, name, relpath = getCharData(context, False)
+        if rig is None:
+            rig = context.object
+        if rig is None:
+            raise DazError("No object selected")
         self.defins = self.formulas = self.minmax = {}
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
@@ -1342,7 +1346,7 @@ class StandardAnimation:
                         msg += "    %s\n" % name
                     raise DazError(msg)
             loadScannedInfo(self, name)
-        elif rig:
+        elif rig.type == 'ARMATURE':
             from .driver import getPropMinMax
             alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
             alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]

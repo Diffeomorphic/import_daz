@@ -719,6 +719,7 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        self.renamedBones = {}
         for rig in getSelectedArmatures(context):
             if rig.DazRig[-7:] == ".suffix":
                 raise DazError("%s already has suffix bones" % rig.name)
@@ -738,6 +739,7 @@ class DAZ_OT_ChangeSuffixToPrefix(DazOperator, GizmoUser, IsArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        self.renamedBones = {}
         for rig in getSelectedArmatures(context):
             if rig.DazRig[-7:] != ".suffix":
                 raise DazError("%s does not have suffix bones" % rig.name)
@@ -762,6 +764,30 @@ class DAZ_OT_ChangeSuffixToPrefix(DazOperator, GizmoUser, IsArmature):
                 return "r%s%s" % (bname[0].upper(), bname[1:-2])
         else:
             return bname
+
+#-------------------------------------------------------------
+#   Select seg01
+#-------------------------------------------------------------
+
+class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
+    bl_idname = "daz.select_matching_bones"
+    bl_label = "Select Matching Bones"
+    bl_description = "Select bones with matching names"
+    bl_options = {'UNDO'}
+
+    match : StringProperty(
+        name = "Match",
+        description = "Select all bones with matching names",
+        default = "seg01")
+
+    def draw(self, context):
+        self.layout.prop(self, "match")
+
+    def run(self, context):
+        rig = context.object
+        match = self.match.lower()
+        for bone in rig.data.bones:
+            bone.select = (match in bone.name.lower())
 
 #-------------------------------------------------------------
 #   Constraints class
@@ -1575,6 +1601,7 @@ classes = [
     DAZ_OT_AddWinders,
     DAZ_OT_ChangePrefixToSuffix,
     DAZ_OT_ChangeSuffixToPrefix,
+    DAZ_OT_SelectMatchingBones,
     DAZ_OT_ChangeArmature,
 ]
 

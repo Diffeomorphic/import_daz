@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import bpy
+from . import getSetupEnabled, getRuntimeEnabled
 from .utils import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
@@ -35,18 +36,33 @@ from .morphing import MS
 #   Panels
 #----------------------------------------------------------
 
-class DAZ_PT_Base:
+class DAZ_PT_SetupTab:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "DAZ Importer"
+    bl_category = "DAZ Setup"
     bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        return getSetupEnabled(context)
+
+
+class DAZ_PT_RuntimeTab:
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "DAZ Runtime"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        return getRuntimeEnabled(context)
 
 #----------------------------------------------------------
 #   Setup panel
 #----------------------------------------------------------
 
-class DAZ_PT_Setup(DAZ_PT_Base, bpy.types.Panel):
-    bl_label = "Setup (version 1.7.1.%04d)" % BUILD
+class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_label = "DAZ Setup (version 1.7.1.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
@@ -60,8 +76,7 @@ class DAZ_PT_Setup(DAZ_PT_Base, bpy.types.Panel):
         self.layout.prop(scn, "DazPreferredRoot")
 
 
-class DAZ_PT_SetupCorrections(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Setup"
+class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupCorrections"
     bl_label = "Corrections"
 
@@ -75,8 +90,7 @@ class DAZ_PT_SetupCorrections(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.change_armature")
 
 
-class DAZ_PT_SetupMaterials(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Setup"
+class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupMaterials"
     bl_label = "Materials"
 
@@ -96,8 +110,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_combo_material")
 
 
-class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Setup"
+class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupMorphs"
     bl_label = "Morphs"
 
@@ -141,8 +154,20 @@ class DAZ_PT_SetupMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.transfer_shapekeys")
 
 
-class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Setup"
+class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_SetupVisibility"
+    bl_label = "Visibility"
+
+    def draw(self, context):
+        self.layout.operator("daz.add_shrinkwrap")
+        self.layout.operator("daz.make_invisible")
+        self.layout.operator("daz.create_masks")
+        self.layout.operator("daz.add_visibility_drivers")
+        self.layout.operator("daz.remove_visibility_drivers")
+        self.layout.operator("daz.add_shape_vis_drivers")
+
+
+class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupFinishing"
     bl_label = "Finishing"
 
@@ -161,8 +186,7 @@ class DAZ_PT_SetupFinishing(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.connect_bone_chains")
 
 
-class DAZ_PT_SetupRigging(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Setup"
+class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupRigging"
     bl_label = "Rigging"
 
@@ -178,18 +202,42 @@ class DAZ_PT_SetupRigging(DAZ_PT_Base, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.add_mannequin")
 
+
+class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_SetupHair"
+    bl_label = "Hair"
+
+    def draw(self, context):
+        from .hair import getHairAndHuman
+        self.layout.operator("daz.print_statistics")
+        self.layout.operator("daz.select_strands_by_size")
+        self.layout.operator("daz.select_strands_by_width")
+        self.layout.operator("daz.select_random_strands")
+        self.layout.separator()
+        self.layout.operator("daz.make_hair")
+        hair,hum = getHairAndHuman(context, False)
+        self.layout.label(text = "  Hair:  %s" % (hair.name if hair else None))
+        self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
+        self.layout.separator()
+        self.layout.operator("daz.update_hair")
+        self.layout.operator("daz.color_hair")
+        self.layout.operator("daz.combine_hairs")
+        self.layout.separator()
+        self.layout.operator("daz.mesh_add_pinning")
+        self.layout.operator("daz.add_hair_rig")
+
 #----------------------------------------------------------
 #   Advanced setup panel
 #----------------------------------------------------------
 
-class DAZ_PT_Advanced(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_Advanced(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Advanced Setup"
 
     def draw(self, context):
         pass
 
 
-class DAZ_PT_AdvancedLowpoly(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedLowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedLowpoly"
     bl_label = "Lowpoly"
@@ -207,21 +255,7 @@ class DAZ_PT_AdvancedLowpoly(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.add_push")
 
 
-class DAZ_PT_AdvancedVisibility(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
-    bl_idname = "DAZ_PT_AdvancedVisibility"
-    bl_label = "Visibility"
-
-    def draw(self, context):
-        self.layout.operator("daz.add_shrinkwrap")
-        self.layout.operator("daz.make_invisible")
-        self.layout.operator("daz.create_masks")
-        self.layout.operator("daz.add_visibility_drivers")
-        self.layout.operator("daz.remove_visibility_drivers")
-        self.layout.operator("daz.add_shape_vis_drivers")
-
-
-class DAZ_PT_AdvancedHDMesh(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedHDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedHDMesh"
     bl_label = "HDMesh"
@@ -239,7 +273,7 @@ class DAZ_PT_AdvancedHDMesh(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.add_driven_value_nodes")
 
 
-class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedMaterials"
     bl_label = "Materials"
@@ -283,7 +317,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_shader_groups")
 
 
-class DAZ_PT_AdvancedMesh(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedMesh(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedMesh"
     bl_label = "Mesh"
@@ -298,7 +332,7 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.find_seams")
 
 
-class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedSimulation"
     bl_label = "Simulation"
@@ -313,7 +347,7 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.make_cloth")
 
 
-class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedRigging"
     bl_label = "Rigging"
@@ -324,6 +358,7 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.add_extra_face_bones")
         self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.change_suffix_to_prefix")
+        self.layout.operator("daz.select_matching_bones")
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
         self.layout.operator("daz.batch_set_custom_shape")
@@ -334,7 +369,7 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_Base, bpy.types.Panel):
 
 
 
-class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedMorphs"
     bl_label = "Morphs"
@@ -365,44 +400,17 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_Base, bpy.types.Panel):
         self.layout.operator("daz.import_dbz")
         self.layout.operator("daz.update_morph_paths")
 
-
-class DAZ_PT_AdvancedHair(DAZ_PT_Base, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
-    bl_idname = "DAZ_PT_AdvancedHair"
-    bl_label = "Hair"
-
-    def draw(self, context):
-        from .hair import getHairAndHuman
-        self.layout.operator("daz.print_statistics")
-        self.layout.operator("daz.select_strands_by_size")
-        self.layout.operator("daz.select_strands_by_width")
-        self.layout.operator("daz.select_random_strands")
-        self.layout.separator()
-        self.layout.operator("daz.make_hair")
-        hair,hum = getHairAndHuman(context, False)
-        self.layout.label(text = "  Hair:  %s" % (hair.name if hair else None))
-        self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
-        self.layout.separator()
-        self.layout.operator("daz.update_hair")
-        self.layout.operator("daz.color_hair")
-        self.layout.operator("daz.combine_hairs")
-        self.layout.separator()
-        self.layout.operator("daz.mesh_add_pinning")
-        self.layout.operator("daz.add_hair_rig")
-
 #----------------------------------------------------------
 #   Utilities panel
 #----------------------------------------------------------
 
-class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Utilities"
 
     def draw(self, context):
         ob = context.object
         scn = context.scene
         layout = self.layout
-        layout.operator("daz.render_frames")
-        layout.separator()
         layout.operator("daz.decode_file")
         layout.operator("daz.scan_absolute_paths")
         layout.operator("daz.quote_unquote")
@@ -473,10 +481,23 @@ class DAZ_PT_Utils(DAZ_PT_Base, bpy.types.Panel):
             row.label(text = "%.3f" % vec[n])
 
 #----------------------------------------------------------
+#   Runtime panel
+#----------------------------------------------------------
+
+class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
+    bl_label = "DAZ Runtime (version 1.7.1.%04d)" % BUILD
+    bl_options = set()
+
+    def draw(self, context):
+        self.layout.operator("daz.render_frames")
+        self.layout.separator()
+        self.layout.prop(context.scene, "DazPreferredRoot")
+
+#----------------------------------------------------------
 #   Posing panel
 #----------------------------------------------------------
 
-class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Posing"
 
     def draw(self, context):
@@ -532,11 +553,13 @@ class DAZ_PT_Posing(DAZ_PT_Base, bpy.types.Panel):
 #   Morphs panel
 #----------------------------------------------------------
 
-class DAZ_PT_Morphs:
+class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
     useMesh = False
 
     @classmethod
     def poll(self, context):
+        if not getRuntimeEnabled(context):
+            return False
         rig = self.getCurrentRig(self, context)
         return (rig and
                 not rig.DazDriversDisabled and
@@ -635,13 +658,13 @@ class DAZ_PT_Morphs:
                                    rig.data, "DazIndex%s" % self.morphset )
 
 
-class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Morphs"
     morphset = "All"
 
     @classmethod
     def poll(self, context):
-        return True
+        return getRuntimeEnabled(context)
 
     def draw(self, context):
         rig = self.getCurrentRig(context)
@@ -666,7 +689,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Standard(DAZ_UL_StandardMorphs):
     morphset = "Standard"
 
-class DAZ_PT_Standard(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Standard(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Unclassified Standard Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Standard"
@@ -677,7 +700,7 @@ class DAZ_PT_Standard(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Units(DAZ_UL_StandardMorphs):
     morphset = "Units"
 
-class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Units(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Face Units"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Units"
@@ -688,7 +711,7 @@ class DAZ_PT_Units(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Head(DAZ_UL_StandardMorphs):
     morphset = "Head"
 
-class DAZ_PT_Head(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Head(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Head"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Head"
@@ -699,7 +722,7 @@ class DAZ_PT_Head(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Expressions(DAZ_UL_StandardMorphs):
     morphset = "Expressions"
 
-class DAZ_PT_Expressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Expressions(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Expressions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Expressions"
@@ -710,7 +733,7 @@ class DAZ_PT_Expressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Visemes(DAZ_UL_StandardMorphs):
     morphset = "Visemes"
 
-class DAZ_PT_Visemes(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Visemes(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Visemes"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Visemes"
@@ -725,7 +748,7 @@ class DAZ_PT_Visemes(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Facs(DAZ_UL_StandardMorphs):
     morphset = "Facs"
 
-class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "FACS"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facs"
@@ -741,7 +764,7 @@ class DAZ_PT_Facs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_FacsDetails(DAZ_UL_StandardMorphs):
     morphset = "Facsdetails"
 
-class DAZ_PT_FacsDetails(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_FacsDetails(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "FACS Details"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facsdetails"
@@ -752,7 +775,7 @@ class DAZ_PT_FacsDetails(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_FacsExpressions(DAZ_UL_StandardMorphs):
     morphset = "Facsexpr"
 
-class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_FacsExpressions(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "FACS Expressions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Facsexpr"
@@ -763,7 +786,7 @@ class DAZ_PT_FacsExpressions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Body(DAZ_UL_StandardMorphs):
     morphset = "Body"
 
-class DAZ_PT_Body(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Body(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Body Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Body"
@@ -774,7 +797,7 @@ class DAZ_PT_Body(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_JCMs(DAZ_UL_StandardMorphs):
     morphset = "Jcms"
 
-class DAZ_PT_JCMs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_JCMs(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "JCMs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Jcms"
@@ -785,7 +808,7 @@ class DAZ_PT_JCMs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Flexions(DAZ_UL_StandardMorphs):
     morphset = "Flexions"
 
-class DAZ_PT_Flexions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Flexions(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Flexions"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Flexions"
@@ -796,7 +819,7 @@ class DAZ_PT_Flexions(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
 class DAZ_UL_Baked(DAZ_UL_StandardMorphs):
     morphset = "Baked"
 
-class DAZ_PT_Baked(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs):
+class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Baked"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Baked"
@@ -834,7 +857,7 @@ class CustomDrawItems:
             self.drawCustomBox(box, cat, scn, ob)
 
 
-class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDrawItems):
+class DAZ_PT_CustomMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
     bl_label = "Custom Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
@@ -865,7 +888,7 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDra
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 
-class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, CustomDrawItems):
+class DAZ_PT_CustomMeshMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
     bl_label = "Mesh Shape Keys"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
@@ -944,19 +967,13 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Base, bpy.types.Panel, DAZ_PT_Morphs, Custo
 #    Simple IK Panels
 #------------------------------------------------------------------------
 
-class DAZ_PT_DazRig:
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "DAZ Rig"
-    bl_options = {'DEFAULT_CLOSED'}
-
-
-class DAZ_PT_DazLayers(DAZ_PT_DazRig, bpy.types.Panel):
+class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Layers"
 
     @classmethod
     def poll(cls, context):
-        return (context.object and context.object.DazCustomShapes)
+        ob = context.object
+        return (getRuntimeEnabled(context) and ob and ob.DazCustomShapes)
 
     def draw(self, context):
         from .simple import BoneLayers
@@ -979,12 +996,13 @@ class DAZ_PT_DazLayers(DAZ_PT_DazRig, bpy.types.Panel):
             row.prop(rig.data, "layers", index=n, toggle=True, text=second)
 
 
-class DAZ_PT_DazIK(DAZ_PT_DazRig, bpy.types.Panel):
+class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Simple IK"
 
     @classmethod
     def poll(cls, context):
-        return (context.object and context.object.DazSimpleIK)
+        ob = context.object
+        return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
 
     def draw(self, context):
         rig = context.object
@@ -1048,14 +1066,14 @@ class DAZ_PT_DazIK(DAZ_PT_DazRig, bpy.types.Panel):
 #   Visibility panels
 #------------------------------------------------------------------------
 
-class DAZ_PT_Visibility(DAZ_PT_Base, bpy.types.Panel):
+class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Visibility"
     prefix = "Mhh"
 
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and ob.DazVisibilityDrivers)
+        return (getRuntimeEnabled(context) and ob and ob.DazVisibilityDrivers)
 
     def draw(self, context):
         ob = rig = context.object
@@ -1117,21 +1135,22 @@ classes = [
     DAZ_PT_SetupCorrections,
     DAZ_PT_SetupMaterials,
     DAZ_PT_SetupMorphs,
+    DAZ_PT_SetupVisibility,
     DAZ_PT_SetupFinishing,
     DAZ_PT_SetupRigging,
 
     DAZ_PT_Advanced,
     DAZ_PT_AdvancedLowpoly,
-    DAZ_PT_AdvancedVisibility,
     DAZ_PT_AdvancedHDMesh,
     DAZ_PT_AdvancedMaterials,
     DAZ_PT_AdvancedMesh,
     DAZ_PT_AdvancedSimulation,
     DAZ_PT_AdvancedRigging,
     DAZ_PT_AdvancedMorphs,
-    DAZ_PT_AdvancedHair,
+    DAZ_PT_SetupHair,
 
     DAZ_PT_Utils,
+    DAZ_PT_Runtime,
     DAZ_PT_Posing,
 
     DAZ_UL_Standard,
@@ -1166,8 +1185,8 @@ classes = [
     DAZ_PT_Visibility,
     DAZ_PT_DazRigifyProps,
 
-    DAZ_PT_DazLayers,
-    DAZ_PT_DazIK,
+    DAZ_PT_DazSimpleLayers,
+    DAZ_PT_DazSimpleIK,
 ]
 
 def register():

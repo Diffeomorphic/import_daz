@@ -1169,22 +1169,18 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
     bl_description = "Control the visility of geometry shells"
     bl_options = {'UNDO'}
 
-    useInsertKey : BoolProperty(
-        name = "Insert Keys",
-        description = "Insert keys at the current frame",
-        default = False)
-
     def draw(self, context):
-        self.layout.prop(self, "useInsertKey")
+        self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
         for item in context.scene.DazFloats:
             self.layout.prop(item, "f", text=item.name)
 
     def run(self, context):
         scn = context.scene
+        self.auto = scn.tool_settings.use_keyframe_insert_auto
         for item in scn.DazFloats:
             for node in self.shells[item.name]:
                 node.inputs["Influence"].default_value = item.f
-                if self.useInsertKey:
+                if self.auto:
                     node.inputs["Influence"].keyframe_insert("default_value")
 
     def invoke(self, context, event):
