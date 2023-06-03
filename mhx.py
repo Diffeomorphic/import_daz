@@ -1753,7 +1753,7 @@ LRGizmos = {
 #   Used by load pose etc.
 #-------------------------------------------------------------
 
-def setToFk(rig, layers, keepLimits, useInsertKeys, frame):
+def setToFk(rig, layers, useInsertKeys, frame):
     def setValue(rig, prop, value):
         if hasattr(rig, prop):
             setattr(rig, prop, value)
@@ -1772,9 +1772,8 @@ def setToFk(rig, layers, keepLimits, useInsertKeys, frame):
         setValue(rig, prop, 0.0)
     for prop in ["MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R"]:
         setValue(rig, prop, 0)
-    if not keepLimits:
-        for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
-            setValue(rig, prop, False)
+    for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
+        setValue(rig, prop, False)
     for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
         layers[layer] = True
     for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:

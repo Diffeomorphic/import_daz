@@ -366,7 +366,7 @@ class DAZ_OT_RenderFrames(bpy.types.Operator):
                 rig.select_set(True)
         ob = context.object
         if self.rigs and not (ob and ob.type == 'ARMATURE'):
-            vly.objects.active = self.rigs[0]
+            context.view_layer.objects.active = self.rigs[0]
         wm = context.window_manager
         self.timer = wm.event_timer_add(0.1, window=context.window)
         wm.modal_handler_add(self)

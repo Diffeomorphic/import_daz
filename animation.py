@@ -446,16 +446,6 @@ class BoneOptions:
         description = "Only animate selected bones",
         default = False)
 
-    keepLocks : BoolProperty(
-        name = "Keep Locks",
-        description = "Keep locks",
-        default = True)
-
-    keepLimits : BoolProperty(
-        name = "Keep Limits",
-        description = "Keep limits.\nDisable for better matching",
-        default = False)
-
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -480,8 +470,6 @@ class BoneOptions:
         if self.affectBones:
             self.layout.prop(self, "useMaster")
             self.layout.prop(self, "affectScale")
-            self.layout.prop(self, "keepLocks")
-            self.layout.prop(self, "keepLimits")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
             if self.useConvert:
@@ -826,7 +814,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.boneLayers = setFkIk2(rig, True, self.boneLayers, self.useInsertKeys, frame)
         elif rig.MhxRig or rig.DazRig == "mhx":
             from .mhx import setToFk
-            self.boneLayers = setToFk(rig, self.boneLayers, self.keepLimits, self.useInsertKeys, frame)
+            self.boneLayers = setToFk(rig, self.boneLayers, self.useInsertKeys, frame)
         elif rig.DazSimpleIK:
             from .simple import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)
@@ -1232,9 +1220,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             rig.DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             #self.clearBendTwist(pb)
-            if self.keepLocks:
-                imposeLocks(pb)
-            elif not self.unlimited.get(pb.name):
+            imposeLocks(pb)
+            if not self.unlimited.get(pb.name):
                 self.unlimit(pb)
             if self.useInsertKeys:
                 insertKeys(pb, True, n+offset, self)
@@ -1328,6 +1315,7 @@ class StandardAnimation:
         self.defins2 = self.formulas2 = self.minmax2 = {}
         self.shapekeys = {}
         self.altmorphs = {}
+        self.alias = {}
         if self.affectMorphs:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks

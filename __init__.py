@@ -38,10 +38,11 @@ bl_info = {
     "tracker_url": "https://bitbucket.org/Diffeomorphic/import_daz/issues?status=new&status=open",
     "category": "Import-Export"}
 
-
 #----------------------------------------------------------
 #   Preferences
 #----------------------------------------------------------
+
+import bpy
 
 class DazPreferences(bpy.types.AddonPreferences):
     # this must match the addon name, use '__package__'
@@ -110,7 +111,6 @@ def importModules():
             mod = importlib.import_module("." + modname, anchor)
             theModules.append(mod)
 
-import bpy
 importModules()
 from .settings import GS
 from .api import *

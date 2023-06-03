@@ -167,6 +167,30 @@ class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.add_shape_vis_drivers")
 
 
+class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_SetupHair"
+    bl_label = "Hair"
+
+    def draw(self, context):
+        from .hair import getHairAndHuman
+        self.layout.operator("daz.print_statistics")
+        self.layout.operator("daz.select_strands_by_size")
+        self.layout.operator("daz.select_strands_by_width")
+        self.layout.operator("daz.select_random_strands")
+        self.layout.separator()
+        self.layout.operator("daz.make_hair")
+        hair,hum = getHairAndHuman(context, False)
+        self.layout.label(text = "  Hair:  %s" % (hair.name if hair else None))
+        self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
+        self.layout.separator()
+        self.layout.operator("daz.update_hair")
+        self.layout.operator("daz.color_hair")
+        self.layout.operator("daz.combine_hairs")
+        self.layout.separator()
+        self.layout.operator("daz.mesh_add_pinning")
+        self.layout.operator("daz.add_hair_rig")
+
+
 class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupFinishing"
     bl_label = "Finishing"
@@ -201,30 +225,6 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.rigify_meta")
         self.layout.separator()
         self.layout.operator("daz.add_mannequin")
-
-
-class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_idname = "DAZ_PT_SetupHair"
-    bl_label = "Hair"
-
-    def draw(self, context):
-        from .hair import getHairAndHuman
-        self.layout.operator("daz.print_statistics")
-        self.layout.operator("daz.select_strands_by_size")
-        self.layout.operator("daz.select_strands_by_width")
-        self.layout.operator("daz.select_random_strands")
-        self.layout.separator()
-        self.layout.operator("daz.make_hair")
-        hair,hum = getHairAndHuman(context, False)
-        self.layout.label(text = "  Hair:  %s" % (hair.name if hair else None))
-        self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
-        self.layout.separator()
-        self.layout.operator("daz.update_hair")
-        self.layout.operator("daz.color_hair")
-        self.layout.operator("daz.combine_hairs")
-        self.layout.separator()
-        self.layout.operator("daz.mesh_add_pinning")
-        self.layout.operator("daz.add_hair_rig")
 
 #----------------------------------------------------------
 #   Advanced setup panel
@@ -1136,6 +1136,7 @@ classes = [
     DAZ_PT_SetupMaterials,
     DAZ_PT_SetupMorphs,
     DAZ_PT_SetupVisibility,
+    DAZ_PT_SetupHair,
     DAZ_PT_SetupFinishing,
     DAZ_PT_SetupRigging,
 
@@ -1147,7 +1148,6 @@ classes = [
     DAZ_PT_AdvancedSimulation,
     DAZ_PT_AdvancedRigging,
     DAZ_PT_AdvancedMorphs,
-    DAZ_PT_SetupHair,
 
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
