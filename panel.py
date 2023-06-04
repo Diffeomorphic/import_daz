@@ -501,53 +501,52 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Posing"
 
     def draw(self, context):
+        self.layout.operator("daz.import_pose")
+        self.layout.operator("daz.import_expression")
+        self.layout.operator("daz.import_poselib")
+        self.layout.operator("daz.import_action")
+        self.layout.separator()
+        self.layout.operator("daz.import_node_pose")
+        self.layout.separator()
+        self.layout.operator("daz.clear_pose")
+        op = self.layout.operator("daz.clear_morphs")
+        op.morphset = "All"
+        self.layout.operator("daz.copy_absolute_pose")
+        self.layout.operator("daz.prune_action")
+        self.layout.separator()
+        self.layout.operator("daz.bake_pose_to_fk_rig")
+        self.layout.operator("daz.bake_shapekeys")
+        self.layout.operator("daz.mute_control_rig")
+        self.layout.operator("daz.unmute_control_rig")
+        self.layout.operator("daz.save_pose_preset")
+        self.layout.operator("daz.transfer_to_gaze")
+        self.layout.operator("daz.transfer_from_gaze")
+        self.layout.separator()
+        self.layout.operator("daz.save_poses_to_file")
+        self.layout.operator("daz.load_poses_from_file")
+
+
+class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
+    bl_label = "Locks And Limits"
+
+    def draw(self, context):
         rig = getRigFromContext(context, strict=False)
         if rig is None:
             return
-        scn = context.scene
-        layout = self.layout
-
-        layout.operator("daz.import_pose")
-        layout.operator("daz.import_expression")
-        layout.operator("daz.import_poselib")
-        layout.operator("daz.import_action")
-        layout.separator()
-        layout.operator("daz.import_node_pose")
-        layout.separator()
-        layout.operator("daz.clear_pose")
-        op = layout.operator("daz.clear_morphs")
-        op.morphset = "All"
-        layout.operator("daz.copy_absolute_pose")
+        split = self.layout.split(factor=0.6)
+        self.layout.prop(rig, "DazLocLocks")
+        self.layout.prop(rig, "DazRotLocks")
+        self.layout.prop(rig, "DazLocLimits")
+        self.layout.prop(rig, "DazRotLimits")
+        self.layout.prop(rig, "DazInheritScale")
+        self.layout.operator("daz.impose_locks_limits")
         if rig.DazDriversDisabled:
-            layout.operator("daz.enable_drivers")
+            self.layout.operator("daz.enable_drivers")
         else:
-            layout.operator("daz.disable_drivers")
-        layout.operator("daz.prune_action")
-        layout.separator()
-        layout.operator("daz.impose_locks_limits")
-        layout.operator("daz.bake_pose_to_fk_rig")
-        layout.operator("daz.bake_shapekeys")
-        layout.operator("daz.mute_control_rig")
-        layout.operator("daz.unmute_control_rig")
-        layout.operator("daz.save_pose_preset")
-        layout.operator("daz.transfer_to_gaze")
-        layout.operator("daz.transfer_from_gaze")
-        layout.separator()
+            self.layout.operator("daz.disable_drivers")
+        return
+        self.layout.operator("daz.rotate_bones")
 
-        layout.operator("daz.save_poses_to_file")
-        layout.operator("daz.load_poses_from_file")
-
-        if rig:
-            layout.separator()
-            split = layout.split(factor=0.6)
-            layout.prop(rig, "DazLocLocks")
-            layout.prop(rig, "DazRotLocks")
-            layout.prop(rig, "DazLocLimits")
-            layout.prop(rig, "DazRotLimits")
-            layout.prop(rig, "DazInheritScale")
-            return
-            layout.separator()
-            layout.operator("daz.rotate_bones")
 
 #----------------------------------------------------------
 #   Morphs panel
@@ -1152,6 +1151,7 @@ classes = [
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
+    DAZ_PT_LocksLimits,
 
     DAZ_UL_Standard,
     DAZ_UL_Units,

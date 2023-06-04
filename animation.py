@@ -1221,8 +1221,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             #self.clearBendTwist(pb)
             imposeLocks(pb)
-            if not self.unlimited.get(pb.name):
-                self.unlimit(pb)
             if self.useInsertKeys:
                 insertKeys(pb, True, n+offset, self)
         else:
@@ -1247,16 +1245,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             pb.rotation_euler[1] = 0
         elif pb.name.endswith("Twist"):
             pb.rotation_euler[0] = pb.rotation_euler[2] = 0
-
-
-    def unlimit(self, pb):
-        pb.lock_location = pb.lock_rotation = pb.lock_scale = (False,False,False)
-        if pb.rotation_mode == 'QUATERNION':
-            pb.lock_rotation_w = False
-        for cns in pb.constraints:
-            if cns.type[0:6] == "LIMIT_":
-                cns.mute = True
-        self.unlimited[pb.name] = True
 
 
     def mergeHipObject(self, rig):
@@ -1352,7 +1340,6 @@ class StandardAnimation:
         if not self.affectSelectedOnly:
             selected = self.selectAll(rig, True)
         LS.forAnimation(self, rig)
-        self.unlimited = {}
         self.findDrivers(rig)
         self.clearAnimation(rig)
         self.missing = {}
@@ -1760,7 +1747,7 @@ def imposeLocks(pb):
             pb.scale[n] = 1
     if pb.rotation_mode == 'QUATERNION':
         if pb.lock_rotation_w:
-            pb.rotation_quaternion[0] = 0
+            pb.rotation_quaternion[0] = 1
         for n in range(3):
             if pb.lock_rotation[n]:
                 pb.rotation_quaternion[n+1] = 0
