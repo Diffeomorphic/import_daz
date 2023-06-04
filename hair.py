@@ -287,7 +287,11 @@ class HairSystem:
         self.strands = []
         self.useEmitter = True
         self.vertexGroup = None
-        self.material = btn.materials[mnum].name
+        self.material = ""
+        if mnum < len(btn.materials):
+            mat = btn.materials[mnum]
+            if mat:
+                self.material = mat.name
 
 
     def setHairSettings(self, psys, ob):
