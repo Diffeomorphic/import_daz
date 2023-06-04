@@ -890,6 +890,7 @@ class DAZ_OT_ImportJCMs(DazOperator, StandardMorphSelector, StandardMorphLoader,
     morphset = "Jcms"
     bodypart = "Body"
     hideable = False
+    useMuteDrivers = True
 
 
 class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMesh):
@@ -901,6 +902,7 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
     morphset = "Flexions"
     bodypart = "Body"
     hideable = False
+    useMuteDrivers = True
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1016,6 +1018,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
+        self.useMuteDrivers = False
         self.loadMorphType(context, self.useUnits, "Units", "Face")
         self.loadMorphType(context, self.useHead, "Head", "Face")
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face")
@@ -1024,6 +1027,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.loadMorphType(context, self.useBody, "Body", "Body")
+        self.useMuteDrivers = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body")
         self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
@@ -1124,12 +1128,17 @@ class PropDrivers:
         default = "Shapes")
 
     usePropDrivers : BoolProperty(
-        name = "Use Rig Property Drivers",
+        name = "Rig Property Drivers",
         description = "Drive shapekeys with rig properties",
         default = True)
 
+    useMuteDrivers : BoolProperty(
+        name = "Shapekey Mute Drivers",
+        description = "Add drivers that mute shapekeys if shapekey value = 0",
+        default = True)
+
     useMeshCats : BoolProperty(
-        name = "Use Mesh Categories",
+        name = "Mesh Categories",
         description = "Mesh categories",
         default = False)
 
@@ -1139,6 +1148,7 @@ class PropDrivers:
             self.layout.prop(self, "category")
             if self.hasAdjusters:
                 self.layout.prop(self, "useAdjusters")
+            self.layout.prop(self, "useMuteDrivers")
         else:
             self.layout.prop(self, "useMeshCats")
             if self.useMeshCats:

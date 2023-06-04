@@ -323,6 +323,11 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         if self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findTriangles(self.trihuman)
         failed = []
+        self.driverPaths = {}
+        if self.useDrivers:
+            hskeys = src.data.shape_keys
+            if hskeys and hskeys.animation_data:
+                self.driverPaths = dict([(fcu.data_path,fcu) for fcu in hskeys.animation_data.drivers])
         snames = self.getSelectedProps()
         for trg in targets:
             if not self.transferMorphs(snames, src, trg, context):
@@ -396,7 +401,12 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 cskey.slider_max = hskey.slider_max
                 cskey.value = self.svalues[sname]
                 if self.useDrivers:
-                    addGeneralDriver(cskey, "value", hskeys, 'key_blocks["%s"].value' % hskey.name, "x")
+                    path = 'key_blocks["%s"].value' % hskey.name
+                    addGeneralDriver(cskey, "value", hskeys, path, "x")
+                    path = 'key_blocks["%s"].mute' % hskey.name
+                    fcu = self.driverPaths.get(path)
+                    if fcu:
+                        self.copyDriver(fcu, cskeys)
             else:
                 printName(" -", sname)
 
@@ -973,6 +983,7 @@ class DAZ_OT_MixShapekeys(DazOperator):
     def deleteShape(self, ob, skeys, skey, sname):
         from .category import removeShapeDriversAndProps
         skey.driver_remove("value")
+        skey.driver_remove("mute")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")
         removeShapeDriversAndProps(ob.parent, sname)

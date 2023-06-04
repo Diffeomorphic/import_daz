@@ -44,6 +44,7 @@ MAX_EXPR_LEN = 240
 class LoadMorph(DriverUser):
     morphset = None
     usePropDrivers = True
+    useMuteDrivers = False
     treatHD = 'ERROR'
     useAdjusters = False
     onMorphSuffix = 'NONE'
@@ -305,7 +306,7 @@ class LoadMorph(DriverUser):
             if self.rig and self.usePropDrivers:
                 final = self.addNewProp(prop)
                 adj = self.getStrengthAdjuster()
-                self.adjustShapekey(skey, adj, final)
+                self.addShapeDriver(skey, adj, final)
             pgs = self.mesh.data.DazBodyPart
             if prop in pgs.keys():
                 item = pgs[prop]
@@ -394,18 +395,26 @@ class LoadMorph(DriverUser):
         return adj
 
 
-    def adjustShapekey(self, skey, adj, final):
+    def addShapeDriver(self, skey, adj, final):
         from .driver import removeModifiers
-        skey.driver_remove("value")
-        fcu = skey.driver_add("value")
-        fcu.driver.type = 'SCRIPTED'
-        removeModifiers(fcu)
-        self.addPathVar(fcu, "a", self.amt, propRef(final))
-        if adj:
-            self.addPathVar(fcu, "L", self.rig, propRef(adj))
-            fcu.driver.expression = "L*a"
-        else:
-            fcu.driver.expression = "a"
+
+        def addDriver(channel):
+            skey.driver_remove(channel)
+            fcu = skey.driver_add(channel)
+            fcu.driver.type = 'SCRIPTED'
+            removeModifiers(fcu)
+            self.addPathVar(fcu, "a", self.amt, propRef(final))
+            if adj:
+                self.addPathVar(fcu, "L", self.rig, propRef(adj))
+                fcu.driver.expression = "L*a"
+            else:
+                fcu.driver.expression = "a"
+            return fcu
+
+        fcu = addDriver("value")
+        if self.useMuteDrivers:
+            fcu = addDriver("mute")
+            fcu.driver.expression = "abs(%s)<0.0001" % fcu.driver.expression
 
 
     def adjustStrength(self, adj, pb, string, vars):
