@@ -554,7 +554,11 @@ class Instance(Accessor, Channels, SimNode):
             if self.inherits_scale:
                 wscale = parent.wscale @ oscale
             else:
-                wscale = parent.wscale @ parent.lscale.inverted() @ oscale
+                try:
+                    pscaleinv = parent.lscale.inverted()
+                except ValueError:
+                    pscaleinv = Matrix()
+                wscale = parent.wscale @ pscaleinv @ oscale
         else:
             wtrans = cpoint + trans
             wrot = ormat @ lrot @ ormat.inverted()

@@ -784,10 +784,10 @@ class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
         self.layout.prop(self, "match")
 
     def run(self, context):
-        rig = context.object
         match = self.match.lower()
-        for bone in rig.data.bones:
-            bone.select = (match in bone.name.lower())
+        for rig in getSelectedArmatures(context):
+            for bone in rig.data.bones:
+                bone.select = (match in bone.name.lower())
 
 #-------------------------------------------------------------
 #   Constraints class
@@ -1299,7 +1299,11 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
 
 
     def run(self, context):
-        rig = context.object
+        for rig in getSelectedArmatures(context):
+            self.addIkGoals(context, rig)
+
+
+    def addIkGoals(self, context, rig):
         if self.fromRoots:
             ikgoals = self.ikGoalsFromRoots(rig)
         else:

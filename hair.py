@@ -170,7 +170,10 @@ class HairOptions:
     useResizeHair : BoolProperty(
         name = "Resize Hair",
         default = False,
-        description = "Resize hair afterwards"
+        description = (
+            "Resize hair so all strands have the same length,\n" +
+            "and thus fit into a single particle system.\n" +
+            "Known to cause problems for hair dynamics")
     )
 
     useAutoResize : BoolProperty(
