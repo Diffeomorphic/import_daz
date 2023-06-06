@@ -804,8 +804,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             None, "spine", "spine-1", "chest", "chest-1",
             None, "neck", "neck-1",
             None, "pelvis",
-            None, "hand.L", None, "foot.L",
-            None, "hand.R", None, "foot.R",
+            None, "hand.L", None, "shin.L", "foot.L",
+            None, "hand.R", None, "shin.R", "foot.R",
             ]
 
         self.noTweakParents = [
