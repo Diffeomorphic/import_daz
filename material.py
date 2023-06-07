@@ -156,7 +156,6 @@ class Material(Asset, Channels):
         self.useVolume = False
         self.useTranslucency = False
         self.isThinWall = self.getValue(["Thin Walled"], False)
-        eps = 1e-4
 
         if self.shader == 'UBER_IRAY':
             self.enabled = {
@@ -177,10 +176,10 @@ class Material(Asset, Channels):
                 "Velvet" : False,
             }
             self.useTranslucency = (
-                self.getValue("getChannelTranslucencyWeight", 1) > eps)
+                self.getValue("getChannelTranslucencyWeight", 1) != 0)
             self.useVolume = (
-                self.getValue("getChannelTranslucencyWeight", 1) > eps or
-                self.getValue("getChannelRefractionWeight", 1) > eps)
+                self.getValue("getChannelTranslucencyWeight", 1) != 0 or
+                self.getValue("getChannelRefractionWeight", 1) != 0)
 
         elif self.shader == 'PBRSKIN':
             self.enabled = {
@@ -202,7 +201,7 @@ class Material(Asset, Channels):
             }
             self.useTranslucency = (
                 self.enabled["Translucency"] and
-                self.getValue("getChannelTranslucencyWeight", 1) > eps)
+                self.getValue("getChannelTranslucencyWeight", 1) != 0)
             self.useVolume = self.useTranslucency
 
         elif self.shader == 'DAZ_SHADER':
@@ -255,8 +254,8 @@ class Material(Asset, Channels):
 
 
     def isRefractive(self):
-        return (self.getValue("getChannelRefractionWeight", 0) > 0.001 or
-                self.getValue("getChannelOpacity", 1) < 0.999)
+        return (self.getValue("getChannelRefractionWeight", 0) != 0 or
+                self.getValue("getChannelOpacity", 1) != 1)
 
 
     def isPureRefractive(self):

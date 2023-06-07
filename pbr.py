@@ -188,7 +188,7 @@ class PbrTree(CyclesTree):
         self.diffuseTex = findTextureNode(tex)
         self.pbr.inputs["Subsurface"].default_value = 0
 
-        if not (self.isEnabled("Subsurface") or not self.useTranslucency):
+        if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
             return
         self.column -= 1
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
