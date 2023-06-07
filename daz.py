@@ -815,7 +815,7 @@ def register():
         description = "Use reflection maps")
 
     bpy.types.Scene.DazUseSssSkin = BoolProperty(
-        name = "SSS Skin (BSDF)",
+        name = "SSS Skin",
         description = (
             "Replace translucency with SSS for volumetric skin materials.\n" +
             "Limited IRAY conversion but faster rendering and more conventional skin materials.\n" +

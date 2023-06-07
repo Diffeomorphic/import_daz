@@ -142,6 +142,7 @@ class Material(Asset, Channels):
         self.basemix = dmat.basemix
         self.useVolume = dmat.useVolume
         self.useTranslucency = dmat.useTranslucency
+        self.isThinWall = dmat.isThinWall
         self.shader = dmat.shader
         self.enabled = dmat.enabled
         self.rna = dmat.rna
@@ -152,6 +153,10 @@ class Material(Asset, Channels):
         if self.basemix > 2:
             self.basemix = 0
             raise DazError("Unknown Base Mixing: %s             " % self.basemix)
+        self.useVolume = False
+        self.useTranslucency = False
+        self.isThinWall = self.getValue(["Thin Walled"], False)
+        eps = 1e-4
 
         if self.shader == 'UBER_IRAY':
             self.enabled = {
@@ -171,6 +176,12 @@ class Material(Asset, Channels):
                 "Metallic Flakes" : True,
                 "Velvet" : False,
             }
+            self.useTranslucency = (
+                self.getValue("getChannelTranslucencyWeight", 1) > eps)
+            self.useVolume = (
+                self.getValue("getChannelTranslucencyWeight", 1) > eps or
+                self.getValue("getChannelRefractionWeight", 1) > eps)
+
         elif self.shader == 'PBRSKIN':
             self.enabled = {
                 "Diffuse" : self.getValue(["Diffuse Enable"], False),
@@ -189,6 +200,11 @@ class Material(Asset, Channels):
                 "Metallic Flakes" : self.getValue(["Metallic Flakes Enable"], False),
                 "Velvet" : False,
             }
+            self.useTranslucency = (
+                self.enabled["Translucency"] and
+                self.getValue("getChannelTranslucencyWeight", 1) > eps)
+            self.useVolume = self.useTranslucency
+
         elif self.shader == 'DAZ_SHADER':
             self.enabled = {
                 "Diffuse" : self.getValue(["Diffuse Active"], False),
@@ -207,6 +223,7 @@ class Material(Asset, Channels):
                 "Metallic Flakes" : False,
                 "Velvet" : not self.getValue(["Velvet Active"], False),
             }
+
         elif self.shader == 'BRICK':
             self.enabled = {
                 "Diffuse" : True,
@@ -228,20 +245,18 @@ class Material(Asset, Channels):
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
-        self.useTranslucency = (
-            (LS.materialMethod == 'BSDF' and not GS.useSssSkin) or
-            (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
-             not self.isVoluSkinMaterial()))
-        self.useVolume = (self.useTranslucency and not self.isThinWall())
-
-
-    def isThinWall(self):
-        return self.getValue(["Thin Walled"], False)
+        if self.isVoluSkinMaterial():
+            if GS.useSssSkin:
+                self.useTranslucency = False
+                self.useVolume = False
+        if LS.materialMethod == 'SINGLE_PRINCIPLED':
+            self.useTranslucency = False
+            self.useVolume = False
 
 
     def isRefractive(self):
-        return (self.getValue("getChannelRefractionWeight", 0) > 0.01 or
-                self.getValue("getChannelOpacity", 1) < 0.99)
+        return (self.getValue("getChannelRefractionWeight", 0) > 0.001 or
+                self.getValue("getChannelOpacity", 1) < 0.999)
 
 
     def isPureRefractive(self):
@@ -617,7 +632,7 @@ class Material(Asset, Channels):
     def sssActive(self):
         if not self.enabled["Subsurface"]:
             return False
-        if self.isRefractive() or self.isThinWall():
+        if self.isRefractive() or self.isThinWall:
             return False
         return True
 

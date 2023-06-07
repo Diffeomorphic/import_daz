@@ -188,9 +188,7 @@ class PbrTree(CyclesTree):
         self.diffuseTex = findTextureNode(tex)
         self.pbr.inputs["Subsurface"].default_value = 0
 
-        if ((LS.materialMethod == 'SINGLE_PRINCIPLED' and not self.owner.isVoluSkinMaterial()) or
-            not self.isEnabled("Subsurface") or
-            not self.checkTranslucency()):
+        if not (self.isEnabled("Subsurface") or not self.useTranslucency):
             return
         self.column -= 1
         transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
@@ -435,7 +433,7 @@ class PbrTree(CyclesTree):
     def setRefractivePrincipled(self, pbr, pbr2):
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
-        if (self.owner.isThinWall() and
+        if (self.owner.isThinWall and
             LS.materialMethod != 'SINGLE_PRINCIPLED'):
             from .cgroup import RayClipGroup
             self.addColumn()
@@ -458,7 +456,7 @@ class PbrTree(CyclesTree):
                 self.cycles = mix
         self.postPBR = True
 
-        if self.owner.isThinWall():
+        if self.owner.isThinWall:
             # if thin walled is on then there's no volume
             # and we use the clearcoat channel for reflections
             #  principled ior = 1

@@ -244,7 +244,6 @@ class CyclesTree(Tree):
         self.emit = None
         self.clipsocket = None
         self.useCutout = False
-        self.useTranslucency = False
         self.pureMetal = False
 
 
@@ -1279,20 +1278,7 @@ class CyclesTree(Tree):
     #   Translucency
     #-------------------------------------------------------------
 
-    def checkTranslucency(self):
-        if not self.isEnabled("Translucency"):
-            return False
-        if (self.owner.isThinWall() or
-            self.volume or
-            self.getValue("getChannelTranslucencyWeight", 0) > 0.01):
-            return True
-        else:
-            return False
-
-
     def buildTranslucency(self, uvname):
-        if not self.checkTranslucency():
-            return None
         from .cgroup import TranslucentGroup
         fac = self.getValue("getChannelTranslucencyWeight", 0)
         color = self.getColor(["Translucency Color"], BLACK)
@@ -1405,7 +1391,7 @@ class CyclesTree(Tree):
         # if there's no volume we use the sss to make translucency
         # please note that here we only use the iray base translucency color with no textures
         # as for blender 2.8x eevee doesn't support nodes in the radius channel so we deal with it
-        if self.owner.isThinWall():
+        if self.owner.isThinWall:
             return color,None
 
         if sssmode == 1 and isWhite(ssscolor):
@@ -1486,7 +1472,7 @@ class CyclesTree(Tree):
         if (GS.useFakeCaustics and
             bpy.app.version < (3,4,0) and
             not self.inShell and
-            not self.owner.isThinWall()):
+            not self.owner.isThinWall):
             from .cgroup import FakeCausticsGroup
             self.addColumn()
             node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[color], force=True)
@@ -1498,7 +1484,7 @@ class CyclesTree(Tree):
         from .cgroup import RefractionGroup, ThinWallGroup
         self.addColumn()
         ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
-        thin = (self.owner.isThinWall() or (ior == 1 and iortex is None))
+        thin = (self.owner.isThinWall or (ior == 1 and iortex is None))
         if thin:
             node = self.addGroup(ThinWallGroup, "DAZ Thin Wall", size=15)
         else:
