@@ -434,7 +434,7 @@ class LoadMorph(DriverUser):
 
 
     def addNewProp(self, raw, asset=None, skey=None):
-        from .driver import setBoolProp, setFloatProp, getPropMinMax, setProtected
+        from .driver import setBoolProp, getPropMinMax, setProtected
         from .selector import setActivated
         from .modifier import Alias
         final = finalProp(raw)
@@ -479,21 +479,27 @@ class LoadMorph(DriverUser):
 
 
     def setFloatLimits(self, rna, prop, limits, asset, skey, ovr):
+        value = asset.value
+        baseprop = prop.split(":", 1)[0]
+        if ((self.rig and baseprop in self.rig.DazBaked.keys()) or
+            baseprop in ["CTRLInitialGensShape01"]):
+            value = 0
+            print("Baked %s = 0" % baseprop)
         from .driver import setFloatProp
         if limits == 'DAZ':
             min = GS.morphMultiplier * asset.min
             max = GS.morphMultiplier * asset.max
-            setFloatProp(rna, prop, asset.value, min, max, ovr)
+            setFloatProp(rna, prop, value, min, max, ovr)
             if skey:
                 skey.slider_min = min
                 skey.slider_max = max
         elif limits == 'CUSTOM':
-            setFloatProp(rna, prop, asset.value, GS.customMin, GS.customMax, ovr)
+            setFloatProp(rna, prop, value, GS.customMin, GS.customMax, ovr)
             if skey:
                 skey.slider_min = GS.customMin
                 skey.slider_max = GS.customMax
         else:
-            setFloatProp(rna, prop, asset.value, None, None, ovr)
+            setFloatProp(rna, prop, value, None, None, ovr)
             if skey:
                 skey.slider_min = -10
                 skey.slider_max = 10
