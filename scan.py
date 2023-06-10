@@ -32,6 +32,7 @@ from bpy.props import *
 from .error import *
 from .utils import *
 from .animation import MorphOptions
+from .fileutils import SingleFile
 
 CURRENT_VERSION = 6
 
@@ -56,6 +57,10 @@ AltNames = {
             "Genesis8Male" : ("Genesis8_1Male", "/data/Daz 3D/Genesis 8/Male 8_1"),
             "Genesis8_1Male" : ("Genesis8Male", "/data/Daz 3D/Genesis 8/Male"),
             }
+
+#----------------------------------------------------------
+#   CharSelector
+#----------------------------------------------------------
 
 class CharSelector:
     useActive : BoolProperty(
@@ -133,30 +138,12 @@ class CharSelector:
             self.layout.prop(self, "useGenesis8_1Male")
             self.layout.prop(self, "useGenesis9")
 
+#----------------------------------------------------------
+#   Scanner
+#----------------------------------------------------------
 
-class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
-    bl_idname = "daz.scan_morph_database"
-    bl_label = "Scan Morph Database"
-    bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
-
-    def run(self, context):
-        active = self.getActive(context.object)
-        if active and self.useActive:
-            self.rig, self.mesh, name, relpath = getCharData(context, True)
-            scanpath = getScanPath(name)
-            self.scanCharacter(context, name, relpath, scanpath)
-        else:
-            self.rig = self.mesh = None
-            for attr,name,relpath in ScanPaths:
-                if getattr(self, attr):
-                    scanpath = getScanPath(name)
-                    self.scanCharacter(context, name, relpath, scanpath)
-
-
-    def scanCharacter(self, context, name, relpath, scanpath):
-        global theScannedFiles
-        from .load_json import saveJson
-        t1 = time.perf_counter()
+class Scanner:
+    def setupScanner(self, name, url):
         self.formulas = {}
         self.defins = {}
         self.minmax = {}
@@ -164,29 +151,16 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
         modified = time.time()
         struct = {
             "name" : name,
-            "path" : relpath,
+            "url" : url,
             "modified" : str(modified),
             "version" : CURRENT_VERSION,
             "definitions" : self.defins,
-            "formulas" : self.formulas,
-            "minmax" : self.minmax,
             "alias" : self.alias,
         }
         self.count = 0
         self.maxcount = 1000000
         #self.maxcount = 10
-        self.wm = context.window_manager
-        self.wm.progress_begin(0, self.maxcount)
-        LS.forMorphLoad(self.mesh)
-        for dazpath in GS.getDazPaths():
-            morphpath = "%s%s/Morphs" % (dazpath, relpath)
-            morphpath = bpy.path.resolve_ncase(morphpath)
-            self.scanMorphs(morphpath, len(morphpath))
-        self.wm.progress_end()
-        saveJson(struct, scanpath)
-        theScannedFiles[name] = struct
-        t2 = time.perf_counter()
-        print("Database for %s scanned in %.3f seconds and saved in\n%s" % (name, t2-t1, scanpath))
+        return struct
 
 
     def scanMorphs(self, folderpath, nskip):
@@ -228,11 +202,12 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
                 if key != target:
                     self.alias[key] = target
             return
-        elif isinstance(asset, Formula):
+        elif isinstance(asset, Formula) and self.useFormulas:
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
-        if (key is not None and
+        if (self.useFormulas and
+            key is not None and
             asset.min is not None and
             asset.max is not None):
             self.minmax[key] = (asset.min, asset.max)
@@ -244,7 +219,11 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
             self.formulas[key] = info
         if info or ref:
             self.count += 1
-            self.wm.progress_update(self.count)
+            self.updateProgress()
+
+
+    def updateProgress(self):
+        self.wm.progress_update(self.count)
 
 
     def evalExprs(self, asset, exprs):
@@ -266,6 +245,98 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector):
             if prop and factor and channel=="value":
                 info[output] = factor
         return info
+
+#----------------------------------------------------------
+#   Scan directory
+#----------------------------------------------------------
+
+class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
+    bl_idname = "daz.scan_morph_directory"
+    bl_label = "Scan Morph Directory"
+    bl_description = "Scan a single directory for morphs for the present mesh,\nand build a database"
+
+    useFormulas = False
+
+    def invoke(self, context, event):
+        from .fileutils import getFoldersFromObject
+        dirs = getFoldersFromObject(context.object, ["Morphs/"])
+        if dirs:
+            self.filepath = dirs[0]
+        return SingleFile.invoke(self, context, event)
+
+    def run(self, context):
+        from .load_json import saveJson
+        ob = self.mesh = context.object
+        self.rig = getRigFromMesh(ob)
+        folder = os.path.dirname(self.filepath)
+        url = self.mesh.DazUrl
+        name = url.rsplit("#", 1)[-1]
+        scanpath = getScanPath(name)
+        struct = self.setupScanner(name, url)
+        LS.forMorphLoad(ob)
+        self.scanMorphs(folder, len(folder))
+        if ob.data.DazGraftGroup:
+            graft = struct["geograft"] = {}
+            graft["vertex_count"] = ob.data.DazVertexCount
+        saveJson(struct, scanpath)
+        print('Saved "%s"' % scanpath)
+
+
+    def scanMorphs(self, folderpath, nskip):
+        for file in os.listdir(folderpath):
+            path = os.path.join(folderpath, file)
+            if os.path.isfile(path):
+                ext = os.path.splitext(file)[-1]
+                if ext in [".duf", ".dsf"]:
+                    self.scanMorph(path, nskip)
+
+    def updateProgress(self):
+        return
+
+#----------------------------------------------------------
+#   Scan morph database
+#----------------------------------------------------------
+
+class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
+    bl_idname = "daz.scan_morph_database"
+    bl_label = "Scan Morph Database"
+    bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
+
+    useFormulas = True
+
+    def run(self, context):
+        active = self.getActive(context.object)
+        if active and self.useActive:
+            self.rig, self.mesh, name, relpath = getCharData(context, True)
+            scanpath = getScanPath(name)
+            self.scanCharacter(context, name, relpath, scanpath)
+        else:
+            self.rig = self.mesh = None
+            for attr,name,relpath in ScanPaths:
+                if getattr(self, attr):
+                    scanpath = getScanPath(name)
+                    self.scanCharacter(context, name, relpath, scanpath)
+
+
+    def scanCharacter(self, context, name, relpath, scanpath):
+        global theScannedFiles
+        from .load_json import saveJson
+        t1 = time.perf_counter()
+        struct = self.setupScanner(name, relpath)
+        struct["formulas"] = self.formulas
+        struct["minmax"] = self.minmax
+        self.wm = context.window_manager
+        self.wm.progress_begin(0, self.maxcount)
+        LS.forMorphLoad(self.mesh)
+        for dazpath in GS.getDazPaths():
+            morphpath = "%s%s/Morphs" % (dazpath, relpath)
+            morphpath = bpy.path.resolve_ncase(morphpath)
+            self.scanMorphs(morphpath, len(morphpath))
+        self.wm.progress_end()
+        saveJson(struct, scanpath)
+        theScannedFiles[name] = struct
+        t2 = time.perf_counter()
+        print("Database for %s scanned in %.3f seconds and saved in\n%s" % (name, t2-t1, scanpath))
 
 
 def getCharData(context, error):
@@ -417,7 +488,7 @@ def getMorphSet(path):
     return "Custom"
 
 #----------------------------------------------------------
-#   Initialize
+#   Check database
 #----------------------------------------------------------
 
 def checkNeedUpdate(name, relpath):
@@ -510,6 +581,7 @@ class DAZ_OT_CheckDatabase(DazPropsOperator, CharSelector):
 classes = [
     DAZ_OT_ScanMorphDatabase,
     DAZ_OT_CheckDatabase,
+    DAZ_OT_ScanMorphDirectory,
 ]
 
 def register():

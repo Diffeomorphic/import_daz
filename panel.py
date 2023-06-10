@@ -114,20 +114,14 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupMorphs"
     bl_label = "Morphs"
 
-    def drawDatabase(self):
-        self.layout.operator("daz.scan_morph_database")
-        self.layout.operator("daz.check_database")
-
     def draw(self, context):
         ob = context.object
         if ob and ob.type in ['ARMATURE', 'MESH'] and ob.DazId:
             if ob.DazDriversDisabled:
                 self.layout.label(text = "Morph Drivers Disabled")
                 self.layout.operator("daz.enable_drivers")
-                self.drawDatabase()
                 return
             elif ob.DazMorphPrefixes:
-                self.drawDatabase()
                 return
             self.layout.operator("daz.import_units")
             self.layout.operator("daz.import_expressions")
@@ -149,8 +143,6 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.operator("daz.save_favo_morphs")
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
-        self.drawDatabase()
-        self.layout.separator()
         self.layout.operator("daz.transfer_shapekeys")
 
 
@@ -413,6 +405,9 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         layout = self.layout
         layout.operator("daz.decode_file")
         layout.operator("daz.scan_absolute_paths")
+        layout.operator("daz.scan_morph_database")
+        layout.operator("daz.scan_morph_directory")
+        layout.operator("daz.check_database")
         layout.operator("daz.quote_unquote")
         layout.operator("daz.print_statistics")
         layout.operator("daz.update_all")

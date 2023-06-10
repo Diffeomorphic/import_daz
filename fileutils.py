@@ -48,6 +48,7 @@ class AnimationFolders:
         self.presets = {}
         self.lowpoly = {}
         self.altmorphs = {}
+        self.scanned = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",

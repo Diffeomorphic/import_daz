@@ -1550,19 +1550,65 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
 
 
     def addFavoMorphs(self, ob, context):
-        from .fileutils import findPathRecursiveFromObject
-        if ob.type == 'MESH' and len(ob.data.DazFavorites) > 0:
+        if len(ob.data.DazFavorites) > 0:
+            self.setupScanned(ob)
             namepaths = []
+            self.parpaths = []
             self.mesh = ob
             self.meshes = [ob]
             for favo in ob.data.DazFavorites.keys():
-                morph = unquote(favo.split("/",1)[0])
-                path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
+                morph = favo.split("/",1)[0]
+                path = self.findMorph(morph, ob)
                 if path:
-                    namepaths.append((morph, path, "Custom"))
+                    namepaths.append((unquote(morph), path, "Custom"))
             if namepaths:
                 self.setCategory("Favorites %s" % ob.name)
                 self.getAllMorphs(namepaths, context)
+            if self.parpaths:
+                print("LOAD", self.parpaths, self.geograft["url"])
+                parent = self.getParent(ob, self.geograft["url"])
+                if parent:
+                    self.mesh = parent
+                    self.meshes = [parent]
+                    print("PAR", parent)
+                    self.getAllMorphs(self.parpaths, context)
+
+
+    def setupScanned(self, ob):
+        from .fileutils import AF
+        name = ob.DazUrl.rsplit("#", 1)[-1]
+        struct = AF.loadEntry(name, "scanned", False)
+        self.defs = struct.get("definitions", {})
+        self.alias = struct.get("alias", {})
+        self.geograft = struct.get("geograft", {})
+
+
+    def findMorph(self, morph, ob):
+        from .fileutils import findPathRecursiveFromObject
+        alias = self.alias.get(morph)
+        if alias:
+            morph = alias
+        if self.defs:
+            path = self.defs.get(morph)
+            if path:
+                return GS.getAbsPath(path)
+            if self.geograft:
+                path = self.geograft["definitions"].get(morph)
+                if path:
+                    path = GS.getAbsPath(path)
+                    if path:
+                        self.parpaths.append((unquote(morph), path, "Custom"))
+                    return None
+        morph = unquote(morph)
+        return findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
+
+
+    def getParent(self, ob, url):
+        rig = getRigFromMesh(ob)
+        for child in rig.children:
+            if child.DazUrl == url:
+                return child
+        return None
 
 #-------------------------------------------------------------
 #   Register

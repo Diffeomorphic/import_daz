@@ -66,12 +66,12 @@ class DazPreferences(bpy.types.AddonPreferences):
 
 def getSetupEnabled(context):
     prefs = context.preferences.addons[__name__].preferences
-    return prefs.showSetupTab
+    return (prefs and prefs.showSetupTab)
 
 
 def getRuntimeEnabled(context):
     prefs = context.preferences.addons[__name__].preferences
-    return prefs.showRuntimeTab
+    return (prefs and prefs.showRuntimeTab)
 
 #----------------------------------------------------------
 #   Modules
