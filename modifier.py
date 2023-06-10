@@ -319,12 +319,6 @@ class ChannelAsset(Modifier):
             self.value = struct["channel"]["current_value"]
 
 
-    def postbuild(self, context, inst):
-        if LS.fitFile:
-            from .formula import buildBakedMorph
-            print("AA", self)
-            buildBakedMorph(inst, self.id, self.value)
-
 
 def stripPrefix(prop):
     lprop = prop.lower()

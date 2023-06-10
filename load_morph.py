@@ -37,6 +37,10 @@ MAX_TERMS = 12
 MAX_TERMS2 = 9
 MAX_EXPR_LEN = 240
 
+ALWAYS_BAKED = [
+    "CTRLInitialGensShape01",
+]
+
 #------------------------------------------------------------------
 #   LoadMorph base class
 #------------------------------------------------------------------
@@ -482,7 +486,7 @@ class LoadMorph(DriverUser):
         value = asset.value
         baseprop = prop.split(":", 1)[0]
         if ((self.rig and baseprop in self.rig.DazBaked.keys()) or
-            baseprop in ["CTRLInitialGensShape01"]):
+            baseprop in ALWAYS_BAKED):
             value = 0
             print("Baked %s = 0" % baseprop)
         from .driver import setFloatProp
