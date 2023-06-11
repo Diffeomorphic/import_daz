@@ -154,7 +154,7 @@ class Material(Asset, Channels):
             self.basemix = 0
             raise DazError("Unknown Base Mixing: %s             " % self.basemix)
         self.useVolume = False
-        self.useTranslucency = False
+        self.useTranslucency = True
         self.isThinWall = self.getValue(["Thin Walled"], False)
 
         if self.shader == 'UBER_IRAY':
