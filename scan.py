@@ -251,7 +251,7 @@ class Scanner:
                     prop = expr["prop"]
                     factor = expr["factor"]
                 elif key in ["translation", "rotation", "scale", "general_scale"]:
-                    return {}
+                    return info,prop
                 if prop and factor and channel == "value":
                     info[output] = factor
         return info,prop

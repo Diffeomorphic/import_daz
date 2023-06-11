@@ -1196,6 +1196,8 @@ class CyclesTree(Tree):
             if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
             fac = 0.05 * topweight * refl
+            if fac == 0:
+                return
             bumpmode = self.getValue(["Top Coat Bump Mode"], 0)
             bumpval,bumptex = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
             if bumptex is None:
@@ -1208,6 +1210,8 @@ class CyclesTree(Tree):
             if lmode == 0:  # Reflectivity
                 refl,refltex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
             fac = 0.05 * topweight * refl
+            if fac == 0:
+                return
             bumpval = self.getValue(["Top Coat Bump Weight"], 0)
             if self.bumptex:
                 bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)

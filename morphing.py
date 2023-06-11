@@ -1572,7 +1572,6 @@ class ScanFinder:
                 path = self.getDefinedPath(prop)
                 self.addNamePath(prop, path, self.namepaths)
         if not self.found:
-            print("NOT", morph)
             morph = unquote(morph)
             path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
             self.addNamePath(morph, path, self.namepaths)
