@@ -115,7 +115,8 @@ class LoadMorph(DriverUser):
         if self.amt and self.amt.DazOptimizedDrivers:
             raise DazError("Cannot add new morphs to an armature with optimized drivers")
 
-        print("Making morphs")
+        if GS.verbosity >= 3:
+            print("Making morphs")
         self.makeAllMorphs(namepaths, True)
         adjustable = self.adjustable
         self.adjustable = {}
@@ -697,7 +698,8 @@ class LoadMorph(DriverUser):
 
     def makeMissingMorphs(self, level):
         newLine()
-        print("Making missing morphs level %d" % level)
+        if GS.verbosity >= 3:
+            print("Making missing morphs level %d" % level)
         for fileref in self.loaded:
             self.referred[fileref] = False
         morphset = self.morphset
@@ -756,7 +758,8 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def buildDrivers(self):
-        print("Building drivers")
+        if GS.verbosity >= 3:
+            print("Building drivers")
         for output,drivers in self.drivers.items():
             if drivers:
                 if self.isDriverType('BONE', drivers):
@@ -1200,7 +1203,8 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def buildSumDrivers(self):
-        print("Building sum drivers")
+        if GS.verbosity >= 3:
+            print("Building sum drivers")
         for bname,bdata in self.sumdrivers.items():
             for channel,cdata in bdata.items():
                 for idx,idata in cdata.items():
@@ -1266,10 +1270,11 @@ class LoadMorph(DriverUser):
     def buildRestDrivers(self):
         from .driver import getRnaDriver
         newLine()
-        if self.restdrivers:
-            print("Building rest drivers")
-        else:
-            print("No rest drivers")
+        if GS.verbosity >= 3:
+            if self.restdrivers:
+                print("Building rest drivers")
+            else:
+                print("No rest drivers")
         for rest,drivers in self.restdrivers.items():
             self.amt[rest] = 0.0
             fcu = getRnaDriver(self.amt, propRef(rest))

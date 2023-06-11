@@ -1530,10 +1530,88 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         self.namepaths[cat].append((text, path, bodypart))
 
 #-------------------------------------------------------------
+#   ScanFinder class
+#-------------------------------------------------------------
+
+class ScanFinder:
+    useSearchAlias = False
+
+    def setupUniqueSuffix(self, path):
+        self.uniqueSuffix = ""
+
+
+    def setupScanned(self, ob):
+        from .fileutils import AF
+        name = ob.DazUrl.rsplit("#", 1)[-1]
+        struct = AF.loadEntry(name, "scanned", False)
+        self.defs = struct.get("definitions", {})
+        self.alias = struct.get("alias", {})
+        self.formulas = struct.get("formulas", {})
+        self.geograft = struct.get("geograft", {})
+        self.namepaths = []
+        self.parpaths = []
+
+
+    def findMorphs(self, morph, ob):
+        from .fileutils import findPathRecursiveFromObject
+        self.found = False
+        if self.defs:
+            path = self.defs.get(morph)
+            self.addNamePath(morph, path, self.namepaths)
+            alias = self.alias.get(morph)
+            if alias:
+                path = self.defs.get(alias)
+                self.addNamePath(alias, path, self.namepaths)
+                morph = alias
+            if self.geograft:
+                path = self.geograft["definitions"].get(morph)
+                self.addNamePath(morph, path, self.parpaths)
+            exprs = self.formulas.get(morph, {})
+            for prop,factor in exprs.items():
+                path = self.defs.get(prop)
+                self.addNamePath(prop, path, self.namepaths)
+        if not self.found:
+            morph = unquote(morph)
+            path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
+            self.addNamePath(morph, path, self.namepaths)
+
+
+    def addNamePath(self, morph, path, namepaths):
+        if path:
+            path = GS.getAbsPath(path)
+            if path:
+                self.found = True
+                namepaths.append((unquote(morph), path, "Custom"))
+
+
+    def getParent(self, ob, url):
+        rig = getRigFromMesh(ob)
+        for child in rig.children:
+            if child.DazUrl == url:
+                return child
+        return None
+
+
+    def loadOwnMorphs(self, context, ob):
+        if self.namepaths:
+            self.mesh = ob
+            self.meshes = [ob]
+            self.getAllMorphs(self.namepaths, context)
+
+
+    def loadParentMorphs(self, context, ob):
+        if self.parpaths:
+            parent = self.getParent(ob, self.geograft["url"])
+            if parent:
+                self.mesh = parent
+                self.meshes = [parent]
+                self.getAllMorphs(self.parpaths, context)
+
+#-------------------------------------------------------------
 #   Import DAZ Favorites
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature):
+class DAZ_OT_ImportDazFavoMorphs(DazOperator, ScanFinder, CustomMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
@@ -1552,63 +1630,12 @@ class DAZ_OT_ImportDazFavoMorphs(DazOperator, CustomMorphLoader, IsMeshArmature)
     def addFavoMorphs(self, ob, context):
         if len(ob.data.DazFavorites) > 0:
             self.setupScanned(ob)
-            namepaths = []
-            self.parpaths = []
-            self.mesh = ob
-            self.meshes = [ob]
             for favo in ob.data.DazFavorites.keys():
                 morph = favo.split("/",1)[0]
-                path = self.findMorph(morph, ob)
-                if path:
-                    namepaths.append((unquote(morph), path, "Custom"))
-            if namepaths:
-                self.setCategory("Favorites %s" % ob.name)
-                self.getAllMorphs(namepaths, context)
-            if self.parpaths:
-                print("LOAD", self.parpaths, self.geograft["url"])
-                parent = self.getParent(ob, self.geograft["url"])
-                if parent:
-                    self.mesh = parent
-                    self.meshes = [parent]
-                    print("PAR", parent)
-                    self.getAllMorphs(self.parpaths, context)
-
-
-    def setupScanned(self, ob):
-        from .fileutils import AF
-        name = ob.DazUrl.rsplit("#", 1)[-1]
-        struct = AF.loadEntry(name, "scanned", False)
-        self.defs = struct.get("definitions", {})
-        self.alias = struct.get("alias", {})
-        self.geograft = struct.get("geograft", {})
-
-
-    def findMorph(self, morph, ob):
-        from .fileutils import findPathRecursiveFromObject
-        alias = self.alias.get(morph)
-        if alias:
-            morph = alias
-        if self.defs:
-            path = self.defs.get(morph)
-            if path:
-                return GS.getAbsPath(path)
-            if self.geograft:
-                path = self.geograft["definitions"].get(morph)
-                if path:
-                    path = GS.getAbsPath(path)
-                    if path:
-                        self.parpaths.append((unquote(morph), path, "Custom"))
-                    return None
-        morph = unquote(morph)
-        return findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
-
-
-    def getParent(self, ob, url):
-        rig = getRigFromMesh(ob)
-        for child in rig.children:
-            if child.DazUrl == url:
-                return child
-        return None
+                self.findMorphs(morph, ob)
+            self.setCategory("Favorites %s" % ob.name)
+            self.loadOwnMorphs(context, ob)
+            self.loadParentMorphs(context, ob)
 
 #-------------------------------------------------------------
 #   Register

@@ -1,9 +1,15 @@
 ﻿{
     "name" : "new_gens_V8",
     "url" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/new_gens_V8_1840.dsf#new_gens_V8",
-    "modified" : "1686406392.1226676",
+    "modified" : "1686453011.2176366",
     "version" : 6,
     "definitions" : {
+        "0104%20-%20AnusOpen" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/alias_new_gens_V8_1840_0104 - AnusOpen.dsf",
+        "0504%20-%20PullLabiaMajoraLowerLeft%28Along%20with%20legs%20pose%29" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/alias_new_gens_V8_1840_0504 - PullLabiaMajoraLowerLeft(Along with legs pose).dsf",
+        "0505%20-%20PullLabiaMajoraLowerRight%28Along%20with%20legs%20pose%29" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/alias_new_gens_V8_1840_0505 - PullLabiaMajoraLowerRight(Along with legs pose).dsf",
+        "0610%20-%20GenitaliaOpen02%28Along%20with%20legs%20pose%29" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/alias_new_gens_V8_1840_0610 - GenitaliaOpen02(Along with legs pose).dsf",
+        "0611%20-%20GenitaliaOpen03%28Along%20with%20legs%20pose%29" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/alias_new_gens_V8_1840_0611 - GenitaliaOpen03(Along with legs pose).dsf",
+        "0612%20-%20LegsTogether" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/alias_new_gens_V8_1840_0612 - LegsTogether.dsf",
         "PBMAnusEversion" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/PBMAnusEversion.dsf",
         "PBMAnusOpen" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/PBMAnusOpen.dsf",
         "PBMAnusOpen01" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base/PBMAnusOpen01.dsf",
@@ -97,6 +103,84 @@
         "0611%20-%20GenitaliaOpen03%28Along%20with%20legs%20pose%29" : "PBMG8FGensOpen02",
         "0612%20-%20LegsTogether" : "PBMG8FLegsTogether"
     },
+    "formulas" : {
+        "PBMG8FAnusOpen" : {
+            "PBMAnusOpen" : 1
+        },
+        "PBMG3FAnusOpen" : {
+            "PBMAnusOpen01" : 1
+        },
+        "JCMG3FCorrectiveLTB" : {
+            "PBMG3FGensCorrectiveLTB" : 1
+        },
+        "JCMG3FCorrectiveLTBS" : {
+            "PBMG3FGensCorrectiveLTBS" : 1
+        },
+        "JCMG3FCorrectiveLTS" : {
+            "PBMG3FGensCorrectiveLTS" : 1
+        },
+        "JCMG3FCorrectiveRTB" : {
+            "PBMG3FGensCorrectiveRTB" : 1
+        },
+        "JCMG3FCorrectiveRTBS" : {
+            "PBMG3FGensCorrectiveRTBS" : 1
+        },
+        "JCMG3FCorrectiveRTS" : {
+            "PBMG3FGensCorrectiveRTS" : 1
+        },
+        "JCMG8FCorrectiveLTB" : {
+            "PBMG8FGensCorrectiveLTB" : 1
+        },
+        "JCMG8FCorrectiveLTBS" : {
+            "PBMG8FGensCorrectiveLTBS" : 1
+        },
+        "JCMG8FCorrectiveLTS" : {
+            "PBMG8FGensCorrectiveLTS" : 1
+        },
+        "JCMG8FCorrectiveRTB" : {
+            "PBMG8FGensCorrectiveRTB" : 1
+        },
+        "JCMG8FCorrectiveRTBS" : {
+            "PBMG8FGensCorrectiveRTBS" : 1
+        },
+        "JCMG8FCorrectiveRTS" : {
+            "PBMG8FGensCorrectiveRTS" : 1
+        },
+        "PBMG8FGensOpen01" : {
+            "PBMGensOpen01" : 1
+        },
+        "PBMG8FGensOpen02" : {
+            "PBMGensOpen02" : 1
+        },
+        "PBMGensOpen02" : {
+            "PBMGensPullOutE" : 1
+        },
+        "CTRLGlansClitorisUpDown" : {
+            "PBMGlansClitorisUp" : 1
+        },
+        "CTRLGlansClitorisLeftRight" : {
+            "PBMGlansClitorisRight" : -1
+        },
+        "PBMGlansClitorisSize" : {
+            "PBMGlansClitorisSizeE" : 1
+        },
+        "CTRLLabiaMinoraOffset02" : {
+            "PBMLabiaMinoraOffset03" : -1
+        },
+        "PBMLabiaMinoraEversion" : {
+            "PBMLabiaMinoraStyle03Eversion" : 1
+        },
+        "PBMG8FLegsTogether" : {
+            "PBMLegsTogether" : 1
+        },
+        "PBMG8FPullLabiaLL" : {
+            "PBMPullLabiaMajoraLowerLeft" : 1
+        },
+        "PBMG8FPullLabiaLR" : {
+            "PBMPullLabiaMajoraLowerRight" : 1
+        }
+    },
+    "minmax" : {},
     "geograft" : {
         "vertex_count" : 16556,
         "url" : "/data/DAZ 3D/Genesis 8/Female/Genesis8Female.dsf#geometry",

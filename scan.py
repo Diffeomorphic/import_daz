@@ -156,6 +156,8 @@ class Scanner:
             "version" : CURRENT_VERSION,
             "definitions" : self.defins,
             "alias" : self.alias,
+            "formulas" : self.formulas,
+            "minmax" : self.minmax,
         }
         self.count = 0
         self.maxcount = 1000000
@@ -191,20 +193,21 @@ class Scanner:
         if "modifier_library" not in struct.keys():
             return
         asset = parseAssetFile(struct)
-        ref = info = key = None
+        ref = info = key = prop = None
         if isinstance(asset, Morph):
             ref,key = asset.id.rsplit("#",1)
+            exprs = asset.evalFormulas(self.rig, self.mesh, False)
+            info,prop = self.evalExprs(asset, exprs)
         elif isinstance(asset, Alias):
             ref,key = asset.id.rsplit("#",1)
-            ref,target = asset.target_channel.rsplit("#",1)
+            target = asset.target_channel.rsplit("#",1)[-1]
             if target[-6:] == "?value":
                 target = target[:-6]
                 if key != target:
                     self.alias[key] = target
-            return
         elif isinstance(asset, Formula) and self.useFormulas:
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
-            info = self.evalExprs(asset, exprs)
+            info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
         if (self.useFormulas and
             key is not None and
@@ -216,7 +219,10 @@ class Scanner:
             #key = key.lower()
             self.defins[key] = filepath
         if info:
-            self.formulas[key] = info
+            if prop:
+                self.formulas[prop] = info
+            else:
+                self.formulas[key] = info
         if info or ref:
             self.count += 1
             self.updateProgress()
@@ -228,6 +234,7 @@ class Scanner:
 
     def evalExprs(self, asset, exprs):
         info = {}
+        prop = None
         for output,data in exprs.items():
             ref = None
             channel = None
@@ -242,9 +249,9 @@ class Scanner:
                     factor = expr["factor"]
                 elif key in ["translation", "rotation", "scale", "general_scale"]:
                     return {}
-            if prop and factor and channel=="value":
-                info[output] = factor
-        return info
+                if prop and factor and channel == "value":
+                    info[output] = factor
+        return info,prop
 
 #----------------------------------------------------------
 #   Scan directory
@@ -293,6 +300,11 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
     def updateProgress(self):
         return
 
+
+    def setInfo(self, info, output, prop, factor):
+        if prop and factor and not (prop == output and factor == 1):
+            info[prop] = factor
+
 #----------------------------------------------------------
 #   Scan morph database
 #----------------------------------------------------------
@@ -323,8 +335,6 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
         from .load_json import saveJson
         t1 = time.perf_counter()
         struct = self.setupScanner(name, relpath)
-        struct["formulas"] = self.formulas
-        struct["minmax"] = self.minmax
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
         LS.forMorphLoad(self.mesh)
