@@ -152,6 +152,7 @@ class Scanner:
         struct = {
             "name" : name,
             "url" : url,
+            "directory" : self.directory,
             "modified" : str(modified),
             "version" : CURRENT_VERSION,
             "definitions" : self.defins,
@@ -216,8 +217,10 @@ class Scanner:
             self.minmax[key] = (asset.min, asset.max)
         if ref:
             filepath = bpy.path.resolve_ncase(unquote(ref))
-            #key = key.lower()
-            self.defins[key] = filepath
+            folder = os.path.dirname(filepath)
+            name = os.path.splitext(os.path.basename(filepath))[0]
+            if unquote(key) != name or folder != self.directory:
+                self.defins[key] = filepath
         if info:
             if prop:
                 self.formulas[prop] = info
@@ -279,6 +282,7 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
         url = self.mesh.DazUrl
         name = url.rsplit("#", 1)[-1]
         scanpath = getScanPath(name)
+        self.directory = GS.getRelativePath(folder)
         struct = self.setupScanner(name, url)
         LS.forMorphLoad(ob)
         self.scanMorphs(folder, len(folder))
@@ -315,6 +319,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
     bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
 
     useFormulas = True
+    directory = None
 
     def run(self, context):
         active = self.getActive(context.object)

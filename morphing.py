@@ -1544,6 +1544,7 @@ class ScanFinder:
         from .fileutils import AF
         name = ob.DazUrl.rsplit("#", 1)[-1]
         struct = AF.loadEntry(name, "scanned", False)
+        self.directory = struct.get("directory")
         self.defs = struct.get("definitions", {})
         self.alias = struct.get("alias", {})
         self.formulas = struct.get("formulas", {})
@@ -1556,11 +1557,11 @@ class ScanFinder:
         from .fileutils import findPathRecursiveFromObject
         self.found = False
         if self.defs:
-            path = self.defs.get(morph)
+            path = self.getDefinedPath(morph)
             self.addNamePath(morph, path, self.namepaths)
             alias = self.alias.get(morph)
             if alias:
-                path = self.defs.get(alias)
+                path = self.getDefinedPath(alias)
                 self.addNamePath(alias, path, self.namepaths)
                 morph = alias
             if self.geograft:
@@ -1568,12 +1569,23 @@ class ScanFinder:
                 self.addNamePath(morph, path, self.parpaths)
             exprs = self.formulas.get(morph, {})
             for prop,factor in exprs.items():
-                path = self.defs.get(prop)
+                path = self.getDefinedPath(prop)
                 self.addNamePath(prop, path, self.namepaths)
         if not self.found:
+            print("NOT", morph)
             morph = unquote(morph)
             path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
             self.addNamePath(morph, path, self.namepaths)
+
+
+    def getDefinedPath(self, morph):
+        path = self.defs.get(morph)
+        if path:
+            return path
+        elif self.directory:
+            path = "%s/%s.dsf" % (self.directory, unquote(morph))
+            return path
+        return None
 
 
     def addNamePath(self, morph, path, namepaths):
