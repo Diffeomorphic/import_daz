@@ -1549,8 +1549,8 @@ class ScanFinder:
         self.alias = struct.get("alias", {})
         self.formulas = struct.get("formulas", {})
         self.geograft = struct.get("geograft", {})
-        self.namepaths = []
-        self.parpaths = []
+        self.namepaths = {}
+        self.parpaths = {}
 
 
     def findMorphs(self, morph, ob):
@@ -1591,8 +1591,9 @@ class ScanFinder:
         if path:
             path = GS.getAbsPath(path)
             if path:
+                morph = unquote(morph)
                 self.found = True
-                namepaths.append((unquote(morph), path, "Custom"))
+                namepaths[morph] = (morph, path, "Custom")
 
 
     def getParent(self, ob, url):
@@ -1607,7 +1608,7 @@ class ScanFinder:
         if self.namepaths:
             self.mesh = ob
             self.meshes = [ob]
-            self.getAllMorphs(self.namepaths, context)
+            self.getAllMorphs(list(self.namepaths.values()), context)
 
 
     def loadParentMorphs(self, context, ob):
@@ -1616,7 +1617,7 @@ class ScanFinder:
             if parent:
                 self.mesh = parent
                 self.meshes = [parent]
-                self.getAllMorphs(self.parpaths, context)
+                self.getAllMorphs(list(self.parpaths.values()), context)
 
 #-------------------------------------------------------------
 #   Import DAZ Favorites

@@ -1924,7 +1924,7 @@ class CyclesTree(Tree):
     def mixWithActive(self, fac, factex, node, keep=False, effect=0):
         if node.type != 'GROUP':
             raise RuntimeError("BUG: mixWithActive", node.type)
-        node.inputs["Fac"].default_value = 1.0
+        node.inputs["Fac"].default_value = fac
         if effect or factex or keep:
             pass
         elif fac == 0:
