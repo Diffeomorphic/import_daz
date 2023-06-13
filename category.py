@@ -986,7 +986,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             if mname:
                 rig[key] = 1.0
                 updateRigDrivers(context, rig)
-                mod = self.applyArmature(ob, rig, mod, mname)
+                mod = self.applyArmature(ob, rig, mod, key, mname)
                 rig[key] = 0.0
                 t = perf_counter()
                 print("Converted %s in %g seconds" % (mname, t-t0))
@@ -1006,7 +1006,8 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         print("%d morphs converted in %g seconds" % (nitems, t2-t1))
 
 
-    def applyArmature(self, ob, rig, mod, mname):
+    def applyArmature(self, ob, rig, mod, key, mname):
+        from .driver import getPropMinMax
         mod.name = mname
         if bpy.app.version < (2,90,0):
             bpy.ops.object.modifier_apply(apply_as='SHAPE', modifier=mname)
@@ -1015,6 +1016,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[mname]
         skey.value = 0.0
+        skey.slider_min, skey.slider_max, default, ovr = getPropMinMax(rig, key)
         offsets = [(skey.data[vn].co - v.co).length for vn,v in enumerate(ob.data.vertices)]
         omax = max(offsets)
         omin = min(offsets)

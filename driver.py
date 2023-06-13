@@ -500,7 +500,7 @@ def isProtected(rna, prop):
 #   Properties
 #-------------------------------------------------------------
 
-def getPropMinMax(rna, prop, ovr):
+def getPropMinMax(rna, prop, ovr=False):
     struct = getPropUi(rna, prop)
     min = GS.customMin
     max = GS.customMax
