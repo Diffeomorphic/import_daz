@@ -103,7 +103,6 @@ class GlobalSettings:
         self.showInTerminal = True
         self.useShapekeys = True
         self.useERC = False
-        self.useProtect = True
         self.useStripCategory = False
         self.useModifiedMesh = False
 
@@ -187,7 +186,6 @@ class GlobalSettings:
         "DazShowInTerminal" : "showInTerminal",
         "DazUseShapekeys" : "useShapekeys",
         "DazUseERC" : "useERC",
-        "DazProtect" : "useProtect",
         "DazStripCategory" : "useStripCategory",
         "DazUseModifiedMesh" : "useModifiedMesh",
 

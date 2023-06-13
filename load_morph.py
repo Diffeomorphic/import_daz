@@ -978,7 +978,7 @@ class LoadMorph(DriverUser):
                     multfinal = finalProp(mult)
                     if propRef(multfinal) not in targets:
                         mstring += "%s*" % varname
-                        self.ensureExists(mult, multfinal, self.defaultMultiplier, True)
+                        self.ensureExists(mult, multfinal, self.defaultMultiplier)
                         self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
                         varname = nextLetter(varname)
                 elif isinstance(mult, tuple):
@@ -1011,22 +1011,13 @@ class LoadMorph(DriverUser):
             fcu.driver.expression = string
 
 
-    def ensureExists(self, raw, final, default, protect=False):
+    def ensureExists(self, raw, final, default):
         from .driver import removeModifiers, setProtected
         from .selector import setActivated
         if self.rig is None:
             return
         if raw not in self.rig.keys():
             self.rig[raw] = default
-            if protect and GS.useProtect:
-                morphset = self.morphset
-                self.morphset = self.origMorphset
-                self.addToMorphSet(raw, None, False, True)
-                self.morphset = morphset
-        if protect and GS.useProtect:
-            setProtected(self.rig, raw, True)
-            setActivated(self.rig, raw, False)
-
         if final not in self.amt.keys():
             self.amt[final] = default
             fcu = self.amt.driver_add(propRef(final))
