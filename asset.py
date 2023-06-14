@@ -78,7 +78,7 @@ class Accessor:
                 msg = ("Missing local asset:\n  '%s'\n" % ref)
                 if self.caller:
                     msg += ("in file:\n  '%s'\n" % self.caller.fileref)
-                reportError(msg, trigger=(2,3))
+                reportError(msg)
             return None
         else:
             return self.getNewAsset(id, ref)
@@ -111,7 +111,7 @@ class Accessor:
             "Asset of type %s not found:\n  %s\n" % (type, id) +
             "File ref:\n  '%s'\n" % self.fileref
         )
-        return reportError(msg, trigger=(2,3), warnPaths=True)
+        return reportError(msg, trigger=(2,5), warnPaths=True)
 
 
     def parseUrlAsset(self, struct, type=None):
@@ -121,7 +121,7 @@ class Accessor:
                    "File ref:\n  '%s'\n" % self.fileref +
                    "Id: '%s'\n" % struct["id"] +
                    "Keys:\n %s\n" % list(struct.keys()))
-            reportError(msg, warnPaths=True, trigger=(2,3))
+            reportError(msg, warnPaths=True)
             return None
         asset = self.getTypedAsset(struct["url"], type)
         if isinstance(asset, Asset):
@@ -139,7 +139,7 @@ class Accessor:
                    "Type: %s\n" % type +
                    "File ref:\n  '%s'\n" % self.fileref +
                    "Found asset:\n %s\n" % asset)
-            return reportError(msg, warnPaths=True, trigger=(3,4))
+            return reportError(msg, warnPaths=True, trigger=(3,5))
         return None
 
 
@@ -162,7 +162,7 @@ class Accessor:
                    "  Asset 2: %s\n" % asset2 +
                    "  Ref 1: %s\n" % ref +
                    "  Ref 2: %s\n" % ref2)
-            reportError(msg, trigger=(2,4))
+            reportError(msg)
             LS.theAssets[ref2] = asset
         else:
             LS.theAssets[ref] = LS.theAssets[ref2] = asset
@@ -180,7 +180,7 @@ class Accessor:
                            "  Caller: %s\n" % asset.caller +
                            "  Ref 1: %s\n" % ref +
                            "  Ref 2: %s\n" % ref2)
-                    return reportError(msg, trigger=(2,3))
+                    return reportError(msg)
             else:
                 print("REF2", ref2)
                 print("  ", asset)
@@ -281,7 +281,7 @@ class Asset(Accessor):
         else:
             self.id = "?"
             msg = ("Asset without id\nin file \"%s\":\n%s    " % (self.fileref, struct))
-            reportError(msg, trigger=(1,2))
+            reportError(msg, trigger=(1,5))
 
         if "url" in struct.keys():
             self.url = struct["url"]
@@ -333,7 +333,7 @@ class Asset(Accessor):
                        "URL: %s           \n" % url +
                        "Asset: %s\n" % self +
                        "Source: %s\n" % asset)
-                reportError(msg, trigger=(2,3))
+                reportError(msg)
 
 
     def update(self, struct):

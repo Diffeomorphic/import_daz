@@ -57,7 +57,7 @@ class FileAsset(Asset):
     def parse(self, struct):
         msg = ("+FILE %s" % self.fileref)
         LS.theTrace.append(msg)
-        if GS.verbosity > 4:
+        if GS.verbosity >= 4:
             print(msg)
 
         sources = []
@@ -117,7 +117,7 @@ class FileAsset(Asset):
                         self.nodes.append((asset, inst))
                     elif asset is not None:
                         msg = ("Expected node but got\n%s" % asset)
-                        reportError(msg, trigger=(2,4))
+                        reportError(msg)
 
             if LS.useMaterials and "materials" in scene.keys():
                 for mstruct in scene["materials"]:
@@ -165,7 +165,7 @@ class FileAsset(Asset):
 
         msg = ("-FILE %s" % self.fileref)
         LS.theTrace.append(msg)
-        if GS.verbosity > 4:
+        if GS.verbosity >= 4:
             print(msg)
         return self
 
@@ -246,7 +246,7 @@ class FileAsset(Asset):
             if asset:
                 if isinstance(asset, Geometry):
                     msg = ("Duplicate geometry definition:\n  %s" % asset)
-                    reportError(msg, trigger=(2,4))
+                    reportError(msg)
                 return asset
             else:
                 asset = typedAsset(self.fileref)

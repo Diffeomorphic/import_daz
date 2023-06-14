@@ -639,7 +639,7 @@ class Bone(Node):
             len(self.instances.values()) > 0):
             return list(self.instances.values())[0]
         msg = ("Bone: Did not find instance %s in %s\nSelf = %s\nSourcing = %s" % (iref, list(self.instances.keys()), self, self.sourcing))
-        reportError(msg, trigger=(2,3))
+        reportError(msg)
         return None
 
 

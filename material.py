@@ -104,7 +104,7 @@ class Material(Asset, Channels):
                    "  %s\n" % geonode +
                    "  %s\n" % geonode.materials[key] +
                    "  %s" % self)
-            reportError(msg, trigger=(2,3))
+            reportError(msg)
         geonode.materials[key] = self
         self.geometry = geonode
 
@@ -378,7 +378,7 @@ class Material(Asset, Channels):
                         uvset = geo.findUvSet(key, path)
             if not uvset:
                 msg = ("Missing UV for '%s': '%s' not in %s" % (self.getLabel(), key, list(struct.keys())))
-                reportError(msg, trigger=(3,4))
+                reportError(msg, trigger=(3,5))
         return key
 
 
@@ -720,7 +720,7 @@ def getImage(url):
 def loadImage(url):
     filepath = GS.getAbsPath(url)
     if not filepath:
-        reportError('Image not found:  \n"%s"' % filepath, trigger=(3,4))
+        reportError('Image not found:  \n"%s"' % filepath, trigger=(3,5))
         return None
     else:
         try:
@@ -728,7 +728,7 @@ def loadImage(url):
         except TypeError:
             img = None
         if img is None:
-            reportError('Error when reading image:\n"%s"' % filepath, trigger=(2,3))
+            reportError('Error when reading image:\n"%s"' % filepath)
             return None
         img.name = bpy.path.clean_name(os.path.splitext(os.path.basename(filepath))[0])
         LS.images[url] = img
@@ -922,7 +922,7 @@ def setColorSpace(img, alts):
         except TypeError:
             pass
     msg = "No matching color space in %s" % alts
-    reportError(msg, trigger=(2,3))
+    reportError(msg)
 
 def setColorSpaceSRGB(img):
     setColorSpace(img, ["sRGB", "sRGB OETF", "srgb_texture"])

@@ -1017,13 +1017,11 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         MP.setupMorphPaths(False)
         self.errors = {}
         self.allfaceshapes = {}
-        self.meshes.reverse()
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
         self.useMuteDrivers = False
         self.loadMorphType(context, self.useHead, "Head", "Face")
-        self.meshes = self.meshes[-1:]
         self.loadMorphType(context, self.useUnits, "Units", "Face")
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face")
         self.loadMorphType(context, self.useVisemes, "Visemes", "Face")

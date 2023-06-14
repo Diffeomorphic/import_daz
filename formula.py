@@ -161,7 +161,7 @@ class Formula:
                     reportError("Found bone in other rig: %s/%s (%s)" % (rig2.name, pb.name, output), trigger=(3,5))
                     return False
                 else:
-                    reportError("Missing bone (evalFormula): %s" % output, trigger=(2,4))
+                    reportError("Missing bone (evalFormula): %s" % output)
                     return False
 
         path,idx,default = self.parseChannel(channel)

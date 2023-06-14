@@ -122,7 +122,7 @@ class Light(Node):
             light = bpy.data.lights.new(self.name, "AREA")
         else:
             msg = ("Unknown light type: %s" % self.type)
-            reportError(msg, trigger=(1,3))
+            reportError(msg, trigger=(1,5))
             light = bpy.data.lights.new(self.name, "SPOT")
             light.shadow_soft_size = height/2
             self.twosided = False

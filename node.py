@@ -773,7 +773,7 @@ class Node(Asset, Formula, Channels):
             if iref:
                 return iref
         msg = ("Node: Did not find instance %s in %s" % (instRef(ref), caller))
-        reportError(msg, caller.instances, trigger=(2,4))
+        reportError(msg, caller.instances)
         return None
 
 

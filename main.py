@@ -228,7 +228,7 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
             self.loadDazFile(filepath, context)
         if LS.render:
             LS.render.build(context)
-        if GS.useDump:
+        if GS.useDump or GS.verbosity >= 4:
             from .error import dumpErrors
             dumpErrors(filepath)
         if len(filepaths) > 1:

@@ -158,7 +158,7 @@ def safeOpen(filepath, rw, encoding="utf-8-sig"):
                "%s          " % filepath)
         if mustOpen:
             raise DazError(msg)
-        reportError(msg, warnPaths=True, trigger=(2,4))
+        reportError(msg, warnPaths=True)
     return fp
 
 #-------------------------------------------------------------

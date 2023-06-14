@@ -288,10 +288,10 @@ class LoadMorph(DriverUser):
                 elif self.treatHD == 'ACTIVE':
                     skey = self.getActiveShape(asset)
                 else:
-                    reportError(msg, trigger=(2,4))
+                    reportError(msg)
                     return None,False
             else:
-                reportError(msg, trigger=(2,4))
+                reportError(msg)
                 if asset.vertex_count in VertexCounts.keys():
                     LS.targetCharacter = VertexCounts[asset.vertex_count]
                 return None,False
@@ -474,7 +474,7 @@ class LoadMorph(DriverUser):
             else:
                 self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, None, True)
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
-                reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset), trigger=(2,3))
+                reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset))
             if visible:
                 if self.useProtected:
                     setProtected(self.rig, raw, True)
@@ -1185,7 +1185,7 @@ class LoadMorph(DriverUser):
         elif channel == "scale":
             return ["SCALE_X", "SCALE_Y", "SCALE_Z"]
         else:
-            reportError("Unknown channel: %s" % channel, trigger=(2,3))
+            reportError("Unknown channel: %s" % channel)
             return None
 
     #------------------------------------------------------------------

@@ -162,8 +162,6 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)
             GS.toScene(context.scene)
-            if GS.caseSensitivePaths and GS.rescanOnChange:
-                GS.scanAbsPaths()
         else:
             print("No root paths found in", self.filepath)
         return {'PASS_THROUGH'}
@@ -191,8 +189,6 @@ class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
                 pg = scn.DazContentDirs.add()
                 pg.name = folder
         GS.fromScene(scn)
-        #if GS.caseSensitivePaths and GS.rescanOnChange and change:
-        #    GS.scanAbsPaths()
         GS.saveDefaults()
         return {'PASS_THROUGH'}
 
@@ -275,7 +271,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUnitScale")
         box.prop(scn, "DazVerbosity")
         box.prop(scn, "DazCaseSensitivePaths")
-        box.prop(scn, "DazRescanOnChange")
 
         box = col.box()
         box.label(text = "Debugging")
@@ -445,8 +440,14 @@ def register():
 
     bpy.types.Scene.DazVerbosity = IntProperty(
         name = "Verbosity",
-        description = "Controls the number of warning messages when loading files",
-        min=1, max = 5)
+        min=1, max = 5,
+        description = (
+            "Controls the number of warning messages when loading files\n" +
+            "1: Silent mode.\n" +
+            "2: Default. Warn about some problems.\n" +
+            "3: Warn about all problems.\n" +
+            "4: Warn about all problems and save a log file.\n" +
+            "5: Like verbosity = 4 and trigger a Python error."))
 
     bpy.types.Scene.DazStrengthAdjusters = EnumProperty(
         items = [('NONE', "None", "Never add adjusters"),
@@ -712,10 +713,6 @@ def register():
     bpy.types.Scene.DazCaseSensitivePaths = BoolProperty(
         name = "Case-Sensitive Paths",
         description = "Convert URLs to lowercase. Works best on Windows")
-
-    bpy.types.Scene.DazRescanOnChange = BoolProperty(
-        name = "Rescan Paths On Change",
-        description = "Rescan the database with absolute paths if the root directories have changed.\nOnly for case-sensitive paths")
 
     bpy.types.Scene.DazUseInstancing = BoolProperty(
         name = "Use Instancing",

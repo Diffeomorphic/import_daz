@@ -86,7 +86,7 @@ def addItem(pgs):
         raise DazError("Loading morphs caused a type error:\n%s\nMorphs can not be loaded to linked characters." % err)
 
 
-def reportError(msg, instances={}, warnPaths=False, trigger=(2,3), force=False):
+def reportError(msg, instances={}, warnPaths=False, trigger=(2,5), force=False):
     global theUseDumpErrors
     trigWarning,trigError = trigger
     if GS.verbosity >= trigWarning or force:

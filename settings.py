@@ -73,7 +73,6 @@ class GlobalSettings:
         self.useDazOrientation = False
         self.useSubtractRestpose = True
         self.caseSensitivePaths = (platform not in ['win32', 'darwin'])
-        self.rescanOnChange = True
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -144,7 +143,6 @@ class GlobalSettings:
         "DazScanPath" : "scanPath",
         "DazAbsScanPath" : "absScanPath",
         "DazCaseSensitivePaths" : "caseSensitivePaths",
-        "DazRescanOnChange" : "rescanOnChange",
 
         # Debugging
         "DazDump" : "useDump",
@@ -256,12 +254,6 @@ class GlobalSettings:
         self.scanPath = self.fixPath(getattr(scn, "DazScanPath"))
         self.absScanPath = self.fixPath(getattr(scn, "DazAbsScanPath"))
         self.eliminateDuplicates()
-        if (differ(contentOld, self.contentDirs) or
-            differ(mdlOld, self.mdlDirs) or
-            differ(cloudOld, self.cloudDirs) or
-            caseOld != self.caseSensitivePaths):
-            if self.caseSensitivePaths and self.rescanOnChange:
-                self.scanAbsPaths()
 
 
     def toggleMorphArmatures(self, scn):
@@ -542,7 +534,7 @@ class GlobalSettings:
                         "\nFolders:")
                 for folder in folders:
                     msg += "\n  %s" % folder
-            reportError(msg, trigger=(3,4))
+            reportError(msg, trigger=(3,5))
         return ""
 
 

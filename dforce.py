@@ -73,7 +73,7 @@ class DynSim(DForce):
         elif isinstance(self.instance, GeoNode):
             geonode = self.instance
         else:
-            reportError("Bug DynSim %s" % self.instance, trigger=(2,3))
+            reportError("Bug DynSim %s" % self.instance)
             return
         ob = geonode.rna
         if ob and ob.type == 'MESH':
@@ -98,7 +98,7 @@ class DynSim(DForce):
                     vgrp.add([vn], w, 'REPLACE')
             else:
                 msg = ("Influence weight mismatch: %d != %d" % (vcount, nverts))
-                reportError(msg, trigger=(2,4))
+                reportError(msg)
         if not useInflu:
             influ = dict([(vn,1.0) for vn in range(nverts)])
 

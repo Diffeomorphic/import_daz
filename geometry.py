@@ -62,7 +62,7 @@ class GeoNode(Node, SimNode):
                 print("Geometry is None: %s %s" % (self.id, etype))
         else:
             msg = ("Not a geometry:\n%s" % geo)
-            reportError(msg, trigger=(2,4))
+            reportError(msg)
         self.data = geo
         self.figure = figure
         self.figureInst = None
@@ -578,7 +578,7 @@ def addMultires(context, ob, hdob, strict):
     msg = ('Cannot unsubdivide "%s"' % hdob.name)
     if strict:
         raise DazError(msg)
-    reportError(msg, trigger=(2,4))
+    reportError(msg)
     hdob.modifiers.remove(mod)
     LS.hdFailures.append(hdob.name)
     return 'HIGHDEF'
@@ -900,7 +900,7 @@ class Geometry(Asset, Channels):
                            "Inst: %s\n" % inst.name +
                            "Shell: %s\n" % inst.shellNode.name +
                            "UV set: %s\n" % uv)
-                    reportError(msg, trigger=(2,4))
+                    reportError(msg)
 
 
     def addShells(self, inst, shinst):
@@ -1071,7 +1071,7 @@ class Geometry(Asset, Channels):
                 self.polygon_material_groups = asset.polygon_material_groups
             else:
                 msg = ("BUG: Sourcing:\n%  %s\n  %s" % (self, asset))
-                reportError(msg, trigger=(2,3))
+                reportError(msg)
 
         me = self.rna = bpy.data.meshes.new(geonode.getName())
 
@@ -1112,7 +1112,7 @@ class Geometry(Asset, Channels):
                    "Geometry: '%s'\n" % self.name +
                    "\# DAZ faces: %d\n" % len(faces) +
                    "\# Blender polygons: %d\n" % len(me.polygons))
-            reportError(msg, trigger=(2,3))
+            reportError(msg)
 
         if len(me.polygons) > 0:
             for fn,mn in enumerate(self.material_indices):
@@ -1258,7 +1258,7 @@ class Geometry(Asset, Channels):
                     mats = list(geonode.materials.keys())
                     mats.sort()
                     print("Existing materials:\n  %s" % mats)
-                reportError("Material \"%s\" not found in geometry %s" % (mname, geonode.name), trigger=(2,4))
+                reportError("Material \"%s\" not found in geometry %s" % (mname, geonode.name))
                 return False
         return hasShells
 
@@ -1266,7 +1266,7 @@ class Geometry(Asset, Channels):
     def addMaterial(self, dmat, mnum, me, geonode):
         if dmat.rna is None:
             msg = ("Material without rna:\n  %s\n  %s\n  %s" % (dmat, geonode, self))
-            reportError(msg, trigger=(2,3))
+            reportError(msg)
         me.materials.append(dmat.rna)
         self.dmaterials.append(dmat)
         dmat.correctBumpArea(self, me)
@@ -1286,7 +1286,7 @@ class Geometry(Asset, Channels):
 
     def validateMesh(self, me):
         if me.validate():
-            reportError('Invalid mesh "%s". Correcting.' % me.name, trigger=(2,5))
+            reportError('Invalid mesh "%s". Correcting.' % me.name)
             LS.invalidMeshes.append(me.name)
 
     def getBumpArea(self, me, bumps):
@@ -1310,7 +1310,7 @@ class Geometry(Asset, Channels):
                 uv_set.build(context, me, self, setActive)
             else:
                 msg = ("Incompatible UV sets:\n  %s\n  %s" % (me.name, uv_set.name))
-                reportError(msg, trigger=(2,3))
+                reportError(msg)
 
 
     def buildRigidity(self, ob):

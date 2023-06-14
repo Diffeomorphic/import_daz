@@ -89,7 +89,7 @@ def loadJson(filepath, mustOpen=False, silent=False):
             string = None
     if string is None:
         if not silent:
-            reportError('Could not open file\n"%s"\n' % (filepath), trigger=(1,2))
+            reportError('Could not open file\n"%s"\n' % (filepath), trigger=(1,5))
         return {}
 
     struct,msg,jsonerr = loadFromString(string)
@@ -98,7 +98,7 @@ def loadJson(filepath, mustOpen=False, silent=False):
         if string:
             struct,msg,jsonerr = loadFromString(string)
     if msg and not silent:
-        reportError(msg, trigger=(1,2))
+        reportError(msg, trigger=(1,5))
     return struct
 
 

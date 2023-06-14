@@ -455,7 +455,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 msg = ("Not yet implemented: Rigidity rotmode = %s\n" % rotmode +
                        "Object: %s\n" % ob.name +
                        "Shapekey: %s\n" % skey.name)
-                reportError(msg, trigger=(3,4))
+                reportError(msg, trigger=(3,5))
 
             scalemodes = rgroup.scale_modes.split(" ")
 

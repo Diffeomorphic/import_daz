@@ -137,7 +137,7 @@ class Modifier(Asset):
             return ob, rig, geonode
         else:
             msg = ("Expected geonode or figure but got:\n  %s" % inst)
-            reportError(msg, trigger=(2,3))
+            reportError(msg)
             return None,None,None
 
 #-------------------------------------------------------------
@@ -174,7 +174,7 @@ class DForm(Modifier):
             vcount = self.dform["influence_vertex_count"]
             if vcount != len(ob.data.vertices) and vcount >= 0:
                 msg = "Dform vertex count mismatch %d != %d" % (vcount, len(ob.data.vertices))
-                reportError(msg, trigger=(2,3))
+                reportError(msg)
             vgrp = ob.vertex_groups.new(name = "Dform " + self.name)
             for vn,w in self.dform["influence_weights"]["values"]:
                 vgrp.add([vn], w, 'REPLACE')
@@ -410,7 +410,7 @@ class SkinBinding(Modifier):
         if not (isinstance(self.parent, Geometry) or
                 isinstance(self.parent, Figure)):
             msg = "Parent of %s\nshould be a geometry or a figure but is\n%s" % (self, self.parent)
-            reportError(msg, trigger=(2,3))
+            reportError(msg)
 
 
     def parseSource(self, url):
@@ -423,7 +423,7 @@ class SkinBinding(Modifier):
                        "Skin: %s\n" % self +
                        "Asset: %s\n" % asset +
                        "Parent: %s\n" % self.parent)
-                reportError(msg, trigger=(2,3))
+                reportError(msg)
             if asset != self.parent:
                 self.parent.source = asset
                 asset.sourcing = self.parent
@@ -723,7 +723,7 @@ class Morph(FormulaAsset):
             elif "geometry" in parent.nodes.keys():
                 geonode = parent.nodes["geometry"]
             else:
-                reportError("Missing geonode %s in\n %s" %(ref, parent), trigger=(2,4))
+                reportError("Missing geonode %s in\n %s" %(ref, parent))
                 return
         elif isinstance(parent, GeoNode):
             geonode = parent
@@ -774,7 +774,7 @@ class Morph(FormulaAsset):
 
         if inst is None:
             msg = ("Morph not found:\n  %s\n  %s\n  %s" % (self.id, self.parent, asset))
-            reportError(msg, trigger=(2,3))
+            reportError(msg)
             return None
 
         for geonode in geonodes:
