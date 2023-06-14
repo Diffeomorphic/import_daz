@@ -1814,16 +1814,18 @@ class LayeredGroup(CyclesGroup):
 
     def mixColor(self, map, texnode, outnode):
         def setFactor(alpha, node, slot, mix):
-            if alpha != 1:
+            if slot not in node.outputs.keys():
+                slot = 0
+            if alpha > 0 and alpha < 1:
                 node = self.multiplyScalarTex(alpha, node, slot, 3)
                 self.links.new(node.outputs[0], mix.inputs[0])
-            elif slot in node.outputs.keys():
-                self.links.new(node.outputs[slot], mix.inputs[0])
             else:
-                self.links.new(node.outputs[0], mix.inputs[0])
+                self.links.new(node.outputs[slot], mix.inputs[0])
 
         if map.ismask:
             self.mask = outnode
+        elif map.transparency == 0:
+            self.outnode = outnode
         else:
             BlendType = {
                 "multiply" : 'MULTIPLY',
