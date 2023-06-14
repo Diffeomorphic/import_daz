@@ -826,7 +826,9 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
         if not self.hasTheseMorphs(rig):
             return
         for item in rig.DazBaked.values():
-            self.layout.prop(rig, propRef(item.name), text=item.text)
+            value = rig.get(item.name)
+            if value is not None:
+                self.layout.label(text = "%s : %.3f" % (item.text, value))
 
 #------------------------------------------------------------------------
 #    Custom panels
