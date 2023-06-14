@@ -470,7 +470,6 @@ class MorphLoader(LoadMorph):
     category = ""
     adjuster = None
     bodypart = None
-    useSingleMesh = True
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
@@ -492,12 +491,12 @@ class MorphLoader(LoadMorph):
     def getFingeredRigMeshes(self, context):
         from .finger import getFingeredCharacters
         ob = context.object
-        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh)
+        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh, useGenesis=True)
         if ob.type == 'MESH':
             self.meshes = [ob]
         elif self.rig and not self.meshes:
             self.meshes = getMeshChildren(self.rig)
-        if self.useSingleMesh and len(self.meshes) > 1:
+        if len(self.meshes) > 1:
             self.meshes = self.meshes[0:1]
 
     def getMorphSet(self, asset):
@@ -805,7 +804,6 @@ class DAZ_OT_ImportHead(DazOperator, StandardMorphSelector, StandardMorphLoader,
     bl_description = "Import selected head morphs"
     bl_options = {'UNDO'}
 
-    useSingleMesh = False
     morphset = "Head"
     bodypart = "Face"
 
@@ -1000,7 +998,6 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     bl_options = {'UNDO', 'PRESET'}
 
     morphset = "Standard"
-    useSingleMesh = False
 
     def draw(self, context):
         MorphTypeOptions.draw(self, context)
@@ -1027,7 +1024,6 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.useMuteDrivers = False
         self.loadMorphType(context, self.useHead, "Head", "Face")
         self.meshes = self.meshes[-1:]
-        self.useSingleMesh = True
         self.loadMorphType(context, self.useUnits, "Units", "Face")
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face")
         self.loadMorphType(context, self.useVisemes, "Visemes", "Face")
@@ -1382,7 +1378,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         from .finger import getFingeredCharacters
         if ob.type != 'MESH':
             return
-        _,_,self.chars,self.modded = getFingeredCharacters(ob, False, verbose=False)
+        _,_,self.chars,self.modded = getFingeredCharacters(ob, False, useGenesis=True, verbose=False)
         self.char = self.chars[0]
         self.meshes = [ob]
         self.mesh = ob

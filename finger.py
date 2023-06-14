@@ -134,7 +134,7 @@ def getFingerPrint(ob):
         return ("%d-%d-%d" % (len(ob.data.vertices), len(ob.data.edges), len(ob.data.polygons)))
 
 
-def getFingeredCharacters(ob, useOrig, verbose=True):
+def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
     def getSingleChar(rig, char):
         if isinstance(char, tuple) and rig:
             url = rig.DazUrl.rsplit("#",1)[-1]
@@ -147,10 +147,12 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
                 return char[0]
         return char
 
+    meshes = []
+    chars = []
     modded = False
     char = ""
     if ob is None:
-        return None,[],[],False
+        return None,meshes,chars,False
     elif ob.type == 'MESH':
         finger = getFingerPrint(ob)
         if finger in FingerPrints.keys():
@@ -161,12 +163,15 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
         else:
             if verbose:
                 print("Did not find fingerprint", finger)
-        chars = [getSingleChar(ob.parent, char)]
+        char = getSingleChar(ob.parent, char)
+        if not useGenesis or char.startswith("Genesis"):
+            chars = [char]
+            meshes = [ob]
         if ob.parent and ob.parent.type == 'ARMATURE':
             rig = ob.parent
         else:
             rig = None
-        return rig,[ob],chars,modded
+        return rig,meshes,chars,modded
 
     elif ob.type == 'ARMATURE':
         def addChar(finger, mesh):
@@ -176,13 +181,11 @@ def getFingeredCharacters(ob, useOrig, verbose=True):
                 if char.startswith("Genesis"):
                     meshes0.append(child)
                     chars0.append(char)
-                else:
+                elif not useGenesis:
                     meshes.append(child)
                     chars.append(char)
             return char
 
-        meshes = []
-        chars = []
         meshes0 = []
         chars0 = []
         modded = False

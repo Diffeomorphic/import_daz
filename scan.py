@@ -356,7 +356,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
 
 def getCharData(context, error):
     from .finger import getFingeredCharacters
-    rig,meshes,chars,modded = getFingeredCharacters(context.object, GS.useModifiedMesh)
+    rig,meshes,chars,modded = getFingeredCharacters(context.object, GS.useModifiedMesh, useGenesis=True)
     if not (meshes and
             meshes[0].DazUrl and
             chars[0].startswith("Genesis")):
