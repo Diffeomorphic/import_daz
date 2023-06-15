@@ -313,6 +313,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.label(text = "Morphs")
         box.prop(scn, "DazStrengthAdjusters")
         box.prop(scn, "DazMakeHiddenSliders")
+        box.prop(scn, "DazBakedMorphs")
         box.prop(scn, "DazSliderLimits")
         box.prop(scn, "DazFinalLimits")
         box.prop(scn, "DazMorphMultiplier")
@@ -515,6 +516,10 @@ def register():
     bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
         name = "Make Hidden Sliders",
         description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
+
+    bpy.types.Scene.DazBakedMorphs = BoolProperty(
+        name = "Baked Morphs",
+        description = "Allow that baked morphs are imported,\nand display them in the Morphs panel")
 
     bpy.types.Scene.DazShowHiddenObjects = BoolProperty(
         name = "Show Hidden Objects",

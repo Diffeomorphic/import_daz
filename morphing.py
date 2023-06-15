@@ -548,7 +548,7 @@ class MorphLoader(LoadMorph):
         else:
             raise DazError("No morphs selected")
         self.loadAllMorphs(namepaths)
-        self.finishLoading(namepaths, context, t1)
+        return self.finishLoading(namepaths, context, t1)
 
 
     def finishLoading(self, namepaths, context, t1):
@@ -557,24 +557,28 @@ class MorphLoader(LoadMorph):
         t2 = perf_counter()
         folder = os.path.dirname(namepaths[0][0])
         print("Folder %s loaded in %.3f seconds" % (folder, t2-t1))
+        msg = ""
         if LS.targetCharacter:
-            msg = "Morphs made for %s" % LS.targetCharacter
-        elif self.errors and GS.verbosity >= 3:
-            msg = "Morphs loaded with errors."
+            msg = "Morphs made for %s.\n" % LS.targetCharacter
+        if self.bakedSkipped:
+            msg += "\nThe following morphs were not imported because baked in the dbz.\nThey have to be zero in DAZ Studio when exporting,\nor turn on Baked Morphs in the global settings:\n  "
+            msg += ", ".join(list(self.bakedSkipped.values()))
+        if self.errors and GS.verbosity >= 3:
+            msg += "\nMorphs loaded with errors."
             for err,props in self.errors.items():
                 msg += "\n%s:    \n" % err
                 for prop in props:
                     msg += "    %s\n" % prop
         elif self.erc and GS.verbosity >= 3:
-            msg = "Found morphs that want to\nchange the rest pose"
-        else:
-            msg = None
+            msg += "\nFound morphs that want to\nchange the rest pose."
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
         if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
             self.transferToFaceMeshes(context)
         if msg:
+            if msg[0] == "\n":
+                msg = msg[1:]
             print(msg)
         return msg
 
@@ -690,7 +694,9 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
         self.meshes.reverse()
         t1 = perf_counter()
         namepaths = self.loadStandardMorphs()
-        self.finishLoading(namepaths, context, t1)
+        msg = self.finishLoading(namepaths, context, t1)
+        if msg:
+            raise DazError(msg, warning=True)
 
 
     def loadStandardMorphs(self):
@@ -1255,8 +1261,10 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
                 self.loadAllMorphs(namepaths)
 
         self.addPropDrivers()
-        self.finishLoading(namepaths, context, t1)
+        msg = self.finishLoading(namepaths, context, t1)
         updateScrollbars(context)
+        if msg:
+            raise DazError(msg, warning=True)
 
 
     def getNamePaths(self):
@@ -1432,7 +1440,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
             self.category = cat
             self.hideable = hide
             namepaths = [(name, unquote(ref), bodypart) for ref,name,bodypart in infos]
-            self.getAllMorphs(namepaths, context)
+            msg = self.getAllMorphs(namepaths, context)
 
 
     def findPropGroup(self, prop):
@@ -1520,7 +1528,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         for cat,namepaths in self.namepaths.items():
             print("Load %s corrections" % cat)
             self.setCategory(cat)
-            self.getAllMorphs(namepaths, context)
+            msg = self.getAllMorphs(namepaths, context)
         updateScrollbars(context)
 
 
@@ -1609,7 +1617,7 @@ class ScanFinder:
         if self.namepaths:
             self.mesh = ob
             self.meshes = [ob]
-            self.getAllMorphs(list(self.namepaths.values()), context)
+            msg = self.getAllMorphs(list(self.namepaths.values()), context)
 
 
     def loadParentMorphs(self, context, ob):
@@ -1618,7 +1626,7 @@ class ScanFinder:
             if parent:
                 self.mesh = parent
                 self.meshes = [parent]
-                self.getAllMorphs(list(self.parpaths.values()), context)
+                msg = self.getAllMorphs(list(self.parpaths.values()), context)
 
 #-------------------------------------------------------------
 #   Import DAZ Favorites

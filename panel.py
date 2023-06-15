@@ -821,6 +821,9 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
     ftype = "DazBaked"
     uilist = "DAZ_UL_Baked"
 
+    def hasTheseMorphs(self, rig):
+        return (rig.DazBaked and GS.useBakedMorphs)
+
     def draw(self, context):
         rig = self.getCurrentRig(context)
         if not self.hasTheseMorphs(rig):

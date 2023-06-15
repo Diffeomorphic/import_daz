@@ -65,6 +65,7 @@ class LoadMorph(DriverUser):
         self.char = None
         self.chars = []
         self.modded = False
+        self.baked = []
         self.mult = []
         self.mults = {}
         self.adjustable = {}
@@ -108,7 +109,10 @@ class LoadMorph(DriverUser):
         self.restdrivers = {}
         self.iked = []
         self.origRestored = []
+        self.bakedSkipped = {}
         self.initAmt()
+        if self.rig:
+            self.baked = [key.lower() for key in self.rig.DazBaked.keys()]
         self.adjustable = {}
         self.origMorphset = self.morphset
 
@@ -152,8 +156,14 @@ class LoadMorph(DriverUser):
         for name,path,bodypart in namepaths:
             showProgress(idx, npaths)
             idx += 1
-            char = self.makeSingleMorph(name, path, bodypart, force)
-            printName(char, name)
+            lname = name.lower()
+            if lname in self.baked and not GS.useBakedMorphs:
+                if lname not in self.bakedSkipped.keys():
+                    self.bakedSkipped[lname] = name
+                    printName(" B", name)
+            else:
+                char = self.makeSingleMorph(name, path, bodypart, force)
+                printName(char, name)
 
     #------------------------------------------------------------------
     #   First pass: collect data
@@ -713,7 +723,7 @@ class LoadMorph(DriverUser):
                 someMissing = True
                 path = GS.getAbsPath(ref)
                 if path:
-                    name = ref.rsplit("/",1)[-1]
+                    name = os.path.splitext(ref.rsplit("/",1)[-1])[0]
                     data = (name, path, self.bodypart)
                     morphset = self.getPathMorphSet(path, morphfiles)
                     if morphset:

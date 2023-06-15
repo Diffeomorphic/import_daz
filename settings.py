@@ -60,6 +60,7 @@ class GlobalSettings:
         self.zup = True
         self.unflipped = False
         self.useMakeHiddenSliders = False
+        self.useBakedMorphs = False
         self.showHiddenObjects = False
         self.useIgnoreHiddenObjects = False
 
@@ -148,6 +149,7 @@ class GlobalSettings:
         "DazDump" : "useDump",
         "DazZup" : "zup",
         "DazMakeHiddenSliders" : "useMakeHiddenSliders",
+        "DazBakedMorphs" : "useBakedMorphs",
         "DazShowHiddenObjects" : "showHiddenObjects",
         "DazIgnoreHiddenObjects" : "useIgnoreHiddenObjects",
         "DazShellMethod" : "shellMethod",
