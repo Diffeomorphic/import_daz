@@ -429,11 +429,12 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
 class MorphSuffix:
     onMorphSuffix : EnumProperty(
         items = [('NONE', "None", "Don't add morph suffixes"),
+                 ('DUPLICATE', "Duplicates", "Add suffixes to duplicate meshes,\ni.e. if the rig has several meshes with the same topology"),
                  ('GEOGRAFT', "Geografts", "Add suffixes to geograft morphs based on the geograft name"),
                  ('ALL', "All", "Add custom morph suffixes to all morphs")],
         name = "Use Suffix",
         description = "Add morph suffixes",
-        default = 'GEOGRAFT')
+        default = 'DUPLICATE')
 
     morphSuffix : StringProperty(
         name = "Suffix",
@@ -445,15 +446,22 @@ class MorphSuffix:
         if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
 
+
     def setupUniqueSuffix(self, path):
         if self.onMorphSuffix == 'NONE' or self.mesh is None:
             self.uniqueSuffix = ""
+        elif self.onMorphSuffix == 'DUPLICATE':
+            if self.mesh in self.duplicates:
+                self.uniqueSuffix = ":%s" % self.mesh.name
+            else:
+                self.uniqueSuffix = ""
         elif self.onMorphSuffix == 'GEOGRAFT' and self.mesh.data.DazGraftGroup:
             self.uniqueSuffix = ":%s" % self.mesh.name
         elif self.onMorphSuffix == 'ALL':
             self.uniqueSuffix = ":%s" % self.morphSuffix
         else:
             self.uniqueSuffix = ""
+
 
     def getUniqueName(self, string):
         if self.uniqueSuffix:
@@ -537,6 +545,7 @@ class MorphLoader(LoadMorph):
             ob = self.rig
         else:
             raise DazError("Neither mesh nor rig selected")
+        self.setupIdenticalMeshes()
         LS.forMorphLoad(ob)
         if not self.usePropDrivers:
             self.rig = None
@@ -549,6 +558,22 @@ class MorphLoader(LoadMorph):
             raise DazError("No morphs selected")
         self.loadAllMorphs(namepaths)
         return self.finishLoading(namepaths, context, t1)
+
+
+    def setupIdenticalMeshes(self):
+        self.duplicates = []
+        if self.rig is None:
+            return
+        from .finger import getFingerPrint
+        fingers = {}
+        for ob in getMeshChildren(self.rig):
+            key = getFingerPrint(ob)
+            if key not in fingers.keys():
+                fingers[key] = []
+            fingers[key].append(ob)
+        for key,meshes in fingers.items():
+            if len(meshes) > 1:
+                self.duplicates += meshes
 
 
     def finishLoading(self, namepaths, context, t1):
@@ -1242,6 +1267,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         namepaths0 = self.getNamePaths()
         mesh0 = self.meshes[0]
         char0 = mesh0.DazMesh
+        self.setupIdenticalMeshes()
         meshlist = list(enumerate(self.meshes))
         meshlist.reverse()
         for n,mesh in meshlist:

@@ -65,6 +65,7 @@ class LoadMorph(DriverUser):
         self.char = None
         self.chars = []
         self.modded = False
+        self.duplicates = []
         self.baked = []
         self.mult = []
         self.mults = {}
