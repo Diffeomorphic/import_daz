@@ -1385,7 +1385,9 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
         if ob.type != 'MESH':
             return
         _,_,self.chars,self.modded = getFingeredCharacters(ob, False, useGenesis=True, verbose=False)
-        self.char = self.chars[0]
+        self.char = None
+        if self.chars:
+            self.char = self.chars[0]
         self.meshes = [ob]
         self.mesh = ob
         if self.ignoreUrl:
