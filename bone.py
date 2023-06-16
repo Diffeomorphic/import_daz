@@ -385,9 +385,11 @@ class BoneInstance(Instance):
 
     def setFlip(self):
         for n in range(3):
-            if self.name.startswith(BD.UnFlips[n]):
+            if (self.name.startswith(BD.UnFlips[n]) or
+                self.name in BD.UnFlipsSharp[n]):
                 self.flipped[n] = False
-            elif self.name.startswith(BD.Flips[n]):
+            elif (self.name.startswith(BD.Flips[n]) or
+                self.name in BD.FlipsSharp[n]):
                 self.flipped[n] = True
 
 

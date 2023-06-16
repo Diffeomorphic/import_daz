@@ -126,8 +126,16 @@ class BoneData:
         ),
         ("l_forearmtwist1", "l_forearmtwist2",
          "l_thightwist1", "l_thightwist2",
-         "r_thightwist1", "r_thightwist2"),
-        ("l_upperarmtwist1", "l_upperarmtwist2"),
+         "r_thightwist1", "r_thightwist2",
+         ),
+        ("l_upperarmtwist1", "l_upperarmtwist2",
+        ),
+        ]
+
+    UnFlipsSharp = [
+        [],
+        ["Eyes", "l_Eye", "r_Eye",],
+        [],
         ]
 
     Flips = [
@@ -138,6 +146,12 @@ class BoneData:
         ),
         "___",
         "___"
+        ]
+
+    FlipsSharp = [
+        [],
+        [],
+        [],
         ]
 
     #-------------------------------------------------------------
