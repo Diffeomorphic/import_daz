@@ -170,6 +170,19 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
 #------------------------------------------------------------------------
 
 def createSubCollection(coll, cname):
+    def getSubColl(coll, cname):
+        for child in coll.children:
+            if child.name == cname:
+                return child
+        for child in coll.children:
+            subcoll = getSubColl(child, cname)
+            if subcoll:
+                return subcoll
+        return None
+
+    subcoll = getSubColl(coll, cname)
+    if subcoll:
+        return subcoll
     subcoll = bpy.data.collections.new(cname)
     coll.children.link(subcoll)
     return subcoll
@@ -491,28 +504,33 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
         hum = context.object
         rig = getRigFromContext(context)
         clothes = [ob for ob in getSelectedMeshes(context) if ob != hum]
-        if len(clothes) != 1:
-            raise DazError("Exactly two meshes must be selected")
-        clo = clothes[0]
-        if not clo.DazVisibilityDrivers:
-            raise DazError("Create visibility drivers first")
-        props = self.getSelectedProps()
-        prop = getHidePropName(clo.name)
-        if prop not in rig.keys():
-            rig[prop] = 1.0
+        if len(clothes) < 1:
+            raise DazError("At least two meshes must be selected")
+        props = []
+        for clo in clothes:
+            if not clo.DazVisibilityDrivers:
+                raise DazError("Create visibility drivers first")
+            prop = getHidePropName(clo.name)
+            if prop not in rig.keys():
+                rig[prop] = 1.0
+            props.append(prop)
+        snames = self.getSelectedProps()
         for skey in hum.data.shape_keys.key_blocks:
-            if skey.name in props:
+            if skey.name in snames:
                 skey.driver_remove("value")
                 fcu = skey.driver_add("value")
                 fcu.driver.type = 'SCRIPTED'
-                addDriverVar(fcu, "a", propRef(prop), rig)
                 final = finalProp(skey.name)
+                letter = "a"
+                expr = ""
+                for prop in props:
+                    addDriverVar(fcu, letter, propRef(prop), rig)
+                    expr = expr + "*(1-%s)" % letter
+                    letter = chr(ord(letter)+1)
                 if rig and final in rig.data.keys():
-                    addDriverVar(fcu, "b", propRef(final), rig.data)
-                    fcu.driver.expression = "1-a+b"
-                else:
-                    fcu.driver.expression = "1-a"
-
+                    addDriverVar(fcu, letter, propRef(final), rig.data)
+                    expr = expr + "+%s" % letter
+                fcu.driver.expression = expr[1:]
 
 #----------------------------------------------------------
 #   Initialize
