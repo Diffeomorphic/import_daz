@@ -429,12 +429,12 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
 class MorphSuffix:
     onMorphSuffix : EnumProperty(
         items = [('NONE', "None", "Don't add morph suffixes"),
-                 ('DUPLICATE', "Duplicates", "Add suffixes to duplicate meshes,\ni.e. if the rig has several meshes with the same topology"),
+                 ('SMART', "Smart", "Add suffixes to duplicate meshes,\ni.e. if the rig has several meshes with the same topology"),
                  ('GEOGRAFT', "Geografts", "Add suffixes to geograft morphs based on the geograft name"),
                  ('ALL', "All", "Add custom morph suffixes to all morphs")],
         name = "Use Suffix",
         description = "Add morph suffixes",
-        default = 'DUPLICATE')
+        default = 'SMART')
 
     morphSuffix : StringProperty(
         name = "Suffix",
@@ -447,10 +447,10 @@ class MorphSuffix:
             self.layout.prop(self, "morphSuffix")
 
 
-    def setupUniqueSuffix(self, path):
+    def setupUniqueSuffix(self):
         if self.onMorphSuffix == 'NONE' or self.mesh is None:
             self.uniqueSuffix = ""
-        elif self.onMorphSuffix == 'DUPLICATE':
+        elif self.onMorphSuffix == 'SMART':
             if self.mesh in self.duplicates:
                 self.uniqueSuffix = ":%s" % self.mesh.name
             else:
@@ -545,7 +545,7 @@ class MorphLoader(LoadMorph):
             ob = self.rig
         else:
             raise DazError("Neither mesh nor rig selected")
-        self.setupIdenticalMeshes()
+        self.setupDuplicates()
         LS.forMorphLoad(ob)
         if not self.usePropDrivers:
             self.rig = None
@@ -560,7 +560,7 @@ class MorphLoader(LoadMorph):
         return self.finishLoading(namepaths, context, t1)
 
 
-    def setupIdenticalMeshes(self):
+    def setupDuplicates(self):
         self.duplicates = []
         if self.rig is None:
             return
@@ -1267,7 +1267,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         namepaths0 = self.getNamePaths()
         mesh0 = self.meshes[0]
         char0 = mesh0.DazMesh
-        self.setupIdenticalMeshes()
+        self.setupDuplicates()
         meshlist = list(enumerate(self.meshes))
         meshlist.reverse()
         for n,mesh in meshlist:
@@ -1573,10 +1573,6 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
 class ScanFinder:
     useSearchAlias = False
 
-    def setupUniqueSuffix(self, path):
-        self.uniqueSuffix = ""
-
-
     def setupScanned(self, ob):
         from .fileutils import AF
         name = ob.DazUrl.rsplit("#", 1)[-1]
@@ -1660,13 +1656,18 @@ class ScanFinder:
 #   Import DAZ Favorites
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportDazFavoMorphs(DazOperator, ScanFinder, CustomMorphLoader, IsMeshArmature):
+class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
+    def draw(self, context):
+        MorphSuffix.draw(self, context)
+
     def run(self, context):
         self.rig = getRigFromContext(context)
+        self.setupDuplicates()
+        print("DUP", self.duplicates)
         if self.rig:
             for ob in getMeshChildren(self.rig):
                 self.addFavoMorphs(ob, context)

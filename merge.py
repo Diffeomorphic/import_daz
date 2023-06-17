@@ -254,6 +254,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.initUvNames()
         subDLevels = 0
         for aob in anatomies:
+            self.renameUvLayers(aob)
             self.storeUvName(aob)
             if self.useFixTiles:
                 from .udim import TileFixer
@@ -582,6 +583,27 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     tree.links.new(uvmap.outputs["UV"], socket)
 
 
+    def renameUvLayers(self, aob):
+        def replaceUvMaps(tree):
+            for node in tree.nodes:
+                if node.type in ['NORMAL_MAP', 'UVMAP']:
+                    if node.uv_map in renamed.keys():
+                        node.uv_map = renamed[node.uv_map]
+                elif node.type == 'GROUP':
+                    replaceUvMaps(node.node_tree)
+
+        renamed = {}
+        for uvlayer in aob.data.uv_layers:
+            if uvlayer.name.startswith(("Base", "Default")):
+                newname = "%s:%s" % (uvlayer.name, aob.name)
+                renamed[uvlayer.name] = newname
+                uvlayer.name = newname
+        if renamed:
+            for mat in aob.data.materials:
+                if mat:
+                    replaceUvMaps(mat.node_tree)
+
+
     def copyBodyPart(self, aob, cob):
         apgs = aob.data.DazBodyPart
         cpgs = cob.data.DazBodyPart
@@ -847,7 +869,10 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
         for keepData,mergeData in zip(keepLayer.data, mergeLayer.data):
             if (keepData.uv.length > 1e-6 and
                 mergeData.uv.length > 1e-6):
-                raise DazError("UV layers overlap")
+                msg = 'UV layers overlap:\n"%s", "%s"' % (keepLayer.name, mergeLayer.name)
+                reportError(msg)
+                return True
+        return False
 
     def replaceUVMapNodes(me, mergeLayer):
         from .tree import hideAllBut
@@ -880,7 +905,8 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
     if not keepLayer.active_render:
         raise DazError("Only the active render layer may be the layer to keep")
     if not allowOverlap:
-        checkLayersOverlap(keepLayer, mergeLayer)
+        if checkLayersOverlap(keepLayer, mergeLayer):
+            return
     replaceUVMapNodes(me, mergeLayer)
     for n,data in enumerate(mergeLayer.data):
         if data.uv.length > 1e-6:

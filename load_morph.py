@@ -178,7 +178,7 @@ class LoadMorph(DriverUser):
         asset = self.currentAsset = parseAssetFile(struct)
         fileref = self.getFileRef(filepath)
         self.loaded.append(fileref)
-        self.setupUniqueSuffix(filepath)
+        self.setupUniqueSuffix()
         if not force:
             if self.alreadyLoaded(asset):
                 return " ."

@@ -504,6 +504,8 @@ class GlobalSettings:
         if len(path) > 2 and path[0] == "/" and os.path.exists(path[1:]):
             # Absolute path
             return path[1:]
+        elif os.path.exists(path):
+            return path
         elif self.caseSensitivePaths:
             lfolder = os.path.dirname(path).lower()
             lfile = os.path.basename(path).lower()
