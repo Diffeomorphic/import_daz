@@ -35,6 +35,7 @@ from .utils import *
 from .error import *
 from .driver import DriverUser
 from .fileutils import AF
+from .geometry import getActiveUvLayer
 
 #-------------------------------------------------------------
 #   Merge UV Layers
@@ -75,7 +76,6 @@ class UVLayerMerger:
             return default
 
         from .udim import isShellNode
-        from .geometry import getActiveUvLayer
         active = getActiveUvLayer(ob)
         uvmaps = {}
         shellmaps = {}
@@ -109,11 +109,7 @@ class UVLayerMerger:
 
 
     def mergeUvs(self, ob):
-        active = None
-        for uvlayer in ob.data.uv_layers:
-            if uvlayer.active_render:
-                active = uvlayer
-                break
+        active = getActiveUvLayer(ob)
 
         if not self.useMergeUvs:
             actname = ""
@@ -128,16 +124,19 @@ class UVLayerMerger:
             return
 
         idxs = []
+        keepIdx = 0
         for idx,uvlayer in enumerate(ob.data.uv_layers):
-            if uvlayer.name in self.auvnames and uvlayer != active:
+            if uvlayer == active:
+                keepIdx = idx
+            elif uvlayer.name in self.auvnames:
                 idxs.append(idx)
         if not idxs:
             print("No UV layers to merge")
             return
         idxs.reverse()
         for idx in idxs:
-            mergeUvLayers(ob.data, 0, idx, self.allowOverlap)
-        uvname0 = ob.data.uv_layers[0].name
+            mergeUvLayers(ob.data, keepIdx, idx, self.allowOverlap)
+        uvname0 = ob.data.uv_layers[keepIdx].name
         print("UV layers %s merged to %s" % (list(self.auvnames), uvname0))
 
 #-------------------------------------------------------------
@@ -253,6 +252,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         self.initUvNames()
         subDLevels = 0
+        self.setActiveUvLayer(cob)
         for aob in anatomies:
             self.renameUvLayers(aob)
             self.storeUvName(aob)
@@ -269,7 +269,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                         subDLevels = mod.render_levels
 
         # Select graft group for each anatomy
-        cuvname = self.getUvName(cob.data)
+        cuvname = getActiveUvLayer(cob).name
         drivers = {}
         cvgrps = dict([(vgrp.index, vgrp.name) for vgrp in cob.vertex_groups])
         for aob in anatomies:
@@ -475,7 +475,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 if amod.type in ['SUBSURF']:
                     amod.show_viewport = amod.show_render = False
                     aob.modifiers.remove(amod)
-        cuvname = self.getUvName(cob.data)
+        cuvname = getActiveUvLayer(cob).name
         self.replaceTexco(cob, cuvname, True)
 
         if self.useNewMesh:
@@ -554,7 +554,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def replaceTexco(self, ob, cuvname, force):
-        uvname = self.getUvName(ob.data)
+        uvname = getActiveUvLayer(ob).name
         if (self.useMergeUvs or uvname == cuvname) and not force:
             return
         for mat in ob.data.materials:
@@ -581,6 +581,35 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 socket = node.inputs.get("Vector")
                 if socket and not socket.links:
                     tree.links.new(uvmap.outputs["UV"], socket)
+
+
+    def setActiveUvLayer(self, ob):
+        def findUvMap(node):
+            socket = node.inputs.get("Vector")
+            if socket and socket.links:
+                return findUvMap(socket.links[0].from_node)
+            return node
+
+        uvmaps = {}
+        for mat in ob.data.materials:
+            if mat is None:
+                continue
+            for node in mat.node_tree.nodes:
+                if node.type == 'TEX_IMAGE':
+                    uvmap = findUvMap(node)
+                    if uvmap is None or uvmap.type == 'TEX_COORD':
+                        return
+                    elif uvmap.type == 'UVMAP':
+                        uvmaps[uvmap.uv_map] = True
+        if uvmaps:
+            uvlayer = None
+            for uvmap in uvmaps.keys():
+                if uvlayer is None or uvmap.startswith("Base"):
+                    uvlayer = ob.data.uv_layers.get(uvmap)
+            if uvlayer:
+                uvlayer.active_render = True
+                uvlayer.active = True
+                print('New active UV layer: "%s"' % uvlayer.name)
 
 
     def renameUvLayers(self, aob):
@@ -680,13 +709,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     me.uv_layers.remove(uvtex)
                 except RuntimeError:
                     print("Cannot remove texture layer '%s'" % uvtex.name)
-
-
-    def getUvName(self, me):
-        for uvtex in me.uv_layers:
-            if uvtex.active_render:
-                return uvtex.name
-        return None
 
 
     def removeMultires(self, ob):
