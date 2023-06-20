@@ -350,7 +350,7 @@ class Proxifier(DriverUser):
 
 
     def buildNewMesh(self, newfaces):
-        from .geometry import makeNewUvloop
+        from .geometry import makeNewUvLayer
 
         free = [[fn] for fn,t in self.dirty.items() if not t]
         newfaces += free
@@ -410,7 +410,7 @@ class Proxifier(DriverUser):
 
         me = bpy.data.meshes.new("New")
         me.from_pydata(self.verts, [], faces)
-        uvloop = makeNewUvloop(me, "Uvloop", True)
+        uvloop = makeNewUvLayer(me, "Uvloop", True)
         n = 0
         for uvface in uvfaces:
             for uv in uvface:

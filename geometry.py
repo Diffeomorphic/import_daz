@@ -263,15 +263,15 @@ class GeoNode(Node, SimNode):
             uvname = ob.data.uv_layers[0].name
         else:
             uvname = "UV Layer"
-        uvloop = makeNewUvloop(hdob.data, uvname, True)
-        if len(uvs) > len(uvloop.data):
-            print("%s has too many UVs: %d > %d" % (hdob.name, len(uvs), len(uvloop.data)))
+        uvlayer = makeNewUvLayer(hdob.data, uvname, True)
+        if len(uvs) > len(uvlayer.data):
+            print("%s has too many UVs: %d > %d" % (hdob.name, len(uvs), len(uvlayer.data)))
             LS.hdUvMismatch.append(hdob.name)
             return
         m = 0
         for f in uvfaces:
             for vn in f:
-                uvloop.data[m].uv = uvs[vn]
+                uvlayer.data[m].uv = uvs[vn]
                 m += 1
 
 
@@ -642,7 +642,7 @@ def copyUvLayers(ob, hdob):
         if uvlayer.name in hdob.data.uv_layers.keys():
             print('UV layer "%s" already exists' % uvlayer.name)
             continue
-        hdlayer = makeNewUvloop(hdob.data, uvlayer.name, False)
+        hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
         copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
 
 #-------------------------------------------------------------
@@ -1395,7 +1395,7 @@ class Uvset(Asset):
         self.uvs = []
         self.polyverts = []
         self.material = None
-        self.built = []
+        self.built = {}
 
 
     def __repr__(self):
@@ -1455,7 +1455,12 @@ class Uvset(Asset):
 
 
     def build(self, context, me, geo, setActive):
-        if self.name is None or me in self.built:
+        if self.name is None:
+            return
+        uvlayer = self.built.get(geo.name)
+        if uvlayer:
+            if setActive:
+                uvlayer.active = uvlayer.active_render = True
             return
         if len(me.polygons) == 0:
             print("NO UVs", me.name, self.name)
@@ -1463,7 +1468,7 @@ class Uvset(Asset):
 
         polyverts = self.getPolyVerts(me)
         self.checkPolyverts(me, polyverts, False)
-        uvloop = makeNewUvloop(me, self.getLabel(), setActive)
+        uvlayer = makeNewUvLayer(me, self.getLabel(), setActive)
 
         m = 0
         vnmax = len(self.uvs)
@@ -1475,7 +1480,7 @@ class Uvset(Asset):
                 vn = polyverts[f.index][n]
                 if vn < vnmax:
                     uv = self.uvs[vn]
-                    uvloop.data[m].uv = uv
+                    uvlayer.data[m].uv = uv
                     ucoords[mn].append(uv[0])
                 m += 1
 
@@ -1490,7 +1495,7 @@ class Uvset(Asset):
                     if GS.verbosity > 2:
                         print("UV coordinate difference %f - %f > 1" % (umax, umin))
                 self.fixUdims(context, mn, udim, geo)
-        self.built.append(me)
+        self.built[geo.name] = uvlayer
 
 
     def fixUdims(self, context, mn, udim, geo):
@@ -1505,14 +1510,14 @@ class Uvset(Asset):
             print("Material \"%s\" not found" % key)
 
 
-def makeNewUvloop(me, name, setActive):
+def makeNewUvLayer(me, name, setActive):
     uvtex = me.uv_layers.new()
     uvtex.name = name
-    uvloop = me.uv_layers[-1]
-    uvloop.active_render = setActive
+    uvlayer = me.uv_layers[-1]
+    uvlayer.active_render = setActive
     if setActive:
         me.uv_layers.active_index = len(me.uv_layers) - 1
-    return uvloop
+    return uvlayer
 
 #-------------------------------------------------------------
 #   Prune Uv textures
@@ -1566,7 +1571,7 @@ class DAZ_OT_PruneUvMaps(DazOperator, IsMesh):
 
 def addUdimsToUVs(ob, restore, udim, vdim):
     mat = ob.data.materials[0]
-    for uvloop in ob.data.uv_layers:
+    for uvlayer in ob.data.uv_layers:
         m = 0
         for fn,f in enumerate(ob.data.polygons):
             mat = ob.data.materials[f.material_index]
@@ -1577,8 +1582,8 @@ def addUdimsToUVs(ob, restore, udim, vdim):
                 ushift = udim - mat.DazUDim
                 vshift = vdim - mat.DazVDim
             for n in range(len(f.vertices)):
-                uvloop.data[m].uv[0] += ushift
-                uvloop.data[m].uv[1] += vshift
+                uvlayer.data[m].uv[0] += ushift
+                uvlayer.data[m].uv[1] += vshift
                 m += 1
 
 
@@ -1670,7 +1675,7 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
         for uvset in asset.uvs:
             polyverts = uvset.getPolyVerts(me)
             uvset.checkPolyverts(me, polyverts, True)
-            uvloop = makeNewUvloop(me, uvset.getLabel(), False)
+            uvlayer = makeNewUvLayer(me, uvset.getLabel(), False)
             vnmax = len(uvset.uvs)
             m = 0
             for fn,f in enumerate(me.polygons):
@@ -1678,7 +1683,7 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
                     vn = polyverts[f.index][n]
                     if vn < vnmax:
                         uv = uvset.uvs[vn]
-                        uvloop.data[m].uv = uv
+                        uvlayer.data[m].uv = uv
                     m += 1
 
 #-------------------------------------------------------------
@@ -1702,16 +1707,16 @@ class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter):
     def run(self, context):
         from .load_json import saveJson
         ob = context.object
-        uvloop = ob.data.uv_layers.active
+        uvlayer = ob.data.uv_layers.active
         struct, filepath = self.makeDazStruct("uv_set", self.filepath)
         uvstruct = OrderedDict()
-        uvstruct["id"] = uvloop.name
-        uvstruct["name"] = uvloop.name
-        uvstruct["label"] = uvloop.name
+        uvstruct["id"] = uvlayer.name
+        uvstruct["name"] = uvlayer.name
+        uvstruct["label"] = uvlayer.name
         uvstruct["vertex_count"] = len(ob.data.vertices)
         uvs = OrderedDict()
-        uvs["count"] = len(uvloop.data)
-        uvs["values"] = [list(uv.uv) for uv in uvloop.data]
+        uvs["count"] = len(uvlayer.data)
+        uvs["values"] = [list(uv.uv) for uv in uvlayer.data]
         uvstruct["uvs"] = uvs
         polys = []
         m = 0
@@ -1722,8 +1727,8 @@ class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter):
         uvstruct["polygon_vertex_indices"] = polys
         struct["uv_set_library"] = [uvstruct]
         scene = {"uvs": [
-            { "id" : "%s-1" % uvloop.name,
-              "url" : "#%s" % normalizeRef(uvloop.name) }
+            { "id" : "%s-1" % uvlayer.name,
+              "url" : "#%s" % normalizeRef(uvlayer.name) }
             ]
         }
         struct["scene"] = scene
