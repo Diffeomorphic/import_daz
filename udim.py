@@ -112,9 +112,9 @@ class TileFixer:
                         else:
                             trg = bpy.path.abspath(newpath)
                             img = self.changeImage(src, trg, None)
-                            node.label = "%s_%d" % (base, mattile)
                             images[src] = img
                         node.image = img
+                        node.label = "%s_%d" % (base, mattile)
 
 
     def udimsFromTextures(self, ob, cob):
@@ -122,20 +122,19 @@ class TileFixer:
         dims = {}
         print("Shift materials:")
         for mn,mat in enumerate(ob.data.materials):
-            udim = vdim = 0
-            found = False
-            if True and mat and mat.node_tree:
-                for node in mat.node_tree.nodes:
-                    if node.type == 'TEX_IMAGE' and node.image:
-                        tile,base = getTileBase(node.image.name)
-                        if tile:
-                            udim = (int(tile) - 1001) % 10
-                            vdim = (int(tile) - 1001) // 10
-                            found = True
+            key = stripName(mat.name)
+            if key in tiles.keys():
+                dims[mn] = tiles[key]
+            else:
+                udim = vdim = 0
+                if mat and mat.node_tree:
+                    for node in mat.node_tree.nodes:
+                        if node.type == 'TEX_IMAGE' and node.image:
+                            tile,base = getTileBase(node.image.name)
+                            if tile:
+                                udim = (int(tile) - 1001) % 10
+                                vdim = (int(tile) - 1001) // 10
                 dims[mn] = [udim, vdim]
-            if not found:
-                key = stripName(mat.name)
-                dims[mn] = tiles.get(key, [0,0])
             print('    "%s": %s,' % (mat.name, dims[mn]))
 
         for uvloop in ob.data.uv_layers:
@@ -228,7 +227,7 @@ class DAZ_OT_TilesFromTextures(DazOperator, TileFixer, IsMesh):
 #   Fix Texture Tiles
 #----------------------------------------------------------
 
-class DAZ_OT_FixTextureTiles(DazOperator, TileFixer):
+class DAZ_OT_FixTextureTiles(DazOperator, LocalTextureSaver, TileFixer):
     bl_idname = "daz.fix_texture_tiles"
     bl_label = "Fix Texture Tiles"
     bl_description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names"
@@ -236,8 +235,7 @@ class DAZ_OT_FixTextureTiles(DazOperator, TileFixer):
 
     @classmethod
     def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and ob.active_material)
+        return (context.object and context.object.DazLocalTextures)
 
     def run(self, context):
         ob = context.object
