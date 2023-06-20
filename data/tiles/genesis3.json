@@ -1,0 +1,18 @@
+{
+  "name" : "Genesis 3",
+  "tiles" : {
+    Eyelashes: (5, 0),
+    Fingernails: (3, 0),
+    Toenails: (2, 0),
+    Cornea: (0, 0),
+    Pupils: (6, 0),
+    Face: (0, 0),
+    Teeth: (4, 0),
+    Sclera: (6, 0),
+    Legs: (2, 0),
+    Torso: (1, 0),
+    EyeMoisture: (7, 0),
+    Mouth: (4, 0),
+    Arms: (3, 0)
+  }
+}

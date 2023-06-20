@@ -1,0 +1,19 @@
+{
+  "name" : "Genesis 8",
+  "tiles" : {
+    Torso: (1, 0),
+    Face: (0, 0),
+    Lips: (0, 0),
+    Teeth: (4, 0),
+    Legs: (2, 0),
+    EyeSocket: (0, 0),
+    Arms: (3, 0),
+    Pupils: (6, 0),
+    EyeMoisture: (0, 0),
+    Fingernails: (3, 0),
+    Cornea: (6, 0),
+    Irises: (6, 0),
+    Sclera: (6, 0),
+    Toenails: (2, 0),
+  }
+}
