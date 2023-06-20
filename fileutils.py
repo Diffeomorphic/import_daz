@@ -49,6 +49,7 @@ class AnimationFolders:
         self.lowpoly = {}
         self.altmorphs = {}
         self.scanned = {}
+        self.tiles = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",

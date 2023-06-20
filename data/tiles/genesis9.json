@@ -1,10 +1,13 @@
 {
   "name" : "Genesis 9",
   "tiles" : {
-    Fingernails: (4, 0),
-    Legs: (2, 0),
-    Head: (0, 0),
-    Arms: (3, 0),
-    Body: (1, 0)
+    "Fingernails": [4, 0],
+    "Toenails": [4, 0],
+    "Legs": [2, 0],
+    "Mouth Cavity": [0, 0],
+    "Arms": [3, 0],
+    "Head": [0, 0],
+    "Body": [1, 0],
+    "Genitalia": [1, 0]
   }
 }

@@ -117,20 +117,26 @@ class TileFixer:
                         node.image = img
 
 
-    def udimsFromTextures(self, ob):
+    def udimsFromTextures(self, ob, cob):
+        tiles = self.getKnownTiles(cob)
         dims = {}
         print("Shift materials:")
         for mn,mat in enumerate(ob.data.materials):
             udim = vdim = 0
-            if mat.node_tree:
+            found = False
+            if True and mat and mat.node_tree:
                 for node in mat.node_tree.nodes:
                     if node.type == 'TEX_IMAGE' and node.image:
                         tile,base = getTileBase(node.image.name)
                         if tile:
                             udim = (int(tile) - 1001) % 10
                             vdim = (int(tile) - 1001) // 10
-            dims[mn] = (udim, vdim)
-            print("  %s: (%d, %d)" % (mat.name, udim, vdim))
+                            found = True
+                dims[mn] = [udim, vdim]
+            if not found:
+                key = stripName(mat.name)
+                dims[mn] = tiles.get(key, [0,0])
+            print('    "%s": %s,' % (mat.name, dims[mn]))
 
         for uvloop in ob.data.uv_layers:
             m = 0
@@ -141,6 +147,23 @@ class TileFixer:
                     uvs[0] += udim - int(uvs[0])
                     uvs[1] += vdim - int(uvs[1])
                     m += 1
+
+
+    def getKnownTiles(self, ob):
+        from .fileutils import AF
+        char = ob.DazMesh.split("-",1)[0].lower()
+        if char == "genesis8":
+            for mat in ob.data.materials:
+                if mat.name.startswith("Body"):
+                    char = "genesis81"
+                    break
+                elif mat.name.startswith("Torso"):
+                    break
+        entry = AF.loadEntry(char, "tiles", strict=False)
+        if entry:
+            return entry["tiles"]
+        else:
+            return {}
 
 
     def addSkipZeroUvs(self, mat):
@@ -194,8 +217,9 @@ class DAZ_OT_TilesFromTextures(DazOperator, TileFixer, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        cob = context.object
         for ob in getSelectedMeshes(context):
-            self.udimsFromTextures(ob)
+            self.udimsFromTextures(ob, cob)
 
 #----------------------------------------------------------
 #   Fix Texture Tiles
