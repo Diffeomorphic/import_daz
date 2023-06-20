@@ -99,7 +99,7 @@ class TileFixer:
                     file = os.path.basename(path)
                     fname,ext = os.path.splitext(file)
                     tile,base = getTileBase(fname)
-                    if not tile:
+                    if not base:
                         continue
                     if tile != mattile:
                         if inform:
@@ -204,7 +204,10 @@ def getTileBase(string):
     if tile:
         return tile, base
     words = string.split("-")
-    return getTileBaseFromList(words)
+    tile,base = getTileBaseFromList(words)
+    if tile:
+        return tile, base
+    return None, string
 
 #----------------------------------------------------------
 #   Tiles From Textures
@@ -267,7 +270,10 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     useFixTextures : BoolProperty(
         name = "Fix Textures",
-        description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names",
+        description = (
+            "Copy textures to the right directory and correct tile numbers.\n" +
+            "For incorrect Genesis 8.1 material names,\n" +
+            "or for textures without tile info"),
         default = True)
 
     useMergeMaterials : BoolProperty(
@@ -374,7 +380,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             if bpy.app.version >= (3, 1, 0):
                 path2,ext2 = os.path.splitext(img.filepath)
                 tile,base = getTileBase(path2)
-                if tile:
+                if base:
                     img.filepath = "%s_<UDIM>%s" % (base,ext2)
             tile0 = img.tiles[0]
             for udim,mname in udims.items():
