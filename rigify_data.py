@@ -274,16 +274,20 @@ class RigifyData:
             self.Genesis38Spine["head"] = (self.head, neck)
             self.Genesis9Spine["head"] = (self.head, neck)
 
-        self.Genesis38Mergers = {
+        self.Genesis38Mergers1 = {
             "lShldrBend" : ["lShldrTwist"],
             "lForearmBend" : ["lForearmTwist"],
             "lThighBend" : ["lThighTwist"],
-            #"lFoot" : ["lMetatarsals"],
             "rShldrBend" : ["rShldrTwist"],
             "rForearmBend" : ["rForearmTwist"],
             "rThighBend" : ["rThighTwist"],
-            #"rFoot" : ["rMetatarsals"],
         }
+
+        self.Genesis38Mergers2 = {
+            "lFoot" : ["lMetatarsals"],
+            "rFoot" : ["rMetatarsals"],
+        }
+
         self.Genesis9Mergers = {
             "l_upperarm" : ["l_upperarmtwist1", "l_upperarmtwist2"],
             "l_forearm" : ["l_forearmtwist1", "l_forearmtwist2"],
