@@ -259,7 +259,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if self.useFixTiles:
                 from .udim import TileFixer
                 fixer = TileFixer()
-                fixer.udimsFromTextures(aob, cob)
+                fixer.udimsFromGraft(aob, cob)
             self.copyBodyPart(aob, cob)
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':

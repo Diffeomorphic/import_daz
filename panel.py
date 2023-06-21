@@ -294,7 +294,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.collapse_udims")
         self.layout.operator("daz.restore_udims")
-        self.layout.operator("daz.tiles_from_textures")
+        self.layout.operator("daz.tiles_from_geograft")
         self.layout.operator("daz.fix_texture_tiles")
         self.layout.separator()
         if bpy.app.version >= (3,1,0):

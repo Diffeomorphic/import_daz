@@ -42,35 +42,39 @@ class TileFixer:
     def findMatTiles(self, ob):
         ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
         vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
-        uvloop = ob.data.uv_layers.active
+        uvlayer = ob.data.uv_layers.active
         m = 0
         for fn,f in enumerate(ob.data.polygons):
             mn = f.material_index
             ucoord = ucoords[mn]
             vcoord = vcoords[mn]
             for n in range(len(f.vertices)):
-                uv = uvloop.data[m].uv
+                uv = uvlayer.data[m].uv
                 ucoord.append(uv[0])
                 vcoord.append(uv[1])
                 m += 1
         self.mattiles = {}
         for mn,mat in enumerate(ob.data.materials):
-            ucoord = ucoords[mn]
-            vcoord = vcoords[mn]
-            if ucoord and vcoord:
-                umax = max(ucoord)
-                umin = min(ucoord)
-                vmax = max(vcoord)
-                vmin = min(vcoord)
-                udim = math.floor((umax+umin)/2)
-                vdim = math.floor((vmax+vmin)/2)
-                tile = 1001 + udim + 10*vdim
+            if mat:
+                tile,udim,vdim = self.getTile(ucoords[mn], vcoords[mn])
                 mat.DazUDim = udim
                 mat.DazVDim = vdim
                 self.mattiles[mn] = tile
         print("Tile assignment:")
         for mn,mat in enumerate(ob.data.materials):
             print("  %s: %d" % (mat.name, self.mattiles[mn]))
+
+
+    def getTile(self, ucoord, vcoord):
+        umax = max(ucoord)
+        umin = min(ucoord)
+        vmax = max(vcoord)
+        vmin = min(vcoord)
+        udim = math.floor((umax+umin)/2)
+        vdim = math.floor((vmax+vmin)/2)
+        tile = 1001 + udim + 10*vdim
+        return tile, udim, vdim
+
 
     def fixTextures(self, ob, matname):
         def getFolder(ob, matname):
@@ -117,37 +121,26 @@ class TileFixer:
                         node.label = "%s_%d" % (base, mattile)
 
 
-    def udimsFromTextures(self, ob, cob):
-        tiles = self.getKnownTiles(cob)
-        dims = {}
-        print("Shift materials:")
-        for mn,mat in enumerate(ob.data.materials):
-            udim = vdim = 0
-            found = False
-            if mat:
-                for node in mat.node_tree.nodes:
-                    if node.type == 'TEX_IMAGE' and node.image:
-                        tile,base = getTileBase(node.image.name)
-                        if tile:
-                            udim = (int(tile) - 1001) % 10
-                            vdim = (int(tile) - 1001) // 10
-                            found = True
-            dims[mn] = [udim, vdim]
-            if not found:
-                key = stripName(mat.name)
-                if key in tiles.keys():
-                    dims[mn] = tiles[key]
-            print('    "%s": %s,' % (mat.name, dims[mn]))
-
-        for uvloop in ob.data.uv_layers:
-            m = 0
-            for fn,f in enumerate(ob.data.polygons):
-                udim,vdim = dims[f.material_index]
-                for _ in f.vertices:
-                    uvs = uvloop.data[m].uv
-                    uvs[0] += udim - int(uvs[0])
-                    uvs[1] += vdim - int(uvs[1])
-                    m += 1
+    def udimsFromGraft(self, aob, cob):
+        cuvlayer = cob.data.uv_layers.active
+        ucoord = []
+        vcoord = []
+        fmasked = [face.a for face in aob.data.DazMaskGroup]
+        m = 0
+        for fn,f in enumerate(cob.data.polygons):
+            if fn in fmasked:
+                for j,vn in enumerate(f.vertices):
+                    uv = cuvlayer.data[m+j].uv
+                    ucoord.append(uv[0])
+                    vcoord.append(uv[1])
+            m += len(f.vertices)
+        tile,udim,vdim = self.getTile(ucoord, vcoord)
+        print("Move %s UVs to tile %d" % (aob.name, tile))
+        auvlayer = aob.data.uv_layers.active
+        for data in auvlayer.data:
+            uvs = data.uv
+            uvs[0] += udim - int(uvs[0])
+            uvs[1] += vdim - int(uvs[1])
 
 
     def getKnownTiles(self, ob):
@@ -211,19 +204,20 @@ def getTileBase(string):
     return None, string
 
 #----------------------------------------------------------
-#   Tiles From Textures
+#   Tiles From Graft
 #----------------------------------------------------------
 
-class DAZ_OT_TilesFromTextures(DazOperator, TileFixer, IsMesh):
-    bl_idname = "daz.tiles_from_textures"
-    bl_label = "Tiles From Textures"
-    bl_description = "Move UV coordinates to tiles based on texture names"
+class DAZ_OT_TilesFromGraft(DazOperator, TileFixer, IsMesh):
+    bl_idname = "daz.tiles_from_geograft"
+    bl_label = "Tiles From Geograft"
+    bl_description = "Move geograft UV coordinates to same tile as body UVs"
     bl_options = {'UNDO'}
 
     def run(self, context):
         cob = context.object
-        for ob in getSelectedMeshes(context):
-            self.udimsFromTextures(ob, cob)
+        for aob in getSelectedMeshes(context):
+            if aob != cob:
+                self.udimsFromGraft(aob, cob)
 
 #----------------------------------------------------------
 #   Fix Texture Tiles
@@ -546,12 +540,12 @@ def shiftUVs(mat, mn, ob, udim, vdim):
     print(" Shift", mat.name, mn, ushift, vshift)
     if ushift == 0 and vshift == 0:
         return
-    uvloop = ob.data.uv_layers.active
+    uvlayer = ob.data.uv_layers.active
     m = 0
     for fn,f in enumerate(ob.data.polygons):
         if f.material_index == mn:
             for n in range(len(f.vertices)):
-                uv = uvloop.data[m].uv
+                uv = uvlayer.data[m].uv
                 uv[0] += ushift
                 uv[1] += vshift
                 m += 1
@@ -601,7 +595,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_TilesFromTextures,
+    DAZ_OT_TilesFromGraft,
     DAZ_OT_FixTextureTiles,
     DAZ_OT_MakeUdimMaterials,
     DAZ_OT_SetUDims,
