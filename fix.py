@@ -288,7 +288,7 @@ class Fixer(DriverUser):
 
     def saveDazRig(self, context):
         def dazName(string):
-            return (string + "_DAZ")
+            return "%s_DAZ" % string
 
         def findChildrenRecursive(ob, objects):
             objects.append(ob)
@@ -315,7 +315,7 @@ class Fixer(DriverUser):
             ob.name = dazName(baseName(ob.name))
             if ob.data:
                 ob.data.name = dazName(baseName(ob.data.name))
-            if ob.name == dazName(baseName(rig.name)):
+            if ob.type == 'ARMATURE' and ob != rig:
                 nrig = ob
             unlinkAll(ob, False)
             coll.objects.link(ob)

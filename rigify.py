@@ -252,8 +252,8 @@ class MetaMaker(RigifyCommon):
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.deleteBendTwistDrvBones(rig)
-            mergeBones(rig, RF.Genesis38Mergers1, RF.Genesis38Parents, context)
-            mergeBones(rig, RF.Genesis38Mergers2, {}, context)
+            mergers = dict((list(RF.Genesis38Mergers1.items()) + list(RF.Genesis38Mergers2.items())))
+            mergeBones(rig, mergers, RF.Genesis38Parents, context)
             if dazrig:
                 pass
             elif meta["DazReuseBendTwists"]:
