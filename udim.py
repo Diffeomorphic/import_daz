@@ -122,19 +122,21 @@ class TileFixer:
         dims = {}
         print("Shift materials:")
         for mn,mat in enumerate(ob.data.materials):
-            key = stripName(mat.name)
-            if key in tiles.keys():
-                dims[mn] = tiles[key]
-            else:
-                udim = vdim = 0
-                if mat and mat.node_tree:
-                    for node in mat.node_tree.nodes:
-                        if node.type == 'TEX_IMAGE' and node.image:
-                            tile,base = getTileBase(node.image.name)
-                            if tile:
-                                udim = (int(tile) - 1001) % 10
-                                vdim = (int(tile) - 1001) // 10
-                dims[mn] = [udim, vdim]
+            udim = vdim = 0
+            found = False
+            if mat:
+                for node in mat.node_tree.nodes:
+                    if node.type == 'TEX_IMAGE' and node.image:
+                        tile,base = getTileBase(node.image.name)
+                        if tile:
+                            udim = (int(tile) - 1001) % 10
+                            vdim = (int(tile) - 1001) // 10
+                            found = True
+            dims[mn] = [udim, vdim]
+            if not found:
+                key = stripName(mat.name)
+                if key in tiles.keys():
+                    dims[mn] = tiles[key]
             print('    "%s": %s,' % (mat.name, dims[mn]))
 
         for uvloop in ob.data.uv_layers:
