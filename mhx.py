@@ -553,6 +553,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
         if self.useKeepRig:
+            print("NN", nrig, rig)
             self.tieBones(nrig, rig)
             self.setRigName(rig, nrig, "MHX")
 

@@ -1781,11 +1781,7 @@ class CyclesTree(Tree):
             texnode.outputs["Color"].default_value[0:3] = color
             return None, texnode, texnode, False
 
-        img = asset.buildImage(colorSpace)
-        if img:
-            imgname = img.name
-        else:
-            imgname = asset.getName()
+        img,imgname = asset.buildImage(colorSpace)
         texnode,outnode = self.getTexNode(imgname, colorSpace)
         if texnode:
             isnew = False

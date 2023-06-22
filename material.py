@@ -730,7 +730,8 @@ def loadImage(url):
         if img is None:
             reportError('Error when reading image:\n"%s"' % filepath)
             return None
-        img.name = bpy.path.clean_name(os.path.splitext(os.path.basename(filepath))[0])
+        imname = os.path.splitext(os.path.basename(filepath))[0]
+        img.name = unquote(bpy.path.clean_name(imname))
         LS.images[url] = img
     return img
 
@@ -803,18 +804,32 @@ class Texture:
 
 
     def buildImage(self, colorSpace):
+        def fixUdimChar(imgname):
+            fname,ext = os.path.splitext(imgname)
+            if len(fname) > 5 and fname[-4:].isdigit() and fname[-5] in ["-", " "]:
+                tile = int(fname[-4:])
+                if tile > 1000 and tile < 1100:
+                    imgname = "%s_%s%s" % (fname[:-5], fname[-4:], ext)
+            return imgname
+
         if self.image:
-            return self.image
+            return self.image, self.image.name
         elif self.map.url:
             self.image = self.map.build()
         elif self.map.image:
             self.image = self.map.image
-        if self.image:
+        if self.image is None:
+            imgname = fixUdimChar(unquote(self.getName()))
+            return None, imgname
+        else:
+            imgname = fixUdimChar(self.image.name)
+            if imgname != self.image.name:
+                self.image.name = imgname
             if colorSpace == "LINEAR":
                 setColorSpaceLinear(self.image)
             else:
                 setColorSpaceSRGB(self.image)
-        return self.image
+            return self.image, self.image.name
 
 
     def hasMapping(self, map):
