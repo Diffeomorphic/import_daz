@@ -102,6 +102,7 @@ class GlobalSettings:
         self.showFinalProps = False
         self.showInTerminal = True
         self.useShapekeys = True
+        self.useMuteDrivers = False
         self.useERC = False
         self.useStripCategory = False
         self.useModifiedMesh = False
@@ -185,6 +186,7 @@ class GlobalSettings:
         "DazShowFinalProps" : "showFinalProps",
         "DazShowInTerminal" : "showInTerminal",
         "DazUseShapekeys" : "useShapekeys",
+        "DazMuteDrivers" : "useMuteDrivers",
         "DazUseERC" : "useERC",
         "DazStripCategory" : "useStripCategory",
         "DazUseModifiedMesh" : "useModifiedMesh",

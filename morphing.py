@@ -1155,6 +1155,7 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
 
 class PropDrivers:
     hasAdjusters = True
+    useMuteDrivers = True
 
     category : StringProperty(
         name = "Category",
@@ -1163,11 +1164,6 @@ class PropDrivers:
     usePropDrivers : BoolProperty(
         name = "Rig Property Drivers",
         description = "Drive shapekeys with rig properties",
-        default = True)
-
-    useMuteDrivers : BoolProperty(
-        name = "Shapekey Mute Drivers",
-        description = "Add drivers that mute shapekeys if shapekey value = 0",
         default = True)
 
     useMeshCats : BoolProperty(
@@ -1181,7 +1177,6 @@ class PropDrivers:
             self.layout.prop(self, "category")
             if self.hasAdjusters:
                 self.layout.prop(self, "useAdjusters")
-            self.layout.prop(self, "useMuteDrivers")
         else:
             self.layout.prop(self, "useMeshCats")
             if self.useMeshCats:

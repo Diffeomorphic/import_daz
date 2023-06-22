@@ -111,7 +111,6 @@ class TileFixer:
                             inform = False
                         newpath = os.path.join(folder, "%s_%d%s" % (base, mattile, ext))
                         src = bpy.path.abspath(path)
-                        words = newpath.split(".")
                         if src in images.keys():
                             img = images[src]
                         else:

@@ -322,6 +322,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazShowFinalProps")
         box.prop(scn, "DazShowInTerminal")
         box.prop(scn, "DazUseShapekeys")
+        box.prop(scn, "DazMuteDrivers")
         box.prop(scn, "DazUseERC")
         box.prop(scn, "DazStripCategory")
         box.prop(scn, "DazUseModifiedMesh")
@@ -500,6 +501,10 @@ def register():
     bpy.types.Scene.DazUseShapekeys = BoolProperty(
         name = "Shapekeys",
         description = "Load shapekeys for morphs")
+
+    bpy.types.Scene.DazMuteDrivers = BoolProperty(
+        name = "Shapekey Mute Drivers",
+        description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
 
     bpy.types.Scene.DazUseERC = BoolProperty(
         name = "ERC Morphs",

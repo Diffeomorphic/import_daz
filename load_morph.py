@@ -428,7 +428,7 @@ class LoadMorph(DriverUser):
             return fcu
 
         fcu = addDriver("value")
-        if self.useMuteDrivers:
+        if self.useMuteDrivers and GS.useMuteDrivers:
             fcu = addDriver("mute")
             fcu.driver.expression = "abs(%s)<0.0001" % fcu.driver.expression
 
