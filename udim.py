@@ -102,7 +102,7 @@ class TileFixer:
                     path = bpy.path.abspath(node.image.filepath)
                     file = os.path.basename(path)
                     fname,ext = os.path.splitext(file)
-                    tile,base = getTileBase(fname)
+                    tile,base = getTileBase(node.image.name)
                     if not base:
                         continue
                     if tile != mattile:
@@ -111,11 +111,13 @@ class TileFixer:
                             inform = False
                         newpath = os.path.join(folder, "%s_%d%s" % (base, mattile, ext))
                         src = bpy.path.abspath(path)
+                        words = newpath.split(".")
                         if src in images.keys():
                             img = images[src]
                         else:
                             trg = bpy.path.abspath(newpath)
                             img = self.changeImage(src, trg, None)
+                            img.colorspace_settings.name = node.image.colorspace_settings.name
                             images[src] = img
                         node.image = img
                         node.label = "%s_%d" % (base, mattile)
@@ -448,11 +450,11 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         return texnodes, hasmaps
 
 
-    def getBaseName(self, string, udim):
-        tile,base = getTileBase(string)
+    def getBaseName(self, path, udim):
+        tile,base = getTileBase(os.path.splitext(path)[0])
         if tile == 1001+udim:
             return base
-        return string
+        return path
 
 
     def updateImage(self, img, basename, udim):
