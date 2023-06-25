@@ -113,7 +113,10 @@ class FACSImporter(SingleFile, ActionOptions):
             raise DazError("No rig selected")
         if "MhaGaze_L" in rig.data.keys():
             rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
-        self.facstable = dict((key.lower(), value) for key,value in self.FacsTable.items())
+        self.facstable = {}
+        for facsType in ["FaceCap", "LiveLink"]:
+            for key,value in FacsTables[facsType].items():
+                self.facstable[key.lower()] = value
         self.bshapes = []
         self.bskeys = {}
         self.hlockeys = {}
@@ -156,6 +159,7 @@ class FACSImporter(SingleFile, ActionOptions):
             msg = "Missing blendshapes:     \n"
             for bshape in missing:
                 msg += ("  %s\n" % bshape)
+            print("Total %d blendshapes missing" % len(missing))
             raise DazError(msg)
 
         from time import perf_counter
@@ -306,22 +310,11 @@ class FACSImporter(SingleFile, ActionOptions):
         return None
 
 #------------------------------------------------------------------
-#   FaceCap
+#   FACS tables
 #------------------------------------------------------------------
 
-class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
-    bl_idname = "daz.import_facecap"
-    bl_label = "Import FaceCap File"
-    bl_description = "Import a text file with facecap data"
-    bl_options = {'UNDO'}
-
-    fps : FloatProperty(
-        name = "Frame Rate",
-        description = "Animation FPS in FaceCap file",
-        min = 0,
-        default = 24)
-
-    FacsTable = {
+FacsTables = {
+    "FaceCap" : {
         "browInnerUp" : "BrowInnerUp",
         "browDown_L" : "BrowDownLeft",
         "browDown_R" : "BrowDownRight",
@@ -374,12 +367,85 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
         "mouthStretch_L" : "MouthStretchLeft",
         "mouthStretch_R" : "MouthStretchRight",
         "tongueOut" : "TongueOut",
-    }
+    },
+
+    "LiveLink" : {
+        "browInnerUp" : "BrowInnerUp",
+        "browDownLeft" : "BrowDownLeft",
+        "browDownRight" : "BrowDownRight",
+        "browOuterUpLeft" : "BrowOuterUpLeft",
+        "browOuterUpRight" : "BrowOuterUpRight",
+        "eyeLookUpLeft" : "EyeLookUpLeft",
+        "eyeLookUpRight" : "EyeLookUpRight",
+        "eyeLookDownLeft" : "EyeLookDownLeft",
+        "eyeLookDownRight" : "EyeLookDownRight",
+        "eyeLookInLeft" : "EyeLookInLeft",
+        "eyeLookInRight" : "EyeLookInRight",
+        "eyeLookOutLeft" : "EyeLookOutLeft",
+        "eyeLookOutRight" : "EyeLookOutRight",
+        "eyeBlinkLeft" : "EyeBlinkLeft",
+        "eyeBlinkRight" : "EyeBlinkRight",
+        "eyeSquintLeft" : "EyeSquintLeft",
+        "eyeSquintRight" : "EyeSquintRight",
+        "eyeWideLeft" : ("EyesWideLeft", "EyeWideLeft"),
+        "eyeWideRight" : ("EyesWideRight", "EyeWideRight"),
+        "cheekPuff" : "CheekPuff",
+        "cheekSquintLeft" : "CheekSquintLeft",
+        "cheekSquintRight" : "CheekSquintRight",
+        "noseSneerLeft" : "NoseSneerLeft",
+        "noseSneerRight" : "NoseSneerRight",
+        "jawOpen" : "JawOpen",
+        "jawForward" : "JawForward",
+        "jawLeft" : "JawLeft",
+        "jawRight" : "JawRight",
+        "mouthFunnel" : "MouthFunnel",
+        "mouthPucker" : "MouthPucker",
+        "mouthLeft" : "MouthLeft",
+        "mouthRight" : "MouthRight",
+        "mouthRollUpper" : "MouthRollUpper",
+        "mouthRollLower" : "MouthRollLower",
+        "mouthShrugUpper" : "MouthShrugUpper",
+        "mouthShrugLower" : "MouthShrugLower",
+        "mouthClose" : "MouthClose",
+        "mouthSmileLeft" : "MouthSmileLeft",
+        "mouthSmileRight" : "MouthSmileRight",
+        "mouthFrownLeft" : "MouthFrownLeft",
+        "mouthFrownRight" : "MouthFrownRight",
+        "mouthDimpleLeft" : "MouthDimpleLeft",
+        "mouthDimpleRight" : "MouthDimpleRight",
+        "mouthUpperUpLeft" : "MouthUpperUpLeft",
+        "mouthUpperUpRight" : "MouthUpperUpRight",
+        "mouthLowerDownLeft" : "MouthLowerDownLeft",
+        "mouthLowerDownRight" : "MouthLowerDownRight",
+        "mouthPressLeft" : "MouthPressLeft",
+        "mouthPressRight" : "MouthPressRight",
+        "mouthStretchLeft" : "MouthStretchLeft",
+        "mouthStretchRight" : "MouthStretchRight",
+        "tongueOut" : "TongueOut",
+    },
+}
+
+#------------------------------------------------------------------
+#   FaceCap
+#------------------------------------------------------------------
+
+class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
+    bl_idname = "daz.import_facecap"
+    bl_label = "Import FaceCap File"
+    bl_description = "Import a text file with facecap data"
+    bl_options = {'UNDO'}
+
+    FacsType = "FaceCap",
+
+    fps : FloatProperty(
+        name = "Frame Rate",
+        description = "Animation FPS in FaceCap file",
+        min = 0,
+        default = 24)
 
     def draw(self, context):
         self.layout.prop(self, "fps")
         FACSImporter.draw(self, context)
-
 
     def getFrame(self, t):
         return self.fps * 1e-3 * t
@@ -413,68 +479,13 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
 #   Unreal Live Link
 #------------------------------------------------------------------
 
-LiveLinkFacsTable = {
-    "browInnerUp" : "BrowInnerUp",
-    "browDownLeft" : "BrowDownLeft",
-    "browDownRight" : "BrowDownRight",
-    "browOuterUpLeft" : "BrowOuterUpLeft",
-    "browOuterUpRight" : "BrowOuterUpRight",
-    "eyeLookUpLeft" : "EyeLookUpLeft",
-    "eyeLookUpRight" : "EyeLookUpRight",
-    "eyeLookDownLeft" : "EyeLookDownLeft",
-    "eyeLookDownRight" : "EyeLookDownRight",
-    "eyeLookInLeft" : "EyeLookInLeft",
-    "eyeLookInRight" : "EyeLookInRight",
-    "eyeLookOutLeft" : "EyeLookOutLeft",
-    "eyeLookOutRight" : "EyeLookOutRight",
-    "eyeBlinkLeft" : "EyeBlinkLeft",
-    "eyeBlinkRight" : "EyeBlinkRight",
-    "eyeSquintLeft" : "EyeSquintLeft",
-    "eyeSquintRight" : "EyeSquintRight",
-    "eyeWideLeft" : ("EyesWideLeft", "EyeWideLeft"),
-    "eyeWideRight" : ("EyesWideRight", "EyeWideRight"),
-    "cheekPuff" : "CheekPuff",
-    "cheekSquintLeft" : "CheekSquintLeft",
-    "cheekSquintRight" : "CheekSquintRight",
-    "noseSneerLeft" : "NoseSneerLeft",
-    "noseSneerRight" : "NoseSneerRight",
-    "jawOpen" : "JawOpen",
-    "jawForward" : "JawForward",
-    "jawLeft" : "JawLeft",
-    "jawRight" : "JawRight",
-    "mouthFunnel" : "MouthFunnel",
-    "mouthPucker" : "MouthPucker",
-    "mouthLeft" : "MouthLeft",
-    "mouthRight" : "MouthRight",
-    "mouthRollUpper" : "MouthRollUpper",
-    "mouthRollLower" : "MouthRollLower",
-    "mouthShrugUpper" : "MouthShrugUpper",
-    "mouthShrugLower" : "MouthShrugLower",
-    "mouthClose" : "MouthClose",
-    "mouthSmileLeft" : "MouthSmileLeft",
-    "mouthSmileRight" : "MouthSmileRight",
-    "mouthFrownLeft" : "MouthFrownLeft",
-    "mouthFrownRight" : "MouthFrownRight",
-    "mouthDimpleLeft" : "MouthDimpleLeft",
-    "mouthDimpleRight" : "MouthDimpleRight",
-    "mouthUpperUpLeft" : "MouthUpperUpLeft",
-    "mouthUpperUpRight" : "MouthUpperUpRight",
-    "mouthLowerDownLeft" : "MouthLowerDownLeft",
-    "mouthLowerDownRight" : "MouthLowerDownRight",
-    "mouthPressLeft" : "MouthPressLeft",
-    "mouthPressRight" : "MouthPressRight",
-    "mouthStretchLeft" : "MouthStretchLeft",
-    "mouthStretchRight" : "MouthStretchRight",
-    "tongueOut" : "TongueOut",
-}
-
 class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
     bl_idname = "daz.import_livelink"
     bl_label = "Import Live Link File"
     bl_description = "Import a csv file with Unreal's Live Link data"
     bl_options = {'UNDO'}
 
-    FacsTable = LiveLinkFacsTable
+    FacsType = "LiveLink"
 
     def getFrame(self, t):
         return t+1
