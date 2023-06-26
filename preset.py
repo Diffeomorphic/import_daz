@@ -63,6 +63,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     affectBones = True
     affectMorphs = False
 
+    useHierarchial : BoolProperty(
+        name = "Hierarchial Pose",
+        description = "Save a hierarchial pose preset",
+        default = False)
+
     useAction : BoolProperty(
         name = "Use Action",
         description = "Save action instead of single pose",
@@ -121,6 +126,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def draw(self, context):
         DazExporter.draw(self, context)
+        self.layout.prop(self, "useHierarchial")
         self.layout.prop(self, "useObject")
         if self.isFigure:
             self.layout.prop(self, "useBones")
@@ -146,24 +152,45 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def run(self, context):
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
-        rig = getRigFromContext(context, strict=False, activate=True)
+        if self.useHierarchial:
+            rigs = getSelectedArmatures(context)
+            rig = context.object
+            if rig.type != 'ARMATURE':
+                raise DazError("The active object must be an armature for hierarchial presets")
+        else:
+            rig = getRigFromContext(context, strict=False, activate=True)
+            rigs = [rig]
+        self.rignums = {}
+        self.rigids = {}
+        for idx,rig in enumerate(rigs):
+            self.rignums[rig.name] = idx
+            self.rigids[idx] = rig.DazId.rsplit("#",1)
         self.driven = {}
-        if rig.type == 'ARMATURE' and self.useBones:
-            self.setupDriven(rig)
-            self.setupConverter(rig)
-        self.alias = dict([(key, pg.s) for key,pg in rig.DazAlias.items()])
+        self.alias = {}
+        self.conv = {}
+        self.twists = []
+        for rig in rigs:
+            if self.useBones:
+                self.setupDriven(rig)
+                self.setupConverter(rig)
+            for bname,pg in rig.DazAlias.items():
+                bname = self.getDazBone(bname, rig)
+                self.alias[bname] = pg.s
         self.morphs = {}
         self.locs = {}
         self.rots = {}
         self.quats = {}
         self.scales = {}
-        act = None
-        if self.useAction and rig.animation_data:
-            act = rig.animation_data.action
-        if act:
-            self.getFcurves(rig, act)
-        else:
-            self.getFakeCurves(rig)
+        for rig in rigs:
+            act = None
+            if self.useAction and rig.animation_data:
+                act = rig.animation_data.action
+            if act:
+                self.getFcurves(rig, act)
+            else:
+                self.getFakeCurves(rig)
+
+        rig = rigs[0]
         if self.useMorphs and rig.type == 'MESH':
             skeys = rig.data.shape_keys
             if skeys:
@@ -174,13 +201,23 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     self.getShapeFcurves(act)
                 else:
                     self.getShapeFakeCurves(skeys)
-        self.Ls = {}
-        if rig.type == 'ARMATURE' and self.useBones:
-            self.setupFlipper(rig)
-            self.setupBoneFrames(rig)
-        elif self.useObject:
-            self.setupObjectFrames(rig)
-        self.saveFile(rig)
+
+        self.Ls = dict([(frame, {}) for frame in range(self.first, self.last+1)])
+        self.F = {}
+        self.Finv = {}
+        self.idxs = {}
+        self.loclocks = {}
+        self.rotlocks = {}
+        for rig in rigs:
+            if self.useBones:
+                self.setupFlipper(rig)
+                self.setupBoneFrames(rig)
+            elif self.useObject:
+                self.setupObjectFrames(rig)
+        if self.useHierarchial:
+            self.saveHierarchialPreset(rigs)
+        else:
+            self.savePosePreset(rigs[0])
 
 
     def isLocUnlocked(self, pb, bname):
@@ -191,9 +228,10 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getFcurves(self, rig, act):
-        self.rots[""] = 3*[None]
-        self.locs[""] = 3*[None]
-        self.scales[""] = 3*[None]
+        objkey = self.getDazObject(rig)
+        self.rots[objkey] = 3*[None]
+        self.locs[objkey] = 3*[None]
+        self.scales[objkey] = 3*[None]
         if rig.type == 'ARMATURE':
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
@@ -227,11 +265,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             else:
                 idx = fcu.array_index
                 if channel == "location":
-                    self.locs[""][idx] = fcu
+                    self.locs[objkey][idx] = fcu
                 elif channel == "rotation_euler":
-                    self.rots[""][idx] = fcu
+                    self.rots[objkey][idx] = fcu
                 elif self.useScale and channel == "scale":
-                    self.scales[""][idx] = fcu
+                    self.scales[objkey][idx] = fcu
 
 
     def getShapeFcurves(self, act):
@@ -248,12 +286,14 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def getFakeCurves(self, rig):
         if self.useObject:
-            self.rots[""] = [FakeCurve(t) for t in rig.rotation_euler]
-            self.locs[""] = [FakeCurve(t) for t in rig.location]
-            self.scales[""] = [FakeCurve(t) for t in rig.scale]
-        if self.useBones and rig.type == 'ARMATURE':
+            objkey = self.getDazObject(rig)
+            self.rots[objkey] = [FakeCurve(t) for t in rig.rotation_euler]
+            self.locs[objkey] = [FakeCurve(t) for t in rig.location]
+            self.scales[objkey] = [FakeCurve(t) for t in rig.scale]
+        if self.useBones:
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
+                    bname = self.getDazBone(bname, rig)
                     if pb.rotation_mode == 'QUATERNION':
                         self.quats[bname] = [FakeCurve(t) for t in pb.rotation_quaternion]
                     else:
@@ -275,18 +315,13 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def setupFlipper(self, rig):
-        self.F = {}
-        self.Finv = {}
-        self.idxs = {}
-        self.loclocks = {}
-        self.rotlocks = {}
-
         for pb in rig.pose.bones:
             euler = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ')
             dmat = euler.to_matrix().to_4x4()
             dmat.col[3][0:3] = Vector(pb.bone.DazHead)*rig.DazScale
             Fn = pb.bone.matrix_local.inverted() @ self.Z @ dmat
             for bname in self.getBoneNames(pb.name):
+                bname = self.getDazBone(bname, rig)
                 self.F[bname] = Fn
                 self.Finv[bname] = Fn.inverted()
                 idxs = self.idxs[bname] = []
@@ -298,10 +333,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def setupObjectFrames(self, rig):
+        objkey = self.getDazObject(rig)
         for frame in range(self.first, self.last+1):
             L = self.Ls[frame] = {}
             mat = self.getRigMatrix(rig, frame)
-            L[""] = self.Z.inverted() @ mat @ self.Z
+            L[objkey] = self.Z.inverted() @ mat @ self.Z
 
 
     RootNames = ["Root", "master", "root"]
@@ -313,46 +349,49 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     return rig.pose.bones[bname]
             return None
 
+        objkey = self.getDazObject(rig)
         for frame in range(self.first, self.last+1):
-            L = self.Ls[frame] = {}
+            L = self.Ls[frame]
             smats = {}
             mat = self.getRigMatrix(rig, frame)
             root = getRoot(rig)
             if root and root.parent is None:
-                rmat = self.getBoneMatrix(root, root.name, smats, frame)
+                rmat = self.getBoneMatrix(root, root.name, smats, rig, frame)
                 rmat = root.bone.matrix_local @ rmat @ root.bone.matrix_local.inverted()
                 mat = mat @ rmat
-            L[""] = self.Z.inverted() @ mat @ self.Z
+            L[objkey] = self.Z.inverted() @ mat @ self.Z
 
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
-                    mat = self.getBoneMatrix(pb, bname, smats, frame)
+                    bname = self.getDazBone(bname, rig)
+                    mat = self.getBoneMatrix(pb, bname, smats, rig, frame)
                     if mat is None:
                         continue
                     L[bname] = self.Finv[bname] @ mat @ self.F[bname]
 
 
     def getRigMatrix(self, rig, frame):
+        objkey = self.getDazObject(rig)
         rot = rig.rotation_euler.copy()
-        for idx,fcu in enumerate(self.rots[""]):
+        for idx,fcu in enumerate(self.rots[objkey]):
             if fcu:
                 rot[idx] = fcu.evaluate(frame)
         mat = rot.to_matrix().to_4x4()
         if self.useScale:
             scale = rig.scale.copy()
-            for idx,fcu in enumerate(self.scales[""]):
+            for idx,fcu in enumerate(self.scales[objkey]):
                 if fcu:
                     scale[idx] = fcu.evaluate(frame)
             smat = Matrix.Diagonal(scale)
             mat = mat @ smat.to_4x4()
         loc = rig.location.copy()
-        for idx,fcu in enumerate(self.locs[""]):
+        for idx,fcu in enumerate(self.locs[objkey]):
             if fcu:
                 loc[idx] = fcu.evaluate(frame)
         return Matrix.Translation(loc) @ mat
 
 
-    def getBoneMatrix(self, pb, bname, smats, frame):
+    def getBoneMatrix(self, pb, bname, smats, rig, frame):
         if bname in self.quats.keys():
             quat = pb.rotation_quaternion.copy()
             for idx,fcu in enumerate(self.quats[bname]):
@@ -377,10 +416,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             if (pb.parent and
                 pb.parent.name in smats.keys() and
                 inheritsScale(pb)):
-                psmat = smats[pb.parent.name]
+                parname = self.getDazBone(pb.parent.name, rig)
+                psmat = smats[parname]
                 smat = smat @ psmat
             mat = mat @ smat.to_4x4()
-            smats[pb.name] = smat
+            smats[bname] = smat
 
         if bname in self.locs.keys():
             loc = pb.location.copy()
@@ -408,8 +448,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def setupConverter(self, rig):
         conv,twists = self.getConv(rig, rig)
-        self.conv = {}
-        self.twists = []
         bonemap = OrderedDict()
         if conv:
             self.twists = twists
@@ -434,7 +472,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 return
             for pb in rig.pose.bones:
                 if pb.bone.layers[customLayer]:
-                    bname = self.getDazName(pb)
+                    bname = self.getPrefixName(pb)
                     if bname:
                         self.conv[pb.name] = [bname]
         else:
@@ -443,7 +481,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.setupConvBones(pb)
 
 
-    def getDazName(self, pb):
+    def getPrefixName(self, pb):
         if isDrvBone(pb.name) or isFinal(pb.name):
             return None
         elif pb.name[-2:] == ".L":
@@ -455,7 +493,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def setupConvBones(self, pb):
-        bname = self.getDazName(pb)
+        bname = self.getPrefixName(pb)
         if bname:
             self.conv[pb.name] = [bname]
         if bname != "head" or self.useFaceBones:
@@ -487,13 +525,83 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         return None, 0
 
 
-    def saveFile(self, rig):
+    def getDazObject(self, rig):
+        return ""
+
+    def getDazBone(self, bname, rig):
+        idx = self.rignums[rig.name]
+        if idx == 0:
+            return bname
+        else:
+            return "%s-%d" % (bname, idx)
+
+
+    def getNodes(self, rig):
+        nodes = []
+        node = {
+            "id" : rig.name,
+            "url" : "name://@selection/%s:" % rig.name,
+        }
+        if rig.parent:
+            if rig.parent_type == 'OBJECT':
+                node["parent"] = "#%s" % rig.parent.name
+            elif rig.parent_type == 'BONE':
+                parbone = self.getDazBone(rig.parent_bone, rig.parent)
+                node["parent"] = "#%s" % parbone
+        nodes.append(node)
+
+        for pb in rig.pose.bones:
+            bname = self.getDazBone(pb.name, rig)
+            if pb.parent:
+                parname = self.getDazBone(pb.parent.name, rig)
+            else:
+                parname = rig.name
+            node = {
+                "id" : bname,
+                "url" : "name://@selection/%s:" % pb.name,
+                "parent" : "#%s" % parname
+            }
+            nodes.append(node)
+        return nodes
+
+
+    def saveHierarchialPreset(self, rigs):
+        from .load_json import saveJson
+        struct, filepath = self.makeDazStruct("preset_hierarchical_pose", self.filepath)
+        struct["scene"] = {}
+        nodes = []
+        anims = []
+        for rig in rigs:
+            nodes += self.getNodes(rig)
+            anims += self.getAnimations(rig)
+        struct["scene"]["nodes"] = nodes
+        struct["scene"]["animations"] = anims
+        saveJson(struct, filepath, binary=self.useCompress)
+        print("Pose preset %s saved" % filepath)
+
+
+    def savePosePreset(self, rig):
         from .load_json import saveJson
         struct, filepath = self.makeDazStruct("preset_pose", self.filepath)
         struct["scene"] = {}
         struct["scene"]["animations"] = self.getAnimations(rig)
         saveJson(struct, filepath, binary=self.useCompress)
         print("Pose preset %s saved" % filepath)
+
+
+    def getBoneUrl(self, bname, pb, rig):
+        if self.useHierarchial:
+            path,figure = rig.DazId.rsplit("#",1)
+            if pb == rig:
+                return "%s:%s/%s" % (figure, path, figure)
+            else:
+                suffix = "-%d" % self.rignums[rig.name]
+                return "%s:%s/%s" % (bname, path, bname.rstrip(suffix))
+        else:
+            if pb == rig:
+                return "name://@selection:"
+            else:
+                return "name://@selection/%s" % bname
 
 
     def getAnimations(self, rig):
@@ -512,26 +620,28 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 if pb.name in self.RootNames:
                     continue
                 for bname in self.getBoneNames(pb.name):
+                    bname = self.getDazBone(bname, rig)
                     Ls = [self.Ls[frame][bname] for frame in range(self.first, self.last+1)]
                     if self.isLocUnlocked(pb, bname):
                         locs = [L.to_translation() for L in Ls]
-                        self.getTrans(bname, pb, locs, 1/rig.DazScale, anims)
+                        self.getTrans(bname, pb, rig, locs, 1/rig.DazScale, anims)
                     rots = [L.to_euler(pb.DazRotMode) for L in Ls]
-                    self.getRot(bname, pb, rots, 1/D, anims)
+                    self.getRot(bname, pb, rig, rots, 1/D, anims)
                     if self.useScale:
                         scales = [L.to_scale() for L in Ls]
-                        self.getScale(bname, pb, scales, anims)
+                        self.getScale(bname, pb, rig, scales, anims)
 
         if self.useObject:
-            Ls = [self.Ls[frame][""] for frame in range(self.first, self.last+1)]
+            objkey = self.getDazObject(rig)
+            Ls = [self.Ls[frame][objkey] for frame in range(self.first, self.last+1)]
             locs = [L.to_translation() for L in Ls]
-            self.getTrans("", rig, locs, 1/rig.DazScale, anims)
+            self.getTrans("", rig, rig, locs, 1/rig.DazScale, anims)
 
             rots = [L.to_euler(globalFlip[rig.rotation_mode]) for L in Ls]
-            self.getRot("", rig, rots, 1/D, anims)
+            self.getRot("", rig, rig, rots, 1/D, anims)
             if self.useScale:
                 scales = [L.to_scale() for L in Ls]
-                self.getScale("", rig, scales, anims)
+                self.getScale("", rig, rig, scales, anims)
 
         if self.useMorphs:
             for prop,fcu in self.morphs.items():
@@ -571,13 +681,13 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             anim["keys"] = [(n/self.fps, x) for n,x in enumerate(xs)]
 
 
-    def getTrans(self, bname, pb, vecs, factor, anims):
+    def getTrans(self, bname, pb, rig, vecs, factor, anims):
         if self.driven.get(pb.name) and self.driven[pb.name].get("location"):
             return
-        if bname == "":
+        if pb == rig:
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
-                anim["url"] = "name://@selection:?translation/%s/value" % (x)
+                anim["url"] = "%s?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor for vec in vecs]
                 self.addKeys(locs, anim, 1e-5)
                 anims.append(anim)
@@ -588,19 +698,19 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     self.loclocks[pb.name][idx]):
                     continue
                 anim = {}
-                anim["url"] = "name://@selection/%s:?translation/%s/value" % (bname, x)
+                anim["url"] = "%s:?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor for vec in vecs]
                 self.addKeys(locs, anim, 1e-5)
                 anims.append(anim)
 
 
-    def getRot(self, bname, pb, vecs, factor, anims):
+    def getRot(self, bname, pb, rig, vecs, factor, anims):
         if self.driven.get(pb.name) and self.driven[pb.name].get("rotation"):
             return
-        if bname == "":
+        if pb == rig:
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
-                anim["url"] = "name://@selection:?rotation/%s/value" % (x)
+                anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
                 self.addKeys(rots, anim, 1e-3)
@@ -614,7 +724,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     (twname and idx == twidx)):
                     continue
                 anim = {}
-                anim["url"] = "name://@selection/%s:?rotation/%s/value" % (bname, x)
+                anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
                 self.addKeys(rots, anim, 1e-3)
@@ -625,14 +735,14 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 if idx != twidx:
                     continue
                 anim = {}
-                anim["url"] = "name://@selection/%s:?rotation/%s/value" % (twname, x)
+                anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(twname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
                 self.addKeys(rots, anim, 1e-3)
                 anims.append(anim)
 
 
-    def getScale(self, bname, pb, vecs, anims):
+    def getScale(self, bname, pb, rig, vecs, anims):
         if self.driven.get(pb.name) and self.driven[pb.name].get("scale"):
             return
         general = True
@@ -642,18 +752,18 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 abs(vec[1]-vec[2]) > 1e-5):
                 general = False
                 break
-        if bname:
-            bname = "/%s" % bname
+        #if bname:
+        #    bname = "/%s" % bname
         if general:
             anim = {}
-            anim["url"] = "name://@selection%s:?scale/general/value" % bname
+            anim["url"] = "%s:?scale/general/value" % self.getBoneUrl(bname, pb, rig)
             scales = [vec[0] for vec in vecs]
             self.addKeys(scales, anim, 1e-4)
             anims.append(anim)
         else:
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
-                anim["url"] = "name://@selection%s:?scale/%s/value" % (bname, x)
+                anim["url"] = "%s:?scale/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 scales = [vec[idx] for vec in vecs]
                 self.addKeys(scales, anim, 1e-4)
                 anims.append(anim)
