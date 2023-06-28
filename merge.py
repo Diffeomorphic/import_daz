@@ -1134,7 +1134,8 @@ class RigInfo:
             self.bones[key] = pb.bone.use_deform
 
 
-    def addEditBones(self, rig, layers):
+    def addEditBones(self, rig, idx, layers):
+        setMode('EDIT')
         ebones = rig.data.edit_bones
         for bname,data in self.editbones.items():
             eb = ebones.new(bname)
@@ -1146,6 +1147,10 @@ class RigInfo:
                 self.setParent(eb, self.parbone, ebones)
             eb.head, eb.tail, eb.roll, parent = data
             eb.layers = layers
+        setMode('OBJECT')
+        for bname in self.editbones.keys():
+            bone = rig.data.bones[bname]
+            bone["DazRigIndex"] = idx
 
 
     def setParent(self, eb, parent, ebones):
@@ -1422,16 +1427,17 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
         layers = self.clothesLayer*[False] + [True] + (31-self.clothesLayer)*[False]
         activateObject(context, rig)
-        setMode('EDIT')
-        for subinfo in subinfos:
+        for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:
-                subinfo.addEditBones(rig, layers)
-        setMode('OBJECT')
+                subinfo.addEditBones(rig, idx+1, layers)
         for bone in rig.data.bones:
             if bone.name in extrabones:
                 bone.DazExtraBone = True
         self.reparentObjects(info, rig, adds, hdadds, removes)
-        for subinfo in subinfos:
+        pg = rig.data.DazMergedRigs.add()
+        pg.name = "0"
+        pg.s = rig.DazUrl
+        for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:
                 subinfo.copyPose(context, rig)
                 for ob,_ in subinfo.objects:
@@ -1440,6 +1446,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                         subinfo.renameVertexGroups(ob)
                 self.reparentObjects(subinfo, rig, adds, hdadds, removes)
                 subinfo.rig.parent = None
+                pg = rig.data.DazMergedRigs.add()
+                pg.name = str(idx+1)
+                pg.s = subinfo.rig.DazUrl
                 deleteObjects(context, [subinfo.rig])
             else:
                 subinfo.reParent(rig)
@@ -1852,6 +1861,8 @@ classes = [
 ]
 
 def register():
+    from .propgroups import DazStringGroup
+    bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringGroup)
     for cls in classes:
         bpy.utils.register_class(cls)
 
