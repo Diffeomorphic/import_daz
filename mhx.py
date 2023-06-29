@@ -36,7 +36,7 @@ from .layers import *
 from .propgroups import DazPairGroup
 from .driver import addDriver
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
-from .mhx_data import *
+from .mhx_data import MHX
 
 #-------------------------------------------------------------
 #
@@ -376,10 +376,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def createBoneGroups(self, rig):
-        if len(rig.pose.bone_groups) != len(MhxBoneGroups):
+        if len(rig.pose.bone_groups) != len(MHX.BoneGroups):
             for bg in list(rig.pose.bone_groups):
                 rig.pose.bone_groups.remove(bg)
-            for bgname,color,_layers in MhxBoneGroups:
+            for bgname,color,_layers in MHX.BoneGroups:
                 bg = rig.pose.bone_groups.new(name=bgname)
                 bg.color_set = 'CUSTOM'
                 bg.colors.normal = color
@@ -433,7 +433,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #-------------------------------------------------------------
 
         showProgress(1, 25, "  Fix DAZ rig")
-        bendTwistBones = list(MhxBendTwistBones)
+        bendTwistBones = list(MHX.BendTwistBones)
         self.constraints = {}
         rig.data.layers = 32*[True]
         bchildren = applyBoneChildren(context, rig)
@@ -446,7 +446,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
             if not self.reuseBendTwists:
-                self.joinBendTwistVGroups(rig, MhxBendTwistGenesis38)
+                self.joinBendTwistVGroups(rig, MHX.BendTwistGenesis38)
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
             self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
@@ -459,14 +459,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(9, 25, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
-            self.fixBoneDrivers(rig, MhxBoneDrivers)
+            self.fixBoneDrivers(rig, MHX.BoneDrivers)
         elif rig.DazRig == "genesis9":
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
             showProgress(4, 25, "  Rename bones")
             if not self.reuseBendTwists:
                 self.deleteBendTwistDrvBones(rig)
-                self.joinBendTwistVGroups(rig, MhxBendTwistGenesis9)
+                self.joinBendTwistVGroups(rig, MHX.BendTwistGenesis9)
             self.rename2Mhx(rig)
             showProgress(7, 25, "  Fix hands")
             self.fixHands(rig)
@@ -594,8 +594,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             bname = bone.name
             if bone.name in self.sacred:
                 bone.name = mname = bname + ".1"
-            elif bname in MhxSkeleton.keys():
-                mname,layer = MhxSkeleton[bname]
+            elif bname in MHX.Skeleton.keys():
+                mname,layer = MHX.Skeleton[bname]
                 if bname != mname:
                     bone.name = mname
                 bone.layers = layer*[False] + [True] + (31-layer)*[False]
@@ -608,7 +608,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 mname = mname.replace("Twist", ".twist")
             self.renamedBones[mname] = bname
 
-        for mname, bname in MhxExtraRenames:
+        for mname, bname in MHX.ExtraRenames:
             self.renamedBones[mname] = self.renamedBones[bname]
 
         for pb in rig.pose.bones:
@@ -640,8 +640,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def getMhxBone(self, rig, bname):
         if bname in rig.data.bones.keys():
             return rig.data.bones[bname]
-        if bname in MhxSkeleton.keys():
-            mname = MhxSkeleton[bname][0]
+        if bname in MHX.Skeleton.keys():
+            mname = MHX.Skeleton[bname][0]
             if mname[-2] == ".":
                 if mname[-6:-2] == "Bend":
                     mname = "%s.bend.%s" % (mname[:-6],  mname[-1])
@@ -663,7 +663,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.makeGizmos(True, None)
 
         for pb in rig.pose.bones:
-            if isDrvBone(pb.name) or isFinal(pb.name):
+            if (isDrvBone(pb.name) or
+                isFinal(pb.name) or
+                pb.name in MHX.FaceRigs+MHX.Teeth):
                 continue
             elif pb.name in Gizmos.keys():
                 gizmo,scale = Gizmos[pb.name]
@@ -708,7 +710,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addBoneGroups(self, rig):
-        for idx,data in enumerate(MhxBoneGroups):
+        for idx,data in enumerate(MHX.BoneGroups):
             _bgname,_theme,layers = data
             bgrp = rig.pose.bone_groups[idx]
             for pb in rig.pose.bones.values():
@@ -723,10 +725,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if not self.useFixKnees:
             return
         from .bone import setRoll
-        from .mhx_data import MhxKnees
         eps = 0.5
         setMode('EDIT')
-        for thigh,shin,zaxis in MhxKnees:
+        for thigh,shin,zaxis in MHX.Knees:
             eb1 = rig.data.edit_bones[thigh]
             eb2 = rig.data.edit_bones[shin]
             hip = eb1.head
@@ -1617,23 +1618,25 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 def getBoneLayer(pb, rig):
     from .driver import isBoneDriven
     lname = pb.name.lower()
-    if pb.name in HeadBones:
+    if pb.name in MHX.HeadBones:
         return L_HEAD, False
     elif (isDrvBone(pb.name) or
         isBoneDriven(rig, pb) or
-        pb.name in FaceRigs):
+        pb.name in MHX.FaceRigs):
         return L_HELP, False
+    elif pb.name in MHX.Teeth:
+        return L_TWEAK, False
     elif isFinal(pb.name) or pb.bone.layers[L_FIN]:
         return L_FIN, False
     elif pb.name[0:6] == "tongue":
         return L_FACE, False
     elif pb.parent:
         par = pb.parent
-        if par.name in FaceRigs:
+        if par.name in MHX.FaceRigs:
             return L_FACE, True
         elif (isDrvBone(par.name) and
               par.parent and
-              par.parent.name in FaceRigs):
+              par.parent.name in MHX.FaceRigs):
             return L_FACE, True
     return L_CUSTOM, True
 
@@ -1641,15 +1644,15 @@ def getBoneLayer(pb, rig):
 def connectToParent(rig, connectAll=False, useSplitShin=False):
     setMode('EDIT')
     if useSplitShin:
-        shinBones = ConnectShin
-        otherBones = ConnectOther
+        shinBones = MHX.ConnectShin
+        otherBones = MHX.ConnectOther
     else:
         shinBones = []
-        otherBones = ConnectOther+ConnectShin
+        otherBones = MHX.ConnectOther + MHX.ConnectShin
     if connectAll:
-        allBones = ConnectBendTwist+shinBones+otherBones
+        allBones = MHX.ConnectBendTwist + shinBones + otherBones
     else:
-        allBones = ConnectBendTwist+shinBones
+        allBones = MHX.ConnectBendTwist + shinBones
     for eb in rig.data.edit_bones:
         if eb.name in allBones:
             eb.parent.tail = eb.head

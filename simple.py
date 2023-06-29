@@ -277,8 +277,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         LS.customShapes = []
         csHandIk = makeCustomShape("CS_HandIk", "RectX")
         csFootIk = makeCustomShape("CS_FootIk", "RectZ")
-        if True or IK.usePoleTargets:
+        if IK.usePoleTargets:
             csCube = makeCustomShape("CS_Cube", "Cube", scale=0.3)
+        csArrows = makeCustomShape("CS_Arrows", "Arrows")
 
         armTable = {
             "G12" : ("Hand", "HandIK", "Shldr", "Shldr", "ForeArm", "ForeArm", "Collar", "Elbow"),
@@ -293,11 +294,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         }
 
         armTable2 = {
-            "G38" : ("ShldrIKTwist", "ForearmIKTwist"),
+            "G38" : ("ShldrIK", "ForearmIKTwist"),
         }
 
         legTable2 = {
-            "G38" : ("ThighIKTwist", "ShinIKTwist"),
+            "G38" : ("ThighIK", "ShinIKTwist"),
         }
 
         def getEntry(table, key, prefix, bones):
@@ -328,9 +329,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 foreTwist.tail = hand.head
                 if genesis == "G38" and self.useCopyRotation:
                     shikname, foreikname = getEntry(armTable2, genesis, prefix, ebones)
-                    layer = (30 if self.usePoleTargets else 26+dlayer)
+                    layer = (31 if self.usePoleTargets else 26+dlayer)
                     shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, layer, shldrBend.parent)
-                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, 30, shldrIK)
+                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, 31, shldrIK)
                 if IK.usePoleTargets:
                     elbow = makePole(elbowname, rig, foreBend, collar)
 
@@ -340,9 +341,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 shin.tail = foot.head
                 if genesis == "G38" and self.useCopyRotation:
                     thikname, shinikname = getEntry(legTable2, genesis, prefix, ebones)
-                    layer = (30 if self.usePoleTargets else 28+dlayer)
+                    layer = (31 if self.usePoleTargets else 28+dlayer)
                     thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, layer, thighBend.parent)
-                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, 30, thighIK)
+                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, 31, thighIK)
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
 
@@ -443,7 +444,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.use_y = False
                     cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL_WITH_PARENT')
                     cns.use_x = cns.use_z = False
-                    #shldrIK.custom_shape = csCube
+                    shldrIK.custom_shape = csArrows
                     shldrIK.bone_group = rig.pose.bone_groups["IK"]
                 if self.useLegs:
                     thighIK, shinIK = getEntry(legTable2, genesis, prefix, rpbs)
@@ -461,7 +462,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode
-                    #thighIK.custom_shape = csCube
+                    thighIK.custom_shape = csArrows
                     thighIK.bone_group = rig.pose.bone_groups["IK"]
             elif genesis == "G38":
                 if self.useArms:
@@ -586,7 +587,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
                 addToLayer(pb, "Face", rig, "Face")
             elif lname == "lowerjaw":
                 setCustomShape(pb, csCollar)
-                addToLayer(pb, "Spine", rig, "Face")
+                addToLayer(pb, "Face", rig, "Face")
             elif pb.name.startswith("tongue"):
                 setCustomShape(pb, csTongue)
                 addToLayer(pb, "Face", rig, "Face")
@@ -655,6 +656,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
                 addToLayer(pb, "IK Leg", rig, "IK")
             elif "pectoral" in lname:
                 setCustomShape(pb, circleY2, 0.3, 1.0)
+                addToLayer(pb, "Custom", rig, "Custom")
             elif pb.name.endswith(("twist1", "twist2")):
                 pass
             elif lname.endswith("anchor"):
@@ -1131,7 +1133,7 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        rig.data.layers = 16*[False] + 14*[True] + 2*[False]
+        rig.data.layers = 16*[False] + 15*[True] + [False]
 
 
 class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
