@@ -984,7 +984,7 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
         row.operator("daz.select_named_layers")
         row.operator("daz.unselect_named_layers")
         layout.separator()
-        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot", ("Custom", "")]:
+        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot", ("Special", "")]:
             row = layout.row()
             if isinstance(lnames, str):
                 first,second = "Left "+lnames, "Right "+lnames

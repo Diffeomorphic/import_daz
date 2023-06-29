@@ -673,8 +673,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elif pb.name[-2:] in [".L", ".R"] and pb.name[:-2] in LRGizmos.keys():
                 gizmo,scale = LRGizmos[pb.name[:-2]]
                 self.addGizmo(pb, gizmo, scale)
-            elif pb.name[0:4] == "palm":
-                self.addGizmo(pb, "GZM_Ellipse", 1)
+            #elif pb.name[0:4] == "palm":
+            #    self.addGizmo(pb, "GZM_Ellipse", 1)
             elif pb.name[0:6] == "tongue":
                 self.addGizmo(pb, "GZM_MTongue", 1)
             elif self.isFaceBone(pb, rig) and not self.isEyeLid(pb):
@@ -1711,7 +1711,7 @@ LRGizmos = {
     "thigh.ik.twist":   ("GZM_Circle025", 1),
     "shin.ik.twist" :   ("GZM_Circle025", 1),
     "foot.fk" :         ("GZM_Foot", 1),
-    "tarsal" :          ("GZM_Foot", 1),
+    #"tarsal" :          ("GZM_Foot", 1),
     "toe.fk" :          ("GZM_Toe", 1),
     "legSocket" :       ("GZM_Cube", 0.25),
     "foot.rev" :        ("GZM_FootRev", 1),

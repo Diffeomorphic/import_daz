@@ -488,7 +488,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         rig.data.display_type = 'WIRE'
 
 #----------------------------------------------------------
-#   Custom shapes
+#   Special shapes
 #----------------------------------------------------------
 
 def makeCustomShape(csname, gname, offset=(0,0,0), scale=1):
@@ -525,7 +525,7 @@ def getGenesisName(genesis, bnames):
 
 class DAZ_OT_AddCustomShapes(DazOperator):
     bl_idname = "daz.add_custom_shapes"
-    bl_label = "Add Custom Shapes"
+    bl_label = "Add Special Shapes"
     bl_description = "Add custom shapes to the bones of the active rig"
     bl_options = {'UNDO'}
 
@@ -543,7 +543,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
 
         csCollar = makeCustomShape("CS_Collar", "CircleX", (0,1,0), (0,0.5,0.1))
         csHandFk = makeCustomShape("CS_HandFk", "CircleX", (0,1,0), (0,0.6,0.5))
-        csCarpal = makeCustomShape("CS_Carpal", "CircleZ", (0,1,0), (0.1,0.5,0))
+        #csCarpal = makeCustomShape("CS_Carpal", "CircleZ", (0,1,0), (0.1,0.5,0))
         csTongue = makeCustomShape("CS_Tongue", "CircleZ", (0,1,0), (1.5,0.5,0))
         circleY2 = makeCustomShape("CS_CircleY2", "CircleY", scale=1/3)
         csLimb = makeCustomShape("CS_Limb", "CircleY", (0,2,0), scale=1/4)
@@ -568,12 +568,14 @@ class DAZ_OT_AddCustomShapes(DazOperator):
 
         for pb in rig.pose.bones:
             lname = pb.name.lower()
-            if lname in ["upperfacerig", "lowerfacerig", "l_metatarsal", "r_metatarsal", "upperteeth", "lowerteeth"]:
+            if lname in ["upperfacerig", "lowerfacerig"]:
                 pb.bone.layers = [False] + [True] + 30*[False]
+            elif lname in ["upperteeth", "lowerteeth"]:
+               addToLayer(pb, "Special", rig, "Special")
             elif not pb.bone.layers[0]:
                 for lnum in range(1,16):
                     if pb.bone.layers[lnum]:
-                        addToLayer(pb, "Custom", rig, "Custom")
+                        addToLayer(pb, "Special", rig, "Special")
                         break
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
@@ -597,9 +599,8 @@ class DAZ_OT_AddCustomShapes(DazOperator):
             elif lname.endswith("handik"):
                 setCustomShape(pb, csHandIk, 1.8)
                 addToLayer(pb, "IK Arm", rig, "IK")
-            elif "carpal" in lname:
-                setCustomShape(pb, csCarpal)
-                addToLayer(pb, "Hand", rig, "Limb")
+            elif "carpal" in lname or "tarsal" in lname:
+                addToLayer(pb, "Special", rig, "Special")
             elif pb.name in ["lCollar", "rCollar", "l_shoulder", "r_shoulder"]:
                 setCustomShape(pb, csCollar)
                 addToLayer(pb, "Spine", rig, "Spine")
@@ -656,7 +657,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
                 addToLayer(pb, "IK Leg", rig, "IK")
             elif "pectoral" in lname:
                 setCustomShape(pb, circleY2, 0.3, 1.0)
-                addToLayer(pb, "Custom", rig, "Custom")
+                addToLayer(pb, "Special", rig, "Special")
             elif pb.name.endswith(("twist1", "twist2")):
                 pass
             elif lname.endswith("anchor"):
@@ -682,7 +683,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
 
 class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
     bl_idname = "daz.remove_custom_shapes"
-    bl_label = "Remove Custom Shapes"
+    bl_label = "Remove Special Shapes"
     bl_description = "Remove custom shapes from the bones of the active rig"
     bl_options = {'UNDO'}
 
@@ -1086,7 +1087,7 @@ BoneLayers = {
     "Right IK Arm" : 27,
     "Left IK Leg" : 28,
     "Right IK Leg" : 29,
-    "Custom" : 30,
+    "Special" : 30,
 }
 
 
@@ -1097,7 +1098,7 @@ def makeBoneGroups(rig):
         ("IK",      (1,0,0)),
         ("Limb",    (0,0,1)),
         ("Face",    (1,0.5,0)),
-        ("Custom",  (1,0,1)),
+        ("Special",  (1,0,1)),
     ]
     if len(rig.pose.bone_groups) != len(BoneGroups):
         for bg in list(rig.pose.bone_groups):
@@ -1231,7 +1232,7 @@ def improveIk(rig, exclude=[]):
 
 class DAZ_OT_BatchSetCustomShape(DazPropsOperator, IsArmature):
     bl_idname = "daz.batch_set_custom_shape"
-    bl_label = "Batch Set Custom Shape"
+    bl_label = "Batch Set Special Shape"
     bl_description = "Set the selected mesh as the custom shape of all selected bones"
     bl_options = {'UNDO'}
 
