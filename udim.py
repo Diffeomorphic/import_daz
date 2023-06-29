@@ -145,7 +145,7 @@ class TileFixer:
 
 
     def getKnownTiles(self, ob):
-        from .fileutils import AF
+        from .fileutils import DF
         char = ob.DazMesh.split("-",1)[0].lower()
         if char == "genesis8":
             for mat in ob.data.materials:
@@ -154,7 +154,7 @@ class TileFixer:
                     break
                 elif mat.name.startswith("Torso"):
                     break
-        entry = AF.loadEntry(char, "tiles", strict=False)
+        entry = DF.loadEntry(char, "tiles", strict=False)
         if entry:
             return entry["tiles"]
         else:

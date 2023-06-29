@@ -487,8 +487,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 #----------------------------------------------------------
 
 def makeCustomShape(csname, gname, offset=(0,0,0), scale=1):
-    from .fileutils import AF
-    struct = AF.loadEntry("simple", "gizmos", True)
+    from .fileutils import DF
+    gizmos = DF.loadEntry("simple", "gizmos", True)
+    struct = gizmos[gname]
     me = bpy.data.meshes.new(csname)
     verts = struct["verts"]
     u,v,w = offset

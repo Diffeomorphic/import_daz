@@ -33,7 +33,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .layers import *
-from .fileutils import AF
+from .fileutils import DF
 from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
 
 #-------------------------------------------------------------
@@ -835,7 +835,7 @@ class Rigifier(RigifyCommon):
             copyProp(key, rig.data, gen.data, False)
 
         # Some more bones
-        conv = AF.loadEntry("genesis-%s" % meta.DazRigifyType, "converters")
+        conv = DF.loadEntry("genesis-%s" % meta.DazRigifyType, "converters")
         for srcname,trgname in conv.items():
             self.copyBoneInfo(srcname, trgname, rig, gen)
 

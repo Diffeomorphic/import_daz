@@ -34,7 +34,7 @@ from mathutils import Matrix
 from .utils import *
 from .error import *
 from .driver import DriverUser
-from .fileutils import AF
+from .fileutils import DF
 from .geometry import getActiveUvLayer
 
 #-------------------------------------------------------------
@@ -1350,7 +1350,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         if self.useMergeNonConforming == 'ALWAYS':
             return True
         elif self.useMergeNonConforming == 'CONTROLS':
-            if subrig.DazUrl.lower() in AF.FaceControls:
+            if subrig.DazUrl.lower() in DF.FaceControls:
                 if info.foundControl:
                     subrig.hide_viewport = True
                     for child in subrig.children:

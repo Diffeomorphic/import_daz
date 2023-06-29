@@ -110,7 +110,7 @@ class FrameConverter:
         conv = {}
         twists = {}
         if self.useConvert:
-            srctype = AF.SourceRigs[self.srcCharacter]
+            srctype = DF.SourceRigs[self.srcCharacter]
         elif (rig.DazRig == "mhx" or
             rig.DazRig[0:6] == "rigify"):
             srctype = "genesis8"
@@ -221,8 +221,8 @@ class FrameConverter:
         if trgCharacter is None:
             return anims
 
-        parents = AF.loadEntry(AF.ParentRigs[self.srcCharacter], "parents").get("parents")
-        nparents = AF.loadEntry(trgCharacter, "parents").get("parents")
+        parents = DF.loadEntry(DF.ParentRigs[self.srcCharacter], "parents").get("parents")
+        nparents = DF.loadEntry(trgCharacter, "parents").get("parents")
         core = {}
         for bname, parname in parents.items():
             if bname in ["head",
@@ -242,7 +242,7 @@ class FrameConverter:
         for bname,nname in bonemap.items():
             if not core.get(bname):
                 continue
-            orient,xyzs[bname] = AF.getOrientation(self.srcCharacter, bname)
+            orient,xyzs[bname] = DF.getOrientation(self.srcCharacter, bname)
             if orient is not None:
                 restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
             if nname[0:6] == "TWIST-":
@@ -452,7 +452,7 @@ class BoneOptions:
         default = False)
 
     srcCharacter : EnumProperty(
-        items = AF.RestPoseItems,
+        items = DF.RestPoseItems,
         name = "Source Character",
         description = "Character this file was made for",
         default = "genesis_8_female")
@@ -1384,7 +1384,7 @@ def loadAltMorphs(rig):
     if rig is None:
         return {}
     char = rig.DazMesh.split("-",1)[0].lower()
-    struct = AF.loadEntry(char, "altmorphs", False)
+    struct = DF.loadEntry(char, "altmorphs", False)
     if struct:
         return struct["morphs"]
     else:

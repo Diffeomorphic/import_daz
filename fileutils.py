@@ -39,7 +39,7 @@ from .utils import *
 
 theImageExtensions = ["png", "jpeg", "jpg", "bmp", "tif", "tiff"]
 
-class AnimationFolders:
+class DataFolders:
     def __init__(self):
         self.converters = {}
         self.restposes = {}
@@ -50,6 +50,7 @@ class AnimationFolders:
         self.altmorphs = {}
         self.scanned = {}
         self.tiles = {}
+        self.gizmos = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",
@@ -137,7 +138,7 @@ class AnimationFolders:
             return None, "XYZ"
 
 
-AF = AnimationFolders()
+DF = DataFolders()
 
 #-------------------------------------------------------------
 #   Open and check for case change

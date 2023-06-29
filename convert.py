@@ -32,7 +32,7 @@ from collections import OrderedDict
 from mathutils import *
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, JsonFile, JsonExportFile, AF
+from .fileutils import SingleFile, JsonFile, JsonExportFile, DF
 
 #-------------------------------------------------------------
 #   Load pose
@@ -117,7 +117,7 @@ def optimizePose(context, useApplyRestPose):
     char = getCharacterFromRig(rig)
     if char is None:
         raise DazError("Did not recognize character")
-    entry = AF.loadEntry(char, "ikposes")
+    entry = DF.loadEntry(char, "ikposes")
     loadPose(context, rig, entry)
     if useApplyRestPose:
         applyRestPoses(context, rig, [])
@@ -137,9 +137,9 @@ def getConverter(srctype, trg):
 
     if srctype == "" or trgtype == "":
         return {},[]
-    if (srctype in AF.TwistBones.keys() and
-        trgtype not in AF.TwistBones.keys()):
-        twists = AF.TwistBones[srctype]
+    if (srctype in DF.TwistBones.keys() and
+        trgtype not in DF.TwistBones.keys()):
+        twists = DF.TwistBones[srctype]
     else:
         twists = []
 
@@ -154,7 +154,7 @@ def getConverter(srctype, trg):
     else:
         char = srctype + "-" + trgtype
 
-    conv = AF.loadEntry(char, "converters")
+    conv = DF.loadEntry(char, "converters")
     if not conv:
         print("No converter", srctype, trg.DazRig)
     return conv, twists

@@ -31,7 +31,7 @@ from mathutils import Vector, Euler
 from .error import *
 from .tables import *
 from .utils import *
-from .fileutils import AF
+from .fileutils import DF
 from .selector import Selector
 from .driver import DriverUser
 
@@ -1728,7 +1728,7 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, IsMesh):
         ob = context.object
         fac = self.offset*0.1*ob.DazScale
         char = ob.DazMesh.lower()
-        struct = AF.loadEntry(char, "lowpoly")
+        struct = DF.loadEntry(char, "lowpoly")
         vnums = struct["vertices"]
         verts = ob.data.vertices
         coords = [(verts[vn].co + fac*verts[vn].normal) for vn in vnums]

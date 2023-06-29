@@ -601,8 +601,8 @@ class GizmoUser:
             self.makeEmptyGizmo("GZM_Cube", 'CUBE')
             self.makeEmptyGizmo("GZM_Cone", 'CONE')
 
-        from .fileutils import AF
-        struct = AF.loadEntry("mhx", "gizmos", True)
+        from .fileutils import DF
+        struct = DF.loadEntry("mhx", "gizmos", True)
         if gnames is None:
             gnames = struct.keys()
         for gname in gnames:

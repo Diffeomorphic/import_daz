@@ -1569,9 +1569,9 @@ class ScanFinder:
     useSearchAlias = False
 
     def setupScanned(self, ob):
-        from .fileutils import AF
+        from .fileutils import DF
         name = ob.DazUrl.rsplit("#", 1)[-1]
-        struct = AF.loadEntry(name, "scanned", False)
+        struct = DF.loadEntry(name, "scanned", False)
         self.directory = struct.get("directory")
         self.defs = struct.get("definitions", {})
         self.alias = struct.get("alias", {})
