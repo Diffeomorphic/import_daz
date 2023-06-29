@@ -601,10 +601,8 @@ class GizmoUser:
             self.makeEmptyGizmo("GZM_Cube", 'CUBE')
             self.makeEmptyGizmo("GZM_Cone", 'CONE')
 
-        from .load_json import loadJson
-        folder = os.path.dirname(__file__)
-        filepath = os.path.join(folder, "data", "gizmos.json")
-        struct = loadJson(filepath)
+        from .fileutils import AF
+        struct = AF.loadEntry("mhx", "gizmos", True)
         if gnames is None:
             gnames = struct.keys()
         for gname in gnames:
