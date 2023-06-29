@@ -984,16 +984,17 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
         row.operator("daz.select_named_layers")
         row.operator("daz.unselect_named_layers")
         layout.separator()
-        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot"]:
+        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot", ("Custom", "")]:
             row = layout.row()
             if isinstance(lnames, str):
                 first,second = "Left "+lnames, "Right "+lnames
             else:
                 first,second = lnames
             m = BoneLayers[first]
-            n = BoneLayers[second]
             row.prop(rig.data, "layers", index=m, toggle=True, text=first)
-            row.prop(rig.data, "layers", index=n, toggle=True, text=second)
+            if second:
+                n = BoneLayers[second]
+                row.prop(rig.data, "layers", index=n, toggle=True, text=second)
 
 
 class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):

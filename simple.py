@@ -277,7 +277,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         LS.customShapes = []
         csHandIk = makeCustomShape("CS_HandIk", "RectX")
         csFootIk = makeCustomShape("CS_FootIk", "RectZ")
-        if IK.usePoleTargets:
+        if True or IK.usePoleTargets:
             csCube = makeCustomShape("CS_Cube", "Cube", scale=0.3)
 
         armTable = {
@@ -329,7 +329,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if genesis == "G38" and self.useCopyRotation:
                     shikname, foreikname = getEntry(armTable2, genesis, prefix, ebones)
                     layer = (30 if self.usePoleTargets else 26+dlayer)
-                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrBend.tail, shldrBend.roll, layer, shldrBend.parent)
+                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, layer, shldrBend.parent)
                     foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, 30, shldrIK)
                 if IK.usePoleTargets:
                     elbow = makePole(elbowname, rig, foreBend, collar)
@@ -443,6 +443,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.use_y = False
                     cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL_WITH_PARENT')
                     cns.use_x = cns.use_z = False
+                    #shldrIK.custom_shape = csCube
+                    shldrIK.bone_group = rig.pose.bone_groups["IK"]
                 if self.useLegs:
                     thighIK, shinIK = getEntry(legTable2, genesis, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
@@ -459,6 +461,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode
+                    #thighIK.custom_shape = csCube
+                    thighIK.bone_group = rig.pose.bone_groups["IK"]
             elif genesis == "G38":
                 if self.useArms:
                     ikConstraint(foreTwist, handIK, elbow, -90, 4, rig, prop=armProp)
@@ -561,35 +565,31 @@ class DAZ_OT_AddCustomShapes(DazOperator):
             csFoot = makeCustomShape("CS_Foot", "CircleZ", (0,1,0), (0.8,0.5*footFactor,0))
             csToe = makeCustomShape("CS_Toe", "CircleZ", (0,1,0), (1,0.5,0))
 
-        for bnames in [("upperFaceRig", "upperfacerig"),
-                       ("lowerFaceRig", "lowerfacerig"),
-                       ("lMetatarsals", "l_metatarsal"),
-                       ("rMetatarsals", "r_metatarsal"),
-                       ("upperTeeth", "upperteeth"),
-                       ("lowerTeeth", "lowerteeth")]:
-            pb = getPoseBone(rig, bnames)
-            if pb:
-                pb.bone.layers = [False] + [True] + 30*[False]
-
         for pb in rig.pose.bones:
             lname = pb.name.lower()
-            if not pb.bone.layers[0]:
-                pass
-            elif pb.parent and pb.parent.name in ["lowerFaceRig", "upperFaceRig", "lowerfacerig", "upperfacerig"]:
+            if lname in ["upperfacerig", "lowerfacerig", "l_metatarsal", "r_metatarsal", "upperteeth", "lowerteeth"]:
+                pb.bone.layers = [False] + [True] + 30*[False]
+            elif not pb.bone.layers[0]:
+                for lnum in range(1,16):
+                    if pb.bone.layers[lnum]:
+                        addToLayer(pb, "Custom", rig, "Custom")
+                        break
+            elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
-                    setCustomShape(pb, csFace, 0.3, 1.0)
+                    pass
+                    #setCustomShape(pb, csFace, 0.3, 1.0)
                 else:
                     setCustomShape(pb, csFace)
-                addToLayer(pb, "Face", rig, "Spine")
+                addToLayer(pb, "Face", rig, "Face")
             elif pb.name in ["lEye", "rEye", "lEar", "rEar", "l_eye", "r_eye", "l_ear", "r_ear"]:
                 setCustomShape(pb, circleY2, None, 1.0)
-                addToLayer(pb, "Face", rig, "Spine")
+                addToLayer(pb, "Face", rig, "Face")
             elif lname == "lowerjaw":
                 setCustomShape(pb, csCollar)
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, "Spine", rig, "Face")
             elif pb.name.startswith("tongue"):
                 setCustomShape(pb, csTongue)
-                addToLayer(pb, "Face", rig, "Spine")
+                addToLayer(pb, "Face", rig, "Face")
             elif lname.endswith("hand"):
                 setCustomShape(pb, csHandFk)
                 addToLayer(pb, "FK Arm", rig, "FK")
@@ -1084,6 +1084,7 @@ BoneLayers = {
     "Right IK Arm" : 27,
     "Left IK Leg" : 28,
     "Right IK Leg" : 29,
+    "Custom" : 30,
 }
 
 
@@ -1093,6 +1094,8 @@ def makeBoneGroups(rig):
         ("FK",      (0,1,0)),
         ("IK",      (1,0,0)),
         ("Limb",    (0,0,1)),
+        ("Face",    (1,0.5,0)),
+        ("Custom",  (1,0,1)),
     ]
     if len(rig.pose.bone_groups) != len(BoneGroups):
         for bg in list(rig.pose.bone_groups):

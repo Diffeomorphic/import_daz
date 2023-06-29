@@ -538,7 +538,7 @@ class TreeSaver:
         name = stripName(name)
         nodelist = []
         struct["nodes"] = nodelist
-        ignore = ( "inputs", "outputs", "rna_type", "internal_links", "interface", "texture_mapping", "color_mapping", "image_user")
+        ignore = ( "inputs", "outputs", "rna_type", "internal_links", "interface", "texture_mapping", "color_mapping", "image_user", "node_preview")
         for node in tree.nodes:
             nodestruct = {}
             nodelist.append(nodestruct)
