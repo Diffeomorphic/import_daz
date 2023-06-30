@@ -526,6 +526,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getNodes(self, rig):
+        nodes = {}
         self.ancestors = {}
         figure = rig.DazUrl.rsplit("#",1)[1]
         node = {
@@ -539,16 +540,21 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 node["parent"] = "#%s" % quote(parent)
             elif rig.parent_type == 'BONE':
                 node["parent"] = "#%s" % quote(rig.parent_bone)
-        nodes = [node]
+        nodes[0] = [node]
         for pb in rig.pose.bones:
             if isDrvBone(pb.name) or isFinal(pb.name):
                 continue
-            nodes += self.getAncestors(pb, rig, figure)
-        return nodes
+            idx = pb.bone.get("DazRigIndex", 0)
+            if idx not in nodes.keys():
+                nodes[idx] = []
+            nodes[idx] += self.getAncestors(pb, rig, idx, figure)
+        nodelist = []
+        for idx in range(len(rig.data.DazMergedRigs)):
+            nodelist += nodes.get(idx, [])
+        return nodelist
 
 
-    def getAncestors(self, pb, rig, figure):
-        idx = pb.bone.get("DazRigIndex", 0)
+    def getAncestors(self, pb, rig, idx, figure):
         pg = rig.data.DazMergedRigs[str(idx)]
         path,figure2 = pg.s.rsplit("#",1)
         parent = pb.parent
@@ -559,7 +565,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.ancestors[parname] = True
             node = {
                 "id" : parname,
-                "url" : "name://@selection/%s:" % quote(parname)
+                "url" : "name://@selection/%s:" % quote(parent.name)
             }
             parent = parent.parent
             if parent:
@@ -571,7 +577,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         if figure2 not in self.ancestors.keys():
             node = {
                 "id" : figure2,
-                "url" : "name://@selection/%s:" % quote(figure),
+                "url" : "name://@selection/%s:" % quote(figure2),
                 "parent" : "#%s" % quote(figure)
             }
             nodes.append(node)
