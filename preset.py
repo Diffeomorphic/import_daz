@@ -351,10 +351,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
-                    bname = self.getDazBone(bname, pb)
                     mat = self.getBoneMatrix(pb, bname, smats, rig, frame)
                     if mat is None:
+                        print("NOMAT", pb.name, bname)
                         continue
+                    bname = self.getDazBone(bname, pb)
                     L[bname] = self.Finv[bname] @ mat @ self.F[bname]
 
 
