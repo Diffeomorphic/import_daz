@@ -403,6 +403,7 @@ class BoneInstance(Instance):
         pb = rig.pose.bones[node.name]
         self.rna = pb
         pb.bone.inherit_scale = self.defaultInherit()
+
         mapped = self.node.mapped
         if (mapped and
             self.name != mapped and
@@ -410,6 +411,8 @@ class BoneInstance(Instance):
             pg = rig.data.DazBoneMap.add()
             pg.name = mapped
             pg.s = self.name
+        if self.id != self.name:
+            pb.bone["DazTrueName"] = unquote(self.id)
         if isBoneDriven(rig, pb):
             pb.rotation_mode = self.getRotationMode(pb, True)
             pb.bone.layers = [False,True] + 30*[False]

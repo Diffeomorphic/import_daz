@@ -28,7 +28,7 @@
 import bpy
 import math
 from mathutils import Vector, Euler
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 from bpy.props import *
 from .settings import GS, LS
 

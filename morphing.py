@@ -1329,7 +1329,6 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
             return
         else:
             print(ob.name)
-        from urllib.parse import quote
         from .finger import getFingerPrint
         url = quote(ob.DazUrl)
         if url not in struct.keys():
@@ -1401,7 +1400,6 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
 
 
     def loadPreset(self, ob, rig, struct, context):
-        from urllib.parse import quote
         from .finger import getFingeredCharacters
         if ob.type != 'MESH':
             return

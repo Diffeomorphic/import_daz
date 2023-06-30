@@ -429,7 +429,6 @@ def getRef(id, fileref):
 
 
 def normalizeRef(id):
-    from urllib.parse import quote
     ref = undoQuote(quote(id))
     return ref.replace("//", "/")
 
@@ -440,7 +439,6 @@ def undoQuote(ref):
 
 
 def normalizeUrl(filepath):
-    from urllib.parse import quote
     filepath = bpy.path.resolve_ncase(filepath)
     for path in GS.getDazPaths():
         if path:

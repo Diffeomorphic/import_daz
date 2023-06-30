@@ -1425,18 +1425,21 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             subinfo.getEditBones(mainbones, extrabones)
         adds, hdadds, removes = self.createNewCollections(rig)
 
-        layers = self.clothesLayer*[False] + [True] + (31-self.clothesLayer)*[False]
         activateObject(context, rig)
+        nmerged = len(rig.data.DazMergedRigs)
+        if nmerged == 0:
+            pg = rig.data.DazMergedRigs.add()
+            pg.name = "0"
+            pg.s = rig.DazUrl
+            nmerged = 1
+        layers = self.clothesLayer*[False] + [True] + (31-self.clothesLayer)*[False]
         for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:
-                subinfo.addEditBones(rig, idx+1, layers)
+                subinfo.addEditBones(rig, idx+nmerged, layers)
         for bone in rig.data.bones:
             if bone.name in extrabones:
                 bone.DazExtraBone = True
         self.reparentObjects(info, rig, adds, hdadds, removes)
-        pg = rig.data.DazMergedRigs.add()
-        pg.name = "0"
-        pg.s = rig.DazUrl
         for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:
                 subinfo.copyPose(context, rig)
@@ -1447,7 +1450,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 self.reparentObjects(subinfo, rig, adds, hdadds, removes)
                 subinfo.rig.parent = None
                 pg = rig.data.DazMergedRigs.add()
-                pg.name = str(idx+1)
+                pg.name = str(idx+nmerged)
                 pg.s = subinfo.rig.DazUrl
                 deleteObjects(context, [subinfo.rig])
             else:
