@@ -80,6 +80,7 @@ MhxRigifyLayer = {
     L_HEAD : R_FACE,
     L_CUSTOM : R_CUSTOM,
     L_FIN : R_LAST,
+    L_TWEAK : R_CUSTOM,
 }
 
 #-------------------------------------------------------------

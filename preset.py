@@ -599,16 +599,14 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 idx = pb.bone.get("DazRigIndex", 0)
                 pg = rig.data.DazMergedRigs[str(idx)]
                 path,figure = pg.s.rsplit("#",1)
-                if "DazTrueName" in pb.bone.keys():
-                    id = pb.bone["DazTrueName"]
-                else:
-                    id = pb.name
+                id = pb.bone.get("DazTrueName", pb.name)
                 return"%s:%s#%s" % (quote(bname), quote(path), quote(id))
         else:
             if pb == rig:
                 return "name://@selection:"
             else:
-                return "name://@selection/%s" % quote(bname)
+                id = pb.bone.get("DazTrueName", pb.name)
+                return "name://@selection/%s" % quote(id)
 
 
     def getAnimations(self, rig):

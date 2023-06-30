@@ -173,45 +173,64 @@ class FrameConverter:
     #-------------------------------------------------------------
 
     def setupBoneMap(self, anims, rig):
+        truenames = dict([(bone.name, bone.name) for bone in rig.data.bones])
+        for bone in rig.data.bones:
+            if "DazTrueName" in bone.keys():
+                truenames[bone["DazTrueName"]] = bone.name
         conv,twists = self.getConv(anims[0][0], rig)
         bonemap = OrderedDict()
         locks = self.getRigifyLocks(rig, conv)
+        missing = []
         for banim,vanim in anims:
             for bname in banim.keys():
-                if bname in rig.data.bones.keys():
-                    bonemap[bname] = bname
-                elif bname in conv.keys():
+                if bname in truenames.keys():
+                    bonemap[bname] = truenames[bname]
+                    continue
+                if bname in conv.keys():
                     bonemap[bname] = conv[bname]
-                elif len(bname) < 2:
+                    continue
+                if len(bname) < 2:
                     bonemap[bname] = bname
+                    continue
                 elif bname[0] in ["l", "r"] and bname[1].isupper():
                     rname1 = "%s%s.%s" % (bname[1].lower(), bname[2:], bname[0].upper())
                     rname2 = "%s%s.%s" % (bname[1].lower(), bname[2:].lower(), bname[0].upper())
                     rname3 = "%s_%s" % (bname[0], bname[1:].lower())
                     if rname1 in rig.data.bones.keys():
                         bonemap[bname] = rname1
+                        continue
                     elif rname2 in rig.data.bones.keys():
                         bonemap[bname] = rname2
+                        continue
                     elif rname3 in rig.data.bones.keys():
                         bonemap[bname] = rname2
+                        continue
                 elif bname[0:2] in ["l_", "r_"]:
                     rname1 = "%s.%s" % (bname[2:], bname[0].upper())
                     rname2 = "%s%s%s" % (bname[0], bname[2].upper(), bname[3:])
                     if rname1 in rig.data.bones.keys():
                         bonemap[bname] = rname1
+                        continue
                     elif rname2 in rig.data.bones.keys():
                         bonemap[bname] = rname2
+                        continue
                 elif bname[0].isupper():
                     rname1 = "%s%s" % (bname[0].lower(), bname[1:])
                     rname2 = bname.lower()
                     if rname1 in rig.data.bones.keys():
                         bonemap[bname] = rname1
+                        continue
                     elif rname2 in rig.data.bones.keys():
                         bonemap[bname] = rname2
-                else:
-                    rname = bname.lower()
-                    if rname in rig.data.bones.keys():
-                        bonemap[bname] = rname
+                        continue
+                rname = bname.lower()
+                if rname in rig.data.bones.keys():
+                    bonemap[bname] = rname
+                elif bname != "@selection":
+                    missing.append(bname)
+        if missing:
+            print("Missing bones:")
+            print(missing)
         return bonemap, locks
 
 
