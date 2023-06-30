@@ -526,46 +526,57 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getNodes(self, rig):
-        taken = dict([(idx,False) for idx in range(len(rig.data.DazMergedRigs))])
+        self.ancestors = {}
         figure = rig.DazUrl.rsplit("#",1)[1]
         node = {
             "id" : figure,
             "url" : "name://@selection/%s:" % quote(figure),
         }
+        self.ancestors[figure] = True
         if rig.parent:
             if rig.parent_type == 'OBJECT':
                 parent = rig.parent.DazUrl.rsplit("#",1)[1]
                 node["parent"] = "#%s" % quote(parent)
             elif rig.parent_type == 'BONE':
                 node["parent"] = "#%s" % quote(rig.parent_bone)
-        taken[0] = True
         nodes = [node]
         for pb in rig.pose.bones:
             if isDrvBone(pb.name) or isFinal(pb.name):
                 continue
-            bname = self.getDazBone(pb.name, pb)
-            if pb.parent:
-                parname = self.getDazBone(pb.parent.name, pb.parent)
-            else:
-                parname = figure
-            idx = pb.bone.get("DazRigIndex", 0)
-            if not taken[idx]:
-                pg = rig.data.DazMergedRigs[str(idx)]
-                path,figure = pg.s.rsplit("#",1)
-                node = {
-                    "id" : figure,
-                    "url" : "name://@selection/%s:" % quote(figure),
-                    "parent" : "#%s" % quote(parname)
-                }
-                nodes.append(node)
-                taken[idx] = True
-                parname = figure
+            nodes += self.getAncestors(pb, rig, figure)
+        return nodes
+
+
+    def getAncestors(self, pb, rig, figure):
+        idx = pb.bone.get("DazRigIndex", 0)
+        pg = rig.data.DazMergedRigs[str(idx)]
+        path,figure2 = pg.s.rsplit("#",1)
+        parent = pb.parent
+        nodes = []
+        if parent:
+            parname = self.getDazBone(parent.name, pb)
+        while parent and parname not in self.ancestors.keys():
+            self.ancestors[parname] = True
             node = {
-                "id" : bname,
-                "url" : "name://@selection/%s:" % quote(pb.name),
-                "parent" : "#%s" % quote(parname)
+                "id" : parname,
+                "url" : "name://@selection/%s:" % quote(parname)
+            }
+            parent = parent.parent
+            if parent:
+                parname = self.getDazBone(parent.name, pb)
+                node["parent"] = "#%s" % quote(parname)
+            else:
+                node["parent"] = "#%s" % quote(figure2)
+            nodes.append(node)
+        if figure2 not in self.ancestors.keys():
+            node = {
+                "id" : figure2,
+                "url" : "name://@selection/%s:" % quote(figure),
+                "parent" : "#%s" % quote(figure)
             }
             nodes.append(node)
+            self.ancestors[figure2] = True
+        nodes.reverse()
         return nodes
 
 
