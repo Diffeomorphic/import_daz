@@ -148,6 +148,17 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def invoke(self, context, event):
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
+        adata = rig.animation_data
+        if adata and adata.action:
+            tmin = tmax = 1
+            for fcu in adata.action.fcurves:
+                times = [kp.co[0] for kp in fcu.keyframe_points]
+                tmin = min(int(min(times)), tmin)
+                tmax = max(int(max(times)), tmax)
+            self.first = tmin
+            self.last = tmax
+        else:
+            self.first = self.last = context.scene.frame_current
         return SingleFile.invoke(self, context, event)
 
 
@@ -281,7 +292,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         if self.useBones or self.useHierarchial:
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
-                    bname = self.getDazBone(bname, pb)
                     if pb.rotation_mode == 'QUATERNION':
                         self.quats[bname] = [FakeCurve(t) for t in pb.rotation_quaternion]
                     else:

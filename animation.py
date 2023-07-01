@@ -813,7 +813,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             pb.lock_location = lock
         updateDrivers(rig)
         setMode('OBJECT')
-        self.mergeHipObject(rig)
+        #self.mergeHipObject(rig)
         return result
 
     def clearAnimation(self, ob):
@@ -960,8 +960,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif rig.DazRig[0:6] == "rigify":
             master = "root"
         else:
-            return False
-        return (master in rig.pose.bones.keys())
+            return None
+        if master in rig.pose.bones.keys():
+            return master
 
 
     #-------------------------------------------------------------
@@ -1242,8 +1243,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             imposeLocks(pb)
             if self.useInsertKeys:
                 insertKeys(pb, True, n+offset, self)
-        else:
-            pass
 
 
     def setBoneTwist(self, tfm, pb, rig):
