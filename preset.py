@@ -561,7 +561,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 nodes[idx] = []
             nodes[idx] += self.getAncestors(pb, rig, idx, figure)
         nodelist = []
-        for idx in range(len(rig.data.DazMergedRigs)):
+        nrigs = max(1, len(rig.data.DazMergedRigs))
+        for idx in range(nrigs):
             nodelist += nodes.get(idx, [])
         return nodelist
 
@@ -588,8 +589,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.ancestors[bname] = True
             return node
 
-        pg = rig.data.DazMergedRigs[str(idx)]
-        path,figure2 = pg.s.rsplit("#",1)
+        path2,figure2 = self.getPathFigure(rig, idx)
         node = addNode(pb)
         nodes = [node]
         parent,parname = getParent(pb)
@@ -607,6 +607,15 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.ancestors[figure2] = True
         nodes.reverse()
         return nodes
+
+
+    def getPathFigure(self, rig, idx):
+        pg = rig.data.DazMergedRigs.get(str(idx))
+        if pg:
+            string = pg.s
+        else:
+            string = rig.DazUrl
+        return string.rsplit("#",1)
 
 
     def skipBone(self, pb):
@@ -643,8 +652,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 return "%s:%s#%s" % (figure, path, figure)
             else:
                 idx = pb.bone.get("DazRigIndex", 0)
-                pg = rig.data.DazMergedRigs[str(idx)]
-                path,figure = pg.s.rsplit("#",1)
+                path,figure = self.getPathFigure(rig, idx)
                 id = pb.bone.get("DazTrueName", pb.name)
                 return"%s:%s#%s" % (quote(bname), quote(path), quote(id))
         else:

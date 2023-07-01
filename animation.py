@@ -1246,15 +1246,30 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def setBoneTwist(self, tfm, pb, rig):
-        from .node import flipAxes
-        vec = flipAxes(tfm.rot*D, pb)
+        table = {
+            "upper_arm.fk.L" : (0, 1),
+            "upper_arm.fk.R" : (0, -1),
+            "forearm.fk.L" : (0, 1),
+            "forearm.fk.R" : (0, -1),
+            "thigh.fk.L" : (1, -1),
+            "thigh.fk.R" : (1, -1),
+            "upper_arm_fk.L" : (0, 1),
+            "upper_arm_fk.R" : (0, -1),
+            "forearm_fk.L" : (0, 1),
+            "forearm_fk.R" : (0, -1),
+            "thigh_fk.L" : (1, -1),
+            "thigh_fk.R" : (1, -1),
+            "neck" : (1, 1),
+        }
+        idx,sign = table[pb.name]
+        y = sign*tfm.rot[idx]
         if pb.rotation_mode == 'QUATERNION':
             euler = pb.matrix_basis.to_3x3().to_euler('YXZ')
-            euler.y = vec[1]
+            euler.y = y*D
             pb.rotation_quaternion = euler.to_quaternion()
         else:
             euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
-            euler.y = vec[1]
+            euler.y = y*D
             pb.rotation_euler = euler
 
 
