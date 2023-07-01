@@ -528,8 +528,9 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         return ""
 
 
-    def getDazBone(self, bname, pb):
-        idx = pb.bone.get("DazRigIndex", 0)
+    def getDazBone(self, bname, pb, idx=None):
+        if idx is None:
+            idx = pb.bone.get("DazRigIndex", 0)
         if idx == 0:
             return bname
         else:
@@ -553,7 +554,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 node["parent"] = "#%s" % quote(rig.parent_bone)
         nodes[0] = [node]
         for pb in rig.pose.bones:
-            if isDrvBone(pb.name) or isFinal(pb.name):
+            if self.skipBone(pb):
                 continue
             idx = pb.bone.get("DazRigIndex", 0)
             if idx not in nodes.keys():
@@ -566,25 +567,36 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getAncestors(self, pb, rig, idx, figure):
+        def getParent(pb):
+            parent = pb.parent
+            if parent and self.skipBone(parent):
+                parent = parent.parent
+            if parent:
+                parname = self.getDazBone(parent.name, pb, idx)
+                return parent, parname
+            else:
+                return None, figure2
+
+        def addNode(pb):
+            bname = self.getDazBone(pb.name, pb, idx)
+            parent,parname = getParent(pb)
+            node = {
+                "id" : bname,
+                "url" : "name://@selection/%s:" % quote(pb.name),
+                "parent" : "#%s" % quote(parname)
+            }
+            self.ancestors[bname] = True
+            return node
+
         pg = rig.data.DazMergedRigs[str(idx)]
         path,figure2 = pg.s.rsplit("#",1)
-        parent = pb.parent
-        nodes = []
-        if parent:
-            parname = self.getDazBone(parent.name, pb)
+        node = addNode(pb)
+        nodes = [node]
+        parent,parname = getParent(pb)
         while parent and parname not in self.ancestors.keys():
-            self.ancestors[parname] = True
-            node = {
-                "id" : parname,
-                "url" : "name://@selection/%s:" % quote(parent.name)
-            }
-            parent = parent.parent
-            if parent:
-                parname = self.getDazBone(parent.name, pb)
-                node["parent"] = "#%s" % quote(parname)
-            else:
-                node["parent"] = "#%s" % quote(figure2)
+            node = addNode(parent)
             nodes.append(node)
+            parent,parname = getParent(parent)
         if figure2 not in self.ancestors.keys():
             node = {
                 "id" : figure2,
@@ -595,6 +607,12 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             self.ancestors[figure2] = True
         nodes.reverse()
         return nodes
+
+
+    def skipBone(self, pb):
+        return (isDrvBone(pb.name) or
+                isFinal(pb.name) or
+                pb.name in ["Root"])
 
 
     def saveHierarchialPreset(self, rig):
@@ -1034,7 +1052,7 @@ class DAZ_OT_BakeShapekeys(Framer, DazPropsOperator, IsMesh):
 
 class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
     bl_idname = "daz.mute_control_rig"
-    bl_label = "Mute Deform Rig"
+    bl_label = "Mute Control Rig"
     bl_description = "Disable drivers and copy location/rotation constraints"
     bl_options = {'UNDO'}
 
@@ -1110,7 +1128,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
 
 class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
     bl_idname = "daz.unmute_control_rig"
-    bl_label = "Unmute Deform Rig"
+    bl_label = "Unmute Control Rig"
     bl_description = "Enable drivers and copy location/rotation constraints"
     bl_options = {'UNDO'}
 
