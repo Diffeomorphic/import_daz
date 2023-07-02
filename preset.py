@@ -153,7 +153,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     includeLocks : BoolProperty(
         name = "Include Locked Channels",
         description = "Include locked bone channels in the pose preset",
-        default = False)
+        default = True)
 
     useScale : BoolProperty(
         name = "Use Scale",
@@ -788,13 +788,16 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def addKeys(self, xs, anim, eps):
+        def nullify(x):
+            return (0 if abs(x) < eps else x)
+
         if len(xs) == 0:
             return
         maxdiff = max([abs(x-xs[0]) for x in xs])
         if maxdiff < eps:
-            anim["keys"] = [(0, xs[0])]
+            anim["keys"] = [(0, nullify(xs[0]))]
         else:
-            anim["keys"] = [(n/self.fps, x) for n,x in enumerate(xs)]
+            anim["keys"] = [(n/self.fps, nullify(x)) for n,x in enumerate(xs)]
 
 
     def getTrans(self, bname, pb, rig, vecs, factor, anims):
@@ -805,7 +808,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim = {}
                 anim["url"] = "%s?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor for vec in vecs]
-                self.addKeys(locs, anim, 1e-5)
+                self.addKeys(locs, anim, 1e-4)
                 anims.append(anim)
         else:
             for idx,x in enumerate(["x","y","z"]):
@@ -816,7 +819,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim = {}
                 anim["url"] = "%s:?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor for vec in vecs]
-                self.addKeys(locs, anim, 1e-5)
+                self.addKeys(locs, anim, 1e-4)
                 anims.append(anim)
 
 
