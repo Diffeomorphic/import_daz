@@ -527,7 +527,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getPrefixName(self, pb):
-        if isDrvBone(pb.name) or isFinal(pb.name):
+        if self.skipBone(pb):
             return None
         elif pb.name[-2:] == ".L":
             return "l%s%s" % (pb.name[0].upper(), pb.name[1:-2])
@@ -575,6 +575,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getDazBone(self, bname, pb, idx=None):
+        if not self.useHierarchial:
+            return bname
         if idx is None:
             idx = pb.bone.get("DazRigIndex", 0)
         if idx == 0:
@@ -715,8 +717,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             if pb == rig:
                 return "name://@selection:"
             else:
-                id = pb.bone.get("DazTrueName", pb.name)
-                return "name://@selection/%s" % quote(id)
+                return "name://@selection/%s" % quote(bname)
 
 
     def getAnimations(self, rig):
