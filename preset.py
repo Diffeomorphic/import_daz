@@ -644,7 +644,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             parent,parname = getParent(pb, None)
             suffix = parname.rsplit("-",1)[-1]
             if suffix != str(idx):
-                node["parent"] = quote(figure2)
+                node["parent"] = "#%s" % quote(figure2)
                 figure = parname
         else:
             node = addNode(pb, idx)
