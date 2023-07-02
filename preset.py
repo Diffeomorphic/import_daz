@@ -39,6 +39,73 @@ from .animation import HideOperator, FrameConverter
 from .bone_data import BD
 
 #----------------------------------------------------------
+#   Framer class
+#----------------------------------------------------------
+
+class Framer(DazPropsOperator):
+    frame_start : IntProperty(
+        name = "Start",
+        default = 1)
+
+    frame_end : IntProperty(
+        name = "End",
+        default = 1)
+
+    def draw(self, context):
+        self.layout.prop(self, "frame_start")
+        self.layout.prop(self, "frame_end")
+
+
+    def setActiveRange(self, context, rig):
+        adata = rig.animation_data
+        if adata and adata.action:
+            tmin = tmax = 1
+            for fcu in adata.action.fcurves:
+                times = [kp.co[0] for kp in fcu.keyframe_points]
+                tmin = min(int(min(times)), tmin)
+                tmax = max(int(max(times)), tmax)
+            self.frame_start = tmin
+            self.frame_end = tmax
+        else:
+            self.frame_start = self.frame_end = context.scene.frame_current
+
+
+    def invoke(self, context, event):
+        rig = getRigFromContext(context)
+        rig = self.getControlRig(rig)
+        self.setActiveRange(context, rig)
+        return DazPropsOperator.invoke(self, context, event)
+
+
+    def getControlRig(rig):
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                if cns.type == 'COPY_TRANSFORMS':
+                    return cns.target
+        return rig
+
+
+    def bakeShapekeys(self, context, meshes, actname):
+        scn = context.scene
+        for ob in meshes:
+            if ob.animation_data:
+                ob.animation_data.action = None
+        for frame in range(self.frame_start, self.frame_end+1):
+            scn.frame_current = frame
+            updateScene(context)
+            for ob in meshes:
+                for skey in ob.data.shape_keys.key_blocks:
+                    skey.value = skey.value
+                    if abs(skey.value) < 1e-4:
+                        skey.value = 0
+                    skey.keyframe_insert("value", frame=frame)
+        for ob in meshes:
+            if ob.data.shape_keys:
+                act = getCurrentAction(ob.data.shape_keys)
+                if act:
+                    act.name = "%s:%s" % (actname[0:33], ob.name[0:30])
+
+#----------------------------------------------------------
 #   Save pose preset
 #----------------------------------------------------------
 
@@ -53,7 +120,7 @@ class FakeCurve:
         return self.value
 
 
-class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, FrameConverter, IsObject):
+class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, FrameConverter, Framer, IsObject):
     bl_idname = "daz.save_pose_preset"
     bl_label = "Save Pose Preset"
     bl_description = "Save the active action as a pose preset,\nto be used in DAZ Studio"
@@ -108,16 +175,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         description = "Include morphs that are constantly zero",
         default = False)
 
-    first : IntProperty(
-        name = "Start",
-        description = "First frame",
-        default = 1)
-
-    last : IntProperty(
-        name = "End",
-        description = "Last frame",
-        default = 1)
-
     fps : FloatProperty(
         name = "FPS",
         description = "Frames per second",
@@ -140,25 +197,14 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.layout.prop(self, "useUnusedMorphs")
         self.layout.prop(self, "useAction")
         if self.useAction:
-            self.layout.prop(self, "first")
-            self.layout.prop(self, "last")
+            Framer.draw(self, context)
             self.layout.prop(self, "fps")
 
 
     def invoke(self, context, event):
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
-        adata = rig.animation_data
-        if adata and adata.action:
-            tmin = tmax = 1
-            for fcu in adata.action.fcurves:
-                times = [kp.co[0] for kp in fcu.keyframe_points]
-                tmin = min(int(min(times)), tmin)
-                tmax = max(int(max(times)), tmax)
-            self.first = tmin
-            self.last = tmax
-        else:
-            self.first = self.last = context.scene.frame_current
+        self.setActiveRange(context, rig)
         return SingleFile.invoke(self, context, event)
 
 
@@ -211,7 +257,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         self.rots = {}
         self.quats = {}
         self.scales = {}
-        self.Ls = dict([(frame, {}) for frame in range(self.first, self.last+1)])
+        self.Ls = dict([(frame, {}) for frame in range(self.frame_start, self.frame_end+1)])
         self.F = {}
         self.Finv = {}
         self.idxs = {}
@@ -332,7 +378,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def setupObjectFrames(self, rig):
         objkey = self.getDazObject(rig)
-        for frame in range(self.first, self.last+1):
+        for frame in range(self.frame_start, self.frame_end+1):
             L = self.Ls[frame] = {}
             mat = self.getRigMatrix(rig, frame)
             L[objkey] = self.Z.inverted() @ mat @ self.Z
@@ -348,7 +394,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             return None
 
         objkey = self.getDazObject(rig)
-        for frame in range(self.first, self.last+1):
+        for frame in range(self.frame_start, self.frame_end+1):
             L = self.Ls[frame]
             smats = {}
             mat = self.getRigMatrix(rig, frame)
@@ -686,7 +732,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         anims = []
         if self.useObject or self.useHierarchial:
             objkey = self.getDazObject(rig)
-            Ls = [self.Ls[frame][objkey] for frame in range(self.first, self.last+1)]
+            Ls = [self.Ls[frame][objkey] for frame in range(self.frame_start, self.frame_end+1)]
             locs = [L.to_translation() for L in Ls]
             self.getTrans("", rig, rig, locs, 1/rig.DazScale, anims)
 
@@ -702,7 +748,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                     continue
                 for bname in self.getBoneNames(pb.name):
                     bname = self.getDazBone(bname, pb)
-                    Ls = [self.Ls[frame][bname] for frame in range(self.first, self.last+1)]
+                    Ls = [self.Ls[frame][bname] for frame in range(self.frame_start, self.frame_end+1)]
                     if self.isLocUnlocked(pb, bname):
                         locs = [L.to_translation() for L in Ls]
                         self.getTrans(bname, pb, rig, locs, 1/rig.DazScale, anims)
@@ -724,7 +770,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             prop = self.alias[prop]
         anim = {}
         anim["url"] = "name://@selection#%s:?value/value" % normalizeRef(prop)
-        vals = [fcu.evaluate(frame) for frame in range(self.first, self.last+1)]
+        vals = [fcu.evaluate(frame) for frame in range(self.frame_start, self.frame_end+1)]
         maxval = max(vals)
         minval = min(vals)
         if maxval-minval < 1e-4:
@@ -969,40 +1015,6 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
 #   Bake deform rig
 #-------------------------------------------------------------
 
-class Framer:
-    frame_start : IntProperty(
-        name = "Start",
-        default = 1)
-
-    frame_end : IntProperty(
-        name = "End",
-        default = 1)
-
-    def draw(self, context):
-        self.layout.prop(self, "frame_start")
-        self.layout.prop(self, "frame_end")
-
-    def bakeShapekeys(self, context, meshes, actname):
-        scn = context.scene
-        for ob in meshes:
-            if ob.animation_data:
-                ob.animation_data.action = None
-        for frame in range(self.frame_start, self.frame_end+1):
-            scn.frame_current = frame
-            updateScene(context)
-            for ob in meshes:
-                for skey in ob.data.shape_keys.key_blocks:
-                    skey.value = skey.value
-                    if abs(skey.value) < 1e-4:
-                        skey.value = 0
-                    skey.keyframe_insert("value", frame=frame)
-        for ob in meshes:
-            if ob.data.shape_keys:
-                act = getCurrentAction(ob.data.shape_keys)
-                if act:
-                    act.name = "%s:%s" % (actname[0:33], ob.name[0:30])
-
-
 class ControlRigMuter:
     useShapekeys : BoolProperty(
         name = "Shapekeys",
@@ -1054,7 +1066,7 @@ def getCurrentAction(rna):
 #   Bake shapekeys
 #-------------------------------------------------------------
 
-class DAZ_OT_BakeShapekeys(Framer, DazPropsOperator, IsMesh):
+class DAZ_OT_BakeShapekeys(Framer, IsMesh):
     bl_idname = "daz.bake_shapekeys"
     bl_label = "Bake Shapekeys"
     bl_description = "Bake shapekey values to current action.\nMute control rig afterwards"
@@ -1068,7 +1080,7 @@ class DAZ_OT_BakeShapekeys(Framer, DazPropsOperator, IsMesh):
 #   Mute control rig
 #-------------------------------------------------------------
 
-class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
+class DAZ_OT_MuteControlRig(ControlRigMuter, Framer):
     bl_idname = "daz.mute_control_rig"
     bl_label = "Mute Control Rig"
     bl_description = "Disable drivers and copy location/rotation constraints"
@@ -1144,7 +1156,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
 #   Unmute control rig
 #-------------------------------------------------------------
 
-class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
+class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
     bl_idname = "daz.unmute_control_rig"
     bl_label = "Unmute Control Rig"
     bl_description = "Enable drivers and copy location/rotation constraints"
