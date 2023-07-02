@@ -488,7 +488,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         rig.data.display_type = 'WIRE'
 
 #----------------------------------------------------------
-#   Special shapes
+#   Custom shapes
 #----------------------------------------------------------
 
 def makeCustomShape(csname, gname, offset=(0,0,0), scale=1):
@@ -525,7 +525,7 @@ def getGenesisName(genesis, bnames):
 
 class DAZ_OT_AddCustomShapes(DazOperator):
     bl_idname = "daz.add_custom_shapes"
-    bl_label = "Add Special Shapes"
+    bl_label = "Add Custom Shapes"
     bl_description = "Add custom shapes to the bones of the active rig"
     bl_options = {'UNDO'}
 
@@ -568,7 +568,9 @@ class DAZ_OT_AddCustomShapes(DazOperator):
 
         for pb in rig.pose.bones:
             lname = pb.name.lower()
-            if lname in ["upperfacerig", "lowerfacerig"]:
+            if pb.bone.hide:
+                pass
+            elif lname in ["upperfacerig", "lowerfacerig"]:
                 pb.bone.layers = [False] + [True] + 30*[False]
             elif lname in ["upperteeth", "lowerteeth"]:
                addToLayer(pb, "Special", rig, "Special")
@@ -683,7 +685,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
 
 class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
     bl_idname = "daz.remove_custom_shapes"
-    bl_label = "Remove Special Shapes"
+    bl_label = "Remove Custom Shapes"
     bl_description = "Remove custom shapes from the bones of the active rig"
     bl_options = {'UNDO'}
 
@@ -1232,7 +1234,7 @@ def improveIk(rig, exclude=[]):
 
 class DAZ_OT_BatchSetCustomShape(DazPropsOperator, IsArmature):
     bl_idname = "daz.batch_set_custom_shape"
-    bl_label = "Batch Set Special Shape"
+    bl_label = "Batch Set Custom Shape"
     bl_description = "Set the selected mesh as the custom shape of all selected bones"
     bl_options = {'UNDO'}
 

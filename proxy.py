@@ -1835,7 +1835,7 @@ class DAZ_OT_CopyModifiers(DazPropsOperator, IsMesh):
 class WidgetConverter:
     usedLayer = 4
     unusedLayer = 5
-    deleteUnused = True
+    deleteUnused = False
 
     def convertWidgets(self, context, rig, ob):
         from .node import createHiddenCollection
@@ -1901,6 +1901,10 @@ class WidgetConverter:
                 eb = rig.data.edit_bones[bname]
                 rig.data.edit_bones.remove(eb)
             setMode('OBJECT')
+        else:
+            for bname in self.unused.keys():
+                bone = rig.data.bones[bname]
+                bone.hide = True
 
 
     def inheritLimits(self, pb, pb2, rig):
@@ -2044,8 +2048,8 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
 
     deleteUnused : BoolProperty(
         name = "Delete Unused",
-        description = "Delete unused bones",
-        default = True)
+        description = "Delete unused bones.\nIf disabled, unused bones are hidden",
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "usedLayer")

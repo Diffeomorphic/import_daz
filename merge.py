@@ -1431,6 +1431,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             pg = rig.data.DazMergedRigs.add()
             pg.name = "0"
             pg.s = rig.DazUrl
+            pg.b = False
             nmerged = 1
         layers = self.clothesLayer*[False] + [True] + (31-self.clothesLayer)*[False]
         for idx,subinfo in enumerate(subinfos):
@@ -1448,10 +1449,11 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                         self.changeArmatureModifier(ob, rig)
                         subinfo.renameVertexGroups(ob)
                 self.reparentObjects(subinfo, rig, adds, hdadds, removes)
-                subinfo.rig.parent = None
                 pg = rig.data.DazMergedRigs.add()
                 pg.name = str(idx+nmerged)
                 pg.s = subinfo.rig.DazUrl
+                pg.b = (subinfo.parbone is not None)
+                subinfo.rig.parent = None
                 deleteObjects(context, [subinfo.rig])
             else:
                 subinfo.reParent(rig)
@@ -1864,8 +1866,8 @@ classes = [
 ]
 
 def register():
-    from .propgroups import DazStringGroup
-    bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringGroup)
+    from .propgroups import DazStringBoolGroup
+    bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringBoolGroup)
     for cls in classes:
         bpy.utils.register_class(cls)
 
