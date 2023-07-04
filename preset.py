@@ -130,10 +130,16 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     affectBones = True
     affectMorphs = False
 
-    useHierarchical : BoolProperty(
-        name = "Hierarchical Pose",
-        description = "Save a hierarchical pose preset",
-        default = False)
+    type : EnumProperty(
+        items = [
+            ('POSE', "Pose", "Pose preset"),
+            ('SHAPE', "Shaping", "Shaping preset"),
+            ('HIERARCHICAL', "Hierarchical", "Hierarchical pose preset"),
+            ('POSE_SHAPE', "Pose And Shaping", "Combined pose and shaping preset"),
+        ],
+        name = "Preset Type",
+        description = "Preset type",
+        default = 'POSE')
 
     useAction : BoolProperty(
         name = "Use Action",
@@ -143,11 +149,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     useObject : BoolProperty(
         name = "Use Object",
         description = "Include object in the pose preset",
-        default = True)
-
-    useBones : BoolProperty(
-        name = "Use Bones",
-        description = "Include bones in the pose preset",
         default = True)
 
     includeLocks : BoolProperty(
@@ -165,11 +166,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         description = "Include face bones in the pose preset",
         default = True)
 
-    useMorphs : BoolProperty(
-        name = "Use Morphs",
-        description = "Include morphs in the pose preset",
-        default = True)
-
     useUnusedMorphs : BoolProperty(
         name = "Save Unused Morphs",
         description = "Include morphs that are constantly zero",
@@ -183,18 +179,19 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def draw(self, context):
         DazExporter.draw(self, context)
-        self.layout.prop(self, "useHierarchical")
+        self.layout.prop(self, "type")
+        self.useBones = self.type in ['POSE', 'POSE_SHAPE', 'HIERARCHICAL']
+        self.useHierarchical = self.type == 'HIERARCHICAL'
+        self.useMorphs = self.type in ['SHAPE', 'POSE_SHAPE']
+        self.useBones = (self.useBones and self.isFigure)
         if not self.useHierarchical:
             self.layout.prop(self, "useObject")
-            if self.isFigure:
-                self.layout.prop(self, "useBones")
-                if self.useBones:
-                    self.layout.prop(self, "includeLocks")
-                    self.layout.prop(self, "useScale")
-                    self.layout.prop(self, "useFaceBones")
-            self.layout.prop(self, "useMorphs")
-            if self.useMorphs:
-                self.layout.prop(self, "useUnusedMorphs")
+        if self.useBones:
+            self.layout.prop(self, "includeLocks")
+            self.layout.prop(self, "useScale")
+            self.layout.prop(self, "useFaceBones")
+        if self.useMorphs:
+            self.layout.prop(self, "useUnusedMorphs")
         self.layout.prop(self, "useAction")
         if self.useAction:
             Framer.draw(self, context)
@@ -202,6 +199,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def invoke(self, context, event):
+        self.useMorphs = self.useBones = self.useHierarchical = False
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
         self.setActiveRange(context, rig)
@@ -211,8 +209,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def run(self, context):
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
+        if self.useHierarchical and rig.DazRig.startswith(("mhx", "rigify")):
+            msg = "Hierarchical pose presets can only be made for original DAZ rigs.\nConsider generating %s rig with Keep DAZ Rig enabled" % rig.DazRig
+            raise DazError(msg)
         self.initData()
-        if self.useBones or self.useHierarchical:
+        if self.useBones:
             self.setupDriven(rig)
             self.setupConverter(rig)
         for bname,pg in rig.DazAlias.items():
@@ -225,7 +226,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         else:
             self.getFakeCurves(rig)
 
-        if self.useMorphs and not self.useHierarchical and rig.type == 'MESH':
+        if self.useMorphs and rig.type == 'MESH':
             skeys = rig.data.shape_keys
             if skeys:
                 act = None
@@ -236,10 +237,10 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 else:
                     self.getShapeFakeCurves(skeys)
 
-        if self.useBones or self.useHierarchical:
+        if self.useBones:
             self.setupFlipper(rig)
             self.setupBoneFrames(rig)
-        elif self.useObject or self.useHierarchical:
+        elif self.useObject:
             self.setupObjectFrames(rig)
         if self.useHierarchical:
             self.saveHierarchicalPreset(rig)
@@ -291,7 +292,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         for fcu in act.fcurves:
             channel = fcu.data_path.rsplit(".",1)[-1]
             words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[" and (self.useBones or self.useHierarchical):
+            if words[0] == "pose.bones[" and self.useBones:
                 idx = fcu.array_index
                 for bname in self.getBoneNames(words[1]):
                     if channel == "location" and bname in self.locs.keys():
@@ -302,7 +303,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                         self.quats[bname][idx] = fcu
                     elif self.useScale and channel == "scale" and bname in self.scales.keys():
                         self.scales[bname][idx] = fcu
-            elif words[0] == "[" and self.useMorphs and not self.useHierarchical:
+            elif words[0] == "[" and self.useMorphs:
                 prop = words[1]
                 if prop in rig.keys():
                     if self.isValidMorph(rig, prop):
@@ -330,12 +331,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getFakeCurves(self, rig):
-        if self.useObject or self.useHierarchical:
-            objkey = self.getDazObject(rig)
-            self.rots[objkey] = [FakeCurve(t) for t in rig.rotation_euler]
-            self.locs[objkey] = [FakeCurve(t) for t in rig.location]
-            self.scales[objkey] = [FakeCurve(t) for t in rig.scale]
-        if self.useBones or self.useHierarchical:
+        objkey = self.getDazObject(rig)
+        self.rots[objkey] = [FakeCurve(t) for t in rig.rotation_euler]
+        self.locs[objkey] = [FakeCurve(t) for t in rig.location]
+        self.scales[objkey] = [FakeCurve(t) for t in rig.scale]
+        if self.useBones:
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
                     if pb.rotation_mode == 'QUATERNION':
@@ -346,7 +346,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                         self.scales[bname] = [FakeCurve(t) for t in pb.scale]
                     if self.isLocUnlocked(pb, bname):
                         self.locs[bname] = [FakeCurve(t) for t in pb.location]
-        if self.useMorphs and not self.useHierarchical and rig.type == 'ARMATURE':
+        if self.useMorphs and rig.type == 'ARMATURE':
             for prop in rig.keys():
                 if self.isValidMorph(rig, prop):
                     self.morphs[prop]= FakeCurve(rig[prop])
@@ -743,7 +743,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 scales = [L.to_scale() for L in Ls]
                 self.getScale("", rig, rig, scales, anims)
 
-        if (self.useBones or self.useHierarchical) and rig.type == 'ARMATURE':
+        if self.useBones and rig.type == 'ARMATURE':
             for pb in rig.pose.bones:
                 if pb.name in self.RootNames:
                     continue
@@ -759,7 +759,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                         scales = [L.to_scale() for L in Ls]
                         self.getScale(bname, pb, rig, scales, anims)
 
-        if self.useMorphs and not self.useHierarchical:
+        if self.useMorphs:
             for prop,fcu in self.morphs.items():
                 self.getMorph(prop, fcu, anims)
         return anims
