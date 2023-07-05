@@ -133,9 +133,9 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     type : EnumProperty(
         items = [
             ('POSE', "Pose", "Pose preset"),
-            ('SHAPE', "Shaping", "Shaping preset"),
+            ('MORPH', "Morph", "Morph preset"),
             ('HIERARCHICAL', "Hierarchical", "Hierarchical pose preset"),
-            ('POSE_SHAPE', "Pose And Shaping", "Combined pose and shaping preset"),
+            ('POSE_MORPH', "Pose And Morph", "Combined pose and morph preset"),
         ],
         name = "Preset Type",
         description = "Preset type",
@@ -180,9 +180,9 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def draw(self, context):
         DazExporter.draw(self, context)
         self.layout.prop(self, "type")
-        self.useBones = self.type in ['POSE', 'POSE_SHAPE', 'HIERARCHICAL']
+        self.useBones = self.type in ['POSE', 'POSE_MORPH', 'HIERARCHICAL']
         self.useHierarchical = self.type == 'HIERARCHICAL'
-        self.useMorphs = self.type in ['SHAPE', 'POSE_SHAPE']
+        self.useMorphs = self.type in ['MORPH', 'POSE_MORPH']
         self.useBones = (self.useBones and self.isFigure)
         if not self.useHierarchical:
             self.layout.prop(self, "useObject")
