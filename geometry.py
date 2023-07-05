@@ -120,6 +120,10 @@ class GeoNode(Node, SimNode):
         Node.buildObject(self, context, inst, center)
 
 
+    def getObjectName(self, inst):
+        return "%s Mesh" % inst.name
+
+
     def buildShells(self, context):
         if not self.shellGeos:
             return
@@ -1141,7 +1145,8 @@ class Geometry(Asset, Channels):
                     item = items.names.add()
                     item.name = mname
 
-        ob = bpy.data.objects.new(inst.name, me)
+        obname = geonode.getObjectName(inst)
+        ob = bpy.data.objects.new(obname, me)
         from .finger import getFingerPrint
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:

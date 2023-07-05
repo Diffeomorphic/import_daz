@@ -1493,9 +1493,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 ob.parent_bone = info.getBoneKey(parbone)
             setWorldMatrix(ob, wmat)
             self.addToCollections(ob, adds, hdadds, removes)
-            ob.name = stripName(ob.name)
-            if ob.data:
-                ob.data.name = stripName(ob.data.name)
 
 
     def createNewCollections(self, rig):

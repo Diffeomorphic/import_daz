@@ -873,18 +873,18 @@ class Node(Asset, Formula, Channels):
         from .geometry import UnGeometry
         scn = context.scene
         ob2 = None
+        obname = self.getObjectName(inst)
         if isinstance(self.data, UnGeometry):
-            ob = bpy.data.objects.new(inst.name, None)
+            ob = bpy.data.objects.new(obname, None)
             self.data.fixMappingNodes(inst)
         elif isinstance(self.data, Asset):
             if self.data.isShell and GS.shellMethod == 'MATERIAL':
                 return
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
-                ob = bpy.data.objects.new(inst.name, self.data.rna)
+                ob = bpy.data.objects.new(obname, self.data.rna)
         else:
-            ob = bpy.data.objects.new(inst.name, self.data)
-        ob.name = inst.name
+            ob = bpy.data.objects.new(obname, self.data)
         self.rna = inst.rna = ob
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)
@@ -893,6 +893,10 @@ class Node(Asset, Formula, Channels):
             LS.objects[LS.rigname].append(ob2)
             self.arrangeObject(ob2, inst, context, center)
             ob2.parent = ob
+
+
+    def getObjectName(self, inst):
+        return inst.name
 
 
     def arrangeObject(self, ob, inst, context, center):

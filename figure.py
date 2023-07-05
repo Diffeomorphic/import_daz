@@ -83,16 +83,16 @@ class FigureInstance(Instance):
             mesh = meshes[0]
             char = chars[0]
             rig.DazMesh = char
-            if (char.startswith("Genesis") and
-                mesh.name in [self.name, "%s.001" % self.name]):
-                mesh.name = "%s Mesh" % self.name
+            #if (char.startswith("Genesis") and
+            #    mesh.name in [self.name, "%s.001" % self.name]):
+            #    mesh.name = "%s Mesh" % self.name
             for mesh,char in zip(meshes, chars):
                 mesh.DazMesh = char
             self.poseChildren(rig, rig)
         elif meshes:
             for mesh,char in zip(meshes, chars):
                 mesh.DazMesh = char
-        self.rna.name = self.name
+        #self.rna.name = self.name
         Instance.finalize(self, context)
         if rig and chars:
             activateObject(context, rig)
