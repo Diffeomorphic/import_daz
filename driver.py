@@ -1031,7 +1031,7 @@ class DAZ_OT_UpdateAll(DazOperator):
 #   Disable and enable drivers
 #----------------------------------------------------------
 
-def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True, useShapekeys=True):
+def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True, useShapekeys=True, muted=[]):
     def isDazFcurve(path):
         for string in ["(fin)", "(rst)", ":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"]:
             if string in path:
@@ -1055,7 +1055,7 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
                     fcu.mute = mute
 
     if not useShapekeys:
-        return
+        return muted
     for ob in getShapeChildren(rig):
         skeys = ob.data.shape_keys
         if skeys.animation_data:
@@ -1066,7 +1066,12 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
                     sname = words[1]
                     if sname in skeys.key_blocks.keys():
                         skey = skeys.key_blocks[sname]
-                        skey.mute = mute
+                        key = "%s:%s" % (ob.name, sname)
+                        if skey.mute and mute:
+                            muted.append(key)
+                        if key not in muted:
+                            skey.mute = mute
+    return muted
 
 
 class DAZ_OT_DisableDrivers(DazOperator):

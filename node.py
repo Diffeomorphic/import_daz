@@ -988,7 +988,7 @@ def getTransformMatrices(pb, rig, bonemap):
                 cns.influence == 1 and
                 not cns.mute):
                 pb2 = rig.pose.bones.get(cns.subtarget)
-                if pb2:
+                if pb2 and pb2 != pb:
                     return getParent(pb2)
         if pb.parent:
             if pb.parent.name in bonemap.values():
