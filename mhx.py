@@ -291,6 +291,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Show link bones",
         default = True)
 
+    usePoleTargets : BoolProperty(
+        name = "Pole Targets",
+        description = "Use pole targets for IK",
+        default = True)
+
     useBack : BoolProperty(
         name = "Add Back And NeckHead Bones",
         description = "Add back and neckhead bones which rotate\nthe spine and neck/head bones together",
@@ -346,6 +351,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         Fixer.__init__(self)
 
     def draw(self, context):
+        self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "addTweakBones")
         self.layout.prop(self, "useBack")
         self.layout.prop(self, "showLinks")
@@ -553,7 +559,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
         if self.useKeepRig:
-            print("NN", nrig, rig)
             self.tieBones(nrig, rig)
             self.setRigName(rig, nrig, "MHX")
 
@@ -1044,30 +1049,32 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             setConnected(forearmFk, forearm.use_connect)
             handFk = deriveBone("hand.fk.%s" % suffix, hand, rig, L_LARMFK+dlayer, forearmFk)
             handFk.use_connect = False
-            upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, L_HELP2, armParent)
+            layer = (L_HELP2 if self.usePoleTargets else L_LARMIK+dlayer)
+            upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, layer, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
-            upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LARMIK+dlayer, upper_armIk)
-            forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LARMIK+dlayer, forearmIk)
+            upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LEXTRA+dlayer, upper_armIk)
+            forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LEXTRA+dlayer, forearmIk)
             handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
-            vec = upper_arm.matrix.to_3x3().col[2]
-            vec.normalize()
-            dist = max(upper_arm.length, forearm.length)
-            locElbowPt = forearm.head - 1.2*dist*vec
-            elbowFac = upper_arm.length/(upper_arm.length + forearm.length)
-            elbowVec = forearm.tail - upper_arm.head
-            elbowHead = upper_arm.head + elbowFac*elbowVec
-            elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, L_LARMIK+dlayer, armSocket)
-            elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
-            parent = self.getElbowParent(rig, suffix)
-            elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, parent)
-            elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, L_LARMIK+dlayer, upper_armIk)
-            if self.showLinks:
-                elbowLink.hide_select = True
-            else:
-                elbowLink.layers = L_HIDE*[False] + [True] + (31-L_HIDE)*[False]
+            if self.usePoleTargets:
+                vec = upper_arm.matrix.to_3x3().col[2]
+                vec.normalize()
+                dist = max(upper_arm.length, forearm.length)
+                locElbowPt = forearm.head - 1.2*dist*vec
+                elbowFac = upper_arm.length/(upper_arm.length + forearm.length)
+                elbowVec = forearm.tail - upper_arm.head
+                elbowHead = upper_arm.head + elbowFac*elbowVec
+                elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, L_LARMIK+dlayer, armSocket)
+                elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
+                parent = self.getElbowParent(rig, suffix)
+                elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, parent)
+                elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, L_LARMIK+dlayer, upper_armIk)
+                if self.showLinks:
+                    elbowLink.hide_select = True
+                else:
+                    elbowLink.layers = L_HIDE*[False] + [True] + (31-L_HIDE)*[False]
 
             thigh = self.setLayer("thigh.%s" % suffix, rig, L_HELP)
             shin = self.setLayer("shin.%s" % suffix, rig, L_HELP)
@@ -1092,13 +1099,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             footFk.use_connect = False
             toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, L_LLEGFK+dlayer, footFk)
             setConnected(toeFk, True)
-            thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, L_HELP2, thigh.parent)
+            layer = (L_HELP2 if self.usePoleTargets else L_LLEGIK+dlayer)
+            thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, layer, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
             setConnected(shinIk, shin.use_connect)
-            thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, L_LLEGIK+dlayer, thighIk)
-            thighIkTwist.layers[L_LEXTRA+dlayer] = True
-            shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, L_LLEGIK+dlayer, shinIk)
-            shinIkTwist.layers[L_LEXTRA+dlayer] = True
+            thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, L_LEXTRA+dlayer, thighIk)
+            shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, L_LEXTRA+dlayer, shinIk)
 
             if "heel.%s" % suffix in rig.data.edit_bones.keys():
                 heel = rig.data.edit_bones["heel.%s" % suffix]
@@ -1119,25 +1125,26 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 setConnected(toe2, True)
             ankleIk = deriveBone("ankle.ik.%s" % suffix, foot, rig, L_HELP2, footRev)
 
-            vec = thigh.matrix.to_3x3().col[2]
-            vec.normalize()
-            dist = max(thigh.length, shin.length)
-            locKneePt = shin.head - 1.2*dist*vec
-            kneeFac = thigh.length/(thigh.length + shin.length)
-            kneeVec = shin.tail - thigh.head
-            kneeHead = thigh.head + kneeFac*kneeVec
-            kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, L_LLEGIK+dlayer, legSocket)
-            kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
-            kneePoleA.layers[L_LEXTRA+dlayer] = True
-            parent = self.getKneeParent(rig, suffix)
-            kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent)
-            kneePt.layers[L_LEXTRA+dlayer] = True
-            kneeLink = makeBone("knee.link.%s" % suffix, rig, shin.head, locKneePt, 0, L_LLEGIK+dlayer, thighIk)
-            if self.showLinks:
-                kneeLink.layers[L_LEXTRA+dlayer] = True
-                kneeLink.hide_select = True
-            else:
-                kneeLink.layers = L_HIDE*[False] + [True] + (31-L_HIDE)*[False]
+            if self.usePoleTargets:
+                vec = thigh.matrix.to_3x3().col[2]
+                vec.normalize()
+                dist = max(thigh.length, shin.length)
+                locKneePt = shin.head - 1.2*dist*vec
+                kneeFac = thigh.length/(thigh.length + shin.length)
+                kneeVec = shin.tail - thigh.head
+                kneeHead = thigh.head + kneeFac*kneeVec
+                kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, L_LLEGIK+dlayer, legSocket)
+                kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
+                kneePoleA.layers[L_LEXTRA+dlayer] = True
+                parent = self.getKneeParent(rig, suffix)
+                kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent)
+                kneePt.layers[L_LEXTRA+dlayer] = True
+                kneeLink = makeBone("knee.link.%s" % suffix, rig, shin.head, locKneePt, 0, L_LLEGIK+dlayer, thighIk)
+                if self.showLinks:
+                    kneeLink.layers[L_LEXTRA+dlayer] = True
+                    kneeLink.hide_select = True
+                else:
+                    kneeLink.layers = L_HIDE*[False] + [True] + (31-L_HIDE)*[False]
 
             footInvFk = deriveBone("foot.inv.fk.%s" % suffix, footRev, rig, L_HELP2, footFk)
             toeInvFk = deriveBone("toe.inv.fk.%s" % suffix, toeRev, rig, L_HELP2, toeFk)
@@ -1204,8 +1211,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             forearmIkTwist = rpbs["forearm.ik.twist.%s" % suffix]
             handIk = rpbs["hand.ik.%s" % suffix]
             hand0Ik = rpbs["hand0.ik.%s" % suffix]
-            elbowPt = rpbs["elbow.pt.ik.%s" % suffix]
-            elbowLink = rpbs["elbow.link.%s" % suffix]
 
             prop = "MhaArmHinge_%s" % suffix
             setattr(rig, prop, 0.0)
@@ -1221,21 +1226,25 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             copyTransformFkIk(hand, handFk, handIk, rig, ikprop)
             copyTransform(hand0Ik, handIk, rig)
 
-            elbowPoleA = rpbs["elbowPoleA.%s" % suffix]
-            elbowPoleP = rpbs["elbowPoleP.%s" % suffix]
-            elbowPoleA.lock_location = (True,True,True)
-            elbowPoleA.lock_rotation = (True,False,True)
-            dampedTrack(elbowPoleA, handIk, rig)
-            cns = copyLocation(elbowPoleA, handIk, rig)
-            cns.influence = elbowFac
-            copyTransform(elbowPoleP, elbowPoleA, rig)
-            if not self.useChildOfConstraints:
-                setattr(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
-
-            ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
-            stretchTo(elbowLink, elbowPt, rig)
-            elbowPt.rotation_euler[0] = -90*D
-            elbowPt.lock_rotation = (True,True,True)
+            if self.usePoleTargets:
+                elbowPt = rpbs["elbow.pt.ik.%s" % suffix]
+                elbowLink = rpbs["elbow.link.%s" % suffix]
+                elbowPoleA = rpbs["elbowPoleA.%s" % suffix]
+                elbowPoleP = rpbs["elbowPoleP.%s" % suffix]
+                elbowPoleA.lock_location = (True,True,True)
+                elbowPoleA.lock_rotation = (True,False,True)
+                dampedTrack(elbowPoleA, handIk, rig)
+                cns = copyLocation(elbowPoleA, handIk, rig)
+                cns.influence = elbowFac
+                copyTransform(elbowPoleP, elbowPoleA, rig)
+                if not self.useChildOfConstraints:
+                    setattr(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
+                ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
+                stretchTo(elbowLink, elbowPt, rig)
+                elbowPt.rotation_euler[0] = -90*D
+                elbowPt.lock_rotation = (True,True,True)
+            else:
+                ikConstraint(forearmIk, handIk, None, 0, 2, rig)
 
             prop = "MhaForearmFollow_%s" % suffix
             setattr(rig, prop, True)
@@ -1265,8 +1274,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             shinIk = rpbs["shin.ik.%s" % suffix]
             thighIkTwist = rpbs["thigh.ik.twist.%s" % suffix]
             shinIkTwist = rpbs["shin.ik.twist.%s" % suffix]
-            kneePt = rpbs["knee.pt.ik.%s" % suffix]
-            kneeLink = rpbs["knee.link.%s" % suffix]
             footIk = rpbs["foot.ik.%s" % suffix]
             toeRev = rpbs["toe.rev.%s" % suffix]
             footRev = rpbs["foot.rev.%s" % suffix]
@@ -1292,34 +1299,42 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             copyTransformFkIk(foot, footFk, footInvIk, rig, prop1, prop2)
             copyTransformFkIk(toe, toeFk, toeInvIk, rig, prop1, prop2)
 
-            kneePoleA = rpbs["kneePoleA.%s" % suffix]
-            kneePoleP = rpbs["kneePoleP.%s" % suffix]
-            kneePoleA.lock_location = (True,True,True)
-            kneePoleA.lock_rotation = (True,False,True)
-            dampedTrack(kneePoleA, ankleIk, rig)
-            cns = copyLocation(kneePoleA, ankleIk, rig)
-            cns.influence = kneeFac
-            copyTransform(kneePoleP, kneePoleA, rig)
-            if not self.useChildOfConstraints:
-                setattr(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
+            if self.usePoleTargets:
+                kneePt = rpbs["knee.pt.ik.%s" % suffix]
+                kneeLink = rpbs["knee.link.%s" % suffix]
+                kneePoleA = rpbs["kneePoleA.%s" % suffix]
+                kneePoleP = rpbs["kneePoleP.%s" % suffix]
+                kneePoleA.lock_location = (True,True,True)
+                kneePoleA.lock_rotation = (True,False,True)
+                dampedTrack(kneePoleA, ankleIk, rig)
+                cns = copyLocation(kneePoleA, ankleIk, rig)
+                cns.influence = kneeFac
+                copyTransform(kneePoleP, kneePoleA, rig)
+                if not self.useChildOfConstraints:
+                    setattr(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
 
-            ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
-            stretchTo(kneeLink, kneePt, rig)
-            kneePt.rotation_euler[0] = 90*D
-            kneePt.lock_rotation = (True,True,True)
-            if self.useFoot2:
-                copyTransform(ankleIk, foot2, rig, prop2)
-                copyTransform(foot, foot2, rig, prop2)
-                copyTransform(toe, toe2, rig, prop2)
+                ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
+                stretchTo(kneeLink, kneePt, rig)
+                kneePt.rotation_euler[0] = 90*D
+                kneePt.lock_rotation = (True,True,True)
+                if self.useFoot2:
+                    copyTransform(ankleIk, foot2, rig, prop2)
+                    copyTransform(foot, foot2, rig, prop2)
+                    copyTransform(toe, toe2, rig, prop2)
+            else:
+                ikConstraint(shinIk, ankleIk, None, 0, 2, rig)
 
             self.addGazeConstraint(rig, suffix)
 
-            self.lockLocations([
+            locks = [
                 upper_armFk, forearmFk,
-                upper_armIk, forearmIk, upper_armIkTwist, forearmIkTwist, elbowLink,
+                upper_armIk, forearmIk, upper_armIkTwist, forearmIkTwist,
                 thighFk, shinFk, toeFk,
-                thighIk, shinIk, thighIkTwist, shinIkTwist, kneeLink, footRev, toeRev,
-            ])
+                thighIk, shinIk, thighIkTwist, shinIkTwist, footRev, toeRev,
+            ]
+            if self.usePoleTargets:
+                locks += [elbowLink, kneeLink]
+            self.lockLocations(locks)
             handFk.lock_location = footFk.lock_location = (False,False,False)
             setattr(rig, "MhaToeTarsal_%s" % suffix, False)
 
@@ -1708,6 +1723,7 @@ LRGizmos = {
 
     "thigh.fk" :        ("GZM_Circle025", 1),
     "shin.fk" :         ("GZM_Circle025", 1),
+    "thigh.ik":         ("GZM_Arrows", 1),
     "thigh.ik.twist":   ("GZM_Circle025", 1),
     "shin.ik.twist" :   ("GZM_Circle025", 1),
     "foot.fk" :         ("GZM_Foot", 1),
@@ -1729,6 +1745,7 @@ LRGizmos = {
     "clavicle" :        ("GZM_Shoulder", 1),
     "upper_arm.fk" :    ("GZM_Circle025", 1),
     "forearm.fk" :      ("GZM_Circle025", 1),
+    "upper_arm.ik" :    ("GZM_Arrows", 1),
     "upper_arm.ik.twist" :  ("GZM_Circle025", 1),
     "forearm.ik.twist" :    ("GZM_Circle025", 1),
     "hand.fk" :         ("GZM_Hand", 1),

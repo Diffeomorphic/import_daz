@@ -1171,9 +1171,9 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig, bendTwistBones):
-        from .mhx import dampedTrack, copyTransform, stretchTo
+        from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('POSE')
-        gizmo = "GZM_Ball025"
+        ball = "GZM_Ball025"
         for bname,trgname,stretch,prop in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):
@@ -1183,8 +1183,17 @@ class BendTwists:
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             pb2 = rig.pose.bones[trgname]
-            cns1 = dampedTrack(bend, pb2, rig)
-            cns2 = copyTransform(twist, pb, rig)
+            if self.usePoleTargets:
+                cns1 = dampedTrack(bend, pb2, rig)
+                cns2 = copyTransform(twist, pb, rig)
+            else:
+                cns = copyRotation(bend, pb, rig)
+                cns.euler_order = pb.rotation_mode
+                cns.use_y = False
+                cns = copyRotation(twist, pb, rig)
+                cns.euler_order = pb.rotation_mode
+                cns.use_x = cns.use_z = False
+
             if stretch:
                 cns = stretchTo(bend, pb2, rig, prop, "x")
                 cns = stretchTo(twist, pb2, rig, prop, "x")
@@ -1193,8 +1202,8 @@ class BendTwists:
                 ttwkname = self.getTweakBoneName(twistname)
                 bendtwk = rig.pose.bones[btwkname]
                 twisttwk = rig.pose.bones[ttwkname]
-                self.addGizmo(bendtwk, gizmo, 1, blen=10*rig.DazScale)
-                self.addGizmo(twisttwk, gizmo, 1, blen=10*rig.DazScale)
+                self.addGizmo(bendtwk, ball, 1, blen=10*rig.DazScale)
+                self.addGizmo(twisttwk, ball, 1, blen=10*rig.DazScale)
 
 #-------------------------------------------------------------
 #   Add IK goals

@@ -1895,7 +1895,6 @@ class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
                 act = rig.animation_data.action
                 self.removeFromAction(act, rig)
                 first,last = self.getRange(act)
-                print("RANGE", first, last)
                 matrices = []
                 for frame in range(first, last+1):
                     scn.frame_current = frame
