@@ -1659,7 +1659,7 @@ def fixMaterialUvs(mats, uvset):
 #   Find missing textures
 #----------------------------------------------------------
 
-class DAZ_OT_FindMissingTextures(DazOperator):
+class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
     bl_idname = "daz.find_missing_textures"
     bl_label = "Find Missing Textures"
     bl_description = "Search for missing textures of selected meshes in the DAZ database"

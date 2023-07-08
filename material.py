@@ -1475,7 +1475,15 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         description = "Raise an error if the number of source and target materials are different",
         default = True)
 
+    useAddMaterials : BoolProperty(
+        name = "Add New Materials",
+        description = "Add materials after existing materials",
+        default = False)
+
     def draw(self, context):
+        self.layout.prop(self, "useAddMaterials")
+        if self.useAddMaterials:
+            return
         self.layout.prop(self, "useReplaceFaces")
         if not self.useReplaceFaces:
             self.layout.prop(self, "useMatchNames")
@@ -1488,8 +1496,10 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         self.mismatch = ""
         found = False
         for trg in getSelectedMeshes(context):
-           if trg != src:
-                if self.useReplaceFaces:
+            if trg != src:
+                if self.useAddMaterials:
+                    self.addMaterials(src, trg)
+                elif self.useReplaceFaces:
                     self.replaceFaces(src, trg)
                 elif self.useMatchNames:
                     self.copyByName(src, trg)
@@ -1501,6 +1511,11 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
         if self.mismatch:
             msg = "Material number mismatch.\n" + self.mismatch
             raise DazError(msg, warning=True)
+
+
+    def addMaterials(self, src, trg):
+        for mat in src.data.materials:
+            trg.data.materials.append(mat)
 
 
     def replaceFaces(self, src, trg):
