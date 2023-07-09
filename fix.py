@@ -1174,6 +1174,11 @@ class BendTwists:
         from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('POSE')
         ball = "GZM_Ball025"
+        eulers = {
+            "upper_arm" : "YXZ",
+            "forearm" : "YZX",
+            "thigh" : "YZX",
+        }
         for bname,trgname,stretch,prop in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):
@@ -1187,11 +1192,12 @@ class BendTwists:
                 cns1 = dampedTrack(bend, pb2, rig)
                 cns2 = copyTransform(twist, pb, rig)
             else:
+                xyz = eulers[pb.name.split(".")[0]]
                 cns = copyRotation(bend, pb, rig)
-                cns.euler_order = pb.rotation_mode
+                cns.euler_order = xyz
                 cns.use_y = False
                 cns = copyRotation(twist, pb, rig)
-                cns.euler_order = pb.rotation_mode
+                cns.euler_order = xyz
                 cns.use_x = cns.use_z = False
 
             if stretch:
