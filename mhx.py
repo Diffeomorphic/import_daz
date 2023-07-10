@@ -1613,7 +1613,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         elif ".twist" in rb.name:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         else:
-            cns = copyTransform(pb, rb, gen, space='WORLD')
+            cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
 
     #-------------------------------------------------------------
     #   Error on missing bone
