@@ -706,8 +706,8 @@ class ActionOptions:
 
     actionName : StringProperty(
         name = "Action Name",
-        description = "Name of loaded action",
-        default = "Action")
+        description = "Name of loaded action.\nUse file name if blank",
+        default = "")
 
     fps : FloatProperty(
         name = "Frame Rate",
@@ -745,14 +745,21 @@ class ActionOptions:
         self.layout.prop(self, "firstFrame")
         self.layout.prop(self, "lastFrame")
 
+
     def clearAnimation(self, ob):
-        if self.makeNewAction:
-            if ob.animation_data:
-                act = bpy.data.actions.new(self.actionName)
-                ob.animation_data.action = act
+        if self.makeNewAction and ob.animation_data:
+            ob.animation_data.action = None
 
 
-    def nameAnimation(self, ob):
+    def nameAnimation(self, ob, dazfiles):
+        if self.makeNewAction and ob.animation_data:
+            act = ob.animation_data.action
+            if self.actionName:
+                act.name = self.actionName
+            elif dazfiles:
+                act.name = os.path.splitext(os.path.basename(dazfiles[0]))[0]
+            else:
+                act.name = "Action"
         return
 
 #-------------------------------------------------------------
@@ -819,7 +826,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def clearAnimation(self, ob):
         pass
 
-    def nameAnimation(self, ob):
+    def nameAnimation(self, ob, dazfiles):
         pass
 
     def prepareRig(self, rig, frame):
@@ -1394,7 +1401,7 @@ class StandardAnimation:
         print("File %s imported in %.3f seconds" % (self.filepath, t2-t1))
         scn.frame_current = startframe
         updateScrollbars(context)
-        self.nameAnimation(rig)
+        self.nameAnimation(rig, dazfiles)
         if not self.affectSelectedOnly:
             self.selectAll(rig, selected)
 
@@ -1572,7 +1579,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
                 ob.pose_library = None
 
 
-    def nameAnimation(self, ob):
+    def nameAnimation(self, ob, dazfiles):
         if self.makeNewPoseLib:
             if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
                 pass

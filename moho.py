@@ -187,7 +187,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
             raise DazError("No armature found")
         self.phonemes = self.phonemeConverters[self.phonemeSet]
         self.clearAnimation(rig)
-        if self.atFrameOne:
+        if self.atFrameOne and self.makeNewAction:
             frame0 = 0
         else:
             frame0 = scn.frame_current-1
@@ -204,7 +204,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
             else:
                 prop = self.getMohoKey(moho, rig)
                 pinProp(rig, scn, prop, mgrp, frame+frame0, value=value)
-        self.nameAnimation(rig)
+        self.nameAnimation(rig, [self.filepath])
         print("Moho file %s loaded" % self.filepath)
 
 
