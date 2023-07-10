@@ -1178,6 +1178,7 @@ class BendTwists:
             "upper_arm" : "YXZ",
             "forearm" : "YZX",
             "thigh" : "YZX",
+            "shin" : "YZX",
         }
         for bname,trgname,stretch,prop in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)

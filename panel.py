@@ -528,7 +528,8 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
         rig = getRigFromContext(context, strict=False)
         if rig is None:
             return
-        split = self.layout.split(factor=0.6)
+        self.layout.operator("daz.enable_locks_limits")
+        self.layout.operator("daz.disable_locks_limits")
         self.layout.prop(rig, "DazLocLocks")
         self.layout.prop(rig, "DazRotLocks")
         self.layout.prop(rig, "DazLocLimits")

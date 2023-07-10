@@ -702,7 +702,7 @@ class ActionOptions:
     makeNewAction : BoolProperty(
         name = "New Action",
         description = "Unlink current action and make a new one",
-        default = False)
+        default = True)
 
     actionName : StringProperty(
         name = "Action Name",
@@ -721,7 +721,7 @@ class ActionOptions:
 
     atFrameOne : BoolProperty(
         name = "Start At Frame 1",
-        description = "Always start actions at frame 1",
+        description = "Always start new actions at frame 1",
         default = True)
 
     firstFrame : IntProperty(
@@ -739,21 +739,21 @@ class ActionOptions:
         self.layout.prop(self, "makeNewAction")
         if self.makeNewAction:
             self.layout.prop(self, "actionName")
+            self.layout.prop(self, "atFrameOne")
         self.layout.prop(self, "fps")
         self.layout.prop(self, "integerFrames")
-        self.layout.prop(self, "atFrameOne")
         self.layout.prop(self, "firstFrame")
         self.layout.prop(self, "lastFrame")
 
     def clearAnimation(self, ob):
-        if self.makeNewAction and ob.animation_data:
-            ob.animation_data.action = None
+        if self.makeNewAction:
+            if ob.animation_data:
+                act = bpy.data.actions.new(self.actionName)
+                ob.animation_data.action = act
+
 
     def nameAnimation(self, ob):
-        if self.makeNewAction and ob.animation_data:
-            act = ob.animation_data.action
-            if act:
-                act.name = self.actionName
+        return
 
 #-------------------------------------------------------------
 #   AnimatorBase
@@ -1383,7 +1383,7 @@ class StandardAnimation:
         print("\n--------------------")
 
         for filepath in dazfiles:
-            if self.atFrameOne and len(dazfiles) == 1:
+            if self.atFrameOne and self.makeNewAction and len(dazfiles) == 1:
                 offset = 1
             print("*", os.path.basename(filepath), offset)
             offset,prop = self.getSingleAnimation(filepath, context, offset)

@@ -922,6 +922,32 @@ def toggleRotLimits(self, context):
 def toggleLocLimits(self, context):
     toggleLimits(self, context, "DazLocLimits", "LIMIT_LOCATION")
 
+
+class DAZ_OT_EnableLocksLimits(DazOperator, IsMeshArmature):
+    bl_idname = "daz.enable_locks_limits"
+    bl_label = "Enable Locks And Limits"
+    bl_description = "Enable locks and limits"
+
+    def run(self, context):
+        rig = getRigFromContext(context)
+        rig.DazLocLocks = True
+        rig.DazRotLocks = True
+        rig.DazLocLimits = 1.0
+        rig.DazRotLimits = 1.0
+
+
+class DAZ_OT_DisableLocksLimits(DazOperator, IsMeshArmature):
+    bl_idname = "daz.disable_locks_limits"
+    bl_label = "Disable Locks And Limits"
+    bl_description = "Disable locks and limits"
+
+    def run(self, context):
+        rig = getRigFromContext(context)
+        rig.DazLocLocks = False
+        rig.DazRotLocks = False
+        rig.DazLocLimits = 0.0
+        rig.DazRotLimits = 0.0
+
 #----------------------------------------------------------
 #   Toggle Inherit Scale
 #----------------------------------------------------------
@@ -1023,6 +1049,8 @@ classes = [
     DAZ_OT_MakeAllBonesPosable,
     DAZ_OT_FixLegacyPosable,
     DAZ_OT_FinalizeArmature,
+    DAZ_OT_EnableLocksLimits,
+    DAZ_OT_DisableLocksLimits,
     DAZ_OT_CategorizeObjects,
     DAZ_OT_MorphArmature,
     DAZ_OT_InspectWorldMatrix,
