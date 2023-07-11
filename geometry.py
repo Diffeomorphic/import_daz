@@ -355,6 +355,7 @@ class GeoNode(Node, SimNode):
         hdob.parent = ob.parent
         hdob.parent_type = ob.parent_type
         hdob.parent_bone = ob.parent_bone
+        setWorldMatrix(hdob, ob.matrix_world)
         if LS.hdcollection is None:
             from .main import makeRootCollection
             LS.hdcollection = makeRootCollection(LS.collection.name + "_HD", context)

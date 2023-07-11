@@ -83,16 +83,12 @@ class FigureInstance(Instance):
             mesh = meshes[0]
             char = chars[0]
             rig.DazMesh = char
-            #if (char.startswith("Genesis") and
-            #    mesh.name in [self.name, "%s.001" % self.name]):
-            #    mesh.name = "%s Mesh" % self.name
             for mesh,char in zip(meshes, chars):
                 mesh.DazMesh = char
             self.poseChildren(rig, rig)
         elif meshes:
             for mesh,char in zip(meshes, chars):
                 mesh.DazMesh = char
-        #self.rna.name = self.name
         Instance.finalize(self, context)
         if rig and chars:
             activateObject(context, rig)
@@ -1024,6 +1020,12 @@ class DAZ_OT_InspectWorldMatrix(DazOperator, IsObject):
         ob = context.object
         print("World Matrix", ob.name)
         print(ob.matrix_world)
+        rig = ob.parent
+        if rig and ob.parent_type == 'BONE':
+            pb = rig.pose.bones[ob.parent_bone]
+            print("Inverse Parent Matrix", pb.name)
+            print(pb.matrix.inverted())
+            print(ob.matrix_parent_inverse)
 
 
 class DAZ_OT_EnableAllLayers(DazOperator, IsArmature):
