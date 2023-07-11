@@ -170,11 +170,17 @@ function doFigure(fp, figure, useHdUvs)
 //===============================================================================
 
 function startObject(fp, node)
-{
+{        
     fp.writeLine("    {" );
     fp.writeLine("        \"name\": \"" + node.name + "\",");
     fp.writeLine("        \"center_point\": " + node.getOrigin() + ",");
-    fp.writeLine("        \"end_point\": " + node.getEndPoint() + ",");
+    fp.writeLine("        \"end_point\": " + node.getEndPoint() + ",");     
+    fp.writeLine("        \"orientation\": " + node.getOrientation() + ",");             
+    fp.writeLine("        \"rotation_order\": \"" + node.getRotationOrder() + "\",");             
+    fp.writeLine("        \"ws_pos\": " + node.getWSPos() + ",");     
+    fp.writeLine("        \"ws_rot\": " + node.getWSRot() + ",");     
+    fp.writeLine("        \"ws_scale\": " + node.getWSScale() + ",");     
+    fp.writeLine("        \"ws_transform\": " + node.getWSTransform() + ",");             
 }
 
 
