@@ -801,6 +801,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getTrans(self, bname, pb, rig, vecs, factor, anims):
+        from .node import getTransformMatrices
         if self.driven.get(pb.name) and self.driven[pb.name].get("location"):
             return
         if pb == rig:
@@ -811,6 +812,12 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 self.addKeys(locs, anim, 1e-4)
                 anims.append(anim)
         else:
+            dmat,bmat,xmat,parent = getTransformMatrices(pb, rig, {})
+            if parent:
+                mat = xmat @ dmat
+                inv = mat.inverted()
+                tmats = [mat @ Matrix.Translation(vec) @ inv for vec in vecs]
+                vecs = [tmat.to_translation() for tmat in tmats]
             for idx,x in enumerate(["x","y","z"]):
                 if (not self.includeLocks and
                     pb.name in self.loclocks.keys() and
