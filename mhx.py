@@ -269,12 +269,6 @@ def applyBoneChildren(context, rig):
 #   Convert to MHX button
 #-------------------------------------------------------------
 
-MhxDrivenParents = {
-    "lowerFaceRig" :    "lowerJaw",
-    drvBone("lowerTeeth") : "lowerJaw",
-    drvBone("tongue01") :   "lowerTeeth",
-}
-
 class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, GizmoUser):
     bl_idname = "daz.convert_to_mhx"
     bl_label = "Convert To MHX"
@@ -481,7 +475,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(9, 25, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones)
             showProgress(10, 25, "  Fix bone drivers")
-            self.fixBoneDrivers(rig, MhxBoneDrivers)
+            self.fixBoneDrivers(rig, MHX.BoneDrivers)
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
@@ -491,7 +485,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixHands(rig)
             self.storeAllConstraints(rig)
             self.createBendTwists(rig, bendTwistBones)
-            self.fixBoneDrivers(rig, MhxBoneDrivers)
+            self.fixBoneDrivers(rig, MHX.BoneDrivers)
         elif rig.DazRig.endswith(".suffix"):
             raise DazError("%s has suffix bones.\nConvert to prefix before converting to MHX" % rig.name)
         else:
@@ -585,7 +579,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         deformLayer = 31*[False] + [True]
 
         setMode('EDIT')
-        for bname,pname in MhxDrivenParents.items():
+        for bname,pname in MHX.DrivenParents.items():
             if (bname in rig.data.edit_bones.keys() and
                 pname in rig.data.edit_bones.keys()):
                 eb = rig.data.edit_bones[bname]

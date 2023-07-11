@@ -344,6 +344,12 @@ class MhxData:
         "rThighBend(fin)" : "thigh.bend.R",
     }
 
+    DrivenParents = {
+        "lowerFaceRig" :    "lowerJaw",
+        "lowerTeeth(drv)" : "lowerJaw",
+        "tongue01(drv)" :   "lowerTeeth",
+    }
+
     FaceRigs = [
         "upperFaceRig", "lowerFaceRig",
         "upperfacerig", "lowerfacerig",
