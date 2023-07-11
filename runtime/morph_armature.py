@@ -77,7 +77,7 @@ def getEditBones(rig):
             tloffsets[pb.name] = d2b90(pb.TlOffset)
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
-            copyTables(pb.name[:-5], pb.name)
+            copyTables(pb.name, pb.name[:-5])
         elif pb.name[-2:] == "IK":
             copyTables(pb.name[:-2], pb.name)
 
