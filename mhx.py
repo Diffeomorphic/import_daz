@@ -42,6 +42,23 @@ from .mhx_data import MHX
 #
 #-------------------------------------------------------------
 
+if False:
+    def setMhx(rna, prop, value):
+        setattr(rna, prop, value)
+
+    def mhxProp(prop):
+        return prop
+else:
+    def setMhx(rna, prop, value):
+        rna[prop] = value
+
+    def mhxProp(prop):
+        return propRef(prop)
+
+#-------------------------------------------------------------
+#
+#-------------------------------------------------------------
+
 def getBoneCopy(bname, model, rpbs):
     pb = rpbs[bname]
     pb.DazRotMode = model.DazRotMode
@@ -83,7 +100,7 @@ def copyTransform(bone, target, rig, prop=None, expr="x", space='WORLD'):
     cns.target = rig
     cns.subtarget = target.name
     if prop is not None:
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     cns.owner_space = space
     cns.target_space = space
     return cns
@@ -97,7 +114,7 @@ def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
         cnsIk = copyTransform(bone, boneIk, rig, prop1)
         cnsIk.influence = 0.0
         if prop2:
-            addDriver(cnsIk, "mute", rig, prop2, "x")
+            addDriver(cnsIk, "mute", rig, mhxProp(prop2), "x")
 
 
 def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
@@ -106,7 +123,7 @@ def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
     cns.target = rig
     cns.subtarget = target.name
     if prop is not None:
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     cns.owner_space = space
     cns.target_space = space
     return cns
@@ -125,7 +142,7 @@ def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', amt=None
     if prop is not None:
         if amt is None:
             amt = rig
-        addDriver(cns, "influence", amt, prop, expr)
+        addDriver(cns, "influence", amt, mhxProp(prop), expr)
     return cns
 
 
@@ -137,7 +154,7 @@ def copyScale(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns.owner_space = space
     cns.target_space = space
     if prop is not None:
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -147,7 +164,7 @@ def limitLocation(bone, rig, prop=None, expr="x"):
     cns.use_transform_limit = True
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -158,7 +175,7 @@ def limitRotation(bone, rig, prop=None, expr="x"):
     cns.use_transform_limit = True
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -176,7 +193,7 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x", amt
         cns.influence = 0.0
         if amt is None:
             amt = rig
-        addDriver(cns, "influence", amt, prop, expr)
+        addDriver(cns, "influence", amt, mhxProp(prop), expr)
     return cns
 
 
@@ -188,7 +205,7 @@ def stretchTo(pb, target, rig, prop=None, expr="x"):
     cns.volume = "NO_VOLUME"
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -200,7 +217,7 @@ def dampedTrack(pb, target, rig, prop=None, expr="x"):
     cns.track_axis = 'TRACK_Y'
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -213,7 +230,7 @@ def trackTo(pb, target, rig, prop=None, expr="x"):
     cns.up_axis = 'UP_Z'
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -224,7 +241,7 @@ def childOf(pb, target, rig, prop=None, expr="x"):
     cns.subtarget = target
     if prop is not None:
         cns.influence = 0.0
-        addDriver(cns, "influence", rig, prop, expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -234,7 +251,7 @@ def armatureConstraint(pb, rig, drivers):
         target = cns.targets.new()
         target.target = rig
         target.subtarget = bone
-        addDriver(target, "weight", rig, prop, expr)
+        addDriver(target, "weight", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -539,6 +556,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
         rig.data.display_type = 'WIRE'
+        rig.data.MhaFeatures |= F_IDPROPS
         T = True
         F = False
         rig.data.layers = [T,T,T,F, T,F,T,F, F,F,F,F, F,F,F,F,
@@ -929,14 +947,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.drvBones = {}
         for suffix,dlayer in [("L",0), ("R",16)]:
             prop1 = "MhaFingerControl_%s" % suffix
-            setattr(rig, prop1, True)
+            setMhx(rig, prop1, True)
             prop2 = "MhaFingerIk_%s" % suffix
-            setattr(rig, prop2, False)
+            setMhx(rig, prop2, False)
             if self.useFingerIk:
-                props = (prop1,prop2)
+                props = (mhxProp(prop1), mhxProp(prop2))
                 expr = "(x2==1 or not(x1))"
             else:
-                props = prop1
+                props = mhxProp(prop1)
                 expr = "not(x)"
             thumb1Name = self.linkName(0, 0, suffix)
             if thumb1Name in rig.data.bones.keys():
@@ -979,7 +997,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     cns = getConstraint(pb, 'LIMIT_ROTATION')
                     if cns:
                         self.setIkLimits(cns, pb, pb)
-                        addDriver(cns, "mute", rig, prop, "x")
+                        addDriver(cns, "mute", rig, mhxProp(prop), "x")
                     bname = self.linkName(m, n, suffix)
                     pb = rig.pose.bones[bname]
                     ikname = "ik_%s" % bname
@@ -987,7 +1005,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     trgb.bone.use_deform = False
                     self.addGizmo(trgb, "GZM_Ball", 0.2)
                     cns = stretchTo(pb, trgb, rig, prop)
-                    addDriver(trgb.bone, "hide", rig, prop, "x==0")
+                    addDriver(trgb.bone, "hide", rig, mhxProp(prop), "x==0")
                     rig.data.MhaFeatures |= F_FINGER
 
     #-------------------------------------------------------------
@@ -1207,14 +1225,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             hand0Ik = rpbs["hand0.ik.%s" % suffix]
 
             prop = "MhaArmHinge_%s" % suffix
-            setattr(rig, prop, 0.0)
+            setMhx(rig, prop, 0.0)
             cns = copyTransform(armParent, armSocket, rig)
-            addDriver(cns, "influence", rig, prop, "1-x")
+            addDriver(cns, "influence", rig, mhxProp(prop), "1-x")
             cns = copyLocation(armParent, armSocket, rig)
-            addDriver(cns, "influence", rig, prop, "x")
+            addDriver(cns, "influence", rig, mhxProp(prop), "x")
 
             ikprop = "MhaArmIk_%s" % suffix
-            setattr(rig, ikprop, 1.0)
+            setMhx(rig, ikprop, 1.0)
             copyTransformFkIk(upper_arm, upper_armFk, upper_armIkTwist, rig, ikprop)
             copyTransformFkIk(forearm, forearmFk, forearmIkTwist, rig, ikprop)
             copyTransformFkIk(hand, handFk, handIk, rig, ikprop)
@@ -1232,7 +1250,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 cns.influence = elbowFac
                 copyTransform(elbowPoleP, elbowPoleA, rig)
                 if not self.useChildOfConstraints:
-                    setattr(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
+                    setMhx(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
                 ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
                 stretchTo(elbowLink, elbowPt, rig)
                 elbowPt.rotation_euler[0] = -90*D
@@ -1241,14 +1259,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ikConstraint(forearmIk, handIk, None, 0, 2, rig)
 
             prop = "MhaForearmFollow_%s" % suffix
-            setattr(rig, prop, True)
+            setMhx(rig, prop, True)
             cns1 = copyRotation(forearm, handFk, rig, space='LOCAL')
             cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, space='LOCAL')
             cns1.use_x = cns1.use_z = cns2.use_x = cns2.use_z = False
-            addDriver(cns1, "mute", rig, prop, "not(x)")
-            addDriver(cns2, "mute", rig, prop, "not(x)")
+            addDriver(cns1, "mute", rig, mhxProp(prop), "not(x)")
+            addDriver(cns2, "mute", rig, mhxProp(prop), "not(x)")
             forearmFk.lock_rotation[1] = True
-            addDriver(forearmFk, "lock_rotation", rig, prop, "x", index=1)
+            addDriver(forearmFk, "lock_rotation", rig, mhxProp(prop), "x", index=1)
 
             legSocket = rpbs["legSocket.%s" % suffix]
             legParent = rpbs["leg_parent.%s" % suffix]
@@ -1275,16 +1293,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             toeInvIk = rpbs["toe.inv.ik.%s" % suffix]
 
             prop = "MhaLegHinge_%s" % suffix
-            setattr(rig, prop, 0.0)
+            setMhx(rig, prop, 0.0)
             cns = copyTransform(legParent, legSocket, rig)
-            addDriver(cns, "influence", rig, prop, "1-x")
+            addDriver(cns, "influence", rig, mhxProp(prop), "1-x")
             cns = copyLocation(legParent, legSocket, rig)
-            addDriver(cns, "influence", rig, prop, "x")
+            addDriver(cns, "influence", rig, mhxProp(prop), "x")
 
             prop1 = "MhaLegIk_%s" % suffix
-            setattr(rig, prop1, 1.0)
+            setMhx(rig, prop1, 1.0)
             prop2 = "MhaLegIkToAnkle_%s" % suffix
-            setattr(rig, prop2, 0.0)
+            setMhx(rig, prop2, 0.0)
 
             footRev.lock_rotation = (False,True,True)
 
@@ -1305,7 +1323,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 cns.influence = kneeFac
                 copyTransform(kneePoleP, kneePoleA, rig)
                 if not self.useChildOfConstraints:
-                    setattr(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
+                    setMhx(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
 
                 ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
                 stretchTo(kneeLink, kneePt, rig)
@@ -1330,10 +1348,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 locks += [elbowLink, kneeLink]
             self.lockLocations(locks)
             handFk.lock_location = footFk.lock_location = (False,False,False)
-            setattr(rig, "MhaToeTarsal_%s" % suffix, False)
+            setMhx(rig, "MhaToeTarsal_%s" % suffix, False)
 
         self.addGazeFollowsHead(rig)
-        setattr(rig, "MhaLimitsOn", True)
+        setMhx(rig, "MhaLimitsOn", True)
 
 
     def lockLocations(self, bones):
@@ -1353,7 +1371,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ("foot", "Leg"),
                 ("foot.fk", "Leg")]:
                 prop = "Mha%sStretch_%s" % (part, suffix)
-                setattr(rig, prop, 0.0)
+                setMhx(rig, prop, 0.0)
                 pb = rig.pose.bones["%s.%s" % (bname, suffix)]
                 cns = copyLocation(pb, pb.parent, rig, prop, "1-x")
                 cns.head_tail = 1.0
@@ -1390,8 +1408,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for suffix in ["L", "R"]:
             handprop = "MhaElbowHand_%s" % suffix
             shoulderprop = "MhaElbowShoulder_%s" % suffix
-            setattr(rig, handprop, (float)(self.elbowParent=='HAND'))
-            setattr(rig, shoulderprop, (float)(self.elbowParent=='SHOULDER'))
+            setMhx(rig, handprop, (float)(self.elbowParent=='HAND'))
+            setMhx(rig, shoulderprop, (float)(self.elbowParent=='SHOULDER'))
             pb = rig.pose.bones["elbow.pt.ik.%s" % suffix]
             cns = childOf(pb, "master", rig, (handprop, shoulderprop), "1-min(1,x1+x2)")
             cns.name = "ChildOf Master"
@@ -1402,8 +1420,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             footprop = "MhaKneeFoot_%s" % suffix
             hipprop = "MhaKneeHip_%s" % suffix
-            setattr(rig, footprop, (float)(self.kneeParent=='FOOT'))
-            setattr(rig, hipprop, (float)(self.kneeParent=='HIP'))
+            setMhx(rig, footprop, (float)(self.kneeParent=='FOOT'))
+            setMhx(rig, hipprop, (float)(self.kneeParent=='HIP'))
             pb = rig.pose.bones["knee.pt.ik.%s" % suffix]
             cns = childOf(pb, "master", rig, (footprop, hipprop), "1-min(1,x1+x2)")
             cns.name = "ChildOf Master"
@@ -1482,7 +1500,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         pb = rig.pose.bones[bname]
         cns = getConstraint(pb, 'LIMIT_ROTATION')
         if cns:
-            addDriver(cns, "use_limit_y", rig, prop, "not(x)")
+            addDriver(cns, "use_limit_y", rig, mhxProp(prop), "not(x)")
 
 
     def copyIkLimits(self, rig, bname, suffix):

@@ -89,3 +89,4 @@ MhxRigifyLayer = {
 
 F_TONGUE = 1
 F_FINGER = 2
+F_IDPROPS = 4

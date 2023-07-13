@@ -108,11 +108,12 @@ class FACSImporter(SingleFile, ActionOptions):
 
 
     def run(self, context):
+        from .mhx import setMhx
         rig = getRigFromContext(context)
         if rig is None:
             raise DazError("No rig selected")
-        if "MhaGaze_L" in rig.data.keys():
-            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
+        setMhx(rig, "MhaGaze_L", 0.0)
+        setMhx(rig, "MhaGaze_R", 0.0)
         self.facstable = {}
         for facsType in ["FaceCap", "LiveLink"]:
             for key,value in FacsTables[facsType].items():
@@ -580,11 +581,13 @@ class TransferToGaze(DazOperator, GazeTransferer):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        from .mhx import setMhx
         t1 = perf_counter()
         rig = context.object
         scn = context.scene
         self.setupBones(rig)
-        rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
+        setMhx(rig, "MhaGaze_L", 0.0)
+        setMhx(rig, "MhaGaze_R", 0.0)
         frames = self.getFrames(rig, scn, ["eye.L", "eye.R", "lEye", "rEye"])
         for frame in frames:
             if frame is not None:
@@ -597,7 +600,8 @@ class TransferToGaze(DazOperator, GazeTransferer):
             updateScene(context)
             self.setMatrix(self.lgaze, lmat, frame)
             self.setMatrix(self.rgaze, rmat, frame)
-        rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 1.0
+        setMhx(rig, "MhaGaze_L", 1.0)
+        setMhx(rig, "MhaGaze_R", 1.0)
         updateScene(context)
         t2 = perf_counter()
         print("%d frames converted in %g seconds" % (len(frames), t2-t1))
@@ -627,6 +631,7 @@ class TransferFromGaze(DazOperator, GazeTransferer):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        from .mhx import setMhx
         t1 = perf_counter()
         rig = context.object
         scn = context.scene
@@ -636,11 +641,13 @@ class TransferFromGaze(DazOperator, GazeTransferer):
         for frame in frames:
             if frame is not None:
                 scn.frame_current = frame
-            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 1.0
+            setMhx(rig, "MhaGaze_L", 1.0)
+            setMhx(rig, "MhaGaze_R", 1.0)
             updateScene(context)
             lmat = self.leye.matrix.copy()
             rmat = self.reye.matrix.copy()
-            rig.data["MhaGaze_L"] = rig.data["MhaGaze_R"] = 0.0
+            setMhx(rig, "MhaGaze_L", 0.0)
+            setMhx(rig, "MhaGaze_R", 0.0)
             updateScene(context)
             self.setEuler(self.leye, lmat, frame)
             self.setEuler(self.reye, rmat, frame)

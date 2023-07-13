@@ -1144,18 +1144,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def addToPoseLib(self, rig, filepath):
         pass
 
-
-    def fixForearmFollow(self, prop, rig, hand, forearm):
-        if "MhaForearmsFollow" in rig.data.keys():
-            fix = rig.data["MhaForearmsFollow"]
-        elif prop in rig.data.key():
-            fix = rig.data[prop]
-        else:
-            fix = True
-        if fix:
-            hand.rotation_euler[1] = forearm.rotation_euler[1]
-            forearm.rotation_euler[1] = 0
-
     #-------------------------------------------------------------
     #   Add frames
     #-------------------------------------------------------------

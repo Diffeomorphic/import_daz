@@ -413,9 +413,9 @@ class Fixer(DriverUser):
 
 
     def addTongueIk(self, rig):
-        from .mhx import ikConstraint, copyLocation, stretchTo
+        from .mhx import ikConstraint, copyLocation, stretchTo, setMhx, mhxProp
         prop = "MhaTongueIk"
-        rig.MhaTongueIk = 0
+        setMhx(rig, prop, 0)
         if not self.useTongueIk:
             return
         rig.data.MhaFeatures |= F_TONGUE
@@ -425,11 +425,11 @@ class Fixer(DriverUser):
             for cns in list(pb.constraints):
                 if cns.type == 'LIMIT_ROTATION':
                     self.setIkLimits(cns, pb, pb)
-                    addDriver(cns, "influence", rig, prop, "1-x")
+                    addDriver(cns, "influence", rig, mhxProp(prop), "1-x")
             trgb = rig.pose.bones["ik_%s" % bname]
             trgb.bone.use_deform = False
             self.addGizmo(trgb, "GZM_Ball", 0.2)
-            addDriver(trgb.bone, "hide", rig, prop, "x==0")
+            addDriver(trgb.bone, "hide", rig, mhxProp(prop), "x==0")
             cns = stretchTo(pb, trgb, rig, prop)
 
 
@@ -490,7 +490,7 @@ class Fixer(DriverUser):
                         return True
             return False
 
-        from .mhx import dampedTrack, copyRotation
+        from .mhx import dampedTrack, copyRotation, setMhx
         eye = rig.pose.bones.get("eye.%s" % suffix)
         eyedrv = rig.pose.bones.get(drvBone("eye.%s" % suffix))
         gaze = rig.pose.bones.get("gaze.%s" % suffix)
@@ -498,7 +498,7 @@ class Fixer(DriverUser):
             print("Cannot add gaze constraint")
             return
         prop = "MhaGaze_%s" % suffix
-        setattr(rig, prop, 1.0)
+        setMhx(rig, prop, 1.0)
         if not constraintExists(eye, eyedrv):
             cns = copyRotation(eye, eyedrv, rig)
             cns.mix_mode = 'ADD'
@@ -506,12 +506,12 @@ class Fixer(DriverUser):
 
 
     def addGazeFollowsHead(self, rig):
-        from .mhx import copyTransform
+        from .mhx import copyTransform, setMhx
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
         if gaze0 and gaze1:
             prop = "MhaGazeFollowsHead"
-            setattr(rig, prop, 1.0)
+            setMhx(rig, prop, 1.0)
             copyTransform(gaze1, gaze0, rig, prop)
 
     #-------------------------------------------------------------
