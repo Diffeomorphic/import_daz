@@ -413,7 +413,7 @@ class Fixer(DriverUser):
 
 
     def addTongueIk(self, rig):
-        from .mhx import ikConstraint, copyLocation, stretchTo, setMhx, mhxProp
+        from .mhx import ikConstraint, stretchTo, setMhx, mhxProp
         prop = "MhaTongueIk"
         setMhx(rig, prop, 0)
         if not self.useTongueIk:
@@ -506,13 +506,13 @@ class Fixer(DriverUser):
 
 
     def addGazeFollowsHead(self, rig):
-        from .mhx import copyTransform, setMhx
+        from .mhx import copyTransform, setMhx, mhxProp
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
         if gaze0 and gaze1:
             prop = "MhaGazeFollowsHead"
             setMhx(rig, prop, 1.0)
-            copyTransform(gaze1, gaze0, rig, prop)
+            copyTransform(gaze1, gaze0, rig, mhxProp(prop))
 
     #-------------------------------------------------------------
     #   Toe rotation

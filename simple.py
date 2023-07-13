@@ -250,9 +250,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
         def driveConstraint(pb, type, rig, prop):
             from .driver import addDriver
+            from .mhx import mhxProp
             for cns in pb.constraints:
                 if cns.type == type:
-                    addDriver(cns, "influence", rig, (prop, "DazRotLimits"), "(1-x1)*x2")
+                    addDriver(cns, "influence", rig, (mhxProp(prop), mhxProp("DazRotLimits")), "(1-x1)*x2")
 
         def copyBoneProps(src, trg):
             trg.DazRotMode = src.DazRotMode

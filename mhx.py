@@ -129,7 +129,7 @@ def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
     return cns
 
 
-def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', amt=None):
+def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns = bone.constraints.new('COPY_ROTATION')
     cns.name = "Copy Rotation %s" % target.name
     cns.target = rig
@@ -140,9 +140,7 @@ def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', amt=None
         bone.rotation_mode == target.rotation_mode):
         cns.euler_order = bone.rotation_mode
     if prop is not None:
-        if amt is None:
-            amt = rig
-        addDriver(cns, "influence", amt, mhxProp(prop), expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -158,28 +156,22 @@ def copyScale(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     return cns
 
 
-def limitLocation(bone, rig, prop=None, expr="x"):
+def limitLocation(bone, rig):
     cns = bone.constraints.new('LIMIT_LOCATION')
     cns.owner_space = 'LOCAL'
     cns.use_transform_limit = True
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
-def limitRotation(bone, rig, prop=None, expr="x"):
+def limitRotation(bone, rig):
     cns = bone.constraints.new('LIMIT_ROTATION')
     cns.owner_space = 'LOCAL'
     cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = False
     cns.use_transform_limit = True
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
-def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x", amt=None):
+def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
     cns = last.constraints.new('IK')
     cns.name = "IK %s" % target.name
     cns.target = rig
@@ -191,9 +183,7 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x", amt
     cns.chain_count = count
     if prop is not None:
         cns.influence = 0.0
-        if amt is None:
-            amt = rig
-        addDriver(cns, "influence", amt, mhxProp(prop), expr)
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
 
 
@@ -215,19 +205,6 @@ def dampedTrack(pb, target, rig, prop=None, expr="x"):
     cns.target = rig
     cns.subtarget = target.name
     cns.track_axis = 'TRACK_Y'
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def trackTo(pb, target, rig, prop=None, expr="x"):
-    cns = pb.constraints.new('TRACK_TO')
-    cns.name = "TrackTo %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.track_axis = 'TRACK_Y'
-    cns.up_axis = 'UP_Z'
     if prop is not None:
         cns.influence = 0.0
         addDriver(cns, "influence", rig, mhxProp(prop), expr)
