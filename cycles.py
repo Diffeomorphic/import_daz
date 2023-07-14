@@ -1177,27 +1177,39 @@ class CyclesTree(Tree):
         topweight = self.getValue(["Top Coat Weight"], 0)
         if topweight == 0:
             return
+        fac,factex = self.getColorTex(["Top Coat Weight"], "NONE", 0)
+        color,coltex = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
 
         # Top Coat Layering Mode
         #   [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
-        lmode = self.getValue(["Top Coat Layering Mode"], 0)
-        fresnel = refltex = None
-        refl = 0.5
-        if lmode == 2:  # Fresnel
-            from .cgroup import FresnelGroup
-            fac = 0.5
-            fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel", size=4)
-            fresnel.inputs["Power"].default_value = 1
-            ior,iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
-            self.linkScalar(iortex, fresnel, ior, "IOR")
+        spec0tex = spec90tex = powertex = None
+        lmode = self.getValue(["Top Coat Layering Mode"], 1)
+        if self.owner.shader == 'PBRSKIN':
+            refl,spec0tex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
+            spec0 = 0.08 * refl
+            spec90 = 1
+            power = 5
+        elif lmode == 1 or self.owner.shader != 'UBER_IRAY':    # Weighted
+            spec0 = 1
+            spec90 = 1
+            power = 1
+        elif lmode == 0:      # Reflectivity
+            refl,spec0tex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
+            spec0 = 0.08 * refl
+            spec90 = 1
+            power = 5
+        elif lmode == 2:    # Fresnel
+            ior,spec0tex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
+            spec0 = ((ior-1)/(ior+1))**2
+            spec90 = 0.5
+            power = 5
+        elif lmode == 3:    # Custom curve
+            spec0,spec0tex = self.getColorTex(["Top Coat Curve Normal"], "NONE", 1)
+            spec90,spec90tex = self.getColorTex(["Top Coat Curve Grazing"], "NONE", 1)
+            power,powertex = self.getColorTex(["Top Coat Curve Exponent"], "NONE", 1)
 
         bump = normal = None
         if self.owner.shader == 'UBER_IRAY':
-            if lmode == 0:  # Reflectivity
-                refl,refltex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
-            fac = 0.05 * topweight * refl
-            if fac == 0:
-                return
             bumpmode = self.getValue(["Top Coat Bump Mode"], 0)
             bumpval,bumptex = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
             if bumptex is None:
@@ -1207,32 +1219,28 @@ class CyclesTree(Tree):
             elif bumpmode == 1:   # Normal map
                 normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
         else:
-            if lmode == 0:  # Reflectivity
-                refl,refltex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
-            fac = 0.05 * topweight * refl
-            if fac == 0:
-                return
             bumpval = self.getValue(["Top Coat Bump Weight"], 0)
             if self.bumptex:
                 bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)
                 self.linkNormal(bump)
 
-        _,tex = self.getColorTex(["Top Coat Weight"], "NONE", 0, value=fac, isMask=True)
-        factex = self.multiplyTexs(tex, refltex)
-        color,coltex = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
         roughness,roughtex = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
         if roughness == 0:
             glossiness,glosstex = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
-            roughness = 1 - glossiness
+            roughness = 1 - glossiness**2
             roughtex = self.invertTex(glosstex, 5)
         aniso,anitex = self.getColorTex(["Top Coat Anisotropy"], "NONE", 0)
         anirot,rottex = self.getColorTex(["Top Coat Rotations"], "NONE", 0)
 
         from .cgroup import TopCoatGroup
         self.addColumn()
-        top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=12)
+        top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=20)
+        top.width = 200
         effect = self.getValue(["Top Coat Color Effect"], 0)
         self.buildColorEffect(effect, color, coltex, None, fac, factex, top)
+        self.linkScalar(spec0tex, top, spec0, "Specular0")
+        self.linkScalar(spec90tex, top, spec90, "Specular90")
+        self.linkScalar(powertex, top, power, "Power")
         self.linkScalar(roughtex, top, roughness, "Roughness")
         self.linkScalar(anitex, top, aniso, "Anisotropy")
         self.linkScalar(rottex, top, 1 - anirot, "Rotation")
@@ -1243,10 +1251,6 @@ class CyclesTree(Tree):
         else:
             self.linkBumpNormal(top)
         self.mixWithActive(fac, factex, top, effect=effect)
-        if fresnel:
-            self.linkScalar(roughtex, fresnel, roughness, "Roughness")
-            self.linkBumpNormal(fresnel)
-            self.links.new(fresnel.outputs["Dielectric"], top.inputs["Fac"])
 
 
     def mixBump(self, bumpmode, bumpval, bumptex):

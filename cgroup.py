@@ -301,6 +301,59 @@ class FresnelGroup(CyclesGroup):
         self.links.new(sub.outputs[0], self.outputs.inputs["Metal"])
 
 # ---------------------------------------------------------------------
+#   Schlick Group
+# ---------------------------------------------------------------------
+
+class SchlickGroup(CyclesGroup):
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Specular0", "Specular90", "Power"]
+        self.outsockets += ["Fac"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 3)
+        self.group.inputs.new("NodeSocketFloat", "Specular0")
+        self.setMinMax("Specular0", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Specular90")
+        self.setMinMax("Specular90", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Power")
+        self.setMinMax("Power", 1, 1, 4)
+        self.group.outputs.new("NodeSocketFloat", "Fac")
+
+
+    def addNodes(self, args=None):
+        geo = self.addNode("ShaderNodeNewGeometry", 0)
+        hideAllBut(geo, ["Normal", "Incoming"])
+
+        dot = self.addNode("ShaderNodeVectorMath", 1)
+        dot.operation = 'DOT_PRODUCT'
+        self.links.new(geo.outputs["Normal"], dot.inputs[0])
+        self.links.new(geo.outputs["Incoming"], dot.inputs[1])
+
+        sub1 = self.addNode("ShaderNodeMath", 1)
+        sub1.operation = 'SUBTRACT'
+        sub1.inputs[0].default_value = 1.0
+        self.links.new(dot.outputs["Value"], sub1.inputs[1])
+
+        sub2 = self.addNode("ShaderNodeMath", 2)
+        sub2.operation = 'SUBTRACT'
+        self.links.new(self.inputs.outputs["Specular90"], sub2.inputs[0])
+        self.links.new(self.inputs.outputs["Specular0"], sub2.inputs[1])
+
+        power = self.addNode("ShaderNodeMath", 2)
+        power.operation = 'POWER'
+        self.links.new(sub1.outputs[0], power.inputs[0])
+        self.links.new(self.inputs.outputs["Power"], power.inputs[1])
+
+        mult = self.addNode("ShaderNodeMath", 3)
+        mult.operation = 'MULTIPLY_ADD'
+        self.links.new(sub2.outputs[0], mult.inputs[0])
+        self.links.new(power.outputs[0], mult.inputs[1])
+        self.links.new(self.inputs.outputs["Specular0"], mult.inputs[2])
+        self.links.new(mult.outputs[0], self.outputs.inputs["Fac"])
+
+# ---------------------------------------------------------------------
 #   LogColor Group
 # ---------------------------------------------------------------------
 
@@ -863,12 +916,18 @@ class TopCoatGroup(FacMixGroup):
 
     def __init__(self):
         FacMixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
+        self.insockets += ["Specular0", "Specular90", "Power", "Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
 
 
     def create(self, node, name, parent):
-        FacMixGroup.create(self, node, name, parent, 3)
+        FacMixGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketColor", "Color")
+        self.group.inputs.new("NodeSocketFloat", "Specular0")
+        self.setMinMax("Specular0", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Specular90")
+        self.setMinMax("Specular90", 0.5, 0.0, 1.0)
+        self.group.inputs.new("NodeSocketFloat", "Power")
+        self.setMinMax("Power", 1, 1, 4)
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
         self.group.inputs.new("NodeSocketFloat", "Anisotropy")
@@ -882,6 +941,11 @@ class TopCoatGroup(FacMixGroup):
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
 
+        schlick = self.addGroup(SchlickGroup, "DAZ Schlick", 1)
+        self.links.new(self.inputs.outputs["Specular0"], schlick.inputs["Specular0"])
+        self.links.new(self.inputs.outputs["Specular90"], schlick.inputs["Specular90"])
+        self.links.new(self.inputs.outputs["Power"], schlick.inputs["Power"])
+
         aniso = self.addNode("ShaderNodeBsdfAnisotropic", 1)
         aniso.distribution = 'ASHIKHMIN_SHIRLEY'
         self.links.new(self.inputs.outputs["Color"], aniso.inputs["Color"])
@@ -890,7 +954,12 @@ class TopCoatGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Rotation"], aniso.inputs["Rotation"])
         self.links.new(self.inputs.outputs["Normal"], aniso.inputs["Normal"])
 
-        self.mixCycles(aniso.outputs[0], 2)
+        mix = self.addNode("ShaderNodeMixShader", 2)
+        self.links.new(schlick.outputs[0], mix.inputs[0])
+        self.links.new(self.inputs.outputs["BSDF"], mix.inputs[1])
+        self.links.new(aniso.outputs[0], mix.inputs[2])
+
+        self.mixCycles(mix.outputs[0], 2)
 
 # ---------------------------------------------------------------------
 #   Refraction Group
@@ -1866,6 +1935,7 @@ ShaderGroups = {
         "useLogColor" : (LogColorGroup, "DAZ Log Color", []),
         "useColorEffect" : (ColorEffectGroup, "DAZ Color Effect", []),
         "useFresnel" : (FresnelGroup, "DAZ Fresnel", []),
+        "useSchlick" : (SchlickGroup, "DAZ Schlick", []),
         "useEmission" : (EmissionGroup, "DAZ Emission", []),
         "useOneSided" : (OneSidedGroup, "DAZ One-Sided", []),
         "useOverlay" : (DiffuseGroup, "DAZ Overlay", []),
@@ -1902,6 +1972,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useColorEffect : BoolProperty(name="Color Effect", default=False)
     useTintedEffect : BoolProperty(name="Tinted Effect", default=False)
     useFresnel : BoolProperty(name="Fresnel", default=False)
+    useSchlick : BoolProperty(name="Schlick", default=False)
     useEmission : BoolProperty(name="Emission", default=False)
     useOneSided : BoolProperty(name="One Sided", default=False)
     useOverlay : BoolProperty(name="Diffuse Overlay", default=False)
