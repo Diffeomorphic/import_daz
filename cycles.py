@@ -1179,7 +1179,6 @@ class CyclesTree(Tree):
             return
         fac,factex = self.getColorTex(["Top Coat Weight"], "NONE", 0)
         color,coltex = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
-
         # Top Coat Layering Mode
         #   [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
         spec0tex = spec90tex = powertex = None
@@ -1250,7 +1249,7 @@ class CyclesTree(Tree):
             self.links.new(normal.outputs["Normal"], top.inputs["Normal"])
         else:
             self.linkBumpNormal(top)
-        self.mixWithActive(fac, factex, top, effect=effect)
+        self.mixWithActive(fac, factex, top, keep=True, effect=effect)
 
 
     def mixBump(self, bumpmode, bumpval, bumptex):
