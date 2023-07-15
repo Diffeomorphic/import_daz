@@ -178,9 +178,8 @@ class PbrTree(CyclesTree):
 
     def buildBaseSubsurface(self):
         from .cycles import findTextureNode
-        if self.isEnabled("Diffuse"):
-            color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
-        else:
+        color,tex = self.getDiffuseColor()
+        if not self.isEnabled("Diffuse"):
             color = WHITE
             tex = None
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")

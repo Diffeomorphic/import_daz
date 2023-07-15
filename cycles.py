@@ -791,17 +791,22 @@ class CyclesTree(Tree):
     #   Diffuse
     #-------------------------------------------------------------
 
+    def getDiffuseColor(self):
+        color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
+        self.diffuseColor = color
+        self.diffuseTex = findTextureNode(tex)
+        return color,tex
+
+
     def buildDiffuse(self):
         if not self.isEnabled("Diffuse"):
             return
         from .cgroup import DiffuseGroup
         self.addColumn()
+        color,tex = self.getDiffuseColor()
         fac,factex = self.getFacFromTranslucency()
         if fac == 0:
             return
-        color,tex = self.getColorTex("getChannelDiffuse", "COLOR", WHITE)
-        self.diffuseColor = color
-        self.diffuseTex = findTextureNode(tex)
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         effect = self.getValue(["Base Color Effect"], 0)
@@ -1052,12 +1057,14 @@ class CyclesTree(Tree):
         self.addColumn()
         if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR", size=10)
+            self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
             rough1,rough2,roughtex, ratio = self.getDualRoughness(0.0)
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
             node.inputs["Dual Ratio"].default_value = ratio
         else:
             node = self.addGroup(MetalGroupUber, "DAZ Metal", size=4)
+            self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
             roughness,roughtex = self.getColorTex(["Glossy Roughness"], "NONE", 0)
             self.setRoughness(node, "Roughness", roughness, roughtex)
             anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
