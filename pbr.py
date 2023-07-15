@@ -335,11 +335,6 @@ class PbrTree(CyclesTree):
     #   Clearcoat
     #-------------------------------------------------------------
 
-    def checkTopCoat(self):
-        return (LS.materialMethod != 'SINGLE_PRINCIPLED' and
-                self.isEnabled("Top Coat"))
-
-
     def addClearCoat(self, useTex):
         if self.isEnabled("Top Coat"):
             top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)

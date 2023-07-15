@@ -1178,11 +1178,14 @@ class CyclesTree(Tree):
     #   Top Coat
     #-------------------------------------------------------------
 
+    def checkTopCoat(self):
+        return (LS.materialMethod != 'SINGLE_PRINCIPLED' and
+                self.isEnabled("Top Coat") and
+                self.getValue(["Top Coat Weight"], 0))
+
+
     def buildTopCoat(self, uvname):
-        if not self.isEnabled("Top Coat"):
-            return
-        topweight = self.getValue(["Top Coat Weight"], 0)
-        if topweight == 0:
+        if not self.checkTopCoat():
             return
         fac,factex = self.getColorTex(["Top Coat Weight"], "NONE", 0)
         color,coltex = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
