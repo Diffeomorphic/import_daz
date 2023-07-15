@@ -1182,21 +1182,16 @@ class CyclesTree(Tree):
         # Top Coat Layering Mode
         #   [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
         spec0tex = spec90tex = powertex = None
-        lmode = self.getValue(["Top Coat Layering Mode"], 1)
-        if self.owner.shader == 'PBRSKIN':
-            refl,spec0tex = self.getColorTex(["Top Coat Reflectivity"], "NONE", 0, useFactor=False)
+        lmode = self.getValue(["Top Coat Layering Mode"], 0)
+        if lmode == 0:      # Reflectivity
+            refl,spec0tex = self.getColorTex(["Reflectivity", "Top Coat Reflectivity"], "NONE", 0, useFactor=False)
             spec0 = 0.08 * refl
             spec90 = 1
             power = 5
-        elif lmode == 1 or self.owner.shader != 'UBER_IRAY':    # Weighted
+        elif lmode == 1:    # Weighted
             spec0 = 1
             spec90 = 1
             power = 1
-        elif lmode == 0:      # Reflectivity
-            refl,spec0tex = self.getColorTex(["Reflectivity"], "NONE", 0, useFactor=False)
-            spec0 = 0.08 * refl
-            spec90 = 1
-            power = 5
         elif lmode == 2:    # Fresnel
             ior,spec0tex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             spec0 = ((ior-1)/(ior+1))**2

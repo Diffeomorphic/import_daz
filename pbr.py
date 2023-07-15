@@ -63,7 +63,7 @@ class PbrTree(CyclesTree):
         useTopCoatNode = self.checkTopCoat()
         self.buildPBRNode(useTopCoatNode)
         self.postPBR = False
-        self.column = 6
+        self.column = 7
         if self.translucent:
             self.mixPbrTranslucency()
         if self.buildMakeup():
@@ -337,17 +337,8 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def checkTopCoat(self):
-        if (LS.materialMethod == 'SINGLE_PRINCIPLED' or
-            self.owner.basemix == 1 or  # Specular/Glossiness
-            not self.isEnabled("Top Coat")):
-            return False
-        aniso = self.getValue(["Top Coat Anisotropy"], 0)
-        anirot = self.getValue(["Top Coat Rotations"], 0)
-        if (self.owner.basemix == 0 and
-            aniso == 0 and
-            anirot == 0):
-            return False
-        return True
+        return (LS.materialMethod != 'SINGLE_PRINCIPLED' and
+                self.isEnabled("Top Coat"))
 
 
     def addClearCoat(self, useTex):
