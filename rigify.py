@@ -99,7 +99,7 @@ class RigifyCommon:
         ("Custom ", R_CUSTOM, 13, 6)]
 
     def setupDazSkeleton(self, rig):
-        if rig.DazRig in ["genesis1", "genesis2"]:
+        if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
             self.rigifySkel = RF.RigifyGenesis38
             self.rigifySkel["chestUpper"] = "chestUpper"
             self.rigifySkel["abdomen2"] = "abdomen2"
@@ -245,7 +245,7 @@ class MetaMaker(RigifyCommon):
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
         print("  Fix bones", rig.DazRig)
-        if rig.DazRig in ["genesis1", "genesis2"]:
+        if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             self.splitBone(rig, "chest", "chestUpper")

@@ -297,7 +297,7 @@ class RigifyData:
             "r_thigh" : ["r_thightwist1", "r_thightwist2"],
         }
         if not meta.get("DazUseSplitNeck"):
-            self.Genesis38Mergers["neckLower"] = ["neckUpper"]
+            self.Genesis38Mergers1["neckLower"] = ["neckUpper"]
             self.Genesis9Mergers["neck1"] = ["neck2"]
 
         self.Genesis38Parents = {

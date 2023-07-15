@@ -512,7 +512,7 @@ class Fixer(DriverUser):
         if gaze0 and gaze1:
             prop = "MhaGazeFollowsHead"
             setMhx(rig, prop, 1.0)
-            copyTransform(gaze1, gaze0, rig, mhxProp(prop))
+            copyTransform(gaze1, gaze0, rig, prop)
 
     #-------------------------------------------------------------
     #   Toe rotation
