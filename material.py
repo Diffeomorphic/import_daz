@@ -132,7 +132,7 @@ class Material(Asset, Channels):
             uvset = self.getTypedAsset(struct["uv_set"], Uvset)
             if uvset:
                 uvset.material = self
-                if geo and uvset != geo.default_uv_set:
+                if geo:
                     geo.uv_sets[uvset.name] = uvset
                     self.uvNodeType = 'UVMAP'
                 self.uv_set = uvset
