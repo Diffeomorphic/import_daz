@@ -829,11 +829,12 @@ class CyclesTree(Tree):
             if wt == 1.0 and not wttex:
                 return 0,None
             elif wttex:
-                inv = self.addNode("ShaderNodeMath", self.column-2, size=8)
-                inv.operation = 'SUBTRACT'
-                inv.inputs[0].default_value = 1.0
-                self.linkScalar(wttex, inv, wt, 1)
-                return 1,inv
+                mix = self.addNode("ShaderNodeMath", self.column-2, size=8)
+                mix.operation = 'MULTIPLY_ADD'
+                self.linkScalar(wttex, mix, wt, 0)
+                mix.inputs[1].default_value = -1
+                mix.inputs[2].default_value = 1
+                return 1,mix
             else:
                 return 1-wt,None
         else:
@@ -1322,10 +1323,14 @@ class CyclesTree(Tree):
                 self.links.new(normal.outputs["Normal"], node.inputs["Normal"])
         else:
             self.linkBumpNormal(node)
-        self.cycles = node
+        self.linkTranslucency(node)
         LS.usedFeatures["Transparent"] = True
         self.endSSS()
         return node
+
+
+    def linkTranslucency(self, node):
+        self.cycles = node
 
     #-------------------------------------------------------------
     #   Subsurface scattering
@@ -2017,12 +2022,12 @@ class CyclesTree(Tree):
             self.links.new(self.colorOutput(tex), socket)
 
 
-    def multiplyScalarTex(self, value, tex, slot=None, col=None):
+    def multiplyScalarTex(self, value, tex, slot=None, col=None, force=False):
         if value == 1:
             return tex
-        elif value == 0:
+        elif value == 0 or tex is None:
             return None
-        elif (tex and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
+        elif (not force and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
         if col is None:
             col = self.column-1
@@ -2035,6 +2040,8 @@ class CyclesTree(Tree):
 
 
     def multiplyAddScalarTex(self, factor, term, tex, slot=None, col=None):
+        if tex is None:
+            return None
         if col is None:
             col = self.column-1
         mult = self.addNode("ShaderNodeMath", col, size=8)
@@ -2046,10 +2053,10 @@ class CyclesTree(Tree):
         return mult
 
 
-    def multiplyTexs(self, tex1, tex2):
+    def multiplyTexs(self, tex1, tex2, operation='MULTIPLY'):
         if tex1 and tex2:
             mult = self.addNode("ShaderNodeMath", size=8)
-            mult.operation = 'MULTIPLY'
+            mult.operation = operation
             self.links.new(self.colorOutput(tex1), mult.inputs[0])
             self.links.new(self.colorOutput(tex2), mult.inputs[1])
             self.moveTex(tex1, mult)

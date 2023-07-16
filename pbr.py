@@ -40,6 +40,8 @@ class PbrTree(CyclesTree):
         self.pbr = None
         self.type = 'PBR'
         self.translucent = None
+        self.metal = 0
+        self.metaltex = None
 
 
     def __repr__(self):
@@ -50,8 +52,6 @@ class PbrTree(CyclesTree):
         self.column = 3
         self.buildNormal(uvname)
         self.buildBump(uvname)
-        if self.owner.useTranslucency:
-            self.translucent = self.buildTranslucency(uvname)
         self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5, size=30)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
@@ -64,8 +64,8 @@ class PbrTree(CyclesTree):
         self.buildPBRNode(useTopCoatNode)
         self.postPBR = False
         self.column = 7
-        if self.translucent:
-            self.mixPbrTranslucency()
+        if self.owner.useTranslucency:
+            self.buildTranslucency(uvname)
         if self.buildMakeup():
             self.postPBR = True
         if self.buildOverlay():
@@ -95,24 +95,23 @@ class PbrTree(CyclesTree):
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
 
 
-    def mixPbrTranslucency(self):
-        fac,factex = self.getFacFromTranslucency()
-        if fac == 1 and factex is None:
-            return
-        effect = self.getValue(["Base Color Effect"], 0)
-        tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-        mix = self.addNode("ShaderNodeMixShader", col=self.column+1, size=5)
-        node = self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, mix, colorslot=None)
-        self.addColumn()
-        self.linkScalar(factex, mix, fac, "Fac")
-        self.links.new(self.translucent.outputs["BSDF"], mix.inputs[1])
-        self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])
-        if node:
-            self.links.new(self.colorOutput(node), self.pbr.inputs["Base Color"])
+    def linkTranslucency(self, trans):
+        fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0)
+        self.mixWithActive(fac, factex, trans)
+        if self.metal:
+            self.addColumn()
+            mix = self.addNode("ShaderNodeMixShader", size=10)
+            self.linkScalar(self.metaltex, mix, self.metal, 0)
+            self.links.new(trans.outputs["BSDF"], mix.inputs[1])
+            self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])
+            self.cycles = mix
+
+        #effect = self.getValue(["Base Color Effect"], 0)
+        #tint = self.getColor(["SSS Reflectance Tint"], WHITE)
+        #self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, self.pbr, colorslot="Base Color")
         self.replaceSlot(self.pbr, "Subsurface", 0.0)
         self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
         self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
-        self.cycles = mix
 
 
     def getShellGroup(self, shmat, push):
@@ -240,11 +239,9 @@ class PbrTree(CyclesTree):
 
     def buildMetallic(self):
         if self.isEnabled("Metallicity"):
-            metallicity,tex = self.getColorTex(["Metallic Weight"], "NONE", 0.0)
-            self.linkScalar(tex, self.pbr, metallicity, "Metallic")
-            self.pureMetal = (metallicity == 1 and tex is None)
-        else:
-            metallicity = 0
+            self.metal,self.metaltex = self.getColorTex(["Metallic Weight"], "NONE", 0.0)
+            self.linkScalar(self.metaltex, self.pbr, self.metal, "Metallic")
+            self.pureMetal = (self.metal == 1 and self.metaltex is None)
 
     #-------------------------------------------------------------
     #   Specular
