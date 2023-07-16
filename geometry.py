@@ -1400,12 +1400,11 @@ class Uvset(Asset):
         Asset.__init__(self, fileref)
         self.uvs = []
         self.polyverts = []
-        self.material = None
         self.built = {}
 
 
     def __repr__(self):
-        return ("<Uvset %s '%s' %d %d %s>" % (self.id, self.name, len(self.uvs), len(self.polyverts), self.material))
+        return ("<Uvset %s '%s' %d %d>" % (self.id, self.name, len(self.uvs), len(self.polyverts)))
 
 
     def parse(self, struct):
