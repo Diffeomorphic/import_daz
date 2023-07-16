@@ -1462,7 +1462,7 @@ class Uvset(Asset):
     def build(self, context, me, geo, setActive):
         if self.name is None:
             return
-        uvlayer = self.built.get(geo.name)
+        uvlayer = self.built.get(me.name)
         if uvlayer:
             if setActive:
                 uvlayer.active = uvlayer.active_render = True
@@ -1500,7 +1500,7 @@ class Uvset(Asset):
                     if GS.verbosity > 2:
                         print("UV coordinate difference %f - %f > 1" % (umax, umin))
                 self.fixUdims(context, mn, udim, geo)
-        self.built[geo.name] = uvlayer
+        self.built[me.name] = uvlayer
 
 
     def fixUdims(self, context, mn, udim, geo):
