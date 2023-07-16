@@ -315,23 +315,39 @@ def pruneNodeTree(tree,
                           useFixColorSpace)
 
     if usePruneTexco:
-        texcos = []
+        removes = []
+        replaces = []
         links = []
         for node in tree.nodes:
             if (node.type == 'TEX_COORD' or
                 (active and node.type == 'UVMAP' and node.uv_map == active.name) or
                 (active and node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
-                ok = True
+                useRemove = True
+                replaceLinks = []
                 for link in node.outputs["UV"].links:
                     if link.to_node.type in ['TEX_IMAGE']:
                         links.append(link)
+                    elif (node.type != 'TEX_COORD' and
+                          link.to_node.type in ['VECT_MATH', 'MAPPING']):
+                        replaceLinks.append(link)
+                        useRemove = False
                     else:
-                        ok = False
-                if ok:
-                    texcos.append(node)
+                        useRemove = False
+                if replaceLinks:
+                    replaces.append((node, replaceLinks))
+                elif useRemove:
+                    removes.append(node)
         for link in links:
             tree.links.remove(link)
-        for node in texcos:
+        for node,links in replaces:
+            texco = tree.nodes.new("ShaderNodeTexCoord")
+            texco.hide = True
+            hideAllBut(texco, ["UV"])
+            texco.location = node.location
+            for link in links:
+                tree.links.new(texco.outputs["UV"], link.to_socket)
+            tree.nodes.remove(node)
+        for node in removes:
             tree.nodes.remove(node)
 
     for node in tree.nodes:
