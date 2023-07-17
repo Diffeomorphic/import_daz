@@ -322,6 +322,24 @@ class MetaMaker(RigifyCommon):
         return rig, meta, dazrig
 
 
+    def splitBone(self, rig, bname, upname):
+        if upname in rig.data.bones.keys():
+            return
+        setMode('EDIT')
+        eblow = rig.data.edit_bones[bname]
+        vec = eblow.tail - eblow.head
+        mid = eblow.head + vec/2
+        ebup = rig.data.edit_bones.new(upname)
+        for eb in eblow.children:
+            eb.parent = ebup
+        ebup.head = mid
+        ebup.tail = eblow.tail
+        ebup.parent = eblow
+        ebup.roll = eblow.roll
+        eblow.tail = mid
+        setMode('OBJECT')
+
+
     def addRigifyProps(self, meta):
         # Add rigify properties to spine bones
         setMode('OBJECT')
@@ -616,24 +634,6 @@ class Rigifier(RigifyCommon):
         for pb in rig.data.bones:
             if isDrvBone(pb.name):
                 self.extras[pb.name] = pb.name
-
-
-    def splitBone(self, rig, bname, upname):
-        if upname in rig.data.bones.keys():
-            return
-        setMode('EDIT')
-        eblow = rig.data.edit_bones[bname]
-        vec = eblow.tail - eblow.head
-        mid = eblow.head + vec/2
-        ebup = rig.data.edit_bones.new(upname)
-        for eb in eblow.children:
-            eb.parent = ebup
-        ebup.head = mid
-        ebup.tail = eblow.tail
-        ebup.parent = eblow
-        ebup.roll = eblow.roll
-        eblow.tail = mid
-        setMode('OBJECT')
 
 
     def checkRigifyEnabled(self, context):
