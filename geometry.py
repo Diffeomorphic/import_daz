@@ -1468,7 +1468,9 @@ class Uvset(Asset):
                 uvlayer.active = uvlayer.active_render = True
             return
         if len(me.polygons) == 0:
-            print("NO UVs", me.name, self.name)
+            LS.polyLines[geo.id] = geo
+            if GS.verbosity > 2:
+                print("NO UVs", me.name, self.name)
             return
 
         polyverts = self.getPolyVerts(me)

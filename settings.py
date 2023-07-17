@@ -609,6 +609,7 @@ class LocalSettings:
         self.otherRigBones = {}
         self.legacySkin = []
         self.invalidMeshes = []
+        self.polyLines = {}
         self.deflectors = {}
         self.materials = {}
         self.images = {}

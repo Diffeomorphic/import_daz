@@ -248,6 +248,12 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
         if LS.invalidMeshes:
             self.msg += "Invalid meshes found and corrected.\nImporting morphs may not work:\n"
             self.addItems(LS.invalidMeshes)
+        if LS.polyLines:
+            self.msg += "Found meshes without faces. Should probably be converted to hair:\n"
+            obnames = []
+            for geo in LS.polyLines.values():
+                obnames += [geonode.rna.name for geonode in geo.nodes.values() if geonode.rna]
+            self.addItems(obnames)
         if LS.otherRigBones:
             self.msg += "Found formulas for other rigs:\n"
             self.addItems(LS.otherRigBones.keys())

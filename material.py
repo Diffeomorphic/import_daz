@@ -305,6 +305,8 @@ class Material(Asset, Channels):
             shadername = unquote(self.url.rsplit("#",1)[-1])
             if shadername == "PBRSkin":
                 self.shader = 'PBRSKIN'
+            elif shadername in ["Blended Dual Lobe Hair"]:
+                self.shader = 'BRICK'
             else:
                 self.shader = 'BRICK'
                 LS.shaders[shadername] = True
