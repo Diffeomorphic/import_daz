@@ -305,17 +305,24 @@ class Material(Asset, Channels):
             shadername = unquote(self.url.rsplit("#",1)[-1])
             if shadername == "PBRSkin":
                 self.shader = 'PBRSKIN'
-            elif shadername in ["Blended Dual Lobe Hair"]:
+            elif shadername in ["Blended Dual Lobe Hair", "4-Layer Uber PBR MDL"]:
                 self.shader = 'BRICK'
             else:
                 self.shader = 'BRICK'
                 LS.shaders[shadername] = True
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
+            shadername = struct["definition"]
             if "definition" in struct.keys():
-                LS.shaders[struct["definition"]] = True
+                LS.shaders[shadername] = True
         elif struct["type"].startswith("studio/material/"):
-            LS.shaders[struct["type"]] = True
+            n = len("studio/material/")
+            shadername = struct["type"][n:]
+            table = {
+                "strand_hair_rsl" : "RSL Strand Shader",
+            }
+            shadername = table.get(shadername, shadername)
+            LS.shaders[shadername] = True
 
 
     def build(self, context):

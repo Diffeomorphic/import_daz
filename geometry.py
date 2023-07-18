@@ -121,7 +121,11 @@ class GeoNode(Node, SimNode):
 
 
     def getObjectName(self, inst):
-        return "%s Mesh" % inst.name
+        from .figure import Figure
+        if isinstance(self.figure, Figure):
+            return "%s Mesh" % inst.name
+        else:
+            return inst.name
 
 
     def buildShells(self, context):
