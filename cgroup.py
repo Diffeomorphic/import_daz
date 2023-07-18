@@ -90,7 +90,7 @@ class ShellGroup(NodeGroup):
         self.texco = self.inputs.outputs["UV"]
         self.tileTexco()
         self.buildLayer(uvname)
-        alpha,atex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
+        alpha,atex,_ = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
         mult = self.addNode("ShaderNodeMath", 6)
         mult.operation = 'MULTIPLY'
         self.links.new(self.inputs.outputs["Influence"], mult.inputs[0])

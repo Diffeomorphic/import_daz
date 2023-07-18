@@ -42,9 +42,9 @@ class BrickTree:
             for layer in layers[1:]:
                 node = self.addBrickLayer(layer, True)
                 channels = ["%s Weight" % layer, "%s Layer Weight" % layer]
-                weight,wttex = self.getColorTex(channels, "NONE", 1)
+                weight,wttex,_ = self.getColorTex(channels, "NONE", 1)
                 print("  Brick layer", layer, weight)
-                self.mixWithActive(weight, wttex, node)
+                self.mixWithActive(weight, wttex, None, node)
         else:
             self.buildLayer("")
 

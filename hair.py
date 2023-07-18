@@ -1400,7 +1400,7 @@ class HairUpdater:
 class DAZ_OT_UpdateHair(DazPropsOperator, HairUpdater, IsHair):
     bl_idname = "daz.update_hair"
     bl_label = "Update Hair"
-    bl_description = "Change settings for particle hair"
+    bl_description = "Copy settings from active particle system to all other particle systems"
     bl_options = {'UNDO'}
 
     affectMaterial : BoolProperty(
@@ -1686,8 +1686,8 @@ class HairTree(CyclesTree):
 
 
     def readColor(self, factor):
-        root, self.roottex = self.getColorTex(["Hair Root Color"], "COLOR", self.color, useFactor=False)
-        tip, self.tiptex = self.getColorTex(["Hair Tip Color"], "COLOR", self.color, useFactor=False)
+        root,self.roottex,_ = self.getColorTex(["Hair Root Color"], "COLOR", self.color, useFactor=False)
+        tip,self.tiptex,_ = self.getColorTex(["Hair Tip Color"], "COLOR", self.color, useFactor=False)
         self.owner.rna.diffuse_color[0:3] = root
         self.root = factor * Vector(root)
         self.tip = factor * Vector(tip)
@@ -1750,8 +1750,8 @@ class HairBSDFTree(HairTree):
 
 
     def buildTransmission(self):
-        root, roottex = self.getColorTex(["Root Transmission Color"], "COLOR", self.color, useFactor=False)
-        tip, tiptex = self.getColorTex(["Tip Transmission Color"], "COLOR", self.color, useFactor=False)
+        root,roottex,_ = self.getColorTex(["Root Transmission Color"], "COLOR", self.color, useFactor=False)
+        tip,tiptex,_ = self.getColorTex(["Tip Transmission Color"], "COLOR", self.color, useFactor=False)
         trans = self.addNode('ShaderNodeBsdfHair')
         trans.component = 'Transmission'
         trans.inputs['Offset'].default_value = 0

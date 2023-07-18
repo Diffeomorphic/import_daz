@@ -96,8 +96,8 @@ class PbrTree(CyclesTree):
 
 
     def linkTranslucency(self, trans):
-        fac,factex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0)
-        self.mixWithActive(fac, factex, trans)
+        fac,factex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0)
+        self.mixWithActive(fac, factex, texslot, trans)
         if self.metal:
             self.addColumn()
             mix = self.addNode("ShaderNodeMixShader", size=10)
@@ -127,13 +127,11 @@ class PbrTree(CyclesTree):
 
     def buildCutout(self):
         if self.pbr and "Alpha" in self.pbr.inputs.keys() and not self.postPBR:
-            alpha,tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1)
+            alpha,tex,texslot = self.getColorTex("getChannelCutoutOpacity", "NONE", 1)
             if alpha < 1 or tex:
                 self.owner.setTransSettings(None, False, WHITE, alpha)
                 self.useCutout = True
-            self.pbr.inputs["Alpha"].default_value = alpha
-            if tex:
-                self.links.new(self.colorOutput(tex), self.pbr.inputs["Alpha"])
+            self.linkScalar(tex, self.pbr, alpha, "Alpha", texslot=texslot)
         else:
             CyclesTree.buildCutout(self)
 
@@ -189,8 +187,8 @@ class PbrTree(CyclesTree):
         if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
             return
         self.column -= 1
-        transwt,wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        transcolor,transtex = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
+        transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+        transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
         if isBlack(transcolor):
             self.column += 1
             return
@@ -198,9 +196,9 @@ class PbrTree(CyclesTree):
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
         if GS.useAltSss:
-            self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex)
+            self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex, texslot)
         else:
-            self.addSubsurfaceColor(transwt, wttex, transcolor, transtex)
+            self.addSubsurfaceColor(transwt, wttex, transcolor, transtex, texslot)
 
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
@@ -212,15 +210,15 @@ class PbrTree(CyclesTree):
         self.endSSS()
 
 
-    def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex):
+    def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex, texslot):
         gamma = self.addNode("ShaderNodeGamma", size=7)
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
         self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
-        self.linkScalar(wttex, self.pbr, transwt, "Subsurface")
+        self.linkScalar(wttex, self.pbr, transwt, "Subsurface", texslot=texslot)
 
 
-    def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex):
+    def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex, texslot):
         from .cgroup import AltSSSGroup
         fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS")
         self.linkScalar(ssstex, fix, sss, "SSS Amount")
@@ -228,7 +226,7 @@ class PbrTree(CyclesTree):
         if self.diffuseInput:
             self.links.new(self.colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
-        self.linkScalar(wttex, fix, transwt, "Translucency Weight")
+        self.linkScalar(wttex, fix, transwt, "Translucency Weight", texslot=texslot)
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
         self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
         self.links.new(fix.outputs["Subsurface"], self.pbr.inputs["Subsurface"])
@@ -239,7 +237,7 @@ class PbrTree(CyclesTree):
 
     def buildMetallic(self):
         if self.isEnabled("Metallicity"):
-            self.metal,self.metaltex = self.getColorTex(["Metallic Weight"], "NONE", 0.0)
+            self.metal,self.metaltex,_ = self.getColorTex(["Metallic Weight"], "NONE", 0.0)
             self.linkScalar(self.metaltex, self.pbr, self.metal, "Metallic")
             self.pureMetal = (self.metal == 1 and self.metaltex is None)
 
@@ -252,11 +250,11 @@ class PbrTree(CyclesTree):
         factor = value = 0.0
         tex = None
         if self.owner.shader == 'UBER_IRAY':
-            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             if self.owner.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
-                refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
-                color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
+                refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
+                color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
                 if reftex and coltex:
                     reftex = self.mixTexs('MULTIPLY', coltex, reftex)
                 elif coltex:
@@ -266,17 +264,17 @@ class PbrTree(CyclesTree):
                 value = factor * averageColor(color)
             elif self.owner.basemix == 1:  # Specular/Glossiness
                 # principled specular = iray glossy specular * iray glossy layered weight * 16
-                color,reftex = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
+                color,reftex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
                 tex = self.mixTexs('MULTIPLY', strtex, reftex)
                 factor = 16 * strength
                 value = factor * averageColor(color)
         elif self.owner.shader == 'PBRSKIN':
             if self.isEnabled("Dual Lobe Specular"):
-                value,tex = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
+                value,tex,texslot = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
                 factor = value
         else:
-            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
-            color,coltex = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
+            strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
             tex = self.mixTexs('MULTIPLY', strtex, coltex)
             value = factor = strength * averageColor(color)
 
@@ -291,10 +289,10 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildAnisotropy(self):
-        anisotropy,tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
+        anisotropy,tex,_ = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
         if anisotropy > 0:
             self.linkScalar(tex, self.pbr, anisotropy, "Anisotropic")
-            anirot,tex = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
+            anirot,tex,_ = self.getColorTex(["Glossy Anisotropy Rotations"], "NONE", 0)
             value = 0.75 - anirot
             self.linkScalar(tex, self.pbr, value, "Anisotropic Rotation")
         return anisotropy
@@ -334,14 +332,14 @@ class PbrTree(CyclesTree):
 
     def addClearCoat(self, useTex):
         if self.isEnabled("Top Coat"):
-            top,toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
-            rough,roughtex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
+            top,toptex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
+            rough,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
             self.linkScalar(roughtex, self.pbr, rough, "Clearcoat Roughness")
         else:
             top,toptex = 0.0,None
         if self.owner.shader == 'UBER_IRAY':
             if self.owner.basemix == 0:    # Metallic/Roughness
-                refl,reftex = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
+                refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 tex = self.mixTexs('MULTIPLY', toptex, reftex)
                 value = 1.25 * refl * top
             elif self.owner.basemix == 1:  # Specular/Glossiness
@@ -365,7 +363,7 @@ class PbrTree(CyclesTree):
 
     def buildSheen(self):
         if self.isEnabled("Velvet"):
-            velvet,tex = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
+            velvet,tex,texslot = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
             self.linkScalar(tex, self.pbr, velvet, "Sheen")
 
     #-------------------------------------------------------------
@@ -392,7 +390,7 @@ class PbrTree(CyclesTree):
         if not self.isEnabled("Transmission"):
             return 0, None
         if LS.materialMethod == 'SINGLE_PRINCIPLED':
-            weight,wttex = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
+            weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
                 self.replaceSlot(self.pbr, "Transmission", weight)
                 self.setRefractivePrincipled(self.pbr, None)
@@ -414,7 +412,7 @@ class PbrTree(CyclesTree):
 
     def setRefractivePrincipled(self, pbr, pbr2):
         color,coltex,roughness,roughtex = self.getRefractionColor()
-        ior,iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
+        ior,iortex,_ = self.getColorTex("getChannelIOR", "NONE", 1.45)
         if (self.owner.isThinWall and
             LS.materialMethod != 'SINGLE_PRINCIPLED'):
             from .cgroup import RayClipGroup
@@ -448,10 +446,10 @@ class PbrTree(CyclesTree):
             self.owner.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
-            strength,strtex = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
+            strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
             clearcoat = (ior-1)*10*strength
             self.removeLink(pbr, "Clearcoat")
-            self.linkScalar(strtex, pbr, clearcoat, "Clearcoat")
+            self.linkScalar(strtex, pbr, clearcoat, "Clearcoat", texslot=texslot)
             self.replaceSlot(pbr, "Clearcoat Roughness", 0)
 
         else:
@@ -461,7 +459,7 @@ class PbrTree(CyclesTree):
             # principled ior = iray refraction index
             # principled roughness = iray glossy roughness
             self.owner.setTransSettings(True, False, color, 0.2)
-            transcolor,transtex = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
+            transcolor,transtex,_ = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
             dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
             if not (isBlack(transcolor) or isWhite(transcolor) or dist == 0.0):
                 coltex = self.mixTexs('MULTIPLY', coltex, transtex)

@@ -312,8 +312,8 @@ class Material(Asset, Channels):
                 LS.shaders[shadername] = True
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
-            shadername = struct["definition"]
             if "definition" in struct.keys():
+                shadername = struct["definition"]
                 LS.shaders[shadername] = True
         elif struct["type"].startswith("studio/material/"):
             n = len("studio/material/")
