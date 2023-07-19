@@ -176,14 +176,14 @@ class PbrTree(CyclesTree):
 
     def buildBaseSubsurface(self):
         from .cycles import findTextureNode
-        color,tex = self.getDiffuseColor()
         if not self.isEnabled("Diffuse"):
             color = WHITE
             tex = None
+        else:
+            color,tex = self.getDiffuseColor()
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
-        self.diffuseColor = color
-        self.diffuseTex = findTextureNode(tex)
         self.pbr.inputs["Subsurface"].default_value = 0
+        print("BASE", color, tex)
 
         if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
             return
@@ -397,9 +397,8 @@ class PbrTree(CyclesTree):
                 self.setRefractivePrincipled()
             return weight,wttex
         else:
-            data = CyclesTree.buildRefraction(self)
             self.postPBR = True
-            return data
+            return CyclesTree.buildRefraction(self)
 
 
     def buildPureRefractive(self):

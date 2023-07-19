@@ -253,9 +253,7 @@ class Material(Asset, Channels):
             self.useVolume = False
             if self.isVoluSkinMaterial():
                 self.useTranslucency = False
-            if (self.isRefractive() and
-                self.getValue("getChannelIOR", 1) == 1 and
-                not self.isThinWall):
+            if self.isVolume():
                 self.useVolume = True
         elif LS.materialMethod == 'SINGLE_PRINCIPLED':
             self.useTranslucency = False
@@ -263,13 +261,21 @@ class Material(Asset, Channels):
 
 
     def isRefractive(self):
-        return (self.getValue("getChannelRefractionWeight", 0) != 0 or
-                self.getValue("getChannelOpacity", 1) != 1)
+        return ((self.getValue("getChannelRefractionWeight", 0) != 0 or
+                 self.getValue("getChannelOpacity", 1) != 1))
 
 
     def isPureRefractive(self):
-        return (self.isPure("getChannelRefractionWeight", 0, 1) or
-                self.isPure("getChannelOpacity", 1, 0))
+        return ((self.isPure("getChannelRefractionWeight", 0, 1) or
+                 self.isPure("getChannelOpacity", 1, 0)) and
+                 self.getValue("getChannelIOR", 1) != 1)
+
+
+    def isVolume(self):
+        return ((self.getValue("getChannelRefractionWeight", 0) == 1 or
+                 self.getValue("getChannelOpacity", 1) == 0) and
+                 self.getValue("getChannelIOR", 1) == 1 and
+                 not self.isThinWall)
 
 
     def isPure(self, attr, default, value):

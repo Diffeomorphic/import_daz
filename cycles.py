@@ -1483,7 +1483,7 @@ class CyclesTree(Tree):
         if weight == 0:
             return weight,wttex
         node,color = self.buildRefractionNode()
-        self.mixWithActive(weight, wttex, texslot, node)
+        self.mixWithActive(weight, wttex, texslot, node, keep=True)
         if (GS.useFakeCaustics and
             bpy.app.version < (3,4,0) and
             not self.inShell and
