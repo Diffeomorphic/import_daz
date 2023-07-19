@@ -445,9 +445,9 @@ class CyclesTree(Tree):
         self.prepareWeighted()
         self.buildGlossyOrDualLobe()
         self.buildMetal()
-        self.buildTopCoat(uvname)
         if self.owner.isRefractive():
             self.buildRefraction()
+        self.buildTopCoat(uvname)
         self.buildWeighted()
         self.buildEmission()
 
@@ -1483,7 +1483,7 @@ class CyclesTree(Tree):
         if weight == 0:
             return weight,wttex
         node,color = self.buildRefractionNode()
-        self.mixWithActive(weight, wttex, texslot, node, keep=True)
+        self.mixWithActive(weight, wttex, texslot, node)
         if (GS.useFakeCaustics and
             bpy.app.version < (3,4,0) and
             not self.inShell and

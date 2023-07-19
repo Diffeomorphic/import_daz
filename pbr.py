@@ -78,11 +78,11 @@ class PbrTree(CyclesTree):
             self.postPBR = True
         else:
             self.buildGlossyOrDualLobe()
+        if self.owner.isRefractive():
+            self.buildRefraction()
         if useTopCoatNode:
             self.postPBR = True
             self.buildTopCoat(uvname)
-        if self.owner.isRefractive():
-            self.buildRefraction()
         self.buildWeighted()
         self.buildEmission()
 
@@ -183,7 +183,6 @@ class PbrTree(CyclesTree):
             color,tex = self.getDiffuseColor()
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
         self.pbr.inputs["Subsurface"].default_value = 0
-        print("BASE", color, tex)
 
         if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
             return
