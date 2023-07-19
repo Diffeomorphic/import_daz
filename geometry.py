@@ -1103,7 +1103,6 @@ class Geometry(Asset, Channels):
                 verts = geonode.verts
 
         if not verts:
-            self.addAllMaterials(me, geonode)
             return None, None
 
         if self.polylines and not polymats:
@@ -1285,13 +1284,6 @@ class Geometry(Asset, Channels):
         if GS.useAutoSmooth:
             me.use_auto_smooth = dmat.getValue(["Smooth On"], False)
             me.auto_smooth_angle = dmat.getValue(["Smooth Angle"], 89.9)*D
-
-
-    def addAllMaterials(self, me, geonode):
-        for key, dmat in geonode.materials.items():
-            if dmat.rna:
-                me.materials.append(dmat.rna)
-                self.dmaterials.append(dmat)
 
 
     def validateMesh(self, me):
