@@ -1703,6 +1703,7 @@ class CyclesTree(Tree):
             self.links.new(self.displacement, output.inputs["Displacement"])
             mat = self.owner.rna
             mat.cycles.displacement_method = 'DISPLACEMENT'
+        return output
 
     #-------------------------------------------------------------
     #   Displacment

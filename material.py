@@ -243,11 +243,21 @@ class Material(Asset, Channels):
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
-        if self.isVoluSkinMaterial():
-            if GS.useSssSkin:
+        if LS.materialMethod == 'BSDF':
+            if GS.useSssSkin and self.isVoluSkinMaterial():
                 self.useTranslucency = False
                 self.useVolume = False
-        if LS.materialMethod == 'SINGLE_PRINCIPLED':
+            if self.isThinWall:
+                self.useVolume = False
+        elif LS.materialMethod == 'EXTENDED_PRINCIPLED':
+            self.useVolume = False
+            if self.isVoluSkinMaterial():
+                self.useTranslucency = False
+            if (self.isRefractive() and
+                self.getValue("getChannelIOR", 1) == 1 and
+                not self.isThinWall):
+                self.useVolume = True
+        elif LS.materialMethod == 'SINGLE_PRINCIPLED':
             self.useTranslucency = False
             self.useVolume = False
 
@@ -258,15 +268,14 @@ class Material(Asset, Channels):
 
 
     def isPureRefractive(self):
-        channel = self.getChannelRefractionWeight()
-        if channel:
-            return (self.getChannelValue(channel, 0) == 1 and
-                    not self.hasTextures(channel))
-        channel = self.getChannelOpacity()
-        if channel:
-            return (self.getChannelValue(channel, 1) == 0 and
-                    not self.hasTextures(channel))
-        return False
+        return (self.isPure("getChannelRefractionWeight", 0, 1) or
+                self.isPure("getChannelOpacity", 1, 0))
+
+
+    def isPure(self, attr, default, value):
+        channel = self.getChannel(attr)
+        return (self.getChannelValue(channel, default) == value and
+                not self.hasTextures(channel))
 
 
     def isHair(self):

@@ -56,6 +56,7 @@ class PbrTree(CyclesTree):
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
+            self.column = 6
             return
         self.column = 4
         self.buildDetail(uvname)
@@ -393,7 +394,7 @@ class PbrTree(CyclesTree):
             weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
                 self.replaceSlot(self.pbr, "Transmission", weight)
-                self.setRefractivePrincipled(self.pbr, None)
+                self.setRefractivePrincipled()
             return weight,wttex
         else:
             data = CyclesTree.buildRefraction(self)
@@ -405,12 +406,13 @@ class PbrTree(CyclesTree):
         if (self.owner.isPureRefractive() and
             self.owner.basemix != 2):
             self.pbr.inputs["Transmission"].default_value = 1.0
-            self.setRefractivePrincipled(self.pbr, None)
+            self.setRefractivePrincipled()
             return True
         return False
 
 
-    def setRefractivePrincipled(self, pbr, pbr2):
+    def setRefractivePrincipled(self):
+        pbr = self.pbr
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex,_ = self.getColorTex("getChannelIOR", "NONE", 1.45)
         if (self.owner.isThinWall and
@@ -423,17 +425,6 @@ class PbrTree(CyclesTree):
             self.cycles = clip
         else:
             clip = pbr
-
-        if pbr2:
-            if self.inShell:
-                self.replaceSlot(pbr, "Transmission", 1.0)
-                self.cycles = clip
-            elif self.owner.basemix == 2:
-                self.cycles = clip
-            else:
-                self.addColumn()
-                mix = self.mixShaders(weight, wttex, self.pbr, clip)
-                self.cycles = mix
         self.postPBR = True
 
         if self.owner.isThinWall:
@@ -478,7 +469,6 @@ class PbrTree(CyclesTree):
         pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
         if self.getValue(["Share Glossy Inputs"], False):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
-        self.pbr = pbr
         self.addColumn()
 
     #-------------------------------------------------------------
