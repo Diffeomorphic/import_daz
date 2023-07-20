@@ -149,9 +149,7 @@ class Material(Asset, Channels):
 
     def setupBasics(self):
         self.basemix = self.getValue(["Base Mixing"], 0)
-        if self.basemix > 2:
-            self.basemix = 0
-            raise DazError("Unknown Base Mixing: %s             " % self.basemix)
+        #  "PBR Metallicity/Roughness", "PBR Specular/Glossiness", "Weighted"
         self.useVolume = False
         self.useTranslucency = True
         self.isThinWall = self.getValue(["Thin Walled"], False)
@@ -268,7 +266,8 @@ class Material(Asset, Channels):
     def isPureRefractive(self):
         return ((self.isPure("getChannelRefractionWeight", 0, 1) or
                  self.isPure("getChannelOpacity", 1, 0)) and
-                 self.getValue("getChannelIOR", 1) != 1)
+                (self.getValue("getChannelIOR", 1) != 1 or
+                 self.isThinWall))
 
 
     def isVolume(self):

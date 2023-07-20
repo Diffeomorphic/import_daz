@@ -56,7 +56,6 @@ class PbrTree(CyclesTree):
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         if self.buildPureRefractive():
-            self.column = 6
             return
         self.column = 4
         self.buildDetail(uvname)
@@ -403,6 +402,7 @@ class PbrTree(CyclesTree):
     def buildPureRefractive(self):
         if (self.owner.isPureRefractive() and
             self.owner.basemix != 2):
+            self.column = 6
             self.pbr.inputs["Transmission"].default_value = 1.0
             self.setRefractivePrincipled()
             return True
@@ -416,7 +416,6 @@ class PbrTree(CyclesTree):
         if (self.owner.isThinWall and
             LS.materialMethod != 'SINGLE_PRINCIPLED'):
             from .cgroup import RayClipGroup
-            self.addColumn()
             clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
             self.links.new(pbr.outputs["BSDF"], clip.inputs["Shader"])
             self.linkColor(coltex, clip, color, "Color")
