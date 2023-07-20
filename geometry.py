@@ -1103,6 +1103,8 @@ class Geometry(Asset, Channels):
                 verts = geonode.verts
 
         if not verts:
+            if not self.isStrandHair:
+                self.addAllMaterials(me, geonode)
             return None, None
 
         if self.polylines and not polymats:
@@ -1290,6 +1292,14 @@ class Geometry(Asset, Channels):
         if me.validate():
             reportError('Invalid mesh "%s". Correcting.' % me.name)
             LS.invalidMeshes.append(me.name)
+
+
+    def addAllMaterials(self, me, geonode):
+        for key, dmat in geonode.materials.items():
+            if dmat.rna:
+                me.materials.append(dmat.rna)
+                self.dmaterials.append(dmat)
+
 
     def getBumpArea(self, me, bumps):
         bump = list(bumps)[0]

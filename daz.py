@@ -729,8 +729,8 @@ def register():
         description = "Use instancing for DAZ instances")
 
     bpy.types.Scene.DazHairGuides = BoolProperty(
-        name = "Hair Guides",
-        description = "Import hair guides as well as hair strands")
+        name = "Import All Hair Versions",
+        description = "Import hair guides even if the corresponding PS hairs have also been generated.\nOnly for DBZ mesh fitting")
 
     bpy.types.Scene.DazHighdef = BoolProperty(
         name = "Build HD Meshes",
