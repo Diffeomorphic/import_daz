@@ -55,8 +55,6 @@ class PbrTree(CyclesTree):
         self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5, size=30)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
-        if self.buildPureRefractive():
-            return
         self.column = 4
         self.buildDetail(uvname)
         self.column = 5
@@ -388,40 +386,25 @@ class PbrTree(CyclesTree):
     def buildRefraction(self):
         if not self.isEnabled("Transmission"):
             return 0, None
-        if LS.materialMethod == 'SINGLE_PRINCIPLED':
+        if LS.materialMethod == 'SINGLE_PRINCIPLED' or self.owner.isPureRefractive():
+            col = self.column
+            self.column = 5
             weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
-                self.replaceSlot(self.pbr, "Transmission", weight)
+                self.linkScalar(wttex, self.pbr, weight, "Transmission", texslot=texslot)
                 self.setRefractivePrincipled()
+            else:
+                self.column = col
             return weight,wttex
         else:
             self.postPBR = True
             return CyclesTree.buildRefraction(self)
 
 
-    def buildPureRefractive(self):
-        if (self.owner.isPureRefractive() and
-            self.owner.basemix != 2):
-            self.column = 6
-            self.pbr.inputs["Transmission"].default_value = 1.0
-            self.setRefractivePrincipled()
-            return True
-        return False
-
-
     def setRefractivePrincipled(self):
-        pbr = self.pbr
+        pbr = self.cycles = self.pbr
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex,_ = self.getColorTex("getChannelIOR", "NONE", 1.45)
-        if (self.owner.isThinWall and
-            LS.materialMethod != 'SINGLE_PRINCIPLED'):
-            from .cgroup import RayClipGroup
-            clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
-            self.links.new(pbr.outputs["BSDF"], clip.inputs["Shader"])
-            self.linkColor(coltex, clip, color, "Color")
-            self.cycles = clip
-        else:
-            clip = pbr
         self.postPBR = True
 
         if self.owner.isThinWall:
@@ -439,6 +422,19 @@ class PbrTree(CyclesTree):
             self.removeLink(pbr, "Clearcoat")
             self.linkScalar(strtex, pbr, clearcoat, "Clearcoat", texslot=texslot)
             self.replaceSlot(pbr, "Clearcoat Roughness", 0)
+            if LS.materialMethod == 'EXTENDED_PRINCIPLED':
+                from .cgroup import RayClipGroup
+                clip = self.addGroup(RayClipGroup, "DAZ Ray Clip", col=6)
+                self.links.new(pbr.outputs["BSDF"], clip.inputs["Shader"])
+                self.linkColor(coltex, clip, color, "Color")
+                self.cycles = clip
+
+        elif self.owner.isVolume():
+            self.owner.setTransSettings(True, False, color, 0.1)
+            self.replaceSlot(pbr, "Metallic", 0)
+            self.replaceSlot(pbr, "Specular", 0)
+            self.replaceSlot(pbr, "IOR", 1.0)
+            self.replaceSlot(pbr, "Roughness", 0.0)
 
         else:
             # principled transmission = 1
