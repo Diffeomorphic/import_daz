@@ -34,10 +34,49 @@ from .animation import ActionOptions
 from .fileutils import SingleFile, TextFile, CsvFile
 
 #------------------------------------------------------------------
+#   Utility class BoneHandler
+#------------------------------------------------------------------
+
+class BoneHandler:
+    def setRotation(self, pb, euler, frame, fraction=None):
+        if fraction == 0 or pb is None:
+            return
+        elif fraction is not None:
+            euler = Euler(fraction*Vector(euler))
+        mat = euler.to_matrix()
+        if pb.rotation_mode == 'QUATERNION':
+            pb.rotation_quaternion = mat.to_quaternion()
+            pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
+        else:
+            pb.rotation_euler = mat.to_euler(pb.rotation_mode)
+            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
+
+
+    def getBones(self, bnames, rig):
+        def getBone(bname, rig):
+            if bname not in rig.pose.bones.keys():
+                return None
+            pb = rig.pose.bones[bname]
+            if rig.animation_data and not self.useShapekeys:
+                msg = ("Bone %s is driven.\nMake bones posable first" % bname)
+                datapath = 'pose.bones["%s"].rotation_euler' % bname
+                for fcu in rig.animation_data.drivers:
+                    if fcu.data_path == datapath:
+                        raise DazError(msg)
+            return pb
+
+        for bname in bnames:
+            pb = getBone(bname, rig)
+            if pb:
+                return pb
+        print("Did not find bones: %s" % bnames)
+        return None
+
+#------------------------------------------------------------------
 #   Generic FACS importer
 #------------------------------------------------------------------
 
-class FACSImporter(SingleFile, ActionOptions):
+class FACSImporter(SingleFile, ActionOptions, BoneHandler):
 
     useShapekeys : BoolProperty(
         name = "Load To Shapekeys",
@@ -275,41 +314,6 @@ class FACSImporter(SingleFile, ActionOptions):
             self.setRotation(self.leye, self.leyekeys[t], frame)
             self.setRotation(self.reye, self.reyekeys[t], frame)
 
-
-    def setRotation(self, pb, euler, frame, fraction=None):
-        if fraction == 0 or pb is None:
-            return
-        elif fraction is not None:
-            euler = Euler(fraction*Vector(euler))
-        mat = euler.to_matrix()
-        if pb.rotation_mode == 'QUATERNION':
-            pb.rotation_quaternion = mat.to_quaternion()
-            pb.keyframe_insert("rotation_quaternion", frame=frame, group=pb.name)
-        else:
-            pb.rotation_euler = mat.to_euler(pb.rotation_mode)
-            pb.keyframe_insert("rotation_euler", frame=frame, group=pb.name)
-
-
-    def getBones(self, bnames, rig):
-        def getBone(bname, rig):
-            if bname not in rig.pose.bones.keys():
-                return None
-            pb = rig.pose.bones[bname]
-            if rig.animation_data and not self.useShapekeys:
-                msg = ("Bone %s is driven.\nMake bones posable first" % bname)
-                datapath = 'pose.bones["%s"].rotation_euler' % bname
-                for fcu in rig.animation_data.drivers:
-                    if fcu.data_path == datapath:
-                        raise DazError(msg)
-            return pb
-
-        for bname in bnames:
-            pb = getBone(bname, rig)
-            if pb:
-                return pb
-        print("Did not find bones: %s" % bnames)
-        return None
-
 #------------------------------------------------------------------
 #   FACS tables
 #------------------------------------------------------------------
@@ -518,7 +522,9 @@ class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
 #   Gaze transfer
 #------------------------------------------------------------------
 
-class GazeTransferer:
+class GazeTransferer(BoneHandler):
+    useShapekeys = False
+
     @classmethod
     def poll(self, context):
         rig = context.object
