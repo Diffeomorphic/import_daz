@@ -879,8 +879,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print("Apply transforms")
             bpy.ops.object.select_all(action='DESELECT')
             wmats = []
+            status = []
             for ob in objects:
                 try:
+                    status.append((ob, ob.hide_get(), ob.hide_select))
+                    ob.hide_set(False)
+                    ob.hide_select = False
                     if ob.parent and ob.parent_type == 'BONE':
                         wmats.append((ob, ob.matrix_world.copy()))
                     elif ob.type in ['MESH', 'ARMATURE']:
@@ -890,6 +894,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
             for ob,wmat in wmats:
                 setWorldMatrix(ob, wmat)
+            for ob,hide,select in status:
+                ob.hide_set(hide)
+                ob.hide_select = select
 
         if mainChar and mainRig and mainMesh:
             if self.useFavoMorphs:

@@ -1685,12 +1685,19 @@ def applyAllObjectTransforms(rigs):
         selectSet(rig, True)
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     bpy.ops.object.select_all(action='DESELECT')
+    status = []
     try:
         for rig in rigs:
             for ob in getMeshChildren(rig):
+                status.append((ob, ob.hide_get(), ob.hide_select))
+                ob.hide_set(False)
+                ob.hide_select = False
                 if ob.parent_type != 'BONE':
                     selectSet(ob, True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        for ob,hide,select in status:
+            ob.hide_set(hide)
+            ob.hide_select = select
         return True
     except RuntimeError:
         print("Could not apply object transformations to meshes")

@@ -324,7 +324,8 @@ def pruneNodeTree(tree,
                 (active and node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
                 useRemove = True
                 replaceLinks = []
-                for link in node.outputs["UV"].links:
+                key = ("Vector" if node.type == 'ATTRIBUTE' else "UV")
+                for link in node.outputs[key].links:
                     if link.to_node.type in ['TEX_IMAGE']:
                         links.append(link)
                     elif (node.type != 'TEX_COORD' and
