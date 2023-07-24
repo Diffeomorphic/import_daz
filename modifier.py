@@ -856,7 +856,6 @@ class Morph(FormulaAsset):
         elif LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
         elif LS.fitFile or LS.useMorph:
-            print("PBB", self)
             from .formula import buildBakedMorph
             buildBakedMorph(inst, self.id, self.value)
             self.buildBakedFormulas(context, inst)
