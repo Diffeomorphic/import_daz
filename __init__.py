@@ -29,8 +29,8 @@
 bl_info = {
     "name": "DAZ importer",
     "author": "Thomas Larsson",
-    "version": (1,7,1),
-    "blender": (3,3,0),
+    "version": (1,7,2),
+    "blender": (3,6,0),
     "location": "UI > DAZ Setup, DAZ Runtime",
     "description": "Import native DAZ files (.duf, .dsf)",
     "warning": "",
