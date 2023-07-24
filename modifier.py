@@ -612,6 +612,7 @@ def copyVertexGroups(ob, hdob):
             hdvgrps[g.group].add([vn], g.weight, 'REPLACE')
     return True
 
+
 class LegacySkinBinding(SkinBinding):
 
     def __repr__(self):
@@ -643,7 +644,7 @@ class FormulaAsset(Formula, ChannelAsset):
 
     def parse(self, struct):
         ChannelAsset.parse(self, struct)
-        if not (LS.useMorphOnly or LS.fitFile):
+        if not (LS.useMorph or LS.fitFile):
             return
         if "group" in struct.keys():
             words = struct["group"].split("/")
@@ -655,14 +656,14 @@ class FormulaAsset(Formula, ChannelAsset):
 
 
     def build(self, context, inst):
-        if LS.useMorphOnly:
+        if LS.useMorph:
             Formula.build(self, context, inst)
 
 
     def postbuild(self, context, inst):
         if LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
-        elif LS.fitFile and inst:
+        elif (LS.fitFile or LS.useMorph) and inst:
             self.buildBakedFormulas(context, inst)
 
 #-------------------------------------------------------------
@@ -781,8 +782,8 @@ class Morph(FormulaAsset):
             ob = geonode.rna
             if value >= 0:
                 self.value = value
-                if self not in geonode.modifiers:
-                    geonode.modifiers.append(self)
+                if self.name not in geonode.modifiers.keys():
+                    geonode.modifiers[self.name] = self
                 geonode.morphsValues[self.name] = value
             elif self.name in geonode.morphsValues.keys():
                 self.value = geonode.morphsValues[self.name]
@@ -854,7 +855,8 @@ class Morph(FormulaAsset):
             return
         elif LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
-        elif LS.fitFile:
+        elif LS.fitFile or LS.useMorph:
+            print("PBB", self)
             from .formula import buildBakedMorph
             buildBakedMorph(inst, self.id, self.value)
             self.buildBakedFormulas(context, inst)

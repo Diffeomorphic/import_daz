@@ -1596,15 +1596,23 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
         rname = assoc.get(pb.name, pb.name)
         rb = gen.pose.bones.get(rname)
+        space = 'LOCAL_WITH_PARENT'
+        if not pb.parent:
+            space = 'POSE'
+        elif rb.name.startswith(("hand.", "foot.")):
+            space = 'POSE'
+        else:
+            rparname = assoc.get(pb.parent.name, pb.parent.name)
+            rparb = gen.pose.bones.get(rparname)
+            if rparb == rb.parent:
+                space = 'LOCAL'
         if rb is None:
             print("MISS", pb.name)
             return
         elif ".twist" in rb.name:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif isLocationUnlocked(pb):
-            cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
         else:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns = copyTransform(pb, rb, gen, space=space)
 
     #-------------------------------------------------------------
     #   Error on missing bone

@@ -691,9 +691,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
-        self.layout.prop(self, "useTransferFace")
-        self.layout.prop(self, "useTransferGeografts")
-        self.layout.prop(self, "useTransferClothes")
+        if self.fitMeshes != 'MORPHED':
+            self.layout.prop(self, "useTransferFace")
+            self.layout.prop(self, "useTransferGeografts")
+            self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
         self.layout.prop(self, "useCombineMaterials")
         self.layout.prop(self, "useSoftbody")
@@ -965,9 +966,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 useLegs = self.useLegs
                 )
 
+
+        if self.fitMeshes == 'MORPHED' and mainMesh:
+            self.transferShapes(context, mainMesh, meshes[1:], False, "All", True)
+
         # Merge geografts
         if geografts:
-            if self.useTransferGeografts or self.useMergeGeografts:
+            if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
                         self.transferShapes(context, cob, aobs, self.useMergeGeografts, "NoFace", True)
@@ -987,9 +992,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
 
         # Transfer shapekeys to clothes and lashes
-        if self.useTransferClothes:
+        if self.useTransferClothes and self.fitMeshes != 'MORPHED':
             self.transferShapes(context, mainMesh, clothes, False, "NoFace", False)
-        if self.useTransferFace:
+        if self.useTransferFace and self.fitMeshes != 'MORPHED':
             self.transferShapes(context, mainMesh, lashes, False, "Face", True)
 
         if mainRig and activateObject(context, mainRig):

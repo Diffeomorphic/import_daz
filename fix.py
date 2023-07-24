@@ -62,7 +62,7 @@ class Fixer(DriverUser):
 
     useKeepRig : BoolProperty(
         name = "Keep DAZ Rig",
-        description = "Keep the original DAZ rig for deformation.\nRotation locks should be enabled during generation",
+        description = "Keep the original DAZ rig for deformation",
         default = False)
 
     def draw(self, context):
