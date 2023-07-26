@@ -215,13 +215,19 @@ class GeoNode(Node, SimNode):
         subDLevel = 0
         if self.materials:
             subDLevel = max([dmat.getSubDLevel(0) for dmat in self.materials.values()])
+            if subDLevel > GS.maxSubdivs:
+                for dmat in self.materials.values():
+                    mat = dmat.rna
+                    if mat and mat.cycles.displacement_method == 'DISPLACEMENT':
+                        mat.cycles.displacement_method = 'BOTH'
+                subDLevel = GS.maxSubdivs
         if (self.type == "subdivision_surface" and
             self.data and
             (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0 or subDLevel > 0)):
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
             renderLevel = max(self.data.SubDIALevel + self.data.SubDRenderLevel, subDLevel)
-            mod.render_levels = self.limitDisp(renderLevel)
-            mod.levels = self.limitDisp(self.data.SubDIALevel)
+            mod.render_levels = min(renderLevel, GS.maxSubdivs)
+            mod.levels = min(self.data.SubDIALevel, GS.maxSubdivs)
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
             if self.data.SubDEdgeInterpolateLevel == 1:
@@ -232,21 +238,6 @@ class GeoNode(Node, SimNode):
                     pass
             self.data.creaseEdges(context, ob)
             ob.data.use_auto_smooth = False
-        if False and subDLevel > renderLevel:
-            mod = ob.modifiers.new("SubD Displacement", 'SUBSURF')
-            mod.subdivision_type = 'SIMPLE'
-            mod.levels = 0
-            mod.render_levels = subDLevel - renderLevel
-
-
-    def limitDisp(self, level):
-        if level > GS.maxSubdivs:
-            for dmat in self.materials.values():
-                mat = dmat.rna
-                if mat and mat.cycles.displacement_method == 'DISPLACEMENT':
-                    mat.cycles.displacement_method = 'BOTH'
-            return GS.maxSubdivs
-        return level
 
 
     def addMappings(self, selmap):
@@ -1450,6 +1441,7 @@ class Uvset(Asset):
             uvmax = max(uvnums) + 1
         else:
             uvmin = uvmax = -1
+            return
         if (uvmin != 0 or uvmax != len(self.uvs)):
                 msg = ("Vertex number mismatch.\n" +
                        "Expected mesh with %d UV vertices        \n" % len(self.uvs) +
