@@ -990,7 +990,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             key,mname = pair
             showProgress(n, nitems)
             rig[key] = 0.0
-            if mname in skeys.key_blocks.keys():
+            if mname in existing.keys():
                 del existing[mname]
                 duplets.append(skeys.key_blocks[mname])
                 continue

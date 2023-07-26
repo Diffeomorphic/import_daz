@@ -1599,8 +1599,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if (not pb.parent or
             rb.name.startswith(("hand0.", "foot."))):
             space = 'POSE'
+        elif pb.name in facebones:
+            space = 'LOCAL'
         else:
-            space = 'LOCAL_WITH_PARENT'
+            space = 'POSE'
         if rb is None:
             print("Cannot tie", pb.name)
             return

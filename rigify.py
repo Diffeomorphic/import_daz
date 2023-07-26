@@ -614,7 +614,7 @@ class Rigifier(RigifyCommon):
                 if isinstance(dbone, tuple):
                     dbone = dbone[0]
             taken.append(dbone)
-        for ob in rig.children:
+        for ob in self.meshes:
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
@@ -701,7 +701,7 @@ class Rigifier(RigifyCommon):
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)
-        self.meshes = getMeshChildren(rig)
+        self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
 
         setMode('POSE')
         try:
@@ -841,7 +841,8 @@ class Rigifier(RigifyCommon):
 
         # Handle bone parents
         print("  Reparent bones")
-        for ob in rig.children:
+        children = (dazrig.children if dazrig else rig.children)
+        for ob in children:
             if ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()
                 rname = self.getRigifyBone(ob.parent_bone, gen.data.bones)
@@ -1280,24 +1281,22 @@ class Rigifier(RigifyCommon):
             cns.invert_z = True
         elif pb.name == "pelvis":
             pass
-            #cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif rname.startswith("DEF-toe"):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             cns.invert_x = True
             cns.invert_y = False
             cns.invert_z = True
-        elif rname.startswith("DEF-spine"):
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+        elif rname.startswith("DEF-palm"):
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+            pass
         elif rname.startswith(("DEF-foot", "DEF-hand")):
             cns = copyTransform(pb, rb, gen, space='POSE')
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
-            if isLocationUnlocked(pb):
-                cns = copyLocation(pb, rb, gen, space='LOCAL')
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
         else:
-            cns = copyRotation(pb, rb, gen, space='POSE')
+            cns = copyTransform(pb, rb, gen, space='POSE')
 
 #-------------------------------------------------------------
 #  Buttons

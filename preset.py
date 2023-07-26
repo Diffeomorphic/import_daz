@@ -809,7 +809,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim = {}
                 anim["url"] = "%s?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor for vec in vecs]
-                self.addKeys(locs, anim, 1e-4)
+                self.addKeys(locs, anim, 0.01)
                 anims.append(anim)
         else:
             dmat,bmat,xmat,parent = getTransformMatrices(pb, rig, {})
@@ -826,7 +826,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim = {}
                 anim["url"] = "%s:?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor for vec in vecs]
-                self.addKeys(locs, anim, 1e-4)
+                self.addKeys(locs, anim, 0.01)
                 anims.append(anim)
 
 
@@ -839,7 +839,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
-                self.addKeys(rots, anim, 1e-3)
+                self.addKeys(rots, anim, 0.01)
                 anims.append(anim)
         else:
             twname,twidx = self.getTwistBone(pb.name)
@@ -853,7 +853,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
-                self.addKeys(rots, anim, 1e-3)
+                self.addKeys(rots, anim, 0.01)
                 anims.append(anim)
             if twname is None:
                 return
@@ -864,7 +864,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(twname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
-                self.addKeys(rots, anim, 1e-3)
+                self.addKeys(rots, anim, 0.02)
                 anims.append(anim)
 
 
