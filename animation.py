@@ -1728,21 +1728,20 @@ class DAZ_OT_ClearPose(DazOperator, IsObject):
             rig = getRigFromMesh(ob)
             if rig:
                 ob = rig
-            self.clearPose(ob, scn)
+            clearPose(ob, scn.frame_current, scn.tool_settings.use_keyframe_insert_auto)
 
 
-    def clearPose(self, rig, scn):
-        auto = scn.tool_settings.use_keyframe_insert_auto
-        unit = Matrix()
-        setWorldMatrix(rig, unit)
-        if auto:
-            insertKeys(rig, False, scn.frame_current)
-        if rig.pose:
-            for pb in rig.pose.bones:
-                pb.matrix_basis = unit
-                if auto:
-                    insertKeys(pb, True, scn.frame_current)
-            setChildofInverses(rig)
+def clearPose(rig, frame, auto):
+    unit = Matrix()
+    setWorldMatrix(rig, unit)
+    if auto:
+        insertKeys(rig, False, frame)
+    if rig.pose:
+        for pb in rig.pose.bones:
+            pb.matrix_basis = unit
+            if auto:
+                insertKeys(pb, True, frame)
+        setChildofInverses(rig)
 
 
 def insertKeys(pb, isbone, frame, btn=None):
