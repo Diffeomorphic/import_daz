@@ -1286,9 +1286,8 @@ class Rigifier(RigifyCommon):
             cns.invert_x = True
             cns.invert_y = False
             cns.invert_z = True
-        elif rname.startswith("DEF-palm"):
+        elif rname.startswith(("DEF-palm", "DEF-spine")):
             cns = copyTransform(pb, rb, gen, space='LOCAL')
-            pass
         elif rname.startswith(("DEF-foot", "DEF-hand")):
             cns = copyTransform(pb, rb, gen, space='POSE')
         elif "twist" in pb.name.lower():
