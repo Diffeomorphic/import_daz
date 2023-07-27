@@ -1660,7 +1660,6 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
     def run(self, context):
         self.rig = getRigFromContext(context)
         self.setupDuplicates()
-        print("DUP", self.duplicates)
         if self.rig:
             for ob in getMeshChildren(self.rig):
                 self.addFavoMorphs(ob, context)

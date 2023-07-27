@@ -193,6 +193,10 @@ class Formula:
         if type == "value":
             if expr["prop"] is None:
                 expr["prop"] = prop
+            else:
+                expr["prop2"] = prop
+                factor = "factor2"
+                expr["comp2"] = comp
         elif expr["bone"] is None:
             expr["bone"] = getMappedBone(prop, rig, mesh)
             expr["comp"] = comp
@@ -322,6 +326,7 @@ def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
             "factor" : 0,
             "factor2" : 0,
             "prop" : None,
+            "prop2" : None,
             "bone" : None,
             "bone2" : None,
             "path" : None,

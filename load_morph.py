@@ -286,9 +286,15 @@ class LoadMorph(DriverUser):
                 finger = self.mesh.data.DazFingerPrint
                 nverts = int(finger.split("-")[0])
 
+        parent = self.getGraftParent(asset)
         if asset.vertex_count < 0:
-            print("Vertex count == %d" % asset.vertex_count)
-        elif asset.vertex_count != nverts:
+            pass
+            #print("Vertex count == %d" % asset.vertex_count)
+        elif asset.vertex_count == nverts:
+            pass
+        elif parent:
+            pass
+        else:
             from .finger import VertexCounts
             msg = ("Vertex count mismatch: %d != %d" % (asset.vertex_count, len(self.mesh.data.vertices)))
             if GS.verbosity > 2:
@@ -306,8 +312,12 @@ class LoadMorph(DriverUser):
                 if asset.vertex_count in VertexCounts.keys():
                     LS.targetCharacter = VertexCounts[asset.vertex_count]
                 return None,False
+
         if not asset.rna:
-            asset.buildMorph(self.mesh, useBuild=useBuild)
+            if parent:
+                asset.buildMorph(parent, useBuild=useBuild)
+            else:
+                asset.buildMorph(self.mesh, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
             prop = self.getUniqueName(unquote(skey.name))
@@ -333,6 +343,14 @@ class LoadMorph(DriverUser):
             return skey,True
         else:
             return None,True
+
+
+    def getGraftParent(self, asset):
+        if self.mesh and self.mesh.data.DazGraftGroup and self.rig:
+            for ob in self.rig.children:
+                if len(ob.data.vertices) == asset.vertex_count:
+                    return ob
+        return None
 
 
     def makeFormulas(self, asset, skey):
@@ -530,6 +548,10 @@ class LoadMorph(DriverUser):
             if "points" in expr.keys():
                 factor = self.cheatSplineTCB(expr["points"], factor)
             self.drivers[output].append(("PROP", prop, factor))
+            if expr["prop2"]:
+                prop2 = self.getUniqueName(expr["prop2"])
+                factor2 = expr["factor2"]
+                self.drivers[output].append(("PROP", prop2, factor2))
         for mult in expr["mults"]:
             if isinstance(mult, str):
                 mult = self.getUniqueName(mult)
