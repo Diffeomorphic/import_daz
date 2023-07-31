@@ -1494,7 +1494,7 @@ class Uvset(Asset):
             mn = geo.material_indices[fn]
             for n in range(len(f.vertices)):
                 vn = polyverts[f.index][n]
-                if vn < vnmax:
+                if vn < vnmax and mn < nmats:
                     uv = self.uvs[vn]
                     uvlayer.data[m].uv = uv
                     ucoords[mn].append(uv[0])

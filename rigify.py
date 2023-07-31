@@ -1272,26 +1272,36 @@ class Rigifier(RigifyCommon):
         rb = gen.pose.bones.get(rname)
         if rb is None:
             return
-        elif pb.name == "hip":
-            cns = copyLocation(pb, rb, gen, space='WORLD')
-            cns.head_tail = 1.0
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-            cns.invert_x = False
-            cns.invert_y = True
-            cns.invert_z = True
         elif pb.name == "pelvis":
             pass
-        elif rname.startswith("DEF-toe"):
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-            cns.invert_x = True
-            cns.invert_y = False
-            cns.invert_z = True
-        elif rname.startswith(("DEF-palm", "DEF-spine")):
-            cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif rname.startswith(("DEF-foot", "DEF-hand")):
             cns = copyTransform(pb, rb, gen, space='POSE')
-        elif "twist" in pb.name.lower():
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+        elif pb.name == "hip":
+            if bpy.app.version >= (3,0,0):
+                cns = copyTransform(pb, rb, gen, space='LOCAL')
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
+            else:
+                cns = copyLocation(pb, rb, gen, space='WORLD')
+                cns.head_tail = 1.0
+                cns = copyRotation(pb, rb, gen, space='LOCAL')
+                cns.invert_x = False
+                cns.invert_y = True
+                cns.invert_z = True
+        elif rname.startswith("DEF-toe"):
+            if bpy.app.version >= (3,0,0):
+                cns = copyTransform(pb, rb, gen, space='LOCAL')
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
+            else:
+                cns = copyRotation(pb, rb, gen, space='LOCAL')
+                cns.invert_x = True
+                cns.invert_y = False
+                cns.invert_z = True
+        elif rname.startswith(("DEF-palm", "DEF-spine")):
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+            if bpy.app.version >= (3,0,0):
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
+        #elif "twist" in pb.name.lower():
+        #    cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         else:
