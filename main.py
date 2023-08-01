@@ -900,14 +900,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 ob.hide_select = select
 
         if mainChar and mainRig and mainMesh:
-            if self.useFavoMorphs:
-                if activateObject(context, mainRig) and self.favoPath:
-                    bpy.ops.daz.load_favo_morphs(
-                        filepath = self.favoPath,
-                        onMorphSuffix = self.onMorphSuffix,
-                        morphSuffix = self.morphSuffix,
-                        useAdjusters = self.useAdjusters,
-                        useTransferFace = False)
             if (  self.useUnits or
                   self.useExpressions or
                   self.useVisemes or
@@ -941,6 +933,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms)
+            if self.useFavoMorphs:
+                if activateObject(context, mainRig) and self.favoPath:
+                    bpy.ops.daz.load_favo_morphs(
+                        filepath = self.favoPath,
+                        onMorphSuffix = self.onMorphSuffix,
+                        morphSuffix = self.morphSuffix,
+                        useAdjusters = self.useAdjusters,
+                        useTransferFace = False)
 
         # Import DAZ favorites
         if self.useDazFavorites and meshes:
@@ -995,7 +995,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useTransferClothes and self.fitMeshes != 'MORPHED':
             self.transferShapes(context, mainMesh, clothes, False, "NoFace", False)
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
-            self.transferShapes(context, mainMesh, lashes, False, "Face", True)
+            self.transferShapes(context, mainMesh, lashes, False, "All", True)
 
         if mainRig and activateObject(context, mainRig):
             # Make all bones posable

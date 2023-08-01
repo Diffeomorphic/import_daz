@@ -1,0 +1,436 @@
+﻿{
+    "name" : "AP_Redux_Default",
+    "url" : "/data/Laudanum/Advance Pussy/Advanced Pussy Redux/AdvancedPussy_Redux__2253.dsf#AP_Redux_Default",
+    "directory" : "/data/Laudanum/Advance Pussy/Advanced Pussy Redux/Morphs/Laudanum",
+    "modified" : "1690860305.836382",
+    "version" : 6,
+    "definitions" : {},
+    "alias" : {},
+    "formulas" : {
+        "AP_Ctrl_AP01_Tiny02DH" : {
+            "APR_AP_Tiny_DH" : 1,
+            "AP_Ctrl_AP01_Tiny02DH" : 1
+        },
+        "AP_Ctrl_AP01_Tiny03DV" : {
+            "APR_AP_Tiny_DV" : 1,
+            "AP_Ctrl_AP01_Tiny03DV" : 1
+        },
+        "AP_Ctrl_AP01_Tiny04TP" : {
+            "APR_AP_Tiny_TP" : 1,
+            "AP_Ctrl_AP01_Tiny04TP" : 1
+        },
+        "AP_Ctrl_AP01_Tiny05TI" : {
+            "APR_AP_Tiny_TI" : 1,
+            "AP_Ctrl_AP01_Tiny05TI" : 1
+        },
+        "AP_Ctrl_AP01_Tiny06Q" : {
+            "APR_AP_Tiny_Q" : 1,
+            "AP_Ctrl_AP01_Tiny06Q" : 1
+        },
+        "AP_Ctrl_AP02_Small02DH" : {
+            "APR_AP_Small_DH" : 1,
+            "AP_Ctrl_AP02_Small02DH" : 1
+        },
+        "AP_Ctrl_AP02_Small03DV" : {
+            "APR_AP_Small_DV" : 1,
+            "AP_Ctrl_AP02_Small03DV" : 1
+        },
+        "AP_Ctrl_AP02_Small04TP" : {
+            "APR_AP_Small_TP" : 1,
+            "AP_Ctrl_AP02_Small04TP" : 1
+        },
+        "AP_Ctrl_AP02_Small05TI" : {
+            "APR_AP_Small_TI" : 1,
+            "AP_Ctrl_AP02_Small05TI" : 1
+        },
+        "AP_Ctrl_AP02_Small06Q" : {
+            "APR_AP_Small_Q" : 1,
+            "AP_Ctrl_AP02_Small06Q" : 1
+        },
+        "AP_Ctrl_AP03_Average02DH" : {
+            "APR_AP_Average_DH" : 1,
+            "AP_Ctrl_AP03_Average02DH" : 1
+        },
+        "AP_Ctrl_AP03_Average03DV" : {
+            "APR_AP_Average_DV" : 1,
+            "AP_Ctrl_AP03_Average03DV" : 1
+        },
+        "AP_Ctrl_AP03_Average04TP" : {
+            "APR_AP_Average_TP" : 1,
+            "AP_Ctrl_AP03_Average04TP" : 1
+        },
+        "AP_Ctrl_AP03_Average05TI" : {
+            "APR_AP_Average_TI" : 1,
+            "AP_Ctrl_AP03_Average05TI" : 1
+        },
+        "AP_Ctrl_AP03_Average06Q" : {
+            "APR_AP_Average_Q" : 1,
+            "AP_Ctrl_AP03_Average06Q" : 1
+        },
+        "AP_Ctrl_AP04_Big01D" : {
+            "APR_AP_Big_DE" : 1,
+            "AP_Ctrl_AP04_Big01D" : 1
+        },
+        "AP_Ctrl_AP04_Big02DH" : {
+            "APR_AP_Big_DH" : 1,
+            "AP_Ctrl_AP04_Big02DH" : 1
+        },
+        "AP_Ctrl_AP04_Big03DV" : {
+            "APR_AP_Big_DV" : 1,
+            "AP_Ctrl_AP04_Big03DV" : 1
+        },
+        "AP_Ctrl_AP04_Big04TP" : {
+            "APR_AP_Big_TP" : 1,
+            "AP_Ctrl_AP04_Big04TP" : 1
+        },
+        "AP_Ctrl_AP04_Big05TI" : {
+            "APR_AP_Big_TI" : 1,
+            "AP_Ctrl_AP04_Big05TI" : 1
+        },
+        "AP_Ctrl_AP04_Big06Q" : {
+            "APR_AP_Big_Q" : 1,
+            "AP_Ctrl_AP04_Big06Q" : 1
+        },
+        "AP_Ctrl_AP05_Huge01D" : {
+            "APR_AP_Huge_DE" : 1,
+            "AP_Ctrl_AP05_Huge01D" : 1
+        },
+        "AP_Ctrl_AP05_Huge02DH" : {
+            "APR_AP_Huge_DH" : 1,
+            "AP_Ctrl_AP05_Huge02DH" : 1
+        },
+        "AP_Ctrl_AP05_Huge03DV" : {
+            "APR_AP_Huge_DV" : 1,
+            "AP_Ctrl_AP05_Huge03DV" : 1
+        },
+        "AP_Ctrl_AP05_Huge04TP" : {
+            "APR_AP_Huge_TP" : 1,
+            "AP_Ctrl_AP05_Huge04TP" : 1
+        },
+        "AP_Ctrl_AP05_Huge05TI" : {
+            "APR_AP_Huge_TI" : 1,
+            "AP_Ctrl_AP05_Huge05TI" : 1
+        },
+        "AP_Ctrl_AP05_Huge06Q" : {
+            "APR_AP_Huge_Q" : 1,
+            "AP_Ctrl_AP05_Huge06Q" : 1
+        },
+        "AP_Ctrl_AP06_Insane01D" : {
+            "APR_AP_Insane_DE" : 1,
+            "AP_Ctrl_AP06_Insane01D" : 1
+        },
+        "AP_Ctrl_VP01_Tiny02DH" : {
+            "APR_VP_Tiny_DH" : 1,
+            "AP_Ctrl_VP01_Tiny02DH" : 1
+        },
+        "AP_Ctrl_VP01_Tiny03DV" : {
+            "APR_VP_Tiny_DV" : 1,
+            "AP_Ctrl_VP01_Tiny03DV" : 1
+        },
+        "AP_Ctrl_VP01_Tiny04TP" : {
+            "APR_VP_Tiny_TP" : 1,
+            "AP_Ctrl_VP01_Tiny04TP" : 1
+        },
+        "AP_Ctrl_VP01_Tiny05TI" : {
+            "APR_VP_Tiny_TI" : 1,
+            "AP_Ctrl_VP01_Tiny05TI" : 1
+        },
+        "AP_Ctrl_VP01_Tiny06Q" : {
+            "APR_VP_Tiny_Q" : 1,
+            "AP_Ctrl_VP01_Tiny06Q" : 1
+        },
+        "AP_Ctrl_VP02_Small02DH" : {
+            "APR_VP_Small_DefaultDH" : 1,
+            "AP_Ctrl_VP02_Small02DH" : 1
+        },
+        "AP_Ctrl_VP02_Small03DV" : {
+            "APR_VP_Small_DV" : 1,
+            "AP_Ctrl_VP02_Small03DV" : 1
+        },
+        "AP_Ctrl_VP02_Small04TP" : {
+            "APR_VP_Small_TP" : 1,
+            "AP_Ctrl_VP02_Small04TP" : 1
+        },
+        "AP_Ctrl_VP02_Small05TI" : {
+            "APR_VP_Small_TI" : 1,
+            "AP_Ctrl_VP02_Small05TI" : 1
+        },
+        "AP_Ctrl_VP02_Small06Q" : {
+            "APR_VP_Small_Q" : 1,
+            "AP_Ctrl_VP02_Small06Q" : 1
+        },
+        "AP_Ctrl_VP03_Average02DH" : {
+            "APR_VP_Average_DH" : 1,
+            "AP_Ctrl_VP03_Average02DH" : 1
+        },
+        "AP_Ctrl_VP03_Average03DV" : {
+            "APR_VP_Average_DV" : 1,
+            "AP_Ctrl_VP03_Average03DV" : 1
+        },
+        "AP_Ctrl_VP03_Average04TP" : {
+            "APR_VP_Average_TP" : 1,
+            "AP_Ctrl_VP03_Average04TP" : 1
+        },
+        "AP_Ctrl_VP03_Average05TI" : {
+            "APR_VP_Average_TI" : 1,
+            "AP_Ctrl_VP03_Average05TI" : 1
+        },
+        "AP_Ctrl_VP03_Average06Q" : {
+            "APR_VP_Average_Q" : 1,
+            "AP_Ctrl_VP03_Average06Q" : 1
+        },
+        "AP_Ctrl_VP04_Big01D" : {
+            "APR_VP_Big_Default" : 1,
+            "AP_Ctrl_VP04_Big01D" : 1
+        },
+        "AP_Ctrl_VP04_Big02DH" : {
+            "APR_VP_Big_DH" : 1,
+            "AP_Ctrl_VP04_Big02DH" : 1
+        },
+        "AP_Ctrl_VP04_Big03DV" : {
+            "APR_VP_Big_DV" : 1,
+            "AP_Ctrl_VP04_Big03DV" : 1
+        },
+        "AP_Ctrl_VP04_Big04TP" : {
+            "APR_VP_Big_TP" : 1,
+            "AP_Ctrl_VP04_Big04TP" : 1
+        },
+        "AP_Ctrl_VP04_Big05TI" : {
+            "APR_VP_Big_TI" : 1,
+            "AP_Ctrl_VP04_Big05TI" : 1
+        },
+        "AP_Ctrl_VP04_Big06Q" : {
+            "APR_VP_Big_Q" : 1,
+            "AP_Ctrl_VP04_Big06Q" : 1
+        }, 
+        "AP_Ctrl_VP05_Huge01D" : {
+            "APR_VP_Huge_Default" : 1,
+            "AP_Ctrl_VP05_Huge01D" : 1
+        },
+        "AP_Ctrl_VP05_Huge02DH" : {
+            "APR_VP_Huge_DH" : 1,
+            "AP_Ctrl_VP05_Huge02DH" : 1
+        },
+        "AP_Ctrl_VP05_Huge03DV" : {
+            "APR_VP_Huge_DV" : 1,
+            "AP_Ctrl_VP05_Huge03DV" : 1
+        },
+        "AP_Ctrl_VP05_Huge04TP" : {
+            "APR_VP_Huge_TP" : 1,
+            "AP_Ctrl_VP05_Huge04TP" : 1
+        },
+        "AP_Ctrl_VP05_Huge05TI" : {
+            "APR_VP_Huge_TI" : 1,
+            "AP_Ctrl_VP05_Huge05TI" : 1
+        },
+        "AP_Ctrl_VP05_Huge06Q" : {
+            "APR_VP_Huge_Q" : 1,
+            "AP_Ctrl_VP05_Huge06Q" : 1
+        },
+        "AP_Ctrl_VP06_Insane01D" : {
+            "APR_VP_Insane_Default" : 1,
+            "AP_Ctrl_VP06_Insane01D" : 1
+        },
+        "AP_Ctrl_AnusSpread03_R" : {
+            "APR_AnusSpread03_Right" : 1
+        },
+        "AP_Ctrl_AnusSpread01" : {
+            "AP_Ctrl_AnusSpread01_L" : 1,
+            "AP_Ctrl_AnusSpread01_R" : 1
+        },
+        "AP_Ctrl_AnusSpread01_L" : {
+            "APR_AnusSpread01_Left" : 1
+        },
+        "AP_Ctrl_AnusSpread01_R" : {
+            "APR_AnusSpread01_Right" : 1
+        },
+        "AP_Ctrl_AnusSpread02" : {
+            "AP_Ctrl_AnusSpread02_L" : 1,
+            "AP_Ctrl_AnusSpread02_R" : 1
+        },
+        "AP_Ctrl_AnusSpread02_L" : {
+            "APR_AnusSpread02_Left" : 1
+        },
+        "AP_Ctrl_AnusSpread02_R" : {
+            "APR_AnusSpread02_Right" : 1
+        },
+        "AP_Ctrl_AnusSpread03" : {
+            "AP_Ctrl_AnusSpread03_L" : 1,
+            "AP_Ctrl_AnusSpread03_R" : 1
+        },
+        "AP_Ctrl_AnusSpread03_L" : {
+            "APR_AnusSpread03_Left" : 1
+        },
+        "AP_Ctrl_AnusSpread04" : {
+            "AP_Ctrl_AnusSpread04_L" : 1,
+            "AP_Ctrl_AnusSpread04_R" : 1
+        },
+        "AP_Ctrl_AnusSpread04_L" : {
+            "APR_AnusSpread04_Left" : 1
+        },
+        "AP_Ctrl_AnusSpread04_R" : {
+            "APR_AnusSpread04_Right" : 1
+        },
+        "AP_Ctrl_AnusSpread05" : {
+            "APR_AnusSpread05" : 1
+        },
+        "AP_Ctrl_AP01_Tiny01Dpo" : {
+            "AP_Ctrl_AP01_Tiny01D" : 1
+        },
+        "AP_Ctrl_AP02_Small01D" : {
+            "APR_AP_Small_Default" : 1,
+            "AP_Ctrl_AP02_Small01D" : 1
+        },
+        "AP_Ctrl_AP03_Average01D" : {
+            "APR_AP_Average_Default" : 1,
+            "AP_Ctrl_AP03_Average01D" : 1
+        },
+        "AP_Ctrl_ButtSpread" : {
+            "AP_Ctrl_ButtSpread_L" : 1,
+            "AP_Ctrl_ButtSpread_R" : 1
+        },
+        "AP_Ctrl_ButtSpread_L" : {
+            "APR_ButtSpread01_Left" : 1
+        },
+        "AP_Ctrl_ButtSpread_R" : {
+            "APR_ButtSpread01_Right" : 1
+        },
+        "AP_Ctrl_PussySpread01" : {
+            "AP_Ctrl_PussySpread01_L" : 1,
+            "AP_Ctrl_PussySpread01_R" : 1
+        },
+        "AP_Ctrl_PussySpread01_L" : {
+            "APR_PussySpread01_Left" : 1
+        },
+        "AP_Ctrl_PussySpread01_R" : {
+            "APR_PussySpread01_Right" : 1
+        },
+        "AP_Ctrl_PussySpread02" : {
+            "AP_Ctrl_PussySpread02_L" : 1,
+            "AP_Ctrl_PussySpread02_R" : 1
+        },
+        "AP_Ctrl_PussySpread02_L" : {
+            "APR_PussySpread02_Left" : 1
+        },
+        "AP_Ctrl_PussySpread02_R" : {
+            "APR_PussySpread02_Right" : 1
+        },
+        "AP_Ctrl_PussySpread03" : {
+            "AP_Ctrl_PussySpread03_L" : 1,
+            "AP_Ctrl_PussySpread03_R" : 1
+        },
+        "AP_Ctrl_PussySpread03_L" : {
+            "APR_PussySpread03_Left" : 1
+        },
+        "AP_Ctrl_PussySpread03_R" : {
+            "APR_PussySpread03_Right" : 1
+        },
+        "AP_Ctrl_PussySpread04" : {
+            "AP_Ctrl_PussySpread04_L" : 1,
+            "AP_Ctrl_PussySpread04_R" : 1
+        },
+        "AP_Ctrl_PussySpread04_L" : {
+            "APR_PussySpread04_Left" : 1
+        },
+        "AP_Ctrl_PussySpread04_R" : {
+            "APR_PussySpread04_Right" : 1
+        },
+        "AP_Ctrl_PussySpread05" : {
+            "AP_Ctrl_PussySpread05_L" : 1,
+            "AP_Ctrl_PussySpread05_R" : 1
+        },
+        "AP_Ctrl_PussySpread05_L" : {
+            "APR_PussySpread05_Left" : 1
+        },
+        "AP_Ctrl_PussySpread05_R" : {
+            "APR_PussySpread05_Right" : 1
+        },
+        "AP_Ctrl_PussySpread06" : {
+            "APR_PussySpread06" : 1
+        },
+        "AP_Ctrl_P_Barbara" : {
+            "AP_Shape_UrethraShut01" : 1,
+            "AP_Shape_LabiaMinoraButterfly" : 0.503,
+            "AP_Shape_ClitorisErect" : 0.2367,
+            "AP_Shape_CervixStyle03_Lv4" : 1,
+            "AP_Shape_CervixSmoothBorder" : 0.2604,
+            "AP_Shape_CervixShut01" : 1,
+            "AP_Shape_CervixBulge" : 0.284,
+            "AP_Shape_VC_Ripples05_Lv4" : 2,
+            "AP_Shape_VestibuleStyle02_Lv4" : 0.6746,
+            "AP_Shape_VestibuleStyle03_Lv4" : 0.4024,
+            "AP_Shape_MinoraStyle01_Lv4" : 1,
+            "AP_Shape_HoodStyle02_Lv4" : 0.5562,
+            "AP_Shape_HoodStyle03_Lv4" : 0.3314
+        },
+        "AP_Ctrl_P_Cindy" : {
+            "AP_Shape_UrethraShut02" : 0.7811,
+            "AP_Shape_LabiaMinoraThick" : 0.4438,
+            "AP_Shape_ClitorisExposed04" : 0.3314,
+            "AP_Shape_ClitorisErect" : 0.1834,
+            "AP_Shape_CervixStyle01_Lv4" : 1,
+            "AP_Shape_CervixShut03" : 0.8047,
+            "AP_Shape_CervixBulge" : 0.3254,
+            "AP_Shape_VC_Ripples01_Lv4" : 0.645,
+            "AP_Shape_VC_Ripples03_Lv4" : 0.5799,
+            "AP_Shape_VestibuleStyle01_Lv4" : 0.7692,
+            "AP_Shape_VestibuleStyle02_Lv4" : 0.5325,
+            "AP_Shape_MinoraStyle02_Lv4" : 1,
+            "AP_Shape_HoodStyle02_Lv4" : 0.5444
+        },
+        "AP_Ctrl_P_Claire" : {
+            "AP_Shape_CervixStyle04_Lv4" : 0.34597,
+            "AP_Shape_CervixStyle03_Lv4" : 0.69194,
+            "AP_Shape_CervixSmoothBorder" : 0.11374,
+            "AP_Shape_CervixShut02" : 0.78673,
+            "AP_Shape_CervixBulge" : 0.19905,
+            "AP_Shape_VC_Ripples01_Lv4" : 2,
+            "AP_Shape_VestibuleStyle01_Lv4" : 1,
+            "AP_Shape_MinoraStyle01_Lv4" : 1,
+            "AP_Shape_HoodStyle01_Lv4" : 1
+        },
+        "AP_Ctrl_P_Kitty" : {
+            "AP_Shape_CervixStyle02_Lv4" : 1,
+            "AP_Shape_VC_Ripples02_Lv4" : 2,
+            "AP_Shape_VestibuleStyle02_Lv4" : 1,
+            "AP_Shape_MinoraStyle02_Lv4" : 1,
+            "AP_Shape_HoodStyle02_Lv4" : 1
+        },
+        "AP_Ctrl_P_Rachel" : {
+            "AP_Shape_CervixStyle03_Lv4" : 1,
+            "AP_Shape_VC_Ripples03_Lv4" : 2,
+            "AP_Shape_VestibuleStyle03_Lv4" : 1,
+            "AP_Shape_MinoraStyle03_Lv4" : 1,
+            "AP_Shape_HoodStyle03_Lv4" : 1
+        },
+        "AP_Ctrl_P_Sakura" : {
+            "AP_Shape_CervixStyle04_Lv4" : 1,
+            "AP_Shape_VC_Ripples04_Lv4" : 2,
+            "AP_Shape_VestibuleStyle04_Lv4" : 1,
+            "AP_Shape_MinoraStyle04_Lv4" : 1,
+            "AP_Shape_HoodStyle04_Lv4" : 1
+        },
+        "AP_Ctrl_VP01_Tiny01Dpo" : {
+            "AP_Ctrl_VP01_Tiny01D" : 1
+        },
+        "AP_Ctrl_VP02_Small01D" : {
+            "APR_P_Small_Default" : 1,
+            "AP_Ctrl_VP02_Small01D" : 1
+        },
+        "AP_Ctrl_VP03_Average01D" : {
+            "APR_P_Average_Default" : 1,
+            "AP_Ctrl_VP03_Average01D" : 1
+        },
+        "AP_Ctrl_CervixSize" : {
+            "CervixSizeSmall" : -1
+        },
+        "AP_Ctrl_VC_Depth" : {
+            "VaginalCanalDepthShort" : -1
+        }
+    },
+    "minmax" : {},
+    "geograft" : {
+        "vertex_count" : 16556
+    }
+}
+

@@ -161,7 +161,6 @@ class LoadMorph(DriverUser):
             if lname in self.baked and not GS.useBakedMorphs:
                 if lname not in self.bakedSkipped.keys():
                     self.bakedSkipped[lname] = name
-                    printName(" B", name)
             else:
                 char = self.makeSingleMorph(name, path, bodypart, force)
                 printName(char, name)
@@ -206,6 +205,11 @@ class LoadMorph(DriverUser):
     def alreadyLoaded(self, asset):
         raw = self.getUniqueName(asset.getName())
         final = finalProp(raw)
+        parent = self.getGraftParent(asset)
+        if parent:
+            if not (parent.data.shape_keys and
+                    raw in parent.data.shape_keys.key_blocks.keys()):
+                return False
         if self.rig and raw in self.rig.keys() and final in self.amt.keys():
             self.adjustMults(raw, final)
             return True
@@ -287,12 +291,9 @@ class LoadMorph(DriverUser):
                 nverts = int(finger.split("-")[0])
 
         parent = self.getGraftParent(asset)
-        if asset.vertex_count < 0:
-            pass
-            #print("Vertex count == %d" % asset.vertex_count)
-        elif asset.vertex_count == nverts:
-            pass
-        elif parent:
+        if (asset.vertex_count < 0 or
+            asset.vertex_count == nverts or
+            parent):
             pass
         else:
             from .finger import VertexCounts

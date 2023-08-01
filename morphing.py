@@ -1580,6 +1580,14 @@ class ScanFinder:
 
 
     def findMorphs(self, morph, ob):
+        if morph in self.formulas.keys():
+            for morph1,value1 in self.formulas[morph].items():
+                self.findMorphs1(morph1, ob)
+        else:
+            self.findMorphs1(morph, ob)
+
+
+    def findMorphs1(self, morph, ob):
         from .fileutils import findPathRecursiveFromObject
         self.found = False
         if self.defs:
@@ -1588,7 +1596,7 @@ class ScanFinder:
             alias = self.alias.get(morph)
             if alias:
                 path = self.getDefinedPath(alias)
-                self.addNamePath(alias, path, self.parpaths)
+                self.addNamePath(alias, path, self.namepaths)
                 morph = alias
             if self.geograft:
                 formulas = self.geograft["formulas"].get(morph)
@@ -1598,7 +1606,6 @@ class ScanFinder:
                     pmorphs = [morph]
                 for pmorph in pmorphs:
                     path = self.geograft["definitions"].get(pmorph)
-                    print("GGG", pmorph, path)
                     self.addNamePath(pmorph, path, self.parpaths)
             exprs = self.formulas.get(morph, {})
             for prop,factor in exprs.items():
@@ -1682,9 +1689,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             for favo in ob.data.DazFavorites.keys():
                 morph = favo.split("/",1)[0]
                 self.findMorphs(morph, ob)
-            self.setCategory("Favorites %s" % ob.name)
+            self.setCategory("Favorites %s" % ob.name.rstrip("Mesh"))
             self.loadOwnMorphs(context, ob)
-            print("FFF", self.name, len(self.namepaths), len(self.parpaths))
             self.loadParentMorphs(context, ob)
 
 #-------------------------------------------------------------

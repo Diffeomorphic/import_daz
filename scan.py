@@ -212,8 +212,7 @@ class Scanner:
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
-        if (self.useFormulas and
-            not self.useDefins and
+        if (self.useMinmax and
             key is not None and
             asset.min is not None and
             asset.max is not None):
@@ -271,7 +270,21 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
     bl_description = "Scan a single directory for morphs for the present mesh,\nand build a database"
 
     useFormulas = True
-    useDefins = True
+    useMinmax = False
+
+    useSubdirs : BoolProperty(
+        name = "Subdirectories",
+        description = "Also scan top level subdirectories",
+        default = True)
+
+    useDefins : BoolProperty(
+        name = "Definitions",
+        description = "Include paths to definitions.\nIf morph and file names differ",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useDefins")
+        self.layout.prop(self, "useSubdirs")
 
     def invoke(self, context, event):
         from .fileutils import getFoldersFromObject
@@ -292,6 +305,12 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
         struct = self.setupScanner(name, url)
         LS.forMorphLoad(ob)
         self.scanMorphs(folder, len(folder))
+        if self.useSubdirs:
+            for file in os.listdir(folder):
+                subdir = "%s/%s" % (folder, file)
+                if os.path.isdir(subdir):
+                    self.directory = GS.getRelativePath(subdir)
+                    self.scanMorphs(subdir, len(subdir))
         if ob.data.DazGraftGroup:
             graft = struct["geograft"] = {}
             graft["vertex_count"] = ob.data.DazVertexCount
@@ -300,6 +319,7 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
 
 
     def scanMorphs(self, folderpath, nskip):
+        print("SCA", folderpath)
         for file in os.listdir(folderpath):
             path = os.path.join(folderpath, file)
             if os.path.isfile(path):
@@ -325,6 +345,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
     bl_description = "Scan the DAZ database\nfor morphs for the present mesh,\nand build a database"
 
     useFormulas = True
+    useMinmax = True
     directory = None
 
     def run(self, context):
