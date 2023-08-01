@@ -1588,11 +1588,18 @@ class ScanFinder:
             alias = self.alias.get(morph)
             if alias:
                 path = self.getDefinedPath(alias)
-                self.addNamePath(alias, path, self.namepaths)
+                self.addNamePath(alias, path, self.parpaths)
                 morph = alias
             if self.geograft:
-                path = self.geograft["definitions"].get(morph)
-                self.addNamePath(morph, path, self.parpaths)
+                formulas = self.geograft["formulas"].get(morph)
+                if formulas:
+                    pmorphs = formulas.keys()
+                else:
+                    pmorphs = [morph]
+                for pmorph in pmorphs:
+                    path = self.geograft["definitions"].get(pmorph)
+                    print("GGG", pmorph, path)
+                    self.addNamePath(pmorph, path, self.parpaths)
             exprs = self.formulas.get(morph, {})
             for prop,factor in exprs.items():
                 path = self.getDefinedPath(prop)
@@ -1677,6 +1684,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                 self.findMorphs(morph, ob)
             self.setCategory("Favorites %s" % ob.name)
             self.loadOwnMorphs(context, ob)
+            print("FFF", self.name, len(self.namepaths), len(self.parpaths))
             self.loadParentMorphs(context, ob)
 
 #-------------------------------------------------------------

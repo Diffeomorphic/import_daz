@@ -143,6 +143,8 @@ class CharSelector:
 #----------------------------------------------------------
 
 class Scanner:
+    useDefins = False
+
     def setupScanner(self, name, url):
         self.formulas = {}
         self.defins = {}
@@ -211,6 +213,7 @@ class Scanner:
             info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
         if (self.useFormulas and
+            not self.useDefins and
             key is not None and
             asset.min is not None and
             asset.max is not None):
@@ -219,7 +222,9 @@ class Scanner:
             filepath = bpy.path.resolve_ncase(unquote(ref))
             folder = os.path.dirname(filepath)
             name = os.path.splitext(os.path.basename(filepath))[0]
-            if unquote(key) != name or folder != self.directory:
+            if (self.useDefins or
+                unquote(key) != name or
+                folder != self.directory):
                 self.defins[key] = filepath
         if info:
             if prop:
@@ -265,7 +270,8 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
     bl_label = "Scan Morph Directory"
     bl_description = "Scan a single directory for morphs for the present mesh,\nand build a database"
 
-    useFormulas = False
+    useFormulas = True
+    useDefins = True
 
     def invoke(self, context, event):
         from .fileutils import getFoldersFromObject

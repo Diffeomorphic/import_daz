@@ -117,9 +117,35 @@
             "PBMG8FAnusOpenCorrectiveRTB" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FAnusOpenCorrectiveRTB.dsf",
             "PBMG8FAnusOpenCorrectiveRTBS" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FAnusOpenCorrectiveRTBS.dsf",
             "PBMG8FAnusOpenCorrectiveRTS" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FAnusOpenCorrectiveRTS.dsf",
+            "PBMG8FGensOpen01" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FGensOpen01.dsf",
+            "PBMG8FGensOpen02" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FGensOpen02.dsf",
             "PBMG8FGensOpen02E" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FGensOpen02E.dsf",
+            "PBMG8FLegsTogether" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FLegsTogether.dsf",
             "PBMG8FPullLabiaLL" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FPullLabiaLL.dsf",
             "PBMG8FPullLabiaLR" : "/data/DAZ 3D/Genesis 8/Female/Morphs/3feetwolf/NGV8/PBMG8FPullLabiaLR.dsf"
+        },
+        "formulas" : {
+            "JCMG8FCorrectiveLTB" : {
+                "PBMG8FAnusOpenCorrectiveLTB" : 1
+            },
+            "JCMG8FCorrectiveLTBS" : {
+                "PBMG8FAnusOpenCorrectiveLTBS" : 1
+            },
+            "JCMG8FCorrectiveLTS" : {
+                "PBMG8FAnusOpenCorrectiveLTS" : 1
+            },
+            "JCMG8FCorrectiveRTB" : {
+                "PBMG8FAnusOpenCorrectiveRTB" : 1
+            },
+            "JCMG8FCorrectiveRTBS" : {
+                "PBMG8FAnusOpenCorrectiveRTBS" : 1
+            },
+            "JCMG8FCorrectiveRTS" : {
+                "PBMG8FAnusOpenCorrectiveRTS" : 1
+            },
+            "PBMG8FGensOpen02" : {
+                "PBMG8FGensOpen02E" : 1
+            }
         }
     }
 }
