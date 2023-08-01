@@ -107,7 +107,9 @@ class FastMatcher:
             if ob != src:
                 objects.append(ob)
                 self.checkTransforms(ob)
-                if ob.parent and ob.parent != src.parent:
+                if (ob.parent and
+                    ob.parent != src.parent and
+                    self.transferMethod != 'BY_NUMBER'):
                     msg = '"%s" parent is not same as\n"%s" parent' % (ob.name, src.name)
                     self.addWarning(msg)
         if not objects:
@@ -232,10 +234,11 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         return (ob and ob.type == 'MESH' and ob.data.shape_keys)
 
     transferMethod : EnumProperty(
-        items = [('NEAREST', "Nearest Face", "Transfer morphs from nearest source face.\nUse to transfer shapekeys to clothes"),
-                 ('SELECTED', "Selected", "One transfer morphs from selected vertices"),
+        items = [('NEAREST', "Nearest Face", "Transfer shapekeys from nearest source face.\nUse to transfer shapekeys to clothes"),
+                 ('SELECTED', "Selected", "One transfer shapekeys from selected vertices"),
+                 ('BY_NUMBER', "By Number", "Transfer shapekeys by vertex number.\nBoth meshes must have the same number of vertices"),
                  ('BODY', "Body", "Only transfer vertices as long as they match exactly.\nUse to transfer shapekeys from body to merged mesh"),
-                 ('GEOGRAFT', "Geograft", "Transfer morphs to nearest target vertex.\nUse to transfer shapekeys from geograft to merged mesh"),
+                 ('GEOGRAFT', "Geograft", "Transfer shapekeys to nearest target vertex.\nUse to transfer shapekeys from geograft to merged mesh"),
                  ('LEGACY', "Legacy", "Transfer using Blender's data transfer modifier.\nVery slow but works in general")],
         name = "Transfer Method",
         description = "Method used to transfer morphs",
@@ -622,6 +625,8 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             self.findMatchExact(src, trg)
         elif self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findMatchNearest(self.trihuman, trg)
+        elif self.transferMethod == 'BY_NUMBER':
+            self.findMatchByNumber(src, trg)
         elif self.transferMethod == 'GEOGRAFT':
             self.findMatchGeograft(src, trg)
         t2 = perf_counter()
@@ -632,7 +637,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
     def autoTransfer(self, src, trg, hskey):
         if self.transferMethod == 'LEGACY':
             return self.autoTransferSlow(src, trg, hskey)
-        elif self.transferMethod == 'BODY':
+        elif self.transferMethod in ['BODY', 'BY_NUMBER']:
             return self.autoTransferExact(src, trg, hskey)
         elif self.transferMethod in ['NEAREST', 'SELECTED']:
             return self.autoTransferFace(src, trg, hskey)
@@ -735,6 +740,15 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             for cvn,hvn,offset in self.match:
                 cskey.data[cvn].co = hskey.data[hvn].co + offset
         return True
+
+    #----------------------------------------------------------
+    #   By number
+    #----------------------------------------------------------
+
+    def findMatchByNumber(self, src, trg):
+        if len(src.data.vertices) != len(trg.data.vertices):
+            raise DazError("Both meshes must have the same number of vertices\nto use the By Number transfer method")
+        self.match = [(vn, vn, Zero) for vn in range(len(src.data.vertices))]
 
     #----------------------------------------------------------
     #   Nearest vertex and face matching
