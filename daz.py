@@ -216,8 +216,11 @@ class DAZ_OT_LoadSettingsFile(DazOperator, SingleFile, JsonFile):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        GS.load(self.filepath)
-        GS.toScene(context.scene)
+        try:
+            GS.load(self.filepath)
+            GS.toScene(context.scene)
+        except DazError:
+            handleDazError(context)
         print("Settings file %s saved" % self.filepath)
         return {'PASS_THROUGH'}
 

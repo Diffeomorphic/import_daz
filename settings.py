@@ -309,13 +309,8 @@ class GlobalSettings:
     def load(self, filepath):
         from .fileutils import openSettingsFile
         struct = openSettingsFile(filepath)
-        if struct:
+        if struct and "daz-settings" in struct.keys():
             print("Load settings from", filepath)
-            self.readDazSettings(struct)
-
-
-    def readDazSettings(self, struct):
-        if "daz-settings" in struct.keys():
             settings = struct["daz-settings"]
             for prop,value in settings.items():
                 if prop in self.SceneTable.keys():
@@ -327,6 +322,7 @@ class GlobalSettings:
             self.cloudDirs = self.readSettingsDirs("DazCloud", settings)
             self.eliminateDuplicates()
         else:
+            from .error import DazError
             raise DazError("Not a settings file   :\n'%s'" % filepath)
 
 
