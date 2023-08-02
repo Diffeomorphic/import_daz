@@ -748,7 +748,8 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
     def findMatchByNumber(self, src, trg):
         if len(src.data.vertices) != len(trg.data.vertices):
             raise DazError("Both meshes must have the same number of vertices\nto use the By Number transfer method")
-        self.match = [(vn, vn, Zero) for vn in range(len(src.data.vertices))]
+        tverts = trg.data.vertices
+        self.match = [(vn, vn, tverts[vn].co - v.co) for vn,v in enumerate(src.data.vertices)]
 
     #----------------------------------------------------------
     #   Nearest vertex and face matching
