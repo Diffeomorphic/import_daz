@@ -52,7 +52,7 @@ class PbrTree(CyclesTree):
         self.column = 3
         self.buildNormal(uvname)
         self.buildBump(uvname)
-        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5, size=30)
+        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         self.column = 4
@@ -98,7 +98,7 @@ class PbrTree(CyclesTree):
         self.mixWithActive(fac, factex, texslot, trans)
         if self.metal:
             self.addColumn()
-            mix = self.addNode("ShaderNodeMixShader", size=10)
+            mix = self.addNode("ShaderNodeMixShader")
             self.linkScalar(self.metaltex, mix, self.metal, 0)
             self.links.new(trans.outputs["BSDF"], mix.inputs[1])
             self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])

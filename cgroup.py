@@ -758,7 +758,6 @@ class DiffuseGroup(FacMixGroup):
 # ---------------------------------------------------------------------
 
 class GlossyGroup(FacMixGroup):
-
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += ["Color", "IOR", "Roughness", "Anisotropy", "Rotation", "Normal"]
@@ -809,7 +808,6 @@ class GlossyGroup(FacMixGroup):
 # ---------------------------------------------------------------------
 
 class MetalGroupUber(FacMixGroup):
-
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
@@ -860,7 +858,6 @@ class MetalGroupUber(FacMixGroup):
 
 
 class MetalGroupPbrSkin(FacMixGroup):
-
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness 1",  "Roughness 2", "Dual Ratio", "Normal"]
@@ -913,7 +910,6 @@ class MetalGroupPbrSkin(FacMixGroup):
 # ---------------------------------------------------------------------
 
 class TopCoatGroup(FacMixGroup):
-
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += ["Specular0", "Specular90", "Power", "Color", "Roughness", "Anisotropy", "Rotation", "Normal"]
@@ -1174,7 +1170,6 @@ class TranslucentGroup(FacMixGroup):
 # ---------------------------------------------------------------------
 
 class MakeupGroup(FacMixGroup):
-
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Normal"]
@@ -1202,7 +1197,6 @@ class MakeupGroup(FacMixGroup):
 # ---------------------------------------------------------------------
 
 class FlakesGroup(FacMixGroup):
-
     def __init__(self):
         FacMixGroup.__init__(self)
         self.insockets += ["Color", "Roughness", "Strength", "Distance", "Scale", "From Min", "Normal"]

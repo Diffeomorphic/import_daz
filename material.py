@@ -1932,9 +1932,18 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
         description = "Hide unused output sockets",
         default = True)
 
-    keepMissingTextures : BoolProperty(
+    keepUnusedTextures : BoolProperty(
         name = "Keep Unused Textures",
         description = "Keep textures from unused channels",
+        default = True)
+
+    useFixColorSpace : BoolProperty(
+        name = "Fix Color Space",
+        default = True)
+
+    useBeautify : BoolProperty(
+        name = "Beautify",
+        description = "Beautify node tree",
         default = True)
 
     def draw(self, context):
@@ -1942,13 +1951,22 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useHideTexNodes")
         self.layout.prop(self, "usePruneTexco")
         self.layout.prop(self, "useHideOutputs")
-        self.layout.prop(self, "keepMissingTextures")
+        self.layout.prop(self, "keepUnusedTextures")
+        self.layout.prop(self, "useFixColorSpace")
+        self.layout.prop(self, "useBeautify")
 
 
     def run(self, context):
         from .tree import pruneMaterials
         for ob in getSelectedMeshes(context):
-            pruneMaterials(ob, self.useDeleteUnusedNodes, self.useHideTexNodes, self.usePruneTexco, self.useHideOutputs, self.keepMissingTextures)
+            pruneMaterials(ob,
+                           self.useDeleteUnusedNodes,
+                           self.useHideTexNodes,
+                           self.usePruneTexco,
+                           self.useHideOutputs,
+                           self.keepUnusedTextures,
+                           self.useFixColorSpace,
+                           self.useBeautify)
 
 #----------------------------------------------------------
 #   Utility

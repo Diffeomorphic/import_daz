@@ -273,7 +273,7 @@ class WorldTree(CyclesTree):
                 texco = self.addMapping([0,0,zrot], scale, texco, 2)
             img = self.getImage(backdrop, "COLOR")
             if img:
-                tex = self.addTextureNode(3, img, img.name, "COLOR")
+                tex = self.addTextureNode(3, img, img.name)
                 self.setTexNode(img.name, tex, tex, "COLOR")
                 self.linkVector(texco, tex)
 

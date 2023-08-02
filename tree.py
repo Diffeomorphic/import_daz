@@ -52,7 +52,7 @@ class Tree:
     def getValue(self, channel, default):
         return self.owner.getValue(channel, default)
 
-    def addNode(self, stype, col=None, size=10, label=None, parent=None):
+    def addNode(self, stype, col=None, size=None, label=None, parent=None):
         if col is None:
             col = self.column
         col = max(0, min(col, NCOLUMNS-1))
@@ -116,6 +116,10 @@ class Tree:
 
     def setLocation(self, node, col, size):
         node.location = ((col-2)*XSIZE, self.ycoords[col])
+        if size is None:
+            size = NodeSize.get(node.type, 0)
+            if size == 0:
+                print("Missing NodeSize", node.type)
         self.ycoords[col] -= size*YSTEP
 
 
@@ -129,12 +133,13 @@ class Tree:
             self.setLocation(tex, self.column-1, 2)
 
 
-    def addGroup(self, classdef, name, col=None, size=10, args=[], force=False):
+    def addGroup(self, classdef, name, col=None, args=[], force=False):
         if col is None:
             col = self.column
+        group = classdef()
+        size = GroupSize.get(name, 10)
         node = self.addNode(self.nodeGroupType, col, size=size)
         node.name = node.label = name
-        group = classdef()
         if name in bpy.data.node_groups.keys() and not force:
             tree = bpy.data.node_groups[name]
             if group.checkSockets(tree):
@@ -162,6 +167,8 @@ class NodeGroup:
     def __init__(self):
         self.insockets = []
         self.outsockets = []
+        self.nodeTreeType = "ShaderNodeTree"
+        self.nodeGroupType = "ShaderNodeGroup"
 
     def __repr__(self):
         return ("<Group %s %s>" % (self.nodeTreeType, self.nodeGroupType))
@@ -204,6 +211,95 @@ class NodeGroup:
         self.group.inputs[slot].default_value = default
         self.group.inputs[slot].min_value = min
         self.group.inputs[slot].max_value = max
+
+#-------------------------------------------------------------
+#   Utilities
+#-------------------------------------------------------------
+
+NodeSize = {
+    "BSDF_PRINCIPLED" : 30,
+    "BSDF_TRANSPARENT" : 5,
+    "BSDF_BLACKBODY" : 5,
+    "BSDF_TRANSLUCENT" : 10,
+    "BSDF_ANISOTROPIC" : 7,
+    "BSDF_DIFFUSE" : 7,
+    "BSDF_GLOSSY" : 7,
+    "BSDF_REFRACTION" : 7,
+    "BSDF_" : 10,
+    "BSDF_" : 10,
+    "SUBSURFACE_SCATTERING" : 10,
+    "RGB" : 10,
+    "INVERT" : 5,
+    "GAMMA" : 6,
+    "SEPRGB" : 7,
+    "COMBRGB" : 7,
+    "RGBTOBW" : 7,
+    "CLAMP" : 5,
+    "MIX" : 12,
+    "MATH" : 8,
+    "VECT_MATH" : 6,
+    "TEX_COORD" : 10,
+    "TEX_ENVIRONMENT" : 10,
+    "TEX_NOISE" : 8,
+    "BACKGROUND" : 7,
+    "GROUP" : 15,
+    "GROUP_INPUT" : 15,
+    "GROUP_OUTPUT" : 15,
+    "ATTRIBUTE" : 2,
+    "UVMAP" : 2,
+    "FRESNEL" : 6,
+    "MAPPING" : 10,
+    "BEVEL" : 7,
+    "NORMAL_MAP" : 7,
+    "BUMP" : 8,
+    "NEW_GEOMETRY" : 7,
+    "HUE_SAT" : 7,
+    "OUTPUT_MATERIAL" : 7,
+    "OUTPUT_WORLD" : 7,
+    "HAIR" : 7,
+    "HAIR_INFO" : 7,
+    "MAP_RANGE" : 7,
+    "MIX_SHADER" : 6,
+    "ADD_SHADER" : 6,
+    "VOLUME_ABSORPTION" : 7,
+    "VOLUME_SCATTER" : 7,
+    "DISPLACEMENT" : 10,
+    "LIGHT_PATH" : 10,
+}
+
+GroupSize = {
+    "DAZ Diffuse" : 9,
+    "DAZ Log Color" : 6,
+    "DAZ Weighted" : 4,
+    "DAZ Color Effect" : 8,
+    "DAZ Fresnel" : 10,
+    "DAZ Schlick" : 10,
+    "DAZ Emission" : 10,
+    "DAZ One-Sided" : 6,
+    "DAZ Overlay" : 9,
+    "DAZ Glossy" : 12,
+    "DAZ Top Coat" : 14,
+    "DAZ Refraction" : 15,
+    "DAZ Thin Wall" : 15,
+    "DAZ Fake Caustics" : 10,
+    "DAZ Transparent" : 7,
+    "DAZ Invert NMap" : 10,
+    "DAZ Translucent" : 8,
+    "DAZ Subsurface" : 14,
+    "DAZ Flakes" : 12,
+    "DAZ Ray Clip" : 10,
+    "DAZ Dual Lobe" : 10,
+    "DAZ Dual Lobe PBR" : 10,
+    "DAZ Metal" : 4,
+    "DAZ Metal PBR" : 10,
+    "DAZ Makeup" : 10,
+    "DAZ Volume" : 10,
+    "DAZ Normal" : 10,
+    "DAZ Displacement" : 10,
+    "DAZ Decal" : 10,
+    "DAZ Principled" : 25,
+    "DAZ Background" : 6,
+}
 
 #-------------------------------------------------------------
 #   Utilities
@@ -296,7 +392,9 @@ def pruneNodeTree(tree,
                   usePruneTexco=True,
                   useHideOutputs=True,
                   keepUnusedTextures=True,
-                  useFixColorSpace=True):
+                  useFixColorSpace=True,
+                  useBeautify=True,
+                  ):
     marked = {}
     if not tree:
         return marked
@@ -312,7 +410,8 @@ def pruneNodeTree(tree,
                           usePruneTexco,
                           useHideOutputs,
                           keepUnusedTextures,
-                          useFixColorSpace)
+                          useFixColorSpace,
+                          useBeautify)
 
     if usePruneTexco:
         removes = []
@@ -370,15 +469,15 @@ def pruneNodeTree(tree,
             node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:
-        output = False
+        outputs = []
         for node in tree.nodes:
             marked[node.name] = False
             if not node.outputs:
                 if (keepUnusedTextures or
                     not node.name.startswith("Unused Textures")):
                     marked[node.name] = True
-                    output = True
-        if not output:
+                    outputs.append(node)
+        if not outputs:
             print("No output node")
             return marked
         nmarked = 0
@@ -395,15 +494,56 @@ def pruneNodeTree(tree,
             if not marked[node.name]:
                 tree.nodes.remove(node)
 
+    def findColumn(node, col, level):
+        if level < 0:
+            print("Infinite recursion")
+            return
+        col1 = columns.get(node.name, -1)
+        if col1 < col:
+            columns[node.name] = col
+            nodes[node.name] = node
+            for socket in node.inputs:
+                for link in socket.links:
+                    findColumn(link.from_node, col+1, level-1)
+
+    if useBeautify:
+        columns = {}
+        nodes = {}
+        for node in outputs:
+            findColumn(node, 0, 100)
+        for key,col in list(columns.items()):
+            columns[key] = col % 20
+        rows = {}
+        for name,node in nodes.items():
+            col = columns[name]
+            row = rows.get(col, 0)
+            node.location = (-XSIZE*col, -YSTEP*row)
+            if node.hide:
+                size = 2
+            elif node.type == "GROUP":
+                grpname = node.name.split(".",1)[0]
+                if grpname.startswith("LIE"):
+                    size = 6
+                else:
+                    size = GroupSize.get(grpname, 10)
+                    if (grpname not in GroupSize.keys() and
+                        "shell" not in grpname.lower()):
+                        print("Missing GroupSize", grpname)
+            else:
+                size = NodeSize.get(node.type, 10)
+                if node.type not in NodeSize.keys():
+                    print("Missing NodeSize", node.type)
+            rows[col] = row + size
+
     return marked
 
 
-def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True):
+def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True, useFixColorSpace=True, useBeautify=False):
     from .geometry import getActiveUvLayer
     active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
-            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures)
+            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures, useFixColorSpace, useBeautify)
 
 # ---------------------------------------------------------------------
 #   TNode and TLink
