@@ -265,6 +265,17 @@ NodeSize = {
     "VOLUME_SCATTER" : 7,
     "DISPLACEMENT" : 10,
     "LIGHT_PATH" : 10,
+
+    "OBJECT_INFO" : 10,
+    "INPUT_NORMAL" : 3,
+    "DELETE_GEOMETRY" : 6,
+    "JOIN_GEOMETRY" : 6,
+    "SET_POSITION" : 8,
+    "MATERIAL_SELECTION" : 4,
+    "SET_MATERIAL" : 6,
+    "BOOLEAN_MATH" : 6,
+    "CAPTURE_ATTRIBUTE" : 10,
+    "MERGE_BY_DISTANCE" : 8,
 }
 
 GroupSize = {
@@ -512,10 +523,20 @@ def pruneNodeTree(tree,
         for node in outputs:
             findColumn(node, 0, 100)
         for key,col in list(columns.items()):
-            columns[key] = col % 20
+            if col > 20:
+                columns[key] = 10 + col%10
+        used = {}
+        for col in columns.values():
+            used[col] = True
+        ncols = {}
+        ncol = 0
+        for col in range(20):
+            ncols[col] = ncol
+            if used.get(col, False):
+                ncol += 1
         rows = {}
         for name,node in nodes.items():
-            col = columns[name]
+            col = ncols[columns[name]]
             row = rows.get(col, 0)
             node.location = (-XSIZE*col, -YSTEP*row)
             if node.hide:
