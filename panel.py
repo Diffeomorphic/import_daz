@@ -104,6 +104,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.strip_material_names")
         self.layout.operator("daz.change_colors")
         self.layout.operator("daz.change_skin_color")
+        self.layout.operator("daz.fix_shells")
         self.layout.separator()
         self.layout.operator("daz.launch_editor")
         self.layout.operator("daz.reset_material")

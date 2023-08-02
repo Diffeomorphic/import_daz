@@ -1704,6 +1704,45 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
         return None,""
 
 #----------------------------------------------------------
+#   Fix shells
+#----------------------------------------------------------
+
+class DAZ_OT_FixShells(DazOperator, IsMesh):
+    bl_idname = "daz.fix_shells"
+    bl_label = "Fix Shells"
+    bl_description = "Replace shell node groups in selected meshes\nwith the node groups of the active material"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        hum = context.object
+        mat = hum.active_material
+        if mat is None:
+            raise DazError("No active material")
+        mainShells = self.getShells(mat)
+        for ob in getSelectedMeshes(context):
+            if ob != hum:
+                for mat in ob.data.materials:
+                    if mat:
+                        shells = self.getShells(mat)
+                        for label,nodes in shells.items():
+                            mainNodes = mainShells.get(label)
+                            if mainNodes:
+                                tree = mainNodes[0].node_tree
+                                for node in nodes:
+                                    node.node_tree = tree
+
+
+    def getShells(self, mat):
+        shells = {}
+        if mat:
+            for node in mat.node_tree.nodes:
+                if node.type == 'GROUP' and not node.name.startswith(("DAZ ", "LIE")):
+                    if node.label not in shells.keys():
+                        shells[node.label] = []
+                    shells[node.label].append(node)
+        return shells
+
+#----------------------------------------------------------
 #   Activate diffuse texture
 #----------------------------------------------------------
 
@@ -1764,6 +1803,7 @@ classes = [
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,
     DAZ_OT_FindMissingTextures,
+    DAZ_OT_FixShells,
     DAZ_OT_ActivateDiffuse,
 ]
 
