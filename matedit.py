@@ -36,7 +36,7 @@ from .utils import *
 from .material import WHITE, isWhite
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
-from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP
+from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput
 
 #-------------------------------------------------------------
 #   Material selector
@@ -394,28 +394,42 @@ class ChannelSetter:
                 self.setOriginal(socket, ncomps, mat, item.name)
                 socket.default_value = self.getItemValue(ncomps, item)
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
-                if fromnode:
-                    if fromnode.type == 'MIX_RGB':
+                if not fromnode:
+                    pass
+                elif self.setNodeValue(node, fromnode, fromsocket, socket, mat, ncomps, item):
+                    pass
+                elif isGroupType(fromnode, ["DAZ Log Color"]):
+                    self.ensureColor(ncomps, item)
+                    fromnode.inputs["Color"].default_value = self.getItemValue(4, item)
+                elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
+                    if slot == "Fac":
+                        socket = fromnode.inputs["Fac"]
+                        socket.default_value = self.getItemValue(1, item)
+                    elif slot == "Color":
                         self.ensureColor(ncomps, item)
-                        fromnode.inputs[1].default_value = self.getItemValue(4, item)
-                    elif fromnode.type == 'MIX':
-                        self.ensureColor(ncomps, item)
-                        fromnode.inputs[6].default_value = self.getItemValue(4, item)
-                    elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
-                        fromnode.inputs[0].default_value = self.getItemValue(1, item)
-                    elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY_ADD':
-                        fromnode.inputs[1].default_value = self.getItemValue(1, item)
-                    elif fromnode.type in ['TEX_IMAGE', 'GAMMA']:
-                        self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
-                    elif isGroupType(fromnode, ["DAZ Log Color"]):
-                        self.ensureColor(ncomps, item)
-                        fromnode.inputs["Color"].default_value = self.getItemValue(4, item)
-                    elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
-                        if slot == "Fac":
-                            fromnode.inputs["Fac"].default_value = self.getItemValue(1, item)
-                        elif slot == "Color":
-                            self.ensureColor(ncomps, item)
-                            fromnode.inputs[slot].default_value = self.getItemValue(4, item)
+                        socket = fromnode.inputs["Color"]
+                        socket.default_value = self.getItemValue(4, item)
+                    for link in socket.links:
+                        texnode = link.from_node
+                        self.setNodeValue(fromnode, texnode, colorOutput(texnode), socket, mat, ncomps, item)
+
+
+    def setNodeValue(self, node, fromnode, fromsocket, socket, mat, ncomps, item):
+        if fromnode.type == 'MIX_RGB':
+            self.ensureColor(ncomps, item)
+            fromnode.inputs[MixRGB.LegacyColor1].default_value = self.getItemValue(4, item)
+        elif fromnode.type == 'MIX':
+            self.ensureColor(ncomps, item)
+            fromnode.inputs[MixRGB.Color1].default_value = self.getItemValue(4, item)
+        elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
+            fromnode.inputs[0].default_value = self.getItemValue(1, item)
+        elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY_ADD':
+            fromnode.inputs[1].default_value = self.getItemValue(1, item)
+        elif fromnode.type in ['TEX_IMAGE', 'GAMMA']:
+            self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
+        else:
+            return False
+        return True
 
 
     def ensureColor(self, ncomps, item):
@@ -475,9 +489,9 @@ class ChannelSetter:
                 fromnode,fromsocket = self.getFromNode(mat, node, socket)
                 if fromnode:
                     if fromnode.type == 'MIX_RGB':
-                        return fromnode.inputs[1].default_value, ncomps
+                        return fromnode.inputs[MixRGB.LegacyColor1].default_value, ncomps
                     elif fromnode.type == 'MIX':
-                        return fromnode.inputs[6].default_value, ncomps
+                        return fromnode.inputs[MixRGB.Color1].default_value, ncomps
                     elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
                         return fromnode.inputs[0].default_value, ncomps
                     elif fromnode.type == 'GAMMA':
@@ -670,13 +684,15 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
     def multiplyTex(self, node, fromsocket, tosocket, tree, item):
         x,y = node.location
         if item.ncomps == 4 and not isWhite(item.color):
-            mix = tree.nodes.new(type = "ShaderNodeMixRGB")
+            mix = tree.nodes.new(type = MixRGB.Nodetype)
             mix.location = (x-XSIZE+50,y-12*YSTEP)
             mix.blend_type = 'MULTIPLY'
+            if bpy.app.version >= (3,4,0):
+                mix.data_type = 'RGBA'
             mix.inputs[0].default_value = 1.0
-            mix.inputs[1].default_value = item.color
-            tree.links.new(fromsocket, mix.inputs[2])
-            tree.links.new(mix.outputs[0], tosocket)
+            mix.inputs[MixRGB.Color1].default_value = item.color
+            tree.links.new(fromsocket, mix.inputs[MixRGB.Color2])
+            tree.links.new(mix.outputs[MixRGB.ColorOut], tosocket)
             return mix
         elif item.ncomps == 1 and item.number != 1.0:
             mult = tree.nodes.new(type = "ShaderNodeMath")
@@ -1127,10 +1143,10 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 #   Reset button
 # ---------------------------------------------------------------------
 
-class DAZ_OT_ResetMaterial(DazOperator, ChannelSetter, IsMesh):
-    bl_idname = "daz.reset_material"
-    bl_label = "Reset Material"
-    bl_description = "Reset material to original"
+class DAZ_OT_ResetMaterials(DazOperator, ChannelSetter, IsMesh):
+    bl_idname = "daz.reset_materials"
+    bl_label = "Reset Materials"
+    bl_description = "Reset materials to original"
     bl_options = {'UNDO'}
 
     def run(self, context):
@@ -1802,7 +1818,7 @@ classes = [
     DAZ_OT_SelectSkinRedMaterials,
     DAZ_OT_LaunchEditor,
     DAZ_OT_UpdateMaterials,
-    DAZ_OT_ResetMaterial,
+    DAZ_OT_ResetMaterials,
     DAZ_OT_MakeComboMaterials,
     DAZ_OT_ReplacePrincipled,
     DAZ_OT_MakeDecal,

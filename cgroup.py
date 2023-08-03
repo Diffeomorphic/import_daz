@@ -30,7 +30,7 @@ import bpy
 from .cycles import CyclesTree
 from .pbr import PbrTree
 from .material import WHITE, BLACK
-from .tree import NodeGroup, hideAllBut
+from .tree import NodeGroup, hideAllBut, colorOutput
 from .utils import *
 from .error import *
 
@@ -602,12 +602,12 @@ class ColorEffectGroup(CyclesGroup):
         mix,a,b,mixout = self.addMixRgbNode('MIX', 2)
         self.links.new(self.inputs.outputs["Fac"], mix.inputs[0])
         a.default_value[0:3] = BLACK
-        self.links.new(self.colorOutput(mult), b)
+        self.links.new(colorOutput(mult), b)
 
         rgb,a,b,rgbout = self.addMixRgbNode('COLOR', 2)
         rgb.inputs[0].default_value = 1.0
         a.default_value[0:3] = WHITE
-        self.links.new(self.colorOutput(mult), b)
+        self.links.new(colorOutput(mult), b)
 
         scale = self.addNode("ShaderNodeVectorMath", 3)
         scale.operation = 'SCALE'
@@ -1864,8 +1864,8 @@ class LayeredGroup(CyclesGroup):
         mix,a,b,mixout = self.addMixRgbNode('MIX', 5)
         mix.inputs[0].default_value = 1.0
         self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
-        self.links.new(self.colorOutput(firstnode), a)
-        self.links.new(self.colorOutput(self.outnode), b)
+        self.links.new(colorOutput(firstnode), a)
+        self.links.new(colorOutput(self.outnode), b)
         if False and colorSpace == "NONE":
             gamma = self.addNode("ShaderNodeGamma", 5, size=7)
             self.links.new(mixout, gamma.inputs["Color"])
@@ -1916,8 +1916,8 @@ class LayeredGroup(CyclesGroup):
                 self.mask = None
             else:
                 setFactor(map.transparency, texnode, "Alpha", mix)
-            self.links.new(self.colorOutput(self.outnode), a)
-            self.links.new(self.colorOutput(outnode), b)
+            self.links.new(colorOutput(self.outnode), a)
+            self.links.new(colorOutput(outnode), b)
             self.outnode = mix
 
 #----------------------------------------------------------

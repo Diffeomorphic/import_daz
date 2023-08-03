@@ -32,7 +32,7 @@ import os
 from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .tree import Tree, NCOLUMNS, XSIZE, YSIZE
-from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree, hideAllBut
+from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree, hideAllBut, colorOutput
 from .error import DazError
 from .utils import *
 
@@ -623,7 +623,7 @@ class CyclesTree(Tree):
         elif self.owner.uv_set:
             normal.uv_map = self.owner.uv_set.name
         normal.inputs["Strength"].default_value = strength
-        self.links.new(self.colorOutput(tex), normal.inputs["Color"])
+        self.links.new(colorOutput(tex), normal.inputs["Color"])
         return normal
 
 
@@ -661,7 +661,7 @@ class CyclesTree(Tree):
             col = self.column
         bump = self.addNode("ShaderNodeBump", size=8)
         bump.inputs["Strength"].default_value = bumpval
-        self.links.new(self.colorOutput(bumptex), bump.inputs["Height"])
+        self.links.new(colorOutput(bumptex), bump.inputs["Height"])
         self.owner.addGeoBump(bumptex, bump.inputs["Distance"])
         return bump
 
@@ -710,7 +710,7 @@ class CyclesTree(Tree):
                 if link:
                     mult = self.addNode("ShaderNodeMath", size=8)
                     mult.operation = 'MULTIPLY_ADD'
-                    self.links.new(self.colorOutput(tex), mult.inputs[0])
+                    self.links.new(colorOutput(tex), mult.inputs[0])
                     self.linkScalar(wttex, mult, weight, 1)
                     self.links.new(link.from_socket, mult.inputs[2])
                     self.links.new(mult.outputs["Value"], self.bump.inputs["Height"])
@@ -733,15 +733,15 @@ class CyclesTree(Tree):
                     node,a,b,out = self.addOverlay(weight, wttex)
                     self.links.new(socket, a)
                     if tex:
-                        self.links.new(self.colorOutput(tex), b)
+                        self.links.new(colorOutput(tex), b)
                     self.links.new(out, self.normal.inputs["Color"])
                     self.normaltex = node
                 else:
-                    self.links.new(self.colorOutput(tex), self.normal.inputs["Color"])
+                    self.links.new(colorOutput(tex), self.normal.inputs["Color"])
             else:
                 self.normal = self.buildNormalMap(weight, tex, uvname)
                 if wttex:
-                    self.links.new(self.colorOutput(wttex), self.normal.inputs["Strength"])
+                    self.links.new(colorOutput(wttex), self.normal.inputs["Strength"])
                 if self.bump:
                     self.links.new(self.normal.outputs["Normal"], self.bump.inputs["Normal"])
 
@@ -884,7 +884,7 @@ class CyclesTree(Tree):
         if slot in tex.outputs.keys():
             socket = tex.outputs[slot]
         else:
-            socket = self.colorOutput(tex)
+            socket = colorOutput(tex)
         self.links.new(socket, node.inputs[0])
         return node
 
@@ -1013,7 +1013,7 @@ class CyclesTree(Tree):
         node.inputs["IOR"].default_value = 1.1 + 0.7*value
         if tex:
             iortex = self.multiplyAddScalarTex(0.7*value, 1.1, tex)
-            self.links.new(self.colorOutput(iortex), node.inputs["IOR"])
+            self.links.new(colorOutput(iortex), node.inputs["IOR"])
 
         if self.owner.shader == 'PBRSKIN':
             rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
@@ -1073,7 +1073,7 @@ class CyclesTree(Tree):
 
         node.inputs["Color"].default_value[0:3] = self.diffuseColor
         if self.diffuseInput:
-            self.links.new(self.colorOutput(self.diffuseInput), node.inputs["Color"])
+            self.links.new(colorOutput(self.diffuseInput), node.inputs["Color"])
         self.linkBumpNormal(node)
         weight,wttex,texslot = self.getColorTex(["Metallic Weight"], "NONE", 0)
         self.mixWithActive(weight, wttex, texslot, node)
@@ -1267,15 +1267,15 @@ class CyclesTree(Tree):
             maxval = max(bumpval, self.normalval)
             if maxval > 1.0:
                 normalbase,a,b,out = self.addOverlay(self.normalval/maxval, None)
-                self.links.new(self.colorOutput(self.normaltex), b)
+                self.links.new(colorOutput(self.normaltex), b)
                 mixval = bumpval/maxval
             else:
                 normalbase = self.normaltex
                 mixval = bumpval
             mix,a,b,out = self.addOverlay(mixval, None)
             mix.inputs[0].default_value = mixval
-            self.links.new(self.colorOutput(normalbase), a)
-            self.links.new(self.colorOutput(bumptex), b)
+            self.links.new(colorOutput(normalbase), a)
+            self.links.new(colorOutput(bumptex), b)
             bumptex = mix
         normal = self.buildNormalMap(bumpval, bumptex, uvname)
         if self.bumptex:
@@ -1305,13 +1305,13 @@ class CyclesTree(Tree):
             if self.normalval and self.normaltex:
                 from .cgroup import InvertNormalMapGroup
                 inv = self.addGroup(InvertNormalMapGroup, "DAZ Invert NMap", col=self.column-1)
-                self.links.new(self.colorOutput(self.normaltex), inv.inputs["Color"])
+                self.links.new(colorOutput(self.normaltex), inv.inputs["Color"])
                 normal = self.buildNormalMap(self.normalval, inv, uvname, col=self.column-1)
                 self.links.new(inv.outputs["Color"], normal.inputs["Color"])
             if self.bumpval and self.bumptex:
                 inv = self.addNode("ShaderNodeInvert", col=self.column-1)
                 inv.inputs["Fac"].default_value = 1.0
-                self.links.new(self.colorOutput(self.bumptex), inv.inputs["Color"])
+                self.links.new(colorOutput(self.bumptex), inv.inputs["Color"])
                 bump = self.buildBumpMap(self.bumpval, inv, col=self.column-1)
                 if normal:
                     self.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
@@ -1358,7 +1358,7 @@ class CyclesTree(Tree):
             fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS")
             fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
             if self.diffuseInput:
-                self.links.new(self.colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
+                self.links.new(colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
             self.linkScalar(ssstex, fix, sss, "SSS Amount")
             self.linkColor(transtex, fix, transcolor, "Translucent Color")
             self.linkScalar(wttex, fix, transwt, "Translucency Weight")
@@ -1465,7 +1465,7 @@ class CyclesTree(Tree):
         else:
             node.inputs[slot].default_value = value
         if tex:
-            self.links.new(self.colorOutput(tex), node.inputs[slot])
+            self.links.new(colorOutput(tex), node.inputs[slot])
         return value,tex
 
 
@@ -1474,7 +1474,7 @@ class CyclesTree(Tree):
         if roughtex:
             tex = self.multiplyScalarTex(roughness, roughtex)
             if tex:
-                self.links.new(self.colorOutput(tex), node.inputs[slot])
+                self.links.new(colorOutput(tex), node.inputs[slot])
         return roughness
 
 
@@ -1683,7 +1683,7 @@ class CyclesTree(Tree):
             self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
         self.volume.inputs["Scatter Color"].default_value[0:3] = color
         if tex:
-            self.links.new(self.colorOutput(tex), self.volume.inputs["Scatter Color"])
+            self.links.new(colorOutput(tex), self.volume.inputs["Scatter Color"])
         self.volume.inputs["Scatter Density"].default_value = 100/dist
         self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue(["SSS Direction"], 0)
 
@@ -1725,7 +1725,7 @@ class CyclesTree(Tree):
 
             from .cgroup import DisplacementGroup
             node = self.addGroup(DisplacementGroup, "DAZ Displacement")
-            self.links.new(self.colorOutput(tex), node.inputs["Texture"])
+            self.links.new(colorOutput(tex), node.inputs["Texture"])
             node.inputs["Strength"].default_value = strength
             node.inputs["Max"].default_value = LS.scale * dmax
             node.inputs["Min"].default_value = LS.scale * dmin
@@ -1920,15 +1920,15 @@ class CyclesTree(Tree):
         #mix.use_alpha = False
         mix.inputs[0].default_value = fac
         if factex:
-            self.links.new(self.colorOutput(factex), mix.inputs[0])
+            self.links.new(colorOutput(factex), mix.inputs[0])
         if color1:
             a.default_value[0:3] = color1
         if tex1:
-            self.links.new(self.colorOutput(tex1), a)
+            self.links.new(colorOutput(tex1), a)
         if color2:
             b.default_value[0:3] = color2
         if tex2:
-            self.links.new(self.colorOutput(tex2), b)
+            self.links.new(colorOutput(tex2), b)
         return mix
 
 
@@ -1955,7 +1955,7 @@ class CyclesTree(Tree):
         if tex:
             tex = self.multiplyVectorTex(color, tex)
             if tex:
-                self.links.new(self.colorOutput(tex), node.inputs[slot])
+                self.links.new(colorOutput(tex), node.inputs[slot])
         return tex
 
 
@@ -1967,7 +1967,7 @@ class CyclesTree(Tree):
                 if texslot:
                     self.links.new(tex.outputs[texslot], node.inputs[slot])
                 else:
-                    self.links.new(self.colorOutput(tex), node.inputs[slot])
+                    self.links.new(colorOutput(tex), node.inputs[slot])
         return tex
 
 
@@ -1979,14 +1979,14 @@ class CyclesTree(Tree):
             if invert:
                 tex = self.invertTex(tex, 3)
             if tex:
-                self.links.new(self.colorOutput(tex), node.inputs[slot])
+                self.links.new(colorOutput(tex), node.inputs[slot])
         return tex
 
 
     def invertTex(self, tex, col):
         if tex:
             inv = self.addNode("ShaderNodeInvert", col, size=5)
-            self.links.new(self.colorOutput(tex), inv.inputs["Color"])
+            self.links.new(colorOutput(tex), inv.inputs["Color"])
             return inv
         else:
             return None
@@ -2025,9 +2025,9 @@ class CyclesTree(Tree):
             if tex.type == "TEX_IMAGE":
                 self.links.new(tex.outputs["Alpha"], socket)
             else:
-                self.links.new(self.colorOutput(tex), socket)
+                self.links.new(colorOutput(tex), socket)
         else:
-            self.links.new(self.colorOutput(tex), socket)
+            self.links.new(colorOutput(tex), socket)
 
 
     def multiplyScalarTex(self, value, tex, slot=None, col=None, force=False):
@@ -2065,8 +2065,8 @@ class CyclesTree(Tree):
         if tex1 and tex2:
             mult = self.addNode("ShaderNodeMath")
             mult.operation = operation
-            self.links.new(self.colorOutput(tex1), mult.inputs[0])
-            self.links.new(self.colorOutput(tex2), mult.inputs[1])
+            self.links.new(colorOutput(tex1), mult.inputs[0])
+            self.links.new(colorOutput(tex2), mult.inputs[1])
             self.moveTex(tex1, mult)
             self.moveTex(tex2, mult)
             return mult

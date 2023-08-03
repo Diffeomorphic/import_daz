@@ -107,7 +107,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.fix_shells")
         self.layout.separator()
         self.layout.operator("daz.launch_editor")
-        self.layout.operator("daz.reset_material")
+        self.layout.operator("daz.reset_materials")
         self.layout.operator("daz.make_combo_material")
 
 

@@ -35,6 +35,31 @@ XSIZE = 300
 YSIZE = 250
 YSTEP = 25
 
+class MixRGB:
+    if bpy.app.version < (3,4,0):
+        Nodetype = "ShaderNodeMixRGB"
+        Color1 = 1
+        Color2 = 2
+        ColorOut = 0
+    else:
+        Nodetype = "ShaderNodeMix"
+        Color1 = 6
+        Color2 = 7
+        ColorOut = 2
+    LegacyColor1 = 1
+    LegacyColor2 = 2
+    LegacyColorOut = 0
+
+
+def colorOutput(node):
+    if "Color" in node.outputs.keys():
+        return node.outputs["Color"]
+    elif node.type == 'MIX':
+        return node.outputs[2]
+    else:
+        return node.outputs[0]
+
+
 
 class Tree:
     def __init__(self, owner):
@@ -75,36 +100,16 @@ class Tree:
             x,y = node.location
             node.location = (x+dx, y+dy)
 
-    if bpy.app.version < (3,4,0):
-        MixColor1 = 1
-        MixColor2 = 2
-        MixColorOut = 0
-    else:
-        MixColor1 = 6
-        MixColor2 = 7
-        MixColorOut = 2
-
 
     def addMixRgbNode(self, blendtype, col=None, parent=None, size=12):
-        if bpy.app.version < (3,4,0):
-            node = self.addNode("ShaderNodeMixRGB", col, size=size, parent=parent)
-        else:
-            node = self.addNode("ShaderNodeMix", col, size=size, parent=parent)
+        node = self.addNode(MixRGB.Nodetype, col, size=size, parent=parent)
+        if bpy.app.version >= (3,4,0):
             node.data_type = 'RGBA'
         node.blend_type = blendtype
-        a = node.inputs[self.MixColor1]
-        b = node.inputs[self.MixColor2]
-        out = node.outputs[self.MixColorOut]
+        a = node.inputs[MixRGB.Color1]
+        b = node.inputs[MixRGB.Color2]
+        out = node.outputs[MixRGB.ColorOut]
         return node,a,b,out
-
-
-    def colorOutput(self, node):
-        if "Color" in node.outputs.keys():
-            return node.outputs["Color"]
-        elif node.type == 'MIX':
-            return node.outputs[2]
-        else:
-            return node.outputs[0]
 
 
     def addColumn(self):
@@ -225,8 +230,6 @@ NodeSize = {
     "BSDF_DIFFUSE" : 7,
     "BSDF_GLOSSY" : 7,
     "BSDF_REFRACTION" : 7,
-    "BSDF_" : 10,
-    "BSDF_" : 10,
     "SUBSURFACE_SCATTERING" : 10,
     "RGB" : 10,
     "INVERT" : 5,
@@ -235,6 +238,7 @@ NodeSize = {
     "COMBRGB" : 7,
     "RGBTOBW" : 7,
     "CLAMP" : 5,
+    "MIX_RGB" : 8,
     "MIX" : 12,
     "MATH" : 8,
     "VECT_MATH" : 6,

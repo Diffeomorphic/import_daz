@@ -33,6 +33,7 @@ from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .error import *
 from .utils import *
 from .cycles import CyclesTree
+from .tree import colorOutput
 
 class PbrTree(CyclesTree):
     def __init__(self, pbrmat):
@@ -221,7 +222,7 @@ class PbrTree(CyclesTree):
         self.linkScalar(ssstex, fix, sss, "SSS Amount")
         fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
         if self.diffuseInput:
-            self.links.new(self.colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
+            self.links.new(colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight", texslot=texslot)
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
@@ -279,7 +280,7 @@ class PbrTree(CyclesTree):
         if tex and useTex:
             tex = self.multiplyScalarTex(clamp(factor), tex)
             if tex:
-                self.links.new(self.colorOutput(tex), self.pbr.inputs["Specular"])
+                self.links.new(colorOutput(tex), self.pbr.inputs["Specular"])
 
     #-------------------------------------------------------------
     #   Anisotropy
@@ -352,7 +353,7 @@ class PbrTree(CyclesTree):
         if tex and useTex:
             tex = self.multiplyScalarTex(clamp(value), tex)
             if tex:
-                self.links.new(self.colorOutput(tex), self.pbr.inputs["Clearcoat"])
+                self.links.new(colorOutput(tex), self.pbr.inputs["Clearcoat"])
 
     #-------------------------------------------------------------
     #   Sheen
@@ -472,7 +473,7 @@ class PbrTree(CyclesTree):
         mix = self.addNode("ShaderNodeMixShader", size=5)
         mix.inputs[0].default_value = weight
         if wttex:
-            self.links.new(self.colorOutput(wttex), mix.inputs[0])
+            self.links.new(colorOutput(wttex), mix.inputs[0])
         self.links.new(node1.outputs[0], mix.inputs[1])
         self.links.new(node2.outputs[0], mix.inputs[2])
         return mix
