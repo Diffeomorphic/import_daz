@@ -509,59 +509,69 @@ def pruneNodeTree(tree,
             if not marked[node.name]:
                 tree.nodes.remove(node)
 
+    if useBeautify:
+        beautifyNodeTree(tree)
+    return marked
+
+#-------------------------------------------------------------
+#   Beautify NodeTree
+#-------------------------------------------------------------
+
+def beautifyNodeTree(tree):
     def findColumn(node, col, level):
         if level < 0:
             print("Infinite recursion")
             return
         col1 = columns.get(node.name, -1)
         if col1 < col:
+            if node.width > XSIZE-50:
+                col += 1
             columns[node.name] = col
             nodes[node.name] = node
             for socket in node.inputs:
                 for link in socket.links:
                     findColumn(link.from_node, col+1, level-1)
 
-    if useBeautify:
-        columns = {}
-        nodes = {}
-        for node in outputs:
-            findColumn(node, 0, 100)
-        for key,col in list(columns.items()):
-            if col > 20:
-                columns[key] = 10 + col%10
-        used = {}
-        for col in columns.values():
-            used[col] = True
-        ncols = {}
-        ncol = 0
-        for col in range(20):
-            ncols[col] = ncol
-            if used.get(col, False):
-                ncol += 1
-        rows = {}
-        for name,node in nodes.items():
-            col = ncols[columns[name]]
-            row = rows.get(col, 0)
-            node.location = (-XSIZE*col, -YSTEP*row)
-            if node.hide:
-                size = 2
-            elif node.type == "GROUP":
-                grpname = node.name.split(".",1)[0]
-                if grpname.startswith("LIE"):
-                    size = 6
-                else:
-                    size = GroupSize.get(grpname, 10)
-                    if (grpname not in GroupSize.keys() and
-                        "shell" not in grpname.lower()):
-                        print("Missing GroupSize", grpname)
+    if tree is None:
+        return
+    outputs = []
+    for node in tree.nodes:
+        if not node.outputs:
+            outputs.append(node)
+    columns = {}
+    nodes = {}
+    for node in outputs:
+        findColumn(node, 0, 100)
+    for key,col in list(columns.items()):
+        if col > 20:
+            columns[key] = 10 + col%10
+    rows = {}
+    for name,node in nodes.items():
+        col = columns[name]
+        row = rows.get(col, 0)
+        node.location = (-XSIZE*col, -YSTEP*row)
+        if node.hide:
+            size = 2
+        elif node.type == "GROUP":
+            grpname = node.name.split(".",1)[0]
+            if grpname.startswith("LIE"):
+                size = 6
+            elif grpname.endswith("Combo"):
+                size = 30
             else:
-                size = NodeSize.get(node.type, 10)
-                if node.type not in NodeSize.keys():
-                    print("Missing NodeSize", node.type)
-            rows[col] = row + size
+                size = GroupSize.get(grpname, 10)
+                if (grpname not in GroupSize.keys() and
+                    "shell" not in grpname.lower()):
+                    print("Missing GroupSize", grpname)
+        else:
+            size = NodeSize.get(node.type, 10)
+            if node.type not in NodeSize.keys():
+                print("Missing NodeSize", node.type)
+        rows[col] = row + size
 
-    return marked
-
+#-------------------------------------------------------------
+#   Prune materials
+#-------------------------------------------------------------
 
 def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True, useFixColorSpace=True, useBeautify=False):
     from .geometry import getActiveUvLayer

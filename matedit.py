@@ -36,7 +36,7 @@ from .utils import *
 from .material import WHITE, isWhite
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
-from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput
+from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
 
 #-------------------------------------------------------------
 #   Material selector
@@ -655,6 +655,7 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
         for mat in ob.data.materials:
             if mat and self.useMaterial(mat):
                 self.setChannelCycles(mat, item)
+                beautifyNodeTree(mat.node_tree)
 
 
     def getObjectSlot(self, mat, key):
@@ -739,7 +740,8 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
         self.findOutputs(tree)
         for socket in self.outputs.values():
             self.selectNodes(socket, "")
-        group = self.makeGroup(ob)
+        group,gname = self.makeGroup(ob)
+        beautifyNodeTree(group)
         mats = []
         for mat in ob.data.materials:
             if (mat and
@@ -753,7 +755,8 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
             self.findOutputs(mat.node_tree)
             for socket in self.outputs.values():
                 self.selectNodes(socket, "")
-            self.replaceNodes(mat.node_tree, group)
+            self.replaceNodes(mat.node_tree, group, gname)
+            beautifyNodeTree(mat.node_tree)
 
 
     def clearData(self):
@@ -873,7 +876,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                     print("MISS", fromsocket.name, self.outputs.keys())
         for slot,links in self.inputs.items():
             self.linkInputs(group, links, innode.outputs.get(slot))
-        return group
+        return group, gname
 
 
     def linkInputs(self, group, links, fromsocket):
@@ -886,8 +889,10 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                 group.links.new(fromsocket, tosocket)
 
 
-    def replaceNodes(self, tree, group):
+    def replaceNodes(self, tree, group, gname):
         skin = tree.nodes.new("ShaderNodeGroup")
+        skin.name = gname
+        skin.label = gname
         skin.node_tree = group
         skin.location = (self.cycles.location[0] - 1.5*XSIZE, 2*YSIZE)
         skin.width = 1.5*XSIZE
