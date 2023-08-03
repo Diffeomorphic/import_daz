@@ -85,8 +85,23 @@ class MaterialSelector:
                 umats = []
 
 
-    def setupMaterials(self, ob):
+    def drawActive(self, context):
+        ob = context.object
+        box = self.layout.box()
+        box.label(text="Active Material: %s" % ob.active_material.name)
+        self.layout.separator()
+
+
+    def invoke(self, context, event):
+        self.setupMaterialSelector(context)
+        return DazPropsOperator.invoke(self, context, event)
+
+
+    def setupMaterialSelector(self, context):
         from .guess import getMaterialType
+        global theMaterialEditor
+        theMaterialEditor = self
+        ob = context.object
         self.skinColor = WHITE
         for mat in ob.data.materials:
             if mat and getMaterialType(mat) == 'SKIN':
@@ -99,6 +114,10 @@ class MaterialSelector:
                 item.name = mat.name
                 item.bool = self.isDefaultActive(mat, ob)
         setMaterialSelector(self)
+
+
+    def isDefaultActive(self, mat, ob):
+        return False
 
 
     def useMaterial(self, mat):
@@ -528,7 +547,7 @@ def isGroupType(node, gtypes):
 #   Launch button
 # ---------------------------------------------------------------------
 
-class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, IsMesh):
+class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsMesh):
     bl_idname = "daz.launch_editor"
     bl_label = "Launch Material Editor"
     bl_description = "Edit materials of selected meshes"
@@ -552,9 +571,7 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, IsM
         row.prop(self, "useChangedOnly")
         if not self.useAllMaterials:
             MaterialSelector.draw(self, context)
-        ob = context.object
-        self.layout.label(text="Active Material: %s" % ob.active_material.name)
-        self.layout.separator()
+        self.drawActive(context)
         group = None
         items = []
         for key in TweakableChannels.keys():
@@ -597,10 +614,7 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, IsM
 
 
     def invoke(self, context, event):
-        global theMaterialEditor
-        theMaterialEditor = self
-        ob = context.object
-        self.setupMaterials(ob)
+        self.setupMaterialSelector(context)
         self.shows.clear()
         for key in TweakableChannels.keys():
             if TweakableChannels[key] is None:
@@ -688,23 +702,15 @@ class DAZ_OT_UpdateMaterials(bpy.types.Operator):
 #   Combo materials
 # ---------------------------------------------------------------------
 
-class DAZ_OT_MakeComboMaterials(DazPropsOperator, MaterialSelector, IsMesh):
+class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
     bl_idname = "daz.make_combo_material"
     bl_label = "Make Combo Material"
     bl_description = "Create a combo node group for selected materials"
     bl_options = {'UNDO'}
 
     def draw(self, context):
+        self.drawActive(context)
         MaterialSelector.draw(self, context)
-        ob = context.object
-        self.layout.label(text="Active Material: %s" % ob.active_material.name)
-
-    def invoke(self, context, event):
-        global theMaterialEditor
-        theMaterialEditor = self
-        ob = context.object
-        self.setupMaterials(ob)
-        return DazPropsOperator.invoke(self, context, event)
 
     def isDefaultActive(self, mat, ob):
         return self.isSkinRedMaterial(mat)
@@ -893,7 +899,7 @@ def getAllNodeGroups(scn, context):
     return [(group.name, group.name, group.name) for group in bpy.data.node_groups]
 
 
-class DAZ_OT_ReplacePrincipled(DazPropsOperator, MaterialSelector, IsMesh):
+class DAZ_OT_ReplacePrincipled(MaterialSelector, DazPropsOperator):
     bl_idname = "daz.replace_principled"
     bl_label = "Replace Principled With Nodegroup"
     bl_description = "Replace principled node with custom node group for selected materials"
@@ -907,13 +913,6 @@ class DAZ_OT_ReplacePrincipled(DazPropsOperator, MaterialSelector, IsMesh):
     def draw(self, context):
         self.layout.prop(self, "groupName")
         MaterialSelector.draw(self, context)
-
-    def invoke(self, context, event):
-        global theMaterialEditor
-        theMaterialEditor = self
-        ob = context.object
-        self.setupMaterials(ob)
-        return DazPropsOperator.invoke(self, context, event)
 
     def isDefaultActive(self, mat, ob):
         return self.isSkinRedMaterial(mat)
@@ -1039,9 +1038,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 
 
     def invoke(self, context, event):
-        global theMaterialEditor
-        theMaterialEditor = self
-        self.setupMaterials(context.object)
+        self.setupMaterialSelector(context)
         self.decalMask = context.scene.DazDecalMask
         return SingleFile.invoke(self, context, event)
 
@@ -1568,7 +1565,7 @@ def getAllMaterials(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in bpy.data.materials]
 
 
-class DAZ_OT_ReplaceMaterials(DazPropsOperator, MaterialSelector, IsMesh):
+class DAZ_OT_ReplaceMaterials(MaterialSelector, DazPropsOperator, IsMesh):
     bl_idname = "daz.replace_materials"
     bl_label = "Replace Materials"
     bl_description = "Replace selected materials with specified material.\nFor copying geograft base materials"
@@ -1582,13 +1579,6 @@ class DAZ_OT_ReplaceMaterials(DazPropsOperator, MaterialSelector, IsMesh):
     def draw(self, context):
         MaterialSelector.draw(self, context)
         self.layout.prop(self, "material")
-
-    def invoke(self, context, event):
-        global theMaterialEditor
-        theMaterialEditor = self
-        ob = context.object
-        self.setupMaterials(ob)
-        return DazPropsOperator.invoke(self, context, event)
 
     def isDefaultActive(self, mat, ob):
         return True
@@ -1707,11 +1697,22 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
 #   Fix shells
 #----------------------------------------------------------
 
-class DAZ_OT_FixShells(DazOperator, IsMesh):
+class DAZ_OT_FixShells(MaterialSelector, DazPropsOperator):
     bl_idname = "daz.fix_shells"
     bl_label = "Fix Shells"
     bl_description = "Replace shell node groups in selected meshes\nwith the node groups of the active material"
     bl_options = {'UNDO'}
+
+    useSelf : BoolProperty(
+        name = "Fix Active Mesh",
+        description = "Fix selected materials of the active mesh rather than selected meshes",
+        default = False)
+
+    def draw(self, context):
+        self.drawActive(context)
+        self.layout.prop(self, "useSelf")
+        if self.useSelf:
+            MaterialSelector.draw(self, context)
 
     def run(self, context):
         hum = context.object
@@ -1719,17 +1720,27 @@ class DAZ_OT_FixShells(DazOperator, IsMesh):
         if mat is None:
             raise DazError("No active material")
         mainShells = self.getShells(mat)
-        for ob in getSelectedMeshes(context):
-            if ob != hum:
-                for mat in ob.data.materials:
-                    if mat:
-                        shells = self.getShells(mat)
-                        for label,nodes in shells.items():
-                            mainNodes = mainShells.get(label)
-                            if mainNodes:
-                                tree = mainNodes[0].node_tree
-                                for node in nodes:
-                                    node.node_tree = tree
+        if self.useSelf:
+            for mat in hum.data.materials:
+                if mat and self.useMaterial(mat):
+                    self.fixMaterial(mat, mainShells)
+        else:
+            for ob in getSelectedMeshes(context):
+                if ob != hum:
+                    for mat in ob.data.materials:
+                        self.fixMaterial(mat, mainShells)
+
+
+    def fixMaterial(self, mat, mainShells):
+        if mat is None:
+            return
+        shells = self.getShells(mat)
+        for label,nodes in shells.items():
+            mainNodes = mainShells.get(label)
+            if mainNodes:
+                tree = mainNodes[0].node_tree
+                for node in nodes:
+                    node.node_tree = tree
 
 
     def getShells(self, mat):
