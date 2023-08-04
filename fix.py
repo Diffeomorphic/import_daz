@@ -327,6 +327,12 @@ class Fixer(DriverUser):
             mod = getModifier(ob, 'ARMATURE')
             if mod:
                 mod.object = nrig
+            skeys = ob.data.shape_keys
+            if skeys:
+                enableDrivers(skeys)
+                for skey in skeys.key_blocks:
+                    skey.mute = False
+
         activateObject(context, rig)
         return nrig
 
