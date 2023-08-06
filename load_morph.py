@@ -347,7 +347,9 @@ class LoadMorph(DriverUser):
 
 
     def getGraftParent(self, asset):
-        if (self.mesh and
+        from .modifier import Morph
+        if (isinstance(asset, Morph) and
+            self.mesh and
             self.mesh.data.DazVertexCount == asset.vertex_count and
             self.mesh.data.DazGraftGroup and
             self.rig):
