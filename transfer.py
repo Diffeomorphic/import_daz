@@ -775,11 +775,17 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             tskey = src.data.shape_keys.key_blocks[hskey.name]
         else:
             tskey = hskey
-        cskey = trg.shape_key_add(name=hskey.name)
         hcos = np.array([list(data.co) for data in tskey.data])
         tris, w, offsets = self.match
         tcos = hcos[tris]
         ccos = np.sum(tcos * w[:,:,None], axis=1) + offsets
+        cverts = np.array([list(v.co) for v in trg.data.vertices])
+        dists = np.sum(np.abs(ccos-cverts), axis=1)
+        dmax = np.max(dists)
+        eps = 0.01*src.DazScale
+        if dmax < eps:
+            return False
+        cskey = trg.shape_key_add(name=hskey.name)
         if self.useSelectedOnly:
             cverts = trg.data.vertices
             for cvn,co in enumerate(ccos):
@@ -1052,6 +1058,53 @@ class DAZ_OT_PruneVertexGroups(DazPropsOperator, ThresholdFloat, IsMesh):
             pruneVertexGroups(ob, self.threshold, [], True)
 
 #----------------------------------------------------------
+#   Shapekey to vertexgroup
+#----------------------------------------------------------
+
+class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsMesh):
+    bl_idname = "daz.visualize_shapekey"
+    bl_label = "Visualize Shapekey"
+    bl_description = "Visualize shapekey as a vertex group"
+    bl_options = {'UNDO'}
+
+    mindist : FloatProperty(
+        name = "Lower Threshold",
+        description = "Lower threshold for shapekey distance, in mm",
+        min = 0.0, max = 1.0,
+        precision = 4,
+        default = 0.1)
+
+    maxdist : FloatProperty(
+        name = "Upper Threshold",
+        description = "Upper threshold for shapekey distance, in mm",
+        min = 0.0, max = 100.0,
+        precision = 4,
+        default = 1.0)
+
+    def draw(self, context):
+        self.layout.prop(self, "mindist")
+        self.layout.prop(self, "maxdist")
+
+    def run(self, context):
+        ob = context.object
+        eps = 0.1*self.mindist*ob.DazScale
+        factor = 10/(self.maxdist*ob.DazScale)
+        skeys = ob.data.shape_keys
+        if skeys is None:
+            raise DazError("Mesh has no shapekeys")
+        skey = skeys.key_blocks[ob.active_shape_key_index]
+        if skey.name not in ob.vertex_groups:
+            vgrp = ob.vertex_groups.new(name=skey.name)
+        else:
+            vgrp = ob.vertex_groups[skey.name]
+            for vn,v in enumerate(ob.data.vertices):
+                vgrp.remove([vn])
+        dists = [(vn,(skey.data[vn].co - v.co).length) for vn,v in enumerate(ob.data.vertices)]
+        weights = [(vn,factor*dist) for vn,dist in dists if dist > eps]
+        for vn,w in weights:
+            vgrp.add([vn], w, 'REPLACE')
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -1062,6 +1115,7 @@ classes = [
     DAZ_OT_PruneVertexGroups,
     DAZ_OT_ApplyAllShapekeys,
     DAZ_OT_MixShapekeys,
+    DAZ_OT_VisualizeShapekey,
 ]
 
 def register():

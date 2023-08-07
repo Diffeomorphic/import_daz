@@ -388,6 +388,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.remove_all_drivers")
         self.layout.operator("daz.apply_all_shapekeys")
         self.layout.operator("daz.mix_shapekeys")
+        self.layout.operator("daz.visualize_shapekey")
         self.layout.separator()
         self.layout.operator("daz.update_slider_limits")
         self.layout.operator("daz.import_dbz")
