@@ -244,6 +244,15 @@ def isBoneDriven(rig, pb):
     return (getBoneDrivers(rig, pb) != [])
 
 
+def getDrivenBones(rig):
+    if rig.animation_data:
+        dlist = [(fcu.data_path.split('"')[1],True)
+                  for fcu in rig.animation_data.drivers
+                  if fcu.data_path.startswith("pose.bones[")]
+        return dict(dlist)
+    return {}
+
+
 def getBoneDrivers(rig, pb):
     if rig.animation_data:
         path = 'pose.bones["%s"]' % pb.name

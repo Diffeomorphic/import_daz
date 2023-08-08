@@ -658,7 +658,7 @@ class ExtraBones(DriverUser):
             db.custom_shape = None
             copyBoneInfo(db, pb)
             store.storeConstraints(db.name, db)
-            store.removeConstraints(db)
+            #store.removeConstraints(db)
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
             store.restoreConstraints(db.name, pb)
 
@@ -903,8 +903,12 @@ def toggleLocLocks(self, context):
 #----------------------------------------------------------
 
 def toggleLimits(self, context, attr, type):
+    from .driver import getDrivenBones
     auto = context.scene.tool_settings.use_keyframe_insert_auto
+    driven = getDrivenBones(self)
     for pb in self.pose.bones:
+        if pb.name in driven:
+            continue
         for cns in pb.constraints:
             if cns.type == type:
                 cns.mute = False
