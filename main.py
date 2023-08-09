@@ -826,6 +826,26 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 mainMesh = None
             print(msg)
 
+        if mainRig and activateObject(context, mainRig):
+            # Merge rigs
+            for rig in rigs[1:]:
+                selectSet(rig, True)
+            if self.useMergeRigs and len(rigs) > 1:
+                print("Merge rigs")
+                bpy.ops.daz.merge_rigs(
+                    useSubrigsOnly = True,
+                    useCreateDuplicates = self.useCreateDuplicates,
+                    useMergeNonConforming = self.useMergeNonConforming)
+                mainRig = context.object
+                rigs = [mainRig]
+
+            # Merge toes
+            if activateObject(context, mainRig):
+                if self.useMergeToes:
+                    print("Merge toes")
+                    bpy.ops.daz.merge_toes()
+
+        # Rigs must be merged before finding face meshes
         geografts = {}
         lashes = []
         clothes = []
@@ -848,25 +868,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     lashes.append(ob)
                 else:
                     clothes.append(ob)
-
-        if mainRig and activateObject(context, mainRig):
-            # Merge rigs
-            for rig in rigs[1:]:
-                selectSet(rig, True)
-            if self.useMergeRigs and len(rigs) > 1:
-                print("Merge rigs")
-                bpy.ops.daz.merge_rigs(
-                    useSubrigsOnly = True,
-                    useCreateDuplicates = self.useCreateDuplicates,
-                    useMergeNonConforming = self.useMergeNonConforming)
-                mainRig = context.object
-                rigs = [mainRig]
-
-            # Merge toes
-            if activateObject(context, mainRig):
-                if self.useMergeToes:
-                    print("Merge toes")
-                    bpy.ops.daz.merge_toes()
 
         if self.useMergeMaterials and meshes and activateObject(context, meshes[0]):
             # Merge material slots
@@ -1100,7 +1101,7 @@ def getFaceMeshes(rig, ob):
     if head is None:
         return []
     matches = []
-    keys = ["eyelash", "tear", "brow", "hair cap", "beard", "mouth"]
+    keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
     for mesh in getMeshChildren(rig):
         if mesh != ob:
             for key in keys:

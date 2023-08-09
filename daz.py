@@ -245,7 +245,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
 
     def draw(self, context):
         scn = context.scene
-        split = self.layout.split(factor=0.4)
+        split = self.layout.split(factor=0.33)
         col = split.column()
         box = col.box()
         box.label(text = "DAZ Studio Root Directories")
@@ -274,13 +274,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUnitScale")
         box.prop(scn, "DazVerbosity")
         box.prop(scn, "DazCaseSensitivePaths")
-
-        box = col.box()
-        box.label(text = "Debugging")
-        box.prop(scn, "DazZup")
-        box.prop(scn, "DazUnflipped")
-        box.prop(scn, "DazDump")
-        box.prop(scn, "DazPruneNodes")
 
         box = col.box()
         box.label(text = "Meshes")
@@ -313,6 +306,19 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazDisplayLimitRot")
 
         box = col.box()
+        box.label(text = "Objects")
+        box.prop(scn, "DazShowHiddenObjects")
+        box.prop(scn, "DazIgnoreHiddenObjects")
+
+        box = col.box()
+        box.label(text = "Debugging")
+        box.prop(scn, "DazZup")
+        box.prop(scn, "DazUnflipped")
+        box.prop(scn, "DazDump")
+        box.prop(scn, "DazPruneNodes")
+
+        col = split.column()
+        box = col.box()
         box.label(text = "Morphs")
         box.prop(scn, "DazStrengthAdjusters")
         box.prop(scn, "DazMakeHiddenSliders")
@@ -329,6 +335,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseERC")
         box.prop(scn, "DazStripCategory")
         box.prop(scn, "DazUseModifiedMesh")
+        box.prop(scn, "DazUseSubmeshes")
 
         col = split.column()
         box = col.box()
@@ -354,11 +361,6 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazGhostLights")
         box.prop(scn, "DazUseReflection")
 
-        box = col.box()
-        box.label(text = "Objects")
-        box.prop(scn, "DazShowHiddenObjects")
-        box.prop(scn, "DazIgnoreHiddenObjects")
-
         row = self.layout.row()
         row.operator("daz.load_root_paths")
         row.operator("daz.add_content_dirs")
@@ -375,7 +377,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
     def invoke(self, context, event):
         GS.toScene(context.scene)
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=1200)
+        return wm.invoke_props_dialog(self, width=1280)
 
 #-------------------------------------------------------------
 #   Initialize
@@ -518,8 +520,12 @@ def register():
         description = "Strip the category name from the beginning of the morph name if they are the same")
 
     bpy.types.Scene.DazUseModifiedMesh = BoolProperty(
-        name = "Load To Modified Meshes",
-        description = "Load morphs to meshes that have been modified by merging geografts or lashes.\nWarning: can give incorrect shapekeys if meshes have been modified in edit mode")
+        name = "Import To Modified Meshes",
+        description = "Import morphs to meshes that have been modified by merging geografts or lashes.\nWarning: can give incorrect shapekeys if meshes have been modified in edit mode")
+
+    bpy.types.Scene.DazUseSubmeshes = BoolProperty(
+        name = "Import To Submeshes",
+        description = "Import morphs to the figure's submeshes,\ne.g. Genesis 9 eyes, mouth, lashes, and tears")
 
     bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
         name = "Make Hidden Sliders",

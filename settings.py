@@ -106,6 +106,7 @@ class GlobalSettings:
         self.useERC = False
         self.useStripCategory = False
         self.useModifiedMesh = False
+        self.useSubmeshes = True
 
         self.useArmature = True
         self.useLockLoc = True
@@ -190,6 +191,7 @@ class GlobalSettings:
         "DazUseERC" : "useERC",
         "DazStripCategory" : "useStripCategory",
         "DazUseModifiedMesh" : "useModifiedMesh",
+        "DazUseSubmeshes" : "useSubmeshes",
 
         # Rigging
         "DazUseArmature" : "useArmature",
