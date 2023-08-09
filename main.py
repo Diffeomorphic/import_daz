@@ -1100,7 +1100,7 @@ def getFaceMeshes(rig, ob):
     if head is None:
         return []
     matches = []
-    keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
+    keys = ["eyelash", "tear", "brow", "hair cap", "beard", "mouth"]
     for mesh in getMeshChildren(rig):
         if mesh != ob:
             for key in keys:

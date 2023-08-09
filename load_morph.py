@@ -72,6 +72,7 @@ class LoadMorph(DriverUser):
         self.adjustable = {}
         self.currentAsset = None
         self.origMorphset = ""
+        self.trivials = {}
 
 
     def getAdjustProp(self):
@@ -321,6 +322,7 @@ class LoadMorph(DriverUser):
                 asset.buildMorph(self.mesh, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
+            self.trivials[skey.name] = False
             prop = self.getUniqueName(unquote(skey.name))
             self.alias[prop] = skey.name
             skey.name = prop
@@ -380,6 +382,8 @@ class LoadMorph(DriverUser):
             expr["factor"] = 1
         else:
             return
+        if exprs:
+            self.trivials[asset.name] = self.trivials[prop] = False
         for output,data in exprs.items():
             for key,data1 in data.items():
                 if key == "*fileref":

@@ -499,13 +499,13 @@ class MorphLoader(LoadMorph):
     def getFingeredRigMeshes(self, context):
         from .finger import getFingeredCharacters
         ob = context.object
-        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh, useGenesis=True)
+        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh, useGenesis=False)
         if ob.type == 'MESH':
             self.meshes = [ob]
         elif self.rig and not self.meshes:
             self.meshes = getMeshChildren(self.rig)
-        if len(self.meshes) > 1:
-            self.meshes = self.meshes[0:1]
+        #if len(self.meshes) > 1:
+        #    self.meshes = self.meshes[0:1]
 
     def getMorphSet(self, asset):
         return self.morphset
@@ -560,6 +560,23 @@ class MorphLoader(LoadMorph):
         return self.finishLoading(namepaths, context, t1)
 
 
+    def loadToMesh(self, mesh, char, trivials):
+        mesh0 = self.mesh
+        char0 = self.char
+        self.mesh = mesh
+        self.char = char
+        self.trivials = {}
+        namepaths = []
+        namepaths = self.getActiveMorphFiles(trivials)
+        print("Load %d morphs to %s" % (len(namepaths), self.mesh.name))
+        if namepaths:
+            LS.forMorphLoad(self.mesh)
+            self.loadAllMorphs(namepaths)
+        self.mesh = mesh0
+        self.char = char0
+        return namepaths
+
+
     def setupDuplicates(self):
         self.duplicates = []
         if self.rig is None:
@@ -599,7 +616,7 @@ class MorphLoader(LoadMorph):
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
-        if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
+        if self.faceshapes and self.useTransferFace and self.rig and self.meshes:
             self.transferToFaceMeshes(context)
         if msg:
             if msg[0] == "\n":
@@ -653,10 +670,11 @@ class MorphLoader(LoadMorph):
 
     def transferToFaceMeshes(self, context):
         from .main import getFaceMeshes
-        meshes = getFaceMeshes(self.rig, self.mesh)
+        mesh0 = self.meshes[0]
+        meshes = getFaceMeshes(self.rig, mesh0)
         if meshes:
             print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
-            activateObject(context, self.mesh)
+            activateObject(context, mesh0)
             for mesh in meshes:
                 selectSet(mesh, True)
             theFilePaths = LS.theFilePaths
@@ -716,7 +734,6 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             MP.setupMorphPaths(False)
         self.errors = {}
         self.faceshapes = {}
-        self.meshes.reverse()
         t1 = perf_counter()
         namepaths = self.loadStandardMorphs()
         msg = self.finishLoading(namepaths, context, t1)
@@ -729,23 +746,16 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             self.rig.DazMorphPrefixes = False
             self.findIked()
         self.adjuster = MS.Adjusters[self.morphset]
-        namepaths = []
-        for mesh in self.meshes:
-            self.mesh = mesh
-            self.char = mesh.DazMesh
-            namepaths = self.getActiveMorphFiles()
-            print("Load %d morphs to %s" % (len(namepaths), mesh.name))
-            LS.forMorphLoad(mesh)
-            if namepaths:
-                self.loadAllMorphs(namepaths)
+        namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
+        trivials = self.trivials
+        faceshapes = self.faceshapes
+        for mesh, char in zip(self.meshes[1:], self.chars[1:]):
+            self.loadToMesh(mesh, char, trivials)
+        self.faceshapes = faceshapes
         return namepaths
 
 
-    def isHdOk(self, string):
-        return True
-
-
-    def getActiveMorphFiles(self):
+    def getActiveMorphFiles(self, trivials):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
@@ -758,7 +768,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             for item in self.getSelectedItems():
                 key = item.name
                 path = morphFiles.get(key)
-                if path:
+                if path and (trivials is None or trivials.get(key, True)):
                     namepaths.append((item.text, path, self.bodypart))
         return namepaths
 
@@ -776,7 +786,7 @@ class StandardMorphSelector(Selector):
         return True
 
     def selectCondition(self, item):
-        return self.isHdOk(item.text)
+        return True
 
     def invoke(self, context, event):
         scn = context.scene
@@ -1085,7 +1095,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
                 self.allfaceshapes[key] = value
 
 
-    def getActiveMorphFiles(self):
+    def getActiveMorphFiles(self, trivials):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
@@ -1094,7 +1104,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             if self.morphset == "Body" and self.useMhxOnly:
                 morphFiles = self.selectMhxMorphs(morphFiles)
             for key,path in morphFiles.items():
-                if self.isHdOk(key):
+                if trivials is None or trivials.get(key, True):
                     namepaths.append((key, path, self.bodypart))
         return namepaths
 
@@ -1253,34 +1263,17 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
 
 
     def run(self, context):
-        from .finger import replaceHomeDir
         self.findIked()
         self.errors = {}
         t1 = perf_counter()
         if not self.meshes:
             self.getFingeredRigMeshes(context)
-        namepaths0 = self.getNamePaths()
-        mesh0 = self.meshes[0]
-        char0 = mesh0.DazMesh
-        self.setupDuplicates()
-        meshlist = list(enumerate(self.meshes))
-        meshlist.reverse()
-        for n,mesh in meshlist:
-            self.mesh = mesh
-            self.char = mesh.DazMesh
-            if n == 0:
-                namepaths = namepaths0
-            else:
-                namepaths = []
-                for key,path0,bodypart in namepaths0:
-                    path = replaceHomeDir(path0, char0, self.char)
-                    if path:
-                        namepaths.append((key, path, bodypart))
-            print("Load %d morphs to %s" % (len(namepaths), mesh.name))
-            LS.forMorphLoad(mesh)
-            if namepaths:
-                self.loadAllMorphs(namepaths)
-
+        namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
+        trivials = self.trivials
+        faceshapes = self.faceshapes
+        for mesh, char in zip(self.meshes[1:], self.chars[1:]):
+            self.loadToMesh(mesh, char, trivials)
+        self.faceshapes = faceshapes
         self.addPropDrivers()
         msg = self.finishLoading(namepaths, context, t1)
         updateScrollbars(context)
@@ -1288,12 +1281,19 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
             raise DazError(msg, warning=True)
 
 
-    def getNamePaths(self):
+    def getActiveMorphFiles(self, trivials):
+        from .finger import replaceHomeDir
+        char0 = self.chars[0]
         namepaths = []
         folder = ""
         for path in self.getMultiFiles(["duf", "dsf"]):
             name = os.path.splitext(os.path.basename(path))[0]
-            namepaths.append((name,path,self.bodypart))
+            if trivials is None:
+                namepaths.append((name,path,self.bodypart))
+            elif trivials.get(name, True):
+                npath = replaceHomeDir(path, char0, self.char)
+                if npath:
+                    namepaths.append((name,npath,self.bodypart))
         return namepaths
 
 
