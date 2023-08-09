@@ -305,3 +305,10 @@ class IsMeshArmature:
     def poll(self, context):
         return (context.object and context.object.type in ['MESH', 'ARMATURE'])
 
+class IsShape:
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and ob.data.shape_keys)
+
+

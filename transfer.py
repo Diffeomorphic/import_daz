@@ -219,7 +219,7 @@ class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
 #   Morphs transfer
 #----------------------------------------------------------
 
-class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser):
+class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser, IsShape):
     bl_idname = "daz.transfer_shapekeys"
     bl_label = "Transfer Shapekeys"
     bl_description = "Transfer shapekeys from active mesh to selected meshes"
@@ -227,11 +227,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
     usePropDriver = True
     defaultSelect = True
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and ob.data.shape_keys)
 
     transferMethod : EnumProperty(
         items = [('NEAREST', "Nearest Face", "Transfer shapekeys from nearest source face.\nUse to transfer shapekeys to clothes"),
@@ -763,7 +758,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 #   Apply all shapekeys
 #----------------------------------------------------------
 
-class DAZ_OT_ApplyAllShapekeys(DazOperator, IsMesh):
+class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
     bl_idname = "daz.apply_all_shapekeys"
     bl_label = "Apply All Shapekeys"
     bl_description = "Apply all shapekeys to selected meshes"
@@ -810,7 +805,7 @@ def shapekeyItems2(self, context):
     return [("-", "-", "None")] + enums
 
 
-class DAZ_OT_MixShapekeys(DazOperator):
+class DAZ_OT_MixShapekeys(DazOperator, IsShape):
     bl_idname = "daz.mix_shapekeys"
     bl_label = "Mix Shapekeys"
     bl_description = "Mix shapekeys"
@@ -867,12 +862,6 @@ class DAZ_OT_MixShapekeys(DazOperator):
         description = "Show only items containing this string",
         default = ""
         )
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and ob.data.shape_keys)
-
 
     def draw(self, context):
         row = self.layout.row()
@@ -1024,7 +1013,7 @@ class DAZ_OT_PruneVertexGroups(DazPropsOperator, ThresholdFloat, IsMesh):
 #   Shapekey to vertexgroup
 #----------------------------------------------------------
 
-class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsMesh):
+class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsShape):
     bl_idname = "daz.visualize_shapekey"
     bl_label = "Visualize Shapekey"
     bl_description = "Visualize shapekey as a vertex group"
@@ -1053,8 +1042,6 @@ class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsMesh):
         eps = 0.1*self.mindist*ob.DazScale
         factor = 10/(self.maxdist*ob.DazScale)
         skeys = ob.data.shape_keys
-        if skeys is None:
-            raise DazError("Mesh has no shapekeys")
         skey = skeys.key_blocks[ob.active_shape_key_index]
         if skey.name not in ob.vertex_groups:
             vgrp = ob.vertex_groups.new(name=skey.name)

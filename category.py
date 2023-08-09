@@ -770,7 +770,7 @@ class AddRemoveDriver:
         fcu.driver.expression = "a"
 
 
-class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEnums, CategoryString, IsMesh):
+class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEnums, CategoryString, IsShape):
     bl_idname = "daz.add_shape_to_category"
     bl_label = "Add Shapekey To Category"
     bl_description = "Add selected shapekeys to mesh category"
@@ -813,7 +813,7 @@ class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEn
         return ""
 
 
-class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, CategoryString, IsMesh):
+class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, CategoryString, IsShape):
     bl_idname = "daz.add_shapekey_drivers"
     bl_label = "Add Shapekey Drivers"
     bl_description = "Add rig drivers to shapekeys"
@@ -844,7 +844,7 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
         return ""
 
 
-class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelector, IsMesh):
+class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
     bl_idname = "daz.remove_shape_from_category"
     bl_label = "Remove Shapekey From Category"
     bl_description = "Remove selected shapekeys from mesh category"
@@ -884,7 +884,7 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
                 removeFromPropGroup(cat.morphs, prop)
 
 
-class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector, IsMesh):
+class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
     bl_idname = "daz.remove_shapekey_drivers"
     bl_label = "Remove Shapekey Drivers"
     bl_description = "Remove rig drivers from shapekeys"
