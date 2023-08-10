@@ -560,14 +560,14 @@ class MorphLoader(LoadMorph):
         return self.finishLoading(namepaths, context, t1)
 
 
-    def loadToMesh(self, mesh, char, trivials):
+    def loadToMesh(self, mesh, char, trivial):
         mesh0 = self.mesh
         char0 = self.char
         self.mesh = mesh
         self.char = char
-        self.trivials = {}
+        self.trivial = {}
         namepaths = []
-        namepaths = self.getActiveMorphFiles(trivials)
+        namepaths = self.getActiveMorphFiles(trivial)
         print("Load %d morphs to %s" % (len(namepaths), self.mesh.name))
         if namepaths:
             LS.forMorphLoad(self.mesh)
@@ -632,12 +632,16 @@ class MorphLoader(LoadMorph):
             return
         if prop in pgs.keys():
             item = pgs[prop]
+            old = True
         else:
             item = addItem(pgs)
             item.name = prop
+            old = False
         if asset:
             if asset.label:
                 label = asset.label
+            elif old:
+                label = item.text
             elif asset.name:
                 label = asset.name
             else:
@@ -749,15 +753,15 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
         namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
         if not GS.useSubmeshes:
             return namepaths
-        trivials = self.trivials
+        trivial = self.trivial
         faceshapes = self.faceshapes
         for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-            self.loadToMesh(mesh, char, trivials)
+            self.loadToMesh(mesh, char, trivial)
         self.faceshapes = faceshapes
         return namepaths
 
 
-    def getActiveMorphFiles(self, trivials):
+    def getActiveMorphFiles(self, trivial):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
@@ -770,7 +774,7 @@ class StandardMorphLoader(MorphLoader, MorphSuffix):
             for item in self.getSelectedItems():
                 key = item.name
                 path = morphFiles.get(key)
-                if path and (trivials is None or trivials.get(key, True)):
+                if path and (trivial is None or trivial.get(key, True)):
                     namepaths.append((item.text, path, self.bodypart))
         return namepaths
 
@@ -1097,7 +1101,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
                 self.allfaceshapes[key] = value
 
 
-    def getActiveMorphFiles(self, trivials):
+    def getActiveMorphFiles(self, trivial):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
@@ -1106,7 +1110,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             if self.morphset == "Body" and self.useMhxOnly:
                 morphFiles = self.selectMhxMorphs(morphFiles)
             for key,path in morphFiles.items():
-                if trivials is None or trivials.get(key, True):
+                if trivial is None or trivial.get(key, True):
                     namepaths.append((key, path, self.bodypart))
         return namepaths
 
@@ -1272,10 +1276,10 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
             self.getFingeredRigMeshes(context)
         namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
         if GS.useSubmeshes:
-            trivials = self.trivials
+            trivial = self.trivial
             faceshapes = self.faceshapes
             for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-                self.loadToMesh(mesh, char, trivials)
+                self.loadToMesh(mesh, char, trivial)
             self.faceshapes = faceshapes
         self.addPropDrivers()
         msg = self.finishLoading(namepaths, context, t1)
@@ -1284,16 +1288,16 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
             raise DazError(msg, warning=True)
 
 
-    def getActiveMorphFiles(self, trivials):
+    def getActiveMorphFiles(self, trivial):
         from .finger import replaceHomeDir
         char0 = self.chars[0]
         namepaths = []
         folder = ""
         for path in self.getMultiFiles(["duf", "dsf"]):
             name = os.path.splitext(os.path.basename(path))[0]
-            if trivials is None:
+            if trivial is None:
                 namepaths.append((name,path,self.bodypart))
-            elif trivials.get(name, True):
+            elif trivial.get(name, True):
                 npath = replaceHomeDir(path, char0, self.char)
                 if npath:
                     namepaths.append((name,npath,self.bodypart))

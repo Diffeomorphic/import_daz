@@ -72,7 +72,7 @@ class LoadMorph(DriverUser):
         self.adjustable = {}
         self.currentAsset = None
         self.origMorphset = ""
-        self.trivials = {}
+        self.trivial = {}
 
 
     def getAdjustProp(self):
@@ -188,10 +188,13 @@ class LoadMorph(DriverUser):
             return " _"
         self.bodypart = bodypart
         skey,ok = self.buildShape(asset)
+        if skey:
+            self.trivial[name] = False
         if not ok:
             return " #"
         elif self.rig and self.usePropDrivers:
-            self.makeFormulas(asset, skey)
+            if self.makeFormulas(asset, skey):
+                self.trivial[name] = False
         aliases = {}
         if self.useSearchAlias:
             aliaspath = self.getAliasFile(filepath)
@@ -322,7 +325,6 @@ class LoadMorph(DriverUser):
                 asset.buildMorph(self.mesh, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
-            self.trivials[skey.name] = False
             prop = self.getUniqueName(unquote(skey.name))
             self.alias[prop] = skey.name
             skey.name = prop
@@ -381,9 +383,9 @@ class LoadMorph(DriverUser):
             expr["prop"] = prop
             expr["factor"] = 1
         else:
-            return
-        if exprs:
-            self.trivials[asset.name] = self.trivials[prop] = False
+            return False
+        if not exprs:
+            return False
         for output,data in exprs.items():
             for key,data1 in data.items():
                 if key == "*fileref":
@@ -410,6 +412,7 @@ class LoadMorph(DriverUser):
                         self.erc = True
                         if GS.useERC:
                             self.makeOffsetFormula("TlOffset", output, idx, expr)
+        return True
 
 
     def getTypeAdjuster(self, raw):
