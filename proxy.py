@@ -1316,8 +1316,9 @@ def printStatistics(ob):
 
 
 def getStatistics(ob):
-    return ("Verts: %d, Edges: %d, Faces: %d" %
-            (len(ob.data.vertices), len(ob.data.edges), len(ob.data.polygons)))
+    nskeys = ( len(ob.data.shape_keys.key_blocks) if ob.data.shape_keys else 0)
+    return ("Verts: %d, Edges: %d, Faces: %d, Shapekeys: %d, Vgroups: %d" %
+            (len(ob.data.vertices), len(ob.data.edges), len(ob.data.polygons), nskeys, len(ob.vertex_groups)))
 
 
 class DAZ_OT_PrintStatistics(bpy.types.Operator, IsMesh):
