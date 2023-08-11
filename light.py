@@ -79,7 +79,6 @@ class Light(Node):
             self.presentation = struct["presentation"]
             print("Strange light", self)
 
-
     def makeInstance(self, fileref, struct):
         return LightInstance(fileref, self, struct)
 
@@ -90,6 +89,7 @@ class Light(Node):
         height = inst.getValue(["Height"], 0) * LS.scale
         width = inst.getValue(["Width"], 0) * LS.scale
         usePhoto = inst.getValue(["Photometric Mode"], False)
+        spread = inst.getValue(["Spread Angle"], 60)*D
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
         if lgeo == 1:
@@ -97,10 +97,12 @@ class Light(Node):
             light.shape = 'RECTANGLE'
             light.size = width
             light.size_y = height
+            light.spread = spread
         elif lgeo == 2:
             light = bpy.data.lights.new(self.name, "AREA")
             light.shape = 'DISK'
             light.size = height
+            light.spread = spread
         elif lgeo > 1:
             light = bpy.data.lights.new(self.name, "POINT")
             light.shadow_soft_size = height/2
@@ -113,6 +115,7 @@ class Light(Node):
         elif self.type == 'SPOT':
             light = bpy.data.lights.new(self.name, "SPOT")
             light.shadow_soft_size = height/2
+            light.spot_size = spread
             self.twosided = False
         elif self.type == 'DIRECTIONAL':
             light = bpy.data.lights.new(self.name, "SUN")
@@ -120,11 +123,13 @@ class Light(Node):
             self.twosided = False
         elif self.type == 'light':
             light = bpy.data.lights.new(self.name, "AREA")
+            light.spread = spread
         else:
             msg = ("Unknown light type: %s" % self.type)
             reportError(msg, trigger=(1,5))
             light = bpy.data.lights.new(self.name, "SPOT")
             light.shadow_soft_size = height/2
+            light.spot_size = spread
             self.twosided = False
 
         for attr,op,value in getMinLightSettings():
@@ -181,10 +186,6 @@ class LightInstance(Instance):
         light.shadow_color = self.getValue(["Shadow Color"], BLACK)
         if hasattr(light, "shadow_buffer_soft"):
             light.shadow_buffer_soft = self.getValue(["Shadow Softness"], False)
-        #if hasattr(light, "shadow_buffer_bias"):
-        #    bias = self.getValue(["Shadow Bias"], None)
-        #    if bias:
-        #        light.shadow_buffer_bias = bias
         if hasattr(light, "falloff_type"):
             value = self.getValue(["Decay"], 2)
             dtypes = ['CONSTANT', 'INVERSE_LINEAR', 'INVERSE_SQUARE']

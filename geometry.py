@@ -1895,6 +1895,7 @@ def clearMeshProps(me):
     me.DazPolylineMaterials.clear()
     me.DazMaterialSets.clear()
     me.DazHDMaterials.clear()
+    me.DazMorphUrls.clear()
 
 
 def getMeshDataFile(filepath):

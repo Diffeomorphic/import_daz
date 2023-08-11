@@ -270,6 +270,10 @@ NodeSize = {
     "DISPLACEMENT" : 10,
     "LIGHT_PATH" : 10,
 
+    "BLACK_BODY" : 5,
+    "EMISSION" : 6,
+    "OUTPUT_LIGHT" : 5,
+
     "OBJECT_INFO" : 10,
     "INPUT_NORMAL" : 3,
     "DELETE_GEOMETRY" : 6,
