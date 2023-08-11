@@ -360,11 +360,23 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
     def removeMorphType(self, rig, use, morphset):
         if not use:
             return
+        self.removeUrls(rig, morphset)
+        for ob in getMeshChildren(rig):
+            self.removeUrls(ob, morphset)
         pgs = getattr(rig, "Daz%s" % morphset)
         props = [pg.name for pg in pgs]
         for prop in props:
             self.removeRigProp(rig, prop)
         self.removePropGroup(pgs)
+
+    def removeUrls(self, ob, morphset):
+        deletes = []
+        for idx,item in enumerate(ob.DazMorphUrls):
+            if item.morphset == morphset:
+                deletes.append(idx)
+        deletes.reverse()
+        for idx in deletes:
+            ob.DazMorphUrls.remove(idx)
 
 #------------------------------------------------------------------------
 #   Remove category
@@ -377,7 +389,7 @@ class CategorySelector(Selector):
         items.sort()
         items.reverse()
         ob = context.object
-        self.runObject(context, ob, items, (ob.type == 'MESH'))
+        self.runObject(context, ob, items)
         updateScrollbars(context)
 
 #------------------------------------------------------------------------
@@ -390,15 +402,30 @@ class DAZ_OT_RemoveCategories(DazOperator, CategorySelector, MorphRemover, IsArm
     bl_description = "Remove selected categories and associated drivers"
     bl_options = {'UNDO'}
 
-    def runObject(self, context, ob, items, isMesh):
-        for idx,key in items:
-            cat = ob.DazMorphCats[key]
-            ob.DazMorphCats.remove(idx)
-            if not isMesh:
+    def runObject(self, context, rig, items):
+        cats = [cat for idx,cat in items]
+        if rig.type == 'ARMATURE':
+            self.removeUrls(rig, cats)
+            for ob in getMeshChildren(rig):
+                self.removeUrls(ob, cats)
+            for key in cats:
+                cat = rig.DazMorphCats[key]
                 for pg in cat.morphs:
-                    self.removeRigProp(ob, pg.name)
-        if len(ob.DazMorphCats) == 0:
-            ob.DazMeshMorphs = False
+                    self.removeRigProp(rig, pg.name)
+        for idx,key in items:
+            rig.DazMorphCats.remove(idx)
+        if len(rig.DazMorphCats) == 0:
+            rig.DazMeshMorphs = False
+
+
+    def removeUrls(self, ob, cats):
+        deletes = []
+        for idx,item in enumerate(ob.DazMorphUrls):
+            if item.category in cats:
+                deletes.append(idx)
+        deletes.reverse()
+        for idx in deletes:
+            ob.DazMorphUrls.remove(idx)
 
 #------------------------------------------------------------------------
 #   Join categories
@@ -414,7 +441,7 @@ class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, Category
         self.layout.prop(self, "custom")
         CategorySelector.draw(self, context)
 
-    def runObject(self, context, ob, items, isMesh):
+    def runObject(self, context, ob, items):
         props = []
         labels = []
         for idx,key in items:
@@ -446,7 +473,7 @@ class DAZ_OT_ProtectCategories(DazOperator, CategorySelector, CategoryBasic, IsA
         self.layout.prop(self, "useProtect")
         CategorySelector.draw(self, context)
 
-    def runObject(self, context, ob, items, isMesh):
+    def runObject(self, context, ob, items):
         from .driver import setProtected
         from .selector import setActivated
         for idx,key in items:
