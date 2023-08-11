@@ -86,25 +86,10 @@ class Light(Node):
     def build(self, context, inst):
         lgeo = inst.getValue(["Light Geometry"], 0)
         self.twosided = inst.getValue(["Two Sided"], False)
-        height = inst.getValue(["Height"], 10) * LS.scale
-        width = inst.getValue(["Width"], 10) * LS.scale
         usePhoto = inst.getValue(["Photometric Mode"], False)
-        spread = inst.getValue(["Spread Angle"], 60) * D
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
-        if self.type == 'SPOT':
-            if lgeo == 0:
-                light = bpy.data.lights.new(self.name, "SPOT")
-                light.shadow_soft_size = height/2
-                light.spot_size = spread
-                self.twosided = False
-            else:
-                light = bpy.data.lights.new(self.name, "AREA")
-                light.shape = ('RECTANGLE' if lgeo == 1 else 'DISK')
-                light.size = width
-                light.size_y = height
-                light.spread = spread
-        elif self.type == 'POINT':
+        if self.type == 'POINT':
             light = bpy.data.lights.new(self.name, "POINT")
             light.shadow_soft_size = 0
             inst.fluxFactor = 3
@@ -113,16 +98,20 @@ class Light(Node):
             light = bpy.data.lights.new(self.name, "SUN")
             light.shadow_soft_size = height/2
             self.twosided = False
-        elif self.type == 'light':
-            light = bpy.data.lights.new(self.name, "AREA")
-            light.spread = spread
         else:
-            msg = ("Unknown light type: %s" % self.type)
-            reportError(msg, trigger=(1,5))
-            light = bpy.data.lights.new(self.name, "SPOT")
-            light.shadow_soft_size = height/2
-            light.spot_size = spread
-            self.twosided = False
+            light = bpy.data.lights.new(self.name, "AREA")
+            light.shape = ('RECTANGLE' if lgeo == 1 else 'DISK')
+            if lgeo == 0:
+                light.size = light.size_y = 0.1*LS.scale
+            else:
+                light.size = inst.getValue(["Width"], 10) * LS.scale
+                light.size_y = inst.getValue(["Height"], 10) * LS.scale
+            spread = inst.getValue(["Spread Angle"], 60) * D
+            beam = inst.getValue(["Beam Exponent"], 1)
+            light.spread = spread / (1 + (beam - 1) * 0.05)
+            if self.type not in ['light', 'SPOT']:
+                msg = ("Unknown light type: %s" % self.type)
+                reportError(msg, trigger=(1,5))
 
         for attr,op,value in getMinLightSettings():
             if hasattr(light, attr):
