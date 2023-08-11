@@ -1654,14 +1654,17 @@ def d2bBone(pb, channel, idx):
 
 
 def printName(char, name):
-    if GS.showInTerminal:
+    if GS.showInTerminal and not ES.easy:
         print(char, name)
-    else:
+    elif not ES.easy or GS.showInTerminal:
         sys.stdout.write(char)
         sys.stdout.flush()
 
+
 def newLine():
-    if not GS.showInTerminal:
+    if GS.showInTerminal and not ES.easy:
+        pass
+    elif not ES.easy or GS.showInTerminal:
         print("")
 
 

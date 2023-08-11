@@ -1313,7 +1313,6 @@ def getAnimKeys(anim):
 class StandardAnimation:
 
     def run(self, context):
-        from time import perf_counter
         from .uilist import updateScrollbars
         from .scan import getCharData, loadScannedInfo, checkNeedUpdates
         dazfiles = self.getMultiFiles(["dsf", "duf"])

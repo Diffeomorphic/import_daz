@@ -623,7 +623,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
                         ok = True
                         break
             if not ok:
-                print("Remove %s from %s" % (vname, ob.name))
+                if not ES.easy:
+                    print("Remove %s from %s" % (vname, ob.name))
                 ob.vertex_groups.remove(vgrp)
 
 

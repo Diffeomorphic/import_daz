@@ -386,7 +386,8 @@ class MorphPaths:
                 vnums = np.array([delta[0] for delta in deltas])
                 offsets = np.array([scale * d2bu(delta[1:]) for delta in deltas])
                 proj[vnums] = offsets
-                print("Projection file %s loaded" % relpath)
+                if not ES.easy:
+                    print("Projection file %s loaded" % relpath)
             self.projection[char] = proj
         return self.projection[char]
 
@@ -568,7 +569,8 @@ class MorphLoader(LoadMorph):
         self.trivial = {}
         namepaths = []
         namepaths = self.getActiveMorphFiles(trivial)
-        print("Load %d morphs to %s" % (len(namepaths), self.mesh.name))
+        if not ES.easy:
+            print("Load %d morphs to %s" % (len(namepaths), self.mesh.name))
         if namepaths:
             LS.forMorphLoad(self.mesh)
             self.loadAllMorphs(namepaths)
@@ -598,7 +600,8 @@ class MorphLoader(LoadMorph):
             return
         t2 = perf_counter()
         folder = os.path.dirname(namepaths[0][0])
-        print("Folder %s loaded in %.3f seconds" % (folder, t2-t1))
+        if not ES.easy:
+            print("Folder %s loaded in %.3f seconds" % (folder, t2-t1))
         msg = ""
         if LS.targetCharacter:
             msg = "Morphs made for %s.\n" % LS.targetCharacter
@@ -613,7 +616,7 @@ class MorphLoader(LoadMorph):
                     msg += "    %s\n" % prop
         elif self.erc and GS.verbosity >= 3:
             msg += "\nFound morphs that want to\nchange the rest pose."
-        if self.useMakePosable and self.rig and activateObject(context, self.rig):
+        if self.useMakePosable and not ES.easy and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
         if self.faceshapes and self.useTransferFace and self.rig and self.meshes:
@@ -1091,6 +1094,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
     def loadMorphType(self, context, use, morphset, bodypart):
         if use:
+            t1 = perf_counter()
             self.morphset = morphset
             self.bodypart = bodypart
             self.faceshapes = {}
@@ -1099,7 +1103,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             self.loadStandardMorphs()
             for key,value in self.faceshapes.items():
                 self.allfaceshapes[key] = value
-
+            t2 = perf_counter()
+            print("%s loaded in %.1f seconds" % (morphset, t2-t1))
 
     def getActiveMorphFiles(self, trivial):
         namepaths = []

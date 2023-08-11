@@ -1130,7 +1130,8 @@ class MaterialCombiner:
             for ob in self.meshes:
                 table,diffuse = self.setupTable([ob])
                 self.combineMaterials(ob, table, diffuse)
-        print("Number of materials combined: %d" % self.nCombined)
+        if not ES.easy:
+            print("Number of materials combined: %d" % self.nCombined)
 
 
     def setupShells(self, context):
@@ -1218,7 +1219,8 @@ class MaterialCombiner:
             return False
         if mat1.use_nodes and mat2.use_nodes:
             if self.areSameCycles(mat1.node_tree, mat2.node_tree, mname1, mname2):
-                print(mat1.name, "=", mat2.name)
+                if not ES.easy:
+                    print("%s = %s" % (mat1.name, mat2.name))
                 self.nCombined += 1
                 return True
             else:
@@ -1427,7 +1429,8 @@ class DAZ_OT_MergeMaterials(MaterialCombiner, DazPropsOperator, IsMesh):
         self.nMerged = 0
         for ob in self.meshes:
             self.mergeSlots(ob)
-        print("Number of material slots merged: %d" % self.nMerged)
+        if not ES.easy:
+            print("Number of material slots merged: %d" % self.nMerged)
 
     def getMeshes(self, context):
         return getSelectedMeshes(context)
@@ -1443,7 +1446,8 @@ class DAZ_OT_MergeMaterials(MaterialCombiner, DazPropsOperator, IsMesh):
                 reduced = True
             elif mat.name in assoc.keys():
                 reindex[mn] = assoc[mat.name]
-                print("%s: %d = %d" % (mat.name, mn, assoc[mat.name]))
+                if not ES.easy:
+                    print("%s: %d = %d" % (mat.name, mn, assoc[mat.name]))
                 self.nMerged += 1
                 reduced = True
             else:
@@ -2038,7 +2042,7 @@ def checkRenderSettings(context, force):
             header = ('Light "%s" settings' % light.name)
             msg += checkSettings(light.data, lightSettings, handle, header, force)
 
-    if msg:
+    if msg and not ES.easy:
         msg += "See http://diffeomorphic.blogspot.com/2020/04/render-settings.html for details."
         print(msg)
         return msg

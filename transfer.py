@@ -176,7 +176,6 @@ class DAZ_OT_TransferVertexGroups(DazPropsOperator, FastMatcher, IsMesh, Thresho
         src = context.object
         if not src.vertex_groups:
             raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
-        from time import perf_counter
         t1 = perf_counter()
         targets = []
         for trg in self.getTargets(src, context):
@@ -283,7 +282,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def run(self, context):
-        from time import perf_counter
         from .load_morph import newLine
         t1 = perf_counter()
         src = context.object
@@ -429,7 +427,8 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
     def correctForRigidity(self, ob, skey):
         from mathutils import Matrix
         for rgroup in ob.data.DazRigidityGroups:
-            print("Rigidity group: %s" % rgroup.id)
+            if not ES.easy:
+                print("Rigidity group: %s" % rgroup.id)
             rotmode = rgroup.rotation_mode
             maskverts = [elt.a for elt in rgroup.mask_vertices]
             refverts = [elt.a for elt in rgroup.reference_vertices]
@@ -554,7 +553,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
                     shapekey_scalefactor.shapekey_center_coord = shapekey_center_vector
                     shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
-                    #print("Save scale factor for"," ".join(affectedbones))
 
 
     def outsideBox(self, src, trg, hskey):
@@ -575,7 +573,6 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
 
 
     def findMatch(self, src, trg):
-        from time import perf_counter
         t1 = perf_counter()
         if self.transferMethod == 'LEGACY':
             return True
@@ -588,7 +585,8 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         elif self.transferMethod == 'GEOGRAFT':
             self.findMatchGeograft(src, trg)
         t2 = perf_counter()
-        print("Matching table created in %.1f seconds" % (t2-t1))
+        if not ES.easy:
+            print("Matching table created in %.1f seconds" % (t2-t1))
         return True
 
 

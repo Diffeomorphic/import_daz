@@ -202,7 +202,6 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
             print("Total %d blendshapes missing" % len(missing))
             raise DazError(msg)
 
-        from time import perf_counter
         from .animation import loadAltMorphs
         self.setupBones(rig)
         self.skipped = {}

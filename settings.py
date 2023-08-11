@@ -744,7 +744,14 @@ class LocalSettings:
         self.reset()
 
 
+class EasySettings:
+    def __init__(self):
+        self.easy = False
+
+
+
 GS = GlobalSettings()
 LS = LocalSettings()
 LS.theTrace = []
+ES = EasySettings()
 

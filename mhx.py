@@ -390,7 +390,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def run(self, context):
-        from time import perf_counter
         rig = context.object
         if not self.checkMhxEnabled(rig):
             msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
@@ -1440,7 +1439,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         flip = round(2*(roll-oldroll)/math.pi)
         if flip:
             self.flips[bname.replace(".fk", "")] = flip
-            print("FLIP", bname, flip)
             pb = rig.pose.bones[bname]
             flips = list(pb.DazFlips)
             axes = [2,1,0]

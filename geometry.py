@@ -508,8 +508,9 @@ def scaleEyeMoisture(ob):
                         rmoist.append(v)
             lcenter = sum([v.co for v in lmoist], Vector((0,0,0))) / len(lmoist)
             rcenter = sum([v.co for v in rmoist], Vector((0,0,0))) / len(rmoist)
-            print('Scale eye moisture vertices for %s mesh "%s"' % (ob.DazMesh, ob.name))
-            print("Centers:", lcenter, rcenter)
+            if not ES.easy:
+                print('Scale eye moisture vertices for %s mesh "%s"' % (ob.DazMesh, ob.name))
+                print("Centers:", lcenter, rcenter)
             for v in lmoist:
                 v.co = lcenter + 1.01*(v.co - lcenter)
             for v in rmoist:

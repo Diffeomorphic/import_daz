@@ -1416,7 +1416,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         scn = context.scene
         rig = info.rig
 
-        print("Merge infos to %s:" % rig.name)
+        if not ES.easy:
+            print("Merge infos to %s:" % rig.name)
         lmat = rig.matrix_local.copy()
         self.applyTransforms(info, subinfos)
         mainbones = list(rig.pose.bones.keys())

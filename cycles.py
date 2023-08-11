@@ -119,7 +119,8 @@ class CyclesMaterial(Material):
     def postbuild(self):
         Material.postbuild(self)
         for key,node,data in self.mappingNodes:
-            print("Fix mapping", key)
+            if not ES.easy:
+                print("Fix mapping", key)
             dx,dy,sx,sy,rz = data
             node.inputs["Location"].default_value = (dx,dy,0)
             node.inputs["Rotation"].default_value = (0,0,rz)

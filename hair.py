@@ -370,7 +370,6 @@ class HairSystem:
 
 
     def build(self, context, ob):
-        from time import perf_counter
         t1 = perf_counter()
         if len(self.strands) == 0:
             raise DazError("No strands found")
@@ -749,7 +748,6 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
 
 
     def run(self, context):
-        from time import perf_counter
         t1 = perf_counter()
         self.clocks = []
         if self.output == 'HAIR CURVES':

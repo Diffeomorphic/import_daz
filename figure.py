@@ -429,7 +429,6 @@ def copyBoneInfo(srcpb, trgpb):
 class ExtraBones(DriverUser):
 
     def run(self, context):
-        from time import perf_counter
         rig = context.object
         self.checkAllowed(rig)
         t1 = perf_counter()
@@ -611,7 +610,8 @@ class ExtraBones(DriverUser):
             msg = "Rig %s already has extra %s bones" % (rig.name, self.type)
             print(msg)
 
-        print("  Rename bones")
+        if not ES.easy:
+            print("  Rename bones")
         self.bnames = self.getBoneNames(rig)
         self.removeLimits(rig)
         boneDrivers, sumDrivers = self.storeRemoveBoneSumDrivers(rig)
@@ -648,7 +648,8 @@ class ExtraBones(DriverUser):
                 if cb.name != bname:
                     cb.parent = rig.data.edit_bones[bname]
 
-        print("  Change constraints")
+        if not ES.easy:
+            print("  Change constraints")
         setMode('POSE')
         store = ConstraintStore()
         for bname in self.bnames:
@@ -662,17 +663,22 @@ class ExtraBones(DriverUser):
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
             store.restoreConstraints(db.name, pb)
 
-        print("  Restore bone drivers")
+        if not ES.easy:
+            print("  Restore bone drivers")
         self.restoreBoneSumDrivers(rig, boneDrivers)
-        print("  Restore sum drivers")
+        if not ES.easy:
+            print("  Restore sum drivers")
         self.restoreBoneSumDrivers(rig, sumDrivers)
-        print("  Update scripted drivers")
+        if not ES.easy:
+            print("  Update scripted drivers")
         self.updateScriptedDrivers(rig.data)
-        print("  Update drivers")
+        if not ES.easy:
+            print("  Update drivers")
         setattr(rig.data, self.attr, True)
         updateDrivers(rig)
 
-        print("  Update vertex groups")
+        if not ES.easy:
+            print("  Update vertex groups")
         setMode('OBJECT')
         for ob in getMeshChildren(rig):
             for vgrp in ob.vertex_groups:
@@ -681,7 +687,8 @@ class ExtraBones(DriverUser):
                     if vgname in self.bnames:
                         vgrp.name = vgname
 
-        print("  Update shapekeys")
+        if not ES.easy:
+            print("  Update shapekeys")
         for ob in getShapeChildren(rig):
             skeys = ob.data.shape_keys
             for skey in skeys.key_blocks[1:]:

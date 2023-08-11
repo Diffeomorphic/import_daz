@@ -30,7 +30,7 @@ import math
 from mathutils import Vector, Euler
 from urllib.parse import quote, unquote
 from bpy.props import *
-from .settings import GS, LS
+from .settings import GS, LS, ES
 
 #-------------------------------------------------------------
 #   Blender 2.8 compatibility
@@ -494,11 +494,12 @@ def endProgress():
     wm.progress_end()
 
 def showProgress(n, total, string=None):
-    pct = (100.0*n)/total
-    wm = bpy.context.window_manager
-    wm.progress_update(int(pct))
-    if string:
-        print(string)
+    if not ES.easy:
+        pct = (100.0*n)/total
+        wm = bpy.context.window_manager
+        wm.progress_update(int(pct))
+        if string:
+            print(string)
 
 #-------------------------------------------------------------
 #   Coords

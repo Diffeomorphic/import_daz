@@ -561,11 +561,12 @@ def beautifyNodeTree(tree):
             else:
                 size = GroupSize.get(grpname, 10)
                 if (grpname not in GroupSize.keys() and
-                    "shell" not in grpname.lower()):
+                    "shell" not in grpname.lower() and
+                    not ES.easy):
                     print("Missing GroupSize", grpname)
         else:
             size = NodeSize.get(node.type, 10)
-            if node.type not in NodeSize.keys():
+            if node.type not in NodeSize.keys() and not ES.easy:
                 print("Missing NodeSize", node.type)
         rows[col] = row + size
 

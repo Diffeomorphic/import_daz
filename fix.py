@@ -205,7 +205,8 @@ class Fixer(DriverUser):
         def changeTargets(rna, rig):
             if rna.animation_data:
                 drivers = list(rna.animation_data.drivers)
-                print("    (%s %d)" % (rna.name, len(drivers)))
+                if not ES.easy:
+                    print("    (%s %d)" % (rna.name, len(drivers)))
                 for n,fcu in enumerate(drivers):
                     self.changeTarget(fcu, rna, rig, assoc)
 
@@ -226,7 +227,8 @@ class Fixer(DriverUser):
         for dname,bname in assoc0.items():
             assoc[dname] = bname
         findrivers,offsdrivers = getFinOffsDrivers(rig.data)
-        print("    (%s %d)" % (rig.data.name, len(findrivers)))
+        if not ES.easy:
+            print("    (%s %d)" % (rig.data.name, len(findrivers)))
         for fcu in findrivers.values():
             self.changeTarget(fcu, rig.data, rig, assoc)
         for fcu in offsdrivers:
@@ -390,7 +392,8 @@ class Fixer(DriverUser):
             print("Did not find tongue")
             self.useTongueIk = False
             return
-        print("Tongue bones:", self.tongueBones)
+        if not ES.easy:
+            print("Tongue bones:", self.tongueBones)
         self.tongueBones.sort()
         if self.checkDriven(rig, self.tongueBones, "Tongue IK"):
             self.useTongueIk = False
@@ -553,7 +556,8 @@ class Fixer(DriverUser):
                     return True
             return False
 
-        print("Tie bones of %s to %s" % (rig.name, gen.name))
+        if not ES.easy:
+            print("Tie bones of %s to %s" % (rig.name, gen.name))
         facebones = self.setupFaceBones(rig)
         assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
         for pb in rig.pose.bones:

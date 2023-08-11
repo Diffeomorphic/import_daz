@@ -295,7 +295,8 @@ def buildBakedMorph(inst, ref, value):
         rig[raw] = value
         final = finalProp(raw)
         rig.data[final] = value
-        print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
+        if not ES.easy:
+            print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
         setProtected(rig, raw, True)
         setActivated(rig, raw, False)
         item = rig.DazBaked.add()
@@ -305,7 +306,8 @@ def buildBakedMorph(inst, ref, value):
             item = rig.DazBakedFiles.add()
             item.name = file
             item.f = value
-            print("Baked morph file (%s): %s" % (rig.name, file))
+            if not ES.easy:
+                print("Baked morph file (%s): %s" % (rig.name, file))
         fcu = rig.data.driver_add(propRef(final))
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)

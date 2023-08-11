@@ -112,7 +112,6 @@ class FitOptions:
 
 class DazLoader:
     def loadDazFile(self, filepath, context):
-        from time import perf_counter
         from .objfile import getFitFile, fitToFile
 
         LS.scene = filepath
@@ -217,7 +216,6 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
         pass
 
     def run(self, context):
-        from time import perf_counter
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
@@ -293,6 +291,8 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
 
         from .material import checkRenderSettings
         self.msg = checkRenderSettings(context, False)
+        if ES.easy:
+            self.msg = ""
         if self.msg:
             LS.warning = True
             raise DazError(self.msg, warning=True)
@@ -716,16 +716,19 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("useFingerIk")
         self.layout.prop(self, "mannequinType")
 
+
     def invoke(self, context, event):
         self.favoPath = context.scene.DazFavoPath
         self.useFavoMorphs = (self.favoPath != "")
         return MultiFile.invoke(self, context, event)
 
+
     def storeState(self, context):
-        pass
+        ES.easy = True
+
 
     def restoreState(self, context):
-        pass
+        ES.easy = False
 
 
     def run(self, context):
@@ -747,7 +750,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def easyImport(self, context):
-        from time import perf_counter
         time1 = perf_counter()
         bpy.ops.daz.import_daz(
             materialMethod = self.materialMethod,

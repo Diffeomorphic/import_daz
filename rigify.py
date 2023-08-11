@@ -1356,7 +1356,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
 
 
     def run(self, context):
-        from time import perf_counter
         t1 = perf_counter()
         print("Modifying DAZ rig to Rigify")
         rig,meta,dazrig = self.createMeta(context)
