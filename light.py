@@ -84,38 +84,30 @@ class Light(Node):
 
 
     def build(self, context, inst):
-        lgeo = inst.getValue(["Light Geometry"], -1)
+        lgeo = inst.getValue(["Light Geometry"], 0)
         self.twosided = inst.getValue(["Two Sided"], False)
-        height = inst.getValue(["Height"], 0) * LS.scale
-        width = inst.getValue(["Width"], 0) * LS.scale
+        height = inst.getValue(["Height"], 10) * LS.scale
+        width = inst.getValue(["Width"], 10) * LS.scale
         usePhoto = inst.getValue(["Photometric Mode"], False)
-        spread = inst.getValue(["Spread Angle"], 60)*D
+        spread = inst.getValue(["Spread Angle"], 60) * D
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
-        if lgeo == 1:
-            light = bpy.data.lights.new(self.name, "AREA")
-            light.shape = 'RECTANGLE'
-            light.size = width
-            light.size_y = height
-            light.spread = spread
-        elif lgeo == 2:
-            light = bpy.data.lights.new(self.name, "AREA")
-            light.shape = 'DISK'
-            light.size = height
-            light.spread = spread
-        elif lgeo > 1:
-            light = bpy.data.lights.new(self.name, "POINT")
-            light.shadow_soft_size = height/2
-            self.twosided = False
+        if self.type == 'SPOT':
+            if lgeo == 0:
+                light = bpy.data.lights.new(self.name, "SPOT")
+                light.shadow_soft_size = height/2
+                light.spot_size = spread
+                self.twosided = False
+            else:
+                light = bpy.data.lights.new(self.name, "AREA")
+                light.shape = ('RECTANGLE' if lgeo == 1 else 'DISK')
+                light.size = width
+                light.size_y = height
+                light.spread = spread
         elif self.type == 'POINT':
             light = bpy.data.lights.new(self.name, "POINT")
             light.shadow_soft_size = 0
             inst.fluxFactor = 3
-            self.twosided = False
-        elif self.type == 'SPOT':
-            light = bpy.data.lights.new(self.name, "SPOT")
-            light.shadow_soft_size = height/2
-            light.spot_size = spread
             self.twosided = False
         elif self.type == 'DIRECTIONAL':
             light = bpy.data.lights.new(self.name, "SUN")
