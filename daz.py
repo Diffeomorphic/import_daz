@@ -336,6 +336,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazStripCategory")
         box.prop(scn, "DazUseModifiedMesh")
         box.prop(scn, "DazUseSubmeshes")
+        box.prop(scn, "DazDefaultDrivers")
 
         col = split.column()
         box = col.box()
@@ -526,6 +527,10 @@ def register():
     bpy.types.Scene.DazUseSubmeshes = BoolProperty(
         name = "Import To Submeshes",
         description = "Import morphs to the figure's submeshes,\ne.g. Genesis 9 eyes, mouth, lashes, and tears")
+
+    bpy.types.Scene.DazDefaultDrivers = BoolProperty(
+        name = "Default Drivers",
+        description = "Create default drivers for eyelids and pectorals when the scene is imported")
 
     bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
         name = "Make Hidden Sliders",

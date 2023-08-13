@@ -107,6 +107,7 @@ class GlobalSettings:
         self.useStripCategory = False
         self.useModifiedMesh = False
         self.useSubmeshes = True
+        self.useDefaultDrivers = True
 
         self.useArmature = True
         self.useLockLoc = True
@@ -192,6 +193,7 @@ class GlobalSettings:
         "DazStripCategory" : "useStripCategory",
         "DazUseModifiedMesh" : "useModifiedMesh",
         "DazUseSubmeshes" : "useSubmeshes",
+        "DazDefaultDrivers" : "useDefaultDrivers",
 
         # Rigging
         "DazUseArmature" : "useArmature",

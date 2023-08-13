@@ -347,6 +347,7 @@ class BoneInstance(Instance):
     def buildFormulas(self, rig, hide):
         from .load_morph import buildBoneFormula
         if (self.node.formulas and
+            GS.useDefaultDrivers and
             self.name in rig.pose.bones.keys()):
             pb = rig.pose.bones[self.name]
             pb.rotation_mode = self.getRotationMode(pb, self.isRotMorph(self.node.formulas))
