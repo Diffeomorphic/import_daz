@@ -1086,7 +1086,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
         self.faceshapes = self.allfaceshapes
-        if self.faceshapes and self.useTransferFace and self.rig and self.mesh:
+        if self.faceshapes and self.useTransferFace and self.rig and self.meshes:
             self.transferToFaceMeshes(context)
         if self.message:
             raise DazError(self.message, warning=True)
