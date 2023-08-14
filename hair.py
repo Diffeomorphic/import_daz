@@ -70,7 +70,7 @@ class Separator:
         if self.useSeparateLoose:
             from .geometry import clearMeshProps
             print("Separate loose parts")
-            clearMeshProps(hair.data)
+            clearMeshProps(hair)
             bpy.ops.mesh.separate(type='LOOSE')
             print("Loose parts separated")
         setMode('OBJECT')
@@ -1815,7 +1815,7 @@ class FadeGroup(NodeGroup, HairTree):
 
 
     def create(self, node, name, parent):
-        HairTree.__init__(self, parent.material, BLACK)
+        HairTree.__init__(self, parent.owner, BLACK)
         NodeGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketShader", "Shader")
         self.group.inputs.new("NodeSocketFloat", "Intercept")

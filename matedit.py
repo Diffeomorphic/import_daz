@@ -1181,6 +1181,28 @@ class DAZ_OT_ResetMaterials(DazOperator, ChannelSetter, IsMesh):
 #   Set Shell Visibility
 # ---------------------------------------------------------------------
 
+class DAZ_OT_SetAllFloats(bpy.types.Operator):
+    bl_idname = "daz.set_all_floats"
+    bl_label = "All"
+    bl_description = "Set all entries to 1.0"
+
+    def execute(self, context):
+        for item in context.scene.DazFloats:
+            item.f = 1.0
+        return {'PASS_THROUGH'}
+
+
+class DAZ_OT_ClearAllFloats(bpy.types.Operator):
+    bl_idname = "daz.clear_all_floats"
+    bl_label = "None"
+    bl_description = "Set all entries to 0.0"
+
+    def execute(self, context):
+        for item in context.scene.DazFloats:
+            item.f = 0.0
+        return {'PASS_THROUGH'}
+
+
 class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
     bl_idname = "daz.set_shell_visibility"
     bl_label = "Set Shell Visibility"
@@ -1188,7 +1210,12 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def draw(self, context):
-        self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
+        scn = context.scene
+        row = self.layout.row()
+        row.prop(scn.tool_settings, "use_keyframe_insert_auto")
+        row.operator("daz.set_all_floats")
+        row.operator("daz.clear_all_floats")
+        self.layout.separator()
         for item in context.scene.DazFloats:
             self.layout.prop(item, "f", text=item.name)
 
@@ -1828,6 +1855,8 @@ classes = [
     DAZ_OT_ReplacePrincipled,
     DAZ_OT_MakeDecal,
     DAZ_OT_SetShellVisibility,
+    DAZ_OT_SetAllFloats,
+    DAZ_OT_ClearAllFloats,
     DAZ_OT_RemoveShells,
     DAZ_OT_ReplaceShells,
     DAZ_OT_ChangeUnitScale,

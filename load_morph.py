@@ -144,7 +144,7 @@ class LoadMorph(DriverUser):
         if self.origRestored:
             from .geometry import clearMeshProps
             for ob in self.origRestored:
-                clearMeshProps(ob.data)
+                clearMeshProps(ob)
             self.origRestored = []
 
     #------------------------------------------------------------------

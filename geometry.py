@@ -1883,10 +1883,12 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
                     mod.levels = self.maxSubsurf
                 if mod.render_levels > self.maxSubsurf:
                     mod.render_levels = self.maxSubsurf
-        clearMeshProps(ob.data)
+        clearMeshProps(ob)
 
 
-def clearMeshProps(me):
+
+def clearMeshProps(ob):
+    me = ob.data
     me.DazRigidityGroups.clear()
     me.DazOrigVerts.clear()
     #me.DazFingerPrint = getFingerPrint(ob)
@@ -1895,7 +1897,7 @@ def clearMeshProps(me):
     me.DazPolylineMaterials.clear()
     me.DazMaterialSets.clear()
     me.DazHDMaterials.clear()
-    me.DazMorphUrls.clear()
+    ob.DazMorphUrls.clear()
 
 
 def getMeshDataFile(filepath):
