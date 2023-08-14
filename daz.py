@@ -530,7 +530,7 @@ def register():
 
     bpy.types.Scene.DazDefaultDrivers = BoolProperty(
         name = "Default Drivers",
-        description = "Create default drivers for eyelids and pectorals when the scene is imported")
+        description = "Create default drivers defined in the scene file")
 
     bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
         name = "Make Hidden Sliders",

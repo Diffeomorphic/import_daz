@@ -694,6 +694,13 @@ class DAZ_OT_RemoveCustomShapes(DazOperator, IsArmature):
         rig = context.object
         for pb in rig.pose.bones:
             pb.custom_shape = None
+            if hasattr(pb, "custom_shape_scale"):
+                pb.custom_shape_scale = 1
+            else:
+                pb.custom_shape_scale_xyz = One
+            if hasattr(pb, "custom_shape_translation"):
+                pb.custom_shape_translation = Zero
+                pb.custom_shape_rotation_euler = Zero
 
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
