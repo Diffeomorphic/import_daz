@@ -31,7 +31,7 @@ import math
 import os
 from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
-from .tree import Tree, NCOLUMNS, XSIZE, YSIZE
+from .tree import Tree, NCOLUMNS, XSIZE, YSIZE, MixRGB
 from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree, hideAllBut, colorOutput
 from .error import DazError
 from .utils import *
@@ -1596,7 +1596,7 @@ class CyclesTree(Tree):
             mult,a,b,out = self.addMixRgbNode('MULTIPLY', self.column-1)
             mult.inputs[0].default_value = 1
             self.links.new(blackbody.outputs["Color"], a)
-            self.linkColor(tex, mult, color, self.MixColor2)
+            self.linkColor(tex, mult, color, MixRGB.Color2)
             self.links.new(out, emit.inputs[slot])
 
 
