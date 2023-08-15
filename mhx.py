@@ -445,14 +445,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
-            showProgress(7, 25, "  Fix hands")
-            self.fixHands(rig)
-            showProgress(8, 25, "  Store all constraints")
-            self.storeAllConstraints(rig)
-            showProgress(9, 25, "  Create bend and twist bones")
-            self.createBendTwists(rig, bendTwistBones)
-            showProgress(10, 25, "  Fix bone drivers")
-            self.fixBoneDrivers(rig, MHX.BoneDrivers)
         elif rig.DazRig == "genesis9":
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
@@ -461,28 +453,25 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.deleteBendTwistDrvBones(rig)
                 self.joinBendTwistVGroups(rig, MHX.BendTwistGenesis9)
             self.rename2Mhx(rig)
-            showProgress(7, 25, "  Fix hands")
-            self.fixHands(rig)
-            showProgress(8, 25, "  Store all constraints")
-            self.storeAllConstraints(rig)
-            showProgress(9, 25, "  Create bend and twist bones")
-            self.createBendTwists(rig, bendTwistBones)
-            showProgress(10, 25, "  Fix bone drivers")
-            self.fixBoneDrivers(rig, MHX.BoneDrivers)
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             connectToParent(rig, connectAll=False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
-            self.fixHands(rig)
-            self.storeAllConstraints(rig)
-            self.createBendTwists(rig, bendTwistBones)
-            self.fixBoneDrivers(rig, MHX.BoneDrivers)
         elif rig.DazRig.endswith(".suffix"):
             raise DazError("%s has suffix bones.\nConvert to prefix before converting to MHX" % rig.name)
         else:
             raise DazError("Cannot convert %s to MHX" % rig.name)
+
+        showProgress(7, 25, "  Fix hands")
+        self.fixHands(rig)
+        showProgress(8, 25, "  Store all constraints")
+        self.storeAllConstraints(rig)
+        showProgress(9, 25, "  Create bend and twist bones")
+        self.createBendTwists(rig, bendTwistBones)
+        showProgress(10, 25, "  Fix bone drivers")
+        #self.fixBoneDrivers(rig, MHX.BoneDrivers)
 
         #-------------------------------------------------------------
         #   Add MHX stuff
