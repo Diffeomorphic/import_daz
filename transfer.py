@@ -398,7 +398,8 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         if (basic and
             len(trg.data.shape_keys.key_blocks) == 1 and
             trg.data.shape_keys.key_blocks[0] == basic):
-            print("No shapekeys transferred to %s" % trg.name)
+            if not ES.easy:
+                print("No shapekeys transferred to %s" % trg.name)
             trg.shape_key_remove(basic)
         return True
 
