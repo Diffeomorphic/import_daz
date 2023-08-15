@@ -201,14 +201,14 @@ class Fixer(DriverUser):
                     ob.vertex_groups.remove(vgrp)
 
 
-    def fixBoneDrivers(self, rig, assoc0):
-        def changeTargets(rna, rig):
+    def fixBoneDrivers(self, rig, rig0, assoc0):
+        def changeTargets(rna, rig, rig0):
             if rna.animation_data:
                 drivers = list(rna.animation_data.drivers)
                 if not ES.easy:
                     print("    (%s %d)" % (rna.name, len(drivers)))
                 for n,fcu in enumerate(drivers):
-                    self.changeTarget(fcu, rna, rig, assoc)
+                    self.changeTarget(fcu, rna, rig, rig0, assoc)
 
         def getFinOffsDrivers(amt):
             findrivers = {}
@@ -230,16 +230,16 @@ class Fixer(DriverUser):
         if not ES.easy:
             print("    (%s %d)" % (rig.data.name, len(findrivers)))
         for fcu in findrivers.values():
-            self.changeTarget(fcu, rig.data, rig, assoc)
+            self.changeTarget(fcu, rig.data, rig, rig0, assoc)
         for fcu in offsdrivers:
             rig.data.animation_data.drivers.remove(fcu)
         for ob in rig.children:
-            changeTargets(ob, rig)
+            changeTargets(ob, rig, rig0)
             if ob.type == 'MESH' and ob.data.shape_keys:
-                changeTargets(ob.data.shape_keys, rig)
+                changeTargets(ob.data.shape_keys, rig, rig0)
 
 
-    def changeTarget(self, fcu, rna, rig, assoc):
+    def changeTarget(self, fcu, rna, rig, rig0, assoc):
         channel = fcu.data_path
         idx = self.getArrayIndex(fcu)
         fcu2 = self.getTmpDriver(0)
@@ -251,9 +251,9 @@ class Fixer(DriverUser):
         success = True
         for var in fcu2.driver.variables:
             for trg in var.targets:
-                if trg.id_type == 'OBJECT':
+                if trg.id_type == 'OBJECT' and trg.id == rig0:
                     trg.id = rig
-                elif trg.id_type == 'ARMATURE':
+                elif trg.id_type == 'ARMATURE' and trg.id == rig0.data:
                     trg.id = rig.data
                 if var.type == 'TRANSFORMS':
                     bname = trg.bone_target

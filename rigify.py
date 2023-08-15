@@ -916,7 +916,7 @@ class Rigifier(RigifyCommon):
                 assoc[dname] = bname
                 assoc["%sBend" % dname] = bname
                 self.fixIkBone(dname, rig, (rname0, suffix), gen)
-        #self.fixBoneDrivers(gen, assoc)
+        self.fixBoneDrivers(gen, rig, assoc)
         self.renameBendTwistDrivers(gen.data)
 
         # Unlock bend locks

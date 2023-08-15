@@ -471,7 +471,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(9, 25, "  Create bend and twist bones")
         self.createBendTwists(rig, bendTwistBones)
         showProgress(10, 25, "  Fix bone drivers")
-        #self.fixBoneDrivers(rig, MHX.BoneDrivers)
+        self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
 
         #-------------------------------------------------------------
         #   Add MHX stuff
