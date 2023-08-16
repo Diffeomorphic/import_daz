@@ -282,7 +282,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     usePoleTargets : BoolProperty(
         name = "Pole Targets",
         description = "Use pole targets for IK",
-        default = True)
+        default = False)
 
     useBack : BoolProperty(
         name = "Add Back And NeckHead Bones",
@@ -344,7 +344,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "useBack")
         self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
-        self.layout.prop(self, "useFixKnees")
+        if self.usePoleTargets:
+            self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "useChildOfConstraints")
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
@@ -704,7 +705,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def fixKnees(self, rig):
-        if not self.useFixKnees:
+        if not (self.useFixKnees and self.usePoleTargets):
             return
         from .bone import setRoll
         eps = 0.5

@@ -240,16 +240,7 @@ class Fixer(DriverUser):
 
 
     def changeTarget(self, fcu, rna, rig, rig0, assoc):
-        channel = fcu.data_path
-        idx = self.getArrayIndex(fcu)
-        fcu2 = self.getTmpDriver(0)
-        self.copyFcurve(fcu, fcu2)
-        if idx >= 0:
-            rna.driver_remove(channel, idx)
-        else:
-            rna.driver_remove(channel)
-        success = True
-        for var in fcu2.driver.variables:
+        def setVar(var):
             for trg in var.targets:
                 if trg.id_type == 'OBJECT' and trg.id == rig0:
                     trg.id = rig
@@ -263,8 +254,30 @@ class Fixer(DriverUser):
                     elif defbone in rig.pose.bones.keys():
                         trg.bone_target = defbone
                     else:
-                        success = False
-        if success:
+                        return False
+            return True
+
+        for var in fcu.driver.variables:
+            if not setVar(var):
+                if idx >= 0:
+                    rna.driver_remove(channel, idx)
+                else:
+                    rna.driver_remove(channel)
+                return
+        return
+
+        channel = fcu.data_path
+        idx = self.getArrayIndex(fcu)
+        fcu2 = self.getTmpDriver(0)
+        self.copyFcurve(fcu, fcu2)
+        if idx >= 0:
+            rna.driver_remove(channel, idx)
+        else:
+            rna.driver_remove(channel)
+        ok = True
+        for var in fcu2.driver.variables:
+            ok = (ok and setVar(var))
+        if ok:
             fcu3 = rna.animation_data.drivers.from_existing(src_driver=fcu2)
             fcu3.data_path = channel
             if idx >= 0:

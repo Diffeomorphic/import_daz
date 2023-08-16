@@ -455,6 +455,11 @@ class BoneOptions:
         description = "Object animations affect master bone rather than object transformations.\nOnly for MHX and Rigify",
         default = False)
 
+    useTwistAnimation : BoolProperty(
+        name = "Twist Bones",
+        description = "Use the twist bone pose for the twist of MHX and Rigify bones",
+        default = True)
+
     affectScale : BoolProperty(
         name = "Affect Scale",
         description = "Include bone scale in animation.\nObject scale is always included",
@@ -488,6 +493,7 @@ class BoneOptions:
             self.layout.prop(self, "useClearPose")
         if self.affectBones:
             self.layout.prop(self, "useMaster")
+            self.layout.prop(self, "useTwistAnimation")
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
@@ -1080,8 +1086,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     elif rig.type == 'ARMATURE':
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
 
-                for (bname, tfm) in twists:
-                    self.transformBone(rig, bname, tfm, n, offset, True)
+                if self.useTwistAnimation:
+                    for (bname, tfm) in twists:
+                        self.transformBone(rig, bname, tfm, n, offset, True)
                 self.saveScales(rig, n+offset)
 
             self.fixScales(rig)
