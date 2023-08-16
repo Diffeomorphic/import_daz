@@ -1212,7 +1212,7 @@ class BendTwists:
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             pb2 = rig.pose.bones[trgname]
-            if self.usePoleTargets:
+            if False and self.usePoleTargets:
                 cns1 = dampedTrack(bend, pb2, rig)
                 cns2 = copyTransform(twist, pb, rig)
             else:

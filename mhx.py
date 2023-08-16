@@ -340,12 +340,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def draw(self, context):
         self.layout.prop(self, "usePoleTargets")
+        if self.usePoleTargets:
+            self.layout.prop(self, "showLinks")
+            self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "addTweakBones")
         self.layout.prop(self, "useBack")
-        self.layout.prop(self, "showLinks")
         Fixer.draw(self, context)
-        if self.usePoleTargets:
-            self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "useChildOfConstraints")
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
