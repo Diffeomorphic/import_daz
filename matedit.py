@@ -1250,6 +1250,48 @@ class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
                             self.shells[key].append(node)
         return DazPropsOperator.invoke(self, context, event)
 
+#----------------------------------------------------------
+#   Drive shell influence
+#----------------------------------------------------------
+
+class DAZ_OT_SetShellInfluence(DazOperator, IsMesh):
+    bl_idname = "daz.set_shell_influence"
+    bl_label = "Set Shell Influence"
+
+    value : FloatProperty()
+
+    def run(self, context):
+        ob = context.object
+        for prop in ob.keys():
+            if prop[0:6] == "INFLU ":
+                ob[prop] = self.value
+        updateDrivers(ob)
+
+
+class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
+    bl_idname = "daz.drive_shell_influence"
+    bl_label = "Drive Shell Influence"
+    bl_description = "Create drivers for shell and layered image influence"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            driveShellInfluence(ob)
+
+
+def driveShellInfluence(ob):
+    from .driver import setFloatProp, addDriver
+    for mat in ob.data.materials:
+        if mat:
+            for node in mat.node_tree.nodes:
+                if node.type == 'GROUP' and "Influence" in node.inputs.keys():
+                    if "Color" in node.outputs.keys():
+                        prop = "INFLU %s Layers" % mat.name
+                    else:
+                        prop = "INFLU %s" % node.label
+                    setFloatProp(ob, prop, 1.0, 0.0, 10.0, True)
+                    addDriver(node.inputs["Influence"], "default_value", ob, propRef(prop), "x")
+
 # ---------------------------------------------------------------------
 #   Remove shells from materials
 # ---------------------------------------------------------------------
@@ -1855,6 +1897,8 @@ classes = [
     DAZ_OT_ReplacePrincipled,
     DAZ_OT_MakeDecal,
     DAZ_OT_SetShellVisibility,
+    DAZ_OT_DriveShellInfluence,
+    DAZ_OT_SetShellInfluence,
     DAZ_OT_SetAllFloats,
     DAZ_OT_ClearAllFloats,
     DAZ_OT_RemoveShells,

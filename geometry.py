@@ -310,6 +310,7 @@ class GeoNode(Node, SimNode):
 
     def finalize(self, context, inst):
         from .material import sortMaterialsByName
+        from .matedit import driveShellInfluence
         geo = self.data
         ob = self.rna
         if ob is None:
@@ -328,6 +329,7 @@ class GeoNode(Node, SimNode):
                 if dmat:
                     dmat.correctEmitArea(ob, mnum)
             scaleEyeMoisture(ob)
+            driveShellInfluence(ob)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
             if hdob and hdob != ob:

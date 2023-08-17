@@ -274,6 +274,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
         self.layout.operator("daz.replace_principled")
+        self.layout.operator("daz.drive_shell_influence")
         self.layout.separator()
         self.layout.operator("daz.make_palette")
         self.layout.operator("daz.copy_materials")
@@ -1082,19 +1083,31 @@ class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
         ob = rig = context.object
         scn = context.scene
         if ob.type == 'MESH':
-            self.layout.operator("daz.set_shell_visibility")
+            props = [prop for prop in ob.keys() if prop[0:6] == "INFLU "]
+            if props:
+                box = self.layout.box()
+                row = box.row()
+                op = row.operator("daz.set_shell_influence", text="All")
+                op.value = 1.0
+                op = row.operator("daz.set_shell_influence", text="None")
+                op.value = 0.0
+                for prop in props:
+                    box.prop(ob, propRef(prop), text=prop[6:])
+            else:
+                self.layout.operator("daz.set_shell_visibility")
             self.layout.separator()
             if ob.parent and ob.parent.type == 'ARMATURE':
                 rig = ob.parent
             else:
                 return
-        row = self.layout.row()
-        row.operator("daz.show_all_vis")
-        row.operator("daz.hide_all_vis")
         props = list(rig.keys())
         props.sort()
-        self.drawProps(rig, props, "Mhh")
-        self.drawProps(rig, props, "DzS")
+        if props:
+            row = self.layout.row()
+            row.operator("daz.show_all_vis")
+            row.operator("daz.hide_all_vis")
+            self.drawProps(rig, props, "Mhh")
+            self.drawProps(rig, props, "DzS")
 
     def drawProps(self, rig, props, prefix):
         for prop in props:
