@@ -174,10 +174,17 @@ class Formula:
 
     def evalStage(self, formula, expr, rig, mesh):
         from .bone import getMappedBone
+        ignore = ["JCMs On",
+                  "BaseFlexions",
+                  "body_basejointcorrectives",
+                  "body_ctrl_FlexionAutoStrength",
+                  "facs_ctrl_FACSDetailStrength",]
         if formula["stage"] == "mult":
             opers = formula["operations"]
             prop,type,path,comp = self.evalUrl(opers[0], rig)
-            if type == "value":
+            if prop in ignore:
+                pass
+            elif type == "value":
                 expr["mults"].append(prop)
             elif comp >= 0:
                 bname = getMappedBone(prop, rig, mesh)

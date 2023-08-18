@@ -1200,6 +1200,11 @@ class LoadMorph(DriverUser):
             var = fcu.driver.variables.new()
             bvar.create(var)
         if string[0:5] != "clamp" and self.currentAsset and bpy.app.version >= (2,93,0):
+            words = string.split("else ")
+            if len(words) == 3:
+                words = words[1].split(" if")
+                if len(words) == 2:
+                    string = words[0]
             string = "clamp(%s,%g,%g)" % (string, self.currentAsset.min, self.currentAsset.max)
         if GS.useMakeHiddenSliders and isPath(path) and "u" not in vvars.keys():
             final = unPath(path)
