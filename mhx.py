@@ -770,11 +770,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         back = rig.pose.bones[bname]
         back.rotation_mode = 'YZX'
         back.lock_location = (True,True,True)
+        nbones = len(bones)
         for bname in bones:
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
                 cns = copyRotation(pb, back, rig)
                 cns.use_offset = True
+                cns.influence = 1.3/nbones
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -880,12 +882,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for suffix,dlayer in [("L",0), ("R",16)]:
             hand = rig.data.edit_bones["hand.%s" % suffix]
             for m in range(5):
-                if m == 0:
-                    fing1name = self.linkName(0, 1, suffix)
-                    palmname = self.linkName(0, 0, suffix)
-                else:
-                    fing1name = self.linkName(m, 0, suffix)
-                    palmname = self.palmname(m, suffix)
+                fing1name = self.linkName(m, 0, suffix)
+                palmname = self.palmname(m, suffix)
                 if fing1name in rig.data.edit_bones.keys():
                     fing1 = rig.data.edit_bones[fing1name]
                 else:
@@ -893,6 +891,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     continue
                 if palmname in rig.data.edit_bones.keys():
                     palm = rig.data.edit_bones[palmname]
+                elif m == 0:
+                    palm = hand
                 else:
                     self.raiseError(palmname)
                     continue
@@ -928,28 +928,26 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 self.raiseError(thumb1Name)
                 continue
-            thumb1.layers[L_LHAND+dlayer] = True
+            #thumb1.layers[L_LHAND+dlayer] = True
             for m in range(5):
-                if m == 0:
-                    n0 = 1
-                else:
-                    n0 = 0
                 long = rig.pose.bones[self.longName(m, suffix)]
                 long.lock_location = (True,True,True)
                 long.lock_rotation = (False,True,False)
-                fing = rig.pose.bones[self.linkName(m, n0, suffix)]
+                fing = rig.pose.bones[self.linkName(m, 0, suffix)]
                 fing.lock_rotation = (False,True,False)
                 long.rotation_mode = fing.rotation_mode
                 cns = copyRotation(fing, long, rig)
                 cns.use_offset = True
+                cns.influence = (0.25 if m == 0 else 0.5)
                 addDriver(cns, "mute", rig, props, expr)
                 addDriver(long.bone, "hide", rig, props, expr)
-                for n in range(n0+1,3):
+                for n in range(1,3):
                     fing = rig.pose.bones[self.linkName(m, n, suffix)]
                     fing.lock_rotation = (False,True,True)
                     cns = copyRotation(fing, long, rig)
                     cns.use_y = cns.use_z = False
                     cns.use_offset = True
+                    cns.influence = 0.5
                     addDriver(cns, "mute", rig, props, expr)
 
 
