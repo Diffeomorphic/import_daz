@@ -253,6 +253,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.initUvNames()
         subDLevels = 0
         self.setActiveUvLayer(cob)
+        influs = dict([(prop, value) for prop,value in cob.items() if prop[0:6] == "INFLU "])
         for aob in anatomies:
             self.renameUvLayers(aob)
             self.storeUvName(aob)
@@ -261,6 +262,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 fixer = TileFixer()
                 fixer.udimsFromGraft(aob, cob)
             self.copyBodyPart(aob, cob)
+            for prop,value in aob.items():
+                if prop[0:6] == "INFLU " and prop not in influs.keys():
+                    influs[prop] = value
             for mod in list(aob.modifiers):
                 if mod.type == 'SURFACE_DEFORM':
                     aob.modifiers.remove(mod)
@@ -368,6 +372,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Retarget shell modifiers
         if bpy.app.version >= (3,1,0):
             self.retargetShellModifiers(cob, anatomies)
+        self.retargetShellInfluence(cob, anatomies, influs)
 
         # Also select cob graft group. These will not be removed.
         if cob.data.DazGraftGroup:
@@ -551,6 +556,21 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                         aob = mod.get("Input_1")
                         if aob and aob in anatomies:
                             mod["Input_1"] = cob
+
+
+    def retargetShellInfluence(self, cob, anatomies, influs):
+        for prop,value in influs.items():
+            if prop not in cob.keys():
+                cob[prop] = value
+        for aob in anatomies:
+            for mat in aob.data.materials:
+                if mat and mat.node_tree.animation_data:
+                    for fcu in mat.node_tree.animation_data.drivers:
+                        for var in fcu.driver.variables:
+                            for trg in var.targets:
+                                if trg.id_type == 'OBJECT' and getProp(trg.data_path) in influs.keys():
+                                    trg.id = cob
+
 
 
     def replaceTexco(self, ob, cuvname, force):
