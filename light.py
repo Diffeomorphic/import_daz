@@ -87,6 +87,8 @@ class Light(Node):
         lgeo = inst.getValue(["Light Geometry"], 0)
         self.twosided = inst.getValue(["Two Sided"], False)
         usePhoto = inst.getValue(["Photometric Mode"], False)
+        width = inst.getValue(["Width"], 10) * LS.scale
+        height = inst.getValue(["Height"], 10) * LS.scale
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
         if self.type == 'POINT':
@@ -104,8 +106,8 @@ class Light(Node):
             if lgeo == 0:
                 light.size = light.size_y = 0.1*LS.scale
             else:
-                light.size = inst.getValue(["Width"], 10) * LS.scale
-                light.size_y = inst.getValue(["Height"], 10) * LS.scale
+                light.size = width
+                light.size_y = height
             spread = inst.getValue(["Spread Angle"], 60) * D
             beam = inst.getValue(["Beam Exponent"], 1)
             light.spread = spread / (1 + (beam - 1) * 0.05)
