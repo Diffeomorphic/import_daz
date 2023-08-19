@@ -337,6 +337,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
         box.prop(scn, "DazUseModifiedMesh")
         box.prop(scn, "DazUseSubmeshes")
         box.prop(scn, "DazDefaultDrivers")
+        box.prop(scn, "DazOptimizeJcms")
 
         col = split.column()
         box = col.box()
@@ -531,6 +532,10 @@ def register():
     bpy.types.Scene.DazDefaultDrivers = BoolProperty(
         name = "Default Drivers",
         description = "Create default drivers defined in the scene file")
+
+    bpy.types.Scene.DazOptimizeJcms = BoolProperty(
+        name = "Optimize JCM Drivers",
+        description = "Optimize drivers when loading JCMs and flexions. Experimental")
 
     bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
         name = "Make Hidden Sliders",

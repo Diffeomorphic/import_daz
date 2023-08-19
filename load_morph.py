@@ -48,7 +48,7 @@ ALWAYS_BAKED = [
 class LoadMorph(DriverUser):
     morphset = None
     usePropDrivers = True
-    useMuteDrivers = False
+    isJcm = False
     treatHD = 'ERROR'
     useAdjusters = False
     onMorphSuffix = 'NONE'
@@ -135,6 +135,8 @@ class LoadMorph(DriverUser):
                 self.buildDrivers()
                 self.buildSumDrivers()
                 self.buildRestDrivers()
+                if self.isJcm:
+                    self.optimizeJcmDrivers()
                 self.correctScaleParents()
             finally:
                 self.deleteTmp()
@@ -459,7 +461,7 @@ class LoadMorph(DriverUser):
             return fcu
 
         fcu = addDriver("value")
-        if self.useMuteDrivers and GS.useMuteDrivers:
+        if self.isJcm and GS.useMuteDrivers:
             fcu = addDriver("mute")
             fcu.driver.expression = "abs(%s)<0.0001" % fcu.driver.expression
 
@@ -1399,6 +1401,39 @@ class LoadMorph(DriverUser):
             removeModifiers(fcu)
             fcu.driver.expression = "%.1f" % value
         return path
+
+
+    def optimizeJcmDrivers(self):
+        if (not GS.useOptimizeJcms or
+            self.rig is None or
+            self.amt is None or
+            self.amt.animation_data is None or
+            self.mesh is None):
+            return
+        if GS.verbosity >= 2:
+            print("Optimize JCM drivers")
+        skeys = self.mesh.data.shape_keys
+        if skeys is None or skeys.animation_data is None:
+            return
+        drivers = {}
+        for fcu in self.amt.animation_data.drivers:
+            if fcu.array_index == 0:
+                drivers[fcu.data_path] = fcu
+        for prop in self.drivers.keys():
+            skey = skeys.key_blocks.get(prop)
+            if skey:
+                final = finalProp(prop)
+                fcu = drivers.get(propRef(final))
+                if fcu:
+                    skey.driver_remove("value")
+                    fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
+                    fcu2.data_path = 'key_blocks["%s"].value' % prop
+                    self.rig.driver_remove(propRef(prop))
+                    if prop in self.rig.keys():
+                        del self.rig[prop]
+                    self.amt.driver_remove(propRef(final))
+                    if final in self.amt.keys():
+                        del self.amt[final]
 
 
     def addScaleDriver(self, pb, idx):

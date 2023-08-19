@@ -943,7 +943,7 @@ class DAZ_OT_ImportJCMs(DazOperator, StandardMorphSelector, StandardMorphLoader,
     morphset = "Jcms"
     bodypart = "Body"
     hideable = False
-    useMuteDrivers = True
+    isJcm = True
 
 
 class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMesh):
@@ -955,7 +955,7 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
     morphset = "Flexions"
     bodypart = "Body"
     hideable = False
-    useMuteDrivers = True
+    isJcm = True
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1070,7 +1070,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         if self.rig:
             self.rig.DazMorphPrefixes = False
         self.message = None
-        self.useMuteDrivers = False
+        self.isJcm = False
         self.loadMorphType(context, self.useHead, "Head", "Face")
         self.loadMorphType(context, self.useUnits, "Units", "Face")
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face")
@@ -1079,7 +1079,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.loadMorphType(context, self.useBody, "Body", "Body")
-        self.useMuteDrivers = True
+        self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body")
         self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
@@ -1176,7 +1176,7 @@ class CustomMorphLoader(MorphLoader, MorphSuffix):
 
 class PropDrivers:
     hasAdjusters = True
-    useMuteDrivers = True
+    isJcm = True
 
     category : StringProperty(
         name = "Category",

@@ -108,6 +108,7 @@ class GlobalSettings:
         self.useModifiedMesh = False
         self.useSubmeshes = True
         self.useDefaultDrivers = True
+        self.useOptimizeJcms = False
 
         self.useArmature = True
         self.useLockLoc = True
@@ -194,6 +195,7 @@ class GlobalSettings:
         "DazUseModifiedMesh" : "useModifiedMesh",
         "DazUseSubmeshes" : "useSubmeshes",
         "DazDefaultDrivers" : "useDefaultDrivers",
+        "DazOptimizeJcms" : "useOptimizeJcms",
 
         # Rigging
         "DazUseArmature" : "useArmature",
