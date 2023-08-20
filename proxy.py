@@ -1669,7 +1669,7 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
         hasShapeKeys = []
         for ob in getSelectedMeshes(context):
             ob,skeys,new = getBasicShape(ob)
-            if new:
+            if not new:
                 hasShapeKeys.append(ob)
             skey = ob.shape_key_add(name="Push")
             scale = ob.DazScale

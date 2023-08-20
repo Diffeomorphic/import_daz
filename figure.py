@@ -686,6 +686,12 @@ class ExtraBones(DriverUser):
                     vgname = baseBone(vgrp.name)
                     if vgname in self.bnames:
                         vgrp.name = vgname
+            if ob.parent_type == 'BONE' and isDrvBone(ob.parent_bone):
+                bname = baseBone(ob.parent_bone)
+                if bname in self.bnames:
+                    wmat = ob.matrix_world.copy()
+                    ob.parent_bone = bname
+                    setWorldMatrix(ob, wmat)
 
         if not ES.easy:
             print("  Update shapekeys")
