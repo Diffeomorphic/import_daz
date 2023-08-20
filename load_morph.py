@@ -1009,10 +1009,6 @@ class LoadMorph(DriverUser):
     def multiplyMults(self, fcu, string):
         if self.mult:
             mstring = ""
-            clamp = None
-            if string[0:6] == "clamp(":
-                clamp = string.rsplit(",", 2)
-                string = clamp[0][6:]
             if len(string) == 0:
                 reportError("Trying to multiply empty string", trigger=(1,1))
             elif len(string) > 1 and string[1] == '*' and string[0].isupper():
@@ -1040,10 +1036,7 @@ class LoadMorph(DriverUser):
                         mstring += "%s%s*" % (signchar, varname)
                         addTransformVar(fcu, varname, ttypes[idx2], self.rig, bname)
                         varname = nextLetter(varname)
-            if clamp:
-                return "clamp(%s%s,%s,%s" % (mstring, string, clamp[1], clamp[2])
-            else:
-                return "%s%s" % (mstring, string)
+            return "%s%s" % (mstring, string)
         else:
             return string
 

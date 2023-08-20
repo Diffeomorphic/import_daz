@@ -1534,7 +1534,8 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
 
         self.getFingeredRigMeshes(context)
         used = []
-        self.namepaths = {}
+        facepaths = {}
+        bodypaths = {}
         for path,pg in self.rig.DazBakedFiles.items():
             folder = os.path.dirname(path)
             lfolder = folder.lower()
@@ -1553,23 +1554,29 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                 if os.path.splitext(file)[-1] in [".dsf", ".duf"]:
                     path = "%s/%s" % (absfolder, file)
                     if self.useExpressions and match(["ejcm"]):
-                        self.addPath(path, cat, "Face")
+                        self.addPath(path, cat, "Face", facepaths)
                     elif self.useFacs and match(["facs"]):
-                        self.addPath(path, cat, "Face")
+                        self.addPath(path, cat, "Face", facepaths)
                     elif self.useJcms and match(["pjcm", "body_cbs", "ctrlmd_n"]):
-                        self.addPath(path, cat, "Body")
-        for cat,namepaths in self.namepaths.items():
-            print("Load %s corrections" % cat)
+                        self.addPath(path, cat, "Body", bodypaths)
+        self.isJcm = False
+        for cat,namepaths in facepaths.items():
+            print("Load %s face corrections" % cat)
             self.setCategory(cat)
-            msg = self.getAllMorphs(namepaths, context)
+            self.getAllMorphs(namepaths, context)
+        self.isJcm = True
+        for cat,namepaths in bodypaths.items():
+            print("Load %s body corrections" % cat)
+            self.setCategory(cat)
+            self.getAllMorphs(namepaths, context)
         updateScrollbars(context)
 
 
-    def addPath(self, path, cat, bodypart):
-        if cat not in self.namepaths.keys():
-            self.namepaths[cat] = []
+    def addPath(self, path, cat, bodypart, namepaths):
+        if cat not in namepaths.keys():
+            namepaths[cat] = []
         text = os.path.splitext(os.path.basename(path))[0]
-        self.namepaths[cat].append((text, path, bodypart))
+        namepaths[cat].append((text, path, bodypart))
 
 #-------------------------------------------------------------
 #   ScanFinder class
