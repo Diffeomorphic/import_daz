@@ -328,6 +328,7 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
     def transferMorphs(self, snames, src, trg, context):
         from .load_morph import printName
         from .morphing import MP
+        from .modifier import getBasicShape
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
         scn = context.scene
@@ -336,16 +337,12 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         self.projection = MP.getProjection(trg)
         if not self.findMatch(src, trg):
             return False
-        trg.select_set(True)
-        if not trg.data.shape_keys:
-            basic = trg.shape_key_add(name="Basic")
-        else:
-            basic = None
         hskeys = src.data.shape_keys
-        cskeys = trg.data.shape_keys
+        cbasic,cskeys,new = getBasicShape(trg)
         if src.active_shape_key_index < 0:
             src.active_shape_key_index = 0
         trg.active_shape_key_index = 0
+        trg.select_set(True)
 
         nskeys = len(snames)
         for idx,sname in enumerate(snames):
@@ -395,12 +392,12 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
             else:
                 printName(" -", sname)
 
-        if (basic and
+        if (cbasic and
             len(trg.data.shape_keys.key_blocks) == 1 and
-            trg.data.shape_keys.key_blocks[0] == basic):
+            trg.data.shape_keys.key_blocks[0] == cbasic):
             if not ES.easy:
                 print("No shapekeys transferred to %s" % trg.name)
-            trg.shape_key_remove(basic)
+            trg.shape_key_remove(cbasic)
         return True
 
 

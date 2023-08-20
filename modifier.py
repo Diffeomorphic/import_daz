@@ -862,12 +862,19 @@ class Morph(FormulaAsset):
 
 
 def addShapekey(ob, sname):
-    if not ob.data.shape_keys:
-        basic = ob.shape_key_add(name="Basic")
-    else:
-        basic = ob.data.shape_keys.key_blocks[0]
+    basic,skeys,new = getBasicShape(ob)
     if sname in ob.data.shape_keys.key_blocks.keys():
         skey = ob.data.shape_keys.key_blocks[sname]
         ob.shape_key_remove(skey)
     return ob.shape_key_add(name=sname)
 
+
+def getBasicShape(ob):
+    if not ob.data.shape_keys:
+        basic = ob.shape_key_add(name="Basic")
+        ob.data.shape_keys.name = "%s:KEYS" % ob.name
+        new = True
+    else:
+        basic = ob.data.shape_keys.key_blocks[0]
+        new = False
+    return basic, ob.data.shape_keys, new

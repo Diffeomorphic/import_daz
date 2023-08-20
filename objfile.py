@@ -464,12 +464,8 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
 
 
     def buildMeshMorph(self, ob, rig, dbz):
-        skeys = ob.data.shape_keys
-        if not skeys:
-            basic = ob.shape_key_add(name="Basic")
-            skeys = ob.data.shape_keys
-        else:
-            basic = skeys.key_blocks[0]
+        from .modifier import getBasicShape
+        basic,skeys,new = getBasicShape(ob)
         sname = dbz.name
         if sname in skeys.key_blocks.keys():
             skey = skeys.key_blocks[sname]

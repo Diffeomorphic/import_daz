@@ -1665,13 +1665,12 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        from .modifier import getBasicShape
         hasShapeKeys = []
         for ob in getSelectedMeshes(context):
-            #applyShapeKeys(ob)
-            if ob.data.shape_keys:
+            ob,skeys,new = getBasicShape(ob)
+            if new:
                 hasShapeKeys.append(ob)
-            else:
-                basic = ob.shape_key_add(name="Basic")
             skey = ob.shape_key_add(name="Push")
             scale = ob.DazScale
             for n,v in enumerate(ob.data.vertices):

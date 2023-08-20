@@ -353,9 +353,8 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getShapeFakeCurves(self, skeys):
-        for skey in skeys.key_blocks:
-            if skey.name != "Basic":
-                self.morphs[skey.name] = FakeCurve(skey.value)
+        for skey in skeys.key_blocks[1:]:
+            self.morphs[skey.name] = FakeCurve(skey.value)
 
 
     def setupFlipper(self, rig):

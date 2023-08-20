@@ -387,7 +387,7 @@ class MorphGroup:
         if skeys is None:
             return [], []
         if self.morphset == "All":
-            morphs = [skey for skey in skeys.key_blocks if skey.name != "Basic"]
+            morphs = list(skeys.key_blocks[1:])
             return morphs, skeys
         filtered = self.getFiltered()
         if self.category:
