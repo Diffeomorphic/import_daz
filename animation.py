@@ -1263,6 +1263,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             "thigh_fk.R" : (1, -1),
             "neck" : (1, 1),
         }
+        if pb.name not in table.keys():
+            return
         idx,sign = table[pb.name]
         y = sign*tfm.rot[idx]
         if pb.rotation_mode == 'QUATERNION':
