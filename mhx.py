@@ -284,9 +284,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Use pole targets for IK",
         default = False)
 
-    useBack : BoolProperty(
-        name = "Add Back And NeckHead Bones",
-        description = "Add back and neckhead bones which rotate\nthe spine and neck/head bones together",
+    useSpineIk : BoolProperty(
+        name = "Spine IK",
+        description = "Spine IK (experimental)",
         default = True)
 
     useChildOfConstraints : BoolProperty(
@@ -344,7 +344,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "showLinks")
             self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "addTweakBones")
-        self.layout.prop(self, "useBack")
+        self.layout.prop(self, "useSpineIk")
         Fixer.draw(self, context)
         self.layout.prop(self, "useChildOfConstraints")
         self.layout.prop(self, "elbowParent")
@@ -421,6 +421,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
         self.sacred = ["root", "hips", "spine"]
+        self.rolls = {}
 
         #-------------------------------------------------------------
         #   Fix and rename bones of the genesis rig
@@ -482,9 +483,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addLongFingers(rig)
         showProgress(13, 25, "  Add tweak bones")
         self.addTweaks(rig)
-        if self.useBack:
-            showProgress(14, 25, "  Add backbone")
-            self.addBack(rig)
+        showProgress(14, 25, "  Add backbone")
+        self.addBack(rig)
         showProgress(15, 25, "  Add master bone")
         self.addMaster(rig)
         showProgress(16, 25, "  Setup FK-IK")
@@ -521,7 +521,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             improveIk(rig, exclude=self.tongueBones)
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
-        rig.data.display_type = 'WIRE'
+        #rig.data.display_type = 'WIRE'
         rig.data.MhaFeatures |= F_IDPROPS
         T = True
         F = False
@@ -739,44 +739,80 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def addBack(self, rig):
         BackBones = ["spine", "spine-1", "chest", "chest-1"]
         NeckBones = ["neck", "neck-1", "head"]
+        backbones = [bname for bname in BackBones if bname in rig.data.bones.keys()]
+        neckbones = [bname for bname in NeckBones if bname in rig.data.bones.keys()]
+        if self.useSpineIk:
+            self.addWinderIk(rig, "back", backbones)
+        else:
+            self.addBackWinder(rig, "back", backbones)
+        self.addBackWinder(rig, "neckhead", neckbones)
 
+
+    def addWinderIk(self, rig, backname, bnames):
+        print("IK", backname, bnames)
         setMode('EDIT')
-        if "spine" in rig.data.edit_bones:
-            spine = rig.data.edit_bones["spine"]
-        else:
-            return self.raiseError("spine")
-        if "chest-1" in rig.data.edit_bones:
-            chest = rig.data.edit_bones["chest-1"]
-        elif "chest" in rig.data.edit_bones:
-            chest = rig.data.edit_bones["chest"]
-        else:
-            return self.raiseError("chest")
-        makeBone("back", rig, spine.head, chest.tail, 0, L_MAIN, spine.parent)
-        if "neck" in rig.data.edit_bones:
-            neck = rig.data.edit_bones["neck"]
-        else:
-            return self.raiseError("neck")
-        if "head" in rig.data.edit_bones:
-            head = rig.data.edit_bones["head"]
-        else:
-            return self.raiseError("head")
-        makeBone("neckhead", rig, neck.head, head.tail, 0, L_MAIN, neck.parent)
+        spine = rig.data.edit_bones[bnames[0]]
+        chest = rig.data.edit_bones[bnames[-1]]
+        vec = (chest.tail - spine.head) * 0.1
+        fkback = makeBone(backname, rig, spine.head, chest.tail, 0, L_MAIN, spine.parent)
+        back = deriveBone("%s.mch" % backname, fkback, rig, L_HELP, spine.parent)
+        ikback = deriveBone("%s.ik" % backname, fkback, rig, L_HELP2, spine.parent)
+        ikgoal = makeBone("%s.top" % backname, rig, chest.tail, chest.tail+Vector((0,0,0.1)), 0, L_MAIN, None)
+
+        par = spine.parent
+        tailb = None
+        for bname in bnames:
+            defb = rig.data.edit_bones[bname]
+            self.setLayer(bname, rig, L_DEF)
+            defb.name = "DEF-%s" % bname
+            headb = makeBone("%s.head" % bname, rig, defb.head, defb.head+vec, 0, L_HELP2, par)
+            if tailb:
+                tailb.parent = headb
+            tailb = makeBone("%s.tail" % bname, rig, defb.tail, defb.tail+vec, 0, L_HELP2, None)
+            eb = makeBone(bname, rig, defb.head, defb.tail, 0, L_SPINE, headb)
+            print("BB", defb.name, headb.name, tailb.name, eb.name)
+            par = eb
+        tailb.parent = back
+
         setMode('POSE')
-        self.addBackWinder(rig, "back", BackBones)
-        self.addBackWinder(rig, "neckhead", NeckBones)
+        back = rig.pose.bones["%s.mch" % backname]
+        fkback = rig.pose.bones[backname]
+        ikback = rig.pose.bones["%s.ik" % backname]
+        ikgoal = rig.pose.bones["%s.top" % backname]
+        ikConstraint(ikback, ikgoal, None, 0, 1, rig)
+        setMhx(rig, "MhaSpineIk", 0.0)
+        copyTransformFkIk(back, fkback, ikback, rig, "MhaSpineIk")
+
+        nbones = len(bnames)
+        for bname in bnames:
+            pb = rig.pose.bones[bname]
+            defb = rig.pose.bones["DEF-%s" % bname]
+            headb = rig.pose.bones["%s.head" % bname]
+            tailb = rig.pose.bones["%s.tail" % bname]
+            cns = copyTransform(defb, pb, rig, space='WORLD')
+            cns = copyTransform(headb, back, rig, space='LOCAL')
+            cns.influence = 1/nbones
+            cns = stretchTo(defb, tailb, rig)
 
 
-    def addBackWinder(self, rig, bname, bones):
-        back = rig.pose.bones[bname]
+
+
+    def addBackWinder(self, rig, backname, bnames):
+        setMode('EDIT')
+        spine = rig.data.edit_bones[bnames[0]]
+        chest = rig.data.edit_bones[bnames[-1]]
+        makeBone(backname, rig, spine.head, chest.tail, 0, L_MAIN, spine.parent)
+
+        setMode('POSE')
+        back = rig.pose.bones[backname]
         back.rotation_mode = 'YZX'
         back.lock_location = (True,True,True)
-        nbones = len(bones)
-        for bname in bones:
-            if bname in rig.pose.bones.keys():
-                pb = rig.pose.bones[bname]
-                cns = copyRotation(pb, back, rig)
-                cns.use_offset = True
-                cns.influence = 1.3/nbones
+        nbones = len(bnames)
+        for bname in bnames:
+            pb = rig.pose.bones[bname]
+            cns = copyRotation(pb, back, rig)
+            cns.use_offset = True
+            cns.influence = 1.3/nbones
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -992,7 +1028,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def setupFkIk(self, rig):
         setMode('EDIT')
-        self.rolls = {}
         hip = rig.data.edit_bones["hip"]
         for suffix,dlayer in [("L",0), ("R",16)]:
             upper_arm = self.setLayer("upper_arm.%s" % suffix, rig, L_HELP)
