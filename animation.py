@@ -452,7 +452,7 @@ class BoneOptions:
 
     useMaster: BoolProperty(
         name = "Master Bone",
-        description = "Object animations affect master bone rather than object transformations.\nOnly for MHX and Rigify",
+        description = "Object animations affect master bone rather than object transformations.\nFor Simple IK, MHX and Rigify",
         default = False)
 
     useTwistAnimation : BoolProperty(
@@ -826,7 +826,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             pb.lock_location = lock
         updateDrivers(rig)
         setMode('OBJECT')
-        #self.mergeHipObject(rig)
+        self.mergeHipObject(rig)
         return result
 
     def clearAnimation(self, ob):
@@ -972,6 +972,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             master = "master"
         elif rig.DazRig[0:6] == "rigify":
             master = "root"
+        elif rig.DazSimpleIK:
+            master = "Root"
         else:
             return None
         if master in rig.pose.bones.keys():
@@ -1263,6 +1265,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             "thigh_fk.R" : (1, -1),
             "neck" : (1, 1),
         }
+        if pb.name not in table.keys():
+            return
         idx,sign = table[pb.name]
         y = sign*tfm.rot[idx]
         if pb.rotation_mode == 'QUATERNION':

@@ -353,6 +353,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useRootBone:
             root = rpbs["Root"]
             setCustomShape(root, csRoot, 7)
+            root.rotation_mode = rig.rotation_mode
 
         for prefix in ["l", "r"]:
             suffix = prefix.upper()
