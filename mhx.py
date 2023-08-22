@@ -257,7 +257,8 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None):
     wind = makeBone("mch_%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent)
     fkwind = deriveBone(windname, wind, rig, lmain, first.parent)
     ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, None)
-    revwind = deriveBone("rev_%s" % windname, wind, rig, lhelp2, ikwind)
+    revwind = deriveBone("rev_%s" % windname, ikwind, rig, lhelp2, fkwind)
+    revikwind = deriveBone("rev_ik_%s" % windname, wind, rig, lhelp2, ikwind)
     vec = (last.tail - first.head) * 0.1
     par = first.parent
     tailb = None
@@ -278,12 +279,14 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None):
     fkwind = rig.pose.bones[windname]
     ikwind = rig.pose.bones["ik_%s" % windname]
     revwind = rig.pose.bones["rev_%s" % windname]
+    revikwind = rig.pose.bones["rev_ik_%s" % windname]
     pb = rig.pose.bones[bnames[0]]
     wind.rotation_mode = pb.rotation_mode
     fkwind.rotation_mode = pb.rotation_mode
     ikwind.rotation_mode = pb.rotation_mode
     revwind.rotation_mode = pb.rotation_mode
-    copyTransformFkIk(wind, fkwind, revwind, rig, prop2)
+    revikwind.rotation_mode = pb.rotation_mode
+    copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
     nbones = len(bnames)
     pbones = []
     for n,bname in enumerate(bnames):
@@ -825,6 +828,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         neckbones = [bname for bname in NeckBones if bname in rig.data.bones.keys()]
         layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
         if self.useSpineIk:
+            rig.data.MhaFeatures |= F_SPINE
             setMhx(rig, "MhaSpineIk", 1.0)
             addSuperWinder(rig, "back", backbones, layers, None, "MhaSpineIk")
             addWinder(rig, "neckhead", neckbones, layers)
