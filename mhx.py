@@ -572,6 +572,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addTweaks(rig)
         showProgress(14, 25, "  Add backbone")
         self.addBack(rig)
+        self.addTongueIk(rig)
         showProgress(15, 25, "  Add master bone")
         self.addMaster(rig)
         showProgress(16, 25, "  Setup FK-IK")
@@ -590,7 +591,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreAllConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
-        self.addTongueIk(rig)
+        #self.addTongueIk(rig)
         self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
@@ -686,7 +687,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.bone.layers = layer*[False] + [True] + (31-layer)*[False]
             if False and unlock:
                 pb.lock_location = (False,False,False)
-        self.checkTongueIk(rig)
+        #self.checkTongueIk(rig)
         self.checkFingerIk(rig)
 
 
@@ -821,11 +822,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #   Backbone
     #-------------------------------------------------------------
 
+    def getExistingBones(self, rig, bnames):
+        return [bname for bname in bnames if bname in rig.data.bones.keys()]
+
+
     def addBack(self, rig):
         BackBones = ["spine", "spine-1", "chest", "chest-1"]
         NeckBones = ["neck", "neck-1", "head"]
-        backbones = [bname for bname in BackBones if bname in rig.data.bones.keys()]
-        neckbones = [bname for bname in NeckBones if bname in rig.data.bones.keys()]
+        backbones = self.getExistingBones(rig, BackBones)
+        neckbones = self.getExistingBones(rig, NeckBones)
         layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
         if self.useSpineIk:
             rig.data.MhaFeatures |= F_SPINE
@@ -835,6 +840,18 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         else:
             addWinder(rig, "back", backbones, layers)
             addWinder(rig, "neckhead", neckbones, layers)
+
+
+    def addTongueIk(self, rig):
+        setMhx(rig, "MhaTongueIk", 0.0)
+        if not self.useTongueIk:
+            return
+        rig.data.MhaFeatures |= F_TONGUE
+        self.tongueBones = [bone.name for bone in rig.data.bones
+                            if bone.name.lower().startswith("tongue")]
+        self.tongueBones.sort()
+        layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
+        addSuperWinder(rig, "tongue", self.tongueBones, layers, None, "MhaTongueIk")
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -1198,7 +1215,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.rolls["%s.%s" % (bname,suffix)] = rig.data.edit_bones["%s.%s" % (bname,suffix)].roll
 
         self.addCombinedGazeBone(rig, L_HEAD, L_HELP)
-        self.addTongueIkBone(rig, L_HEAD, L_DEF)
+        #self.addTongueIkBone(rig, L_HEAD, L_DEF)
 
         from .figure import copyBoneInfo
         setMode('OBJECT')
@@ -1733,7 +1750,8 @@ Gizmos = {
     "back" :            ("GZM_Knuckle", 1),
     "ik_back" :         ("GZM_CrownHips", 0.3),
     "neckhead" :        ("GZM_Knuckle", 1),
-    "ik_tongue" :       ("GZM_Cone", 0.4),
+    "tongue" :          ("GZM_Knuckle", 1),
+    "ik_tongue" :       ("GZM_Cone", -0.2),
 
     #Spine
     "root" :            ("GZM_CrownHips", 1),

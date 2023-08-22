@@ -53,7 +53,7 @@ class Fixer(DriverUser):
     useTongueIk : BoolProperty(
         name = "Tongue IK",
         description = "Generate IK controls for tongue",
-        default = False)
+        default = True)
 
     reuseBendTwists : BoolProperty(
         name = "Reuse Bend And Twist Bones",
