@@ -53,7 +53,9 @@ L_RTOE =    29
 L_FACE =    8
 L_TWEAK =   9
 L_HEAD =    10
+L_UNUSED =  11
 L_CUSTOM =  16
+L_CUSTOM2 = 17
 
 L_HELP =    14
 L_HELP2 =   15
@@ -91,3 +93,4 @@ F_TONGUE = 1
 F_FINGER = 2
 F_IDPROPS = 4
 F_SPINE = 8
+F_SHAFT = 16

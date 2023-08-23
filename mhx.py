@@ -242,7 +242,7 @@ def getPropString(prop, x):
 #   Winders
 #-------------------------------------------------------------
 
-def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None):
+def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor=1, alignRoll=False):
     if len(bnames) < 2:
         return
     if len(layers) == 2:
@@ -264,13 +264,15 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None):
     tailb = None
     for bname in bnames:
         defb = rig.data.edit_bones[bname]
+        if alignRoll:
+            defb.roll = roll
         defb.layers = ldef*[False] + [True] + (31-ldef)*[False]
         defb.name = "DEF-%s" % bname
         headb = makeBone("head_%s" % bname, rig, defb.head, defb.head+vec, roll, lhelp2, par)
         if tailb:
             tailb.parent = headb
         tailb = makeBone("tail_%s" % bname, rig, defb.tail, defb.tail+vec, roll, lhelp2, None)
-        eb = makeBone(bname, rig, defb.head, defb.tail, roll, lspine, headb)
+        eb = deriveBone(bname, defb, rig, lspine, headb)
         par = eb
     tailb.parent = wind
 
@@ -299,7 +301,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None):
         tailb = rig.pose.bones["tail_%s" % bname]
         cns = copyTransform(defb, pb, rig, space='WORLD')
         cns = copyTransform(headb, wind, rig, prop1, space='LOCAL')
-        cns.influence = 1/nbones
+        cns.influence = factor/nbones
         if n < nbones-1:
             cns = stretchTo(defb, tailb, rig, prop1)
     return fkwind, ikwind, pbones
@@ -376,6 +378,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Spine IK (experimental)",
         default = True)
 
+    useShaftIk : BoolProperty(
+        name = "Shaft IK",
+        description = "Add IK for Dicktator/Futalicious shaft",
+        default = True)
+
     useChildOfConstraints : BoolProperty(
         name = "ChildOf Constraints (Experimental)",
         description = ("Use childOf constraints for parents of elbow and knee pole targets.\n" +
@@ -431,13 +438,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "showLinks")
             self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "addTweakBones")
-        self.layout.prop(self, "useSpineIk")
         Fixer.draw(self, context)
         self.layout.prop(self, "useChildOfConstraints")
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useFoot2")
         self.layout.prop(self, "useRaiseError")
+
+    def drawMiddle(self):
+        self.layout.prop(self, "useSpineIk")
+        self.layout.prop(self, "useShaftIk")
 
     def invoke(self, context, event):
         self.createBoneGroups(context.object)
@@ -573,6 +583,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(14, 25, "  Add backbone")
         self.addBack(rig)
         self.addTongueIk(rig)
+        self.addShaftIk(rig)
         showProgress(15, 25, "  Add master bone")
         self.addMaster(rig)
         showProgress(16, 25, "  Setup FK-IK")
@@ -843,15 +854,31 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def addTongueIk(self, rig):
+        def isTongue(bname):
+            return (bname.lower()[0:6] == "tongue" and bname[6:].isdigit())
+
         setMhx(rig, "MhaTongueIk", 0.0)
         if not self.useTongueIk:
             return
         rig.data.MhaFeatures |= F_TONGUE
-        self.tongueBones = [bone.name for bone in rig.data.bones
-                            if bone.name.lower().startswith("tongue")]
+        self.tongueBones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
         self.tongueBones.sort()
         layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
         addSuperWinder(rig, "tongue", self.tongueBones, layers, None, "MhaTongueIk")
+
+
+    def addShaftIk(self, rig):
+        def isShaft(bname):
+            return (bname.lower()[0:5] == "shaft" and bname[5:].isdigit())
+
+        setMhx(rig, "MhaShaftIk", 0.0)
+        if not self.useShaftIk:
+            return
+        rig.data.MhaFeatures |= F_SHAFT
+        shaftbones = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+        shaftbones.sort()
+        layers = [L_CUSTOM, L_CUSTOM2, L_HELP, L_HELP2, L_DEF]
+        addSuperWinder(rig, "shaft", shaftbones, layers, None, "MhaShaftIk", factor=2, alignRoll=True)
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -1752,6 +1779,8 @@ Gizmos = {
     "neckhead" :        ("GZM_Knuckle", 1),
     "tongue" :          ("GZM_Knuckle", 1),
     "ik_tongue" :       ("GZM_Cone", -0.2),
+    "shaft" :           ("GZM_Knuckle", 1),
+    "ik_shaft" :        ("GZM_Cone", -0.2),
 
     #Spine
     "root" :            ("GZM_CrownHips", 1),
