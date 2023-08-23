@@ -381,7 +381,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     useShaftIk : BoolProperty(
         name = "Shaft IK",
         description = "Add IK for Dicktator/Futalicious shaft",
-        default = True)
+        default = False)
 
     useChildOfConstraints : BoolProperty(
         name = "ChildOf Constraints (Experimental)",
@@ -615,7 +615,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addBoneGroups(rig)
         if self.useImproveIk:
             from .simple import improveIk
-            improveIk(rig, exclude=self.tongueBones)
+            improveIk(rig)
         rig.MhxRig = True
         rig.data.display_type = 'OCTAHEDRAL'
         #rig.data.display_type = 'WIRE'
@@ -861,10 +861,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if not self.useTongueIk:
             return
         rig.data.MhaFeatures |= F_TONGUE
-        self.tongueBones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
-        self.tongueBones.sort()
+        tonguebones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
+        tonguebones.sort()
         layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "tongue", self.tongueBones, layers, None, "MhaTongueIk")
+        addSuperWinder(rig, "tongue", tonguebones, layers, None, "MhaTongueIk")
 
 
     def addShaftIk(self, rig):
