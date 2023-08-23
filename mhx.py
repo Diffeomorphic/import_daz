@@ -617,8 +617,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             from .simple import improveIk
             improveIk(rig)
         rig.MhxRig = True
-        rig.data.display_type = 'OCTAHEDRAL'
-        #rig.data.display_type = 'WIRE'
+        #rig.data.display_type = 'OCTAHEDRAL'
+        rig.data.display_type = 'WIRE'
         rig.data.MhaFeatures |= F_IDPROPS
         T = True
         F = False
@@ -760,7 +760,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elif self.isFaceBone(pb, rig) and not self.isEyeLid(pb):
                 self.addGizmo(pb, "GZM_Circle", 0.2)
             else:
-                for pname in self.FingerNames + ["big_toe", "small_toe"]:
+                for pname in MHX.F_Fingers + ["big_toe", "small_toe"]:
                     if pb.name.startswith(pname):
                         self.addGizmo(pb, "GZM_Circle", 0.4)
                 for pname,shape,scale in [
@@ -953,15 +953,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #   Fingers
     #-------------------------------------------------------------
 
-    FingerNames = ["thumb", "f_index", "f_middle", "f_ring", "f_pinky"]
-    PalmNames = ["palm_thumb", "palm_index", "palm_index", "palm_middle", "palm_middle"]
-
     def linkName(self, m, n, suffix):
-        return ("%s.0%d.%s" % (self.FingerNames[m], n+1, suffix))
+        return ("%s.0%d.%s" % (MHX.F_Fingers[m], n+1, suffix))
 
 
     def longName(self, m, suffix):
-        fname = self.FingerNames[m]
+        fname = MHX.F_Fingers[m]
         if fname[0:2] == "f_":
             return "%s.%s" % (fname[2:], suffix)
         else:
@@ -969,7 +966,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def palmname(self, m, suffix):
-        return "%s.%s" % (self.PalmNames[m], suffix)
+        return "%s.%s" % (MHX.PalmNames[m], suffix)
 
 
     def checkFingerIk(self, rig):
@@ -1883,7 +1880,7 @@ def setToFk(rig, layers, useInsertKeys, frame):
             if useInsertKeys:
                 rig.data.keyframe_insert(propRef(prop), frame=frame)
 
-    for prop in ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R", "MhaSpineIk"]:
+    for prop in ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R", "MhaSpineIk", "MhaTongueIK", "MhaShaftIK"]:
         setValue(rig, prop, 0.0)
     for prop in ["MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R"]:
         setValue(rig, prop, 0)
@@ -1894,6 +1891,17 @@ def setToFk(rig, layers, useInsertKeys, frame):
     for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:
         layers[layer] = False
     return layers
+
+
+def updateWinders(rig, frame):
+    winders = ["back", "tongue", "shaft"]
+    for suffix in ["L", "R"]:
+        winders += ["%s.%s" % (fing, suffix) for fing in MHX.Fingers]
+    for bname in winders:
+        revwind = rig.pose.bones.get("rev_%s" % bname)
+        ikwind = rig.pose.bones.get("ik_%s" % bname)
+        if revwind and ikwind:
+            ikwind.matrix = revwind.matrix
 
 #-------------------------------------------------------------
 #   Register

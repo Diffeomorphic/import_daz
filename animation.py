@@ -825,6 +825,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         for pb,lock in locks:
             pb.lock_location = lock
         updateDrivers(rig)
+        updateScene(context)
+        self.updateWinders(rig, scn.frame_current)
         setMode('OBJECT')
         self.mergeHipObject(rig)
         return result
@@ -850,6 +852,16 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif rig.DazSimpleIK:
             from .simple import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)
+
+
+    def updateWinders(self, rig, frame):
+        if not self.affectBones:
+            return
+        if rig.MhxRig or rig.DazRig == "mhx":
+            from .mhx import updateWinders
+            updateWinders(rig, frame)
+        elif rig.DazSimpleIK:
+            pass
 
 
     def parseScene(self, struct, rig):

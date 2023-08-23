@@ -29,6 +29,10 @@ from .layers import *
 from mathutils import Vector
 
 class MhxData:
+    Fingers = ["thumb", "index", "middle", "ring", "pinky"]
+    F_Fingers = ["thumb", "f_index", "f_middle", "f_ring", "f_pinky"]
+    PalmNames = ["palm_thumb", "palm_index", "palm_index", "palm_middle", "palm_middle"]
+
     Skeleton = {
         "hip" : ("hip", L_MAIN),
         "pelvis" : ("pelvis", L_SPINE),
