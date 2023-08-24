@@ -988,7 +988,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             prop1 = "MhaFingerControl_%s" % suffix
             setMhx(rig, prop1, True)
             prop2 = "MhaFingerIk_%s" % suffix
-            setMhx(rig, prop2, False)
+            setMhx(rig, prop2, 0.0)
             layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
             for m in range(5):
                 bnames = [self.linkName(m, n, suffix) for n in range(3)]
