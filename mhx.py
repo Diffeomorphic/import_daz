@@ -847,8 +847,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
         if self.useSpineIk:
             rig.data.MhaFeatures |= F_SPINE
-            setMhx(rig, "MhaSpineIk", 1.0)
-            addSuperWinder(rig, "back", backbones, layers, None, "MhaSpineIk", master="master")
+            setMhx(rig, "MhaSpineControl", True)
+            setMhx(rig, "MhaSpineIk", 0.0)
+            addSuperWinder(rig, "back", backbones, layers, "MhaSpineControl", "MhaSpineIk", master="master")
             addWinder(rig, "neckhead", neckbones, layers)
         else:
             addWinder(rig, "back", backbones, layers)
@@ -859,6 +860,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         def isTongue(bname):
             return (bname.lower()[0:6] == "tongue" and bname[6:].isdigit())
 
+        setMhx(rig, "MhaTongueControl", True)
         setMhx(rig, "MhaTongueIk", 0.0)
         if not self.useTongueIk:
             return
@@ -866,13 +868,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         tonguebones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
         tonguebones.sort()
         layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "tongue", tonguebones, layers, None, "MhaTongueIk", master="master")
+        addSuperWinder(rig, "tongue", tonguebones, layers, "MhaTongueControl", "MhaTongueIk", master="master")
 
 
     def addShaftIk(self, rig):
         def isShaft(bname):
             return (bname.lower()[0:5] == "shaft" and bname[5:].isdigit())
 
+        setMhx(rig, "MhaShaftControl", True)
         setMhx(rig, "MhaShaftIk", 0.0)
         if not self.useShaftIk:
             return
@@ -880,7 +883,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         shaftbones = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
         shaftbones.sort()
         layers = [L_CUSTOM, L_CUSTOM2, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "shaft", shaftbones, layers, None, "MhaShaftIk", factor=2, alignRoll=True, master="master")
+        addSuperWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", "MhaShaftIk", factor=2, alignRoll=True, master="master")
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -986,12 +989,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             setMhx(rig, prop1, True)
             prop2 = "MhaFingerIk_%s" % suffix
             setMhx(rig, prop2, False)
-            if self.useFingerIk:
-                props = (mhxProp(prop1), mhxProp(prop2))
-                expr = "(x2==1 or not(x1))"
-            else:
-                props = mhxProp(prop1)
-                expr = "not(x)"
             layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
             for m in range(5):
                 bnames = [self.linkName(m, n, suffix) for n in range(3)]
