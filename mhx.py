@@ -242,7 +242,7 @@ def getPropString(prop, x):
 #   Winders
 #-------------------------------------------------------------
 
-def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor=1, alignRoll=False):
+def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor=1, alignRoll=False, master=None):
     if len(bnames) < 2:
         return
     if len(layers) == 2:
@@ -253,10 +253,12 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     setMode('EDIT')
     first = rig.data.edit_bones[bnames[0]]
     last = rig.data.edit_bones[bnames[-1]]
+    if master:
+        master = rig.data.edit_bones.get(master)
     roll = first.roll
     wind = makeBone("mch_%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent)
     fkwind = deriveBone(windname, wind, rig, lmain, first.parent)
-    ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, None)
+    ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
     revwind = deriveBone("rev_%s" % windname, ikwind, rig, lhelp2, fkwind)
     revikwind = deriveBone("rev_ik_%s" % windname, wind, rig, lhelp2, ikwind)
     vec = (last.tail - first.head) * 0.1
@@ -576,16 +578,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #   Add MHX stuff
         #-------------------------------------------------------------
 
-        showProgress(12, 25, "  Add long fingers")
+        showProgress(12, 25, "  Add master bone")
+        self.addMaster(rig)
+        showProgress(13, 25, "  Add long fingers")
         self.addLongFingers(rig)
-        showProgress(13, 25, "  Add tweak bones")
+        showProgress(14, 25, "  Add tweak bones")
         self.addTweaks(rig)
-        showProgress(14, 25, "  Add backbone")
+        showProgress(15, 25, "  Add backbone")
         self.addBack(rig)
         self.addTongueIk(rig)
         self.addShaftIk(rig)
-        showProgress(15, 25, "  Add master bone")
-        self.addMaster(rig)
         showProgress(16, 25, "  Setup FK-IK")
         self.setupFkIk(rig)
         showProgress(17, 25, "  Add layers")
@@ -846,7 +848,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.useSpineIk:
             rig.data.MhaFeatures |= F_SPINE
             setMhx(rig, "MhaSpineIk", 1.0)
-            addSuperWinder(rig, "back", backbones, layers, None, "MhaSpineIk")
+            addSuperWinder(rig, "back", backbones, layers, None, "MhaSpineIk", master="master")
             addWinder(rig, "neckhead", neckbones, layers)
         else:
             addWinder(rig, "back", backbones, layers)
@@ -864,7 +866,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         tonguebones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
         tonguebones.sort()
         layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "tongue", tonguebones, layers, None, "MhaTongueIk")
+        addSuperWinder(rig, "tongue", tonguebones, layers, None, "MhaTongueIk", master="master")
 
 
     def addShaftIk(self, rig):
@@ -878,7 +880,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         shaftbones = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
         shaftbones.sort()
         layers = [L_CUSTOM, L_CUSTOM2, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "shaft", shaftbones, layers, None, "MhaShaftIk", factor=2, alignRoll=True)
+        addSuperWinder(rig, "shaft", shaftbones, layers, None, "MhaShaftIk", factor=2, alignRoll=True, master="master")
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -996,7 +998,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 bnames = [bname for bname in bnames if bname in rig.data.bones.keys()]
                 long = self.longName(m, suffix)
                 if self.useFingerIk:
-                    fklong,iklong,pbones = addSuperWinder(rig, long, bnames, layers, prop1, prop2)
+                    fklong,iklong,pbones = addSuperWinder(rig, long, bnames, layers, prop1, prop2, master="master")
                 else:
                     fklong,pbones = addWinder(rig, long, bnames, layers, prop1)
                 fklong.lock_location = (True,True,True)
@@ -1099,6 +1101,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def setupFkIk(self, rig):
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
+        master = rig.data.edit_bones["master"]
         for suffix,dlayer in [("L",0), ("R",16)]:
             upper_arm = self.setLayer("upper_arm.%s" % suffix, rig, L_HELP)
             forearm = self.setLayer("forearm.%s" % suffix, rig, L_HELP)
@@ -1136,7 +1139,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             setConnected(forearmIk, forearm.use_connect)
             upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LEXTRA+dlayer, upper_armIk)
             forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LEXTRA+dlayer, forearmIk)
-            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, self.master)
+            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
             if self.usePoleTargets:
@@ -1193,14 +1196,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 vec = foot.tail - foot.head
                 locFootIk = (foot.head[0], foot.head[1] - 0.5*vec[1], toe.tail[2])
-            footIk = makeBone("foot.ik.%s" % suffix, rig, locFootIk, toe.tail, 180*D, L_LLEGIK+dlayer, self.master)
+            footIk = makeBone("foot.ik.%s" % suffix, rig, locFootIk, toe.tail, 180*D, L_LLEGIK+dlayer, master)
             toeRev = makeBone("toe.rev.%s" % suffix, rig, toe.tail, toe.head, 0, L_LLEGIK+dlayer, footIk)
             setConnected(toeRev, True)
             footRev = makeBone("foot.rev.%s" % suffix, rig, toe.head, foot.head, 0, L_LLEGIK+dlayer, toeRev)
             setConnected(footRev, True)
             locAnkle = foot.head + (shin.tail-shin.head)/4
             if self.useFoot2:
-                foot2 = deriveBone("foot.2.%s" % suffix, foot, rig, L_LEXTRA+dlayer, self.master)
+                foot2 = deriveBone("foot.2.%s" % suffix, foot, rig, L_LEXTRA+dlayer, master)
                 setConnected(foot2, False)
                 toe2 = deriveBone("toe.2.%s" % suffix, toe, rig, L_LEXTRA+dlayer, foot2)
                 setConnected(toe2, True)
@@ -1653,8 +1656,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def addMaster(self, rig):
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
-        self.master = makeBone("master", rig, (0,0,0), (0,hip.head[2]/5,0), 0, L_MAIN, None)
-        hip.parent = self.master
+        master = makeBone("master", rig, (0,0,0), (0,hip.head[2]/5,0), 0, L_MAIN, None)
+        hip.parent = master
         return
         for eb in rig.data.edit_bones:
             if (eb.parent is None and
