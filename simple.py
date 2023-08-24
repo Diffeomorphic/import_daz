@@ -295,11 +295,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         }
 
         armTable2 = {
-            "G38" : ("ShldrIK", "ForearmIKTwist"),
+            "G38" : ("ShldrIK", "ForearmIK"),
         }
 
         legTable2 = {
-            "G38" : ("ThighIK", "ShinIKTwist"),
+            "G38" : ("ThighIK", "ShinIK"),
         }
 
         def getEntry(table, key, prefix, bones):
