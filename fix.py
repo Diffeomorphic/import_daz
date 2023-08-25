@@ -1043,6 +1043,7 @@ class BendTwists:
             srcbone = rig.pose.bones[bendname]
             trgbone = rig.pose.bones[bname]
             copyBoneInfo(srcbone, trgbone)
+            trgbone.DazRotLocks = (False, False, False)
 
         setMode('EDIT')
         for data in bendTwistBones:

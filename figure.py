@@ -417,7 +417,7 @@ def copyBoneInfo(srcpb, trgpb):
     for key in ["DazRigIndex", "DazTrueName"]:
         if key in srcpb.bone.keys():
             trgpb.bone[key] = srcpb.bone[key]
-    for attr in ["DazRestRotation", "DazAxes", "DazFlips"]:
+    for attr in ["DazRestRotation", "DazAxes", "DazFlips", "DazLocLocks", "DazRotLocks"]:
         setattr(trgpb, attr, tuple(getattr(srcpb, attr)))
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
         for x in ["x", "y", "z"]:

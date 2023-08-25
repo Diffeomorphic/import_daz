@@ -261,55 +261,54 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
     revwind = deriveBone("rev_%s" % windname, ikwind, rig, lhelp2, fkwind)
     revikwind = deriveBone("rev_ik_%s" % windname, wind, rig, lhelp2, ikwind)
-    vec = (last.tail - first.head) * 0.1
-    par = first.parent
-    tailb = None
+    eb = first.parent
+    tailb = first.parent
     for bname in bnames:
         defb = rig.data.edit_bones[bname]
         if alignRoll:
             defb.roll = roll
         defb.layers = ldef*[False] + [True] + (31-ldef)*[False]
         defb.name = "DEF-%s" % bname
-        headb = makeBone("head_%s" % bname, rig, defb.head, defb.head+vec, roll, lhelp2, par)
-        if tailb:
-            tailb.parent = headb
-        tailb = makeBone("tail_%s" % bname, rig, defb.tail, defb.tail+vec, roll, lhelp2, None)
-        eb = deriveBone(bname, defb, rig, lspine, headb)
-        par = eb
+        vec = (defb.tail - defb.head) * 0.2
+        headb = makeBone("head_%s" % bname, rig, defb.head, defb.head+vec, defb.roll, lhelp2, tailb)
+        tailb = makeBone("tail_%s" % bname, rig, defb.tail, defb.tail+vec, defb.roll, lhelp2, headb)
+        eb = deriveBone(bname, defb, rig, lspine, eb)
     tailb.parent = wind
 
+    from .driver import addDriver
+    from .figure import copyBoneInfo
     setMode('POSE')
     wind = rig.pose.bones["mch_%s" % windname]
     fkwind = rig.pose.bones[windname]
     ikwind = rig.pose.bones["ik_%s" % windname]
     revwind = rig.pose.bones["rev_%s" % windname]
     revikwind = rig.pose.bones["rev_ik_%s" % windname]
-    pb = rig.pose.bones[bnames[0]]
-    wind.rotation_mode = pb.rotation_mode
-    fkwind.rotation_mode = pb.rotation_mode
-    ikwind.rotation_mode = pb.rotation_mode
-    revwind.rotation_mode = pb.rotation_mode
-    revikwind.rotation_mode = pb.rotation_mode
-    copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
     nbones = len(bnames)
     pbones = []
     for n,bname in enumerate(bnames):
         pb = rig.pose.bones[bname]
         pbones.append(pb)
         defb = rig.pose.bones["DEF-%s" % bname]
-        pb.rotation_mode = defb.rotation_mode
-        pb.lock_rotation = defb.lock_rotation
+        copyBoneInfo(defb, pb)
         headb = rig.pose.bones["head_%s" % bname]
         tailb = rig.pose.bones["tail_%s" % bname]
+        cns = copyTransform(pb, headb, rig, space='WORLD')
+        addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
         cns = copyTransform(defb, pb, rig, space='WORLD')
-        cns = copyTransform(headb, wind, rig, prop1, space='LOCAL')
+        cns = copyTransform(headb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
         if n < nbones-1:
-            cns = stretchTo(defb, tailb, rig, prop1)
+            stretchTo(defb, tailb, rig, prop1)
+            #dampedTrack(defb, tailb, rig, prop1)
+    pb = rig.pose.bones[bnames[0]]
+    fkwind.rotation_mode = pb.rotation_mode
+    copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
     return fkwind, ikwind, pbones
 
 
 def addWinder(rig, windname, bnames, layers, prop=None):
+    if len(bnames) < 3:
+        return
     setMode('EDIT')
     first = rig.data.edit_bones[bnames[0]]
     last = rig.data.edit_bones[bnames[-1]]
@@ -378,7 +377,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     useSpineIk : BoolProperty(
         name = "Spine IK",
         description = "Spine IK (experimental)",
-        default = True)
+        default = False)
 
     useShaftIk : BoolProperty(
         name = "Shaft IK",
@@ -581,7 +580,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(12, 25, "  Add master bone")
         self.addMaster(rig)
         showProgress(13, 25, "  Add long fingers")
-        self.addLongFingers(rig)
+        self.addFingerWinders(rig)
         showProgress(14, 25, "  Add tweak bones")
         self.addTweaks(rig)
         showProgress(15, 25, "  Add backbone")
@@ -845,15 +844,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         backbones = self.getExistingBones(rig, BackBones)
         neckbones = self.getExistingBones(rig, NeckBones)
         layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
+        setMhx(rig, "MhaSpineControl", True)
         if self.useSpineIk:
             rig.data.MhaFeatures |= F_SPINE
-            setMhx(rig, "MhaSpineControl", True)
             setMhx(rig, "MhaSpineIk", 0.0)
             addSuperWinder(rig, "back", backbones, layers, "MhaSpineControl", "MhaSpineIk", master="master")
-            addWinder(rig, "neckhead", neckbones, layers)
         else:
-            addWinder(rig, "back", backbones, layers)
-            addWinder(rig, "neckhead", neckbones, layers)
+            addWinder(rig, "back", backbones, layers, "MhaSpineControl")
+        addWinder(rig, "neckhead", neckbones, layers, "MhaSpineControl")
 
 
     def addTongueIk(self, rig):
@@ -861,14 +859,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             return (bname.lower()[0:6] == "tongue" and bname[6:].isdigit())
 
         setMhx(rig, "MhaTongueControl", True)
-        setMhx(rig, "MhaTongueIk", 0.0)
-        if not self.useTongueIk:
-            return
-        rig.data.MhaFeatures |= F_TONGUE
         tonguebones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
         tonguebones.sort()
         layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "tongue", tonguebones, layers, "MhaTongueControl", "MhaTongueIk", master="master")
+        if self.useTongueIk:
+            setMhx(rig, "MhaTongueIk", 0.0)
+            rig.data.MhaFeatures |= F_TONGUE
+            addSuperWinder(rig, "tongue", tonguebones, layers, "MhaTongueControl", "MhaTongueIk", master="master")
+        else:
+            addWinder(rig, "tongue", tonguebones, layers, "MhaTongueControl")
 
 
     def addShaftIk(self, rig):
@@ -876,14 +875,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             return (bname.lower()[0:5] == "shaft" and bname[5:].isdigit())
 
         setMhx(rig, "MhaShaftControl", True)
-        setMhx(rig, "MhaShaftIk", 0.0)
-        if not self.useShaftIk:
-            return
-        rig.data.MhaFeatures |= F_SHAFT
         shaftbones = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
         shaftbones.sort()
         layers = [L_CUSTOM, L_CUSTOM2, L_HELP, L_HELP2, L_DEF]
-        addSuperWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", "MhaShaftIk", factor=2, alignRoll=True, master="master")
+        if self.useShaftIk:
+            setMhx(rig, "MhaShaftIk", 0.0)
+            rig.data.MhaFeatures |= F_SHAFT
+            addSuperWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", "MhaShaftIk", factor=2, alignRoll=True, master="master")
+        else:
+            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl")
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -962,18 +962,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         return ("%s.0%d.%s" % (MHX.F_Fingers[m], n+1, suffix))
 
 
-    def longName(self, m, suffix):
-        fname = MHX.F_Fingers[m]
-        if fname[0:2] == "f_":
-            return "%s.%s" % (fname[2:], suffix)
-        else:
-            return "%s.%s" % (fname, suffix)
-
-
-    def palmname(self, m, suffix):
-        return "%s.%s" % (MHX.PalmNames[m], suffix)
-
-
     def checkFingerIk(self, rig):
         if self.useFingerIk:
             bnames = [self.linkName(m, n, suffix) for m in range(5) for n in range(3) for suffix in ["L", "R"]]
@@ -981,101 +969,29 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.useFingerIk = False
 
 
-    def addLongFingers(self, rig):
+    def addFingerWinders(self, rig):
         if self.useFingerIk:
             rig.data.MhaFeatures |= F_FINGER
         for suffix,dlayer in [("L",0), ("R",16)]:
             prop1 = "MhaFingerControl_%s" % suffix
             setMhx(rig, prop1, True)
-            prop2 = "MhaFingerIk_%s" % suffix
-            setMhx(rig, prop2, 0.0)
+            if self.useFingerIk:
+                prop2 = "MhaFingerIk_%s" % suffix
+                setMhx(rig, prop2, 0.0)
             layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
             for m in range(5):
                 bnames = [self.linkName(m, n, suffix) for n in range(3)]
                 bnames = [bname for bname in bnames if bname in rig.data.bones.keys()]
-                long = self.longName(m, suffix)
+                windname = "%s.%s" % (MHX.Fingers[m], suffix)
                 if self.useFingerIk:
-                    fklong,iklong,pbones = addSuperWinder(rig, long, bnames, layers, prop1, prop2, master="master")
+                    fkwind,ikwind,pbones = addSuperWinder(rig, windname, bnames, layers, prop1, prop2, master="master")
                 else:
-                    fklong,pbones = addWinder(rig, long, bnames, layers, prop1)
-                fklong.lock_location = (True,True,True)
-                fklong.lock_rotation = (False,True,False)
+                    fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1)
+                fkwind.lock_rotation = (False,True,False)
                 lock = (False,True,False)
                 for pb in pbones:
                     pb.lock_rotation = lock
                     lock = (False,True,True)
-
-
-        return
-
-
-        '''
-
-                fing1name = self.linkName(m, 0, suffix)
-                palmname = self.palmname(m, suffix)
-                if fing1name in rig.data.edit_bones.keys():
-                    fing1 = rig.data.edit_bones[fing1name]
-                else:
-                    self.raiseError(fing1name)
-                    continue
-                if palmname in rig.data.edit_bones.keys():
-                    palm = rig.data.edit_bones[palmname]
-                elif m == 0:
-                    palm = hand
-                else:
-                    self.raiseError(palmname)
-                    continue
-                fing3name = self.linkName(m, 2, suffix)
-                if fing3name in rig.data.edit_bones.keys():
-                    fing3 = rig.data.edit_bones[fing3name]
-                else:
-                    self.raiseError(fing3name)
-                    continue
-                makeBone(self.longName(m, suffix), rig, fing1.head, fing3.tail, fing1.roll, L_LHAND+dlayer, palm)
-                if self.useFingerIk:
-                    for n in range(3):
-                        bname = self.linkName(m, n, suffix)
-                        fing = rig.data.edit_bones[bname]
-                        makeBone("ik_%s" % bname, rig, fing.tail, 2*fing.tail-fing.head, fing.roll, L_LHAND+dlayer, hand)
-
-        setMode('POSE')
-        self.drvBones = {}
-        for suffix,dlayer in [("L",0), ("R",16)]:
-            thumb1Name = self.linkName(0, 0, suffix)
-            if thumb1Name in rig.data.bones.keys():
-                thumb1 = rig.data.bones[thumb1Name]
-            else:
-                self.raiseError(thumb1Name)
-                continue
-            #thumb1.layers[L_LHAND+dlayer] = True
-            for m in range(5):
-                long = rig.pose.bones[self.longName(m, suffix)]
-
-                cns = copyRotation(fing, long, rig)
-
-
-        '''
-
-    def addFingerIk(self, rig):
-        for suffix in ["L", "R"]:
-            prop = "MhaFingerIk_%s" % suffix
-            for m in range(5):
-                for n in range(3):
-                    bname = self.linkName(m, n, suffix)
-                    pb = rig.pose.bones[bname]
-                    cns = getConstraint(pb, 'LIMIT_ROTATION')
-                    if cns:
-                        self.setIkLimits(cns, pb, pb)
-                        addDriver(cns, "mute", rig, mhxProp(prop), "x")
-                    bname = self.linkName(m, n, suffix)
-                    pb = rig.pose.bones[bname]
-                    ikname = "ik_%s" % bname
-                    trgb = rig.pose.bones[ikname]
-                    trgb.bone.use_deform = False
-                    self.addGizmo(trgb, "GZM_Ball", 0.2)
-                    cns = stretchTo(pb, trgb, rig, prop)
-                    addDriver(trgb.bone, "hide", rig, mhxProp(prop), "x==0")
-                    rig.data.MhaFeatures |= F_FINGER
 
     #-------------------------------------------------------------
     #   FK/IK
