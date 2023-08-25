@@ -256,33 +256,29 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     if master:
         master = rig.data.edit_bones.get(master)
     roll = first.roll
-    wind = makeBone("mch_%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent)
+    wind = makeBone("MCH-%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent)
     fkwind = deriveBone(windname, wind, rig, lmain, first.parent)
     ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
-    revwind = deriveBone("rev_%s" % windname, ikwind, rig, lhelp2, fkwind)
-    revikwind = deriveBone("rev_ik_%s" % windname, wind, rig, lhelp2, ikwind)
+    revwind = deriveBone("REV-%s" % windname, ikwind, rig, lhelp, fkwind)
+    revikwind = deriveBone("REV-ik_%s" % windname, wind, rig, lhelp, ikwind)
     eb = first.parent
-    tailb = first.parent
+    mchb = first.parent
     for bname in bnames:
         defb = rig.data.edit_bones[bname]
         if alignRoll:
             defb.roll = roll
         defb.layers = ldef*[False] + [True] + (31-ldef)*[False]
         defb.name = "DEF-%s" % bname
-        vec = (defb.tail - defb.head) * 0.2
-        headb = makeBone("head_%s" % bname, rig, defb.head, defb.head+vec, defb.roll, lhelp2, tailb)
-        tailb = makeBone("tail_%s" % bname, rig, defb.tail, defb.tail+vec, defb.roll, lhelp2, headb)
+        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, mchb)
         eb = deriveBone(bname, defb, rig, lspine, eb)
-    tailb.parent = wind
 
-    from .driver import addDriver
     from .figure import copyBoneInfo
     setMode('POSE')
-    wind = rig.pose.bones["mch_%s" % windname]
+    wind = rig.pose.bones["MCH-%s" % windname]
     fkwind = rig.pose.bones[windname]
     ikwind = rig.pose.bones["ik_%s" % windname]
-    revwind = rig.pose.bones["rev_%s" % windname]
-    revikwind = rig.pose.bones["rev_ik_%s" % windname]
+    revwind = rig.pose.bones["REV-%s" % windname]
+    revikwind = rig.pose.bones["REV-ik_%s" % windname]
     nbones = len(bnames)
     pbones = []
     for n,bname in enumerate(bnames):
@@ -290,16 +286,16 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         pbones.append(pb)
         defb = rig.pose.bones["DEF-%s" % bname]
         copyBoneInfo(defb, pb)
-        headb = rig.pose.bones["head_%s" % bname]
-        tailb = rig.pose.bones["tail_%s" % bname]
-        cns = copyTransform(pb, headb, rig, space='WORLD')
+        mchb = rig.pose.bones["MCH-%s" % bname]
+        cns = copyTransform(pb, mchb, rig, space='LOCAL')
         addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
         cns = copyTransform(defb, pb, rig, space='WORLD')
-        cns = copyTransform(headb, wind, rig, space='LOCAL')
+        cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
         if n < nbones-1:
-            stretchTo(defb, tailb, rig, prop1)
-            #dampedTrack(defb, tailb, rig, prop1)
+            cns = stretchTo(defb, mchb, rig, prop1)
+            #cns = dampedTrack(defb, mchb, rig, prop1)
+            cns.head_tail = 1.0
     pb = rig.pose.bones[bnames[0]]
     fkwind.rotation_mode = pb.rotation_mode
     copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
@@ -377,7 +373,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     useSpineIk : BoolProperty(
         name = "Spine IK",
         description = "Spine IK (experimental)",
-        default = False)
+        default = True)
+
+    useNeckIk : BoolProperty(
+        name = "Neck IK",
+        description = "Add IK to the neck and head bones",
+        default = True)
 
     useShaftIk : BoolProperty(
         name = "Shaft IK",
@@ -448,6 +449,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def drawMiddle(self):
         self.layout.prop(self, "useSpineIk")
+        self.layout.prop(self, "useNeckIk")
         self.layout.prop(self, "useShaftIk")
 
     def invoke(self, context, event):
@@ -840,9 +842,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addBack(self, rig):
         BackBones = ["spine", "spine-1", "chest", "chest-1"]
-        NeckBones = ["neck", "neck-1", "head"]
         backbones = self.getExistingBones(rig, BackBones)
-        neckbones = self.getExistingBones(rig, NeckBones)
         layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
         setMhx(rig, "MhaSpineControl", True)
         if self.useSpineIk:
@@ -851,7 +851,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             addSuperWinder(rig, "back", backbones, layers, "MhaSpineControl", "MhaSpineIk", master="master")
         else:
             addWinder(rig, "back", backbones, layers, "MhaSpineControl")
-        addWinder(rig, "neckhead", neckbones, layers, "MhaSpineControl")
+
+        NeckBones = ["neck", "neck-1", "head"]
+        neckbones = self.getExistingBones(rig, NeckBones)
+        setMhx(rig, "MhaNeckControl", True)
+        if self.useNeckIk:
+            rig.data.MhaFeatures |= F_NECK
+            setMhx(rig, "MhaNeckIk", 0.0)
+            addSuperWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl", "MhaNeckIk", master="master")
+        else:
+            addWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl")
 
 
     def addTongueIk(self, rig):
@@ -1690,6 +1699,7 @@ Gizmos = {
     "back" :            ("GZM_Knuckle", 1),
     "ik_back" :         ("GZM_CrownHips", 0.3),
     "neckhead" :        ("GZM_Knuckle", 1),
+    "ik_neckhead" :     ("GZM_CrownHips", 0.3),
     "tongue" :          ("GZM_Knuckle", 1),
     "ik_tongue" :       ("GZM_Cone", -0.2),
     "shaft" :           ("GZM_Knuckle", 1),
@@ -1814,7 +1824,7 @@ def updateWinders(rig, frame):
     for suffix in ["L", "R"]:
         winders += ["%s.%s" % (fing, suffix) for fing in MHX.Fingers]
     for bname in winders:
-        revwind = rig.pose.bones.get("rev_%s" % bname)
+        revwind = rig.pose.bones.get("REV-%s" % bname)
         ikwind = rig.pose.bones.get("ik_%s" % bname)
         if revwind and ikwind:
             ikwind.matrix = revwind.matrix
