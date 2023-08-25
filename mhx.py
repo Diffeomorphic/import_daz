@@ -269,8 +269,8 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
             defb.roll = roll
         defb.layers = ldef*[False] + [True] + (31-ldef)*[False]
         defb.name = "DEF-%s" % bname
-        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, mchb)
-        eb = deriveBone(bname, defb, rig, lspine, eb)
+        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, eb)
+        eb = deriveBone(bname, defb, rig, lspine, mchb)
 
     from .figure import copyBoneInfo
     setMode('POSE')
@@ -287,15 +287,15 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         defb = rig.pose.bones["DEF-%s" % bname]
         copyBoneInfo(defb, pb)
         mchb = rig.pose.bones["MCH-%s" % bname]
-        cns = copyTransform(pb, mchb, rig, space='LOCAL')
-        addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
-        cns = copyTransform(defb, pb, rig, space='WORLD')
         cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
-        if n < nbones-1:
-            cns = stretchTo(defb, mchb, rig, prop1)
-            #cns = dampedTrack(defb, mchb, rig, prop1)
+        addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+        cns = copyTransform(defb, pb, rig, space='WORLD')
+        if False and n < nbones-1:
+            cns = stretchTo(defb, mchb, rig)
+            #cns = dampedTrack(defb, mchb, rig)
             cns.head_tail = 1.0
+            addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
     pb = rig.pose.bones[bnames[0]]
     fkwind.rotation_mode = pb.rotation_mode
     copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
@@ -620,8 +620,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             from .simple import improveIk
             improveIk(rig)
         rig.MhxRig = True
-        #rig.data.display_type = 'OCTAHEDRAL'
-        rig.data.display_type = 'WIRE'
+        rig.data.display_type = 'OCTAHEDRAL'
+        #rig.data.display_type = 'WIRE'
         rig.data.MhaFeatures |= F_IDPROPS
         T = True
         F = False
