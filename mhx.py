@@ -243,7 +243,8 @@ def getPropString(prop, x):
 #-------------------------------------------------------------
 
 def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor=1, alignRoll=False, master=None):
-    if len(bnames) < 2:
+    nbones = len(bnames)
+    if nbones < 2:
         return
     if len(layers) == 2:
         lmain, lspine = layers
@@ -261,16 +262,12 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
     revwind = deriveBone("REV-%s" % windname, ikwind, rig, lhelp, fkwind)
     revikwind = deriveBone("REV-ik_%s" % windname, wind, rig, lhelp, ikwind)
-    eb = first.parent
-    mchb = first.parent
     for bname in bnames:
-        defb = rig.data.edit_bones[bname]
+        eb = rig.data.edit_bones[bname]
         if alignRoll:
-            defb.roll = roll
-        defb.layers = ldef*[False] + [True] + (31-ldef)*[False]
-        defb.name = "DEF-%s" % bname
-        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, eb)
-        eb = deriveBone(bname, defb, rig, lspine, mchb)
+            eb.roll = roll
+        mchb = deriveBone("MCH-%s" % bname, eb, rig, lhelp2, eb.parent)
+        eb.parent = mchb
 
     from .figure import copyBoneInfo
     setMode('POSE')
@@ -279,21 +276,17 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     ikwind = rig.pose.bones["ik_%s" % windname]
     revwind = rig.pose.bones["REV-%s" % windname]
     revikwind = rig.pose.bones["REV-ik_%s" % windname]
-    nbones = len(bnames)
     pbones = []
     for n,bname in enumerate(bnames):
         pb = rig.pose.bones[bname]
         pbones.append(pb)
-        defb = rig.pose.bones["DEF-%s" % bname]
-        copyBoneInfo(defb, pb)
         mchb = rig.pose.bones["MCH-%s" % bname]
         cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
         addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
-        cns = copyTransform(defb, pb, rig, space='WORLD')
         if False and n < nbones-1:
-            cns = stretchTo(defb, mchb, rig)
-            #cns = dampedTrack(defb, mchb, rig)
+            cns = stretchTo(pb, mchb, rig)
+            #cns = dampedTrack(pb, mchb, rig)
             cns.head_tail = 1.0
             addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
     pb = rig.pose.bones[bnames[0]]
