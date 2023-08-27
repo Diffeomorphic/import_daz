@@ -344,6 +344,8 @@ class Material(Asset, Channels):
         self.setupBasics()
         if self.dontBuild():
             return False
+        if GS.verbosity >= 4:
+            print("Build material %s" % self.name)
         mat = self.rna
         if mat is None:
             mat = self.rna = bpy.data.materials.new(self.name)

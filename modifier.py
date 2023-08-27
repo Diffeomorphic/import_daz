@@ -434,7 +434,8 @@ class SkinBinding(Modifier):
         ob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
-
+        if GS.verbosity >= 4:
+            print("Build skinbinding %s" % self.name)
         selmaps = self.skin.get("selection_map")
         if False and selmaps:
             for selmap in selmaps:

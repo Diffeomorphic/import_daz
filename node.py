@@ -871,6 +871,8 @@ class Node(Asset, Formula, Channels):
 
     def buildObject(self, context, inst, center):
         from .geometry import UnGeometry
+        if GS.verbosity >= 4:
+            print("Build object %s" % self.name)
         scn = context.scene
         ob2 = None
         obname = self.getObjectName(inst)

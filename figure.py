@@ -248,7 +248,8 @@ class Figure(Node):
         from .bone import BoneInstance
         from .asset import Asset
         scn = context.scene
-
+        if GS.verbosity >= 4:
+            print("Build figure %s" % self.name)
         center = d2b(inst.attributes["center_point"])
         Asset.build(self, context, inst)
         inst.setLSRig()
