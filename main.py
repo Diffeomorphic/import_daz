@@ -542,23 +542,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     bl_description = "Load a native DAZ file and perform the most common operations"
     bl_options = {'UNDO', 'PRESET'}
 
-    rigType : EnumProperty(
-        items = [('DAZ', "DAZ", "Original DAZ rig"),
-                 ('CUSTOM', "Custom Shapes", "Original DAZ rig with custom shapes"),
-                 ('MHX', "MHX", "MHX rig"),
-                 ('RIGIFY', "Rigify", "Rigify")],
-        name = "Rig Type",
-        description = "Convert the main rig to a more animator-friendly rig",
-        default = 'DAZ')
-
-    mannequinType : EnumProperty(
-        items = [('NONE', "None", "Don't make mannequins"),
-                 ('NUDE', "Nude", "Make mannequin for main mesh only"),
-                 ('ALL', "All", "Make mannequin from all meshes")],
-        name = "Mannequin Type",
-        description = "Add mannequin to meshes of this type",
-        default = 'NONE')
-
     useEliminateEmpties : BoolProperty(
         name = "Eliminate Empties",
         description = "Delete non-hidden empties, parenting its children to its parent instead",
@@ -568,11 +551,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         name = "Merge Rigs",
         description = "Merge all rigs to the main character rig",
         default = True)
-
-    useCombineMaterials : BoolProperty(
-        name = "Combine Scene Materials",
-        description = "Combine identical materials in scene across objects",
-        default = False)
 
     useApplyTransforms : BoolProperty(
         name = "Apply Transforms",
@@ -663,19 +641,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Useful if the character is baked"),
         default = False)
 
-    addTweakBones : BoolProperty(
-        name = "Tweak Bones",
-        description = "Add tweak bones",
-        default = True)
-
-    useFingerIk : BoolProperty(
-        name = "Finger IK",
-        description = "Generate IK controls for fingers",
-        default = False)
-
-    useOptimizePose : BoolProperty(
-        name = "Optimize Pose For IK",
-        description = "Optimize pose for IK.\nIncompatible with pose loading and body morphs",
+    useFinalOptimization : BoolProperty(
+        name = "Final Optimizations",
+        description = "Make final optimizations to the rig and mesh.\nAdditional morphs can not be loaded if this is enabled",
         default = False)
 
     def draw(self, context):
@@ -693,7 +661,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
         self.layout.prop(self, "useApplyTransforms")
-        self.layout.prop(self, "useMakeAllBonesPosable")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
@@ -715,7 +682,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "useTransferGeografts")
             self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
-        self.layout.prop(self, "useCombineMaterials")
         self.layout.prop(self, "useSoftbody")
         if self.useSoftbody:
             self.subprop("useChest")
@@ -726,15 +692,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
-        return
-        self.layout.prop(self, "useOptimizePose")
-        self.layout.prop(self, "rigType")
-        if self.rigType == 'MHX':
-            self.subprop("addTweakBones")
-            self.subprop("useFingerIk")
-        elif self.rigType == 'RIGIFY':
-            self.subprop("useFingerIk")
-        self.layout.prop(self, "mannequinType")
+        self.layout.prop(self, "useMakeAllBonesPosable")
+        self.layout.prop(self, "useFinalOptimization")
 
 
     def invoke(self, context, event):
@@ -786,21 +745,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.objects = self.getTypedObjects(visibles, LS.objects)
         self.hdmeshes = self.getTypedObjects(visibles, LS.hdmeshes)
         self.hairs = self.getTypedObjects(visibles, LS.hairs)
-
         if self.useEliminateEmpties:
             bpy.ops.daz.eliminate_empties()
-
-        allMeshes = []
-        for meshes in self.meshes.values():
-            allMeshes += list(meshes)
-        for meshes in self.hdmeshes.values():
-            allMeshes += list(meshes)
-        if allMeshes:
-            # Merge materials
-            if self.useCombineMaterials:
-                print("Combine materials across objects")
-                bpy.ops.daz.combine_scene_materials()
-
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
         GS.silentMode = False
@@ -1042,11 +988,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print("Transfer to face meshes")
             self.transferShapes(context, mainMesh, lashes, False, "All")
 
+        # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
-            # Make all bones posable
+            if self.useFinalOptimization:
+                bpy.ops.daz.finalize_meshes()
             if self.useMakeAllBonesPosable:
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
+            if self.useFinalOptimization:
+                bpy.ops.daz.optimize_drivers()
+                bpy.ops.daz.finalize_armature()
 
         if mainMesh:
             mainMesh.update_tag()
@@ -1054,38 +1005,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             mainRig.update_tag()
             activateObject(context, mainRig)
         updateAll(context)
-        return
-
-        # Change rig
-        if mainRig and activateObject(context, mainRig):
-            if self.useOptimizePose:
-                bpy.ops.daz.optimize_pose(useApplyRestPose=True)
-
-            if self.rigType == 'CUSTOM':
-                print("Add custom shapes")
-                bpy.ops.daz.add_custom_shapes()
-            elif self.rigType == 'MHX':
-                print("Convert to MHX")
-                bpy.ops.daz.convert_to_mhx(
-                    addTweakBones = self.addTweakBones,
-                    useFingerIk = self.useFingerIk,
-                )
-            elif self.rigType == 'RIGIFY':
-                bpy.ops.daz.convert_to_rigify(
-                    useDeleteMeta = True,
-                    useFingerIk = self.useFingerIk)
-                mainRig = context.object
-
-        # Make mannequin
-        if (mainRig and
-            mainMesh and
-            self.mannequinType != 'NONE' and
-            activateObject(context, mainMesh)):
-            if self.mannequinType == 'ALL':
-                for ob in clothes:
-                    selectSet(ob, True)
-            print("Make mannequin")
-            bpy.ops.daz.add_mannequin(useGroup=True, group="%s Mannequin" % mainRig.name)
 
 
     def getGraftParent(self, ob, meshes):
@@ -1273,16 +1192,21 @@ def register():
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
     import shutil
-    folder = os.path.dirname(__file__).replace("\\", "/")
-    presets = "%s/presets/operator/daz.easy_import_daz" % folder.rsplit("/",2)[0]
-    easy = "%s/data/easy" % folder
-    if not os.path.exists(presets):
-        os.makedirs(presets)
-    for file in os.listdir(easy):
-        if os.path.splitext(file)[-1] == ".py":
-            src = "%s/%s" % (easy, file)
-            trg = "%s/%s" % (presets, file)
-            shutil.copy(src, trg)
+    folder = os.path.dirname(__file__)
+    addons = os.path.split(folder)[0]
+    scripts = os.path.split(addons)[0]
+    presets = os.path.join(scripts, "presets", "operator", "daz.easy_import_daz")
+    easy = os.path.join(folder, "data", "easy")
+    try:
+        if not os.path.exists(presets):
+            os.makedirs(presets)
+        for file in os.listdir(easy):
+            if os.path.splitext(file)[-1] == ".py":
+                src = os.path.join(easy, file)
+                trg = os.path.join(presets, file)
+                shutil.copy(src, trg)
+    except:
+        print("Could not copy preset files")
 
 
 def unregister():

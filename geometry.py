@@ -1854,7 +1854,7 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
         if ob.type == 'MESH':
             self.finalizeMesh(ob, struct)
         if self.nothing:
-            print("Nothing to save.")
+            pass
         elif self.useStoreData:
             rig.DazBlendFile = bpy.data.filepath
             folder,path = getMeshDataFile(bpy.data.filepath)

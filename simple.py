@@ -1228,14 +1228,17 @@ def improveIk(rig, exclude=[]):
             if cns.type == 'IK':
                 ikconstraints.append((pb, cns, cns.mute))
                 cns.mute = True
-                pb.lock_rotation[0] = False
-                pb.rotation_euler[0] = 15*D
+                pb.rotation_euler[0] = 30*D
+                pb.lock_rotation[0] = True
     for pb,cns,mute in ikconstraints:
         pb.lock_rotation = (False, True, True)
         pb.lock_location = (True, True, True)
         cns.mute = mute
-        pb.use_ik_limit_x = pb.use_ik_limit_y = pb.use_ik_limit_z = False
+        pb.use_ik_limit_y = pb.use_ik_limit_z = False
         pb.lock_ik_y = pb.lock_ik_z = True
+        pb.use_ik_limit_x = True
+        pb.ik_min_x = -15*D
+        pb.ik_max_x = 160*D
 
 #----------------------------------------------------------
 #   Batch set custom shape

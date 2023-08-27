@@ -15,7 +15,6 @@ op.bodyMaterial = "Torso"
 
 op.useEliminateEmpties = True
 op.useMergeRigs = True
-op.useCombineMaterials = False
 op.useApplyTransforms = True
 op.useMergeMaterials = True
 op.useFixShells = True
@@ -28,3 +27,4 @@ op.useTransferFace = True
 op.useSoftbody = False
 op.useMergeGeografts = True
 op.useMakeAllBonesPosable = True
+op.useFinalOptimization = True

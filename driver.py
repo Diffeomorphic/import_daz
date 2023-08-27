@@ -773,9 +773,11 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             self.replaceTargets(skeys)
         self.deleteDrivers(self.amt)
         self.removeInvalid(self.amt)
-        msg = "Deleted %d out of %d drivers" % (self.ndeleted, ndrivers)
-        print(msg)
-        raise DazError(msg, warning=True)
+        msg = "Deleted %d out of %d drivers from %s" % (self.ndeleted, ndrivers, self.rig.name)
+        if ES.easy:
+            print(msg)
+        else:
+            raise DazError(msg, warning=True)
 
 
     def collectHidden(self):
