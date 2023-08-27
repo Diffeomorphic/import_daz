@@ -542,11 +542,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     bl_description = "Load a native DAZ file and perform the most common operations"
     bl_options = {'UNDO', 'PRESET'}
 
-    useDefaultSettings : BoolProperty(
-        name = "Use Default Settings",
-        description = "Use default settings for the character type",
-        default = True)
-
     rigType : EnumProperty(
         items = [('DAZ', "DAZ", "Original DAZ rig"),
                  ('CUSTOM', "Custom Shapes", "Original DAZ rig with custom shapes"),
@@ -687,9 +682,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         FitOptions.draw(self, context)
         ColorOptions.draw(self, context)
         self.layout.separator()
-        self.layout.prop(self, "useDefaultSettings")
-        if self.useDefaultSettings:
-            return
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useFixShells")
         if self.useFixShells:
@@ -855,8 +847,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 msg = ("Main mesh has been deleted")
                 mainMesh = None
             print(msg)
-        if self.useDefaultSettings and mainMesh:
-            self.setDefaultSettings(mainMesh)
 
         if mainRig and activateObject(context, mainRig):
             # Merge rigs
@@ -1098,21 +1088,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             bpy.ops.daz.add_mannequin(useGroup=True, group="%s Mannequin" % mainRig.name)
 
 
-    def setDefaultSettings(self, ob):
-        from .fileutils import DF
-        char = ob.DazMesh.lower().replace("-", "_")
-        subtype = ob.DazUrl.rsplit("/", 1)[-1].split(".dsf")[0].lower()
-        struct = DF.loadEntry(char, "easy", strict=False)
-        settings = struct.get(subtype, {})
-        if settings:
-            print("Using default settings for %s" % subtype)
-        for attr,value in settings.items():
-            setattr(self, attr, value)
-        common = DF.loadEntry("common", "easy", strict=False)
-        for attr,value in common.items():
-            setattr(self, attr, value)
-
-
     def getGraftParent(self, ob, meshes):
         for cob in meshes:
             if len(cob.data.vertices) == ob.data.DazVertexCount:
@@ -1296,6 +1271,18 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+
+    import shutil
+    folder = os.path.dirname(__file__).replace("\\", "/")
+    presets = "%s/presets/operator/daz.easy_import_daz" % folder.rsplit("/",2)[0]
+    easy = "%s/data/easy" % folder
+    if not os.path.exists(presets):
+        os.makedirs(presets)
+    for file in os.listdir(easy):
+        if os.path.splitext(file)[-1] == ".py":
+            src = "%s/%s" % (easy, file)
+            trg = "%s/%s" % (presets, file)
+            shutil.copy(src, trg)
 
 
 def unregister():
