@@ -1,0 +1,33 @@
+{
+    "type" : "Genesis3-male",
+    "url" : "/data/DAZ 3D/Genesis 3/Male/Genesis3Male.dsf#Genesis3Male",
+    "genesis3male" : {
+        "useUnits" : true,
+        "useExpressions" : true,
+        "useVisemes" : true,
+        "useHead" : false,
+        "useFacs" : false,
+        "useFacsdetails" : false,
+        "useFacsexpr" : false,
+        "useBody" : false,
+        "useJcms" : true,
+        "useFlexions" : false,    
+        
+        "useEliminateEmpties" : true,
+        "useMergeRigs" : true,
+        "useCombineMaterials" : false,
+        "useApplyTransforms" : true,
+        "useMergeMaterials" : true,
+        "useFixShells" : true,
+        "bodyMaterial" : "Torso",
+        "useMergeToes" : false,
+        "useBakedCorrectives" : false,
+        "useDazFavorites" : true,
+        "useTransferClothes" : true,
+        "useTransferGeografts" : true,
+        "useTransferFace" : true,
+        "useSoftbody" : false,
+        "useMergeGeografts" : true,
+        "useMakeAllBonesPosable" : true
+    }
+}

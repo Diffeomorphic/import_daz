@@ -542,6 +542,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     bl_description = "Load a native DAZ file and perform the most common operations"
     bl_options = {'UNDO', 'PRESET'}
 
+    useDefaultSettings : BoolProperty(
+        name = "Use Default Settings",
+        description = "Use default settings for the character type",
+        default = True)
+
     rigType : EnumProperty(
         items = [('DAZ', "DAZ", "Original DAZ rig"),
                  ('CUSTOM', "Custom Shapes", "Original DAZ rig with custom shapes"),
@@ -584,6 +589,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Merge identical materials",
         default = True)
 
+    useFixShells : BoolProperty(
+        name = "Fix Shells",
+        description = "Fix shell materials for geografts",
+        default = True)
+
+    bodyMaterial : StringProperty(
+        name = "Body Material",
+        description = "Name of the body material use for shell fixing",
+        default = "Torso")
+
     useMergeToes : BoolProperty(
         name = "Merge Toes",
         description = "Merge separate toes into a single toe bone",
@@ -616,6 +631,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             "like eyelashes, tears, brows and beards.\n" +
             "Can be disabled if face meshes will be converted to particle hair"),
         default = True)
+
+    useTransferHair : BoolProperty(
+        name = "Transfer To Hair",
+        description = "Transfer shapekeys from character to hair meshes",
+        default = False)
 
     useSoftbody : BoolProperty(
         name = "Add Softbody",
@@ -667,7 +687,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         FitOptions.draw(self, context)
         ColorOptions.draw(self, context)
         self.layout.separator()
+        self.layout.prop(self, "useDefaultSettings")
+        if self.useDefaultSettings:
+            return
         self.layout.prop(self, "useMergeMaterials")
+        self.layout.prop(self, "useFixShells")
+        if self.useFixShells:
+            self.subprop("bodyMaterial")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -693,6 +719,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "morphSuffix")
         if self.fitMeshes != 'MORPHED':
             self.layout.prop(self, "useTransferFace")
+            self.layout.prop(self, "useTransferHair")
             self.layout.prop(self, "useTransferGeografts")
             self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
@@ -707,6 +734,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
+        return
         self.layout.prop(self, "useOptimizePose")
         self.layout.prop(self, "rigType")
         if self.rigType == 'MHX':
@@ -827,6 +855,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 msg = ("Main mesh has been deleted")
                 mainMesh = None
             print(msg)
+        if self.useDefaultSettings and mainMesh:
+            self.setDefaultSettings(mainMesh)
 
         if mainRig and activateObject(context, mainRig):
             # Merge rigs
@@ -849,6 +879,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Rigs must be merged before finding face meshes
         geografts = {}
+        hairs = []
         lashes = []
         clothes = []
         if mainMesh:
@@ -868,6 +899,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         clothes.append(ob)
                 elif ob in lmeshes:
                     lashes.append(ob)
+                elif "hair" in ob.name.lower():
+                    hairs.append(ob)
                 else:
                     clothes.append(ob)
 
@@ -877,6 +910,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 selectSet(ob, True)
             print("Merge materials")
             bpy.ops.daz.merge_materials()
+
+        if self.useFixShells and mainMesh and geografts.get(mainMesh.name) and activateObject(context, mainMesh):
+            for ob in geografts[mainMesh.name][0]:
+                selectSet(ob, True)
+            print("Fix shells")
+            for mat in mainMesh.data.materials:
+                if mat.name.startswith(self.bodyMaterial):
+                    mainMesh.active_material = mat
+                    break
+            bpy.ops.daz.fix_shells()
 
         if self.useApplyTransforms:
             # Apply transforms to meshes
@@ -924,9 +967,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useFacsexpr = self.useFacsexpr,
                         useBody = self.useBody,
                         useMhxOnly = self.useMhxOnly,
-                        useJcms = self.useJcms,
-                        useFlexions = self.useFlexions,
-                        useAdjusters = self.useAdjusters)
+                        useJcms = (self.useJcms and GS.useShapekeys),
+                        useFlexions = (self.useFlexions and GS.useShapekeys),
+                        useAdjusters = self.useAdjusters,
+                        useTransferFace = False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
                 if (useExpressions or self.useFacs or self.useJcms):
@@ -935,7 +979,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         morphSuffix = self.morphSuffix,
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
-                        useJcms = self.useJcms)
+                        useJcms = self.useJcms,
+                        useTransferFace = False)
             if self.useFavoMorphs:
                 if activateObject(context, mainRig) and self.favoPath:
                     bpy.ops.daz.load_favo_morphs(
@@ -971,11 +1016,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
         if self.fitMeshes == 'MORPHED' and mainMesh:
+            print("Transfer to all meshes")
             self.transferShapes(context, mainMesh, meshes[1:], False, "All")
 
         # Merge geografts
         if geografts:
             if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
+                print("Transfer to geografts")
                 for aobs,cob in geografts.values():
                     if cob == mainMesh:
                         self.transferShapes(context, cob, aobs, self.useMergeGeografts, "NoFace")
@@ -996,8 +1043,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Transfer shapekeys to clothes and lashes
         if self.useTransferClothes and self.fitMeshes != 'MORPHED':
+            print("Transfer to clothes")
             self.transferShapes(context, mainMesh, clothes, False, "NoFace")
+        if self.useTransferHair and self.fitMeshes != 'MORPHED':
+            print("Transfer to hair meshes")
+            self.transferShapes(context, mainMesh, hairs, False, "All")
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
+            print("Transfer to face meshes")
             self.transferShapes(context, mainMesh, lashes, False, "All")
 
         if mainRig and activateObject(context, mainRig):
@@ -1005,6 +1057,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useMakeAllBonesPosable:
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
+
+        if mainMesh:
+            mainMesh.update_tag()
+        if mainRig:
+            mainRig.update_tag()
+            activateObject(context, mainRig)
+        updateAll(context)
+        return
 
         # Change rig
         if mainRig and activateObject(context, mainRig):
@@ -1037,12 +1097,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print("Make mannequin")
             bpy.ops.daz.add_mannequin(useGroup=True, group="%s Mannequin" % mainRig.name)
 
-        if mainMesh:
-            mainMesh.update_tag()
-        if mainRig:
-            mainRig.update_tag()
-            activateObject(context, mainRig)
-        updateAll(context)
+
+    def setDefaultSettings(self, ob):
+        from .fileutils import DF
+        char = ob.DazMesh.lower().replace("-", "_")
+        subtype = ob.DazUrl.rsplit("/", 1)[-1].split(".dsf")[0].lower()
+        struct = DF.loadEntry(char, "easy", strict=False)
+        settings = struct.get(subtype, {})
+        if settings:
+            print("Using default settings for %s" % subtype)
+        for attr,value in settings.items():
+            setattr(self, attr, value)
 
 
     def getGraftParent(self, ob, meshes):

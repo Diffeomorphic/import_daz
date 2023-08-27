@@ -51,6 +51,7 @@ class DataFolders:
         self.scanned = {}
         self.tiles = {}
         self.gizmos = {}
+        self.easy = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",

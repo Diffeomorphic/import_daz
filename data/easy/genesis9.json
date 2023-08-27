@@ -1,0 +1,33 @@
+{
+    "type" : "Genesis9",
+    "url" : "/data/Daz 3D/Genesis 9/Base/Genesis9.dsf#Genesis9-1",
+    "genesis9" : {
+        "useUnits" : false,
+        "useExpressions" : false,
+        "useVisemes" : false,
+        "useHead" : false,
+        "useFacs" : true,
+        "useFacsdetails" : true,
+        "useFacsexpr" : true,
+        "useBody" : false,
+        "useJcms" : true,
+        "useFlexions" : true,    
+        
+        "useEliminateEmpties" : true,
+        "useMergeRigs" : true,
+        "useCombineMaterials" : false,
+        "useApplyTransforms" : true,
+        "useMergeMaterials" : true,
+        "useFixShells" : true,
+        "bodyMaterial" : "Body",        
+        "useMergeToes" : false,
+        "useBakedCorrectives" : false,
+        "useDazFavorites" : true,
+        "useTransferClothes" : true,
+        "useTransferGeografts" : true,
+        "useTransferFace" : true,
+        "useSoftbody" : false,
+        "useMergeGeografts" : true,
+        "useMakeAllBonesPosable" : true
+    }
+}

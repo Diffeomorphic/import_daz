@@ -277,8 +277,10 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     revwind = rig.pose.bones["REV-%s" % windname]
     revikwind = rig.pose.bones["REV-ik_%s" % windname]
     pbones = []
+    layers = lspine*[False] + [True] + (31-lspine)*[False]
     for n,bname in enumerate(bnames):
         pb = rig.pose.bones[bname]
+        pb.bone.layers = layers
         pbones.append(pb)
         mchb = rig.pose.bones["MCH-%s" % bname]
         cns = copyTransform(mchb, wind, rig, space='LOCAL')

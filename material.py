@@ -1890,7 +1890,7 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
             path = getProperPath(path)
             base = self.getBasePath(path)
             _,newpath = self.getNewPath(base)
-            if not os.path.exists(newpath):
+            if not os.path.exists(newpath) and os.path.exists(base):
                 img = bpy.data.images.load(base)
                 if img is None:
                     print("Could not load %s" % base)
