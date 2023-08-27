@@ -1108,6 +1108,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print("Using default settings for %s" % subtype)
         for attr,value in settings.items():
             setattr(self, attr, value)
+        common = DF.loadEntry("common", "easy", strict=False)
+        for attr,value in common.items():
+            setattr(self, attr, value)
 
 
     def getGraftParent(self, ob, meshes):

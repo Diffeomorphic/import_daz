@@ -12,23 +12,7 @@
         "useBody" : false,
         "useJcms" : true,
         "useFlexions" : true,    
-        
-        "useEliminateEmpties" : true,
-        "useMergeRigs" : true,
-        "useCombineMaterials" : false,
-        "useApplyTransforms" : true,
-        "useMergeMaterials" : true,
-        "useFixShells" : true,
-        "bodyMaterial" : "Torso",        
-        "useMergeToes" : false,
-        "useBakedCorrectives" : false,
-        "useDazFavorites" : true,
-        "useTransferClothes" : true,
-        "useTransferGeografts" : true,
-        "useTransferFace" : true,
-        "useSoftbody" : false,
-        "useMergeGeografts" : true,
-        "useMakeAllBonesPosable" : true
+        "bodyMaterial" : "Torso"        
     },
     "genesis8_1female" : {
         "useUnits" : false,
@@ -41,22 +25,6 @@
         "useBody" : false,
         "useJcms" : true,
         "useFlexions" : true,    
-        
-        "useEliminateEmpties" : true,
-        "useMergeRigs" : true,
-        "useCombineMaterials" : false,
-        "useApplyTransforms" : true,
-        "useMergeMaterials" : true,
-        "useFixShells" : true,
-        "bodyMaterial" : "Body",
-        "useMergeToes" : false,
-        "useBakedCorrectives" : false,
-        "useDazFavorites" : true,
-        "useTransferClothes" : true,
-        "useTransferGeografts" : true,
-        "useTransferFace" : true,
-        "useSoftbody" : false,
-        "useMergeGeografts" : true,
-        "useMakeAllBonesPosable" : true
+        "bodyMaterial" : "Body"
     }
 }

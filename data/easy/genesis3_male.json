@@ -12,22 +12,6 @@
         "useBody" : false,
         "useJcms" : true,
         "useFlexions" : false,    
-        
-        "useEliminateEmpties" : true,
-        "useMergeRigs" : true,
-        "useCombineMaterials" : false,
-        "useApplyTransforms" : true,
-        "useMergeMaterials" : true,
-        "useFixShells" : true,
-        "bodyMaterial" : "Torso",
-        "useMergeToes" : false,
-        "useBakedCorrectives" : false,
-        "useDazFavorites" : true,
-        "useTransferClothes" : true,
-        "useTransferGeografts" : true,
-        "useTransferFace" : true,
-        "useSoftbody" : false,
-        "useMergeGeografts" : true,
-        "useMakeAllBonesPosable" : true
+        "bodyMaterial" : "Torso"
     }
 }
