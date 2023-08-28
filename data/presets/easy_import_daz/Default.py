@@ -1,9 +1,9 @@
 import bpy
 op = bpy.context.active_operator
 
-op.useUnits = True
-op.useExpressions = True
-op.useVisemes = True
+op.useUnits = False
+op.useExpressions = False
+op.useVisemes = False
 op.useHead = False
 op.useFacs = False
 op.useFacsdetails = False
@@ -11,20 +11,18 @@ op.useFacsexpr = False
 op.useBody = False
 op.useJcms = False
 op.useFlexions = False
-op.bodyMaterial = "Torso"
 
 op.useEliminateEmpties = True
 op.useMergeRigs = True
 op.useApplyTransforms = True
 op.useMergeMaterials = True
-op.useFixShells = True
+op.useFixShells = False
 op.useMergeToes = False
 op.useBakedCorrectives = False
-op.useDazFavorites = True
-op.useTransferClothes = True
-op.useTransferGeografts = True
-op.useTransferFace = True
-op.useSoftbody = False
-op.useMergeGeografts = True
+op.useDazFavorites = False
+op.useTransferClothes = False
+op.useTransferGeografts = False
+op.useTransferFace = False
+op.useMergeGeografts = False
 op.useMakeAllBonesPosable = True
-op.useFinalOptimization = True
+op.useFinalOptimization = False

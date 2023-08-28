@@ -227,7 +227,7 @@ class Cloth:
         global theSimPresets
         if not theSimPresets:
             from .load_json import loadJson
-            folder = os.path.dirname(__file__) + "/data/presets"
+            folder = os.path.join(os.path.dirname(__file__), "data", "presets", "make_cloth")
             for file in os.listdir(folder):
                 filepath = os.path.join(folder, file)
                 theSimPresets[file] = loadJson(filepath)

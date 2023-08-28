@@ -428,6 +428,28 @@ class MultiFile(ImportHelper):
         return filepaths
 
 #-------------------------------------------------------------
+#   Copy presets
+#-------------------------------------------------------------
+
+def copyPresets(srcop, trgop):
+    import shutil
+    folder = os.path.dirname(__file__)
+    addons = os.path.split(folder)[0]
+    scripts = os.path.split(addons)[0]
+    trgdir = os.path.join(scripts, "presets", "operator", "daz.%s" % trgop)
+    srcdir = os.path.join(folder, "data", "presets", srcop)
+    try:
+        if not os.path.exists(trgdir):
+            os.makedirs(trgdir)
+        for file in os.listdir(srcdir):
+            if os.path.splitext(file)[-1] == ".py":
+                src = os.path.join(srcdir, file)
+                trg = os.path.join(trgdir, file)
+                shutil.copy(src, trg)
+    except:
+        print("Could not copy preset files")
+
+#-------------------------------------------------------------
 #   Open settings file
 #-------------------------------------------------------------
 

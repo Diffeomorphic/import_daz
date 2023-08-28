@@ -32,7 +32,6 @@ from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions
 from .merge import MergeRigsOptions, MergeGeograftOptions, UVLayerMergerOptions
-from .dforce import SoftbodyOptions
 from .daz import MaterialMethodItems
 
 #------------------------------------------------------------------
@@ -535,7 +534,7 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, SoftbodyOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -610,11 +609,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Transfer shapekeys from character to hair meshes",
         default = False)
 
-    useSoftbody : BoolProperty(
-        name = "Add Softbody",
-        description = "Add softbody simultation",
-        default = False)
-
     useMergeGeografts : BoolProperty(
         name = "Merge Geografts",
         description = "Merge selected geografts to active object.\nGeometry nodes are not used.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
@@ -682,13 +676,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "useTransferGeografts")
             self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
-        self.layout.prop(self, "useSoftbody")
-        if self.useSoftbody:
-            self.subprop("useChest")
-            self.subprop("useBelly")
-            self.subprop("useGlutes")
-            self.subprop("useArms")
-            self.subprop("useLegs")
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
@@ -936,21 +923,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 selectSet(ob, True)
             bpy.ops.daz.import_daz_favorites()
 
-        # Add softbody simulation
-        if self.useSoftbody and mainRig and mainMesh and activateObject(context, mainMesh):
-            # Merge materials
-            for ob in meshes[1:]:
-                selectSet(ob, True)
-            print("Add softbody")
-            bpy.ops.daz.add_softbody(
-                useChest = self.useChest,
-                useBelly = self.useBelly,
-                useGlutes = self.useGlutes,
-                useArms = self.useArms,
-                useLegs = self.useLegs
-                )
-
-
         if self.fitMeshes == 'MORPHED' and mainMesh:
             print("Transfer to all meshes")
             self.transferShapes(context, mainMesh, meshes[1:], False, "All")
@@ -1190,23 +1162,8 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-
-    import shutil
-    folder = os.path.dirname(__file__)
-    addons = os.path.split(folder)[0]
-    scripts = os.path.split(addons)[0]
-    presets = os.path.join(scripts, "presets", "operator", "daz.easy_import_daz")
-    easy = os.path.join(folder, "data", "easy")
-    try:
-        if not os.path.exists(presets):
-            os.makedirs(presets)
-        for file in os.listdir(easy):
-            if os.path.splitext(file)[-1] == ".py":
-                src = os.path.join(easy, file)
-                trg = os.path.join(presets, file)
-                shutil.copy(src, trg)
-    except:
-        print("Could not copy preset files")
+    from .fileutils import copyPresets
+    copyPresets("easy_import_daz", "easy_import_daz")
 
 
 def unregister():
