@@ -1231,7 +1231,7 @@ def improveIk(rig, exclude=[]):
                 pb.rotation_euler[0] = 30*D
                 pb.lock_rotation[0] = True
     for pb,cns,mute in ikconstraints:
-        pb.lock_rotation = (False, True, True)
+        pb.lock_rotation = (True, True, True)
         pb.lock_location = (True, True, True)
         cns.mute = mute
         pb.use_ik_limit_y = pb.use_ik_limit_z = False
