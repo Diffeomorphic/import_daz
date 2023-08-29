@@ -959,7 +959,7 @@ class Rigifier(RigifyCommon):
 
         #Clean up
         print("  Clean up")
-        gen.data.display_type = 'WIRE'
+        #gen.data.display_type = 'WIRE'
         gen.show_in_front = True
         gen.DazRig = meta.DazRigifyType
         name = rig.name

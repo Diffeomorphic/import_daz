@@ -269,14 +269,14 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         eb0.tail = eb.head
         eb0 = eb
     eb0.tail = wind.tail
-    mchb = first.parent
+    eb = first.parent
     for bname in bnames:
         defb = rig.data.edit_bones[bname]
         if alignRoll:
             defb.roll = roll
         defb.name = "DEF-%s" % bname
         defb.layers = layers
-        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, mchb)
+        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, eb)
         eb = deriveBone(bname, defb, rig, lspine, mchb)
 
     from .figure import copyBoneInfo
@@ -295,16 +295,20 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         mchb = rig.pose.bones["MCH-%s" % bname]
         mchb.bone.inherit_scale = 'NONE'
         if defb:
-            cns = stretchTo(defb, mchb, rig)
-            addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+            cns = stretchTo(defb, pb, rig)
+            cns.volume = 'VOLUME_XZX'
+            #addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
         defb = rig.pose.bones["DEF-%s" % bname]
         copyBoneInfo(defb, pb)
         defb.bone.inherit_scale = 'NONE'
         defbones.append(defb)
+        cns = copyTransform(defb, pb, rig, space='WORLD')
+        #addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
         cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
         addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
-    cns = stretchTo(defb, mchb, rig)
+    cns = stretchTo(defb, pb, rig)
+    cns.volume = 'VOLUME_XZX'
     cns.head_tail = 1.0
     addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
     copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
@@ -867,8 +871,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def addBack(self, rig):
-        BackBones = ["spine", "spine-1", "chest", "chest-1"]
-        backbones = self.getExistingBones(rig, BackBones)
+        backbones = self.getExistingBones(rig, MHX.BackBones)
         layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
         setMhx(rig, "MhaSpineControl", True)
         if self.useSpineIk:
@@ -878,8 +881,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         else:
             addWinder(rig, "back", backbones, layers, "MhaSpineControl")
 
-        NeckBones = ["neck", "neck-1", "head"]
-        neckbones = self.getExistingBones(rig, NeckBones)
+        neckbones = self.getExistingBones(rig, MHX.NeckBones)
         setMhx(rig, "MhaNeckControl", True)
         if self.useNeckIk:
             rig.data.MhaFeatures |= F_NECK
@@ -889,12 +891,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             addWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl")
 
 
-    def addTongueIk(self, rig):
+    def getTongueBones(self, rig):
         def isTongue(bname):
             return (bname.lower()[0:6] == "tongue" and bname[6:].isdigit())
 
+        return [bone.name for bone in rig.data.bones if isTongue(bone.name)]
+
+
+    def addTongueIk(self, rig):
         setMhx(rig, "MhaTongueControl", True)
-        tonguebones = [bone.name for bone in rig.data.bones if isTongue(bone.name)]
+        tonguebones = self.getTongueBones(rig)
         tonguebones.sort()
         layers = [L_HEAD, L_FACE, L_HELP, L_HELP2, L_DEF]
         if self.useTongueIk:
@@ -905,12 +911,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             addWinder(rig, "tongue", tonguebones, layers, "MhaTongueControl")
 
 
-    def addShaftIk(self, rig):
+    def getShaftBones(self, rig):
         def isShaft(bname):
             return (bname.lower()[0:5] == "shaft" and bname[5:].isdigit())
 
+        return [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+
+
+    def addShaftIk(self, rig):
         setMhx(rig, "MhaShaftControl", True)
-        shaftbones = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+        shaftbones = self.getShaftBones(rig)
         shaftbones.sort()
         layers = [L_CUSTOM, L_CUSTOM2, L_HELP, L_HELP2, L_DEF]
         if self.useShaftIk:
@@ -1004,6 +1014,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.useFingerIk = False
 
 
+    def getFingerNames(self, rig, m, suffix):
+        bnames = [self.linkName(m, n, suffix) for n in range(3)]
+        return [bname for bname in bnames if bname in rig.data.bones.keys()]
+
+
     def addFingerWinders(self, rig):
         if self.useFingerIk:
             rig.data.MhaFeatures |= F_FINGER
@@ -1015,11 +1030,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 setMhx(rig, prop2, 0.0)
             layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
             for m in range(5):
-                bnames = [self.linkName(m, n, suffix) for n in range(3)]
-                bnames = [bname for bname in bnames if bname in rig.data.bones.keys()]
+                bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
                 if self.useFingerIk:
-                    fkwind,ikwind,pbones = addSuperWinder(rig, windname, bnames, layers, prop1, prop2, master="master")
+                    fkwind,ikwind,pbones = addSuperWinder(rig, windname, bnames, layers, prop1, prop2, master="master", factor=2)
                 else:
                     fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1)
                 fkwind.lock_rotation = (False,True,False)
@@ -1389,7 +1403,18 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 if elt["type"] == 'LIMIT_ROTATION':
                     return elt
 
-        self.restoreAllConstraints(rig)
+        ignore = []
+        if self.useSpineIk:
+            ignore += MHX.BackBones + MHX.NeckBones
+        if self.useFingerIk:
+            for m in range(5):
+                for suffix in ["L", "R"]:
+                    ignore += self.getFingerNames(rig, m, suffix)
+        if self.useTongueIk:
+            ignore += self.getTongueBones(rig)
+        if self.useShaftIk:
+            ignore += self.getShaftBones(rig)
+        self.restoreAllConstraints(rig, ignore)
         if rig.DazRig not in ["genesis3", "genesis8"]:
             return
         for bname, bendname, twistnames in MHX.BendTwistGenesis38:

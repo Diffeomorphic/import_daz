@@ -877,11 +877,12 @@ class ConstraintStore:
         return None
 
 
-    def restoreAllConstraints(self, rig):
+    def restoreAllConstraints(self, rig, ignore):
+        print("IGNO", ignore)
         for key,clist in self.constraints.items():
             if key:
                 pb = self.getFkBone(key, rig)
-                if pb:
+                if pb and pb.name not in ignore:
                     for struct in clist:
                         self.restoreConstraint(struct, pb)
 

@@ -32,6 +32,8 @@ class MhxData:
     Fingers = ["thumb", "index", "middle", "ring", "pinky"]
     F_Fingers = ["thumb", "f_index", "f_middle", "f_ring", "f_pinky"]
     PalmNames = ["palm_thumb", "palm_index", "palm_index", "palm_middle", "palm_middle"]
+    BackBones = ["spine", "spine-1", "chest", "chest-1"]
+    NeckBones = ["neck", "neck-1", "head"]
 
     Skeleton = {
         "hip" : ("hip", L_MAIN),
