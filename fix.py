@@ -67,16 +67,12 @@ class Fixer(DriverUser):
 
     def draw(self, context):
         self.drawMeta()
-        self.drawMiddle()
         self.drawRigify()
 
     def drawMeta(self):
         self.layout.prop(self, "useKeepRig")
         self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useFingerIk")
-
-    def drawMiddle(self):
-        pass
 
     def drawRigify(self):
         self.layout.prop(self, "useTongueIk")

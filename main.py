@@ -564,7 +564,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useFixShells : BoolProperty(
         name = "Fix Shells",
         description = "Fix shell materials for geografts",
-        default = True)
+        default = False)
 
     bodyMaterial : StringProperty(
         name = "Body Material",

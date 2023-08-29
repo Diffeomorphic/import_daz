@@ -332,6 +332,9 @@ class MhxData:
         ("hand0.R", "hand.R"),
     ]
 
+    LimbBones = ["upper_arm", "forearm", "thigh", "shin"]
+
+
     BoneDrivers = {
         "upper_armBend.L" : "upper_arm.bend.L",
         "forearmBend.L" : "forearm.bend.L",
@@ -408,5 +411,6 @@ class MhxData:
     ]
 
     ConnectShin = ["lShin", "rShin", "l_shin", "r_shin"]
+
 
 MHX = MhxData()

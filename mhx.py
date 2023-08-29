@@ -414,11 +414,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         type = DazPairGroup,
         name = "Bone Groups")
 
+    useIkLimits : BoolProperty(
+        name = "IK Limits",
+        description = "DAZ locks and limits affect IK",
+        default = False)
+
     useRaiseError : BoolProperty(
         name = "Missing Bone Errors",
         description = "Raise error for missing bones",
-        default = True
-    )
+        default = True)
 
     @classmethod
     def poll(self, context):
@@ -442,10 +446,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "useFoot2")
         self.layout.prop(self, "useRaiseError")
 
-    def drawMiddle(self):
+    def drawRigify(self):
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "useNeckIk")
         self.layout.prop(self, "useShaftIk")
+        self.layout.prop(self, "useTongueIk")
+        self.layout.prop(self, "useImproveIk")
+        self.layout.prop(self, "useIkLimits")
 
     def invoke(self, context, event):
         self.createBoneGroups(context.object)
@@ -531,6 +538,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.driver_remove("HdOffset")
             pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
+            for pb in rig.pose.bones:
+                if pb.name.endswith(("Bend", "Twist")):
+                    self.storeConstraints(pb.name, pb)
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
             showProgress(4, 25, "  Rename bones")
@@ -597,7 +607,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addCopyLocConstraints(rig)
         self.addChildofConstraints(rig)
         showProgress(20, 25, "  Restore constraints")
-        self.restoreAllConstraints(rig)
+        self.restoreFixConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
         #self.addTongueIk(rig)
@@ -611,6 +621,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
+        if self.useIkLimits:
+            self.addIkLimits(rig)
         if self.useImproveIk:
             from .simple import improveIk
             improveIk(rig)
@@ -1347,6 +1359,59 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for pb in bones:
             lock = (not pb.bone.use_connect)
             pb.lock_location = (lock,lock,lock)
+
+    #-------------------------------------------------------------
+    #   Restore constraints for bend-twist bones
+    #-------------------------------------------------------------
+
+    def restoreFixConstraints(self, rig):
+        def getLimitRot(clist):
+            for elt in clist:
+                if elt["type"] == 'LIMIT_ROTATION':
+                    return elt
+
+        self.restoreAllConstraints(rig)
+        if rig.DazRig not in ["genesis3", "genesis8"]:
+            return
+        for bname, bendname, twistnames in MHX.BendTwistGenesis38:
+            clist = self.constraints.get(bendname, [])
+            cinfo = getLimitRot(clist)
+            if not cinfo:
+                continue
+            twistname = twistnames[0]
+            clist1 = self.constraints.get(twistname)
+            cinfo1 = getLimitRot(clist1)
+            if cinfo1:
+                for key in ["use_limit_y", "min_y", "max_y"]:
+                    cinfo[key] = cinfo1[key]
+            pb = rig.pose.bones.get("%s.fk.%s" % (bname[:-2], bname[-1]))
+            self.restoreConstraint(cinfo, pb)
+
+    #-------------------------------------------------------------
+    #   Add IK limits
+    #-------------------------------------------------------------
+
+    def addIkLimits(self, rig):
+        for suffix in ["L", "R"]:
+            for bname in MHX.LimbBones:
+                fkb = rig.pose.bones.get("%s.fk.%s" % (bname, suffix))
+                ikb = rig.pose.bones.get("%s.ik.%s" % (bname, suffix))
+                if fkb and ikb:
+                    cns = getConstraint(fkb, 'LIMIT_ROTATION')
+                    if not cns:
+                        continue
+                    ikb.use_ik_limit_x = cns.use_limit_x
+                    ikb.ik_min_x = cns.min_x
+                    ikb.ik_max_x = cns.max_x
+                    ikb.lock_ik_x = fkb.lock_rotation[0]
+                    ikb.use_ik_limit_y = cns.use_limit_y
+                    ikb.ik_min_y = cns.min_y
+                    ikb.ik_max_y = cns.max_y
+                    ikb.lock_ik_y = fkb.lock_rotation[1]
+                    ikb.use_ik_limit_z = cns.use_limit_z
+                    ikb.ik_min_z = cns.min_z
+                    ikb.ik_max_z = cns.max_z
+                    ikb.lock_ik_z = fkb.lock_rotation[2]
 
     #-------------------------------------------------------------
     #   Toggle constraints
