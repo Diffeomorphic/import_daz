@@ -1276,17 +1276,22 @@ class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            driveShellInfluence(ob)
+            driveShellInfluence(ob, {})
 
 
-def driveShellInfluence(ob):
+def driveShellInfluence(ob, limages):
     from .driver import setFloatProp, addDriver
     for mat in ob.data.materials:
         if mat:
             for node in mat.node_tree.nodes:
-                if node.type == 'GROUP' and "Influence" in node.inputs.keys():
+                if node.type == 'GROUP' and "Influence" in node.inputs.keys() and node.node_tree:
                     if "Color" in node.outputs.keys():
-                        prop = "INFLU %s Layers" % mat.name
+                        key = node.node_tree.name
+                        if key in limages.keys():
+                            prop = limages[key]
+                        else:
+                            prop = "INFLU LI %s" % mat.name
+                            limages[key] = prop
                     else:
                         prop = "INFLU %s" % node.label
                     setFloatProp(ob, prop, 1.0, 0.0, 10.0, True)

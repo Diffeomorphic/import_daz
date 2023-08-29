@@ -564,7 +564,8 @@ def beautifyNodeTree(tree):
                 size = 30
             else:
                 size = GroupSize.get(grpname, 10)
-                if (grpname not in GroupSize.keys() and
+                if (False and
+                    grpname not in GroupSize.keys() and
                     "shell" not in grpname.lower() and
                     not ES.easy):
                     print("Missing GroupSize", grpname)

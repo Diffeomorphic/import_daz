@@ -615,6 +615,7 @@ class LocalSettings:
         self.deflectors = {}
         self.materials = {}
         self.images = {}
+        self.layeredImages = {}
         self.textures = {}
         self.gammas = {}
         self.customShapes = []
