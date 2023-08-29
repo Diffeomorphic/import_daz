@@ -1361,7 +1361,8 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
                 key = item.morphset
             if key not in mstruct.keys():
                 mstruct[key] = []
-            data = (quote(item.name), item.text, item.bodypart)
+            path = GS.getRelativePath(item.name)
+            data = (quote(path), item.text, item.bodypart)
             if data not in mstruct[key]:
                 mstruct[key].append(data)
 
@@ -1472,7 +1473,11 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, 
             self.morphset = morphset
             self.category = cat
             self.hideable = hide
-            namepaths = [(name, unquote(ref), bodypart) for ref,name,bodypart in infos]
+            namepaths = []
+            for ref,name,bodypart in infos:
+                path = GS.getAbsPath(ref)
+                if path:
+                    namepaths.append((name, path, bodypart))
             msg = self.getAllMorphs(namepaths, context)
 
 
