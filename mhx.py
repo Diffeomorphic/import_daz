@@ -262,12 +262,22 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
     revwind = deriveBone("REV-%s" % windname, ikwind, rig, lhelp, fkwind)
     revikwind = deriveBone("REV-ik_%s" % windname, wind, rig, lhelp, ikwind)
-    for bname in bnames:
+    layers = ldef*[False] + [True] + (31-ldef)*[False]
+    eb0 = rig.data.edit_bones[bnames[0]]
+    for bname in bnames[1:]:
         eb = rig.data.edit_bones[bname]
+        eb0.tail = eb.head
+        eb0 = eb
+    eb0.tail = wind.tail
+    mchb = first.parent
+    for bname in bnames:
+        defb = rig.data.edit_bones[bname]
         if alignRoll:
-            eb.roll = roll
-        mchb = deriveBone("MCH-%s" % bname, eb, rig, lhelp2, eb.parent)
-        eb.parent = mchb
+            defb.roll = roll
+        defb.name = "DEF-%s" % bname
+        defb.layers = layers
+        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, mchb)
+        eb = deriveBone(bname, defb, rig, lspine, mchb)
 
     from .figure import copyBoneInfo
     setMode('POSE')
@@ -277,23 +287,32 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     revwind = rig.pose.bones["REV-%s" % windname]
     revikwind = rig.pose.bones["REV-ik_%s" % windname]
     pbones = []
-    layers = lspine*[False] + [True] + (31-lspine)*[False]
+    defbones = []
+    defb = None
     for n,bname in enumerate(bnames):
         pb = rig.pose.bones[bname]
-        pb.bone.layers = layers
         pbones.append(pb)
         mchb = rig.pose.bones["MCH-%s" % bname]
+        mchb.bone.inherit_scale = 'NONE'
+        if defb:
+            cns = stretchTo(defb, mchb, rig)
+            addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+        defb = rig.pose.bones["DEF-%s" % bname]
+        copyBoneInfo(defb, pb)
+        defb.bone.inherit_scale = 'NONE'
+        defbones.append(defb)
         cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
         addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
-        if False and n < nbones-1:
-            cns = stretchTo(pb, mchb, rig)
-            #cns = dampedTrack(pb, mchb, rig)
-            cns.head_tail = 1.0
-            addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
-    pb = rig.pose.bones[bnames[0]]
-    fkwind.rotation_mode = pb.rotation_mode
+    cns = stretchTo(defb, mchb, rig)
+    cns.head_tail = 1.0
+    addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
     copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
+    first = pbones[0]
+    fkwind.rotation_mode = first.rotation_mode
+    last = defbones[-1]
+    for pb in last.children:
+        pb.bone.inherit_scale = 'NONE'
     return fkwind, ikwind, pbones
 
 
@@ -897,7 +916,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.useShaftIk:
             setMhx(rig, "MhaShaftIk", 0.0)
             rig.data.MhaFeatures |= F_SHAFT
-            addSuperWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", "MhaShaftIk", factor=2, alignRoll=True, master="master")
+            addSuperWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", "MhaShaftIk", alignRoll=True, master="master")
         else:
             addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl")
 
