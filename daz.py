@@ -238,130 +238,519 @@ def showBox(scn, attr, layout):
         return True
 
 
+MaterialMethodItems = [
+    ('BSDF', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only unless SSS Skin is enabled"),
+    ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
+    ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
+]
+
 class DAZ_OT_GlobalSettings(DazOperator):
     bl_idname = "daz.global_settings"
     bl_label = "Global Settings"
     bl_description = "Show or update global settings"
 
+    contentDirs : CollectionProperty(
+        type = bpy.types.PropertyGroup,
+        name = "DAZ Content Directories",
+        description = "Search paths for DAZ Studio content")
+
+    mdlDirs : CollectionProperty(
+        type = bpy.types.PropertyGroup,
+        name = "DAZ MDL Directories",
+        description = "Search paths for DAZ Studio MDL")
+
+    cloudDirs : CollectionProperty(
+        type = bpy.types.PropertyGroup,
+        name = "DAZ Cloud Directories",
+        description = "Search paths for DAZ Studio cloud content")
+
+    errorPath : StringProperty(
+        name = "Error Path",
+        description = "Path to error report file")
+
+    scanPath : StringProperty(
+        name = "Scanned Database Path",
+        description = "Path to scanned database")
+
+    absScanPath : StringProperty(
+        name = "Absolute Paths File",
+        description = "Path to file with scanned absolute paths")
+
+    unitScale : FloatProperty(
+        name = "Unit Scale",
+        description = "Scale used to convert between DAZ and Blender units. Default unit meters",
+        default = 0.01,
+        precision = 3,
+        min = 0.001, max = 100.0)
+
+    verbosity : IntProperty(
+        name = "Verbosity",
+        min=1, max = 5,
+        description = (
+            "Controls the number of warning messages when loading files\n" +
+            "1: Silent mode.\n" +
+            "2: Default. Warn about some problems.\n" +
+            "3: Warn about all problems.\n" +
+            "4: Warn about all problems and save a log file.\n" +
+            "5: Like verbosity = 4 and trigger a Python error."))
+
+    useStrengthAdjusters : EnumProperty(
+        items = [('NONE', "None", "Never add adjusters"),
+                 ('Face', "Face", "Add adjusters to face morphs"),
+                 ('Body', "Body", "Add adjusters to body morphs.\nNot recommended because if affects JCMs"),
+                 ('Custom', "Custom", "Add adjusters to custom morphs"),
+                 ('ALL', "All", "Add adjusters to all morphs")],
+        name = "Adjust Strength",
+        description = "Add extra sliders to adjust the overall strength",
+        default = 'NONE')
+
+    customMin : FloatProperty(
+        name = "Custom Min",
+        description = "Custom minimum for sliders",
+        min = -10.0, max = 0.0)
+
+    customMax : FloatProperty(
+        name = "Custom Max",
+        description = "Custom maximum for sliders",
+        min = 0.0, max = 10.0)
+
+    morphMultiplier : FloatProperty(
+        name = "Multiplier",
+        description = "Morph multiplier. Multiply the min and \nmax values for sliders with this factor",
+        min = 0.0, max = 10.0)
+
+    enums = [('DAZ', "DAZ", "Use min and max values from DAZ files if available.\nThe limits are multiplied with the factor below"),
+             ('CUSTOM', "Custom", "Use min and max values from custom sliders"),
+             ('NONE', "None", "Don't limit sliders")]
+
+    finalLimits : EnumProperty(
+        items = enums,
+        name = "Final Limits",
+        description = "Final min and max values for DAZ properties,\nwhen all sliders are taken into account")
+
+    sliderLimits : EnumProperty(
+        items = enums,
+        name = "Slider Limits",
+        description = "Min and max values for sliders")
+
+    showFinalProps : BoolProperty(
+        name = "Show Final Morph Values",
+        description = "Display the \"final\" values of morphs")
+
+    showInTerminal : BoolProperty(
+        name = "Show In Terminal",
+        description = "Display full morph names when loading and transferring morphs")
+
+    useShapekeys : BoolProperty(
+        name = "Shapekeys",
+        description = "Load shapekeys for morphs")
+
+    useMuteDrivers : BoolProperty(
+        name = "Shapekey Mute Drivers",
+        description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
+
+    useERC : BoolProperty(
+        name = "ERC Morphs",
+        description = "Load support for ERC morphs that change the rest pose")
+
+    useStripCategory : BoolProperty(
+        name = "Strip Category",
+        description = "Strip the category name from the beginning of the morph name if they are the same")
+
+    useModifiedMesh : BoolProperty(
+        name = "Import To Modified Meshes",
+        description = "Import morphs to meshes that have been modified by merging geografts or lashes.\nWarning: can give incorrect shapekeys if meshes have been modified in edit mode")
+
+    useSubmeshes : BoolProperty(
+        name = "Import To Submeshes",
+        description = "Import morphs to the figure's submeshes,\ne.g. Genesis 9 eyes, mouth, lashes, and tears")
+
+    useDefaultDrivers : BoolProperty(
+        name = "Default Drivers",
+        description = "Create default drivers defined in the scene file")
+
+    useOptimizeJcms : BoolProperty(
+        name = "Optimize JCM Drivers",
+        description = "Optimize drivers when loading JCMs and flexions. Experimental")
+
+    useMakeHiddenSliders : BoolProperty(
+        name = "Make Hidden Sliders",
+        description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
+
+    useBakedMorphs : BoolProperty(
+        name = "Baked Morphs",
+        description = "Allow that baked morphs are imported,\nand display them in the Morphs panel")
+
+    showHiddenObjects : BoolProperty(
+        name = "Show Hidden Objects",
+        description = "Don't hide objects which are hidden in DAZ Studio")
+
+    ignoreHiddenObjects : BoolProperty(
+        name = "Ignore Hidden Objects",
+        description = "Don't build objects which are hidden in DAZ Studio")
+
+    showPaths : BoolProperty(name = "Paths To DAZ Library", default = False)
+    showContentDirs : BoolProperty(name = "Content Directories", default = True)
+    showMDLDirs : BoolProperty(name = "MDL Directories", default = False)
+    showCloudDirs : BoolProperty(name = "Cloud Directories", default = False)
+
+    materialMethod : EnumProperty(
+        items = [('SELECT', "Select On Load", "Select the material method when loading files")] + MaterialMethodItems,
+        name = "Material Method",
+        description = "Material Method",
+        default = 'SELECT')
+
+    enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
+             ('RANDOM_WALK', "Random Walk", "Random walk")]
+    if bpy.app.version >= (3,0,0):
+        enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
+    sssMethod : EnumProperty(
+        items = enums,
+        name = "SSS",
+        description = "Method for subsurface scattering",
+        default = 'RANDOM_WALK')
+
+    viewportColor : EnumProperty(
+        items = [('ORIGINAL', "Original", "Original diffuse color"),
+                 ('RANDOM', "Random", "Random colors for each material"),
+                 ('GUESS', "Guess", "Guess colors based on name"),
+                 ],
+        name = "Viewport",
+        description = "Method to display object in viewport")
+
+    useWorld : EnumProperty(
+        items = [('ALWAYS', "Always", "Always create world material"),
+                 ('DOME', "Dome", "Create world material from dome"),
+                 ('NEVER', "Never", "Never create world material")],
+        name = "World",
+        description = "When to create a world material")
+
+    useLowerResFolders : BoolProperty(
+        name = "Lower Resolution Folders",
+        description = "Store lower resolution textures in separate folders.\nTexture names are also modified")
+
+    useMaterialsByIndex : BoolProperty(
+        name = "Materials By Index",
+        description = "Use index rather than name to identify materials.\nNeeded if multiple materials have identical names.\nThis only happens in files generated by the MikuMikuDance exporter")
+
+    useMaterialsByName : BoolProperty(
+        name = "Sort Materials Alphabetically",
+        description = "Materials are sorted in alphabetical order.\nIf disabled the order in the duf file is used")
+
+    handleRenderSettings : EnumProperty(
+        items = [("IGNORE", "Ignore", "Ignore insufficient render settings"),
+                 ("WARN", "Warn", "Warn about insufficient render settings"),
+                 ("UPDATE", "Update", "Update insufficient render settings")],
+        name = "Render Settings",
+        default = "UPDATE"
+    )
+
+    handleLightSettings : EnumProperty(
+        items = [("IGNORE", "Ignore", "Ignore insufficient light settings"),
+                 ("WARN", "Warn", "Warn about insufficient light settings"),
+                 ("UPDATE", "Update", "Update insufficient light settings")],
+        name = "Light Settings",
+        default = "UPDATE"
+    )
+
+    useLockLoc : BoolProperty(
+        name = "Location Locks",
+        description = "Use location locks")
+
+    useLimitLoc : BoolProperty(
+        name = "Location Limits",
+        description = "Enable location limits")
+
+    useLockRot : BoolProperty(
+        name = "Rotation Locks",
+        description = "Use rotation locks")
+
+    useLimitRot : BoolProperty(
+        name = "Rotation Limits",
+        description = "Enable rotation limits")
+
+    useInheritScale : BoolProperty(
+        name = "Bones Inherit Scale",
+        description = "Bones inherit scale from their parents (Blender default).\nDisable to mimic behaviour in DAZ Studio")
+
+    displayLimitRot : BoolProperty(
+        name = "Display Rotation Limits",
+        description = "Display rotation limits as IK limits")
+
+
+    useDump : BoolProperty(
+        name = "Dump Debug Info",
+        description = "Dump debug info in the file\ndaz_importer_errors.text after loading file")
+
+    zup : BoolProperty(
+        name = "Z Up",
+        description = "Convert from DAZ's Y up convention to Blender's Z up convention.\nDisable for debugging only")
+
+    unflipped : BoolProperty(
+        name = "Unflipped Bones",
+        description = "Don't flip bone axes.\nEnable for debugging only")
+
+    useArmature : BoolProperty(
+        name = "Armature",
+        description = "Create armatures for imported figures")
+
+    useOrientation : BoolProperty(
+        name = "DAZ Orientation (Experimental)",
+        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
+
+    useOrientation : BoolProperty(
+        name = "DAZ Orientation (Experimental)",
+        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
+
+    useSubtractRestpose : BoolProperty(
+        name = "Subtract Rest Pose",
+        description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
+        default = True)
+
+    useQuaternions : BoolProperty(
+        name = "Quaternions",
+        description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
+
+    useCaseSensitivePaths : BoolProperty(
+        name = "Case-Sensitive Paths",
+        description = "Convert URLs to lowercase. Works best on Windows")
+
+    useInstancing : BoolProperty(
+        name = "Use Instancing",
+        description = "Use instancing for DAZ instances")
+
+    useHairGuides : BoolProperty(
+        name = "Import All Hair Versions",
+        description = "Import hair guides even if the corresponding PS hairs have also been generated.\nOnly for DBZ mesh fitting")
+
+    useHighdef : BoolProperty(
+        name = "Build HD Meshes",
+        description = "Build HD meshes if included in .dbz file")
+
+    useKeepBaseMesh : BoolProperty(
+        name = "Keep Base Meshes",
+        description = "Keep base resolution meshes if HD mesh is built")
+
+    useHDArmature : BoolProperty(
+        name = "Add Armature To HD Meshes",
+        description = "Add armature modifier and vertex groups to true HD meshes")
+
+    useMultires : BoolProperty(
+        name = "Add Multires",
+        description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
+
+    useMultiUvLayers : BoolProperty(
+        name = "Multiple UV Layers",
+        description = "Use multiple UV layers for HD meshes with multires modifiers")
+
+    useAutoSmooth : BoolProperty(
+        name = "Auto Smooth",
+        description = (
+            "Use auto smooth if this is done in DAZ Studio.\n" +
+            "This is useful for objects with hard edges,\n" +
+            "but may lead to poor performance for organic meshes"))
+
+    maxSubdivs : IntProperty(
+        name = "Max Subdivision Level",
+        description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
+        min = 1, max = 11)
+
+    onFaceMaps : EnumProperty(
+        items = [('NEVER', "Never", "Don't create maps groups"),
+                 ('MATERIALS', "Materials", "Create face maps for materials"),
+                 ('POLYGON_GROUPS', "Polygon Groups", "Create face maps for polygon groups"),
+                ],
+        name = "Face Maps",
+        description = "Generate face maps on import")
+
+    useScaleEyeMoisture : BoolProperty(
+        name = "Scale Eye Moisture",
+        description = "Scale eye moisture vertices to avoid dark rings when rendering eyes")
+
+    useSimulation : BoolProperty(
+        name = "Simulation",
+        description = "Add influence (pinning) vertex groups for simulation")
+
+    if bpy.app.version < (3,1,0):
+        enums = [('MATERIAL', "Material", "Create material node group"),
+                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")]
+    else:
+        enums = [('MATERIAL', "Material", "Create material node group"),
+                 ('GEONODES', "Geometry Nodes (Experimental)", "Create geometry node group"),
+                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")]
+    shellMethod : EnumProperty(
+        items = enums,
+        name = "Shell Method",
+        description = "Method for geometry shells")
+
+    usePruneNodes : BoolProperty(
+        name = "Prune Node Tree",
+        description = "Prune material node-tree.\nDisable for debugging only")
+
+    useFakeCaustics : BoolProperty(
+        name = "Fake Caustics",
+        description = "Use fake caustics")
+
+    useDisplacement : BoolProperty(
+        name = "Displacement",
+        description = "Use displacement maps")
+
+    useEmission : BoolProperty(
+        name = "Emission",
+        description = "Use emission")
+
+    useGhostLights : BoolProperty(
+        name = "Ghost Lights",
+        description = "Mimics the iray ghost light bug, that is fixed in DS 4.20.\nDo not use to mimic DS 4.20")
+
+    useReflection : BoolProperty(
+        name = "Reflection",
+        description = "Use reflection maps")
+
+    useSssSkin : BoolProperty(
+        name = "SSS Skin",
+        description = (
+            "Replace translucency with SSS for volumetric skin materials.\n" +
+            "Limited IRAY conversion but faster rendering and more conventional skin materials.\n" +
+            "Works with both Cycles and Eevee but some screen effects may not work"))
+
+    useAltSss : BoolProperty(
+        name = "Alternative SSS",
+        description = "Use alternative handling of SSS suggested by Midnight Arrow")
+
+    useImageInterpolation : EnumProperty(
+        items = [('Linear', "Linear", "Linear"),
+                 ('Closest', "Closest", "Closest"),
+                 ('Cubic', "Cubic", "Cubic"),
+                 ('Smart', "Smart", "Smart")],
+        name = "Interpolation",
+        description = "Image interpolation")
+
+    useUnusedTextures : BoolProperty(
+        name = "Build Unused Textures",
+        description = "Build texture found in unused channels")
+
+
     def draw(self, context):
         scn = context.scene
+        scn = self
         split = self.layout.split(factor=0.33)
         col = split.column()
         box = col.box()
         box.label(text = "DAZ Studio Root Directories")
-        if showBox(scn, "DazShowContentDirs", box):
-            for pg in scn.DazContentDirs:
+        if showBox(scn, "showContentDirs", box):
+            for pg in scn.contentDirs:
                 box.prop(pg, "name", text="")
             box.operator("daz.add_content_dir")
-        if showBox(scn, "DazShowMDLDirs", box):
-            for pg in scn.DazMDLDirs:
+        if showBox(scn, "showMDLDirs", box):
+            for pg in scn.mdlDirs:
                 box.prop(pg, "name", text="")
             box.operator("daz.add_mdl_dir")
-        if showBox(scn, "DazShowCloudDirs", box):
-            for pg in scn.DazCloudDirs:
+        if showBox(scn, "showCloudDirs", box):
+            for pg in scn.cloudDirs:
                 box.prop(pg, "name", text="")
             box.operator("daz.add_cloud_dir")
         box.label(text = "Path To Output Errors:")
-        box.prop(scn, "DazErrorPath", text="")
+        box.prop(scn, "errorPath", text="")
         box.label(text = "Path To Scanned Database:")
-        box.prop(scn, "DazScanPath", text="")
+        box.prop(scn, "scanPath", text="")
         box.label(text = "Path To Scanned Case-sensitive Paths:")
-        box.prop(scn, "DazAbsScanPath", text="")
+        box.prop(scn, "absScanPath", text="")
 
         col = split.column()
         box = col.box()
         box.label(text = "General")
-        box.prop(scn, "DazUnitScale")
-        box.prop(scn, "DazVerbosity")
-        box.prop(scn, "DazCaseSensitivePaths")
+        box.prop(scn, "unitScale")
+        box.prop(scn, "verbosity")
+        box.prop(scn, "useCaseSensitivePaths")
 
         box = col.box()
         box.label(text = "Meshes")
-        box.prop(scn, "DazShellMethod")
-        box.prop(scn, "DazHighdef")
-        box.prop(scn, "DazKeepBaseMesh")
-        box.prop(scn, "DazMultires")
-        box.prop(scn, "DazMultiUvLayers")
-        box.prop(scn, "DazHDArmature")
-        box.prop(scn, "DazHairGuides")
-        box.prop(scn, "DazUseAutoSmooth")
-        box.prop(scn, "DazMaxSubdivs")
-        box.prop(scn, "DazUseInstancing")
-        box.prop(scn, "DazScaleEyeMoisture")
-        box.prop(scn, "DazOnFaceMaps")
-        box.prop(scn, "DazSimulation")
+        box.prop(scn, "shellMethod")
+        box.prop(scn, "useHighdef")
+        box.prop(scn, "useKeepBaseMesh")
+        box.prop(scn, "useMultires")
+        box.prop(scn, "useMultiUvLayers")
+        box.prop(scn, "useHDArmature")
+        box.prop(scn, "useHairGuides")
+        box.prop(scn, "useAutoSmooth")
+        box.prop(scn, "maxSubdivs")
+        box.prop(scn, "useInstancing")
+        box.prop(scn, "useScaleEyeMoisture")
+        box.prop(scn, "onFaceMaps")
+        box.prop(scn, "useSimulation")
 
         col = split.column()
         box = col.box()
         box.label(text = "Rigging")
-        box.prop(scn, "DazUseArmature")
-        box.prop(scn, "DazUseDazOrientation")
-        box.prop(scn, "DazSubtractRestpose")
-        box.prop(scn, "DazUseQuaternions")
-        box.prop(scn, "DazUseLockLoc")
-        box.prop(scn, "DazUseLimitLoc")
-        box.prop(scn, "DazUseLockRot")
-        box.prop(scn, "DazUseLimitRot")
-        box.prop(scn, "DazInheritScale")
-        box.prop(scn, "DazDisplayLimitRot")
+        box.prop(scn, "useArmature")
+        box.prop(scn, "useOrientation")
+        box.prop(scn, "useSubtractRestpose")
+        box.prop(scn, "useQuaternions")
+        box.prop(scn, "useLockLoc")
+        box.prop(scn, "useLimitLoc")
+        box.prop(scn, "useLockRot")
+        box.prop(scn, "useLimitRot")
+        box.prop(scn, "useInheritScale")
+        box.prop(scn, "displayLimitRot")
 
         box = col.box()
         box.label(text = "Objects")
-        box.prop(scn, "DazShowHiddenObjects")
-        box.prop(scn, "DazIgnoreHiddenObjects")
+        box.prop(scn, "showHiddenObjects")
+        box.prop(scn, "ignoreHiddenObjects")
 
         box = col.box()
         box.label(text = "Debugging")
-        box.prop(scn, "DazZup")
-        box.prop(scn, "DazUnflipped")
-        box.prop(scn, "DazDump")
-        box.prop(scn, "DazPruneNodes")
+        box.prop(scn, "zup")
+        box.prop(scn, "unflipped")
+        box.prop(scn, "useDump")
+        box.prop(scn, "usePruneNodes")
 
         col = split.column()
         box = col.box()
         box.label(text = "Morphs")
-        box.prop(scn, "DazStrengthAdjusters")
-        box.prop(scn, "DazMakeHiddenSliders")
-        box.prop(scn, "DazBakedMorphs")
-        box.prop(scn, "DazSliderLimits")
-        box.prop(scn, "DazFinalLimits")
-        box.prop(scn, "DazMorphMultiplier")
-        box.prop(scn, "DazCustomMin")
-        box.prop(scn, "DazCustomMax")
-        box.prop(scn, "DazShowFinalProps")
-        box.prop(scn, "DazShowInTerminal")
-        box.prop(scn, "DazUseShapekeys")
-        box.prop(scn, "DazMuteDrivers")
-        box.prop(scn, "DazUseERC")
-        box.prop(scn, "DazStripCategory")
-        box.prop(scn, "DazUseModifiedMesh")
-        box.prop(scn, "DazUseSubmeshes")
-        box.prop(scn, "DazDefaultDrivers")
-        box.prop(scn, "DazOptimizeJcms")
+        box.prop(scn, "useStrengthAdjusters")
+        box.prop(scn, "useMakeHiddenSliders")
+        box.prop(scn, "useBakedMorphs")
+        box.prop(scn, "sliderLimits")
+        box.prop(scn, "finalLimits")
+        box.prop(scn, "morphMultiplier")
+        box.prop(scn, "customMin")
+        box.prop(scn, "customMax")
+        box.prop(scn, "showFinalProps")
+        box.prop(scn, "showInTerminal")
+        box.prop(scn, "useShapekeys")
+        box.prop(scn, "useMuteDrivers")
+        box.prop(scn, "useERC")
+        box.prop(scn, "useStripCategory")
+        box.prop(scn, "useModifiedMesh")
+        box.prop(scn, "useSubmeshes")
+        box.prop(scn, "useDefaultDrivers")
+        box.prop(scn, "useOptimizeJcms")
 
         col = split.column()
         box = col.box()
         box.label(text = "Materials")
-        box.prop(scn, "DazMaterialMethod")
-        box.prop(scn, "DazSSSMethod")
-        box.prop(scn, "DazViewportColor")
-        box.prop(scn, "DazUseWorld")
-        box.prop(scn, "DazUseSssSkin")
-        box.prop(scn, "DazAltSss")
-        box.prop(scn, "DazLowerResFolders")
-        box.prop(scn, "DazMaterialsByIndex")
-        box.prop(scn, "DazMaterialsByName")
+        box.prop(scn, "materialMethod")
+        box.prop(scn, "sssMethod")
+        box.prop(scn, "viewportColor")
+        box.prop(scn, "useWorld")
+        box.prop(scn, "useSssSkin")
+        box.prop(scn, "useAltSss")
+        box.prop(scn, "useLowerResFolders")
+        box.prop(scn, "useMaterialsByIndex")
+        box.prop(scn, "useMaterialsByName")
         if bpy.app.version < (3,4,0):
-            box.prop(scn, "DazFakeCaustics")
-        box.prop(scn, "DazImageInterpolation")
-        box.prop(scn, "DazUnusedTextures")
-        box.prop(scn, "DazHandleRenderSettings")
-        box.prop(scn, "DazHandleLightSettings")
+            box.prop(scn, "useFakeCaustics")
+        box.prop(scn, "useImageInterpolation")
+        box.prop(scn, "useUnusedTextures")
+        box.prop(scn, "handleRenderSettings")
+        box.prop(scn, "handleLightSettings")
         box.separator()
-        box.prop(scn, "DazUseDisplacement")
-        box.prop(scn, "DazUseEmission")
-        box.prop(scn, "DazGhostLights")
-        box.prop(scn, "DazUseReflection")
+        box.prop(scn, "useDisplacement")
+        box.prop(scn, "useEmission")
+        box.prop(scn, "useGhostLights")
+        box.prop(scn, "useReflection")
 
         row = self.layout.row()
         row.operator("daz.load_root_paths")
@@ -372,12 +761,33 @@ class DAZ_OT_GlobalSettings(DazOperator):
 
 
     def run(self, context):
-        GS.fromScene(context.scene)
-        GS.saveDefaults()
+        struct = {}
+        for attr in dir(GS):
+            print("TT", attr)
+            if attr[0] != "_" and hasattr(self, attr):
+                value = getattr(self, attr)
+                print("ATT", attr, value)
+                setattr(GS, attr, value)
+                struct[attr] = value
+        from .load_json import saveJson
+        filepath = os.path.expanduser(GS.settingsPath)
+        filepath = "%s.json" % os.path.splitext(filepath)[0]
+        saveJson({"daz-settings" : struct}, filepath, strict=False)
+        print("Settings file %s saved" % filepath)
 
 
     def invoke(self, context, event):
-        GS.toScene(context.scene)
+        #self.unitScale = 2.2
+        for attr in dir(GS):
+            value = getattr(GS, attr)
+            if attr in ["contentDirs", "cloudDirs", "mdlDirs"]:
+                pgs = getattr(self, attr)
+                for folder in value:
+                    pg = pgs.add()
+                    pg.name = folder
+            elif attr[0] != "_" and hasattr(self, attr):
+                #print("ATT", attr, value)
+                setattr(self, attr, value)
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=1280)
 
@@ -401,157 +811,14 @@ classes = [
     ErrorOperator
 ]
 
-MaterialMethodItems = [
-    ('BSDF', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only unless SSS Skin is enabled"),
-    ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
-    ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
-]
-
 def getRootEnums(scn, context):
     return [(folder,folder,folder) for folder in GS.getDazPaths()]
 
-
 def register():
-
-    bpy.types.Scene.DazContentDirs = CollectionProperty(
-        type = bpy.types.PropertyGroup,
-        name = "DAZ Content Directories",
-        description = "Search paths for DAZ Studio content")
-
-    bpy.types.Scene.DazMDLDirs = CollectionProperty(
-        type = bpy.types.PropertyGroup,
-        name = "DAZ MDL Directories",
-        description = "Search paths for DAZ Studio MDL")
-
-    bpy.types.Scene.DazCloudDirs = CollectionProperty(
-        type = bpy.types.PropertyGroup,
-        name = "DAZ Cloud Directories",
-        description = "Search paths for DAZ Studio cloud content")
-
-    bpy.types.Scene.DazErrorPath = StringProperty(
-        name = "Error Path",
-        description = "Path to error report file")
-
-    bpy.types.Scene.DazScanPath = StringProperty(
-        name = "Scanned Database Path",
-        description = "Path to scanned database")
-
-    bpy.types.Scene.DazAbsScanPath = StringProperty(
-        name = "Absolute Paths File",
-        description = "Path to file with scanned absolute paths")
-
-    bpy.types.Scene.DazUnitScale = FloatProperty(
-        name = "Unit Scale",
-        description = "Scale used to convert between DAZ and Blender units. Default unit meters",
-        default = 0.01,
-        precision = 3,
-        min = 0.001, max = 100.0)
-
-    bpy.types.Scene.DazVerbosity = IntProperty(
-        name = "Verbosity",
-        min=1, max = 5,
-        description = (
-            "Controls the number of warning messages when loading files\n" +
-            "1: Silent mode.\n" +
-            "2: Default. Warn about some problems.\n" +
-            "3: Warn about all problems.\n" +
-            "4: Warn about all problems and save a log file.\n" +
-            "5: Like verbosity = 4 and trigger a Python error."))
-
-    bpy.types.Scene.DazStrengthAdjusters = EnumProperty(
-        items = [('NONE', "None", "Never add adjusters"),
-                 ('Face', "Face", "Add adjusters to face morphs"),
-                 ('Body', "Body", "Add adjusters to body morphs.\nNot recommended because if affects JCMs"),
-                 ('Custom', "Custom", "Add adjusters to custom morphs"),
-                 ('ALL', "All", "Add adjusters to all morphs")],
-        name = "Adjust Strength",
-        description = "Add extra sliders to adjust the overall strength",
-        default = 'NONE')
-
-    bpy.types.Scene.DazCustomMin = FloatProperty(
-        name = "Custom Min",
-        description = "Custom minimum for sliders",
-        min = -10.0, max = 0.0)
-
-    bpy.types.Scene.DazCustomMax = FloatProperty(
-        name = "Custom Max",
-        description = "Custom maximum for sliders",
-        min = 0.0, max = 10.0)
-
-    bpy.types.Scene.DazMorphMultiplier = FloatProperty(
-        name = "Multiplier",
-        description = "Morph multiplier. Multiply the min and \nmax values for sliders with this factor",
-        min = 0.0, max = 10.0)
-
-    enums = [('DAZ', "DAZ", "Use min and max values from DAZ files if available.\nThe limits are multiplied with the factor below"),
-             ('CUSTOM', "Custom", "Use min and max values from custom sliders"),
-             ('NONE', "None", "Don't limit sliders")]
-
-    bpy.types.Scene.DazFinalLimits = EnumProperty(
-        items = enums,
-        name = "Final Limits",
-        description = "Final min and max values for DAZ properties,\nwhen all sliders are taken into account")
-
-    bpy.types.Scene.DazSliderLimits = EnumProperty(
-        items = enums,
-        name = "Slider Limits",
-        description = "Min and max values for sliders")
-
-    bpy.types.Scene.DazShowFinalProps = BoolProperty(
-        name = "Show Final Morph Values",
-        description = "Display the \"final\" values of morphs")
-
-    bpy.types.Scene.DazShowInTerminal = BoolProperty(
-        name = "Show In Terminal",
-        description = "Display full morph names when loading and transferring morphs")
-
-    bpy.types.Scene.DazUseShapekeys = BoolProperty(
-        name = "Shapekeys",
-        description = "Load shapekeys for morphs")
-
-    bpy.types.Scene.DazMuteDrivers = BoolProperty(
-        name = "Shapekey Mute Drivers",
-        description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
-
-    bpy.types.Scene.DazUseERC = BoolProperty(
-        name = "ERC Morphs",
-        description = "Load support for ERC morphs that change the rest pose")
-
-    bpy.types.Scene.DazStripCategory = BoolProperty(
-        name = "Strip Category",
-        description = "Strip the category name from the beginning of the morph name if they are the same")
-
-    bpy.types.Scene.DazUseModifiedMesh = BoolProperty(
-        name = "Import To Modified Meshes",
-        description = "Import morphs to meshes that have been modified by merging geografts or lashes.\nWarning: can give incorrect shapekeys if meshes have been modified in edit mode")
-
-    bpy.types.Scene.DazUseSubmeshes = BoolProperty(
-        name = "Import To Submeshes",
-        description = "Import morphs to the figure's submeshes,\ne.g. Genesis 9 eyes, mouth, lashes, and tears")
-
-    bpy.types.Scene.DazDefaultDrivers = BoolProperty(
-        name = "Default Drivers",
-        description = "Create default drivers defined in the scene file")
-
-    bpy.types.Scene.DazOptimizeJcms = BoolProperty(
-        name = "Optimize JCM Drivers",
-        description = "Optimize drivers when loading JCMs and flexions. Experimental")
-
-    bpy.types.Scene.DazMakeHiddenSliders = BoolProperty(
-        name = "Make Hidden Sliders",
-        description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
-
-    bpy.types.Scene.DazBakedMorphs = BoolProperty(
-        name = "Baked Morphs",
-        description = "Allow that baked morphs are imported,\nand display them in the Morphs panel")
-
-    bpy.types.Scene.DazShowHiddenObjects = BoolProperty(
-        name = "Show Hidden Objects",
-        description = "Don't hide objects which are hidden in DAZ Studio")
-
-    bpy.types.Scene.DazIgnoreHiddenObjects = BoolProperty(
-        name = "Ignore Hidden Objects",
-        description = "Don't build objects which are hidden in DAZ Studio")
+    bpy.types.Scene.DazPreferredRoot = EnumProperty(
+        items = getRootEnums,
+        name = "Preferred Root Directory",
+        description = "Preferred root directory used by some import tools")
 
     # Object properties
 
@@ -629,239 +896,10 @@ def register():
     bpy.types.Armature.DazExtraFaceBones = BoolProperty(default = False)
     bpy.types.Armature.DazExtraDrivenBones = BoolProperty(default = False)
 
-    bpy.types.Scene.DazShowPaths = BoolProperty(name = "Paths To DAZ Library", default = False)
-    bpy.types.Scene.DazShowContentDirs = BoolProperty(name = "Content Directories", default = True)
-    bpy.types.Scene.DazShowMDLDirs = BoolProperty(name = "MDL Directories", default = False)
-    bpy.types.Scene.DazShowCloudDirs = BoolProperty(name = "Cloud Directories", default = False)
-
-    bpy.types.Scene.DazMaterialMethod = EnumProperty(
-        items = [('SELECT', "Select On Load", "Select the material method when loading files")] + MaterialMethodItems,
-        name = "Material Method",
-        description = "Material Method",
-        default = 'SELECT')
-
-    enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
-             ('RANDOM_WALK', "Random Walk", "Random walk")]
-    if bpy.app.version >= (3,0,0):
-        enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
-    bpy.types.Scene.DazSSSMethod = EnumProperty(
-        items = enums,
-        name = "SSS",
-        description = "Method for subsurface scattering",
-        default = 'RANDOM_WALK')
-
-    bpy.types.Scene.DazViewportColor = EnumProperty(
-        items = [('ORIGINAL', "Original", "Original diffuse color"),
-                 ('RANDOM', "Random", "Random colors for each material"),
-                 ('GUESS', "Guess", "Guess colors based on name"),
-                 ],
-        name = "Viewport",
-        description = "Method to display object in viewport")
-
-    bpy.types.Scene.DazUseWorld = EnumProperty(
-        items = [('ALWAYS', "Always", "Always create world material"),
-                 ('DOME', "Dome", "Create world material from dome"),
-                 ('NEVER', "Never", "Never create world material")],
-        name = "World",
-        description = "When to create a world material")
-
-    bpy.types.Scene.DazLowerResFolders = BoolProperty(
-        name = "Lower Resolution Folders",
-        description = "Store lower resolution textures in separate folders.\nTexture names are also modified")
-
-    bpy.types.Scene.DazMaterialsByIndex = BoolProperty(
-        name = "Materials By Index",
-        description = "Use index rather than name to identify materials.\nNeeded if multiple materials have identical names.\nThis only happens in files generated by the MikuMikuDance exporter")
-
-    bpy.types.Scene.DazMaterialsByName = BoolProperty(
-        name = "Sort Materials Alphabetically",
-        description = "Materials are sorted in alphabetical order.\nIf disabled the order in the duf file is used")
-
-    bpy.types.Scene.DazUseLockLoc = BoolProperty(
-        name = "Location Locks",
-        description = "Use location locks")
-
-    bpy.types.Scene.DazUseLimitLoc = BoolProperty(
-        name = "Location Limits",
-        description = "Enable location limits")
-
-    bpy.types.Scene.DazUseLockRot = BoolProperty(
-        name = "Rotation Locks",
-        description = "Use rotation locks")
-
-    bpy.types.Scene.DazUseLimitRot = BoolProperty(
-        name = "Rotation Limits",
-        description = "Enable rotation limits")
-
-    bpy.types.Scene.DazInheritScale = BoolProperty(
-        name = "Bones Inherit Scale",
-        description = "Bones inherit scale from their parents (Blender default).\nDisable to mimic behaviour in DAZ Studio")
-
-    bpy.types.Scene.DazDisplayLimitRot = BoolProperty(
-        name = "Display Rotation Limits",
-        description = "Display rotation limits as IK limits")
-
     bpy.types.Object.DazHasLocLocks = BoolProperty(default=False)
     bpy.types.Object.DazHasRotLocks = BoolProperty(default=False)
     bpy.types.Object.DazHasLocLimits = BoolProperty(default=False)
     bpy.types.Object.DazHasRotLimits = BoolProperty(default=False)
-
-    bpy.types.Scene.DazDump = BoolProperty(
-        name = "Dump Debug Info",
-        description = "Dump debug info in the file\ndaz_importer_errors.text after loading file")
-
-    bpy.types.Scene.DazZup = BoolProperty(
-        name = "Z Up",
-        description = "Convert from DAZ's Y up convention to Blender's Z up convention.\nDisable for debugging only")
-
-    bpy.types.Scene.DazUnflipped = BoolProperty(
-        name = "Unflipped Bones",
-        description = "Don't flip bone axes.\nEnable for debugging only")
-
-    bpy.types.Scene.DazUseArmature = BoolProperty(
-        name = "Armature",
-        description = "Create armatures for imported figures")
-
-    bpy.types.Scene.DazUseDazOrientation = BoolProperty(
-        name = "DAZ Orientation (Experimental)",
-        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
-
-    bpy.types.Scene.DazUseDazOrientation = BoolProperty(
-        name = "DAZ Orientation (Experimental)",
-        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
-
-    bpy.types.Scene.DazSubtractRestpose = BoolProperty(
-        name = "Subtract Rest Pose",
-        description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
-        default = True)
-
-    bpy.types.Scene.DazUseQuaternions = BoolProperty(
-        name = "Quaternions",
-        description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
-
-    bpy.types.Scene.DazCaseSensitivePaths = BoolProperty(
-        name = "Case-Sensitive Paths",
-        description = "Convert URLs to lowercase. Works best on Windows")
-
-    bpy.types.Scene.DazUseInstancing = BoolProperty(
-        name = "Use Instancing",
-        description = "Use instancing for DAZ instances")
-
-    bpy.types.Scene.DazHairGuides = BoolProperty(
-        name = "Import All Hair Versions",
-        description = "Import hair guides even if the corresponding PS hairs have also been generated.\nOnly for DBZ mesh fitting")
-
-    bpy.types.Scene.DazHighdef = BoolProperty(
-        name = "Build HD Meshes",
-        description = "Build HD meshes if included in .dbz file")
-
-    bpy.types.Scene.DazKeepBaseMesh = BoolProperty(
-        name = "Keep Base Meshes",
-        description = "Keep base resolution meshes if HD mesh is built")
-
-    bpy.types.Scene.DazHDArmature = BoolProperty(
-        name = "Add Armature To HD Meshes",
-        description = "Add armature modifier and vertex groups to true HD meshes")
-
-    bpy.types.Scene.DazMultires = BoolProperty(
-        name = "Add Multires",
-        description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
-
-    bpy.types.Scene.DazMultiUvLayers = BoolProperty(
-        name = "Multiple UV Layers",
-        description = "Use multiple UV layers for HD meshes with multires modifiers")
-
-    bpy.types.Scene.DazUseAutoSmooth = BoolProperty(
-        name = "Auto Smooth",
-        description = (
-            "Use auto smooth if this is done in DAZ Studio.\n" +
-            "This is useful for objects with hard edges,\n" +
-            "but may lead to poor performance for organic meshes"))
-
-    bpy.types.Scene.DazMaxSubdivs = IntProperty(
-        name = "Max Subdivision Level",
-        description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
-        min = 1, max = 11)
-
-    bpy.types.Scene.DazOnFaceMaps = EnumProperty(
-        items = [('NEVER', "Never", "Don't create maps groups"),
-                 ('MATERIALS', "Materials", "Create face maps for materials"),
-                 ('POLYGON_GROUPS', "Polygon Groups", "Create face maps for polygon groups"),
-                ],
-        name = "Face Maps",
-        description = "Generate face maps on import")
-
-    bpy.types.Scene.DazScaleEyeMoisture = BoolProperty(
-        name = "Scale Eye Moisture",
-        description = "Scale eye moisture vertices to avoid dark rings when rendering eyes")
-
-    bpy.types.Scene.DazSimulation = BoolProperty(
-        name = "Simulation",
-        description = "Add influence (pinning) vertex groups for simulation")
-
-    if bpy.app.version < (3,1,0):
-        enums = [('MATERIAL', "Material", "Create material node group"),
-                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")]
-    else:
-        enums = [('MATERIAL', "Material", "Create material node group"),
-                 ('GEONODES', "Geometry Nodes (Experimental)", "Create geometry node group"),
-                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")]
-    bpy.types.Scene.DazShellMethod = EnumProperty(
-        items = enums,
-        name = "Shell Method",
-        description = "Method for geometry shells")
-
-    bpy.types.Scene.DazPruneNodes = BoolProperty(
-        name = "Prune Node Tree",
-        description = "Prune material node-tree.\nDisable for debugging only")
-
-    bpy.types.Scene.DazFakeCaustics = BoolProperty(
-        name = "Fake Caustics",
-        description = "Use fake caustics")
-
-    bpy.types.Scene.DazUseDisplacement = BoolProperty(
-        name = "Displacement",
-        description = "Use displacement maps")
-
-    bpy.types.Scene.DazUseEmission = BoolProperty(
-        name = "Emission",
-        description = "Use emission")
-
-    bpy.types.Scene.DazGhostLights = BoolProperty(
-        name = "Ghost Lights",
-        description = "Mimics the iray ghost light bug, that is fixed in DS 4.20.\nDo not use to mimic DS 4.20")
-
-    bpy.types.Scene.DazUseReflection = BoolProperty(
-        name = "Reflection",
-        description = "Use reflection maps")
-
-    bpy.types.Scene.DazUseSssSkin = BoolProperty(
-        name = "SSS Skin",
-        description = (
-            "Replace translucency with SSS for volumetric skin materials.\n" +
-            "Limited IRAY conversion but faster rendering and more conventional skin materials.\n" +
-            "Works with both Cycles and Eevee but some screen effects may not work"))
-
-    bpy.types.Scene.DazAltSss = BoolProperty(
-        name = "Alternative SSS",
-        description = "Use alternative handling of SSS suggested by Midnight Arrow")
-
-    bpy.types.Scene.DazImageInterpolation = EnumProperty(
-        items = [('Linear', "Linear", "Linear"),
-                 ('Closest', "Closest", "Closest"),
-                 ('Cubic', "Cubic", "Cubic"),
-                 ('Smart', "Smart", "Smart")],
-        name = "Interpolation",
-        description = "Image interpolation")
-
-    bpy.types.Scene.DazUnusedTextures = BoolProperty(
-        name = "Build Unused Textures",
-        description = "Build texture found in unused channels")
-
-    bpy.types.Scene.DazPreferredRoot = EnumProperty(
-        items = getRootEnums,
-        name = "Preferred Root Directory",
-        description = "Preferred root directory used by some import tools")
 
     bpy.types.Material.DazRenderEngine = StringProperty(default='NONE')
     bpy.types.Material.DazShader = StringProperty(default='NONE')

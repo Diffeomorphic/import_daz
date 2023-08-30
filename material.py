@@ -2337,22 +2337,6 @@ def register():
 
     bpy.types.Object.DazLocalTextures = BoolProperty(default = False)
 
-    bpy.types.Scene.DazHandleRenderSettings = EnumProperty(
-        items = [("IGNORE", "Ignore", "Ignore insufficient render settings"),
-                 ("WARN", "Warn", "Warn about insufficient render settings"),
-                 ("UPDATE", "Update", "Update insufficient render settings")],
-        name = "Render Settings",
-        default = "UPDATE"
-    )
-
-    bpy.types.Scene.DazHandleLightSettings = EnumProperty(
-        items = [("IGNORE", "Ignore", "Ignore insufficient light settings"),
-                 ("WARN", "Warn", "Warn about insufficient light settings"),
-                 ("UPDATE", "Update", "Update insufficient light settings")],
-        name = "Light Settings",
-        default = "UPDATE"
-    )
-
 
 def unregister():
     for cls in classes:

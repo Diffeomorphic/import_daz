@@ -146,91 +146,6 @@ class GlobalSettings:
             return self.sssMethod
 
 
-    SceneTable = {
-        # General
-        "DazUnitScale" : "unitScale",
-        "DazVerbosity" : "verbosity",
-        "DazErrorPath" : "errorPath",
-        "DazScanPath" : "scanPath",
-        "DazAbsScanPath" : "absScanPath",
-        "DazCaseSensitivePaths" : "caseSensitivePaths",
-
-        # Debugging
-        "DazDump" : "useDump",
-        "DazZup" : "zup",
-        "DazMakeHiddenSliders" : "useMakeHiddenSliders",
-        "DazBakedMorphs" : "useBakedMorphs",
-        "DazShowHiddenObjects" : "showHiddenObjects",
-        "DazIgnoreHiddenObjects" : "useIgnoreHiddenObjects",
-        "DazShellMethod" : "shellMethod",
-        "DazPruneNodes" : "usePruneNodes",
-
-        # Materials
-        "DazMaterialMethod" : "materialMethod",
-        "DazSSSMethod" : "sssMethod",
-        "DazViewportColor" : "viewportColors",
-        "DazUseWorld" : "useWorld",
-        "DazLowerResFolders" : "useLowerResFolders",
-        "DazMaterialsByIndex" : "useMaterialsByIndex",
-        "DazMaterialsByName" : "useMaterialsByName",
-        "DazFakeCaustics" : "useFakeCaustics",
-        "DazHandleRenderSettings" : "handleRenderSettings",
-        "DazHandleLightSettings" : "handleLightSettings",
-        "DazUseSssSkin" : "useSssSkin",
-        "DazAltSss" : "useAltSss",
-        "DazUseDisplacement" : "useDisplacement",
-        "DazUseEmission" : "useEmission",
-        "DazUseReflection" : "useReflection",
-        "DazGhostLights" : "useGhostLight",
-        "DazUnusedTextures" : "useUnusedTextures",
-        "DazImageInterpolation" : "imageInterpolation",
-
-        # Properties
-        "DazStrengthAdjusters" : "useStrengthAdjusters",
-        "DazCustomMin" : "customMin",
-        "DazCustomMax" : "customMax",
-        "DazMorphMultiplier" : "morphMultiplier",
-        "DazFinalLimits" : "finalLimits",
-        "DazSliderLimits" : "sliderLimits",
-        "DazShowFinalProps" : "showFinalProps",
-        "DazShowInTerminal" : "showInTerminal",
-        "DazUseShapekeys" : "useShapekeys",
-        "DazMuteDrivers" : "useMuteDrivers",
-        "DazUseERC" : "useERC",
-        "DazStripCategory" : "useStripCategory",
-        "DazUseModifiedMesh" : "useModifiedMesh",
-        "DazUseSubmeshes" : "useSubmeshes",
-        "DazDefaultDrivers" : "useDefaultDrivers",
-        "DazOptimizeJcms" : "useOptimizeJcms",
-
-        # Rigging
-        "DazUseArmature" : "useArmature",
-        "DazUnflipped" : "unflipped",
-        "DazUseDazOrientation" : "useDazOrientation",
-        "DazSubtractRestpose" : "useSubtractRestpose",
-        "DazUseQuaternions" : "useQuaternions",
-        "DazUseLockLoc" : "useLockLoc",
-        "DazUseLimitLoc" : "useLimitLoc",
-        "DazUseLockRot" : "useLockRot",
-        "DazUseLimitRot" : "useLimitRot",
-        "DazInheritScale" : "useInheritScale",
-        "DazDisplayLimitRot" : "displayLimitRot",
-
-        # Meshes
-        "DazUseInstancing" : "useInstancing",
-        "DazHairGuides" : "useHairGuides",
-        "DazHighdef" : "useHighDef",
-        "DazKeepBaseMesh" : "keepBaseMesh",
-        "DazHDArmature" : "useHDArmature",
-        "DazMultires" : "useMultires",
-        "DazMultiUvLayers" : "useMultiUvLayers",
-        "DazUseAutoSmooth" : "useAutoSmooth",
-        "DazMaxSubdivs" : "maxSubdivs",
-        "DazSimulation" : "useSimulation",
-        "DazScaleEyeMoisture" : "useScaleEyeMoisture",
-        "DazOnFaceMaps" : "onFaceMaps",
-    }
-
     def fixPath(self, path):
         filepath = os.path.expanduser(path).replace("\\", "/")
         return filepath.rstrip("/ ")
@@ -324,15 +239,13 @@ class GlobalSettings:
         if struct and "daz-settings" in struct.keys():
             print("Load settings from", filepath)
             settings = struct["daz-settings"]
-            for prop,value in settings.items():
-                if prop in self.SceneTable.keys():
-                    key = self.SceneTable[prop]
-                    setattr(self, key, value)
-            self.contentDirs = self.readSettingsDirs("DazPath", settings)
-            self.contentDirs += self.readSettingsDirs("DazContent", settings)
-            self.mdlDirs = self.readSettingsDirs("DazMDL", settings)
-            self.cloudDirs = self.readSettingsDirs("DazCloud", settings)
-            self.eliminateDuplicates()
+            for key,value in settings.items():
+                setattr(self, key, value)
+            #self.contentDirs = self.readSettingsDirs("DazPath", settings)
+            #self.contentDirs += self.readSettingsDirs("DazContent", settings)
+            #self.mdlDirs = self.readSettingsDirs("DazMDL", settings)
+            #self.cloudDirs = self.readSettingsDirs("DazCloud", settings)
+            #self.eliminateDuplicates()
         else:
             from .error import DazError
             print("SETT", filepath)
