@@ -1666,18 +1666,12 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
 
     def run(self, context):
         from .modifier import getBasicShape
-        hasShapeKeys = []
         for ob in getSelectedMeshes(context):
-            ob,skeys,new = getBasicShape(ob)
-            if not new:
-                hasShapeKeys.append(ob)
+            basic,skeys,new = getBasicShape(ob)
             skey = ob.shape_key_add(name="Push")
             scale = ob.DazScale
             for n,v in enumerate(ob.data.vertices):
                 skey.data[n].co += v.normal*scale
-        if hasShapeKeys:
-            msg = ("Push added to meshes with shapekeys:\n  " + "\n  ".join([ob.name for ob in hasShapeKeys]))
-            raise DazError(msg, True)
 
 #-------------------------------------------------------------
 #   Make deflection
