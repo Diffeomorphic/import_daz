@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import os
+import sys
 import bpy
 from urllib.parse import unquote
 
@@ -36,7 +37,12 @@ from urllib.parse import unquote
 class GlobalSettings:
 
     def __init__(self):
-        from sys import platform
+        if sys.platform == 'win32':
+            self.defaultDir = self.fixPath("~/Documents/DAZ Importer")
+        elif sys.platform == 'darwin':
+            self.defaultDir = self.fixPath("~/DAZ Importer")
+        else:
+            self.defaultDir = self.fixPath("~/DAZ Importer")
 
         self.contentDirs = [
             self.fixPath("~/Documents/DAZ 3D/Studio/My Library"),
@@ -46,10 +52,10 @@ class GlobalSettings:
             "C:/Program Files/DAZ 3D/DAZStudio4/shaders/iray",
         ]
         self.cloudDirs = []
-        self.errorPath = self.fixPath("~/Documents/daz_importer_errors.txt")
-        self.scanPath = self.fixPath("~/Documents/Scanned DAZ Database")
-        self.settingsPath = self.fixPath("~/import-daz-settings-28x.json")
-        self.absScanPath = self.fixPath("~/import_daz_scanned_absolute_paths.json")
+        self.errorPath = "%s/%s" % (self.defaultDir, "daz_importer_errors.txt")
+        self.scanPath = "%s/%s" % (self.defaultDir, "Scanned DAZ Database")
+        self.settingsPath = "%s/%s" % (self.defaultDir, "import-daz-settings.json")
+        self.absScanPath = "%s/%s" % (self.defaultDir, "import_daz_scanned_absolute_paths.json")
         self.rootPaths = []
         self.absPaths = {}
 
@@ -73,7 +79,7 @@ class GlobalSettings:
         self.useQuaternions = False
         self.useDazOrientation = False
         self.useSubtractRestpose = True
-        self.caseSensitivePaths = (platform not in ['win32', 'darwin'])
+        self.caseSensitivePaths = (sys.platform not in ['win32', 'darwin'])
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -329,7 +335,8 @@ class GlobalSettings:
             self.eliminateDuplicates()
         else:
             from .error import DazError
-            raise DazError("Not a settings file   :\n'%s'" % filepath)
+            print("SETT", filepath)
+            #raise DazError("Not a settings file   :\n'%s'" % filepath)
 
 
     def readSettingsDirs(self, prefix, settings):
@@ -429,7 +436,7 @@ class GlobalSettings:
         self.saveDirs(self.cloudDirs, "DazCloud", struct)
         filepath = os.path.expanduser(filepath)
         filepath = os.path.splitext(filepath)[0] + ".json"
-        saveJson({"daz-settings" : struct}, filepath)
+        saveJson({"daz-settings" : struct}, filepath, strict=False)
         print("Settings file %s saved" % filepath)
 
 
@@ -489,7 +496,7 @@ class GlobalSettings:
             "type" : "scanned_absolute_paths",
             "absolute_paths" : self.absPaths,
         }
-        saveJson(struct, self.absScanPath)
+        saveJson(struct, self.absScanPath, strict=False)
         print("Scanned paths saved to %s" % self.absScanPath)
 
 

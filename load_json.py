@@ -102,10 +102,14 @@ def loadJson(filepath, mustOpen=False, silent=False):
     return struct
 
 
-def saveJson(struct, filepath, binary=False):
+def saveJson(struct, filepath, binary=False, strict=True):
     folder = os.path.dirname(filepath)
     if not os.path.exists(folder):
-        raise DazError('Output directory does not exist.\n"%s"' % folder)
+        if strict:
+            raise DazError('Output directory does not exist.\n"%s"' % folder)
+        else:
+            print('Creating directory: %s' % folder)
+            os.makedirs(folder)
     if binary:
         string = encodeJsonData(struct, "")
         bytes = string.encode("utf-8-sig")
