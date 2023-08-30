@@ -1814,39 +1814,48 @@ class DAZ_OT_FixShells(MaterialSelector, DazPropsOperator):
         mat = hum.active_material
         if mat is None:
             raise DazError("No active material")
-        mainShells = self.getShells(mat)
+        mainShells = {}
+        self.getShells(mat, mainShells)
+        usedShells = {}
         if self.useSelf:
             for mat in hum.data.materials:
                 if mat and self.useMaterial(mat):
-                    self.fixMaterial(mat, mainShells)
+                    self.fixMaterial(mat, mainShells, usedShells)
         else:
+            for mat in hum.data.materials:
+                self.getShells(mat, usedShells)
             for ob in getSelectedMeshes(context):
                 if ob != hum:
                     for mat in ob.data.materials:
-                        self.fixMaterial(mat, mainShells)
+                        self.fixMaterial(mat, mainShells, usedShells)
 
 
-    def fixMaterial(self, mat, mainShells):
+    def fixMaterial(self, mat, mainShells, usedShells):
         if mat is None:
             return
-        shells = self.getShells(mat)
+        shells = {}
+        self.getShells(mat, shells)
         for label,nodes in shells.items():
-            mainNodes = mainShells.get(label)
-            if mainNodes:
-                tree = mainNodes[0].node_tree
+            if label in mainShells.keys():
+                tree = mainShells[label][0].node_tree
                 for node in nodes:
                     node.node_tree = tree
+            elif label in usedShells.keys():
+                for node in nodes:
+                    for slot in ["BSDF", "Displacement"]:
+                        for inlink in list(node.inputs[slot].links):
+                            for outlink in list(node.outputs[slot].links):
+                                mat.node_tree.links.new(inlink.from_socket, outlink.to_socket)
+                    mat.node_tree.nodes.remove(node)
 
 
-    def getShells(self, mat):
-        shells = {}
+    def getShells(self, mat, shells):
         if mat:
             for node in mat.node_tree.nodes:
                 if node.type == 'GROUP' and not node.name.startswith(("DAZ ", "LIE")):
                     if node.label not in shells.keys():
                         shells[node.label] = []
                     shells[node.label].append(node)
-        return shells
 
 #----------------------------------------------------------
 #   Activate diffuse texture
