@@ -224,11 +224,17 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         description = "Add a root bone which is the parent of all other bones",
         default = True)
 
+    useReverseFoot : BoolProperty(
+        name = "Reverse Foot",
+        description = "Add reverse foot for IK",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useRootBone")
         self.layout.prop(self, "useArms")
         self.layout.prop(self, "useLegs")
         self.layout.prop(self, "usePoleTargets")
+        self.layout.prop(self, "useReverseFoot")
         self.layout.prop(self, "useImproveIk")
 
 
@@ -265,8 +271,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             raise DazError("The rig %s already has simple IK" % rig.name)
         if not rig.DazCustomShapes:
             raise DazError("Make custom shapes first")
+        makeBoneGroups(rig)
 
-        from .mhx import makeBone, getBoneCopy, ikConstraint, copyRotation, stretchTo
+        from .mhx import makeBone, deriveBone, getBoneCopy, ikConstraint, copyRotation, stretchTo, copyTransform
         IK = SimpleIK(self)
         genesis = IK.getGenesisType(rig)
         if not genesis:
@@ -292,6 +299,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             "G12" : ("Foot", "FootIK", "Thigh", "Thigh", "Shin", "hip", "Knee"),
             "G38" : ("Foot", "FootIK", "ThighBend", "ThighTwist", "Shin", "hip", "Knee"),
             "G9" : ("_foot", "_footIK", "_thigh", "_thigh", "_shin", "hip", "_knee"),
+        }
+
+        footTable = {
+            "G12" : ("Toe", "HeelIK", "ToeIK", "TarsalsIK"),
+            "G38" : ("Toe", "HeelIK", "ToeIK", "TarsalsIK"),
+            "G9"  : ("_toe", "_heelIK", "_toeIK", "_tarsalsIK"),
         }
 
         armTable2 = {
@@ -322,7 +335,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             csRoot = makeCustomShape("CS_Root", "CircleY")
         else:
             root = None
+        csCube = makeCustomShape("CS_Cube", "Cube")
 
+        helpLayers = 31*[False] + [True]
         for prefix,dlayer in [("l",0), ("r",1)]:
             if self.useArms:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = getEntry(armTable, genesis, prefix, ebones)
@@ -348,6 +363,25 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
 
+                if self.useReverseFoot:
+                    layer = 28+dlayer
+                    toe, heelIK, toeIK, tarsalIK = getEntry(footTable, genesis, prefix, ebones)
+                    toename, heelname, toename, tarsalname = getEntry(footTable, genesis, prefix, {})
+                    head = Vector(toe.head)
+                    tail = Vector(foot.head)
+                    tail[2] = head[2] = 0
+                    head[0] = tail[0]
+                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root)
+                    toeIK = makeBone(toename, rig, toe.tail, toe.head, 0, layer, heelIK)
+                    revToeIK = deriveBone("REV-%s" % toename, toe, rig, 31, toeIK)
+                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, toeIK)
+                    revFootIK = deriveBone("REV-%sIK" % foot.name, foot, rig, 31, tarsalIK)
+                    footIK.parent = tarsalIK
+                    footIK.layers[31] = True
+                    footIK.layers[layer] = False
+                    toe.layers[layer] = False
+
+
         setMode('OBJECT')
         rpbs = rig.pose.bones
         if self.useRootBone:
@@ -358,19 +392,32 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         for prefix in ["l", "r"]:
             suffix = prefix.upper()
             if self.useArms:
-                armProp = "DazArmIK_" + suffix
+                armProp = "DazArmIK_%s" % suffix
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = getEntry(armTable, genesis, prefix, rpbs)
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
                 copyBoneProps(hand, handIK)
                 copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
-                legProp = "DazLegIK_" + suffix
+                legProp = "DazLegIK_%s" % suffix
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = getEntry(legTable, genesis, prefix, rpbs)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
-                copyBoneProps(foot, footIK)
-                copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
-                addToLayer(footIK, "IK Leg", rig, "IK")
+                driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
+                if not self.useReverseFoot:
+                    copyBoneProps(foot, footIK)
+                    addToLayer(footIK, "IK Leg", rig, "IK")
+                    copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
+                else:
+                    toe, heelIK, toeIK, tarsalIK = getEntry(footTable, genesis, prefix, rpbs)
+                    revfoot = rig.pose.bones["REV-%s" % footIK.name]
+                    revtoe = rig.pose.bones["REV-%s" % toeIK.name]
+                    driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
+                    copyRotation(foot, revfoot, rig, prop=legProp, space='WORLD')
+                    copyRotation(toe, revtoe, rig, prop=legProp, space='WORLD')
+                    copyTransform(footIK, revfoot, rig, prop=legProp, space='WORLD')
+                    addToLayer(heelIK, "IK Leg", rig, "IK")
+                    addToLayer(toeIK, "IK Leg", rig, "IK")
+                    addToLayer(tarsalIK, "IK Leg", rig, "IK")
 
             if genesis == "G38":
                 if self.useArms:
@@ -380,10 +427,17 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     IK.limitBone(foreBend, True, False, rig, armProp)
                     IK.limitBone(foreTwist, False, True, rig, armProp)
                 if self.useLegs:
-                    setCustomShape(footIK, csFootIk, 3.0)
                     IK.limitBone(thighBend, True, False, rig, legProp)
                     IK.limitBone(thighTwist, False, True, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
+                    if not self.useReverseFoot:
+                        setCustomShape(footIK, csFootIk, 3.0)
+                    else:
+                        setCustomShape(tarsalIK, csCube, (0.5,1.0,0.2), 0.5)
+                        setCustomShape(toeIK, csCube, (1,1.0,0.4), 0.5)
+                        setCustomShape(heelIK, csCube, 0.5, (0,1,0.5))
+                        IK.limitBone(foot, False, False, rig, legProp)
+                        IK.limitBone(toe, False, False, rig, legProp)
 
             elif genesis == "G9":
                 if self.useArms:
@@ -487,7 +541,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         T = True
         F = False
         rig.data.layers = 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F]
-        rig.data.display_type = 'WIRE'
+        rig.data.display_type = 'OCTAHEDRAL'
 
 #----------------------------------------------------------
 #   Custom shapes
@@ -901,9 +955,13 @@ def setCustomShape(pb, shape, scale=None, offset=None):
         pass
     elif hasattr(pb, "custom_shape_scale"):
         pb.custom_shape_scale = scale
+    elif isinstance(scale, tuple):
+        pb.custom_shape_scale_xyz = scale
     else:
         pb.custom_shape_scale_xyz = (scale, scale, scale)
-    if offset is not None:
+    if isinstance(offset, tuple):
+        pb.custom_shape_translation = Vector(offset)*pb.bone.length
+    elif offset is not None:
         pb.custom_shape_translation.y = offset*pb.bone.length
 
 #----------------------------------------------------------
