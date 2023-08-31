@@ -119,7 +119,7 @@ class DAZ_OT_SaveSettingsFile(bpy.types.Operator, SingleFile, JsonExportFile):
         return SingleFile.invoke(self, context, event)
 
 
-class DAZ_OT_LoadFactorySettings(DazOperator):
+class DAZ_OT_LoadFactorySettings(bpy.types.Operator):
     bl_idname = "daz.load_factory_settings"
     bl_label = "Load Factory Settings"
     bl_description = "Restore all global settings to factory defaults"
@@ -135,7 +135,7 @@ class DAZ_OT_LoadFactorySettings(DazOperator):
 #   Load Root Paths
 #-------------------------------------------------------------
 
-class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
+class DAZ_OT_LoadRootPaths(bpy.types.Operator, SingleFile, JsonFile):
     bl_idname = "daz.load_root_paths"
     bl_label = "Load Root Paths"
     bl_description = "Load DAZ root paths from file"
@@ -173,7 +173,7 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
 #   Add content dirs
 #-------------------------------------------------------------
 
-class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
+class DAZ_OT_AddContentDirs(bpy.types.Operator, SingleFile):
     bl_idname = "daz.add_content_dirs"
     bl_label = "Add Content Directories"
     bl_description = "Add DAZ root paths in directory"
@@ -210,7 +210,7 @@ class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
 #   Load settings file
 #-------------------------------------------------------------
 
-class DAZ_OT_LoadSettingsFile(DazOperator, SingleFile, JsonFile):
+class DAZ_OT_LoadSettingsFile(bpy.types.Operator, SingleFile, JsonFile):
     bl_idname = "daz.load_settings_file"
     bl_label = "Load Settings File"
     bl_description = "Load settings from file"
@@ -230,6 +230,21 @@ class DAZ_OT_LoadSettingsFile(DazOperator, SingleFile, JsonFile):
         return SingleFile.invoke(self, context, event)
 
 
+class DAZ_OT_RemoveDazProps(bpy.types.Operator):
+    bl_idname = "daz.remove_daz_props"
+    bl_label = "Remove DAZ Properties"
+    bl_description = "Remove unused scene properties"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        for prop in list(scn.keys()):
+            if not hasattr(scn, prop):
+                print("DEL", prop)
+                del scn[prop]
+        return {'FINISHED'}
+
+
 def showBox(scn, attr, layout):
     if not getattr(scn, attr):
         layout.prop(scn, attr, icon="RIGHTARROW", emboss=False)
@@ -245,7 +260,7 @@ MaterialMethodItems = [
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]
 
-class DAZ_OT_GlobalSettings(DazOperator):
+class DAZ_OT_GlobalSettings(DazPropsOperator):
     bl_idname = "daz.global_settings"
     bl_label = "Global Settings"
     bl_description = "Show or update global settings"
@@ -791,6 +806,7 @@ classes = [
     DAZ_OT_SaveSettingsFile,
     DAZ_OT_LoadSettingsFile,
     DAZ_OT_GlobalSettings,
+    DAZ_OT_RemoveDazProps,
 
     ErrorOperator
 ]
