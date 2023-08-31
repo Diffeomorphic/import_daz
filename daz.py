@@ -69,7 +69,8 @@ class DAZ_OT_AddContentDir(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        pg = context.scene.DazContentDirs.add()
+        global theGlobalDialog
+        pg = theGlobalDialog.contentDirs.add()
         pg.name = ""
         return {'PASS_THROUGH'}
 
@@ -81,7 +82,8 @@ class DAZ_OT_AddMDLDir(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        pg = context.scene.DazMDLDirs.add()
+        global theGlobalDialog
+        pg = theGlobalDialog.mdlDirs.add()
         pg.name = ""
         return {'PASS_THROUGH'}
 
@@ -93,7 +95,8 @@ class DAZ_OT_AddCloudDir(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        pg = context.scene.DazCloudDirs.add()
+        global theGlobalDialog
+        pg = theGlobalDialog.cloudDirs.add()
         pg.name = ""
         return {'PASS_THROUGH'}
 
@@ -108,8 +111,9 @@ class DAZ_OT_SaveSettingsFile(bpy.types.Operator, SingleFile, JsonExportFile):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        GS.fromScene(context.scene)
-        GS.save(self.filepath)
+        global theGlobalDialog
+        GS.fromDialog(theGlobalDialog)
+        GS.saveSettings(self.filepath)
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
@@ -124,8 +128,9 @@ class DAZ_OT_LoadFactorySettings(DazOperator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
+        global theGlobalDialog
         GS.__init__()
-        GS.toScene(context.scene)
+        GS.toDialog(theGlobalDialog)
         return {'PASS_THROUGH'}
 
 #-------------------------------------------------------------
@@ -161,7 +166,9 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
         if struct:
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)
-            GS.toScene(context.scene)
+            GS.saveSettings(GS.settingsPath)
+            #global theGlobalDialog
+            #GS.toDialog(theGlobalDialog)
         else:
             print("No root paths found in", self.filepath)
         return {'PASS_THROUGH'}
@@ -183,13 +190,11 @@ class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
         self.findContentDirs(dirname, 5)
         change = False
         for folder in self.folders:
-            if folder not in scn.DazContentDirs.keys():
+            if folder not in GS.contentDirs:
                 print("Add", folder)
                 change = True
-                pg = scn.DazContentDirs.add()
-                pg.name = folder
-        GS.fromScene(scn)
-        GS.saveDefaults()
+                GS.contentDirs.append(folder)
+        GS.saveSettings(GS.settingsPath)
         return {'PASS_THROUGH'}
 
 
@@ -217,8 +222,9 @@ class DAZ_OT_LoadSettingsFile(DazOperator, SingleFile, JsonFile):
 
     def execute(self, context):
         try:
-            GS.load(self.filepath)
-            GS.toScene(context.scene)
+            GS.loadSettings(self.filepath)
+            GS.saveSettings(GS.settingsPath)
+            #GS.toDialog(theGlobalDialog)
         except DazError:
             handleDazError(context)
         print("Settings file %s saved" % self.filepath)
@@ -248,6 +254,7 @@ class DAZ_OT_GlobalSettings(DazOperator):
     bl_idname = "daz.global_settings"
     bl_label = "Global Settings"
     bl_description = "Show or update global settings"
+    bl_options = {'UNDO', 'PRESET'}
 
     contentDirs : CollectionProperty(
         type = bpy.types.PropertyGroup,
@@ -756,40 +763,22 @@ class DAZ_OT_GlobalSettings(DazOperator):
         row.operator("daz.load_root_paths")
         row.operator("daz.add_content_dirs")
         row.operator("daz.load_factory_settings")
-        row.operator("daz.save_settings_file")
-        row.operator("daz.load_settings_file")
+        #row.operator("daz.save_settings_file")
+        #row.operator("daz.load_settings_file")
 
 
     def run(self, context):
-        struct = {}
-        for attr in dir(GS):
-            print("TT", attr)
-            if attr[0] != "_" and hasattr(self, attr):
-                value = getattr(self, attr)
-                print("ATT", attr, value)
-                setattr(GS, attr, value)
-                struct[attr] = value
-        from .load_json import saveJson
-        filepath = os.path.expanduser(GS.settingsPath)
-        filepath = "%s.json" % os.path.splitext(filepath)[0]
-        saveJson({"daz-settings" : struct}, filepath, strict=False)
-        print("Settings file %s saved" % filepath)
-
+        GS.fromDialog(self)
+        GS.saveSettings(GS.settingsPath)
 
     def invoke(self, context, event):
-        #self.unitScale = 2.2
-        for attr in dir(GS):
-            value = getattr(GS, attr)
-            if attr in ["contentDirs", "cloudDirs", "mdlDirs"]:
-                pgs = getattr(self, attr)
-                for folder in value:
-                    pg = pgs.add()
-                    pg.name = folder
-            elif attr[0] != "_" and hasattr(self, attr):
-                #print("ATT", attr, value)
-                setattr(self, attr, value)
+        global theGlobalDialog
+        GS.toDialog(self)
+        theGlobalDialog = self
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=1280)
+        wm.invoke_props_dialog(self, width=1280)
+        return {'RUNNING_MODAL'}
+
 
 #-------------------------------------------------------------
 #   Initialize

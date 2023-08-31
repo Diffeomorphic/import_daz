@@ -158,32 +158,42 @@ class GlobalSettings:
         return paths
 
 
-    def fromScene(self, scn):
-        def differ(list1, list2):
-            if len(list1) != len(list2):
-                return True
-            for elt1,elt2 in zip(list1, list2):
-                if elt1 != elt2:
-                    return True
-            return False
+    def toDialog(self, btn):
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if attr in ["contentDirs", "cloudDirs", "mdlDirs"]:
+                pgs = getattr(btn, attr)
+                pgs.clear()
+                for folder in value:
+                    pg = pgs.add()
+                    pg.name = folder
+            elif attr[0] != "_":
+                if hasattr(btn, attr):
+                    setattr(btn, attr, value)
 
-        caseOld = self.caseSensitivePaths
-        for prop,key in self.SceneTable.items():
-            if hasattr(scn, prop) and hasattr(self, key):
-                value = getattr(scn, prop)
-                setattr(self, key, value)
-            else:
-                print("MIS", prop, key)
-        self.toggleMorphArmatures(scn)
-        contentOld = self.contentDirs
-        mdlOld = self.mdlDirs
-        cloudOld = self.cloudDirs
-        self.contentDirs = self.pathsFromScene(scn.DazContentDirs)
-        self.mdlDirs = self.pathsFromScene(scn.DazMDLDirs)
-        self.cloudDirs = self.pathsFromScene(scn.DazCloudDirs)
-        self.errorPath = self.fixPath(getattr(scn, "DazErrorPath"))
-        self.scanPath = self.fixPath(getattr(scn, "DazScanPath"))
-        self.absScanPath = self.fixPath(getattr(scn, "DazAbsScanPath"))
+
+    def fromDialog(self, btn):
+        def getPaths(pgs):
+            paths = []
+            for pg in pgs:
+                path = self.fixPath(pg.name)
+                if os.path.exists(path):
+                    paths.append(path)
+                else:
+                    print("Skip non-existent path:", path)
+            return paths
+
+        for attr in dir(self):
+            if (attr[0] != "_" and
+                hasattr(btn, attr) and
+                attr not in ["contentDirs", "cloudDirs", "mdlDirs", "errorPath", "scanPath", "absScanPath"]):
+                setattr(self, attr, getattr(btn, attr))
+        self.contentDirs = getPaths(btn.contentDirs)
+        self.mdlDirs = getPaths(btn.mdlDirs)
+        self.cloudDirs = getPaths(btn.cloudDirs)
+        self.errorPath = self.fixPath(btn.errorPath)
+        self.scanPath = self.fixPath(btn.scanPath)
+        self.absScanPath = self.fixPath(btn.absScanPath)
         self.eliminateDuplicates()
 
 
@@ -192,17 +202,6 @@ class GlobalSettings:
         unregister()
         if scn.DazAutoMorphArmatures and self.useERC:
             bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
-
-
-    def pathsFromScene(self, pgs):
-        paths = []
-        for pg in pgs:
-            path = self.fixPath(pg.name)
-            if os.path.exists(path):
-                paths.append(path)
-            else:
-                print("Skip non-existent path:", path)
-        return paths
 
 
     def pathsToScene(self, paths, pgs):
@@ -233,37 +232,43 @@ class GlobalSettings:
         setattr(scn, "DazAbsScanPath", path)
 
 
-    def load(self, filepath):
+    def loadSettings(self, filepath):
+        def readSettingsDirs(prefix, settings):
+            n = len(prefix)
+            return [(key, path) for key,path in settings.items() if key[0:n] == prefix]
+
+        def fixPaths(paths):
+            paths.sort()
+            fixed = []
+            print("PP", paths)
+            for key,path in paths:
+                path = self.fixPath(path)
+                if os.path.exists(path):
+                    fixed.append(path)
+                else:
+                    print("No such path:", path)
+            return fixed
+
         from .fileutils import openSettingsFile
         struct = openSettingsFile(filepath)
         if struct and "daz-settings" in struct.keys():
             print("Load settings from", filepath)
             settings = struct["daz-settings"]
-            for key,value in settings.items():
-                setattr(self, key, value)
-            #self.contentDirs = self.readSettingsDirs("DazPath", settings)
-            #self.contentDirs += self.readSettingsDirs("DazContent", settings)
-            #self.mdlDirs = self.readSettingsDirs("DazMDL", settings)
-            #self.cloudDirs = self.readSettingsDirs("DazCloud", settings)
-            #self.eliminateDuplicates()
+            self.contentDirs = readSettingsDirs("DazPath", settings)
+            self.contentDirs += readSettingsDirs("DazContent", settings)
+            self.mdlDirs = readSettingsDirs("DazMDL", settings)
+            self.cloudDirs = readSettingsDirs("DazCloud", settings)
+            for attr,value in settings.items():
+                if hasattr(self, attr):
+                    setattr(self, attr, value)
+            self.contentDirs = fixPaths(self.contentDirs)
+            self.mdlDirs = fixPaths(self.mdlDirs)
+            self.cloudDirs = fixPaths(self.cloudDirs)
+            self.eliminateDuplicates()
         else:
             from .error import DazError
             print("SETT", filepath)
             #raise DazError("Not a settings file   :\n'%s'" % filepath)
-
-
-    def readSettingsDirs(self, prefix, settings):
-        paths = []
-        n = len(prefix)
-        pathlist = [(key, path) for key,path in settings.items() if key[0:n] == prefix]
-        pathlist.sort()
-        for _prop,path in pathlist:
-            path = self.fixPath(path)
-            if os.path.exists(path):
-                paths.append(path)
-            else:
-                print("No such path:", path)
-        return paths
 
 
     def eliminateDuplicates(self):
@@ -329,36 +334,28 @@ class GlobalSettings:
         return paths
 
 
-    def saveDirs(self, paths, prefix, struct):
-        for n,path in enumerate(paths):
-            struct["%s%03d" % (prefix, n+1)] = self.fixPath(path)
+    def saveSettings(self, filepath):
+        def saveDirs(paths, prefix, struct):
+            for n,path in enumerate(paths):
+                struct["%s%03d" % (prefix, n+1)] = self.fixPath(path)
 
-
-    def save(self, filepath):
         from .load_json import saveJson
         struct = {}
-        for prop,key in self.SceneTable.items():
-            value = getattr(self, key)
-            if (isinstance(value, int) or
-                isinstance(value, float) or
-                isinstance(value, bool) or
-                isinstance(value, str)):
-                struct[prop] = value
-        self.saveDirs(self.contentDirs, "DazContent", struct)
-        self.saveDirs(self.mdlDirs, "DazMDL", struct)
-        self.saveDirs(self.cloudDirs, "DazCloud", struct)
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
+                struct[attr] = value
+        saveDirs(self.contentDirs, "DazContentDirs", struct)
+        saveDirs(self.mdlDirs, "DazMDLDirs", struct)
+        saveDirs(self.cloudDirs, "DazCloudDirs", struct)
         filepath = os.path.expanduser(filepath)
-        filepath = os.path.splitext(filepath)[0] + ".json"
+        filepath = "%s.json" % os.path.splitext(filepath)[0]
         saveJson({"daz-settings" : struct}, filepath, strict=False)
         print("Settings file %s saved" % filepath)
 
 
     def loadDefaults(self):
-        self.load(self.settingsPath)
-
-
-    def saveDefaults(self):
-        self.save(self.settingsPath)
+        self.loadSettings(self.settingsPath)
 
 
     def setRootPaths(self):
