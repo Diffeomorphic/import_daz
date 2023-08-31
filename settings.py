@@ -39,10 +39,13 @@ class GlobalSettings:
     def __init__(self):
         if sys.platform == 'win32':
             self.defaultDir = self.fixPath("~/Documents/DAZ Importer")
+            self.caseSensitivePaths = False
         elif sys.platform == 'darwin':
             self.defaultDir = self.fixPath("~/DAZ Importer")
+            self.caseSensitivePaths = False
         else:
             self.defaultDir = self.fixPath("~/DAZ Importer")
+            self.caseSensitivePaths = True
 
         self.contentDirs = [
             self.fixPath("~/Documents/DAZ 3D/Studio/My Library"),
@@ -54,8 +57,9 @@ class GlobalSettings:
         self.cloudDirs = []
         self.errorPath = "%s/%s" % (self.defaultDir, "daz_importer_errors.txt")
         self.scanPath = "%s/%s" % (self.defaultDir, "Scanned DAZ Database")
-        self.settingsPath = "%s/%s" % (self.defaultDir, "import-daz-settings.json")
+        self.settingsPath = "%s/%s" % (self.defaultDir, "import_daz_settings.json")
         self.absScanPath = "%s/%s" % (self.defaultDir, "import_daz_scanned_absolute_paths.json")
+        self.oldPath = self.fixPath("~/import-daz-settings-28x.json")
         self.rootPaths = []
         self.absPaths = {}
 
@@ -79,7 +83,6 @@ class GlobalSettings:
         self.useQuaternions = False
         self.useDazOrientation = False
         self.useSubtractRestpose = True
-        self.caseSensitivePaths = (sys.platform not in ['win32', 'darwin'])
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -232,12 +235,10 @@ class GlobalSettings:
         setattr(scn, "DazAbsScanPath", path)
 
 
-    def loadSettings(self, filepath):
-        def readSettingsDirs(prefix, settings):
+    def loadSettings(self, filepath, strict=True):
+        def readOldDirs(prefix, settings):
             n = len(prefix)
-            return [(key, path) for key,path in settings.items() if key[0:n] == prefix]
-
-        def fixPaths(paths):
+            paths = [(key, path) for key,path in settings.items() if key[0:n] == prefix]
             paths.sort()
             fixed = []
             for key,path in paths:
@@ -248,9 +249,9 @@ class GlobalSettings:
                     print("No such path:", path)
             return fixed
 
-        def newFixPaths(paths):
+        def readNewDirs(key, settings):
             fixed = []
-            for path in paths:
+            for path in settings[key]:
                 path = self.fixPath(path)
                 if os.path.exists(path):
                     fixed.append(path)
@@ -263,24 +264,25 @@ class GlobalSettings:
         if struct and "daz-settings" in struct.keys():
             print("Load settings from", filepath)
             settings = struct["daz-settings"]
-            self.contentDirs = readSettingsDirs("DazPath", settings)
-            self.contentDirs += readSettingsDirs("DazContent", settings)
-            self.mdlDirs = readSettingsDirs("DazMDL", settings)
-            self.cloudDirs = readSettingsDirs("DazCloud", settings)
-            self.contentDirs = fixPaths(self.contentDirs)
-            self.mdlDirs = fixPaths(self.mdlDirs)
-            self.cloudDirs = fixPaths(self.cloudDirs)
             for attr,value in settings.items():
-                if hasattr(self, attr):
+                if hasattr(self, attr) and isinstance(value, (float, int, bool, str)):
                     setattr(self, attr, value)
-            for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
-                if attr in settings.keys():
-                    setattr(self, attr, newFixPaths(settings[attr]))
+            if "contentDirs" in settings.keys():
+                self.contentDirs = readNewDirs("contentDirs", settings)
+                self.mdlDirs = readNewDirs("mdlDirs", settings)
+                self.cloudDirs = readNewDirs("cloudDirs", settings)
+            else:
+                self.contentDirs = readOldDirs("DazPath", settings)
+                self.contentDirs += readOldDirs("DazContent", settings)
+                self.mdlDirs = readOldDirs("DazMDL", settings)
+                self.cloudDirs = readOldDirs("DazCloud", settings)
             self.eliminateDuplicates()
-        else:
+            return True
+        elif strict:
             from .error import DazError
-            print("SETT", filepath)
-            #raise DazError("Not a settings file   :\n'%s'" % filepath)
+            raise DazError("Not a settings file   :\n'%s'" % filepath)
+        else:
+            return False
 
 
     def eliminateDuplicates(self):
@@ -369,7 +371,8 @@ class GlobalSettings:
 
 
     def loadDefaults(self):
-        self.loadSettings(self.settingsPath)
+        if not self.loadSettings(self.settingsPath, False):
+            self.loadSettings(self.oldPath)
 
 
     def setRootPaths(self):
