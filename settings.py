@@ -240,8 +240,17 @@ class GlobalSettings:
         def fixPaths(paths):
             paths.sort()
             fixed = []
-            print("PP", paths)
             for key,path in paths:
+                path = self.fixPath(path)
+                if os.path.exists(path):
+                    fixed.append(path)
+                else:
+                    print("No such path:", path)
+            return fixed
+
+        def newFixPaths(paths):
+            fixed = []
+            for path in paths:
                 path = self.fixPath(path)
                 if os.path.exists(path):
                     fixed.append(path)
@@ -258,12 +267,15 @@ class GlobalSettings:
             self.contentDirs += readSettingsDirs("DazContent", settings)
             self.mdlDirs = readSettingsDirs("DazMDL", settings)
             self.cloudDirs = readSettingsDirs("DazCloud", settings)
-            for attr,value in settings.items():
-                if hasattr(self, attr):
-                    setattr(self, attr, value)
             self.contentDirs = fixPaths(self.contentDirs)
             self.mdlDirs = fixPaths(self.mdlDirs)
             self.cloudDirs = fixPaths(self.cloudDirs)
+            for attr,value in settings.items():
+                if hasattr(self, attr):
+                    setattr(self, attr, value)
+            for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
+                if attr in settings.keys():
+                    setattr(self, attr, newFixPaths(settings[attr]))
             self.eliminateDuplicates()
         else:
             from .error import DazError
@@ -345,9 +357,11 @@ class GlobalSettings:
             value = getattr(self, attr)
             if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
                 struct[attr] = value
-        saveDirs(self.contentDirs, "DazContentDirs", struct)
-        saveDirs(self.mdlDirs, "DazMDLDirs", struct)
-        saveDirs(self.cloudDirs, "DazCloudDirs", struct)
+        #saveDirs(self.contentDirs, "DazContentDirs", struct)
+        #saveDirs(self.mdlDirs, "DazMDLDirs", struct)
+        #saveDirs(self.cloudDirs, "DazCloudDirs", struct)
+        for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
+            struct[attr] = [self.fixPath(path) for path in getattr(self, attr)]
         filepath = os.path.expanduser(filepath)
         filepath = "%s.json" % os.path.splitext(filepath)[0]
         saveJson({"daz-settings" : struct}, filepath, strict=False)

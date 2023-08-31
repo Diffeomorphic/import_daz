@@ -406,6 +406,9 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         ob = context.object
         scn = context.scene
         layout = self.layout
+        layout.operator("daz.save_settings_file")
+        layout.operator("daz.load_settings_file")
+        layout.separator()
         layout.operator("daz.scan_absolute_paths")
         layout.operator("daz.scan_morph_database")
         layout.operator("daz.scan_morph_directory")

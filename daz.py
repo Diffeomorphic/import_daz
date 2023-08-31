@@ -111,10 +111,8 @@ class DAZ_OT_SaveSettingsFile(bpy.types.Operator, SingleFile, JsonExportFile):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        global theGlobalDialog
-        GS.fromDialog(theGlobalDialog)
         GS.saveSettings(self.filepath)
-        return {'PASS_THROUGH'}
+        return {'FINISHED'}
 
     def invoke(self, context, event):
         self.properties.filepath = os.path.dirname(GS.settingsPath)
@@ -167,11 +165,9 @@ class DAZ_OT_LoadRootPaths(DazOperator, SingleFile, JsonFile):
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)
             GS.saveSettings(GS.settingsPath)
-            #global theGlobalDialog
-            #GS.toDialog(theGlobalDialog)
         else:
             print("No root paths found in", self.filepath)
-        return {'PASS_THROUGH'}
+        return {'FINISHED'}
 
 #-------------------------------------------------------------
 #   Add content dirs
@@ -195,7 +191,7 @@ class DAZ_OT_AddContentDirs(DazOperator, SingleFile):
                 change = True
                 GS.contentDirs.append(folder)
         GS.saveSettings(GS.settingsPath)
-        return {'PASS_THROUGH'}
+        return {'FINISHED'}
 
 
     def findContentDirs(self, folder, level):
@@ -224,11 +220,10 @@ class DAZ_OT_LoadSettingsFile(DazOperator, SingleFile, JsonFile):
         try:
             GS.loadSettings(self.filepath)
             GS.saveSettings(GS.settingsPath)
-            #GS.toDialog(theGlobalDialog)
         except DazError:
             handleDazError(context)
         print("Settings file %s saved" % self.filepath)
-        return {'PASS_THROUGH'}
+        return {'FINISHED'}
 
     def invoke(self, context, event):
         self.properties.filepath = os.path.dirname(GS.settingsPath)
@@ -773,8 +768,8 @@ class DAZ_OT_GlobalSettings(DazOperator):
 
     def invoke(self, context, event):
         global theGlobalDialog
-        GS.toDialog(self)
         theGlobalDialog = self
+        GS.toDialog(self)
         wm = context.window_manager
         wm.invoke_props_dialog(self, width=1280)
         return {'RUNNING_MODAL'}
