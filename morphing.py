@@ -695,7 +695,7 @@ class MorphLoader(LoadMorph):
 #   Load standard morphs
 #------------------------------------------------------------------
 
-class StandardMorphLoader(MorphLoader, MorphSuffix):
+class StandardMorphLoader(MorphSuffix, MorphLoader):
     suppressError = True
     ignoreHD = False
     hideable = True
@@ -1141,7 +1141,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 #   Custom Morph Loader
 #------------------------------------------------------------------------
 
-class CustomMorphLoader(MorphLoader, MorphSuffix):
+class CustomMorphLoader(MorphSuffix, MorphLoader):
     morphset = "Custom"
     hideable = True
     category = ""
@@ -1380,7 +1380,7 @@ class FavoOptions:
         default = False)
 
 
-class DAZ_OT_LoadFavoMorphs(DazOperator, MorphLoader, MorphSuffix, FavoOptions, SingleFile, JsonFile, IsMeshArmature):
+class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, SingleFile, JsonFile, IsMeshArmature):
     bl_idname = "daz.load_favo_morphs"
     bl_label = "Load Favorite Morphs"
     bl_description = "Load favorite morphs"

@@ -47,6 +47,7 @@ ALWAYS_BAKED = [
 
 class LoadMorph(DriverUser):
     morphset = None
+    bodypart = "Custom"
     usePropDrivers = True
     isJcm = False
     treatHD = 'ERROR'
@@ -95,7 +96,11 @@ class LoadMorph(DriverUser):
             self.amt = None
 
 
-    def loadAllMorphs(self, namepaths):
+    def getUniqueName(self, string):
+        return string
+
+
+    def initAll(self):
         DriverUser.__init__(self)
         self.alias = {}
         self.loaded = []
@@ -113,6 +118,10 @@ class LoadMorph(DriverUser):
         self.origRestored = []
         self.bakedSkipped = {}
         self.initAmt()
+
+
+    def loadAllMorphs(self, namepaths):
+        self.initAll()
         if self.rig:
             self.baked = [key.lower() for key in self.rig.DazBaked.keys()]
         self.adjustable = {}

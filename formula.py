@@ -325,21 +325,24 @@ def buildBakedMorph(inst, ref, value):
 #   Formula
 #-------------------------------------------------------------
 
+def makeExpression():
+    return {
+        "factor" : 0,
+        "factor2" : 0,
+        "prop" : None,
+        "prop2" : None,
+        "bone" : None,
+        "bone2" : None,
+        "path" : None,
+        "comp" : -1,
+        "comp2" : -1,
+        "mults" : []}
+
 def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
     if output not in exprs.keys():
         exprs[output] = {"*fileref" : (fileref, channel)}
     if path not in exprs[output].keys():
         exprs[output][path] = {}
     if idx not in exprs[output][path].keys():
-        exprs[output][path][idx] = {
-            "factor" : 0,
-            "factor2" : 0,
-            "prop" : None,
-            "prop2" : None,
-            "bone" : None,
-            "bone2" : None,
-            "path" : None,
-            "comp" : -1,
-            "comp2" : -1,
-            "mults" : []}
+        exprs[output][path][idx] = makeExpression()
     return exprs[output][path][idx]

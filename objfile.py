@@ -397,8 +397,17 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         PropDrivers.draw(self, context)
         self.layout.prop(self, "useERC")
 
+    def storeState(self, context):
+        DazOperator.storeState(self, context)
+        self.gsERC = GS.useERC
+        GS.useERC = self.useERC
+
+    def restoreState(self, context):
+        DazOperator.restoreState(self, context)
+        GS.useERC = self.gsERC
+
     def run(self, context):
-        from .driver import setFloatProp
+        from .driver import setFloatProp, makePropDriver
         rig = getRigFromContext(context)
         LS.scale = rig.DazScale
         if rig.type == 'ARMATURE':
@@ -410,9 +419,13 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         props = []
         for path in paths:
             dbz = loadDbzFile(path)
-            props.append(dbz.name)
+            prop = dbz.name
+            props.append(prop)
             if self.usePropDrivers and rig:
-                setFloatProp(rig, dbz.name, 0.0, GS.customMin, GS.customMax, True)
+                setFloatProp(rig, prop, 0.0, GS.customMin, GS.customMax, True)
+                final = finalProp(prop)
+                setFloatProp(rig.data, final, 0.0, GS.customMin, GS.customMax, False)
+                makePropDriver(propRef(prop), rig.data, propRef(final), rig, "x")
                 if self.useERC:
                     self.buildRigMorph(rig, dbz)
             for ob in meshes:
@@ -437,22 +450,39 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         for name,dbzrig in dbz.rigs.items():
             for restdata, transforms, center in dbzrig:
                 if match(rig, restdata):
-                    for pb in rig.pose.bones:
-                        bname = baseBone(pb.name)
-                        (head, tail, orient, xyz, origin, wsmat) = restdata[bname]
-                        self.makeOffsetFormula("HdOffset", pb, rig, dbz.name, pb.bone.head_local, d2b(head))
-                        self.makeOffsetFormula("TlOffset", pb, rig, dbz.name, pb.bone.tail_local, d2b(tail))
+                    self.buildDbzMorphs(rig, restdata, dbz)
                     return
 
 
-    def makeOffsetFormula(self, attr, pb, rig, prop, vec0, vec1):
-        if attr not in pb.keys():
-            setattr(pb, attr, Zero)
-        pb.driver_remove(attr)
-        for idx in range(3):
-            fcu = pb.driver_add(attr, idx)
-            expr = "%g+%g*a" % (vec0[idx], vec1[idx]-vec0[idx])
-            self.setDriver(fcu, rig, prop, expr)
+    def buildDbzMorphs(self, rig, restdata, dbz):
+        def b2d(v):
+            return factor*Vector((v[0], v[2], -v[1]))
+
+        from .formula import makeExpression
+        from .load_morph import LoadMorph
+        lm = LoadMorph()
+        lm.rig = rig
+        lm.initAll()
+        expr = makeExpression()
+        expr["prop"] = dbz.name
+        factor = 1/rig.DazScale
+        try:
+            lm.createTmp()
+            for pb in rig.pose.bones:
+                if isDrvBone(pb.name):
+                    continue
+                (head, tail, orient, xyz, origin, wsmat) = restdata[pb.name]
+                vec = Vector(head) - b2d(pb.bone.head_local)
+                for idx,comp in enumerate(vec):
+                    expr["factor"] = comp
+                    lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)
+                vec = Vector(tail) - b2d(pb.bone.tail_local)
+                for idx,comp in enumerate(vec):
+                    expr["factor"] = comp
+                    lm.makeOffsetFormula("TlOffset", pb.name, idx, expr)
+            lm.buildSumDrivers()
+        finally:
+            lm.deleteTmp()
 
 
     def setDriver(self, fcu, rig, prop, expr):
