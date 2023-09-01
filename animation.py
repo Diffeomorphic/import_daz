@@ -235,13 +235,11 @@ class FrameConverter:
 
 
     def convertAllFrames(self, anims, rig, bonemap):
-        from .convert import getCharacterFromRig
-        trgCharacter = getCharacterFromRig(rig)
-        if trgCharacter is None:
+        if self.trgCharacter is None:
             return anims
-
+        print("Convert from %s to %s" % (self.srcCharacter, self.trgCharacter))
         parents = DF.loadEntry(DF.ParentRigs[self.srcCharacter], "parents").get("parents")
-        nparents = DF.loadEntry(trgCharacter, "parents").get("parents")
+        nparents = DF.loadEntry(self.trgCharacter, "parents").get("parents")
         core = {}
         for bname, parname in parents.items():
             if bname in ["head",
@@ -266,12 +264,17 @@ class FrameConverter:
                 restmats[bname] = Euler(Vector(orient)*D, 'XYZ').to_matrix()
             if nname[0:6] == "TWIST-":
                 continue
+            if not nname:
+                if bname[-5:] == "Twist":
+                    nname = bonemap.get("%sBend" % bname[:-5], nname)
+                elif bname[-5:] == "Upper":
+                    nname = bonemap.get("%sLower" % bname[:-5], nname)
             pb = rig.pose.bones.get(nname)
             if pb:
                 nxyzs[bname] = pb.DazRotMode
                 nrestmats[bname] = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ').to_matrix()
             else:
-                print("MIII", bname, nname)
+                print('Missing "%s" "%s"' % (bname, nname))
 
         def convertFrames(trmat, xyz, nxyz, frames):
             vecs = framesToVectors(frames)
@@ -300,7 +303,6 @@ class FrameConverter:
                         elif not parname:
                             trmat = restmats[bname] @ nrestmats[bname].inverted()
                         else:
-                            print("XXX", bname, nname, parname)
                             continue
                         nframes = convertFrames(trmat, xyzs[bname], nxyzs[bname], frames["rotation"])
                         banim[nname]["rotation"] = nframes
@@ -431,7 +433,7 @@ class HideOperator(DazOperator):
         context.view_layer.objects.active = self.activeObject
 
 #-------------------------------------------------------------
-#   AffectOptions
+#   BoneOptions
 #-------------------------------------------------------------
 
 class BoneOptions:
@@ -785,13 +787,16 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.drawProp(context)
         self.drawMorphs(context)
 
+
     def invoke(self, context, event):
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
         self.setPreferredFolder(context.object, [], self.preferredFolders, True)
         return MultiFile.invoke(self, context, event)
 
+
     def getSingleAnimation(self, filepath, context, offset):
+        from .convert import getCharacterFromRig
         if filepath is None:
             return offset,None
         rig = getRigFromContext(context, strict=False, activate=True)
@@ -804,6 +809,12 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             raise DazError("Wrong type of file: %s" % filepath)
         if "scene" not in struct.keys():
             return offset,None
+        self.trgCharacter = getCharacterFromRig(rig)
+        self.useTransferTwist = (
+            self.useConvert and
+            self.srcCharacter in ["genesis", "genesis_2_female", "genesis_2_male", "genesis_9"] and
+            self.trgCharacter in ["genesis_3_female", "genesis_3_male", "genesis_8_female", "genesis_8_male"]
+        )
         anims = self.parseScene(struct["scene"], rig)
         if rig.type == 'ARMATURE':
             setMode('POSE')
@@ -831,11 +842,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         self.mergeHipObject(rig)
         return result
 
+
     def clearAnimation(self, ob):
         pass
 
+
     def nameAnimation(self, ob, dazfiles):
         pass
+
 
     def prepareRig(self, rig, frame):
         if not self.affectBones:
@@ -1247,7 +1261,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         pb = rig.pose.bones[bname]
         if self.isAvailable(pb, rig):
             if useTwist:
-                self.setBoneTwist(tfm, pb, rig)
+                self.setBoneTwist(tfm, pb, rig, self.useTransferTwist)
             else:
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
@@ -1255,10 +1269,15 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             not rig.data.DazHasAxes or
                             rig.DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
-            #self.clearBendTwist(pb)
+            if self.useTransferTwist:
+                twist = self.transferTwist(pb, rig)
+            else:
+                twist = None
             imposeLocks(pb)
             if self.useInsertKeys:
                 insertKeys(pb, True, n+offset, self)
+                if twist:
+                    insertKeys(twist, True, n+offset, self)
 
 
     def setBoneTwist(self, tfm, pb, rig):
@@ -1291,11 +1310,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             pb.rotation_euler = euler
 
 
-    def clearBendTwist(self, pb):
-        if pb.name.endswith("Bend"):
-            pb.rotation_euler[1] = 0
-        elif pb.name.endswith("Twist"):
-            pb.rotation_euler[0] = pb.rotation_euler[2] = 0
+    def transferTwist(self, pb, rig):
+        if pb.name[-4:] == "Bend":
+            twist = rig.pose.bones.get("%sTwist" % pb.name[:-4])
+            if twist:
+                twist.rotation_euler = (0, pb.rotation_euler[1], 0)
+                pb.rotation_euler[1] = 0
+                return twist
+        return None
 
 
     def mergeHipObject(self, rig):
@@ -1310,19 +1332,23 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
     def findDrivers(self, rig):
         transforms = [
-            "].rotation_euler",
-            "].rotation_quaternion",
-            "].location",
-            "].scale",
+            "rotation_euler",
+            "rotation_quaternion",
+            "location",
+            "scale",
         ]
-        driven = {}
+        self.driven = {}
         if (rig.animation_data and
             rig.animation_data.drivers):
             for fcu in rig.animation_data.drivers:
                 words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[" and words[2] in transforms:
-                    driven[words[1]] = True
-        self.driven = list(driven.keys())
+                if words[0] == "pose.bones[":
+                    bname = words[1]
+                    channel = words[2][2:]
+                    if channel in transforms:
+                        if bname not in self.driven.keys():
+                            self.driven[bname] = []
+                        self.driven[bname].append(channel)
 
 #-------------------------------------------------------------
 #
@@ -1767,15 +1793,20 @@ def clearPose(rig, frame, auto):
 
 
 def insertKeys(pb, isbone, frame, btn=None):
-    if btn and pb.name in btn.driven:
-        return
-    if not isbone or isLocationUnlocked(pb):
+    driven = []
+    if btn:
+        driven = btn.driven.get(pb.name, [])
+    if ((not isbone or isLocationUnlocked(pb))
+        and "location" not in driven):
         pb.keyframe_insert("location", group=pb.name, frame=frame)
     if isbone and pb.rotation_mode == 'QUATERNION':
-        pb.keyframe_insert("rotation_quaternion", group=pb.name, frame=frame)
+        if "rotation_quaternion" not in driven:
+            pb.keyframe_insert("rotation_quaternion", group=pb.name, frame=frame)
     else:
-        pb.keyframe_insert("rotation_euler", group=pb.name, frame=frame)
-    pb.keyframe_insert("scale", group=pb.name, frame=frame)
+        if "rotation_euler" not in driven:
+            pb.keyframe_insert("rotation_euler", group=pb.name, frame=frame)
+    if "scale" not in driven:
+        pb.keyframe_insert("scale", group=pb.name, frame=frame)
 
 
 def setChildofInverses(rig):
