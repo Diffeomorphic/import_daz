@@ -653,6 +653,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         scn = self
         split = self.layout.split(factor=0.33)
         col = split.column()
+        row = col.row()
+        row.operator("daz.load_root_paths")
+        row.operator("daz.load_factory_settings")
+
         box = col.box()
         box.label(text = "DAZ Studio Root Directories")
         if showBox(scn, "showContentDirs", box):
@@ -768,13 +772,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(scn, "useEmission")
         box.prop(scn, "useGhostLights")
         box.prop(scn, "useReflection")
-
-        row = self.layout.row()
-        row.operator("daz.load_root_paths")
-        row.operator("daz.add_content_dirs")
-        row.operator("daz.load_factory_settings")
-        #row.operator("daz.save_settings_file")
-        #row.operator("daz.load_settings_file")
 
 
     def run(self, context):

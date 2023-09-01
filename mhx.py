@@ -1423,7 +1423,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if not cinfo:
                 continue
             twistname = twistnames[0]
-            clist1 = self.constraints.get(twistname)
+            clist1 = self.constraints.get(twistname, [])
             cinfo1 = getLimitRot(clist1)
             if cinfo1:
                 for key in ["use_limit_y", "min_y", "max_y"]:
