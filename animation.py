@@ -1261,7 +1261,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         pb = rig.pose.bones[bname]
         if self.isAvailable(pb, rig):
             if useTwist:
-                self.setBoneTwist(tfm, pb, rig, self.useTransferTwist)
+                self.setBoneTwist(tfm, pb, rig)
             else:
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
