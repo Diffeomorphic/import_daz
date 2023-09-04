@@ -158,13 +158,13 @@ class Transform:
         return ((self.scale is None or (self.scale-One).length == 0.0) and self.general == 1)
 
 
-    def setRna(self, rna):
-        rna.location = d2b(self.evalTrans())
+    def setObject(self, ob):
+        ob.location = d2b(self.evalTrans() + Vector(ob.DazCenter))
         rot = d2bu(self.evalRot())
-        rna.rotation_euler = rot
-        if hasattr(rna, "rotation_quaternion"):
-            rna.rotation_quaternion = Euler(rot).to_quaternion()
-        rna.scale = d2bs(self.evalScale())
+        ob.rotation_euler = rot
+        if hasattr(ob, "rotation_quaternion"):
+            ob.rotation_quaternion = Euler(rot).to_quaternion()
+        ob.scale = d2bs(self.evalScale())
 
 
     def clearRna(self, rna):

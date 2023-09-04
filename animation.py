@@ -1022,7 +1022,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
         if self.useClearPose and self.affectObject:
-            tfm.setRna(rig)
+            tfm.setObject(rig)
             if self.useInsertKeys:
                 insertKeys(rig, False, frame, self)
         if self.useClearMorphs and self.affectMorphs:
@@ -1132,7 +1132,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif self.useMaster and master:
             self.transformBone(rig, master, tfm, n, offset, False)
         else:
-            tfm.setRna(rig)
+            tfm.setObject(rig)
             if self.useInsertKeys:
                 insertKeys(rig, False, n+offset, self)
 

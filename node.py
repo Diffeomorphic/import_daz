@@ -919,6 +919,7 @@ class Node(Asset, Formula, Channels):
         ob.DazScene = LS.scene
         ob.DazScale = LS.scale
         ob.DazOrient = inst.attributes["orientation"]
+        ob.DazCenter = inst.attributes["center_point"]
         self.subtractCenter(ob, inst, center)
 
 

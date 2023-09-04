@@ -804,10 +804,11 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         if self.driven.get(pb.name) and self.driven[pb.name].get("location"):
             return
         if pb == rig:
+            center = rig.DazCenter
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
                 anim["url"] = "%s?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
-                locs = [vec[idx]*factor for vec in vecs]
+                locs = [vec[idx]*factor - center[idx] for vec in vecs]
                 self.addKeys(locs, anim, 0.01)
                 anims.append(anim)
         else:
