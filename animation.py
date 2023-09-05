@@ -276,7 +276,7 @@ class FrameConverter:
             else:
                 print('Missing "%s" "%s"' % (bname, nname))
 
-        def convertFrames(trmat, xyz, nxyz, frames):
+        def convertFrames(xyz, nxyz, frames):
             vecs = framesToVectors(frames)
             nvecs = {}
             for t,vec in vecs.items():
@@ -304,7 +304,7 @@ class FrameConverter:
                             trmat = restmats[bname] @ nrestmats[bname].inverted()
                         else:
                             continue
-                        nframes = convertFrames(trmat, xyzs[bname], nxyzs[bname], frames["rotation"])
+                        nframes = convertFrames(xyzs[bname], nxyzs[bname], frames["rotation"])
                         banim[nname]["rotation"] = nframes
 
     #-------------------------------------------------------------
@@ -457,11 +457,6 @@ class BoneOptions:
         description = "Object animations affect master bone rather than object transformations.\nFor Simple IK, MHX and Rigify",
         default = False)
 
-    useTwistAnimation : BoolProperty(
-        name = "Twist Bones",
-        description = "Use the twist bone pose for the twist of MHX and Rigify bones",
-        default = True)
-
     affectScale : BoolProperty(
         name = "Affect Scale",
         description = "Include bone scale in animation.\nObject scale is always included",
@@ -495,7 +490,6 @@ class BoneOptions:
             self.layout.prop(self, "useClearPose")
         if self.affectBones:
             self.layout.prop(self, "useMaster")
-            self.layout.prop(self, "useTwistAnimation")
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
@@ -810,11 +804,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if "scene" not in struct.keys():
             return offset,None
         self.trgCharacter = getCharacterFromRig(rig)
-        self.useTransferTwist = (
-            self.useConvert and
-            self.srcCharacter in ["genesis", "genesis_2_female", "genesis_2_male", "genesis_9"] and
-            self.trgCharacter in ["genesis_3_female", "genesis_3_male", "genesis_8_female", "genesis_8_male"]
-        )
         anims = self.parseScene(struct["scene"], rig)
         if rig.type == 'ARMATURE':
             setMode('POSE')
@@ -1087,7 +1076,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             lframes.sort()
             self.clearScales(rig, lframes[0][0]+offset)
             for n,frame in lframes:
-                twists = []
+                twists = {}
+                self.addTwists(frame)
                 for bname in frame.keys():
                     isObject = (bname == "@selection" or bname in self.KnownRigs)
                     bframe = frame[bname]
@@ -1113,10 +1103,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
                     elif rig.type == 'ARMATURE':
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
-
-                if self.useTwistAnimation:
-                    for (bname, tfm) in twists:
-                        self.transformBone(rig, bname, tfm, n, offset, True)
+                self.correctTwists(twists, rig, n, offset)
                 self.saveScales(rig, n+offset)
 
             self.fixScales(rig)
@@ -1140,8 +1127,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def makeBoneFrame(self, bname, rig, bframe, tfm, n, offset, twists):
         if bname in rig.data.bones.keys():
             self.transformBone(rig, bname, tfm, n, offset, False)
+            if bname.endswith(("Bend", "Twist")):
+                twists[bname] = tfm
         elif bname[0:6] == "TWIST-":
-            twists.append((bname[6:], tfm))
+            twists[bname[6:]] = tfm
 
 
     def makeValueFrame(self, bname, rig, bframe, value, n, offset):
@@ -1269,15 +1258,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             not rig.data.DazHasAxes or
                             rig.DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
-            if self.useTransferTwist:
-                twist = self.transferTwist(pb, rig)
-            else:
-                twist = None
             imposeLocks(pb)
             if self.useInsertKeys:
                 insertKeys(pb, True, n+offset, self)
-                if twist:
-                    insertKeys(twist, True, n+offset, self)
 
 
     def setBoneTwist(self, tfm, pb, rig):
@@ -1310,14 +1293,49 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             pb.rotation_euler = euler
 
 
-    def transferTwist(self, pb, rig):
-        if pb.name[-4:] == "Bend":
-            twist = rig.pose.bones.get("%sTwist" % pb.name[:-4])
-            if twist:
-                twist.rotation_euler = (0, pb.rotation_euler[1], 0)
-                pb.rotation_euler[1] = 0
-                return twist
-        return None
+    def addTwists(self, frame):
+        return
+        for bname in ["lShldr", "lForearm", "lThigh", "rShldr", "rForearm", "rThigh"]:
+            bendname = "%sBend" % bname
+            twistname = "%sTwist" % bname
+            bendframe = frame.get(bendname)
+            if bendframe and "rotation" in bendframe.keys():
+                twistframe = frame.get(twistname)
+                if twistframe is None:
+                    twistframe = frame[twistname] = {}
+                if "rotation" not in twistframe.keys():
+                    twistframe["rotation"] = bendframe["rotation"]
+
+
+    def correctTwists(self, twists, rig, n, offset):
+        for bname,tfm in twists.items():
+            if bname[-4:] == "Bend":
+                bend = rig.pose.bones[bname]
+                if bend.rotation_mode == 'QUATERNION':
+                    euler = bend.rotation_quaternion.to_euler('YZX')
+                else:
+                    euler = bend.rotation_euler
+                if abs(euler[1]) < 1e-4:
+                    continue
+                twist = rig.pose.bones.get("%sTwist" % bname[:-4])
+                if twist and abs(twist.rotation_euler[1]) < 1e-4:
+                    twist.rotation_euler = (0, euler[1], 0)
+                    if self.useInsertKeys:
+                        insertKeys(twist, True, n+offset, self)
+                euler[1] = 0
+                if bend.rotation_mode == 'QUATERNION':
+                    bend.rotation_quaternion = euler.to_quaternion()
+                else:
+                    bend.rotation_euler = euler
+                if self.useInsertKeys:
+                    insertKeys(bend, True, n+offset, self)
+            elif bname[-5:] == "Twist":
+                twist = rig.pose.bones[bname]
+                twist.rotation_euler[0] = twist.rotation_euler[2] = 0
+                if self.useInsertKeys:
+                    insertKeys(twist, True, n+offset, self)
+            else:
+                self.transformBone(rig, bname, tfm, n, offset, True)
 
 
     def mergeHipObject(self, rig):
