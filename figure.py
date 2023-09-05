@@ -413,7 +413,7 @@ def copyBoneInfo(srcpb, trgpb):
         setattr(trgpb, attr, getattr(srcpb, attr))
     for attr in ["use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale", "DazAngle"]:
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
-    for attr in ["DazOrient", "DazHead", "DazTail", "DazNormal"]:
+    for attr in ["DazOrient", "DazHead", "DazNormal"]:
         setattr(trgpb.bone, attr, tuple(getattr(srcpb.bone, attr)))
     for key in ["DazRigIndex", "DazTrueName"]:
         if key in srcpb.bone.keys():

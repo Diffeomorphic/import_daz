@@ -446,7 +446,6 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
             if "DazTrueName" in pb.bone.keys():
                 box.label(text = "True Bone: %s" % pb.bone["DazTrueName"])
             self.propRow(box, pb.bone, "DazHead")
-            self.propRow(box, pb.bone, "DazTail")
             self.propRow(box, pb.bone, "DazOrient")
             self.propRow(box, pb, "DazRotMode")
             self.propRow(box, pb, "DazLocLocks")

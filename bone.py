@@ -323,7 +323,6 @@ class BoneInstance(Instance):
         head,tail,orient,xyz,wsmat = self.getHeadTail(center)
         head0,tail0,orient0,xyz0,wsmat0 = self.getHeadTail(center, False)
         bone.DazHead = head
-        bone.DazTail = tail
         bone.DazAngle = 0
 
         vec = d2b00(tail) - d2b00(head)
