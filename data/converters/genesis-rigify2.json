@@ -176,6 +176,38 @@
     "r_ring3" : "f_ring.03.R", 
     "r_pinky1" : "f_pinky.01.R", 
     "r_pinky2" : "f_pinky.02.R", 
-    "r_pinky3" : "f_pinky.03.R"     
+    "r_pinky3" : "f_pinky.03.R",     
+
+    "lCarpal1" : "",
+    "lCarpal2" : "",
+    "lCarpal3" : "",
+    "lCarpal4" : "",    
+    "l_indexmetacarpal" : "",
+    "l_midmetacarpal" : "",
+    "l_ringmetacarpal" : "",
+    "l_pinkymetacarpal" : "",
+    
+    "rCarpal1" : "",
+    "rCarpal2" : "",
+    "rCarpal3" : "",
+    "rCarpal4" : "",    
+    "r_indexmetacarpal" : "",
+    "r_midmetacarpal" : "",
+    "r_ringmetacarpal" : "",
+    "r_pinkymetacarpal" : "",
+    
+    "l_upperarmtwist1" : "",
+    "l_upperarmtwist2" : "",
+    "l_forearmtwist1" : "",
+    "l_forearmtwist2" : "",
+    "l_thightwist1" : "",
+    "l_thightwist2" : "",
+    
+    "r_upperarmtwist1" : "",
+    "r_upperarmtwist2" : "",
+    "r_forearmtwist1" : "",
+    "r_forearmtwist2" : "",
+    "r_thightwist1" : "",
+    "r_thightwist2" : ""    
     
  }

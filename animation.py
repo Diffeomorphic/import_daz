@@ -111,9 +111,6 @@ class FrameConverter:
         twists = {}
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
-        elif (rig.DazRig == "mhx" or
-            rig.DazRig[0:6] == "rigify"):
-            srctype = "genesis8"
         else:
             srctype = getRigType(banims, False)
         if srctype:
