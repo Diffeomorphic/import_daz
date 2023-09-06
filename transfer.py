@@ -243,6 +243,11 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         description = "Transfer both shapekeys and drivers",
         default = True)
 
+    useShapeAsDriver : BoolProperty(
+        name = "Shapekeys As Drivers",
+        description = "Use the main shapekey to drive the other shapekeys",
+        default = True)
+
     useStrength : BoolProperty(
         name = "Strength Multiplier",
         description = "Add a strength multiplier to drivers",
@@ -272,12 +277,14 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         self.layout.prop(self, "transferMethod", expand=True)
         row = self.layout.row()
         row.prop(self, "useDrivers")
+        row.prop(self, "useShapeAsDriver")
         row.prop(self, "useVendorMorphs")
         row.prop(self, "useOverwrite")
         row = self.layout.row()
         row.prop(self, "useStrength")
         row.prop(self, "useSelectedOnly")
         row.prop(self, "ignoreRigidity")
+        row.label(text="")
         JCMSelector.draw(self, context)
 
 
@@ -384,7 +391,12 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
                 cskey.value = self.svalues[sname]
                 if self.useDrivers:
                     path = 'key_blocks["%s"].value' % hskey.name
-                    addGeneralDriver(cskey, "value", hskeys, path, "x")
+                    if self.useShapeAsDriver:
+                        addGeneralDriver(cskey, "value", hskeys, path, "x")
+                    else:
+                        fcu = self.driverPaths.get(path)
+                        if fcu:
+                            self.copyDriver(fcu, cskeys)
                     path = 'key_blocks["%s"].mute' % hskey.name
                     fcu = self.driverPaths.get(path)
                     if fcu:

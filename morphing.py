@@ -208,6 +208,33 @@ else:
 #   Global lists of morph paths
 #------------------------------------------------------------------
 
+def copyMorphsets(rig1, rig2):
+    def copyMorphset(pg1, pg2):
+        if len(pg1) > 0:
+            for item1 in pg1:
+                if item1.name not in pg2.keys():
+                    item2 = pg2.add()
+                    item2.name = item1.name
+                    item2.text = item1.text
+
+    for morphset in MS.Standards:
+        pg1 = getMorphs0(rig1, morphset, None, None)[0]
+        pg2 = getMorphs0(rig2, morphset, None, None)[0]
+        copyMorphset(pg1, pg2)
+    cats1 = rig1.DazMorphCats
+    cats2 = rig2.DazMorphCats
+    for cat1 in cats1:
+        if cat1.name not in cats2.keys():
+            cat2 = cats2.add()
+            cat2.name = cat1.name
+        else:
+            cat2 = cats2[cat1.name]
+        copyMorphset(cat1.morphs, cat2.morphs)
+
+#------------------------------------------------------------------
+#   Global lists of morph paths
+#------------------------------------------------------------------
+
 class MorphPaths:
     ShortForms = {
         "phmunits" : ["phmbrow", "phmcheek", "phmeye", "phmjaw", "phmlip", "phmmouth", "phmnos", "phmteeth", "phmtongue"],
@@ -1105,6 +1132,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
                 self.allfaceshapes[key] = value
             t2 = perf_counter()
             print("%s loaded in %.1f seconds" % (morphset, t2-t1))
+
 
     def getActiveMorphFiles(self, trivial):
         namepaths = []

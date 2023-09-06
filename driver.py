@@ -718,6 +718,102 @@ def removeBoneSumDrivers(rig, bones):
     removeDriverFCurves(sumFcus.values(), rig)
 
 #----------------------------------------------------------
+#   Copy drivers
+#----------------------------------------------------------
+
+class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
+    bl_idname = "daz.copy_drivers"
+    bl_label = "Copy Drivers"
+    bl_description = "Copy drivers from active armature to selected armatures"
+    bl_options = {'UNDO'}
+
+    useShapekeys : BoolProperty(
+        name = "Retarget Shapekeys",
+        description = "Retarget shapekeys of child meshes",
+        default = True)
+
+    useMorphsets : BoolProperty(
+        name = "Copy Morphsets",
+        description = "Copy user interface",
+        default = True)
+
+    useOverride : BoolProperty(
+        name = "Override Existing Drivers",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useShapekeys")
+        self.layout.prop(self, "useMorphsets")
+        self.layout.prop(self, "useOverride")
+
+    def run(self, context):
+        from .morphing import copyMorphsets
+        rig1 = context.object
+        for rig2 in getSelectedObjects(context):
+            if rig2.type == 'ARMATURE' and rig2 != rig1:
+                if self.useMorphsets:
+                    copyMorphsets(rig1, rig2)
+                self.copyDrivers(rig1, rig2, rig1, rig2, True)
+                self.copyDrivers(rig1.data, rig2.data, rig1, rig2, False)
+                if self.useShapekeys:
+                    for ob in getShapeChildren(rig2):
+                        self.retargetShapes(ob.data.shape_keys, rig1, rig2)
+
+
+    def copyDrivers(self, rna1, rna2, rig1, rig2, ovr):
+        if rna1.animation_data is None:
+            return
+        if rna2.animation_data is None:
+            rna2["Dummy"] = 0
+            rna2.driver_add(propRef("Dummy"))
+            dummy = True
+        else:
+            dummy = False
+        existing = {}
+        if not self.useOverride:
+            for fcu2 in rna2.animation_data.drivers:
+                existing[fcu2.data_path] = True
+        for fcu1 in rna1.animation_data.drivers:
+            if fcu1.data_path in existing.keys():
+                continue
+            self.ensureProp(fcu1, rna1, rna2, ovr)
+            fcu2 = rna2.animation_data.drivers.from_existing(src_driver=fcu1)
+            self.retargetFcurve(fcu2, rig1, rig2)
+        if dummy:
+            rna2.driver_remove(propRef("Dummy"))
+            del rna2["Dummy"]
+
+
+    def ensureProp(self, fcu, rna1, rna2, ovr):
+        if isPropRef(fcu.data_path):
+            prop = getProp(fcu.data_path)
+            if prop and prop not in rna2.keys():
+                rna2[prop] = rna1.get(prop, 0.0)
+                ui = getPropUi(rna1, prop)
+                min = ui.get("min", -1e6)
+                max = ui.get("max", 1e6)
+                default = ui.get("default", 0.0)
+                setPropMinMax(rna2, prop, default, min, max, ovr)
+
+
+    def retargetFcurve(self, fcu, rig1, rig2):
+        for var in fcu.driver.variables:
+            for trg in var.targets:
+                if trg.id_type == 'OBJECT' and trg.id == rig1:
+                    self.ensureProp(trg, rig1, rig2, True)
+                    trg.id = rig2
+                elif trg.id_type == 'ARMATURE' and trg.id == rig1.data:
+                    self.ensureProp(trg, rig1.data, rig2.data, False)
+                    trg.id = rig2.data
+
+
+    def retargetShapes(self, skeys, rig1, rig2):
+        if skeys.animation_data is None:
+            return
+        for fcu in skeys.animation_data.drivers:
+            self.retargetFcurve(fcu, rig1, rig2)
+
+#----------------------------------------------------------
 #   Optimize drivers
 #----------------------------------------------------------
 
@@ -1129,6 +1225,7 @@ classes = [
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,
     DAZ_OT_OptimizeDrivers,
+    DAZ_OT_CopyDrivers,
 ]
 
 def register():
