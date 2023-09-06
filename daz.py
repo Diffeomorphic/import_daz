@@ -230,21 +230,6 @@ class DAZ_OT_LoadSettingsFile(bpy.types.Operator, SingleFile, JsonFile):
         return SingleFile.invoke(self, context, event)
 
 
-class DAZ_OT_RemoveDazProps(bpy.types.Operator):
-    bl_idname = "daz.remove_daz_props"
-    bl_label = "Remove DAZ Properties"
-    bl_description = "Remove unused scene properties"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        scn = context.scene
-        for prop in list(scn.keys()):
-            if not hasattr(scn, prop):
-                print("DEL", prop)
-                del scn[prop]
-        return {'FINISHED'}
-
-
 def showBox(scn, attr, layout):
     if not getattr(scn, attr):
         layout.prop(scn, attr, icon="RIGHTARROW", emboss=False)
@@ -803,7 +788,6 @@ classes = [
     DAZ_OT_SaveSettingsFile,
     DAZ_OT_LoadSettingsFile,
     DAZ_OT_GlobalSettings,
-    DAZ_OT_RemoveDazProps,
 
     ErrorOperator
 ]
