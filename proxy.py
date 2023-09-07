@@ -1851,7 +1851,8 @@ class WidgetConverter:
         for idx,verts in vgverts.items():
             if not verts:
                 continue
-            verts = self.transform(verts, mat)
+            bone = rig.data.bones.get(vgnames[idx])
+            verts = self.transform(verts, mat, bone)
             faces = vgfaces[idx]
             key = vgnames[idx]
             gname = "GZM_"+key
@@ -1932,12 +1933,15 @@ class WidgetConverter:
         return vgnames, vgverts, vgfaces
 
 
-    def transform(self, verts, mat):
-        vsum = Vector((0,0,0))
-        for co in verts:
-            vsum += co
-        ave = vsum/len(verts)
-        verts = [mat@(co-ave) for co in verts]
+    def transform(self, verts, mat, bone):
+        if bone:
+            center = bone.head_local
+        else:
+            vsum = Vector((0,0,0))
+            for co in verts:
+                vsum += co
+            center = vsum/len(verts)
+        verts = [mat@(co-center) for co in verts]
         return verts
 
 
