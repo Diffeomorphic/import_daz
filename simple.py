@@ -273,7 +273,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             raise DazError("Make custom shapes first")
         makeBoneGroups(rig)
 
-        from .mhx import makeBone, deriveBone, getBoneCopy, ikConstraint, copyRotation, stretchTo, copyTransform
+        from .mhx import makeBone, deriveBone, getBoneCopy, ikConstraint, copyRotation, stretchTo, copyTransform, dampedTrack
         IK = SimpleIK(self)
         genesis = IK.getGenesisType(rig)
         if not genesis:
@@ -500,17 +500,16 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     shldrIK.lock_rotation = (True, False, True)
                     shldrIK.lock_location = foreIK.lock_location = (True, True, True)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
-                    cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp)
+                    cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp, space='LOCAL')
                     cns.euler_order = BD.getDefaultMode(shldrBend)
                     cns.use_y = False
-                    cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp)
-                    cns.euler_order = BD.getDefaultMode(shldrTwist)
-                    cns.use_x = cns.use_z = False
-                    cns = copyRotation(foreBend, foreIK, rig, prop=armProp)
+                    cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='POSE')
+                    #cns = dampedTrack(shldrTwist, foreIK, rig, prop=armProp)
+                    cns = copyRotation(foreBend, foreIK, rig, prop=armProp, space='LOCAL')
                     cns.euler_order = foreBend.rotation_mode
                     cns.use_y = False
-                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL_WITH_PARENT')
-                    cns.use_x = cns.use_z = False
+                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='POSE')
+                    cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
                     shldrIK.custom_shape = csArrows
                     shldrIK.bone_group = rig.pose.bone_groups["IK"]
                 if self.useLegs:
@@ -521,12 +520,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     thighIK.lock_rotation = (True, False, True)
                     thighIK.lock_location = shinIK.lock_location = (True, True, True)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
-                    cns = copyRotation(thighBend, thighIK, rig, prop=legProp)
+                    cns = copyRotation(thighBend, thighIK, rig, prop=legProp, space='LOCAL')
                     cns.euler_order = BD.getDefaultMode(thighBend)
                     cns.use_y = False
-                    cns = copyRotation(thighTwist, thighIK, rig, prop=legProp)
-                    cns.euler_order = BD.getDefaultMode(thighTwist)
-                    cns.use_x = cns.use_z = False
+                    cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='POSE')
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode
                     thighIK.custom_shape = csArrows
