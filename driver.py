@@ -739,7 +739,7 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
 
     useOverride : BoolProperty(
         name = "Override Existing Drivers",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useShapekeys")
@@ -761,6 +761,14 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
 
 
     def copyDrivers(self, rna1, rna2, rig1, rig2, ovr):
+        def fcukey(fcu):
+            return "%s:%d" % (fcu2.data_path, fcu2.array_index)
+
+        def getDrivenBone(fcu):
+            words = fcu.data_path.split('"')
+            if words[0] == "pose.bones[":
+                return words[1]
+
         if rna1.animation_data is None:
             return
         if rna2.animation_data is None:
@@ -770,11 +778,19 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
         else:
             dummy = False
         existing = {}
-        if not self.useOverride:
-            for fcu2 in rna2.animation_data.drivers:
-                existing[fcu2.data_path] = True
+        for fcu2 in rna2.animation_data.drivers:
+            existing[fcukey(fcu2)] = fcu2
         for fcu1 in rna1.animation_data.drivers:
-            if fcu1.data_path in existing.keys():
+            key = fcukey(fcu1)
+            if key in existing.keys():
+                if self.useOverride:
+                    fcu2 = existing[key]
+                    rna2.animation_data.drivers.remove(fcu2)
+                    del existing[key]
+                else:
+                    continue
+            bname = getDrivenBone(fcu1)
+            if bname and bname not in rig2.data.bones.keys():
                 continue
             self.ensureProp(fcu1, rna1, rna2, ovr)
             fcu2 = rna2.animation_data.drivers.from_existing(src_driver=fcu1)
