@@ -367,14 +367,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     layer = 28+dlayer
                     toe, heelIK, toeIK, tarsalIK = getEntry(footTable, genesis, prefix, ebones)
                     toename, heelname, toename, tarsalname = getEntry(footTable, genesis, prefix, {})
-                    head = Vector(toe.head)
-                    tail = Vector(foot.head)
-                    tail[2] = head[2] = 0
-                    head[0] = tail[0]
+                    head = Vector(foot.head)
+                    tail = Vector(toe.head)
+                    head[2] = tail[2]
+                    #head[0] = tail[0]
                     heelIK = makeBone(heelname, rig, head, tail, 0, layer, root)
-                    toeIK = makeBone(toename, rig, toe.tail, toe.head, 0, layer, heelIK)
-                    revToeIK = deriveBone("REV-%s" % toename, toe, rig, 31, toeIK)
-                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, toeIK)
+                    toeIK = deriveBone(toename, toe, rig, layer, heelIK)
+                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK)
                     revFootIK = deriveBone("REV-%sIK" % foot.name, foot, rig, 31, tarsalIK)
                     footIK.parent = tarsalIK
                     footIK.layers[31] = True
@@ -395,7 +394,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 armProp = "DazArmIK_%s" % suffix
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = getEntry(armTable, genesis, prefix, rpbs)
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
-                copyBoneProps(hand, handIK)
+                #copyBoneProps(hand, handIK)
                 copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
@@ -410,10 +409,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 else:
                     toe, heelIK, toeIK, tarsalIK = getEntry(footTable, genesis, prefix, rpbs)
                     revfoot = rig.pose.bones["REV-%s" % footIK.name]
-                    revtoe = rig.pose.bones["REV-%s" % toeIK.name]
+                    toeIK.rotation_mode = toe.rotation_mode
+                    tarsalIK.rotation_mode = foot.rotation_mode
+                    toeIK.lock_location = tarsalIK.lock_location = (True,True,True)
+                    toeIK.lock_rotation = tarsalIK.lock_rotation = (False, True, True)
                     driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
                     copyRotation(foot, revfoot, rig, prop=legProp, space='WORLD')
-                    copyRotation(toe, revtoe, rig, prop=legProp, space='WORLD')
+                    copyRotation(toe, toeIK, rig, prop=legProp, space='WORLD')
                     copyTransform(footIK, revfoot, rig, prop=legProp, space='WORLD')
                     addToLayer(heelIK, "IK Leg", rig, "IK")
                     addToLayer(toeIK, "IK Leg", rig, "IK")
@@ -435,7 +437,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     else:
                         setCustomShape(tarsalIK, csCube, (0.5,1.0,0.2), 0.5)
                         setCustomShape(toeIK, csCube, (1,1.0,0.4), 0.5)
-                        setCustomShape(heelIK, csCube, 0.5, (0,1,0.5))
+                        setCustomShape(heelIK, csCube, 0.5)
                         IK.limitBone(foot, False, False, rig, legProp)
                         IK.limitBone(toe, False, False, rig, legProp)
 
@@ -542,6 +544,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         F = False
         rig.data.layers = 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F]
         rig.data.display_type = 'OCTAHEDRAL'
+        rig.data.display_type = 'WIRE'
 
 #----------------------------------------------------------
 #   Custom shapes
@@ -672,7 +675,6 @@ class DAZ_OT_AddCustomShapes(DazOperator):
                 setCustomShape(pb, csToe)
                 addToLayer(pb, "FK Leg", rig, "Limb")
                 addToLayer(pb, "IK Leg")
-                addToLayer(pb, "Foot")
             elif pb.name[1:] in IK.G12Arm + IK.G38Arm + IK.G9Arm:
                 setCustomShape(pb, csLimb)
                 addToLayer(pb, "FK Arm", rig, "FK")
