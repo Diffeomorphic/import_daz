@@ -650,8 +650,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             from .simple import improveIk
             improveIk(rig)
         rig.MhxRig = True
-        rig.data.display_type = 'OCTAHEDRAL'
-        #rig.data.display_type = 'WIRE'
         rig.data.MhaFeatures |= F_IDPROPS
         T = True
         F = False
@@ -790,7 +788,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             #    self.addGizmo(pb, "GZM_Ellipse", 1)
             elif pb.name[0:6] == "tongue":
                 self.addGizmo(pb, "GZM_MTongue", 1)
-            elif self.isFaceBone(pb, rig) and not self.isEyeLid(pb):
+            elif self.isEyeLid(pb):
+                self.addGizmo(pb, "GZM_Line", 1)
+            elif self.isFaceBone(pb, rig):
                 self.addGizmo(pb, "GZM_Circle", 0.2)
             else:
                 for pname in MHX.F_Fingers + ["big_toe", "small_toe"]:
@@ -1848,7 +1848,6 @@ LRGizmos = {
     "thigh.ik.twist":   ("GZM_Circle025", 1),
     "shin.ik.twist" :   ("GZM_Circle025", 1),
     "foot.fk" :         ("GZM_Foot", 1),
-    #"tarsal" :          ("GZM_Foot", 1),
     "toe.fk" :          ("GZM_Toe", 1),
     "legSocket" :       ("GZM_Cube", 0.25),
     "foot.rev" :        ("GZM_FootRev", 1),
@@ -1858,6 +1857,7 @@ LRGizmos = {
     "toe.2" :           ("GZM_Toe", 1),
     "knee.pt.ik" :      ("GZM_Cone", 0.25),
     "kneePoleA" :       ("GZM_Knuckle", 1),
+    "knee.link" :       ("GZM_Line", 1),
     "toe.marker" :      ("GZM_Ball025", 1),
     "ball.marker" :     ("GZM_Ball025", 1),
     "heel.marker" :     ("GZM_Ball025", 1),
@@ -1875,6 +1875,7 @@ LRGizmos = {
     "hand.ik" :         ("GZM_HandIK", 1),
     "elbow.pt.ik" :     ("GZM_Cone", 0.25),
     "elbowPoleA" :      ("GZM_Knuckle", 1),
+    "elbow.link" :      ("GZM_Line", 1),
 
     # Finger
     "thumb" :           ("GZM_Knuckle", 1),

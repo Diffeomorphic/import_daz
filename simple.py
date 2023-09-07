@@ -287,6 +287,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         csFootIk = makeCustomShape("CS_FootIk", "RectZ")
         if IK.usePoleTargets:
             csCube = makeCustomShape("CS_Cube", "Cube", scale=0.3)
+            csLine = makeCustomShape("CS_Line", "Line")
         csArrows = makeCustomShape("CS_Arrows", "Arrows")
 
         armTable = {
@@ -380,6 +381,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     footIK.layers[layer] = False
                     toe.layers[layer] = False
 
+        def setStretchLine(pb):
+            if not self.usePoleTargets:
+                return
+            strname = stretchName(pb.name)
+            stretch = rpbs[strname]
+            setCustomShape(stretch, csLine)
 
         setMode('OBJECT')
         rpbs = rig.pose.bones
@@ -394,6 +401,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 armProp = "DazArmIK_%s" % suffix
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = getEntry(armTable, genesis, prefix, rpbs)
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
+                setStretchLine(elbow)
                 #copyBoneProps(hand, handIK)
                 copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
                 addToLayer(handIK, "IK Arm", rig, "IK")
@@ -402,6 +410,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = getEntry(legTable, genesis, prefix, rpbs)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
+                setStretchLine(knee)
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
                     addToLayer(footIK, "IK Leg", rig, "IK")
@@ -543,8 +552,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         T = True
         F = False
         rig.data.layers = 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F]
-        rig.data.display_type = 'OCTAHEDRAL'
-        rig.data.display_type = 'WIRE'
 
 #----------------------------------------------------------
 #   Custom shapes
@@ -609,6 +616,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
         csBend = makeCustomShape("CS_Bend", "CircleY", (0,1,0), scale=1/2)
         csFace = makeCustomShape("CS_Face", "CircleY", scale=1/5)
         csCube = makeCustomShape("CS_Cube", "Cube", scale=1/2)
+        csLine = makeCustomShape("CS_Line", "Line")
 
         spineWidth = 1
         lCollar = getPoseBone(rig, ("lCollar", "l_shoulder"))
@@ -640,8 +648,7 @@ class DAZ_OT_AddCustomShapes(DazOperator):
                         break
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
-                    pass
-                    #setCustomShape(pb, csFace, 0.3, 1.0)
+                    setCustomShape(pb, csLine)
                 else:
                     setCustomShape(pb, csFace)
                 addToLayer(pb, "Face", rig, "Face")

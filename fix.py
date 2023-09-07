@@ -878,7 +878,6 @@ class ConstraintStore:
 
 
     def restoreAllConstraints(self, rig, ignore):
-        print("IGNO", ignore)
         for key,clist in self.constraints.items():
             if key:
                 pb = self.getFkBone(key, rig)
