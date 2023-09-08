@@ -211,6 +211,19 @@ def dampedTrack(pb, target, rig, prop=None, expr="x"):
     return cns
 
 
+def lockedTrack(pb, target, rig, prop=None, expr="x"):
+    cns = pb.constraints.new('LOCKED_TRACK')
+    cns.name = "Locked Track %s" % target.name
+    cns.target = rig
+    cns.subtarget = target.name
+    cns.track_axis = 'TRACK_Y'
+    cns.lock_axis = 'LOCK_X'
+    if prop is not None:
+        cns.influence = 0.0
+        addDriver(cns, "influence", rig, mhxProp(prop), expr)
+    return cns
+
+
 def childOf(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('CHILD_OF')
     cns.name = "ChildOf %s" % target
@@ -341,6 +354,26 @@ def addWinder(rig, windname, bnames, layers, prop=None):
         cns.use_offset = True
         cns.influence = 1/nbones
     return wind, pbones
+
+
+def addFingerIk(rig, ikname, bnames, parname, layers, prop=None):
+    if len(bnames) < 3:
+        return
+    setMode('EDIT')
+    parent = rig.data.edit_bones[parname]
+    last = rig.data.edit_bones[bnames[-1]]
+    makeBone(ikname, rig, last.tail, 2*last.tail-last.head, last.roll, layers[0], parent)
+    setMode('POSE')
+    ikgoal = rig.pose.bones[ikname]
+    first = rig.pose.bones[bnames[0]]
+    influ = 0.25
+    cns = dampedTrack(first, ikgoal, rig, prop, "%.3f*x" % influ)
+    cns.influence = influ
+    for n,bname in enumerate(bnames[1:]):
+        pb = rig.pose.bones[bname]
+        influ = 0.4 + n*0.4
+        cns = lockedTrack(pb, ikgoal, rig, prop, "%.3f*x" % influ)
+        cns.influence = influ
 
 #-------------------------------------------------------------
 #   Bone children
@@ -1029,13 +1062,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 prop2 = "MhaFingerIk_%s" % suffix
                 setMhx(rig, prop2, 0.0)
             layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
+            handname = "hand.%s" % suffix
             for m in range(5):
                 bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
+                #if self.useFingerIk:
+                #    fkwind,ikwind,pbones = addSuperWinder(rig, windname, bnames, layers, prop1, prop2, master="master", factor=2)
+                fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1)
                 if self.useFingerIk:
-                    fkwind,ikwind,pbones = addSuperWinder(rig, windname, bnames, layers, prop1, prop2, master="master", factor=2)
-                else:
-                    fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1)
+                    ikname = "%s.ik.%s" % (MHX.Fingers[m], suffix)
+                    addFingerIk(rig, ikname, bnames, handname, layers, prop2)
                 fkwind.lock_rotation = (False,True,False)
                 lock = (False,True,False)
                 for pb in pbones:
