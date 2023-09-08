@@ -423,6 +423,7 @@ class Target:
 #-------------------------------------------------------------
 
 def addTransformVar(fcu, vname, ttype, rig, bname):
+    from .bone_data import BD
     pb = rig.pose.bones[bname]
     var = fcu.driver.variables.new()
     var.type = 'TRANSFORMS'
@@ -431,7 +432,7 @@ def addTransformVar(fcu, vname, ttype, rig, bname):
     trg.id = rig
     trg.bone_target = bname
     if pb.rotation_mode == 'QUATERNION':
-        trg.rotation_mode = 'AUTO'
+        trg.rotation_mode = BD.getDefaultMode(pb)
     else:
         trg.rotation_mode = pb.rotation_mode
     trg.transform_type = ttype
