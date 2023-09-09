@@ -106,8 +106,6 @@ class CameraInstance(Instance):
         for key,channel in self.channels.items():
             value = channel.get("current_value")
             if value is None:
-                value = channel.get("value")
-            if value is None:
                 continue
             elif key == "Lens Shift X" :
                 camera.shift_x = value * LS.scale
