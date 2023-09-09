@@ -305,7 +305,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         footTable = {
             "G12" : ("Toe", "HeelIK", "ToeIK", "TarsalsIK"),
             "G38" : ("Toe", "HeelIK", "ToeIK", "TarsalsIK"),
-            "G9"  : ("_toe", "_heelIK", "_toeIK", "_tarsalsIK"),
+            "G9"  : ("_toes", "_heelIK", "_toeIK", "_tarsalsIK"),
         }
 
         armTable2 = {
@@ -375,7 +375,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     heelIK = makeBone(heelname, rig, head, tail, 0, layer, root)
                     toeIK = deriveBone(toename, toe, rig, layer, heelIK)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK)
-                    revFootIK = deriveBone("REV-%sIK" % foot.name, foot, rig, 31, tarsalIK)
                     footIK.parent = tarsalIK
                     footIK.layers[31] = True
                     footIK.layers[layer] = False
@@ -402,8 +401,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = getEntry(armTable, genesis, prefix, rpbs)
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
                 setStretchLine(elbow)
-                #copyBoneProps(hand, handIK)
-                copyRotation(hand, handIK, rig, prop=armProp, space='WORLD')
+                cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
+                cns.euler_order = hand.rotation_mode
                 addToLayer(handIK, "IK Arm", rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_%s" % suffix
@@ -414,18 +413,19 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
                     addToLayer(footIK, "IK Leg", rig, "IK")
-                    copyRotation(foot, footIK, rig, prop=legProp, space='WORLD')
+                    cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
+                    cns.euler_order = foot.rotation_mode
                 else:
                     toe, heelIK, toeIK, tarsalIK = getEntry(footTable, genesis, prefix, rpbs)
-                    revfoot = rig.pose.bones["REV-%s" % footIK.name]
                     toeIK.rotation_mode = toe.rotation_mode
                     tarsalIK.rotation_mode = foot.rotation_mode
                     toeIK.lock_location = tarsalIK.lock_location = (True,True,True)
                     toeIK.lock_rotation = tarsalIK.lock_rotation = (False, True, True)
                     driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
-                    copyRotation(foot, revfoot, rig, prop=legProp, space='WORLD')
-                    copyRotation(toe, toeIK, rig, prop=legProp, space='WORLD')
-                    copyTransform(footIK, revfoot, rig, prop=legProp, space='WORLD')
+                    cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
+                    cns.euler_order = foot.rotation_mode
+                    cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
+                    cns.euler_order = toe.rotation_mode
                     addToLayer(heelIK, "IK Leg", rig, "IK")
                     addToLayer(toeIK, "IK Leg", rig, "IK")
                     addToLayer(tarsalIK, "IK Leg", rig, "IK")
@@ -438,18 +438,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     IK.limitBone(foreBend, True, False, rig, armProp)
                     IK.limitBone(foreTwist, False, True, rig, armProp)
                 if self.useLegs:
+                    setCustomShape(footIK, csFootIk, 3.0)
                     IK.limitBone(thighBend, True, False, rig, legProp)
                     IK.limitBone(thighTwist, False, True, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
-                    if not self.useReverseFoot:
-                        setCustomShape(footIK, csFootIk, 3.0)
-                    else:
-                        setCustomShape(tarsalIK, csCube, (0.5,1.0,0.2), 0.5)
-                        setCustomShape(toeIK, csCube, (1,1.0,0.4), 0.5)
-                        setCustomShape(heelIK, csCube, 0.5)
-                        IK.limitBone(foot, False, False, rig, legProp)
-                        IK.limitBone(toe, False, False, rig, legProp)
-
             elif genesis == "G9":
                 if self.useArms:
                     setCustomShape(handIK, csHandIk, 3.0)
@@ -459,7 +451,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     setCustomShape(footIK, csFootIk, 1.5)
                     IK.limitBone(thighBend, False, False, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
-
             elif genesis == "G12":
                 if self.useArms:
                     setCustomShape(handIK, csHandIk, 3.0)
@@ -469,6 +460,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     setCustomShape(footIK, csFootIk, 1.5)
                     IK.limitBone(thighBend, False, False, rig, legProp)
                     IK.limitBone(shin, False, False, rig, legProp)
+
+            if self.useLegs and self.useReverseFoot:
+                setCustomShape(tarsalIK, csCube, (0.5,1.0,0.2), 0.5)
+                setCustomShape(toeIK, csCube, (1,1.0,0.4), 0.5)
+                setCustomShape(heelIK, csCube, 0.5)
+                IK.limitBone(foot, False, False, rig, legProp)
+                IK.limitBone(toe, False, False, rig, legProp)
 
             if IK.usePoleTargets:
                 if self.useArms:
@@ -504,11 +502,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.euler_order = BD.getDefaultMode(shldrBend)
                     cns.use_y = False
                     cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='LOCAL')
+                    cns.euler_order = shldrIK.rotation_mode
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(foreBend, foreIK, rig, prop=armProp, space='LOCAL')
                     cns.euler_order = foreBend.rotation_mode
                     cns.use_y = False
                     cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='POSE')
+                    cns.euler_order = handIK.rotation_mode
                     cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
                     shldrIK.custom_shape = csArrows
                     shldrIK.bone_group = rig.pose.bone_groups["IK"]
@@ -524,6 +524,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.euler_order = BD.getDefaultMode(thighBend)
                     cns.use_y = False
                     cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='LOCAL')
+                    cns.euler_order = thighIK.rotation_mode
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode
