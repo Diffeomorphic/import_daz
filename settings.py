@@ -75,10 +75,7 @@ class GlobalSettings:
         self.useIgnoreHiddenObjects = False
 
         self.materialMethod = 'SELECT'
-        if bpy.app.version < (3,0,0):
-            self.sssMethod = 'RANDOM_WALK'
-        else:
-            self.sssMethod = 'RANDOM_WALK_FIXED_RADIUS'
+        self.sssMethod = 'BURLEY'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.useDazOrientation = False

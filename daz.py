@@ -412,7 +412,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Method for subsurface scattering",
         default = 'RANDOM_WALK')
 
-    viewportColor : EnumProperty(
+    viewportColors : EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),
                  ('RANDOM', "Random", "Random colors for each material"),
                  ('GUESS', "Guess", "Guess colors based on name"),
@@ -739,7 +739,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Materials")
         box.prop(scn, "materialMethod")
         box.prop(scn, "sssMethod")
-        box.prop(scn, "viewportColor")
+        box.prop(scn, "viewportColors")
         box.prop(scn, "useWorld")
         box.prop(scn, "useSssSkin")
         box.prop(scn, "useAltSss")
