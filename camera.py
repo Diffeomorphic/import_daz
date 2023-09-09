@@ -104,8 +104,12 @@ class CameraInstance(Instance):
         camera.sensor_height = 64
         camera.sensor_fit = 'VERTICAL'
         for key,channel in self.channels.items():
-            value = channel["current_value"]
-            if key == "Lens Shift X" :
+            value = channel.get("current_value")
+            if value is None:
+                value = channel.get("value")
+            if value is None:
+                continue
+            elif key == "Lens Shift X" :
                 camera.shift_x = value * LS.scale
             elif key == "Lens Shift Y" :
                 camera.shift_y = value * LS.scale
