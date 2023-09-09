@@ -333,7 +333,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     return fkwind, ikwind, pbones
 
 
-def addWinder(rig, windname, bnames, layers, prop=None):
+def addWinder(rig, windname, bnames, layers, prop=None, parname=None, parinflu=1):
     if len(bnames) < 3:
         return
     setMode('EDIT')
@@ -344,7 +344,12 @@ def addWinder(rig, windname, bnames, layers, prop=None):
     setMode('POSE')
     wind = rig.pose.bones[windname]
     wind.rotation_mode = 'YZX'
-    #back.lock_location = (True,True,True)
+    if parname:
+        parent = rig.pose.bones[parname]
+        cns = copyRotation(wind, parent, rig)
+        cns.use_offset = True
+        cns.use_y = cns.use_z = False
+        cns.influence = parinflu
     nbones = len(bnames)
     pbones = []
     for bname in bnames:
@@ -357,7 +362,8 @@ def addWinder(rig, windname, bnames, layers, prop=None):
 
 
 def addFingerIk(rig, ikname, bnames, parname, layers, prop=None):
-    if len(bnames) < 3:
+    nbones = len(bnames)
+    if nbones < 2:
         return
     setMode('EDIT')
     parent = rig.data.edit_bones[parname]
@@ -366,7 +372,7 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop=None):
     setMode('POSE')
     ikgoal = rig.pose.bones[ikname]
     first = rig.pose.bones[bnames[0]]
-    influ = 0.25
+    influ = 1.0/(nbones+1)
     cns = dampedTrack(first, ikgoal, rig, prop, "%.3f*x" % influ)
     cns.influence = influ
     for n,bname in enumerate(bnames[1:]):
@@ -642,8 +648,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         showProgress(12, 25, "  Add master bone")
         self.addMaster(rig)
-        showProgress(13, 25, "  Add long fingers")
-        self.addFingerWinders(rig)
         showProgress(14, 25, "  Add tweak bones")
         self.addTweaks(rig)
         showProgress(15, 25, "  Add backbone")
@@ -652,6 +656,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addShaftIk(rig)
         showProgress(16, 25, "  Setup FK-IK")
         self.setupFkIk(rig)
+        showProgress(13, 25, "  Add long fingers")
+        self.addFingerWinders(rig)
         showProgress(17, 25, "  Add layers")
         self.addLayers(rig)
         showProgress(18, 25, "  Add markers")
@@ -806,17 +812,23 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('OBJECT')
         self.makeGizmos(True, None)
 
+        def getData(data):
+            if len(data) == 3:
+                return data
+            else:
+                return data[0], data[1], None
+
         for pb in rig.pose.bones:
             if (isDrvBone(pb.name) or
                 isFinal(pb.name) or
                 pb.name in MHX.FaceRigs+MHX.Teeth):
                 continue
             elif pb.name in Gizmos.keys():
-                gizmo,scale = Gizmos[pb.name]
-                self.addGizmo(pb, gizmo, scale)
+                gizmo,scale,offset = getData(Gizmos[pb.name])
+                self.addGizmo(pb, gizmo, scale, offset)
             elif pb.name[-2:] in [".L", ".R"] and pb.name[:-2] in LRGizmos.keys():
-                gizmo,scale = LRGizmos[pb.name[:-2]]
-                self.addGizmo(pb, gizmo, scale)
+                gizmo,scale,offset = getData(LRGizmos[pb.name[:-2]])
+                self.addGizmo(pb, gizmo, scale, offset)
             #elif pb.name[0:4] == "palm":
             #    self.addGizmo(pb, "GZM_Ellipse", 1)
             elif pb.name[0:6] == "tongue":
@@ -863,6 +875,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 for layer in layers:
                     if pb.bone.layers[layer]:
                         pb.bone_group = bgrp
+
     #-------------------------------------------------------------
     #   Fix knees
     #-------------------------------------------------------------
@@ -1062,21 +1075,38 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 prop2 = "MhaFingerIk_%s" % suffix
                 setMhx(rig, prop2, 0.0)
             layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
-            handname = "hand.%s" % suffix
+            fingname = self.makeFingerMaster(rig, suffix, dlayer)
             for m in range(5):
                 bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
-                #if self.useFingerIk:
-                #    fkwind,ikwind,pbones = addSuperWinder(rig, windname, bnames, layers, prop1, prop2, master="master", factor=2)
-                fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1)
+                influ = (0.5 if m==0 else 1.0)
+                fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1, parname=fingname, parinflu=influ)
                 if self.useFingerIk:
                     ikname = "%s.ik.%s" % (MHX.Fingers[m], suffix)
-                    addFingerIk(rig, ikname, bnames, handname, layers, prop2)
+                    addFingerIk(rig, ikname, bnames, fingname, layers, prop2)
                 fkwind.lock_rotation = (False,True,False)
                 lock = (False,True,False)
                 for pb in pbones:
                     pb.lock_rotation = lock
                     lock = (False,True,True)
+
+
+    def makeFingerMaster(self, rig, suffix, dlayer):
+        hand0name = "hand0.%s" % suffix
+        fingname = "fingers.%s" % suffix
+        linkname = self.getFingerNames(rig, 2, suffix)[0]
+        setMode('EDIT')
+        hand0 = rig.data.edit_bones[hand0name]
+        fingers = deriveBone(fingname, hand0, rig, L_LARMIK+dlayer, hand0)
+        fingers.layers[L_LARMFK+dlayer] = True
+        link = rig.data.edit_bones[linkname]
+        fingers.roll = link.roll
+        setMode('OBJECT')
+        fingers = rig.pose.bones[fingname]
+        link = rig.pose.bones[linkname]
+        fingers.rotation_mode = link.rotation_mode
+        fingers.lock_rotation = (False,True,True)
+        return fingname
 
     #-------------------------------------------------------------
     #   FK/IK
@@ -1920,11 +1950,13 @@ LRGizmos = {
     "ring" :            ("GZM_Knuckle", 1),
     "pinky":            ("GZM_Knuckle", 1),
 
-    "ik_thumb" :        ("GZM_Cone", -0.1),
-    "ik_index" :        ("GZM_Cone", -0.1),
-    "ik_middle" :       ("GZM_Cone", -0.1),
-    "ik_ring" :         ("GZM_Cone", -0.1),
-    "ik_pinky":         ("GZM_Cone", -0.1),
+    "thumb.ik" :        ("GZM_Cone", 0.2),
+    "index.ik" :        ("GZM_Cone", 0.2),
+    "middle.ik" :       ("GZM_Cone", 0.2),
+    "ring.ik" :         ("GZM_Cone", 0.2),
+    "pinky.ik":         ("GZM_Cone", 0.2),
+
+    "fingers" :         ("GZM_Cube", (0.4,0.5,0.1), (0,0.5,0)),
     }
 
 #-------------------------------------------------------------

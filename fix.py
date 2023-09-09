@@ -668,13 +668,13 @@ class GizmoUser:
         return empty
 
 
-    def addGizmo(self, pb, gname, scale, blen=None):
+    def addGizmo(self, pb, gname, scale, offset=None, blen=None):
         from .simple import setCustomShape
         gizmo = self.gizmos[gname]
         pb.bone.show_wire = True
         if blen:
             scale = blen/pb.bone.length
-        setCustomShape(pb, gizmo, scale)
+        setCustomShape(pb, gizmo, scale, offset)
 
 
     def renameFaceBones(self, rig, extra=[]):
