@@ -299,25 +299,25 @@ class ChannelAsset(Modifier):
 
     def parse(self, struct):
         Modifier.parse(self, struct)
-        #if not LS.useMorph:
-        #    return
-        if "channel" in struct.keys():
-            for key,value in struct["channel"].items():
-                if key == "value":
-                    self.value = value
-                elif key == "min":
-                    self.min = value
-                elif key == "max":
-                    self.max = value
-                elif key == "type":
-                    self.type = value
+        channels = struct.get("channel", {})
+        for key,value in channels.items():
+            if key == "value":
+                self.value = value
+            elif key == "min":
+                self.min = value
+            elif key == "max":
+                self.max = value
+            elif key == "type":
+                self.type = value
+        if "current_value" in channels.keys():
+            self.value = channels["current_value"]
+
 
     def update(self, struct):
         Modifier.update(self, struct)
-        if ("channel" in struct.keys() and
-            "current_value" in struct["channel"].keys()):
-            self.value = struct["channel"]["current_value"]
-
+        channels = struct.get("channel", {})
+        if "current_value" in channels.keys():
+            self.value = channels["current_value"]
 
 
 def stripPrefix(prop):
@@ -678,6 +678,7 @@ class Morph(FormulaAsset):
         self.vertex_count = 0
         self.deltas = []
         self.hd_url = None
+        self.geonode = None
 
 
     def __repr__(self):
@@ -707,45 +708,49 @@ class Morph(FormulaAsset):
 
 
     def update(self, struct):
+        FormulaAsset.update(self, struct)
+        if LS.useMorph and "parent" in struct.keys():
+            self.storeMorphValues(struct["parent"])
+
+
+    def storeMorphValues(self, geoparent):
         from .geometry import GeoNode, Geometry
         from .figure import Figure, FigureInstance
-        FormulaAsset.update(self, struct)
-        if not LS.useMorph:
-            return
-
         parent = self.getAsset(self.parent)
-        if "parent" not in struct.keys():
-            return
-
         msg = None
+        geonode = None
         if isinstance(parent, Geometry):
-            ref = instRef(struct["parent"])
+            ref = instRef(geoparent)
             if ref in parent.nodes.keys():
                 geonode = parent.nodes[ref]
             elif "geometry" in parent.nodes.keys():
                 geonode = parent.nodes["geometry"]
             else:
-                reportError("Missing geonode %s in\n %s" %(ref, parent))
-                return
+                msg = "Missing geonode %s" % ref
         elif isinstance(parent, GeoNode):
             geonode = parent
-        elif isinstance(parent, Figure) and parent.instances:
-            ref = list(parent.instances.keys())[0]
-            inst = parent.getInstance(ref, self.caller)
-            if inst.geometries:
-                geonode = inst.geometries[0]
+        elif isinstance(parent, Figure):
+            if parent.instances:
+                ref = list(parent.instances.keys())[0]
+                inst = parent.getInstance(ref, self.caller)
+                if inst.geometries:
+                    geonode = inst.geometries[0]
+                else:
+                    msg = "Parent has no geometries"
             else:
-                msg = "Parent has no geometries.\n  %s\n  %s" % (self, parent)
+                msg = "Missing figure instances"
         elif isinstance(parent, FigureInstance):
             geonode = parent.geometries[0]
         else:
-            msg = "Strange morph parent.\n  %s\n  %s" % (self, parent)
+            msg = "Strange morph parent"
+        if geonode:
+            geonode.morphValues[self.name] = self.value
         if msg:
-            return reportError(msg)
-        geonode.morphsValues[self.name] = self.value
+            msg = "%s.\n  %s\n  %s" % (msg, self, parent)
+            reportError(msg)
 
 
-    def build(self, context, inst, value=-1):
+    def build(self, context, inst, value=None):
         if not LS.useMorph:
             return self
         if len(self.deltas) == 0:
@@ -781,18 +786,18 @@ class Morph(FormulaAsset):
 
         for geonode in geonodes:
             ob = geonode.rna
-            if value >= 0:
+            if value is not None:
                 self.value = value
                 if self.name not in geonode.modifiers.keys():
                     geonode.modifiers[self.name] = self
-                geonode.morphsValues[self.name] = value
-            elif self.name in geonode.morphsValues.keys():
-                self.value = geonode.morphsValues[self.name]
+                geonode.morphValues[self.name] = value
+            elif self.name in geonode.morphValues.keys():
+                self.value = geonode.morphValues[self.name]
             else:
                 if GS.verbosity > 3:
                     print("MMMO", self.name)
                     print("  ", geonode)
-                    print("  ", geonode.morphsValues.keys())
+                    print("  ", geonode.morphValues.keys())
                 self.value = 0.0
 
             if ob is None:

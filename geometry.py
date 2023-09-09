@@ -80,7 +80,7 @@ class GeoNode(Node, SimNode):
         self.hdType = 'NONE'
         self.index = figure.count
         self.modifiers = {}
-        self.morphsValues = {}
+        self.morphValues = {}
         self.isShell = False
         self.shellGeos = []
         self.shellPrefix = ""
@@ -740,7 +740,7 @@ class Geometry(Asset, Channels):
 
 
     def __repr__(self):
-        return ("<Geometry %s %s %s>" % (self.id, self.name, self.rna))
+        return ("<Geometry %s %s %d %s>" % (self.id, self.name, len(self.nodes), self.rna))
 
 
     def getInstance(self, ref, caller=None):

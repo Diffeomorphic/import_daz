@@ -231,7 +231,7 @@ class Figure(Node):
 
 
     def __repr__(self):
-        return ("<Figure %s %d %s>" % (self.id, self.count, self.rna))
+        return ("<Figure %s %d %d %s>" % (self.id, self.count, len(self.instances), self.rna))
 
 
     def makeInstance(self, fileref, struct):

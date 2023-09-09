@@ -53,27 +53,23 @@ class Accessor:
             # Attribute. Return None
             return None
         ref = getRef(id, self.fileref)
-        try:
-            return LS.theAssets[ref]
-        except KeyError:
-            pass
+        asset = LS.theAssets.get(ref)
+        if asset:
+            return asset
 
         if id[0] == "#":
             if self.caller:
                 ref = getRef(id, self.caller.fileref)
-                try:
-                    return LS.theAssets[ref]
-                except KeyError:
-                    pass
+                asset = LS.theAssets.get(ref)
+                if asset:
+                    return asset
             ref = getRef(id, self.fileref)
-            try:
-                return LS.theAssets[ref]
-            except KeyError:
-                pass
-            try:
-                return LS.theOtherAssets[ref]
-            except KeyError:
-                pass
+            asset = LS.theAssets.get(ref)
+            if asset:
+                return asset
+            asset = LS.theOtherAssets.get(ref)
+            if asset:
+                return asset
             if strict:
                 msg = ("Missing local asset:\n  '%s'\n" % ref)
                 if self.caller:
@@ -151,11 +147,7 @@ class Accessor:
             else:
                 print("No id", struct.keys())
 
-        try:
-            asset2 = LS.theAssets[ref]
-        except KeyError:
-            asset2 = None
-
+        asset2 = LS.theAssets.get(ref)
         if asset2 and asset2 != asset:
             msg = ("Duplicate asset definition\n" +
                    "  Asset 1: %s\n" % asset +
@@ -383,19 +375,12 @@ class Asset(Accessor):
 
 def getAssetFromStruct(struct, fileref):
     id = getId(struct["id"], fileref)
-    try:
-        return LS.theAssets[id]
-    except KeyError:
-        return None
+    return LS.theAssets.get(id)
 
 
 def getExistingFile(fileref):
     ref = normalizeRef(fileref)
-    if ref in LS.theAssets.keys():
-        #print("Reread", fileref, ref)
-        return LS.theAssets[ref]
-    else:
-        return None
+    return LS.theAssets.get(ref)
 
 #-------------------------------------------------------------
 #
@@ -429,13 +414,12 @@ def getRef(id, fileref):
 
 
 def normalizeRef(id):
+    def undoQuote(ref):
+        ref = ref.replace("%23","#").replace("%25","%").replace("%2D", "-").replace("%2E", ".").replace("%2F", "/").replace("%3F", "?")
+        return ref.replace("%5C", "/").replace("%5F", "_").replace("%7C", "|")
+
     ref = undoQuote(quote(id))
     return ref.replace("//", "/")
-
-
-def undoQuote(ref):
-    ref = ref.replace("%23","#").replace("%25","%").replace("%2D", "-").replace("%2E", ".").replace("%2F", "/").replace("%3F", "?")
-    return ref.replace("%5C", "/").replace("%5F", "_").replace("%7C", "|")
 
 
 def normalizeUrl(filepath):
@@ -447,8 +431,7 @@ def normalizeUrl(filepath):
             if filepath.lower()[0:n] == path.lower():
                 filepath = filepath[n:]
                 break
-    url = undoQuote(quote(filepath))
-    return url.replace("//", "/")
+    return normalizeRef(filepath)
 
 #-------------------------------------------------------------
 #   Paths
