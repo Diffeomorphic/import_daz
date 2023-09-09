@@ -694,7 +694,7 @@ class Morph(FormulaAsset):
         if ("deltas" in morph.keys() and
             "values" in morph["deltas"].keys()):
             self.deltas = morph["deltas"]["values"]
-        else:
+        elif GS.verbosity > 2:
             print("Morph without deltas: %s" % self.name)
         if "vertex_count" in morph.keys():
             self.vertex_count = morph["vertex_count"]
@@ -754,7 +754,8 @@ class Morph(FormulaAsset):
         if not LS.useMorph:
             return self
         if len(self.deltas) == 0:
-            print("Morph without deltas: %s" % self.name)
+            if GS.verbosity > 2:
+                print("Morph without deltas: %s" % self.name)
             return self
         Formula.build(self, context, inst)
         Modifier.build(self, context)
@@ -791,21 +792,14 @@ class Morph(FormulaAsset):
                 if self.name not in geonode.modifiers.keys():
                     geonode.modifiers[self.name] = self
                 geonode.morphValues[self.name] = value
-            elif self.name in geonode.morphValues.keys():
-                self.value = geonode.morphValues[self.name]
-            else:
-                if GS.verbosity > 3:
-                    print("MMMO", self.name)
-                    print("  ", geonode)
-                    print("  ", geonode.morphValues.keys())
-                self.value = 0.0
-
+            elif self.value == 0:
+                self.value = geonode.morphValues.get(self.name, 0.0)
             if ob is None:
                 continue
             elif LS.applyMorphs:
                 self.addMorphToVerts(ob.data)
-            elif self.value > 0.0:
-                self.buildMorph(ob, strength=LS.morphStrength)
+            else:
+                skey = self.buildMorph(ob, strength=LS.morphStrength)
         return self
 
 
@@ -850,6 +844,10 @@ class Morph(FormulaAsset):
         sname = self.getName()
         rig = ob.parent
         skey = addShapekey(ob, sname)
+        if self.value < skey.slider_min:
+            skey.slider_min = self.value
+        if self.value > skey.slider_max:
+            skey.slider_max = self.value
         skey.value = self.value
         self.rna = (skey, ob, sname)
         if useBuild:

@@ -408,17 +408,21 @@ def getId(id0, fileref):
 def getRef(id, fileref):
     id = normalizeRef(id)
     if id[0] == "#":
-        return fileref + id
+        return "%s%s" % (fileref, id)
     else:
         return id
 
 
 def normalizeRef(id):
-    def undoQuote(ref):
-        ref = ref.replace("%23","#").replace("%25","%").replace("%2D", "-").replace("%2E", ".").replace("%2F", "/").replace("%3F", "?")
-        return ref.replace("%5C", "/").replace("%5F", "_").replace("%7C", "|")
-
-    ref = undoQuote(quote(id))
+    ref = quote(id)
+    ref = ref.replace("%23","#").replace("%25","%").replace("%2D", "-").replace("%2E", ".").replace("%2F", "/").replace("%3F", "?")
+    ref = ref.replace("%5C", "/").replace("%5F", "_").replace("%7C", "|")
+    if ref[0] == "/":
+        words = ref.rsplit("#", 1)
+        if len(words) == 2:
+            ref = "%s#%s" % (words[0].lower(), words[1])
+        else:
+            ref = ref.lower()
     return ref.replace("//", "/")
 
 
