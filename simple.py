@@ -502,13 +502,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.euler_order = BD.getDefaultMode(shldrBend)
                     cns.use_y = False
                     cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='LOCAL')
-                    cns.euler_order = shldrIK.rotation_mode
+                    cns.euler_order = shldrTwist.rotation_mode
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(foreBend, foreIK, rig, prop=armProp, space='LOCAL')
                     cns.euler_order = foreBend.rotation_mode
                     cns.use_y = False
                     cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='POSE')
-                    cns.euler_order = handIK.rotation_mode
+                    cns.euler_order = foreTwist.rotation_mode
                     cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
                     shldrIK.custom_shape = csArrows
                     shldrIK.bone_group = rig.pose.bone_groups["IK"]
@@ -524,7 +524,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.euler_order = BD.getDefaultMode(thighBend)
                     cns.use_y = False
                     cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='LOCAL')
-                    cns.euler_order = thighIK.rotation_mode
+                    cns.euler_order = thighTwist.rotation_mode
                     cns.use_x = cns.use_z = False
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode
