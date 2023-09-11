@@ -465,15 +465,10 @@ class SkinBinding(Modifier):
             if "node_weights" in joint.keys():
                 weights = joint["node_weights"]
             elif "local_weights" in joint.keys():
-                LS.triax[ob.name] = True
+                LS.triax[ob.name] = ob
                 if bname in rig.data.bones.keys():
                     lweights = self.calcLocalWeights(bname, joint, rig)
                     weights = {"values": lweights}
-                    if GS.useTriaxWeights:
-                        for comp in ["x", "y", "z"]:
-                            lweights = joint["local_weights"].get(comp)
-                            if lweights:
-                                buildVertexGroup(ob, "%s:%s" % (vgname,comp), lweights["values"])
                 else:
                     print("Local weights missing bone:", bname)
             elif "scale_weights" in joint.keys():
@@ -481,6 +476,24 @@ class SkinBinding(Modifier):
             else:
                 reportError("No weights for %s in %s" % (bname, ob.name), trigger=(3,5))
                 continue
+            if GS.useTriaxWeights:
+                if "local_weights" in joint.keys():
+                    for comp in ["x", "y", "z"]:
+                        lweights = joint["local_weights"].get(comp)
+                        if lweights:
+                            buildVertexGroup(ob, "%s:%s" % (vgname,comp), lweights["values"])
+                if "bulge_weights" in joint.keys():
+                    for comp in ["x", "y", "z"]:
+                        bulges = joint["bulge_weights"].get(comp, {})
+                        if bulges:
+                            left = bulges.get("left_map", {})
+                            if left:
+                                buildVertexGroup(ob, "%s:left_%s" % (vgname,comp), left["values"])
+                            right = bulges.get("right_map", {})
+                            if right:
+                                buildVertexGroup(ob, "%s:right_%s" % (vgname,comp), right["values"])
+                if "scale_weights" in joint.keys():
+                    buildVertexGroup(ob, "%s:scale" % vgname, joint["scale_weights"]["values"])
 
             removes = self.Removes.get(rig.DazRig, [])
             if bname not in removes:

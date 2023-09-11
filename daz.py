@@ -494,7 +494,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     useTriaxWeights : BoolProperty(
         name = "Triax Weights",
-        description = "Add extra vertex groups for all components of triax weights")
+        description = "Add extra vertex groups for all components of triax and bulge weights")
 
     useArmature : BoolProperty(
         name = "Armature",
@@ -529,7 +529,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Import All Hair Versions",
         description = "Import hair guides even if the corresponding PS hairs have also been generated.\nOnly for DBZ mesh fitting")
 
-    useHighdef : BoolProperty(
+    useSmoothTriax : BoolProperty(
+        name = "Smooth Triax Weights",
+        description = "Smooth imported triax weights to avoid artefacts")
+
+    useHighDef : BoolProperty(
         name = "Build HD Meshes",
         description = "Build HD meshes if included in .dbz file")
 
@@ -677,7 +681,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Meshes")
         box.prop(scn, "shellMethod")
-        box.prop(scn, "useHighdef")
+        box.prop(scn, "useSmoothTriax")
+        box.prop(scn, "useHighDef")
         box.prop(scn, "useKeepBaseMesh")
         box.prop(scn, "useMultires")
         box.prop(scn, "useMultiUvLayers")

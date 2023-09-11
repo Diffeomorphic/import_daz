@@ -223,6 +223,14 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
         LS.forImport(self)
         for filepath in filepaths:
             self.loadDazFile(filepath, context)
+        if GS.useSmoothTriax:
+            for ob in LS.triax.values():
+                if activateObject(context, ob):
+                    print("Smooth triax weights: %s" % ob.name)
+                    setMode('WEIGHT_PAINT')
+                    bpy.ops.object.vertex_group_smooth(group_select_mode='BONE_DEFORM', factor=0.5, repeat=4, expand=0.0)
+                    setMode('OBJECT')
+                    print("Triax weights smoothed")
         if LS.render:
             LS.render.build(context)
         if GS.useDump or GS.verbosity >= 4:
