@@ -1188,20 +1188,21 @@ class Rigifier(RigifyCommon):
 
     def addGizmos(self, gen):
         gizmos = {
-            "lowerjaw" :        ("GZM_MJaw", 1),
-            "lowerJaw" :        ("GZM_MJaw", 1),
-            "eye.L" :           ("GZM_Circle025", 1),
-            "eye.R" :           ("GZM_Circle025", 1),
-            "ear.L" :           ("GZM_Circle025", 1.5),
-            "ear.R" :           ("GZM_Circle025", 1.5),
-            "pectoral.L" :      ("GZM_Pectoral", 1),
-            "pectoral.R" :      ("GZM_Pectoral", 1),
-            "metatarsals.L" :   ("GZM_Foot", 1),
-            "metatarsals.R" :   ("GZM_Foot", 1),
-            "gaze" :            ("GZM_Gaze", 1),
-            "gaze.L" :          ("GZM_Circle025", 1),
-            "gaze.R" :          ("GZM_Circle025", 1),
-            "ik_tongue" :       ("GZM_Cone", 0.4),
+            "lowerjaw" :        ("GZM_MJaw", 1, R_FACE),
+            "lowerJaw" :        ("GZM_MJaw", 1, R_FACE),
+            "eye.L" :           ("GZM_Circle025", 1, R_FACE),
+            "eye.R" :           ("GZM_Circle025", 1, R_FACE),
+            "ear.L" :           ("GZM_Circle025", 1.5, R_FACE),
+            "ear.R" :           ("GZM_Circle025", 1.5, R_FACE),
+            "pelvis" :          (None, 1, R_TORSOTWEAK),
+            "pectoral.L" :      ("GZM_Pectoral", 1, R_TORSOTWEAK),
+            "pectoral.R" :      ("GZM_Pectoral", 1, R_TORSOTWEAK),
+            "metatarsals.L" :   ("GZM_Foot", 1, R_HELP),
+            "metatarsals.R" :   ("GZM_Foot", 1, R_HELP),
+            "gaze" :            ("GZM_Gaze", 1, R_FACE),
+            "gaze.L" :          ("GZM_Circle025", 1, R_FACE),
+            "gaze.R" :          ("GZM_Circle025", 1, R_FACE),
+            "ik_tongue" :       ("GZM_Cone", 0.4, R_FACE),
         }
         self.makeGizmos(True, ["GZM_MJaw", "GZM_Circle025", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
         bgrp = gen.pose.bone_groups.new(name="DAZ")
@@ -1210,7 +1211,13 @@ class Rigifier(RigifyCommon):
         bgrp.colors.select = (0.596, 0.898, 1.0)
         bgrp.colors.active = (0.769, 1, 1)
         for pb in gen.pose.bones:
-            if self.isFaceBone(pb, gen):
+            if pb.name in gizmos.keys():
+                gizmo,scale,layer = gizmos[pb.name]
+                if gizmo:
+                    self.addGizmo(pb, gizmo, scale)
+                pb.bone_group = bgrp
+                pb.bone.layers = layer*[False] + [True] + (31-layer)*[False]
+            elif self.isFaceBone(pb, gen):
                 if not self.isEyeLid(pb):
                     self.addGizmo(pb, "GZM_Circle", 0.2)
                 pb.bone_group = bgrp
@@ -1221,15 +1228,6 @@ class Rigifier(RigifyCommon):
                   pb.name.endswith(("toe1.L", "toe2.L", "toe1.R", "toe2.R"))):
                 self.addGizmo(pb, "GZM_Circle", 0.4)
                 pb.bone_group = bgrp
-            elif pb.name in gizmos.keys():
-                gizmo,scale = gizmos[pb.name]
-                self.addGizmo(pb, gizmo, scale)
-                pb.bone_group = bgrp
-
-        for rname in ["pectoral.L", "pectoral.R"]:
-            if rname in gen.pose.bones.keys():
-                pb = gen.pose.bones[rname]
-                pb.bone.layers[4] = True
 
         # Hide some bones on a hidden layer
         for rname in [
