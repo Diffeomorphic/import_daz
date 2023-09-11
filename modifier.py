@@ -436,15 +436,6 @@ class SkinBinding(Modifier):
             return
         if GS.verbosity >= 4:
             print("Build skinbinding %s" % self.name)
-        selmaps = self.skin.get("selection_map")
-        if False and selmaps:
-            for selmap in selmaps:
-                for blabel,bname in selmap["mappings"]:
-                    if blabel != bname:
-                        print("MMM", blabel, bname)
-                        pg = rig.data.DazBoneMap.add()
-                        pg.name = blabel
-                        pg.s = bname
 
         makeArmatureModifier(self.name, context, ob, rig)
         self.addVertexGroups(ob, geonode, rig)
@@ -473,18 +464,18 @@ class SkinBinding(Modifier):
             weights = None
             if "node_weights" in joint.keys():
                 weights = joint["node_weights"]
-                if "local_weights" in joint.keys():
-                    LS.triax[ob.name] = True
             elif "local_weights" in joint.keys():
+                LS.triax[ob.name] = True
                 if bname in rig.data.bones.keys():
-                    calc_weights = self.calcLocalWeights(bname, joint, rig)
-                    weights = {"values": calc_weights}
+                    lweights = self.calcLocalWeights(bname, joint, rig)
+                    weights = {"values": lweights}
+                    if GS.useTriaxWeights:
+                        for comp in ["x", "y", "z"]:
+                            lweights = joint["local_weights"].get(comp)
+                            if lweights:
+                                buildVertexGroup(ob, "%s:%s" % (vgname,comp), lweights["values"])
                 else:
                     print("Local weights missing bone:", bname)
-                    for comp in ["x", "y", "z"]:
-                        if comp in joint["local_weights"].keys():
-                            weights = joint["local_weights"][comp]
-                            break
             elif "scale_weights" in joint.keys():
                 weights = joint["scale_weights"]
             else:

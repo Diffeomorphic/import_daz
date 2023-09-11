@@ -492,6 +492,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Unflipped Bones",
         description = "Don't flip bone axes.\nEnable for debugging only")
 
+    useTriaxWeights : BoolProperty(
+        name = "Triax Weights",
+        description = "Add extra vertex groups for all components of triax weights")
+
     useArmature : BoolProperty(
         name = "Armature",
         description = "Create armatures for imported figures")
@@ -709,6 +713,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Debugging")
         box.prop(scn, "zup")
         box.prop(scn, "unflipped")
+        box.prop(scn, "useTriaxWeights")
         box.prop(scn, "useDump")
         box.prop(scn, "usePruneNodes")
 

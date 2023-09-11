@@ -69,6 +69,7 @@ class GlobalSettings:
         self.useDump = False
         self.zup = True
         self.unflipped = False
+        self.useTriaxWeights = False
         self.useMakeHiddenSliders = False
         self.useBakedMorphs = False
         self.showHiddenObjects = False
