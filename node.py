@@ -45,11 +45,7 @@ def parseNode(asset, struct):
     from .bone import Bone
     from .camera import Camera
     from .light import Light
-    try:
-        type = struct["type"]
-    except KeyError:
-        type = None
-
+    type = struct.get("type", None)
     if type == "figure":
         return asset.parseTypedAsset(struct, Figure)
     elif type == "legacy_figure":

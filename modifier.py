@@ -707,10 +707,10 @@ class Morph(FormulaAsset):
         pass
 
 
-    def update(self, struct):
-        FormulaAsset.update(self, struct)
-        if LS.useMorph and "parent" in struct.keys():
-            self.storeMorphValues(struct["parent"])
+    #def update(self, struct):
+    #    FormulaAsset.update(self, struct)
+    #    if LS.useMorph and "parent" in struct.keys():
+    #        self.storeMorphValues(struct["parent"])
 
 
     def storeMorphValues(self, geoparent):
