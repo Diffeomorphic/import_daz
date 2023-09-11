@@ -186,9 +186,55 @@ class DazLoader:
         from .node import finishNodeInstances
         finishNodeInstances(context)
 
+        if LS.useLoadBaked:
+            self.postloadMorphs(context, filepath)
+
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
         return main
+
+
+    def postloadMorphs(self, context, filepath):
+        from .load_morph import LoadMorph
+        namepaths = {}
+        objects = {}
+        props = {}
+        for asset in LS.bakedmorphs.values():
+            if asset.geometry:
+                key = asset.geometry.id
+                if key not in objects.keys():
+                    namepaths[key] = []
+                    objects[key] = asset.geometry.rna
+                    props[key] = {}
+                if asset.url[0] == "#":
+                    prop = asset.url[1:]
+                    path = filepath
+                else:
+                    url,prop = asset.url.rsplit("#")
+                    path = GS.getAbsPath(url)
+                namepaths[key].append((asset.label, path, 'CUSTOM'))
+                props[key][prop] = asset.value
+        btn = LS.button
+        try:
+            LS.forMorphLoad(None)
+            LS.scale = GS.unitScale
+            for key,data in namepaths.items():
+                ob = objects[key]
+                if not isinstance(ob, bpy.types.Object):
+                    continue
+                lm = LoadMorph()
+                if ob.type == 'ARMATURE':
+                    rig = ob
+                    lm.mesh = rig.children[0]
+                elif ob.type == 'MESH':
+                    lm.mesh = ob
+                    rig = ob.parent
+                lm.initRig(rig)
+                lm.loadAllMorphs(data)
+                for prop,value in props[key].items():
+                    rig[prop] = value
+        finally:
+            LS.forImport(btn)
 
 #------------------------------------------------------------------
 #   Import DAZ

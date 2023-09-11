@@ -95,10 +95,14 @@ class LoadMorph(DriverUser):
         else:
             self.amt = None
 
+    def setupUniqueSuffix(self):
+        self.uniqueSuffix = ""
 
     def getUniqueName(self, string):
         return string
 
+    def addUrl(self, asset, aliases, filepath):
+        pass
 
     def initAll(self):
         DriverUser.__init__(self)

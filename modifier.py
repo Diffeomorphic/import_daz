@@ -642,13 +642,17 @@ class FormulaAsset(Formula, ChannelAsset):
         ChannelAsset.__init__(self, fileref)
         Formula.__init__(self)
         self.group = ""
+        self.geometry = None
+
 
     def __repr__(self):
-        return ("<Formula %s %f>" % (self.id, self.value))
+        return ("<Formula %s %f P:%s G:%s>" % (self.id, self.value, self.parent, self.geometry))
 
 
     def parse(self, struct):
         ChannelAsset.parse(self, struct)
+        if LS.useLoadBaked:
+            LS.bakedmorphs[self.id] = self
         if not (LS.useMorph or LS.fitFile):
             return
         if "group" in struct.keys():
@@ -658,6 +662,49 @@ class FormulaAsset(Formula, ChannelAsset):
                 words[1] == "Pose Controls"):
                 self.group = words[2]
         Formula.parse(self, struct)
+
+
+    def update(self, struct):
+        ChannelAsset.update(self, struct)
+        if LS.useMorph or LS.useLoadBaked:
+            self.geometry = self.getGeometry()
+
+
+    def getGeometry(self):
+        from .geometry import GeoNode, Geometry
+        from .figure import Figure, FigureInstance
+        parent = self.getAsset(self.parent)
+        msg = None
+        if isinstance(parent, Geometry):
+            if parent.nodes:
+                return list(parent.nodes.values())[0]
+            #ref = instRef(geo)
+            if False and ref in parent.nodes.keys():
+                return parent.nodes[ref]
+            if "geometry" in parent.nodes.keys():
+                return parent.nodes["geometry"]
+            else:
+                msg = "Missing geonode %s" % parent.nodes.keys()
+        elif isinstance(parent, GeoNode):
+            return parent
+        elif isinstance(parent, Figure):
+            if parent.instances:
+                inst = list(parent.instances.values())[0]
+                if inst.geometries:
+                    return inst.geometries[0]
+                else:
+                    msg = "Parent has no geometries"
+            else:
+                msg = "Missing figure instances"
+        elif isinstance(parent, FigureInstance):
+            return parent.geometries[0]
+        elif geo is None:
+            msg = "No geometry"
+        else:
+            msg = "Strange morph parent"
+        if msg:
+            msg = "%s.\n  %s\n  %s" % (msg, self, parent)
+            reportError(msg)
 
 
     def build(self, context, inst):
@@ -686,14 +733,13 @@ class Morph(FormulaAsset):
 
 
     def __repr__(self):
-        return ("<Morph %s %f %d %d %s>" % (self.name, self.value, self.vertex_count, len(self.deltas), self.rna))
+        return ("<Morph %s %f %s P:%s G:%s>" % (self.name, self.value, self.url, self.parent, self.geometry))
 
 
     def parse(self, struct):
         FormulaAsset.parse(self, struct)
         if not LS.useMorph:
             return
-        self.parent = struct["parent"]
         morph = struct["morph"]
         if ("deltas" in morph.keys() and
             "values" in morph["deltas"].keys()):
@@ -713,46 +759,6 @@ class Morph(FormulaAsset):
 
     #def update(self, struct):
     #    FormulaAsset.update(self, struct)
-    #    if LS.useMorph and "parent" in struct.keys():
-    #        self.storeMorphValues(struct["parent"])
-
-
-    def storeMorphValues(self, geoparent):
-        from .geometry import GeoNode, Geometry
-        from .figure import Figure, FigureInstance
-        parent = self.getAsset(self.parent)
-        msg = None
-        geonode = None
-        if isinstance(parent, Geometry):
-            ref = instRef(geoparent)
-            if ref in parent.nodes.keys():
-                geonode = parent.nodes[ref]
-            elif "geometry" in parent.nodes.keys():
-                geonode = parent.nodes["geometry"]
-            else:
-                msg = "Missing geonode %s" % ref
-        elif isinstance(parent, GeoNode):
-            geonode = parent
-        elif isinstance(parent, Figure):
-            if parent.instances:
-                ref = list(parent.instances.keys())[0]
-                inst = parent.getInstance(ref, self.caller)
-                if inst.geometries:
-                    geonode = inst.geometries[0]
-                else:
-                    msg = "Parent has no geometries"
-            else:
-                msg = "Missing figure instances"
-        elif isinstance(parent, FigureInstance):
-            geonode = parent.geometries[0]
-        else:
-            msg = "Strange morph parent"
-        if geonode:
-            geonode.morphValues[self.name] = self.value
-        if msg:
-            msg = "%s.\n  %s\n  %s" % (msg, self, parent)
-            reportError(msg)
-
 
     def build(self, context, inst, value=None):
         if not LS.useMorph:
@@ -793,11 +799,6 @@ class Morph(FormulaAsset):
             ob = geonode.rna
             if value is not None:
                 self.value = value
-                #if self.name not in geonode.modifiers.keys():
-                #    geonode.modifiers[self.name] = self
-                #geonode.morphValues[self.name] = value
-            #elif self.value == 0:
-            #    self.value = geonode.morphValues.get(self.name, 0.0)
             if ob is None:
                 continue
             elif LS.applyMorphs:

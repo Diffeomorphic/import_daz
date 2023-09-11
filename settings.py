@@ -494,6 +494,7 @@ class GlobalSettings:
 
 class LocalSettings:
     def __init__(self):
+        self.button = None
         self.theMessage = ""
         self.theErrorLines = []
         self.theFilePaths = []
@@ -517,6 +518,7 @@ class LocalSettings:
         self.useMaterials = False
         self.useModifiers = False
         self.useMorph = False
+        self.useLoadBaked = False
         self.useMorphOnly = False
         self.useFormulas = False
         self.useHDObjects = False
@@ -579,6 +581,7 @@ class LocalSettings:
         self.objects = { None : [] }
         self.hairs = { None : [] }
         self.hdmeshes = { None : [] }
+        self.bakedmorphs = {}
         self.warning = False
         self.returnValue = {}
 
@@ -592,10 +595,11 @@ class LocalSettings:
         return string + ">"
 
 
-    def reset(self):
+    def reset(self, btn=None):
         GS.setRootPaths()
         self.useStrict = False
         self.scene = ""
+        self.button = btn
 
 
     def getMaterialSettings(self, btn):
@@ -613,7 +617,7 @@ class LocalSettings:
 
     def forImport(self, btn):
         self.__init__()
-        self.reset()
+        self.reset(btn)
         self.scale = GS.unitScale
         self.useNodes = True
         self.useGeometries = True
@@ -632,7 +636,8 @@ class LocalSettings:
         elif btn.fitMeshes == 'UNIQUE':
             pass
         elif btn.fitMeshes == 'MORPHED':
-            self.useMorph = True
+            #self.useMorph = True
+            self.useLoadBaked = True
             self.morphStrength = btn.morphStrength
         elif btn.fitMeshes == 'DBZFILE':
             self.fitFile = True
@@ -640,7 +645,7 @@ class LocalSettings:
 
     def forAnimation(self, btn, ob):
         self.__init__()
-        self.reset()
+        self.reset(btn)
         self.scale = ob.DazScale
         self.useNodes = True
         if hasattr(btn, "fps"):
@@ -669,7 +674,7 @@ class LocalSettings:
 
     def forMaterial(self, btn, ob):
         self.__init__()
-        self.reset()
+        self.reset(btn)
         self.scale = ob.DazScale
         self.useImages = True
         self.useMaterials = True
