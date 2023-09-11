@@ -234,7 +234,7 @@ class ExtraAsset(Modifier, Channels):
         if geonode is None:
             return
         if "studio_modifier_channels" in self.extras.keys():
-            geonode.modifiers[self.name] = self
+            #geonode.modifiers[self.name] = self
             modchannels = self.extras["studio_modifier_channels"]
             for cstruct in modchannels["channels"]:
                 channel = cstruct["channel"]
@@ -789,11 +789,11 @@ class Morph(FormulaAsset):
             ob = geonode.rna
             if value is not None:
                 self.value = value
-                if self.name not in geonode.modifiers.keys():
-                    geonode.modifiers[self.name] = self
-                geonode.morphValues[self.name] = value
-            elif self.value == 0:
-                self.value = geonode.morphValues.get(self.name, 0.0)
+                #if self.name not in geonode.modifiers.keys():
+                #    geonode.modifiers[self.name] = self
+                #geonode.morphValues[self.name] = value
+            #elif self.value == 0:
+            #    self.value = geonode.morphValues.get(self.name, 0.0)
             if ob is None:
                 continue
             elif LS.applyMorphs:

@@ -51,8 +51,8 @@ class Formula:
 
 
     def build(self, context, inst):
+        return
         from .modifier import Morph
-        from .node import Node
         for formula in self.formulas:
             ref,key,value = self.computeFormula(formula)
             if ref is None:

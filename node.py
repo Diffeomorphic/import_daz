@@ -162,7 +162,7 @@ class Instance(Accessor, Channels, SimNode):
         self.instanceTarget = None
         self.shellNode = None
         self.hdobject = None
-        self.modifiers = {}
+        #self.modifiers = {}
         self.attributes = copyElements(node.attributes)
         self.restdata = None
         self.mappingNode = None
