@@ -117,11 +117,13 @@ class CameraInstance(Instance):
                 camera.dof.use_dof = value
             elif key == "Depth of Field":
                 camera.dof.focus_distance = value * LS.scale
+                camera.dof.use_dof = True
             elif key == "Frame Width":
                 # https://bitbucket.org/Diffeomorphic/import-daz/issues/75/better-cameras
                 camera.sensor_height = value
             elif key == "Aspect Ratio":
-                self.aspectRatio = value[1]/value[0]
+                if value[0] != 0:
+                    self.aspectRatio = value[1]/value[0]
             elif key == "Aperture Blades":
                 camera.dof.aperture_blades = value
             elif key == "Aperture Blade Rotation":
