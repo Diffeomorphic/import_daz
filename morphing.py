@@ -718,6 +718,21 @@ class MorphLoader(LoadMorph):
             finally:
                 LS.theFilePaths = theFilePaths
 
+
+class BakedMorphLoader(MorphLoader):
+    useAdjusters = False
+    useMakePosable = False
+    useTransferFace = False
+    morphset = "Baked"
+
+    def getFingeredRigMeshes(self, context):
+        self.chars = []
+        self.modded = []
+
+    def finishLoading(self, namepaths, context, t1):
+        pass
+
+
 #------------------------------------------------------------------
 #   Load standard morphs
 #------------------------------------------------------------------

@@ -79,8 +79,6 @@ class GeoNode(Node, SimNode):
         self.hdobject = None
         self.hdType = 'NONE'
         self.index = figure.count
-        #self.modifiers = {}
-        #self.morphValues = {}
         self.isShell = False
         self.shellGeos = []
         self.shellPrefix = ""

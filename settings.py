@@ -602,6 +602,21 @@ class LocalSettings:
         self.button = btn
 
 
+    def getSettings(self):
+        settings = {}
+        for attr in dir(self):
+            if attr[0] != "_":
+                value = getattr(self, attr)
+                if isinstance(value, (int, float, str, dict, list)):
+                    settings[attr] = value
+        return settings
+
+
+    def restoreSettings(self, settings):
+        for attr,value in settings.items():
+            setattr(self, attr, value)
+
+
     def getMaterialSettings(self, btn):
         if GS.materialMethod == 'SELECT':
             self.materialMethod = btn.materialMethod

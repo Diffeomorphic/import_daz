@@ -195,16 +195,16 @@ class DazLoader:
 
 
     def postloadMorphs(self, context, filepath):
-        from .load_morph import LoadMorph
-        namepaths = {}
+        namepathss = {}
         objects = {}
         props = {}
         for asset in LS.bakedmorphs.values():
-            if asset.geometry:
-                key = asset.geometry.id
+            geo = asset.getGeometry()
+            if geo:
+                key = geo.id
                 if key not in objects.keys():
-                    namepaths[key] = []
-                    objects[key] = asset.geometry.rna
+                    namepathss[key] = []
+                    objects[key] = geo.rna
                     props[key] = {}
                 if asset.url[0] == "#":
                     prop = asset.url[1:]
@@ -212,29 +212,45 @@ class DazLoader:
                 else:
                     url,prop = asset.url.rsplit("#")
                     path = GS.getAbsPath(url)
-                namepaths[key].append((asset.label, path, 'CUSTOM'))
-                props[key][prop] = asset.value
-        btn = LS.button
+                namepathss[key].append((asset.label, path, 'BAKED'))
+                props[key][prop] = (asset.label, asset.value)
+        settings = LS.getSettings()
         try:
-            LS.forMorphLoad(None)
-            LS.scale = GS.unitScale
-            for key,data in namepaths.items():
-                ob = objects[key]
-                if not isinstance(ob, bpy.types.Object):
-                    continue
-                lm = LoadMorph()
-                if ob.type == 'ARMATURE':
-                    rig = ob
-                    lm.mesh = rig.children[0]
-                elif ob.type == 'MESH':
-                    lm.mesh = ob
-                    rig = ob.parent
-                lm.initRig(rig)
-                lm.loadAllMorphs(data)
-                for prop,value in props[key].items():
-                    rig[prop] = value
+            self.importBakedMorphs(context, namepathss, objects, props)
         finally:
-            LS.forImport(btn)
+            LS.restoreSettings(settings)
+
+
+    def importBakedMorphs(self, context, namepathss, objects, props):
+        from .morphing import BakedMorphLoader
+        from .driver import setProtected
+        from .selector import setActivated
+        for key,namepaths in namepathss.items():
+            ob = objects[key]
+            print("Load baked morphs to %s" % ob.name)
+            if not isinstance(ob, bpy.types.Object):
+                continue
+            lm = BakedMorphLoader()
+            if ob.type == 'ARMATURE':
+                rig = lm.rig = ob
+                lm.mesh = rig.children[0]
+            elif ob.type == 'MESH':
+                lm.mesh = ob
+                rig = lm.rig = ob.parent
+                if rig is None:
+                    rig = ob
+            else:
+                print("Bad object (importBakedMorphs): %s" % ob)
+                continue
+            lm.getAllMorphs(namepaths, context)
+            for prop,data in props[key].items():
+                label,value = data
+                rig[prop] = value
+                setProtected(rig, prop, True)
+                setActivated(rig, prop, False)
+                item = rig.DazBaked.add()
+                item.name = prop
+                item.text = label
 
 #------------------------------------------------------------------
 #   Import DAZ

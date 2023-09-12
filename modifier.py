@@ -642,32 +642,23 @@ class FormulaAsset(Formula, ChannelAsset):
         ChannelAsset.__init__(self, fileref)
         Formula.__init__(self)
         self.group = ""
-        self.geometry = None
 
 
     def __repr__(self):
-        return ("<Formula %s %f P:%s G:%s>" % (self.id, self.value, self.parent, self.geometry))
+        return ("<Formula %s %f>" % (self.id, self.value))
 
 
     def parse(self, struct):
+        Formula.parse(self, struct)
         ChannelAsset.parse(self, struct)
-        if LS.useLoadBaked:
-            LS.bakedmorphs[self.id] = self
-        if not (LS.useMorph or LS.fitFile):
-            return
         if "group" in struct.keys():
             words = struct["group"].split("/")
             if (len(words) > 2 and
                 words[0] == "" and
                 words[1] == "Pose Controls"):
                 self.group = words[2]
-        Formula.parse(self, struct)
-
-
-    def update(self, struct):
-        ChannelAsset.update(self, struct)
-        if LS.useMorph or LS.useLoadBaked:
-            self.geometry = self.getGeometry()
+        if LS.useLoadBaked:
+            LS.bakedmorphs[self.id] = self
 
 
     def getGeometry(self):
@@ -729,11 +720,10 @@ class Morph(FormulaAsset):
         self.vertex_count = 0
         self.deltas = []
         self.hd_url = None
-        self.geonode = None
 
 
     def __repr__(self):
-        return ("<Morph %s %f %s P:%s G:%s>" % (self.name, self.value, self.url, self.parent, self.geometry))
+        return ("<Morph %s %f %s>" % (self.name, self.value, self.url))
 
 
     def parse(self, struct):
