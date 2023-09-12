@@ -308,8 +308,9 @@ def fitToFile(filepath, nodes):
                     base = dbz.objects[nname][idx]
                     highdef = None
                     if dbz.hdobjects:
-                        highdef = dbz.hdobjects.get(nname,{}).get(idx)
-                        if highdef:
+                        hdobjs = dbz.hdobjects.get(nname,[])
+                        if idx < len(hdobjs):
+                            highdef = hdobjs[idx]
                             print("Highdef", nname, highdef.lod, len(highdef.verts))
                     taken[nname] += 1
                     ok = True
