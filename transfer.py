@@ -55,12 +55,24 @@ class FastMatcher:
             rig.data.pose_position = 'REST'
 
         self.svalues = {}
+        self.rvalues = {}
+        self.mvalues = {}
+        if rig:
+            for key,value in rig.items():
+                if isinstance(value, (int, float, bool)):
+                    self.rvalues[key] = value
+                    rig[key] = 0.0
+        for key,value in src.items():
+            if isinstance(value, (int, float, bool)):
+                self.mvalues[key] = value
+                src[key] = 0.0
         skeys = src.data.shape_keys
         if skeys:
             for skey in skeys.key_blocks:
                 self.svalues[skey.name] = skey.value
                 skey.value = 0
 
+        updateScene(context)
         ob = self.trihuman = None
         if (self.transferMethod in ['NEAREST', 'SELECTED']):
             ob = bpy.data.objects.new("_TRIHUMAN", src.data.copy())
@@ -95,10 +107,18 @@ class FastMatcher:
         if ob:
             deleteObjects(context, [ob])
         skeys = src.data.shape_keys
+        if rig:
+            for key,value in self.rvalues.items():
+                rig[key] = value
+            updateDrivers(rig)
+        for key,value in self.mvalues.items():
+            src[key] = value
+        updateDrivers(src)
         if skeys:
-            for skey in skeys.key_blocks:
-                skey.value = self.svalues[skey.name]
-
+            for key,value in self.svalues.items():
+                skey = skeys.key_blocks[key]
+                skey.value = value
+            updateDrivers(skeys)
 
     def getTargets(self, src, context):
         self.checkTransforms(src)
