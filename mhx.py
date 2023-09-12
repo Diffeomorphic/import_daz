@@ -432,11 +432,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Spine IK (experimental)",
         default = True)
 
-    useNeckIk : BoolProperty(
-        name = "Neck IK",
-        description = "Add IK to the neck and head bones",
-        default = True)
-
     useShaftIk : BoolProperty(
         name = "Shaft IK",
         description = "Add IK for Dicktator/Futalicious shaft",
@@ -510,7 +505,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def drawRigify(self):
         self.layout.prop(self, "useSpineIk")
-        self.layout.prop(self, "useNeckIk")
         self.layout.prop(self, "useShaftIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useImproveIk")
@@ -929,12 +923,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         neckbones = self.getExistingBones(rig, MHX.NeckBones)
         setMhx(rig, "MhaNeckControl", True)
-        if self.useNeckIk:
-            rig.data.MhaFeatures |= F_NECK
-            setMhx(rig, "MhaNeckIk", 0.0)
-            addSuperWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl", "MhaNeckIk", master="master")
-        else:
-            addWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl")
+        addWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl")
 
 
     def getTongueBones(self, rig):

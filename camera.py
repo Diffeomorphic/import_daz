@@ -117,7 +117,6 @@ class CameraInstance(Instance):
                 camera.dof.use_dof = value
             elif key == "Depth of Field":
                 camera.dof.focus_distance = value * LS.scale
-                camera.dof.use_dof = True
             elif key == "Frame Width":
                 # https://bitbucket.org/Diffeomorphic/import-daz/issues/75/better-cameras
                 camera.sensor_height = value
