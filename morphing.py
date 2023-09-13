@@ -1218,7 +1218,6 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
 
 class PropDrivers:
     hasAdjusters = True
-    isJcm = True
 
     category : StringProperty(
         name = "Category",
@@ -1319,6 +1318,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
     def run(self, context):
         self.findIked()
         self.errors = {}
+        self.faceshapes = {}
         t1 = perf_counter()
         if not self.meshes:
             self.getFingeredRigMeshes(context)
