@@ -376,6 +376,8 @@ class MultiFile(ImportHelper):
 
 
     def setPreferredFolder(self, rig, meshes, folders, usePeople):
+        if GS.rememberLastFolder:
+            return
         dirs = []
         if meshes:
             dirs = getFoldersFromObject(meshes[0], folders, usePeople=usePeople)

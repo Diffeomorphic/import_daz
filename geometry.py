@@ -1718,7 +1718,8 @@ class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter):
         return (ob and ob.type == 'MESH' and ob.data.uv_layers.active)
 
     def invoke(self, context, event):
-        self.filepath = "%s.duf" % bpy.path.clean_name(context.object.data.uv_layers.active.name)
+        if not GS.rememberLastFolder:
+            self.filepath = "%s.duf" % bpy.path.clean_name(context.object.data.uv_layers.active.name)
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):

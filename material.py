@@ -2132,8 +2132,9 @@ class DAZ_OT_SaveMaterialsToFile(DazOperator, JsonFile, SingleFile, IsMesh):
         self.layout.prop(self, "useRelativePaths")
 
     def run(self, context):
-        path = os.path.splitext(self.filepath)[0]
-        self.filepath = "%s.json" % bpy.path.abspath(path)
+        if not GS.rememberLastFolder:
+            path = os.path.splitext(self.filepath)[0]
+            self.filepath = "%s.json" % bpy.path.abspath(path)
         from .tree import TreeSaver
         ob = context.object
         tsaver = TreeSaver("material_nodetree", self.useRelativePaths)

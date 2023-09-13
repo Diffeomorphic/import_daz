@@ -65,6 +65,7 @@ class GlobalSettings:
 
         self.unitScale = 0.01
         self.verbosity = 2
+        self.rememberLastFolder = False
         self.silentMode = False
         self.useDump = False
         self.zup = True

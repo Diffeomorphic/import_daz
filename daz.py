@@ -296,6 +296,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             "4: Warn about all problems and save a log file.\n" +
             "5: Like verbosity = 4 and trigger a Python error."))
 
+    rememberLastFolder : BoolProperty(
+        name = "Remember Last Folder",
+        description = "Remember the directory of the last opened file,\ninstead of starting at default location",
+        default = False)
+
     useStrengthAdjusters : EnumProperty(
         items = [('NONE', "None", "Never add adjusters"),
                  ('Face', "Face", "Add adjusters to face morphs"),
@@ -677,6 +682,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(scn, "unitScale")
         box.prop(scn, "verbosity")
         box.prop(scn, "useCaseSensitivePaths")
+        box.prop(scn, "rememberLastFolder")
 
         box = col.box()
         box.label(text = "Meshes")
