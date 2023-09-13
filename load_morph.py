@@ -1607,7 +1607,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                 if pbDriver.parent == pb:
                     if channel == "scale":
                         pbDriver.bone.inherit_scale = pb.bone.inherit_scale = 'FULL'
-                    else:
+                    elif GS.verbosity >= 3:
                         print("Dependency loop: %s %s" % (pbDriver.name, pb.name))
                     continue
                 if factor:

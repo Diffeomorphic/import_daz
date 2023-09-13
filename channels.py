@@ -26,7 +26,6 @@
 # either expressed or implied, of the FreeBSD Project.
 
 
-import copy
 from .error import reportError
 from .utils import *
 
@@ -42,10 +41,11 @@ class Channels:
 
 
     def parse(self, struct):
+        from copy import deepcopy
         if "url" in struct.keys():
             asset = self.getAsset(struct["url"])
             if asset and hasattr(asset, "channels"):
-                self.channels = copy.deepcopy(asset.channels)
+                self.channels = deepcopy(asset.channels)
         for key,data in struct.items():
             if key == "extra":
                 if isinstance(data, list):
@@ -54,20 +54,15 @@ class Channels:
                     self.extra = [data]
                 for extra in self.extra:
                     self.setExtra(extra)
-                    if "channels" in extra.keys():
-                        for cstruct in extra["channels"]:
-                            if isinstance(cstruct, dict) and "channel" in cstruct.keys():
-                                self.setChannel(cstruct["channel"])
+                    for cstruct in extra.get("channels", {}):
+                        if isinstance(cstruct, dict) and "channel" in cstruct.keys():
+                            self.setChannel(cstruct["channel"])
             elif isinstance(data, dict) and "channel" in data.keys():
                 self.setChannel(data["channel"])
 
 
     def setChannel(self, channel):
-        if ("visible" in channel.keys() and not channel["visible"]):
-            return
         self.channels[channel["id"]] = channel
-        if False and "label" in channel.keys():
-            self.channels[channel["label"]] = channel
 
 
     def update(self, struct):
@@ -79,10 +74,9 @@ class Channels:
                     self.extra = [data]
                 for extra in self.extra:
                     self.setExtra(extra)
-                    if "channels" in extra.keys():
-                        for cstruct in extra["channels"]:
-                            if isinstance(cstruct, dict) and "channel" in cstruct.keys():
-                                self.replaceChannel(cstruct["channel"])
+                    for cstruct in extra.get("channels", {}):
+                        if isinstance(cstruct, dict) and "channel" in cstruct.keys():
+                            self.replaceChannel(cstruct["channel"])
             elif isinstance(data, dict) and "channel" in data.keys():
                 self.replaceChannel(data["channel"])
 
@@ -92,20 +86,14 @@ class Channels:
 
 
     def replaceChannel(self, channel, key=None):
-        if ("visible" in channel.keys() and not channel["visible"]):
-            return
+        from copy import deepcopy
         if key is None:
             key = channel["id"]
         if key in self.channels.keys():
-            oldchannel = self.channels[key]
-            self.channels[key] = channel
-            for name,value in oldchannel.items():
-                if name not in channel.keys():
-                    channel[name] = value
+            for name,value in channel.items():
+                self.channels[key][name] = value
         else:
-            self.channels[key] = copy.deepcopy(channel)
-        if False and "label" in channel.keys():
-            self.channels[channel["label"]] = self.channels[key]
+            self.channels[key] = deepcopy(channel)
 
 
     def getChannel(self, attr, onlyVisible=True):
@@ -115,9 +103,7 @@ class Channels:
             if key in self.channels.keys():
                 channel = self.channels[key]
                 self.usedChannels[key] = True
-                if ("visible" not in channel.keys() or
-                    channel["visible"] or
-                    not onlyVisible):
+                if channel.get("visible", True) or not onlyVisible:
                     return channel
         return None
 

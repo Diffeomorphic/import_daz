@@ -115,7 +115,8 @@ class WorldMaterial(CyclesMaterial):
         mode = self.getValue(["Environment Mode"], 3)
         # [Dome and Scene, Dome Only, Sun-Skies Only, Scene Only]
         if LS.useWorld != 'ALWAYS' and mode == 3 and not self.background:
-            print("Import scene only")
+            if GS.verbosity >= 3:
+                print("Import scene only")
             return
 
         scn = context.scene

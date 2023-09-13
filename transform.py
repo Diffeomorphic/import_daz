@@ -41,7 +41,7 @@ class Transform:
         self.generalProp = None
 
     def __repr__(self):
-        return ("<TFM t:%s\n    r::%s\n    s:%s\n    g:%s\n    %s %s %s %s>" %
+        return ("<TFM t:%s\n    r:%s\n    s:%s\n    g:%s\n    %s %s %s %s>" %
                 (self.trans, self.rot, self.scale, self.general,
                  self.transProp, self.rotProp, self.scaleProp, self.generalProp))
 

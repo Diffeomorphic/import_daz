@@ -37,7 +37,6 @@ class Camera(Node):
         Node.__init__(self, fileref)
         self.perspective = {}
         self.orthographic = {}
-        self.aspectRatio = 1.0
 
 
     def __repr__(self):
@@ -98,13 +97,10 @@ class CameraInstance(Instance):
 
 
     def buildChannels(self, context):
-        from .utils import getCurrentValue, D
-
         camera = self.rna.data
-        camera.sensor_height = 64
         camera.sensor_fit = 'VERTICAL'
         for key,channel in self.channels.items():
-            value = channel.get("current_value")
+            value = self.getChannelValue(channel, None)
             if value is None:
                 continue
             elif key == "Lens Shift X" :
@@ -118,11 +114,9 @@ class CameraInstance(Instance):
             elif key == "Depth of Field":
                 camera.dof.focus_distance = value * LS.scale
             elif key == "Frame Width":
-                # https://bitbucket.org/Diffeomorphic/import-daz/issues/75/better-cameras
                 camera.sensor_height = value
             elif key == "Aspect Ratio":
-                if value[0] != 0:
-                    self.aspectRatio = value[1]/value[0]
+                pass
             elif key == "Aperture Blades":
                 camera.dof.aperture_blades = value
             elif key == "Aperture Blade Rotation":
@@ -143,5 +137,5 @@ class CameraInstance(Instance):
                         ]:
                 #print("Unused", key, value)
                 pass
-            elif GS.verbosity > 2:
+            elif GS.verbosity >= 3:
                 print("Unknown camera channel '%s' %s" % (key, value))

@@ -360,7 +360,8 @@ def fitToFile(filepath, nodes):
                         geonode.center = base.center
                         geonode.highdef = highdef
             elif len(geo.verts) == 0:
-                print("Zero verts:", node.name)
+                if GS.verbosity >= 3:
+                    print("Zero verts:", node.name)
                 pass
             else:
                 unfitted.append(node)

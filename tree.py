@@ -245,6 +245,7 @@ NodeSize = {
     "TEX_COORD" : 10,
     "TEX_ENVIRONMENT" : 10,
     "TEX_NOISE" : 8,
+    "TEX_GRADIENT" : 8,
     "BACKGROUND" : 7,
     "GROUP" : 15,
     "GROUP_INPUT" : 15,
