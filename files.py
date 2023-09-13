@@ -267,7 +267,7 @@ def getUrlPath(url):
     return relpath, GS.getAbsPath(relpath)
 
 
-def parseAssetFile(struct, toplevel=False, fileref=None):
+def parseAssetFile(struct, toplevel=False, fileref=None, multi=False):
     from .asset import storeAsset, getId, getExistingFile
     if fileref is None and "asset_info" in struct.keys():
         ainfo = struct["asset_info"]
@@ -284,6 +284,6 @@ def parseAssetFile(struct, toplevel=False, fileref=None):
         return None
     elif LS.useMorphOnly:
         from .modifier import parseMorph
-        return parseMorph(asset, struct)
+        return parseMorph(asset, struct, multi)
     else:
         return asset.parse(struct)

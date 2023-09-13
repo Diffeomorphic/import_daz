@@ -57,6 +57,7 @@ class LoadMorph(DriverUser):
     onlyProperties = False
     useProtected = False
     defaultMultiplier = 1.0
+    useMulti = False
 
     def __init__(self):
         self.rig = None
@@ -125,6 +126,7 @@ class LoadMorph(DriverUser):
 
 
     def loadAllMorphs(self, namepaths):
+        name = namepaths[0][0]
         self.initAll()
         if self.rig:
             self.baked = [key.lower() for key in self.rig.DazBaked.keys()]
@@ -167,10 +169,19 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def makeAllMorphs(self, namepaths, force):
+        def getAsset(name, assets):
+            for asset in assets:
+                if asset.name == name:
+                    return asset
+            if assets:
+                return assets[0]
+
+        from .load_json import loadJson
+        from .files import parseAssetFile
         namepaths.sort()
         idx = 0
         npaths = len(namepaths)
-        for name,path,bodypart in namepaths:
+        for name,filepath,bodypart in namepaths:
             showProgress(idx, npaths)
             idx += 1
             lname = name.lower()
@@ -178,21 +189,33 @@ class LoadMorph(DriverUser):
                 if lname not in self.bakedSkipped.keys():
                     self.bakedSkipped[lname] = name
             else:
-                char = self.makeSingleMorph(name, path, bodypart, force)
-                printName(char, name)
+                struct = loadJson(filepath)
+                assets = parseAssetFile(struct, multi=True)
+                aliases = self.getAliases(filepath)
+                if self.useMulti:
+                    for asset in assets:
+                        char = self.makeSingleMorph(name, asset, bodypart, force)
+                        self.addUrl(asset, aliases, filepath)
+                        printName(char, asset.label)
+                else:
+                    asset = getAsset(name, assets)
+                    if asset:
+                        char = self.makeSingleMorph(name, asset, bodypart, force)
+                        self.addUrl(asset, aliases, filepath)
+                        printName(char, name)
+
+                fileref = self.getFileRef(filepath)
+                self.loaded.append(fileref)
+                if force:
+                    LS.returnValue[fileref] = name
 
     #------------------------------------------------------------------
     #   First pass: collect data
     #------------------------------------------------------------------
 
-    def makeSingleMorph(self, name, filepath, bodypart, force):
-        from .load_json import loadJson
-        from .files import parseAssetFile
+    def makeSingleMorph(self, name, asset, bodypart, force):
         from .modifier import Alias, ChannelAsset
-        struct = loadJson(filepath)
-        asset = self.currentAsset = parseAssetFile(struct)
-        fileref = self.getFileRef(filepath)
-        self.loaded.append(fileref)
+        self.currentAsset = asset
         self.setupUniqueSuffix()
         if not force:
             if self.alreadyLoaded(asset):
@@ -210,14 +233,6 @@ class LoadMorph(DriverUser):
         elif self.rig and self.usePropDrivers:
             if self.makeFormulas(asset, skey):
                 self.trivial[name] = False
-        aliases = {}
-        if self.useSearchAlias:
-            aliaspath = self.getAliasFile(filepath)
-            if aliaspath is not None:
-                aliases = self.loadAlias(aliaspath)
-        self.addUrl(asset, aliases, filepath)
-        if force:
-            LS.returnValue[fileref] = name
         return " *"
 
 
@@ -235,36 +250,42 @@ class LoadMorph(DriverUser):
         return False
 
 
-    def getAliasFile(self, filepath):
-        folder = os.path.dirname(filepath)
-        file1 = os.path.basename(filepath)
-        for file in os.listdir(folder):
-            if (file[0:5] == "alias" and
-                file.endswith(file1)):
-                return os.path.join(folder, file)
-        return None
+    def getAliases(self, filepath):
+        def getAliasFile(filepath):
+            folder = os.path.dirname(filepath)
+            file1 = os.path.basename(filepath)
+            for file in os.listdir(folder):
+                if (file[0:5] == "alias" and
+                    file.endswith(file1)):
+                    return os.path.join(folder, file)
+            return None
 
-
-    def loadAlias(self, filepath):
-        from .load_json import loadJson
-        struct = loadJson(filepath)
-        aliases = {}
-        if self.rig is None:
+        def loadAlias(filepath):
+            from .load_json import loadJson
+            struct = loadJson(filepath)
+            aliases = {}
+            if self.rig is None:
+                return aliases
+            elif "modifier_library" in struct.keys():
+                for mod in struct["modifier_library"]:
+                    if "channel" in mod.keys():
+                        channel = mod["channel"]
+                        if ("type" in channel.keys() and
+                            channel["type"] == "alias"):
+                            alias = channel["name"]
+                            prop = channel["target_channel"].rsplit('#')[-1].split("?")[0]
+                            if alias != prop:
+                                self.setAlias(prop, alias)
+                                aliases[alias] = prop
+                                if "label" in channel.keys():
+                                    self.setLabel(prop, channel["label"])
             return aliases
-        elif "modifier_library" in struct.keys():
-            for mod in struct["modifier_library"]:
-                if "channel" in mod.keys():
-                    channel = mod["channel"]
-                    if ("type" in channel.keys() and
-                        channel["type"] == "alias"):
-                        alias = channel["name"]
-                        prop = channel["target_channel"].rsplit('#')[-1].split("?")[0]
-                        if alias != prop:
-                            self.setAlias(prop, alias)
-                            aliases[alias] = prop
-                            if "label" in channel.keys():
-                                self.setLabel(prop, channel["label"])
-        return aliases
+
+        if self.useSearchAlias:
+            aliaspath = getAliasFile(filepath)
+            if aliaspath is not None:
+                return loadAlias(aliaspath)
+        return {}
 
 
     def setAlias(self, prop, alias):
@@ -565,7 +586,6 @@ class LoadMorph(DriverUser):
             if skey:
                 skey.slider_min = -10
                 skey.slider_max = 10
-
 
     def makeValueFormula(self, output, expr):
         output = self.getUniqueName(output)
@@ -1434,9 +1454,6 @@ class LoadMorph(DriverUser):
                     skey.driver_remove("value")
                     fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
                     fcu2.data_path = 'key_blocks["%s"].value' % prop
-                    self.rig.driver_remove(propRef(prop))
-                    if prop in self.rig.keys():
-                        del self.rig[prop]
                     self.amt.driver_remove(propRef(final))
                     if final in self.amt.keys():
                         del self.amt[final]

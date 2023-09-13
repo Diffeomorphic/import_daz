@@ -70,16 +70,24 @@ def parseChannelAsset(asset, struct):
         return asset.parseTypedAsset(struct, ChannelAsset)
 
 
-def parseMorph(asset, struct):
+def parseMorph(asset, struct, multi):
+    morphs = []
     if "modifier_library" in struct.keys():
         for mstruct in struct["modifier_library"]:
             if "morph" in mstruct.keys():
-                return asset.parseTypedAsset(mstruct, Morph)
+                morph = asset.parseTypedAsset(mstruct, Morph)
             elif "formulas" in mstruct.keys():
-                return asset.parseTypedAsset(mstruct, FormulaAsset)
+                morph = asset.parseTypedAsset(mstruct, FormulaAsset)
             elif "channel" in mstruct.keys():
-                channel = parseChannelAsset(asset, mstruct)
-                return channel
+                morph = parseChannelAsset(asset, mstruct)
+            else:
+                continue
+            if multi:
+                morphs.append(morph)
+            else:
+                return morph
+    if multi:
+        return morphs
 
 #-------------------------------------------------------------
 #   Modifier Assets

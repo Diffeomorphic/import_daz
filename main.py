@@ -207,13 +207,12 @@ class DazLoader:
                     objects[key] = parent.rna
                     props[key] = {}
                 if asset.url[0] == "#":
-                    prop = asset.url[1:]
                     path = filepath
                 else:
-                    url,prop = asset.url.rsplit("#")
+                    url = asset.url.rsplit("#")[0]
                     path = GS.getAbsPath(url)
-                namepathss[key].append((asset.label, path, 'BAKED'))
-                props[key][prop] = (asset.label, asset.value)
+                namepathss[key].append((asset.name, path, 'BAKED'))
+                props[key][asset.name] = (asset.label, asset.value)
         settings = LS.getSettings()
         try:
             self.importBakedMorphs(context, namepathss, objects, props)

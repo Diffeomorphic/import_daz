@@ -392,7 +392,6 @@ class MorphPaths:
     def getProjection(self, ob):
         from .finger import getCharacter
         from .load_json import loadJson
-        from .files import parseAssetFile
         char = getCharacter(ob)
         if not char:
             return None
@@ -1293,6 +1292,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         default = False)
 
     useSearchAlias = False
+    useMulti = True
 
     def draw(self, context):
         PropDrivers.draw(self, context)
