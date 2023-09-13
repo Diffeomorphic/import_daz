@@ -642,6 +642,7 @@ class FormulaAsset(Formula, ChannelAsset):
         ChannelAsset.__init__(self, fileref)
         Formula.__init__(self)
         self.group = ""
+        self.parentRef = None
 
 
     def __repr__(self):
@@ -661,41 +662,30 @@ class FormulaAsset(Formula, ChannelAsset):
             LS.bakedmorphs[self.id] = self
 
 
-    def getGeometry(self):
+    def getMorphParent(self):
         from .geometry import GeoNode, Geometry
         from .figure import Figure, FigureInstance
-        parent = self.getAsset(self.parent)
         msg = None
-        if isinstance(parent, Geometry):
-            if parent.nodes:
-                return list(parent.nodes.values())[0]
-            #ref = instRef(geo)
-            if False and ref in parent.nodes.keys():
-                return parent.nodes[ref]
-            if "geometry" in parent.nodes.keys():
-                return parent.nodes["geometry"]
+        if isinstance(self.parent, Geometry):
+            parent = self.parent.nodes.get(self.parentRef)
+            if parent:
+                return parent
             else:
-                msg = "Missing geonode %s" % parent.nodes.keys()
-        elif isinstance(parent, GeoNode):
-            return parent
-        elif isinstance(parent, Figure):
-            if parent.instances:
-                inst = list(parent.instances.values())[0]
-                if inst.geometries:
-                    return inst.geometries[0]
-                else:
-                    msg = "Parent has no geometries"
+                msg = "Missing geonode %s" % self.parent.nodes.keys()
+        elif isinstance(self.parent, GeoNode):
+            return self.parent
+        elif isinstance(self.parent, Figure):
+            parent = self.parent.instances.get(self.parentRef)
+            if parent:
+                return parent
             else:
                 msg = "Missing figure instances"
-        elif isinstance(parent, FigureInstance):
-            return parent.geometries[0]
-        elif geo is None:
-            msg = "No geometry"
+        elif isinstance(self.parent, FigureInstance):
+            return self.parent
         else:
             msg = "Strange morph parent"
-        if msg:
-            msg = "%s.\n  %s\n  %s" % (msg, self, parent)
-            reportError(msg)
+        msg = "%s: %s\n  %s\n  %s" % (msg, self.parentRef, self, self.parent)
+        reportError(msg)
 
 
     def build(self, context, inst):

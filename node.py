@@ -734,7 +734,7 @@ class Node(Asset, Formula, Channels):
 
     def __repr__(self):
         pid = (self.parent.id if self.parent else None)
-        return ("<Node %s %s P: %s G: %s>" % (self.id, self.label, pid, self.geometries))
+        return ("<Node %s %s %s>" % (self.id, self.label, self.instances.keys()))
 
 
     def errorWrite(self, ref, fp):

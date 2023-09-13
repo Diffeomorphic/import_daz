@@ -738,7 +738,7 @@ class Geometry(Asset, Channels):
 
 
     def __repr__(self):
-        return ("<Geometry %s %s %d %s>" % (self.id, self.name, len(self.nodes), self.rna))
+        return ("<Geometry %s %s %s>" % (self.id, self.name, list(self.nodes.keys())))
 
 
     def getInstance(self, ref, caller=None):

@@ -192,6 +192,7 @@ class Asset(Accessor):
         self.type = None
         self.visible = True
         self.parent = None
+        self.parentRef = None
         self.children = []
         self.source = None
         self.sourcing = None
@@ -303,6 +304,7 @@ class Asset(Accessor):
                     self.label = value
 
         if "parent" in struct.keys():
+            self.parentRef = instRef(struct["parent"])
             self.parent = self.getAsset(struct["parent"])
             if self.parent:
                 self.parent.children.append(self)
@@ -339,6 +341,7 @@ class Asset(Accessor):
             elif key == "label":
                 self.label = value
             elif key == "parent":
+                self.parentRef = instRef(struct["parent"])
                 if self.parent is None and self.caller:
                     self.parent = self.caller.getAsset(struct["parent"])
             elif key == "channel":

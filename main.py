@@ -199,12 +199,12 @@ class DazLoader:
         objects = {}
         props = {}
         for asset in LS.bakedmorphs.values():
-            geo = asset.getGeometry()
-            if geo:
-                key = geo.id
+            parent = asset.getMorphParent()
+            if parent:
+                key = parent.id
                 if key not in objects.keys():
                     namepathss[key] = []
-                    objects[key] = geo.rna
+                    objects[key] = parent.rna
                     props[key] = {}
                 if asset.url[0] == "#":
                     prop = asset.url[1:]
