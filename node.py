@@ -519,6 +519,13 @@ class Instance(Accessor, Channels, SimNode):
 
     def updateMatrices(self):
         self.worldmat, self.wtrans, self.wrot, self.wscale, self.wmat, self.cpoint = self.calcMatrices(self.attributes, self.parent)
+        from .figure import FigureInstance
+        if isinstance(self, FigureInstance):
+            print("UMM", self)
+            print(self.attributes["translation"], self.attributes["scale"], self.attributes["general_scale"])
+            print(self.wtrans)
+            print(self.wrot)
+            print(self.wscale)
 
 
     def calcMatrices(self, attributes, parent):

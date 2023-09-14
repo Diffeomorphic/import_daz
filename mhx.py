@@ -90,6 +90,11 @@ def normalizeRoll(roll):
     else:
         return roll
 
+
+def addMuteDriver(cns, rig, prop):
+    from .driver import addDriver
+    addDriver(cns, "mute", rig, mhxProp(prop), "not(x)")
+
 #-------------------------------------------------------------
 #   Constraints
 #-------------------------------------------------------------
@@ -114,7 +119,7 @@ def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
         cnsIk = copyTransform(bone, boneIk, rig, prop1)
         cnsIk.influence = 0.0
         if prop2:
-            addDriver(cnsIk, "mute", rig, mhxProp(prop2), "x")
+            addMuteDriver(cnsIk, rig, prop2)
 
 
 def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
@@ -310,20 +315,20 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         if defb:
             cns = stretchTo(defb, pb, rig)
             cns.volume = 'VOLUME_XZX'
-            #addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+            #addMuteDriver(cns, rig, prop1)
         defb = rig.pose.bones["DEF-%s" % bname]
         copyBoneInfo(defb, pb)
         defb.bone.inherit_scale = 'NONE'
         defbones.append(defb)
         cns = copyTransform(defb, pb, rig, space='WORLD')
-        #addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+        #addMuteDriver(cns, rig, prop1)
         cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
-        addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+        addMuteDriver(cns, rig, prop1)
     cns = stretchTo(defb, pb, rig)
     cns.volume = 'VOLUME_XZX'
     cns.head_tail = 1.0
-    addDriver(cns, "mute", rig, mhxProp(prop1), "not(x)")
+    addMuteDriver(cns, rig, prop1)
     copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
     first = pbones[0]
     fkwind.rotation_mode = first.rotation_mode
@@ -334,7 +339,6 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
 
 
 def addWinder(rig, windname, bnames, layers, prop=None, parname=None, parinflu=1):
-    from .driver import addDriver
     if len(bnames) < 3:
         return
     setMode('EDIT')
@@ -347,7 +351,7 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, parinflu=1
     wind.rotation_mode = 'YZX'
     if parname:
         parent = rig.pose.bones[parname]
-        cns = copyRotation(wind, parent, rig)
+        cns = copyRotation(wind, parent, rig, space='LOCAL')
         cns.use_offset = True
         cns.use_y = cns.use_z = False
         cns.influence = parinflu
@@ -356,15 +360,10 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, parinflu=1
     for n,bname in enumerate(bnames):
         pb = rig.pose.bones[bname]
         pbones.append(pb)
-        if n == 0:
-            cns = copyLocation(pb, wind, rig, mhxProp(prop), "not(x)", space='POSE')
-            cns = copyScale(pb, wind, rig, mhxProp(prop), "not(x)", space='POSE')
-        else:
-            pb.bone.inherit_scale = 'FULL'
         cns = copyRotation(pb, wind, rig)
         cns.use_offset = True
         cns.influence = 1/nbones
-        addDriver(cns, "mute", rig, mhxProp(prop), "not(x)")
+        addMuteDriver(cns, rig, prop)
     return wind, pbones
 
 
@@ -665,10 +664,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(19, 25, "  Add gizmos")
         self.addGizmos(rig, context)
         showProgress(11, 25, "  Add tongue control")
-        setMhx(rig, "MhaTongueControl", 1.0)
-        addWinder(rig, "tongue", self.tongueBones, [L_HEAD, L_FACE], "MhaTongueControl")
-        if self.useTongueIk:
-            self.addTongueIk(rig)
+        self.addTongueControl(rig)
         showProgress(11, 25, "  Constrain bend and twist bones")
         self.constrainBendTwists(rig, bendTwistBones)
         self.addCopyLocConstraints(rig)
@@ -1343,8 +1339,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             cns1 = copyRotation(forearm, handFk, rig, space='LOCAL')
             cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, space='LOCAL')
             cns1.use_x = cns1.use_z = cns2.use_x = cns2.use_z = False
-            addDriver(cns1, "mute", rig, mhxProp(prop), "not(x)")
-            addDriver(cns2, "mute", rig, mhxProp(prop), "not(x)")
+            addMuteDriver(cns1, rig, prop)
+            addMuteDriver(cns2, rig, prop)
             forearmFk.lock_rotation[1] = True
             addDriver(forearmFk, "lock_rotation", rig, mhxProp(prop), "x", index=1)
 

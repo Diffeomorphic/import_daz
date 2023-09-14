@@ -948,7 +948,7 @@ class Rigifier(RigifyCommon):
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
         if self.useTongueIk:
-            self.addTongueIk(gen)
+            self.addTongueControl(gen)
 
         # Finger IK
         if meta["DazFingerIk"]:

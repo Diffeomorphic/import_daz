@@ -422,33 +422,41 @@ class Fixer(DriverUser):
                     return True
         return False
 
+    #-------------------------------------------------------------
+    #   Tongue Control
+    #-------------------------------------------------------------
 
     def addTongueIkBones(self, rig, layer, deflayer):
         from .mhx import makeBone
-        root = rig.data.edit_bones[self.tongueBones[0]]
+        first = rig.data.edit_bones[self.tongueBones[0]]
         for bname in self.tongueBones:
             eb = rig.data.edit_bones[bname]
             eb.use_connect = False
-            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, root.parent)
+            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, first.parent)
 
 
-    def addTongueIk(self, rig):
-        from .mhx import ikConstraint, stretchTo, setMhx, mhxProp
-        prop = "MhaTongueIk"
-        setMhx(rig, prop, 0.0)
-        rig.data.MhaFeatures |= F_TONGUE
-        for bname in self.tongueBones:
-            pb = rig.pose.bones[bname]
-            pb.lock_location = (True, True, True)
-            for cns in list(pb.constraints):
-                if cns.type == 'LIMIT_ROTATION':
-                    self.setIkLimits(cns, pb, pb)
-                    addDriver(cns, "influence", rig, mhxProp(prop), "1-x")
-            trgb = rig.pose.bones["ik_%s" % bname]
-            trgb.bone.use_deform = False
-            self.addGizmo(trgb, "GZM_Ball", 0.2)
-            #addDriver(trgb.bone, "hide", rig, mhxProp(prop), "x==0")
-            cns = stretchTo(pb, trgb, rig, prop)
+    def addTongueControl(self, rig):
+        from .mhx import setMhx, mhxProp, addWinder, stretchTo, addMuteDriver
+        from .driver import addDriver
+        prop1 = "MhaTongueControl"
+        setMhx(rig, prop1, True)
+        addWinder(rig, "tongue", self.tongueBones, [L_HEAD, L_FACE], prop1)
+        if self.useTongueIk:
+            prop2 = "MhaTongueIk"
+            setMhx(rig, prop2, 0.0)
+            rig.data.MhaFeatures |= F_TONGUE
+            for bname in self.tongueBones:
+                pb = rig.pose.bones[bname]
+                pb.lock_location = (True, True, True)
+                for cns in list(pb.constraints):
+                    if cns.type == 'LIMIT_ROTATION':
+                        self.setIkLimits(cns, pb, pb)
+                        addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
+                trgb = rig.pose.bones["ik_%s" % bname]
+                trgb.bone.use_deform = False
+                self.addGizmo(trgb, "GZM_Ball", 0.2)
+                cns = stretchTo(pb, trgb, rig, prop2)
+                addMuteDriver(cns, rig, prop1)
 
 
     def setIkLimits(self, cns, fkbone, ikbone):
@@ -457,8 +465,6 @@ class Fixer(DriverUser):
             setattr(ikbone, "ik_min_%s" % x, getattr(cns, "min_%s" % x))
             setattr(ikbone, "ik_max_%s" % x, getattr(cns, "max_%s" % x))
             setattr(ikbone, "lock_ik_%s" % x, fkbone.lock_rotation[n])
-            #if fkbone.lock_rotation[n]:
-            #    setattr(ikbone, "ik_stiffness_%s" % x, 0.99)
 
     #-------------------------------------------------------------
     #   Gaze Bones
