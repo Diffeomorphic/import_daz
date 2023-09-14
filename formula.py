@@ -133,6 +133,16 @@ class Formula:
             print("Could not parse formulas", self.formulas)
         return exprs
 
+    Genesis = [
+        "Genesis",
+        "Genesis2Female",
+        "Genesis2Male",
+        "Genesis3Female",
+        "Genesis3Male",
+        "Genesis8Female",
+        "Genesis8Male",
+        "Genesis9",
+    ]
 
     def evalFormula(self, formula, exprs, rig, mesh, force):
         from .bone import getMappedBone, Bone
@@ -145,14 +155,17 @@ class Formula:
                     print("Cannot drive properties", output)
                     print("  ", unquote(formula["output"]))
                 return False
+        elif output in self.Genesis:
+            output = "RIG"
         elif rig:
             output1 = getMappedBone(output, rig, mesh)
             if output1 and output1 in rig.pose.bones.keys():
                 output = output1
             elif output1 == "RIG":
-                output = output1
+                output = "RIG"
             else:
                 asset = self.getAsset(url)
+                print("AA", url, asset)
                 if isinstance(asset, Bone) and asset.instances:
                     inst = list(asset.instances.values())[0]
                     rig2 = inst.figure.rna
