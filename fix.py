@@ -423,9 +423,7 @@ class Fixer(DriverUser):
         return False
 
 
-    def addTongueIkBone(self, rig, layer, deflayer):
-        if not self.useTongueIk:
-            return
+    def addTongueIkBones(self, rig, layer, deflayer):
         from .mhx import makeBone
         root = rig.data.edit_bones[self.tongueBones[0]]
         for bname in self.tongueBones:
@@ -437,9 +435,7 @@ class Fixer(DriverUser):
     def addTongueIk(self, rig):
         from .mhx import ikConstraint, stretchTo, setMhx, mhxProp
         prop = "MhaTongueIk"
-        setMhx(rig, prop, 0)
-        if not self.useTongueIk:
-            return
+        setMhx(rig, prop, 0.0)
         rig.data.MhaFeatures |= F_TONGUE
         for bname in self.tongueBones:
             pb = rig.pose.bones[bname]
@@ -451,7 +447,7 @@ class Fixer(DriverUser):
             trgb = rig.pose.bones["ik_%s" % bname]
             trgb.bone.use_deform = False
             self.addGizmo(trgb, "GZM_Ball", 0.2)
-            addDriver(trgb.bone, "hide", rig, mhxProp(prop), "x==0")
+            #addDriver(trgb.bone, "hide", rig, mhxProp(prop), "x==0")
             cns = stretchTo(pb, trgb, rig, prop)
 
 
