@@ -1175,7 +1175,10 @@ class LoadMorph(DriverUser):
 
         n = len(points)
         xi,yi = points[0]
-        string = "(%s if %s%s %s" % (getPrint(yi), var, lt, getPrint(xi/umax))
+        string = "("
+        term = getPrint(yi)
+        prev = "%s if %s%s %s" % (term, var, lt, getPrint(xi/umax))
+        tie = ""
         for i in range(1, n):
             xj,yj = points[i]
             kij = (yj-yi)/(xj-xi)
@@ -1183,9 +1186,19 @@ class LoadMorph(DriverUser):
             zstring = ""
             if abs(zi) > 5e-4:
                 zstring = ("%s%s" % (zs, getPrint(zi*umax)))
-            string += (" else %s%s if %s%s %s " % (getMult(kij*umax, var), zstring, var, lt, getPrint(xj/umax)))
+                if zstring[0:2] == "+-":
+                    zstring = zstring[1:]
+            term1 = "%s%s" % (getMult(kij*umax, var), zstring)
+            if term1 != term:
+                string += prev
+                term = term1
+                tie = " else "
+            prev = ("%s%s if %s%s %s " % (tie, term, var, lt, getPrint(xj/umax)))
             xi,yi = xj,yj
-        string += " else %s)" % getPrint(yj)
+        default = getPrint(yj)
+        if default != term:
+            string += prev
+        string += " else %s)" % default
 
         if len(string) > 254:
             msg = "String driver too long:\n"
@@ -1770,14 +1783,14 @@ def getPrint(x):
 
 def getMult(x, comp):
     xx = getPrint(x)
-    if xx == "0":
+    if xx in ["0", "-0"]:
         return "0"
     elif xx == "1":
         return comp
     elif xx == "-1":
-        return "-" + comp
+        return "-%s" % comp
     else:
-        return xx + "*" + comp
+        return "%s*%s" % (xx, comp)
 
 def getSign(u):
     if u < 0:
