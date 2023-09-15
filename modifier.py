@@ -693,7 +693,8 @@ class FormulaAsset(Formula, ChannelAsset):
         else:
             msg = "Strange morph parent"
         msg = "%s: %s\n  %s\n  %s" % (msg, self.parentRef, self, self.parent)
-        reportError(msg)
+        print(msg)
+        return None
 
 
     def build(self, context, inst):

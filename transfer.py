@@ -38,40 +38,27 @@ from .driver import DriverUser
 #
 #-------------------------------------------------------------
 
-class FastMatcher:
+class MatchOperator(DazPropsOperator):
+    def storeState(self, context):
+        DazPropsOperator.storeState(self, context)
+        self.mesh = context.object
+        self.storeMesh(self.mesh)
+        self.rig = getRigFromMesh(self.mesh)
+        self.storeRig(self.rig)
+
+
+    def restoreState(self, context):
+        self.restoreRig(self.rig)
+        self.restoreMesh(self.mesh)
+        DazPropsOperator.restoreState(self, context)
+
+
     def checkTransforms(self, ob):
         if hasObjectTransforms(ob):
             raise DazError("Apply object transformations to %s first" % ob.name)
 
 
     def prepare(self, context, src):
-        mod = getModifier(src, 'ARMATURE')
-        if mod:
-            rig = mod.object
-        else:
-            rig = None
-        if rig:
-            self.checkTransforms(rig)
-            rig.data.pose_position = 'REST'
-
-        self.svalues = {}
-        self.rvalues = {}
-        self.mvalues = {}
-        if rig:
-            for key,value in rig.items():
-                if isinstance(value, (int, float, bool)):
-                    self.rvalues[key] = value
-                    rig[key] = 0.0
-        for key,value in src.items():
-            if isinstance(value, (int, float, bool)):
-                self.mvalues[key] = value
-                src[key] = 0.0
-        skeys = src.data.shape_keys
-        if skeys:
-            for skey in skeys.key_blocks:
-                self.svalues[skey.name] = skey.value
-                skey.value = 0
-
         updateScene(context)
         ob = self.trihuman = None
         if (self.transferMethod in ['NEAREST', 'SELECTED']):
@@ -97,28 +84,8 @@ class FastMatcher:
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
             setMode('OBJECT')
             self.trihuman = ob
-        return (ob, rig)
+        return ob
 
-
-    def restore(self, context, src, data):
-        ob,rig = data
-        if rig:
-            rig.data.pose_position = 'POSE'
-        if ob:
-            deleteObjects(context, [ob])
-        skeys = src.data.shape_keys
-        if rig:
-            for key,value in self.rvalues.items():
-                rig[key] = value
-            updateDrivers(rig)
-        for key,value in self.mvalues.items():
-            src[key] = value
-        updateDrivers(src)
-        if skeys:
-            for key,value in self.svalues.items():
-                skey = skeys.key_blocks[key]
-                skey.value = value
-            updateDrivers(skeys)
 
     def getTargets(self, src, context):
         self.checkTransforms(src)
@@ -183,7 +150,7 @@ class ThresholdFloat:
 #   Vertex group transfer
 #----------------------------------------------------------
 
-class DAZ_OT_TransferVertexGroups(DazPropsOperator, FastMatcher, IsMesh, ThresholdFloat):
+class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
     bl_idname = "daz.transfer_vertex_groups"
     bl_label = "Transfer Vertex Groups"
     bl_description = "Transfer vertex groups from active to selected"
@@ -238,7 +205,7 @@ class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
 #   Morphs transfer
 #----------------------------------------------------------
 
-class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser, IsShape):
+class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
     bl_idname = "daz.transfer_shapekeys"
     bl_label = "Transfer Shapekeys"
     bl_description = "Transfer shapekeys from active mesh to selected meshes"
@@ -317,13 +284,14 @@ class DAZ_OT_TransferShapekeys(DazOperator, JCMSelector, FastMatcher, DriverUser
         if not self.useDrivers:
             self.useStrength = False
         targets = self.getTargets(src, context)
-        data = self.prepare(context, src)
+        ob = self.prepare(context, src)
         self.createTmp()
         try:
             failed = self.transferAllMorphs(context, src, targets)
         finally:
             self.deleteTmp()
-            self.restore(context, src, data)
+            if ob:
+                deleteObjects(context, [ob])
         t2 = perf_counter()
         print("Morphs transferred in %.1f seconds" % (t2-t1))
         if failed:

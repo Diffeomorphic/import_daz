@@ -141,6 +141,8 @@ class Formula:
         "Genesis3Male",
         "Genesis8Female",
         "Genesis8Male",
+        "Genesis8_1Female",
+        "Genesis8_1Male",
         "Genesis9",
     ]
 

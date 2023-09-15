@@ -1296,6 +1296,18 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     def __init__(self):
         DriverUser.__init__(self)
 
+
+    def storeState(self, context):
+        DazPropsOperator.storeState(self, context)
+        self.rig = context.object
+        self.storeRig(self.rig)
+
+
+    def restoreState(self, context):
+        self.restoreRig(self.rig)
+        DazPropsOperator.restoreState(self, context)
+
+
     def run(self, context):
         if not self.separateCharacters:
             if self.useSubrigsOnly:

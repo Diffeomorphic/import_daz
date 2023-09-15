@@ -699,7 +699,7 @@ def getAllBoneSumDrivers(rig, bnames):
             if bname not in bnames:
                 continue
         else:
-            if words[0] != "[":
+            if GS.verbosity >= 3 and words[0] != "[":
                 print("MISS", words)
             continue
         if fcu.driver.type == 'SCRIPTED':

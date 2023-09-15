@@ -1623,7 +1623,8 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
             return False
         while parent and parent.bone.inherit_scale == 'FULL':
             parent = parent.parent
-            parents.append(parent.name)
+            if parent:
+                parents.append(parent.name)
         for idx,expr in exprs.items():
             if idx < 0:
                 pass

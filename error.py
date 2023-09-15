@@ -28,6 +28,7 @@
 
 import bpy
 from .settings import GS, LS
+from .utils import *
 
 def clearErrorMessage():
     LS.theMessage = ""
@@ -247,7 +248,6 @@ class DazOperator(bpy.types.Operator):
 
 
     def storeState(self, context):
-        from .utils import getSelectedObjects
         self.mode = None
         self.activeObject = context.object
         self.selectedObjects = [ob.name for ob in getSelectedObjects(context)]
@@ -260,7 +260,6 @@ class DazOperator(bpy.types.Operator):
 
 
     def restoreState(self, context):
-        from .utils import setActiveObject
         try:
             if self.activeObject:
                 setActiveObject(context, self.activeObject)
@@ -271,6 +270,50 @@ class DazOperator(bpy.types.Operator):
                 bpy.ops.object.mode_set(mode=self.mode)
         except RuntimeError:
             pass
+
+
+    def storeRig(self, rig):
+        self.rvalues = {}
+        if rig:
+            rig.data.pose_position = 'REST'
+            for key,value in rig.items():
+                if isinstance(value, (int, float, bool)):
+                    self.rvalues[key] = value
+                    rig[key] = 0.0
+
+
+    def restoreRig(self, rig):
+        if rig:
+            rig.data.pose_position = 'POSE'
+            for key,value in self.rvalues.items():
+                rig[key] = value
+            updateDrivers(rig)
+
+
+    def storeMesh(self, ob):
+        self.svalues = {}
+        self.mvalues = {}
+        for key,value in ob.items():
+            if isinstance(value, (int, float, bool)):
+                self.mvalues[key] = value
+                ob[key] = 0.0
+        skeys = ob.data.shape_keys
+        if skeys:
+            for skey in skeys.key_blocks:
+                self.svalues[skey.name] = skey.value
+                skey.value = 0
+
+
+    def restoreMesh(self, ob):
+        skeys = self.mesh.data.shape_keys
+        for key,value in self.mvalues.items():
+            ob[key] = value
+        updateDrivers(ob)
+        if skeys:
+            for key,value in self.svalues.items():
+                skey = skeys.key_blocks[key]
+                skey.value = value
+            updateDrivers(skeys)
 
 
     def addWarning(self, msg):
@@ -284,6 +327,10 @@ class DazPropsOperator(DazOperator):
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=self.dialogWidth)
+
+#-------------------------------------------------------------
+#
+#-------------------------------------------------------------
 
 class IsObject:
     @classmethod

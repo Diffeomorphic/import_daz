@@ -232,7 +232,7 @@ class DazLoader:
             lm = BakedMorphLoader()
             if ob.type == 'ARMATURE':
                 rig = lm.rig = ob
-                lm.mesh = rig.children[0]
+                lm.mesh = getMeshChildren(rig)[0]
             elif ob.type == 'MESH':
                 lm.mesh = ob
                 rig = lm.rig = ob.parent
