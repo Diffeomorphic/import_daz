@@ -660,7 +660,7 @@ class ExtraBones(DriverUser):
             db.custom_shape = None
             copyBoneInfo(db, pb)
             store.storeConstraints(db.name, db)
-            #store.removeConstraints(db)
+            store.removeConstraints(db, onlyLimit=True)
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
             store.restoreConstraints(db.name, pb)
 
