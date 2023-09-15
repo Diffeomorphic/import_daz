@@ -135,6 +135,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.separator()
             self.layout.operator("daz.import_jcms")
             self.layout.operator("daz.import_flexions")
+            self.layout.operator("daz.import_bulges")
             self.layout.separator()
             self.layout.operator("daz.import_standard_morphs")
             self.layout.operator("daz.import_custom_morphs")

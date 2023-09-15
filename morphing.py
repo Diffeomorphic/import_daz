@@ -1002,6 +1002,59 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 #   Import all standard morphs in one bunch, for performance
 #------------------------------------------------------------------------
 
+class DAZ_OT_ImportBulges(DazOperator, IsMesh):
+    bl_idname = "daz.import_bulges"
+    bl_label = "Import Bulges"
+    bl_description = "Import bulge morphs to Genesis/Genesis 2 character"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and ob.data.get("DazBulges", False))
+
+    def run(self, context):
+        from .driver import removeModifiers, addTransformVar
+        ob = context.object
+        if ob.data.shape_keys is None:
+            ob.shape_key_add(name="Basic")
+        rig = ob.parent
+        if not rig:
+            raise DazError("No armature found")
+        rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
+        bulges = []
+        vgrps = list(ob.vertex_groups)
+        vgrps.reverse()
+        for vgrp in vgrps:
+            data = vgrp.name.rsplit(":",1)
+            if data[-1].startswith(("left_", "right_")):
+                mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
+                mod.strength = -2*ob.DazScale
+                mod.vertex_group = vgrp.name
+                bpy.ops.object.modifier_apply_as_shapekey(modifier=mod.name)
+                skey = ob.data.shape_keys.key_blocks[-1]
+                bulges.append((vgrp.name, skey))
+                ob.vertex_groups.remove(vgrp)
+        for vgname,skey in bulges:
+            bname,channel = vgname.rsplit(":",1)
+            pb = rig.pose.bones.get(bname)
+            if pb is None:
+                continue
+            lr,comp = channel.split("_")
+            idx0 = ord(comp) - ord("x")
+            idx = pb.DazAxes[idx0]
+            flip = pb.DazFlips[idx0]
+            print("BUL", bname, lr, comp, idx0, idx, flip)
+            fcu = skey.driver_add("value")
+            fcu.driver.type = 'SCRIPTED'
+            fcu.driver.expression = "x"
+            addTransformVar(fcu, "x", rottypes[idx], rig, bname)
+            removeModifiers(fcu)
+
+#------------------------------------------------------------------------
+#   Import all standard morphs in one bunch, for performance
+#------------------------------------------------------------------------
+
 class MorphTypeOptions:
     isMhxAware = True
 
@@ -1779,6 +1832,7 @@ classes = [
     DAZ_OT_ImportFacsExpressions,
     DAZ_OT_ImportBodyMorphs,
     DAZ_OT_ImportFlexions,
+    DAZ_OT_ImportBulges,
     DAZ_OT_ImportStandardMorphs,
     DAZ_OT_ImportCustomMorphs,
     DAZ_OT_ImportJCMs,

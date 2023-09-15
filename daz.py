@@ -499,7 +499,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     useTriaxWeights : BoolProperty(
         name = "Triax Weights",
-        description = "Add extra vertex groups for all components of triax and bulge weights")
+        description = "Add extra vertex groups for all components of triax weights")
+
+    useBulgeWeights : BoolProperty(
+        name = "Bulge Weights",
+        description = "Add vertex groups for triax bulge weights")
 
     useArmature : BoolProperty(
         name = "Armature",
@@ -688,6 +692,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Meshes")
         box.prop(scn, "shellMethod")
         box.prop(scn, "useSmoothTriax")
+        box.prop(scn, "useBulgeWeights")
         box.prop(scn, "useHighDef")
         box.prop(scn, "useKeepBaseMesh")
         box.prop(scn, "useMultires")

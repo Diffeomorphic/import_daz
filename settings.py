@@ -70,7 +70,6 @@ class GlobalSettings:
         self.useDump = False
         self.zup = True
         self.unflipped = False
-        self.useTriaxWeights = False
         self.useMakeHiddenSliders = False
         self.useBakedMorphs = False
         self.showHiddenObjects = False
@@ -130,6 +129,8 @@ class GlobalSettings:
         self.useHairGuides = False
         self.useHighDef = True
         self.useSmoothTriax = True
+        self.useTriaxWeights = False
+        self.useBulgeWeights = True
         self.keepBaseMesh = False
         self.useMultires = True
         self.useMultiUvLayers = True

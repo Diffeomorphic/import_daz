@@ -490,6 +490,7 @@ class SkinBinding(Modifier):
                         lweights = joint["local_weights"].get(comp)
                         if lweights:
                             buildVertexGroup(ob, "%s:%s" % (vgname,comp), lweights["values"])
+            if GS.useBulgeWeights:
                 if "bulge_weights" in joint.keys():
                     for comp in ["x", "y", "z"]:
                         bulges = joint["bulge_weights"].get(comp, {})
@@ -500,8 +501,8 @@ class SkinBinding(Modifier):
                             right = bulges.get("right_map", {})
                             if right:
                                 buildVertexGroup(ob, "%s:right_%s" % (vgname,comp), right["values"])
-                if "scale_weights" in joint.keys():
-                    buildVertexGroup(ob, "%s:scale" % vgname, joint["scale_weights"]["values"])
+                            ob.data["DazBulges"] = True
+
 
             removes = self.Removes.get(rig.DazRig, [])
             if bname not in removes:
