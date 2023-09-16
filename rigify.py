@@ -1192,21 +1192,21 @@ class Rigifier(RigifyCommon):
         gizmos = {
             "lowerjaw" :        ("GZM_MJaw", 1, R_FACE),
             "lowerJaw" :        ("GZM_MJaw", 1, R_FACE),
-            "eye.L" :           ("GZM_Circle025", 1, R_FACE),
-            "eye.R" :           ("GZM_Circle025", 1, R_FACE),
-            "ear.L" :           ("GZM_Circle025", 1.5, R_FACE),
-            "ear.R" :           ("GZM_Circle025", 1.5, R_FACE),
+            "eye.L" :           ("GZM_Circle", 0.25, R_FACE),
+            "eye.R" :           ("GZM_Circle", 0.25, R_FACE),
+            "ear.L" :           ("GZM_Circle", 0.375, R_FACE),
+            "ear.R" :           ("GZM_Circle", 0.375, R_FACE),
             "pelvis" :          (None, 1, R_HELP),
             "pectoral.L" :      ("GZM_Pectoral", 1, R_TORSOTWEAK),
             "pectoral.R" :      ("GZM_Pectoral", 1, R_TORSOTWEAK),
             "metatarsals.L" :   (None, 1, R_HELP),
             "metatarsals.R" :   (None, 1, R_HELP),
             "gaze" :            ("GZM_Gaze", 1, R_FACE),
-            "gaze.L" :          ("GZM_Circle025", 1, R_FACE),
-            "gaze.R" :          ("GZM_Circle025", 1, R_FACE),
+            "gaze.L" :          ("GZM_Circle", 0.25, R_FACE),
+            "gaze.R" :          ("GZM_Circle", 0.25, R_FACE),
             "ik_tongue" :       ("GZM_Cone", 0.4, R_FACE),
         }
-        self.makeGizmos(True, ["GZM_MJaw", "GZM_Circle025", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
+        self.makeGizmos(True, ["GZM_MJaw", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
         bgrp = gen.pose.bone_groups.new(name="DAZ")
         bgrp.color_set = 'CUSTOM'
         bgrp.colors.normal = (1.0, 0.5, 0)

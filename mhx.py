@@ -92,7 +92,6 @@ def normalizeRoll(roll):
 
 
 def addMuteDriver(cns, rig, prop):
-    from .driver import addDriver
     addDriver(cns, "mute", rig, mhxProp(prop), "not(x)")
 
 #-------------------------------------------------------------
@@ -119,7 +118,7 @@ def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
         cnsIk = copyTransform(bone, boneIk, rig, prop1)
         cnsIk.influence = 0.0
         if prop2:
-            addMuteDriver(cnsIk, rig, prop2)
+            addDriver(cnsIk, "mute", rig, mhxProp(prop2), "x")
 
 
 def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
@@ -829,8 +828,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             elif pb.name[-2:] in [".L", ".R"] and pb.name[:-2] in LRGizmos.keys():
                 gizmo,scale,offset = getData(LRGizmos[pb.name[:-2]])
                 self.addGizmo(pb, gizmo, scale, offset)
-            #elif pb.name[0:4] == "palm":
-            #    self.addGizmo(pb, "GZM_Ellipse", 1)
             elif pb.name[0:6] == "tongue":
                 self.addGizmo(pb, "GZM_MTongue", 1)
             elif self.isEyeLid(pb):
@@ -841,27 +838,23 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 for pname in MHX.F_Fingers + ["big_toe", "small_toe"]:
                     if pb.name.startswith(pname):
                         self.addGizmo(pb, "GZM_Circle", 0.4)
-                for pname,shape,scale in [
-                        ("pectoral", "GZM_Ball025", 1) ,
-                        ("heel", "GZM_Ball025End", 1)]:
+                for pname,shape,scale,offset in [
+                        ("pectoral", "GZM_Ball", 0.25, (0,0,0)) ,
+                        ("heel", "GZM_Ball", 0.25, (0,1,0))]:
                     if pb.name.startswith(pname):
                         if isBoneDriven(rig, pb):
                             pb.bone.layers[L_HELP] = True
                             pb.bone.layers[L_TWEAK] = False
                         else:
-                            self.addGizmo(pb, shape, scale)
+                            self.addGizmo(pb, shape, scale, offset)
 
         for bname in self.tweakBones:
             if bname is None:
                 continue
-            if bname.startswith(("pelvis", "chest", "clavicle")):
-                gizmo = "GZM_Ball025End"
-            else:
-                gizmo = "GZM_Ball025"
             twkname = self.getTweakBoneName(bname)
             if twkname in rig.pose.bones.keys():
                 tb = rig.pose.bones[twkname]
-                self.addGizmo(tb, gizmo, 1, blen=10*rig.DazScale)
+                self.addGizmo(tb, "GZM_Ball", 0.25, (0,0.5,0), blen=10*rig.DazScale)
 
     #-------------------------------------------------------------
     #   Bone groups
@@ -1377,11 +1370,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             prop1 = "MhaLegIk_%s" % suffix
             setMhx(rig, prop1, 1.0)
-            prop2 = "MhaLegIkToAnkle_%s" % suffix
-            setMhx(rig, prop2, 0.0)
+            if self.useFoot2:
+                prop2 = "MhaLegIkToAnkle_%s" % suffix
+                setMhx(rig, prop2, False)
+            else:
+                prop2 = None
 
             footRev.lock_rotation = (False,True,True)
-
             copyTransformFkIk(thigh, thighFk, thighIkTwist, rig, prop1)
             copyTransformFkIk(shin, shinFk, shinIkTwist, rig, prop1)
             copyTransformFkIk(foot, footFk, footInvIk, rig, prop1, prop2)
@@ -1865,30 +1860,30 @@ Gizmos = {
     "head" :            ("GZM_MHead", 1),
     "lowerJaw" :        ("GZM_MJaw", 1),
     "lowerjaw" :        ("GZM_MJaw", 1),
-    "eye.R" :           ("GZM_Circle025", 1),
-    "eye.L" :           ("GZM_Circle025", 1),
-    "ear.R" :           ("GZM_Circle025", 1.5),
-    "ear.L" :           ("GZM_Circle025", 1.5),
+    "eye.R" :           ("GZM_Circle", 0.25),
+    "eye.L" :           ("GZM_Circle", 0.25),
+    "ear.R" :           ("GZM_Circle", 0.375),
+    "ear.L" :           ("GZM_Circle", 0.375),
     "gaze" :            ("GZM_Gaze", 1),
 }
 
 LRGizmos = {
     "pectoral" :        ("GZM_Pectoral", 1),
-    "clavicle" :        ("GZM_Ball025End", 1),
+    "clavicle" :        ("GZM_Ball", 0.25, (0,1,0)),
 
     # Head
 
-    "gaze" :            ("GZM_Circle025", 1),
+    "gaze" :            ("GZM_Circle", 0.25),
     "uplid" :           ("GZM_UpLid", 1),
     "lolid" :           ("GZM_LoLid", 1),
 
     # Leg
 
-    "thigh.fk" :        ("GZM_Circle025", 1),
-    "shin.fk" :         ("GZM_Circle025", 1),
+    "thigh.fk" :        ("GZM_Circle", 0.25),
+    "shin.fk" :         ("GZM_Circle", 0.25),
     "thigh.ik":         ("GZM_Arrows", 1),
-    "thigh.ik.twist":   ("GZM_Circle025", 1),
-    "shin.ik.twist" :   ("GZM_Circle025", 1),
+    "thigh.ik.twist":   ("GZM_Circle", 0.25),
+    "shin.ik.twist" :   ("GZM_Circle", 0.25),
     "foot.fk" :         ("GZM_Foot", 1),
     "toe.fk" :          ("GZM_Toe", 1),
     "legSocket" :       ("GZM_Cube", 0.25),
@@ -1900,17 +1895,18 @@ LRGizmos = {
     "knee.pt.ik" :      ("GZM_Cone", 0.25),
     "kneePoleA" :       ("GZM_Knuckle", 1),
     "knee.link" :       ("GZM_Line", 1),
-    "toe.marker" :      ("GZM_Ball025", 1),
-    "ball.marker" :     ("GZM_Ball025", 1),
-    "heel.marker" :     ("GZM_Ball025", 1),
+    "toe.marker" :      ("GZM_Ball", 0.25),
+    "ball.marker" :     ("GZM_Ball", 0.25),
+    "heel.marker" :     ("GZM_Ball", 0.25),
+    "ankle.ik" :        ("GZM_Ball", 0.25),
 
     # Arm
     "clavicle" :        ("GZM_Shoulder", 1),
-    "upper_arm.fk" :    ("GZM_Circle025", 1),
-    "forearm.fk" :      ("GZM_Circle025", 1),
+    "upper_arm.fk" :    ("GZM_Circle", 0.25),
+    "forearm.fk" :      ("GZM_Circle", 0.25),
     "upper_arm.ik" :    ("GZM_Arrows", 1),
-    "upper_arm.ik.twist" :  ("GZM_Circle025", 1),
-    "forearm.ik.twist" :    ("GZM_Circle025", 1),
+    "upper_arm.ik.twist" :  ("GZM_Circle", 0.25),
+    "forearm.ik.twist" :    ("GZM_Circle", 0.25),
     "hand.fk" :         ("GZM_Hand", 1),
     "handTwk" :         ("GZM_Circle", 0.4),
     "armSocket" :       ("GZM_Cube", 0.25),

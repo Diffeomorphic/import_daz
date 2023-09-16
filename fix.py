@@ -675,7 +675,7 @@ class GizmoUser:
         gizmo = self.gizmos[gname]
         pb.bone.show_wire = True
         if blen:
-            scale = blen/pb.bone.length
+            scale *= blen/pb.bone.length
         setCustomShape(pb, gizmo, scale, offset)
 
 
@@ -1200,7 +1200,6 @@ class BendTwists:
     def constrainBendTwists(self, rig, bendTwistBones):
         from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('POSE')
-        ball = "GZM_Ball025"
         eulers = {
             "upper_arm" : "YXZ",
             "forearm" : "YZX",
@@ -1236,8 +1235,8 @@ class BendTwists:
                 ttwkname = self.getTweakBoneName(twistname)
                 bendtwk = rig.pose.bones[btwkname]
                 twisttwk = rig.pose.bones[ttwkname]
-                self.addGizmo(bendtwk, ball, 1, blen=10*rig.DazScale)
-                self.addGizmo(twisttwk, ball, 1, blen=10*rig.DazScale)
+                self.addGizmo(bendtwk, "GZM_Ball", 0.25, blen=10*rig.DazScale)
+                self.addGizmo(twisttwk, "GZM_Ball", 0.25, blen=10*rig.DazScale)
 
 #-------------------------------------------------------------
 #   Add IK goals
