@@ -1470,7 +1470,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 subinfo.addEditBones(rig, idx+nmerged, layers)
         for bone in rig.data.bones:
             if bone.name in extrabones:
-                bone.DazExtraBone = True
+                bone["DazExtraBone"] = True
         self.reparentObjects(info, rig, adds, hdadds, removes)
         for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:

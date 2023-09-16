@@ -105,7 +105,7 @@ def getEditBones(rig):
 
             for bone in rigidity_group.affected_bones:
                 parent = rig.pose.bones[bone.name].parent
-                while parent and parent.bone.DazExtraBone:
+                while parent and parent.bone.get("DazExtraBone"):
                     parent = parent.parent
                 heads[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (heads[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(heads[bone.name]+ hdoffsets[parent.name]))
                 tails[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (tails[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(tails[bone.name]+ tloffsets[parent.name]))
@@ -115,9 +115,9 @@ def getEditBones(rig):
                 processed_bonenames.append(bone.name)
 
     for pb in rig.pose.bones:
-        if pb.bone.DazExtraBone and pb.name not in processed_bonenames :
+        if pb.bone.get("DazExtraBone") and pb.name not in processed_bonenames :
             parent = pb.parent
-            while parent and parent.bone.DazExtraBone:
+            while parent and parent.bone.get("DazExtraBone"):
                 parent = parent.parent
             if parent:
                 hdoffsets[pb.name] = hdoffsets[pb.name] + hdoffsets[parent.name]
@@ -191,7 +191,6 @@ def onFrameChangeDaz(scn):
 
 def register():
     bpy.types.Object.DazScale = bpy.props.FloatProperty(default = 0.01)
-    bpy.types.Bone.DazExtraBone = bpy.props.BoolProperty(default=False)
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))

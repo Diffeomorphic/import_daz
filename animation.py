@@ -1252,7 +1252,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
                 oldStyle = (self.useConvert or
-                            not rig.data.DazHasAxes or
+                            not rig.data.get("DazHasAxes") or
                             rig.DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             imposeLocks(pb)

@@ -263,8 +263,9 @@ class Figure(Node):
             LS.rigs[LS.rigname].append(rig)
             amt.display_type = 'STICK'
             rig.show_in_front = True
-            rig.data.DazUnflipped = GS.unflipped
-            rig.data.DazHasAxes = True
+            if GS.unflipped:
+                rig.data["DazUnflipped"] = True
+            rig.data["DazHasAxes"] = True
             rig.DazInheritScale = False
         else:
             rig = amt = None
@@ -640,7 +641,8 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                bone.DazExtraBone = db.DazExtraBone
+                if "DazExtraBone" in db.keys():
+                    bone["DazExtraBone"] = db["DazExtraBone"]
 
         setMode('EDIT')
         for bname in self.bnames:
