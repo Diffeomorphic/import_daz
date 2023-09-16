@@ -323,9 +323,9 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
         if LS.otherRigBones:
             self.msg += "Found formulas for other rigs:\n"
             self.addItems(LS.otherRigBones.keys())
-        #if LS.triax:
-        #    self.msg += "Meshes with triax weights found. Consider converting to general weights in DAZ Studio.\n"
-        #    self.addItems(LS.triax.keys())
+        if LS.triax:
+            self.msg += "Triax approximation used for the following meshes:\n"
+            self.addItems(LS.triax.keys())
         if LS.hasInstanceChildren:
             self.msg += ("The following objects have instance children.\n" +
                    "The result may be incorrect.\n")

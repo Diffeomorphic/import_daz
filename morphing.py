@@ -1002,7 +1002,7 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 #   Import all standard morphs in one bunch, for performance
 #------------------------------------------------------------------------
 
-class DAZ_OT_CreateBulges(DazOperator, IsMesh):
+class DAZ_OT_CreateBulges(DazOperator, Selector, IsMesh):
     bl_idname = "daz.create_bulges"
     bl_label = "Create Bulges"
     bl_description = "Create bulge morphs.\nOnly for Genesis and Genesis 2 character"
@@ -1013,6 +1013,22 @@ class DAZ_OT_CreateBulges(DazOperator, IsMesh):
         ob = context.object
         return (ob and ob.type == 'MESH' and len(ob.data.DazBulges) > 0)
 
+
+    def invoke(self, context, event):
+        ob = context.object
+        self.selection.clear()
+        for vgrp in ob.vertex_groups:
+            words = vgrp.name.rsplit(":",1)
+            if len(words) == 2 and words[1].startswith(("left_", "right_")):
+                bname = words[0]
+                if bname not in self.selection.keys():
+                    item = self.selection.add()
+                    item.name = bname
+                    item.text = bname
+                    item.select = True
+        return self.invokeDialog(context)
+
+
     def run(self, context):
         from .driver import removeModifiers, addTransformVar
         ob = context.object
@@ -1021,15 +1037,20 @@ class DAZ_OT_CreateBulges(DazOperator, IsMesh):
         rig = ob.parent
         if not rig:
             raise DazError("No armature found")
-        rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
         bulges = []
         vgrps = list(ob.vertex_groups)
         vgrps.reverse()
         for vgrp in vgrps:
-            data = vgrp.name.rsplit(":",1)
-            if data[-1].startswith(("left_", "right_")):
+            words = vgrp.name.rsplit(":",1)
+            if len(words) == 2 and words[-1].startswith(("left_", "right_")):
+                bname = words[0]
+                item = self.selection.get(bname)
+                if item is None or not item.select:
+                    ob.vertex_groups.remove(vgrp)
+                    continue
                 mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
                 mod.strength = -2*ob.DazScale
+                mod.mid_level = 0
                 mod.vertex_group = vgrp.name
                 mod.show_viewport = False
                 bpy.ops.object.modifier_apply_as_shapekey(modifier=mod.name)
@@ -1039,6 +1060,7 @@ class DAZ_OT_CreateBulges(DazOperator, IsMesh):
                 bulges.append((vgrp.name, skey))
                 ob.vertex_groups.remove(vgrp)
         factor = 0.2/math.pi
+        rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
         for vgname,skey in bulges:
             bname,channel = vgname.rsplit(":",1)
             pb = rig.pose.bones.get(bname)
