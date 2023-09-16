@@ -74,6 +74,12 @@ class DazMorphInfoGroup(bpy.types.PropertyGroup):
     bodypart : StringProperty()
     category : StringProperty()
 
+class DazBulgeGroup(bpy.types.PropertyGroup):
+    positive_left : FloatProperty()
+    positive_right : FloatProperty()
+    negative_left : FloatProperty()
+    negative_right : FloatProperty()
+
 #-------------------------------------------------------------
 #   Rigidity groups
 #-------------------------------------------------------------
@@ -123,6 +129,7 @@ classes = [
     DazStringStringGroup,
     DazTextGroup,
     DazMorphInfoGroup,
+    DazBulgeGroup,
     ]
 
 def register():

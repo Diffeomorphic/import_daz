@@ -36,7 +36,7 @@ from .error import *
 from .utils import *
 from .selector import Selector
 from .fileutils import SingleFile, MultiFile, DazImageFile, JsonFile, ensureExt
-from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup
+from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup, DazBulgeGroup
 from .load_morph import LoadMorph
 from .driver import isProtected
 from .uilist import updateScrollbars
@@ -1002,16 +1002,16 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 #   Import all standard morphs in one bunch, for performance
 #------------------------------------------------------------------------
 
-class DAZ_OT_ImportBulges(DazOperator, IsMesh):
-    bl_idname = "daz.import_bulges"
-    bl_label = "Import Bulges"
-    bl_description = "Import bulge morphs to Genesis/Genesis 2 character"
+class DAZ_OT_CreateBulges(DazOperator, IsMesh):
+    bl_idname = "daz.create_bulges"
+    bl_label = "Create Bulges"
+    bl_description = "Create bulge morphs.\nOnly for Genesis and Genesis 2 character"
     bl_options = {'UNDO'}
 
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'MESH' and ob.data.get("DazBulges", False))
+        return (ob and ob.type == 'MESH' and len(ob.data.DazBulges) > 0)
 
     def run(self, context):
         from .driver import removeModifiers, addTransformVar
@@ -1031,25 +1031,42 @@ class DAZ_OT_ImportBulges(DazOperator, IsMesh):
                 mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
                 mod.strength = -2*ob.DazScale
                 mod.vertex_group = vgrp.name
+                mod.show_viewport = False
                 bpy.ops.object.modifier_apply_as_shapekey(modifier=mod.name)
                 skey = ob.data.shape_keys.key_blocks[-1]
+                skey.slider_min = -5
+                skey.slider_max = 5
                 bulges.append((vgrp.name, skey))
                 ob.vertex_groups.remove(vgrp)
+        factor = 0.2/math.pi
         for vgname,skey in bulges:
             bname,channel = vgname.rsplit(":",1)
             pb = rig.pose.bones.get(bname)
             if pb is None:
                 continue
             lr,comp = channel.split("_")
+            pg = ob.data.DazBulges.get("%s_%s" % (bname, comp))
+            if pg is None:
+                continue
             idx0 = ord(comp) - ord("x")
             idx = pb.DazAxes[idx0]
             flip = pb.DazFlips[idx0]
-            print("BUL", bname, lr, comp, idx0, idx, flip)
+            if lr == "left":
+                pos = -factor*pg["positive_left"]
+                neg = factor*pg["negative_left"]
+            else:
+                pos = -factor*pg["positive_right"]
+                neg = factor*pg["negative_right"]
+            if flip == -1:
+                tmp = pos
+                pos = -neg
+                neg = -tmp
             fcu = skey.driver_add("value")
             fcu.driver.type = 'SCRIPTED'
-            fcu.driver.expression = "x"
+            fcu.driver.expression = "%.4f*x if x > 0 else %.4f*x" % (pos, neg)
             addTransformVar(fcu, "x", rottypes[idx], rig, bname)
             removeModifiers(fcu)
+        ob.data.DazBulges.clear()
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1832,7 +1849,7 @@ classes = [
     DAZ_OT_ImportFacsExpressions,
     DAZ_OT_ImportBodyMorphs,
     DAZ_OT_ImportFlexions,
-    DAZ_OT_ImportBulges,
+    DAZ_OT_CreateBulges,
     DAZ_OT_ImportStandardMorphs,
     DAZ_OT_ImportCustomMorphs,
     DAZ_OT_ImportJCMs,
@@ -1869,6 +1886,7 @@ def register():
         bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
 
     bpy.types.Mesh.DazBodyPart = CollectionProperty(type = DazStringGroup)
+    bpy.types.Mesh.DazBulges = CollectionProperty(type = DazBulgeGroup)
     bpy.types.Scene.DazMorphCatsContent = EnumProperty(
         items = [],
         name = "Morph")

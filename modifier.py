@@ -493,15 +493,21 @@ class SkinBinding(Modifier):
             if GS.useBulgeWeights:
                 if "bulge_weights" in joint.keys():
                     for comp in ["x", "y", "z"]:
-                        bulges = joint["bulge_weights"].get(comp, {})
-                        if bulges:
-                            left = bulges.get("left_map", {})
-                            if left:
+                        bweights = joint["bulge_weights"].get(comp, {})
+                        if bweights:
+                            pg = ob.data.DazBulges.add()
+                            pg.name = "%s_%s" % (vgname, comp)
+                            bvalues = {}
+                            for bulge in bweights.get("bulges", []):
+                                bid = bulge["id"].replace("-", "_")
+                                setattr(pg, bid, bulge["value"])
+                                bvalues[bid] =  bulge["value"]
+                            left = bweights.get("left_map", {})
+                            if left and (bvalues.get("positive_left") or bvalues.get("negative_left")):
                                 buildVertexGroup(ob, "%s:left_%s" % (vgname,comp), left["values"])
-                            right = bulges.get("right_map", {})
-                            if right:
+                            right = bweights.get("right_map", {})
+                            if right and (bvalues.get("positive_right") or bvalues.get("negative_right")):
                                 buildVertexGroup(ob, "%s:right_%s" % (vgname,comp), right["values"])
-                            ob.data["DazBulges"] = True
 
 
             removes = self.Removes.get(rig.DazRig, [])
