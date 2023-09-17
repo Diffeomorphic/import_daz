@@ -209,7 +209,6 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Rigging"
 
     def draw(self, context):
-        self.layout.operator("daz.add_custom_shapes")
         self.layout.operator("daz.add_simple_ik")
         self.layout.separator()
         self.layout.operator("daz.convert_to_mhx")
@@ -349,7 +348,6 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.change_unit_scale")
-        self.layout.operator("daz.remove_custom_shapes")
         self.layout.operator("daz.add_extra_face_bones")
         self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.change_suffix_to_prefix")
@@ -981,7 +979,7 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (getRuntimeEnabled(context) and ob and ob.DazCustomShapes)
+        return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
 
     def draw(self, context):
         from .simple import BoneLayers

@@ -134,12 +134,14 @@ class Fixer(DriverUser):
 
 
     def fixCustomShape(self, rig, bnames, factor, offset=0):
-        from .simple import setCustomShape
         for bname in bnames:
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
                 if pb.custom_shape:
-                    setCustomShape(pb, pb.custom_shape, factor)
+                    if hasattr(pb, "custom_shape_scale"):
+                        pb.custom_shape_scale = scale
+                    else:
+                        pb.custom_shape_scale_xyz = (scale, scale, scale)
                     if offset:
                         for v in pb.custom_shape.data.vertices:
                             v.co += offset
