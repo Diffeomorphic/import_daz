@@ -2145,12 +2145,15 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for data in binbones.values():
                 self.addAutoIk(data, rig, gizmo)
         elif self.controlMethod == 'WINDER':
-            from .fix import addWinder
+            from .mhx import addWinder
             self.makeGizmos(False, ["GZM_Knuckle"])
             gizmo = self.gizmos["GZM_Knuckle"]
             for key,data in binbones.items():
                 bones,locs,xaxis = data
-                addWinder(rig, bones[0][0], gizmo, True, self.boneLayers, self.hiddenLayers, xaxis=xaxis)
+                bnames = bones[0]
+                windname = "Wind_%s" % bnames[0]
+                layers = [self.boneLayer, 31]
+                addWinder(rig, windname, bnames, layers, gizmo=gizmo, xaxis=xaxis)
 
         if self.weightingMethod != 'AUTO':
             for key,data in binbones.items():

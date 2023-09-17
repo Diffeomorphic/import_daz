@@ -397,9 +397,6 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def checkTongueIk(self, rig):
-        if not self.useTongueIk:
-            self.tongueBones = []
-            return
         self.tongueBones = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
         if len(self.tongueBones) < 3:
             print("Did not find tongue")
@@ -440,7 +437,8 @@ class Fixer(DriverUser):
         from .driver import addDriver
         prop1 = "MhaTongueControl"
         setMhx(rig, prop1, True)
-        addWinder(rig, "tongue", self.tongueBones, [L_HEAD, L_FACE], prop1)
+        winder,pbones = addWinder(rig, "tongue", self.tongueBones, [L_HEAD, L_FACE], prop1, useLocation=True, useScale=True)
+        self.addGizmo(winder, "GZM_Knuckle", 1.0)
         if self.useTongueIk:
             prop2 = "MhaTongueIk"
             setMhx(rig, prop2, 0.0)
@@ -1451,15 +1449,21 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         min = 1, max = 32,
         default = 2)
 
-    useLockLoc : BoolProperty(
-        name = "Lock Location",
-        description = "Lock winder location even if original bone is not locked",
+    useLocation : BoolProperty(
+        name = "Location",
+        description = "Add driver for location",
+        default = False)
+
+    useScale : BoolProperty(
+        name = "Scale",
+        description = "Add driver for scale",
         default = False)
 
     def draw(self, context):
         self.layout.prop(self, "winderLayer")
         self.layout.prop(self, "windedLayer")
-        self.layout.prop(self, "useLockLoc")
+        self.layout.prop(self, "useLocation")
+        self.layout.prop(self, "useScale")
 
     def invoke(self, context, event):
         rig = context.object
@@ -1469,14 +1473,23 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
+        def findChildren(pb):
+            bnames = []
+            while len(pb.children) == 1:
+                bnames.append(pb.name)
+                pb = pb.children[0]
+            return bnames
+
+        from .mhx import addWinder
         rig = context.object
-        self.winderLayers = (self.winderLayer-1)*[False] + [True] + (32-self.winderLayer)*[False]
-        self.windedLayers = (self.windedLayer-1)*[False] + [True] + (32-self.windedLayer)*[False]
         self.startGizmos(context, rig)
         self.makeGizmos(False, ["GZM_Knuckle"])
         gizmo = self.gizmos["GZM_Knuckle"]
-        for pb in self.findPoseRoots(rig):
-            addWinder(rig, pb.name, gizmo, self.useLockLoc, self.winderLayers, self.windedLayers)
+        for root in self.findPoseRoots(rig):
+            windname = "Wind_%s" % root.name
+            bnames = findChildren(root)
+            layers = [self.winderLayer-1, self.windedLayer-1]
+            addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=self.useLocation, useScale=self.useScale)
 
 
     def findPoseRoots(self, rig):
@@ -1496,66 +1509,6 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
             if bname in proots.keys():
                 del proots[bname]
         return proots.values()
-
-#-------------------------------------------------------------
-#   addWinder used in hide.py
-#-------------------------------------------------------------
-
-def addWinder(rig, bname, gizmo, useLockLoc, winderLayers, windedLayers, xaxis=None):
-    from .mhx import copyRotation, copyScale, copyLocation
-    wname = "Wind_%s" % bname
-    setMode('EDIT')
-    eb = rig.data.edit_bones[bname]
-    tarb = rig.data.edit_bones.new(wname)
-    tarb.head = eb.head
-    tarb.tail = eb.tail
-    tarb.roll = eb.roll
-    tarb.parent = eb.parent
-    tarb.layers = winderLayers
-    n = 1
-    length = eb.length
-    while eb.children and len(eb.children) == 1:
-        eb = eb.children[0]
-        tarb.tail = eb.tail
-        n += 1
-        length += eb.length
-    if xaxis is not None:
-        from .bone import setRoll
-        setRoll(tarb, xaxis)
-
-    setMode('POSE')
-    pb = rig.pose.bones[bname]
-    winder = rig.pose.bones[wname]
-    if gizmo:
-        winder.custom_shape = gizmo
-        winder.bone.show_wire = True
-    winder.rotation_mode = pb.rotation_mode
-    winder.matrix_basis = pb.matrix_basis
-    winder.lock_location = pb.lock_location
-    winder.lock_rotation = pb.lock_rotation
-    winder.lock_scale = pb.lock_scale
-    if useLockLoc:
-        winder.lock_location = (True, True, True)
-
-    infl = 2*pb.bone.length/length
-    cns1 = copyRotation(pb, winder, rig)
-    cns1.influence = infl
-    cns2 = copyScale(pb, winder, rig)
-    cns2.influence = infl
-    if not useLockLoc:
-        cns3 = copyLocation(pb, winder, rig)
-        cns3.influence = infl
-    pb.bone.layers = windedLayers
-    while pb.children and len(pb.children) == 1:
-        pb = pb.children[0]
-        infl = 2*pb.bone.length/length
-        cns1 = copyRotation(pb, winder, rig)
-        cns1.use_offset = True
-        cns1.influence = infl
-        cns2 = copyScale(pb, winder, rig)
-        cns2.use_offset = True
-        cns2.influence = infl
-        pb.bone.layers = windedLayers
 
 #-------------------------------------------------------------
 #   Retarget armature

@@ -92,7 +92,8 @@ def normalizeRoll(roll):
 
 
 def addMuteDriver(cns, rig, prop):
-    addDriver(cns, "mute", rig, mhxProp(prop), "not(x)")
+    if prop:
+        addDriver(cns, "mute", rig, mhxProp(prop), "not(x)")
 
 #-------------------------------------------------------------
 #   Constraints
@@ -337,7 +338,76 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     return fkwind, ikwind, pbones
 
 
-def addWinder(rig, windname, bnames, layers, prop=None, parname=None, parinflu=1):
+def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None, useLocation=False, useScale=False, xaxis=None):
+    setMode('EDIT')
+    first = rig.data.edit_bones[bnames[0]]
+    last = rig.data.edit_bones[bnames[-1]]
+    windbone = makeBone(windname, rig, first.head, last.tail, first.roll, layers[0], first.parent)
+    if xaxis is not None:
+        from .bone import setRoll
+        setRoll(windbone, xaxis)
+
+    setMode('POSE')
+    pb = rig.pose.bones[bnames[0]]
+    pbones = [pb]
+    winder = rig.pose.bones[windname]
+    if gizmo:
+        winder.custom_shape = gizmo
+        winder.bone.show_wire = True
+    winder.rotation_mode = pb.rotation_mode
+    winder.matrix_basis = pb.matrix_basis
+    #winder.lock_location = pb.lock_location
+    winder.lock_rotation = pb.lock_rotation
+    #winder.lock_scale = pb.lock_scale
+    if not useLocation:
+        winder.lock_location = (True, True, True)
+    if not useScale:
+        winder.lock_scale = (True, True, True)
+
+    def setLocks(locks, cns):
+        if locks[0]:
+            cns.use_x = False
+        if locks[1]:
+            cns.use_y = False
+        if locks[2]:
+            cns.use_z = False
+
+    windedLayers = layers[1]*[False] + [True] + (31-layers[1])*[False]
+    infl = 2*pb.bone.length/winder.length
+    cns = copyRotation(pb, winder, rig)
+    setLocks(pb.lock_rotation, cns)
+    cns.influence = infl
+    addMuteDriver(cns, rig, prop)
+    if useScale:
+        cns = copyScale(pb, winder, rig)
+        setLocks(pb.lock_scale, cns)
+        cns.influence = infl
+        addMuteDriver(cns, rig, prop)
+    if useLocation:
+        cns = copyLocation(pb, winder, rig)
+        cns.influence = infl
+        addMuteDriver(cns, rig, prop)
+    pb.bone.layers = windedLayers
+    for bname in bnames[1:]:
+        pb = rig.pose.bones[bname]
+        pbones.append(pb)
+        infl = 2*pb.bone.length/winder.length
+        cns = copyRotation(pb, winder, rig)
+        setLocks(pb.lock_rotation, cns)
+        cns.use_offset = True
+        cns.influence = infl
+        addMuteDriver(cns, rig, prop)
+        if useScale:
+            cns = copyScale(pb, winder, rig)
+            setLocks(pb.lock_scale, cns)
+            cns.use_offset = True
+            cns.influence = infl
+            addMuteDriver(cns, rig, prop)
+        pb.bone.layers = windedLayers
+    return winder, pbones
+
+'''
+def addWinder(rig, windname, bnames, layers, prop=None, parname=None):
     if len(bnames) < 3:
         return
     setMode('EDIT')
@@ -364,7 +434,7 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, parinflu=1
         cns.influence = 1/nbones
         addMuteDriver(cns, rig, prop)
     return wind, pbones
-
+'''
 
 def addFingerIk(rig, ikname, bnames, parname, layers, prop=None):
     nbones = len(bnames)
@@ -437,9 +507,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Spine IK (experimental)",
         default = True)
 
-    useShaftIk : BoolProperty(
-        name = "Shaft IK",
-        description = "Add IK for Dicktator/Futalicious shaft",
+    useShaftWinder : BoolProperty(
+        name = "Shaft Winder",
+        description = "Add windoer for Dicktator/Futalicious shaft",
         default = False)
 
     useChildOfConstraints : BoolProperty(
@@ -510,8 +580,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def drawRigify(self):
         self.layout.prop(self, "useSpineIk")
-        self.layout.prop(self, "useShaftIk")
         self.layout.prop(self, "useTongueIk")
+        self.layout.prop(self, "useShaftWinder")
         self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "useIkLimits")
 
@@ -651,7 +721,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addTweaks(rig)
         showProgress(15, 25, "  Add backbone")
         self.addBack(rig)
-        self.addShaftIk(rig)
+        self.addShaftWinder(rig)
         showProgress(16, 25, "  Setup FK-IK")
         self.setupFkIk(rig)
         showProgress(13, 25, "  Add long fingers")
@@ -930,17 +1000,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         return [bone.name for bone in rig.data.bones if isShaft(bone.name)]
 
 
-    def addShaftIk(self, rig):
-        setMhx(rig, "MhaShaftControl", True)
-        shaftbones = self.getShaftBones(rig)
-        shaftbones.sort()
-        layers = [L_CUSTOM, L_CUSTOM2, L_HELP, L_HELP2, L_DEF]
-        if self.useShaftIk:
-            setMhx(rig, "MhaShaftIk", 0.0)
-            rig.data.MhaFeatures |= F_SHAFT
-            addSuperWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", "MhaShaftIk", alignRoll=True, master="master")
-        else:
-            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl")
+    def addShaftWinder(self, rig):
+        if self.useShaftWinder:
+            setMhx(rig, "MhaShaftControl", True)
+            shaftbones = self.getShaftBones(rig)
+            shaftbones.sort()
+            layers = [L_CUSTOM, L_CUSTOM2]
+            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", useLocation=True, useScale=True)
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -1045,8 +1111,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             for m in range(5):
                 bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
-                influ = (0.5 if m==0 else 1.0)
-                fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1, parname=fingname, parinflu=influ)
+                fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1, parname=fingname)
+                fingers = rig.pose.bones[fingname]
+                cns = copyRotation(fkwind, fingers, rig, space='LOCAL')
+                cns.influence = (0.5 if m==0 else 1.0)
+                addMuteDriver(cns, rig, prop1)
                 if self.useFingerIk:
                     ikname = "%s.ik.%s" % (MHX.Fingers[m], suffix)
                     addFingerIk(rig, ikname, bnames, fingname, layers, prop2)
@@ -1447,7 +1516,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     ignore += self.getFingerNames(rig, m, suffix)
         if self.useTongueIk:
             ignore += self.tongueBones
-        if self.useShaftIk:
+        if self.useShaftWinder:
             ignore += self.getShaftBones(rig)
         self.restoreAllConstraints(rig, ignore)
         if rig.DazRig not in ["genesis3", "genesis8"]:
@@ -1963,7 +2032,7 @@ def setToFk(rig, layers, useInsertKeys, frame):
 
 
 def updateWinders(rig, frame):
-    winders = ["back", "tongue", "shaft"]
+    winders = ["back"]
     for suffix in ["L", "R"]:
         winders += ["%s.%s" % (fing, suffix) for fing in MHX.Fingers]
     for bname in winders:

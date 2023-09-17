@@ -1846,7 +1846,11 @@ class WidgetConverter:
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
         euler = Euler((0,180*D,90*D))
-        mat = euler.to_matrix()*(1.0/rig.DazScale)
+        if rig.DazScale == 0:
+            factor = 1.0/GS.unitScale
+        else:
+            factor = 1.0/rig.DazScale
+        mat = euler.to_matrix()*factor
         self.gizmos = []
         for idx,verts in vgverts.items():
             if not verts:
