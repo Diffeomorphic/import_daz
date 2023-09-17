@@ -670,6 +670,9 @@ class GizmoUser:
 
     def addGizmo(self, pb, gname, scale, offset=None, blen=None):
         from .simple import setCustomShape
+        if gname not in self.gizmos.keys():
+            print("Missing gizmo: %s" % gname)
+            return
         gizmo = self.gizmos[gname]
         pb.bone.show_wire = True
         if blen:
@@ -1478,6 +1481,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
             while len(pb.children) == 1:
                 bnames.append(pb.name)
                 pb = pb.children[0]
+            bnames.append(pb.name)
             return bnames
 
         from .mhx import addWinder

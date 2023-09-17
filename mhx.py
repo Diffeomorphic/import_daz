@@ -339,6 +339,9 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
 
 
 def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None, useLocation=False, useScale=False, xaxis=None):
+    if len(bnames) < 3:
+        print("Too few bones to wind: %s" % windname)
+        return None, []
     setMode('EDIT')
     first = rig.data.edit_bones[bnames[0]]
     last = rig.data.edit_bones[bnames[-1]]

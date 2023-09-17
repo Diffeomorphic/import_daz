@@ -2150,10 +2150,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             gizmo = self.gizmos["GZM_Knuckle"]
             for key,data in binbones.items():
                 bones,locs,xaxis = data
-                bnames = bones[0]
+                bnames = [bone[0] for bone in bones]
                 windname = "Wind_%s" % bnames[0]
                 layers = [self.boneLayer, 31]
-                addWinder(rig, windname, bnames, layers, gizmo=gizmo, xaxis=xaxis)
+                addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=True, xaxis=xaxis)
 
         if self.weightingMethod != 'AUTO':
             for key,data in binbones.items():
