@@ -133,7 +133,7 @@ class Fixer(DriverUser):
         setMode('OBJECT')
 
 
-    def fixCustomShape(self, rig, bnames, factor, offset=0):
+    def fixCustomShape(self, rig, bnames, scale, offset=0):
         for bname in bnames:
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]

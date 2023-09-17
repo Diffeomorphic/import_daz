@@ -360,29 +360,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toe.layers[layer] = False
 
     #----------------------------------------------------------
-    #   Set custom shape
+    #   Make custom shapes
     #----------------------------------------------------------
 
     def setCustomShape(self, pb, shape, scale=None, offset=None):
-        pb.custom_shape = self.customShapes[shape]
-        if scale is None:
-            pass
-        elif hasattr(pb, "custom_shape_scale"):
-            pb.custom_shape_scale = scale
-        elif isinstance(scale, tuple):
-            pb.custom_shape_scale_xyz = scale
-        else:
-            pb.custom_shape_scale_xyz = (scale, scale, scale)
-        if not hasattr(pb, "custom_shape_translation"):
-            return
-        elif isinstance(offset, tuple):
-            pb.custom_shape_translation = Vector(offset)*pb.bone.length
-        elif offset is not None:
-            pb.custom_shape_translation.y = offset*pb.bone.length
+        setCustomShape(pb, self.customShapes[shape], scale, offset)
 
-    #----------------------------------------------------------
-    #   Make custom shapes
-    #----------------------------------------------------------
 
     def makeCustomShapes(self, context, rig, IK):
         def makeSpine(pb, width, tail=0.5):
@@ -408,8 +391,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         from .fileutils import DF
         self.gizmos = DF.loadEntry("simple", "gizmos", True)
         self.customShapes = {}
-        makeBoneGroups(rig)
-
         makeCustomShape("CS_Collar", "CircleX", (0,1,0), (0,0.5,0.1))
         makeCustomShape("CS_HandFk", "CircleX", (0,1,0), (0,0.6,0.5))
         makeCustomShape("CS_Tongue", "CircleZ", (0,1,0), (1.5,0.5,0))
@@ -424,18 +405,20 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         makeCustomShape("CS_Arrows", "Arrows")
         makeCustomShape("CS_Root", "CircleY")
 
-        spineWidth = 1
-        lCollar = getPoseBone(rig, ("lCollar", "l_shoulder"))
-        rCollar = getPoseBone(rig, ("rCollar", "r_shoulder"))
-        if lCollar and rCollar:
-            spineWidth = 0.5*(lCollar.bone.tail_local[0] - rCollar.bone.tail_local[0])
-
+        setMode('OBJECT')
+        makeBoneGroups(rig)
         lFoot = getPoseBone(rig, ("lFoot", "l_foot"))
         lToe = getPoseBone(rig, ("lToe", "l_toes"))
         if lFoot and lToe:
             footFactor = (lToe.bone.head_local[1] - lFoot.bone.head_local[1])/(lFoot.bone.tail_local[1] - lFoot.bone.head_local[1])
             makeCustomShape("CS_Foot", "CircleZ", (0,1,0), (0.8,0.5*footFactor,0))
             makeCustomShape("CS_Toe", "CircleZ", (0,1,0), (1,0.5,0))
+
+        spineWidth = 1
+        lCollar = getPoseBone(rig, ("lCollar", "l_shoulder"))
+        rCollar = getPoseBone(rig, ("rCollar", "r_shoulder"))
+        if lCollar and rCollar:
+            spineWidth = 0.5*(lCollar.bone.tail_local[0] - rCollar.bone.tail_local[0])
 
         for pb in rig.pose.bones:
             lname = pb.name.lower()
@@ -444,7 +427,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif lname in ["upperfacerig", "lowerfacerig"]:
                 pb.bone.layers = [False] + [True] + 30*[False]
             elif lname in ["upperteeth", "lowerteeth"]:
-               addToLayer(pb, "Special", rig, "Special")
+                addToLayer(pb, "Special", rig, "Special")
             elif not pb.bone.layers[0]:
                 for lnum in range(1,16):
                     if pb.bone.layers[lnum]:
@@ -563,7 +546,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
         from .mhx import ikConstraint, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
         from .driver import addDriver
-        setMode('OBJECT')
         rpbs = rig.pose.bones
         if self.useRootBone:
             root = rpbs["Root"]
@@ -726,6 +708,24 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 #----------------------------------------------------------
 #   Custom shapes
 #----------------------------------------------------------
+
+def setCustomShape(pb, shape, scale=None, offset=None):
+    pb.custom_shape = shape
+    if scale is None:
+        pass
+    elif hasattr(pb, "custom_shape_scale"):
+        pb.custom_shape_scale = scale
+    elif isinstance(scale, tuple):
+        pb.custom_shape_scale_xyz = scale
+    else:
+        pb.custom_shape_scale_xyz = (scale, scale, scale)
+    if not hasattr(pb, "custom_shape_translation"):
+        return
+    elif isinstance(offset, tuple):
+        pb.custom_shape_translation = Vector(offset)*pb.bone.length
+    elif offset is not None:
+        pb.custom_shape_translation.y = offset*pb.bone.length
+
 
 def getPoseBone(rig, bnames):
     for bname in bnames:
@@ -1135,15 +1135,15 @@ def makeBoneGroups(rig):
             bg.colors.active = (1.0, 1.0, 0.8)
 
 
-def addToLayer(pb, lname, rig=None, bgname=None):
-    if lname in BoneLayers.keys():
-        n = BoneLayers[lname]
-    elif pb.name[0] == "l" and "Left "+lname in BoneLayers.keys():
-        n = BoneLayers["Left "+lname]
-    elif pb.name[0] == "r" and "Right "+lname in BoneLayers.keys():
-        n = BoneLayers["Right "+lname]
+def addToLayer(pb, layname, rig=None, bgname=None):
+    if layname in BoneLayers.keys():
+        n = BoneLayers[layname]
+    elif pb.name[0] == "l" and "Left "+layname in BoneLayers.keys():
+        n = BoneLayers["Left "+layname]
+    elif pb.name[0] == "r" and "Right "+layname in BoneLayers.keys():
+        n = BoneLayers["Right "+layname]
     else:
-        print("MISSING LAYER", lname, pb.name)
+        print("MISSING LAYER", layname, pb.name)
         return
     pb.bone.layers[n] = True
     if rig and bgname:
