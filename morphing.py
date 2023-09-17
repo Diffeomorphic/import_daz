@@ -1030,65 +1030,70 @@ class DAZ_OT_CreateBulges(DazOperator, Selector, IsMesh):
 
 
     def run(self, context):
-        from .driver import removeModifiers, addTransformVar
         ob = context.object
-        if ob.data.shape_keys is None:
-            ob.shape_key_add(name="Basic")
         rig = ob.parent
         if not rig:
             raise DazError("No armature found")
-        bulges = []
-        vgrps = list(ob.vertex_groups)
-        vgrps.reverse()
-        for vgrp in vgrps:
-            words = vgrp.name.rsplit(":",1)
-            if len(words) == 2 and words[-1].startswith(("left_", "right_")):
-                bname = words[0]
-                item = self.selection.get(bname)
+        createBulges(ob, rig, self.selection)
+
+
+def createBulges(ob, rig, selection):
+    from .driver import removeModifiers, addTransformVar
+    if ob.data.shape_keys is None:
+        ob.shape_key_add(name="Basic")
+    bulges = []
+    vgrps = list(ob.vertex_groups)
+    vgrps.reverse()
+    for vgrp in vgrps:
+        words = vgrp.name.rsplit(":",1)
+        if len(words) == 2 and words[-1].startswith(("left_", "right_")):
+            bname = words[0]
+            if selection:
+                item = selection.get(bname)
                 if item is None or not item.select:
                     ob.vertex_groups.remove(vgrp)
                     continue
-                mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
-                mod.strength = -2*ob.DazScale
-                mod.mid_level = 0
-                mod.vertex_group = vgrp.name
-                mod.show_viewport = False
-                bpy.ops.object.modifier_apply_as_shapekey(modifier=mod.name)
-                skey = ob.data.shape_keys.key_blocks[-1]
-                skey.slider_min = -5
-                skey.slider_max = 5
-                bulges.append((vgrp.name, skey))
-                ob.vertex_groups.remove(vgrp)
-        factor = 0.2/math.pi
-        rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
-        for vgname,skey in bulges:
-            bname,channel = vgname.rsplit(":",1)
-            pb = rig.pose.bones.get(bname)
-            if pb is None:
-                continue
-            lr,comp = channel.split("_")
-            pg = ob.data.DazBulges.get("%s_%s" % (bname, comp))
-            if pg is None:
-                continue
-            idx0 = ord(comp) - ord("x")
-            idx = pb.DazAxes[idx0]
-            flip = pb.DazFlips[idx0]
-            if lr == "left":
-                pos = -factor*pg["positive_left"]
-                neg = factor*pg["negative_left"]
-            else:
-                pos = -factor*pg["positive_right"]
-                neg = factor*pg["negative_right"]
-            if flip == -1:
-                tmp = pos
-                pos = -neg
-                neg = -tmp
-            fcu = skey.driver_add("value")
-            fcu.driver.type = 'SCRIPTED'
-            fcu.driver.expression = "%.4f*x if x > 0 else %.4f*x" % (pos, neg)
-            addTransformVar(fcu, "x", rottypes[idx], rig, bname)
-            removeModifiers(fcu)
-        ob.data.DazBulges.clear()
+            mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
+            mod.strength = -2*ob.DazScale
+            mod.mid_level = 0
+            mod.vertex_group = vgrp.name
+            mod.show_viewport = False
+            bpy.ops.object.modifier_apply_as_shapekey(modifier=mod.name)
+            skey = ob.data.shape_keys.key_blocks[-1]
+            skey.slider_min = -5
+            skey.slider_max = 5
+            bulges.append((vgrp.name, skey))
+            ob.vertex_groups.remove(vgrp)
+    factor = 0.2/math.pi
+    rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
+    for vgname,skey in bulges:
+        bname,channel = vgname.rsplit(":",1)
+        pb = rig.pose.bones.get(bname)
+        if pb is None:
+            continue
+        lr,comp = channel.split("_")
+        pg = ob.data.DazBulges.get("%s_%s" % (bname, comp))
+        if pg is None:
+            continue
+        idx0 = ord(comp) - ord("x")
+        idx = pb.DazAxes[idx0]
+        flip = pb.DazFlips[idx0]
+        if lr == "left":
+            pos = -factor*pg["positive_left"]
+            neg = factor*pg["negative_left"]
+        else:
+            pos = -factor*pg["positive_right"]
+            neg = factor*pg["negative_right"]
+        if flip == -1:
+            tmp = pos
+            pos = -neg
+            neg = -tmp
+        fcu = skey.driver_add("value")
+        fcu.driver.type = 'SCRIPTED'
+        fcu.driver.expression = "%.4f*x if x > 0 else %.4f*x" % (pos, neg)
+        addTransformVar(fcu, "x", rottypes[idx], rig, bname)
+        removeModifiers(fcu)
+    ob.data.DazBulges.clear()
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1152,6 +1157,10 @@ class MorphTypeOptions:
         description = "Import all flexions",
         default = False)
 
+    useBulges : BoolProperty(
+        name = "Bulges",
+        description = "Make all bulges (Genesis and Genesis 2)",
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "useUnits")
@@ -1166,6 +1175,7 @@ class MorphTypeOptions:
             self.subprop("useMhxOnly")
         self.layout.prop(self, "useJcms")
         self.layout.prop(self, "useFlexions")
+        self.layout.prop(self, "useBulges")
 
 
     def subprop(self, prop):
@@ -1215,6 +1225,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body")
         self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
+        if self.useBulges:
+            self.createBulges(context)
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
@@ -1270,6 +1282,13 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     def addToMorphSet(self, prop, asset, hidden, protected):
         self.hideable = (self.morphset in ["Jcms", "Flexions"])
         StandardMorphLoader.addToMorphSet(self, prop, asset, hidden, protected)
+
+
+    def createBulges(self, context):
+        mesh = self.meshes[0]
+        if self.rig and mesh and len(mesh.data.DazBulges) > 0:
+            if activateObject(context, mesh):
+                createBulges(mesh, self.rig, None)
 
 #------------------------------------------------------------------------
 #   Custom Morph Loader

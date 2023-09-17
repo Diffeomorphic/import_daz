@@ -947,7 +947,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                   self.useFacsexpr or
                   self.useBody or
                   self.useJcms or
-                  self.useFlexions):
+                  self.useFlexions or
+                  self.useBulges):
                 if activateObject(context, mainRig):
                     bpy.ops.daz.import_standard_morphs(
                         useUnits = self.useUnits,
@@ -961,6 +962,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useMhxOnly = self.useMhxOnly,
                         useJcms = (self.useJcms and GS.useShapekeys),
                         useFlexions = (self.useFlexions and GS.useShapekeys),
+                        useBulges = (self.useBulges and GS.useShapekeys),
                         useAdjusters = self.useAdjusters,
                         useTransferFace = False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
