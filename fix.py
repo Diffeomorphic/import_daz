@@ -671,7 +671,6 @@ class GizmoUser:
 
 
     def addGizmo(self, pb, gname, scale, offset=None, blen=None):
-        from .simple import setCustomShape
         if gname not in self.gizmos.keys():
             print("Missing gizmo: %s" % gname)
             return
@@ -706,6 +705,32 @@ class GizmoUser:
     def getOtherName(self, bname):
         return getSuffixName(bname)
 
+#----------------------------------------------------------
+#  Set custom shape
+#----------------------------------------------------------
+
+def setCustomShape(pb, shape, scale=None, offset=None, rotation=None):
+    pb.custom_shape = shape
+    if scale is None:
+        pass
+    elif hasattr(pb, "custom_shape_scale"):
+        pb.custom_shape_scale = scale
+    elif isinstance(scale, tuple):
+        pb.custom_shape_scale_xyz = scale
+    else:
+        pb.custom_shape_scale_xyz = (scale, scale, scale)
+    if not hasattr(pb, "custom_shape_translation"):
+        return
+    if isinstance(offset, tuple):
+        pb.custom_shape_translation = Vector(offset)*pb.bone.length
+    elif offset is not None:
+        pb.custom_shape_translation.y = offset*pb.bone.length
+    if isinstance(rotation, tuple):
+        pb.custom_shape_rotation_euler = rotation
+
+#----------------------------------------------------------
+#   Get suffix name
+#----------------------------------------------------------
 
 def getSuffixName(bname):
     if isDrvBone(bname) or isFinal(bname):
