@@ -1981,6 +1981,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     useSeparateLoose = True
     sparsity = 1
+    gizmoFile = "knuckle"
 
     nSectors : IntProperty(
         name = "Sectors",

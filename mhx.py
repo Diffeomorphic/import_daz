@@ -490,6 +490,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     bl_description = "Convert rig to MHX"
     bl_options = {'UNDO'}
 
+    gizmoFile = "mhx"
+
     addTweakBones : BoolProperty(
         name = "Tweak Bones",
         description = "Add tweak bones",

@@ -92,6 +92,7 @@ def addDicts(structs):
 #-------------------------------------------------------------
 
 class RigifyCommon:
+    gizmoFile = "mhx"
 
     GroupBones = [
         ("Face ", R_FACE, 2, 6),

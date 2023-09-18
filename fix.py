@@ -627,7 +627,7 @@ class GizmoUser:
             self.makeEmptyGizmo("GZM_Cone", 'CONE')
 
         from .fileutils import DF
-        struct = DF.loadEntry("mhx", "gizmos", True)
+        struct = DF.loadEntry(self.gizmoFile, "gizmos", True)
         if gnames is None:
             gnames = struct.keys()
         for gname in gnames:
@@ -1466,6 +1466,8 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
     bl_label = "Add Winders"
     bl_description = "Add winders to selected posebones"
     bl_options = {'UNDO'}
+
+    gizmoFile = "knuckle"
 
     winderLayer : IntProperty(
         name = "Winder Layer",
