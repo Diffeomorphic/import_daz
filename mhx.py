@@ -994,8 +994,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             addSuperWinder(rig, "back", backbones, layers, "MhaSpineControl", "MhaSpineIk", master="master")
         else:
             addWinder(rig, "back", backbones, layers, "MhaSpineControl")
+        setMhx(rig, "MhaNeckControl", True)
         neckbones = self.getExistingBones(rig, MHX.NeckBones)
-        addWinder(rig, "neckhead", neckbones, layers, "MhaSpineControl")
+        addWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl")
 
 
     def getShaftBones(self, rig):
