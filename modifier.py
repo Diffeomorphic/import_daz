@@ -474,22 +474,22 @@ class SkinBinding(Modifier):
                 weights = joint["node_weights"]
             elif "local_weights" in joint.keys():
                 LS.triax[ob.name] = ob
-                if bname in rig.data.bones.keys():
-                    lweights = self.calcLocalWeights(bname, joint, rig)
-                    weights = {"values": lweights}
+                if GS.useTriaxWeights:
+                    for comp in ["x", "y", "z"]:
+                        lweights = joint["local_weights"].get(comp)
+                        if lweights:
+                            buildVertexGroup(ob, "%s:%s" % (vgname,comp), lweights["values"])
                 else:
-                    print("Local weights missing bone:", bname)
+                    if bname in rig.data.bones.keys():
+                        lweights = self.calcLocalWeights(bname, joint, rig)
+                        weights = {"values": lweights}
+                    else:
+                        print("Local weights missing bone:", bname)
             elif "scale_weights" in joint.keys():
                 weights = joint["scale_weights"]
             else:
                 reportError("No weights for %s in %s" % (bname, ob.name), trigger=(3,5))
                 continue
-            if GS.useTriaxWeights:
-                if "local_weights" in joint.keys():
-                    for comp in ["x", "y", "z"]:
-                        lweights = joint["local_weights"].get(comp)
-                        if lweights:
-                            buildVertexGroup(ob, "%s:%s" % (vgname,comp), lweights["values"])
             if GS.useBulgeWeights:
                 if "bulge_weights" in joint.keys():
                     for comp in ["x", "y", "z"]:
@@ -511,7 +511,7 @@ class SkinBinding(Modifier):
 
 
             removes = self.Removes.get(rig.DazRig, [])
-            if bname not in removes:
+            if bname not in removes and weights:
                 buildVertexGroup(ob, vgname, weights["values"])
                 if bname in rig.data.bones.keys() and len(weights["values"]) > 0:
                     rig.data.bones[bname].use_deform = True
@@ -576,7 +576,14 @@ class SkinBinding(Modifier):
             target.append(b)
 
 
-    TwistBones = ["lShldr", "lForeArm", "lThigh", "rShldr", "rForeArm", "rThigh"]
+    TwistBones = {
+        "lShldr" :  ("yxz", "YXZ"),
+        "lForeArm" : ("yxz", "YZX"),
+        "lThigh" : ("xyz", "YZX"),
+        "rShldr" :  ("yxz", "YXZ"),
+        "rForeArm" : ("yxz", "YZX"),
+        "rThigh" : ("xyz", "YZX")
+    }
 
     def postbuild(self, context, inst):
         if not GS.useTriaxWeights:
@@ -584,39 +591,71 @@ class SkinBinding(Modifier):
         ob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
+
+        def getComp(pb, x):
+            return "%s:%s" % (pb.name, x)
+
         from .mhx import deriveBone, copyRotation
-        for bname in self.TwistBones:
-            pb = rig.pose.bones.get(bname)
-            if pb:
-                n = ord("x")
-                x,y,z = pb.DazAxes
-                #vgrp = ob.vertex_groups["%s:%s" % (pb.name, chr(x+n))]
-                #vgrp.name = "%s.twist" % pb.name
-                mod = ob.modifiers.new(pb.name, 'VERTEX_WEIGHT_MIX')
-                mod.vertex_group_a = "%s:%s" % (pb.name, chr(x+n))
-                mod.vertex_group_b = "%s:%s" % (pb.name, chr(z+n))
+        from .dforce import ModStore
+        stores = []
+        for mod in list(ob.modifiers):
+            stores.append(ModStore(mod))
+            ob.modifiers.remove(mod)
+        ob.show_wire = True
+        for pb in rig.pose.bones:
+            if getComp(pb, "x") not in ob.vertex_groups.keys():
+                continue
+            bends = []
+            for m,n in enumerate(pb.DazAxes):
+                if n == 1:
+                    twist = chr(m+ord("x"))
+                else:
+                    bends.append(chr(m+ord("x")))
+            data = self.TwistBones.get(pb.name)
+            if data:
+                print("BT", data[0], bends, twist)
+                x,y,z = data[0]
+                vgrp = ob.vertex_groups[getComp(pb, x)]
+                twistname = "%s.twist" % pb.name
+                vgrp.name = twistname
+                vgrp = ob.vertex_groups[getComp(pb, y)]
+                vgrp.name = pb.name
+                mod = ob.modifiers.new(twistname, 'VERTEX_WEIGHT_MIX')
+                mod.vertex_group_a = twistname
+                mod.vertex_group_b = getComp(pb, z)
                 mod.mix_set = 'OR'
                 mod.mix_mode = 'AVG'
                 mod.normalize = True
-                mod = ob.modifiers.new("%s.twist" % pb.name, 'VERTEX_WEIGHT_MIX')
+                mod = ob.modifiers.new(pb.name, 'VERTEX_WEIGHT_MIX')
                 mod.vertex_group_a = pb.name
-                mod.vertex_group_b = "%s:%s" % (pb.name, chr(y+n))
+                mod.vertex_group_b = twistname
                 mod.mix_set = 'OR'
                 mod.mix_mode = 'MUL'
                 mod.normalize = True
             else:
-                return
+                x,z = bends
+                vgrp = ob.vertex_groups[getComp(pb, x)]
+                vgrp.name = pb.name
+                mod = ob.modifiers.new(pb.name, 'VERTEX_WEIGHT_MIX')
+                mod.vertex_group_a = pb.name
+                mod.vertex_group_b = getComp(pb, z)
+                mod.mix_set = 'OR'
+                mod.mix_mode = 'AVG'
+                mod.normalize = True
+        for store in stores:
+            store.restore(ob)
+
         if activateObject(context, rig):
             setMode('EDIT')
-            for bname in self.TwistBones:
+            for bname in self.TwistBones.keys():
                 eb = rig.data.edit_bones[bname]
                 twist = deriveBone("%s.twist" % bname, eb, rig, 31, eb.parent)
             setMode('OBJECT')
-            for bname in self.TwistBones:
+            for bname,data in self.TwistBones.items():
                 pb = rig.pose.bones[bname]
                 twist = rig.pose.bones["%s.twist" % bname]
                 cns = copyRotation(twist, pb, rig, space='LOCAL')
-                cns.euler_order = pb.rotation_mode
+                cns.euler_order = data[1]
                 cns.use_y = False
 
 
