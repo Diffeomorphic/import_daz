@@ -538,10 +538,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Import All Hair Versions",
         description = "Import hair guides even if the corresponding PS hairs have also been generated.\nOnly for DBZ mesh fitting")
 
-    useSmoothTriax : BoolProperty(
-        name = "Smooth Triax Weights",
-        description = "Smooth imported triax weights to avoid artefacts")
-
     useHighDef : BoolProperty(
         name = "Build HD Meshes",
         description = "Build HD meshes if included in .dbz file")
@@ -691,7 +687,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Meshes")
         box.prop(scn, "shellMethod")
-        box.prop(scn, "useSmoothTriax")
+        box.prop(scn, "useTriaxWeights")
         box.prop(scn, "useBulgeWeights")
         box.prop(scn, "useHighDef")
         box.prop(scn, "useKeepBaseMesh")
@@ -729,7 +725,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Debugging")
         box.prop(scn, "zup")
         box.prop(scn, "unflipped")
-        box.prop(scn, "useTriaxWeights")
         box.prop(scn, "useDump")
         box.prop(scn, "usePruneNodes")
 

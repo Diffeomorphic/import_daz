@@ -577,12 +577,12 @@ class SkinBinding(Modifier):
 
 
     TwistBones = {
-        "lShldr" :  ("yxz", "YXZ"),
-        "lForeArm" : ("yxz", "YZX"),
-        "lThigh" : ("xyz", "YZX"),
-        "rShldr" :  ("yxz", "YXZ"),
-        "rForeArm" : ("yxz", "YZX"),
-        "rThigh" : ("xyz", "YZX")
+        "lShldr" :  ("yxz", "YXZ", "lShldr.twist"),
+        "lForeArm" : ("yxz", "YZX", "lHand:x"),
+        "lThigh" : ("xyz", "YZX", "lThigh.twist"),
+        "rShldr" :  ("yxz", "YXZ", "rShldr.twist"),
+        "rForeArm" : ("yxz", "YZX", "rHand:x"),
+        "rThigh" : ("xyz", "YZX", "rThigh.twist")
     }
 
     def postbuild(self, context, inst):
@@ -602,9 +602,12 @@ class SkinBinding(Modifier):
             stores.append(ModStore(mod))
             ob.modifiers.remove(mod)
         ob.show_wire = True
+        if not activateObject(context, ob):
+            return
         for pb in rig.pose.bones:
             if getComp(pb, "x") not in ob.vertex_groups.keys():
                 continue
+            pb.bone.use_deform = True
             bends = []
             for m,n in enumerate(pb.DazAxes):
                 if n == 1:
@@ -613,8 +616,8 @@ class SkinBinding(Modifier):
                     bends.append(chr(m+ord("x")))
             data = self.TwistBones.get(pb.name)
             if data:
-                print("BT", data[0], bends, twist)
-                x,y,z = data[0]
+                x,z = bends
+                y = twist
                 vgrp = ob.vertex_groups[getComp(pb, x)]
                 twistname = "%s.twist" % pb.name
                 vgrp.name = twistname
@@ -628,7 +631,7 @@ class SkinBinding(Modifier):
                 mod.normalize = True
                 mod = ob.modifiers.new(pb.name, 'VERTEX_WEIGHT_MIX')
                 mod.vertex_group_a = pb.name
-                mod.vertex_group_b = twistname
+                mod.vertex_group_b = data[2]
                 mod.mix_set = 'OR'
                 mod.mix_mode = 'MUL'
                 mod.normalize = True
@@ -642,10 +645,19 @@ class SkinBinding(Modifier):
                 mod.mix_set = 'OR'
                 mod.mix_mode = 'AVG'
                 mod.normalize = True
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+
         for store in stores:
             store.restore(ob)
 
+        if True:
+            print("Smooth triax weights: %s" % ob.name)
+            setMode('WEIGHT_PAINT')
+            bpy.ops.object.vertex_group_smooth(group_select_mode='BONE_DEFORM', factor=0.5, repeat=4, expand=0.0)
+            setMode('OBJECT')
+
         if activateObject(context, rig):
+            print("Add triax twist bones: %s" % rig.name)
             setMode('EDIT')
             for bname in self.TwistBones.keys():
                 eb = rig.data.edit_bones[bname]
@@ -654,6 +666,7 @@ class SkinBinding(Modifier):
             for bname,data in self.TwistBones.items():
                 pb = rig.pose.bones[bname]
                 twist = rig.pose.bones["%s.twist" % bname]
+                twist.bone.use_deform = True
                 cns = copyRotation(twist, pb, rig, space='LOCAL')
                 cns.euler_order = data[1]
                 cns.use_y = False
