@@ -576,6 +576,52 @@ class SkinBinding(Modifier):
             target.append(b)
 
 
+    TwistBones = ["lShldr", "lForeArm", "lThigh", "rShldr", "rForeArm", "rThigh"]
+
+    def postbuild(self, context, inst):
+        if not GS.useTriaxWeights:
+            return
+        ob,rig,geonode = self.getGeoRig(context, inst)
+        if ob is None or rig is None or ob.type != 'MESH':
+            return
+        from .mhx import deriveBone, copyRotation
+        for bname in self.TwistBones:
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                n = ord("x")
+                x,y,z = pb.DazAxes
+                #vgrp = ob.vertex_groups["%s:%s" % (pb.name, chr(x+n))]
+                #vgrp.name = "%s.twist" % pb.name
+                mod = ob.modifiers.new(pb.name, 'VERTEX_WEIGHT_MIX')
+                mod.vertex_group_a = "%s:%s" % (pb.name, chr(x+n))
+                mod.vertex_group_b = "%s:%s" % (pb.name, chr(z+n))
+                mod.mix_set = 'OR'
+                mod.mix_mode = 'AVG'
+                mod.normalize = True
+                mod = ob.modifiers.new("%s.twist" % pb.name, 'VERTEX_WEIGHT_MIX')
+                mod.vertex_group_a = pb.name
+                mod.vertex_group_b = "%s:%s" % (pb.name, chr(y+n))
+                mod.mix_set = 'OR'
+                mod.mix_mode = 'MUL'
+                mod.normalize = True
+            else:
+                return
+        if activateObject(context, rig):
+            setMode('EDIT')
+            for bname in self.TwistBones:
+                eb = rig.data.edit_bones[bname]
+                twist = deriveBone("%s.twist" % bname, eb, rig, 31, eb.parent)
+            setMode('OBJECT')
+            for bname in self.TwistBones:
+                pb = rig.pose.bones[bname]
+                twist = rig.pose.bones["%s.twist" % bname]
+                cns = copyRotation(twist, pb, rig, space='LOCAL')
+                cns.euler_order = pb.rotation_mode
+                cns.use_y = False
+
+
+
+
 def buildVertexGroup(ob, vgname, weights, default=None):
     if weights:
         if vgname in ob.vertex_groups.keys():
