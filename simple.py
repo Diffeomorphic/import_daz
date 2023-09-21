@@ -620,19 +620,27 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if self.useArms:
                     self.setCustomShape(handIK, "CS_HandIk")
                     IK.limitBone(shldrBend, False, False, rig, armProp)
+                    if not self.usePoleTargets:
+                        addToLayer(shldrBend, "IK Arm")
                     IK.limitBone(foreBend, False, False, rig, armProp)
                 if self.useLegs:
                     self.setCustomShape(footIK, "CS_FootIk")
                     IK.limitBone(thighBend, False, False, rig, legProp)
+                    if not self.usePoleTargets:
+                        addToLayer(thighBend, "IK Leg")
                     IK.limitBone(shin, False, False, rig, legProp)
             elif self.genesis == "G12":
                 if self.useArms:
-                    self.setCustomShape(handIK, "CS_HandIk")
+                    self.setCustomShape(handIK, "CS_HandIk", 2)
                     IK.limitBone(shldrBend, False, False, rig, armProp)
+                    if not self.usePoleTargets:
+                        addToLayer(shldrBend, "IK Arm")
                     IK.limitBone(foreBend, False, False, rig, armProp)
                 if self.useLegs:
                     self.setCustomShape(footIK, "CS_FootIk")
                     IK.limitBone(thighBend, False, False, rig, legProp)
+                    if not self.usePoleTargets:
+                        addToLayer(thighBend, "IK Leg")
                     IK.limitBone(shin, False, False, rig, legProp)
 
             if self.useLegs and self.useReverseFoot:
@@ -709,9 +717,19 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     ikConstraint(foreTwist, handIK, elbow, -90, 4, rig, prop=armProp)
                 if self.useLegs:
                     ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp)
+            elif self.genesis == "G12":
+                if self.useArms:
+                    ikConstraint(foreBend, handIK, elbow, -90, 2, rig, prop=armProp)
+                    foreTwist = rpbs.get("%s.twist" % foreBend.name)
+                    if self.useCopyRotation and foreTwist:
+                        cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL')
+                        cns.euler_order = foreTwist.rotation_mode
+                        cns.use_x = cns.use_z = False
+                if self.useLegs:
+                    ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
             else:
                 if self.useArms:
-                    ikConstraint(foreTwist, handIK, elbow, -90, 2, rig, prop=armProp)
+                    ikConstraint(foreBend, handIK, elbow, -90, 2, rig, prop=armProp)
                 if self.useLegs:
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
 

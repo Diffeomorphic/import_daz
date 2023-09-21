@@ -128,9 +128,10 @@ class GlobalSettings:
         self.useInstancing = True
         self.useHairGuides = False
         self.useHighDef = True
-        self.useTriaxWeights = True
+        self.useTriaxImprove = True
         self.useBulgeWeights = True
-        self.useTriaxDebug = False
+        self.keepTriaxWeights = False
+        self.useTriaxApply = True
         self.keepBaseMesh = False
         self.useMultires = True
         self.useMultiUvLayers = True

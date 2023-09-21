@@ -497,17 +497,21 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Unflipped Bones",
         description = "Don't flip bone axes.\nEnable for debugging only")
 
-    useTriaxWeights : BoolProperty(
-        name = "Triax Weights",
-        description = "Add extra vertex groups for all components of triax weights")
+    useTriaxImprove : BoolProperty(
+        name = "Improve Triax Weights",
+        description = "Improve vertex groups for triax weights (Genesis/Genesis 2 only)")
 
     useBulgeWeights : BoolProperty(
         name = "Bulge Weights",
         description = "Add vertex groups for triax bulge weights")
 
-    useTriaxDebug : BoolProperty(
-        name = "Triax Debug",
+    keepTriaxWeights : BoolProperty(
+        name = "Keep Triax Weights",
         description = "Keep triax local weights")
+
+    useTriaxApply : BoolProperty(
+        name = "Triax Apply",
+        description = "Apply triax vertex weight modifiers")
 
     useArmature : BoolProperty(
         name = "Armature",
@@ -691,7 +695,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Meshes")
         box.prop(scn, "shellMethod")
-        box.prop(scn, "useTriaxWeights")
+        box.prop(scn, "useTriaxImprove")
         box.prop(scn, "useBulgeWeights")
         box.prop(scn, "useHighDef")
         box.prop(scn, "useKeepBaseMesh")
@@ -731,7 +735,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(scn, "unflipped")
         box.prop(scn, "useDump")
         box.prop(scn, "usePruneNodes")
-        box.prop(scn, "useTriaxDebug")
+        box.prop(scn, "keepTriaxWeights")
+        box.prop(scn, "useTriaxApply")
 
         col = split.column()
         box = col.box()
