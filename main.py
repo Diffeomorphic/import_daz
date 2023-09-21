@@ -581,7 +581,6 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
                         channel["type"] = "string"
                     else:
                         print("UV '%s'" % value)
-                        halt
             elif type == "image":
                 channel["image"] = value
             elif type == "image_file":

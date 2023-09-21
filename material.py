@@ -608,8 +608,9 @@ class Material(Asset, Channels):
                 return [],[]
             else:
                 asset = self.getAsset(channel["image"])
-                maps = asset.maps
-                if maps is None:
+                if asset and asset.maps:
+                    maps = asset.maps
+                else:
                     maps = []
         elif "image_file" in channel.keys():
             map = Map({}, False)
@@ -618,15 +619,7 @@ class Material(Asset, Channels):
         elif "map" in channel.keys():
             maps = Maps(self.fileref)
             maps.parse(channel["map"])
-            halt
-        elif "literal_maps" in channel.keys():
-            maps = []
-            for struct in channel["literal_maps"]["map"]:
-                if "mask" in struct.keys():
-                    mask = Map(struct["mask"], True)
-                    maps.append(mask)
-                map = Map(struct, False)
-                maps.append(map)
+            raise DazError("Map in channel.keys: %s" % channel["map"])
         else:
             return [],[]
 
