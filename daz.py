@@ -505,6 +505,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Bulge Weights",
         description = "Add vertex groups for triax bulge weights")
 
+    useTriaxDebug : BoolProperty(
+        name = "Triax Debug",
+        description = "Keep triax local weights")
+
     useArmature : BoolProperty(
         name = "Armature",
         description = "Create armatures for imported figures")
@@ -727,6 +731,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(scn, "unflipped")
         box.prop(scn, "useDump")
         box.prop(scn, "usePruneNodes")
+        box.prop(scn, "useTriaxDebug")
 
         col = split.column()
         box = col.box()

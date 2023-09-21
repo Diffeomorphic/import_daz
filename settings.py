@@ -130,6 +130,7 @@ class GlobalSettings:
         self.useHighDef = True
         self.useTriaxWeights = True
         self.useBulgeWeights = True
+        self.useTriaxDebug = False
         self.keepBaseMesh = False
         self.useMultires = True
         self.useMultiUvLayers = True
