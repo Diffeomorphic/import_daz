@@ -2164,6 +2164,8 @@ def findTextureNode(tex):
         return None
     elif tex.type == "TEX_IMAGE":
         return tex
+    elif tex.type == "GROUP" and tex.name.startswith("LIE"):
+        return tex
     for inp in tex.inputs:
         if inp.type == "RGBA":
             for link in inp.links:

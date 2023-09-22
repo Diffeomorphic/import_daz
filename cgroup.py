@@ -1873,6 +1873,8 @@ class LayeredGroup(CyclesGroup):
             self.links.new(gamma.outputs[0], self.outputs.inputs["Color"])
         else:
             self.links.new(mixout, self.outputs.inputs["Color"])
+        firstnode.select = True
+        self.nodes.active = firstnode
 
 
     def mixColor(self, map, texnode, outnode):
