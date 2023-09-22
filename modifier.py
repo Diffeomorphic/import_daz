@@ -606,10 +606,8 @@ class SkinBinding(Modifier):
             stores.append(ModStore(mod))
             ob.modifiers.remove(mod)
         zgroups = []
+        twists = {}
         for pb in rig.pose.bones:
-            if getComp(pb, "x") not in ob.vertex_groups.keys():
-                continue
-            pb.bone.use_deform = True
             x = y = z = None
             for m,n in enumerate(pb.DazAxes):
                 if n == 0:
@@ -618,40 +616,49 @@ class SkinBinding(Modifier):
                     y = chr(m+ord("x"))
                 else:
                     z = chr(m+ord("x"))
-            if x is None or y is None or z is None:
-                print("Missing local weights: %s" % pb.name)
+            vgrp1 = ob.vertex_groups.get(getComp(pb, x))
+            vgrp2 = ob.vertex_groups.get(getComp(pb, y))
+            vgrp3 = ob.vertex_groups.get(getComp(pb, z))
+            if vgrp1 or vgrp2 or vgrp3:
+                pb.bone.use_deform = True
+            else:
                 continue
             data = self.TwistBones.get(pb.name)
             if data:
-                vgrp = ob.vertex_groups[getComp(pb, x)]
-                twistname = "%s.twist" % pb.name
-                vgrp.name = twistname
-                vgrp = ob.vertex_groups[getComp(pb, y)]
-                vgrp.name = pb.name
-                mod = ob.modifiers.new(twistname, 'VERTEX_WEIGHT_MIX')
-                mod.vertex_group_a = twistname
-                mod.vertex_group_b = getComp(pb, z)
-                mod.mix_set = 'OR'
-                mod.mix_mode = 'AVG'
-                mod.normalize = True
-                zgroups.append(getComp(pb, z))
-                if GS.useTriaxApply:
-                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                if (vgrp1 or vgrp3) and vgrp2:
+                    twists[pb.name] = True
+                    twistname = "%s.twist" % pb.name
+                    if vgrp1:
+                        vgrp1.name = twistname
+                    else:
+                        vgrp3.name = twistname
+                    vgrp2.name = pb.name
+                elif vgrp1:
+                    vgrp1.name = pb.name
+                elif vgrp3:
+                    vgrp3.name = pb.name
+                elif vgrp2:
+                    vgrp2.name = pb.name
             else:
-                vgrp = ob.vertex_groups[getComp(pb, x)]
-                vgrp.name = pb.name
-                mod = ob.modifiers.new(pb.name, 'VERTEX_WEIGHT_MIX')
-                mod.vertex_group_a = pb.name
-                mod.vertex_group_b = getComp(pb, z)
+                if vgrp1:
+                    vgrp1.name = pb.name
+                elif vgrp3:
+                    vgrp3.name = pb.name
+                if vgrp2:
+                    zgroups.append(vgrp2.name)
+            if vgrp1 and vgrp3:
+                mod = ob.modifiers.new(vgrp1.name, 'VERTEX_WEIGHT_MIX')
+                mod.vertex_group_a = vgrp1.name
+                mod.vertex_group_b = vgrp3.name
                 mod.mix_set = 'OR'
                 mod.mix_mode = 'AVG'
                 mod.normalize = True
-                zgroups.append(getComp(pb, y))
-                zgroups.append(getComp(pb, z))
                 if GS.useTriaxApply:
+                    zgroups.append(vgrp3.name)
                     bpy.ops.object.modifier_apply(modifier=mod.name)
 
-        for bname,data in self.TwistBones.items():
+        for bname in twists.keys():
+            data = self.TwistBones[bname]
             mod = ob.modifiers.new(bname, 'VERTEX_WEIGHT_MIX')
             mod.vertex_group_a = bname
             mod.vertex_group_b = "%s.twist" % bname
@@ -662,6 +669,8 @@ class SkinBinding(Modifier):
                 bpy.ops.object.modifier_apply(modifier=mod.name)
 
         for bname,hname in [("lForeArm", "lHand"), ("rForeArm", "rHand")]:
+            if not twists.get(bname):
+                continue
             mod = ob.modifiers.new(bname, 'VERTEX_WEIGHT_MIX')
             mod.vertex_group_a = bname
             mod.vertex_group_b = "%s:x" % hname
@@ -673,11 +682,11 @@ class SkinBinding(Modifier):
 
         for store in stores:
             store.restore(ob)
-        for zname in zgroups:
-            vgrp = ob.vertex_groups.get(zname)
-            if vgrp:
-                ob.vertex_groups.remove(vgrp)
         if GS.useTriaxApply:
+            for vgname in zgroups:
+                vgrp = ob.vertex_groups.get(vgname)
+                if vgrp:
+                    ob.vertex_groups.remove(vgrp)
             print("Smooth triax weights: %s" % ob.name)
             setMode('WEIGHT_PAINT')
             bpy.ops.object.vertex_group_smooth(group_select_mode='BONE_DEFORM', factor=0.5, repeat=4, expand=0.0)
@@ -686,11 +695,12 @@ class SkinBinding(Modifier):
         if activateObject(context, rig):
             print("Add triax twist bones: %s" % rig.name)
             setMode('EDIT')
-            for bname in self.TwistBones.keys():
+            for bname in twists.keys():
                 eb = rig.data.edit_bones[bname]
                 twist = deriveBone("%s.twist" % bname, eb, rig, 31, eb.parent)
             setMode('OBJECT')
-            for bname,data in self.TwistBones.items():
+            for bname in twists.keys():
+                data = self.TwistBones[bname]
                 pb = rig.pose.bones[bname]
                 twist = rig.pose.bones["%s.twist" % bname]
                 twist.bone.use_deform = True
