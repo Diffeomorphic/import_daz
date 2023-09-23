@@ -10,6 +10,7 @@ op.useFacsdetails = False
 op.useFacsexpr = False
 op.useBody = False
 op.useJcms = False
+op.useBulges = False
 op.useFlexions = False
 
 op.useEliminateEmpties = True

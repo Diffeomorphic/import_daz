@@ -843,6 +843,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         if mainRig and activateObject(context, mainRig):
             # Merge rigs
+            # Rigs must be merged before finding face meshes
             for rig in rigs[1:]:
                 selectSet(rig, True)
             if self.useMergeRigs and len(rigs) > 1:
@@ -860,7 +861,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
 
-        # Rigs must be merged before finding face meshes
+        def isHair(ob):
+            for key in ["hair", "ponytail", "pigtail", "braid"]:
+                if key in ob.name.lower():
+                    return True
+            return ob.name in ["ToulouseHR"]
+
         geografts = {}
         hairs = []
         lashes = []
@@ -882,7 +888,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         clothes.append(ob)
                 elif ob in lmeshes:
                     lashes.append(ob)
-                elif "hair" in ob.name.lower():
+                elif isHair(ob):
                     hairs.append(ob)
                 else:
                     clothes.append(ob)

@@ -1008,11 +1008,18 @@ class DAZ_OT_CreateBulges(DazOperator, Selector, IsMesh):
     bl_description = "Create bulge morphs.\nOnly for Genesis and Genesis 2 character"
     bl_options = {'UNDO'}
 
+    useDeleteOthers : BoolProperty(
+        name = "Delete Other Bulges",
+        description = "Also delete bulge vertex groups for clothes",
+        default = True)
+
     @classmethod
     def poll(self, context):
         ob = context.object
         return (ob and ob.type == 'MESH' and len(ob.data.DazBulges) > 0)
 
+    def drawExtra(self, context):
+        self.layout.prop(self, "useDeleteOthers")
 
     def invoke(self, context, event):
         ob = context.object
@@ -1028,19 +1035,24 @@ class DAZ_OT_CreateBulges(DazOperator, Selector, IsMesh):
                     item.select = True
         return self.invokeDialog(context)
 
-
     def run(self, context):
         ob = context.object
         rig = ob.parent
         if not rig:
             raise DazError("No armature found")
-        createBulges(ob, rig, self.selection)
+        createBulges(ob, rig, self.selection, self.useDeleteOthers)
 
 
-def createBulges(ob, rig, selection):
+def createBulges(ob, rig, selection, useDeleteOthers):
     from .driver import removeModifiers, addTransformVar
+    from .dforce import ModStore
+    stores = []
+    for mod in list(ob.modifiers):
+        stores.append(ModStore(mod))
+        ob.modifiers.remove(mod)
     if ob.data.shape_keys is None:
         ob.shape_key_add(name="Basic")
+
     bulges = []
     vgrps = list(ob.vertex_groups)
     vgrps.reverse()
@@ -1064,6 +1076,7 @@ def createBulges(ob, rig, selection):
             skey.slider_max = 5
             bulges.append((vgrp.name, skey))
             ob.vertex_groups.remove(vgrp)
+
     factor = 0.2/math.pi
     rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
     for vgname,skey in bulges:
@@ -1093,7 +1106,17 @@ def createBulges(ob, rig, selection):
         fcu.driver.expression = "%.4f*x if x > 0 else %.4f*x" % (pos, neg)
         addTransformVar(fcu, "x", rottypes[idx], rig, bname)
         removeModifiers(fcu)
+
     ob.data.DazBulges.clear()
+    for store in stores:
+        store.restore(ob)
+    if useDeleteOthers:
+        for clo in getMeshChildren(rig):
+            if clo != ob:
+                for vgrp in list(clo.vertex_groups):
+                    words = vgrp.name.rsplit(":",1)
+                    if len(words) == 2 and words[-1].startswith(("left_", "right_")):
+                        clo.vertex_groups.remove(vgrp)
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1288,7 +1311,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         mesh = self.meshes[0]
         if self.rig and mesh and len(mesh.data.DazBulges) > 0:
             if activateObject(context, mesh):
-                createBulges(mesh, self.rig, None)
+                createBulges(mesh, self.rig, None, True)
 
 #------------------------------------------------------------------------
 #   Custom Morph Loader

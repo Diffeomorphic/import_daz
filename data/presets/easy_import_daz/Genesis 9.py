@@ -12,6 +12,7 @@ op.useFacsexpr = True
 op.useBody = False
 op.useJcms = True
 op.useFlexions = True
+op.useBulges = False
 op.bodyMaterial = "Body"
 
 op.useEliminateEmpties = True

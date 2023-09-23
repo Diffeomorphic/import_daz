@@ -11,6 +11,7 @@ op.useFacsexpr = False
 op.useBody = False
 op.useJcms = False
 op.useFlexions = False
+op.useBulges = True
 op.bodyMaterial = "Torso"
 
 op.useEliminateEmpties = True

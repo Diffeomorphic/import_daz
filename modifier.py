@@ -580,10 +580,10 @@ class SkinBinding(Modifier):
 
     TwistBones = {
         "lShldr" :  ("yxz", "YXZ", 'MUL'),
-        "lForeArm" : ("yxz", "YZX", 'AVG'),
+        "lForeArm" : ("yxz", "YZX", 'SET'),
         "lThigh" : ("xyz", "YZX", 'MUL'),
         "rShldr" :  ("yxz", "YXZ", 'MUL'),
-        "rForeArm" : ("yxz", "YZX", 'AVG'),
+        "rForeArm" : ("yxz", "YZX", 'SET'),
         "rThigh" : ("xyz", "YZX", 'MUL')
     }
 
@@ -594,8 +594,8 @@ class SkinBinding(Modifier):
         if ob is None or rig is None or ob.type != 'MESH':
             return
 
-        def getComp(pb, x):
-            return "%s:%s" % (pb.name, x)
+        def getTriaxGroup(pb, m):
+            return ob.vertex_groups.get("%s:%s" % (pb.name, chr(m+ord("x"))))
 
         from .mhx import deriveBone, copyRotation
         from .dforce import ModStore
@@ -608,17 +608,14 @@ class SkinBinding(Modifier):
         zgroups = []
         twists = {}
         for pb in rig.pose.bones:
-            x = y = z = None
+            vgrp1 = vgrp2 = vgrp3 = None
             for m,n in enumerate(pb.DazAxes):
                 if n == 0:
-                    x = chr(m+ord("x"))
+                    vgrp1 = getTriaxGroup(pb, m)
                 elif n == 1:
-                    y = chr(m+ord("x"))
+                    vgrp2 = getTriaxGroup(pb, m)
                 else:
-                    z = chr(m+ord("x"))
-            vgrp1 = ob.vertex_groups.get(getComp(pb, x))
-            vgrp2 = ob.vertex_groups.get(getComp(pb, y))
-            vgrp3 = ob.vertex_groups.get(getComp(pb, z))
+                    vgrp3 = getTriaxGroup(pb, m)
             if vgrp1 or vgrp2 or vgrp3:
                 pb.bone.use_deform = True
             else:
@@ -652,7 +649,7 @@ class SkinBinding(Modifier):
                 mod.vertex_group_b = vgrp3.name
                 mod.mix_set = 'OR'
                 mod.mix_mode = 'AVG'
-                mod.normalize = True
+                mod.normalize = False
                 if GS.useTriaxApply:
                     zgroups.append(vgrp3.name)
                     bpy.ops.object.modifier_apply(modifier=mod.name)
@@ -664,7 +661,7 @@ class SkinBinding(Modifier):
             mod.vertex_group_b = "%s.twist" % bname
             mod.mix_set = 'OR'
             mod.mix_mode = data[2]
-            mod.normalize = True
+            mod.normalize = False
             if GS.useTriaxApply:
                 bpy.ops.object.modifier_apply(modifier=mod.name)
 
@@ -676,7 +673,7 @@ class SkinBinding(Modifier):
             mod.vertex_group_b = "%s:x" % hname
             mod.mix_set = 'OR'
             mod.mix_mode = 'MUL'
-            mod.normalize = True
+            mod.normalize = False
             if GS.useTriaxApply:
                 bpy.ops.object.modifier_apply(modifier=mod.name)
 
