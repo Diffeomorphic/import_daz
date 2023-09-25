@@ -1014,8 +1014,8 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 
 class DAZ_OT_SelectBodyBulges(bpy.types.Operator):
     bl_idname = "daz.select_body_bulges"
-    bl_label = "Body Bulges"
-    bl_description = "Select body bulges"
+    bl_label = "Only Body Bulges"
+    bl_description = "Deselect bulges for fingers and toes"
 
     def execute(self, context):
         from .selector import getSelector
@@ -1046,14 +1046,12 @@ class DAZ_OT_CreateBulges(DazOperator, Selector):
         ob = context.object
         self.selection.clear()
         for vgrp in ob.vertex_groups:
-            words = vgrp.name.rsplit(":",1)
-            if len(words) == 2 and words[1].startswith(("left_", "right_")):
-                bname = words[0]
-                if bname not in self.selection.keys():
-                    item = self.selection.add()
-                    item.name = bname
-                    item.text = bname
-                    item.select = True
+            bname = getBulgeBone(vgrp.name)
+            if bname and bname not in self.selection.keys():
+                item = self.selection.add()
+                item.name = bname
+                item.text = bname
+                item.select = True
         return self.invokeDialog(context)
 
 
@@ -1076,7 +1074,13 @@ def isFingerBulge(text):
             return True
 
 
-def createBulges(ob, rig, selection=None, useFingerBulges=True):
+def getBulgeBone(string):
+    words = string.rsplit(":",1)
+    if len(words) == 2 and words[-1].startswith(("left_", "right_")):
+        return words[0]
+
+
+def createBulges(ob, rig, selection=None, onlyBodyBulges=True):
     from .driver import removeModifiers, addTransformVar
     from .dforce import ModStore
     stores = []
@@ -1090,15 +1094,14 @@ def createBulges(ob, rig, selection=None, useFingerBulges=True):
     vgrps = list(ob.vertex_groups)
     vgrps.reverse()
     for vgrp in vgrps:
-        words = vgrp.name.rsplit(":",1)
-        if len(words) == 2 and words[-1].startswith(("left_", "right_")):
-            bname = words[0]
+        bname = getBulgeBone(vgrp.name)
+        if bname:
             if selection:
                 item = selection.get(bname)
                 if item is None or not item.select:
                     ob.vertex_groups.remove(vgrp)
                     continue
-            elif not useFingerBulges and isFingerBulge(vgrp.name):
+            elif onlyBodyBulges and isFingerBulge(vgrp.name):
                 ob.vertex_groups.remove(vgrp)
                 continue
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
@@ -1214,10 +1217,10 @@ class MorphTypeOptions:
         description = "Make all bulges (Genesis and Genesis 2)",
         default = False)
 
-    useFingerBulges : BoolProperty(
-        name = "Include Finger Bulges",
+    onlyBodyBulges : BoolProperty(
+        name = "Body Bulges Only",
         description = "Don't create bulges for fingers and toes",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useUnits")
@@ -1234,7 +1237,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "useFlexions")
         self.layout.prop(self, "useBulges")
         if self.useBulges:
-            self.subprop("useFingerBulges")
+            self.subprop("onlyBodyBulges")
 
 
     def subprop(self, prop):
@@ -1292,7 +1295,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
                 meshes = getMeshChildren(self.rig)
             for mesh in meshes:
                 if len(mesh.data.DazBulges) > 0 and activateObject(context, mesh):
-                    createBulges(mesh, self.rig, useFingerBulges=self.useFingerBulges)
+                    createBulges(mesh, self.rig, onlyBodyBulges=self.onlyBodyBulges)
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()

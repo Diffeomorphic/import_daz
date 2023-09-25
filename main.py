@@ -961,7 +961,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useFlexions = (self.useFlexions and GS.useShapekeys),
                         useBulges = (self.useBulges and GS.useShapekeys),
                         useAdjusters = self.useAdjusters,
-                        useFingerBulges = self.useFingerBulges,
+                        onlyBodyBulges = self.onlyBodyBulges,
                         useTransferFace = False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
@@ -1059,6 +1059,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if not (ob and meshes):
             return
         from .selector import classifyShapekeys
+        from .morphing import getBulgeBone
         skeys = ob.data.shape_keys
         if skeys:
             bodyparts = classifyShapekeys(ob, skeys)
@@ -1068,6 +1069,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 snames = [sname for sname,bpart in bodyparts.items() if bpart != "Face"]
             else:
                 snames = [sname for sname,bpart in bodyparts.items() if bpart != bodypart]
+            snames = [sname for sname in snames if not getBulgeBone(sname)]
             if not snames:
                 return
             activateObject(context, ob)
