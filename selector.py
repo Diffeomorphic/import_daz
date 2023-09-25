@@ -66,16 +66,6 @@ class DAZ_OT_SelectNone(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
 
-class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
-    bl_idname = "daz.select_mhx_compatible"
-    bl_label = "MHX Compatible"
-    bl_description = "Select MHX compatible body morphs"
-
-    def execute(self, context):
-        getSelector().selectMhxCompatible(context)
-        return {'PASS_THROUGH'}
-
-
 class DazSelectGroup(bpy.types.PropertyGroup):
     text : StringProperty()
     category : StringProperty()
@@ -805,7 +795,6 @@ classes = [
 
     DAZ_OT_SelectAll,
     DAZ_OT_SelectNone,
-    DAZ_OT_SelectMhxCompatible,
 
     DAZ_OT_ActivateAll,
     DAZ_OT_ActivateProtected,

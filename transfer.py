@@ -355,6 +355,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
                 if self.useOverwrite:
                     cskey = cskeys.key_blocks[sname]
                     trg.shape_key_remove(cskey)
+                else:
+                    printName(" X", sname)
+                    continue
 
             cskey = None
             filepath = None

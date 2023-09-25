@@ -929,6 +929,17 @@ class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardM
     bodypart = "Face"
 
 
+class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
+    bl_idname = "daz.select_mhx_compatible"
+    bl_label = "MHX Compatible"
+    bl_description = "Select MHX compatible body morphs"
+
+    def execute(self, context):
+        from .selector import getSelector
+        getSelector().selectMhxCompatible(context)
+        return {'PASS_THROUGH'}
+
+
 class DAZ_OT_ImportBodyMorphs(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_body_morphs"
     bl_label = "Import Body Morphs"
@@ -943,7 +954,6 @@ class DAZ_OT_ImportBodyMorphs(DazOperator, StandardMorphSelector, StandardMorphL
         row.operator("daz.select_all")
         row.operator("daz.select_mhx_compatible")
         row.operator("daz.select_none")
-
 
     def selectMhxCompatible(self, context):
         safe,unsafe = getMhxSafe(self.rig)
@@ -1002,24 +1012,35 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 #   Import all standard morphs in one bunch, for performance
 #------------------------------------------------------------------------
 
-class DAZ_OT_CreateBulges(DazOperator, Selector, IsMesh):
+class DAZ_OT_SelectBodyBulges(bpy.types.Operator):
+    bl_idname = "daz.select_body_bulges"
+    bl_label = "Body Bulges"
+    bl_description = "Select body bulges"
+
+    def execute(self, context):
+        from .selector import getSelector
+        getSelector().selectBodyBulges(context)
+        return {'PASS_THROUGH'}
+
+
+class DAZ_OT_CreateBulges(DazOperator, Selector):
     bl_idname = "daz.create_bulges"
     bl_label = "Create Bulges"
     bl_description = "Create bulge morphs.\nOnly for Genesis and Genesis 2 character"
     bl_options = {'UNDO'}
-
-    useDeleteOthers : BoolProperty(
-        name = "Delete Other Bulges",
-        description = "Also delete bulge vertex groups for clothes",
-        default = True)
 
     @classmethod
     def poll(self, context):
         ob = context.object
         return (ob and ob.type == 'MESH' and len(ob.data.DazBulges) > 0)
 
-    def drawExtra(self, context):
-        self.layout.prop(self, "useDeleteOthers")
+
+    def drawSelectionRow(self):
+        row = self.layout.row()
+        row.operator("daz.select_all")
+        row.operator("daz.select_body_bulges")
+        row.operator("daz.select_none")
+
 
     def invoke(self, context, event):
         ob = context.object
@@ -1035,15 +1056,27 @@ class DAZ_OT_CreateBulges(DazOperator, Selector, IsMesh):
                     item.select = True
         return self.invokeDialog(context)
 
+
     def run(self, context):
         ob = context.object
         rig = ob.parent
         if not rig:
             raise DazError("No armature found")
-        createBulges(ob, rig, self.selection, self.useDeleteOthers)
+        createBulges(ob, rig, self.selection)
 
 
-def createBulges(ob, rig, selection, useDeleteOthers):
+    def selectBodyBulges(self, context):
+        for item in self.selection:
+            item.select = (not isFingerBulge(item.text))
+
+
+def isFingerBulge(text):
+    for string in ["Thumb", "Index", "Ring", "Mid", "Pinky", "Toe"]:
+        if string in text:
+            return True
+
+
+def createBulges(ob, rig, selection=None, useFingerBulges=True):
     from .driver import removeModifiers, addTransformVar
     from .dforce import ModStore
     stores = []
@@ -1065,6 +1098,9 @@ def createBulges(ob, rig, selection, useDeleteOthers):
                 if item is None or not item.select:
                     ob.vertex_groups.remove(vgrp)
                     continue
+            elif not useFingerBulges and isFingerBulge(vgrp.name):
+                ob.vertex_groups.remove(vgrp)
+                continue
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
             mod.strength = -2*ob.DazScale
             mod.mid_level = 0
@@ -1110,13 +1146,6 @@ def createBulges(ob, rig, selection, useDeleteOthers):
     ob.data.DazBulges.clear()
     for store in stores:
         store.restore(ob)
-    if useDeleteOthers:
-        for clo in getMeshChildren(rig):
-            if clo != ob:
-                for vgrp in list(clo.vertex_groups):
-                    words = vgrp.name.rsplit(":",1)
-                    if len(words) == 2 and words[-1].startswith(("left_", "right_")):
-                        clo.vertex_groups.remove(vgrp)
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1185,6 +1214,11 @@ class MorphTypeOptions:
         description = "Make all bulges (Genesis and Genesis 2)",
         default = False)
 
+    useFingerBulges : BoolProperty(
+        name = "Include Finger Bulges",
+        description = "Don't create bulges for fingers and toes",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useUnits")
         self.layout.prop(self, "useExpressions")
@@ -1199,6 +1233,8 @@ class MorphTypeOptions:
         self.layout.prop(self, "useJcms")
         self.layout.prop(self, "useFlexions")
         self.layout.prop(self, "useBulges")
+        if self.useBulges:
+            self.subprop("useFingerBulges")
 
 
     def subprop(self, prop):
@@ -1228,6 +1264,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
+        ob = context.object
         if not self.setupCharacter(context):
             return
         MP.setupMorphPaths(False)
@@ -1249,7 +1286,13 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useJcms, "Jcms", "Body")
         self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useBulges:
-            self.createBulges(context)
+            if ob.type == 'MESH':
+                meshes = [ob]
+            elif self.rig:
+                meshes = getMeshChildren(self.rig)
+            for mesh in meshes:
+                if len(mesh.data.DazBulges) > 0 and activateObject(context, mesh):
+                    createBulges(mesh, self.rig, useFingerBulges=self.useFingerBulges)
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
@@ -1305,13 +1348,6 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
     def addToMorphSet(self, prop, asset, hidden, protected):
         self.hideable = (self.morphset in ["Jcms", "Flexions"])
         StandardMorphLoader.addToMorphSet(self, prop, asset, hidden, protected)
-
-
-    def createBulges(self, context):
-        mesh = self.meshes[0]
-        if self.rig and mesh and len(mesh.data.DazBulges) > 0:
-            if activateObject(context, mesh):
-                createBulges(mesh, self.rig, None, True)
 
 #------------------------------------------------------------------------
 #   Custom Morph Loader
@@ -1912,8 +1948,10 @@ classes = [
     DAZ_OT_ImportFacsDetails,
     DAZ_OT_ImportFacsExpressions,
     DAZ_OT_ImportBodyMorphs,
+    DAZ_OT_SelectMhxCompatible,
     DAZ_OT_ImportFlexions,
     DAZ_OT_CreateBulges,
+    DAZ_OT_SelectBodyBulges,
     DAZ_OT_ImportStandardMorphs,
     DAZ_OT_ImportCustomMorphs,
     DAZ_OT_ImportJCMs,

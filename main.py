@@ -961,6 +961,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useFlexions = (self.useFlexions and GS.useShapekeys),
                         useBulges = (self.useBulges and GS.useShapekeys),
                         useAdjusters = self.useAdjusters,
+                        useFingerBulges = self.useFingerBulges,
                         useTransferFace = False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
@@ -1075,7 +1076,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             theFilePaths = LS.theFilePaths
             LS.theFilePaths = snames
             try:
-                bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers))
+                bpy.ops.daz.transfer_shapekeys(useDrivers=(not skipDrivers), useOverwrite=False)
             except DazError:
                 pass
             finally:
