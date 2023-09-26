@@ -116,6 +116,9 @@ class BoneData:
         "r_thumb1" : "YZX",
         "r_thumb2" : "YZX",
         "r_thumb3" : "YZX",
+
+        "upper_arm.fk.L" : "YXZ",
+        "upper_arm.fk.R" : "YXZ",
     }
 
     UnFlips = [
@@ -244,10 +247,7 @@ class BoneData:
     }
 
     def getDefaultMode(self, pb):
-        if pb.name in self.RotationModes.keys():
-            return self.RotationModes[pb.name]
-        else:
-            return 'YZX'
+        return self.RotationModes.get(pb.name, 'YZX')
 
 
 BD = BoneData()

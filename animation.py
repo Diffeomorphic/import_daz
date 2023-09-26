@@ -1281,7 +1281,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         idx,sign = table[pb.name]
         y = sign*tfm.rot[idx]
         if pb.rotation_mode == 'QUATERNION':
-            euler = pb.matrix_basis.to_3x3().to_euler('YXZ')
+            xyz = BD.getDefaultMode(pb)
+            euler = pb.matrix_basis.to_3x3().to_euler(xyz)
             euler.y = y*D
             pb.rotation_quaternion = euler.to_quaternion()
         else:
@@ -1309,7 +1310,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             if bname[-4:] == "Bend":
                 bend = rig.pose.bones[bname]
                 if bend.rotation_mode == 'QUATERNION':
-                    euler = bend.rotation_quaternion.to_euler('YZX')
+                    xyz = BD.getDefaultMode(bend)
+                    euler = bend.rotation_quaternion.to_euler(xyz)
                 else:
                     euler = bend.rotation_euler
                 if abs(euler[1]) < 1e-4:
