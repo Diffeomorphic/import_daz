@@ -1221,7 +1221,7 @@ class MorphTypeOptions:
         default = False)
 
     onlyBodyShapes : BoolProperty(
-        name = "Body Shapes Only",
+        name = "Only Body Shapes",
         description = "Don't create morphs for fingers and toes",
         default = True)
 
