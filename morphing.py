@@ -989,14 +989,14 @@ def getMhxSafe(rig):
 #------------------------------------------------------------------------
 
 class FingerSkip:
-    def selectBodyShapes(self, context):
+    def deselectFingers(self, context):
         for item in self.selection:
             item.select = (not isFingerShape(item.text))
 
     def drawSelectionRow(self):
         row = self.layout.row()
         row.operator("daz.select_all")
-        row.operator("daz.select_body_shapes")
+        row.operator("daz.all_but_fingers")
         row.operator("daz.select_none")
 
 
@@ -1008,14 +1008,14 @@ def isFingerShape(text):
 
 
 
-class DAZ_OT_SelectBodyShapes(bpy.types.Operator):
-    bl_idname = "daz.select_body_shapes"
-    bl_label = "Only Body Shapes"
+class DAZ_OT_AllButFingers(bpy.types.Operator):
+    bl_idname = "daz.all_but_fingers"
+    bl_label = "All But Fingers"
     bl_description = "Deselect morphs for fingers and toes"
 
     def execute(self, context):
         from .selector import getSelector
-        getSelector().selectBodyShapes(context)
+        getSelector().deselectFingers(context)
         return {'PASS_THROUGH'}
 
 
@@ -1083,7 +1083,7 @@ def getBulgeBone(string):
         return words[0]
 
 
-def createBulges(ob, rig, selection=None, onlyBodyShapes=True):
+def createBulges(ob, rig, selection=None, ignoreFingers=True):
     from .driver import removeModifiers, addTransformVar
     from .dforce import ModStore
     stores = []
@@ -1104,7 +1104,7 @@ def createBulges(ob, rig, selection=None, onlyBodyShapes=True):
                 if item is None or not item.select:
                     ob.vertex_groups.remove(vgrp)
                     continue
-            elif onlyBodyShapes and isFingerShape(vgrp.name):
+            elif ignoreFingers and isFingerShape(vgrp.name):
                 ob.vertex_groups.remove(vgrp)
                 continue
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
@@ -1220,8 +1220,8 @@ class MorphTypeOptions:
         description = "Make all bulges (Genesis and Genesis 2)",
         default = False)
 
-    onlyBodyShapes : BoolProperty(
-        name = "Only Body Shapes",
+    ignoreFingers : BoolProperty(
+        name = "Ignore Finger Morphs",
         description = "Don't create morphs for fingers and toes",
         default = True)
 
@@ -1239,7 +1239,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "useBulges")
         self.layout.prop(self, "useJcms")
         if self.useJcms or self.useBulges:
-            self.subprop("onlyBodyShapes")
+            self.subprop("ignoreFingers")
         self.layout.prop(self, "useFlexions")
 
 
@@ -1289,7 +1289,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.loadMorphType(context, self.useBody, "Body", "Body")
         self.isJcm = True
-        self.loadMorphType(context, self.useJcms, "Jcms", "Body", onlyBodyShapes=self.onlyBodyShapes)
+        self.loadMorphType(context, self.useJcms, "Jcms", "Body", ignoreFingers=self.ignoreFingers)
         self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useBulges:
             if ob.type == 'MESH':
@@ -1298,7 +1298,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
                 meshes = getMeshChildren(self.rig)
             for mesh in meshes:
                 if len(mesh.data.DazBulges) > 0 and activateObject(context, mesh):
-                    createBulges(mesh, self.rig, onlyBodyShapes=self.onlyBodyShapes)
+                    createBulges(mesh, self.rig, ignoreFingers=self.ignoreFingers)
         if self.useMakePosable and self.rig and activateObject(context, self.rig):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable()
@@ -1309,7 +1309,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             raise DazError(self.message, warning=True)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart, onlyBodyShapes=False):
+    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False):
         if use:
             t1 = perf_counter()
             self.morphset = morphset
@@ -1317,7 +1317,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             self.faceshapes = {}
             print("Load %s" % morphset)
             self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
-            if onlyBodyShapes:
+            if ignoreFingers:
                 for char,struct in list(self.morphFiles.items()):
                     mlist = [data for data in struct.items() if not isFingerShape(data[0])]
                     self.morphFiles[char] = OrderedDict(mlist)
@@ -1961,7 +1961,7 @@ classes = [
     DAZ_OT_SelectMhxCompatible,
     DAZ_OT_ImportFlexions,
     DAZ_OT_CreateBulges,
-    DAZ_OT_SelectBodyShapes,
+    DAZ_OT_AllButFingers,
     DAZ_OT_ImportStandardMorphs,
     DAZ_OT_ImportCustomMorphs,
     DAZ_OT_ImportJCMs,
