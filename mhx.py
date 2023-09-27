@@ -914,8 +914,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     if pb.name.startswith(pname):
                         self.addGizmo(pb, "GZM_Circle", 0.4)
                 for pname,shape,scale,offset in [
-                        ("pectoral", "GZM_Ball", 0.25, (0,0,0)) ,
-                        ("heel", "GZM_Ball", 0.25, (0,1,0))]:
+                        ("pectoral", "GZM_Ball", 0.25, 0) ,
+                        ("heel", "GZM_Ball", 0.25, 1)]:
                     if pb.name.startswith(pname):
                         if isBoneDriven(rig, pb):
                             pb.bone.layers[L_HELP] = True
@@ -929,7 +929,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             twkname = self.getTweakBoneName(bname)
             if twkname in rig.pose.bones.keys():
                 tb = rig.pose.bones[twkname]
-                self.addGizmo(tb, "GZM_Ball", 0.25, (0,0.5,0), blen=10*rig.DazScale)
+                self.addGizmo(tb, "GZM_Ball", 0.25, 0.5, blen=10*rig.DazScale)
 
     #-------------------------------------------------------------
     #   Bone groups
@@ -1942,7 +1942,7 @@ Gizmos = {
 
 LRGizmos = {
     "pectoral" :        ("GZM_Pectoral", 1),
-    "clavicle" :        ("GZM_Ball", 0.25, (0,1,0)),
+    "clavicle" :        ("GZM_Ball", 0.25, 1),
 
     # Head
 
@@ -1952,11 +1952,11 @@ LRGizmos = {
 
     # Leg
 
-    "thigh.fk" :        ("GZM_Circle", 0.25),
-    "shin.fk" :         ("GZM_Circle", 0.25),
+    "thigh.fk" :        ("GZM_Circle", 0.25, 0.5),
+    "shin.fk" :         ("GZM_Circle", 0.25, 0.5),
     "thigh.ik":         ("GZM_Arrows", 1),
-    "thigh.ik.twist":   ("GZM_Circle", 0.25),
-    "shin.ik.twist" :   ("GZM_Circle", 0.25),
+    "thigh.ik.twist":   ("GZM_Circle", 0.25, 0.5),
+    "shin.ik.twist" :   ("GZM_Circle", 0.25, 0.5),
     "foot.fk" :         ("GZM_Foot", 1),
     "toe.fk" :          ("GZM_Toe", 1),
     "legSocket" :       ("GZM_Cube", 0.25),
@@ -1975,11 +1975,11 @@ LRGizmos = {
 
     # Arm
     "clavicle" :        ("GZM_Shoulder", 1),
-    "upper_arm.fk" :    ("GZM_Circle", 0.25),
-    "forearm.fk" :      ("GZM_Circle", 0.25),
+    "upper_arm.fk" :    ("GZM_Circle", 0.25, 0.5),
+    "forearm.fk" :      ("GZM_Circle", 0.25, 0.5),
     "upper_arm.ik" :    ("GZM_Arrows", 1),
-    "upper_arm.ik.twist" :  ("GZM_Circle", 0.25),
-    "forearm.ik.twist" :    ("GZM_Circle", 0.25),
+    "upper_arm.ik.twist" :  ("GZM_Circle", 0.25, 0.5),
+    "forearm.ik.twist" :    ("GZM_Circle", 0.25, 0.5),
     "hand.fk" :         ("GZM_Hand", 1),
     "handTwk" :         ("GZM_Circle", 0.4),
     "armSocket" :       ("GZM_Cube", 0.25),
@@ -2001,7 +2001,7 @@ LRGizmos = {
     "ring.ik" :         ("GZM_Cone", 0.2),
     "pinky.ik":         ("GZM_Cone", 0.2),
 
-    "fingers" :         ("GZM_Cube", (0.4,0.5,0.1), (0,0.5,0)),
+    "fingers" :         ("GZM_Cube", (0.4,0.5,0.1), 0.5),
     }
 
 #-------------------------------------------------------------
