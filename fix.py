@@ -406,7 +406,6 @@ class Fixer(DriverUser):
             return
         if not ES.easy:
             print("Tongue bones:", self.tongueBones)
-        self.tongueBones.sort()
         if self.checkDriven(rig, self.tongueBones, "Tongue IK"):
             self.useTongueIk = False
 
