@@ -252,7 +252,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     footTable = {
         "G12" : ("Toe", "HeelIK", "ToeIK", "TarsalsIK"),
         "G38" : ("Toe", "HeelIK", "ToeIK", "TarsalsIK"),
-        "G9"  : ("_toes", "_heelIK", "_toeIK", "_tarsalsIK"),
+        "G9"  : ("_toes", "_heelIK", "_toesIK", "_tarsalsIK"),
     }
 
     armTable2 = {
@@ -362,6 +362,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toeIK = deriveBone(toename, toe, rig, layer, heelIK)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK)
                     footIK.parent = tarsalIK
+                    deriveBone("MCH-%s" % tarsalname, tarsalIK, rig, 31, foot)
+                    deriveBone("MCH-%s" % heelname, heelIK, rig, 31, foot)
 
     #----------------------------------------------------------
     #   Make custom shapes
@@ -607,6 +609,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     addToLayer(heelIK, "IK Leg", rig, "IK")
                     addToLayer(toeIK, "IK Leg", rig, "IK")
                     addToLayer(tarsalIK, "IK Leg", rig, "IK")
+                    tarsalCopy = rpbs["MCH-%s" % tarsalIK.name]
+                    heelCopy = rpbs["MCH-%s" % heelIK.name]
+                    tarsalCopy.rotation_mode = tarsalIK.rotation_mode
+                    heelCopy.rotation_mode = heelIK.rotation_mode
 
             if self.genesis == "G38":
                 if self.useArms:
@@ -816,32 +822,75 @@ class SimpleIKSnapper(SimpleIK):
 
     def snapSimpleIK(self, rig, prefix, type, pole):
         bnames = self.getLimbBoneNames(rig, prefix, type)
+        if type == "Leg":
+            revbones = self.getRevBones(prefix, rig)
+            shldrik = "%sThighIK" % prefix
+        else:
+            revbones = []
+            shldrik = "%sShldrIK" % prefix
         if bnames:
             prop = self.getIKProp(prefix, type)
             self.setProp(rig, prop, 0.0)
             updatePose()
-            self.snapBones(rig, bnames, prop, pole)
+            self.snapBones(rig, bnames, prop, pole, shldrik, revbones)
             toggleLayer(rig, "FK", prefix, type, False)
             toggleLayer(rig, "IK", prefix, type, True)
             self.setProp(rig, prop, 1.0)
 
 
-    def snapBones(self, rig, bnames, prop, pole):
+    def getRevBones(self, prefix, rig):
+        from .fix import getPreSufName
+        if rig.DazRig == "genesis9":
+            bonelist = [
+                ("%s_heelIK" % prefix, "MCH-%s_heelIK" % prefix),
+                ("%s_tarsalsIK" % prefix, "MCH-%s_tarsalsIK" % prefix),
+                ("%s_toesIK" % prefix, "%s_toes" % prefix)]
+        else:
+            bonelist = [
+                ("%sHeelIK" % prefix, "MCH-%sHeelIK" % prefix),
+                ("%sTarsalsIK" % prefix, "MCH-%sTarsalsIK" % prefix),
+                ("%sToeIK" % prefix, "%sToe" % prefix)]
+        revbones = []
+        for bname1,bname2 in bonelist:
+            pb1 = rig.pose.bones.get(getPreSufName(bname1, rig))
+            pb2 = rig.pose.bones.get(getPreSufName(bname2, rig))
+            if pb1 and pb2:
+                revbones.append((pb1, pb2))
+        return revbones
+
+
+    def snapBones(self, rig, bnames, prop, pole, shldrik, revbones):
         from .fix import getPreSufName
         hand = bnames[-1]
         handfk = rig.pose.bones.get(getPreSufName(hand, rig))
         if handfk is None:
             return
         handmat = handfk.matrix.copy()
+        upbend = bnames[0]
+        if len(bnames) == 3:
+            loarm = bnames[1]
+            uptwist = upbend
+        else:
+            loarm = bnames[2]
+            uptwist = bnames[1]
+        upbendfk = rig.pose.bones.get(getPreSufName(upbend, rig))
+        uptwistfk = rig.pose.bones.get(getPreSufName(uptwist, rig))
+        loarmfk = rig.pose.bones.get(getPreSufName(loarm, rig))
         pole = getPreSufName(pole, rig)
         if pole:
             poleik = rig.pose.bones.get(pole)
-            uparm = bnames[0]
-            loarm = bnames[1] if len(bnames) == 3 else bnames[2]
-            uparmfk = rig.pose.bones.get(getPreSufName(uparm, rig))
-            loarmfk = rig.pose.bones.get(getPreSufName(loarm, rig))
-            polemat = self.getPoleMatrix(uparmfk, loarmfk)
+            polemat = self.getPoleMatrix(upbendfk, loarmfk)
+        else:
+            shldrik = rig.pose.bones.get(getPreSufName(shldrik, rig))
+            shldrrot = uptwistfk.rotation_euler[1]
+        revmats = []
+        for pb1,pb2 in revbones:
+            revmats.append((pb1, pb2.matrix.copy()))
         self.setProp(rig, prop, 1.0)
+        for pb,mat in revmats:
+            pb.matrix = mat
+            updatePose()
+            self.keyPose(pb)
         handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
         if handik:
             handik.matrix = handmat
@@ -851,6 +900,10 @@ class SimpleIKSnapper(SimpleIK):
             poleik.matrix = polemat
             updatePose()
             self.keyPose(poleik)
+        elif shldrik:
+            shldrik.rotation_euler = (0, shldrrot, 0)
+            self.keyPose(shldrik)
+        return
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
