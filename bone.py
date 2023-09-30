@@ -491,8 +491,6 @@ class BoneInstance(Instance):
 
     def setRotationLockDaz(self, pb, rig):
         locks,limits,useLimits = self.getLocksLimits(pb, self.node.rotation)
-        if pb.rotation_mode == 'QUATERNION':
-            return
         # DazRotLocks used to update lock_rotation
         for n,lock in enumerate(locks):
             idx = self.axes[n]
@@ -501,6 +499,8 @@ class BoneInstance(Instance):
             for n,lock in enumerate(locks):
                 idx = self.axes[n]
                 pb.lock_rotation[idx] = lock
+        if pb.rotation_mode == 'QUATERNION':
+            return
         if useLimits and GS.useLimitRot and not self.isPosed:
             from .mhx import limitRotation
             cns = limitRotation(pb, rig)

@@ -258,13 +258,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     armTable2 = {
         "G12" : ("ShldrIK", "ForearmIK"),
         "G38" : ("ShldrIK", "ForearmIK"),
-        "G9" : ("ShldrIK", "ForearmIK"),
+        "G9" : ("_upperarmIK", "_forearmIK"),
     }
 
     legTable2 = {
         "G12" : ("ThighIK", "ShinIK"),
         "G38" : ("ThighIK", "ShinIK"),
-        "G9" : ("ThighIK", "ShinIK"),
+        "G9" : ("_thighIK", "_shinIK"),
     }
 
     def run(self, context):
@@ -677,6 +677,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if self.useArms:
                     shldrIK, foreIK = self.getEntry(self.armTable2, prefix, rpbs)
                     copyBoneProps(shldrBend, shldrIK)
+                    shldrIK.rotation_mode = BD.getDefaultMode(shldrBend)
                     copyBoneProps(foreBend, foreIK)
                     foreIK.lock_ik_z = True
                     shldrIK.lock_rotation = (True, False, True)
@@ -703,6 +704,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if self.useLegs:
                     thighIK, shinIK = self.getEntry(self.legTable2, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
+                    thighIK.rotation_mode = BD.getDefaultMode(thighBend)
                     copyBoneProps(shin, shinIK)
                     shinIK.lock_ik_y = shinIK.lock_ik_z = True
                     thighIK.lock_rotation = (True, False, True)
@@ -824,10 +826,16 @@ class SimpleIKSnapper(SimpleIK):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if type == "Leg":
             revbones = self.getRevBones(prefix, rig)
-            shldrik = "%sThighIK" % prefix
+            if rig.DazRig == "genesis9":
+                shldrik = "%s_thighIK" % prefix
+            else:
+                shldrik = "%sThighIK" % prefix
         else:
             revbones = []
-            shldrik = "%sShldrIK" % prefix
+            if rig.DazRig == "genesis9":
+                shldrik = "%s_upperarmIK" % prefix
+            else:
+                shldrik = "%sShldrIK" % prefix
         if bnames:
             prop = self.getIKProp(prefix, type)
             self.setProp(rig, prop, 0.0)
@@ -882,7 +890,11 @@ class SimpleIKSnapper(SimpleIK):
             polemat = self.getPoleMatrix(upbendfk, loarmfk)
         else:
             shldrik = rig.pose.bones.get(getPreSufName(shldrik, rig))
-            shldrrot = uptwistfk.rotation_euler[1]
+            if uptwistfk.rotation_mode == 'QUATERNION':
+                xyz = BD.getDefaultMode(upbendfk)
+                shldrrot = upbendfk.rotation_quaternion.to_euler(xyz)[1]
+            else:
+                shldrrot = uptwistfk.rotation_euler[1]
         revmats = []
         for pb1,pb2 in revbones:
             revmats.append((pb1, pb2.matrix.copy()))
