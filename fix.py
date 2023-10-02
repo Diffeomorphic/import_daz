@@ -1180,8 +1180,10 @@ class BendTwists:
                 twisttwk.parent = twist
                 bend.use_deform = twist.use_deform = False
                 bendtwk.use_deform = twisttwk.use_deform = True
-                enableBoneLayer(bendtwk, rig, L_DEF, [L_TWEAK])
-                enableBoneLayer(twisttwk, rig, L_DEF, [L_TWEAK])
+                enableBoneLayer(bendtwk, rig, L_DEF)
+                enableBoneLayer(twisttwk, rig, L_DEF)
+                setBoneLayer(bendtwk, rig, L_TWEAK)
+                setBoneLayer(twisttwk, rig, L_TWEAK)
                 bvgname = btwkname
                 tvgname = ttwkname
             else:

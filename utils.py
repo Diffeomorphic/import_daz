@@ -33,14 +33,15 @@ from bpy.props import *
 from .settings import GS, LS, ES
 
 #-------------------------------------------------------------
-#   Blender 4.0 compatibility
+#   Bone layers
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,0,0):
-    def enableBoneLayer(bone, rig, layer, xtras=[]):
+    def enableBoneLayer(bone, rig, layer):
         bone.layers = layer*[False] + [True] + (31-layer)*[False]
-        for layer in xtras:
-            bone.layers[layer] = True
+
+    def setBoneLayer(bone, rig, layer, value=True):
+        bone.layers[layer] = value
 
     def setBoneLayers(bone, rig, layers):
         bone.layers = layers
@@ -61,7 +62,10 @@ if bpy.app.version < (4,0,0):
         rig.data.layers[layer] = value
 
 else:
-    def enableBoneLayer(bone, rig, layer, xtras=[]):
+    def enableBoneLayer(bone, rig, layer):
+        pass
+
+    def setBoneLayer(bone, rig, layer, value=True):
         pass
 
     def setBoneLayers(bone, rig, layers):
