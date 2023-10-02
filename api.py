@@ -210,6 +210,24 @@ def get_absolute_paths(paths):
     return abspaths
 
 #-------------------------------------------------------------
+#   Load DAZ file
+#-------------------------------------------------------------
+
+def load_daz_file(filepath):
+    """load_json_file(filepath)
+
+    Import a duf/dsf file (a gzipped json file).
+
+    Arguments:
+    ?filepath: File path
+
+    Returns:
+    The content of the file as a Python dict.
+    """
+    from .load_json import loadJson
+    return loadJson(filepath)
+
+#-------------------------------------------------------------
 #   Paths used by Xin's HD-morphs add-on
 #-------------------------------------------------------------
 
