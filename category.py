@@ -917,16 +917,39 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
     bl_description = "Remove rig drivers from shapekeys"
     bl_options = {'UNDO'}
 
+    useRemoveProps : BoolProperty(
+        name = "Remove Sliders",
+        description = "Remove rig properties that drive the shapekeys",
+        default = True)
+
+    useSubmeshes : BoolProperty(
+        name = "Remove From Submeshes",
+        description = "Also remove drivers from other meshes in the same figure (eye-lashes etc.)",
+        default = True)
+
     def draw(self, context):
-        #self.layout.prop(self, "custom")
         Selector.draw(self, context)
+
+    def drawExtra(self, context):
+        row = self.layout.row()
+        row.prop(self, "useRemoveProps")
+        row.prop(self, "useSubmeshes")
 
     def handleShapekey(self, sname, rig, ob):
         skey = ob.data.shape_keys.key_blocks[sname]
         skey.driver_remove("value")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")
-        removeShapeDriversAndProps(ob.parent, sname)
+        if self.useSubmeshes and rig:
+            for clo in getShapeChildren(rig):
+                if clo != ob:
+                    skey = clo.data.shape_keys.key_blocks.get(sname)
+                    if skey:
+                        skey.driver_remove("value")
+                        skey.driver_remove("slider_min")
+                        skey.driver_remove("slider_max")
+        if self.useRemoveProps:
+            removeShapeDriversAndProps(ob.parent, sname)
 
     def includeShapekey(self, skeys, sname):
         from .driver import getShapekeyDriver
