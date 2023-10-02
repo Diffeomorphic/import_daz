@@ -415,7 +415,7 @@ class BoneInstance(Instance):
             pb.bone["DazTrueName"] = unquote(self.id)
         if isBoneDriven(rig, pb):
             pb.rotation_mode = self.getRotationMode(pb, True)
-            enableBoneLayer(pb.bone, rig, [False,True] + 30*[False])
+            enableBoneLayer(pb.bone, rig, 1)
         else:
             pb.rotation_mode = self.getRotationMode(pb, False)
         pb.DazRotMode = self.rotation_order
