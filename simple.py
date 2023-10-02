@@ -142,7 +142,7 @@ class SimpleIK:
         bnames = [prefix+bname for bname in bnames]
         for bname in bnames:
             if bname not in rig.data.bones.keys():
-                sufname = getSuffixName(bname)
+                sufname = getSuffixName(bname, True)
                 if sufname not in rig.data.bones.keys():
                     return False
         return True

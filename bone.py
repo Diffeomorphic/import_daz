@@ -52,7 +52,7 @@ def getMappedBone(bname, rig, mesh=None):
         if bname1 and bname1 in rig.data.bones.keys():
             return bname1
         from .fix import getSuffixName
-        sufname = getSuffixName(bname)
+        sufname = getSuffixName(bname, False)
         if sufname in rig.pose.bones.keys():
             return sufname
         return ""

@@ -439,6 +439,8 @@ class Fixer(DriverUser):
         prop1 = "MhaTongueControl"
         setMhx(rig, prop1, True)
         winder,pbones = addWinder(rig, "tongue", self.tongueBones, [L_HEAD, L_FACE], prop1, useLocation=True, useScale=True)
+        if winder is None:
+            return
         self.addGizmo(winder, "GZM_Knuckle", 1.0)
         if self.useTongueIk:
             prop2 = "MhaTongueIk"
@@ -702,7 +704,7 @@ class GizmoUser:
 
 
     def getOtherName(self, bname):
-        return getSuffixName(bname)
+        return getSuffixName(bname, True)
 
 #----------------------------------------------------------
 #  Set custom shape
@@ -731,8 +733,10 @@ def setCustomShape(pb, shape, scale=None, offset=None, rotation=None):
 #   Get suffix name
 #----------------------------------------------------------
 
-def getSuffixName(bname):
-    if isDrvBone(bname) or isFinal(bname):
+def getSuffixName(bname, useTwist):
+    if useTwist and bname.endswith(("twist1", "twist2")):
+        pass
+    elif isDrvBone(bname) or isFinal(bname):
         return ""
     if len(bname) >= 2 and bname[1].isupper():
         if bname[0] == "r":
@@ -753,7 +757,7 @@ def getSuffixName(bname):
 def getPreSufName(bname, rig):
     if bname in rig.data.bones.keys():
         return bname
-    sufname = getSuffixName(bname)
+    sufname = getSuffixName(bname, True)
     if sufname and sufname in rig.data.bones.keys():
         return sufname
     return ""
