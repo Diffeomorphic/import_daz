@@ -325,6 +325,8 @@ class CyclesTree(Tree):
 
     def build(self):
         self.makeTree()
+        if bpy.app.version >= (4,0,0):
+            return
         self.column = 3
         self.buildLayers()
         self.buildCutout()

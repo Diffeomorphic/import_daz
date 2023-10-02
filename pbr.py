@@ -51,9 +51,7 @@ class PbrTree(CyclesTree):
 
     def buildLayer(self, uvname):
         self.column = 3
-        self.buildNormal(uvname)
-        self.buildBump(uvname)
-        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5)
+        self.addNode("ShaderNodeBsdfPrincipled", col=5)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         self.column = 4
@@ -88,10 +86,12 @@ class PbrTree(CyclesTree):
     def linkPBRNormal(self, pbr):
         if self.bump:
             self.links.new(self.bump.outputs["Normal"], pbr.inputs["Normal"])
-            self.links.new(self.bump.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
+            if hasattr(pbr.inputs, "Clearcoat Normal"):
+                self.links.new(self.bump.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
         elif self.normal:
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Normal"])
-            self.links.new(self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
+            if hasattr(pbr.inputs, "Clearcoat Normal"):
+                self.links.new(self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
 
 
     def linkTranslucency(self, trans):

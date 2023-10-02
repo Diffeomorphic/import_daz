@@ -1282,7 +1282,7 @@ class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
 def driveShellInfluence(ob, limages):
     from .driver import setFloatProp, addDriver
     for mat in ob.data.materials:
-        if mat:
+        if mat and mat.node_tree:
             for node in mat.node_tree.nodes:
                 if node.type == 'GROUP' and "Influence" in node.inputs.keys() and node.node_tree:
                     if "Color" in node.outputs.keys():

@@ -374,7 +374,7 @@ class GlobalSettings:
 
     def loadDefaults(self):
         if not self.loadSettings(self.settingsPath, False):
-            self.loadSettings(self.oldPath)
+            self.loadSettings(self.oldPath, False)
 
 
     def setRootPaths(self):
