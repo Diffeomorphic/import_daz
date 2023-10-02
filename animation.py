@@ -395,8 +395,8 @@ class HideOperator(DazOperator):
                 self.obhides.append((ob, ob.hide_get()))
                 ob.hide_set(False)
         if self.rig:
-            self.boneLayers = list(self.rig.data.layers)
-            self.rig.data.layers = 32*[True]
+            self.boneLayers = getRigLayers(self.rig)
+            enableAllRigLayers(self.rig)
             self.hideLayerColls(self.rig, context.view_layer.layer_collection)
             self.muted = muteDazFcurves(self.rig, True)
             context.view_layer.objects.active = self.rig
@@ -421,7 +421,7 @@ class HideOperator(DazOperator):
         from .driver import muteDazFcurves
         DazOperator.restoreState(self, context)
         if self.rig:
-            self.rig.data.layers = self.boneLayers
+            setRigLayers(self.rig, self.boneLayers)
             muteDazFcurves(self.rig, self.rig.DazDriversDisabled, muted=self.muted)
         for layer in self.layerColls:
             layer.exclude = False

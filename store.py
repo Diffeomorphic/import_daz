@@ -251,8 +251,9 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
                         pass
             if ob.type == 'ARMATURE':
                 rig = ob
-                rig.data.layers = ostruct["layers"]
-                rig.data.layers_protected = ostruct["layers_protected"]
+                setRigLayers(rig, ostruct["layers"])
+                if bpy.app.version < (4,0,0):
+                    rig.data.layers_protected = ostruct["layers_protected"]
                 pose = ostruct.get("pose")
                 if pose:
                     for bname,bstruct in pose.items():

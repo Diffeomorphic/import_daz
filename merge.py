@@ -1152,7 +1152,7 @@ class RigInfo:
             self.bones[key] = pb.bone.use_deform
 
 
-    def addEditBones(self, rig, idx, layers):
+    def addEditBones(self, rig, idx, layer):
         setMode('EDIT')
         ebones = rig.data.edit_bones
         for bname,data in self.editbones.items():
@@ -1164,7 +1164,7 @@ class RigInfo:
             elif self.parbone:
                 self.setParent(eb, self.parbone, ebones)
             eb.head, eb.tail, eb.roll, parent = data
-            eb.layers = layers
+            enableBoneLayer(eb, rig, layer)
         setMode('OBJECT')
         for bname in self.editbones.keys():
             bone = rig.data.bones[bname]
@@ -1424,18 +1424,18 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         LS.forAnimation(None, rig)
         if rig is None:
             raise DazError("No rigs to merge")
-        oldvis = list(rig.data.layers)
-        rig.data.layers = 32*[True]
+        oldvis = getRigLayers(rig)
+        enableAllRigLayers(rig)
         success = False
         try:
             self.mergeRigs1(context, info, subinfos, repars)
             success = True
         finally:
-            rig.data.layers = oldvis
+            setRigLayers(rig, oldvis)
             if success:
-                rig.data.layers[self.clothesLayer] = True
+                enableRigLayer(rig, self.clothesLayer)
             if info.foundControl:
-                rig.data.layers[self.widgetLayer] = True
+                enableRigLayer(rig, self.widgetLayer)
             setActiveObject(context, rig)
             updateDrivers(rig)
             updateDrivers(rig.data)
@@ -1464,10 +1464,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             pg.s = rig.DazUrl
             pg.b = False
             nmerged = 1
-        layers = self.clothesLayer*[False] + [True] + (31-self.clothesLayer)*[False]
         for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:
-                subinfo.addEditBones(rig, idx+nmerged, layers)
+                subinfo.addEditBones(rig, idx+nmerged, self.clothesLayer)
         for bone in rig.data.bones:
             if bone.name in extrabones:
                 bone["DazExtraBone"] = True
@@ -1507,7 +1506,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             print("Convert %s to widgets for %s" % (ob.name, rig.name))
             wc = WidgetConverter()
             wc.convertWidgets(context, rig, ob)
-            rig.data.layers[3] = True
+            enableRigLayer(rig, 3)
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):

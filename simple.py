@@ -292,7 +292,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 1.0
         T = True
         F = False
-        rig.data.layers = 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F]
+        setRigLayers(rig, 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F])
 
 
     def getEntry(self, table, prefix, bones):
@@ -336,7 +336,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         else:
             root = None
 
-        helpLayers = 31*[False] + [True]
         for prefix,dlayer in [("l",0), ("r",1)]:
             if self.useArms:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = self.getEntry(self.armTable, prefix, ebones)
@@ -464,7 +463,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             if pb.bone.hide:
                 pass
             elif lname in ["upperfacerig", "lowerfacerig"]:
-                pb.bone.layers = [False] + [True] + 30*[False]
+                enableBoneLayer(pb.bone, rig, 2)
             elif lname in ["upperteeth", "lowerteeth"]:
                 addToLayer(pb, "Special", rig, "Special")
             elif not pb.bone.layers[0]:
@@ -1000,7 +999,7 @@ def toggleLayer(rig, fk, prefix, type, on):
     side = {"l" : "Left", "r" : "Right"}
     lname = ("%s %s %s" % (side[prefix], fk, type))
     layer = BoneLayers[lname]
-    rig.data.layers[layer] = on
+    enableRigLayer(rig, layer, on)
 
 #----------------------------------------------------------
 #   Connect bone chains
@@ -1241,7 +1240,7 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        rig.data.layers = 16*[False] + 15*[True] + [False]
+        setRigLayers(rig, 16*[False] + 15*[True] + [False])
 
 
 class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
@@ -1259,7 +1258,7 @@ class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
                 if bone.layers[n]:
                     m = n
                     break
-        rig.data.layers = m*[False] + [True] + (31-m)*[False]
+        setRigLayers(rig, m*[False] + [True] + (31-m)*[False])
 
 #----------------------------------------------------------
 #   Copy Absolute Pose

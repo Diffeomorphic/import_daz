@@ -535,13 +535,13 @@ class GazeTransferer(BoneHandler):
 
     def storeState(self, context):
         rig = context.object
-        self.layers = list(rig.data.layers)
-        rig.data.layers = 32*[True]
+        self.layers = getRigLayers(rig)
+        enableAllRigLayers(rig)
 
 
     def restoreState(self, context):
         rig = context.object
-        rig.data.layers = self.layers
+        setRigLayers(rig, self.layers)
 
 
     def setupBones(self, rig):

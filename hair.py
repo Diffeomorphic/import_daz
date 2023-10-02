@@ -2094,8 +2094,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             raise DazError('No head bone named "%s"' % self.headName)
         if self.startHair > self.endHead:
             raise DazError("Hair start location cannot exceed head end location")
-        self.boneLayers = (self.boneLayer-1)*[False] + [True] + (32-self.boneLayer)*[False]
-        self.hiddenLayers = 30*[False] + [True, False]
         if self.useSeparateRig or self.controlMethod == 'BBONES':
             rig = self.addSeparateRig(context, hairname, rig)
             activateObject(context, ob)
@@ -2172,7 +2170,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             mod = getModifier(ob, 'ARMATURE')
             mod.object = rig
             mod.name = "Armature Hair"
-        rig.data.layers[self.boneLayer-1] = True
+        enableRigLayer(rig, self.boneLayer-1)
 
 
     def mergeObjects(self, context, hairs, hairname, rig):
@@ -2350,7 +2348,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         pb.bone.show_wire = True
         pb.custom_shape = gizmo
         pb.bone.use_deform = False
-        pb.bone.layers = self.boneLayers
+        enableBoneLayer(pb.bone, rig, self.boneLayer)
 
 
     def addBendyConstraints(self, key, data, rig):
@@ -2374,7 +2372,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for n,bdata in enumerate(bones):
                 bname,r0,r1 = bdata
                 bone = rig.data.bones[bname]
-                bone.layers = self.boneLayers
+                enableBoneLayer(bone, rig, self.boneLayer)
 
         handle = getHandle(0)
         for n,bdata in enumerate(bones):
@@ -2397,11 +2395,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                bone.layers = self.boneLayers
+                enableBoneLayer(bone, rig, self.boneLayer)
         elif self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                bone.layers = self.hiddenLayers
+                enableBoneLayer(bone, rig, 30)
                 bone.hide_select = True
 
 

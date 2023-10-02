@@ -434,8 +434,8 @@ class ExtraBones(DriverUser):
         rig = context.object
         self.checkAllowed(rig)
         t1 = perf_counter()
-        oldvis = list(rig.data.layers)
-        rig.data.layers = 32*[True]
+        oldvis = getRigLayers(rig)
+        enableAllRigLayers(rig)
         success = False
         self.createTmp()
         try:
@@ -443,7 +443,7 @@ class ExtraBones(DriverUser):
             success = True
         finally:
             self.deleteTmp()
-            rig.data.layers = oldvis
+            setRigLayers(rig, oldvis)
         t2 = perf_counter()
         print("%s completed in %.1f seconds" % (self.button, t2-t1))
 
@@ -586,7 +586,7 @@ class ExtraBones(DriverUser):
             eb.head = db.head
             eb.tail = db.tail
             eb.roll = db.roll
-            eb.layers = list(db.layers)
+            setBoneLayers(eb, rig, getBoneLayers(db, rig))
             eb.use_deform = db.use_deform
             return eb
 
@@ -624,12 +624,11 @@ class ExtraBones(DriverUser):
         setMode('OBJECT')
 
         setMode('EDIT')
-        drivenLayers = 31*[False] + [True]
         for bname in self.bnames:
             db = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(db, rig, bname)
             eb.parent = db.parent
-            db.layers = drivenLayers
+            enableBoneLayer(db, rig, 31)
             db.use_deform = False
             self.changeLayer(eb, rig)
         setMode('OBJECT')
@@ -758,9 +757,9 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
 
     def changeLayer(self, eb, rig):
         if rig.DazRig == "mhx":
-            eb.layers = 8*[False] + [True] + 23*[False]
+            enableBoneLayer(eb, rig, 8)
         elif rig.DazRig[0:6] == "rigify":
-            eb.layers = 2*[False] + [True] + 29*[False]
+            enableBoneLayer(eb, rig, 2)
 
     def hasBoneDriver(self, bname, drivers):
         return True
@@ -1056,7 +1055,7 @@ class DAZ_OT_EnableAllLayers(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        rig.data.layers = 32*[True]
+        enableAllRigLayers(rig)
         for bone in rig.data.bones:
             bone.hide_select = False
 

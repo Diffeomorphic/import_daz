@@ -214,7 +214,7 @@ def get_absolute_paths(paths):
 #-------------------------------------------------------------
 
 def load_daz_file(filepath):
-    """load_json_file(filepath)
+    """load_daz_file(filepath)
 
     Import a duf/dsf file (a gzipped json file).
 

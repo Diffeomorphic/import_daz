@@ -33,6 +33,56 @@ from bpy.props import *
 from .settings import GS, LS, ES
 
 #-------------------------------------------------------------
+#   Blender 4.0 compatibility
+#-------------------------------------------------------------
+
+if bpy.app.version < (4,0,0):
+    def enableBoneLayer(bone, rig, layer, xtras=[]):
+        bone.layers = layer*[False] + [True] + (31-layer)*[False]
+        for layer in xtras:
+            bone.layers[layer] = True
+
+    def setBoneLayers(bone, rig, layers):
+        bone.layers = layers
+
+    def getBoneLayers(bone, rig):
+        return list(bone.layers)
+
+    def getRigLayers(rig):
+        return list(rig.data.layers)
+
+    def setRigLayers(rig, layers):
+        rig.data.layers = layers
+
+    def enableAllRigLayers(rig):
+        rig.data.layers = 32*[True]
+
+    def enableRigLayer(rig, layer, value=True):
+        rig.data.layers[layer] = value
+
+else:
+    def enableBoneLayer(bone, rig, layer, xtras=[]):
+        pass
+
+    def setBoneLayers(bone, rig, layers):
+        pass
+
+    def getBoneLayers(bone, rig):
+        return []
+
+    def getRigLayers(rig):
+        return []
+
+    def setRigLayers(rig, layers):
+        pass
+
+    def enableAllRigLayers(rig):
+        pass
+
+    def enableRigLayer(rig, layer, value=True):
+        pass
+
+#-------------------------------------------------------------
 #   Blender 2.8 compatibility
 #-------------------------------------------------------------
 

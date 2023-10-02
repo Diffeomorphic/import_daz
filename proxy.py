@@ -1457,8 +1457,8 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             raise DazError("Mesh %s has no armature parent" % ob)
         setActiveObject(context, rig)
         setMode('OBJECT')
-        oldlayers = list(rig.data.layers)
-        rig.data.layers = 32*[True]
+        oldlayers = getRigLayers(rig)
+        enableAllRigLayers(rig)
         oldpose = rig.data.pose_position
         rig.data.pose_position = 'REST'
 
@@ -1482,7 +1482,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                 selectSet(ob, True)
             else:
                 selectSet(ob, False)
-        rig.data.layers = oldlayers
+        setRigLayers(rig, oldlayers)
         rig.data.pose_position = oldpose
         return obs, nobs, rig
 
@@ -1838,10 +1838,9 @@ class WidgetConverter:
 
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
-        rig.data.layers[self.usedLayer-1] = True
-        rig.data.layers[self.unusedLayer-1] = False
-        self.usedLayers = (self.usedLayer-1)*[False] + [True] + (32-self.usedLayer)*[False]
-        self.unusedLayers = (self.unusedLayer-1)*[False] + [True] + (32-self.unusedLayer)*[False]
+        if bpy.app.version < (4,0,0):
+            enableRigLayer(rig, self.usedLayer-1)
+            enableRigLayer(rig, self.unusedLayer-1, False)
         activateObject(context, ob)
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
@@ -1985,7 +1984,7 @@ class WidgetConverter:
 
     def assignLayer(self, pb, rig):
         if pb.name in self.drivers.keys() or len(pb.children) > 3:
-            pb.bone.layers = self.usedLayers
+            enableBoneLayer(pb.bone, rig, self.usedLayer)
             if not pb.custom_shape:
                 self.modifyDriver(pb, rig)
         elif isDrvBone(pb.name) or isFinal(pb.name):
@@ -1993,7 +1992,7 @@ class WidgetConverter:
             if bname not in self.drivers.keys():
                 self.unused[pb.name] = True
         else:
-            pb.bone.layers = self.unusedLayers
+            enableBoneLayer(pb.bone, rig, self.unusedLayer)
             if pb.name not in self.drivers.keys():
                 self.unused[pb.name] = True
         for child in pb.children:
@@ -2005,7 +2004,7 @@ class WidgetConverter:
         if bname[-2] == "-" and bname[-1].isdigit():
             self.replaceDriverTarget(bname, bname[:-2], rig)
         self.unused[bname] = True
-        pb.bone.layers = self.unusedLayers
+        enableBoneLayer(pb.bone, rig, self.unusedLayer)
         if bname not in self.drivers.keys():
             return
         for fcu in self.drivers[bname]:
@@ -2019,7 +2018,7 @@ class WidgetConverter:
     def replaceDriverTarget(self, bname, bname1, rig):
         if bname1 in rig.pose.bones.keys():
             pb1 = rig.pose.bones[bname1]
-            pb1.bone.layers = self.usedLayers
+            enableBoneLayer(pb1.bone, rig, self.usedLayer)
             self.drivers[bname1] = []
             if bname1 in self.unused.keys():
                 del self.unused[bname1]

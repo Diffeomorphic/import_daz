@@ -1012,7 +1012,6 @@ class BendTwists:
 
     def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
         setMode('POSE')
-        hiddenLayer = 31*[False] + [True]
         rotmodes = {}
         for data in bendTwistBones:
             bname = data[0]
@@ -1083,13 +1082,13 @@ class BendTwists:
             if bendname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[bendname]
                 if keep:
-                    eb.layers = hiddenLayer
+                    enableBoneLayer(eb, rig, 31)
                 else:
                     rig.data.edit_bones.remove(eb)
             if twistname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[twistname]
                 if keep:
-                    eb.layers = hiddenLayer
+                    enableBoneLayer(eb, rig, 31)
                 else:
                     rig.data.edit_bones.remove(eb)
         setMode('OBJECT')
@@ -1149,11 +1148,7 @@ class BendTwists:
 
 
     def createBendTwists(self, rig, bendTwistBones):
-        defLayer = L_DEF*[False] + [True] + (31-L_DEF)*[False]
-        finLayer = L_FIN*[False] + [True] + (31-L_FIN)*[False]
-        tweakLayer = L_TWEAK*[False] + [True] + (31-L_TWEAK)*[False]
         setMode('EDIT')
-
         for data in bendTwistBones:
             bname = data[0]
             eb = rig.data.edit_bones[bname]
@@ -1170,7 +1165,8 @@ class BendTwists:
             bend.use_connect = eb.use_connect
             twist.use_connect = True
             eb.use_deform = False
-            bend.layers = twist.layers = finLayer
+            enableBoneLayer(bend, rig, L_FIN)
+            enableBoneLayer(twist, rig, L_FIN)
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
@@ -1184,13 +1180,14 @@ class BendTwists:
                 twisttwk.parent = twist
                 bend.use_deform = twist.use_deform = False
                 bendtwk.use_deform = twisttwk.use_deform = True
-                bendtwk.layers = twisttwk.layers = defLayer
-                bendtwk.layers[L_TWEAK] = twisttwk.layers[L_TWEAK] = True
+                enableBoneLayer(bendtwk, rig, L_DEF, [L_TWEAK])
+                enableBoneLayer(twisttwk, rig, L_DEF, [L_TWEAK])
                 bvgname = btwkname
                 tvgname = ttwkname
             else:
                 bend.use_deform = twist.use_deform = True
-                bend.layers = twist.layers = defLayer
+                enableBoneLayer(bend, rig, L_DEF)
+                enableBoneLayer(twist, rig, L_DEF)
                 bvgname = bend.name
                 tvgname = twist.name
 
