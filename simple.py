@@ -99,15 +99,27 @@ class SimpleIK:
                 pb.keyframe_insert("rotation_euler", frame=self.frame)
             pb.keyframe_insert("scale", frame=self.frame)
 
+
     def initAuto(self, context):
         scn = context.scene
         self.auto = scn.tool_settings.use_keyframe_insert_auto
         self.frame = scn.frame_current
 
+
     def setProp(self, rna, prop, value):
         setattr(rna, prop, value)
         if self.auto:
             rna.keyframe_insert(prop, frame=self.frame)
+
+
+    def linearizeFcurve(self, rna, prop):
+        if rna.animation_data and rna.animation_data.action:
+            for fcu in rna.animation_data.action.fcurves:
+                if fcu.data_path == prop:
+                    for pt in fcu.keyframe_points:
+                        pt.interpolation = 'LINEAR'
+                    fcu.extrapolation = 'CONSTANT'
+
 
     def getGenesisType(self, rig):
         if (self.hasAllBones(rig, self.G38Arm+self.G38Leg, "l") and
@@ -772,6 +784,7 @@ class SimpleFKSnapper(SimpleIK):
             toggleLayer(rig, "FK", prefix, type, True)
             toggleLayer(rig, "IK", prefix, type, False)
             self.setProp(rig, prop, False)
+            self.linearizeFcurve(rig, prop)
 
 
     def snapBones(self, rig, bnames, prop):
@@ -844,6 +857,7 @@ class SimpleIKSnapper(SimpleIK):
             toggleLayer(rig, "FK", prefix, type, False)
             toggleLayer(rig, "IK", prefix, type, True)
             self.setProp(rig, prop, 1.0)
+            self.linearizeFcurve(rig, prop)
 
 
     def getRevBones(self, prefix, rig):

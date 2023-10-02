@@ -733,7 +733,7 @@ def setCustomShape(pb, shape, scale=None, offset=None, rotation=None):
 
 def getSuffixName(bname):
     if isDrvBone(bname) or isFinal(bname):
-        return None
+        return ""
     if len(bname) >= 2 and bname[1].isupper():
         if bname[0] == "r":
             return "%s%s.R" % (bname[1].lower(), bname[2:])
@@ -747,7 +747,7 @@ def getSuffixName(bname):
     elif bname[0].isupper():
         return "%s%s" % (bname[0].lower(), bname[1:])
     else:
-        return None
+        return ""
 
 
 def getPreSufName(bname, rig):
@@ -756,7 +756,7 @@ def getPreSufName(bname, rig):
     sufname = getSuffixName(bname)
     if sufname and sufname in rig.data.bones.keys():
         return sufname
-    return None
+    return ""
 
 #-------------------------------------------------------------
 #   Replace left-right prefix with suffix
