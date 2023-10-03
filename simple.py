@@ -473,12 +473,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             if pb.bone.hide:
                 pass
             elif lname in ["upperfacerig", "lowerfacerig"]:
-                enableBoneLayer(pb.bone, rig, 2)
+                enableBoneLayer(pb.bone, rig, T_HIDDEN)
             elif lname in ["upperteeth", "lowerteeth"]:
                 addToLayer(pb, S_SPECIAL, rig, "Special")
-            elif not pb.bone.layers[0]:
+            elif not isInLayer(pb.bone, rig, T_BONES):
                 for lnum in range(1,16):
-                    if pb.bone.layers[lnum]:
+                    if isInLayer(pb.bone, rig, lnum):
                         addToLayer(pb, S_SPECIAL, rig, "Special")
                         break
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
@@ -511,7 +511,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 self.setCustomShape(pb, "CS_ToeFk")
                 addToLayer(pb, S_LEGFK, rig, "Limb")
                 if not self.useReverseFoot:
-                    addToLayer(pb, S_LEGIK)
+                    addToLayer(pb, S_LEGIK, rig)
             elif pb.name[1:] in IK.G12Arm + IK.G38Arm + IK.G9Arm:
                 self.setCustomShape(pb, "CS_Limb")
                 addToLayer(pb, S_ARMFK, rig, "FK")
@@ -533,7 +533,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif pb.name == "head":
                 makeSpine(pb, 0.7*spineWidth, 1)
                 addToLayer(pb, S_SPINE, rig, "Spine")
-                addToLayer(pb, S_FACE)
+                addToLayer(pb, S_FACE, rig)
             elif pb.name in IK.G38Neck + IK.G12Neck + IK.G9Neck:
                 makeSpine(pb, 0.5*spineWidth)
                 addToLayer(pb, S_SPINE, rig, "Spine")
@@ -721,7 +721,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.euler_order = foreTwist.rotation_mode
                     cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
                     self.setCustomShape(shldrIK, "CS_Arrows")
-                    shldrIK.bone_group = rig.pose.bone_groups["IK"]
+                    setBonegroup(shldrIK, rig, "IK")
                 if self.useLegs:
                     thighIK, shinIK = self.getEntry(self.legTable2, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
@@ -744,7 +744,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     cns.euler_order = shin.rotation_mode
                     self.setCustomShape(thighIK, "CS_Arrows")
-                    thighIK.bone_group = rig.pose.bone_groups["IK"]
+                    setBonegroup(thighIK, rig, "IK")
             elif self.genesis == "G38":
                 if self.useArms:
                     ikConstraint(foreTwist, handIK, elbow, -90, 4, rig, prop=armProp)
@@ -1214,30 +1214,31 @@ def makeBoneGroups(rig):
         ("Face",    (1,0.5,0)),
         ("Special",  (1,0,1)),
     ]
-    if len(rig.pose.bone_groups) != len(BoneGroups):
-        for bg in list(rig.pose.bone_groups):
-            rig.pose.bone_groups.remove(bg)
-        for bgname,color in BoneGroups:
-            bg = rig.pose.bone_groups.new(name=bgname)
-            bg.color_set = 'CUSTOM'
-            bg.colors.normal = color
-            bg.colors.select = (0.6, 0.9, 1.0)
-            bg.colors.active = (1.0, 1.0, 0.8)
+    if bpy.app.version < (4,0,0):
+        if len(rig.pose.bone_groups) != len(BoneGroups):
+            for bg in list(rig.pose.bone_groups):
+                rig.pose.bone_groups.remove(bg)
+            for bgname,color in BoneGroups:
+                bg = rig.pose.bone_groups.new(name=bgname)
+                bg.color_set = 'CUSTOM'
+                bg.colors.normal = color
+                bg.colors.select = (0.6, 0.9, 1.0)
+                bg.colors.active = (1.0, 1.0, 0.8)
 
 
-def addToLayer(pb, layer, rig=None, bgname=None):
+def addToLayer(pb, layer, rig, bgname=None):
     if isinstance(layer, int):
-        n = layer
+        idx = layer
     elif pb.name[0] == "l":
-        n = layer[0]
+        idx = layer[0]
     elif pb.name[0] == "r":
-        n = layer[1]
+        idx = layer[1]
     else:
         print("MISSING LAYER", layer, pb.name)
         return
-    pb.bone.layers[n] = True
+    setBoneLayer(pb.bone, rig, idx)
     if rig and bgname:
-        pb.bone_group = rig.pose.bone_groups[bgname]
+        setBonegroup(pb, rig, bgname)
 
 
 class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):

@@ -747,7 +747,8 @@ class Rigifier(RigifyCommon):
             eb.roll = dbone.roll
             eb.use_deform = dbone.use_deform
             if eb.use_deform:
-                enableBoneLayer(eb, gen, R_FACE, [R_DEFORM])
+                enableBoneLayer(eb, gen, R_FACE)
+                setBoneLayer(eb, gen, R_DEFORM)
             else:
                 enableBoneLayer(eb, gen, R_HELP)
             if dname in driven.keys():
@@ -1202,29 +1203,30 @@ class Rigifier(RigifyCommon):
             "ik_tongue" :       ("GZM_Cone", 0.4, R_FACE),
         }
         self.makeGizmos(True, ["GZM_MJaw", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
-        bgrp = gen.pose.bone_groups.new(name="DAZ")
-        bgrp.color_set = 'CUSTOM'
-        bgrp.colors.normal = (1.0, 0.5, 0)
-        bgrp.colors.select = (0.596, 0.898, 1.0)
-        bgrp.colors.active = (0.769, 1, 1)
+        if bpy.app.version < (4,0,0):
+            bgrp = gen.pose.bone_groups.new(name="DAZ")
+            bgrp.color_set = 'CUSTOM'
+            bgrp.colors.normal = (1.0, 0.5, 0)
+            bgrp.colors.select = (0.596, 0.898, 1.0)
+            bgrp.colors.active = (0.769, 1, 1)
         for pb in gen.pose.bones:
             if pb.name in gizmos.keys():
                 gizmo,scale,layer = gizmos[pb.name]
                 if gizmo:
                     self.addGizmo(pb, gizmo, scale)
-                pb.bone_group = bgrp
+                setBonegroup(pb, gen, "DAZ")
                 enableBoneLayer(pb.bone, gen, layer)
             elif self.isFaceBone(pb, gen):
                 if not self.isEyeLid(pb):
                     self.addGizmo(pb, "GZM_Circle", 0.2)
-                pb.bone_group = bgrp
+                setBonegroup(pb, gen, "DAZ")
             elif pb.name[0:6] == "tongue":
                 self.addGizmo(pb, "GZM_MTongue", 1)
-                pb.bone_group = bgrp
+                setBonegroup(pb, gen, "DAZ")
             elif (pb.name.startswith(("bigToe", "smallToe")) or
                   pb.name.endswith(("toe1.L", "toe2.L", "toe1.R", "toe2.R"))):
                 self.addGizmo(pb, "GZM_Circle", 0.4)
-                pb.bone_group = bgrp
+                setBonegroup(pb, gen, "DAZ")
 
         # Hide some bones on a hidden layer
         for rname in [

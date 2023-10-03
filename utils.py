@@ -49,6 +49,9 @@ if bpy.app.version < (4,0,0):
     def getBoneLayers(bone, rig):
         return list(bone.layers)
 
+    def isInLayer(bone, rig, layer):
+        return bone.layers[layer]
+
     def getRigLayers(rig):
         return list(rig.data.layers)
 
@@ -64,11 +67,15 @@ if bpy.app.version < (4,0,0):
     def makeBoneCollections(rig, table):
         LS.boneCollections[rig.name] = table
 
+    def setBonegroup(pb, rig, bgname):
+        pb.bone_group = rig.pose.bone_groups[bgname]
+
 else:
     def enableBoneLayer(bone, rig, layer):
         for idx,coll in LS.boneCollections[rig.name].items():
             if idx == layer:
                 coll.assign(bone)
+                print("ENA", bone.name, layer, coll.name)
             else:
                 coll.unassign(bone)
 
@@ -89,17 +96,19 @@ else:
 
     def getBoneLayers(bone, rig):
         colls = LS.boneCollections[rig.name]
-        return [(idx,coll) for idx,coll in colls.items() if bone in coll.values()]
+        return dict([(idx,coll) for idx,coll in colls.items() if bone in coll.values()])
+
+    def isInLayer(bone, rig, layer):
+        coll = LS.boneCollections[rig.name].get(layer)
+        if coll:
+            return (bone.name in coll.bones)
 
     def getRigLayers(rig):
-        return list(LS.boneCollections[rig.name].items())
+        return [idx for idx,coll in LS.boneCollections[rig.name].items() if coll.is_visible]
 
     def setRigLayers(rig, layers):
-        colls = LS.boneCollections[rig.name]
-        for idx,value in layers:
-            coll = colls.get(idx)
-            if coll:
-                coll.is_visible = value
+        for idx,coll in LS.boneCollections[rig.name].items():
+            coll.is_visible = (idx in layers)
 
     def enableAllRigLayers(rig):
         for idx,coll in LS.boneCollections[rig.name].items():
@@ -115,6 +124,23 @@ else:
         for idx,name in table.items():
             coll = rig.data.collections.new(name)
             colls[idx] = coll
+
+    def setBonegroup(pb, rig, bgname):
+        pass
+
+#-------------------------------------------------------------
+#   Standard layers
+#-------------------------------------------------------------
+
+T_BONES = 0
+T_DRIVEN = 1
+T_HIDDEN = 31
+
+StandardLayers = {
+    T_BONES : "Bones",
+    T_DRIVEN : "Driven",
+    T_HIDDEN : "Hidden",
+}
 
 #-------------------------------------------------------------
 #   Blender 2.8 compatibility

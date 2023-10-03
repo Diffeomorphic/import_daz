@@ -2399,7 +2399,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         elif self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                enableBoneLayer(bone, rig, 30)
+                enableBoneLayer(bone, rig, T_HIDDEN)
                 bone.hide_select = True
 
 

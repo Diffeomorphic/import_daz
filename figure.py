@@ -30,7 +30,6 @@ import math
 from mathutils import *
 from .utils import *
 from .error import *
-from .layers import StandardLayers
 from .node import Node, Instance
 from .driver import DriverUser
 
@@ -630,7 +629,6 @@ class ExtraBones(DriverUser):
             db = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(db, rig, bname)
             eb.parent = db.parent
-            enableBoneLayer(db, rig, 31)
             db.use_deform = False
             self.changeLayer(eb, rig)
         setMode('OBJECT')
@@ -642,6 +640,7 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
+                enableBoneLayer(db, rig, T_HIDDEN)
                 if "DazExtraBone" in db.keys():
                     bone["DazExtraBone"] = db["DazExtraBone"]
 
@@ -759,9 +758,9 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
 
     def changeLayer(self, eb, rig):
         if rig.DazRig == "mhx":
-            enableBoneLayer(eb, rig, 8)
+            enableBoneLayer(eb, rig, L_FACE)
         elif rig.DazRig[0:6] == "rigify":
-            enableBoneLayer(eb, rig, 2)
+            enableBoneLayer(eb, rig, R_DETAIL)
 
     def hasBoneDriver(self, bname, drivers):
         return True

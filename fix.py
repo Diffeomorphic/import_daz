@@ -1082,13 +1082,13 @@ class BendTwists:
             if bendname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[bendname]
                 if keep:
-                    enableBoneLayer(eb, rig, 31)
+                    enableBoneLayer(eb, rig, L_DEF)
                 else:
                     rig.data.edit_bones.remove(eb)
             if twistname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[twistname]
                 if keep:
-                    enableBoneLayer(eb, rig, 31)
+                    enableBoneLayer(eb, rig, L_DEF)
                 else:
                     rig.data.edit_bones.remove(eb)
         setMode('OBJECT')

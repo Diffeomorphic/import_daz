@@ -608,6 +608,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def createBoneGroups(self, rig):
+        if bpy.app.version >= (4,0,0):
+            return
         if len(rig.pose.bone_groups) != len(MHX.BoneGroups):
             for bg in list(rig.pose.bone_groups):
                 rig.pose.bone_groups.remove(bg)
@@ -933,6 +935,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addBoneGroups(self, rig):
+        if bpy.app.version >= (4,0,0):
+            return
         for idx,data in enumerate(MHX.BoneGroups):
             _bgname,_theme,layers = data
             bgrp = rig.pose.bone_groups[idx]
@@ -1863,7 +1867,7 @@ def getBoneLayer(pb, rig):
         return L_HELP, False
     elif pb.name in MHX.Teeth:
         return L_TWEAK, False
-    elif isFinal(pb.name) or pb.bone.layers[L_FIN]:
+    elif isFinal(pb.name) or isInLayer(pb.bone, rig, L_FIN):
         return L_FIN, False
     elif pb.name[0:6] == "tongue":
         return L_FACE, False
