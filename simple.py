@@ -30,7 +30,16 @@ import math
 from mathutils import *
 from .utils import *
 from .error import *
+from .layers import *
 from .bone_data import BD
+
+
+S_ARMIK = (S_LARMIK, S_RARMIK)
+S_ARMFK = (S_LARMFK, S_RARMFK)
+S_LEGIK = (S_LLEGIK, S_RLEGIK)
+S_LEGFK = (S_LLEGFK, S_RLEGFK)
+S_HAND = (S_LHAND, S_RHAND)
+S_FOOT = (S_LFOOT, S_RFOOT)
 
 #-------------------------------------------------------------
 #   Simple IK
@@ -285,6 +294,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
+        makeBoneCollections(rig, SimpleLayers)
         self.makeNewBones(rig, IK)
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
@@ -465,86 +475,86 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif lname in ["upperfacerig", "lowerfacerig"]:
                 enableBoneLayer(pb.bone, rig, 2)
             elif lname in ["upperteeth", "lowerteeth"]:
-                addToLayer(pb, "Special", rig, "Special")
+                addToLayer(pb, S_SPECIAL, rig, "Special")
             elif not pb.bone.layers[0]:
                 for lnum in range(1,16):
                     if pb.bone.layers[lnum]:
-                        addToLayer(pb, "Special", rig, "Special")
+                        addToLayer(pb, S_SPECIAL, rig, "Special")
                         break
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
                     self.setCustomShape(pb, "CS_Line")
                 else:
                     self.setCustomShape(pb, "CS_Face")
-                addToLayer(pb, "Face", rig, "Face")
+                addToLayer(pb, S_FACE, rig, "Face")
             elif pb.name in ["lEye", "rEye", "lEar", "rEar", "l_eye", "r_eye", "l_ear", "r_ear"]:
                 self.setCustomShape(pb, "CS_CircleY2")
-                addToLayer(pb, "Face", rig, "Face")
+                addToLayer(pb, S_FACE, rig, "Face")
             elif lname == "lowerjaw":
                 self.setCustomShape(pb, "CS_Jaw")
-                addToLayer(pb, "Face", rig, "Face")
+                addToLayer(pb, S_FACE, rig, "Face")
             elif pb.name.startswith("tongue"):
                 self.setCustomShape(pb, "CS_Tongue")
-                addToLayer(pb, "Face", rig, "Face")
+                addToLayer(pb, S_FACE, rig, "Face")
             elif lname.endswith("hand"):
                 self.setCustomShape(pb, "CS_HandFk")
-                addToLayer(pb, "FK Arm", rig, "FK")
+                addToLayer(pb, S_ARMFK, rig, "FK")
             elif "carpal" in lname or "tarsal" in lname:
-                addToLayer(pb, "Special", rig, "Special")
+                addToLayer(pb, S_SPECIAL, rig, "Special")
             elif pb.name in ["lCollar", "rCollar", "l_shoulder", "r_shoulder"]:
                 self.setCustomShape(pb, "CS_Collar")
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, S_SPINE, rig, "Spine")
             elif lname.endswith("foot"):
                 self.setCustomShape(pb, "CS_Foot")
-                addToLayer(pb, "FK Leg", rig, "FK")
+                addToLayer(pb, S_LEGFK, rig, "FK")
             elif pb.name in ["lToe", "rToe", "l_toes", "r_toes"]:
                 self.setCustomShape(pb, "CS_ToeFk")
-                addToLayer(pb, "FK Leg", rig, "Limb")
+                addToLayer(pb, S_LEGFK, rig, "Limb")
                 if not self.useReverseFoot:
-                    addToLayer(pb, "IK Leg")
+                    addToLayer(pb, S_LEGIK)
             elif pb.name[1:] in IK.G12Arm + IK.G38Arm + IK.G9Arm:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, "FK Arm", rig, "FK")
+                addToLayer(pb, S_ARMFK, rig, "FK")
             elif pb.name[1:] in IK.G12Leg + IK.G38Leg + IK.G9Leg:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, "FK Leg", rig, "FK")
+                addToLayer(pb, S_LEGFK, rig, "FK")
             elif pb.name[1:] in ["Thumb1", "Index1", "Mid1", "Ring1", "Pinky1"]:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, "Hand", rig, "Limb")
+                addToLayer(pb, S_HAND, rig, "Limb")
             elif pb.name == "hip":
                 makeSpine(pb, 1.5*spineWidth, gizmo="CS_Cube")
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name == "pelvis":
                 makeSpine(pb, 1.5*spineWidth, 1)
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name in IK.G38Spine + IK.G12Spine + IK.G9Spine:
                 makeSpine(pb, spineWidth)
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name == "head":
                 makeSpine(pb, 0.7*spineWidth, 1)
-                addToLayer(pb, "Spine", rig, "Spine")
-                addToLayer(pb, "Face")
+                addToLayer(pb, S_SPINE, rig, "Spine")
+                addToLayer(pb, S_FACE)
             elif pb.name in IK.G38Neck + IK.G12Neck + IK.G9Neck:
                 makeSpine(pb, 0.5*spineWidth)
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, S_SPINE, rig, "Spine")
             elif "toe" in lname:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, "Foot", rig, "Limb")
+                addToLayer(pb, S_FOOT, rig, "Limb")
             elif (pb.name[1:4] in ["Thu", "Ind", "Mid", "Rin", "Pin"] or
                   pb.name[1:5] in ["_thu", "_ind", "_mid", "_rin", "_pin"]):
                 self.setCustomShape(pb, "CS_CircleY2")
-                addToLayer(pb, "Hand", rig, "Limb")
+                addToLayer(pb, S_HAND, rig, "Limb")
             elif "elbow" in lname:
                 if not pb.name.endswith("STR"):
                     self.setCustomShape(pb, "CS_Pole")
-                addToLayer(pb, "IK Arm", rig, "IK")
+                addToLayer(pb, S_ARMIK, rig, "IK")
             elif "knee" in lname:
                 if not pb.name.endswith("STR"):
                     self.setCustomShape(pb, "CS_Pole")
-                addToLayer(pb, "IK Leg", rig, "IK")
+                addToLayer(pb, S_LEGIK, rig, "IK")
             elif "pectoral" in lname:
                 self.setCustomShape(pb, "CS_Pect")
-                addToLayer(pb, "Spine", rig, "Spine")
+                addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name.endswith(("twist1", "twist2", "anchor", "footik", "handik")):
                 pass
             else:
@@ -594,7 +604,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 setStretchLine(elbow)
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
                 cns.euler_order = hand.rotation_mode
-                addToLayer(handIK, "IK Arm", rig, "IK")
+                addToLayer(handIK, S_ARMIK, rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_%s" % suffix
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = self.getEntry(self.legTable, prefix, rpbs)
@@ -603,7 +613,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 setStretchLine(knee)
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
-                    addToLayer(footIK, "IK Leg", rig, "IK")
+                    addToLayer(footIK, S_LEGIK, rig, "IK")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
                     cns.euler_order = foot.rotation_mode
                 else:
@@ -617,9 +627,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.euler_order = foot.rotation_mode
                     cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
                     cns.euler_order = toe.rotation_mode
-                    addToLayer(heelIK, "IK Leg", rig, "IK")
-                    addToLayer(toeIK, "IK Leg", rig, "IK")
-                    addToLayer(tarsalIK, "IK Leg", rig, "IK")
+                    addToLayer(heelIK, S_LEGIK, rig, "IK")
+                    addToLayer(toeIK, S_LEGIK, rig, "IK")
+                    addToLayer(tarsalIK, S_LEGIK, rig, "IK")
                     tarsalCopy = rpbs["MCH-%s" % tarsalIK.name]
                     heelCopy = rpbs["MCH-%s" % heelIK.name]
                     tarsalCopy.rotation_mode = tarsalIK.rotation_mode
@@ -667,18 +677,18 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if self.useArms:
                     elbow.lock_rotation = (True,True,True)
                     self.setCustomShape(elbow, "CS_Pole")
-                    addToLayer(elbow, "IK Arm", rig, "IK")
+                    addToLayer(elbow, S_ARMIK, rig, "IK")
                     stretch = rpbs[self.stretchName(elbow.name)]
                     stretchTo(stretch, elbow, rig)
-                    addToLayer(stretch, "IK Arm", rig, "IK")
+                    addToLayer(stretch, S_ARMIK, rig, "IK")
                     stretch.lock_rotation = stretch.lock_location = (True,True,True)
                 if self.useLegs:
                     knee.lock_rotation = (True,True,True)
                     self.setCustomShape(knee, "CS_Pole")
-                    addToLayer(knee, "IK Leg", rig, "IK")
+                    addToLayer(knee, S_LEGIK, rig, "IK")
                     stretch = rpbs[self.stretchName(knee.name)]
                     stretchTo(stretch, knee, rig)
-                    addToLayer(stretch, "IK Leg", rig, "IK")
+                    addToLayer(stretch, S_LEGIK, rig, "IK")
                     stretch.lock_rotation = stretch.lock_location = (True,True,True)
             else:
                 elbow = knee = None
@@ -758,10 +768,10 @@ def getPoseBone(rig, bnames):
 
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
-    for lname in ["Left FK Arm", "Right FK Arm", "Left FK Leg", "Right FK Leg"]:
-        layers[BoneLayers[lname]] = True
-    for lname in ["Left IK Arm", "Right IK Arm", "Left IK Leg", "Right IK Leg"]:
-        layers[BoneLayers[lname]] = False
+    for n in [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]:
+        layers[n] = True
+    for n in [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]:
+        layers[n] = False
     for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]:
         setattr(rig, attr, 0)
         if useInsertKeys:
@@ -773,15 +783,15 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
 #----------------------------------------------------------
 
 class SimpleFKSnapper(SimpleIK):
-    def snapSimpleFK(self, rig, prefix, type):
+    def snapSimpleFK(self, rig, prefix, type, on, off):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if bnames:
             prop = self.getIKProp(prefix, type)
             self.setProp(rig, prop, True)
             updatePose()
             self.snapBones(rig, bnames, prop)
-            toggleLayer(rig, "FK", prefix, type, True)
-            toggleLayer(rig, "IK", prefix, type, False)
+            enableRigLayer(rig, on, True)
+            enableRigLayer(rig, off, False)
             self.setProp(rig, prop, False)
             self.linearizeFcurve(rig, prop)
 
@@ -809,11 +819,13 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
 
     prefix : StringProperty()
     type : StringProperty()
+    on : IntProperty()
+    off : IntProperty()
 
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        self.snapSimpleFK(rig, self.prefix, self.type)
+        self.snapSimpleFK(rig, self.prefix, self.type, self.on, self.off)
 
 
 class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
@@ -825,8 +837,12 @@ class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        for prefix,type in [("l", "Arm"), ("r", "Arm"), ("l", "Leg"), ("r", "Leg")]:
-            self.snapSimpleFK(rig, prefix, type)
+        for prefix,type,on,off in [
+            ("l", "Arm", S_LARMFK, S_LARMIK),
+            ("r", "Arm", S_RARMFK, S_RARMIK),
+            ("l", "Leg", S_LLEGFK, S_RLEGIK),
+            ("r", "Leg", S_RLEGFK, S_RLEGIK)]:
+            self.snapSimpleFK(rig, prefix, type, on, off)
 
 #----------------------------------------------------------
 #   IK Snap
@@ -834,7 +850,7 @@ class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
 
 class SimpleIKSnapper(SimpleIK):
 
-    def snapSimpleIK(self, rig, prefix, type, pole):
+    def snapSimpleIK(self, rig, prefix, type, pole, on, off):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if type == "Leg":
             revbones = self.getRevBones(prefix, rig)
@@ -853,8 +869,8 @@ class SimpleIKSnapper(SimpleIK):
             self.setProp(rig, prop, 0.0)
             updatePose()
             self.snapBones(rig, bnames, prop, pole, shldrik, revbones)
-            toggleLayer(rig, "FK", prefix, type, False)
-            toggleLayer(rig, "IK", prefix, type, True)
+            enableRigLayer(rig, on, True)
+            enableRigLayer(rig, off, False)
             self.setProp(rig, prop, 1.0)
             self.linearizeFcurve(rig, prop)
 
@@ -966,11 +982,13 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
     prefix : StringProperty()
     type : StringProperty()
     pole : StringProperty()
+    on : IntProperty()
+    off : IntProperty()
 
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        self.snapSimpleIK(rig, self.prefix, self.type, self.pole)
+        self.snapSimpleIK(rig, self.prefix, self.type, self.pole, self.on, self.off)
 
 
 class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
@@ -984,22 +1002,12 @@ class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        for prefix,type,pole in [
-            ("l", "Arm", "lElbow"),
-            ("r", "Arm", "rElbow"),
-            ("l", "Leg", "lKnee"),
-            ("r", "Leg", "rKnee")]:
-            self.snapSimpleIK(rig, prefix, type, pole)
-
-#----------------------------------------------------------
-#   Utility
-#----------------------------------------------------------
-
-def toggleLayer(rig, fk, prefix, type, on):
-    side = {"l" : "Left", "r" : "Right"}
-    lname = ("%s %s %s" % (side[prefix], fk, type))
-    layer = BoneLayers[lname]
-    enableRigLayer(rig, layer, on)
+        for prefix,type,pole,on,off in [
+            ("l", "Arm", "lElbow", S_LARMIK, S_LARMFK),
+            ("r", "Arm", "rElbow", S_RARMIK, S_RARMFK),
+            ("l", "Leg", "lKnee", S_LLEGIK, S_LLEGFK),
+            ("r", "Leg", "rKnee", S_RLEGIK, S_RLEGFK)]:
+            self.snapSimpleIK(rig, prefix, type, pole, on, off)
 
 #----------------------------------------------------------
 #   Connect bone chains
@@ -1217,15 +1225,15 @@ def makeBoneGroups(rig):
             bg.colors.active = (1.0, 1.0, 0.8)
 
 
-def addToLayer(pb, layname, rig=None, bgname=None):
-    if layname in BoneLayers.keys():
-        n = BoneLayers[layname]
-    elif pb.name[0] == "l" and "Left "+layname in BoneLayers.keys():
-        n = BoneLayers["Left "+layname]
-    elif pb.name[0] == "r" and "Right "+layname in BoneLayers.keys():
-        n = BoneLayers["Right "+layname]
+def addToLayer(pb, layer, rig=None, bgname=None):
+    if isinstance(layer, int):
+        n = layer
+    elif pb.name[0] == "l":
+        n = layer[0]
+    elif pb.name[0] == "r":
+        n = layer[1]
     else:
-        print("MISSING LAYER", layname, pb.name)
+        print("MISSING LAYER", layer, pb.name)
         return
     pb.bone.layers[n] = True
     if rig and bgname:

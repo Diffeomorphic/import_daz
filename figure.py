@@ -30,6 +30,7 @@ import math
 from mathutils import *
 from .utils import *
 from .error import *
+from .layers import StandardLayers
 from .node import Node, Instance
 from .driver import DriverUser
 
@@ -277,6 +278,7 @@ class Figure(Node):
             return
         center = inst.attributes["center_point"]
         activateObject(context, rig)
+        makeBoneCollections(rig, StandardLayers)
         setMode('EDIT')
         for child in inst.children.values():
             if isinstance(child, BoneInstance):

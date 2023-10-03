@@ -64,6 +64,41 @@ L_HIDE =    29
 L_FIN =     30
 L_DEF =     31
 
+MhxLayers = {
+    L_MAIN :    "Root",
+    L_SPINE :   "Spine",
+
+    L_LARMIK :  "IK Arm Left",
+    L_LARMFK :  "FK Arm Left",
+    L_LLEGIK :  "IK Leg Left",
+    L_LLEGFK :  "FK Leg Left",
+    L_LHAND :   "Hand Left",
+    L_LFINGER : "Fingers Left",
+    L_LEXTRA :  "Extra Left",
+    L_LTOE :    "Toes Left",
+
+    L_RARMIK :  "IK Arm Right",
+    L_RARMFK :  "FK Arm Right",
+    L_RLEGIK :  "IK Leg Right",
+    L_RLEGFK :  "FK Leg Right",
+    L_RHAND :   "Hand Right",
+    L_RFINGER : "Fingers Right",
+    L_REXTRA :  "Extra Right",
+    L_RTOE :    "Toes Right",
+
+    L_FACE :    "Face",
+    L_TWEAK :   "Tweak",
+    L_HEAD :    "Head",
+    L_UNUSED :  "Unused",
+    L_CUSTOM :  "Custom",
+    L_CUSTOM2 : "Custom 2",
+
+    L_HELP :    "Help",
+    L_HELP2 :   "Help 2",
+    L_FIN :     "Final",
+    L_DEF :     "Deform",
+}
+
 #-------------------------------------------------------------
 #   Rigify Layers
 #-------------------------------------------------------------
@@ -84,6 +119,55 @@ MhxRigifyLayer = {
     L_CUSTOM : R_CUSTOM,
     L_FIN : R_LAST,
     L_TWEAK : R_CUSTOM,
+}
+
+#-------------------------------------------------------------
+#   Simple layers
+#-------------------------------------------------------------
+
+S_SPINE = 16
+S_FACE = 17
+S_LARMFK = 18
+S_RARMFK = 19
+S_LLEGFK = 20
+S_RLEGFK = 21
+S_LHAND = 22
+S_RHAND = 23
+S_LFOOT = 24
+S_RFOOT = 25
+S_LARMIK = 26
+S_RARMIK = 27
+S_LLEGIK = 28
+S_RLEGIK = 29
+S_SPECIAL = 30
+
+
+SimpleLayers = {
+    S_SPINE : "Spine",
+    S_FACE : "Face",
+    S_LARMFK : "FK Arm Left",
+    S_RARMFK : "FK Arm Right",
+    S_LLEGFK : "FK Leg Left",
+    S_RLEGFK : "FK Leg Right",
+    S_LHAND : "Hand Left",
+    S_RHAND : "Hand Right",
+    S_LFOOT : "Foot Left",
+    S_RFOOT : "Foot Right",
+    S_LARMIK : "IK Arm Left",
+    S_RARMIK : "IK Arm Right",
+    S_LLEGIK : "IK Leg Left",
+    S_RLEGIK : "IK Leg Right",
+    S_SPECIAL : "Special",
+}
+
+#-------------------------------------------------------------
+#   Stanard layers
+#-------------------------------------------------------------
+
+StandardLayers = {
+    0 : "Bones",
+    1 : "Driven",
+    31 : "Hidden",
 }
 
 #-------------------------------------------------------------

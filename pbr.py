@@ -51,7 +51,9 @@ class PbrTree(CyclesTree):
 
     def buildLayer(self, uvname):
         self.column = 3
-        self.addNode("ShaderNodeBsdfPrincipled", col=5)
+        self.buildNormal(uvname)
+        self.buildBump(uvname)
+        self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         self.column = 4

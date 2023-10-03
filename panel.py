@@ -31,6 +31,7 @@ from .utils import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
 from .morphing import MS
+from .layers import *
 
 #----------------------------------------------------------
 #   Panels
@@ -982,25 +983,26 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
         return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
 
     def draw(self, context):
-        from .simple import BoneLayers
         rig = context.object
-        layout = self.layout
-        layout.label(text="Layers")
-        row = layout.row()
+        self.layout.label(text="Layers")
+        row = self.layout.row()
         row.operator("daz.select_named_layers")
         row.operator("daz.unselect_named_layers")
-        layout.separator()
-        for lnames in [("Spine", "Face"), "FK Arm", "IK Arm", "FK Leg", "IK Leg", "Hand", "Foot", ("Special", "")]:
-            row = layout.row()
-            if isinstance(lnames, str):
-                first,second = "Left "+lnames, "Right "+lnames
-            else:
-                first,second = lnames
-            m = BoneLayers[first]
-            row.prop(rig.data, "layers", index=m, toggle=True, text=first)
-            if second:
-                n = BoneLayers[second]
-                row.prop(rig.data, "layers", index=n, toggle=True, text=second)
+        self.layout.separator()
+        layers = [
+            (S_SPINE, S_FACE),
+            (S_LARMFK, S_RARMFK),
+            (S_LARMIK, S_RARMIK),
+            (S_LLEGFK, S_RLEGFK),
+            (S_LLEGIK, S_RLEGIK),
+            (S_LHAND, S_RHAND),
+            (S_LFOOT, S_RFOOT),
+            (S_SPECIAL, None)]
+        for m,n in layers:
+            row = self.layout.row()
+            row.prop(rig.data, "layers", index=m, toggle=True, text=SimpleLayers[m])
+            if n:
+                row.prop(rig.data, "layers", index=n, toggle=True, text=SimpleLayers[n])
 
 
 class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
@@ -1033,16 +1035,24 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
         op = row.operator("daz.snap_simple_fk", text="Left Arm")
         op.prefix = "l"
         op.type = "Arm"
+        op.on = S_LARMFK
+        op.off = S_LARMIK
         op = row.operator("daz.snap_simple_fk", text="Right Arm")
         op.prefix = "r"
         op.type = "Arm"
+        op.on = S_RARMFK
+        op.off = S_RARMIK
         row = layout.row()
         op = row.operator("daz.snap_simple_fk", text="Left Leg")
         op.prefix = "l"
         op.type = "Leg"
+        op.on = S_LLEGFK
+        op.off = S_LLEGIK
         op = row.operator("daz.snap_simple_fk", text="Right Leg")
         op.prefix = "r"
         op.type = "Leg"
+        op.on = S_RLEGFK
+        op.off = S_RLEGIK
 
         layout.label(text="Snap IK bones")
         row = layout.row()
@@ -1050,19 +1060,27 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
         op.prefix = "l"
         op.type = "Arm"
         op.pole = "lElbow"
+        op.on = S_LARMIK
+        op.off = S_LARMFK
         op = row.operator("daz.snap_simple_ik", text="Right Arm")
         op.prefix = "r"
         op.type = "Arm"
         op.pole = "rElbow"
+        op.on = S_RARMIK
+        op.off = S_RARMFK
         row = layout.row()
         op = row.operator("daz.snap_simple_ik", text="Left Leg")
         op.prefix = "l"
         op.type = "Leg"
         op.pole = "lKnee"
+        op.on = S_LLEGIK
+        op.off = S_LLEGFK
         op = row.operator("daz.snap_simple_ik", text="Right Leg")
         op.prefix = "r"
         op.type = "Leg"
         op.pole = "rKnee"
+        op.on = S_RLEGIK
+        op.off = S_RLEGFK
 
         layout.separator()
         layout.operator("daz.snap_all_simple_fk")
@@ -1137,7 +1155,6 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
                 ob.DazRig in ["rigify", "rigify2"])
 
     def draw(self, context):
-        from .layers import F_TONGUE
         rig = context.object
         self.layout.prop(rig, "MhaGazeFollowsHead", text="Gaze Follows Head")
         self.layout.prop(rig, "MhaGaze_L", text="Left Gaze")

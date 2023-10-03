@@ -61,30 +61,60 @@ if bpy.app.version < (4,0,0):
     def enableRigLayer(rig, layer, value=True):
         rig.data.layers[layer] = value
 
+    def makeBoneCollections(rig, table):
+        LS.boneCollections[rig.name] = table
+
 else:
     def enableBoneLayer(bone, rig, layer):
-        pass
+        for idx,coll in LS.boneCollections[rig.name].items():
+            if idx == layer:
+                coll.assign(bone)
+            else:
+                coll.unassign(bone)
 
     def setBoneLayer(bone, rig, layer, value=True):
-        pass
+        coll = LS.boneCollections[rig.name].get(layer)
+        if coll:
+            if value:
+                coll.assign(bone)
+            else:
+                coll.unassign(bone)
 
     def setBoneLayers(bone, rig, layers):
-        pass
+        for idx,coll in LS.boneCollections[rig.name].items():
+            if layers.get(idx):
+                coll.assign(bone)
+            else:
+                coll.unassign(bone)
 
     def getBoneLayers(bone, rig):
-        return []
+        colls = LS.boneCollections[rig.name]
+        return [(idx,coll) for idx,coll in colls.items() if bone in coll.values()]
 
     def getRigLayers(rig):
-        return []
+        return list(LS.boneCollections[rig.name].items())
 
     def setRigLayers(rig, layers):
-        pass
+        colls = LS.boneCollections[rig.name]
+        for idx,value in layers:
+            coll = colls.get(idx)
+            if coll:
+                coll.is_visible = value
 
     def enableAllRigLayers(rig):
-        pass
+        for idx,coll in LS.boneCollections[rig.name].items():
+            coll.is_visible = True
 
     def enableRigLayer(rig, layer, value=True):
-        pass
+        coll = LS.boneCollections[rig.name].get(layer)
+        if coll:
+            coll.is_visible = value
+
+    def makeBoneCollections(rig, table):
+        colls = LS.boneCollections[rig.name] = {}
+        for idx,name in table.items():
+            coll = rig.data.collections.new(name)
+            colls[idx] = coll
 
 #-------------------------------------------------------------
 #   Blender 2.8 compatibility

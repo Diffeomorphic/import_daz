@@ -655,6 +655,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             nrig = self.saveDazRig(context)
         self.meshes = getMeshChildren(rig)
         finalizeArmature(rig)
+        makeBoneCollections(rig, MhxLayers)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
         self.sacred = ["root", "hips", "spine"]
