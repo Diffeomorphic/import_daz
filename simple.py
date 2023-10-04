@@ -792,8 +792,14 @@ class SimpleFKSnapper(SimpleIK):
             self.setProp(rig, prop, True)
             updatePose()
             self.snapBones(rig, bnames, prop)
-            enableRigLayer(rig, on, True)
-            enableRigLayer(rig, off, False)
+            if bpy.app.version < (4,0,0):
+                rig.data.layers[on] = True
+                rig.data.layers[off] = False
+            else:
+                coll = rig.data.collections[SimpleLayers[on]]
+                coll.is_visible = True
+                coll = rig.data.collections[SimpleLayers[off]]
+                coll.is_visible = False
             self.setProp(rig, prop, False)
             self.linearizeFcurve(rig, prop)
 
@@ -871,8 +877,14 @@ class SimpleIKSnapper(SimpleIK):
             self.setProp(rig, prop, 0.0)
             updatePose()
             self.snapBones(rig, bnames, prop, pole, shldrik, revbones)
-            enableRigLayer(rig, on, True)
-            enableRigLayer(rig, off, False)
+            if bpy.app.version < (4,0,0):
+                rig.data.layers[on] = True
+                rig.data.layers[off] = False
+            else:
+                coll = rig.data.collections[SimpleLayers[on]]
+                coll.is_visible = True
+                coll = rig.data.collections[SimpleLayers[off]]
+                coll.is_visible = False
             self.setProp(rig, prop, 1.0)
             self.linearizeFcurve(rig, prop)
 
@@ -1232,7 +1244,15 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        setRigLayers(rig, 16*[False] + 15*[True] + [False])
+        if bpy.app.version < (4,0,0):
+            rig.data.layers = 16*[False] + 15*[True] + [False]
+        else:
+            for coll in rig.data.collections:
+                coll.is_visible = False
+            for cname in SimpleLayers.values():
+                coll = rig.data.collections.get(cname)
+                if coll and cname != "Hidden":
+                    coll.is_visible = True
 
 
 class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
@@ -1243,14 +1263,21 @@ class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        m = 16
-        bone = rig.data.bones.active
-        if bone:
-            for n in range(16,30):
-                if bone.layers[n]:
-                    m = n
-                    break
-        setRigLayers(rig, m*[False] + [True] + (31-m)*[False])
+        if bpy.app.version < (4,0,0):
+            m = 16
+            bone = rig.data.bones.active
+            if bone:
+                for n in range(16,30):
+                    if bone.layers[n]:
+                        m = n
+                        break
+            rig.data.layers = m*[False] + [True] + (31-m)*[False]
+        else:
+            coll0 = rig.data.collections.active
+            for cname in SimpleLayers.values():
+                coll = rig.data.collections.get(cname)
+                if coll and coll != coll0:
+                    coll.is_visible = False
 
 #----------------------------------------------------------
 #   Copy Absolute Pose

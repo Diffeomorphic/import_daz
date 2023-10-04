@@ -1000,10 +1000,18 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
             (S_SPECIAL, None)]
         for m,n in layers:
             row = self.layout.row()
-            row.prop(rig.data, "layers", index=m, toggle=True, text=SimpleLayers[m])
-            if n:
-                row.prop(rig.data, "layers", index=n, toggle=True, text=SimpleLayers[n])
-
+            if bpy.app.version < (4,0,0):
+                row.prop(rig.data, "layers", index=m, toggle=True, text=SimpleLayers[m])
+                if n:
+                    row.prop(rig.data, "layers", index=n, toggle=True, text=SimpleLayers[n])
+            else:
+                cname = SimpleLayers[m]
+                coll = rig.data.collections[cname]
+                row.prop(coll, "is_visible", toggle=True, text=cname)
+                if n:
+                    cname = SimpleLayers[n]
+                    coll = rig.data.collections[cname]
+                    row.prop(coll, "is_visible", toggle=True, text=cname)
 
 class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Simple IK"
