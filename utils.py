@@ -58,8 +58,8 @@ if bpy.app.version < (4,0,0):
     def setRigLayers(rig, layers):
         rig.data.layers = layers
 
-    def enableAllRigLayers(rig):
-        rig.data.layers = 32*[True]
+    def enableAllRigLayers(rig, value=True):
+        rig.data.layers = 32*[value]
 
     def enableRigLayer(rig, layer, value=True):
         rig.data.layers[layer] = value
@@ -67,17 +67,23 @@ if bpy.app.version < (4,0,0):
     def makeBoneCollections(rig, table):
         LS.boneCollections[rig.name] = table
 
+    def clearBoneCollections(rig):
+        pass
+
+    def assignOtherBones(rig, layer):
+        pass
+        
     def setBonegroup(pb, rig, bgname):
         pb.bone_group = rig.pose.bone_groups[bgname]
 
 else:
     def enableBoneLayer(bone, rig, layer):
-        for idx,coll in LS.boneCollections[rig.name].items():
-            if idx == layer:
-                coll.assign(bone)
-                print("ENA", bone.name, layer, coll.name)
-            else:
-                coll.unassign(bone)
+        coll0 = LS.boneCollections[rig.name].get(layer)
+        if coll0:
+            coll0.assign(bone)
+            for coll in rig.data.collections:
+                if coll != coll0:
+                    coll.unassign(bone)
 
     def setBoneLayer(bone, rig, layer, value=True):
         coll = LS.boneCollections[rig.name].get(layer)
@@ -88,11 +94,11 @@ else:
                 coll.unassign(bone)
 
     def setBoneLayers(bone, rig, layers):
+        for coll in rig.data.collections:
+            coll.unassign(bone)
         for idx,coll in LS.boneCollections[rig.name].items():
             if layers.get(idx):
                 coll.assign(bone)
-            else:
-                coll.unassign(bone)
 
     def getBoneLayers(bone, rig):
         colls = LS.boneCollections[rig.name]
@@ -102,17 +108,21 @@ else:
         coll = LS.boneCollections[rig.name].get(layer)
         if coll:
             return (bone.name in coll.bones)
+        else:
+            return True
 
     def getRigLayers(rig):
         return [idx for idx,coll in LS.boneCollections[rig.name].items() if coll.is_visible]
 
     def setRigLayers(rig, layers):
-        for idx,coll in LS.boneCollections[rig.name].items():
-            coll.is_visible = (idx in layers)
+        for idx,vis in enumerate(layers):
+            coll = LS.boneCollections[rig.name].get(idx)
+            if coll:
+                coll.is_visible = vis
 
-    def enableAllRigLayers(rig):
-        for idx,coll in LS.boneCollections[rig.name].items():
-            coll.is_visible = True
+    def enableAllRigLayers(rig, value=True):
+        for coll in rig.data.collections:
+            coll.is_visible = value
 
     def enableRigLayer(rig, layer, value=True):
         coll = LS.boneCollections[rig.name].get(layer)
@@ -122,8 +132,23 @@ else:
     def makeBoneCollections(rig, table):
         colls = LS.boneCollections[rig.name] = {}
         for idx,name in table.items():
-            coll = rig.data.collections.new(name)
+            coll = rig.data.collections.get(name)
+            if coll is None:
+                coll = rig.data.collections.new(name)
+                coll.is_visible = True
             colls[idx] = coll
+
+    def assignOtherBones(rig, layer):
+        coll = LS.boneCollections[rig.name].get(layer)
+        if coll:
+            for bone in rig.data.bones:
+                coll.assign(bone)
+
+    def clearBoneCollections(rig):
+        for coll in rig.data.collections:
+            rig.data.collections.remove(coll)
+        if rig.name in LS.boneCollections.keys():
+            del LS.boneCollections[rig.name]
 
     def setBonegroup(pb, rig, bgname):
         pass

@@ -140,6 +140,7 @@ S_RARMIK = 27
 S_LLEGIK = 28
 S_RLEGIK = 29
 S_SPECIAL = 30
+S_HIDDEN = 31
 
 
 SimpleLayers = {
@@ -158,6 +159,7 @@ SimpleLayers = {
     S_LLEGIK : "IK Leg Left",
     S_RLEGIK : "IK Leg Right",
     S_SPECIAL : "Special",
+    S_HIDDEN : "Hidden"
 }
 
 #-------------------------------------------------------------

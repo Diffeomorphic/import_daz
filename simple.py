@@ -294,6 +294,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
+        enableAllRigLayers(rig, False)
         makeBoneCollections(rig, SimpleLayers)
         self.makeNewBones(rig, IK)
         self.makeCustomShapes(context, rig, IK)
@@ -303,6 +304,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         T = True
         F = False
         setRigLayers(rig, 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F])
+        assignOtherBones(rig, S_HIDDEN)
 
 
     def getEntry(self, table, prefix, bones):
@@ -1185,25 +1187,6 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
 #----------------------------------------------------------
 #   Named Layers
 #----------------------------------------------------------
-
-BoneLayers = {
-    "Spine" : 16,
-    "Face" : 17,
-    "Left FK Arm" : 18,
-    "Right FK Arm" : 19,
-    "Left FK Leg" : 20,
-    "Right FK Leg" : 21,
-    "Left Hand" : 22,
-    "Right Hand" : 23,
-    "Left Foot" : 24,
-    "Right Foot" : 25,
-    "Left IK Arm" : 26,
-    "Right IK Arm" : 27,
-    "Left IK Leg" : 28,
-    "Right IK Leg" : 29,
-    "Special" : 30,
-}
-
 
 def makeBoneGroups(rig):
     BoneGroups = [
