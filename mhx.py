@@ -917,8 +917,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                         ("heel", "GZM_Ball", 0.25, 1)]:
                     if pb.name.startswith(pname):
                         if isBoneDriven(rig, pb):
-                            pb.bone.layers[L_HELP] = True
-                            pb.bone.layers[L_TWEAK] = False
+                            setBoneLayer(pb.bone, L_HELP)
+                            setBoneLayer(pb.bone, L_TWEAK, False)
                         else:
                             self.addGizmo(pb, shape, scale, offset)
 
@@ -942,7 +942,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             bgrp = rig.pose.bone_groups[idx]
             for pb in rig.pose.bones.values():
                 for layer in layers:
-                    if pb.bone.layers[layer]:
+                    if isInLayer(pb.bone, rig, layer):
                         pb.bone_group = bgrp
 
     #-------------------------------------------------------------
@@ -1139,7 +1139,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('EDIT')
         hand0 = rig.data.edit_bones[hand0name]
         fingers = deriveBone(fingname, hand0, rig, L_LARMIK+dlayer, hand0)
-        fingers.layers[L_LARMFK+dlayer] = True
+        setBoneLayer(fingers, rig, L_LARMFK+dlayer)
         link = rig.data.edit_bones[linkname]
         fingers.roll = link.roll
         setMode('OBJECT')
@@ -1288,13 +1288,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 kneeHead = thigh.head + kneeFac*kneeVec
                 kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, L_LLEGIK+dlayer, legSocket)
                 kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
-                kneePoleA.layers[L_LEXTRA+dlayer] = True
+                setBoneLayer(kneePoleA, rig, L_LEXTRA+dlayer)
                 parent = self.getKneeParent(rig, suffix)
                 kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent)
-                kneePt.layers[L_LEXTRA+dlayer] = True
+                setBoneLayer(kneePt, rig, L_LEXTRA+dlayer)
                 kneeLink = makeBone("knee.link.%s" % suffix, rig, shin.head, locKneePt, 0, L_LLEGIK+dlayer, thighIk)
                 if self.showLinks:
-                    kneeLink.layers[L_LEXTRA+dlayer] = True
+                    setBoneLayer(kneeLink, rig, L_LEXTRA+dlayer)
                     kneeLink.hide_select = True
                 else:
                     enableBoneLayer(kneeLink, rig, L_HIDE)
@@ -1809,15 +1809,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('OBJECT')
         for bone in rig.data.bones:
             if bone.use_deform:
-                bone.layers[L_DEF] = True
+                setBoneLayer(bone, rig, L_DEF)
 
 
     def addLayers(self, rig):
         setMode('OBJECT')
         for suffix,dlayer in [("L",0), ("R",16)]:
             clavicle = rig.data.bones["clavicle.%s" % suffix]
-            clavicle.layers[L_SPINE] = True
-            clavicle.layers[L_LARMIK+dlayer] = True
+            setBoneLayer(clavicle, rig, L_SPINE)
+            setBoneLayer(clavicle, rig, L_LARMIK+dlayer)
 
     #-------------------------------------------------------------
     #   Tie bone

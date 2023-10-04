@@ -112,7 +112,10 @@ else:
             return True
 
     def getRigLayers(rig):
-        return [idx for idx,coll in LS.boneCollections[rig.name].items() if coll.is_visible]
+        layers = 32*[False]
+        for idx,coll in LS.boneCollections[rig.name].items():
+            layers[idx] = coll.is_visible
+        return layers
 
     def setRigLayers(rig, layers):
         for idx,vis in enumerate(layers):
