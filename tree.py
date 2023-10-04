@@ -196,6 +196,8 @@ class NodeGroup:
 
 
     def checkSockets(self, tree):
+        if bpy.app.version >= (4,0,0):
+            return True
         for socket in self.insockets:
             if socket not in tree.inputs.keys():
                 print("Missing insocket: %s" % socket)
@@ -208,14 +210,15 @@ class NodeGroup:
 
 
     def hideSlot(self, slot):
-        if bpy.app.version >= (2,90,0):
-            self.group.inputs[slot].hide_value = True
+        socket = getGroupInput(self.group, slot)
+        socket.hide_value = True
 
 
     def setMinMax(self, slot, default, min, max):
-        self.group.inputs[slot].default_value = default
-        self.group.inputs[slot].min_value = min
-        self.group.inputs[slot].max_value = max
+        socket = getGroupInput(self.group, slot)
+        socket.default_value = default
+        socket.min_value = min
+        socket.max_value = max
 
 #-------------------------------------------------------------
 #   Utilities

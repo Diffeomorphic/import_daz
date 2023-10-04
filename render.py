@@ -165,9 +165,9 @@ class BackgroundGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 2)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketFloat", "Fac")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketFloat", "Fac")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
 
     def addNodes(self, args=None):
         from .tree import hideAllBut

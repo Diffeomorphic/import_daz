@@ -70,14 +70,14 @@ class ShellGroup(NodeGroup):
 
     def create(self, node, name, parent):
         NodeGroup.create(self, node, name, parent, 11)
-        self.group.inputs.new("NodeSocketFloat", "Influence")
-        self.group.inputs.new("NodeSocketShader", "BSDF")
-        self.group.inputs.new("NodeSocketVector", "UV")
+        addGroupInput(self.group, "NodeSocketFloat", "Influence")
+        addGroupInput(self.group, "NodeSocketShader", "BSDF")
+        addGroupInput(self.group, "NodeSocketVector", "UV")
         self.hideSlot("UV")
-        self.group.inputs.new("NodeSocketVector", "Displacement")
+        addGroupInput(self.group, "NodeSocketVector", "Displacement")
         self.hideSlot("Displacement")
-        self.group.outputs.new("NodeSocketShader", "BSDF")
-        self.group.outputs.new("NodeSocketVector", "Displacement")
+        addGroupOutput(self.group, "NodeSocketShader", "BSDF")
+        addGroupOutput(self.group, "NodeSocketVector", "Displacement")
 
 
     def addNodes(self, args):
@@ -239,17 +239,17 @@ class FresnelGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 5)
-        self.group.inputs.new("NodeSocketFloat", "IOR")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Power")
+        addGroupInput(self.group, "NodeSocketFloat", "Power")
         self.setMinMax("Power", 1, 1, 4)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
-        self.group.outputs.new("NodeSocketFloat", "Dielectric")
-        self.group.outputs.new("NodeSocketFloat", "Metal")
-        self.group.outputs.new("NodeSocketFloat", "Refraction")
+        addGroupOutput(self.group, "NodeSocketFloat", "Dielectric")
+        addGroupOutput(self.group, "NodeSocketFloat", "Metal")
+        addGroupOutput(self.group, "NodeSocketFloat", "Refraction")
 
 
     def addNodes(self, args=None):
@@ -313,13 +313,13 @@ class SchlickGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketFloat", "Specular0")
+        addGroupInput(self.group, "NodeSocketFloat", "Specular0")
         self.setMinMax("Specular0", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Specular90")
+        addGroupInput(self.group, "NodeSocketFloat", "Specular90")
         self.setMinMax("Specular90", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Power")
+        addGroupInput(self.group, "NodeSocketFloat", "Power")
         self.setMinMax("Power", 1, 1, 4)
-        self.group.outputs.new("NodeSocketFloat", "Fac")
+        addGroupOutput(self.group, "NodeSocketFloat", "Fac")
 
 
     def addNodes(self, args=None):
@@ -366,8 +366,8 @@ class LogColorGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 6)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
 
 
     def addNodes(self, args=None):
@@ -413,8 +413,8 @@ class SkipZeroUvGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketVector", "UV")
-        self.group.outputs.new("NodeSocketFloat", "Influence")
+        addGroupInput(self.group, "NodeSocketVector", "UV")
+        addGroupOutput(self.group, "NodeSocketFloat", "Influence")
 
 
     def addNodes(self, args=None):
@@ -438,8 +438,8 @@ class BSDFGroup(CyclesGroup):
         self.outsockets += ["BSDF"]
 
     def createShaderSlots(self):
-        self.group.inputs.new("NodeSocketShader", "BSDF")
-        self.group.outputs.new("NodeSocketShader", "BSDF")
+        addGroupInput(self.group, "NodeSocketShader", "BSDF")
+        addGroupOutput(self.group, "NodeSocketShader", "BSDF")
 
     def mixCycles(self, socket, slot):
         self.links.new(socket, self.mix1.inputs[slot])
@@ -455,7 +455,7 @@ class FacMixGroup(BSDFGroup):
 
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
+        addGroupInput(self.group, "NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
         self.createShaderSlots()
 
@@ -495,7 +495,7 @@ class BrickLayerGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 10)
-        self.group.inputs.new("NodeSocketVector", "UV")
+        addGroupInput(self.group, "NodeSocketVector", "UV")
         self.hideSlot("UV")
 
 
@@ -524,14 +524,14 @@ class AltSSSGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "SSS Amount")
-        self.group.inputs.new("NodeSocketColor", "Diffuse Color")
-        self.group.inputs.new("NodeSocketColor", "Translucent Color")
-        self.group.inputs.new("NodeSocketFloat", "Translucency Weight")
+        addGroupInput(self.group, "NodeSocketFloat", "SSS Amount")
+        addGroupInput(self.group, "NodeSocketColor", "Diffuse Color")
+        addGroupInput(self.group, "NodeSocketColor", "Translucent Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Translucency Weight")
         self.setMinMax("Translucency Weight", 0.5, 0.0, 1.0)
-        self.group.outputs.new("NodeSocketFloat", "Subsurface")
-        self.group.outputs.new("NodeSocketColor", "Base Color")
-        self.group.outputs.new("NodeSocketColor", "Subsurface Color")
+        addGroupOutput(self.group, "NodeSocketFloat", "Subsurface")
+        addGroupOutput(self.group, "NodeSocketColor", "Base Color")
+        addGroupOutput(self.group, "NodeSocketColor", "Subsurface Color")
 
 
     def addNodes(self, args=None):
@@ -584,14 +584,14 @@ class ColorEffectGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
+        addGroupInput(self.group, "NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketColor", "Tint")
-        self.group.inputs["Tint"].default_value = (1,1,1,1)
-        self.group.outputs.new("NodeSocketFloat", "Transmit Fac")
-        self.group.outputs.new("NodeSocketFloat", "Intensity Fac")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Tint")
+        getGroupInput(self.group, "Tint").default_value = (1,1,1,1)
+        addGroupOutput(self.group, "NodeSocketFloat", "Transmit Fac")
+        addGroupOutput(self.group, "NodeSocketFloat", "Intensity Fac")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
 
     def addNodes(self, args=None):
         mult,a,b,out = self.addMixRgbNode('MULTIPLY', 1)
@@ -638,8 +638,8 @@ class InvertNormalMapGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
 
 
     def addNodes(self, args=None):
@@ -670,11 +670,11 @@ class WeightedGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
+        addGroupInput(self.group, "NodeSocketFloat", "Fac")
         self.setMinMax("Fac", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketShader", "Diffuse Cycles")
-        self.group.inputs.new("NodeSocketShader", "Glossy Cycles")
-        self.group.outputs.new("NodeSocketShader", "BSDF")
+        addGroupInput(self.group, "NodeSocketShader", "Diffuse Cycles")
+        addGroupInput(self.group, "NodeSocketShader", "Glossy Cycles")
+        addGroupOutput(self.group, "NodeSocketShader", "BSDF")
 
 
     def addNodes(self, args=None):
@@ -697,8 +697,8 @@ class EmissionGroup(AddGroup):
 
     def create(self, node, name, parent):
         AddGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Strength")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Strength")
 
 
     def addNodes(self, args=None):
@@ -738,10 +738,10 @@ class DiffuseGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -765,16 +765,16 @@ class GlossyGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "IOR")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropy")
         self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Rotation")
+        addGroupInput(self.group, "NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -815,14 +815,14 @@ class MetalGroupUber(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 5)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropy")
         self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Rotation")
+        addGroupInput(self.group, "NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -865,13 +865,13 @@ class MetalGroupPbrSkin(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 6)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness 1")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness 1")
         self.setMinMax("Roughness 1", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Roughness 2")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness 2")
         self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Dual Ratio")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketFloat", "Dual Ratio")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -917,20 +917,20 @@ class TopCoatGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Specular0")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Specular0")
         self.setMinMax("Specular0", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Specular90")
+        addGroupInput(self.group, "NodeSocketFloat", "Specular90")
         self.setMinMax("Specular90", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Power")
+        addGroupInput(self.group, "NodeSocketFloat", "Power")
         self.setMinMax("Power", 1, 1, 4)
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropy")
         self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Rotation")
+        addGroupInput(self.group, "NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -971,18 +971,18 @@ class RefractionThinWallGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 5)
-        self.group.inputs.new("NodeSocketColor", "Refraction Color")
+        addGroupInput(self.group, "NodeSocketColor", "Refraction Color")
         self.addArgs()
-        self.group.inputs.new("NodeSocketFloat", "IOR")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
-        self.group.inputs.new("NodeSocketColor", "Glossy Color")
-        self.group.inputs.new("NodeSocketFloat", "Glossy Roughness")
+        addGroupInput(self.group, "NodeSocketColor", "Glossy Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Glossy Roughness")
         self.setMinMax("Glossy Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropy")
         self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Rotation")
+        addGroupInput(self.group, "NodeSocketFloat", "Rotation")
         self.setMinMax("Rotation", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -1019,7 +1019,7 @@ class RefractionGroup(RefractionThinWallGroup):
     extra = ["Refraction Roughness"]
 
     def addArgs(self):
-        self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
+        addGroupInput(self.group, "NodeSocketFloat", "Refraction Roughness")
         self.setMinMax("Refraction Roughness", 0.5, 0.0, 1.0)
 
     def AddRefractionTransparent(self):
@@ -1098,7 +1098,7 @@ class TransparentGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
 
 
     def addNodes(self, args=None):
@@ -1120,14 +1120,14 @@ class SubsurfaceGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Scale")
-        self.group.inputs.new("NodeSocketVector", "Radius")
-        self.group.inputs.new("NodeSocketFloat", "IOR")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Scale")
+        addGroupInput(self.group, "NodeSocketVector", "Radius")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
-        self.group.inputs.new("NodeSocketFloat", "Anisotropy")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropy")
         self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
     def addNodes(self, args=None):
@@ -1154,8 +1154,8 @@ class TranslucentGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
     def addNodes(self, args=None):
@@ -1177,10 +1177,10 @@ class MakeupGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -1204,15 +1204,15 @@ class FlakesGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 6)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         self.setMinMax("Roughness", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Strength")
+        addGroupInput(self.group, "NodeSocketFloat", "Strength")
         self.setMinMax("Strength", 1.0, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Distance")
-        self.group.inputs.new("NodeSocketFloat", "Scale")
-        self.group.inputs.new("NodeSocketFloat", "From Min")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketFloat", "Distance")
+        addGroupInput(self.group, "NodeSocketFloat", "Scale")
+        addGroupInput(self.group, "NodeSocketFloat", "From Min")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -1281,9 +1281,9 @@ class GhostLightGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketShader", "Emission")
-        self.group.inputs.new("NodeSocketShader", "Transparent")
-        self.group.outputs.new("NodeSocketShader", "Shader")
+        addGroupInput(self.group, "NodeSocketShader", "Emission")
+        addGroupInput(self.group, "NodeSocketShader", "Transparent")
+        addGroupOutput(self.group, "NodeSocketShader", "Shader")
 
 
     def addNodes(self, args=None):
@@ -1320,9 +1320,9 @@ class RayClipGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketShader", "Shader")
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketShader", "Shader")
+        addGroupInput(self.group, "NodeSocketShader", "Shader")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketShader", "Shader")
 
 
     def addNodes(self, args=None):
@@ -1356,15 +1356,15 @@ class DualLobeGroup(FacMixGroup):
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Ratio")
+        addGroupInput(self.group, "NodeSocketFloat", "Ratio")
         self.setMinMax("Ratio", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "IOR")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
         self.setMinMax("IOR", 1.0, 1.0, 5.0)
-        self.group.inputs.new("NodeSocketFloat", "Roughness 1")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness 1")
         self.setMinMax("Roughness 1", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketFloat", "Roughness 2")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness 2")
         self.setMinMax("Roughness 2", 0.5, 0.0, 1.0)
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
 
@@ -1445,12 +1445,12 @@ class VolumeGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Absorbtion Color")
-        self.group.inputs.new("NodeSocketFloat", "Absorbtion Density")
-        self.group.inputs.new("NodeSocketColor", "Scatter Color")
-        self.group.inputs.new("NodeSocketFloat", "Scatter Density")
-        self.group.inputs.new("NodeSocketFloat", "Scatter Anisotropy")
-        self.group.outputs.new("NodeSocketShader", "Volume")
+        addGroupInput(self.group, "NodeSocketColor", "Absorbtion Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Absorbtion Density")
+        addGroupInput(self.group, "NodeSocketColor", "Scatter Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Scatter Density")
+        addGroupInput(self.group, "NodeSocketFloat", "Scatter Anisotropy")
+        addGroupOutput(self.group, "NodeSocketShader", "Volume")
 
 
     def addNodes(self, args=None):
@@ -1484,11 +1484,11 @@ class NormalGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 8)
-        self.group.inputs.new("NodeSocketFloat", "Strength")
+        addGroupInput(self.group, "NodeSocketFloat", "Strength")
         self.setMinMax("Strength", 1.0, 0.0, 1.0)
-        color = self.group.inputs.new("NodeSocketColor", "Color")
+        color = addGroupInput(self.group, "NodeSocketColor", "Color")
         color.default_value = ((0.5, 0.5, 1.0, 1.0))
-        self.group.outputs.new("NodeSocketVector", "Normal")
+        addGroupOutput(self.group, "NodeSocketVector", "Normal")
 
 
     def addNodes(self, args):
@@ -1614,13 +1614,13 @@ class DisplacementGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Texture")
-        self.group.inputs.new("NodeSocketFloat", "Strength")
-        self.group.inputs.new("NodeSocketFloat", "Max")
-        self.group.inputs.new("NodeSocketFloat", "Min")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketFloat", "Texture")
+        addGroupInput(self.group, "NodeSocketFloat", "Strength")
+        addGroupInput(self.group, "NodeSocketFloat", "Max")
+        addGroupInput(self.group, "NodeSocketFloat", "Min")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
-        self.group.outputs.new("NodeSocketVector", "Displacement")
+        addGroupOutput(self.group, "NodeSocketVector", "Displacement")
 
 
     def addNodes(self, args=None):
@@ -1662,8 +1662,8 @@ class MappingGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
-        self.group.outputs.new("NodeSocketFloat", "Depth Mask")
-        self.group.outputs.new("NodeSocketVector", "Vector")
+        addGroupOutput(self.group, "NodeSocketFloat", "Depth Mask")
+        addGroupOutput(self.group, "NodeSocketVector", "Vector")
 
 
     def addNodes(self, args):
@@ -1710,12 +1710,12 @@ class DecalGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 5)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Influence")
-        self.group.outputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketFloat", "Alpha")
-        self.group.outputs.new("NodeSocketColor", "Combined")
-        self.group.outputs.new("NodeSocketFloat", "Depth Mask")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Influence")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketFloat", "Alpha")
+        addGroupOutput(self.group, "NodeSocketColor", "Combined")
+        addGroupOutput(self.group, "NodeSocketFloat", "Depth Mask")
 
 
     def addNodes(self, args):
@@ -1798,35 +1798,35 @@ class PrincipledGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 5)
-        self.group.inputs.new("NodeSocketColor", "Base Color")
-        self.group.inputs.new("NodeSocketFloat", "Subsurface")
-        self.group.inputs.new("NodeSocketVector", "Subsurface Radius")
+        addGroupInput(self.group, "NodeSocketColor", "Base Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Subsurface")
+        addGroupInput(self.group, "NodeSocketVector", "Subsurface Radius")
         self.hideSlot("Subsurface Radius")
-        self.group.inputs.new("NodeSocketColor", "Subsurface Color")
-        self.group.inputs.new("NodeSocketFloat", "Subsurface IOR")
-        self.group.inputs.new("NodeSocketFloat", "Metallic")
-        self.group.inputs.new("NodeSocketFloat", "Specular")
-        self.group.inputs.new("NodeSocketFloat", "Specular Tint")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
-        self.group.inputs.new("NodeSocketFloat", "Anisotropic")
-        self.group.inputs.new("NodeSocketFloat", "Anisotropic Rotation")
-        self.group.inputs.new("NodeSocketFloat", "Sheen")
-        self.group.inputs.new("NodeSocketFloat", "Sheen Tint")
-        self.group.inputs.new("NodeSocketFloat", "Clearcoat")
-        self.group.inputs.new("NodeSocketFloat", "Clearcoat Roughness")
-        self.group.inputs.new("NodeSocketFloat", "IOR")
-        self.group.inputs.new("NodeSocketFloat", "Transmission")
-        self.group.inputs.new("NodeSocketFloat", "Transmission Roughness")
-        self.group.inputs.new("NodeSocketColor", "Emission")
-        self.group.inputs.new("NodeSocketFloat", "Emission Strength")
-        self.group.inputs.new("NodeSocketFloat", "Alpha")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        addGroupInput(self.group, "NodeSocketColor", "Subsurface Color")
+        addGroupInput(self.group, "NodeSocketFloat", "Subsurface IOR")
+        addGroupInput(self.group, "NodeSocketFloat", "Metallic")
+        addGroupInput(self.group, "NodeSocketFloat", "Specular")
+        addGroupInput(self.group, "NodeSocketFloat", "Specular Tint")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropic")
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropic Rotation")
+        addGroupInput(self.group, "NodeSocketFloat", "Sheen")
+        addGroupInput(self.group, "NodeSocketFloat", "Sheen Tint")
+        addGroupInput(self.group, "NodeSocketFloat", "Clearcoat")
+        addGroupInput(self.group, "NodeSocketFloat", "Clearcoat Roughness")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
+        addGroupInput(self.group, "NodeSocketFloat", "Transmission")
+        addGroupInput(self.group, "NodeSocketFloat", "Transmission Roughness")
+        addGroupInput(self.group, "NodeSocketColor", "Emission")
+        addGroupInput(self.group, "NodeSocketFloat", "Emission Strength")
+        addGroupInput(self.group, "NodeSocketFloat", "Alpha")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
-        self.group.inputs.new("NodeSocketVector", "Clearcoat Normal")
+        addGroupInput(self.group, "NodeSocketVector", "Clearcoat Normal")
         self.hideSlot("Clearcoat Normal")
-        self.group.inputs.new("NodeSocketVector", "Tangent")
+        addGroupInput(self.group, "NodeSocketVector", "Tangent")
         self.hideSlot("Tangent")
-        self.group.outputs.new("NodeSocketShader", "BSDF")
+        addGroupOutput(self.group, "NodeSocketShader", "BSDF")
 
     def addNodes(self, args):
         pass
@@ -1845,9 +1845,9 @@ class LayeredGroup(CyclesGroup):
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 6)
-        self.group.inputs.new("NodeSocketVector", "Vector")
-        self.group.inputs.new("NodeSocketFloat", "Influence")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketVector", "Vector")
+        addGroupInput(self.group, "NodeSocketFloat", "Influence")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
 
 
     def addTextureNodes(self, assets, maps, colorSpace, isMask):

@@ -56,11 +56,11 @@ class GeoTree(Tree, NodeGroup):
 class GeograftGroup(GeoTree):
     def create(self, name):
         NodeGroup.make(self, name, 5)
-        self.group.inputs.new("NodeSocketGeometry", "Geometry")
-        self.group.inputs.new("NodeSocketFloat", "Geograft Edge")
-        self.group.inputs.new("NodeSocketFloat", "Geograft Area")
-        self.group.inputs.new("NodeSocketFloat", "Merge Distance")
-        self.group.outputs.new("NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketFloat", "Geograft Edge")
+        addGroupInput(self.group, "NodeSocketFloat", "Geograft Area")
+        addGroupInput(self.group, "NodeSocketFloat", "Merge Distance")
+        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
     def addNodes(self, cob, anatomies):
@@ -122,10 +122,10 @@ class GeograftGroup(GeoTree):
 class GeoshellGroup(GeoTree):
     def create(self, name, mnames):
         NodeGroup.make(self, name, 7)
-        self.group.inputs.new("NodeSocketGeometry", "Geometry")
-        self.group.inputs.new("NodeSocketObject", "Shell Geometry")
-        self.group.inputs.new("NodeSocketFloat", "Shell Offset")
-        self.group.outputs.new("NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketObject", "Shell Geometry")
+        addGroupInput(self.group, "NodeSocketFloat", "Shell Offset")
+        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
     def addNodes(self, mnames, mats, shmats):

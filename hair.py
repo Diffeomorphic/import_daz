@@ -1817,10 +1817,10 @@ class FadeGroup(NodeGroup, HairTree):
     def create(self, node, name, parent):
         HairTree.__init__(self, parent.owner, BLACK)
         NodeGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketShader", "Shader")
-        self.group.inputs.new("NodeSocketFloat", "Intercept")
-        self.group.inputs.new("NodeSocketFloat", "Random")
-        self.group.outputs.new("NodeSocketShader", "Shader")
+        addGroupInput(self.group, "NodeSocketShader", "Shader")
+        addGroupInput(self.group, "NodeSocketFloat", "Intercept")
+        addGroupInput(self.group, "NodeSocketFloat", "Random")
+        addGroupOutput(self.group, "NodeSocketShader", "Shader")
 
 
     def addNodes(self, args=None):

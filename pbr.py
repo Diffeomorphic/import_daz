@@ -35,6 +35,25 @@ from .utils import *
 from .cycles import CyclesTree
 from .tree import colorOutput
 
+# PBR slots:
+# ['Base Color', 'Metallic', 'Roughness', 'IOR', 'Alpha', 'Normal', 'Weight', 'Subsurface Weight', 'Subsurface Radius', 'Subsurface Scale', 'Subsurface IOR', 'Subsurface Anisotropy', 'Specular IOR Level', 'Specular Tint', 'Anisotropic', 'Anisotropic Rotation', 'Tangent', 'Transmission Weight', 'Coat Weight', 'Coat Roughness', 'Coat IOR', 'Coat Tint', 'Coat Normal', 'Sheen Weight', 'Sheen Roughness', 'Sheen Tint', 'Emission Color', 'Emission Strength']
+#
+
+if bpy.app.version < (4,0,0):
+    SubsurfWeight = "Subsurface"
+    Specular = "Specular"
+    CoatWeight = "Clearcoat"
+    CoatRoughness = "Clearcoat Roughness"
+    SheenWeight = "Sheen"
+    TransmitWeight = "Transmission"
+else:
+    SubsurfWeight = "Subsurface Weight"
+    Specular = "Specular IOR Level"
+    CoatWeight = "Coat Weight"
+    CoatRoughness = "Coat Roughness"
+    SheenWeight = "Sheen Weight"
+    TransmitWeight = "Transmission Weight"
+
 class PbrTree(CyclesTree):
     def __init__(self, pbrmat):
         CyclesTree.__init__(self, pbrmat)
@@ -110,8 +129,9 @@ class PbrTree(CyclesTree):
         #effect = self.getValue(["Base Color Effect"], 0)
         #tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         #self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, self.pbr, colorslot="Base Color")
-        self.replaceSlot(self.pbr, "Subsurface", 0.0)
-        self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
+        self.replaceSlot(self.pbr, SubsurfWeight, 0.0)
+        if bpy.app.version < (4,0,0):
+            self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
         self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
 
 
@@ -182,7 +202,8 @@ class PbrTree(CyclesTree):
         else:
             color,tex = self.getDiffuseColor()
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
-        self.pbr.inputs["Subsurface"].default_value = 0
+        self.pbr.inputs["Base Color"].default_value = (1,1,1,1)
+        self.pbr.inputs[SubsurfWeight].default_value = 0
 
         if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
             return
@@ -214,8 +235,9 @@ class PbrTree(CyclesTree):
         gamma = self.addNode("ShaderNodeGamma", size=7)
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
-        self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
-        self.linkScalar(wttex, self.pbr, transwt, "Subsurface", texslot=texslot)
+        if bpy.app.version < (4,0,0):
+            self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
+        self.linkScalar(wttex, self.pbr, transwt, SubsurfWeight, texslot=texslot)
 
 
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex, texslot):
@@ -228,8 +250,9 @@ class PbrTree(CyclesTree):
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight", texslot=texslot)
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
-        self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
-        self.links.new(fix.outputs["Subsurface"], self.pbr.inputs["Subsurface"])
+        if bpy.app.version < (4,0,0):
+            self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
+        self.links.new(fix.outputs[SubsurfWeight], self.pbr.inputs[SubsurfWeight])
 
     #-------------------------------------------------------------
     #   Metallic
@@ -278,11 +301,11 @@ class PbrTree(CyclesTree):
             tex = self.mixTexs('MULTIPLY', strtex, coltex)
             value = factor = strength * averageColor(color)
 
-        self.pbr.inputs["Specular"].default_value = clamp(value)
+        self.pbr.inputs[Specular].default_value = clamp(value)
         if tex and useTex:
             tex = self.multiplyScalarTex(clamp(factor), tex)
             if tex:
-                self.links.new(colorOutput(tex), self.pbr.inputs["Specular"])
+                self.links.new(colorOutput(tex), self.pbr.inputs[Specular])
 
     #-------------------------------------------------------------
     #   Anisotropy
@@ -303,9 +326,10 @@ class PbrTree(CyclesTree):
 
     def buildRoughness(self, anisotropy, useTex):
         if self.pureMetal:
-            self.replaceSlot(self.pbr, "Specular", 0.5)
-            self.replaceSlot(self.pbr, "Subsurface", 0.0)
-            self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
+            self.replaceSlot(self.pbr, Specular, 0.5)
+            self.replaceSlot(self.pbr, SubsurfWeight, 0.0)
+            if bpy.app.version < (4,0,0):
+                self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
             self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
         if self.owner.shader == 'PBRSKIN':
             if self.pureMetal:
@@ -334,7 +358,7 @@ class PbrTree(CyclesTree):
         if self.isEnabled("Top Coat"):
             top,toptex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
             rough,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
-            self.linkScalar(roughtex, self.pbr, rough, "Clearcoat Roughness")
+            self.linkScalar(roughtex, self.pbr, rough, CoatRoughness)
         else:
             top,toptex = 0.0,None
         if self.owner.shader == 'UBER_IRAY':
@@ -351,11 +375,11 @@ class PbrTree(CyclesTree):
         else:
             tex = toptex
             value = top
-        self.pbr.inputs["Clearcoat"].default_value = clamp(value)
+        self.pbr.inputs[CoatWeight].default_value = clamp(value)
         if tex and useTex:
             tex = self.multiplyScalarTex(clamp(value), tex)
             if tex:
-                self.links.new(colorOutput(tex), self.pbr.inputs["Clearcoat"])
+                self.links.new(colorOutput(tex), self.pbr.inputs[CoatWeight])
 
     #-------------------------------------------------------------
     #   Sheen
@@ -364,7 +388,7 @@ class PbrTree(CyclesTree):
     def buildSheen(self):
         if self.isEnabled("Velvet"):
             velvet,tex,texslot = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
-            self.linkScalar(tex, self.pbr, velvet, "Sheen")
+            self.linkScalar(tex, self.pbr, velvet, SheenWeight)
 
     #-------------------------------------------------------------
     #   Glossy or Dual lobe
@@ -379,7 +403,7 @@ class PbrTree(CyclesTree):
             dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
             if dualLobeWeight > 0:
                 self.buildDualLobe()
-                self.replaceSlot(self.pbr, "Specular", 0)
+                self.replaceSlot(self.pbr, Specular, 0)
                 self.postPBR = True
 
     #-------------------------------------------------------------
@@ -394,7 +418,7 @@ class PbrTree(CyclesTree):
             self.column = 5
             weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
-                self.linkScalar(wttex, self.pbr, weight, "Transmission", texslot=texslot)
+                self.linkScalar(wttex, self.pbr, weight, TransmitWeight, texslot=texslot)
                 self.setRefractivePrincipled()
             else:
                 self.column = col
@@ -422,9 +446,9 @@ class PbrTree(CyclesTree):
             self.replaceSlot(pbr, "Roughness", 0.0)
             strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
             clearcoat = (ior-1)*10*strength
-            self.removeLink(pbr, "Clearcoat")
-            self.linkScalar(strtex, pbr, clearcoat, "Clearcoat", texslot=texslot)
-            self.replaceSlot(pbr, "Clearcoat Roughness", 0)
+            self.removeLink(pbr, CoatWeight)
+            self.linkScalar(strtex, pbr, clearcoat, CoatWeight, texslot=texslot)
+            self.replaceSlot(pbr, CoatRoughness, 0)
             if LS.materialMethod == 'EXTENDED_PRINCIPLED':
                 from .cgroup import RayClipGroup
                 clip = self.addGroup(RayClipGroup, "DAZ Ray Clip", col=6)
@@ -435,7 +459,7 @@ class PbrTree(CyclesTree):
         elif self.owner.isVolume():
             self.owner.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "Metallic", 0)
-            self.replaceSlot(pbr, "Specular", 0)
+            self.replaceSlot(pbr, Specular, 0)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
 
@@ -452,7 +476,7 @@ class PbrTree(CyclesTree):
                 coltex = self.mixTexs('MULTIPLY', coltex, transtex)
                 color = self.compProd(color, transcolor)
             self.replaceSlot(pbr, "Metallic", 0)
-            self.replaceSlot(pbr, "Specular", 0.5)
+            self.replaceSlot(pbr, Specular, 0.5)
             self.removeLink(pbr, "IOR")
             self.linkScalar(iortex, pbr, ior, "IOR")
             self.removeLink(pbr, "Roughness")
@@ -460,11 +484,12 @@ class PbrTree(CyclesTree):
 
         self.removeLink(pbr, "Base Color")
         self.linkColor(coltex, pbr, color, "Base Color")
-        self.replaceSlot(pbr, "Subsurface", 0)
-        self.removeLink(pbr, "Subsurface Color")
-        pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
-        if self.getValue(["Share Glossy Inputs"], False):
-            self.replaceSlot(pbr, "Specular Tint", 1.0)
+        self.replaceSlot(pbr, SubsurfWeight, 0)
+        if bpy.app.version < (4,0,0):
+            self.removeLink(pbr, "Subsurface Color")
+            pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
+        #if self.getValue(["Share Glossy Inputs"], False):
+        #    self.replaceSlot(pbr, "Specular Tint", 1.0)
         self.addColumn()
 
     #-------------------------------------------------------------
