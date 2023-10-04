@@ -223,6 +223,7 @@ class MetaMaker(RigifyCommon):
 
         print("  Fix metarig")
         meta = context.object
+        makeBoneCollections(meta, RigifyLayers)
         cns = meta.constraints.new('COPY_SCALE')
         cns.name = "Rigify Source"
         cns.target = rig
@@ -253,8 +254,11 @@ class MetaMaker(RigifyCommon):
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.deleteBendTwistDrvBones(rig)
+            print("DLL")
             mergers = dict((list(RF.Genesis38Mergers1.items()) + list(RF.Genesis38Mergers2.items())))
+            print("MM", mergers)
             mergeBones(rig, mergers, RF.Genesis38Parents, context)
+            print("NNN")
             if dazrig:
                 pass
             elif meta["DazReuseBendTwists"]:
@@ -262,6 +266,7 @@ class MetaMaker(RigifyCommon):
             else:
                 mergeVertexGroups(rig, mergers)
             self.renameBones(rig, RF.Genesis38Renames, dazrig)
+            print("RR")
         elif rig.DazRig == "genesis9":
             if dazrig:
                 pass
@@ -398,15 +403,17 @@ class MetaMaker(RigifyCommon):
         for bname,layer,row,group in self.GroupBones:
             pb = meta.pose.bones[bname]
             pb["rigify_type"] = "basic.pivot"
-            meta.data.layers[layer] = True
-            rlayer = meta.data.rigify_layers[layer]
-            rlayer.name = bname
-            rlayer.row = row
-            rlayer.group = group
-        meta.data.layers[0] = False
-        rlayer = meta.data.rigify_layers[0]
-        rlayer.name = ""
-        rlayer.group = 6
+            enableRigLayer(meta, layer)
+            if bpy.app.version < (4,0,0):
+                rlayer = meta.data.rigify_layers[layer]
+                rlayer.name = bname
+                rlayer.row = row
+                rlayer.group = group
+        if bpy.app.version < (4,0,0):
+            meta.data.layers[0] = False
+            rlayer = meta.data.rigify_layers[0]
+            rlayer.name = ""
+            rlayer.group = 6
 
 
     def getChildren(self, pb):
@@ -574,7 +581,7 @@ class MetaMaker(RigifyCommon):
             eb.roll = dbone.roll
             eb.parent = mbones[pname]
             eb.use_connect = True
-            eb.layers = list(eb.parent.layers)
+            copyBoneLayers(eb.parent, eb, meta)
 
 
     def reparentBones(self, rig, parents):
@@ -712,6 +719,7 @@ class Rigifier(RigifyCommon):
 
         scn = context.scene
         gen = context.object
+        makeBoneCollections(gen, RigifyLayers)
         if gen.name in scn.collection.objects:
             scn.collection.objects.unlink(gen)
         if gen.name not in coll.objects:
@@ -979,20 +987,16 @@ class Rigifier(RigifyCommon):
                     if layer:
                         layer.exclude = True
                     break
-        setFkIk2(gen, False, gen.data.layers, False, 0)
+        if bpy.app.version < (4,0,0):
+            setFkIk2(gen, False, gen.data.layers, False, 0)
         if activateObject(context, rig):
             deleteObjects(context, [rig])
         if self.useDeleteMeta:
             if activateObject(context, meta):
                 deleteObjects(context, [meta])
         activateObject(context, gen)
+        setRigLayers(gen, [R_TORSO, R_FACE])
         gen.name = name
-        F = False
-        T = True
-        gen.data.layers = (
-            F,T,F,T, F,F,F,T, F,F,T,F, F,T,F,F,
-            T,F,F,F, F,F,F,F, F,F,F,F, T,F,F,F)
-
         if dazrig:
             self.tieBones(dazrig, gen)
             self.setRigName(gen, dazrig, "RIGIFY")

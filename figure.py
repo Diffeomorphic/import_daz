@@ -587,7 +587,7 @@ class ExtraBones(DriverUser):
             eb.head = db.head
             eb.tail = db.tail
             eb.roll = db.roll
-            setBoneLayers(eb, rig, getBoneLayers(db, rig))
+            copyBoneLayers(db, eb, rig)
             eb.use_deform = db.use_deform
             return eb
 

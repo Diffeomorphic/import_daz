@@ -46,8 +46,8 @@ if bpy.app.version < (4,0,0):
     def setBoneLayers(bone, rig, layers):
         bone.layers = layers
 
-    def getBoneLayers(bone, rig):
-        return list(bone.layers)
+    def copyBoneLayers(src, trg, rig):
+        trg.layers = list(src.layers)
 
     def isInLayer(bone, rig, layer):
         return bone.layers[layer]
@@ -103,9 +103,10 @@ else:
             if layers.get(idx):
                 coll.assign(bone)
 
-    def getBoneLayers(bone, rig):
-        colls = LS.boneCollections[rig.name]
-        return dict([(idx,coll) for idx,coll in colls.items() if bone in coll.values()])
+    def copyBoneLayers(src, trg, rig):
+        for coll in rig.data.collections:
+            if src.name in coll.bones:
+                coll.assign(trg)
 
     def isInLayer(bone, rig, layer):
         coll = LS.boneCollections[rig.name].get(layer)
