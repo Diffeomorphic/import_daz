@@ -53,10 +53,13 @@ if bpy.app.version < (4,0,0):
         return bone.layers[layer]
 
     def getRigLayers(rig):
-        return list(rig.data.layers)
+        return [idx for idx in range(32) if rig.data.layers[idx]]
 
     def setRigLayers(rig, layers):
-        rig.data.layers = layers
+        rig.data.layers = 31*[False] + [True]
+        for idx in layers:
+            rig.data.layers[idx] = True
+        rig.data.layers[31] = False
 
     def enableAllRigLayers(rig, value=True):
         rig.data.layers = 32*[value]
@@ -72,7 +75,7 @@ if bpy.app.version < (4,0,0):
 
     def assignOtherBones(rig, layer):
         pass
-        
+
     def setBonegroup(pb, rig, bgname):
         pb.bone_group = rig.pose.bone_groups[bgname]
 
@@ -112,16 +115,15 @@ else:
             return True
 
     def getRigLayers(rig):
-        layers = 32*[False]
-        for idx,coll in LS.boneCollections[rig.name].items():
-            layers[idx] = coll.is_visible
-        return layers
+        return [idx for idx,coll in LS.boneCollections[rig.name].items() if coll.is_visible]
 
     def setRigLayers(rig, layers):
-        for idx,vis in enumerate(layers):
+        for coll in rig.data.collections:
+            coll.is_visible = False
+        for idx in layers:
             coll = LS.boneCollections[rig.name].get(idx)
             if coll:
-                coll.is_visible = vis
+                coll.is_visible = True
 
     def enableAllRigLayers(rig, value=True):
         for coll in rig.data.collections:

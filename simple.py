@@ -303,7 +303,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 1.0
         T = True
         F = False
-        setRigLayers(rig, 16*[F] + [T,T,F,F, F,F,F,F, F,F,T,T, T,T,F,F])
+        setRigLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
         assignOtherBones(rig, S_HIDDEN)
 
 
