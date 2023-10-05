@@ -558,7 +558,8 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
 
     def outsideBox(self, src, trg, hskey):
-        hverts = [v.index for v in src.data.vertices if (hskey.data[v.index].co - v.co).length > self.eps]
+        eps = self.eps
+        hverts = [v.index for v in src.data.vertices if (hskey.data[v.index].co - v.co).length > eps]
         for j in range(3):
             xclo = [v.co[j] for v in trg.data.vertices]
             # xkey = [hskey.data[vn].co[j] for vn in hverts]
@@ -632,6 +633,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
         coords = []
         isZero = True
+        eps = self.eps
         for n,vgname in enumerate(["_trx", "_try", "_trz"]):
             vgrp = trg.vertex_groups[vgname]
             weights = [[g.weight for g in v.groups if g.group == vgrp.index][0] for v in trg.data.vertices]
@@ -641,7 +643,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
             coords.append(coord)
             wmax = max(weights)/fac + offs
             wmin = min(weights)/fac + offs
-            if abs(wmax) > self.eps or abs(wmin) > self.eps:
+            if abs(wmax) > eps or abs(wmin) > eps:
                 isZero = False
             trg.vertex_groups.remove(vgrp)
 
@@ -667,13 +669,14 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
     #----------------------------------------------------------
 
     def findMatchExact(self, src, trg):
+        eps = self.eps
         hverts = src.data.vertices
         self.match = []
         nhverts = len(hverts)
         hvn = 0
         for cvn,cv in enumerate(trg.data.vertices):
             hv = hverts[hvn]
-            while (hv.co - cv.co).length > self.eps:
+            while (hv.co - cv.co).length > eps:
                 hvn += 1
                 if hvn < nhverts:
                     hv = hverts[hvn]
