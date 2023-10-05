@@ -281,6 +281,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
         src = context.object
         if not src.data.shape_keys:
             raise DazError("Cannot transfer because object    \n%s has no shapekeys   " % (src.name))
+        self.eps = 0.01*GS.unitScale    # 0.1 mm
         if not self.useDrivers:
             self.useStrength = False
         targets = self.getTargets(src, context)
@@ -557,8 +558,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
 
     def outsideBox(self, src, trg, hskey):
-        eps = 0.01 * src.DazScale   # 0.1 mm
-        hverts = [v.index for v in src.data.vertices if (hskey.data[v.index].co - v.co).length > eps]
+        hverts = [v.index for v in src.data.vertices if (hskey.data[v.index].co - v.co).length > self.eps]
         for j in range(3):
             xclo = [v.co[j] for v in trg.data.vertices]
             # xkey = [hskey.data[vn].co[j] for vn in hverts]
@@ -608,7 +608,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
     def autoTransferSlow(self, src, trg, hskey):
         hverts = src.data.vertices
         cverts = trg.data.vertices
-        eps = 1e-4
         facs = {0:1.0, 1:1.0, 2:1.0}
         offsets = {0:0.0, 1:0.0, 2:0.0}
         for n,vgname in enumerate(["_trx", "_try", "_trz"]):
@@ -642,7 +641,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
             coords.append(coord)
             wmax = max(weights)/fac + offs
             wmin = min(weights)/fac + offs
-            if abs(wmax) > eps or abs(wmin) > eps:
+            if abs(wmax) > self.eps or abs(wmin) > self.eps:
                 isZero = False
             trg.vertex_groups.remove(vgrp)
 
@@ -669,13 +668,12 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
     def findMatchExact(self, src, trg):
         hverts = src.data.vertices
-        eps = 0.01*src.DazScale
         self.match = []
         nhverts = len(hverts)
         hvn = 0
         for cvn,cv in enumerate(trg.data.vertices):
             hv = hverts[hvn]
-            while (hv.co - cv.co).length > eps:
+            while (hv.co - cv.co).length > self.eps:
                 hvn += 1
                 if hvn < nhverts:
                     hv = hverts[hvn]
@@ -739,8 +737,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
         cverts = np.array([list(v.co) for v in trg.data.vertices])
         dists = np.sum(np.abs(ccos-cverts), axis=1)
         dmax = np.max(dists)
-        eps = 0.01*src.DazScale
-        if dmax < eps:
+        if dmax < self.eps:
             return False
         cskey = trg.shape_key_add(name=hskey.name)
         if self.useSelectedOnly:
