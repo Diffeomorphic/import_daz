@@ -33,26 +33,74 @@ from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .error import *
 from .utils import *
 from .cycles import CyclesTree
-from .tree import colorOutput
+from .tree import addGroupInput, addGroupOutput, getGroupInput, colorOutput
 
-# PBR slots:
-# ['Base Color', 'Metallic', 'Roughness', 'IOR', 'Alpha', 'Normal', 'Weight', 'Subsurface Weight', 'Subsurface Radius', 'Subsurface Scale', 'Subsurface IOR', 'Subsurface Anisotropy', 'Specular IOR Level', 'Specular Tint', 'Anisotropic', 'Anisotropic Rotation', 'Tangent', 'Transmission Weight', 'Coat Weight', 'Coat Roughness', 'Coat IOR', 'Coat Tint', 'Coat Normal', 'Sheen Weight', 'Sheen Roughness', 'Sheen Tint', 'Emission Color', 'Emission Strength']
+# ---------------------------------------------------------------------
+#   Principled v 2
+# ---------------------------------------------------------------------
+#   https://projects.blender.org/blender/blender/issues/99447
 #
+#   PBR slots:
+#   3.6                     4.0
+#   Base Color              Base Color
+#   Subsurface              Subsurface Weight
+#   Subsurface Radius       Subsurface Radius
+#   -                       Subsurface Scale
+#   Subsurface Color        -
+#   Subsurface IOR          Subsurface IOR
+#   Subsurface Anisotropy   Subsurface Anisotropy
+#   Metallic                Metallic
+#   Specular                Specular IOR Level
+#   Specular Tint           Specular Tint
+#   Roughness               Roughness
+#   Anisotropic             Anisotropic
+#   Anisotropic Rotation    Anisotropic Rotation
+#   Sheen                   Sheen Weight
+#   -                       Sheen Roughness
+#   Sheen Tint              Sheen Tint
+#   Clearcoat               Coat Weight
+#   Clearcoat Roughness     Coat Roughness
+#   -                       Coat IOR
+#   -                       Coat Tint
+#   IOR                     IOR
+#   Transmission            Transmission Weight
+#   Transmission Roughness  -
+#   Emission                Emission Color
+#   Emission Strength       Emission Strength
+#   Alpha                   Alpha
+#   Normal                  Normal
+#   Clearcoat Normal        Coat Normal
+#   Tangent                 Tangent
+#   Weight                  Weight
 
 if bpy.app.version < (4,0,0):
     SubsurfWeight = "Subsurface"
     Specular = "Specular"
     CoatWeight = "Clearcoat"
     CoatRoughness = "Clearcoat Roughness"
+    CoatNormal = "Clearcoat Normal"
     SheenWeight = "Sheen"
     TransmitWeight = "Transmission"
+    EmitColor = "Emission"
+
+    def Tint(x):
+        return x
 else:
     SubsurfWeight = "Subsurface Weight"
     Specular = "Specular IOR Level"
     CoatWeight = "Coat Weight"
     CoatRoughness = "Coat Roughness"
+    CoatNormal = "Coat Normal"
     SheenWeight = "Sheen Weight"
     TransmitWeight = "Transmission Weight"
+    EmitColor = "Emission Color"
+
+    def Tint(x):
+        return (x,x,x)
+
+# ---------------------------------------------------------------------
+#   PbrTree
+# ---------------------------------------------------------------------
 
 class PbrTree(CyclesTree):
     def __init__(self, pbrmat):
@@ -107,12 +155,12 @@ class PbrTree(CyclesTree):
     def linkPBRNormal(self, pbr):
         if self.bump:
             self.links.new(self.bump.outputs["Normal"], pbr.inputs["Normal"])
-            if hasattr(pbr.inputs, "Clearcoat Normal"):
-                self.links.new(self.bump.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
+            if hasattr(pbr.inputs, CoatNormal):
+                self.links.new(self.bump.outputs["Normal"], pbr.inputs[CoatNormal])
         elif self.normal:
             self.links.new(self.normal.outputs["Normal"], pbr.inputs["Normal"])
-            if hasattr(pbr.inputs, "Clearcoat Normal"):
-                self.links.new(self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
+            if hasattr(pbr.inputs, CoatNormal):
+                self.links.new(self.normal.outputs["Normal"], pbr.inputs[CoatNormal])
 
 
     def linkTranslucency(self, trans):
@@ -163,10 +211,10 @@ class PbrTree(CyclesTree):
     def buildEmission(self):
         if not GS.useEmission:
             return
-        elif self.pbr and "Emission" in self.pbr.inputs.keys() and not self.postPBR:
+        elif self.pbr and EmitColor in self.pbr.inputs.keys() and not self.postPBR:
             color = self.getColor("getChannelEmissionColor", BLACK)
             if not isBlack(color):
-                self.addEmitColor(self.pbr, "Emission")
+                self.addEmitColor(self.pbr, EmitColor)
                 if "Emission Strength" in self.pbr.inputs.keys():
                     socket = self.pbr.inputs["Emission Strength"]
                     strength = self.getLuminance(socket)
@@ -232,11 +280,12 @@ class PbrTree(CyclesTree):
 
 
     def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex, texslot):
+        if bpy.app.version >= (4,0,0):
+            return
         gamma = self.addNode("ShaderNodeGamma", size=7)
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
-        if bpy.app.version < (4,0,0):
-            self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
+        self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
         self.linkScalar(wttex, self.pbr, transwt, SubsurfWeight, texslot=texslot)
 
 
@@ -333,7 +382,7 @@ class PbrTree(CyclesTree):
             self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
         if self.owner.shader == 'PBRSKIN':
             if self.pureMetal:
-                self.replaceSlot(self.pbr, "Specular Tint", 0.0)
+                self.replaceSlot(self.pbr, "Specular Tint", Tint(0.0))
             if self.isEnabled("Dual Lobe Specular"):
                 rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
                 roughness = rough1*(1-ratio) + rough2*ratio
@@ -345,7 +394,7 @@ class PbrTree(CyclesTree):
                 self.replaceSlot(self.pbr, "Roughness", 0.0)
         else:
             if self.pureMetal:
-                self.replaceSlot(self.pbr, "Specular Tint", 1.0)
+                self.replaceSlot(self.pbr, "Specular Tint", Tint(1.0))
             channel,value,roughness,invert = self.owner.getGlossyRoughness(0.5)
             roughness *= (1 + anisotropy)
             self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)
@@ -488,8 +537,8 @@ class PbrTree(CyclesTree):
         if bpy.app.version < (4,0,0):
             self.removeLink(pbr, "Subsurface Color")
             pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
-        #if self.getValue(["Share Glossy Inputs"], False):
-        #    self.replaceSlot(pbr, "Specular Tint", 1.0)
+        if self.getValue(["Share Glossy Inputs"], False):
+            self.replaceSlot(pbr, "Specular Tint", Tint(1.0))
         self.addColumn()
 
     #-------------------------------------------------------------

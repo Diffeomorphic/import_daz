@@ -33,6 +33,7 @@ import numpy as np
 from mathutils import Vector
 from .error import *
 from .utils import *
+from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .material import WHITE, GREY, BLACK, isWhite, isBlack
 from .cycles import CyclesMaterial, CyclesTree
 from .selector import Selector

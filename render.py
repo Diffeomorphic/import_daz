@@ -30,6 +30,7 @@ import os
 from .asset import Asset
 from .channels import Channels
 from .material import Material, WHITE, BLACK, isBlack
+from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .cycles import CyclesMaterial, CyclesTree
 from .cgroup import CyclesGroup
 from .utils import *

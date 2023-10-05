@@ -31,6 +31,7 @@ from .cycles import CyclesTree
 from .pbr import PbrTree
 from .material import WHITE, BLACK
 from .tree import NodeGroup, hideAllBut, colorOutput
+from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .utils import *
 from .error import *
 

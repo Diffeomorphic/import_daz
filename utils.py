@@ -37,15 +37,6 @@ from .settings import GS, LS, ES
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,0,0):
-    def addGroupInput(group, type, slot):
-        group.inputs.new(type, slot)
-
-    def addGroupOutput(group, type, slot):
-        group.outputs.new(type, slot)
-        
-    def getGroupInput(group, slot):
-        return group.inputs[slot]
-
     def enableBoneLayer(bone, rig, layer):
         bone.layers = layer*[False] + [True] + (31-layer)*[False]
 
@@ -89,17 +80,6 @@ if bpy.app.version < (4,0,0):
         pb.bone_group = rig.pose.bone_groups[bgname]
 
 else:
-    def addGroupInput(group, type, slot):
-        group.interface.new_socket(slot, socket_type=type, in_out='INPUT')
-
-    def addGroupOutput(group, type, slot):
-        group.interface.new_socket(slot, socket_type=type, in_out='OUTPUT')
-
-    def getGroupInput(group, slot):
-        for item in group.interface.items_tree:
-            if item.item_type == 'SOCKET' and item.in_out == 'INPUT' and item.name == slot:
-                return item
-
     def enableBoneLayer(bone, rig, layer):
         coll0 = LS.boneCollections[rig.name].get(layer)
         if coll0:

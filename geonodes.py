@@ -29,6 +29,7 @@ import bpy
 from .error import *
 from .utils import *
 from .tree import Tree, NodeGroup, XSIZE, YSIZE, addNodeGroup
+from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .selector import Selector
 
 VECTOR = 1

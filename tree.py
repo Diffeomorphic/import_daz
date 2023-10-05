@@ -35,6 +35,35 @@ XSIZE = 300
 YSIZE = 250
 YSTEP = 25
 
+#-------------------------------------------------------------
+#   Group input and output
+#-------------------------------------------------------------
+
+if bpy.app.version < (4,0,0):
+    def addGroupInput(group, type, slot):
+        group.inputs.new(type, slot)
+
+    def addGroupOutput(group, type, slot):
+        group.outputs.new(type, slot)
+
+    def getGroupInput(group, slot):
+        return group.inputs[slot]
+else:
+    def addGroupInput(group, type, slot):
+        group.interface.new_socket(slot, socket_type=type, in_out='INPUT')
+
+    def addGroupOutput(group, type, slot):
+        group.interface.new_socket(slot, socket_type=type, in_out='OUTPUT')
+
+    def getGroupInput(group, slot):
+        for item in group.interface.items_tree:
+            if item.item_type == 'SOCKET' and item.in_out == 'INPUT' and item.name == slot:
+                return item
+
+#-------------------------------------------------------------
+#   Mix RGB
+#-------------------------------------------------------------
+
 class MixRGB:
     if bpy.app.version < (3,4,0):
         Nodetype = "ShaderNodeMixRGB"
@@ -59,7 +88,9 @@ def colorOutput(node):
     else:
         return node.outputs[0]
 
-
+#-------------------------------------------------------------
+#   Tree base class
+#-------------------------------------------------------------
 
 class Tree:
     def __init__(self, owner):
