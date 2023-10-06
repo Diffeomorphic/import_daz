@@ -53,9 +53,12 @@ if bpy.app.version < (4,0,0):
         return bone.layers[layer]
 
     def getRigLayers(rig):
-        return [idx for idx in range(32) if rig.data.layers[idx]]
+        return list(rig.data.layers)
 
     def setRigLayers(rig, layers):
+        rig.data.layers = layers
+
+    def enableRigLayers(rig, layers):
         rig.data.layers = 31*[False] + [True]
         for idx in layers:
             rig.data.layers[idx] = True
@@ -116,9 +119,13 @@ else:
             return True
 
     def getRigLayers(rig):
-        return [idx for idx,coll in LS.boneCollections[rig.name].items() if coll.is_visible]
+        return [(coll,coll.is_visible) for coll in rig.data.collections]
 
     def setRigLayers(rig, layers):
+        for coll,vis in layers:
+            coll.is_visible = vis
+
+    def enableRigLayers(rig, layers):
         for coll in rig.data.collections:
             coll.is_visible = False
         for idx in layers:

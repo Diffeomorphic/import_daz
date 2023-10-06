@@ -37,6 +37,7 @@ from .material import WHITE, isWhite
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
 from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
+from .tree import addGroupInput, addGroupOutput, getGroupInput
 
 #-------------------------------------------------------------
 #   Material selector
@@ -845,14 +846,14 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
         outnode.location = (max(xlocs) + XSIZE, 2*YSIZE)
         for key,links in self.inputs.items():
             if links and links[0].from_socket.type == 'VALUE':
-                group.inputs.new("NodeSocketFloat", key)
+                addGroupInput(group, "NodeSocketFloat", key)
             else:
-                group.inputs.new("NodeSocketColor", key)
+                addGroupInput(group, "NodeSocketColor", key)
         if self.useBump:
-            group.inputs.new("NodeSocketFloat", "Bump Distance")
-        group.outputs.new("NodeSocketShader", "BSDF")
-        group.outputs.new("NodeSocketShader", "Volume")
-        group.outputs.new("NodeSocketVector", "Displacement")
+            addGroupInput(group, "NodeSocketFloat", "Bump Distance")
+        addGroupOutput(group, "NodeSocketShader", "BSDF")
+        addGroupOutput(group, "NodeSocketShader", "Volume")
+        addGroupOutput(group, "NodeSocketVector", "Displacement")
 
         for tnode in self.tnodes.values():
             tnode.make(group)

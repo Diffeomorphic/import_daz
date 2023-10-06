@@ -435,6 +435,7 @@ class ExtraBones(DriverUser):
         rig = context.object
         self.checkAllowed(rig)
         t1 = perf_counter()
+        makeBoneCollections(rig, StandardLayers)
         oldvis = getRigLayers(rig)
         enableAllRigLayers(rig)
         success = False
@@ -587,12 +588,13 @@ class ExtraBones(DriverUser):
             eb.head = db.head
             eb.tail = db.tail
             eb.roll = db.roll
-            copyBoneLayers(db, eb, rig)
             eb.use_deform = db.use_deform
             return eb
 
 
-        def copyPoseBone(db, pb):
+        def copyPoseBone(db, pb, rig):
+            copyBoneLayers(db, pb, rig)
+            enableBoneLayer(db, rig, T_HIDDEN)
             pb.rotation_mode = db.rotation_mode
             pb.lock_location = db.lock_location
             pb.lock_rotation = db.lock_rotation
@@ -640,7 +642,6 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                enableBoneLayer(db, rig, T_HIDDEN)
                 if "DazExtraBone" in db.keys():
                     bone["DazExtraBone"] = db["DazExtraBone"]
 
@@ -658,7 +659,7 @@ class ExtraBones(DriverUser):
         for bname in self.bnames:
             pb = rig.pose.bones[bname]
             db = rig.pose.bones[drvBone(bname)]
-            copyPoseBone(db, pb)
+            copyPoseBone(db, pb, rig)
             db.custom_shape = None
             copyBoneInfo(db, pb)
             store.storeConstraints(db.name, db)

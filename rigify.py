@@ -995,7 +995,7 @@ class Rigifier(RigifyCommon):
             if activateObject(context, meta):
                 deleteObjects(context, [meta])
         activateObject(context, gen)
-        setRigLayers(gen, [R_TORSO, R_FACE])
+        enableRigLayers(gen, [R_TORSO, R_FACE])
         gen.name = name
         if dazrig:
             self.tieBones(dazrig, gen)
