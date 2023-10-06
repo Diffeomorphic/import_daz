@@ -129,15 +129,16 @@ class HairOptions:
         description = "Keep (reconstruct) mesh hair after making particle hair"
     )
 
+    enums = [('PARTICLES', "Particles", "Particle hair"),
+             ('CURVES', "Curves", "Ordinary curves"),
+             ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
+             ('MESH', "Mesh", "Single line mesh")]
+    if bpy.app.version >= (4,0,0):
+        enums = [('HAIR_CURVES', "Hair Curves", "Hair curves")] + enums
     output : EnumProperty(
-        items = [('PARTICLES', "Particles", "Particle hair"),
-                 ('HAIR CURVES', "Hair Curves", "Hair curves"),
-                 ('CURVES', "Curves", "Ordinary curves"),
-                 ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
-                 ('MESH', "Mesh", "Single line mesh")],
+        items = enums,
         name = "Output",
-        description = "",
-        default = 'PARTICLES')
+        description = "")
 
     removeOldHairs : BoolProperty(
         name = "Remove Particle Hair",
@@ -466,7 +467,7 @@ class HairSystem:
         deflector = findDeflector(hum)
 
 
-    def buildMesh(self, context, strands, hair, mnames):
+    def buildMesh(self, context, strands, hair, hum, mnames):
         nverts = 0
         verts = []
         edges = []
@@ -483,10 +484,10 @@ class HairSystem:
         me = bpy.data.meshes.new(name)
         me.from_pydata(verts, edges, [])
         me.DazHairType = 'LINE'
-        return self.buildObject(name, me, hair, mnames)
+        return self.buildObject(name, me, hair, hum, mnames)
 
 
-    def buildCurves(self, context, strands, hair, mnames):
+    def buildCurves(self, context, strands, hair, hum, mnames):
         name = "Curve Hair"
         cu = bpy.data.curves.new(name, 'CURVE')
         cu.dimensions = '3D'
@@ -497,13 +498,25 @@ class HairSystem:
             spline.points.add(npoints-1)
             for co,point in zip(strand, spline.points):
                 point.co[0:3] = co
-        return self.buildObject(name, cu, hair, mnames)
+        return self.buildObject(name, cu, hair, hum, mnames)
 
 
-    def buildObject(self, name, me, hair, mnames):
+    def buildHairCurves(self, context, strands, hair, hum, mnames):
+        name = "%s Curves" % hair.name.rsplit(".",1)[0]
+        curves = bpy.data.hair_curves.new(name)
+        sizes = [len(strand) for strand in strands]
+        curves.add_curves(sizes)
+        for strand,curve in zip(strands, curves.curves):
+            for pos,point in zip(strand, curve.points):
+                point.position = pos
+        curves.surface = hum
+        return  self.buildObject(name, curves, hair, hum, mnames)
+
+
+    def buildObject(self, name, me, hair, hum, mnames):
         ob = bpy.data.objects.new(name, me)
         wmat = ob.matrix_world.copy()
-        ob.parent = hair.parent
+        ob.parent = hum
         ob.parent_bone = hair.parent_bone
         ob.parent_type = hair.parent_type
         setWorldMatrix(ob, wmat)
@@ -751,10 +764,6 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
     def run(self, context):
         t1 = perf_counter()
         self.clocks = []
-        if self.output == 'HAIR CURVES':
-            if bpy.app.version < (3,5,0):
-                raise DazError("Hair curves not available in Blender %d.%d.%d" % bpy.app.version)
-            raise DazError("Hair curves not yet implemented")
         hair,hum = getHairAndHuman(context, True)
         if hasObjectTransforms(hair):
             raise DazError("Apply object transformations to %s first" % hair.name)
@@ -836,10 +845,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         self.clocks.append(("Resize", t6-t5))
         if self.output == 'PARTICLES':
             self.makeParticleHair(context, hsystems, hum)
-        elif self.output in ['POLYLINES', 'CURVES', 'MESH']:
-            self.makePolylineHair(context, hsystems, hair)
         else:
-            print("Not yet implemented")
+            self.makePolylineHair(context, hsystems, hair, hum)
         for hair in hairs:
             unlinkAll(hair, True)
         #deleteObjects(context, hairs)
@@ -864,28 +871,30 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         print("Done")
 
 
-    def makePolylineHair(self, context, hsystems, hair):
+    def makePolylineHair(self, context, hsystems, hair, hum):
         print("Make polyline hair")
         coll = getCollection(context, hair)
         if not hsystems:
             print("No hair system found")
-        elif self.output in ['MESH', 'CURVES']:
+        elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES']:
             strands = []
             mnames = {}
             for hsys in hsystems.values():
                 strands += hsys.strands
                 mnames[hsys.material] = True
             if self.output == 'MESH':
-                ob = hsys.buildMesh(context, strands, hair, mnames.keys())
+                ob = hsys.buildMesh(context, strands, hair, hum, mnames.keys())
             elif self.output == 'CURVES':
-                ob = hsys.buildCurves(context, strands, hair, mnames.keys())
+                ob = hsys.buildCurves(context, strands, hair, hum, mnames.keys())
+            elif self.output == 'HAIR_CURVES':
+                ob = hsys.buildHairCurves(context, strands, hair, hum, mnames.keys())
             coll.objects.link(ob)
         elif self.output == 'POLYLINES':
             subcoll = bpy.data.collections.new(name = "Mesh Hairs")
             coll.children.link(subcoll)
             for hsys in hsystems.values():
                 for strand in hsys.strands:
-                    ob = hsys.buildMesh(context, [strand], hair, [hsys.material])
+                    ob = hsys.buildMesh(context, [strand], hair, hum, [hsys.material])
                     subcoll.objects.link(ob)
         print("Done")
 

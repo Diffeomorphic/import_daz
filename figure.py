@@ -593,8 +593,8 @@ class ExtraBones(DriverUser):
 
 
         def copyPoseBone(db, pb, rig):
-            copyBoneLayers(db, pb, rig)
-            enableBoneLayer(db, rig, T_HIDDEN)
+            copyBoneLayers(db.bone, pb.bone, rig)
+            enableBoneLayer(db.bone, rig, T_HIDDEN)
             pb.rotation_mode = db.rotation_mode
             pb.lock_location = db.lock_location
             pb.lock_rotation = db.lock_rotation
