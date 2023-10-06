@@ -314,14 +314,18 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
             if hskeys and hskeys.animation_data:
                 self.driverPaths = dict([(fcu.data_path,fcu) for fcu in hskeys.animation_data.drivers])
         snames = self.getSelectedProps()
+        srcboxes = {}
+        for sname in snames:
+            hskey = hskeys.key_blocks[sname]
+            srcboxes[sname] = self.computeShapeBox(src, hskey)
         for trg in targets:
-            if not self.transferMorphs(snames, src, trg, context):
+            if not self.transferMorphs(snames, src, trg, srcboxes, context):
                 failed.append(trg)
             newLine()
         return failed
 
 
-    def transferMorphs(self, snames, src, trg, context):
+    def transferMorphs(self, snames, src, trg, srcboxes, context):
         from .load_morph import printName
         from .morphing import MP
         from .modifier import getBasicShape
@@ -339,12 +343,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
             src.active_shape_key_index = 0
         trg.active_shape_key_index = 0
         trg.select_set(True)
+        trgbox = self.computeObjectBox(trg)
 
         nskeys = len(snames)
-        boxes = {}
-        for sname in snames:
-            hskey = hskeys.key_blocks[sname]
-            boxes[sname] = self.computeBox(src, hskey)
         for idx,sname in enumerate(snames):
             showProgress(idx, nskeys)
             if sname not in hskeys.key_blocks.keys():
@@ -352,7 +353,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
                 continue
             hskey = hskeys.key_blocks[sname]
 
-            if self.outsideBox(src, trg, boxes[sname]):
+            if self.outsideBox(srcboxes[sname], trgbox):
                 printName(" 0", sname)
                 continue
 
@@ -561,7 +562,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
                     shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
 
 
-    def computeBox(self, src, hskey):
+    def computeShapeBox(self, src, hskey):
         eps = self.eps
         verts = src.data.vertices
         hdata = hskey.data
@@ -578,11 +579,18 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
         return box
 
 
-    def outsideBox(self, src, trg, box):
-        tverts = trg.data.vertices
-        for j,side in enumerate(box):
-            xclo = [v.co[j] for v in tverts]
-            if xclo and (min(xclo) > side[1] or max(xclo) < side[0]):
+    def computeObjectBox(self, ob):
+        box = []
+        verts = ob.data.vertices
+        for j in range(3):
+            coords = [v.co[j] for v in verts]
+            box.append((min(coords), max(coords)))
+        return box
+
+
+    def outsideBox(self, srcbox, trgbox):
+        for srcside,trgside in zip(srcbox, trgbox):
+            if srcside[0] > trgside[1] or srcside[1] < trgside[0]:
                 return True
         return False
 
