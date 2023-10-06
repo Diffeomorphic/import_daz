@@ -341,6 +341,10 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
         trg.select_set(True)
 
         nskeys = len(snames)
+        boxes = {}
+        for sname in snames:
+            hskey = hskeys.key_blocks[sname]
+            boxes[sname] = self.computeBox(src, hskey)
         for idx,sname in enumerate(snames):
             showProgress(idx, nskeys)
             if sname not in hskeys.key_blocks.keys():
@@ -348,7 +352,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
                 continue
             hskey = hskeys.key_blocks[sname]
 
-            if self.outsideBox(src, trg, hskey):
+            if self.outsideBox(src, trg, boxes[sname]):
                 printName(" 0", sname)
                 continue
 
@@ -557,20 +561,27 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
                     shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
 
 
-    def outsideBox(self, src, trg, hskey):
+    def computeBox(self, src, hskey):
         eps = self.eps
-        hverts = [v.index for v in src.data.vertices if (hskey.data[v.index].co - v.co).length > eps]
+        verts = src.data.vertices
+        box = []
+        hverts = [v.index for v in verts if (hskey.data[v.index].co - v.co).length > eps]
         for j in range(3):
-            xclo = [v.co[j] for v in trg.data.vertices]
-            # xkey = [hskey.data[vn].co[j] for vn in hverts]
-            xkey = [src.data.vertices[vn].co[j] for vn in hverts]
-            if xclo and xkey:
-                minclo = min(xclo)
-                maxclo = max(xclo)
+            xkey = [verts[vn].co[j] for vn in hverts]
+            if xkey:
                 minkey = min(xkey)
                 maxkey = max(xkey)
-                if minclo > maxkey or maxclo < minkey:
-                    return True
+            else:
+                minkey = maxkey = 0
+            box.append((minkey,maxkey))
+        return box
+
+
+    def outsideBox(self, src, trg, box):
+        for j,side in enumerate(box):
+            xclo = [v.co[j] for v in trg.data.vertices]
+            if xclo and (min(xclo) > side[1] or max(xclo) < side[0]):
+                return True
         return False
 
 
