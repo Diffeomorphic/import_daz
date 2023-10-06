@@ -99,7 +99,7 @@ class LoadMaps(MultiFile, ImageFile, Layouter, MaterialSelector):
 
 
     def invoke(self, context, event):
-        self.setupMaterials(context.object)
+        self.setupMaterialSelector(context)
         return MultiFile.invoke(self, context, event)
 
     def getMaterials(self, ob):

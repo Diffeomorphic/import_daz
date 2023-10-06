@@ -293,12 +293,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def invoke(self, context, event):
-        ob = context.object
-        if False and not ob.DazLocalTextures:
-            from .error import invokeErrorMessage
-            invokeErrorMessage("Save local textures first")
-            return {'CANCELLED'}
-        self.setupMaterials(ob)
+        self.setupMaterialSelector(context)
         return DazPropsOperator.invoke(self, context, event)
 
 
@@ -571,7 +566,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 
 
     def invoke(self, context, event):
-        self.setupMaterials(context.object)
+        self.setupMaterialSelector(context)
         return DazPropsOperator.invoke(self, context, event)
 
 
