@@ -564,8 +564,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
     def computeBox(self, src, hskey):
         eps = self.eps
         verts = src.data.vertices
+        hdata = hskey.data
         box = []
-        hverts = [v.index for v in verts if (hskey.data[v.index].co - v.co).length > eps]
+        hverts = [v.index for v in verts if (hdata[v.index].co - v.co).length > eps]
         for j in range(3):
             xkey = [verts[vn].co[j] for vn in hverts]
             if xkey:
@@ -578,8 +579,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
 
     def outsideBox(self, src, trg, box):
+        tverts = trg.data.vertices
         for j,side in enumerate(box):
-            xclo = [v.co[j] for v in trg.data.vertices]
+            xclo = [v.co[j] for v in tverts]
             if xclo and (min(xclo) > side[1] or max(xclo) < side[0]):
                 return True
         return False
