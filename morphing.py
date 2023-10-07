@@ -1175,6 +1175,11 @@ class MorphTypeOptions:
         description = "Import all visemes",
         default = False)
 
+    ignoreHdMorphs : BoolProperty(
+        name = "Ignore HD Morphs",
+        description = "Don't import HD morphs for units, expressions, visemes",
+        default = False)
+
     useHead : BoolProperty(
         name = "Head",
         description = "Import all head morphs",
@@ -1229,6 +1234,8 @@ class MorphTypeOptions:
         self.layout.prop(self, "useUnits")
         self.layout.prop(self, "useExpressions")
         self.layout.prop(self, "useVisemes")
+        if self.useUnits or self.useExpressions or self.useVisemes:
+            self.subprop("ignoreHdMorphs")
         self.layout.prop(self, "useHead")
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useFacsdetails")
@@ -1280,10 +1287,15 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             self.rig.DazMorphPrefixes = False
         self.message = None
         self.isJcm = False
+        useShapekeys = GS.useShapekeys
+        GS.useShapekeys = (not self.ignoreHdMorphs)
+        try:
+            self.loadMorphType(context, self.useUnits, "Units", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+            self.loadMorphType(context, self.useExpressions, "Expressions", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+            self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+        finally:
+            GS.useShapekeys = useShapekeys
         self.loadMorphType(context, self.useHead, "Head", "Face")
-        self.loadMorphType(context, self.useUnits, "Units", "Face")
-        self.loadMorphType(context, self.useExpressions, "Expressions", "Face")
-        self.loadMorphType(context, self.useVisemes, "Visemes", "Face")
         self.loadMorphType(context, self.useFacs, "Facs", "Face")
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
@@ -1309,7 +1321,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             raise DazError(self.message, warning=True)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False):
+    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False):
         if use:
             t1 = perf_counter()
             self.morphset = morphset
@@ -1320,6 +1332,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             if ignoreFingers:
                 for char,struct in list(self.morphFiles.items()):
                     mlist = [data for data in struct.items() if not isFingerShape(data[0])]
+                    self.morphFiles[char] = OrderedDict(mlist)
+            if ignoreHdMorphs:
+                for char,struct in list(self.morphFiles.items()):
+                    mlist = [data for data in struct.items() if not data[0].endswith("_div2")]
                     self.morphFiles[char] = OrderedDict(mlist)
             self.loadStandardMorphs()
             for key,value in self.faceshapes.items():

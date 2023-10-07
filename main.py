@@ -962,6 +962,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useBulges = (self.useBulges and GS.useShapekeys),
                         useAdjusters = self.useAdjusters,
                         ignoreFingers = self.ignoreFingers,
+                        ignoreHdMorphs = self.ignoreHdMorphs,
                         useTransferFace = False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
