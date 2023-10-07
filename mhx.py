@@ -408,37 +408,8 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None
         enableBoneLayer(pb.bone, rig, windedLayer)
     return winder, pbones
 
-'''
-def addWinder(rig, windname, bnames, layers, prop=None, parname=None):
-    if len(bnames) < 3:
-        return
-    setMode('EDIT')
-    first = rig.data.edit_bones[bnames[0]]
-    last = rig.data.edit_bones[bnames[-1]]
-    makeBone(windname, rig, first.head, last.tail, first.roll, layers[0], first.parent)
 
-    setMode('POSE')
-    wind = rig.pose.bones[windname]
-    wind.rotation_mode = 'YZX'
-    if parname:
-        parent = rig.pose.bones[parname]
-        cns = copyRotation(wind, parent, rig, space='LOCAL')
-        cns.use_offset = True
-        cns.use_y = cns.use_z = False
-        cns.influence = parinflu
-    nbones = len(bnames)
-    pbones = []
-    for n,bname in enumerate(bnames):
-        pb = rig.pose.bones[bname]
-        pbones.append(pb)
-        cns = copyRotation(pb, wind, rig)
-        cns.use_offset = True
-        cns.influence = 1/nbones
-        addMuteDriver(cns, rig, prop)
-    return wind, pbones
-'''
-
-def addFingerIk(rig, ikname, bnames, parname, layers, prop=None):
+def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
     nbones = len(bnames)
     if nbones < 2:
         return
@@ -450,13 +421,15 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop=None):
     ikgoal = rig.pose.bones[ikname]
     first = rig.pose.bones[bnames[0]]
     influ = 1.0/(nbones+1)
-    cns = dampedTrack(first, ikgoal, rig, prop, "%.3f*x" % influ)
+    cns = dampedTrack(first, ikgoal, rig, prop2, "%.3f*x" % influ)
     cns.influence = influ
+    addMuteDriver(cns, rig, prop1)
     for n,bname in enumerate(bnames[1:]):
         pb = rig.pose.bones[bname]
         influ = 0.4 + n*0.4
-        cns = lockedTrack(pb, ikgoal, rig, prop, "%.3f*x" % influ)
+        cns = lockedTrack(pb, ikgoal, rig, prop2, "%.3f*x" % influ)
         cns.influence = influ
+        addMuteDriver(cns, rig, prop1)
 
 #-------------------------------------------------------------
 #   Bone children
@@ -1123,7 +1096,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 addMuteDriver(cns, rig, prop1)
                 if self.useFingerIk:
                     ikname = "%s.ik.%s" % (MHX.Fingers[m], suffix)
-                    addFingerIk(rig, ikname, bnames, fingname, layers, prop2)
+                    addFingerIk(rig, ikname, bnames, fingname, layers, prop1, prop2)
                 fkwind.lock_rotation = (False,True,False)
                 lock = (False,True,False)
                 for pb in pbones:
