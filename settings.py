@@ -166,8 +166,10 @@ class GlobalSettings:
                     pg = pgs.add()
                     pg.name = folder
             elif attr[0] != "_":
-                if hasattr(btn, attr):
+                try:
                     setattr(btn, attr, value)
+                except:
+                    pass
 
 
     def fromDialog(self, btn):

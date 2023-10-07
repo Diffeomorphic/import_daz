@@ -289,7 +289,7 @@ class PbrTree(CyclesTree):
         self.linkScalar(wttex, self.pbr, transwt, SubsurfWeight, texslot=texslot)
 
 
-    def linkSubsurfColor(self, transwt, wttex, socket):        
+    def linkSubsurfColor(self, transwt, wttex, socket):
         if PBR_VERSION_2:
             if transwt == 0:
                 return
@@ -354,18 +354,18 @@ class PbrTree(CyclesTree):
         if useTex is None:
             spectex = None
         self.setSpecular(spec, spectex, color, coltex)
-        
-        
+
+
     def setSpecular(self, spec, spectex, color, coltex):
         if PBR_VERSION_2:
             self.pbr.inputs["Specular IOR Level"].default_value = 0.5
             ior = 1 + clamp(spec)
             self.linkScalar(spectex, self.pbr, ior, "IOR")
             self.linkColor(coltex, self.pbr, color, "Specular Tint")
-        else: 
+        else:
             spec = clamp(spec*averageColor(color))
             spectex = self.mixTexs('MULTIPLY', spectex, coltex)
-            self.linkColor(spectex, self.pbr, spec, "Specular")
+            self.linkScalar(spectex, self.pbr, spec, "Specular")
 
     #-------------------------------------------------------------
     #   Anisotropy
@@ -440,8 +440,8 @@ class PbrTree(CyclesTree):
         if not useTex:
             coattex = None
         self.setCoatWeight(clamp(value), coattex, color, coltex)
-        
-        
+
+
     def setCoatWeight(self, coat, coattex, color, coltex):
         if PBR_VERSION_2:
             if coat == 0:
@@ -453,7 +453,7 @@ class PbrTree(CyclesTree):
                 self.linkColor(coltex, self.pbr, color, "Coat Tint")
                 bump,normal = self.getTopCoatBump()
                 self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
-        else: 
+        else:
             self.linkScalar(coattex, self.pbr, coat, "Clearcoat")
 
     #-------------------------------------------------------------
