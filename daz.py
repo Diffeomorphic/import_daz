@@ -409,13 +409,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
              ('RANDOM_WALK', "Random Walk", "Random walk")]
-    if bpy.app.version >= (3,0,0):
-        enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
     sssMethod : EnumProperty(
         items = enums,
         name = "SSS",
-        description = "Method for subsurface scattering",
-        default = 'RANDOM_WALK')
+        description = "Method for subsurface scattering")
 
     viewportColors : EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),

@@ -261,7 +261,7 @@ class PbrTree(CyclesTree):
         if isBlack(transcolor):
             self.column += 1
             return
-        self.pbr.subsurface_method = GS.getSSSMethod()
+        self.pbr.subsurface_method = GS.sssMethod
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
         if GS.useAltSss:

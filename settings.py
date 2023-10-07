@@ -144,13 +144,6 @@ class GlobalSettings:
         self.onFaceMaps = 'NEVER'
 
 
-    def getSSSMethod(self):
-        if bpy.app.version < (3,0,0) and self.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
-            return 'RANDOM_WALK'
-        else:
-            return self.sssMethod
-
-
     def fixPath(self, path):
         filepath = os.path.expanduser(path).replace("\\", "/")
         return filepath.rstrip("/ ")
