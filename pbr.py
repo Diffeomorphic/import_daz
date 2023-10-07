@@ -291,6 +291,8 @@ class PbrTree(CyclesTree):
 
     def linkSubsurfColor(self, transwt, wttex, socket):        
         if PBR_VERSION_2:
+            if transwt == 0:
+                return
             mix,a,b,out = self.addMixRgbNode('MIX')
             self.linkScalar(wttex, mix, transwt, 0)
             self.linkColor(self.diffuseTex, mix, self.diffuseColor, MixRGB.Color1)
@@ -329,42 +331,41 @@ class PbrTree(CyclesTree):
 
     def buildSpecular(self, useTex):
         # Specular
-        factor = value = 0.0
-        tex = None
+        spec, spectex = 0, None
+        color, coltex = 0, None
         if self.owner.shader == 'UBER_IRAY':
             strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             if self.owner.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
                 refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
-                if reftex and coltex:
-                    reftex = self.mixTexs('MULTIPLY', coltex, reftex)
-                elif coltex:
-                    reftex = coltex
-                tex = self.mixTexs('MULTIPLY', strtex, reftex)
-                factor = 1.25 * refl * strength
-                value = factor * averageColor(color)
+                spectex = self.mixTexs('MULTIPLY', strtex, reftex)
+                spec = 1.25 * refl * strength
             elif self.owner.basemix == 1:  # Specular/Glossiness
                 # principled specular = iray glossy specular * iray glossy layered weight * 16
-                color,reftex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
-                tex = self.mixTexs('MULTIPLY', strtex, reftex)
-                factor = 16 * strength
-                value = factor * averageColor(color)
+                color,coltex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
+                spec = 16 * strength
         elif self.owner.shader == 'PBRSKIN':
             if self.isEnabled("Dual Lobe Specular"):
-                value,tex,texslot = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
-                factor = value
+                spec,spectex,texslot = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
         else:
-            strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            spec,spectex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
-            tex = self.mixTexs('MULTIPLY', strtex, coltex)
-            value = factor = strength * averageColor(color)
-
-        self.pbr.inputs[Specular].default_value = clamp(value)
-        if tex and useTex:
-            tex = self.multiplyScalarTex(clamp(factor), tex)
-            if tex:
-                self.links.new(colorOutput(tex), self.pbr.inputs[Specular])
+        if useTex is None:
+            spectex = None
+        self.setSpecular(spec, spectex, color, coltex)
+        
+        
+    def setSpecular(self, spec, spectex, color, coltex):
+        if PBR_VERSION_2:
+            self.pbr.inputs["Specular IOR Level"].default_value = 0.5
+            ior = 1 + clamp(spec)
+            self.linkScalar(spectex, self.pbr, ior, "IOR")
+            self.linkColor(coltex, self.pbr, color, "Specular Tint")
+        else: 
+            spec = clamp(spec*averageColor(color))
+            spectex = self.mixTexs('MULTIPLY', spectex, coltex)
+            self.linkColor(spectex, self.pbr, spec, "Specular")
 
     #-------------------------------------------------------------
     #   Anisotropy
@@ -417,28 +418,43 @@ class PbrTree(CyclesTree):
         if self.isEnabled("Top Coat"):
             top,toptex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
             rough,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
+            color,coltex,_ = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
             self.linkScalar(roughtex, self.pbr, rough, CoatRoughness)
         else:
             top,toptex = 0.0,None
+            color,coltex = WHITE,None
         if self.owner.shader == 'UBER_IRAY':
             if self.owner.basemix == 0:    # Metallic/Roughness
                 refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
-                tex = self.mixTexs('MULTIPLY', toptex, reftex)
+                coattex = self.mixTexs('MULTIPLY', toptex, reftex)
                 value = 1.25 * refl * top
             elif self.owner.basemix == 1:  # Specular/Glossiness
-                tex = toptex
+                coattex = toptex
                 value = top
             elif self.owner.basemix == 2:  # Weighted
-                tex = None
+                coattex = None
                 value = 0.0
         else:
-            tex = toptex
+            coattex = toptex
             value = top
-        self.pbr.inputs[CoatWeight].default_value = clamp(value)
-        if tex and useTex:
-            tex = self.multiplyScalarTex(clamp(value), tex)
-            if tex:
-                self.links.new(colorOutput(tex), self.pbr.inputs[CoatWeight])
+        if not useTex:
+            coattex = None
+        self.setCoatWeight(clamp(value), coattex, color, coltex)
+        
+        
+    def setCoatWeight(self, coat, coattex, color, coltex):
+        if PBR_VERSION_2:
+            if coat == 0:
+                self.pbr.inputs["Coat Weight"].default_value = 0
+            else:
+                self.pbr.inputs["Coat Weight"].default_value = 1
+                ior = 1 + 0.1*coat
+                self.linkScalar(coattex, self.pbr, ior, "Coat IOR")
+                self.linkColor(coltex, self.pbr, color, "Coat Tint")
+                bump,normal = self.getTopCoatBump()
+                self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
+        else: 
+            self.linkScalar(coattex, self.pbr, coat, "Clearcoat")
 
     #-------------------------------------------------------------
     #   Sheen

@@ -665,13 +665,13 @@ class CyclesTree(Tree):
         self.links.new(colorOutput(bumptex), bump.inputs["Height"])
         self.owner.addGeoBump(bumptex, bump.inputs["Distance"])
         return bump
+        
 
-
-    def linkBumpNormal(self, node):
+    def linkBumpNormal(self, node, slot="Normal"):
         if self.bump:
-            self.links.new(self.bump.outputs["Normal"], node.inputs["Normal"])
+            self.links.new(self.bump.outputs["Normal"], node.inputs[slot])
         elif self.normal:
-            self.links.new(self.normal.outputs["Normal"], node.inputs["Normal"])
+            self.links.new(self.normal.outputs["Normal"], node.inputs[slot])
 
 
     def linkBump(self, node):
@@ -1212,22 +1212,7 @@ class CyclesTree(Tree):
             spec90,spec90tex,_ = self.getColorTex(["Top Coat Curve Grazing"], "NONE", 1)
             power,powertex,_ = self.getColorTex(["Top Coat Curve Exponent"], "NONE", 1)
 
-        bump = normal = None
-        if self.owner.shader == 'UBER_IRAY':
-            bumpmode = self.getValue(["Top Coat Bump Mode"], 0)
-            bumpval,bumptex,_ = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
-            if bumptex is None:
-                pass
-            elif bumpmode == 0:   # Height map
-                bump = self.mixBump(bumpmode, bumpval, bumptex)
-            elif bumpmode == 1:   # Normal map
-                normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
-        else:
-            bumpval = self.getValue(["Top Coat Bump Weight"], 0)
-            if self.bumptex:
-                bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)
-                self.linkNormal(bump)
-
+        bump,normal = self.getTopCoatBump()        
         roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
         if roughness == 0:
             glossiness,glosstex,_ = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
@@ -1248,19 +1233,42 @@ class CyclesTree(Tree):
         self.linkScalar(roughtex, top, roughness, "Roughness")
         self.linkScalar(anitex, top, aniso, "Anisotropy")
         self.linkScalar(rottex, top, 1 - anirot, "Rotation")
-        if bump:
-            self.links.new(bump.outputs["Normal"], top.inputs["Normal"])
-        elif normal:
-            self.links.new(normal.outputs["Normal"], top.inputs["Normal"])
-        else:
-            self.linkBumpNormal(top)
+        self.linkTopCoatBump(bump, normal, top, "Normal")
         self.mixWithActive(fac, factex, texslot, top, keep=True, effect=effect)
 
+        
+    def getTopCoatBump(self):       
+        bump = normal = None
+        if self.owner.shader == 'UBER_IRAY':
+            bumpmode = self.getValue(["Top Coat Bump Mode"], 0)
+            bumpval,bumptex,_ = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
+            if bumptex is None:
+                pass
+            elif bumpmode == 0:   # Height map
+                bump = self.mixBump(bumpmode, bumpval, bumptex)
+            elif bumpmode == 1:   # Normal map
+                normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
+        else:
+            bumpval = self.getValue(["Top Coat Bump Weight"], 0)
+            if self.bumptex:
+                bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)
+                self.linkNormal(bump)
+        return bump, normal
+        
 
     def mixBump(self, bumpmode, bumpval, bumptex):
         bump = self.buildBumpMap(bumpval, bumptex)
         self.linkBumpNormal(bump)
         return bump
+
+
+    def linkTopCoatBump(self, bump, normal, node, slot):       
+        if bump:
+            self.links.new(bump.outputs["Normal"], node.inputs[slot])
+        elif normal:
+            self.links.new(normal.outputs["Normal"], node.inputs[slot])
+        else:
+            self.linkBumpNormal(node, slot)
 
 
     def mixNormal(self, bumpmode, bumpval, bumptex, uvname):
