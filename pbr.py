@@ -33,7 +33,7 @@ from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .error import *
 from .utils import *
 from .cycles import CyclesTree
-from .tree import addGroupInput, addGroupOutput, getGroupInput, colorOutput
+from .tree import addGroupInput, addGroupOutput, getGroupInput, colorOutput, MixRGB
 
 # ---------------------------------------------------------------------
 #   Principled v 2
@@ -73,7 +73,9 @@ from .tree import addGroupInput, addGroupOutput, getGroupInput, colorOutput
 #   Tangent                 Tangent
 #   Weight                  Weight
 
-if bpy.app.version < (4,0,0):
+PBR_VERSION_2 = (bpy.app.version >= (4,0,0))
+
+if not PBR_VERSION_2:
     SubsurfWeight = "Subsurface"
     Specular = "Specular"
     CoatWeight = "Clearcoat"
@@ -96,7 +98,7 @@ else:
     EmitColor = "Emission Color"
 
     def Tint(x):
-        return (x,x,x)
+        return (x,x,x,1)
 
 # ---------------------------------------------------------------------
 #   PbrTree
@@ -178,7 +180,7 @@ class PbrTree(CyclesTree):
         #tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         #self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, self.pbr, colorslot="Base Color")
         self.replaceSlot(self.pbr, SubsurfWeight, 0.0)
-        if bpy.app.version < (4,0,0):
+        if not PBR_VERSION_2:
             self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
         self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
 
@@ -280,13 +282,22 @@ class PbrTree(CyclesTree):
 
 
     def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex, texslot):
-        if bpy.app.version >= (4,0,0):
-            return
         gamma = self.addNode("ShaderNodeGamma", size=7)
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
-        self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
+        self.linkSubsurfColor(transwt, wttex, gamma.outputs["Color"])
         self.linkScalar(wttex, self.pbr, transwt, SubsurfWeight, texslot=texslot)
+
+
+    def linkSubsurfColor(self, transwt, wttex, socket):        
+        if PBR_VERSION_2:
+            mix,a,b,out = self.addMixRgbNode('MIX')
+            self.linkScalar(wttex, mix, transwt, 0)
+            self.linkColor(self.diffuseTex, mix, self.diffuseColor, MixRGB.Color1)
+            self.links.new(socket, b)
+            self.links.new(out, self.pbr.inputs["Base Color"])
+        else:
+            self.links.new(socket, self.pbr.inputs["Subsurface Color"])
 
 
     def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex, texslot):
@@ -299,8 +310,7 @@ class PbrTree(CyclesTree):
         self.linkColor(transtex, fix, transcolor, "Translucent Color")
         self.linkScalar(wttex, fix, transwt, "Translucency Weight", texslot=texslot)
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
-        if bpy.app.version < (4,0,0):
-            self.links.new(fix.outputs["Subsurface Color"], self.pbr.inputs["Subsurface Color"])
+        self.linkSubsurfColor(transwt, wttex, fix.outputs["Subsurface Color"].outputs["Color"])
         self.links.new(fix.outputs[SubsurfWeight], self.pbr.inputs[SubsurfWeight])
 
     #-------------------------------------------------------------
@@ -377,7 +387,7 @@ class PbrTree(CyclesTree):
         if self.pureMetal:
             self.replaceSlot(self.pbr, Specular, 0.5)
             self.replaceSlot(self.pbr, SubsurfWeight, 0.0)
-            if bpy.app.version < (4,0,0):
+            if not PBR_VERSION_2:
                 self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
             self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
         if self.owner.shader == 'PBRSKIN':
@@ -534,7 +544,7 @@ class PbrTree(CyclesTree):
         self.removeLink(pbr, "Base Color")
         self.linkColor(coltex, pbr, color, "Base Color")
         self.replaceSlot(pbr, SubsurfWeight, 0)
-        if bpy.app.version < (4,0,0):
+        if not PBR_VERSION_2:
             self.removeLink(pbr, "Subsurface Color")
             pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
         if self.getValue(["Share Glossy Inputs"], False):
