@@ -1968,10 +1968,10 @@ class CyclesTree(Tree):
         return tex
 
 
-    def linkScalar(self, tex, node, value, slot, texslot=None):
-        node.inputs[slot].default_value = value
+    def linkScalar(self, tex, node, factor, slot, add=0, texslot=None):
+        node.inputs[slot].default_value = add+factor
         if tex:
-            tex = self.multiplyScalarTex(value, tex)
+            tex = self.multiplyScalarTex(factor, tex, add=add)
             if tex:
                 if texslot:
                     self.links.new(tex.outputs[texslot], node.inputs[slot])
@@ -2039,18 +2039,22 @@ class CyclesTree(Tree):
             self.links.new(colorOutput(tex), socket)
 
 
-    def multiplyScalarTex(self, value, tex, slot=None, col=None, force=False):
-        if value == 1:
+    def multiplyScalarTex(self, factor, tex, slot=None, add=0, col=None, force=False):
+        if factor == 1:
             return tex
-        elif value == 0 or tex is None:
+        elif factor == 0 or tex is None:
             return None
         elif (not force and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
         if col is None:
             col = self.column-1
         mult = self.addNode("ShaderNodeMath", col)
-        mult.operation = 'MULTIPLY'
-        mult.inputs[0].default_value = value
+        if add != 0:
+            mult.operation = 'MULTIPLY_ADD'
+            mult.inputs[2].default_value = add
+        else:
+            mult.operation = 'MULTIPLY'
+        mult.inputs[0].default_value = factor
         self.linkSlot(tex, slot, mult.inputs[1])
         self.moveTex(tex, mult)
         return mult

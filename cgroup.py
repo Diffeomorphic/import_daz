@@ -1883,7 +1883,7 @@ class LayeredGroup(CyclesGroup):
             if slot not in node.outputs.keys():
                 slot = 0
             if alpha > 0 and alpha < 1:
-                node = self.multiplyScalarTex(alpha, node, slot, 3)
+                node = self.multiplyScalarTex(alpha, node, slot, col=3)
                 self.links.new(node.outputs[0], mix.inputs[0])
             else:
                 self.links.new(node.outputs[slot], mix.inputs[0])

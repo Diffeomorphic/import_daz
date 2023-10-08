@@ -274,6 +274,8 @@ class PbrTree(CyclesTree):
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
+        if PBR_VERSION_2:
+            self.pbr.inputs["Subsurface Scale"].default_value = 1
         if bpy.app.version >= (3,0,0):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
@@ -359,8 +361,7 @@ class PbrTree(CyclesTree):
     def setSpecular(self, spec, spectex, color, coltex):
         if PBR_VERSION_2:
             self.pbr.inputs["Specular IOR Level"].default_value = 0.5
-            ior = 1 + clamp(spec)
-            self.linkScalar(spectex, self.pbr, ior, "IOR")
+            self.linkScalar(spectex, self.pbr, spec, "IOR", add=1)
             self.linkColor(coltex, self.pbr, color, "Specular Tint")
         else:
             spec = clamp(spec*averageColor(color))
@@ -448,8 +449,7 @@ class PbrTree(CyclesTree):
                 self.pbr.inputs["Coat Weight"].default_value = 0
             else:
                 self.pbr.inputs["Coat Weight"].default_value = 1
-                ior = 1 + 0.1*coat
-                self.linkScalar(coattex, self.pbr, ior, "Coat IOR")
+                self.linkScalar(coattex, self.pbr, coat, "Coat IOR", add=1)
                 self.linkColor(coltex, self.pbr, color, "Coat Tint")
                 bump,normal = self.getTopCoatBump()
                 self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
