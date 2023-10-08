@@ -449,7 +449,7 @@ class PbrTree(CyclesTree):
                 self.pbr.inputs["Coat Weight"].default_value = 0
             else:
                 self.pbr.inputs["Coat Weight"].default_value = 1
-                self.linkScalar(coattex, self.pbr, coat, "Coat IOR", add=1)
+                self.linkScalar(coattex, self.pbr, 0.1*coat, "Coat IOR", add=1)
                 self.linkColor(coltex, self.pbr, color, "Coat Tint")
                 bump,normal = self.getTopCoatBump()
                 self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
