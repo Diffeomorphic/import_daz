@@ -861,12 +861,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
 
-        def isHair(ob):
-            for key in ["hair", "ponytail", "pigtail", "braid"]:
-                if key in ob.name.lower():
-                    return True
-            return ob.name in ["ToulouseHR"]
-
         geografts = {}
         hairs = []
         lashes = []
@@ -1085,6 +1079,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             finally:
                 LS.theFilePaths = theFilePaths
 
+#------------------------------------------------------------------
+#   Utilities
+#------------------------------------------------------------------
 
 def getFaceMeshes(rig, ob):
     def isDeformBone(bone, mesh):
@@ -1100,18 +1097,18 @@ def getFaceMeshes(rig, ob):
     if head is None:
         return []
     matches = []
-    keys = ["eyelash", "tear", "brow", "hair cap", "beard"]
     for mesh in getMeshChildren(rig):
-        if mesh != ob:
-            for key in keys:
-                if key in mesh.name.lower():
-                    if isDeformBone(head, mesh):
-                        matches.append(mesh)
+        if mesh != ob and isDeformBone(head, mesh) and not isHair(mesh):
+            matches.append(mesh)
     return matches
 
-#------------------------------------------------------------------
-#   Utilities
-#------------------------------------------------------------------
+
+def isHair(ob):
+    for key in ["hair", "ponytail", "pigtail", "braid"]:
+        if key in ob.name.lower():
+            return True
+    return ob.name in ["ToulouseHR"]
+
 
 def makeRootCollection(grpname, context):
     root = bpy.data.collections.new(name=grpname)
