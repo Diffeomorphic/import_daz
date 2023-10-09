@@ -1093,13 +1093,25 @@ def getFaceMeshes(rig, ob):
                     return True
         return False
 
+    def hasFaceName(mesh):
+        for key in ["eyelash", "tear", "brow", "hair cap", "beard"]:
+            if key in mesh.name.lower():
+                return True
+        return False
+
     head = rig.data.bones.get("head")
     if head is None:
         return []
     matches = []
     for mesh in getMeshChildren(rig):
-        if mesh != ob and isDeformBone(head, mesh) and not isHair(mesh):
-            matches.append(mesh)
+        if mesh != ob and isDeformBone(head, mesh):
+            if hasFaceName(mesh):
+                matches.append(mesh)
+            elif not isHair(mesh):
+                for child in head.children:
+                    if isDeformBone(child, mesh):
+                        matches.append(mesh)
+                        break
     return matches
 
 
