@@ -665,7 +665,7 @@ class CyclesTree(Tree):
         self.links.new(colorOutput(bumptex), bump.inputs["Height"])
         self.owner.addGeoBump(bumptex, bump.inputs["Distance"])
         return bump
-        
+
 
     def linkBumpNormal(self, node, slot="Normal"):
         if self.bump:
@@ -1013,7 +1013,7 @@ class CyclesTree(Tree):
         value,tex,_ = self.getColorTex(["Dual Lobe Specular Reflectivity"], "NONE", 0.5, False)
         node.inputs["IOR"].default_value = 1.1 + 0.7*value
         if tex:
-            iortex = self.multiplyAddScalarTex(0.7*value, 1.1, tex)
+            iortex = self.multiplyScalarTex(0.7*value, tex, add=1.1)
             self.links.new(colorOutput(iortex), node.inputs["IOR"])
 
         if self.owner.shader == 'PBRSKIN':
@@ -1131,7 +1131,7 @@ class CyclesTree(Tree):
                 ior = 10
                 tex = None
             if tex:
-                iortex = self.multiplyAddScalarTex(factor, 1.1, tex)
+                iortex = self.multiplyScalarTex(factor, tex, add=1.1)
         return ior, iortex
 
     #-------------------------------------------------------------
@@ -1212,7 +1212,7 @@ class CyclesTree(Tree):
             spec90,spec90tex,_ = self.getColorTex(["Top Coat Curve Grazing"], "NONE", 1)
             power,powertex,_ = self.getColorTex(["Top Coat Curve Exponent"], "NONE", 1)
 
-        bump,normal = self.getTopCoatBump()        
+        bump,normal = self.getTopCoatBump()
         roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
         if roughness == 0:
             glossiness,glosstex,_ = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
@@ -1236,8 +1236,8 @@ class CyclesTree(Tree):
         self.linkTopCoatBump(bump, normal, top, "Normal")
         self.mixWithActive(fac, factex, texslot, top, keep=True, effect=effect)
 
-        
-    def getTopCoatBump(self):       
+
+    def getTopCoatBump(self):
         bump = normal = None
         if self.owner.shader == 'UBER_IRAY':
             bumpmode = self.getValue(["Top Coat Bump Mode"], 0)
@@ -1254,7 +1254,7 @@ class CyclesTree(Tree):
                 bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)
                 self.linkNormal(bump)
         return bump, normal
-        
+
 
     def mixBump(self, bumpmode, bumpval, bumptex):
         bump = self.buildBumpMap(bumpval, bumptex)
@@ -1262,7 +1262,7 @@ class CyclesTree(Tree):
         return bump
 
 
-    def linkTopCoatBump(self, bump, normal, node, slot):       
+    def linkTopCoatBump(self, bump, normal, node, slot):
         if bump:
             self.links.new(bump.outputs["Normal"], node.inputs[slot])
         elif normal:
@@ -2054,22 +2054,8 @@ class CyclesTree(Tree):
             mult.inputs[2].default_value = add
         else:
             mult.operation = 'MULTIPLY'
-        mult.inputs[0].default_value = factor
-        self.linkSlot(tex, slot, mult.inputs[1])
-        self.moveTex(tex, mult)
-        return mult
-
-
-    def multiplyAddScalarTex(self, factor, term, tex, slot=None, col=None):
-        if tex is None:
-            return None
-        if col is None:
-            col = self.column-1
-        mult = self.addNode("ShaderNodeMath", col)
-        mult.operation = 'MULTIPLY_ADD'
         self.linkSlot(tex, slot, mult.inputs[0])
         mult.inputs[1].default_value = factor
-        mult.inputs[2].default_value = term
         self.moveTex(tex, mult)
         return mult
 
