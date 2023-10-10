@@ -313,7 +313,7 @@ def buildBakedMorph(inst, ref, value):
         value = float(value)
         file,raw = ref.rsplit("#",1)
         file = unquote(file)
-        raw = unquote(raw)
+        raw = rawProp(unquote(raw))
         rig[raw] = value
         final = finalProp(raw)
         rig.data[final] = value

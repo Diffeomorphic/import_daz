@@ -463,11 +463,14 @@ def stripName(name):
 def normalizePath(path):
     return path.replace("\\", "/")
 
+def rawProp(prop):
+    return prop[0:57]
+
 def finalProp(prop):
-    return "%s(fin)" % prop
+    return "%s(fin)" % prop[0:57]
 
 def restProp(prop):
-    return "%s(rst)" % prop
+    return "%s(rst)" % prop[0:57]
 
 def baseProp(string):
     if string[-5:] in ["(fin)", "(rst)"]:

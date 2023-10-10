@@ -237,7 +237,7 @@ class LoadMorph(DriverUser):
 
 
     def alreadyLoaded(self, asset):
-        raw = self.getUniqueName(asset.getName())
+        raw = rawProp(self.getUniqueName(asset.getName()))
         final = finalProp(raw)
         parent = self.getGraftParent(asset)
         if parent:
@@ -361,7 +361,7 @@ class LoadMorph(DriverUser):
                 asset.buildMorph(self.mesh, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
-            prop = self.getUniqueName(unquote(skey.name))
+            prop = rawProp(self.getUniqueName(unquote(skey.name)))
             self.alias[prop] = skey.name
             skey.name = prop
             skey.slider_min = asset.min
@@ -402,7 +402,7 @@ class LoadMorph(DriverUser):
     def makeFormulas(self, asset, skey):
         from .formula import Formula, setFormulaExpr
         from .modifier import Alias
-        prop = self.getUniqueName(asset.getName())
+        prop = rawProp(self.getUniqueName(asset.getName()))
         if prop != asset.name:
             self.setAlias(asset.name, prop)
         self.addNewProp(prop, asset, skey)
@@ -530,7 +530,7 @@ class LoadMorph(DriverUser):
             self.visible[raw] = visible
             self.primary[raw] = True
             if isinstance(asset, Alias):
-                alias = asset.getAlias()
+                alias = rawProp(asset.getAlias())
                 if not alias:
                     return
                 finalias = finalProp(alias)
@@ -625,7 +625,7 @@ class LoadMorph(DriverUser):
         factor = expr["factor"]
         if "points" in expr.keys():
             factor = self.cheatSplineTCB(expr["points"], factor)
-        raw = self.getUniqueName(expr["prop"])
+        raw = rawProp(self.getUniqueName(expr["prop"]))
         final = self.addNewProp(raw)
         tfm = Transform()
         return tfm, pb, final, factor
@@ -848,9 +848,9 @@ class LoadMorph(DriverUser):
                         if dtype == 'BONE':
                             self.buildBoneDriver(output, bname, expr, False)
                 elif self.isDriverType('PROP', drivers):
-                    self.buildPropDriver(output, drivers)
+                    self.buildPropDriver(rawProp(output), drivers)
             elif self.visible[output]:
-                self.buildPropDriver(output, drivers)
+                self.buildPropDriver(rawProp(output), drivers)
             else:
                 final = finalProp(output)
                 if final not in self.amt.keys():
@@ -951,6 +951,7 @@ class LoadMorph(DriverUser):
         for dtype,subraw,factor in drivers[0:MAX_TERMS2]:
             if dtype != 'PROP' or factor == 0.0:
                 continue
+            subraw = rawProp(subraw)
             subfinal = finalProp(subraw)
             channel = propRef(subfinal)
             if channel in channels:
