@@ -425,7 +425,7 @@ class HideOperator(DazOperator):
         DazOperator.restoreState(self, context)
         if self.rig:
             if bpy.app.version < (4,0,0):
-                self.rig.layers = self.boneLayers
+                self.rig.data.layers = self.boneLayers
             else:
                 for coll in self.rig.data.collections:
                     coll.is_visible = (coll.name in self.boneLayers.keys())
@@ -760,13 +760,14 @@ class ActionOptions:
     def nameAnimation(self, ob, dazfiles):
         if self.makeNewAction and ob.animation_data:
             act = ob.animation_data.action
-            if self.actionName:
+            if act is None:
+                pass
+            elif self.actionName:
                 act.name = self.actionName
             elif dazfiles:
                 act.name = os.path.splitext(os.path.basename(dazfiles[0]))[0]
             else:
                 act.name = "Action"
-        return
 
 #-------------------------------------------------------------
 #   AnimatorBase
@@ -1648,12 +1649,14 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
 
 
     def addToPoseLib(self, rig, filepath):
-        if rig.type != 'ARMATURE':
+        if rig.type != 'ARMATURE' or rig.animation_data is None:
             return
         name = os.path.splitext(os.path.basename(filepath))[0]
         if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
             bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
             act = rig.animation_data.action
+            if act is None:
+                return
             keep = ["location", "rotation_euler", "rotation_quaternion"]
             if self.affectScale:
                 keep.append("scale")
