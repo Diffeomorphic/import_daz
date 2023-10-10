@@ -334,7 +334,7 @@ class PbrTree(CyclesTree):
     def buildSpecular(self, useTex):
         # Specular
         spec, spectex = 0, None
-        color, coltex = 0, None
+        color, coltex = WHITE, None
         if self.owner.shader == 'UBER_IRAY':
             strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             if self.owner.basemix == 0:    # Metallic/Roughness
