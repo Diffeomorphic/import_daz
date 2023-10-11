@@ -305,14 +305,15 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
     def transferAllMorphs(self, context, src, targets):
         from .load_morph import newLine
+        failed = []
+        hskeys = src.data.shape_keys
+        if hskeys is None:
+            return failed
         if self.transferMethod in ['NEAREST', 'SELECTED']:
             self.findTriangles(self.trihuman)
-        failed = []
         self.driverPaths = {}
-        if self.useDrivers:
-            hskeys = src.data.shape_keys
-            if hskeys and hskeys.animation_data:
-                self.driverPaths = dict([(fcu.data_path,fcu) for fcu in hskeys.animation_data.drivers])
+        if self.useDrivers and hskeys.animation_data:
+            self.driverPaths = dict([(fcu.data_path,fcu) for fcu in hskeys.animation_data.drivers])
         snames = self.getSelectedProps()
         srcboxes = {}
         for sname in snames:
