@@ -252,7 +252,6 @@ class PbrTree(CyclesTree):
         else:
             color,tex = self.getDiffuseColor()
         self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
-        self.pbr.inputs["Base Color"].default_value = (1,1,1,1)
         self.pbr.inputs[SubsurfWeight].default_value = 0
 
         if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
