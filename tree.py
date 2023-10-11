@@ -41,19 +41,19 @@ YSTEP = 25
 
 if bpy.app.version < (4,0,0):
     def addGroupInput(group, type, slot):
-        group.inputs.new(type, slot)
+        return group.inputs.new(type, slot)
 
     def addGroupOutput(group, type, slot):
-        group.outputs.new(type, slot)
+        return group.outputs.new(type, slot)
 
     def getGroupInput(group, slot):
         return group.inputs[slot]
 else:
     def addGroupInput(group, type, slot):
-        group.interface.new_socket(slot, socket_type=type, in_out='INPUT')
+        return group.interface.new_socket(slot, socket_type=type, in_out='INPUT')
 
     def addGroupOutput(group, type, slot):
-        group.interface.new_socket(slot, socket_type=type, in_out='OUTPUT')
+        return group.interface.new_socket(slot, socket_type=type, in_out='OUTPUT')
 
     def getGroupInput(group, slot):
         for item in group.interface.items_tree:
@@ -270,12 +270,16 @@ NodeSize = {
     "GAMMA" : 6,
     "SEPRGB" : 7,
     "COMBRGB" : 7,
+    "SEPXYZ" : 7,
+    "COMBXYZ" : 7,
     "RGBTOBW" : 7,
+    "VALTORGB" : 7,
     "CLAMP" : 5,
     "MIX_RGB" : 8,
     "MIX" : 12,
     "MATH" : 8,
     "VECT_MATH" : 6,
+    "TEX_IMAGE" : 12,
     "TEX_COORD" : 10,
     "TEX_ENVIRONMENT" : 10,
     "TEX_NOISE" : 8,
@@ -344,7 +348,7 @@ GroupSize = {
     "DAZ Ray Clip" : 10,
     "DAZ Dual Lobe" : 10,
     "DAZ Dual Lobe PBR" : 10,
-    "DAZ Metal" : 4,
+    "DAZ Metal" : 10,
     "DAZ Metal PBR" : 10,
     "DAZ Makeup" : 10,
     "DAZ Volume" : 10,
