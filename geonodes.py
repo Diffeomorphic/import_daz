@@ -207,8 +207,12 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     group.create(ob.name, mnames)
     group.addNodes(mnames, mats, shmats)
     mod.node_group = group.group
-    mod["Input_1"] = ob
-    mod["Input_2"] = offset
+    if bpy.app.version < (4,0,0):
+        mod["Input_1"] = ob
+        mod["Input_2"] = offset
+    else:
+        mod["Socket_1"] = ob
+        mod["Socket_2"] = offset
 
 #----------------------------------------------------------
 #   Add shells

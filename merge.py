@@ -527,8 +527,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         mod["Input_1_attribute_name"] = edgename
         mod["Input_2_attribute_name"] = maskname
         mod["Input_3"] = 0.01*cob.DazScale
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
+        if bpy.app.version < (4,0,0):
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
+        else:
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=edgename, modifier_name=mod.name)
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=maskname, modifier_name=mod.name)
         for aob in anatomies:
             aob.hide_set(True)
             aob.hide_render = True
