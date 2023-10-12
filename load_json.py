@@ -32,6 +32,43 @@ import os
 from mathutils import Vector, Color
 from .error import reportError, DazError
 
+#-------------------------------------------------------------
+#   Class for caching
+#-------------------------------------------------------------
+
+class JsonLoader:
+    useCache = [
+        "genesis.dsf",
+        "genesis2female.dsf",
+        "genesis2male.dsf",
+        "genesis3female.dsf",
+        "genesis3male.dsf",
+        "genesis8female.dsf",
+        "genesis8male.dsf",
+        "genesis8_1female.dsf",
+        "genesis8_1male.dsf",
+        "genesis9.dsf",
+    ]
+
+    def __init__(self):
+        self.cached = {}
+
+    def load(self, filepath, mustOpen=False, silent=False):
+        key = os.path.basename(filepath).lower()
+        struct = self.cached.get(key)
+        if struct:
+            return struct
+        struct = loadJson(filepath, mustOpen, silent)
+        if key in self.useCache:
+            self.cached[key] = struct
+        return struct
+
+
+JL = JsonLoader()
+
+#-------------------------------------------------------------
+#   Load gzipped json file
+#-------------------------------------------------------------
 
 def loadJson(filepath, mustOpen=False, silent=False):
     def loadFromString(string):
@@ -101,6 +138,9 @@ def loadJson(filepath, mustOpen=False, silent=False):
         reportError(msg, trigger=(1,5))
     return struct
 
+#-------------------------------------------------------------
+#   Save Json file
+#-------------------------------------------------------------
 
 def saveJson(struct, filepath, binary=False, strict=True):
     folder = os.path.dirname(filepath)

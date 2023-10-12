@@ -2146,8 +2146,8 @@ def readTextures(path, url):
         if "id" in struct.keys() and "image_file" in struct.keys():
             textures["%s:%s" % (mname, struct["id"])] = struct["image_file"]
 
-    from .load_json import loadJson
-    struct = loadJson(path, silent=True)
+    from .load_json import JL
+    struct = JL.load(path, silent=True)
     if not struct:
         print('Did not find "%s"' % path)
         return {}

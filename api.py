@@ -224,8 +224,8 @@ def load_daz_file(filepath):
     Returns:
     The content of the file as a Python dict.
     """
-    from .load_json import loadJson
-    return loadJson(filepath)
+    from .load_json import JL
+    return JL.load(filepath)
 
 #-------------------------------------------------------------
 #   Paths used by Xin's HD-morphs add-on

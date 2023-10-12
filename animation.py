@@ -34,6 +34,7 @@ from .error import *
 from .utils import *
 from .transform import Transform
 from .fileutils import *
+from .load_json import JL
 from .bone_data import BD
 
 #-------------------------------------------------------------
@@ -802,8 +803,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         scn = context.scene
         ext = os.path.splitext(filepath)[1]
         if ext in [".duf", ".dsf"]:
-            from .load_json import loadJson
-            struct = loadJson(filepath, False)
+            struct = JL.load(filepath, False)
         else:
             raise DazError("Wrong type of file: %s" % filepath)
         if "scene" not in struct.keys():

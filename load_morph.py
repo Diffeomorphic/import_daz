@@ -31,6 +31,7 @@ import bpy
 from .driver import DriverUser
 from .utils import *
 from .error import reportError, DazError, addItem
+from .load_json import JL
 
 MAX_EXPRESSION_SIZE = 255
 MAX_TERMS = 12
@@ -176,7 +177,6 @@ class LoadMorph(DriverUser):
             if assets:
                 return assets[0]
 
-        from .load_json import loadJson
         from .files import parseAssetFile
         namepaths.sort()
         idx = 0
@@ -189,7 +189,7 @@ class LoadMorph(DriverUser):
                 if lname not in self.bakedSkipped.keys():
                     self.bakedSkipped[lname] = name
             else:
-                struct = loadJson(filepath)
+                struct = JL.load(filepath)
                 assets = parseAssetFile(struct, multi=True)
                 aliases = self.getAliases(filepath)
                 if self.useMulti:
@@ -261,8 +261,7 @@ class LoadMorph(DriverUser):
             return None
 
         def loadAlias(filepath):
-            from .load_json import loadJson
-            struct = loadJson(filepath)
+            struct = JL.load(filepath)
             aliases = {}
             if self.rig is None:
                 return aliases

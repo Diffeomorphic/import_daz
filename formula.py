@@ -167,7 +167,6 @@ class Formula:
                 output = "RIG"
             else:
                 asset = self.getAsset(url)
-                print("AA", url, asset)
                 if isinstance(asset, Bone) and asset.instances:
                     inst = list(asset.instances.values())[0]
                     rig2 = inst.figure.rna

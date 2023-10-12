@@ -121,8 +121,8 @@ class DazLoader:
         if LS.fitFile:
             getFitFile(filepath)
 
-        from .load_json import loadJson
-        struct = loadJson(filepath)
+        from .load_json import JL
+        struct = JL.load(filepath)
         showProgress(10, 100)
 
         if LS.useNodes:
@@ -490,9 +490,9 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
 
 
     def loadDazFile(self, filepath, context):
-        from .load_json import loadJson
+        from .load_json import JL
         LS.scene = filepath
-        struct = loadJson(filepath)
+        struct = JL.load(filepath)
         print("Parsing data")
         from .files import parseAssetFile
         main = parseAssetFile(struct, toplevel=True)

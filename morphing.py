@@ -35,6 +35,7 @@ from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
 from .error import *
 from .utils import *
+from .load_json import JL
 from .selector import Selector
 from .fileutils import SingleFile, MultiFile, DazImageFile, JsonFile, ensureExt
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup, DazBulgeGroup
@@ -269,8 +270,6 @@ class MorphPaths:
             else:
                 return self.ShortForms[item]
 
-        from .load_json import loadJson
-
         if self.morphFiles and not force:
             return
         self.morphFiles = {}
@@ -285,7 +284,7 @@ class MorphPaths:
         files.sort()
         for file in files:
             path = os.path.join(folder, file)
-            struct = loadJson(path)
+            struct = JL.load(path)
             charPaths[struct["name"]] = struct
 
         for char in charPaths.keys():
@@ -391,7 +390,6 @@ class MorphPaths:
 
     def getProjection(self, ob):
         from .finger import getCharacter
-        from .load_json import loadJson
         char = getCharacter(ob)
         if not char:
             return None
@@ -403,7 +401,7 @@ class MorphPaths:
             filepath = GS.getAbsPath(relpath)
             if not filepath:
                 return None
-            struct = loadJson(filepath)
+            struct = JL.load(filepath)
             proj = None
             if struct:
                 deltas = struct["modifier_library"][0]["morph"]["deltas"]["values"]
@@ -1636,9 +1634,8 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
-        from .load_json import loadJson
         filepath = ensureExt(self.filepath, ".json")
-        struct = loadJson(filepath)
+        struct = JL.load(filepath)
         if ("filetype" not in struct.keys() or
             struct["filetype"] != "favo_morphs"):
             raise DazError("This file does not contain favorite morphs")

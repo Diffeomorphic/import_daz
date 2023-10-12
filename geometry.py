@@ -35,6 +35,7 @@ from .asset import Asset, normalizeRef
 from .channels import Channels
 from .utils import *
 from .error import *
+from .load_json import JL
 from .node import Node, Instance, SimNode
 from .fileutils import SingleFile, DazFile, DazExporter
 
@@ -1678,13 +1679,12 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
 
 
     def run(self, context):
-        from .load_json import loadJson
         from .files import parseAssetFile
 
         ob = context.object
         me = ob.data
         LS.forUV(ob)
-        struct = loadJson(self.filepath)
+        struct = JL.load(self.filepath)
         asset = parseAssetFile(struct)
         if asset is None or len(asset.uvs) == 0:
             raise DazError ("Not an UV asset:\n  '%s'" % self.filepath)
@@ -1918,10 +1918,9 @@ def restoreOrigVerts(ob, vcount):
     if not os.path.exists(filepath):
         print("%s does not exist" % filepath)
         return False, False
-    from .load_json import loadJson
     from .finger import getFingerPrint
     finger = getFingerPrint(ob)
-    struct = loadJson(filepath)
+    struct = JL.load(filepath)
     for mstruct in struct["meshes"]:
         if mstruct["finger_print"] == finger and mstruct["orig_verts"]:
             nverts = int(mstruct["orig_finger_print"].split("-")[0])

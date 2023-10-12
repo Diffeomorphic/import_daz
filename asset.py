@@ -32,6 +32,7 @@ import gzip
 import copy
 from .error import reportError
 from .utils import *
+from .load_json import JL
 
 #-------------------------------------------------------------
 #   Accessor base class
@@ -82,11 +83,10 @@ class Accessor:
 
     def getNewAsset(self, id, ref):
         from .files import parseAssetFile
-        from .load_json import loadJson
         fileref = id.split("#")[0]
         filepath = GS.getAbsPath(fileref)
         if filepath:
-            struct = loadJson(filepath)
+            struct = JL.load(filepath)
             parseAssetFile(struct, fileref=fileref)
             return LS.theAssets.get(ref)
         else:

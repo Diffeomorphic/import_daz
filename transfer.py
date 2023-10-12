@@ -412,12 +412,12 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
 
 
     def loadMorph(self, filepath, src, trg, scn):
-        from .load_json import loadJson
+        from .load_json import JL
         from .files import parseAssetFile
         from .modifier import Morph
         from .hdmorphs import addSkeyToUrls
         LS.forMorphLoad(trg)
-        struct = loadJson(filepath)
+        struct = JL.load(filepath)
         asset = parseAssetFile(struct)
         if (not isinstance(asset, Morph) or
             len(trg.data.vertices) != asset.vertex_count):

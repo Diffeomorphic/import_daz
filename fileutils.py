@@ -246,8 +246,8 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library"):
                 findFilesRecursive(path)
 
     def checkContent(path):
-        from .load_json import loadJson
-        struct = loadJson(path, silent=True)
+        from .load_json import JL
+        struct = JL.load(path, silent=True)
         for lib in struct.get(library, []):
             if lib.get("name") == pattern:
                 return True
