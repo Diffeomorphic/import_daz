@@ -303,7 +303,7 @@ class Asset(Accessor):
                 elif key == "label":
                     self.label = value
 
-        if "parent" in struct.keys():
+        if "parent" in struct.keys() and not LS.useMorphOnly:
             self.parentRef = instRef(struct["parent"])
             self.parent = self.getAsset(struct["parent"])
             if self.parent:
@@ -340,7 +340,7 @@ class Asset(Accessor):
                 self.url = value
             elif key == "label":
                 self.label = value
-            elif key == "parent":
+            elif key == "parent" and not LS.useMorphOnly:
                 self.parentRef = instRef(struct["parent"])
                 if self.parent is None and self.caller:
                     self.parent = self.caller.getAsset(struct["parent"])
