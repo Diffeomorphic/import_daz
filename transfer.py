@@ -91,7 +91,7 @@ class MatchOperator(DazPropsOperator):
         self.checkTransforms(src)
         objects = []
         for ob in getSelectedMeshes(context):
-            if ob != src:
+            if ob != src and len(ob.data.polygons) > 0:
                 objects.append(ob)
                 self.checkTransforms(ob)
                 if (ob.parent and
@@ -99,8 +99,8 @@ class MatchOperator(DazPropsOperator):
                     self.transferMethod != 'BY_NUMBER'):
                     msg = '"%s" parent is not same as\n"%s" parent' % (ob.name, src.name)
                     self.addWarning(msg)
-        if not objects:
-            raise DazError("No target meshes selected")
+        if not objects and not ES.easy:
+            raise DazError("No target meshes with faces selected")
         return objects
 
 
