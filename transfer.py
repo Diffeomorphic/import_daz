@@ -166,14 +166,17 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
         t1 = perf_counter()
         targets = []
         for trg in self.getTargets(src, context):
-            targets.append(trg.name)
+            targets.append(trg)
             trg.vertex_groups.clear()
-        print("Copy vertex groups from %s to %s" % (src.name, targets))
+        print("Copy vertex groups from %s to %s" % (src.name, [trg.name for trg in targets]))
         bpy.ops.object.data_transfer(
             data_type = "VGROUP_WEIGHTS",
-            vert_mapping = 'NEAREST',
+            vert_mapping = 'POLYINTERP_NEAREST',
             layers_select_src = 'ALL',
             layers_select_dst = 'NAME')
+        if self.threshold > 0:
+            for trg in targets:
+                pruneVertexGroups(trg, self.threshold, [], True)
         t2 = perf_counter()
         print("Vertex groups transferred in %.1f seconds" % (t2-t1))
 
