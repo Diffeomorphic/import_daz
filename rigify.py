@@ -1316,7 +1316,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
     bl_idname = "daz.convert_to_rigify"
     bl_label = "Convert To Rigify"
     bl_description = "Convert active rig to rigify"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     useDeleteMeta : BoolProperty(
         name = "Delete Metarig",

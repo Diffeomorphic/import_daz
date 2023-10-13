@@ -460,7 +460,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     bl_idname = "daz.convert_to_mhx"
     bl_label = "Convert To MHX"
     bl_description = "Convert rig to MHX"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     gizmoFile = "mhx"
 

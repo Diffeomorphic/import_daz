@@ -211,7 +211,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         "Add Simple IK constraints to the active rig.\n" +
         "This will not work if the rig has body morphs affecting arms and legs,\n" +
         "and the bones have been made posable")
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'PRESET'}
 
     @classmethod
     def poll(self, context):
