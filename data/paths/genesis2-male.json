@@ -8,16 +8,14 @@
 		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
 	},
 	"expressions" : {
-		"prefix" : "ctrl",
-		"include" : ["ctrl"],
-		"exclude" : "ctrlunits",
-		"exclude2" : "ctrlbody",
-		"exclude3" : ["ctrlvsm"],
+		"prefix" : "phm",
+		"include" : ["phm"],
+		"exclude" : "phmunits",
 		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
 	},
 	"visemes" : {
-		"prefix" : "ctrlvsm",
-		"include" : ["ctrlvsm"],
+		"prefix" : "vsm",
+		"include" : ["vsm"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
 	},
