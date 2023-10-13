@@ -140,6 +140,11 @@ class HairOptions:
         name = "Output",
         description = "")
 
+    useSingleOutput : BoolProperty(
+        name = "Single Output",
+        description = "Hair output is a single object",
+        default = True)
+
     removeOldHairs : BoolProperty(
         name = "Remove Particle Hair",
         default = False,
@@ -698,6 +703,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         box.prop(self, "strandType", expand=True)
         box.label(text="Output")
         box.prop(self, "output", expand=True)
+        if self.output in ['MESH', 'CURVES', 'HAIR_CURVES']:
+            box.prop(self, "useSingleOutput")
         if self.strandType == 'SHEET':
             box.prop(self, "strandOrientation")
             box.prop(self, "useSeparateLoose")
@@ -877,18 +884,16 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         if not hsystems:
             print("No hair system found")
         elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES']:
-            strands = []
-            mnames = {}
-            for hsys in hsystems.values():
-                strands += hsys.strands
-                mnames[hsys.material] = True
-            if self.output == 'MESH':
-                ob = hsys.buildMesh(context, strands, hair, hum, mnames.keys())
-            elif self.output == 'CURVES':
-                ob = hsys.buildCurves(context, strands, hair, hum, mnames.keys())
-            elif self.output == 'HAIR_CURVES':
-                ob = hsys.buildHairCurves(context, strands, hair, hum, mnames.keys())
-            coll.objects.link(ob)
+            if self.useSingleOutput:
+                strands = []
+                mnames = {}
+                for hsys in hsystems.values():
+                    strands += hsys.strands
+                    mnames[hsys.material] = True
+                self.buildOutput(context, hsys, strands, hair, hum, mnames.keys(), coll)
+            else:
+                for hsys in hsystems.values():
+                    self.buildOutput(context, hsys, hsys.strands, hair, hum, [hsys.material], coll)
         elif self.output == 'POLYLINES':
             subcoll = bpy.data.collections.new(name = "Mesh Hairs")
             coll.children.link(subcoll)
@@ -897,6 +902,16 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                     ob = hsys.buildMesh(context, [strand], hair, hum, [hsys.material])
                     subcoll.objects.link(ob)
         print("Done")
+
+
+    def buildOutput(self, context, hsys, strands, hair, hum, mnames, coll):
+        if self.output == 'MESH':
+            ob = hsys.buildMesh(context, strands, hair, hum, mnames)
+        elif self.output == 'CURVES':
+            ob = hsys.buildCurves(context, strands, hair, hum, mnames)
+        elif self.output == 'HAIR_CURVES':
+            ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
+        coll.objects.link(ob)
 
 
     def findMeshRects(self, hair):
