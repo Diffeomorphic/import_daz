@@ -409,6 +409,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
              ('RANDOM_WALK', "Random Walk", "Random walk")]
+    if bpy.app.version < (4,0,0):
+        enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
+    else:
+        enums.append(('RANDOM_WALK_SKIN', "Random Walk (Skin)", "Random Walk (Skin)"))
     sssMethod : EnumProperty(
         items = enums,
         name = "SSS",
