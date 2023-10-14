@@ -363,8 +363,7 @@ class LoadMorph(DriverUser):
             prop = rawProp(self.getUniqueName(unquote(skey.name)))
             self.alias[prop] = skey.name
             skey.name = prop
-            skey.slider_min = asset.min
-            skey.slider_max = asset.max
+            self.setShapeLimits(GS.finalLimits, skey, asset)
             self.shapekeys[prop] = skey
             if self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
@@ -572,19 +571,25 @@ class LoadMorph(DriverUser):
             min = GS.morphMultiplier * asset.min
             max = GS.morphMultiplier * asset.max
             setFloatProp(rna, prop, value, min, max, ovr)
-            if skey:
-                skey.slider_min = min
-                skey.slider_max = max
         elif limits == 'CUSTOM':
             setFloatProp(rna, prop, value, GS.customMin, GS.customMax, ovr)
-            if skey:
-                skey.slider_min = GS.customMin
-                skey.slider_max = GS.customMax
         else:
             setFloatProp(rna, prop, value, None, None, ovr)
-            if skey:
-                skey.slider_min = -10
-                skey.slider_max = 10
+        if skey:
+            self.setShapeLimits(limits, skey, asset)
+
+
+    def setShapeLimits(self, limits, skey, asset):
+        if limits == 'DAZ':
+            skey.slider_min = GS.morphMultiplier * asset.min
+            skey.slider_max = GS.morphMultiplier * asset.max
+        elif limits == 'CUSTOM':
+            skey.slider_min = GS.customMin
+            skey.slider_max = GS.customMax
+        else:
+            skey.slider_min = -10
+            skey.slider_max = 10
+
 
     def makeValueFormula(self, output, expr):
         output = self.getUniqueName(output)
