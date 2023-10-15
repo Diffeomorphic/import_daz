@@ -477,6 +477,11 @@ def baseProp(string):
         return string[:-5]
     return string
 
+def truncString(string, ending):
+    if string[-len(ending):] == ending:
+        return string[:-len(ending)]
+    return string
+
 def isDrvBone(string):
     return string.endswith(("(drv)", "twist1", "twist2"))
 

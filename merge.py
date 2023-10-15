@@ -484,10 +484,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.replaceTexco(cob, cuvname, True)
 
         if self.useNewMesh:
-            if cob.name[-5:] == " Mesh":
-                ename = "%s Merged" % cob.name[:-5]
-            else:
-                ename = "%s Merged" % cob.name
+            ename = "%s Merged" % truncString(cob.name, " Mesh")
             me = bpy.data.meshes.new(ename)
             me.use_auto_smooth = cob.data.use_auto_smooth
             me.auto_smooth_angle = cob.data.auto_smooth_angle

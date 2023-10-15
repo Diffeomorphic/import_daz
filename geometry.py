@@ -181,7 +181,8 @@ class GeoNode(Node, SimNode):
         if self.highdef:
             from .finger import getFingerPrint
             me = self.buildHDMesh(ob)
-            hdob = bpy.data.objects.new(ob.name + "_HD", me)
+            hdname = "%s_HD" % truncString(ob.name, " Mesh")
+            hdob = bpy.data.objects.new(hdname, me)
             self.hdobject = inst.hdobject = hdob
             LS.hdmeshes[LS.rigname].append(hdob)
             hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers

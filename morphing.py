@@ -1949,7 +1949,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             for favo in ob.data.DazFavorites.keys():
                 morph = favo.split("/",1)[0]
                 self.findMorphs(morph, ob)
-            self.setCategory("Favorites %s" % ob.name.rstrip("Mesh"))
+            self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
 
