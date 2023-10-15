@@ -103,19 +103,29 @@ MhxLayers = {
 #   Rigify Layers
 #-------------------------------------------------------------
 
-R_TORSO = 0
 R_FACE = 1
 R_DETAIL = 2
+R_TORSO = 3
 R_TORSOTWEAK = 4
+R_ARMIK_L = 7
+R_ARMIK_R = 10
+R_LEGIK_L = 13
+R_LEGIK_R = 16
 R_CUSTOM = 19
+R_ROOT = 28
 R_DEFORM = 29
 R_HELP = 30
 R_LAST = 31
 R_FIN = 27
 
 RigifyLayers = {
+    R_ROOT : "Root",
     R_TORSO : "Torso",
     R_FACE : "Face",
+    R_ARMIK_L : "Arm.L (IK)",
+    R_ARMIK_R : "Arm.R (IK)",
+    R_LEGIK_L : "Leg.L (IK)",
+    R_LEGIK_R : "Leg.R (IK)",
     R_DETAIL : "Face (Primary)",
     R_TORSOTWEAK : "Torso (Tweak)",
     R_CUSTOM : "Custom",
