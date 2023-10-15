@@ -261,7 +261,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         description = "Save local textures if not already done",
         default = True)
 
-    useKeepDirs = True
+    keepDirs = True
 
     useFixTextures : BoolProperty(
         name = "Fix Textures",

@@ -60,7 +60,7 @@ class Fixer(DriverUser):
         description = "Use the original bend-twist bones and vertex groups",
         default = True)
 
-    useKeepRig : BoolProperty(
+    keepRig : BoolProperty(
         name = "Keep DAZ Rig",
         description = "Keep the original DAZ rig for deformation",
         default = False)
@@ -70,7 +70,7 @@ class Fixer(DriverUser):
         self.drawRigify()
 
     def drawMeta(self):
-        self.layout.prop(self, "useKeepRig")
+        self.layout.prop(self, "keepRig")
         self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useFingerIk")
 

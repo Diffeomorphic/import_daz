@@ -551,7 +551,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build HD Meshes",
         description = "Build HD meshes if included in .dbz file")
 
-    useKeepBaseMesh : BoolProperty(
+    keepBaseMesh : BoolProperty(
         name = "Keep Base Meshes",
         description = "Keep base resolution meshes if HD mesh is built")
 
@@ -697,7 +697,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useTriaxImprove")
         box.prop(self, "useBulgeWeights")
         box.prop(self, "useHighDef")
-        box.prop(self, "useKeepBaseMesh")
+        box.prop(self, "keepBaseMesh")
         box.prop(self, "useMultires")
         box.prop(self, "useMultiUvLayers")
         box.prop(self, "useHDArmature")

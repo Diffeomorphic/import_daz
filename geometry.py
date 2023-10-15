@@ -332,10 +332,11 @@ class GeoNode(Node, SimNode):
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
             if hdob and hdob != ob:
-                active = getActiveUvLayer(ob)
-                if active:
-                    hduvlayer = hdob.data.uv_layers.get(active.name)
-                    hduvlayer.active = hduvlayer.active_render = True
+                uvlayer = getActiveUvLayer(ob)
+                if uvlayer:
+                    hduvlayer = hdob.data.uv_layers.get(uvlayer.name)
+                    if hduvlayer:
+                        hduvlayer.active = hduvlayer.active_render = True
                 if GS.usePruneNodes:
                     pruneUvMaps(hdob)
                 scaleEyeMoisture(hdob)

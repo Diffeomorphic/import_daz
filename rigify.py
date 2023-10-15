@@ -197,7 +197,7 @@ class MetaMaker(RigifyCommon):
         if self.useOptimizePose:
             from .convert import optimizePose
             optimizePose(context, True)
-        if self.useKeepRig:
+        if self.keepRig:
             dazrig = self.saveDazRig(context)
         else:
             dazrig = None

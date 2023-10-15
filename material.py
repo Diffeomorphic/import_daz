@@ -1030,7 +1030,7 @@ class LocalTextureSaver:
                 continue
             file = bpy.path.basename(src)
             srclower = normalizePath(src).lower()
-            if (self.useKeepDirs and
+            if (self.keepDirs and
                 "/textures/" in srclower and
                 "/textures/original/" not in srclower):
                 subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
@@ -1090,13 +1090,13 @@ class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
     bl_label = "Save Local Textures"
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
 
-    useKeepDirs : BoolProperty(
+    keepDirs : BoolProperty(
         name = "Keep Directories",
         description = "Keep the directory tree from Daz Studio, otherwise flatten the directory structure",
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useKeepDirs")
+        self.layout.prop(self, "keepDirs")
 
     def run(self, context):
         self.saveLocalTextures(context)

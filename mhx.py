@@ -626,7 +626,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.rigname = rig.name
         rig.DazMhxLegacy = False
         self.makeRealParents(context, rig)
-        if self.useKeepRig:
+        if self.keepRig:
             nrig = self.saveDazRig(context)
         self.meshes = getMeshChildren(rig)
         finalizeArmature(rig)
@@ -751,7 +751,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         self.restoreBoneChildren(bchildren, context, rig)
         updateAll(context)
-        if self.useKeepRig:
+        if self.keepRig:
             self.tieBones(nrig, rig)
             self.setRigName(rig, nrig, "MHX")
 
