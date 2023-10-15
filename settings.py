@@ -176,11 +176,12 @@ class GlobalSettings:
         def getPaths(pgs):
             paths = []
             for pg in pgs:
-                path = self.fixPath(pg.name)
-                if os.path.exists(path):
-                    paths.append(path)
-                else:
-                    print("Skip non-existent path:", path)
+                if pg.name:
+                    path = self.fixPath(pg.name)
+                    if os.path.exists(path):
+                        paths.append(path)
+                    else:
+                        print("Skip non-existent path:", path)
             return paths
 
         for attr in dir(self):
@@ -356,11 +357,12 @@ class GlobalSettings:
             value = getattr(self, attr)
             if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
                 struct[attr] = value
-        #saveDirs(self.contentDirs, "DazContentDirs", struct)
-        #saveDirs(self.mdlDirs, "DazMDLDirs", struct)
-        #saveDirs(self.cloudDirs, "DazCloudDirs", struct)
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
-            struct[attr] = [self.fixPath(path) for path in getattr(self, attr)]
+            paths = []
+            for path in getattr(self, attr):
+                if path:
+                    paths.append(self.fixPath(path))
+            struct[attr] = paths
         filepath = os.path.expanduser(filepath)
         filepath = "%s.json" % os.path.splitext(filepath)[0]
         saveJson({"daz-settings" : struct}, filepath, strict=False)

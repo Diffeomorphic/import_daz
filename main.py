@@ -898,11 +898,15 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             for ob in geografts[mainMesh.name][0]:
                 selectSet(ob, True)
             print("Fix shells")
-            for mat in mainMesh.data.materials:
-                if mat.name.startswith(self.bodyMaterial):
-                    mainMesh.active_material = mat
-                    break
-            bpy.ops.daz.fix_shells()
+            mat0 = mainMesh.active_material
+            try:
+                for mat in mainMesh.data.materials:
+                    if mat.name.startswith(self.bodyMaterial):
+                        mainMesh.active_material = mat
+                        break
+                bpy.ops.daz.fix_shells()
+            finally:
+                mainMesh.active_material = mat0
 
         if self.useApplyTransforms:
             # Apply transforms to meshes
