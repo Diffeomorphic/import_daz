@@ -34,6 +34,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .material import WHITE, isWhite
+from .pbr import PBR, SpecTintComponents
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
 from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
@@ -260,6 +261,28 @@ TweakableChannels = OrderedDict([
     ("Translucency", None),
     ("Translucency Strength", ("DAZ Translucent", "Fac", 1)),
     ("Translucency Color", ("DAZ Translucent", "Color", 4)),
+
+    ("Principled", None),
+    ("Principled Base Color", ('BSDF_PRINCIPLED', "Base Color", 4)),
+    ("Principled %s" % PBR.SubsurfWeight, ('BSDF_PRINCIPLED', PBR.SubsurfWeight, 1)),
+    ("Principled Subsurface Radius", ('BSDF_PRINCIPLED', "Subsurface Radius", 3)),
+    ("Principled Subsurface Color", ('BSDF_PRINCIPLED', "Subsurface Color", 4)),
+    ("Principled Metallic", ('BSDF_PRINCIPLED', "Metallic", 1)),
+    ("Principled %s" % PBR.Specular, ('BSDF_PRINCIPLED', PBR.Specular, 1)),
+    ("Principled Specular Tint", ('BSDF_PRINCIPLED', "Specular Tint", SpecTintComponents)),
+    ("Principled Roughness", ('BSDF_PRINCIPLED', "Roughness", 1)),
+    ("Principled Anisotropic", ('BSDF_PRINCIPLED', "Anisotropic", 1)),
+    ("Principled Anisotropic Rotation", ('BSDF_PRINCIPLED', "Anisotropic Rotation", 1)),
+    ("Principled %s" % PBR.SheenWeight, ('BSDF_PRINCIPLED', PBR.SheenWeight, 1)),
+    ("Principled Sheen Tint", ('BSDF_PRINCIPLED', "Sheen Tint", 1)),
+    ("Principled %s" % PBR.CoatWeight, ('BSDF_PRINCIPLED', PBR.CoatWeight, 1)),
+    ("Principled %s" % PBR.CoatRoughness, ('BSDF_PRINCIPLED', PBR.CoatRoughness, 1)),
+    ("Principled IOR", ('BSDF_PRINCIPLED', "IOR", 1)),
+    ("Principled %s" % PBR.TransmitWeight, ('BSDF_PRINCIPLED', PBR.TransmitWeight, 1)),
+    ("Principled Transmission Roughness", ('BSDF_PRINCIPLED', "Transmission Roughness", 1)),
+    ("Principled %s" % PBR.EmitColor, ('BSDF_PRINCIPLED', PBR.EmitColor, 4)),
+    ("Principled Emission Strength", ('BSDF_PRINCIPLED', "Emission Strength", 1)),
+    ("Principled Alpha", ('BSDF_PRINCIPLED', "Alpha", 1)),
 
     ("Top Coat", None),
     ("Top Coat Color", ("DAZ Top Coat", "Color", 4)),
