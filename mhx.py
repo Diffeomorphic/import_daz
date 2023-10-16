@@ -1798,6 +1798,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
         rname = assoc.get(pb.name, pb.name)
         rb = gen.pose.bones.get(rname)
+        if rb is None:
+            print('Cannot tie "%s" to "%s"' % (pb.name, rname))
+            return
         if (not pb.parent or
             rb.name.startswith(("hand0.", "foot."))):
             space = 'POSE'
@@ -1805,10 +1808,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             space = 'LOCAL'
         else:
             space = 'POSE'
-        if rb is None:
-            print("Cannot tie", pb.name)
-            return
-        elif ".twist" in rb.name:
+        if ".twist" in rb.name:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         else:
             cns = copyTransform(pb, rb, gen, space=space)
