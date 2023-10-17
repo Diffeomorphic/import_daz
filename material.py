@@ -2265,18 +2265,30 @@ class DAZ_OT_LoadMaterialsFromFile(DazOperator, JsonFile, SingleFile, IsMesh):
 #   Strip material names
 #----------------------------------------------------------
 
-class DAZ_OT_StripMaterialNames(DazOperator, IsMesh):
+class DAZ_OT_StripMaterialNames(DazPropsOperator, IsMesh):
     bl_idname = "daz.strip_material_names"
     bl_label = "Strip Material Names"
     bl_description = "Strip endings from material names"
     bl_options = {'UNDO'}
 
+    useMergeMaterials : BoolProperty(
+        name = "Merge Materials",
+        description = "Replace materials with already existing material with stripped name",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useMergeMaterials")
+
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            for mat in ob.data.materials:
+            for n,mat in enumerate(ob.data.materials):
                 if mat:
-                    mat.name = stripName(mat.name)
-                    mat.name = baseName(mat.name)
+                    mname = baseName(stripName(mat.name))
+                    if self.useMergeMaterials and mname in bpy.data.materials.keys():
+                        mat = bpy.data.materials[mname]
+                        ob.data.materials[n] = mat
+                    else:
+                        mat.name = mname
 
 #----------------------------------------------------------
 #   Sort materials by name
