@@ -85,8 +85,7 @@ if not PBR_VERSION_2:
         SheenWeight = "Sheen"
         TransmitWeight = "Transmission"
         EmitColor = "Emission"
-
-    SpecTintComponents = 1
+        TintComponents = 1
 
     def Tint(x):
         return x
@@ -100,8 +99,7 @@ else:
         SheenWeight = "Sheen Weight"
         TransmitWeight = "Transmission Weight"
         EmitColor = "Emission Color"
-
-    SpecTintComponents = 4
+        TintComponents = 4
 
     def Tint(x):
         return (x,x,x,1)

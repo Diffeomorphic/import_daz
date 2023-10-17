@@ -34,7 +34,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .material import WHITE, isWhite
-from .pbr import PBR, SpecTintComponents
+from .pbr import PBR
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
 from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
@@ -269,12 +269,12 @@ TweakableChannels = OrderedDict([
     ("Principled Subsurface Color", ('BSDF_PRINCIPLED', "Subsurface Color", 4)),
     ("Principled Metallic", ('BSDF_PRINCIPLED', "Metallic", 1)),
     ("Principled %s" % PBR.Specular, ('BSDF_PRINCIPLED', PBR.Specular, 1)),
-    ("Principled Specular Tint", ('BSDF_PRINCIPLED', "Specular Tint", SpecTintComponents)),
+    ("Principled Specular Tint", ('BSDF_PRINCIPLED', "Specular Tint", PBR.TintComponents)),
     ("Principled Roughness", ('BSDF_PRINCIPLED', "Roughness", 1)),
     ("Principled Anisotropic", ('BSDF_PRINCIPLED', "Anisotropic", 1)),
     ("Principled Anisotropic Rotation", ('BSDF_PRINCIPLED', "Anisotropic Rotation", 1)),
     ("Principled %s" % PBR.SheenWeight, ('BSDF_PRINCIPLED', PBR.SheenWeight, 1)),
-    ("Principled Sheen Tint", ('BSDF_PRINCIPLED', "Sheen Tint", 1)),
+    ("Principled Sheen Tint", ('BSDF_PRINCIPLED', "Sheen Tint", PBR.TintComponents)),
     ("Principled %s" % PBR.CoatWeight, ('BSDF_PRINCIPLED', PBR.CoatWeight, 1)),
     ("Principled %s" % PBR.CoatRoughness, ('BSDF_PRINCIPLED', PBR.CoatRoughness, 1)),
     ("Principled IOR", ('BSDF_PRINCIPLED', "IOR", 1)),
