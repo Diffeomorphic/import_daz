@@ -1059,6 +1059,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             return
         from .selector import classifyShapekeys
         from .morphing import getBulgeBone
+        meshes = [mesh for mesh in meshes if not (mesh.parent and mesh.parent_type == 'BONE')]
         skeys = ob.data.shape_keys
         if skeys:
             bodyparts = classifyShapekeys(ob, skeys)

@@ -395,7 +395,7 @@ class GeoNode(Node, SimNode):
             self.setHideInfoMesh(ob)
             if hdob and hdob != ob:
                 self.setHideInfoMesh(hdob)
-            self.addLSMesh(ob, inst, None)
+            self.addLSMesh(ob, inst, LS.rigname)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
                     item = ob.data.DazFavorites.add()

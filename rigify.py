@@ -266,7 +266,6 @@ class MetaMaker(RigifyCommon):
             else:
                 mergeVertexGroups(rig, mergers)
             self.renameBones(rig, RF.Genesis38Renames, dazrig)
-            print("RR")
         elif rig.DazRig == "genesis9":
             if dazrig:
                 pass
