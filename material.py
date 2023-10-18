@@ -2271,24 +2271,25 @@ class DAZ_OT_StripMaterialNames(DazPropsOperator, IsMesh):
     bl_description = "Strip endings from material names"
     bl_options = {'UNDO'}
 
-    useMergeMaterials : BoolProperty(
-        name = "Merge Materials",
-        description = "Replace materials with already existing material with stripped name",
+    useCombineMaterials : BoolProperty(
+        name = "Combine Materials",
+        description = "Combine materials with the same stripped name",
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "useMergeMaterials")
+        self.layout.prop(self, "useCombineMaterials")
 
     def run(self, context):
+        mats = {}
         for ob in getSelectedMeshes(context):
             for n,mat in enumerate(ob.data.materials):
                 if mat:
                     mname = baseName(stripName(mat.name))
-                    if self.useMergeMaterials and mname in bpy.data.materials.keys():
-                        mat = bpy.data.materials[mname]
-                        ob.data.materials[n] = mat
+                    if self.useCombineMaterials and mname in mats.keys():
+                        ob.data.materials[n] = mats[mname]
                     else:
                         mat.name = mname
+                        mats[mname] = mat
 
 #----------------------------------------------------------
 #   Sort materials by name
