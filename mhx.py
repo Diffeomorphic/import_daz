@@ -192,6 +192,15 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
     return cns
 
 
+def addHint(pb, rig):
+    cns = pb.constraints.new('LIMIT_ROTATION')
+    cns.owner_space = 'LOCAL'
+    cns.euler_order = pb.rotation_mode
+    cns.min_x = cns.max_x = 18*D
+    cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = True
+    cns.use_transform_limit = True
+
+
 def stretchTo(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('STRETCH_TO')
     cns.name = "StretchTo %s" % target.name
@@ -1178,7 +1187,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, layer, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
-            upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LEXTRA+dlayer, upper_armIk)
+            if self.usePoleTargets:
+                upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LEXTRA+dlayer, upper_armIk)
+            else:
+                upper_armIkTwist = None
             forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LEXTRA+dlayer, forearmIk)
             handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
@@ -1228,7 +1240,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, layer, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
             setConnected(shinIk, shin.use_connect)
-            thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, L_LEXTRA+dlayer, thighIk)
+            if self.usePoleTargets:
+                thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, L_LEXTRA+dlayer, thighIk)
+            else:
+                thighIkTwist = None
             shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, L_LEXTRA+dlayer, shinIk)
 
             if "heel.%s" % suffix in rig.data.edit_bones.keys():
@@ -1333,7 +1348,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             handFk = getBoneCopy("hand.fk.%s" % suffix, hand, rpbs)
             upper_armIk = rpbs["upper_arm.ik.%s" % suffix]
             forearmIk = rpbs["forearm.ik.%s" % suffix]
-            upper_armIkTwist = rpbs["upper_arm.ik.twist.%s" % suffix]
+            upper_armIkTwist = rpbs.get("upper_arm.ik.twist.%s" % suffix, upper_armIk)
             forearmIkTwist = rpbs["forearm.ik.twist.%s" % suffix]
             handIk = rpbs["hand.ik.%s" % suffix]
             hand0Ik = rpbs["hand0.ik.%s" % suffix]
@@ -1352,6 +1367,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             copyTransformFkIk(hand, handFk, handIk, rig, ikprop)
             copyTransform(hand0Ik, handIk, rig)
 
+            addHint(forearmIk, rig)
             if self.usePoleTargets:
                 elbowPt = rpbs["elbow.pt.ik.%s" % suffix]
                 elbowLink = rpbs["elbow.link.%s" % suffix]
@@ -1398,7 +1414,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             toeFk = getBoneCopy("toe.fk.%s" % suffix, toe, rpbs)
             thighIk = rpbs["thigh.ik.%s" % suffix]
             shinIk = rpbs["shin.ik.%s" % suffix]
-            thighIkTwist = rpbs["thigh.ik.twist.%s" % suffix]
+            thighIkTwist = rpbs.get("thigh.ik.twist.%s" % suffix, thighIk)
             shinIkTwist = rpbs["shin.ik.twist.%s" % suffix]
             footIk = rpbs["foot.ik.%s" % suffix]
             toeRev = rpbs["toe.rev.%s" % suffix]
@@ -1427,6 +1443,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             copyTransformFkIk(foot, footFk, footInvIk, rig, prop1, prop2)
             copyTransformFkIk(toe, toeFk, toeInvIk, rig, prop1, prop2)
 
+            addHint(shinIk, rig)
             if self.usePoleTargets:
                 kneePt = rpbs["knee.pt.ik.%s" % suffix]
                 kneeLink = rpbs["knee.link.%s" % suffix]
@@ -1685,15 +1702,17 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def copyIkLimits(self, rig, bname, suffix):
         fkbone = rig.pose.bones["%s.fk.%s" % (bname, suffix)]
         ikbone = rig.pose.bones["%s.ik.%s" % (bname, suffix)]
-        iktwist = rig.pose.bones["%s.ik.twist.%s" % (bname, suffix)]
-        iktwist.lock_rotation = (True,False,True)
+        iktwist = rig.pose.bones.get("%s.ik.twist.%s" % (bname, suffix))
+        if iktwist:
+            iktwist.lock_rotation = (True,False,True)
         cns = getConstraint(fkbone, 'LIMIT_ROTATION')
         if cns:
             self.setIkLimits(cns, fkbone, ikbone)
-            ikcns = limitRotation(iktwist, rig)
-            ikcns.use_limit_y = True
-            ikcns.min_y = cns.min_y
-            ikcns.max_y = cns.max_y
+            if iktwist:
+                ikcns = limitRotation(iktwist, rig)
+                ikcns.use_limit_y = True
+                ikcns.min_y = cns.min_y
+                ikcns.max_y = cns.max_y
 
     #-------------------------------------------------------------
     #   Fix drivers
