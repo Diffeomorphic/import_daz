@@ -194,6 +194,7 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
 
 def addHint(pb, rig):
     cns = pb.constraints.new('LIMIT_ROTATION')
+    cns.name = "Hint"
     cns.owner_space = 'LOCAL'
     cns.euler_order = pb.rotation_mode
     cns.min_x = cns.max_x = 18*D
@@ -485,7 +486,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     usePoleTargets : BoolProperty(
         name = "Pole Targets",
-        description = "Use pole targets for IK",
+        description = "Use pole targets for IK.\nEnable for perfect FK/IK snapping",
         default = False)
 
     useSpineIk : BoolProperty(
@@ -532,11 +533,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         type = DazPairGroup,
         name = "Bone Groups")
 
-    useIkLimits : BoolProperty(
-        name = "IK Limits",
-        description = "DAZ locks and limits affect IK",
-        default = False)
-
     useRaiseError : BoolProperty(
         name = "Missing Bone Errors",
         description = "Raise error for missing bones",
@@ -568,8 +564,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useShaftWinder")
-        self.layout.prop(self, "useImproveIk")
-        self.layout.prop(self, "useIkLimits")
 
     def invoke(self, context, event):
         self.createBoneGroups(context.object)
@@ -741,11 +735,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
-        if self.useIkLimits:
-            self.addIkLimits(rig)
-        if self.useImproveIk:
-            from .simple import improveIk
-            improveIk(rig)
         rig.MhxRig = True
         rig.data.MhaFeatures |= F_IDPROPS
         T = True
@@ -1531,32 +1520,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.restoreConstraint(cinfo, pb)
 
     #-------------------------------------------------------------
-    #   Add IK limits
-    #-------------------------------------------------------------
-
-    def addIkLimits(self, rig):
-        for suffix in ["L", "R"]:
-            for bname in MHX.LimbBones:
-                fkb = rig.pose.bones.get("%s.fk.%s" % (bname, suffix))
-                ikb = rig.pose.bones.get("%s.ik.%s" % (bname, suffix))
-                if fkb and ikb:
-                    cns = getConstraint(fkb, 'LIMIT_ROTATION')
-                    if not cns:
-                        continue
-                    ikb.use_ik_limit_x = cns.use_limit_x
-                    ikb.ik_min_x = cns.min_x
-                    ikb.ik_max_x = cns.max_x
-                    ikb.lock_ik_x = fkb.lock_rotation[0]
-                    ikb.use_ik_limit_y = cns.use_limit_y
-                    ikb.ik_min_y = cns.min_y
-                    ikb.ik_max_y = cns.max_y
-                    ikb.lock_ik_y = fkb.lock_rotation[1]
-                    ikb.use_ik_limit_z = cns.use_limit_z
-                    ikb.ik_min_z = cns.min_z
-                    ikb.ik_max_z = cns.max_z
-                    ikb.lock_ik_z = fkb.lock_rotation[2]
-
-    #-------------------------------------------------------------
     #   Toggle constraints
     #-------------------------------------------------------------
 
@@ -1700,11 +1663,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def copyIkLimits(self, rig, bname, suffix):
-        fkbone = rig.pose.bones["%s.fk.%s" % (bname, suffix)]
-        ikbone = rig.pose.bones["%s.ik.%s" % (bname, suffix)]
         iktwist = rig.pose.bones.get("%s.ik.twist.%s" % (bname, suffix))
         if iktwist:
             iktwist.lock_rotation = (True,False,True)
+        return
+        fkbone = rig.pose.bones["%s.fk.%s" % (bname, suffix)]
+        ikbone = rig.pose.bones["%s.ik.%s" % (bname, suffix)]
         cns = getConstraint(fkbone, 'LIMIT_ROTATION')
         if cns:
             self.setIkLimits(cns, fkbone, ikbone)

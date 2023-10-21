@@ -589,7 +589,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if cns.type == type:
                     addDriver(cns, "influence", rig, (mhxProp(prop), mhxProp("DazRotLimits")), "(1-x1)*x2")
 
-        from .mhx import ikConstraint, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
+        from .mhx import ikConstraint, addHint, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
         from .driver import addDriver
         rpbs = rig.pose.bones
         if self.useRootBone:
@@ -705,6 +705,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     foreIK.lock_ik_z = True
                     shldrIK.lock_rotation = (True, False, True)
                     shldrIK.lock_location = foreIK.lock_location = (True, True, True)
+                    if self.useImproveIk:
+                        addHint(foreIK, rig)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
                     if self.genesis == "G38":
                         cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp, space='LOCAL')
@@ -732,6 +734,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     shinIK.lock_ik_y = shinIK.lock_ik_z = True
                     thighIK.lock_rotation = (True, False, True)
                     thighIK.lock_location = shinIK.lock_location = (True, True, True)
+                    if self.useImproveIk:
+                        addHint(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     if self.genesis == "G38":
                         cns = copyRotation(thighBend, thighIK, rig, prop=legProp, space='LOCAL')
@@ -749,17 +753,22 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     setBonegroup(thighIK, rig, "IK")
             elif self.genesis == "G38":
                 if self.useArms:
+                    if self.useImproveIk:
+                        addHint(foreTwist, rig)
                     ikConstraint(foreTwist, handIK, elbow, -90, 4, rig, prop=armProp)
                 if self.useLegs:
+                    if self.useImproveIk:
+                        addHint(shin, rig)
                     ikConstraint(shin, footIK, knee, -90, 3, rig, prop=legProp)
             else:
                 if self.useArms:
+                    if self.useImproveIk:
+                        addHint(foreBend, rig)
                     ikConstraint(foreBend, handIK, elbow, -90, 2, rig, prop=armProp)
                 if self.useLegs:
+                    if self.useImproveIk:
+                        addHint(shin, rig)
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
-
-        if self.useImproveIk:
-            improveIk(rig)
 
 
 def getPoseBone(rig, bnames):
