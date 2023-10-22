@@ -299,6 +299,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.makeNewBones(rig, IK)
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
+        if self.useImproveIk:
+            improveIk(rig)
         rig.DazSimpleIK = True
         rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 1.0
         T = True

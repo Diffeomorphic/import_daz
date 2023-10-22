@@ -451,21 +451,12 @@ class Fixer(DriverUser):
                 pb.lock_location = (True, True, True)
                 for cns in list(pb.constraints):
                     if cns.type == 'LIMIT_ROTATION':
-                        self.setIkLimits(cns, pb, pb)
                         addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
                 trgb = rig.pose.bones["ik_%s" % bname]
                 trgb.bone.use_deform = False
                 self.addGizmo(trgb, "GZM_Ball", 0.2)
                 cns = stretchTo(pb, trgb, rig, prop2)
                 addMuteDriver(cns, rig, prop1)
-
-
-    def setIkLimits(self, cns, fkbone, ikbone):
-        for n,x in enumerate(["x", "y", "z"]):
-            setattr(ikbone, "use_ik_limit_%s" % x, getattr(cns, "use_limit_%s" % x))
-            setattr(ikbone, "ik_min_%s" % x, getattr(cns, "min_%s" % x))
-            setattr(ikbone, "ik_max_%s" % x, getattr(cns, "max_%s" % x))
-            setattr(ikbone, "lock_ik_%s" % x, fkbone.lock_rotation[n])
 
     #-------------------------------------------------------------
     #   Gaze Bones

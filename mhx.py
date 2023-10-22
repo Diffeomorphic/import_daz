@@ -1666,17 +1666,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         iktwist = rig.pose.bones.get("%s.ik.twist.%s" % (bname, suffix))
         if iktwist:
             iktwist.lock_rotation = (True,False,True)
-        return
         fkbone = rig.pose.bones["%s.fk.%s" % (bname, suffix)]
         ikbone = rig.pose.bones["%s.ik.%s" % (bname, suffix)]
-        cns = getConstraint(fkbone, 'LIMIT_ROTATION')
-        if cns:
-            self.setIkLimits(cns, fkbone, ikbone)
-            if iktwist:
-                ikcns = limitRotation(iktwist, rig)
-                ikcns.use_limit_y = True
-                ikcns.min_y = cns.min_y
-                ikcns.max_y = cns.max_y
+        ikbone.lock_ik_x = fkbone.lock_rotation[0]
+        ikbone.lock_ik_y = fkbone.lock_rotation[1]
+        ikbone.lock_ik_z = fkbone.lock_rotation[2]
 
     #-------------------------------------------------------------
     #   Fix drivers
