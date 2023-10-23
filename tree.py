@@ -264,6 +264,7 @@ NodeSize = {
     "BSDF_DIFFUSE" : 7,
     "BSDF_GLOSSY" : 7,
     "BSDF_REFRACTION" : 7,
+    "BSDF_HAIR" : 7,
     "SUBSURFACE_SCATTERING" : 10,
     "RGB" : 10,
     "INVERT" : 5,

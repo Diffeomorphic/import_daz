@@ -502,6 +502,7 @@ class HairSystem:
 
 
     def buildHairCurves(self, context, strands, hair, hum, mnames):
+        from .geometry import getActiveUvLayer
         curves = bpy.data.hair_curves.new(self.name)
         sizes = [len(strand) for strand in strands]
         curves.add_curves(sizes)
@@ -509,6 +510,9 @@ class HairSystem:
             for pos,point in zip(strand, curve.points):
                 point.position = pos
         curves.surface = hum
+        uvlayer = getActiveUvLayer(hum)
+        if uvlayer:
+            curves.surface_uv_map = uvlayer.name
         return self.buildObject(curves, hair, hum, mnames)
 
 
