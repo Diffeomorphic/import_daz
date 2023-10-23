@@ -482,19 +482,14 @@ class HairSystem:
             verts += strand
             edges += [(m+n, m+n+1) for n in range(len(strand)-1)]
             m += len(strand)
-        if len(mnames) <= 1:
-            name = "Hair %s_%d" % (self.material, nverts)
-        else:
-            name = "Mesh Hair"
-        me = bpy.data.meshes.new(name)
+        me = bpy.data.meshes.new(self.name)
         me.from_pydata(verts, edges, [])
         me.DazHairType = 'LINE'
-        return self.buildObject(name, me, hair, hum, mnames)
+        return self.buildObject(me, hair, hum, mnames)
 
 
     def buildCurves(self, context, strands, hair, hum, mnames):
-        name = "Curve Hair"
-        cu = bpy.data.curves.new(name, 'CURVE')
+        cu = bpy.data.curves.new(self.name, 'CURVE')
         cu.dimensions = '3D'
         cu.twist_mode = 'TANGENT'
         for strand in strands:
@@ -503,23 +498,22 @@ class HairSystem:
             spline.points.add(npoints-1)
             for co,point in zip(strand, spline.points):
                 point.co[0:3] = co
-        return self.buildObject(name, cu, hair, hum, mnames)
+        return self.buildObject(cu, hair, hum, mnames)
 
 
     def buildHairCurves(self, context, strands, hair, hum, mnames):
-        name = "%s Curves" % hair.name.rsplit(".",1)[0]
-        curves = bpy.data.hair_curves.new(name)
+        curves = bpy.data.hair_curves.new(self.name)
         sizes = [len(strand) for strand in strands]
         curves.add_curves(sizes)
         for strand,curve in zip(strands, curves.curves):
             for pos,point in zip(strand, curve.points):
                 point.position = pos
         curves.surface = hum
-        return  self.buildObject(name, curves, hair, hum, mnames)
+        return self.buildObject(curves, hair, hum, mnames)
 
 
-    def buildObject(self, name, me, hair, hum, mnames):
-        ob = bpy.data.objects.new(name, me)
+    def buildObject(self, data, hair, hum, mnames):
+        ob = bpy.data.objects.new(self.name, data)
         wmat = ob.matrix_world.copy()
         ob.parent = hum
         ob.parent_bone = hair.parent_bone
@@ -527,7 +521,7 @@ class HairSystem:
         setWorldMatrix(ob, wmat)
         for mname in mnames:
             mat = bpy.data.materials.get(mname)
-            me.materials.append(mat)
+            data.materials.append(mat)
         return ob
 
 #-------------------------------------------------------------
@@ -711,12 +705,13 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             box.prop(self, "useCheckStrips")
         box.prop(self, "keepMesh")
         box.prop(self, "removeOldHairs")
-        box.prop(self, "useResizeHair")
-        if self.useResizeHair:
-            box.prop(self, "useAutoResize")
-            box.prop(self, "size")
-            if not self.useAutoResize:
-                box.prop(self, "useResizeInBlocks")
+        if not self.hasSingleOutput():
+            box.prop(self, "useResizeHair")
+            if self.useResizeHair:
+                box.prop(self, "useAutoResize")
+                box.prop(self, "size")
+                if not self.useAutoResize:
+                    box.prop(self, "useResizeInBlocks")
         box.prop(self, "sparsity")
 
         col = row.column()
@@ -743,17 +738,18 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             else:
                 box.prop(self, "color")
 
-        col = row.column()
-        box = col.box()
-        box.label(text="Settings")
-        box.prop(self, "nViewChildren")
-        box.prop(self, "nRenderChildren")
-        box.prop(self, "nViewStep")
-        box.prop(self, "nRenderStep")
-        box.prop(self, "childRadius")
-        box.prop(self, "strandShape")
-        box.prop(self, "rootRadius")
-        box.prop(self, "tipRadius")
+        if self.output == 'PARTICLES':
+            col = row.column()
+            box = col.box()
+            box.label(text="Settings")
+            box.prop(self, "nViewChildren")
+            box.prop(self, "nRenderChildren")
+            box.prop(self, "nViewStep")
+            box.prop(self, "nRenderStep")
+            box.prop(self, "childRadius")
+            box.prop(self, "strandShape")
+            box.prop(self, "rootRadius")
+            box.prop(self, "tipRadius")
 
 
     def invoke(self, context, event):
@@ -844,7 +840,9 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         if haircount == 0:
             raise DazError("Conversion failed.\nNo hair strands created")
 
-        if self.useResizeInBlocks and not self.useAutoResize:
+        if self.hasSingleOutput():
+            pass
+        elif self.useResizeInBlocks and not self.useAutoResize:
             hsystems = self.blockResize(hsystems, hum)
         elif self.useResizeHair:
             hsystems = self.hairResize(self.size, hsystems, hum)
@@ -884,16 +882,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         if not hsystems:
             print("No hair system found")
         elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES']:
-            if self.useSingleOutput:
-                strands = []
-                mnames = {}
-                for hsys in hsystems.values():
-                    strands += hsys.strands
-                    mnames[hsys.material] = True
-                self.buildOutput(context, hsys, strands, hair, hum, mnames.keys(), coll)
-            else:
-                for hsys in hsystems.values():
-                    self.buildOutput(context, hsys, hsys.strands, hair, hum, [hsys.material], coll)
+            for hsys in hsystems.values():
+                self.buildOutput(context, hsys, hsys.strands, hair, hum, [hsys.material], coll)
         elif self.output == 'POLYLINES':
             subcoll = bpy.data.collections.new(name = "Mesh Hairs")
             coll.children.link(subcoll)
@@ -989,12 +979,24 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         return strand[0], len(strand[1]), strand[1]
 
 
+    def hasSingleOutput(self):
+        return (self.output in ['MESH', 'CURVES', 'HAIR_CURVES'] and self.useSingleOutput)
+
+
     def getHairKey(self, n, mnum):
         if self.multiMaterials and mnum < len(self.materials):
             mat = self.materials[mnum]
-            return ("%d_%s" % (n, mat.name)), mnum
+            if self.hasSingleOutput():
+                hname = mat.name
+            else:
+                hname = "%d_%s" % (n, mat.name)
         else:
-            return str(n),0
+            mnum = 0
+            if self.hasSingleOutput():
+                hname = ""
+            else:
+                hname = str(n)
+        return hname, mnum
 
 
     def blockResize(self, hsystems, hum):
