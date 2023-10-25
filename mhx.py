@@ -388,6 +388,7 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None
     infl = 2*pb.bone.length/winder.length
     cns = copyRotation(pb, winder, rig)
     setLocks(pb.lock_rotation, cns)
+    cns.use_offset = True
     cns.influence = infl
     addMuteDriver(cns, rig, prop)
     if useScale:
@@ -1090,6 +1091,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1, parname=fingname)
                 fingers = rig.pose.bones[fingname]
                 cns = copyRotation(fkwind, fingers, rig, space='LOCAL')
+                cns.use_offset = True
                 cns.influence = (0.5 if m==0 else 1.0)
                 addMuteDriver(cns, rig, prop1)
                 if self.useFingerIk:
