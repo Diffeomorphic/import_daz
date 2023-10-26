@@ -1212,7 +1212,7 @@ class CyclesTree(Tree):
             spec90,spec90tex,_ = self.getColorTex(["Top Coat Curve Grazing"], "NONE", 1)
             power,powertex,_ = self.getColorTex(["Top Coat Curve Exponent"], "NONE", 1)
 
-        bump,normal = self.getTopCoatBump()
+        bump,normal = self.getTopCoatBump(uvname)
         roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
         if roughness == 0:
             glossiness,glosstex,_ = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
@@ -1237,7 +1237,7 @@ class CyclesTree(Tree):
         self.mixWithActive(fac, factex, texslot, top, keep=True, effect=effect)
 
 
-    def getTopCoatBump(self):
+    def getTopCoatBump(self, uvname):
         bump = normal = None
         if self.owner.shader == 'UBER_IRAY':
             bumpmode = self.getValue(["Top Coat Bump Mode"], 0)

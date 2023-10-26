@@ -134,7 +134,7 @@ class PbrTree(CyclesTree):
         self.buildDetail(uvname)
         self.column = 5
         useTopCoatNode = self.checkTopCoat()
-        self.buildPBRNode(useTopCoatNode)
+        self.buildPBRNode(useTopCoatNode, uvname)
         self.postPBR = False
         self.column = 7
         if self.owner.useTranslucency:
@@ -234,7 +234,7 @@ class PbrTree(CyclesTree):
     #   PBR Node
     #-------------------------------------------------------------
 
-    def buildPBRNode(self, useTopCoatNode):
+    def buildPBRNode(self, useTopCoatNode, uvname):
         self.buildBaseSubsurface()
         self.buildMetallic()
         useTex = not (self.owner.basemix == 0 and self.pureMetal)
@@ -242,7 +242,7 @@ class PbrTree(CyclesTree):
         anisotropy = self.buildAnisotropy()
         self.buildRoughness(anisotropy, useTex)
         if not useTopCoatNode:
-            self.addClearCoat(useTex)
+            self.addClearCoat(useTex, uvname)
         self.buildSheen()
 
     #-------------------------------------------------------------
@@ -419,7 +419,7 @@ class PbrTree(CyclesTree):
     #   Clearcoat
     #-------------------------------------------------------------
 
-    def addClearCoat(self, useTex):
+    def addClearCoat(self, useTex, uvname):
         if self.isEnabled("Top Coat"):
             top,toptex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
             rough,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
@@ -444,10 +444,10 @@ class PbrTree(CyclesTree):
             value = top
         if not useTex:
             coattex = None
-        self.setCoatWeight(clamp(value), coattex, color, coltex)
+        self.setCoatWeight(clamp(value), coattex, color, coltex, uvname)
 
 
-    def setCoatWeight(self, coat, coattex, color, coltex):
+    def setCoatWeight(self, coat, coattex, color, coltex, uvname):
         if PBR_VERSION_2:
             if coat == 0:
                 self.pbr.inputs["Coat Weight"].default_value = 0
@@ -455,7 +455,7 @@ class PbrTree(CyclesTree):
                 self.pbr.inputs["Coat Weight"].default_value = 1
                 self.linkScalar(coattex, self.pbr, 0.1*coat, "Coat IOR", add=1)
                 self.linkColor(coltex, self.pbr, color, "Coat Tint")
-                bump,normal = self.getTopCoatBump()
+                bump,normal = self.getTopCoatBump(uvname)
                 self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
         else:
             self.linkScalar(coattex, self.pbr, coat, "Clearcoat")
