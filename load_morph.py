@@ -493,7 +493,7 @@ class LoadMorph(DriverUser):
             return fcu
 
         fcu = addDriver("value")
-        if self.isJcm and GS.useMuteDrivers:
+        if GS.useMuteDrivers:
             fcu = addDriver("mute")
             fcu.driver.expression = "abs(%s)<0.0001" % fcu.driver.expression
 
