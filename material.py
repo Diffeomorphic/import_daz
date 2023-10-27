@@ -241,7 +241,10 @@ class Material(Asset, Channels):
         else:
             raise DazError("Bug: Unknown shader %s" % self.shader)
 
-        if LS.materialMethod == 'BSDF':
+        if not GS.useVolume:
+            self.useTranslucency = False
+            self.useVolume = False
+        elif LS.materialMethod == 'BSDF':
             if GS.useSssSkin and self.isVoluSkinMaterial():
                 self.useTranslucency = False
                 self.useVolume = False

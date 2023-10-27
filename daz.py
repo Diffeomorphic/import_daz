@@ -642,6 +642,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Alternative SSS",
         description = "Use alternative handling of SSS suggested by Midnight Arrow")
 
+    useVolume : BoolProperty(
+        name = "Volume",
+        description = "Use volume for volumetice materials")
+
     useImageInterpolation : EnumProperty(
         items = [('Linear', "Linear", "Linear"),
                  ('Closest', "Closest", "Closest"),
@@ -780,6 +784,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.separator()
         box.prop(self, "useDisplacement")
         box.prop(self, "useEmission")
+        box.prop(self, "useVolume")
         box.prop(self, "useGhostLights")
         box.prop(self, "useReflection")
 
