@@ -151,7 +151,7 @@ class LoadMorph(DriverUser):
                 self.buildDrivers()
                 self.buildSumDrivers()
                 self.buildRestDrivers()
-                if self.isJcm:
+                if self.isJcm and not GS.useMuteDrivers:
                     self.optimizeJcmDrivers()
                 self.correctScaleParents()
             finally:
