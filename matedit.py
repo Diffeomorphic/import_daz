@@ -1854,9 +1854,18 @@ class DAZ_OT_FixShells(MaterialSelector, DazPropsOperator):
 
 
     def getShells(self, mat, shells):
+        def hasSlots(data, slots):
+            for slot in slots:
+                if slot not in data.keys():
+                    return False
+            return True
+
         if mat:
             for node in mat.node_tree.nodes:
-                if node.type == 'GROUP' and not node.name.startswith(("DAZ ", "LIE")):
+                if (node.type == 'GROUP' and
+                    not node.name.startswith("DAZ ") and
+                    hasSlots(node.inputs, ["Influence", "BSDF", "UV", "Displacement"]) and
+                    hasSlots(node.outputs, ["BSDF", "Displacement"])):
                     if node.label not in shells.keys():
                         shells[node.label] = []
                     shells[node.label].append(node)

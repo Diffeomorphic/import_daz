@@ -563,6 +563,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         for prop,value in influs.items():
             if prop not in cob.keys():
                 cob[prop] = value
+                setOverridable(cob, prop)
         for aob in anatomies:
             for mat in aob.data.materials:
                 if mat and mat.node_tree.animation_data:

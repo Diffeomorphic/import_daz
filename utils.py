@@ -316,12 +316,6 @@ else:
     def setOverridable(rna, attr):
         rna.property_overridable_library_set(propRef(attr), True)
 
-
-def setattrOVR(rna, attr, value):
-    setattr(rna, attr, value)
-    rna[attr] = value
-    setOverridable(rna, attr)
-
 #-------------------------------------------------------------
 #   Utility functions
 #-------------------------------------------------------------
