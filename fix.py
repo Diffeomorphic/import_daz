@@ -840,7 +840,7 @@ class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
 
 ConstraintAttributes = [
     "type", "name", "mute", "target", "subtarget", "mix_mode", "use_transform_limit",
-    "head_tail", "use_offset", "owner_space", "target_space",
+    "head_tail", "use_offset", "owner_space", "target_space", "euler_order",
     "use_x", "use_y", "use_z",
     "invert_x", "invert_y", "invert_z",
     "use_limit_x", "use_limit_y", "use_limit_z",
@@ -1221,12 +1221,6 @@ class BendTwists:
     def constrainBendTwists(self, rig, bendTwistBones):
         from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('POSE')
-        eulers = {
-            "upper_arm" : "YXZ",
-            "forearm" : "YZX",
-            "thigh" : "YZX",
-            "shin" : "YZX",
-        }
         for bname,trgname,stretch,prop in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):
@@ -1236,18 +1230,8 @@ class BendTwists:
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             pb2 = rig.pose.bones[trgname]
-            if False and self.usePoleTargets:
-                cns1 = dampedTrack(bend, pb2, rig)
-                cns2 = copyTransform(twist, pb, rig)
-            else:
-                xyz = eulers[pb.name.split(".")[0]]
-                cns = copyRotation(bend, pb, rig)
-                cns.euler_order = xyz
-                cns.use_y = False
-                cns = copyRotation(twist, pb, rig)
-                cns.euler_order = xyz
-                cns.use_x = cns.use_z = False
-
+            dampedTrack(bend, pb2, rig)
+            copyTransform(twist, pb, rig)
             if stretch:
                 cns = stretchTo(bend, pb2, rig, prop, "x")
                 cns = stretchTo(twist, pb2, rig, prop, "x")
@@ -1615,6 +1599,23 @@ def retargetDrivers(rna, orig, nrig, force):
                 elif trg.id_type not in ['KEY']:
                     print("Unexpected id: %s %s" % (trg.id_type, trg.id))
 
+#-------------------------------------------------------------
+#   Fix limit rotation constraints
+#-------------------------------------------------------------
+
+class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
+    bl_idname = "daz.fix_limit_rot_constraints"
+    bl_label = "Fix Limit Rotation Constraints"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from .bone_data import BD
+        rig = context.object
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                if cns.type == 'LIMIT_ROTATION':
+                    cns.euler_order = BD.getDefaultMode(pb)
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1626,6 +1627,7 @@ classes = [
     DAZ_OT_ChangeSuffixToPrefix,
     DAZ_OT_SelectMatchingBones,
     DAZ_OT_ChangeArmature,
+    DAZ_OT_FixLimitRotConstraints,
 ]
 
 def register():

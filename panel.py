@@ -359,6 +359,7 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.optimize_pose")
         self.layout.operator("daz.improve_ik")
         self.layout.operator("daz.fix_legacy_posable")
+        self.layout.operator("daz.fix_limit_rot_constraints")
         self.layout.operator("daz.categorize_objects")
 
 
@@ -493,6 +494,7 @@ class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.render_frames")
         self.layout.separator()
+        self.layout.operator("daz.global_settings")
         self.layout.prop(context.scene, "DazPreferredRoot")
 
 #----------------------------------------------------------

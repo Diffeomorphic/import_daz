@@ -1314,6 +1314,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.rotation_mode = 'YZX'
 
         rotmodes = {
+            'QUATERNION' : ["upper_arm", "upper_arm.fk", "upper_arm.ik", "thigh", "thigh.fk", "thigh.ik"],
             'YZX': ["shin", "shin.fk", "shin.ik", "thigh.ik.twist", "shin.ik.twist",
                     "forearm", "forearm.fk", "forearm.ik", "upper_arm.ik.twist", "forearm.ik.twist",
                     "foot", "foot.fk", "toe", "toe.fk", "foot.2", "toe.2",
