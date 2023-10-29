@@ -806,6 +806,38 @@ class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
                     v.co = co
 
 #----------------------------------------------------------
+#   Apply selectedshapekeys
+#----------------------------------------------------------
+
+class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
+    bl_idname = "daz.apply_active_shapekey"
+    bl_label = "Apply Active Shapekey"
+    bl_description = "Add active shapekey to all other shapekeys"
+    bl_options = {'UNDO'}
+
+    def draw(self, context):
+        ob = context.object
+        skeys = ob.data.shape_keys
+        skey = skeys.key_blocks[ob.active_shape_key_index]
+        self.layout.label(text='Apply shapekey "%s"?' % skey.name)
+
+    def run(self, context):
+        ob = context.object
+        skeys = ob.data.shape_keys
+        skey = skeys.key_blocks[ob.active_shape_key_index]
+        verts = ob.data.vertices
+        data = skey.data
+        offsets = [d.co - v.co for v,d in zip(verts, data)]
+        ob.shape_key_remove(skey)
+        for v,offs in zip(verts,offsets):
+            v.co += offs
+        for skey in skeys.key_blocks:
+            print(skey.name)
+            data = skey.data
+            for d,offs in zip(data,offsets):
+                d.co += offs
+
+#----------------------------------------------------------
 #   Mix Shapekeys
 #----------------------------------------------------------
 
@@ -1088,6 +1120,7 @@ classes = [
     DAZ_OT_TransferShapekeys,
     DAZ_OT_PruneVertexGroups,
     DAZ_OT_ApplyAllShapekeys,
+    DAZ_OT_ApplyActiveShapekey,
     DAZ_OT_MixShapekeys,
     DAZ_OT_VisualizeShapekey,
 ]

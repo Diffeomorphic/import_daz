@@ -88,6 +88,7 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.copy_pose")
         self.layout.operator("daz.apply_rest_pose")
+        self.layout.operator("daz.apply_active_shapekey")
         self.layout.operator("daz.change_armature")
 
 
