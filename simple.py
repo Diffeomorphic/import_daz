@@ -859,7 +859,7 @@ class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
         for prefix,type,on,off in [
             ("l", "Arm", S_LARMFK, S_LARMIK),
             ("r", "Arm", S_RARMFK, S_RARMIK),
-            ("l", "Leg", S_LLEGFK, S_RLEGIK),
+            ("l", "Leg", S_LLEGFK, S_LLEGIK),
             ("r", "Leg", S_RLEGFK, S_RLEGIK)]:
             self.snapSimpleFK(rig, prefix, type, on, off)
 
