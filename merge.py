@@ -610,7 +610,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             socket = node.inputs.get("Vector")
             if socket and socket.links:
                 return findUvMap(socket.links[0].from_node)
-            return node
+            return None
 
         uvmaps = {}
         for mat in ob.data.materials:
