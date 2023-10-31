@@ -1283,6 +1283,11 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         description = "Stop IK chain at disconnected bones",
         default = True)
 
+    useDeleteDisconnected : BoolProperty(
+        name = "Delete Disconnected",
+        description = "Delete disconnected bones and their vertex groups",
+        default = False)
+
     threshold : FloatProperty(
         name = "Threshold",
         description = "Threshold for stopping the IK chain",
@@ -1294,6 +1299,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         self.layout.prop(self, "onlyConnected")
         if self.onlyConnected:
             self.layout.prop(self, "threshold")
+            self.layout.prop(self, "useDeleteDisconnected")
         self.layout.separator()
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "hideBones")
@@ -1316,7 +1322,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
                     root = pbones[-1]
                     pbones = pbones[:-1]
                     ikgoals.append((pb.name, clen-1, pbones, root))
-        return ikgoals
+        return ikgoals, []
 
 
     def ikGoalsFromRoots(self, rig):
@@ -1329,6 +1335,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
             return True
 
         ikgoals = []
+        deletes = []
         for root in rig.pose.bones:
             if root.bone.select:
                 clen = 0
@@ -1340,19 +1347,24 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
                     clen += 1
                 if clen > 2:
                     ikgoals.append((pb.name, clen-1, pbones, root))
-        return ikgoals
+                    if self.useDeleteDisconnected:
+                        while pb and len(pb.children) == 1:
+                            pb = pb.children[0]
+                            deletes.append(pb.name)
+        return ikgoals, deletes
 
 
     def run(self, context):
         for rig in getSelectedArmatures(context):
+            activateObject(context, rig)
             self.addIkGoals(context, rig)
 
 
     def addIkGoals(self, context, rig):
         if self.fromRoots:
-            ikgoals = self.ikGoalsFromRoots(rig)
+            ikgoals,deletes = self.ikGoalsFromRoots(rig)
         else:
-            ikgoals = self.ikGoalsFromSelected(rig)
+            ikgoals,deletes = self.ikGoalsFromSelected(rig)
 
         setMode('EDIT')
         for bname, clen, pbones, root in ikgoals:
@@ -1370,6 +1382,11 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
                 pole.head = eb.head + eb.length * eb.x_axis
                 pole.tail = eb.tail + eb.length * eb.x_axis
                 pole.roll = eb.roll
+        if self.useDeleteDisconnected:
+            for bname in deletes:
+                eb = rig.data.edit_bones.get(bname)
+                if eb:
+                    rig.data.edit_bones.remove(eb)
 
         setMode('OBJECT')
         self.startGizmos(context, rig)
@@ -1377,7 +1394,6 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         gzmCube = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
         gzmCone = self.makeEmptyGizmo("GZM_Cone", 'CONE')
 
-        setMode('POSE')
         for bname, clen, pbones, root in ikgoals:
             if bname not in rig.pose.bones.keys():
                 continue
@@ -1425,6 +1441,27 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
             if self.disableBones:
                 for pb in pbones:
                     pb.bone.hide_select = True
+
+        if self.useDeleteDisconnected:
+            setMode('OBJECT')
+            for ob in getMeshChildren(rig):
+                if not activateObject(context, ob):
+                    continue
+                setMode('EDIT')
+                bpy.ops.mesh.select_all(action='DESELECT')
+                vgnums = []
+                for vgname in deletes:
+                    vgrp = ob.vertex_groups.get(vgname)
+                    if vgrp:
+                        vgnums.append(vgrp.index)
+                for v in ob.data.vertices:
+                    for g in v.groups:
+                        if g.group in vgnums and g.weight > 0.5:
+                            v.select = True
+                            break
+                bpy.ops.mesh.delete(type='VERT')
+                setMode('OBJECT')
+            activateObject(context, rig)
 
 
     def combineName(self, bname, string):
