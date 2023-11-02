@@ -514,24 +514,36 @@ def pruneNodeTree(tree,
             if not socket.links:
                 socket.hide = useHideOutputs
 
-    from .material import setColorSpaceNone
+    from .material import setColorSpaceNone, setColorSpaceSRGB, isSRGBImage
+    def protectImage(node, img):
+        if isSRGBImage(img):
+            LS.protectedImages[img.name] = img
+        else:
+            img2 = LS.protectedImages.get(img.name)
+            if img2 is None:
+                img2 = img.copy()
+                setColorSpaceSRGB(img2)
+                LS.protectedImages[img.name] = img2
+            node.image = img2
+
     for node in list(tree.nodes):
         if node.type == 'TEX_IMAGE':
             links = node.outputs["Color"].links
-            if len(links) == 1 and node.image:
+            img = node.image
+            if len(links) == 1 and img:
                 gamma = links[0].to_node
                 if (gamma.label == "Linear" and
                     gamma.type == 'GAMMA'):
-                    if node.image.name in LS.protectedImages.keys():
-                        print("Protected image: %s" % node.image.name)
+                    if isSRGBImage(img) and img.name in LS.protectedImages.keys():
+                        print("Protected image: %s" % img.name)
                     else:
-                        setColorSpaceNone(node.image)
+                        setColorSpaceNone(img)
                         for link in gamma.outputs["Color"].links:
                             tree.links.new(node.outputs["Color"], link.to_socket)
                 else:
-                    LS.protectedImages[node.image.name] = True
-            elif node.image:
-                LS.protectedImages[node.image.name] = True
+                    protectImage(node, img)
+            elif img:
+                protectImage(node, img)
             node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:

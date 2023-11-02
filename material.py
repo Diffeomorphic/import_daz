@@ -962,6 +962,9 @@ def setColorSpace(img, alts):
 def setColorSpaceSRGB(img):
     setColorSpace(img, ["sRGB", "sRGB OETF", "srgb_texture"])
 
+def isSRGBImage(img):
+    return (img.colorspace_settings.name in ["sRGB", "sRGB OETF", "srgb_texture"])
+
 def setColorSpaceNone(img):
     setColorSpace(img, ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities - Raw"])
 
