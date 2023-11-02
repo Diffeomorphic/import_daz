@@ -705,9 +705,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         ColorOptions.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "useMergeMaterials")
-        self.layout.prop(self, "useFixShells")
-        if self.useFixShells:
-            self.subprop("bodyMaterial")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
@@ -736,6 +733,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "useTransferGeografts")
             self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
+        self.layout.prop(self, "useFixShells")
+        if self.useFixShells:
+            self.subprop("bodyMaterial")
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")

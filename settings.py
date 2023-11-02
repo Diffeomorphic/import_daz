@@ -552,6 +552,7 @@ class LocalSettings:
         self.deflectors = {}
         self.materials = {}
         self.images = {}
+        self.protectedImages = {}
         self.layeredImages = {}
         self.textures = {}
         self.gammas = {}

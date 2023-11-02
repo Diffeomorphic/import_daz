@@ -522,9 +522,16 @@ def pruneNodeTree(tree,
                 gamma = links[0].to_node
                 if (gamma.label == "Linear" and
                     gamma.type == 'GAMMA'):
-                    setColorSpaceNone(node.image)
-                    for link in gamma.outputs["Color"].links:
-                        tree.links.new(node.outputs["Color"], link.to_socket)
+                    if node.image.name in LS.protectedImages.keys():
+                        print("Protected image: %s" % node.image.name)
+                    else:
+                        setColorSpaceNone(node.image)
+                        for link in gamma.outputs["Color"].links:
+                            tree.links.new(node.outputs["Color"], link.to_socket)
+                else:
+                    LS.protectedImages[node.image.name] = True
+            elif node.image:
+                LS.protectedImages[node.image.name] = True
             node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:
@@ -621,6 +628,7 @@ def beautifyNodeTree(tree):
 
 def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True, useFixColorSpace=True, useBeautify=False):
     from .geometry import getActiveUvLayer
+    LS.__init__()
     active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
