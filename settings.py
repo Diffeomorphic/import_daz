@@ -100,6 +100,7 @@ class GlobalSettings:
         self.imageInterpolation = 'Cubic'
         self.useGhostLight = False
         self.useUnusedTextures = False
+        self.useLayeredInfluence = False
 
         self.useStrengthAdjusters = 'NONE'
         self.customMin = -1.0

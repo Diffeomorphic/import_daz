@@ -658,6 +658,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build Unused Textures",
         description = "Build texture found in unused channels")
 
+    useLayeredInfluence : BoolProperty(
+        name = "Layered Image Influence",
+        description = "Add drivers to the influence of layered images")
 
     def draw(self, context):
         split = self.layout.split(factor=0.33)
@@ -779,6 +782,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             box.prop(self, "useFakeCaustics")
         box.prop(self, "useImageInterpolation")
         box.prop(self, "useUnusedTextures")
+        box.prop(self, "useLayeredInfluence")
         box.prop(self, "handleRenderSettings")
         box.prop(self, "handleLightSettings")
         box.separator()

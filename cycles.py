@@ -578,8 +578,9 @@ class CyclesTree(Tree):
             modulo.operation = 'MODULO'
             modulo.hide = True
             modulo.inputs[1].default_value = (1,1,1)
-            mapping = self.addNode("ShaderNodeMapping", 1)
+            mapping = self.addNode("ShaderNodeMapping", 1, size=2)
             mapping.vector_type = 'TEXTURE'
+            mapping.hide = True
             self.links.new(modulo.outputs[0], mapping.inputs[0])
             mapping.inputs['Location'].default_value = (dx,dy,0)
             mapping.inputs['Scale'].default_value = (sx,sy,1)

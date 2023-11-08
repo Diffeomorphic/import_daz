@@ -329,7 +329,8 @@ class GeoNode(Node, SimNode):
                 if dmat:
                     dmat.correctEmitArea(ob, mnum)
             scaleEyeMoisture(ob)
-            driveShellInfluence(ob, LS.layeredImages)
+            if GS.useLayeredInfluence:
+                driveShellInfluence(ob, LS.layeredImages)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
             if hdob and hdob != ob:

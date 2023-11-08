@@ -1789,18 +1789,15 @@ class LayeredGroup(CyclesGroup):
                 self.outnode = firstnode = outnode
             else:
                 self.mixColor(map, texnode, outnode)
-        mix,a,b,mixout = self.addMixRgbNode('MIX', 5)
-        mix.inputs[0].default_value = 1.0
-        self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
-        self.links.new(colorOutput(firstnode), a)
-        self.links.new(colorOutput(self.outnode), b)
-        if False and colorSpace == "NONE":
-            gamma = self.addNode("ShaderNodeGamma", 5, size=7)
-            self.links.new(mixout, gamma.inputs["Color"])
-            gamma.inputs["Gamma"].default_value = 1/2.2
-            self.links.new(gamma.outputs[0], self.outputs.inputs["Color"])
-        else:
+        if GS.useLayeredInfluence:
+            mix,a,b,mixout = self.addMixRgbNode('MIX', 5)
+            mix.inputs[0].default_value = 1.0
+            self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
+            self.links.new(colorOutput(firstnode), a)
+            self.links.new(colorOutput(self.outnode), b)
             self.links.new(mixout, self.outputs.inputs["Color"])
+        else:
+            self.links.new(colorOutput(self.outnode), self.outputs.inputs["Color"])
         firstnode.select = True
         self.nodes.active = firstnode
 
