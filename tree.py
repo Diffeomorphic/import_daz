@@ -461,7 +461,8 @@ def pruneNodeTree(tree,
     for node in tree.nodes:
         if (node.type == 'GROUP' and
             not node.name.startswith("DAZ ") and
-            node.outputs):
+            node.outputs and
+            node.node_tree not in LS.protectedGroups):
             pruneNodeTree(node.node_tree,
                           None,
                           useDeleteUnusedNodes,
@@ -471,6 +472,7 @@ def pruneNodeTree(tree,
                           keepUnusedTextures,
                           useFixColorSpace,
                           useBeautify)
+            LS.protectedGroups.append(node.node_tree)
 
     if usePruneTexco:
         removes = []

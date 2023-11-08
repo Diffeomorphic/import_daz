@@ -554,6 +554,7 @@ class LocalSettings:
         self.materials = {}
         self.images = {}
         self.protectedImages = {}
+        self.protectedGroups = []
         self.layeredImages = {}
         self.textures = {}
         self.gammas = {}
