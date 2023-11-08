@@ -55,6 +55,9 @@ def getMappedBone(bname, rig, mesh=None):
         sufname = getSuffixName(bname, False)
         if sufname in rig.pose.bones.keys():
             return sufname
+        sufname1 = getSuffixName(bname1, False)
+        if sufname1 in rig.pose.bones.keys():
+            return sufname1
         return ""
 
     if rig is None or bname is None:
