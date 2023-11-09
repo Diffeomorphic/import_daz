@@ -979,9 +979,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             return False
         elif self.affectSelectedOnly:
             if pb.bone.select:
-                for rlayer,blayer in zip(self.boneLayers, pb.bone.layers):
-                    if rlayer and blayer:
-                        return True
+                if bpy.app.version < (4,0,0):
+                    for rlayer,blayer in zip(self.boneLayers, pb.bone.layers):
+                        if rlayer and blayer:
+                            return True
+                else:
+                    for coll in self.boneLayers.values():
+                        if pb.bone.name in coll.bones:
+                            return True
             return False
         else:
             return True

@@ -594,7 +594,7 @@ class ExtraBones(DriverUser):
 
         def copyPoseBone(db, pb, rig):
             copyBoneLayers(db.bone, pb.bone, rig)
-            enableBoneLayer(db.bone, rig, T_HIDDEN)
+            enableBoneNumLayer(db.bone, rig, T_HIDDEN)
             pb.rotation_mode = db.rotation_mode
             pb.lock_location = db.lock_location
             pb.lock_rotation = db.lock_rotation
@@ -759,9 +759,9 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
 
     def changeLayer(self, eb, rig):
         if rig.DazRig == "mhx":
-            enableBoneLayer(eb, rig, L_FACE)
+            enableBoneNumLayer(eb, rig, L_FACE)
         elif rig.DazRig[0:6] == "rigify":
-            enableBoneLayer(eb, rig, R_DETAIL)
+            enableBoneNumLayer(eb, rig, R_DETAIL)
 
     def hasBoneDriver(self, bname, drivers):
         return True

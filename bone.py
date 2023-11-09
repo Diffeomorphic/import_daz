@@ -361,7 +361,7 @@ class BoneInstance(Instance):
             bone.hide = True
         if self.name.endswith(("twist1", "twist2", "metatarsal", "facerig")):
             bone = rig.data.bones[self.name]
-            enableBoneLayer(bone, rig, T_DRIVEN)
+            enableBoneNumLayer(bone, rig, T_DRIVEN)
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildFormulas(rig, hide)
@@ -418,10 +418,10 @@ class BoneInstance(Instance):
             pb.bone["DazTrueName"] = unquote(self.id)
         if isBoneDriven(rig, pb):
             pb.rotation_mode = self.getRotationMode(pb, True)
-            enableBoneLayer(pb.bone, rig, T_DRIVEN)
+            enableBoneNumLayer(pb.bone, rig, T_DRIVEN)
         else:
             pb.rotation_mode = self.getRotationMode(pb, False)
-            enableBoneLayer(pb.bone, rig, T_BONES)
+            enableBoneNumLayer(pb.bone, rig, T_BONES)
         pb.DazRotMode = self.rotation_order
         pb.DazAxes = self.axes
         pb.DazFlips = [(-1 if flip else +1) for flip in self.flipped]

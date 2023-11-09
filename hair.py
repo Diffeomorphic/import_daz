@@ -2201,7 +2201,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             mod = getModifier(ob, 'ARMATURE')
             mod.object = rig
             mod.name = "Armature Hair"
-        enableRigLayer(rig, self.boneLayer-1)
+        enableRigNumLayer(rig, self.boneLayer-1)
 
 
     def mergeObjects(self, context, hairs, hairname, rig):
@@ -2379,7 +2379,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         pb.bone.show_wire = True
         pb.custom_shape = gizmo
         pb.bone.use_deform = False
-        enableBoneLayer(pb.bone, rig, self.boneLayer)
+        enableBoneNumLayer(pb.bone, rig, self.boneLayer)
 
 
     def addBendyConstraints(self, key, data, rig):
@@ -2403,7 +2403,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for n,bdata in enumerate(bones):
                 bname,r0,r1 = bdata
                 bone = rig.data.bones[bname]
-                enableBoneLayer(bone, rig, self.boneLayer)
+                enableBoneNumLayer(bone, rig, self.boneLayer)
 
         handle = getHandle(0)
         for n,bdata in enumerate(bones):
@@ -2426,11 +2426,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                enableBoneLayer(bone, rig, self.boneLayer)
+                enableBoneNumLayer(bone, rig, self.boneLayer)
         elif self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                enableBoneLayer(bone, rig, T_HIDDEN)
+                enableBoneNumLayer(bone, rig, T_HIDDEN)
                 bone.hide_select = True
 
 

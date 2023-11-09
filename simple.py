@@ -305,7 +305,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         rig.DazArmIK_L = rig.DazArmIK_R = rig.DazLegIK_L = rig.DazLegIK_R = 1.0
         T = True
         F = False
-        enableRigLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
+        enableRigNumLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
         assignOtherBones(rig, S_HIDDEN)
 
 
@@ -477,12 +477,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             if pb.bone.hide:
                 pass
             elif lname in ["upperfacerig", "lowerfacerig"]:
-                enableBoneLayer(pb.bone, rig, T_HIDDEN)
+                enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
             elif lname in ["upperteeth", "lowerteeth"]:
                 addToLayer(pb, S_SPECIAL, rig, "Special")
-            elif not isInLayer(pb.bone, rig, T_BONES):
+            elif not isInNumLayer(pb.bone, rig, T_BONES):
                 for lnum in range(1,16):
-                    if isInLayer(pb.bone, rig, lnum):
+                    if isInNumLayer(pb.bone, rig, lnum):
                         addToLayer(pb, S_SPECIAL, rig, "Special")
                         break
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
@@ -1242,7 +1242,7 @@ def addToLayer(pb, layer, rig, bgname=None):
     else:
         print("MISSING LAYER", layer, pb.name)
         return
-    setBoneLayer(pb.bone, rig, idx)
+    setBoneNumLayer(pb.bone, rig, idx)
     if rig and bgname:
         setBonegroup(pb, rig, bgname)
 

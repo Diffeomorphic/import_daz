@@ -1073,13 +1073,13 @@ class BendTwists:
             if bendname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[bendname]
                 if keep:
-                    enableBoneLayer(eb, rig, L_DEF)
+                    enableBoneNumLayer(eb, rig, L_DEF)
                 else:
                     rig.data.edit_bones.remove(eb)
             if twistname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[twistname]
                 if keep:
-                    enableBoneLayer(eb, rig, L_DEF)
+                    enableBoneNumLayer(eb, rig, L_DEF)
                 else:
                     rig.data.edit_bones.remove(eb)
         setMode('OBJECT')
@@ -1156,8 +1156,8 @@ class BendTwists:
             bend.use_connect = eb.use_connect
             twist.use_connect = True
             eb.use_deform = False
-            enableBoneLayer(bend, rig, L_FIN)
-            enableBoneLayer(twist, rig, L_FIN)
+            enableBoneNumLayer(bend, rig, L_FIN)
+            enableBoneNumLayer(twist, rig, L_FIN)
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
@@ -1171,16 +1171,16 @@ class BendTwists:
                 twisttwk.parent = twist
                 bend.use_deform = twist.use_deform = False
                 bendtwk.use_deform = twisttwk.use_deform = True
-                enableBoneLayer(bendtwk, rig, L_DEF)
-                enableBoneLayer(twisttwk, rig, L_DEF)
-                setBoneLayer(bendtwk, rig, L_TWEAK)
-                setBoneLayer(twisttwk, rig, L_TWEAK)
+                enableBoneNumLayer(bendtwk, rig, L_DEF)
+                enableBoneNumLayer(twisttwk, rig, L_DEF)
+                setBoneNumLayer(bendtwk, rig, L_TWEAK)
+                setBoneNumLayer(twisttwk, rig, L_TWEAK)
                 bvgname = btwkname
                 tvgname = ttwkname
             else:
                 bend.use_deform = twist.use_deform = True
-                enableBoneLayer(bend, rig, L_DEF)
-                enableBoneLayer(twist, rig, L_DEF)
+                enableBoneNumLayer(bend, rig, L_DEF)
+                enableBoneNumLayer(twist, rig, L_DEF)
                 bvgname = bend.name
                 tvgname = twist.name
 
@@ -1598,6 +1598,7 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                 ob.parent = rig
         activateObject(context, rig)
         for subrig in subrigs.values():
+            print("SR", subrig.name, rig.name)
             self.addExtraBones(subrig, rig)
 
 
@@ -1610,12 +1611,13 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                     pname = bone.parent.name
                 else:
                     pname = None
-                extras[bname] = (bone.head_local.copy(), bone.tail_local.copy(), bone.matrix_local.copy(), list(bone.layers), pname)
+                extras[bname] = (bone.head_local.copy(), bone.tail_local.copy(), bone.matrix_local.copy(), getBoneLayers(bone, rig), pname)
         if extras:
             setMode('EDIT')
             for bname,data in extras.items():
                 eb = rig.data.edit_bones.new(bname)
-                eb.head, eb.tail, mat, eb.layers, pname = data
+                eb.head, eb.tail, mat, layers, pname = data
+                setBoneLayers(eb, rig, layers)
                 if pname is not None:
                     eb.parent = rig.data.edit_bones[pname]
                 eb.matrix = mat

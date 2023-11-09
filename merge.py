@@ -1166,7 +1166,7 @@ class RigInfo:
             elif self.parbone:
                 self.setParent(eb, self.parbone, ebones)
             eb.head, eb.tail, eb.roll, parent = data
-            enableBoneLayer(eb, rig, layer)
+            enableBoneNumLayer(eb, rig, layer)
         setMode('OBJECT')
         for bname in self.editbones.keys():
             bone = rig.data.bones[bname]
@@ -1436,9 +1436,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         finally:
             setRigLayers(rig, oldvis)
             if success:
-                enableRigLayer(rig, self.clothesLayer)
+                enableRigNumLayer(rig, self.clothesLayer)
             if info.foundControl:
-                enableRigLayer(rig, self.widgetLayer)
+                enableRigNumLayer(rig, self.widgetLayer)
             setActiveObject(context, rig)
             updateDrivers(rig)
             updateDrivers(rig.data)
@@ -1509,7 +1509,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             print("Convert %s to widgets for %s" % (ob.name, rig.name))
             wc = WidgetConverter()
             wc.convertWidgets(context, rig, ob)
-            enableRigLayer(rig, 3)
+            enableRigNumLayer(rig, 3)
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):

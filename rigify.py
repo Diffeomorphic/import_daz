@@ -392,14 +392,14 @@ class MetaMaker(RigifyCommon):
             eb = meta.data.edit_bones.new(bname)
             eb.head = (0,0,0)
             eb.tail = tail
-            enableBoneLayer(eb, meta, layer)
+            enableBoneNumLayer(eb, meta, layer)
 
 
     def setupGroupBones(self, meta):
         for bname,layer,row,group in self.GroupBones:
             pb = meta.pose.bones[bname]
             pb["rigify_type"] = "basic.pivot"
-            enableRigLayer(meta, layer)
+            enableRigNumLayer(meta, layer)
             if bpy.app.version < (4,0,0):
                 rlayer = meta.data.rigify_layers[layer]
                 rlayer.name = bname
@@ -751,19 +751,19 @@ class Rigifier(RigifyCommon):
             eb.roll = dbone.roll
             eb.use_deform = dbone.use_deform
             if eb.use_deform:
-                enableBoneLayer(eb, gen, R_FACE)
-                setBoneLayer(eb, gen, R_DEFORM)
+                enableBoneNumLayer(eb, gen, R_FACE)
+                setBoneNumLayer(eb, gen, R_DEFORM)
             else:
-                enableBoneLayer(eb, gen, R_HELP)
+                enableBoneNumLayer(eb, gen, R_HELP)
             if dname in driven.keys():
-                enableBoneLayer(eb, gen, R_HELP)
+                enableBoneNumLayer(eb, gen, R_HELP)
 
         # Group bones
         print("  Create group bones")
         if meta["DazCustomLayers"]:
             for data in self.GroupBones:
                 eb = gen.data.edit_bones[data[0]]
-                enableBoneLayer(eb, gen, R_HELP)
+                enableBoneNumLayer(eb, gen, R_HELP)
 
         # Add parents to extra bones
         print("  Add parents to extra bones")
@@ -811,12 +811,12 @@ class Rigifier(RigifyCommon):
                 self.dazBones[dname].setPose(pb, gen)
                 mhxlayer,unlock = getBoneLayer(pb, gen)
                 layer = MhxRigifyLayer[mhxlayer]
-                enableBoneLayer(pb.bone, gen, layer)
+                enableBoneNumLayer(pb.bone, gen, layer)
                 if unlock:
                     pb.lock_location = (False, False, False)
                 self.copyBoneInfo(dname, rname, rig, gen)
                 if isFinal(dname):
-                    enableBoneLayer(pb.bone, gen, R_FIN)
+                    enableBoneNumLayer(pb.bone, gen, R_FIN)
 
         # Rescale custom shapes
         if rig.DazRig in ["genesis3", "genesis8"]:
@@ -991,7 +991,7 @@ class Rigifier(RigifyCommon):
             if activateObject(context, meta):
                 deleteObjects(context, [meta])
         activateObject(context, gen)
-        enableRigLayers(gen, [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R])
+        enableRigNumLayers(gen, [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R])
         gen.name = name
         if dazrig:
             self.tieBones(dazrig, gen)
@@ -1024,7 +1024,7 @@ class Rigifier(RigifyCommon):
                     trgpb.custom_shape_scale = srcpb.custom_shape_scale
                 else:
                     trgpb.custom_shape_scale_xyz = srcpb.custom_shape_scale_xyz
-                enableBoneLayer(trgpb.bone, gen, R_CUSTOM)
+                enableBoneNumLayer(trgpb.bone, gen, R_CUSTOM)
 
 
     def getOrgDefBone(self, bname, rig):
@@ -1215,7 +1215,7 @@ class Rigifier(RigifyCommon):
                 if gizmo:
                     self.addGizmo(pb, gizmo, scale)
                 setBonegroup(pb, gen, "DAZ")
-                enableBoneLayer(pb.bone, gen, layer)
+                enableBoneNumLayer(pb.bone, gen, layer)
             elif self.isFaceBone(pb, gen):
                 if not self.isEyeLid(pb):
                     self.addGizmo(pb, "GZM_Circle", 0.2)
@@ -1234,7 +1234,7 @@ class Rigifier(RigifyCommon):
             ]:
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
-                enableBoneLayer(pb.bone, gen, 29)
+                enableBoneNumLayer(pb.bone, gen, 29)
 
 
     def fixFingerIk(self, rig, gen):

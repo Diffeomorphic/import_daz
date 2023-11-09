@@ -1839,8 +1839,8 @@ class WidgetConverter:
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
         if bpy.app.version < (4,0,0):
-            enableRigLayer(rig, self.usedLayer-1)
-            enableRigLayer(rig, self.unusedLayer-1, False)
+            enableRigNumLayer(rig, self.usedLayer-1)
+            enableRigNumLayer(rig, self.unusedLayer-1, False)
         activateObject(context, ob)
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
@@ -1984,7 +1984,7 @@ class WidgetConverter:
 
     def assignLayer(self, pb, rig):
         if pb.name in self.drivers.keys() or len(pb.children) > 3:
-            enableBoneLayer(pb.bone, rig, self.usedLayer)
+            enableBoneNumLayer(pb.bone, rig, self.usedLayer)
             if not pb.custom_shape:
                 self.modifyDriver(pb, rig)
         elif isDrvBone(pb.name) or isFinal(pb.name):
@@ -1992,7 +1992,7 @@ class WidgetConverter:
             if bname not in self.drivers.keys():
                 self.unused[pb.name] = True
         else:
-            enableBoneLayer(pb.bone, rig, self.unusedLayer)
+            enableBoneNumLayer(pb.bone, rig, self.unusedLayer)
             if pb.name not in self.drivers.keys():
                 self.unused[pb.name] = True
         for child in pb.children:
@@ -2004,7 +2004,7 @@ class WidgetConverter:
         if bname[-2] == "-" and bname[-1].isdigit():
             self.replaceDriverTarget(bname, bname[:-2], rig)
         self.unused[bname] = True
-        enableBoneLayer(pb.bone, rig, self.unusedLayer)
+        enableBoneNumLayer(pb.bone, rig, self.unusedLayer)
         if bname not in self.drivers.keys():
             return
         for fcu in self.drivers[bname]:
@@ -2018,7 +2018,7 @@ class WidgetConverter:
     def replaceDriverTarget(self, bname, bname1, rig):
         if bname1 in rig.pose.bones.keys():
             pb1 = rig.pose.bones[bname1]
-            enableBoneLayer(pb1.bone, rig, self.usedLayer)
+            enableBoneNumLayer(pb1.bone, rig, self.usedLayer)
             self.drivers[bname1] = []
             if bname1 in self.unused.keys():
                 del self.unused[bname1]

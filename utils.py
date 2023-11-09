@@ -37,19 +37,25 @@ from .settings import GS, LS, ES
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,0,0):
-    def enableBoneLayer(bone, rig, layer):
+    def enableBoneNumLayer(bone, rig, layer):
         bone.layers = layer*[False] + [True] + (31-layer)*[False]
 
-    def setBoneLayer(bone, rig, layer, value=True):
+    def setBoneNumLayer(bone, rig, layer, value=True):
         bone.layers[layer] = value
 
+    def getBoneLayers(bone, rig):
+        return list(bone.layers)
+
     def setBoneLayers(bone, rig, layers):
+        bone.layers = layers
+
+    def setBoneNumLayers(bone, rig, layers):
         bone.layers = layers
 
     def copyBoneLayers(src, trg, rig):
         trg.layers = list(src.layers)
 
-    def isInLayer(bone, rig, layer):
+    def isInNumLayer(bone, rig, layer):
         return bone.layers[layer]
 
     def getRigLayers(rig):
@@ -58,7 +64,7 @@ if bpy.app.version < (4,0,0):
     def setRigLayers(rig, layers):
         rig.data.layers = layers
 
-    def enableRigLayers(rig, layers):
+    def enableRigNumLayers(rig, layers):
         rig.data.layers = 31*[False] + [True]
         for idx in layers:
             rig.data.layers[idx] = True
@@ -67,7 +73,7 @@ if bpy.app.version < (4,0,0):
     def enableAllRigLayers(rig, value=True):
         rig.data.layers = 32*[value]
 
-    def enableRigLayer(rig, layer, value=True):
+    def enableRigNumLayer(rig, layer, value=True):
         rig.data.layers[layer] = value
 
     def makeBoneCollections(rig, table):
@@ -83,7 +89,7 @@ if bpy.app.version < (4,0,0):
         pb.bone_group = rig.pose.bone_groups[bgname]
 
 else:
-    def enableBoneLayer(bone, rig, layer):
+    def enableBoneNumLayer(bone, rig, layer):
         coll0 = LS.boneCollections[rig.name].get(layer)
         if coll0:
             coll0.assign(bone)
@@ -91,7 +97,7 @@ else:
                 if coll != coll0:
                     coll.unassign(bone)
 
-    def setBoneLayer(bone, rig, layer, value=True):
+    def setBoneNumLayer(bone, rig, layer, value=True):
         coll = LS.boneCollections[rig.name].get(layer)
         if coll:
             if value:
@@ -99,7 +105,14 @@ else:
             else:
                 coll.unassign(bone)
 
-    def setBoneLayers(bone, rig, layers):
+    def getBoneLayers(bone, rig):
+        return [coll for coll in rig.data.collections if bone.name in coll.bones]
+
+    def setBoneLayers(bone, rig, colls):
+        for coll in colls:
+            coll.assign(bone)
+
+    def setBoneNumLayers(bone, rig, layers):
         for coll in rig.data.collections:
             coll.unassign(bone)
         for idx,coll in LS.boneCollections[rig.name].items():
@@ -111,7 +124,7 @@ else:
             if src.name in coll.bones:
                 coll.assign(trg)
 
-    def isInLayer(bone, rig, layer):
+    def isInNumLayer(bone, rig, layer):
         coll = LS.boneCollections[rig.name].get(layer)
         if coll:
             return (bone.name in coll.bones)
@@ -125,7 +138,7 @@ else:
         for coll,vis in layers:
             coll.is_visible = vis
 
-    def enableRigLayers(rig, layers):
+    def enableRigNumLayers(rig, layers):
         for coll in rig.data.collections:
             coll.is_visible = False
         for idx in layers:
@@ -137,7 +150,7 @@ else:
         for coll in rig.data.collections:
             coll.is_visible = value
 
-    def enableRigLayer(rig, layer, value=True):
+    def enableRigNumLayer(rig, layer, value=True):
         coll = LS.boneCollections[rig.name].get(layer)
         if coll:
             coll.is_visible = value
