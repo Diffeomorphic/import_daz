@@ -1300,6 +1300,7 @@ def driveShellInfluence(ob, limages):
                         prop = "INFLU %s" % node.label
                     setFloatProp(ob, prop, 1.0, 0.0, 10.0, True)
                     addDriver(node.inputs["Influence"], "default_value", ob, propRef(prop), "x")
+                    ob.DazVisibilityDrivers = True
 
 # ---------------------------------------------------------------------
 #   Remove shells from materials

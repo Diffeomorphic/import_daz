@@ -659,7 +659,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Build texture found in unused channels")
 
     useLayeredInfluence : BoolProperty(
-        name = "Layered Image Influence",
+        name = "Layered Image Influence Drivers",
         description = "Add drivers to the influence of layered images")
 
     def draw(self, context):

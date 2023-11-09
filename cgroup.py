@@ -72,6 +72,7 @@ class ShellGroup(NodeGroup):
     def create(self, node, name, parent):
         NodeGroup.create(self, node, name, parent, 11)
         addGroupInput(self.group, "NodeSocketFloat", "Influence")
+        self.setMinMax("Influence", 0.0, 0.0, 10)
         addGroupInput(self.group, "NodeSocketShader", "BSDF")
         addGroupInput(self.group, "NodeSocketVector", "UV")
         self.hideSlot("UV")
@@ -416,6 +417,7 @@ class SkipZeroUvGroup(CyclesGroup):
         CyclesGroup.create(self, node, name, parent, 3)
         addGroupInput(self.group, "NodeSocketVector", "UV")
         addGroupOutput(self.group, "NodeSocketFloat", "Influence")
+        self.setMinMax("Influence", 0.0, 0.0, 10)
 
 
     def addNodes(self, args=None):
@@ -1775,6 +1777,7 @@ class LayeredGroup(CyclesGroup):
         CyclesGroup.create(self, node, name, parent, 6)
         addGroupInput(self.group, "NodeSocketVector", "Vector")
         addGroupInput(self.group, "NodeSocketFloat", "Influence")
+        self.setMinMax("Influence", 0.0, 0.0, 10)
         addGroupOutput(self.group, "NodeSocketColor", "Color")
 
 
@@ -1789,15 +1792,12 @@ class LayeredGroup(CyclesGroup):
                 self.outnode = firstnode = outnode
             else:
                 self.mixColor(map, texnode, outnode)
-        if GS.useLayeredInfluence:
-            mix,a,b,mixout = self.addMixRgbNode('MIX', 5)
-            mix.inputs[0].default_value = 1.0
-            self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
-            self.links.new(colorOutput(firstnode), a)
-            self.links.new(colorOutput(self.outnode), b)
-            self.links.new(mixout, self.outputs.inputs["Color"])
-        else:
-            self.links.new(colorOutput(self.outnode), self.outputs.inputs["Color"])
+        mix,a,b,mixout = self.addMixRgbNode('MIX', 5)
+        mix.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Influence"], mix.inputs[0])
+        self.links.new(colorOutput(firstnode), a)
+        self.links.new(colorOutput(self.outnode), b)
+        self.links.new(mixout, self.outputs.inputs["Color"])
         firstnode.select = True
         self.nodes.active = firstnode
 
