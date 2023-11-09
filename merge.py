@@ -454,7 +454,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Merge UV layers
         from .tree import pruneMaterials
         self.mergeUvs(cob)
-        pruneMaterials(cob)
+        #pruneMaterials(cob)
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
