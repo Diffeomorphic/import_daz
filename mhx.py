@@ -42,18 +42,16 @@ from .mhx_data import MHX
 #
 #-------------------------------------------------------------
 
-if False:
-    def setMhx(rna, prop, value):
-        setattr(rna, prop, value)
+def setMhx(rna, prop, value):
+    rna[prop] = value
 
-    def mhxProp(prop):
-        return prop
-else:
-    def setMhx(rna, prop, value):
-        rna[prop] = value
 
-    def mhxProp(prop):
+def mhxProp(prop):
+    if isinstance(prop, str):
         return propRef(prop)
+    else:
+        prop1,prop2 = prop
+        return (propRef(prop1), propRef(prop2))
 
 #-------------------------------------------------------------
 #
