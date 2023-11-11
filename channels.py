@@ -140,7 +140,9 @@ class Channels:
         for key in ["color", "strength", "current_value", "value"]:
             if key in channel.keys():
                 value = channel[key]
-                if isVector(default):
+                if default is None:
+                    return value
+                elif isVector(default):
                     if isVector(value):
                         return value
                     else:

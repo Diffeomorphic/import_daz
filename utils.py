@@ -436,7 +436,7 @@ def clamp(value):
     return min(1, max(0, value))
 
 def isVector(value):
-    return (hasattr(value, "__len__") and len(value) >= 3)
+    return (not isinstance(value, str) and hasattr(value, "__len__") and len(value) >= 3)
 
 def propRef(prop):
     return '["%s"]' % prop
