@@ -1320,6 +1320,15 @@ class ShellRemover:
                         self.addShell(mat, node, node.node_tree)
 
 
+    def addItems(self):
+        self.selection.clear()
+        for name,nodes in self.shells.items():
+                item = self.selection.add()
+                item.name = name
+                item.text = name
+                item.select = False
+
+
     def addShell(self, mat, shell, tree):
         data = (mat,shell)
         if tree.name in self.shells.keys():
@@ -1365,16 +1374,11 @@ class DAZ_OT_RemoveShells(DazOperator, Selector, ShellRemover, IsMesh):
 
     def invoke(self, context, event):
         self.getShells(context)
-        self.selection.clear()
-        for name,nodes in self.shells.items():
-                item = self.selection.add()
-                item.name = name
-                item.text = name
-                item.select = False
+        self.addItems()
         return self.invokeDialog(context)
 
 
-class DAZ_OT_ReplaceShells(DazPropsOperator, ShellRemover, IsMesh):
+class DAZ_OT_ReplaceShells(DazOperator, Selector, ShellRemover, IsMesh):
     bl_idname = "daz.replace_shells"
     bl_label = "Replace Shells"
     bl_description = "Display shell node groups so they can be displaced."
@@ -1404,6 +1408,67 @@ class DAZ_OT_ReplaceShells(DazPropsOperator, ShellRemover, IsMesh):
     def invoke(self, context, event):
         self.getShells(context)
         return DazPropsOperator.invoke(self, context, event)
+
+
+class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, Selector, IsMesh):
+    bl_idname = "daz.copy_shells"
+    bl_label = "Copy Shells"
+    bl_description = "Copy selected material shells to selected meshes"
+    bl_options = {'UNDO'}
+
+    def invoke(self, context, event):
+        self.getShells(context)
+        self.addItems()
+        return self.invokeDialog(context)
+
+
+    def run(self, context):
+        src = context.object
+        shells = {}
+        for item in self.getSelectedItems():
+            for data in self.shells[item.text].values():
+                for mat,node in data:
+                    mname = stripName(mat.name)
+                    if mname not in shells.keys():
+                        shells[mname] = []
+                    shells[mname].append(node)
+        for trg in getSelectedMeshes(context):
+            if trg != src:
+                for mat in trg.data.materials:
+                    if mat is None:
+                        continue
+                    mname = stripName(mat.name)
+                    nodes = shells.get(mname)
+                    if nodes:
+                        self.copyShells(mat, nodes)
+                driveShellInfluence(trg, {})
+
+
+    def copyShells(self, mat, nodes):
+        from .tree import findNode
+        tree = mat.node_tree
+        output = findNode(tree, 'OUTPUT_MATERIAL')
+        if output is None:
+            return
+        for node in nodes:
+            nnode = tree.nodes.new(type="ShaderNodeGroup")
+            nnode.label = node.label
+            nnode.name = node.name
+            nnode.node_tree = node.node_tree
+            nnode.location = output.location
+            output.location[0] += XSIZE
+            for slot,oslot in [("BSDF", "Surface"), ("Displacement", "Displacement")]:
+                for link in output.inputs[oslot].links:
+                    tree.links.new(link.from_socket, nnode.inputs[slot])
+                tree.links.new(nnode.outputs[slot], output.inputs[oslot])
+            for link in node.inputs["UV"].links:
+                uvname = link.from_node.uv_map
+                uvmap = tree.nodes.new(type="ShaderNodeUVMap")
+                uvmap.uv_map = uvname
+                uvmap.label = uvname
+                uvmap.hide = True
+                uvmap.location = nnode.location - Vector((XSIZE, YSIZE))
+                tree.links.new(uvmap.outputs["UV"], nnode.inputs["UV"])
 
 #-------------------------------------------------------------
 #   Scale materials
@@ -1931,6 +1996,7 @@ classes = [
     DAZ_OT_ClearAllFloats,
     DAZ_OT_RemoveShells,
     DAZ_OT_ReplaceShells,
+    DAZ_OT_CopyShells,
     DAZ_OT_ChangeUnitScale,
     DAZ_OT_ScaleMaterials,
     DAZ_OT_MakePalette,
