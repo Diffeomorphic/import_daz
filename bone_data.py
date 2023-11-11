@@ -158,6 +158,35 @@ class BoneData:
         ]
 
     #-------------------------------------------------------------
+    #   Bone twist info
+    #-------------------------------------------------------------
+
+    BoneTwistInfo = {
+        "upper_arm.fk.L" : (0, 1),
+        "upper_arm.fk.R" : (0, -1),
+        "forearm.fk.L" : (0, 1),
+        "forearm.fk.R" : (0, -1),
+        "thigh.fk.L" : (1, -1),
+        "thigh.fk.R" : (1, -1),
+
+        "upper_arm_fk.L" : (0, 1),
+        "upper_arm_fk.R" : (0, -1),
+        "forearm_fk.L" : (0, 1),
+        "forearm_fk.R" : (0, -1),
+        "thigh_fk.L" : (1, -1),
+        "thigh_fk.R" : (1, -1),
+
+        "l_upperarm" : (0, 1),
+        "r_upperarm" : (0, -1),
+        "l_forearm" : (0, 1),
+        "r_forearm" : (0, -1),
+        "l_thigh" : (1, -1),
+        "r_thigh" : (1, -1),
+
+        "neck" : (1, 1),
+    }
+
+    #-------------------------------------------------------------
     #   Alternative bone names
     #-------------------------------------------------------------
 

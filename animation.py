@@ -1088,9 +1088,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             for n,frame in lframes:
                 twists = {}
                 self.addTwists(frame)
-                for bname in frame.keys():
+                for bname,bframe in frame.items():
                     isObject = (bname == "@selection" or bname in self.KnownRigs)
-                    bframe = frame[bname]
                     tfm = Transform()
                     value = 0.0
                     for key in bframe.keys():
@@ -1274,24 +1273,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def setBoneTwist(self, tfm, pb, rig):
-        table = {
-            "upper_arm.fk.L" : (0, 1),
-            "upper_arm.fk.R" : (0, -1),
-            "forearm.fk.L" : (0, 1),
-            "forearm.fk.R" : (0, -1),
-            "thigh.fk.L" : (1, -1),
-            "thigh.fk.R" : (1, -1),
-            "upper_arm_fk.L" : (0, 1),
-            "upper_arm_fk.R" : (0, -1),
-            "forearm_fk.L" : (0, 1),
-            "forearm_fk.R" : (0, -1),
-            "thigh_fk.L" : (1, -1),
-            "thigh_fk.R" : (1, -1),
-            "neck" : (1, 1),
-        }
-        if pb.name not in table.keys():
+        if pb.name not in BD.BoneTwistInfo.keys():
+            print("Not a twist bone: %s" % pb.name)
             return
-        idx,sign = table[pb.name]
+        idx,sign = BD.BoneTwistInfo[pb.name]
         y = sign*tfm.rot[idx]
         if pb.rotation_mode == 'QUATERNION':
             xyz = BD.getDefaultMode(pb)
@@ -1305,17 +1290,21 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def addTwists(self, frame):
-        return
-        for bname in ["lShldr", "lForearm", "lThigh", "rShldr", "rForearm", "rThigh"]:
-            bendname = "%sBend" % bname
-            twistname = "%sTwist" % bname
-            bendframe = frame.get(bendname)
-            if bendframe and "rotation" in bendframe.keys():
-                twistframe = frame.get(twistname)
-                if twistframe is None:
-                    twistframe = frame[twistname] = {}
-                if "rotation" not in twistframe.keys():
-                    twistframe["rotation"] = bendframe["rotation"]
+        for prefix in ["l", "r"]:
+            for bname,idx in [("Shldr",0), ("Forearm",0), ("Thigh",1)]:
+                bendname = self.bonemap.get("%s%sBend" % (prefix, bname))
+                twistname = self.bonemap.get("%s%sTwist" % (prefix, bname))
+                bendframe = frame.get(bendname, {})
+                bendrot = bendframe.get("rotation", Zero)
+                ybend = bendrot[idx]
+                if abs(ybend) > 1e-5:
+                    twistframe = frame.get(twistname)
+                    if twistframe is None:
+                        twistframe = frame[twistname] = {}
+                    twistrot = twistframe.get("rotation", Vector((0,0,0)))
+                    twistrot[idx] += ybend
+                    twistframe["rotation"] = twistrot
+                    bendrot[idx] = 0
 
 
     def correctTwists(self, twists, rig, n, offset):
