@@ -1891,12 +1891,13 @@ class CyclesTree(Tree):
 
         col = self.column-1
         assets,maps = self.owner.getTextures(channel)
+        if self.inShell and len(assets) >= 2 and not GS.useLayeredShells:
+            assets = assets[1:]
+            maps = maps[1:]
         if len(assets) == 0:
             return None
         elif len(assets) == 1:
             return newTexture(assets[0], maps[0])
-        elif self.inShell and len(assets) == 2 and not GS.useLayeredShells:
-            return newTexture(assets[1], maps[1])
 
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
