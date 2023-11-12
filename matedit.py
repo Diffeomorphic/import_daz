@@ -1430,8 +1430,8 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, Selector, IsMesh):
                 for mat,node in data:
                     mname = stripName(mat.name)
                     if mname not in shells.keys():
-                        shells[mname] = []
-                    shells[mname].append(node)
+                        shells[mname] = {}
+                    shells[mname][node.node_tree.name] = node
         for trg in getSelectedMeshes(context):
             if trg != src:
                 for mat in trg.data.materials:
@@ -1440,11 +1440,11 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, Selector, IsMesh):
                     mname = stripName(mat.name)
                     nodes = shells.get(mname)
                     if nodes:
-                        self.copyShells(mat, nodes)
+                        self.copyShells(mat, nodes.values(), trg)
                 driveShellInfluence(trg, {})
 
 
-    def copyShells(self, mat, nodes):
+    def copyShells(self, mat, nodes, trg):
         from .tree import findNode
         tree = mat.node_tree
         output = findNode(tree, 'OUTPUT_MATERIAL')
@@ -1462,7 +1462,15 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, Selector, IsMesh):
                     tree.links.new(link.from_socket, nnode.inputs[slot])
                 tree.links.new(nnode.outputs[slot], output.inputs[oslot])
             for link in node.inputs["UV"].links:
-                uvname = link.from_node.uv_map
+                uvnode = link.from_node
+                if uvnode.type == 'UVMAP':
+                    uvname = uvnode.uv_map
+                elif uvnode.type == 'TEX_COORD':
+                    from .geometry import getActiveUvLayer
+                    uvname = getActiveUvLayer(trg).name
+                else:
+                    print("Unknown UV node type: %s" % uvnode.type)
+                    return
                 uvmap = tree.nodes.new(type="ShaderNodeUVMap")
                 uvmap.uv_map = uvname
                 uvmap.label = uvname
