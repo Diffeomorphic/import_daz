@@ -201,7 +201,7 @@ def moveToCollection(ob, newcoll):
 #   Remove visibility
 #------------------------------------------------------------------------
 
-class DAZ_OT_RemoveVisibility(DazOperator):
+class DAZ_OT_RemoveVisibility(DazPropsOperator):
     bl_idname = "daz.remove_visibility_drivers"
     bl_label = "Remove Visibility Drivers"
     bl_description = "Remove ability to control visibility from rig property"
@@ -212,9 +212,21 @@ class DAZ_OT_RemoveVisibility(DazOperator):
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazVisibilityDrivers)
 
+    useAllMeshes : BoolProperty(
+        name = "All Meshes In Scene",
+        description = "Remove visibility drivers from all meshes in scene,\nnot just children of the active rig",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useAllMeshes")
+
     def run(self, context):
         rig = context.object
-        for ob in getMeshChildren(rig):
+        if self.useAllMeshes:
+            meshes = [ob for ob in context.view_layer.objects if ob.type == 'MESH']
+        else:
+            meshes = getMeshChildren(rig)
+        for ob in meshes:
             ob.driver_remove("hide_viewport")
             ob.driver_remove("hide_render")
             ob.hide_set(False)

@@ -517,10 +517,14 @@ def pruneNodeTree(tree,
                 socket.hide = useHideOutputs
 
     from .material import setColorSpaceNone, setColorSpaceSRGB, isSRGBImage
-    def protectImage(node, img):
+    def protectImage(node, img, links):
         if isSRGBImage(img):
             LS.protectedImages[img.name] = img
         else:
+            for link in links:
+                if (link.to_node.type in ['NORMAL_MAP'] or
+                    link.to_socket.type == 'VALUE'):
+                    return
             img2 = LS.protectedImages.get(img.name)
             if img2 is None:
                 img2 = img.copy()
@@ -543,9 +547,9 @@ def pruneNodeTree(tree,
                         for link in gamma.outputs["Color"].links:
                             tree.links.new(node.outputs["Color"], link.to_socket)
                 else:
-                    protectImage(node, img)
+                    protectImage(node, img, links)
             elif img:
-                protectImage(node, img)
+                protectImage(node, img, links)
             node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:

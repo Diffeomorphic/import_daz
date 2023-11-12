@@ -662,6 +662,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Layered Image Influence Drivers",
         description = "Add drivers to the influence of layered images")
 
+    useLayeredShells : BoolProperty(
+        name = "Layered Images In Shells",
+        description = "Use layered images in shells (experimental)")
+
     def draw(self, context):
         split = self.layout.split(factor=0.33)
         col = split.column()
@@ -783,6 +787,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useImageInterpolation")
         box.prop(self, "useUnusedTextures")
         box.prop(self, "useLayeredInfluence")
+        box.prop(self, "useLayeredShells")
         box.prop(self, "handleRenderSettings")
         box.prop(self, "handleLightSettings")
         box.separator()

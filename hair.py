@@ -480,12 +480,21 @@ class HairSystem:
         for strand in strands:
             nverts = len(strand)
             verts += strand
-            edges += [(m+n, m+n+1) for n in range(len(strand)-1)]
-            m += len(strand)
+            edges += [(m+n, m+n+1) for n in range(nverts-1)]
+            m += nverts
         me = bpy.data.meshes.new(self.name)
         me.from_pydata(verts, edges, [])
         me.DazHairType = 'LINE'
-        return self.buildObject(me, hair, hum, mnames)
+        ob = self.buildObject(me, hair, hum, mnames)
+
+        vgrp = ob.vertex_groups.new(name="Distance")
+        m = 0
+        for strand in strands:
+            nverts = len(strand)
+            for n in range(nverts):
+                vgrp.add([m+n], n/(nverts-1), 'REPLACE')
+            m += nverts
+        return ob
 
 
     def buildCurves(self, context, strands, hair, hum, mnames):
@@ -1984,6 +1993,11 @@ class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        def addWeight(vn, w):
+            x = min(1.0, max(0.0, w))
+            w = node.mapping.evaluate(cu, x)
+            vgrp.add([vn], w, 'REPLACE')
+
         ob = context.object
         node = self.getCurveMapping()
         cu = node.mapping.curves[3]
@@ -1991,14 +2005,21 @@ class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
             vgrp = ob.vertex_groups["HairPinning"]
             ob.vertex_groups.remove(vgrp)
         vgrp = ob.vertex_groups.new(name="HairPinning")
-        uvs = ob.data.uv_layers.active.data
-        m = 0
-        for f in ob.data.polygons:
-            for n,vn in enumerate(f.vertices):
-                x = min(1.0, max(0.0, 1-uvs[m+n].uv[1]))
-                w = node.mapping.evaluate(cu, x)
-                vgrp.add([vn], w, 'REPLACE')
-            m += len(f.vertices)
+        if ob.data.polygons:
+            uvs = ob.data.uv_layers.active.data
+            m = 0
+            for f in ob.data.polygons:
+                for n,vn in enumerate(f.vertices):
+                    addWeight(vn, 1-uvs[m+n].uv[1])
+                m += len(f.vertices)
+        elif "Distance" in ob.vertex_groups.keys():
+            distgrp = ob.vertex_groups["Distance"]
+            idx = distgrp.index
+            for v in ob.data.vertices:
+                for g in v.groups:
+                    if g.group == idx:
+                        addWeight(v.index, 1-g.weight)
+                        break
 
 # ---------------------------------------------------------------------
 #   Initialize

@@ -101,6 +101,7 @@ class GlobalSettings:
         self.useGhostLight = False
         self.useUnusedTextures = False
         self.useLayeredInfluence = False
+        self.useLayeredShells = True
 
         self.useStrengthAdjusters = 'NONE'
         self.customMin = -1.0

@@ -1877,12 +1877,8 @@ class CyclesTree(Tree):
 
 
     def addTexImageNode(self, channel, colorSpace, texslot, isMask):
-        col = self.column-1
-        assets,maps = self.owner.getTextures(channel)
-        if len(assets) == 0:
-            return None
-        elif len(assets) == 1:
-            innode,texnode,outnode,isnew = self.addSingleTexture(col, assets[0], maps[0], colorSpace)
+        def newTexture(asset, map):
+            innode,texnode,outnode,isnew = self.addSingleTexture(col, asset, map, colorSpace)
             if self.isDecal:
                 texnode.extension = 'CLIP'
                 self.clipsocket = texnode.outputs["Alpha"]
@@ -1892,6 +1888,15 @@ class CyclesTree(Tree):
                 return texnode
             else:
                 return outnode
+
+        col = self.column-1
+        assets,maps = self.owner.getTextures(channel)
+        if len(assets) == 0:
+            return None
+        elif len(assets) == 1:
+            return newTexture(assets[0], maps[0])
+        elif self.inShell and len(assets) == 2 and not GS.useLayeredShells:
+            return newTexture(assets[1], maps[1])
 
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
