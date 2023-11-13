@@ -212,6 +212,9 @@ class Scanner:
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
+        if key is None:
+            return
+        key = unquote(key)
         if (self.useMinmax and
             key is not None and
             asset.min is not None and
