@@ -996,7 +996,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
     useHidden : BoolProperty(
         name = "Delete Hidden Empties",
         description = "Also delete empties that are hidden",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useAllEmpties")
@@ -1317,17 +1317,24 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 subrigs = self.getSubRigs(rig)
             else:
                 rig,subrigs = getSelectedRigs(context)
+            locmat = rig.matrix_local.copy()
+            rig.matrix_local = Matrix()
             info,subinfos,repars = self.getRigInfos(context, rig, subrigs)
             self.mergeRigs(context, info, subinfos, repars)
+            rig.matrix_local = locmat
         else:
             rigs = []
             for rig in getSelectedArmatures(context):
                 if rig.parent is None:
                     rigs.append(rig)
             rgroups = []
+            locmats = []
             for rig in rigs:
                 subrigs = self.getSubRigs(rig)
                 rgroups.append((rig,subrigs))
+                locmat = rig.matrix_local.copy()
+                rig.matrix_local = Matrix()
+                locmats.append(locmat)
             igroups = []
             for rig,subrigs in rgroups:
                 igroup = self.getRigInfos(context, rig, subrigs)
@@ -1335,6 +1342,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             for info,subinfos,repars in igroups:
                 activateObject(context, info.rig)
                 self.mergeRigs(context, info, subinfos, repars)
+            for rig,locmat in zip(rigs, locmats):
+                rig.matrix_local = locmat
 
 
     def getRigInfos(self, context, rig, subrigs):
@@ -1429,11 +1438,13 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         makeBoneCollections(rig, StandardLayers)
         oldvis = getRigLayers(rig)
         enableAllRigLayers(rig)
+        locmat = rig.matrix_local.copy()
         success = False
         try:
             self.mergeRigs1(context, info, subinfos, repars)
             success = True
         finally:
+            rig.matrix_local = locmat
             setRigLayers(rig, oldvis)
             if success:
                 enableRigNumLayer(rig, self.clothesLayer)
@@ -1451,8 +1462,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
         if not ES.easy:
             print("Merge infos to %s:" % rig.name)
-        lmat = rig.matrix_local.copy()
-        self.applyTransforms(info, subinfos)
+        #self.applyTransforms(info, subinfos)
         mainbones = list(rig.pose.bones.keys())
         extrabones = []
         for subinfo in subinfos:
@@ -1497,12 +1507,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         activateObject(context, rig)
         self.cleanVertexGroups(rig)
         setMode('OBJECT')
-        rig.matrix_local = lmat.inverted()
-        self.applyTransforms(info, [])
-        rig.matrix_local = lmat
-        for ob,wmat in repars:
-            ob.parent = rig
-            setWorldMatrix(ob, wmat)
         if self.useConvertWidgets and info.foundControl:
             from .proxy import WidgetConverter
             ob = info.foundControl[0]
@@ -1517,7 +1521,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             partype, parbone = data
             if partype in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
                 continue
-            wmat = ob.matrix_world
+            wmat = ob.matrix_world.copy()
             ob.parent = rig
             ob.parent_type = partype
             if parbone is None:
