@@ -572,14 +572,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def storeState(self, context):
         from .driver import muteDazFcurves
         DazPropsOperator.storeState(self, context)
-        muteDazFcurves(context.object, True)
+        muteDazFcurves(self.activeObject, True)
 
 
     def restoreState(self, context):
         from .driver import muteDazFcurves
-        DazPropsOperator.restoreState(self, context)
-        rig = context.object
+        rig = self.activeObject
         muteDazFcurves(rig, rig.DazDriversDisabled)
+        DazPropsOperator.restoreState(self, context)
 
 
     def createBoneGroups(self, rig):
