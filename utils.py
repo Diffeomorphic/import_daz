@@ -484,6 +484,12 @@ def baseProp(string):
         return string[:-5]
     return string
 
+def normKey(key):
+    if key is None:
+        return None
+    else:
+        return unquote(key.lower())
+
 def truncString(string, ending):
     if string[-len(ending):] == ending:
         return string[:-len(ending)]

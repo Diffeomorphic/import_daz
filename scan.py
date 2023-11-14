@@ -199,24 +199,26 @@ class Scanner:
         ref = info = key = prop = None
         if isinstance(asset, Morph):
             ref,key = asset.id.rsplit("#",1)
+            key = normKey(key)
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info,prop = self.evalExprs(asset, exprs)
+            prop = normKey(prop)
         elif isinstance(asset, Alias):
             ref,key = asset.id.rsplit("#",1)
+            key = normKey(key)
             target = asset.target_channel.rsplit("#",1)[-1]
             if target[-6:] == "?value":
-                target = target[:-6]
+                target = normKey(target[:-6])
                 if key != target:
                     self.alias[key] = target
         elif isinstance(asset, Formula) and self.useFormulas:
             exprs = asset.evalFormulas(self.rig, self.mesh, False)
             info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
+            key = normKey(key)
         if key is None:
             return
-        key = unquote(key)
         if (self.useMinmax and
-            key is not None and
             asset.min is not None and
             asset.max is not None):
             self.minmax[key] = (asset.min, asset.max)
@@ -225,12 +227,12 @@ class Scanner:
             folder = os.path.dirname(filepath)
             name = os.path.splitext(os.path.basename(filepath))[0]
             if (self.useDefins or
-                unquote(key) != name or
+                key != normKey(name) or
                 folder != self.directory):
                 self.defins[key] = filepath
         if info:
             if prop:
-                self.formulas[prop] = info
+                self.formulas[normKey(prop)] = info
             else:
                 self.formulas[key] = info
         if info or ref:
@@ -255,12 +257,12 @@ class Scanner:
                     ref,channel = value
                 elif key == "value":
                     expr = value[0]
-                    prop = expr["prop"]
+                    prop = normKey(expr["prop"])
                     factor = expr["factor"]
                 elif key in ["translation", "rotation", "scale", "general_scale"]:
                     return info,prop
                 if prop and factor and channel == "value":
-                    info[output] = factor
+                    info[normKey(output)] = factor
         return info,prop
 
 #----------------------------------------------------------
@@ -426,18 +428,28 @@ def getScannedFile(name, scanpath, checkVersion):
     return struct
 
 
-def loadScannedInfo(self, name):
+def loadScannedInfo(self, name, rig, relpath):
     def loadScanned(name, scanpath):
         defins = formulas = minmax = alias = {}
         struct = getScannedFile(name, scanpath, True)
         if struct:
-            defins = struct["definitions"]
             formulas = struct["formulas"]
             minmax = struct["minmax"]
             if "alias" in struct.keys():
                 alias = struct["alias"]
+            if relpath:
+                defins = struct["definitions"]
         return defins, formulas, minmax, alias
 
+    table = {
+        "Genesis3-female" : "Genesis3Female",
+        "Genesis3-male" : "Genesis3Male",
+        "Genesis8-female" : "Genesis8Female",
+        "Genesis8-male" : "Genesis8Male",
+    }
+
+    if not relpath:
+        name = table.get(rig.DazMesh, rig.DazMesh)
     scanpath = getScanPath(name)
     if not os.path.exists(scanpath):
         raise DazError("Scanned morphs for %s do not exist" % name)
@@ -467,9 +479,10 @@ def loadMissingMorphs(self, context, rig, missing, cat):
     standards = {}
     customs = []
     for ref in missing:
-        path = self.defins.get(ref)
+        key = normKey(ref)
+        path = self.defins.get(key)
         if path is None:
-            path = self.defins2.get(ref)
+            path = self.defins2.get(key)
         if path:
             path = getFullPath(path)
         if path:

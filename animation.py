@@ -326,7 +326,7 @@ class FrameConverter:
             for nprop,factor in formulas.items():
                 if factor == 0:
                     print("SKIP", nprop)
-                    return
+                    continue
                 factor *= self.multiplier
                 if nprop not in nstruct.keys():
                     nstruct[nprop] = {}
@@ -554,11 +554,6 @@ class MorphOptions:
         description = "Use the scanned database to find morphs",
         default = False)
 
-    useCheckUpdates : BoolProperty(
-        name = "Check For Updates",
-        description = "Check the database for new morphs before loading the animation",
-        default = False)
-
     affectGeograft : EnumProperty(
         items = getGeograftItems,
         name = "Affect Geograft",
@@ -579,8 +574,6 @@ class MorphOptions:
             self.layout.prop(self, "useShapekeys")
             if not self.useShapekeys:
                 self.layout.prop(self, "useScanned")
-                if self.useScanned:
-                    self.layout.prop(self, "useCheckUpdates")
                 self.layout.prop(self, "useLoadMissing")
                 if self.useLoadMissing:
                     self.layout.prop(self, "category")
@@ -1394,8 +1387,12 @@ class StandardAnimation:
             rig = context.object
         if rig is None:
             raise DazError("No object selected")
-        self.defins = self.formulas = self.minmax = {}
-        self.defins2 = self.formulas2 = self.minmax2 = {}
+        self.defins = {}
+        self.formulas = {}
+        self.defins2 = {}
+        self.formulas2 = {}
+        self.minmax = {}
+        self.minmax2 = {}
         self.shapekeys = {}
         self.altmorphs = {}
         self.alias = {}
@@ -1408,15 +1405,8 @@ class StandardAnimation:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
-        if self.affectMorphs and self.useScanned and relpath and rig and not self.useShapekeys:
-            if self.useCheckUpdates:
-                needs = checkNeedUpdates(name, relpath)
-                if needs:
-                    msg = "The following databases need to be rescanned:\n"
-                    for name in needs:
-                        msg += "    %s\n" % name
-                    raise DazError(msg)
-            loadScannedInfo(self, name)
+        if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
+            loadScannedInfo(self, name, rig, relpath)
         elif rig.type == 'ARMATURE':
             from .driver import getPropMinMax
             alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
@@ -1424,7 +1414,7 @@ class StandardAnimation:
             self.alias = dict(alias1 + alias2)
             for prop in rig.data.keys():
                 if isFinal(prop):
-                    key = baseProp(prop)
+                    key = normKey(baseProp(prop))
                     self.minmax[key] = getPropMinMax(rig.data, prop, False)[0:2]
         scn = context.scene
         if scn.tool_settings.use_keyframe_insert_auto:

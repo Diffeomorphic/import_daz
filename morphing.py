@@ -502,7 +502,7 @@ class MorphSuffix:
 class MorphLoader(LoadMorph):
     category = ""
     adjuster = None
-    bodypart = None
+    bodypart = "Face"
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
