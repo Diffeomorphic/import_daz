@@ -47,8 +47,8 @@ from .tree import addGroupInput, addGroupOutput, getGroupInput, colorOutput, Mix
 #   Subsurface Radius       Subsurface Radius
 #   -                       Subsurface Scale
 #   Subsurface Color        -
-#   Subsurface IOR          Subsurface IOR
-#   Subsurface Anisotropy   Subsurface Anisotropy
+#   Subsurface IOR          -
+#   Subsurface Anisotropy   -
 #   Metallic                Metallic
 #   Specular                Specular IOR Level
 #   Specular Tint           Specular Tint
@@ -280,7 +280,7 @@ class PbrTree(CyclesTree):
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
         if PBR_VERSION_2:
             self.pbr.inputs["Subsurface Scale"].default_value = 1
-        if bpy.app.version >= (3,0,0):
+        elif bpy.app.version >= (3,0,0):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
         self.column += 1
