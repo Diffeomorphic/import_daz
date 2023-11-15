@@ -1947,7 +1947,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         if len(ob.data.DazFavorites) > 0:
             self.setupScanned(ob)
             for favo in ob.data.DazFavorites.keys():
-                morph = favo.split("/",1)[0]
+                morph = normKey(favo.split("/",1)[0])
                 self.findMorphs(morph, ob)
             self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
