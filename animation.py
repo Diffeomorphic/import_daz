@@ -1407,6 +1407,7 @@ class StandardAnimation:
                         for sname in ob.data.shape_keys.key_blocks.keys():
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
+        found = False
         if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
             found = loadScannedInfo(self, name, rig, relpath)
         if not found and rig.type == 'ARMATURE':
