@@ -452,12 +452,16 @@ def loadScannedInfo(self, name, rig, relpath):
         name = table.get(rig.DazMesh, rig.DazMesh)
     scanpath = getScanPath(name)
     if not os.path.exists(scanpath):
-        raise DazError("Scanned morphs for %s do not exist" % name)
+        msg = "Scanned morphs for %s do not exist" % name
+        print(msg)
+        return False
+        raise DazError(msg)
     self.defins, self.formulas, self.minmax, self.alias = loadScanned(name, scanpath)
     if name in AltNames.keys():
         name2,relpath2 = AltNames[name]
         scanpath2 = getScanPath(name2)
         self.defins2, self.formulas2, self.minmax2, self.alias2 = loadScanned(name2, scanpath2)
+    return True
 
 #----------------------------------------------------------
 #   Load missing morphs
@@ -474,7 +478,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
 
     from .morphing import CustomMorphLoader, StandardMorphLoader
     from .category import addToCategories
-    if not missing:
+    if not missing or not self.defins:
         return False
     standards = {}
     customs = []

@@ -552,7 +552,7 @@ class MorphOptions:
     useScanned : BoolProperty(
         name = "Use Scanned Database",
         description = "Use the scanned database to find morphs",
-        default = False)
+        default = True)
 
     affectGeograft : EnumProperty(
         items = getGeograftItems,
@@ -682,7 +682,9 @@ class MorphOptions:
             return False
         elif self.useScanned:
             from .scan import loadMissingMorphs
-            return loadMissingMorphs(self, context, rig, missing, self.category)
+            found = loadMissingMorphs(self, context, rig, missing, self.category)
+        if found:
+            return True
         else:
             self.unfound = []
             self.loadMissingOld(context, rig, missing)
@@ -1406,8 +1408,8 @@ class StandardAnimation:
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
         if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
-            loadScannedInfo(self, name, rig, relpath)
-        elif rig.type == 'ARMATURE':
+            found = loadScannedInfo(self, name, rig, relpath)
+        if not found and rig.type == 'ARMATURE':
             from .driver import getPropMinMax
             alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
             alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
