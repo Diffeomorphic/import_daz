@@ -959,17 +959,22 @@ def setColorSpace(img, alts):
     msg = "No matching color space in %s" % alts
     reportError(msg)
 
+CSSRGB = ["sRGB", "sRGB OETF", "srgb_texture", "AgX Base sRGB", "Filmic sRGB"]
+CSNonColor = ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities - Raw"]
+CSLinear = ["Linear", "Linear Rec.709", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709",
+            "Linear CIE-XYZ D65", "Linear CIE-XYZ E", "Linear DCI-P3 D65", "Linear Rec.2020"]
+
 def setColorSpaceSRGB(img):
-    setColorSpace(img, ["sRGB", "sRGB OETF", "srgb_texture"])
+    setColorSpace(img, CSSRGB)
 
 def isSRGBImage(img):
-    return (img.colorspace_settings.name in ["sRGB", "sRGB OETF", "srgb_texture"])
+    return (img.colorspace_settings.name in CSSRGB)
 
 def setColorSpaceNone(img):
-    setColorSpace(img, ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities - Raw"])
+    setColorSpace(img, CSNonColor)
 
 def setColorSpaceLinear(img):
-    setColorSpace(img, ["Linear", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709"])
+    setColorSpace(img, CSLinear)
 
 def isWhite(color):
     return (tuple(color[0:3]) == (1.0,1.0,1.0))
