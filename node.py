@@ -372,6 +372,9 @@ class Instance(Accessor, Channels, SimNode):
             LS.collection.children.link(LS.refColl)
         self.refcoll = bpy.data.collections.new(name = obname)
         LS.refColl.children.link(self.refcoll)
+        if not isinstance(ob, bpy.types.Object):
+            print("Trying to instance %s" % ob)
+            return self.refcoll
         ob.name = "%s REF" % obname
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
@@ -391,10 +394,13 @@ class Instance(Accessor, Channels, SimNode):
                 refcoll.objects.link(ob)
         for child in self.children.values():
             ob = child.rna
-            if not isinstance(ob, bpy.types.Object):
+            if isinstance(ob, bpy.types.PoseBone):
+                wmats[ob.name] = ob.matrix.copy()
+            elif isinstance(ob, bpy.types.Object):
+                wmats[ob.name] = ob.matrix_world.copy()
+            else:
                 print("Ref Child not an object:\nP:%s\nS:%s\nC:%s" % (self.parent, self, child))
                 continue
-            wmats[ob.name] = ob.matrix_world.copy()
             if child.instanceTarget:
                 coll = child.instanceTarget.getRefColl(context)
                 child.linkRefChildren(coll, ob, context, wmats)
@@ -412,6 +418,11 @@ class Instance(Accessor, Channels, SimNode):
                     if GS.verbosity >= 3:
                         print('Warning: "%s" has instance children' % ob.name)
                     LS.hasInstanceChildren[ob.name] = True
+                elif isinstance(ob, bpy.types.PoseBone):
+                    rig = ob.id_data
+                    unlinkAll(rig, False)
+                    refcoll.objects.link(rig)
+                    child.linkRefChildren(refcoll, rig, context, wmats)
                 else:
                     unlinkAll(ob, False)
                     refcoll.objects.link(ob)
