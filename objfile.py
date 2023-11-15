@@ -220,7 +220,7 @@ def loadDbzFile(filepath):
             dbz.rigs[name] = []
         dbz.rigs[name].append((restdata, transforms, center))
         for bone in figure["bones"]:
-            head = Vector(bone["center_point"])
+            head = dazhead = Vector(bone["center_point"])
             tail = Vector(bone["end_point"])
             vec = tail - head
             if "ws_transform" in bone.keys():
@@ -246,7 +246,7 @@ def loadDbzFile(filepath):
             bname = bone["name"]
             rmat = wsmat.to_4x4()
             rmat.col[3][0:3] = LS.scale*head
-            restdata[bname] = (head, tail, orient, xyz, origin, wsmat)
+            restdata[bname] = (head, tail, orient, xyz, origin, wsmat, dazhead)
             transforms[bname] = (rmat, head, rmat.to_euler(), (1,1,1))
 
     return dbz
@@ -471,7 +471,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
             for pb in rig.pose.bones:
                 if isDrvBone(pb.name):
                     continue
-                (head, tail, orient, xyz, origin, wsmat) = restdata[pb.name]
+                (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
                 vec = Vector(head) - b2d(pb.bone.head_local)
                 for idx,comp in enumerate(vec):
                     expr["factor"] = comp

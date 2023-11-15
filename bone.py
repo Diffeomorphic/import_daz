@@ -116,7 +116,7 @@ class BoneInstance(Instance):
 
     def getHeadTail(self, center, mayfit=True):
         if mayfit and self.restdata:
-            head,tail,orient,xyz,origin,wsmat = self.restdata
+            head,tail,orient,xyz,origin,wsmat,dazhead = self.restdata
             #head = (cp - center)
             #tail = (ep - center)
             if orient:
@@ -131,9 +131,10 @@ class BoneInstance(Instance):
             orient = Euler(self.attributes["orientation"]*D)
             xyz = self.rotation_order
             wsmat = self.U3
+            dazhead = head
         if (tail-head).length < 0.1:
             tail = head + Vector((0,1,0))
-        return head,tail,orient,xyz,wsmat
+        return head,tail,orient,xyz,wsmat,dazhead
 
     RX = Matrix.Rotation(pi/2, 4, 'X')
     FX = Matrix.Rotation(pi, 4, 'X')
@@ -141,7 +142,7 @@ class BoneInstance(Instance):
 
     def buildEdit(self, figure, figinst, rig, parent, center, isFace):
         self.makeNameUnique(rig.data.edit_bones)
-        head,tail,orient,xyz,wsmat = self.getHeadTail(center)
+        head,tail,orient,xyz,wsmat,_ = self.getHeadTail(center)
         eb = rig.data.edit_bones.new(self.name)
         figure.bones[self.name] = eb.name
         figinst.bones[self.name] = self
@@ -323,9 +324,9 @@ class BoneInstance(Instance):
         bone.inherit_scale = self.defaultInherit()
         bone.DazOrient = self.attributes["orientation"]
 
-        head,tail,orient,xyz,wsmat = self.getHeadTail(center)
-        head0,tail0,orient0,xyz0,wsmat0 = self.getHeadTail(center, False)
-        bone.DazHead = head
+        head,tail,orient,xyz,wsmat,dazhead = self.getHeadTail(center)
+        head0,tail0,orient0,xyz0,wsmat0,_ = self.getHeadTail(center, False)
+        bone.DazHead = dazhead
         bone.DazAngle = 0
 
         vec = d2b00(tail) - d2b00(head)
