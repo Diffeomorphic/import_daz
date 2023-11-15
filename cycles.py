@@ -1359,8 +1359,6 @@ class CyclesTree(Tree):
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
         self.linkColor(radtex, node, radius, "Radius")
-        node.inputs["IOR"].default_value = ior
-        node.inputs["Anisotropy"].default_value = aniso
         node.width = 200
         self.column -= 1
         if GS.useAltSss:
