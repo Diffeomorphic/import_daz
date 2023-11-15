@@ -1913,6 +1913,7 @@ class CyclesTree(Tree):
         tree = LS.layeredGroups.get(name)
         if tree:
             node.node_tree = tree
+            node.name = name
         else:
             group = LayeredGroup()
             group.create(node, name, self)
