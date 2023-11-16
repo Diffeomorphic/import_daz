@@ -1119,13 +1119,17 @@ class TransparentGroup(FacMixGroup):
 class SubsurfaceGroup(FacMixGroup):
     def __init__(self):
         FacMixGroup.__init__(self)
-        self.insockets += ["Color", "Scale", "Radius", "Normal"]
+        self.insockets += ["Color", "Scale", "Radius", "IOR", "Anisotropy", "Normal"]
 
     def create(self, node, name, parent):
         FacMixGroup.create(self, node, name, parent, 3)
         addGroupInput(self.group, "NodeSocketColor", "Color")
         addGroupInput(self.group, "NodeSocketFloat", "Scale")
         addGroupInput(self.group, "NodeSocketVector", "Radius")
+        addGroupInput(self.group, "NodeSocketFloat", "IOR")
+        self.setMinMax("IOR", 1.0, 1.0, 5.0)
+        addGroupInput(self.group, "NodeSocketFloat", "Anisotropy")
+        self.setMinMax("Anisotropy", 0.0, 0.0, 1.0)
         addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
@@ -1136,6 +1140,9 @@ class SubsurfaceGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])
+        if sss.falloff != 'BURLEY' and bpy.app.version >= (3,0,0):
+            self.links.new(self.inputs.outputs["IOR"], sss.inputs["IOR"])
+            self.links.new(self.inputs.outputs["Anisotropy"], sss.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Normal"], sss.inputs["Normal"])
         self.mixCycles(sss.outputs[0], 2)
 

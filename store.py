@@ -107,8 +107,11 @@ class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, Mor
             if ob.type == 'ARMATURE':
                 rig = ob
                 amt = ob.data
-                ostruct["layers"] = amt.layers
-                ostruct["layers_protected"] = amt.layers_protected
+                if bpy.app.version < (4,0,0):
+                    ostruct["layers"] = amt.layers
+                    ostruct["layers_protected"] = amt.layers_protected
+                else:
+                    ostruct["collections"] = [coll.name for coll in amt.collections if coll.is_visible]
                 pstruct = ostruct["pose"] = {}
                 for pb in rig.pose.bones:
                     self.saveTransform(pb, pstruct)
@@ -252,8 +255,16 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
             if ob.type == 'ARMATURE':
                 rig = ob
                 if bpy.app.version < (4,0,0):
-                    rig.layers = ostruct["layers"]
-                    rig.data.layers_protected = ostruct["layers_protected"]
+                    if "layers" in ostruct.keys():
+                        rig.layers = ostruct["layers"]
+                        rig.data.layers_protected = ostruct["layers_protected"]
+                elif "collections" in ostruct.keys():
+                    for coll in rig.data.collections:
+                        coll.is_visible = False
+                    for cname in ostruct["collections"]:
+                        coll = rig.data.collections.get(cname)
+                        if coll:
+                            coll.is_visible = True
                 pose = ostruct.get("pose")
                 if pose:
                     for bname,bstruct in pose.items():
