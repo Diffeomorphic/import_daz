@@ -277,12 +277,15 @@ class PbrTree(CyclesTree):
 
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
-        self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
         if PBR_VERSION_2:
-            self.pbr.inputs["Subsurface Scale"].default_value = 1
+            rmax = max(radius)
+            if rmax > 0:
+                radius /= rmax
+            self.pbr.inputs["Subsurface Scale"].default_value = rmax
         elif bpy.app.version >= (3,0,0):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
+        self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
         self.column += 1
         self.endSSS()
 

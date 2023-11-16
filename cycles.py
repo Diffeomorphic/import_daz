@@ -1441,11 +1441,13 @@ class CyclesTree(Tree):
         elif GS.sssMethod == 'BURLEY':
             return 0.25*radius, 0, 0
         elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
-            return 0.5*radius, 1.4, 0.8
-        elif GS.sssMethod == 'RANDOM_WALK_SKIN':
-            return 0.5*radius, 1.4, 0.8
-        elif GS.sssMethod == 'RANDOM_WALK':
+            return 0.5*radius, 1.4, 0
+        elif GS.sssMethod == 'RANDOM_WALK_SKIN' or
             return 0.1*radius, 1.4, 0.8
+        elif bpy.app.version < (4,0,0): # Random walk = Random walk skin
+            return 0.1*radius, 1.4, 0.8
+        else:                           # Random walk = Random walk fixed radius
+            return 0.5*radius, 1.4, 0
 
     #-------------------------------------------------------------
     #   Transparency

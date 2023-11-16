@@ -632,6 +632,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             nrig = self.saveDazRig(context)
         self.meshes = getMeshChildren(rig)
         finalizeArmature(rig)
+        clearBoneCollections(rig)
         makeBoneCollections(rig, MhxLayers)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
