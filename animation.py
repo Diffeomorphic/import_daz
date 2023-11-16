@@ -682,15 +682,12 @@ class MorphOptions:
             return False
         elif self.useScanned:
             from .scan import loadMissingMorphs
-            found = loadMissingMorphs(self, context, rig, missing, self.category)
-        if found:
-            return True
-        else:
-            self.unfound = []
-            self.loadMissingOld(context, rig, missing)
-            if self.unfound:
-                print("Missing morphs not found:\n  %s" % self.unfound)
+            if loadMissingMorphs(self, context, rig, missing, self.category):
                 return True
+        self.unfound = []
+        self.loadMissingOld(context, rig, missing)
+        if self.unfound:
+            print("Missing morphs not found:\n  %s" % self.unfound)
             return True
         return False
 

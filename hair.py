@@ -129,11 +129,12 @@ class HairOptions:
         description = "Keep (reconstruct) mesh hair after making particle hair"
     )
 
-    enums = [('PARTICLES', "Particles", "Particle hair"),
-             ('CURVES', "Curves", "Ordinary curves"),
+    enums = [('CURVES', "Curves", "Ordinary curves"),
              ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
              ('MESH', "Mesh", "Single line mesh")]
-    if bpy.app.version >= (4,0,0):
+    if bpy.app.version < (4,0,0):
+        enums = [('PARTICLES', "Particles", "Particle hair")] + enums
+    else:
         enums = [('HAIR_CURVES', "Hair Curves", "Hair curves")] + enums
     output : EnumProperty(
         items = enums,
