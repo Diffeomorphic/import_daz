@@ -90,9 +90,11 @@ class FigureInstance(Instance):
             for mesh,char in zip(meshes, chars):
                 mesh.DazMesh = char
         Instance.finalize(self, context)
-        if rig and chars:
-            activateObject(context, rig)
-            self.selectChildren(rig)
+        if rig:
+            enableRigNumLayers(rig, [T_BONES])
+            if chars:
+                activateObject(context, rig)
+                self.selectChildren(rig)
         if self.hiddenBones:
             for geonode in self.geometries:
                 geonode.hideVertexGroups(self.hiddenBones.keys())

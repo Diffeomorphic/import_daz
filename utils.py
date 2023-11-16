@@ -37,7 +37,7 @@ from .settings import GS, LS, ES
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,0,0):
-    def enableBoneNumLayer(bone, rig, layer):
+    def enableBoneNumLayer(bone, rig, layer, cname=None):
         bone.layers = layer*[False] + [True] + (31-layer)*[False]
 
     def setBoneNumLayer(bone, rig, layer, value=True):
@@ -89,8 +89,11 @@ if bpy.app.version < (4,0,0):
         pb.bone_group = rig.pose.bone_groups[bgname]
 
 else:
-    def enableBoneNumLayer(bone, rig, layer):
-        coll0 = LS.boneCollections[rig.name].get(layer)
+    def enableBoneNumLayer(bone, rig, layer, cname=None):
+        if cname:
+            coll0 = rig.data.collections.get(cname)
+        else:
+            coll0 = LS.boneCollections[rig.name].get(layer)
         if coll0:
             coll0.assign(bone)
             for coll in rig.data.collections:
@@ -184,12 +187,12 @@ else:
 #-------------------------------------------------------------
 
 T_BONES = 0
-T_DRIVEN = 1
+T_CUSTOM = 1
 T_HIDDEN = 31
 
 StandardLayers = {
     T_BONES : "Bones",
-    T_DRIVEN : "Driven",
+    T_CUSTOM : "Custom",
     T_HIDDEN : "Hidden",
 }
 
