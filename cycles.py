@@ -1442,7 +1442,7 @@ class CyclesTree(Tree):
             return 0.25*radius, 0, 0
         elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
             return 0.5*radius, 1.4, 0
-        elif GS.sssMethod == 'RANDOM_WALK_SKIN' or
+        elif GS.sssMethod == 'RANDOM_WALK_SKIN':
             return 0.1*radius, 1.4, 0.8
         elif bpy.app.version < (4,0,0): # Random walk = Random walk skin
             return 0.1*radius, 1.4, 0.8
