@@ -1358,6 +1358,10 @@ class CyclesTree(Tree):
         node.inputs["Scale"].default_value = 1.0
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
+        rmax = max(radius)
+        if rmax > 0:
+            radius /= rmax
+        node.inputs["Scale"].default_value = rmax
         self.linkColor(radtex, node, radius, "Radius")
         node.inputs["IOR"].default_value = ior
         node.inputs["Anisotropy"].default_value = aniso

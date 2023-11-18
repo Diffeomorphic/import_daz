@@ -197,29 +197,11 @@ class HairOptions:
 
     # Settings
 
-    nViewChildren : IntProperty(
-        name = "Viewport Children",
-        description = "Number of hair children displayed in viewport",
-        min = 0,
-        default = 5)
-
     nRenderChildren : IntProperty(
         name = "Render Children",
         description = "Number of hair children displayed in renders",
         min = 0,
         default = 50)
-
-    nViewStep : IntProperty(
-        name = "Viewport Steps",
-        description = "How many steps paths are drawn with (power of 2)",
-        min = 0,
-        default = 3)
-
-    nRenderStep : IntProperty(
-        name = "Render Steps",
-        description = "How many steps paths are rendered with (power of 2)",
-        min = 0,
-        default = 3)
 
     strandShape : EnumProperty(
         items = [('STANDARD', "Standard", "Standard strand shape"),
@@ -229,17 +211,54 @@ class HairOptions:
         description = "Strand shape",
         default = 'STANDARD')
 
-    rootRadius : FloatProperty(
-        name = "Root radius (mm)",
-        description = "Strand diameter at the root",
-        min = 0,
-        default = 0.3)
+    if bpy.app.version < (4,0,0):
+        nViewChildren : IntProperty(
+            name = "Viewport Children",
+            description = "Number of hair children displayed in viewport",
+            min = 0,
+            default = 5)
 
-    tipRadius : FloatProperty(
-        name = "Tip radius (mm)",
-        description = "Strand diameter at the tip",
-        min = 0,
-        default = 0.3)
+        nViewStep : IntProperty(
+            name = "Viewport Steps",
+            description = "How many steps paths are drawn with (power of 2)",
+            min = 0,
+            default = 3)
+
+        nRenderStep : IntProperty(
+            name = "Render Steps",
+            description = "How many steps paths are rendered with (power of 2)",
+            min = 0,
+            default = 3)
+
+        rootRadius : FloatProperty(
+            name = "Root radius (mm)",
+            description = "Strand diameter at the root",
+            min = 0,
+            default = 0.3)
+
+        tipRadius : FloatProperty(
+            name = "Tip radius (mm)",
+            description = "Strand diameter at the tip",
+            min = 0,
+            default = 0.3)
+    else:
+        hairRadius : FloatProperty(
+            name = "Hair radius (mm)",
+            description = "Strand diameter",
+            min = 0,
+            default = 0.3)
+
+        hairShape : FloatProperty(
+            name = "Hair Shape",
+            description = "Hair shape parameter",
+            min = -1, max = 1,
+            default = 0)
+
+        viewFactor : FloatProperty(
+            name = "Viewport Factor",
+            description = "The fraction of children displayed in the viewport",
+            min = 0, max = 1,
+            default = 0.1)
 
     childRadius : FloatProperty(
         name = "Child radius (mm)",
@@ -752,7 +771,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             else:
                 box.prop(self, "color")
 
-        if self.output in ['PARTICLES', 'HAIR_CURVES']:
+        if self.output == 'PARTICLES':
             col = row.column()
             box = col.box()
             box.label(text="Settings")
@@ -761,10 +780,18 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             box.prop(self, "childRadius")
             box.prop(self, "rootRadius")
             box.prop(self, "tipRadius")
-            if self.output == 'PARTICLES':
-                box.prop(self, "nViewStep")
-                box.prop(self, "nRenderStep")
-                box.prop(self, "strandShape")
+            box.prop(self, "nViewStep")
+            box.prop(self, "nRenderStep")
+            box.prop(self, "strandShape")
+        elif self.output ==  'HAIR_CURVES':
+            col = row.column()
+            box = col.box()
+            box.label(text="Settings")
+            box.prop(self, "nRenderChildren")
+            box.prop(self, "viewFactor")
+            box.prop(self, "childRadius")
+            box.prop(self, "hairRadius")
+            box.prop(self, "strandShape")
 
 
     def invoke(self, context, event):
@@ -917,6 +944,16 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         elif self.output == 'HAIR_CURVES':
             ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
         coll.objects.link(ob)
+        rig = hum.parent
+        if rig and rig.type == 'ARMATURE':
+            head = rig.data.bones.get("head")
+            if head:
+                wmat = ob.matrix_world.copy()
+                ob.parent = rig
+                ob.parent_type = 'BONE'
+                ob.parent_bone = head.name
+                setWorldMatrix(ob, wmat)
+
         if self.output == 'HAIR_CURVES':
             def addMod(ob, name):
                 group = bpy.data.node_groups.get(name)
@@ -927,23 +964,12 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
 
             mod = addMod(ob, "Set Hair Curve Profile")
             if mod:
-                if self.rootRadius > self.tipRadius:
-                    mod["Input_3"] = self.rootRadius * 1e-3
-                    mod["Input_2"] = 1 - self.tipRadius/self.rootRadius
-                else:
-                    mod["Input_3"] = self.tipRadius * 1e-3
-                    mod["Input_2"] = self.rootRadius/self.tipRadius - 1
-            mod = addMod(ob, "Attach Hair Curves to Surface")
-            if mod:
-                mod["Input_4"] = ob.data.surface
-                mod["Input_2_attribute_name"] = ob.data.surface_uv_map
-                mod["Input_7"] = False
-                mod["Input_8"] = True
+                mod["Input_3"] = self.hairRadius * 1e-3
+                mod["Input_2"] = self.hairShape
             mod = addMod(ob, "Duplicate Hair Curves")
             if mod:
                 mod["Input_2"] = self.nRenderChildren
-                if self.nRenderChildren > self.nViewChildren:
-                    mod["Input_4"] = self.nViewChildren/self.nRenderChildren
+                mod["Input_4"] = self.viewFactor
                 mod["Input_5"] = self.childRadius * 1e-3
 
 

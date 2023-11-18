@@ -282,7 +282,11 @@ class PbrTree(CyclesTree):
             if rmax > 0:
                 radius /= rmax
             self.pbr.inputs["Subsurface Scale"].default_value = rmax
-        elif bpy.app.version >= (3,0,0):
+            if GS.sssMethod != 'BURLEY':
+                self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
+            if GS.sssMethod == 'RANDOM_WALK_SKIN':
+                self.pbr.inputs["Subsurface IOR"].default_value = ior
+        elif GS.sssMethod != 'BURLEY':
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
@@ -367,8 +371,7 @@ class PbrTree(CyclesTree):
 
     def setSpecular(self, spec, spectex, color, coltex):
         if PBR_VERSION_2:
-            self.pbr.inputs["Specular IOR Level"].default_value = 0.5
-            self.linkScalar(spectex, self.pbr, spec, "IOR", add=1)
+            self.linkScalar(spectex, self.pbr, spec, "Specular IOR Level", add=1)
             self.linkColor(coltex, self.pbr, color, "Specular Tint")
         else:
             spec = clamp(spec*averageColor(color))
