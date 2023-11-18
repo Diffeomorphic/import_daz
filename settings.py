@@ -591,6 +591,13 @@ class LocalSettings:
         self.warning = False
         self.returnValue = {}
 
+        if bpy.app.version < (4,0,0):
+            if GS.sssMethod == 'RANDOM_WALK_SKIN':
+                GS.sssMethod = 'RANDOM_WALK'
+        else:
+            if GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
+                GS.sssMethod = 'RANDOM_WALK'
+
 
     def __repr__(self):
         string = "<Local Settings"
