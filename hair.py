@@ -59,6 +59,8 @@ class ColorGroup(bpy.types.PropertyGroup):
         default = (0.2, 0.02, 0.01, 1)
     )
 
+    image : StringProperty()
+
 
 class Separator:
     useCheckStrips : BoolProperty(
@@ -271,12 +273,17 @@ class HairOptions:
     multiMaterials : BoolProperty(
         name = "Multi Materials",
         description = "Create separate particle systems for each material",
-        default = True)
+        default = False)
 
     keepMaterial : BoolProperty(
         name = "Keep Material",
         description = "Use existing material",
         default = True)
+
+    useActiveTexture : BoolProperty(
+        name = "Use Active Texture",
+        description = "Use the active texture of the scalp mesh as hair color",
+        default = False)
 
     activeMaterial : EnumProperty(
         items = getMaterialEnums,
@@ -763,7 +770,10 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 box.prop(self, "activeMaterial")
         else:
             box.prop(self, "hairMaterialMethod")
-            if multimat:
+            box.prop(self, "useActiveTexture")
+            if self.useActiveTexture:
+                pass
+            elif multimat:
                 for item in self.colors:
                     row2 = box.row()
                     row2.label(text=item.name)
@@ -803,6 +813,9 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 item = self.colors.add()
                 item.name = mat.name
                 item.color = mat.diffuse_color
+                node = mat.node_tree.nodes.active
+                if node and node.type == 'TEX_IMAGE' and node.image:
+                    item.image = node.image.name
         return DazPropsOperator.invoke(self, context, event)
 
 
@@ -1305,22 +1318,31 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             else:
                 mats = []
                 for item in self.colors:
-                    mname = "H" + item.name
-                    mat = buildHairMaterial(mname, item.color, context, force=True)
+                    mname = "H%s" % item.name
+                    if self.useActiveTexture:
+                        img = bpy.data.images.get(item.image)
+                    else:
+                        img = None
+                    mat = buildHairMaterial(mname, item.color, img, context, force=True)
                     if fade:
                         addFade(mat)
                     mats.append(mat)
             for mat in mats:
-                hum.data.materials.append(mat)
+                if self.output == 'PARTICLES':
+                    hum.data.materials.append(mat)
                 self.materials.append(mat)
         else:
             mname = self.activeMaterial
-            if keepmat:
-                mat = hair.data.materials[mname]
-            else:
-                mat = buildHairMaterial("Hair", self.color, context, force=True)
+            mat = hair.data.materials[mname]
+            if not keepmat:
+                node = mat.node_tree.nodes.active
+                if self.useActiveTexture and node and node.type == 'TEX_IMAGE':
+                    img = node.image
+                else:
+                    img = None
+                mat = buildHairMaterial("Hair", self.color, img, context, force=True)
             if fade:
-                addFade(mat)
+                addFade(mat, img)
             hum.data.materials.append(mat)
             self.materials = [mat]
 
@@ -1619,9 +1641,9 @@ class DAZ_OT_ColorHair(DazPropsOperator, IsHair, ColorProp):
             pset = psys.settings
             mname = pset.material_slot
             if mname in mats.keys() and mats[mname][1]:
-                mat = buildHairMaterial(mname, self.color, context, force=True)
+                mat = buildHairMaterial(mname, self.color, None, context, force=True)
                 if fade:
-                    addFade(mat)
+                    addFade(mat, None)
                 mats[mname] = (mat, False)
 
         for _,keep in mats.values():
@@ -1661,20 +1683,21 @@ class DAZ_OT_ConnectHair(DazOperator, IsHair):
 #   Materials
 #------------------------------------------------------------------------
 
-def buildHairMaterial(mname, color, context, force=False):
+def buildHairMaterial(mname, color, img, context, force=False):
     color = list(color[0:3])
-    hmat = HairMaterial(mname, color)
+    hmat = HairMaterial(mname, color, img)
     hmat.force = force
-    hmat.build(context, color)
+    hmat.build(context, color, img)
     return hmat.rna
 
 
 class HairMaterial(CyclesMaterial):
 
-    def __init__(self, name, color):
+    def __init__(self, name, color, img):
         CyclesMaterial.__init__(self, name)
         self.name = name
         self.color = color
+        self.image = img
 
 
     def guessColor(self):
@@ -1682,33 +1705,34 @@ class HairMaterial(CyclesMaterial):
             self.rna.diffuse_color = self.color
 
 
-    def build(self, context, color):
+    def build(self, context, color, img):
         from .material import Material
         if not Material.build(self, context):
             return
-        self.tree = getHairTree(self, color)
+        self.tree = getHairTree(self, color, img)
         self.tree.build()
         self.rna.diffuse_color[0:3] = self.color
 
 
-def getHairTree(dmat, color=BLACK):
+def getHairTree(dmat, color=BLACK, img=None):
     #print("Creating %s hair material" % LS.hairMaterialMethod)
     if LS.hairMaterialMethod == 'HAIR_PRINCIPLED':
-        return HairPBRTree(dmat, color)
+        return HairPBRTree(dmat, color, img)
     elif LS.hairMaterialMethod == 'PRINCIPLED':
-        return HairEeveeTree(dmat, color)
+        return HairEeveeTree(dmat, color, img)
     else:
-        return HairBSDFTree(dmat, color)
+        return HairBSDFTree(dmat, color, img)
 
 #-------------------------------------------------------------
 #   Hair tree base
 #-------------------------------------------------------------
 
 class HairTree(CyclesTree):
-    def __init__(self, hmat, color):
+    def __init__(self, hmat, color, img):
         CyclesTree.__init__(self, hmat)
         self.type = 'HAIR'
         self.color = color
+        self.image = img
         self.root = Vector(color)
         self.tip = Vector(color)
         self.roottex = None
@@ -1757,6 +1781,8 @@ class HairTree(CyclesTree):
 
 
     def addRamp(self, node, label, root, tip, endpos=1, slot="Color"):
+        if self.image:
+            root = tip = WHITE
         ramp = self.addNode('ShaderNodeValToRGB', col=self.column-2)
         ramp.label = label
         self.links.new(self.info.outputs["Intercept"], ramp.inputs['Fac'])
@@ -1776,7 +1802,17 @@ class HairTree(CyclesTree):
             elt.color = tip
         if node:
             node.inputs[slot].default_value[0:3] == root
-        return ramp
+        if self.image:
+            tex = self.addNode("ShaderNodeTexImage", col=self.column-2, size=2)
+            tex.image = self.image
+            tex.hide = True
+            mult,a,b,socket = self.addMixRgbNode('MULTIPLY', self.column-1, size=12)
+            mult.inputs[0].default_value = 1
+            self.links.new(ramp.outputs["Color"], a)
+            self.links.new(tex.outputs["Color"], b)
+        else:
+            socket = ramp.outputs["Color"]
+        return ramp,socket
 
 
     def readColor(self, factor):
@@ -1787,8 +1823,8 @@ class HairTree(CyclesTree):
         self.tip = factor * Vector(tip)
 
 
-    def linkRamp(self, ramp, texs, node, slot):
-        out = ramp.outputs[0]
+    def linkRamp(self, socket, texs, node, slot):
+        out = socket
         for tex in texs:
             if tex:
                 mix,a,b,out = self.addMixRgbNode('MULTIPLY', col=self.column-1)
@@ -1851,8 +1887,8 @@ class HairBSDFTree(HairTree):
         trans.inputs['Offset'].default_value = 0
         trans.inputs["RoughnessU"].default_value = 1
         trans.inputs["RoughnessV"].default_value = 1
-        ramp = self.addRamp(trans, "Transmission", root, tip)
-        self.linkRamp(ramp, [roottex, tiptex], trans, "Color")
+        ramp,socket = self.addRamp(trans, "Transmission", root, tip)
+        self.linkRamp(socket, [roottex, tiptex], trans, "Color")
         #self.linkTangent(trans)
         self.active = trans
         return trans
@@ -1864,8 +1900,8 @@ class HairBSDFTree(HairTree):
         refl.inputs['Offset'].default_value = 0
         refl.inputs["RoughnessU"].default_value = 0.02
         refl.inputs["RoughnessV"].default_value = 1.0
-        ramp = self.addRamp(refl, "Reflection", self.root, self.tip)
-        self.linkRamp(ramp, [self.roottex, self.tiptex], refl, "Color")
+        ramp,socket = self.addRamp(refl, "Reflection", self.root, self.tip)
+        self.linkRamp(socket, [self.roottex, self.tiptex], refl, "Color")
         self.active = refl
         return refl
 
@@ -1911,7 +1947,7 @@ class FadeGroup(NodeGroup, HairTree):
 
 
     def create(self, node, name, parent):
-        HairTree.__init__(self, parent.owner, BLACK)
+        HairTree.__init__(self, parent.owner, BLACK, None)
         NodeGroup.create(self, node, name, parent, 4)
         addGroupInput(self.group, "NodeSocketShader", "Shader")
         addGroupInput(self.group, "NodeSocketFloat", "Intercept")
@@ -1922,7 +1958,7 @@ class FadeGroup(NodeGroup, HairTree):
     def addNodes(self, args=None):
         self.column = 3
         self.info = self.inputs
-        ramp = self.addRamp(None, "Root Transparency", (1,1,1,0), (1,1,1,1), endpos=0.15)
+        ramp,socket = self.addRamp(None, "Root Transparency", (1,1,1,0), (1,1,1,1), endpos=0.15)
         maprange = self.addNode('ShaderNodeMapRange', col=1)
         maprange.inputs["From Min"].default_value = 0
         maprange.inputs["From Max"].default_value = 1
@@ -1945,8 +1981,8 @@ class FadeGroup(NodeGroup, HairTree):
         return node
 
 
-def addFade(mat):
-    tree = FadeHairTree(mat, mat.diffuse_color[0:3])
+def addFade(mat, img):
+    tree = FadeHairTree(mat, mat.diffuse_color[0:3], img)
     tree.build(mat)
 
 
@@ -1991,8 +2027,8 @@ class HairPBRTree(HairTree):
         self.initLayer()
         self.readColor(0.216)
         pbr = self.active = self.addNode("ShaderNodeBsdfHairPrincipled")
-        ramp = self.addRamp(pbr, "Color", self.root, self.tip)
-        self.linkRamp(ramp, [self.roottex, self.tiptex], pbr, "Color")
+        ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip)
+        self.linkRamp(socket, [self.roottex, self.tiptex], pbr, "Color")
         pbr.inputs["Roughness"].default_value = 0.2
         pbr.inputs["Radial Roughness"].default_value = 0.8
         pbr.inputs["IOR"].default_value = 1.1
@@ -2008,8 +2044,8 @@ class HairEeveeTree(HairTree):
         self.initLayer()
         self.readColor(0.216)
         pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
-        ramp = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
-        self.linkRamp(ramp, [self.roottex, self.tiptex], pbr, "Base Color")
+        ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
+        self.linkRamp(socket, [self.roottex, self.tiptex], pbr, "Base Color")
         pbr.inputs["Metallic"].default_value = 0.9
         pbr.inputs["Roughness"].default_value = 0.2
         self.buildOutput()

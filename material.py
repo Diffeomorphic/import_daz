@@ -1916,11 +1916,15 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
 #   Prune node tree
 #----------------------------------------------------------
 
-class DAZ_OT_PruneNodeTrees(DazPropsOperator, IsMesh):
+class DAZ_OT_PruneNodeTrees(DazPropsOperator):
     bl_idname = "daz.prune_node_trees"
     bl_label = "Prune Node Trees"
     bl_description = "Prune all material node trees for selected meshes"
     bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        return (context.object and context.object.type in ['MESH', 'CURVES'])
 
     useDeleteUnusedNodes : BoolProperty(
         name = "Delete Unused Nodes",
