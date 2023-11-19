@@ -345,7 +345,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     return fkwind, ikwind, pbones
 
 
-def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None, useLocation=False, useScale=False, xaxis=None):
+def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None, useBaseLocation=False, useLocation=False, useScale=False, xaxis=None):
     if len(bnames) < 3:
         print("Too few bones to wind: %s" % windname)
         return None, []
@@ -394,7 +394,7 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None
         setLocks(pb.lock_scale, cns)
         cns.influence = infl
         addMuteDriver(cns, rig, prop)
-    if useLocation:
+    if useBaseLocation:
         cns = copyLocation(pb, winder, rig)
         cns.influence = infl
         addMuteDriver(cns, rig, prop)
@@ -402,15 +402,20 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None
     for bname in bnames[1:]:
         pb = rig.pose.bones[bname]
         pbones.append(pb)
-        infl = 2*pb.bone.length/winder.length
+        #infl = 2*pb.bone.length/winder.length
         cns = copyRotation(pb, winder, rig)
         setLocks(pb.lock_rotation, cns)
         cns.use_offset = True
         cns.influence = infl
         addMuteDriver(cns, rig, prop)
         if useScale:
-            cns = copyScale(pb, winder, rig)
+            cns = copyScale(pb, winder, rig, space='LOCAL')
             setLocks(pb.lock_scale, cns)
+            cns.use_offset = True
+            cns.influence = infl
+            addMuteDriver(cns, rig, prop)
+        if useLocation:
+            cns = copyLocation(pb, winder, rig, space='LOCAL')
             cns.use_offset = True
             cns.influence = infl
             addMuteDriver(cns, rig, prop)
@@ -983,7 +988,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             shaftbones = self.getShaftBones(rig)
             shaftbones.sort()
             layers = [L_CUSTOM, L_CUSTOM2]
-            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", useLocation=True, useScale=True)
+            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", useBaseLocation=True, useScale=True)
 
     #-------------------------------------------------------------
     #   Spine tweaks
@@ -1981,10 +1986,17 @@ def setToFk(rig, layers, useInsertKeys, frame):
         setValue(rig, prop, 0)
     for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
         setValue(rig, prop, False)
-    for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
-        layers[layer] = True
-    for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:
-        layers[layer] = False
+    if bpy.app.version < (4,0,0):
+        for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
+            layers[layer] = True
+        for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:
+            layers[layer] = False
+    else:
+        for cname in ["FK Arm Left", "FK Arm Right", "FK Leg Left", "FK Leg Right"]:
+            layers[cname] = rig.data.collections.get(cname)
+        for cname in ["IK Arm Left", "IK Arm Right", "IK Leg Left", "IK Leg Right"]:
+            if cname in layers.keys():
+                del layers[cname]
     return layers
 
 

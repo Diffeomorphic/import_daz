@@ -1495,9 +1495,14 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         min = 1, max = 32,
         default = 2)
 
+    useBaseLocation : BoolProperty(
+        name = "Base Location",
+        description = "Add driver for location of base bone",
+        default = False)
+
     useLocation : BoolProperty(
         name = "Location",
-        description = "Add driver for location",
+        description = "Add driver for location of other bones",
         default = False)
 
     useScale : BoolProperty(
@@ -1506,16 +1511,19 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "winderLayer")
-        self.layout.prop(self, "windedLayer")
+        if bpy.app.version < (4,0,0):
+            self.layout.prop(self, "winderLayer")
+            self.layout.prop(self, "windedLayer")
+        self.layout.prop(self, "useBaseLocation")
         self.layout.prop(self, "useLocation")
         self.layout.prop(self, "useScale")
 
     def invoke(self, context, event):
-        rig = context.object
-        if rig and rig.DazRig == "mhx":
-            self.winderLayer = 17
-            self.windedLayer = 18
+        if bpy.app.version < (4,0,0):
+            rig = context.object
+            if rig and rig.DazRig == "mhx":
+                self.winderLayer = 17
+                self.windedLayer = 18
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
@@ -1535,8 +1543,11 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         for root in self.findPoseRoots(rig):
             windname = "Wind_%s" % root.name
             bnames = findChildren(root)
-            layers = [self.winderLayer-1, self.windedLayer-1]
-            addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=self.useLocation, useScale=self.useScale)
+            if bpy.app.version < (4,0,0):
+                layers = [self.winderLayer-1, self.windedLayer-1]
+            else:
+                layers = ("Custom", "Bones")
+            addWinder(rig, windname, bnames, layers, gizmo=gizmo, useBaseLocation=self.useBaseLocation, useLocation=self.useLocation, useScale=self.useScale)
 
 
     def findPoseRoots(self, rig):

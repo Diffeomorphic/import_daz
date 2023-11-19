@@ -92,6 +92,8 @@ else:
     def enableBoneNumLayer(bone, rig, layer, cname=None):
         if cname:
             coll0 = rig.data.collections.get(cname)
+        elif isinstance(layer, str):
+            coll0 = rig.data.collections.get(layer)
         else:
             coll0 = LS.boneCollections[rig.name].get(layer)
         if coll0:
