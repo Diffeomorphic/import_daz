@@ -1273,7 +1273,7 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
                     coll.is_visible = True
 
 
-sclass DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
+class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
     bl_idname = "daz.unselect_named_layers"
     bl_label = ("Only Active" if bpy.app.version < (4,0,0) else "None")
     bl_description = "Unselect all named and unnamed layers except active"
