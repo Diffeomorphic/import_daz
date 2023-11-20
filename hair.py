@@ -973,7 +973,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 if group:
                     mod = ob.modifiers.new(name, 'NODES')
                     mod.node_group = group
-                return mod
+                    return mod
 
             mod = addMod(ob, "Set Hair Curve Profile")
             if mod:
