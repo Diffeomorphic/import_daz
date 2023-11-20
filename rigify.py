@@ -1490,10 +1490,18 @@ def setFkIk2(rig, fk, layers, useInsertKeys, frame):
             rig.data[pname] = 0.0
             if useInsertKeys:
                 rig.data.keyframe_insert(propRef(pname), frame=frame)
-    for n in [8, 11, 14, 17]:
-        layers[n] = fk
-    for n in [7, 10, 13, 16]:
-        layers[n] = (not fk)
+
+    if bpy.app.version < (4,0,0):
+        for n in [R_ARMFK_L, R_ARMFK_R, R_LEGFK_L, R_LEGFK_R]:
+            layers[n] = fk
+        for n in [R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]:
+            layers[n] = (not fk)
+    else:
+        for cname in ["Arm.L (FK)", "Arm.R (FK)", "Leg.L (FK)", "Leg.R (FK)"]:
+            layers[cname] = rig.data.collections.get(cname)
+        for cname in ["Arm.L (IK)", "Arm.R (IK)", "Leg.L (IK)", "Leg.R (IK)"]:
+            if cname in layers.keys():
+                del layers[cname]
     return layers
 
 #----------------------------------------------------------

@@ -781,10 +781,17 @@ def getPoseBone(rig, bnames):
 
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
-    for n in [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]:
-        layers[n] = True
-    for n in [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]:
-        layers[n] = False
+    if bpy.app.version < (4,0,0):
+        for n in [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]:
+            layers[n] = True
+        for n in [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]:
+            layers[n] = False
+    else:
+        for cname in ["FK Arm Left", "FK Arm Right", "FK Leg Left", "FK Leg Right"]:
+            layers[cname] = rig.data.collections.get(cname)
+        for cname in ["IK Arm Left", "IK Arm Right", "IK Leg Left", "IK Leg Right"]:
+            if cname in layers.keys():
+                del layers[cname]
     for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]:
         setattr(rig, attr, 0)
         if useInsertKeys:
@@ -1266,9 +1273,9 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
                     coll.is_visible = True
 
 
-class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
+sclass DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
     bl_idname = "daz.unselect_named_layers"
-    bl_label = "Only Active"
+    bl_label = ("Only Active" if bpy.app.version < (4,0,0) else "None")
     bl_description = "Unselect all named and unnamed layers except active"
     bl_options = {'UNDO'}
 
