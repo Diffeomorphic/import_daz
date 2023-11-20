@@ -276,7 +276,6 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
-        self.layout.operator("daz.replace_principled")
         self.layout.operator("daz.drive_shell_influence")
         self.layout.separator()
         self.layout.operator("daz.make_palette")

@@ -917,70 +917,6 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
             tree.nodes.remove(node)
 
 # ---------------------------------------------------------------------
-#   Replace Principled node
-# ---------------------------------------------------------------------
-
-def getAllNodeGroups(scn, context):
-    return [(group.name, group.name, group.name) for group in bpy.data.node_groups]
-
-
-class DAZ_OT_ReplacePrincipled(MaterialSelector, DazPropsOperator):
-    bl_idname = "daz.replace_principled"
-    bl_label = "Replace Principled With Nodegroup"
-    bl_description = "Replace principled node with custom node group for selected materials"
-    bl_options = {'UNDO'}
-
-    groupName : EnumProperty(
-        items = getAllNodeGroups,
-        name = "Node Group",
-        description = "Replace principled nodes with this node group")
-
-    def draw(self, context):
-        self.layout.prop(self, "groupName")
-        MaterialSelector.draw(self, context)
-
-    def isDefaultActive(self, mat, ob):
-        return self.isSkinRedMaterial(mat)
-
-    def run(self, context):
-        ob = context.object
-        self.group = bpy.data.node_groups[self.groupName]
-        for mat in ob.data.materials:
-            if mat and self.useMaterial(mat) and mat.node_tree:
-                self.replacePrincipled(mat)
-
-
-    def replacePrincipled(self, mat):
-        tree = mat.node_tree
-        pbr = None
-        for node in tree.nodes:
-            if node.type == 'BSDF_PRINCIPLED':
-                pbr = node
-                break
-        if pbr is None:
-            return
-        node = tree.nodes.new("ShaderNodeGroup")
-        node.node_tree = self.group
-        node.location = pbr.location
-        node.width = pbr.width
-        for name,pbrsocket in pbr.inputs.items():
-            socket = node.inputs.get(name)
-            if socket is None:
-                print("Missing socket:", name)
-            else:
-                socket.default_value = pbrsocket.default_value
-                for link in pbrsocket.links:
-                    tree.links.new(link.from_socket, socket)
-        for name,pbrsocket in pbr.outputs.items():
-            socket = node.outputs.get(name)
-            if socket is None:
-                print("Missing socket:", name)
-            else:
-                for link in pbrsocket.links:
-                    tree.links.new(link.to_socket, socket)
-        tree.nodes.remove(pbr)
-
-# ---------------------------------------------------------------------
 #   Make Decal
 # ---------------------------------------------------------------------
 
@@ -1995,7 +1931,6 @@ classes = [
     DAZ_OT_UpdateMaterials,
     DAZ_OT_ResetMaterials,
     DAZ_OT_MakeComboMaterials,
-    DAZ_OT_ReplacePrincipled,
     DAZ_OT_MakeDecal,
     DAZ_OT_SetShellVisibility,
     DAZ_OT_DriveShellInfluence,
