@@ -259,6 +259,8 @@ class Fixer(DriverUser):
                         return False
             return True
 
+        channel = fcu.data_path
+        idx = self.getArrayIndex(fcu)
         for var in fcu.driver.variables:
             if not setVar(var):
                 if idx >= 0:
@@ -266,10 +268,6 @@ class Fixer(DriverUser):
                 else:
                     rna.driver_remove(channel)
                 return
-        return
-
-        channel = fcu.data_path
-        idx = self.getArrayIndex(fcu)
         fcu2 = self.getTmpDriver(0)
         self.copyFcurve(fcu, fcu2)
         if idx >= 0:
