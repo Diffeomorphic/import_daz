@@ -400,12 +400,12 @@ class MetaMaker(RigifyCommon):
             pb = meta.pose.bones[bname]
             pb["rigify_type"] = "basic.pivot"
             enableRigNumLayer(meta, layer)
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 rlayer = meta.data.rigify_layers[layer]
                 rlayer.name = bname
                 rlayer.row = row
                 rlayer.group = group
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             meta.data.layers[0] = False
             rlayer = meta.data.rigify_layers[0]
             rlayer.name = ""
@@ -983,7 +983,7 @@ class Rigifier(RigifyCommon):
                     if layer:
                         layer.exclude = True
                     break
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             setFkIk2(gen, False, gen.data.layers, False, 0)
         if activateObject(context, rig):
             deleteObjects(context, [rig])
@@ -1203,7 +1203,7 @@ class Rigifier(RigifyCommon):
             "ik_tongue" :       ("GZM_Cone", 0.4, R_FACE),
         }
         self.makeGizmos(True, ["GZM_MJaw", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             bgrp = gen.pose.bone_groups.new(name="DAZ")
             bgrp.color_set = 'CUSTOM'
             bgrp.colors.normal = (1.0, 0.5, 0)
@@ -1491,7 +1491,7 @@ def setFkIk2(rig, fk, layers, useInsertKeys, frame):
             if useInsertKeys:
                 rig.data.keyframe_insert(propRef(pname), frame=frame)
 
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         for n in [R_ARMFK_L, R_ARMFK_R, R_LEGFK_L, R_LEGFK_R]:
             layers[n] = fk
         for n in [R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]:

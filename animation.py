@@ -396,7 +396,7 @@ class HideOperator(DazOperator):
                 self.obhides.append((ob, ob.hide_get()))
                 ob.hide_set(False)
         if self.rig:
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 self.boneLayers = list(self.rig.data.layers)
                 self.rig.data.layers = 32*[True]
             else:
@@ -425,7 +425,7 @@ class HideOperator(DazOperator):
         from .driver import muteDazFcurves
         DazOperator.restoreState(self, context)
         if self.rig:
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 self.rig.data.layers = self.boneLayers
             else:
                 for coll in self.rig.data.collections:
@@ -971,7 +971,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             return False
         elif self.affectSelectedOnly:
             if pb.bone.select:
-                if bpy.app.version < (4,0,0):
+                if BLENDER3:
                     for rlayer,blayer in zip(self.boneLayers, pb.bone.layers):
                         if rlayer and blayer:
                             return True

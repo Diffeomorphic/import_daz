@@ -1511,7 +1511,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         default = False)
 
     def draw(self, context):
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             self.layout.prop(self, "winderLayer")
             self.layout.prop(self, "windedLayer")
         self.layout.prop(self, "useBaseLocation")
@@ -1519,7 +1519,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         self.layout.prop(self, "useScale")
 
     def invoke(self, context, event):
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             rig = context.object
             if rig and rig.DazRig == "mhx":
                 self.winderLayer = 17
@@ -1543,7 +1543,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         for root in self.findPoseRoots(rig):
             windname = "Wind_%s" % root.name
             bnames = findChildren(root)
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 layers = [self.winderLayer-1, self.windedLayer-1]
             else:
                 layers = ("Custom", "Bones")

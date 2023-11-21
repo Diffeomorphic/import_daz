@@ -1838,7 +1838,7 @@ class WidgetConverter:
 
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             enableRigNumLayer(rig, self.usedLayer-1)
             enableRigNumLayer(rig, self.unusedLayer-1, False)
         activateObject(context, ob)

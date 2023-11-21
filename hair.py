@@ -134,7 +134,7 @@ class HairOptions:
     enums = [('CURVES', "Curves", "Ordinary curves"),
              ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
              ('MESH', "Mesh", "Single line mesh")]
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         enums = [('PARTICLES', "Particles", "Particle hair")] + enums
     else:
         enums = [('HAIR_CURVES', "Hair Curves", "Hair curves")] + enums
@@ -213,7 +213,7 @@ class HairOptions:
         description = "Strand shape",
         default = 'STANDARD')
 
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         nViewChildren : IntProperty(
             name = "Viewport Children",
             description = "Number of hair children displayed in viewport",

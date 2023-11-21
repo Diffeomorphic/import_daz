@@ -207,7 +207,7 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     group.create(ob.name, mnames)
     group.addNodes(mnames, mats, shmats)
     mod.node_group = group.group
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         mod["Input_1"] = ob
         mod["Input_2"] = offset
     else:

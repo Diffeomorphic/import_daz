@@ -107,7 +107,7 @@ class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, Mor
             if ob.type == 'ARMATURE':
                 rig = ob
                 amt = ob.data
-                if bpy.app.version < (4,0,0):
+                if BLENDER3:
                     ostruct["layers"] = amt.layers
                     ostruct["layers_protected"] = amt.layers_protected
                 else:
@@ -254,7 +254,7 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
                         pass
             if ob.type == 'ARMATURE':
                 rig = ob
-                if bpy.app.version < (4,0,0):
+                if BLENDER3:
                     if "layers" in ostruct.keys():
                         rig.layers = ostruct["layers"]
                         rig.data.layers_protected = ostruct["layers_protected"]

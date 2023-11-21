@@ -32,11 +32,13 @@ from urllib.parse import quote, unquote
 from bpy.props import *
 from .settings import GS, LS, ES
 
+BLENDER3 = (bpy.app.version < (4,0,0))
+
 #-------------------------------------------------------------
 #   Bone layers
 #-------------------------------------------------------------
 
-if bpy.app.version < (4,0,0):
+if BLENDER3:
     def enableBoneNumLayer(bone, rig, layer, cname=None):
         bone.layers = layer*[False] + [True] + (31-layer)*[False]
 

@@ -781,7 +781,7 @@ def getPoseBone(rig, bnames):
 
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         for n in [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]:
             layers[n] = True
         for n in [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]:
@@ -810,7 +810,7 @@ class SimpleFKSnapper(SimpleIK):
             self.setProp(rig, prop, True)
             updatePose()
             self.snapBones(rig, bnames, prop)
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 rig.data.layers[on] = True
                 rig.data.layers[off] = False
             else:
@@ -895,7 +895,7 @@ class SimpleIKSnapper(SimpleIK):
             self.setProp(rig, prop, 0.0)
             updatePose()
             self.snapBones(rig, bnames, prop, pole, shldrik, revbones)
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 rig.data.layers[on] = True
                 rig.data.layers[off] = False
             else:
@@ -1227,7 +1227,7 @@ def makeBoneGroups(rig):
         ("Face",    (1,0.5,0)),
         ("Special",  (1,0,1)),
     ]
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         if len(rig.pose.bone_groups) != len(BoneGroups):
             for bg in list(rig.pose.bone_groups):
                 rig.pose.bone_groups.remove(bg)
@@ -1262,7 +1262,7 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             rig.data.layers = 16*[False] + 15*[True] + [False]
         else:
             for coll in rig.data.collections:
@@ -1275,13 +1275,13 @@ class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
 
 class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
     bl_idname = "daz.unselect_named_layers"
-    bl_label = ("Only Active" if bpy.app.version < (4,0,0) else "None")
+    bl_label = ("Only Active" if BLENDER3 else "None")
     bl_description = "Unselect all named and unnamed layers except active"
     bl_options = {'UNDO'}
 
     def run(self, context):
         rig = context.object
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             m = 16
             bone = rig.data.bones.active
             if bone:

@@ -588,7 +588,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def createBoneGroups(self, rig):
-        if bpy.app.version >= (4,0,0):
+        if not BLENDER3:
             return
         if len(rig.pose.bone_groups) != len(MHX.BoneGroups):
             for bg in list(rig.pose.bone_groups):
@@ -910,7 +910,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addBoneGroups(self, rig):
-        if bpy.app.version >= (4,0,0):
+        if not BLENDER3:
             return
         for idx,data in enumerate(MHX.BoneGroups):
             _bgname,_theme,layers = data
@@ -1986,7 +1986,7 @@ def setToFk(rig, layers, useInsertKeys, frame):
         setValue(rig, prop, 0)
     for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
         setValue(rig, prop, False)
-    if bpy.app.version < (4,0,0):
+    if BLENDER3:
         for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
             layers[layer] = True
         for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:

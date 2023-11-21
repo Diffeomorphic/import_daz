@@ -178,7 +178,7 @@ class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
         hair,hum = getHairAndHuman(context, False)
         self.layout.label(text = "  Hair:  %s" % (hair.name if hair else None))
         self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
-        if bpy.app.version < (4,0,0):
+        if BLENDER3:
             self.layout.separator()
             self.layout.operator("daz.update_hair")
             self.layout.operator("daz.color_hair")
@@ -1004,7 +1004,7 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
             (S_SPECIAL, None)]
         for m,n in layers:
             row = self.layout.row()
-            if bpy.app.version < (4,0,0):
+            if BLENDER3:
                 row.prop(rig.data, "layers", index=m, toggle=True, text=SimpleLayers[m])
                 if n:
                     row.prop(rig.data, "layers", index=n, toggle=True, text=SimpleLayers[n])

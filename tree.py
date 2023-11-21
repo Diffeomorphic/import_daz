@@ -39,7 +39,7 @@ YSTEP = 25
 #   Group input and output
 #-------------------------------------------------------------
 
-if bpy.app.version < (4,0,0):
+if BLENDER3:
     def addGroupInput(group, type, slot):
         return group.inputs.new(type, slot)
 
@@ -227,7 +227,7 @@ class NodeGroup:
 
 
     def checkSockets(self, tree):
-        if bpy.app.version >= (4,0,0):
+        if not BLENDER3:
             return True
         for socket in self.insockets:
             if socket not in tree.inputs.keys():
