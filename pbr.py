@@ -351,7 +351,10 @@ class PbrTree(CyclesTree):
                 refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
                 spectex = self.mixTexs('MULTIPLY', strtex, reftex)
-                spec = 1.25 * refl * strength
+                if BLENDER3:
+                    spec = 1.25 * refl * strength
+                else:
+                    spec = refl * strength
             elif self.owner.basemix == 1:  # Specular/Glossiness
                 # principled specular = iray glossy specular * iray glossy layered weight * 16
                 color,coltex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
@@ -364,16 +367,14 @@ class PbrTree(CyclesTree):
             color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
         if useTex is None:
             spectex = None
-        self.setSpecular(spec, spectex, color, coltex)
 
-
-    def setSpecular(self, spec, spectex, color, coltex):
         if BLENDER3:
             spec = clamp(spec*averageColor(color))
             spectex = self.mixTexs('MULTIPLY', spectex, coltex)
             self.linkScalar(spectex, self.pbr, spec, "Specular")
         else:
-            self.linkScalar(spectex, self.pbr, spec, "Specular IOR Level", add=1)
+            self.replaceSlot(self.pbr, "IOR", 1.5)
+            self.linkScalar(spectex, self.pbr, spec, "Specular IOR Level")
             self.linkColor(coltex, self.pbr, color, "Specular Tint")
 
     #-------------------------------------------------------------
