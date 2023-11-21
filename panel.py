@@ -298,8 +298,6 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.tiles_from_geograft")
         self.layout.operator("daz.fix_texture_tiles")
         self.layout.separator()
-        if bpy.app.version >= (3,1,0):
-            self.layout.operator("daz.add_shell")
         self.layout.operator("daz.copy_shells")
         self.layout.operator("daz.remove_shells")
         self.layout.operator("daz.replace_shells")

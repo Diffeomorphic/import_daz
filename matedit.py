@@ -1450,15 +1450,26 @@ class MaterialScaler:
                 if self.auto:
                     mat.keyframe_insert("DazScale")
 
-    NodeScale = {
-        "BUMP" : ["Distance"],
-        "BSDF_PRINCIPLED" : ["Subsurface Radius"],
-        "DAZ Principled" : ["Subsurface Radius"],
-        "DAZ Translucent" : ["Radius"],
-        "DAZ Subsurface" : ["Radius"],
-        "DAZ Top Coat" : ["Distance"],
-        "DAZ Displacement" : ["Max", "Min"],
-    }
+    if BLENDER3:
+        NodeScale = {
+            "BUMP" : ["Distance"],
+            "BSDF_PRINCIPLED" : ["Subsurface Radius"],
+            "DAZ Translucent" : ["Radius"],
+            "DAZ Subsurface" : ["Radius"],
+            "DAZ Top Coat" : ["Distance"],
+            "DAZ Displacement" : ["Max", "Min"],
+        }
+    else:
+        NodeScale = {
+            "BUMP" : ["Distance"],
+            "BSDF_PRINCIPLED" : ["Subsurface Scale"],
+            "DAZ Translucent" : ["Radius"],
+            "DAZ Subsurface" : ["Scale"],
+            "DAZ Top Coat" : ["Distance"],
+            "DAZ Displacement" : ["Max", "Min"],
+        }
+
+
 
     def fixNode(self, node, nodetype, scale):
         if nodetype in self.NodeScale.keys():
