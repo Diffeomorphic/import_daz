@@ -1235,7 +1235,7 @@ class Geometry(Asset, Channels):
 
 
     def creaseEdges(self, context, ob):
-        if self.edge_weights:
+        if self.edge_weights and BLENDER3:
             from .tables import getVertEdges
             vertedges = getVertEdges(ob)
             weights = {}
