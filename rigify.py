@@ -994,7 +994,7 @@ class Rigifier(RigifyCommon):
         enableRigNumLayers(gen, [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R])
         gen.name = name
         if dazrig:
-            self.tieBones(dazrig, gen)
+            self.tieBones(context, dazrig, gen)
             self.setRigName(gen, dazrig, "RIGIFY")
         print("Rigify created")
         return gen
