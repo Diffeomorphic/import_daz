@@ -1788,14 +1788,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if (not pb.parent or
             rb.name.startswith(("hand0.", "foot."))):
             space = 'POSE'
-        elif pb.name in facebones:
+        elif (pb.name in facebones or
+              ".twist" in rb.name or
+              rb.name.startswith("shin")):
             space = 'LOCAL'
         else:
             space = 'POSE'
-        if ".twist" in rb.name:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-        else:
-            cns = copyTransform(pb, rb, gen, space=space)
+        cns = copyTransform(pb, rb, gen, space=space)
 
     #-------------------------------------------------------------
     #   Error on missing bone

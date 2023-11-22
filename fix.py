@@ -68,7 +68,7 @@ class Fixer(DriverUser):
     useModifyDazRig : BoolProperty(
         name = "Modify DAZ Rig",
         description = "Change the rest pose of the deform rig to match the control rig",
-        default = True)
+        default = False)
 
     def draw(self, context):
         self.drawMeta()
