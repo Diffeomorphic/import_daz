@@ -577,7 +577,6 @@ class MetaMaker(RigifyCommon):
             eb.roll = dbone.roll
             eb.parent = mbones[pname]
             eb.use_connect = True
-            copyBoneLayers(eb.parent, eb, meta)
 
 
     def reparentBones(self, rig, parents):

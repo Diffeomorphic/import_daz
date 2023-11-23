@@ -1012,6 +1012,7 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
                     coll = rig.data.collections[cname]
                     row.prop(coll, "is_visible", toggle=True, text=cname)
 
+
 class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Simple IK"
 

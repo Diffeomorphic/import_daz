@@ -133,6 +133,7 @@ RigifyLayers = {
     R_DETAIL : "Face (Primary)",
     R_TORSOTWEAK : "Torso (Tweak)",
     R_CUSTOM : "Custom",
+    R_HELP : "Help",
 }
 
 
