@@ -79,7 +79,7 @@ if BLENDER3:
         rig.data.layers[layer] = value
 
     def makeBoneCollections(rig, table):
-        LS.boneCollections[rig.name] = table
+        return
 
     def clearBoneCollections(rig):
         pass
@@ -92,25 +92,22 @@ if BLENDER3:
 
 else:
     def enableBoneNumLayer(bone, rig, layer, cname=None):
-        if cname:
-            coll0 = rig.data.collections.get(cname)
-        elif isinstance(layer, str):
-            coll0 = rig.data.collections.get(layer)
-        else:
-            coll0 = LS.boneCollections[rig.name].get(layer)
-        if coll0:
-            coll0.assign(bone)
-            for coll in rig.data.collections:
-                if coll != coll0:
-                    coll.unassign(bone)
+        coll0 = rig.data.collections.get(layer)
+        if coll0 is None:
+            coll0 = rig.data.collections.new(layer)
+        coll0.assign(bone)
+        for coll in rig.data.collections:
+            if coll != coll0:
+                coll.unassign(bone)
 
     def setBoneNumLayer(bone, rig, layer, value=True):
-        coll = LS.boneCollections[rig.name].get(layer)
-        if coll:
-            if value:
-                coll.assign(bone)
-            else:
-                coll.unassign(bone)
+        coll = rig.data.collections.get(layer)
+        if coll is None:
+            coll = rig.data.collections.new(layer)
+        if value:
+            coll.assign(bone)
+        else:
+            coll.unassign(bone)
 
     def getBoneLayers(bone, rig):
         return [coll for coll in rig.data.collections if bone.name in coll.bones]
@@ -122,8 +119,8 @@ else:
     def setBoneNumLayers(bone, rig, layers):
         for coll in rig.data.collections:
             coll.unassign(bone)
-        for idx,coll in LS.boneCollections[rig.name].items():
-            if layers.get(idx):
+        for coll in rig.data.collections.get(layer, []):
+            if layers.get(layer):
                 coll.assign(bone)
 
     def copyBoneLayers(src, trg, rig):
@@ -132,7 +129,7 @@ else:
                 coll.assign(trg)
 
     def isInNumLayer(bone, rig, layer):
-        coll = LS.boneCollections[rig.name].get(layer)
+        coll = rig.data.collections.get(layer)
         if coll:
             return (bone.name in coll.bones)
         else:
@@ -148,8 +145,8 @@ else:
     def enableRigNumLayers(rig, layers):
         for coll in rig.data.collections:
             coll.is_visible = False
-        for idx in layers:
-            coll = LS.boneCollections[rig.name].get(idx)
+        for layer in layers:
+            coll = rig.data.collections.get(layer)
             if coll:
                 coll.is_visible = True
 
@@ -158,21 +155,19 @@ else:
             coll.is_visible = value
 
     def enableRigNumLayer(rig, layer, value=True):
-        coll = LS.boneCollections[rig.name].get(layer)
+        coll = rig.data.collections.get(layer)
         if coll:
             coll.is_visible = value
 
     def makeBoneCollections(rig, table):
-        colls = LS.boneCollections[rig.name] = {}
-        for idx,name in table.items():
-            coll = rig.data.collections.get(name)
+        for cname in table.keys():
+            coll = rig.data.collections.get(cname)
             if coll is None:
-                coll = rig.data.collections.new(name)
+                coll = rig.data.collections.new(cname)
                 coll.is_visible = True
-            colls[idx] = coll
 
     def assignOtherBones(rig, layer):
-        coll = LS.boneCollections[rig.name].get(layer)
+        coll = rig.data.collections.get(layer)
         if coll:
             for bone in rig.data.bones:
                 coll.assign(bone)
@@ -180,8 +175,6 @@ else:
     def clearBoneCollections(rig):
         for coll in rig.data.collections:
             rig.data.collections.remove(coll)
-        if rig.name in LS.boneCollections.keys():
-            del LS.boneCollections[rig.name]
 
     def setBonegroup(pb, rig, bgname):
         pass
@@ -190,9 +183,14 @@ else:
 #   Standard layers
 #-------------------------------------------------------------
 
-T_BONES = 0
-T_CUSTOM = 1
-T_HIDDEN = 31
+if BLENDER3:
+    T_BONES = 0
+    T_CUSTOM = 1
+    T_HIDDEN = 31
+else:
+    T_BONES = "Bones"
+    T_CUSTOM = "Custom"
+    T_HIDDEN = "Hidden"
 
 StandardLayers = {
     T_BONES : "Bones",

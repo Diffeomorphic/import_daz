@@ -334,9 +334,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             zaxis = mat.col[2]
             head = eb.head - 40*rig.DazScale*zaxis
             tail = head + 10*rig.DazScale*Vector((0,0,1))
-            makeBone(bname, rig, head, tail, 0, 0, parent)
+            makeBone(bname, rig, head, tail, 0, S_SPINE, parent)
             strname = self.stretchName(bname)
-            stretch = makeBone(strname, rig, eb.head, head, 0, 0, eb)
+            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb)
             stretch.hide_select = True
 
         from .mhx import makeBone, deriveBone
@@ -344,39 +344,39 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         ebones = rig.data.edit_bones
         if self.useRootBone:
             roots = [eb for eb in ebones if eb.parent is None]
-            root = makeBone("Root", rig, (0,0,0), (0,0,10*rig.DazScale), 0, 16, None)
+            root = makeBone("Root", rig, (0,0,0), (0,0,10*rig.DazScale), 0, S_SPINE, None)
             for eb in roots:
                 eb.parent = root
         else:
             root = None
 
-        for prefix,dlayer in [("l",0), ("r",1)]:
-            if self.useArms:
+        if self.useArms:
+            for prefix,layer in [("l",S_LARMIK), ("r",S_RARMIK)]:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = self.getEntry(self.armTable, prefix, ebones)
-                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, 31, root)
+                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root)
                 foreTwist.tail = hand.head
                 if self.useCopyRotation:
                     shikname, foreikname = self.getEntry(self.armTable2, prefix, ebones)
-                    layer = (31 if self.usePoleTargets else 26+dlayer)
-                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, layer, shldrBend.parent)
-                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, 31, shldrIK)
+                    polelayer = (S_HIDDEN if self.usePoleTargets else layer)
+                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, polelayer, shldrBend.parent)
+                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, S_HIDDEN, shldrIK)
                 if IK.usePoleTargets:
                     elbow = makePole(elbowname, rig, foreBend, collar)
 
-            if self.useLegs:
+        if self.useLegs:
+            for prefix,layer in [("l",S_LLEGIK), ("r",S_RLEGIK)]:
                 foot, fikname, thighBend, thighTwist, shin, hip, kneename = self.getEntry(self.legTable, prefix, ebones)
-                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, 31, root)
+                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, S_HIDDEN, root)
                 shin.tail = foot.head
                 if self.useCopyRotation:
                     thikname, shinikname = self.getEntry(self.legTable2, prefix, ebones)
-                    layer = (31 if self.usePoleTargets else 28+dlayer)
-                    thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, layer, thighBend.parent)
-                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, 31, thighIK)
+                    polelayer = (S_HIDDEN if self.usePoleTargets else layer)
+                    thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, polelayer, thighBend.parent)
+                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, S_HIDDEN, thighIK)
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, hip)
 
                 if self.useReverseFoot:
-                    layer = 28+dlayer
                     toe, heelIK, toeIK, tarsalIK = self.getEntry(self.footTable, prefix, ebones)
                     toename, heelname, toename, tarsalname = self.getEntry(self.footTable, prefix, {})
                     head = Vector(foot.head)
@@ -387,8 +387,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toeIK = deriveBone(toename, toe, rig, layer, heelIK)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK)
                     footIK.parent = tarsalIK
-                    deriveBone("MCH-%s" % tarsalname, tarsalIK, rig, 31, foot)
-                    deriveBone("MCH-%s" % heelname, heelIK, rig, 31, foot)
+                    deriveBone("MCH-%s" % tarsalname, tarsalIK, rig, S_HIDDEN, foot)
+                    deriveBone("MCH-%s" % heelname, heelIK, rig, S_HIDDEN, foot)
 
     #----------------------------------------------------------
     #   Make custom shapes
@@ -481,10 +481,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif lname in ["upperteeth", "lowerteeth"]:
                 addToLayer(pb, S_SPECIAL, rig, "Special")
             elif not isInNumLayer(pb.bone, rig, T_BONES):
-                for lnum in range(1,16):
-                    if isInNumLayer(pb.bone, rig, lnum):
-                        addToLayer(pb, S_SPECIAL, rig, "Special")
-                        break
+                if not isInNumLayer(pb.bone, rig, T_HIDDEN):
+                    addToLayer(pb, S_SPECIAL, rig, "Special")
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
                     self.setCustomShape(pb, "CS_Line")
@@ -845,8 +843,12 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
 
     prefix : StringProperty()
     type : StringProperty()
-    on : IntProperty()
-    off : IntProperty()
+    if BLENDER3:
+        on : IntProperty()
+        off : IntProperty()
+    else:
+        on : StringProperty()
+        off : StringProperty()
 
     def run(self, context):
         rig = context.object
@@ -1014,8 +1016,12 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
     prefix : StringProperty()
     type : StringProperty()
     pole : StringProperty()
-    on : IntProperty()
-    off : IntProperty()
+    if BLENDER3:
+        on : IntProperty()
+        off : IntProperty()
+    else:
+        on : StringProperty()
+        off : StringProperty()
 
     def run(self, context):
         rig = context.object
@@ -1240,16 +1246,15 @@ def makeBoneGroups(rig):
 
 
 def addToLayer(pb, layer, rig, bgname=None):
-    if isinstance(layer, int):
-        idx = layer
-    elif pb.name[0] == "l":
-        idx = layer[0]
-    elif pb.name[0] == "r":
-        idx = layer[1]
-    else:
-        print("MISSING LAYER", layer, pb.name)
-        return
-    setBoneNumLayer(pb.bone, rig, idx)
+    if isinstance(layer, tuple):
+        if pb.name[0] == "l":
+            layer = layer[0]
+        elif pb.name[0] == "r":
+            layer = layer[1]
+        else:
+            print("MISSING LAYER", layer, pb.name)
+            return
+    setBoneNumLayer(pb.bone, rig, layer)
     if rig and bgname:
         setBonegroup(pb, rig, bgname)
 
@@ -1289,7 +1294,7 @@ class DAZ_OT_UnSelectNamedLayers(DazOperator, IsArmature):
                     if bone.layers[n]:
                         m = n
                         break
-            rig.data.layers = m*[False] + [True] + (31-m)*[False]
+            rig.data.layers = m*[False] + [True] + (S_HIDDEN-m)*[False]
         else:
             coll0 = rig.data.collections.active
             for cname in SimpleLayers.values():

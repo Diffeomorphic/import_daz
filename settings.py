@@ -498,7 +498,6 @@ class GlobalSettings:
 class LocalSettings:
     def __init__(self):
         self.button = None
-        self.boneCollections = {}
         self.theMessage = ""
         self.theErrorLines = []
         self.theFilePaths = []

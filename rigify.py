@@ -1233,7 +1233,7 @@ class Rigifier(RigifyCommon):
             ]:
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
-                enableBoneNumLayer(pb.bone, gen, 29)
+                enableBoneNumLayer(pb.bone, gen, R_DEFORM)
 
 
     def fixFingerIk(self, rig, gen):

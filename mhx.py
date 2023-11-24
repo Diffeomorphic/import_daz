@@ -1081,14 +1081,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def addFingerWinders(self, rig):
         if self.useFingerIk:
             rig.data.MhaFeatures |= F_FINGER
-        for suffix,dlayer in [("L",0), ("R",16)]:
+        for suffix,handlayer,finglayer,fklayer,iklayer in [
+            ("L", L_LHAND, L_LFINGER, L_LARMFK, L_LARMIK),
+            ("R", L_RHAND, L_RFINGER, L_RARMFK, L_RARMIK)]:
             prop1 = "MhaFingerControl_%s" % suffix
             setMhx(rig, prop1, True)
             if self.useFingerIk:
                 prop2 = "MhaFingerIk_%s" % suffix
                 setMhx(rig, prop2, 0.0)
-            layers = [L_LHAND+dlayer, L_LFINGER+dlayer, L_HELP, L_HELP2, L_DEF]
-            fingname = self.makeFingerMaster(rig, suffix, dlayer)
+            layers = [handlayer, finglayer, L_HELP, L_HELP2, L_DEF]
+            fingname = self.makeFingerMaster(rig, suffix, fklayer, iklayer)
             for m in range(5):
                 bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
@@ -1108,14 +1110,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     lock = (False,True,True)
 
 
-    def makeFingerMaster(self, rig, suffix, dlayer):
+    def makeFingerMaster(self, rig, suffix, fklayer, iklayer):
         hand0name = "hand0.%s" % suffix
         fingname = "fingers.%s" % suffix
         linkname = self.getFingerNames(rig, 2, suffix)[0]
         setMode('EDIT')
         hand0 = rig.data.edit_bones[hand0name]
-        fingers = deriveBone(fingname, hand0, rig, L_LARMIK+dlayer, hand0)
-        setBoneNumLayer(fingers, rig, L_LARMFK+dlayer)
+        fingers = deriveBone(fingname, hand0, rig, iklayer, hand0)
+        setBoneNumLayer(fingers, rig, fklayer)
         link = rig.data.edit_bones[linkname]
         fingers.roll = link.roll
         setMode('OBJECT')
@@ -1147,7 +1149,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
         master = rig.data.edit_bones["master"]
-        for suffix,dlayer in [("L",0), ("R",16)]:
+        for suffix, armFkLayer, armIkLayer, legFkLayer, legIkLayer, extraLayer in [
+            ("L", L_LARMFK, L_LARMIK, L_LLEGFK, L_LLEGIK, L_LEXTRA),
+            ("R", L_RARMFK, L_RARMIK, L_RLEGFK, L_RLEGIK, L_REXTRA)]:
             upper_arm = self.setLayer("upper_arm.%s" % suffix, rig, L_HELP)
             forearm = self.setLayer("forearm.%s" % suffix, rig, L_HELP)
             hand0 = self.setLayer("hand.%s" % suffix, rig, L_DEF)
@@ -1166,28 +1170,28 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             size = 10*rig.DazScale
             ez = Vector((0,0,size))
-            armSocket = makeBone("armSocket.%s" % suffix, rig, upper_arm.head, upper_arm.head+ez, 0, L_LEXTRA+dlayer, upper_arm.parent)
+            armSocket = makeBone("armSocket.%s" % suffix, rig, upper_arm.head, upper_arm.head+ez, 0, extraLayer, upper_arm.parent)
             armParent = deriveBone("arm_parent.%s" % suffix, armSocket, rig, L_HELP, hip)
             upper_arm.parent = armParent
             bend = rig.data.edit_bones.get("upper_arm.bend.%s" % suffix)
             if bend:
                 bend.parent = armParent
 
-            upper_armFk = deriveBone("upper_arm.fk.%s" % suffix, upper_arm, rig, L_LARMFK+dlayer, armParent)
-            forearmFk = deriveBone("forearm.fk.%s" % suffix, forearm, rig, L_LARMFK+dlayer, upper_armFk)
+            upper_armFk = deriveBone("upper_arm.fk.%s" % suffix, upper_arm, rig, armFkLayer, armParent)
+            forearmFk = deriveBone("forearm.fk.%s" % suffix, forearm, rig, armFkLayer, upper_armFk)
             setConnected(forearmFk, forearm.use_connect)
-            handFk = deriveBone("hand.fk.%s" % suffix, hand, rig, L_LARMFK+dlayer, forearmFk)
+            handFk = deriveBone("hand.fk.%s" % suffix, hand, rig, armFkLayer, forearmFk)
             handFk.use_connect = False
-            layer = (L_HELP2 if self.usePoleTargets else L_LARMIK+dlayer)
+            layer = (L_HELP2 if self.usePoleTargets else armIkLayer)
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, layer, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
             if self.usePoleTargets:
-                upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, L_LEXTRA+dlayer, upper_armIk)
+                upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, extraLayer, upper_armIk)
             else:
                 upper_armIkTwist = None
-            forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, L_LEXTRA+dlayer, forearmIk)
-            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, L_LARMIK+dlayer, master)
+            forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, extraLayer, forearmIk)
+            handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, armIkLayer, master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
             if self.usePoleTargets:
@@ -1198,11 +1202,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 elbowFac = upper_arm.length/(upper_arm.length + forearm.length)
                 elbowVec = forearm.tail - upper_arm.head
                 elbowHead = upper_arm.head + elbowFac*elbowVec
-                elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, L_LARMIK+dlayer, armSocket)
+                elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, armIkLayer, armSocket)
                 elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
                 parent = self.getElbowParent(rig, suffix)
-                elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, L_LARMIK+dlayer, parent)
-                elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, L_LARMIK+dlayer, upper_armIk)
+                elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, armIkLayer, parent)
+                elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, armIkLayer, upper_armIk)
                 if self.showLinks:
                     elbowLink.hide_select = True
                 else:
@@ -1217,29 +1221,29 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             foot.use_connect = False
             setConnected(toe, True)
 
-            legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, L_LEXTRA+dlayer, thigh.parent)
+            legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, extraLayer, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)
             thigh.parent = legParent
             bend = rig.data.edit_bones.get("thigh.bend.%s" % suffix)
             if bend:
                 bend.parent = legParent
 
-            thighFk = deriveBone("thigh.fk.%s" % suffix, thigh, rig, L_LLEGFK+dlayer, thigh.parent)
-            shinFk = deriveBone("shin.fk.%s" % suffix, shin, rig, L_LLEGFK+dlayer, thighFk)
+            thighFk = deriveBone("thigh.fk.%s" % suffix, thigh, rig, legFkLayer, thigh.parent)
+            shinFk = deriveBone("shin.fk.%s" % suffix, shin, rig, legFkLayer, thighFk)
             setConnected(shinFk, shin.use_connect)
-            footFk = deriveBone("foot.fk.%s" % suffix, foot, rig, L_LLEGFK+dlayer, shinFk)
+            footFk = deriveBone("foot.fk.%s" % suffix, foot, rig, legFkLayer, shinFk)
             footFk.use_connect = False
-            toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, L_LLEGFK+dlayer, footFk)
+            toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, legFkLayer, footFk)
             setConnected(toeFk, True)
-            layer = (L_HELP2 if self.usePoleTargets else L_LLEGIK+dlayer)
+            layer = (L_HELP2 if self.usePoleTargets else legIkLayer)
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, layer, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
             setConnected(shinIk, shin.use_connect)
             if self.usePoleTargets:
-                thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, L_LEXTRA+dlayer, thighIk)
+                thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, extraLayer, thighIk)
             else:
                 thighIkTwist = None
-            shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, L_LEXTRA+dlayer, shinIk)
+            shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, extraLayer, shinIk)
 
             if "heel.%s" % suffix in rig.data.edit_bones.keys():
                 heel = rig.data.edit_bones["heel.%s" % suffix]
@@ -1247,16 +1251,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 vec = foot.tail - foot.head
                 locFootIk = (foot.head[0], foot.head[1] - 0.5*vec[1], toe.tail[2])
-            footIk = makeBone("foot.ik.%s" % suffix, rig, locFootIk, toe.tail, 180*D, L_LLEGIK+dlayer, master)
-            toeRev = makeBone("toe.rev.%s" % suffix, rig, toe.tail, toe.head, 0, L_LLEGIK+dlayer, footIk)
+            footIk = makeBone("foot.ik.%s" % suffix, rig, locFootIk, toe.tail, 180*D, legIkLayer, master)
+            toeRev = makeBone("toe.rev.%s" % suffix, rig, toe.tail, toe.head, 0, legIkLayer, footIk)
             setConnected(toeRev, True)
-            footRev = makeBone("foot.rev.%s" % suffix, rig, toe.head, foot.head, 0, L_LLEGIK+dlayer, toeRev)
+            footRev = makeBone("foot.rev.%s" % suffix, rig, toe.head, foot.head, 0, legIkLayer, toeRev)
             setConnected(footRev, True)
             locAnkle = foot.head + (shin.tail-shin.head)/4
             if self.useFoot2:
-                foot2 = deriveBone("foot.2.%s" % suffix, foot, rig, L_LEXTRA+dlayer, master)
+                foot2 = deriveBone("foot.2.%s" % suffix, foot, rig, extraLayer, master)
                 setConnected(foot2, False)
-                toe2 = deriveBone("toe.2.%s" % suffix, toe, rig, L_LEXTRA+dlayer, foot2)
+                toe2 = deriveBone("toe.2.%s" % suffix, toe, rig, extraLayer, foot2)
                 setConnected(toe2, True)
             ankleIk = deriveBone("ankle.ik.%s" % suffix, foot, rig, L_HELP2, footRev)
 
@@ -1268,15 +1272,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 kneeFac = thigh.length/(thigh.length + shin.length)
                 kneeVec = shin.tail - thigh.head
                 kneeHead = thigh.head + kneeFac*kneeVec
-                kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, L_LLEGIK+dlayer, legSocket)
+                kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, legIkLayer, legSocket)
                 kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
-                setBoneNumLayer(kneePoleA, rig, L_LEXTRA+dlayer)
+                setBoneNumLayer(kneePoleA, rig, extraLayer)
                 parent = self.getKneeParent(rig, suffix)
-                kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, L_LLEGIK+dlayer, parent)
-                setBoneNumLayer(kneePt, rig, L_LEXTRA+dlayer)
-                kneeLink = makeBone("knee.link.%s" % suffix, rig, shin.head, locKneePt, 0, L_LLEGIK+dlayer, thighIk)
+                kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, legIkLayer, parent)
+                setBoneNumLayer(kneePt, rig, extraLayer)
+                kneeLink = makeBone("knee.link.%s" % suffix, rig, shin.head, locKneePt, 0, legIkLayer, thighIk)
                 if self.showLinks:
-                    setBoneNumLayer(kneeLink, rig, L_LEXTRA+dlayer)
+                    setBoneNumLayer(kneeLink, rig, extraLayer)
                     kneeLink.hide_select = True
                 else:
                     enableBoneNumLayer(kneeLink, rig, L_HIDE)
@@ -1725,7 +1729,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addMarkers(self, rig):
-        for suffix,dlayer in [("L",0), ("R",16)]:
+        for suffix,extraLayer in [("L", L_LEXTRA), ("R", L_REXTRA)]:
             setMode('EDIT')
             foot = rig.data.edit_bones["foot.%s" % suffix]
             toe = rig.data.edit_bones["toe.%s" % suffix]
@@ -1736,10 +1740,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 heelTail = Vector((foot.head[0], foot.head[1], toe.head[2]))
 
             ballLoc = Vector((toe.head[0], toe.head[1], heelTail[2]))
-            mBall = makeBone("ball.marker.%s" % suffix, rig, ballLoc, ballLoc+offs, 0, L_LEXTRA+dlayer, foot)
+            mBall = makeBone("ball.marker.%s" % suffix, rig, ballLoc, ballLoc+offs, 0, extraLayer, foot)
             toeLoc = Vector((toe.tail[0], toe.tail[1], heelTail[2]))
-            mToe = makeBone("toe.marker.%s" % suffix, rig, toeLoc, toeLoc+offs, 0, L_LEXTRA+dlayer, toe)
-            mHeel = makeBone("heel.marker.%s" % suffix, rig, heelTail, heelTail+offs, 0, L_LEXTRA+dlayer, foot)
+            mToe = makeBone("toe.marker.%s" % suffix, rig, toeLoc, toeLoc+offs, 0, extraLayer, toe)
+            mHeel = makeBone("heel.marker.%s" % suffix, rig, heelTail, heelTail+offs, 0, extraLayer, foot)
 
     #-------------------------------------------------------------
     #   Master bone
@@ -1770,10 +1774,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addLayers(self, rig):
         setMode('OBJECT')
-        for suffix,dlayer in [("L",0), ("R",16)]:
+        for suffix,armIkLayer in [("L", L_LARMIK), ("R", L_RARMIK)]:
             clavicle = rig.data.bones["clavicle.%s" % suffix]
             setBoneNumLayer(clavicle, rig, L_SPINE)
-            setBoneNumLayer(clavicle, rig, L_LARMIK+dlayer)
+            setBoneNumLayer(clavicle, rig, armIkLayer)
 
     #-------------------------------------------------------------
     #   Tie bone

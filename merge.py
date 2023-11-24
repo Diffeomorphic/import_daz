@@ -1274,16 +1274,18 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         description = "Only merge armatures that are children of the active armature",
         default = False)
 
-    clothesLayer = 2
-    widgetLayer = 3
+    if BLENDER3:
+        clothesLayer = 2
+        widgetLayer = 3
 
-    if bpy.app.version >= (3,4,0):
-        createMeshCollection = False
-    else:
         createMeshCollection : BoolProperty(
             name = "Create Mesh Collection",
             description = "Create a new collection and move all meshes to it",
             default = True)
+    else:
+        clothesLayer = "Clothes"
+        widgetLayer = "Widgets"
+        createMeshCollection = False
 
     def draw(self, context):
         self.layout.prop(self, "separateCharacters")
@@ -1292,7 +1294,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         self.layout.prop(self, "useCreateDuplicates")
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
-        if bpy.app.version < (3,4,0):
+        if BLENDER3:
             self.layout.prop(self, "createMeshCollection")
 
     def __init__(self):

@@ -748,7 +748,9 @@ def getSuffixName(bname, useTwist):
         pass
     elif isDrvBone(bname) or isFinal(bname):
         return ""
-    if len(bname) >= 2 and bname[1].isupper():
+    if len(bname) < 2:
+        return bname
+    elif bname[1].isupper():
         if bname[0] == "r":
             return "%s%s.R" % (bname[1].lower(), bname[2:])
         elif bname[0] == "l":

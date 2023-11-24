@@ -48,7 +48,7 @@ def getMappedBone(bname, rig, mesh=None):
             return pg.s
         elif bname in rig.pose.bones.keys():
             return bname
-        bname1 = BD.BoneMap.get(bname)
+        bname1 = BD.BoneMap.get(bname, "")
         if bname1 and bname1 in rig.data.bones.keys():
             return bname1
         from .fix import getSuffixName
