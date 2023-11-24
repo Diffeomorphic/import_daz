@@ -39,6 +39,7 @@ from .cycles import CyclesMaterial, CyclesTree
 from .selector import Selector
 from .guess import ColorProp
 from .fix import GizmoUser
+from .layers import *
 
 #-------------------------------------------------------------
 #   Classes
@@ -2213,14 +2214,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             self.layout.prop(self, "endHead")
 
 
-    def invoke(self, context, event):
-        ob = context.object
-        rig = ob.parent
-        if rig and rig.DazRig == "mhx":
-            self.boneLayer = 17
-        return DazPropsOperator.invoke(self, context, event)
-
-
     def run(self, context):
         ob = context.object
         hairname = ob.name
@@ -2228,13 +2221,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if rig is None:
             raise DazError("No rig found")
         if rig.DazRig == "mhx":
-            from .mhx import L_CUSTOM, MhxLayers
             self.boneLayer = L_CUSTOM
-            layers = MhxLayers
         else:
             self.boneLayer = T_CUSTOM
-            layers = StandardLayers
-        makeBoneCollections(rig, layers)
         if rig is None or rig.type != 'ARMATURE':
             raise DazError("Hair must have an armature")
         if self.headName not in rig.data.bones.keys():
@@ -2299,7 +2288,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 bones,locs,xaxis = data
                 bnames = [bone[0] for bone in bones]
                 windname = "Wind_%s" % bnames[0]
-                layers = [self.boneLayer, 31]
+                layers = [self.boneLayer, T_HIDDEN]
                 addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=True, xaxis=xaxis)
 
         if self.weightingMethod != 'AUTO':
@@ -2342,7 +2331,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         hairrig.parent_bone = self.headName
         hairrig.show_in_front = True
         context.collection.objects.link(hairrig)
-        makeBoneCollections(hairrig, StandardLayers)
         enableRigNumLayers(hairrig, [T_CUSTOM])
         activateObject(context, rig)
         setMode('EDIT')
@@ -2498,7 +2486,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         pb.bone.show_wire = True
         pb.custom_shape = gizmo
         pb.bone.use_deform = False
-        enableBoneNumLayer(pb.bone, rig, self.boneLayer, "Custom")
+        enableBoneNumLayer(pb.bone, rig, self.boneLayer)
 
 
     def addBendyConstraints(self, key, data, rig):
@@ -2522,7 +2510,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for n,bdata in enumerate(bones):
                 bname,r0,r1 = bdata
                 bone = rig.data.bones[bname]
-                enableBoneNumLayer(bone, rig, self.boneLayer, "Hidden")
+                enableBoneNumLayer(bone, rig, self.boneLayer)
 
         handle = getHandle(0)
         for n,bdata in enumerate(bones):
@@ -2545,7 +2533,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
-                enableBoneNumLayer(bone, rig, self.boneLayer, "Custom")
+                enableBoneNumLayer(bone, rig, self.boneLayer)
         elif self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]

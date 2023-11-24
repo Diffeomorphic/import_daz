@@ -39,7 +39,7 @@ BLENDER3 = (bpy.app.version < (4,0,0))
 #-------------------------------------------------------------
 
 if BLENDER3:
-    def enableBoneNumLayer(bone, rig, layer, cname=None):
+    def enableBoneNumLayer(bone, rig, layer):
         bone.layers = layer*[False] + [True] + (31-layer)*[False]
 
     def setBoneNumLayer(bone, rig, layer, value=True):
@@ -91,7 +91,7 @@ if BLENDER3:
         pb.bone_group = rig.pose.bone_groups[bgname]
 
 else:
-    def enableBoneNumLayer(bone, rig, layer, cname=None):
+    def enableBoneNumLayer(bone, rig, layer):
         coll0 = rig.data.collections.get(layer)
         if coll0 is None:
             coll0 = rig.data.collections.new(layer)
@@ -191,12 +191,6 @@ else:
     T_BONES = "Bones"
     T_CUSTOM = "Custom"
     T_HIDDEN = "Hidden"
-
-StandardLayers = {
-    T_BONES : "Bones",
-    T_CUSTOM : "Custom",
-    T_HIDDEN : "Hidden",
-}
 
 #-------------------------------------------------------------
 #   Blender 2.8 compatibility

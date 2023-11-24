@@ -1437,7 +1437,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         LS.forAnimation(None, rig)
         if rig is None:
             raise DazError("No rigs to merge")
-        makeBoneCollections(rig, StandardLayers)
         oldvis = getRigLayers(rig)
         enableAllRigLayers(rig)
         locmat = rig.matrix_local.copy()

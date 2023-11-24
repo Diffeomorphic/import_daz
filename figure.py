@@ -279,7 +279,6 @@ class Figure(Node):
             return
         center = inst.attributes["center_point"]
         activateObject(context, rig)
-        makeBoneCollections(rig, StandardLayers)
         setMode('EDIT')
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
@@ -437,7 +436,6 @@ class ExtraBones(DriverUser):
         rig = context.object
         self.checkAllowed(rig)
         t1 = perf_counter()
-        makeBoneCollections(rig, StandardLayers)
         oldvis = getRigLayers(rig)
         enableAllRigLayers(rig)
         success = False
