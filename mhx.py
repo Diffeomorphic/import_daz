@@ -345,7 +345,15 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     return fkwind, ikwind, pbones
 
 
-def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None, useBaseLocation=False, useLocation=False, useScale=False, xaxis=None):
+def addWinder(rig, windname, bnames, layers,
+        prop=None,
+        parname=None,
+        gizmo=None,
+        useBaseLocation=False,
+        useLocation=False,
+        useScale=False,
+        xaxis=None,
+        bboneSegments=1):
     if len(bnames) < 3:
         print("Too few bones to wind: %s" % windname)
         return None, []
@@ -420,6 +428,9 @@ def addWinder(rig, windname, bnames, layers, prop=None, parname=None, gizmo=None
             cns.influence = infl
             addMuteDriver(cns, rig, prop)
         enableBoneNumLayer(pb.bone, rig, windedLayer)
+    if bboneSegments > 1:
+        for pb in pbones:
+            pb.bone.bbone_segments = bboneSegments
     return winder, pbones
 
 

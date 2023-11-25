@@ -1531,6 +1531,12 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         description = "Add driver for scale",
         default = False)
 
+    bboneSegments : IntProperty(
+        name = "B-Bone Segments",
+        description = "Number of b-bone segments",
+        default = 1)
+
+
     def draw(self, context):
         if BLENDER3:
             self.layout.prop(self, "winderLayer")
@@ -1538,6 +1544,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
         self.layout.prop(self, "useBaseLocation")
         self.layout.prop(self, "useLocation")
         self.layout.prop(self, "useScale")
+        self.layout.prop(self, "bboneSegments")
 
     def invoke(self, context, event):
         if BLENDER3:
@@ -1567,8 +1574,14 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
             if BLENDER3:
                 layers = [self.winderLayer-1, self.windedLayer-1]
             else:
-                layers = ("Custom", "Bones")
-            addWinder(rig, windname, bnames, layers, gizmo=gizmo, useBaseLocation=self.useBaseLocation, useLocation=self.useLocation, useScale=self.useScale)
+                layers = ("Custom", "Deform")
+            addWinder(rig, windname, bnames, layers,
+                gizmo=gizmo,
+                useBaseLocation=self.useBaseLocation,
+                useLocation=self.useLocation,
+                useScale=self.useScale,
+                bboneSegments = self.bboneSegments
+                )
 
 
     def findPoseRoots(self, rig):

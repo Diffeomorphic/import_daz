@@ -1275,16 +1275,11 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         default = False)
 
     if BLENDER3:
-        clothesLayer = 2
-        widgetLayer = 3
-
         createMeshCollection : BoolProperty(
             name = "Create Mesh Collection",
             description = "Create a new collection and move all meshes to it",
             default = True)
     else:
-        clothesLayer = "Clothes"
-        widgetLayer = "Widgets"
         createMeshCollection = False
 
     def draw(self, context):
@@ -1448,9 +1443,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             rig.matrix_local = locmat
             setRigLayers(rig, oldvis)
             if success:
-                enableRigNumLayer(rig, self.clothesLayer)
+                enableRigNumLayer(rig, T_CUSTOM)
             if info.foundControl:
-                enableRigNumLayer(rig, self.widgetLayer)
+                enableRigNumLayer(rig, T_WIDGETS)
             setActiveObject(context, rig)
             updateDrivers(rig)
             updateDrivers(rig.data)
@@ -1480,7 +1475,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             nmerged = 1
         for idx,subinfo in enumerate(subinfos):
             if subinfo.conforms:
-                subinfo.addEditBones(rig, idx+nmerged, self.clothesLayer)
+                subinfo.addEditBones(rig, idx+nmerged, T_CUSTOM)
         for bone in rig.data.bones:
             if bone.name in extrabones:
                 bone["DazExtraBone"] = True

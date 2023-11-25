@@ -407,6 +407,7 @@ class BoneInstance(Instance):
         pb = rig.pose.bones[node.name]
         self.rna = pb
         pb.bone.inherit_scale = self.defaultInherit()
+        pb.bone.bbone_x = pb.bone.bbone_z = GS.unitScale
 
         mapped = self.node.mapped
         if (mapped and

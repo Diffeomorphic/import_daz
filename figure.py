@@ -414,7 +414,7 @@ class DAZ_OT_RotateBones(DazPropsOperator, IsArmature):
 def copyBoneInfo(srcpb, trgpb):
     for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale", "DazRotMode"]:
         setattr(trgpb, attr, getattr(srcpb, attr))
-    for attr in ["use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale", "DazAngle"]:
+    for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale", "DazAngle"]:
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazOrient", "DazHead", "DazNormal"]:
         setattr(trgpb.bone, attr, tuple(getattr(srcpb.bone, attr)))
