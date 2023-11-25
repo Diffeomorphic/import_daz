@@ -370,8 +370,7 @@ class LoadMorph(DriverUser):
             addSkeyToUrls(self.mesh, asset, skey)
             if self.rig and self.usePropDrivers:
                 final = self.addNewProp(prop)
-                adj = self.getStrengthAdjuster()
-                self.addShapeDriver(skey, adj, final)
+                self.addShapeDriver(skey, final)
             pgs = self.mesh.data.DazBodyPart
             if prop in pgs.keys():
                 item = pgs[prop]
@@ -476,7 +475,7 @@ class LoadMorph(DriverUser):
         return adj
 
 
-    def addShapeDriver(self, skey, adj, final):
+    def addShapeDriver(self, skey, final):
         from .driver import removeModifiers
 
         def addDriver(channel):
@@ -485,11 +484,7 @@ class LoadMorph(DriverUser):
             fcu.driver.type = 'SCRIPTED'
             removeModifiers(fcu)
             self.addPathVar(fcu, "a", self.amt, propRef(final))
-            if adj:
-                self.addPathVar(fcu, "L", self.rig, propRef(adj))
-                fcu.driver.expression = "L*a"
-            else:
-                fcu.driver.expression = "a"
+            fcu.driver.expression = "a"
             return fcu
 
         fcu = addDriver("value")
@@ -1036,9 +1031,15 @@ class LoadMorph(DriverUser):
         props = []
         if raw and raw in self.mults.keys():
             props = self.mults[raw]
+        adjs = []
         adj = self.getTypeAdjuster(raw)
         if adj:
-            self.mult = [adj] + [prop for prop in props if prop[0:3].lower() not in ["fbm", "fhm"]]
+            adjs.append(adj)
+        adj = self.getStrengthAdjuster()
+        if adj:
+            adjs.append(adj)
+        if adjs:
+            self.mult = adjs + [prop for prop in props if prop[0:3].lower() not in ["fbm", "fhm"]]
         else:
             self.mult = props
         return self.mult
