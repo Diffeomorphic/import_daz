@@ -1509,7 +1509,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             print("Convert %s to widgets for %s" % (ob.name, rig.name))
             wc = WidgetConverter()
             wc.convertWidgets(context, rig, ob)
-            enableRigNumLayer(rig, 3)
+            enableRigNumLayer(rig, T_WIDGETS)
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):

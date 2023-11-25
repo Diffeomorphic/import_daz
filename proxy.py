@@ -1827,8 +1827,6 @@ class DAZ_OT_CopyModifiers(DazPropsOperator, IsMesh):
 #----------------------------------------------------------
 
 class WidgetConverter:
-    usedLayer = 4
-    unusedLayer = 5
     deleteUnused = False
 
     def convertWidgets(self, context, rig, ob):
@@ -1838,9 +1836,6 @@ class WidgetConverter:
 
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
-        if BLENDER3:
-            enableRigNumLayer(rig, self.usedLayer-1)
-            enableRigNumLayer(rig, self.unusedLayer-1, False)
         activateObject(context, ob)
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
@@ -1892,6 +1887,8 @@ class WidgetConverter:
             coll.objects.unlink(gzm)
         unlinkAll(ob, False)
 
+        enableRigNumLayer(rig, T_WIDGETS)
+        enableRigNumLayer(rig, T_HIDDEN, False)
         if self.deleteUnused:
             activateObject(context, rig)
             setMode('EDIT')
@@ -1984,7 +1981,7 @@ class WidgetConverter:
 
     def assignLayer(self, pb, rig):
         if pb.name in self.drivers.keys() or len(pb.children) > 3:
-            enableBoneNumLayer(pb.bone, rig, self.usedLayer)
+            enableBoneNumLayer(pb.bone, rig, T_WIDGETS)
             if not pb.custom_shape:
                 self.modifyDriver(pb, rig)
         elif isDrvBone(pb.name) or isFinal(pb.name):
@@ -1992,7 +1989,7 @@ class WidgetConverter:
             if bname not in self.drivers.keys():
                 self.unused[pb.name] = True
         else:
-            enableBoneNumLayer(pb.bone, rig, self.unusedLayer)
+            enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
             if pb.name not in self.drivers.keys():
                 self.unused[pb.name] = True
         for child in pb.children:
@@ -2004,7 +2001,7 @@ class WidgetConverter:
         if bname[-2] == "-" and bname[-1].isdigit():
             self.replaceDriverTarget(bname, bname[:-2], rig)
         self.unused[bname] = True
-        enableBoneNumLayer(pb.bone, rig, self.unusedLayer)
+        enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
         if bname not in self.drivers.keys():
             return
         for fcu in self.drivers[bname]:
@@ -2018,7 +2015,7 @@ class WidgetConverter:
     def replaceDriverTarget(self, bname, bname1, rig):
         if bname1 in rig.pose.bones.keys():
             pb1 = rig.pose.bones[bname1]
-            enableBoneNumLayer(pb1.bone, rig, self.usedLayer)
+            enableBoneNumLayer(pb1.bone, rig, T_WIDGETS)
             self.drivers[bname1] = []
             if bname1 in self.unused.keys():
                 del self.unused[bname1]
@@ -2035,26 +2032,12 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
     bl_description = "Convert the active mesh to custom shapes for the parent armature bones"
     bl_options = {'UNDO'}
 
-    usedLayer : IntProperty(
-        name = "Used Layer",
-        description = "Bone layer for bones with shapekeys",
-        min = 1, max = 32,
-        default = 4)
-
-    unusedLayer : IntProperty(
-        name = "Unused Layer",
-        description = "Bone layer for bones without shapekeys",
-        min = 1, max = 32,
-        default = 5)
-
     deleteUnused : BoolProperty(
         name = "Delete Unused",
         description = "Delete unused bones.\nIf disabled, unused bones are hidden",
         default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "usedLayer")
-        self.layout.prop(self, "unusedLayer")
         self.layout.prop(self, "deleteUnused")
 
     def run(self, context):
