@@ -427,12 +427,6 @@ def updatePose():
 def instRef(ref):
     return ref.rsplit("#",1)[-1]
 
-def tolower(url):
-    if not GS.caseSensitivePaths:
-        return url.lower()
-    else:
-        return url
-
 def clamp(value):
     return min(1, max(0, value))
 

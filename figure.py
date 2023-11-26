@@ -290,22 +290,6 @@ class Figure(Node):
                 child.buildBoneProps(rig, center)
 
 
-def getModifierPath(moddir, folder, tfile):
-    try:
-        files = list(os.listdir(moddir+folder))
-    except FileNotFoundError:
-        files = []
-    for file in files:
-        file = tolower(file)
-        if file == tfile:
-            return folder+"/"+tfile
-        elif os.path.isdir(moddir+folder+"/"+file):
-            path = getModifierPath(moddir, folder+"/"+file, tfile)
-            if path:
-                return path
-    return None
-
-
 def getRigType(data, strict):
     if isinstance(data, bpy.types.Object):
         return getRigType1(data.pose.bones.keys(), strict)

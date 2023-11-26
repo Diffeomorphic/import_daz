@@ -535,7 +535,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Quaternions",
         description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
 
-    useCaseSensitivePaths : BoolProperty(
+    caseSensitivePaths : BoolProperty(
         name = "Case-Sensitive Paths",
         description = "Convert URLs to lowercase. Works best on Windows")
 
@@ -699,7 +699,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "General")
         box.prop(self, "unitScale")
         box.prop(self, "verbosity")
-        box.prop(self, "useCaseSensitivePaths")
+        box.prop(self, "caseSensitivePaths")
         box.prop(self, "rememberLastFolder")
 
         box = col.box()

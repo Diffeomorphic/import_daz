@@ -323,23 +323,20 @@ class MorphPaths:
                 if "exclude3" in struct.keys():
                     excludes = excludes + getShortformList(struct["exclude3"])
 
-                for dazpath in GS.getDazPaths():
-                    folderpath = "%s/%s" % (dazpath, folder)
-                    folderpath = bpy.path.resolve_ncase(folderpath)
-                    if os.path.exists(folderpath):
-                        files = list(os.listdir(folderpath))
-                        files.sort()
-                        for file in files:
-                            fname,ext = os.path.splitext(file)
-                            if ext not in [".duf", ".dsf"]:
-                                continue
-                            isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
-                            key = fname.lower()
-                            if isright and key not in typeNames.keys():
-                                string = "%s/%s" % (folderpath, file)
-                                string = string.replace("//", "/")
-                                typeFiles[name] = bpy.path.resolve_ncase(string)
-                                typeNames[key] = name
+                for abspath in GS.getAbsPaths(folder):
+                    files = list(os.listdir(abspath))
+                    files.sort()
+                    for file in files:
+                        fname,ext = os.path.splitext(file)
+                        if ext not in [".duf", ".dsf"]:
+                            continue
+                        isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
+                        key = fname.lower()
+                        if isright and key not in typeNames.keys():
+                            string = "%s/%s" % (abspath, file)
+                            string = string.replace("//", "/")
+                            typeFiles[name] = string
+                            typeNames[key] = name
 
 
     def isRightType(self, fname, prefixes, strips, includes, excludes):

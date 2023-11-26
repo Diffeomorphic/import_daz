@@ -360,6 +360,7 @@ class GlobalSettings:
             value = getattr(self, attr)
             if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
                 struct[attr] = value
+        print("caseSensitivePaths", struct["caseSensitivePaths"])
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
             paths = []
             for path in getattr(self, attr):
@@ -439,13 +440,24 @@ class GlobalSettings:
                 print("Absolute paths loaded from %s" % self.absScanPath)
 
 
+    def getAbsPaths(self, path):
+        if self.caseSensitivePaths:
+            lpath = "/%s" % os.path.dirname(path).lower()
+            return self.absPaths.get(lpath, [])
+        else:
+            abspaths = []
+            for folder in self.getDazPaths():
+                abspath = "%s/%s" % (folder, path)
+                if os.path.exists(abspath):
+                    abspaths.append(abspath)
+            return abspaths
+
+
     def getAbsPath(self, ref):
         path = unquote(ref)
         if len(path) > 2 and path[0] == "/" and os.path.exists(path[1:]):
             # Absolute path
             return path[1:]
-        elif os.path.exists(path):
-            return path
         elif self.caseSensitivePaths:
             lfolder = os.path.dirname(path).lower()
             lfile = os.path.basename(path).lower()
@@ -455,6 +467,8 @@ class GlobalSettings:
                 file = files.get(lfile)
                 if file:
                     return "%s/%s" % (folder, file)
+        elif os.path.exists(path):
+            return path
         else:
             for folder in self.getDazPaths():
                 filepath = "%s/%s" % (folder, path)
