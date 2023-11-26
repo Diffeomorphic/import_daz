@@ -430,25 +430,5 @@ def normalizeRef(id):
 
 
 def normalizeUrl(filepath):
-    filepath = bpy.path.resolve_ncase(filepath)
-    for path in GS.getDazPaths():
-        if path:
-            path = bpy.path.resolve_ncase(path)
-            n = len(path)
-            if filepath.lower()[0:n] == path.lower():
-                filepath = filepath[n:]
-                break
-    return normalizeRef(filepath)
-
-#-------------------------------------------------------------
-#   Paths
-#-------------------------------------------------------------
-
-def getRelativeRef(ref):
-    path = unquote(ref)
-    for dazpath in GS.rootPaths:
-        n = len(dazpath)
-        if path[0:n].lower() == dazpath.lower():
-            return ref[n:]
-    print("Not a relative path:\n  '%s'" % path)
-    return ref
+    relpath = GS.getRelativePath(filepath)
+    return normalizeRef(relpath)

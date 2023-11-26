@@ -1806,11 +1806,10 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
                 file = words[1].replace(res, "")
             else:
                 file = words[1]
-            for root in GS.getDazPaths():
-                newpath = bpy.path.resolve_ncase("%s/runtime/textures/%s" % (root, file))
-                if os.path.exists(newpath):
-                    print("New path: %s" % newpath)
-                    return newpath,res
+            newpath = GS.getAbsPath("runtime/textures/%s" % file)
+            if newpath and os.path.exists(newpath):
+                print("New path: %s" % newpath)
+                return newpath,res
         return None,""
 
 #----------------------------------------------------------

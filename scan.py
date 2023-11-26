@@ -375,9 +375,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
         LS.forMorphLoad(self.mesh)
-        for dazpath in GS.getDazPaths():
-            morphpath = "%s%s/Morphs" % (dazpath, relpath)
-            morphpath = bpy.path.resolve_ncase(morphpath)
+        for morphpath in GS.getAbsPaths("%s/Morphs" % relpath):
             self.scanMorphs(morphpath, len(morphpath))
         self.wm.progress_end()
         saveJson(struct, scanpath)
@@ -468,14 +466,6 @@ def loadScannedInfo(self, name, rig, relpath):
 #----------------------------------------------------------
 
 def loadMissingMorphs(self, context, rig, missing, cat):
-    def getFullPath(path):
-        for folder in GS.getDazPaths():
-            path1 = "%s%s" % (folder, path)
-            fullpath = bpy.path.resolve_ncase(path1.replace("//", "/"))
-            if os.path.exists(fullpath):
-                return fullpath
-        return None
-
     from .morphing import CustomMorphLoader, StandardMorphLoader
     from .category import addToCategories
     if not missing or not self.defins:
@@ -488,7 +478,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         if path is None:
             path = self.defins2.get(key)
         if path:
-            path = getFullPath(path)
+            path = GS.getAbsPath(path)
         if path:
             mset = getMorphSet(path)
             if mset == "Custom":
@@ -579,11 +569,9 @@ def checkNeedUpdate(name, relpath):
             if version != CURRENT_VERSION:
                 return True
             modified = float(struct["modified"])
-        for dazpath in GS.getDazPaths():
-            morphpath = "%s%s/Morphs" % (dazpath, relpath)
-            morphpath = bpy.path.resolve_ncase(morphpath)
-            if checkFolder(morphpath, modified):
-                return True
+        morphpath = GS.getAbsPath("%s/Morphs" % relpath)
+        if morphpath and checkFolder(morphpath, modified):
+            return True
         return False
 
     needs = []

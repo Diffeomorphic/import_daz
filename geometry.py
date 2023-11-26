@@ -1064,13 +1064,13 @@ class Geometry(Asset, Channels):
 
 
     def findUvSet(self, uv, url):
-        from .asset import getRelativeRef
+        from .asset import normalizeRef
         from .fileutils import findPathRecursive
-        relpath = os.path.dirname(url)
-        filepath = findPathRecursive(uv, relpath, ["UV Sets/"])
+        folder = os.path.dirname(url)
+        filepath = findPathRecursive(uv, folder, ["UV Sets/"])
         if filepath:
-            url = unquote("%s#%s" % (filepath, uv))
-            url = getRelativeRef(url)
+            relpath = GS.getRelativePath(filepath)
+            url = normalizeRef("%s#%s" % (relpath, uv))
             asset = self.getAsset(url)
             if asset:
                 if GS.verbosity > 2:

@@ -430,6 +430,14 @@ class GlobalSettings:
         print("Scanned paths saved to %s" % self.absScanPath)
 
 
+    def checkAbsPaths(self):
+        if self.caseSensitivePaths and not self.absPaths:
+            from .error import DazError
+            msg = ("The DAZ database must be scanned to work with case-sensitive file paths.\n" +
+                   "Utilities > Scan Absolute Paths")
+            raise DazError(msg)
+
+
     def loadAbsPaths(self):
         self.absPaths = {}
         if os.path.exists(self.absScanPath):
@@ -442,15 +450,24 @@ class GlobalSettings:
 
     def getAbsPaths(self, path):
         if self.caseSensitivePaths:
-            lpath = "/%s" % os.path.dirname(path).lower()
-            return self.absPaths.get(lpath, [])
+            lpath = os.path.dirname(path).lower()
+            if lpath[0] != "/":
+                lpath = "/%s" % lpath
+            abspaths = self.absPaths.get(lpath, [])
+            if path[-1] == "/":
+                abspaths = ["%s/" % abspath for abspath in abspaths]
         else:
-            abspaths = []
-            for folder in self.getDazPaths():
-                abspath = "%s/%s" % (folder, path)
-                if os.path.exists(abspath):
-                    abspaths.append(abspath)
-            return abspaths
+            abspaths = [
+                ("%s/%s" % (folder, path)).replace("//", "/")
+                for folder in self.getDazPaths()]
+        return [abspath for abspath in abspaths if os.path.exists(abspath)]
+
+
+    def getBasePath(self, abspath):
+        for path in self.getDazPaths():
+            if abspath.startswith(path):
+                return path
+        return ""
 
 
     def getAbsPath(self, ref):
@@ -466,7 +483,9 @@ class GlobalSettings:
                 files = dict([(file.lower(),file) for file in os.listdir(folder)])
                 file = files.get(lfile)
                 if file:
-                    return "%s/%s" % (folder, file)
+                    abspath = "%s/%s" % (folder, file)
+                    if os.path.exists(abspath):
+                        return abspath
         elif os.path.exists(path):
             return path
         else:
@@ -478,7 +497,7 @@ class GlobalSettings:
                 words = filepath.rsplit("/", 2)
                 if len(words) == 3 and words[1].lower() == "hiddentemp":
                     filepath = "%s/%s" % (words[0], words[2])
-                    if filepath:
+                    if filepath and os.path.exists(abspath):
                         return filepath
         if not path.startswith("name:/@selection"):
             from .error import reportError

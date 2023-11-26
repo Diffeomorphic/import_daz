@@ -177,16 +177,14 @@ the81Folders = {
 
 def getFolders(reldir, subdirs, match81=True):
     def addFolders(reldir):
-        for basedir in GS.getDazPaths():
-            for subdir in subdirs:
-                folder = "%s/%s/%s" % (basedir, reldir, subdir)
-                folder = folder.replace("//", "/")
-                folder = bpy.path.resolve_ncase(folder)
-                if os.path.exists(folder):
-                    if basedir == prefroot:
-                        preferred.append(folder)
-                    else:
-                        others.append(folder)
+        for subdir in subdirs:
+            folders = GS.getAbsPaths("%s/%s" % (reldir, subdir))
+            for folder in folders:
+                root = GS.getBasePath(folder)
+                if root == prefroot:
+                    preferred.append(folder)
+                else:
+                    others.append(folder)
 
     if reldir is None:
         return []
@@ -230,8 +228,7 @@ def getReldirFromObject(ob, usePeople):
         lreldir = reldir.lower()
         for data,people in table:
             if lreldir.startswith(data):
-                pdir = lreldir.replace(data,people)
-                return bpy.path.resolve_ncase(pdir)
+                return lreldir.replace(data,people)
     return reldir
 
 
