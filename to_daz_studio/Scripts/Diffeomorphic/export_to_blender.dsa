@@ -147,16 +147,21 @@ function doMesh (fp, obj, start, node, str1, str2)
     if (clname == "DzGeometryShellNode")
     	return false;
 
+    // Write HD verts
+    var geom = obj.getCachedGeom();
+    var geom0 = shape.getGeometry();
+    if (geom == null || geom0 == null)
+        return false;
+    var nv0 = geom0.getNumVertices();
+    doVerts(fp, geom, nv0, "\"vertices\"", "\"num verts\"");
+    fp.writeLine("            ],")
+    
     // Turn off high resolution
     var lodctrl = shape.getLODControl();
     var lodvalue = lodctrl.getValue();
     lodctrl.setValue(0);
     // update mesh
     obj.forceCacheUpdate(node,false);   
-
-    var geom = obj.getCachedGeom();
-    if (geom == null)
-        return false;
 
     if (start)
         startObject(fp, node);
@@ -165,23 +170,22 @@ function doMesh (fp, obj, start, node, str1, str2)
     	fp.writeLine("        \"node\": {");
     	doProperties(fp, node, "        ");
     	fp.writeLine("        },");
-    	doFaces(fp, geom);
+    	doFaces(fp, geom0);
     }
-    var nf = geom.getNumFacets();
+    var nf = geom0.getNumFacets();
     if (nf == 0)
-        doPolylines(fp, geom);
-    doVerts(fp, geom);
+        doPolylines(fp, geom0);
+    doVerts(fp, geom0, nv0, "\"vertices0\"", "\"num verts0\"");
     fp.writeLine(str1);
     fp.writeLine(str2);
     lodctrl.setValue(lodvalue);    
     return true;
 }
 
-function doVerts(fp, geom)
+function doVerts(fp, geom, nv, vkey, numkey)
 {
-    var nv = geom.getNumVertices();
-    var buf = ("        \"num verts\": " + nv + ",\n");
-    buf += ("        \"vertices\": [\n" );
+    var buf = ("        " + numkey + ": " + nv + ",\n");
+    buf += ("        " + vkey + ": [\n" );
     
     var c = ",\n"
     for (var i = 0; i < nv; i++)
