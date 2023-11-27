@@ -42,7 +42,7 @@ function exportToBlender()
             obj = node.getObject();
             if (obj != null) 
             {
-                doMesh(fp, obj, true, node, "        ]", "    },");
+                doMesh(fp, obj, true, node, "", "    },");
             }
         }
     }
@@ -88,7 +88,7 @@ function doFigure (fp, figure)
     var obj = figure.getObject();
     if (obj != null) 
     {
-        doMesh(fp, obj, false, figure, "        ],", "")
+        doMesh(fp, obj, false, figure, ",", "")
     }
     
     var bones = figure.getAllBones();
@@ -138,7 +138,7 @@ function startObject(fp, node)
 }
 
 
-function doMesh (fp, obj, start, node, str1, str2)
+function doMesh (fp, obj, start, node, endchar, str2)
 {
     var shape = obj.getCurrentShape();
     if (shape == null)
@@ -152,9 +152,10 @@ function doMesh (fp, obj, start, node, str1, str2)
     var geom0 = shape.getGeometry();
     if (geom == null || geom0 == null)
         return false;
+    if (start)
+        startObject(fp, node);
     var nv0 = geom0.getNumVertices();
     doVerts(fp, geom, nv0, "\"vertices\"", "\"num verts\"");
-    fp.writeLine("            ],")
     
     // Turn off high resolution
     var lodctrl = shape.getLODControl();
@@ -163,8 +164,6 @@ function doMesh (fp, obj, start, node, str1, str2)
     // update mesh
     obj.forceCacheUpdate(node,false);   
 
-    if (start)
-        startObject(fp, node);
     if (clname == "DzStrandHairNode")    
     {
     	fp.writeLine("        \"node\": {");
@@ -175,8 +174,8 @@ function doMesh (fp, obj, start, node, str1, str2)
     var nf = geom0.getNumFacets();
     if (nf == 0)
         doPolylines(fp, geom0);
-    doVerts(fp, geom0, nv0, "\"vertices0\"", "\"num verts0\"");
-    fp.writeLine(str1);
+    // doVerts(fp, geom0, nv0, "\"vertices0\"", "\"num verts0\"");    
+    fp.writeLine("        \"dummy\" : 0" + endchar)
     fp.writeLine(str2);
     lodctrl.setValue(lodvalue);    
     return true;
@@ -195,6 +194,7 @@ function doVerts(fp, geom, nv, vkey, numkey)
         buf += ("            [" + v.x + ", " + v.y + ", " + v.z + "]" + c)
     }   
     fp.writeLine(buf);
+    fp.writeLine("        ],")
 }
 
 function doPolylines(fp, geom)
