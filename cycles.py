@@ -1772,11 +1772,11 @@ class CyclesTree(Tree):
             name = "Unused Textures"
             for group in bpy.data.node_groups:
                 if (group.name.startswith(name) and
-                    foundMatch(texnodes, group.inputs)):
+                    foundMatch(texnodes, getGroupInputs(group))):
                     return group
             group = bpy.data.node_groups.new(name, "ShaderNodeTree")
             for key in texnodes.keys():
-                group.inputs.new("NodeSocketColor", key)
+                addGroupInput(group, "NodeSocketColor", key)
             return group
 
         self.column += 2

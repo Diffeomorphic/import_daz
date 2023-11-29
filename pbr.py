@@ -324,7 +324,7 @@ class PbrTree(CyclesTree):
         self.linkScalar(wttex, fix, transwt, "Translucency Weight", texslot=texslot)
         self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
         self.linkSubsurfColor(transwt, wttex, fix.outputs["Subsurface Color"])
-        self.links.new(fix.outputs[PBR.SubsurfWeight], self.pbr.inputs[PBR.SubsurfWeight])
+        self.links.new(fix.outputs["Subsurface"], self.pbr.inputs[PBR.SubsurfWeight])
 
     #-------------------------------------------------------------
     #   Metallic

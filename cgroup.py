@@ -1869,6 +1869,7 @@ ShaderGroups = {
         "useInvertNormalMap" : (InvertNormalMapGroup, "DAZ Invert NMap", []),
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
         "useSubsurface" : (SubsurfaceGroup, "DAZ Subsurface", []),
+        "useAltSSS" : (AltSSSGroup, "DAZ Alt SSS", []),
         "useFlakes" : (FlakesGroup, "DAZ Flakes", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),
         "useDualLobeUber" : (DualLobeGroupUberIray, "DAZ Dual Lobe", []),
@@ -1905,6 +1906,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useInvertNormalMap : BoolProperty(name="Invert Normal Map", default=False)
     useTranslucent : BoolProperty(name="Translucent", default=False)
     useSubsurface : BoolProperty(name="Subsurface", default=False)
+    useAltSSS : BoolProperty(name="Alt SSS", default=False)
     useFlakes : BoolProperty(name="Metallic Flakes", default=False)
     useRayClip : BoolProperty(name="Ray Clip", default=False)
     useDualLobeUber : BoolProperty(name="Dual Lobe (Uber Shader)", default=False)
