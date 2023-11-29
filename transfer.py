@@ -156,6 +156,8 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
     bl_description = "Transfer vertex groups from active to selected"
     bl_options = {'UNDO'}
 
+    transferMethod = 'NEAREST'
+
     def draw(self, context):
         self.layout.prop(self, "threshold")
 
