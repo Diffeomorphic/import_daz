@@ -896,16 +896,16 @@ class Rigifier(RigifyCommon):
             assoc[dname] = self.getOrgDefBone(rnames[0], gen)
 
         for fcu in getPropDrivers(rig):
-            fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen)
+            self.copyDriver(fcu, gen, old=rig, new=gen)
         for fcu in getPropDrivers(rig.data):
-            fcu2 = self.copyDriver(fcu, gen.data, old=rig, new=gen)
+            self.copyDriver(fcu, gen.data, old=rig, new=gen)
         for bname, fcus in driven.items():
             if bname in gen.pose.bones.keys():
                 pb = gen.pose.bones[bname]
                 for fcu in fcus:
                     self.copyBoneProp(fcu, rig, gen, pb)
                 for fcu in fcus:
-                    fcu2 = self.copyDriver(fcu, gen, old=rig, new=gen, assoc=assoc)
+                    self.copyDriver(fcu, gen, old=rig, new=gen, assoc=assoc)
 
         # Fix bend and twist drivers
         print("  Fix bend and twist drivers")

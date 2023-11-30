@@ -81,15 +81,18 @@ class DriverUser:
     def copyDriver(self, fcu, rna, old=None, new=None, assoc=None):
         channel = fcu.data_path
         idx = self.getArrayIndex(fcu)
+        if rna.animation_data is None:
+            try:
+                if idx > 0:
+                    rna.driver_add(channel, idx)
+                else:
+                    rna.driver_add(channel)
+            except TypeError:
+                return
         fcu2 = self.getTmpDriver(0)
         self.copyFcurve(fcu, fcu2)
         if old or assoc:
             self.setId(fcu2, old, new, assoc)
-        if rna.animation_data is None:
-            if idx > 0:
-                rna.driver_add(channel, idx)
-            else:
-                rna.driver_add(channel)
         if idx >= 0:
             rna.driver_remove(channel, idx)
         else:

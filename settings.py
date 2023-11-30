@@ -360,7 +360,6 @@ class GlobalSettings:
             value = getattr(self, attr)
             if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
                 struct[attr] = value
-        print("caseSensitivePaths", struct["caseSensitivePaths"])
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
             paths = []
             for path in getattr(self, attr):
