@@ -1235,7 +1235,7 @@ class Geometry(Asset, Channels):
 
 
     def creaseEdges(self, context, ob):
-        if self.edge_weights and BLENDER3:
+        if self.edge_weights:
             from .tables import getVertEdges
             vertedges = getVertEdges(ob)
             weights = {}
@@ -1243,15 +1243,20 @@ class Geometry(Asset, Channels):
                 for e in vertedges[vn1]:
                     if vn2 in e.vertices:
                         weights[e.index] = w
+            level = max(1, self.SubDIALevel + self.SubDRenderLevel)
             activateObject(context, ob)
+            if not BLENDER3:
+                bpy.ops.geometry.attribute_add(name='crease_edge', domain='EDGE')
             setMode('EDIT')
             bm = bmesh.from_edit_mesh(ob.data)
             bm.edges.ensure_lookup_table()
-            creaseLayer = bm.edges.layers.crease.verify()
-            level = max(1, self.SubDIALevel + self.SubDRenderLevel)
+            if BLENDER3:
+                crease = bm.edges.layers.crease.verify()
+            else:
+                crease = bm.edges.layers.float.get('crease_edge')
             for en,w in weights.items():
                 e = bm.edges[en]
-                e[creaseLayer] = min(1.0, w/level)
+                e[crease] = min(1.0, w/level)
             bmesh.update_edit_mesh(ob.data)
             setMode('OBJECT')
             self.edge_weights = []
