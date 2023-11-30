@@ -307,6 +307,11 @@ def unlinkAll(ob, clearParent):
     if ob in coll.objects.values():
         coll.objects.unlink(ob)
 
+
+def setEulerOrder(cns, xyz):
+    if hasattr(cns, "euler_order"):
+        cns.euler_order = xyz
+
 #-------------------------------------------------------------
 #   Overridable properties
 #-------------------------------------------------------------

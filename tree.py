@@ -246,10 +246,13 @@ class NodeGroup:
                 return False
         return True
 
-
-    def hideSlot(self, slot):
-        socket = getGroupInput(self.group, slot)
-        socket.hide_value = True
+    if bpy.app.version < (3,0,0):
+        def hideSlot(self, slot):
+            return
+    else:
+        def hideSlot(self, slot):
+            socket = getGroupInput(self.group, slot)
+            socket.hide_value = True
 
 
     def setMinMax(self, slot, default, min, max):

@@ -703,7 +703,7 @@ class SkinBinding(Modifier):
                 twist.bone.use_deform = True
                 twist.rotation_mode = data[1]
                 cns = copyRotation(twist, pb, rig, space='LOCAL')
-                cns.euler_order = data[1]
+                setEulerOrder(cns, data[1])
                 cns.use_y = False
 
 

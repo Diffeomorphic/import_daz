@@ -284,7 +284,7 @@ class PbrTree(CyclesTree):
                 self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
             if GS.sssMethod == 'RANDOM_WALK_SKIN':
                 self.pbr.inputs["Subsurface IOR"].default_value = ior
-        elif GS.sssMethod != 'BURLEY':
+        elif GS.sssMethod != 'BURLEY' and hasattr(self.pbr.inputs, "Subsurface IOR"):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")

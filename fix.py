@@ -725,6 +725,9 @@ def setCustomShape(pb, shape, scale=None, offset=None, rotation=None):
     if scale is None:
         pass
     elif hasattr(pb, "custom_shape_scale"):
+        if isinstance(scale, tuple):
+            x,y,z = scale
+            scale = (x+y+z)/3
         pb.custom_shape_scale = scale
     elif isinstance(scale, tuple):
         pb.custom_shape_scale_xyz = scale
@@ -1698,7 +1701,7 @@ class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type == 'LIMIT_ROTATION':
-                    cns.euler_order = BD.getDefaultMode(pb)
+                    setEulerOrder(cns, BD.getDefaultMode(pb))
 
 #----------------------------------------------------------
 #   Initialize
