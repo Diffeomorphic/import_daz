@@ -1484,7 +1484,10 @@ class HairUpdater:
     def getAllSettings(self, psys):
         psettings = self.getSettings(psys.settings)
         hdyn = psys.use_hair_dynamics
-        csettings = self.getSettings(psys.cloth.settings)
+        if psys.cloth:
+            csettings = self.getSettings(psys.cloth.settings)
+        else:
+            csettings = None
         return psettings, hdyn, csettings
 
 
@@ -1492,7 +1495,8 @@ class HairUpdater:
         psettings, hdyn, csettings = data
         self.setSettings(psys.settings, psettings)
         psys.use_hair_dynamics = hdyn
-        self.setSettings(psys.cloth.settings, csettings)
+        if csettings is not None:
+            self.setSettings(psys.cloth.settings, csettings)
 
 
     def getSettings(self, pset):
