@@ -132,12 +132,11 @@ class HairOptions:
         description = "Keep (reconstruct) mesh hair after making particle hair"
     )
 
-    enums = [('CURVES', "Curves", "Ordinary curves"),
+    enums = [('PARTICLES', "Particles", "Particle hair"),
+             ('CURVES', "Curves", "Ordinary curves"),
              ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
              ('MESH', "Mesh", "Single line mesh")]
-    if BLENDER3:
-        enums = [('PARTICLES', "Particles", "Particle hair")] + enums
-    else:
+    if not BLENDER3:
         enums = [('HAIR_CURVES', "Hair Curves", "Hair curves")] + enums
     output : EnumProperty(
         items = enums,
@@ -904,7 +903,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             hsystems = self.hairResize(self.size, hsystems, hum)
         t6 = perf_counter()
         self.clocks.append(("Resize", t6-t5))
-        if self.output == 'PARTICLES':
+        if self.output == 'PARTICLES' and BLENDER3:
             self.makeParticleHair(context, hsystems, hum)
         else:
             self.makePolylineHair(context, hsystems, hair, hum)
@@ -937,7 +936,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         coll = getCollection(context, hair)
         if not hsystems:
             print("No hair system found")
-        elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES']:
+        elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES', 'PARTICLES']:
             for hsys in hsystems.values():
                 self.buildOutput(context, hsys, hsys.strands, hair, hum, [hsys.material], coll)
         elif self.output == 'POLYLINES':
@@ -955,7 +954,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             ob = hsys.buildMesh(context, strands, hair, hum, mnames)
         elif self.output == 'CURVES':
             ob = hsys.buildCurves(context, strands, hair, hum, mnames)
-        elif self.output == 'HAIR_CURVES':
+        elif self.output in ['HAIR_CURVES', 'PARTICLES']:
             ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
         coll.objects.link(ob)
         rig = hum.parent
@@ -968,7 +967,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 ob.parent_bone = head.name
                 setWorldMatrix(ob, wmat)
 
-        if self.output == 'HAIR_CURVES':
+        if self.output == 'PARTICLES':
+        elif self.output == 'HAIR_CURVES':
             def addMod(ob, name):
                 group = bpy.data.node_groups.get(name)
                 if group:
@@ -1329,7 +1329,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                         addFade(mat)
                     mats.append(mat)
             for mat in mats:
-                if self.output == 'PARTICLES':
+                if self.output == 'PARTICLES' and BLENDER3:
                     hum.data.materials.append(mat)
                 self.materials.append(mat)
         else:

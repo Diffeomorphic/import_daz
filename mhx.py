@@ -514,12 +514,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Add windoer for Dicktator/Futalicious shaft",
         default = False)
 
-    useChildOfConstraints : BoolProperty(
-        name = "ChildOf Constraints (Experimental)",
-        description = ("Use childOf constraints for parents of elbow and knee pole targets.\n" +
-                       "May cause problems for FK-IK snapping"),
-        default = False)
-
     useFixKnees : BoolProperty(
         name = "Fix Elbows And Knees",
         description = "Change elbow and knee location for better IK",
@@ -569,7 +563,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "useFixKnees")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
-        self.layout.prop(self, "useChildOfConstraints")
         self.layout.prop(self, "elbowParent")
         self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useFoot2")
@@ -736,7 +729,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(11, 25, "  Constrain bend and twist bones")
         self.constrainBendTwists(rig, bendTwistBones)
         self.addCopyLocConstraints(rig)
-        self.addChildofConstraints(rig)
         showProgress(20, 25, "  Restore constraints")
         self.restoreFixConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
@@ -1390,8 +1382,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 cns = copyLocation(elbowPoleA, handIk, rig)
                 cns.influence = elbowFac
                 copyTransform(elbowPoleP, elbowPoleA, rig)
-                if not self.useChildOfConstraints:
-                    setMhx(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
+                setMhx(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
                 ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
                 stretchTo(elbowLink, elbowPt, rig)
                 elbowPt.rotation_euler[0] = -90*D
@@ -1466,8 +1457,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 cns = copyLocation(kneePoleA, ankleIk, rig)
                 cns.influence = kneeFac
                 copyTransform(kneePoleP, kneePoleA, rig)
-                if not self.useChildOfConstraints:
-                    setMhx(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
+                setMhx(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
 
                 ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
                 stretchTo(kneeLink, kneePt, rig)
@@ -1560,9 +1550,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def getElbowParent(self, rig, suffix):
-        if self.useChildOfConstraints:
-            return None
-        elif self.elbowParent == 'HAND':
+        if self.elbowParent == 'HAND':
             bname = "elbowPoleP.%s" % suffix
         elif self.elbowParent == 'SHOULDER':
             bname = "arm_parent.%s" % suffix
@@ -1572,45 +1560,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def getKneeParent(self, rig, suffix):
-        if self.useChildOfConstraints:
-            return None
-        elif self.kneeParent == 'FOOT':
+        if self.kneeParent == 'FOOT':
             bname = "kneePoleP.%s" % suffix
         elif self.kneeParent == 'HIP':
             bname = "hip"
         else:
             bname = "master"
         return rig.data.edit_bones[bname]
-
-
-    def addChildofConstraints(self, rig):
-        if not self.useChildOfConstraints:
-            return
-        rig.MhxChildOfConstraints = True
-        for suffix in ["L", "R"]:
-            handprop = "MhaElbowHand_%s" % suffix
-            shoulderprop = "MhaElbowShoulder_%s" % suffix
-            setMhx(rig, handprop, (float)(self.elbowParent=='HAND'))
-            setMhx(rig, shoulderprop, (float)(self.elbowParent=='SHOULDER'))
-            pb = rig.pose.bones["elbow.pt.ik.%s" % suffix]
-            cns = childOf(pb, "master", rig, (handprop, shoulderprop), "1-min(1,x1+x2)")
-            cns.name = "ChildOf Master"
-            cns = childOf(pb, "elbowPoleP.%s" % suffix, rig, handprop, "x")
-            cns.name = "ChildOf Hand"
-            cns = childOf(pb, "arm_parent.%s" % suffix, rig, shoulderprop, "x")
-            cns.name = "ChildOf Shoulder"
-
-            footprop = "MhaKneeFoot_%s" % suffix
-            hipprop = "MhaKneeHip_%s" % suffix
-            setMhx(rig, footprop, (float)(self.kneeParent=='FOOT'))
-            setMhx(rig, hipprop, (float)(self.kneeParent=='HIP'))
-            pb = rig.pose.bones["knee.pt.ik.%s" % suffix]
-            cns = childOf(pb, "master", rig, (footprop, hipprop), "1-min(1,x1+x2)")
-            cns.name = "ChildOf Master"
-            cns = childOf(pb, "kneePoleP.%s" % suffix, rig, footprop, "x")
-            cns.name = "ChildOf Foot"
-            cns = childOf(pb, "hip", rig, hipprop, "x")
-            cns.name = "ChildOf Hip"
 
     #-------------------------------------------------------------
     #   Fix constraints -

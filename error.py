@@ -64,7 +64,7 @@ def invokeErrorMessage(value, warning=False):
         #LS.theMessage = "WARNING:\n%s" % value
         LS.theMessage = value
     else:
-        LS.theMessage = "ERROR (1.7.1.%04d):\n%s" % (BUILD, value)
+        LS.theMessage = "ERROR (1.7.2.%04d):\n%s" % (BUILD, value)
     if GS.silentMode:
         print(LS.theMessage)
     else:
