@@ -213,54 +213,53 @@ class HairOptions:
         description = "Strand shape",
         default = 'STANDARD')
 
-    if BLENDER3:
-        nViewChildren : IntProperty(
-            name = "Viewport Children",
-            description = "Number of hair children displayed in viewport",
-            min = 0,
-            default = 5)
+    nViewChildren : IntProperty(
+        name = "Viewport Children",
+        description = "Number of hair children displayed in viewport",
+        min = 0,
+        default = 5)
 
-        nViewStep : IntProperty(
-            name = "Viewport Steps",
-            description = "How many steps paths are drawn with (power of 2)",
-            min = 0,
-            default = 3)
+    nViewStep : IntProperty(
+        name = "Viewport Steps",
+        description = "How many steps paths are drawn with (power of 2)",
+        min = 0,
+        default = 3)
 
-        nRenderStep : IntProperty(
-            name = "Render Steps",
-            description = "How many steps paths are rendered with (power of 2)",
-            min = 0,
-            default = 3)
+    nRenderStep : IntProperty(
+        name = "Render Steps",
+        description = "How many steps paths are rendered with (power of 2)",
+        min = 0,
+        default = 3)
 
-        rootRadius : FloatProperty(
-            name = "Root radius (mm)",
-            description = "Strand diameter at the root",
-            min = 0,
-            default = 0.3)
+    rootRadius : FloatProperty(
+        name = "Root radius (mm)",
+        description = "Strand diameter at the root",
+        min = 0,
+        default = 0.3)
 
-        tipRadius : FloatProperty(
-            name = "Tip radius (mm)",
-            description = "Strand diameter at the tip",
-            min = 0,
-            default = 0.3)
-    else:
-        hairRadius : FloatProperty(
-            name = "Hair radius (mm)",
-            description = "Strand diameter",
-            min = 0,
-            default = 0.3)
+    tipRadius : FloatProperty(
+        name = "Tip radius (mm)",
+        description = "Strand diameter at the tip",
+        min = 0,
+        default = 0.3)
 
-        hairShape : FloatProperty(
-            name = "Hair Shape",
-            description = "Hair shape parameter",
-            min = -1, max = 1,
-            default = 0)
+    hairRadius : FloatProperty(
+        name = "Hair radius (mm)",
+        description = "Strand diameter",
+        min = 0,
+        default = 0.3)
 
-        viewFactor : FloatProperty(
-            name = "Viewport Factor",
-            description = "The fraction of children displayed in the viewport",
-            min = 0, max = 1,
-            default = 0.1)
+    hairShape : FloatProperty(
+        name = "Hair Shape",
+        description = "Hair shape parameter",
+        min = -1, max = 1,
+        default = 0)
+
+    viewFactor : FloatProperty(
+        name = "Viewport Factor",
+        description = "The fraction of children displayed in the viewport",
+        min = 0, max = 1,
+        default = 0.1)
 
     childRadius : FloatProperty(
         name = "Child radius (mm)",
@@ -334,6 +333,15 @@ class HairSystem:
     def setHairSettings(self, psys, ob):
         btn = self.button
         pset = psys.settings
+        if btn.nViewChildren or btn.nRenderChildren:
+            pset.child_type = 'SIMPLE'
+        else:
+            pset.child_type = 'NONE'
+        pset.use_hair_bspline = True
+        if hasattr(pset, "display_step"):
+            pset.display_step = 3
+        else:
+            pset.draw_step = 3
         if hasattr(pset, "cycles_curve_settings"):
             ccset = pset.cycles_curve_settings
         elif hasattr(pset, "cycles"):
@@ -346,7 +354,10 @@ class HairSystem:
             pset.material_slot = self.material
 
         pset.rendered_child_count = btn.nRenderChildren
-        pset.child_nbr = btn.nViewChildren
+        if BLENDER3:
+            pset.child_nbr = btn.nViewChildren
+        else:
+            pset.child_percent = int(100*btn.nViewChildren/max(1,btn.nRenderChildren))
         if hasattr(pset, "display_step"):
             pset.display_step = btn.nViewStep
         else:
@@ -430,21 +441,12 @@ class HairSystem:
         elif hasattr(ob, "show_instancer_for_render"):
             ob.show_instancer_for_render = self.useEmitter
         pset.render_type = 'PATH'
-        if btn.nViewChildren or btn.nRenderChildren:
-            pset.child_type = 'SIMPLE'
-        else:
-            pset.child_type = 'NONE'
 
         #pset.material = len(ob.data.materials)
         pset.path_start = 0
         pset.path_end = 1
         pset.count = int(len(self.strands))
         pset.hair_step = hlen-1
-        pset.use_hair_bspline = True
-        if hasattr(pset, "display_step"):
-            pset.display_step = 3
-        else:
-            pset.draw_step = 3
         self.setHairSettings(psys, ob)
 
         psys.use_hair_dynamics = False
@@ -968,6 +970,14 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 setWorldMatrix(ob, wmat)
 
         if self.output == 'PARTICLES':
+            activateObject(context, ob)
+            bpy.ops.curves.convert_to_particle_system()
+            activateObject(context, hum)
+            ob.hide_set(True)
+            ob.hide_render = True
+            hsys = HairSystem("Dummy", 0, hum, 0, self)
+            for psys in hum.particle_systems:
+                hsys.setHairSettings(psys, hum)
         elif self.output == 'HAIR_CURVES':
             def addMod(ob, name):
                 group = bpy.data.node_groups.get(name)
