@@ -354,10 +354,10 @@ class HairSystem:
             pset.material_slot = self.material
 
         pset.rendered_child_count = btn.nRenderChildren
-        if BLENDER3:
+        if hasattr(pset, "child_nbr"):
             pset.child_nbr = btn.nViewChildren
         else:
-            pset.child_percent = int(100*btn.nViewChildren/max(1,btn.nRenderChildren))
+            pset.child_percent = btn.nViewChildren
         if hasattr(pset, "display_step"):
             pset.display_step = btn.nViewStep
         else:
@@ -1838,7 +1838,7 @@ class HairTree(CyclesTree):
         self.tip = factor * Vector(tip)
 
 
-    def linkRamp(self, socket, texs, node, slot):
+    def linkRamp(self, ramp, socket, texs, node, slot):
         out = socket
         for tex in texs:
             if tex:
@@ -1903,7 +1903,7 @@ class HairBSDFTree(HairTree):
         trans.inputs["RoughnessU"].default_value = 1
         trans.inputs["RoughnessV"].default_value = 1
         ramp,socket = self.addRamp(trans, "Transmission", root, tip)
-        self.linkRamp(socket, [roottex, tiptex], trans, "Color")
+        self.linkRamp(ramp, socket, [roottex, tiptex], trans, "Color")
         #self.linkTangent(trans)
         self.active = trans
         return trans
@@ -1916,7 +1916,7 @@ class HairBSDFTree(HairTree):
         refl.inputs["RoughnessU"].default_value = 0.02
         refl.inputs["RoughnessV"].default_value = 1.0
         ramp,socket = self.addRamp(refl, "Reflection", self.root, self.tip)
-        self.linkRamp(socket, [self.roottex, self.tiptex], refl, "Color")
+        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], refl, "Color")
         self.active = refl
         return refl
 
@@ -2043,7 +2043,7 @@ class HairPBRTree(HairTree):
         self.readColor(0.216)
         pbr = self.active = self.addNode("ShaderNodeBsdfHairPrincipled")
         ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip)
-        self.linkRamp(socket, [self.roottex, self.tiptex], pbr, "Color")
+        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Color")
         pbr.inputs["Roughness"].default_value = 0.2
         pbr.inputs["Radial Roughness"].default_value = 0.8
         pbr.inputs["IOR"].default_value = 1.1
@@ -2060,7 +2060,7 @@ class HairEeveeTree(HairTree):
         self.readColor(0.216)
         pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
         ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
-        self.linkRamp(socket, [self.roottex, self.tiptex], pbr, "Base Color")
+        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Base Color")
         pbr.inputs["Metallic"].default_value = 0.9
         pbr.inputs["Roughness"].default_value = 0.2
         self.buildOutput()

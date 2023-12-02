@@ -420,7 +420,9 @@ def normalizeRef(id):
     ref = quote(id)
     ref = ref.replace("%23","#").replace("%25","%").replace("%2D", "-").replace("%2E", ".").replace("%2F", "/").replace("%3F", "?")
     ref = ref.replace("%5C", "/").replace("%5F", "_").replace("%7C", "|")
-    if ref[0] == "/":
+    if len(ref) == 0:
+        return ""
+    elif ref[0] == "/":
         words = ref.rsplit("#", 1)
         if len(words) == 2:
             ref = "%s#%s" % (words[0].lower(), words[1])
