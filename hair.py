@@ -333,6 +333,7 @@ class HairSystem:
     def setHairSettings(self, psys, ob):
         btn = self.button
         pset = psys.settings
+        pset.hair_length = 50 * GS.unitScale
         if btn.nViewChildren or btn.nRenderChildren:
             pset.child_type = 'SIMPLE'
         else:
@@ -977,6 +978,10 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             ob.hide_render = True
             hsys = HairSystem("Dummy", 0, hum, 0, self)
             for psys in hum.particle_systems:
+                pset = psys.settings
+                hair = psys.particles[0]
+                pset.hair_step = len(hair.hair_keys) - 1
+                pset.count = len(psys.particles)
                 hsys.setHairSettings(psys, hum)
         elif self.output == 'HAIR_CURVES':
             def addMod(ob, name):
