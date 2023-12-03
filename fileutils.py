@@ -87,6 +87,17 @@ class DataFolders:
             "michael_8" : "genesis_8_male",
         }
 
+        self.AltRigNames = {
+            "Genesis" : "genesis",
+            "Genesis2-female" : "genesis_2_female",
+            "Genesis2-male" : "genesis_2_male",
+            "Genesis3-female" : "genesis_3_female",
+            "Genesis3-male" : "genesis_3_male",
+            "Genesis8-female" : "genesis_8_female",
+            "Genesis8-male" : "genesis_8_male",
+            "Genesis9" : "genesis_9",
+        }
+
         self.TwistBones = {}
         self.TwistBones["genesis3"] = [
             ("lShldrBend", "lShldrTwist"),
@@ -119,7 +130,9 @@ class DataFolders:
         print("Load", filepath)
         if not os.path.exists(filepath):
             if strict:
-                raise DazError("File %s    \n does not exist" % filepath)
+                msg = "File does not exist:\n%s                 " % filepath
+                print(msg)
+                raise DazError(msg)
             else:
                 data = {}
         else:
@@ -137,6 +150,12 @@ class DataFolders:
             return orient, xyz
         else:
             return None, "XYZ"
+
+
+    def getCenter(self, char):
+        entry = self.loadEntry(char, "restposes", False)
+        if "center" in entry.keys():
+            return Vector(entry["center"])
 
 
 DF = DataFolders()

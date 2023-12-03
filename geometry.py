@@ -649,8 +649,8 @@ def copyUvLayers(ob, hdob):
         for f in ob.data.polygons:
             fid = tuple( sorted(list(f.vertices)) )
             if fid not in loopsMapping:
-                #print("Bad map", fid)
-                continue
+                msg =("Missing face_id: %s\nCannot copy UV layer to HD mesh.\nDisable Multiple UV Layers before importing" % (fid,))
+                raise DazError(msg)
             for i,vn in enumerate(f.vertices):
                 if vn not in loopsMapping[fid]:
                     print("Bad vert", vn)
@@ -658,6 +658,7 @@ def copyUvLayers(ob, hdob):
                 hdLoop = loopsMapping[fid][vn]
                 loop = f.loop_indices[i]
                 hddata[hdLoop].uv = uvdata[loop].uv
+        return True
 
     loopsMapping = setupLoopsMapping()
     for uvlayer in ob.data.uv_layers:
@@ -665,7 +666,10 @@ def copyUvLayers(ob, hdob):
             print('UV layer "%s" already exists' % uvlayer.name)
             continue
         hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
-        copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
+        ok = copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
+        if not ok:
+            hdob.data.uv_layers.remove(hdlayer)
+
 
 #-------------------------------------------------------------
 #   UnGeometry

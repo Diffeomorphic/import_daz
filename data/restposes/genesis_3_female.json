@@ -1,5 +1,6 @@
 {
 	"character":	"Genesis 3 Female",
+	"center": [ 0, 105.1781, 1.824816 ],
 	"pose":	{
 		"hip": [
 			[-1.4612, -0.0000, 0.0000],
