@@ -255,6 +255,12 @@ class HairOptions:
         min = -1, max = 1,
         default = 0)
 
+    hairLength : FloatProperty(
+        name = "Hair Length (meters)",
+        description = "Hair length during emission",
+        min = 0.1, max = 2,
+        default = 0.5)
+
     viewFactor : FloatProperty(
         name = "Viewport Factor",
         description = "The fraction of children displayed in the viewport",
@@ -333,7 +339,7 @@ class HairSystem:
     def setHairSettings(self, psys, ob):
         btn = self.button
         pset = psys.settings
-        pset.hair_length = 50 * GS.unitScale
+        pset.hair_length = btn.hairLength * GS.unitScale * 100
         if btn.nViewChildren or btn.nRenderChildren:
             pset.child_type = 'SIMPLE'
         else:
@@ -790,6 +796,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             box.label(text="Settings")
             box.prop(self, "nViewChildren")
             box.prop(self, "nRenderChildren")
+            box.prop(self, "hairLength")
             box.prop(self, "childRadius")
             box.prop(self, "rootRadius")
             box.prop(self, "tipRadius")
