@@ -261,7 +261,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         self.Ls = dict([(frame, {}) for frame in range(self.frame_start, self.frame_end+1)])
         self.F = {}
         self.Finv = {}
-        self.idxs = {}
         self.loclocks = {}
         self.rotlocks = {}
 
@@ -368,7 +367,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 bname = self.getDazBone(bname, pb)
                 self.F[bname] = Fn
                 self.Finv[bname] = Fn.inverted()
-                self.idxs[bname] = [ord(pb.DazRotMode[n]) - ord('X') for n in range(3)]
                 self.rotlocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_rotation) @ Fn.to_3x3()]
                 self.loclocks[bname] = [int(round(abs(f))) for f in Vector(pb.lock_location) @ Fn.to_3x3()]
 
