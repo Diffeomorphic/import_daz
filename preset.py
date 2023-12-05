@@ -363,6 +363,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             dmat = euler.to_matrix().to_4x4()
             dmat.col[3][0:3] = Vector(pb.bone.DazHead)*rig.DazScale
             Fn = pb.bone.matrix_local.inverted() @ self.Z @ dmat
+            Fn = Fn.to_quaternion().to_matrix().to_4x4()
             for bname in self.getBoneNames(pb.name):
                 bname = self.getDazBone(bname, pb)
                 self.F[bname] = Fn
