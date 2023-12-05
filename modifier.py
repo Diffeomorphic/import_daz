@@ -454,8 +454,7 @@ class SkinBinding(Modifier):
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
             if geonode.hdType == 'MULTIRES':
-                from .geometry import copyVertexGroups
-                if not copyVertexGroups(context, ob, hdob, True):
+                if not copyVertexGroups(ob, hdob):
                     LS.hdWeights.append(hdob.name)
 
 
@@ -738,6 +737,31 @@ def makeArmatureModifier(name, context, ob, rig):
     ob.lock_location = (True,True,True)
     ob.lock_rotation = (True,True,True)
     ob.lock_scale = (True,True,True)
+
+
+def copyVertexGroups(ob, hdob):
+    def addVertexGroup(hdob, vgname, vnums):
+        vgrp = hdob.vertex_groups.get(vgname)
+        if vgrp:
+            print("DEL", vgrp)
+            hdob.vertex_groups.remove(vgrp)
+        vgrp = hdob.vertex_groups.new(name=vgname)
+        for vn in vnums:
+            vgrp.add([vn], 1.0, 'REPLACE')
+
+    from .finger import getFingerPrint
+    if getFingerPrint(ob) != getFingerPrint(hdob):
+        return False
+
+    hdvgrps = {}
+    for vgrp in ob.vertex_groups:
+        hdvgrp = hdob.vertex_groups.new(name=vgrp.name)
+        hdvgrps[vgrp.index] = hdvgrp
+    for v in ob.data.vertices:
+        vn = v.index
+        for g in v.groups:
+            hdvgrps[g.group].add([vn], g.weight, 'REPLACE')
+    return True
 
 
 class LegacySkinBinding(SkinBinding):

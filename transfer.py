@@ -191,7 +191,7 @@ class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
 
     def run(self, context):
         from .finger import getFingerPrint
-        from .geometry import copyVertexGroups
+        from .modifier import copyVertexGroups
         src = context.object
         if not src.vertex_groups:
             raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
@@ -204,7 +204,7 @@ class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
                            "Source: %s %s\n" % (srcfinger, src.name) +
                            "Target: %s %s" % (trgfinger, trg.name))
                     raise DazError(msg)
-                copyVertexGroups(context, src, trg)
+                copyVertexGroups(src, trg)
 
 #----------------------------------------------------------
 #   Morphs transfer
