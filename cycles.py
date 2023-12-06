@@ -33,6 +33,7 @@ from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .tree import Tree, NCOLUMNS, XSIZE, YSIZE, MixRGB
 from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree, hideAllBut, colorOutput
+from .tree import addGroupInput, getGroupInputs
 from .error import DazError
 from .utils import *
 
@@ -1764,7 +1765,7 @@ class CyclesTree(Tree):
 
         def foundMatch(texnodes, inputs):
             for key in texnodes.keys():
-                if key not in inputs.keys():
+                if key not in inputs:
                     return False
             return True
 

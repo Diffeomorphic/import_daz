@@ -274,7 +274,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         return
     if len(layers) == 2:
         lmain, lspine = layers
-        lhelp = lhelp2 = ldef = 31
+        lhelp = lhelp2 = ldef = T_HIDDEN
     else:
         lmain, lspine, lhelp, lhelp2, ldef = layers
     setMode('EDIT')
@@ -1729,7 +1729,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 eb.parent = master
 
     #-------------------------------------------------------------
-    #   Move all deform bones to layer 31
+    #   Move all deform bones to layer T_HIDDEN
     #-------------------------------------------------------------
 
     def collectDeformBones(self, rig):

@@ -694,7 +694,7 @@ class SkinBinding(Modifier):
             setMode('EDIT')
             for bname in twists.keys():
                 eb = rig.data.edit_bones[bname]
-                twist = deriveBone("%s.twist" % bname, eb, rig, 31, eb.parent)
+                twist = deriveBone("%s.twist" % bname, eb, rig, T_HIDDEN, eb.parent)
             setMode('OBJECT')
             for bname in twists.keys():
                 data = self.TwistBones[bname]

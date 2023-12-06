@@ -50,7 +50,7 @@ if BLENDER3:
         return group.inputs[slot]
 
     def getGroupInputs(group):
-        return group.inputs
+        return group.inputs.keys()
 else:
     def addGroupInput(group, type, slot):
         return group.interface.new_socket(slot, socket_type=type, in_out='INPUT')
@@ -64,7 +64,7 @@ else:
                 return item
 
     def getGroupInputs(group):
-        return [item for item in group.interface.items_tree
+        return [item.name for item in group.interface.items_tree
                 if item.item_type == 'SOCKET' and item.in_out == 'INPUT']
 
 #-------------------------------------------------------------
