@@ -1034,7 +1034,7 @@ def findVertexGroups(ob, bnames):
     nverts = len(ob.data.vertices)
     nvgrps = len(ob.vertex_groups)
     vnames = [vgrp.name for vgrp in ob.vertex_groups if vgrp.name not in bnames]
-    weights = dict([(gn, np.zeros(nverts, dtype=np.float)) for gn in range(nvgrps)])
+    weights = dict([(gn, np.zeros(nverts, dtype=float)) for gn in range(nvgrps)])
     for v in ob.data.vertices:
         for g in v.groups:
             weights[g.group][v.index] = g.weight
