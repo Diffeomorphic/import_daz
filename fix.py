@@ -1302,6 +1302,11 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         description = "Select IK chains from root bones",
         default = True)
 
+    useParent : BoolProperty(
+        name = "Parent",
+        description = "Parent the IK targets to the root bones' parents",
+        default = False)
+
     onlyConnected : BoolProperty(
         name = "Only Connected Bones",
         description = "Stop IK chain at disconnected bones",
@@ -1320,6 +1325,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
 
     def draw(self, context):
         self.layout.prop(self, "fromRoots")
+        self.layout.prop(self, "useParent")
         self.layout.prop(self, "onlyConnected")
         if self.onlyConnected:
             self.layout.prop(self, "threshold")
@@ -1345,7 +1351,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
                 if clen > 2:
                     root = pbones[-1]
                     pbones = pbones[:-1]
-                    ikgoals.append((pb.name, clen-1, pbones, root))
+                    ikgoals.append((pb.name, clen-1, pbones, root.name))
         return ikgoals, []
 
 
@@ -1370,7 +1376,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
                     pbones.append(pb)
                     clen += 1
                 if clen > 2:
-                    ikgoals.append((pb.name, clen-1, pbones, root))
+                    ikgoals.append((pb.name, clen-1, pbones, root.name))
                     if self.useDeleteDisconnected:
                         while pb and len(pb.children) == 1:
                             pb = pb.children[0]
@@ -1391,13 +1397,16 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
             ikgoals,deletes = self.ikGoalsFromSelected(rig)
 
         setMode('EDIT')
-        for bname, clen, pbones, root in ikgoals:
+        for bname, clen, pbones, rootname in ikgoals:
+            root = rig.data.edit_bones[rootname]
             eb = rig.data.edit_bones[bname]
             goalname = self.combineName(bname, "Goal")
             goal = rig.data.edit_bones.new(goalname)
             goal.head = eb.tail
             goal.tail = 2*eb.tail - eb.head
             goal.roll = eb.roll
+            if self.useParent:
+                goal.parent = root.parent
             if self.usePoleTargets:
                 for n in range(clen//2):
                     eb = eb.parent
@@ -1418,9 +1427,10 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         gzmCube = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
         gzmCone = self.makeEmptyGizmo("GZM_Cone", 'CONE')
 
-        for bname, clen, pbones, root in ikgoals:
+        for bname, clen, pbones, rootname in ikgoals:
             if bname not in rig.pose.bones.keys():
                 continue
+            root = rig.pose.bones[rootname]
             pb = rig.pose.bones[bname]
             rmat = pb.bone.matrix_local
             root.custom_shape = gzmCube
