@@ -298,6 +298,7 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.fix_texture_tiles")
         self.layout.separator()
         self.layout.operator("daz.copy_shells")
+        self.layout.operator("daz.copy_all_shells")
         self.layout.operator("daz.remove_shells")
         self.layout.operator("daz.replace_shells")
         self.layout.separator()

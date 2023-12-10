@@ -1345,8 +1345,49 @@ class DAZ_OT_ReplaceShells(DazOperator, Selector, ShellRemover, IsMesh):
         self.getShells(context)
         return DazPropsOperator.invoke(self, context, event)
 
+#-------------------------------------------------------------
+#   Copy shells
+#-------------------------------------------------------------
 
-class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, Selector, IsMesh):
+class ShellCopy:
+    def copyShells(self, mat, nodes, trg):
+        from .tree import findNode
+        from .geometry import getActiveUvLayer
+        tree = mat.node_tree
+        output = findNode(tree, 'OUTPUT_MATERIAL')
+        if output is None:
+            return
+        for node in nodes:
+            nnode = tree.nodes.new(type="ShaderNodeGroup")
+            nnode.label = node.label
+            nnode.name = node.name
+            nnode.node_tree = node.node_tree
+            nnode.location = output.location
+            output.location[0] += XSIZE
+            for slot,oslot in [("BSDF", "Surface"), ("Displacement", "Displacement")]:
+                for link in output.inputs[oslot].links:
+                    tree.links.new(link.from_socket, nnode.inputs[slot])
+                tree.links.new(nnode.outputs[slot], output.inputs[oslot])
+            for link in node.inputs["UV"].links:
+                uvnode = link.from_node
+                if uvnode.type == 'UVMAP':
+                    uvname = uvnode.uv_map
+                    if uvname not in trg.data.uv_layers.keys():
+                        uvname = getActiveUvLayer(trg).name
+                elif uvnode.type == 'TEX_COORD':
+                    uvname = getActiveUvLayer(trg).name
+                else:
+                    print("Unknown UV node type: %s" % uvnode.type)
+                    return
+                uvmap = tree.nodes.new(type="ShaderNodeUVMap")
+                uvmap.uv_map = uvname
+                uvmap.label = uvname
+                uvmap.hide = True
+                uvmap.location = nnode.location - Vector((XSIZE, YSIZE))
+                tree.links.new(uvmap.outputs["UV"], nnode.inputs["UV"])
+
+
+class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, ShellCopy, Selector, IsMesh):
     bl_idname = "daz.copy_shells"
     bl_label = "Copy Shells"
     bl_description = "Copy selected material shells to selected meshes"
@@ -1380,39 +1421,29 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, Selector, IsMesh):
                 driveShellInfluence(trg, {})
 
 
-    def copyShells(self, mat, nodes, trg):
-        from .tree import findNode
-        tree = mat.node_tree
-        output = findNode(tree, 'OUTPUT_MATERIAL')
-        if output is None:
-            return
-        for node in nodes:
-            nnode = tree.nodes.new(type="ShaderNodeGroup")
-            nnode.label = node.label
-            nnode.name = node.name
-            nnode.node_tree = node.node_tree
-            nnode.location = output.location
-            output.location[0] += XSIZE
-            for slot,oslot in [("BSDF", "Surface"), ("Displacement", "Displacement")]:
-                for link in output.inputs[oslot].links:
-                    tree.links.new(link.from_socket, nnode.inputs[slot])
-                tree.links.new(nnode.outputs[slot], output.inputs[oslot])
-            for link in node.inputs["UV"].links:
-                uvnode = link.from_node
-                if uvnode.type == 'UVMAP':
-                    uvname = uvnode.uv_map
-                elif uvnode.type == 'TEX_COORD':
-                    from .geometry import getActiveUvLayer
-                    uvname = getActiveUvLayer(trg).name
-                else:
-                    print("Unknown UV node type: %s" % uvnode.type)
-                    return
-                uvmap = tree.nodes.new(type="ShaderNodeUVMap")
-                uvmap.uv_map = uvname
-                uvmap.label = uvname
-                uvmap.hide = True
-                uvmap.location = nnode.location - Vector((XSIZE, YSIZE))
-                tree.links.new(uvmap.outputs["UV"], nnode.inputs["UV"])
+class DAZ_OT_CopyAllShells(DazOperator, ShellRemover, ShellCopy, IsMesh):
+    bl_idname = "daz.copy_all_shells"
+    bl_label = "Copy All Shells"
+    bl_description = "Copy all shell node groups from active material to selected meshes"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        self.getShells(context)
+        src = context.object
+        mat = src.active_material
+        nodes = []
+        for struct in self.shells.values():
+            pairs = struct.get(mat.name)
+            if pairs:
+                nodes += [pair[1] for pair in pairs]
+        for trg in getSelectedMeshes(context):
+            if trg != src:
+                for mat in trg.data.materials:
+                    if mat is None:
+                        continue
+                    if nodes:
+                        self.copyShells(mat, nodes, trg)
+                driveShellInfluence(trg, {})
 
 #-------------------------------------------------------------
 #   Scale materials
@@ -1950,6 +1981,7 @@ classes = [
     DAZ_OT_RemoveShells,
     DAZ_OT_ReplaceShells,
     DAZ_OT_CopyShells,
+    DAZ_OT_CopyAllShells,
     DAZ_OT_ChangeUnitScale,
     DAZ_OT_ScaleMaterials,
     DAZ_OT_MakePalette,
