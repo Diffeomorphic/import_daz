@@ -1302,10 +1302,13 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         description = "Select IK chains from root bones",
         default = True)
 
-    useParent : BoolProperty(
-        name = "Parent",
-        description = "Parent the IK targets to the root bones' parents",
-        default = False)
+    ikTargetParent : EnumProperty(
+        items = [('NONE', "None", "IK targets not parented"),
+                 ('IMMEDIATE', "Immediate", "Parent IK targets to root bones' immediate parent"),
+                 ('ULTIMATE', "Ultimate", "Parent IK targets to root bones' ultimate parent")],
+        name = "IK Target Parents",
+        description = "IK targets parents",
+        default = 'NONE')
 
     onlyConnected : BoolProperty(
         name = "Only Connected Bones",
@@ -1325,7 +1328,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
 
     def draw(self, context):
         self.layout.prop(self, "fromRoots")
-        self.layout.prop(self, "useParent")
+        self.layout.prop(self, "ikTargetParent")
         self.layout.prop(self, "onlyConnected")
         if self.onlyConnected:
             self.layout.prop(self, "threshold")
@@ -1405,8 +1408,13 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
             goal.head = eb.tail
             goal.tail = 2*eb.tail - eb.head
             goal.roll = eb.roll
-            if self.useParent:
+            if self.ikTargetParent == 'IMMEDIATE':
                 goal.parent = root.parent
+            elif self.ikTargetParent == 'ULTIMATE':
+                parent = root.parent
+                while parent and parent.parent:
+                    parent = parent.parent
+                goal.parent = parent
             if self.usePoleTargets:
                 for n in range(clen//2):
                     eb = eb.parent
