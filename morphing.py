@@ -1925,6 +1925,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
+    #useERC = True
+
     def draw(self, context):
         MorphSuffix.draw(self, context)
 

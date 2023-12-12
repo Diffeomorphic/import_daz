@@ -1761,12 +1761,8 @@ def setRestPose(ob, rig, context):
             print("Could not apply armature to %s" % ob.name)
             ok = False
         if ok:
-            mod = ob.modifiers.new("Armature %s" % rig.name, "ARMATURE")
-            mod.object = rig
-            mod.use_deform_preserve_volume = True
-            nmods = len(ob.modifiers)
-            for n in range(nmods-1):
-                bpy.ops.object.modifier_move_up(modifier=mod.name)
+            from .modifier import newArmatureModifier
+            newArmatureModifier(rig.name, ob. rig)
 
 
 def applyArmatureModifier(ob):
