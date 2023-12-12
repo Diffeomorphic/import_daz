@@ -725,18 +725,24 @@ def buildVertexGroup(ob, vgname, weights, default=None):
 
 
 def makeArmatureModifier(name, context, ob, rig):
-    mod = ob.modifiers.new("Armature %s" % name, 'ARMATURE')
-    mod.object = rig
-    mod.use_deform_preserve_volume = True
     activateObject(context, ob)
-    for n in range(len(ob.modifiers)-1):
-        bpy.ops.object.modifier_move_up(modifier=mod.name)
+    newArmatureModifier(name, ob, rig)
     ob.location = (0,0,0)
     ob.rotation_euler = (0,0,0)
     ob.scale = (1,1,1)
     ob.lock_location = (True,True,True)
     ob.lock_rotation = (True,True,True)
     ob.lock_scale = (True,True,True)
+
+
+def newArmatureModifier(name, ob, rig):
+    mod = ob.modifiers.new("Armature %s" % name, "ARMATURE")
+    mod.object = rig
+    mod.use_deform_preserve_volume = True
+    nmods = len(ob.modifiers)
+    for n in range(nmods-1):
+        bpy.ops.object.modifier_move_up(modifier=mod.name)
+
 
 
 def copyVertexGroups(ob, hdob):

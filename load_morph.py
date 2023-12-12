@@ -59,6 +59,7 @@ class LoadMorph(DriverUser):
     useProtected = False
     defaultMultiplier = 1.0
     useMulti = False
+    useERC = False
 
     def __init__(self):
         self.rig = None
@@ -123,6 +124,7 @@ class LoadMorph(DriverUser):
         self.iked = []
         self.origRestored = []
         self.bakedSkipped = {}
+        self.ercMorphs = {}
         self.initAmt()
 
 
@@ -158,6 +160,8 @@ class LoadMorph(DriverUser):
                 self.deleteTmp()
             self.rig.update_tag()
             if self.mesh:
+                if self.ercMorphs:
+                    self.applyErcArmature(bpy.context)
                 self.mesh.update_tag()
         if self.origRestored:
             from .geometry import clearMeshProps
@@ -231,8 +235,11 @@ class LoadMorph(DriverUser):
         if not ok:
             return " #"
         elif self.rig and self.usePropDrivers:
+            self.ercTransforms = {}
             if self.makeFormulas(asset, skey):
                 self.trivial[name] = False
+            if self.ercTransforms:
+                self.makeErcMorphs(name)
         return " *"
 
 
@@ -434,16 +441,22 @@ class LoadMorph(DriverUser):
                     elif key == "rotation":
                         self.makeRotFormula(output, idx, expr)
                     elif key == "translation":
-                        self.makeTransFormula(output, idx, expr)
+                        if not self.useERC:
+                            self.makeTransFormula(output, idx, expr)
                     elif key == "scale":
                         self.makeScaleFormula(output, idx, expr)
                     elif key == "center_point":
                         self.erc = True
-                        if GS.useERC:
+                        if self.useERC:
+                            self.makeErcFormula(output, idx, expr)
+                        elif GS.useERC:
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
                     elif key == "end_point":
                         self.erc = True
-                        if GS.useERC:
+                        if self.useERC:
+                            pass
+                            #self.makeErcFormula(output, idx, expr)
+                        elif GS.useERC:
                             self.makeOffsetFormula("TlOffset", output, idx, expr)
         return True
 
@@ -475,7 +488,7 @@ class LoadMorph(DriverUser):
         return adj
 
 
-    def addShapeDriver(self, skey, final):
+    def addShapeDriver(self, skey, final, expr="a"):
         from .driver import removeModifiers
 
         def addDriver(channel):
@@ -484,7 +497,7 @@ class LoadMorph(DriverUser):
             fcu.driver.type = 'SCRIPTED'
             removeModifiers(fcu)
             self.addPathVar(fcu, "a", self.amt, propRef(final))
-            fcu.driver.expression = "a"
+            fcu.driver.expression = expr
             return fcu
 
         fcu = addDriver("value")
@@ -667,6 +680,17 @@ class LoadMorph(DriverUser):
         self.addPoseboneDriver(pb, tfm)
 
 
+    def makeErcFormula(self, bname, idx, expr):
+        tfm,pb,prop,factor = self.getBoneData(bname, expr)
+        self.ercMorphs[prop] = True
+        if pb.name not in self.ercTransforms.keys():
+            tfm.setTrans(factor, prop, index=idx)
+            self.ercTransforms[pb.name] = (tfm, tfm.trans)
+        else:
+            tfm,trans = self.ercTransforms[pb.name]
+            tfm.trans[idx] = factor
+
+
     def makeOffsetFormula(self, attr, bname, idx, expr):
         _tfm,pb,prop,factor = self.getBoneData(bname, expr)
         if attr not in pb.keys():
@@ -674,6 +698,57 @@ class LoadMorph(DriverUser):
         vec = Vector((0,0,0))
         vec[idx] = factor
         self.setFcurves(pb, vec, prop, attr, "pose")
+
+
+    def makeErcMorphs(self, name):
+        def getParentTrans(pb):
+            parent = pb.parent
+            while parent and parent.name not in self.ercTransforms.keys():
+                parent = parent.parent
+            if parent:
+                return self.ercTransforms[parent.name][1]
+            else:
+                return Zero
+
+        offsets = {}
+        for pb in self.rig.pose.bones:
+            tfm,trans = self.ercTransforms.get(pb.name, (None,None))
+            if tfm:
+                offset = trans - getParentTrans(pb)
+                mat = Euler(pb.bone.DazOrient).to_matrix()
+                loc = offset @ mat
+                tfm.trans = loc
+                self.addPoseboneDriver(pb, tfm)
+
+
+    def applyErcArmature(self, context):
+        from .merge import applyArmatureModifier
+        from .modifier import getBasicShape, newArmatureModifier
+        from .driver import getPropMinMax
+        activateObject(context, self.mesh)
+        basic,skeys,new = getBasicShape(self.mesh)
+        for skey in skeys.key_blocks:
+            skey.mute = True
+            skey.value = 0.0
+        for final in self.ercMorphs.keys():
+            prop = baseProp(final)
+            self.rig[prop] = 1.0
+            updateDrivers(self.rig)
+            updateDrivers(self.rig.data)
+            applyArmatureModifier(self.mesh)
+            name = self.rig.name
+            rig = self.rig
+            newArmatureModifier(name, self.mesh, rig)
+            self.rig[prop] = 0.0
+            skey = skeys.key_blocks[-1]
+            skey.name = "%s:correct" % prop
+            self.addShapeDriver(skey, final, expr="-a")
+            min,max,default,ovr = getPropMinMax(self.rig, prop, True)
+            skey.slider_min = -max
+            skey.slider_max = -min
+            skey.mute = True
+        for skey in skeys.key_blocks:
+            skey.mute = False
 
     #-------------------------------------------------------------
     #   Add posebone driver
