@@ -388,23 +388,25 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
     hasAdjusters = False
     useAdjusters = False
 
-    useERC : BoolProperty(
-        name = "ERC Morphs",
-        description = "Load support for ERC morphs that change the rest pose",
-        default = True)
+    ercMethod : EnumProperty(
+        items = [('NONE', "None", "ERC morphs are ignored"),
+                 ('TRANSLATION', "Translation", "ERC morphs are translations"),
+                 ('ARMATURE', "Armature", "ERC morphs change the rest pose")],
+        name = "ERC Method",
+        description = "Support for ERC morphs that change the rest pose")
 
     def draw(self, context):
         PropDrivers.draw(self, context)
-        self.layout.prop(self, "useERC")
+        self.layout.prop(self, "ercMethod")
 
     def storeState(self, context):
         DazOperator.storeState(self, context)
-        self.gsERC = GS.useERC
-        GS.useERC = self.useERC
+        self.gsERC = GS.ercMethod
+        GS.ercMethod = self.ercMethod
 
     def restoreState(self, context):
         DazOperator.restoreState(self, context)
-        GS.useERC = self.gsERC
+        GS.ercMethod = self.gsERC
 
     def run(self, context):
         from .driver import setFloatProp, makePropDriver
@@ -426,7 +428,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
                 final = finalProp(prop)
                 setFloatProp(rig.data, final, 0.0, GS.customMin, GS.customMax, False)
                 makePropDriver(propRef(prop), rig.data, propRef(final), rig, "x")
-                if self.useERC:
+                if self.ercMethod == 'ARMATURE':
                     self.buildRigMorph(rig, dbz)
             for ob in meshes:
                 self.buildMeshMorph(ob, rig, dbz)

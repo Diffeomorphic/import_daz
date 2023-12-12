@@ -1445,23 +1445,10 @@ class PropDrivers:
             self.mesh.DazMeshMorphs = True
 
 #------------------------------------------------------------------------
-#   ERC User
-#------------------------------------------------------------------------
-
-class ERCUser:
-    useERC : BoolProperty(
-        name = "ERC Morphs As Translations",
-        description = "Import ERC morphs as translations.\nOrdinary translation are not imported",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "useERC")
-
-#------------------------------------------------------------------------
 #   Import custom morphs
 #------------------------------------------------------------------------
 
-class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, ERCUser, DazImageFile, MultiFile, IsMeshArmature):
+class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_custom_morphs"
     bl_label = "Import Custom Morphs"
     bl_description = "Import selected morphs from native DAZ files (*.duf, *.dsf)"
@@ -1500,7 +1487,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, ERC
     def draw(self, context):
         PropDrivers.draw(self, context)
         MorphSuffix.draw(self, context)
-        ERCUser.draw(self, context)
         self.layout.prop(self, "bodypart")
         if self.bodypart == "Face":
             self.layout.prop(self, "useTransferFace")
@@ -1934,14 +1920,13 @@ class ScanFinder:
 #   Import DAZ Favorites
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, ERCUser, IsMeshArmature):
+class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
     def draw(self, context):
         MorphSuffix.draw(self, context)
-        ERCUser.draw(self, context)
 
     def run(self, context):
         self.rig = getRigFromContext(context)

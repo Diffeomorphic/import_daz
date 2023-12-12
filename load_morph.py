@@ -59,7 +59,6 @@ class LoadMorph(DriverUser):
     useProtected = False
     defaultMultiplier = 1.0
     useMulti = False
-    useERC = False
 
     def __init__(self):
         self.rig = None
@@ -235,10 +234,10 @@ class LoadMorph(DriverUser):
         if not ok:
             return " #"
         elif self.rig and self.usePropDrivers:
-            self.ercTransforms = {}
+            self.ercBones = {}
             if self.makeFormulas(asset, skey):
                 self.trivial[name] = False
-            if self.ercTransforms:
+            if self.ercBones:
                 self.makeErcMorphs(name)
         return " *"
 
@@ -441,22 +440,18 @@ class LoadMorph(DriverUser):
                     elif key == "rotation":
                         self.makeRotFormula(output, idx, expr)
                     elif key == "translation":
-                        if not self.useERC:
-                            self.makeTransFormula(output, idx, expr)
+                        self.makeTransFormula(output, idx, expr)
                     elif key == "scale":
                         self.makeScaleFormula(output, idx, expr)
                     elif key == "center_point":
                         self.erc = True
-                        if self.useERC:
+                        if GS.ercMethod == 'TRANSLATION':
                             self.makeErcFormula(output, idx, expr)
-                        elif GS.useERC:
+                        elif GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
                     elif key == "end_point":
                         self.erc = True
-                        if self.useERC:
-                            pass
-                            #self.makeErcFormula(output, idx, expr)
-                        elif GS.useERC:
+                        if GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("TlOffset", output, idx, expr)
         return True
 
@@ -682,12 +677,12 @@ class LoadMorph(DriverUser):
 
     def makeErcFormula(self, bname, idx, expr):
         tfm,pb,prop,factor = self.getBoneData(bname, expr)
-        self.ercMorphs[prop] = True
-        if pb.name not in self.ercTransforms.keys():
+        self.ercMorphs[prop] = self.ercBones
+        if pb.name not in self.ercBones.keys():
             tfm.setTrans(factor, prop, index=idx)
-            self.ercTransforms[pb.name] = (tfm, tfm.trans)
+            self.ercBones[pb.name] = (tfm, tfm.trans)
         else:
-            tfm,trans = self.ercTransforms[pb.name]
+            tfm,trans = self.ercBones[pb.name]
             tfm.trans[idx] = factor
 
 
@@ -703,10 +698,10 @@ class LoadMorph(DriverUser):
     def makeErcMorphs(self, name):
         def getParentTrans(pb):
             parent = pb.parent
-            while parent and parent.name not in self.ercTransforms.keys():
+            while parent and parent.name not in self.ercBones.keys():
                 parent = parent.parent
             if parent:
-                return self.ercTransforms[parent.name][1]
+                return self.ercBones[parent.name][1]
             else:
                 return Zero
 
@@ -714,7 +709,7 @@ class LoadMorph(DriverUser):
         from mathutils import Matrix
         offsets = {}
         for pb in self.rig.pose.bones:
-            tfm,trans = self.ercTransforms.get(pb.name, (None,None))
+            tfm,trans = self.ercBones.get(pb.name, (None,None))
             if tfm:
                 offset = trans - getParentTrans(pb)
                 dmat,bmat,rmat,parent = getTransformMatrices(pb, self.rig, {})
@@ -732,21 +727,36 @@ class LoadMorph(DriverUser):
         for skey in skeys.key_blocks:
             skey.mute = True
             skey.value = 0.0
-        for final in self.ercMorphs.keys():
+        for final,ercBones in self.ercMorphs.items():
             prop = baseProp(final)
+            fcus = []
+            for fcu in self.rig.animation_data.drivers:
+                words = fcu.data_path.split('"')
+                if words[0] == "pose.bones[" and words[1] not in ercBones.keys():
+                    fcus.append((fcu, fcu.mute))
+                    fcu.mute = True
             self.rig[prop] = 1.0
             updateDrivers(self.amt)
             applyArmatureModifier(self.mesh)
             self.rig[prop] = 0.0
             name = self.rig.name
             newArmatureModifier(name, self.mesh, self.rig)
-            skey = skeys.key_blocks[-1]
-            skey.name = "%s:ERC" % prop
-            self.addShapeDriver(skey, final, expr="-a")
-            min,max,default,ovr = getPropMinMax(self.rig, prop, True)
-            skey.slider_min = -max
-            skey.slider_max = -min
-            skey.mute = True
+            eskey = skeys.key_blocks[-1]
+            skey = skeys.key_blocks.get(prop)
+            if skey:
+                basic = skeys.key_blocks[0]
+                for data,edata,bdata in zip(skey.data, eskey.data, basic.data):
+                    data.co += bdata.co - edata.co
+                self.mesh.shape_key_remove(eskey)
+            else:
+                eskey.name = "%s:ERC" % prop
+                self.addShapeDriver(eskey, final, expr="-a")
+                min,max,default,ovr = getPropMinMax(self.rig, prop, True)
+                eskey.slider_min = -max
+                eskey.slider_max = -min
+                eskey.mute = True
+            for fcu,mute in fcus:
+                fcu.mute = mute
         for skey in skeys.key_blocks:
             skey.mute = False
         updateDrivers(self.amt)

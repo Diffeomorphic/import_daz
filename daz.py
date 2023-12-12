@@ -356,9 +356,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Shapekey Mute Drivers",
         description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
 
-    useERC : BoolProperty(
-        name = "ERC Morphs",
-        description = "Load support for ERC morphs that change the rest pose")
+    ercMethod : EnumProperty(
+        items = [('NONE', "None", "ERC morphs are ignored"),
+                 ('TRANSLATION', "Translation", "ERC morphs are translations"),
+                 ('ARMATURE', "Armature", "ERC morphs change the rest pose")],
+        name = "ERC Method",
+        description = "Support for ERC morphs that change the rest pose")
 
     useStripCategory : BoolProperty(
         name = "Strip Category",
@@ -763,7 +766,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "showInTerminal")
         box.prop(self, "useShapekeys")
         box.prop(self, "useMuteDrivers")
-        box.prop(self, "useERC")
+        box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useModifiedMesh")
         box.prop(self, "useSubmeshes")

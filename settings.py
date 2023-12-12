@@ -113,7 +113,7 @@ class GlobalSettings:
         self.showInTerminal = True
         self.useShapekeys = True
         self.useMuteDrivers = False
-        self.useERC = False
+        self.ercMethod = 'NONE'
         self.useStripCategory = False
         self.useModifiedMesh = False
         self.useSubmeshes = True
@@ -204,7 +204,7 @@ class GlobalSettings:
     def toggleMorphArmatures(self, scn):
         from .runtime.morph_armature import onFrameChangeDaz, unregister
         unregister()
-        if scn.DazAutoMorphArmatures and self.useERC:
+        if scn.DazAutoMorphArmatures and self.ercMethod == 'ARMATURE':
             bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 
 
