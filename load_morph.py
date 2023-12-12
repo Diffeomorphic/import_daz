@@ -710,14 +710,16 @@ class LoadMorph(DriverUser):
             else:
                 return Zero
 
+        from .node import getTransformMatrices
+        from mathutils import Matrix
         offsets = {}
         for pb in self.rig.pose.bones:
             tfm,trans = self.ercTransforms.get(pb.name, (None,None))
             if tfm:
                 offset = trans - getParentTrans(pb)
-                mat = Euler(pb.bone.DazOrient).to_matrix()
-                loc = offset @ mat
-                tfm.trans = loc
+                dmat,bmat,rmat,parent = getTransformMatrices(pb, self.rig, {})
+                wmat = rmat.inverted() @ Matrix.Translation(offset) @ rmat
+                tfm.trans = wmat.to_translation()
                 self.addPoseboneDriver(pb, tfm)
 
 
@@ -733,15 +735,13 @@ class LoadMorph(DriverUser):
         for final in self.ercMorphs.keys():
             prop = baseProp(final)
             self.rig[prop] = 1.0
-            updateDrivers(self.rig)
-            updateDrivers(self.rig.data)
+            updateDrivers(self.amt)
             applyArmatureModifier(self.mesh)
-            name = self.rig.name
-            rig = self.rig
-            newArmatureModifier(name, self.mesh, rig)
             self.rig[prop] = 0.0
+            name = self.rig.name
+            newArmatureModifier(name, self.mesh, self.rig)
             skey = skeys.key_blocks[-1]
-            skey.name = "%s:correct" % prop
+            skey.name = "%s:ERC" % prop
             self.addShapeDriver(skey, final, expr="-a")
             min,max,default,ovr = getPropMinMax(self.rig, prop, True)
             skey.slider_min = -max
@@ -749,6 +749,7 @@ class LoadMorph(DriverUser):
             skey.mute = True
         for skey in skeys.key_blocks:
             skey.mute = False
+        updateDrivers(self.amt)
 
     #-------------------------------------------------------------
     #   Add posebone driver
