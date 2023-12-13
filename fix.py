@@ -959,6 +959,35 @@ class ConstraintStore:
                 cns.driver_remove("mute")
                 pb.constraints.remove(cns)
 
+    #-------------------------------------------------------------
+    #   Driver store
+    #-------------------------------------------------------------
+
+    def storeAllMeshDrivers(self):
+        from .driver import Driver
+        self.drivers = {}
+        for mesh in self.meshes:
+            skeys = mesh.data.shape_keys
+            if skeys and skeys.animation_data:
+                drivers = self.drivers[mesh.name] = []
+                for fcu in list(skeys.animation_data.drivers):
+                    driver = Driver(fcu, False)
+                    drivers.append(driver)
+                    skeys.animation_data.drivers.remove(fcu)
+
+
+    def restoreAllMeshDrivers(self, rig, renamed):
+        assoc = dict([(dbone,mbone) for mbone,dbone in renamed.items()])
+        for mbone,dbone in renamed.items():
+            defbone = "DEF-%s" % mbone
+            if defbone in rig.data.bones.keys():
+                assoc[dbone] = defbone
+        for mesh in self.meshes:
+            skeys = mesh.data.shape_keys
+            drivers = self.drivers.get(mesh.name, [])
+            for driver in drivers:
+                driver.createDirect(skeys, assoc)
+
 #-------------------------------------------------------------
 #   BendTwist class
 #-------------------------------------------------------------

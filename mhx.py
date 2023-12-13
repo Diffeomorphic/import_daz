@@ -637,9 +637,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.rigname = rig.name
         rig.DazMhxLegacy = False
         self.makeRealParents(context, rig)
+        self.meshes = getMeshChildren(rig)
         if self.keepRig:
             nrig = self.saveDazRig(context)
-        self.meshes = getMeshChildren(rig)
+        self.storeAllMeshDrivers()
         finalizeArmature(rig)
         clearBoneCollections(rig)
         makeBoneCollections(rig, MhxLayers)
@@ -733,6 +734,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreFixConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
+        if self.keepRig:
+            self.restoreAllMeshDrivers(nrig, {})
+        else:
+            self.restoreAllMeshDrivers(rig, self.renamedBones)
         self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)

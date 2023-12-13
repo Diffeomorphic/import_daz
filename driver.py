@@ -354,13 +354,19 @@ class Driver:
         return self.fill(fcu, fixDrv)
 
 
-    def fill(self, fcu, fixDrv=False):
+    def createDirect(self, rna, assoc):
+        fcu = rna.driver_add(self.data_path, self.array_index)
+        removeModifiers(fcu)
+        return self.fill(fcu, False, assoc)
+
+
+    def fill(self, fcu, fixDrv=False, assoc={}):
         drv = fcu.driver
         drv.type = self.type
         drv.use_self = self.use_self
         drv.expression = self.expression
         for var in self.variables:
-            var.create(drv.variables.new(), fixDrv)
+            var.create(drv.variables.new(), fixDrv, assoc)
         return fcu
 
 
@@ -382,10 +388,10 @@ class Variable:
         for trg in var.targets:
             self.targets.append(Target(trg))
 
-    def create(self, var, fixDrv=False):
+    def create(self, var, fixDrv=False, assoc={}):
         var.name = self.name
         var.type = self.type
-        self.targets[0].create(var.targets[0], fixDrv)
+        self.targets[0].create(var.targets[0], fixDrv, assoc)
         for target in self.targets[1:]:
             trg = var.targets.new()
             target.create(trg, fixDrv)
@@ -406,11 +412,11 @@ class Target:
         else:
             self.name = words[0]
 
-    def create(self, trg, fixDrv=False):
+    def create(self, trg, fixDrv=False, assoc={}):
         if self.id_type != 'OBJECT':
             trg.id_type = self.id_type
         trg.id = self.id
-        trg.bone_target = self.bone_target
+        trg.bone_target = assoc.get(self.bone_target, self.bone_target)
         trg.transform_type = self.transform_type
         trg.rotation_mode = self.rotation_mode
         trg.transform_space = self.transform_space
