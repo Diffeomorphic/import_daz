@@ -379,6 +379,10 @@ def fitToFile(filepath, nodes):
 #   Import DBZ as morph
 #----------------------------------------------------------
 
+def b2d(v):
+    return Vector((v[0], v[2], -v[1]))/GS.unitScale
+
+
 class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmature):
     bl_idname = "daz.import_dbz"
     bl_label = "Import DBZ Morphs"
@@ -393,7 +397,8 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
                  ('TRANSLATION', "Translation", "ERC morphs are translations"),
                  ('ARMATURE', "Armature", "ERC morphs change the rest pose")],
         name = "ERC Method",
-        description = "Support for ERC morphs that change the rest pose")
+        description = "Support for ERC morphs that change the rest pose",
+        default = 'TRANSLATION')
 
     def draw(self, context):
         PropDrivers.draw(self, context)
@@ -405,7 +410,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         GS.ercMethod = self.ercMethod
 
     def restoreState(self, context):
-        DazOperator.restoreState(self, context)
+        #DazOperator.restoreState(self, context)
         GS.ercMethod = self.gsERC
 
     def run(self, context):
@@ -423,15 +428,16 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
             dbz = loadDbzFile(path)
             prop = dbz.name
             props.append(prop)
+            for ob in meshes:
+                self.buildMeshMorph(ob, rig, dbz)
+            print("MESH", meshes)
             if self.usePropDrivers and rig:
                 setFloatProp(rig, prop, 0.0, GS.customMin, GS.customMax, True)
                 final = finalProp(prop)
                 setFloatProp(rig.data, final, 0.0, GS.customMin, GS.customMax, False)
                 makePropDriver(propRef(prop), rig.data, propRef(final), rig, "x")
-                if self.ercMethod == 'ARMATURE':
-                    self.buildRigMorph(rig, dbz)
-            for ob in meshes:
-                self.buildMeshMorph(ob, rig, dbz)
+                if self.ercMethod != 'NONE':
+                    self.buildRigMorph(context, rig, meshes, dbz)
         if self.usePropDrivers and rig:
             addToCategories(rig, props, None, self.category)
             rig.DazCustomMorphs = True
@@ -442,7 +448,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         updateScrollbars(context)
 
 
-    def buildRigMorph(self, rig, dbz):
+    def buildRigMorph(self, context, rig, meshes, dbz):
         def match(rig, restdata):
             for bname in rig.data.bones.keys():
                 if baseBone(bname) not in restdata.keys():
@@ -452,14 +458,11 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         for name,dbzrig in dbz.rigs.items():
             for restdata, transforms, center in dbzrig:
                 if match(rig, restdata):
-                    self.buildDbzMorphs(rig, restdata, dbz)
+                    self.buildDbzMorphs(context, rig, meshes, restdata, dbz)
                     return
 
 
-    def buildDbzMorphs(self, rig, restdata, dbz):
-        def b2d(v):
-            return factor*Vector((v[0], v[2], -v[1]))
-
+    def buildDbzMorphs(self, context, rig, meshes, restdata, dbz):
         from .formula import makeExpression
         from .load_morph import LoadMorph
         lm = LoadMorph()
@@ -467,24 +470,49 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         lm.initAll()
         expr = makeExpression()
         expr["prop"] = dbz.name
-        factor = 1/rig.DazScale
         try:
             lm.createTmp()
-            for pb in rig.pose.bones:
-                if isDrvBone(pb.name):
-                    continue
-                (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
-                vec = Vector(head) - b2d(pb.bone.head_local)
-                for idx,comp in enumerate(vec):
-                    expr["factor"] = comp
-                    lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)
-                vec = Vector(tail) - b2d(pb.bone.tail_local)
-                for idx,comp in enumerate(vec):
-                    expr["factor"] = comp
-                    lm.makeOffsetFormula("TlOffset", pb.name, idx, expr)
+            if GS.ercMethod == 'TRANSLATION':
+                self.makeErcFormulas(context, rig, meshes, lm, expr, restdata)
+            elif GS.ercMethod == 'ARMATURE':
+                self.makeOffsetFormulas(rig, lm, expr, restdata)
             lm.buildSumDrivers()
         finally:
             lm.deleteTmp()
+
+
+    def makeErcFormulas(self, context, rig, meshes, lm, expr, restdata):
+        lm.ercBones = {}
+        for pb in rig.pose.bones:
+            if isDrvBone(pb.name):
+                continue
+            (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
+            vec = Vector(head) - b2d(pb.bone.head_local)
+            for idx,comp in enumerate(vec):
+                expr["factor"] = comp
+                lm.makeErcFormula(pb.name, idx, expr)
+        if lm.ercBones:
+            lm.makeErcMorphs()
+        if lm.ercMorphs:
+            for mesh in meshes:
+                lm.mesh = mesh
+                lm.applyErcArmature(context)
+        lm.mesh.update_tag()
+
+
+    def makeOffsetFormulas(self, rig, lm, expr, restdata):
+        for pb in rig.pose.bones:
+            if isDrvBone(pb.name):
+                continue
+            (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
+            vec = Vector(head) - b2d(pb.bone.head_local)
+            for idx,comp in enumerate(vec):
+                expr["factor"] = comp
+                lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)
+            vec = Vector(tail) - b2d(pb.bone.tail_local)
+            for idx,comp in enumerate(vec):
+                expr["factor"] = comp
+                lm.makeOffsetFormula("TlOffset", pb.name, idx, expr)
 
 
     def setDriver(self, fcu, rig, prop, expr):

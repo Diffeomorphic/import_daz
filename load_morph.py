@@ -238,7 +238,7 @@ class LoadMorph(DriverUser):
             if self.makeFormulas(asset, skey):
                 self.trivial[name] = False
             if self.ercBones:
-                self.makeErcMorphs(name)
+                self.makeErcMorphs()
         return " *"
 
 
@@ -695,7 +695,7 @@ class LoadMorph(DriverUser):
         self.setFcurves(pb, vec, prop, attr, "pose")
 
 
-    def makeErcMorphs(self, name):
+    def makeErcMorphs(self):
         def getParentTrans(pb):
             parent = pb.parent
             while parent and parent.name not in self.ercBones.keys():
@@ -737,13 +737,15 @@ class LoadMorph(DriverUser):
                     fcu.mute = True
             self.rig[prop] = 1.0
             updateDrivers(self.amt)
+            print("AMT", self.amt)
             applyArmatureModifier(self.mesh)
+            return
             self.rig[prop] = 0.0
             name = self.rig.name
             newArmatureModifier(name, self.mesh, self.rig)
             eskey = skeys.key_blocks[-1]
             skey = skeys.key_blocks.get(prop)
-            if skey:
+            if False and skey:
                 basic = skeys.key_blocks[0]
                 for data,edata,bdata in zip(skey.data, eskey.data, basic.data):
                     data.co += bdata.co - edata.co
