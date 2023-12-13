@@ -1762,7 +1762,7 @@ def setRestPose(ob, rig, context):
             ok = False
         if ok:
             from .modifier import newArmatureModifier
-            newArmatureModifier(rig.name, ob. rig)
+            newArmatureModifier(rig.name, ob, rig)
 
 
 def applyArmatureModifier(ob):

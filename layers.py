@@ -63,8 +63,7 @@ if BLENDER3:
 
     L_HELP =    14
     L_HELP2 =   15
-    L_ORIG =    27
-    L_HIDE =    29
+    L_HIDDEN =    29
     L_FIN =     30
     L_DEF =     31
 else:
@@ -98,6 +97,7 @@ else:
 
     L_HELP =    "Help"
     L_HELP2 =   "Help 2"
+    L_HIDDEN =    "Hidden"
     L_FIN =     "Final"
     L_DEF =     "Deform"
 

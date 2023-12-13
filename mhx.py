@@ -1218,7 +1218,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 if self.showLinks:
                     elbowLink.hide_select = True
                 else:
-                    enableBoneNumLayer(elbowLink, rig, L_HIDE)
+                    enableBoneNumLayer(elbowLink, rig, L_HIDDEN)
 
             thigh = self.setLayer("thigh.%s" % suffix, rig, L_HELP)
             shin = self.setLayer("shin.%s" % suffix, rig, L_HELP)
@@ -1291,7 +1291,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     setBoneNumLayer(kneeLink, rig, extraLayer)
                     kneeLink.hide_select = True
                 else:
-                    enableBoneNumLayer(kneeLink, rig, L_HIDE)
+                    enableBoneNumLayer(kneeLink, rig, L_HIDDEN)
 
             footInvFk = deriveBone("foot.inv.fk.%s" % suffix, footRev, rig, L_HELP2, footFk)
             toeInvFk = deriveBone("toe.inv.fk.%s" % suffix, toeRev, rig, L_HELP2, toeFk)
