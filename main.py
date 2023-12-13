@@ -111,7 +111,7 @@ class FitOptions:
 
 class DazLoader:
     def loadDazFile(self, filepath, context):
-        from .objfile import getFitFile, fitToFile
+        from .dbzfile import getFitFile, fitToFile
 
         LS.scene = filepath
         if bpy.app.version < (3,1,0) and GS.shellMethod == 'GEONODES':

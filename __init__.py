@@ -96,7 +96,7 @@ def importModules():
         modnames = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
                     "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
                     "bone_data", "transform", "node", "figure", "bone", "geometry",
-                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "category", "objfile", "panel",
+                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "category", "dbzfile", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "hide", "store",
@@ -120,7 +120,7 @@ from .api import *
 #----------------------------------------------------------
 
 regnames = ["propgroups", "daz", "uilist", "driver", "selector",
-            "figure", "geometry", "objfile", "simple",
+            "figure", "geometry", "dbzfile", "simple",
             "fix", "animation", "morphing", "category", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
