@@ -713,8 +713,8 @@ class LoadMorph(DriverUser):
             if tfm:
                 offset = trans - getParentTrans(pb)
                 dmat,bmat,rmat,parent = getTransformMatrices(pb, self.rig, {})
-                wmat = rmat.inverted() @ Matrix.Translation(offset) @ rmat
-                tfm.trans = wmat.to_translation()
+                tmat = rmat.inverted() @ Matrix.Translation(offset) @ rmat
+                tfm.trans = tmat.to_translation()
                 self.addPoseboneDriver(pb, tfm)
 
 
@@ -737,15 +737,13 @@ class LoadMorph(DriverUser):
                     fcu.mute = True
             self.rig[prop] = 1.0
             updateDrivers(self.amt)
-            print("AMT", self.amt)
             applyArmatureModifier(self.mesh)
-            return
             self.rig[prop] = 0.0
             name = self.rig.name
             newArmatureModifier(name, self.mesh, self.rig)
             eskey = skeys.key_blocks[-1]
             skey = skeys.key_blocks.get(prop)
-            if False and skey:
+            if skey:
                 basic = skeys.key_blocks[0]
                 for data,edata,bdata in zip(skey.data, eskey.data, basic.data):
                     data.co += bdata.co - edata.co

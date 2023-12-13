@@ -410,7 +410,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         GS.ercMethod = self.ercMethod
 
     def restoreState(self, context):
-        #DazOperator.restoreState(self, context)
+        DazOperator.restoreState(self, context)
         GS.ercMethod = self.gsERC
 
     def run(self, context):
@@ -430,7 +430,6 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
             props.append(prop)
             for ob in meshes:
                 self.buildMeshMorph(ob, rig, dbz)
-            print("MESH", meshes)
             if self.usePropDrivers and rig:
                 setFloatProp(rig, prop, 0.0, GS.customMin, GS.customMax, True)
                 final = finalProp(prop)
@@ -476,7 +475,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
                 self.makeErcFormulas(context, rig, meshes, lm, expr, restdata)
             elif GS.ercMethod == 'ARMATURE':
                 self.makeOffsetFormulas(rig, lm, expr, restdata)
-            lm.buildSumDrivers()
+                lm.buildSumDrivers()
         finally:
             lm.deleteTmp()
 
@@ -493,6 +492,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
                 lm.makeErcFormula(pb.name, idx, expr)
         if lm.ercBones:
             lm.makeErcMorphs()
+        lm.buildSumDrivers()
         if lm.ercMorphs:
             for mesh in meshes:
                 lm.mesh = mesh
