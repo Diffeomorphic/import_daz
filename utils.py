@@ -629,6 +629,13 @@ def getCurrentValue(struct, default=None):
     else:
         return default
 
+
+def someMatch(keys, string):
+    for key in keys:
+        if key in string:
+            return True
+    return False
+
 #-------------------------------------------------------------
 #   Profiling
 #-------------------------------------------------------------

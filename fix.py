@@ -963,30 +963,40 @@ class ConstraintStore:
     #   Driver store
     #-------------------------------------------------------------
 
-    def storeAllMeshDrivers(self):
+    def storeAllDrivers(self, rig, meshes):
         from .driver import Driver
+        def storeDrivers(rna, key):
+            if rna and rna.animation_data:
+                drivers = self.drivers[key] = []
+                for fcu in list(rna.animation_data.drivers):
+                    if not someMatch([":Hdo:", ":Tlo:"], fcu.data_path):
+                        driver = Driver(fcu, False)
+                        drivers.append(driver)
+                    rna.animation_data.drivers.remove(fcu)
+
         self.drivers = {}
-        for mesh in self.meshes:
-            skeys = mesh.data.shape_keys
-            if skeys and skeys.animation_data:
-                drivers = self.drivers[mesh.name] = []
-                for fcu in list(skeys.animation_data.drivers):
-                    driver = Driver(fcu, False)
-                    drivers.append(driver)
-                    skeys.animation_data.drivers.remove(fcu)
+        storeDrivers(rig.data, rig.name)
+        for ob in meshes:
+            skeys = ob.data.shape_keys
+            storeDrivers(skeys, ob.name)
 
 
-    def restoreAllMeshDrivers(self, rig, renamed):
-        assoc = dict([(dbone,mbone) for mbone,dbone in renamed.items()])
+    def restoreAllDrivers(self, rig, meshes, renamed):
+        def restoreDrivers(rna, key):
+            drivers = self.drivers.get(key, [])
+            for driver in drivers:
+                driver.createDirect(rna, assoc)
+
+        assoc = {}
         for mbone,dbone in renamed.items():
             defbone = "DEF-%s" % mbone
             if defbone in rig.data.bones.keys():
                 assoc[dbone] = defbone
-        for mesh in self.meshes:
-            skeys = mesh.data.shape_keys
-            drivers = self.drivers.get(mesh.name, [])
-            for driver in drivers:
-                driver.createDirect(skeys, assoc)
+            else:
+                assoc[dbone] = mbone
+        restoreDrivers(rig.data, rig.name)
+        for ob in meshes:
+            restoreDrivers(ob.data.shape_keys, ob.name)
 
 #-------------------------------------------------------------
 #   BendTwist class

@@ -949,12 +949,6 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 
 
     def collectDrivers(self, rna):
-        def match(keys, string):
-            for key in keys:
-                if key in string:
-                    return True
-            return False
-
         if rna is None or rna.animation_data is None:
             print("No drivers: %s" % rna)
             return
@@ -962,7 +956,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             prop = getProp(fcu.data_path)
             if prop is None:
                 continue
-            elif match([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
+            elif someMatch([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
                 self.sumdrivers[fcu.data_path] = fcu, prop
             elif prop.endswith("(rst):01"):
                 self.restdrivers[propRef(prop[:-3])] = fcu, prop
@@ -973,7 +967,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                     if raw == baseProp(prop) and trg.id == self.rig:
                         self.findrivers[propRef(prop)] = fcu, raw
                         self.deldrivers[prop] = fcu
-            if self.useRemoveERC and match([":Hdo:", ":Tlo:"], fcu.data_path):
+            if self.useRemoveERC and someMatch([":Hdo:", ":Tlo:"], fcu.data_path):
                 self.deldrivers[prop] = fcu
 
 

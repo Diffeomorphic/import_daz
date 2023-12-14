@@ -640,7 +640,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.meshes = getMeshChildren(rig)
         if self.keepRig:
             nrig = self.saveDazRig(context)
-        self.storeAllMeshDrivers()
+        self.storeAllDrivers(rig, self.meshes)
         finalizeArmature(rig)
         clearBoneCollections(rig)
         makeBoneCollections(rig, MhxLayers)
@@ -701,8 +701,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.storeAllConstraints(rig)
         showProgress(9, 25, "  Create bend and twist bones")
         self.createBendTwists(rig, bendTwistBones)
-        showProgress(10, 25, "  Fix bone drivers")
-        self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
+        #showProgress(10, 25, "  Fix bone drivers")
+        #self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
 
         #-------------------------------------------------------------
         #   Add MHX stuff
@@ -734,10 +734,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreFixConstraints(rig)
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
-        if self.keepRig:
-            self.restoreAllMeshDrivers(nrig, {})
+        if False and self.keepRig:
+            self.restoreAllDrivers(nrig, self.meshes, {})
         else:
-            self.restoreAllMeshDrivers(rig, self.renamedBones)
+            self.restoreAllDrivers(rig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
@@ -1021,9 +1021,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             "clavicle.R", "upper_arm.R", "hand.R", "thigh.R", "shin.R", "foot.R",
         ]
 
-        setMode('OBJECT')
-        for bname in self.tweakBones:
-            self.deleteBoneDrivers(rig, bname)
         setMode('EDIT')
         for bname in self.tweakBones:
             if bname is None:
@@ -1046,18 +1043,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setMode('POSE')
         from .figure import copyBoneInfo
         rpbs = rig.pose.bones
-        tweakCorrectives = {}
         for bname in self.tweakBones:
             if bname and bname in rpbs.keys():
                 tname = self.getTweakBoneName(bname)
-                tweakCorrectives[tname] = bname
                 tb = rpbs[tname]
                 pb = getBoneCopy(bname, tb, rpbs)
                 copyBoneInfo(tb, pb)
                 tb.lock_location = tb.lock_rotation = tb.lock_scale = (False,False,False)
-
         setMode('OBJECT')
-        #self.fixBoneDrivers(rig, tweakCorrectives)
 
 
     def getTweakBoneName(self, bname):
