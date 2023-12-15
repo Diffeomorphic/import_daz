@@ -963,7 +963,7 @@ class ConstraintStore:
     #   Driver store
     #-------------------------------------------------------------
 
-    def storeAllDrivers(self, rig, meshes):
+    def storeAllDrivers(self, rig, nrig, meshes):
         from .driver import Driver
         def storeDrivers(rna, key):
             if rna and rna.animation_data:
@@ -975,14 +975,14 @@ class ConstraintStore:
                     rna.animation_data.drivers.remove(fcu)
 
         self.drivers = {}
-        storeDrivers(rig.data, rig.name)
+        storeDrivers(rig.data, "_RIG_")
         for ob in meshes:
             skeys = ob.data.shape_keys
             storeDrivers(skeys, ob.name)
 
 
-    def restoreAllDrivers(self, rig, meshes, renamed):
-        def restoreDrivers(rna, key):
+    def restoreAllDrivers(self, rig, nrig, meshes, renamed):
+        def restoreDrivers(rna, key, assoc):
             drivers = self.drivers.get(key, [])
             for driver in drivers:
                 driver.createDirect(rna, assoc)
@@ -994,9 +994,11 @@ class ConstraintStore:
                 assoc[dbone] = defbone
             else:
                 assoc[dbone] = mbone
-        restoreDrivers(rig.data, rig.name)
+        restoreDrivers(rig.data, "_RIG_", assoc)
+        if nrig:
+            assoc = {}
         for ob in meshes:
-            restoreDrivers(ob.data.shape_keys, ob.name)
+            restoreDrivers(ob.data.shape_keys, ob.name, assoc)
 
 #-------------------------------------------------------------
 #   BendTwist class
