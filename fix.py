@@ -1221,8 +1221,6 @@ class BendTwists:
             bend.use_connect = eb.use_connect
             twist.use_connect = True
             eb.use_deform = False
-            enableBoneNumLayer(bend, rig, L_FIN)
-            enableBoneNumLayer(twist, rig, L_FIN)
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
@@ -1240,6 +1238,8 @@ class BendTwists:
                 enableBoneNumLayer(twisttwk, rig, L_DEF)
                 setBoneNumLayer(bendtwk, rig, L_TWEAK)
                 setBoneNumLayer(twisttwk, rig, L_TWEAK)
+                enableBoneNumLayer(bend, rig, L_HELP2)
+                enableBoneNumLayer(twist, rig, L_HELP2)
                 bvgname = btwkname
                 tvgname = ttwkname
             else:

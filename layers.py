@@ -64,7 +64,6 @@ if BLENDER3:
     L_HELP =    14
     L_HELP2 =   15
     L_HIDDEN =    29
-    L_FIN =     30
     L_DEF =     31
 else:
     L_MAIN =    "Root"
@@ -97,8 +96,7 @@ else:
 
     L_HELP =    "Help"
     L_HELP2 =   "Help 2"
-    L_HIDDEN =    "Hidden"
-    L_FIN =     "Final"
+    L_HIDDEN =   "Hidden"
     L_DEF =     "Deform"
 
 
@@ -133,7 +131,6 @@ MhxLayers = {
 
     L_HELP :    "Help",
     L_HELP2 :   "Help 2",
-    L_FIN :     "Final",
     L_DEF :     "Deform",
 }
 
@@ -156,16 +153,14 @@ if BLENDER3:
     R_LEGFK_R = 17
     R_CUSTOM = 19
     R_ROOT = 28
-    R_DEFORM = 29
+    R_DEF = 29
     R_HELP = 30
-    R_LAST = 31
-    R_FIN = 27
 else:
     R_ROOT = "Root"
     R_FACE = "Face"
-    R_DETAIL = 2
+    R_DETAIL = "Face (Primary)"
     R_TORSO = "Torso"
-    R_TORSOTWEAK = 4
+    R_TORSOTWEAK = "Torso (Tweak)"
     R_ARMIK_L = "Arm.L (IK)"
     R_ARMIK_R = "Arm.R (IK)"
     R_LEGIK_L = "Leg.L (IK)"
@@ -174,24 +169,20 @@ else:
     R_ARMFK_R = "Arm.R (FK)"
     R_LEGFK_L = "Leg.L (FK)"
     R_LEGFK_R = "Leg.R (FK)"
-    R_DETAIL = "Face (Primary)"
-    R_TORSOTWEAK = "Torso (Tweak)"
     R_CUSTOM = "Custom"
     R_HELP = "Help"
-    R_DEFORM = "Deform"
-    R_LAST = "Last"
-    R_FIN = "Fin"
+    R_DEF = "DEF"
 
 RigifyLayers = {
     R_ROOT : "Root",
     R_TORSO : "Torso",
+    R_TORSOTWEAK : "Torso (Tweak)",
     R_FACE : "Face",
+    R_DETAIL : "Face (Primary)",
     R_ARMIK_L : "Arm.L (IK)",
     R_ARMIK_R : "Arm.R (IK)",
     R_LEGIK_L : "Leg.L (IK)",
     R_LEGIK_R : "Leg.R (IK)",
-    R_DETAIL : "Face (Primary)",
-    R_TORSOTWEAK : "Torso (Tweak)",
     R_CUSTOM : "Custom",
     R_HELP : "Help",
 }
@@ -199,11 +190,12 @@ RigifyLayers = {
 
 MhxRigifyLayer = {
     L_HELP : R_HELP,
+    L_HELP2 : R_DETAIL,
     L_FACE : R_DETAIL,
     L_HEAD : R_FACE,
     L_CUSTOM : R_CUSTOM,
-    L_FIN : R_LAST,
     L_TWEAK : R_CUSTOM,
+    L_DEF : R_DEF,
 }
 
 #-------------------------------------------------------------

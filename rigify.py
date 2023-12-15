@@ -751,7 +751,7 @@ class Rigifier(RigifyCommon):
             eb.use_deform = dbone.use_deform
             if eb.use_deform:
                 enableBoneNumLayer(eb, gen, R_FACE)
-                setBoneNumLayer(eb, gen, R_DEFORM)
+                setBoneNumLayer(eb, gen, R_DEF)
             else:
                 enableBoneNumLayer(eb, gen, R_HELP)
             if dname in driven.keys():
@@ -796,7 +796,7 @@ class Rigifier(RigifyCommon):
         self.checkTongueIk(gen)
         if self.useTongueIk:
             setMode('EDIT')
-            self.addTongueIkBones(gen, R_FACE, R_DEFORM)
+            self.addTongueIkBones(gen, R_FACE, R_DEF)
 
         setMode('POSE')
 
@@ -814,8 +814,6 @@ class Rigifier(RigifyCommon):
                 if unlock:
                     pb.lock_location = (False, False, False)
                 self.copyBoneInfo(dname, rname, rig, gen)
-                if isFinal(dname):
-                    enableBoneNumLayer(pb.bone, gen, R_FIN)
 
         # Rescale custom shapes
         if rig.DazRig in ["genesis3", "genesis8"]:
@@ -1234,7 +1232,7 @@ class Rigifier(RigifyCommon):
             ]:
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
-                enableBoneNumLayer(pb.bone, gen, R_DEFORM)
+                enableBoneNumLayer(pb.bone, gen, R_DEF)
 
 
     def fixFingerIk(self, rig, gen):

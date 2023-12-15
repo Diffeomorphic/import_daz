@@ -1799,8 +1799,8 @@ def getBoneLayer(pb, rig):
         return L_HELP, False
     elif pb.name in MHX.Teeth:
         return L_TWEAK, False
-    elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_FIN):
-        return L_FIN, False
+    elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
+        return L_HELP2, False
     elif pb.name[0:6] == "tongue":
         return L_FACE, False
     elif pb.parent:
