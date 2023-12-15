@@ -190,7 +190,7 @@ RigifyLayers = {
 
 MhxRigifyLayer = {
     L_HELP : R_HELP,
-    L_HELP2 : R_DETAIL,
+    L_HELP2 : R_HELP,
     L_FACE : R_DETAIL,
     L_HEAD : R_FACE,
     L_CUSTOM : R_CUSTOM,

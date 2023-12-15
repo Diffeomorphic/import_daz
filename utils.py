@@ -130,10 +130,7 @@ else:
 
     def isInNumLayer(bone, rig, layer):
         coll = rig.data.collections.get(layer)
-        if coll:
-            return (bone.name in coll.bones)
-        else:
-            return True
+        return (coll and bone.name in coll.bones)
 
     def getRigLayers(rig):
         return [(coll,coll.is_visible) for coll in rig.data.collections]
