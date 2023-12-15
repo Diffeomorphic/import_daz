@@ -917,15 +917,24 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addBoneGroups(self, rig):
-        if not BLENDER3:
-            return
-        for idx,data in enumerate(MHX.BoneGroups):
-            _bgname,_theme,layers = data
-            bgrp = rig.pose.bone_groups[idx]
-            for pb in rig.pose.bones.values():
+        if BLENDER3:
+            for idx,data in enumerate(MHX.BoneGroups):
+                _bgname,color,layers = data
+                bgrp = rig.pose.bone_groups[idx]
+                for pb in rig.pose.bones:
+                    for layer in layers:
+                        if isInNumLayer(pb.bone, rig, layer):
+                            pb.bone_group = bgrp
+        else:
+            for _bgname,color,layers in MHX.BoneGroups:
                 for layer in layers:
-                    if isInNumLayer(pb.bone, rig, layer):
-                        pb.bone_group = bgrp
+                    coll = rig.data.collections.get(layer)
+                    if coll:
+                        for bone in coll.bones:
+                            bone.color.palette = 'CUSTOM'
+                            bone.color.custom.normal = color
+                            bone.color.custom.select = (0.6, 0.9, 1.0)
+                            bone.color.custom.active = (1.0, 1.0, 0.8)
 
     #-------------------------------------------------------------
     #   Fix knees

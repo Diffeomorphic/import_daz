@@ -87,7 +87,7 @@ if BLENDER3:
     def assignOtherBones(rig, layer):
         pass
 
-    def setBonegroup(pb, rig, bgname):
+    def setBonegroup(pb, rig, bgname, color):
         pb.bone_group = rig.pose.bone_groups[bgname]
 
 else:
@@ -176,8 +176,11 @@ else:
         for coll in rig.data.collections:
             rig.data.collections.remove(coll)
 
-    def setBonegroup(pb, rig, bgname):
-        pass
+    def setBonegroup(pb, rig, bgname, color):
+        pb.color.palette = 'CUSTOM'
+        pb.color.custom.normal = color
+        pb.color.custom.select = (0.6, 0.9, 1.0)
+        pb.color.custom.active = (1.0, 1.0, 0.8)
 
 #-------------------------------------------------------------
 #   Standard layers

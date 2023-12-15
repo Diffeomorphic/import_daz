@@ -470,7 +470,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         makeCustomShape("CS_Pect", "CS_Circle", (0,1,0), 0.15)
         makeCustomShape("CS_Foot", "CS_Circle", (0,0.5,0), (0.5,1,1), (90,0,0))
         makeCustomShape("CS_ToeFk", "CS_Circle", (0,0.5,0), (1,1,0.5), (90,0,0))
-        makeBoneGroups(rig)
+        self.makeBoneGroups(rig)
 
         for pb in rig.pose.bones:
             lname = pb.name.lower()
@@ -479,84 +479,84 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif lname in ["upperfacerig", "lowerfacerig"]:
                 enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
             elif lname in ["upperteeth", "lowerteeth"]:
-                addToLayer(pb, S_SPECIAL, rig, "Special")
+                self.addToLayer(pb, S_SPECIAL, rig, "Special")
             elif not isInNumLayer(pb.bone, rig, T_BONES):
                 if not isInNumLayer(pb.bone, rig, T_HIDDEN):
-                    addToLayer(pb, S_SPECIAL, rig, "Special")
+                    self.addToLayer(pb, S_SPECIAL, rig, "Special")
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
                     self.setCustomShape(pb, "CS_Line")
                 else:
                     self.setCustomShape(pb, "CS_Face")
-                addToLayer(pb, S_FACE, rig, "Face")
+                self.addToLayer(pb, S_FACE, rig, "Face")
             elif pb.name in ["lEye", "rEye", "lEar", "rEar", "l_eye", "r_eye", "l_ear", "r_ear"]:
                 self.setCustomShape(pb, "CS_CircleY2")
-                addToLayer(pb, S_FACE, rig, "Face")
+                self.addToLayer(pb, S_FACE, rig, "Face")
             elif lname == "lowerjaw":
                 self.setCustomShape(pb, "CS_Jaw")
-                addToLayer(pb, S_FACE, rig, "Face")
+                self.addToLayer(pb, S_FACE, rig, "Face")
             elif pb.name.startswith("tongue"):
                 self.setCustomShape(pb, "CS_Tongue")
-                addToLayer(pb, S_FACE, rig, "Face")
+                self.addToLayer(pb, S_FACE, rig, "Face")
             elif lname.endswith("hand"):
                 self.setCustomShape(pb, "CS_HandFk")
-                addToLayer(pb, S_ARMFK, rig, "FK")
+                self.addToLayer(pb, S_ARMFK, rig, "FK")
             elif "carpal" in lname or "tarsal" in lname:
-                addToLayer(pb, S_SPECIAL, rig, "Special")
+                self.addToLayer(pb, S_SPECIAL, rig, "Special")
             elif pb.name in ["lCollar", "rCollar", "l_shoulder", "r_shoulder"]:
                 self.setCustomShape(pb, "CS_Collar")
-                addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
             elif lname.endswith("foot"):
                 self.setCustomShape(pb, "CS_Foot")
-                addToLayer(pb, S_LEGFK, rig, "FK")
+                self.addToLayer(pb, S_LEGFK, rig, "FK")
             elif pb.name in ["lToe", "rToe", "l_toes", "r_toes"]:
                 self.setCustomShape(pb, "CS_ToeFk")
-                addToLayer(pb, S_LEGFK, rig, "Limb")
+                self.addToLayer(pb, S_LEGFK, rig, "Limb")
                 if not self.useReverseFoot:
-                    addToLayer(pb, S_LEGIK, rig)
+                    self.addToLayer(pb, S_LEGIK, rig, None)
             elif pb.name[1:] in IK.G12Arm + IK.G38Arm + IK.G9Arm:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, S_ARMFK, rig, "FK")
+                self.addToLayer(pb, S_ARMFK, rig, "FK")
             elif pb.name[1:] in IK.G12Leg + IK.G38Leg + IK.G9Leg:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, S_LEGFK, rig, "FK")
+                self.addToLayer(pb, S_LEGFK, rig, "FK")
             elif pb.name[1:] in ["Thumb1", "Index1", "Mid1", "Ring1", "Pinky1"]:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, S_HAND, rig, "Limb")
+                self.addToLayer(pb, S_HAND, rig, "Limb")
             elif pb.name == "hip":
                 makeSpine(pb, 1.5*spineWidth, gizmo="CS_Cube")
-                addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name == "pelvis":
                 makeSpine(pb, 1.5*spineWidth, 1)
-                addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name in IK.G38Spine + IK.G12Spine + IK.G9Spine:
                 makeSpine(pb, spineWidth)
-                addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name == "head":
                 makeSpine(pb, 0.7*spineWidth, 1)
-                addToLayer(pb, S_SPINE, rig, "Spine")
-                addToLayer(pb, S_FACE, rig)
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_FACE, rig, None)
             elif pb.name in IK.G38Neck + IK.G12Neck + IK.G9Neck:
                 makeSpine(pb, 0.5*spineWidth)
-                addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
             elif "toe" in lname:
                 self.setCustomShape(pb, "CS_Limb")
-                addToLayer(pb, S_FOOT, rig, "Limb")
+                self.addToLayer(pb, S_FOOT, rig, "Limb")
             elif (pb.name[1:4] in ["Thu", "Ind", "Mid", "Rin", "Pin"] or
                   pb.name[1:5] in ["_thu", "_ind", "_mid", "_rin", "_pin"]):
                 self.setCustomShape(pb, "CS_CircleY2")
-                addToLayer(pb, S_HAND, rig, "Limb")
+                self.addToLayer(pb, S_HAND, rig, "Limb")
             elif "elbow" in lname:
                 if not pb.name.endswith("STR"):
                     self.setCustomShape(pb, "CS_Pole")
-                addToLayer(pb, S_ARMIK, rig, "IK")
+                self.addToLayer(pb, S_ARMIK, rig, "IK")
             elif "knee" in lname:
                 if not pb.name.endswith("STR"):
                     self.setCustomShape(pb, "CS_Pole")
-                addToLayer(pb, S_LEGIK, rig, "IK")
+                self.addToLayer(pb, S_LEGIK, rig, "IK")
             elif "pectoral" in lname:
                 self.setCustomShape(pb, "CS_Pect")
-                addToLayer(pb, S_SPINE, rig, "Spine")
+                self.addToLayer(pb, S_SPINE, rig, "Spine")
             elif pb.name.endswith(("twist1", "twist2", "anchor", "footik", "handik")):
                 pass
             else:
@@ -569,6 +569,42 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             ob = data[0]
             if ob.name not in hidden.objects:
                 hidden.objects.link(ob)
+
+
+    BoneGroups = {
+        "Spine" :   (1,1,0),
+        "FK" :      (0,1,0),
+        "IK" :      (1,0,0),
+        "Limb" :    (0,0,1),
+        "Face" :    (1,0.5,0),
+        "Special" :  (1,0,1),
+    }
+
+    def makeBoneGroups(self, rig):
+        if BLENDER3:
+            if len(rig.pose.bone_groups) != len(self.BoneGroups):
+                for bg in list(rig.pose.bone_groups):
+                    rig.pose.bone_groups.remove(bg)
+                for bgname,color in self.BoneGroups.items():
+                    bg = rig.pose.bone_groups.new(name=bgname)
+                    bg.color_set = 'CUSTOM'
+                    bg.colors.normal = color
+                    bg.colors.select = (0.6, 0.9, 1.0)
+                    bg.colors.active = (1.0, 1.0, 0.8)
+
+
+    def addToLayer(self, pb, layer, rig, bgname):
+        if isinstance(layer, tuple):
+            if pb.name[0] == "l":
+                layer = layer[0]
+            elif pb.name[0] == "r":
+                layer = layer[1]
+            else:
+                print("MISSING LAYER", layer, pb.name)
+                return
+        setBoneNumLayer(pb.bone, rig, layer)
+        if rig and bgname:
+            setBonegroup(pb, rig, bgname, self.BoneGroups[bgname])
 
 
     def addConstraints(self, rig, IK):
@@ -606,7 +642,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 setStretchLine(elbow)
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
                 setEulerOrder(cns, hand.rotation_mode)
-                addToLayer(handIK, S_ARMIK, rig, "IK")
+                self.addToLayer(handIK, S_ARMIK, rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_%s" % suffix
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = self.getEntry(self.legTable, prefix, rpbs)
@@ -615,7 +651,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 setStretchLine(knee)
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
-                    addToLayer(footIK, S_LEGIK, rig, "IK")
+                    self.addToLayer(footIK, S_LEGIK, rig, "IK")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                 else:
@@ -629,9 +665,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     setEulerOrder(cns, foot.rotation_mode)
                     cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, toe.rotation_mode)
-                    addToLayer(heelIK, S_LEGIK, rig, "IK")
-                    addToLayer(toeIK, S_LEGIK, rig, "IK")
-                    addToLayer(tarsalIK, S_LEGIK, rig, "IK")
+                    self.addToLayer(heelIK, S_LEGIK, rig, "IK")
+                    self.addToLayer(toeIK, S_LEGIK, rig, "IK")
+                    self.addToLayer(tarsalIK, S_LEGIK, rig, "IK")
                     tarsalCopy = rpbs["MCH-%s" % tarsalIK.name]
                     heelCopy = rpbs["MCH-%s" % heelIK.name]
                     tarsalCopy.rotation_mode = tarsalIK.rotation_mode
@@ -679,18 +715,18 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if self.useArms:
                     elbow.lock_rotation = (True,True,True)
                     self.setCustomShape(elbow, "CS_Pole")
-                    addToLayer(elbow, S_ARMIK, rig, "IK")
+                    self.addToLayer(elbow, S_ARMIK, rig, "IK")
                     stretch = rpbs[self.stretchName(elbow.name)]
                     stretchTo(stretch, elbow, rig)
-                    addToLayer(stretch, S_ARMIK, rig, "IK")
+                    self.addToLayer(stretch, S_ARMIK, rig, "IK")
                     stretch.lock_rotation = stretch.lock_location = (True,True,True)
                 if self.useLegs:
                     knee.lock_rotation = (True,True,True)
                     self.setCustomShape(knee, "CS_Pole")
-                    addToLayer(knee, S_LEGIK, rig, "IK")
+                    self.addToLayer(knee, S_LEGIK, rig, "IK")
                     stretch = rpbs[self.stretchName(knee.name)]
                     stretchTo(stretch, knee, rig)
-                    addToLayer(stretch, S_LEGIK, rig, "IK")
+                    self.addToLayer(stretch, S_LEGIK, rig, "IK")
                     stretch.lock_rotation = stretch.lock_location = (True,True,True)
             else:
                 elbow = knee = None
@@ -725,7 +761,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     setEulerOrder(cns, foreTwist.rotation_mode)
                     cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
                     self.setCustomShape(shldrIK, "CS_Arrows")
-                    setBonegroup(shldrIK, rig, "IK")
+                    setBonegroup(shldrIK, rig, "IK", self.BoneGroups["IK"])
                 if self.useLegs:
                     thighIK, shinIK = self.getEntry(self.legTable2, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
@@ -750,7 +786,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns = copyRotation(shin, shinIK, rig, prop=legProp)
                     setEulerOrder(cns, shin.rotation_mode)
                     self.setCustomShape(thighIK, "CS_Arrows")
-                    setBonegroup(thighIK, rig, "IK")
+                    setBonegroup(thighIK, rig, "IK", self.BoneGroups["IK"])
             elif self.genesis == "G38":
                 if self.useArms:
                     if self.useImproveIk:
@@ -1223,41 +1259,6 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
 #----------------------------------------------------------
 #   Named Layers
 #----------------------------------------------------------
-
-def makeBoneGroups(rig):
-    BoneGroups = [
-        ("Spine",   (1,1,0)),
-        ("FK",      (0,1,0)),
-        ("IK",      (1,0,0)),
-        ("Limb",    (0,0,1)),
-        ("Face",    (1,0.5,0)),
-        ("Special",  (1,0,1)),
-    ]
-    if BLENDER3:
-        if len(rig.pose.bone_groups) != len(BoneGroups):
-            for bg in list(rig.pose.bone_groups):
-                rig.pose.bone_groups.remove(bg)
-            for bgname,color in BoneGroups:
-                bg = rig.pose.bone_groups.new(name=bgname)
-                bg.color_set = 'CUSTOM'
-                bg.colors.normal = color
-                bg.colors.select = (0.6, 0.9, 1.0)
-                bg.colors.active = (1.0, 1.0, 0.8)
-
-
-def addToLayer(pb, layer, rig, bgname=None):
-    if isinstance(layer, tuple):
-        if pb.name[0] == "l":
-            layer = layer[0]
-        elif pb.name[0] == "r":
-            layer = layer[1]
-        else:
-            print("MISSING LAYER", layer, pb.name)
-            return
-    setBoneNumLayer(pb.bone, rig, layer)
-    if rig and bgname:
-        setBonegroup(pb, rig, bgname)
-
 
 class DAZ_OT_SelectNamedLayers(DazOperator, IsArmature):
     bl_idname = "daz.select_named_layers"
