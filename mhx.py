@@ -139,9 +139,10 @@ def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns.subtarget = target.name
     cns.owner_space = space
     cns.target_space = space
-    if (bone.rotation_mode != 'QUATERNION' and
-        bone.rotation_mode == target.rotation_mode):
+    if bone.rotation_mode != 'QUATERNION':
         setEulerOrder(cns, bone.rotation_mode)
+    elif target.rotation_mode != 'QUATERNION':
+        setEulerOrder(cns, target.rotation_mode)
     if prop is not None:
         addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
@@ -1865,8 +1866,8 @@ Gizmos = {
     "head" :            ("GZM_MHead", 1),
     "lowerJaw" :        ("GZM_MJaw", 1),
     "lowerjaw" :        ("GZM_MJaw", 1),
-    "eye.R" :           ("GZM_Circle", 0.25),
-    "eye.L" :           ("GZM_Circle", 0.25),
+    "eye.R" :           ("GZM_Circle", 0.25, 1.0),
+    "eye.L" :           ("GZM_Circle", 0.25, 1.0),
     "ear.R" :           ("GZM_Circle", 0.375),
     "ear.L" :           ("GZM_Circle", 0.375),
     "gaze" :            ("GZM_Gaze", 1),
