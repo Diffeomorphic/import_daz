@@ -1359,6 +1359,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     repars.append((ob, wmat))
 
         subinfos = []
+        conforming = []
         info = RigInfo(rig, True, self)
         for subrig in subrigs:
             if subrig.parent and subrig.parent_type == 'BONE':
@@ -1370,6 +1371,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 continue
             else:
                 conforms = True
+            if conforms:
+                conforming.append(subrig)
             subinfo = RigInfo(subrig, conforms, self)
             subinfos.append(subinfo)
 
@@ -1381,6 +1384,10 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         for ob in repars:
             selectSet(ob, True)
         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+        bpy.ops.object.select_all(action='DESELECT')
+        for subrig in conforming:
+            selectSet(subrig, True)
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         return info, subinfos, repars
 
 
