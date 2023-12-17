@@ -736,6 +736,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
     ignoreHD = False
     hideable = True
     useMakePosable = False
+    disableErc = True
 
     def drawOptions(self, layout):
         layout.prop(self, "useMakePosable")

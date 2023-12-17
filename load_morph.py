@@ -59,6 +59,7 @@ class LoadMorph(DriverUser):
     useProtected = False
     defaultMultiplier = 1.0
     useMulti = False
+    disableErc = False
 
     def __init__(self):
         self.rig = None
@@ -445,13 +446,17 @@ class LoadMorph(DriverUser):
                         self.makeScaleFormula(output, idx, expr)
                     elif key == "center_point":
                         self.erc = True
-                        if GS.ercMethod == 'TRANSLATION':
+                        if self.disableErc:
+                            pass
+                        elif GS.ercMethod == 'TRANSLATION':
                             self.makeErcFormula(output, idx, expr)
                         elif GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
                     elif key == "end_point":
                         self.erc = True
-                        if GS.ercMethod == 'ARMATURE':
+                        if self.disableErc:
+                            pass
+                        elif GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("TlOffset", output, idx, expr)
         return True
 
