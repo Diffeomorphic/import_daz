@@ -1121,6 +1121,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.transformBone(rig, master, tfm, n, offset, False)
         else:
             tfm.setObject(rig)
+            if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
+                rig.rotation_euler[0] += math.pi/2
             if self.useInsertKeys:
                 insertKeys(rig, False, n+offset, self)
 

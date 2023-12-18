@@ -713,7 +713,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
                 return"%s:%s#%s" % (quote(bname), quote(path), quote(id))
         else:
             if pb == rig:
-                return "name://@selection:"
+                return "name://@selection"
             else:
                 return "name://@selection/%s" % quote(bname)
 
@@ -806,7 +806,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
             center = rig.DazCenter
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
-                anim["url"] = "%s?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
+                anim["url"] = "%s:?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 locs = [vec[idx]*factor - center[idx] for vec in vecs]
                 self.addKeys(locs, anim, 0.01)
                 anims.append(anim)
