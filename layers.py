@@ -63,7 +63,7 @@ if BLENDER3:
 
     L_HELP =    14
     L_HELP2 =   15
-    L_HIDDEN =    29
+    L_HIDDEN =  30
     L_DEF =     31
 else:
     L_MAIN =    "Root"

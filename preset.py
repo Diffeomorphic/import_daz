@@ -413,19 +413,22 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def getRigMatrix(self, rig, frame):
         objkey = self.getDazObject(rig)
         rot = rig.rotation_euler.copy()
-        for idx,fcu in enumerate(self.rots[objkey]):
+        for idx,fcu in enumerate(self.rots.get(objkey,[])):
             if fcu:
                 rot[idx] = fcu.evaluate(frame)
+        # reverse postTransform for cameras and lights before saving pose preset
+        if GS.zup and rig.type in ['CAMERA', 'LIGHT']:
+            rot.x -= math.pi/2
         mat = rot.to_matrix().to_4x4()
         if self.useScale:
             scale = rig.scale.copy()
-            for idx,fcu in enumerate(self.scales[objkey]):
+            for idx,fcu in enumerate(self.scales.get(objkey,[])):
                 if fcu:
                     scale[idx] = fcu.evaluate(frame)
             smat = Matrix.Diagonal(scale)
             mat = mat @ smat.to_4x4()
         loc = rig.location.copy()
-        for idx,fcu in enumerate(self.locs[objkey]):
+        for idx,fcu in enumerate(self.locs.get(objkey,[])):
             if fcu:
                 loc[idx] = fcu.evaluate(frame)
         return Matrix.Translation(loc) @ mat
