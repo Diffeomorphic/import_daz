@@ -27,6 +27,7 @@
 
 import os
 import sys
+import numpy as np
 import bpy
 from .driver import DriverUser
 from .utils import *
@@ -161,10 +162,13 @@ class LoadMorph(DriverUser):
             self.rig.update_tag()
             if self.mesh:
                 if self.ercMorphs:
-                    self.transferErcShapes(bpy.context)
+                    meshes = getMeshChildren(self.rig)
+                    self.transferErcShapes(bpy.context, self.mesh, meshes)
                     for ob in getMeshChildren(self.rig):
                         self.applyErcArmature(bpy.context, ob)
-                self.mesh.update_tag()
+                        ob.update_tag()
+                else:
+                    self.mesh.update_tag()
         if self.origRestored:
             from .geometry import clearMeshProps
             for ob in self.origRestored:
@@ -727,15 +731,14 @@ class LoadMorph(DriverUser):
                 self.addPoseboneDriver(pb, tfm)
 
 
-    def transferErcShapes(self, context):
+    def transferErcShapes(self, context, ob, meshes):
         from .morphing import transferShapesToMeshes
-        skeys = self.mesh.data.shape_keys
+        skeys = ob.data.shape_keys
         if skeys is None:
             return
         props = [baseProp(final) for final in self.ercMorphs.keys()]
         snames = [prop for prop in props if prop in skeys.key_blocks.keys()]
-        meshes = getMeshChildren(self.rig)
-        transferShapesToMeshes(context, self.mesh, meshes, snames)
+        transferShapesToMeshes(context, ob, meshes, snames)
 
 
     def applyErcArmature(self, context, ob):
@@ -763,21 +766,27 @@ class LoadMorph(DriverUser):
             name = self.rig.name
             newArmatureModifier(name, ob, self.rig)
             eskey = skeys.key_blocks[-1]
+            earr = np.array([v.co for v in eskey.data])
+            ob.shape_key_remove(eskey)
             skey = skeys.key_blocks.get(prop)
             if skey:
-                basic = skeys.key_blocks[0]
-                for data,edata,bdata in zip(skey.data, eskey.data, basic.data):
-                    data.co += bdata.co - edata.co
-                ob.shape_key_remove(eskey)
-            elif True:
-                pass
+                bdata = skeys.key_blocks[0].data
+                sdata = skey.data
+                barr = np.array([v.co for v in bdata])
+                sarr = np.array([v.co for v in sdata])
+                arr = sarr + barr - earr
             else:
-                eskey.name = "%s:ERC" % prop
-                self.addShapeDriver(eskey, final, expr="-a")
+                vdata = ob.data.vertices
+                varr = np.array([v.co for v in vdata])
+                arr = 2*varr - earr
+                skey = ob.shape_key_add(name=prop)
+                self.addShapeDriver(skey, final)
                 min,max,default,ovr = getPropMinMax(self.rig, prop, True)
-                eskey.slider_min = -max
-                eskey.slider_max = -min
-                eskey.mute = True
+                skey.slider_min = min
+                skey.slider_max = max
+                skey.mute = True
+            for data,co in zip(skey.data, arr):
+                data.co = co
             for fcu,mute in fcus:
                 fcu.mute = mute
         for skey in skeys.key_blocks:

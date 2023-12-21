@@ -493,11 +493,11 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
         if lm.ercBones:
             lm.makeErcMorphs()
         lm.buildSumDrivers()
-        if lm.ercMorphs:
+        if lm.ercMorphs and meshes:
             for mesh in meshes:
                 lm.mesh = mesh
-                lm.applyErcArmature(context)
-        lm.mesh.update_tag()
+                lm.applyErcArmature(context, mesh)
+                mesh.update_tag()
 
 
     def makeOffsetFormulas(self, rig, lm, expr, restdata):
