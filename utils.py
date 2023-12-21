@@ -597,7 +597,7 @@ def getRigFromContext(context, useMesh=False, strict=True, activate=False):
 
 
 def getMeshChildren(rig):
-    return [ob for ob in rig.children if ob.type == 'MESH']
+    return [ob for ob in rig.children if ob.type == 'MESH' and ob.parent_type != 'BONE']
 
 def getShapeChildren(rig):
     return [ob for ob in rig.children if ob.type == 'MESH' and ob.data.shape_keys]

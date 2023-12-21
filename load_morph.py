@@ -161,7 +161,9 @@ class LoadMorph(DriverUser):
             self.rig.update_tag()
             if self.mesh:
                 if self.ercMorphs:
-                    self.applyErcArmature(bpy.context)
+                    self.transferErcShapes(bpy.context)
+                    for ob in getMeshChildren(self.rig):
+                        self.applyErcArmature(bpy.context, ob)
                 self.mesh.update_tag()
         if self.origRestored:
             from .geometry import clearMeshProps
@@ -372,7 +374,9 @@ class LoadMorph(DriverUser):
             skey.name = prop
             self.setShapeLimits(GS.finalLimits, skey, asset)
             self.shapekeys[prop] = skey
-            if self.bodypart == "Face":
+            if GS.ercMethod == 'TRANSLATION' and not self.disableErc:
+                pass
+            elif self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
             if self.rig and self.usePropDrivers:
@@ -723,12 +727,24 @@ class LoadMorph(DriverUser):
                 self.addPoseboneDriver(pb, tfm)
 
 
-    def applyErcArmature(self, context):
+    def transferErcShapes(self, context):
+        from .morphing import transferShapesToMeshes
+        skeys = self.mesh.data.shape_keys
+        if skeys is None:
+            return
+        props = [baseProp(final) for final in self.ercMorphs.keys()]
+        snames = [prop for prop in props if prop in skeys.key_blocks.keys()]
+        meshes = getMeshChildren(self.rig)
+        transferShapesToMeshes(context, self.mesh, meshes, snames)
+
+
+    def applyErcArmature(self, context, ob):
         from .merge import applyArmatureModifier
         from .modifier import getBasicShape, newArmatureModifier
         from .driver import getPropMinMax
-        activateObject(context, self.mesh)
-        basic,skeys,new = getBasicShape(self.mesh)
+
+        activateObject(context, ob)
+        basic,skeys,new = getBasicShape(ob)
         for skey in skeys.key_blocks:
             skey.mute = True
             skey.value = 0.0
@@ -742,17 +758,19 @@ class LoadMorph(DriverUser):
                     fcu.mute = True
             self.rig[prop] = 1.0
             updateDrivers(self.amt)
-            applyArmatureModifier(self.mesh)
+            applyArmatureModifier(ob)
             self.rig[prop] = 0.0
             name = self.rig.name
-            newArmatureModifier(name, self.mesh, self.rig)
+            newArmatureModifier(name, ob, self.rig)
             eskey = skeys.key_blocks[-1]
             skey = skeys.key_blocks.get(prop)
             if skey:
                 basic = skeys.key_blocks[0]
                 for data,edata,bdata in zip(skey.data, eskey.data, basic.data):
                     data.co += bdata.co - edata.co
-                self.mesh.shape_key_remove(eskey)
+                ob.shape_key_remove(eskey)
+            elif True:
+                pass
             else:
                 eskey.name = "%s:ERC" % prop
                 self.addShapeDriver(eskey, final, expr="-a")

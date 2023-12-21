@@ -698,20 +698,29 @@ class MorphLoader(LoadMorph):
 
     def transferToFaceMeshes(self, context):
         from .main import getFaceMeshes
-        mesh0 = self.meshes[0]
-        meshes = getFaceMeshes(self.rig, mesh0)
-        if meshes:
-            print("Transfer shapekeys to %s" % [mesh.name for mesh in meshes])
-            activateObject(context, mesh0)
-            for mesh in meshes:
-                selectSet(mesh, True)
-            theFilePaths = LS.theFilePaths
-            try:
-                LS.theFilePaths = self.faceshapes.keys()
-                bpy.ops.daz.transfer_shapekeys()
-            finally:
-                LS.theFilePaths = theFilePaths
+        ob = self.meshes[0]
+        meshes = getFaceMeshes(self.rig, ob)
+        transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
 
+
+def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True):
+    if not snames:
+        return
+    activateObject(context, ob)
+    for mesh in meshes:
+        selectSet(mesh, True)
+    theFilePaths = LS.theFilePaths
+    LS.theFilePaths = snames
+    try:
+        bpy.ops.daz.transfer_shapekeys(useDrivers=useDrivers, useOverwrite=useOverwrite)
+    except DazError:
+        pass
+    finally:
+        LS.theFilePaths = theFilePaths
+
+#------------------------------------------------------------------
+#
+#------------------------------------------------------------------
 
 class BakedMorphLoader(MorphLoader):
     useAdjusters = False
