@@ -196,11 +196,9 @@ class DriverUser:
             return drivers
 
         for fcu in ob.data.shape_keys.animation_data.drivers:
-            words = fcu.data_path.split('"')
-            if (words[0] == "key_blocks[" and
-                len(words) == 3 and
-                words[2] == "].value"):
-                drivers[words[1]] = fcu
+            sname,channel = getShapeChannel(fcu)
+            if sname and channel == "value":
+                drivers[sname] = fcu
 
         return drivers
 
@@ -774,11 +772,6 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
         def fcukey(fcu):
             return "%s:%d" % (fcu2.data_path, fcu2.array_index)
 
-        def getDrivenBone(fcu):
-            words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[":
-                return words[1]
-
         if rna1.animation_data is None:
             return
         if rna2.animation_data is None:
@@ -799,7 +792,7 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
                     del existing[key]
                 else:
                     continue
-            bname = getDrivenBone(fcu1)
+            bname,channel = getBoneChannel(fcu1)
             if bname and bname not in rig2.data.bones.keys():
                 continue
             self.ensureProp(fcu1, rna1, rna2, ovr)
@@ -995,8 +988,8 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             if skeys.animation_data is None:
                 return True
             for fcu in skeys.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if words[0] == "key_blocks[":
+                sname,channel = getShapeChannel(fcu)
+                if sname:
                     for var in fcu.driver.variables:
                         for trg in var.targets:
                             if trg.id_type in ['KEY', 'OBJECT']:
@@ -1172,9 +1165,8 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
 
     if rig and rig.animation_data:
         for fcu in rig.animation_data.drivers:
-            words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[":
-                channel = words[-1].rsplit(".",1)[-1]
+            bname,channel = getBoneChannel(fcu)
+            if bname:
                 if ((channel in ["rotation_euler", "rotation_quaternion"] and useRotation) or
                     (channel == "location" and useLocation) or
                     (channel == "scale" and useScale) or
@@ -1187,10 +1179,9 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
         skeys = ob.data.shape_keys
         if skeys.animation_data:
             for fcu in skeys.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if words[0] == "key_blocks[":
+                sname,channel = getShapeChannel(fcu)
+                if sname:
                     fcu.mute = mute
-                    sname = words[1]
                     if sname in skeys.key_blocks.keys():
                         skey = skeys.key_blocks[sname]
                         key = "%s:%s" % (ob.name, sname)

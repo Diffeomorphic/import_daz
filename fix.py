@@ -418,9 +418,8 @@ class Fixer(DriverUser):
     def checkDriven(self, rig, bnames, string):
         if rig.animation_data:
             for fcu in rig.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if (words[0] == "pose.bones[" and
-                    words[1] in bnames):
+                bname,channel = getBoneChannel(fcu)
+                if bname and bname in bnames:
                     self.messages.append("%s is disabled because\n%s has drivers" % (string, words[1]))
                     return True
         return False

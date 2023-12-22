@@ -319,9 +319,9 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
     def getShapeFcurves(self, act):
         for fcu in act.fcurves:
-            words = fcu.data_path.split('"')
-            if words[0] == "key_blocks[" and words[1] != "Basic":
-                self.morphs[words[1]] = fcu
+            sname,channel = getShapeChannel(fcu)
+            if sname and sname != "Basic":
+                self.morphs[sname] = fcu
 
 
     def isValidMorph(self, rig, prop):
@@ -477,12 +477,10 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
     def setupDriven(self, rig):
         if rig.animation_data:
             for fcu in rig.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[":
-                    bname = words[1]
+                bname,channel = getBoneChannel(fcu)
+                if bname:
                     if bname not in self.driven.keys():
                         self.driven[bname] = {}
-                    channel = words[2][2:]
                     if channel in ["rotation_euler", "rotation_quaternion"]:
                         self.driven[bname]["rotation"] = True
                     elif channel in ["location", "scale"]:

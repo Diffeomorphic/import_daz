@@ -388,8 +388,26 @@ def getRigParent(ob):
         par = par.parent
     return par
 
+
 def isModifiedMesh(ob):
     return (len(ob.data.DazOrigVerts) > 0)
+
+
+def getBoneChannel(fcu):
+    words = fcu.data_path.split('"')
+    if words[0] == "pose.bones[":
+        return words[1], words[-1].split(".")[-1]
+    else:
+        return None, None
+
+
+def getShapeChannel(fcu):
+    words = fcu.data_path.split('"')
+    if words[0] == "key_blocks[":
+        return words[1], words[-1].split(".")[-1]
+    else:
+        return None, None
+
 
 #-------------------------------------------------------------
 #   Updating

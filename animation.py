@@ -1354,14 +1354,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if (rig.animation_data and
             rig.animation_data.drivers):
             for fcu in rig.animation_data.drivers:
-                words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[":
-                    bname = words[1]
-                    channel = words[2][2:]
-                    if channel in transforms:
-                        if bname not in self.driven.keys():
-                            self.driven[bname] = []
-                        self.driven[bname].append(channel)
+                bname,channel = getBoneChannel(fcu)
+                if bname and channel in transforms:
+                    if bname not in self.driven.keys():
+                        self.driven[bname] = []
+                    self.driven[bname].append(channel)
 
 #-------------------------------------------------------------
 #
@@ -2018,9 +2015,9 @@ class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
     def removeFromAction(self, act, rig):
         used = {}
         for fcu in act.fcurves:
-            words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[":
-                used[words[1]] = True
+            bname,channel = getBoneChannel(fcu)
+            if bname:
+                used[bname] = True
         for bname in list(self.banims.keys()):
             if bname not in used.keys():
                 self.removeFromPose(bname, rig)
@@ -2067,10 +2064,8 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             act = rig.animation_data.action
             deletes = []
             for fcu in act.fcurves:
-                words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[":
-                    bname = words[1]
-                    channel = words[2].split(".")[-1]
+                bname,channel = getBoneChannel(fcu)
+                if bname:
                     if (channel in self.locks.keys() and
                         bname in self.locks[channel].keys()):
                         lock = self.locks[channel][bname]

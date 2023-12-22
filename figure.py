@@ -812,13 +812,17 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
 class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
     bl_idname = "daz.remove_driven_bones"
     bl_label = "Remove Driven Bones"
-    bl_description = "Remove (drv) bones.\nThis undoes Make All Bones Posable"
+    bl_description = "Remove driven (drv) bones and drive the posable bones.\nThis undoes Make All Bones Posable"
     bl_options = {'UNDO'}
 
     def run(self, context):
         from .bone_data import BD
         rig = context.object
-        bpy.ops.daz.remove_all_drivers(useDeleteProps=True, useDeleteShapekeys=True)
+        if rig.animation_data:
+            for fcu in list(rig.animation_data.drivers):
+                bname,channel = getBoneChannel(fcu)
+                if bname and isDrvBone(bname):
+                    fcu.data_path = fcu.data_path.replace("(drv)", "")
         for pb in rig.pose.bones:
             for cns in list(pb.constraints):
                 if (cns.type in ['COPY_TRANSFORMS', 'COPY_ROTATION'] and

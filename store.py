@@ -144,12 +144,9 @@ class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, Mor
         if rig.animation_data is None:
             return
         for fcu in rig.animation_data.drivers:
-            words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[":
-                bname = words[1]
-                if not (isDrvBone(bname) or isFinal(bname)):
-                    channel = fcu.data_path.split(".")[-1]
-                    self.setChannel(bname, channel, fcu.array_index)
+            bname,channel = getBoneChannel(fcu)
+            if bname and not isDrvBone(bname):
+                self.setChannel(bname, channel, fcu.array_index)
 
 
     def setChannel(self, bname, channel, idx):

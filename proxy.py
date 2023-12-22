@@ -1299,11 +1299,10 @@ class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
         nskeys = nob.data.shape_keys
         if nskeys:
             for driver in drivers:
-                words = driver.data_path.split('"')
-                if words[0] == "key_blocks[":
-                    nskey = nskeys.key_blocks.get(words[1])
+                sname,channel = getShapeChannel(driver)
+                if sname:
+                    nskey = nskeys.key_blocks.get(sname)
                     if nskey:
-                        channel = driver.data_path.rsplit(".",1)[-1]
                         fcu = nskey.driver_add(channel)
                         driver.fill(fcu)
 
@@ -2005,10 +2004,9 @@ class WidgetConverter:
         if bname not in self.drivers.keys():
             return
         for fcu in self.drivers[bname]:
-            words = fcu.data_path.split('"')
-            if words[0] == "pose.bones[":
-                pb1 = rig.pose.bones[words[1]]
-                channel = words[-1].rsplit(".",1)[-1]
+            bname,channel = getBoneChannel(fcu)
+            if bname:
+                pb1 = rig.pose.bones[bname]
                 pb1.driver_remove(channel, fcu.array_index)
 
 

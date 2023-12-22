@@ -559,8 +559,8 @@ class GazeTransferer(BoneHandler):
         if rig.animation_data and rig.animation_data.action:
             act = rig.animation_data.action
             for fcu in act.fcurves:
-                words = fcu.data_path.split('"')
-                if words[0] == "pose.bones[" and words[1] in bnames:
+                bname,channel = getBoneChannel(fcu)
+                if bname and bname in bnames:
                     for kp in fcu.keyframe_points:
                         t = kp.co[0]
                         fstruct[t] = True
