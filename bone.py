@@ -186,7 +186,7 @@ class BoneInstance(Instance):
             self.correctRoll(eb, figure)
         self.correctLength(eb, length)
 
-        if self.name in ["upperFaceRig", "lowerFaceRig"]:
+        if self.name in BD.FaceRigs:
             isFace = True
         for child in self.children.values():
             if isinstance(child, BoneInstance):

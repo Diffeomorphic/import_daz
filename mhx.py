@@ -36,6 +36,7 @@ from .layers import *
 from .propgroups import DazPairGroup
 from .driver import addDriver
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
+from .bone_data import BD
 from .mhx_data import MHX
 
 #-------------------------------------------------------------
@@ -877,7 +878,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for pb in rig.pose.bones:
             if (isDrvBone(pb.name) or
                 isFinal(pb.name) or
-                pb.name in MHX.FaceRigs+MHX.Teeth):
+                pb.name in BD.FaceRigs+BD.Teeth):
                 continue
             elif pb.name in Gizmos.keys():
                 gizmo,scale,offset = getData(Gizmos[pb.name])
@@ -1792,13 +1793,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 def getBoneLayer(pb, rig):
     from .driver import isBoneDriven
     lname = pb.name.lower()
-    if pb.name in MHX.HeadBones:
+    if pb.name in BD.HeadBones:
         return L_HEAD, False
     elif (isDrvBone(pb.name) or
         isBoneDriven(rig, pb) or
-        pb.name in MHX.FaceRigs):
+        pb.name in BD.FaceRigs):
         return L_HELP, False
-    elif pb.name in MHX.Teeth:
+    elif pb.name in BD.Teeth:
         return L_TWEAK, False
     elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
         return L_HELP2, False
@@ -1806,11 +1807,11 @@ def getBoneLayer(pb, rig):
         return L_FACE, False
     elif pb.parent:
         par = pb.parent
-        if par.name in MHX.FaceRigs:
+        if par.name in BD.FaceRigs:
             return L_FACE, True
         elif (isDrvBone(par.name) and
               par.parent and
-              par.parent.name in MHX.FaceRigs):
+              par.parent.name in BD.FaceRigs):
             return L_FACE, True
     return L_CUSTOM, True
 

@@ -805,6 +805,31 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
     def hasBoneDriver(self, bname, drivers):
         return True
 
+#----------------------------------------------------------
+#   Remove Driven Bones
+#----------------------------------------------------------
+
+class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
+    bl_idname = "daz.remove_driven_bones"
+    bl_label = "Remove Driven Bones"
+    bl_description = "Remove (drv) bones.\nThis undoes Make All Bones Posable"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from .bone_data import BD
+        rig = context.object
+        bpy.ops.daz.remove_all_drivers(useDeleteProps=True, useDeleteShapekeys=True)
+        for pb in rig.pose.bones:
+            for cns in list(pb.constraints):
+                if (cns.type in ['COPY_TRANSFORMS', 'COPY_ROTATION'] and
+                    isDrvBone(cns.subtarget)):
+                    pb.constraints.remove(cns)
+        setMode('EDIT')
+        for eb in list(rig.data.edit_bones):
+            if isDrvBone(eb.name):
+                rig.data.edit_bones.remove(eb)
+        setMode('POSE')
+
 #-------------------------------------------------------------
 #   Fix legacy posable bones
 #-------------------------------------------------------------
@@ -1054,6 +1079,7 @@ classes = [
     DAZ_OT_RotateBones,
     DAZ_OT_SetAddExtraFaceBones,
     DAZ_OT_MakeAllBonesPosable,
+    DAZ_OT_RemoveDrivenBones,
     DAZ_OT_FixLegacyPosable,
     DAZ_OT_FinalizeArmature,
     DAZ_OT_EnableLocksLimits,

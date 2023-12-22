@@ -359,21 +359,6 @@ class MhxData:
         "tongue01(drv)" :   "lowerTeeth",
     }
 
-    FaceRigs = [
-        "upperFaceRig", "lowerFaceRig",
-        "upperfacerig", "lowerfacerig",
-    ]
-
-    Teeth = [
-        "upperTeeth", "lowerTeeth",
-        "upperteeth", "lowerteeth",
-    ]
-
-    HeadBones = [
-        "upperJaw", "lowerJaw",
-        "upperjaw", "lowerjaw",
-    ]
-
     ConnectBendTwist = [
         "lShldrTwist", "lForeArm", "lForearmBend", "lForearmTwist", "lHand",
         "rShldrTwist", "rForeArm", "rForearmBend", "rForearmTwist", "rHand",

@@ -186,6 +186,26 @@ class BoneData:
         "neck" : (1, 1),
     }
 
+    FaceRigs = [
+        "upperFaceRig", "lowerFaceRig",
+        "upperfacerig", "lowerfacerig",
+    ]
+
+    Teeth = [
+        "upperTeeth", "lowerTeeth",
+        "upperteeth", "lowerteeth",
+    ]
+
+    HeadBones = [
+        "upperJaw", "lowerJaw",
+        "upperjaw", "lowerjaw",
+    ]
+
+    Tongue = [
+        "tongue01", "tongue02", "tongue03", "tongue04",
+        "tongue05", "tongue06", "tongueBase", "tongueTip",
+    ]
+
     #-------------------------------------------------------------
     #   Alternative bone names
     #-------------------------------------------------------------

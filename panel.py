@@ -355,6 +355,7 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.batch_set_custom_shape")
         self.layout.operator("daz.optimize_pose")
         self.layout.operator("daz.improve_ik")
+        self.layout.operator("daz.remove_driven_bones")
         self.layout.operator("daz.fix_legacy_posable")
         self.layout.operator("daz.fix_limit_rot_constraints")
         self.layout.operator("daz.categorize_objects")
