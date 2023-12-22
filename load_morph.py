@@ -694,6 +694,9 @@ class LoadMorph(DriverUser):
         if pb.name not in self.ercBones.keys():
             tfm.setTrans(factor, prop, index=idx)
             self.ercBones[pb.name] = (tfm, tfm.trans)
+            cns = getConstraint(pb, 'LIMIT_LOCATION')
+            if cns:
+                cns.mute = True
         else:
             tfm,trans = self.ercBones[pb.name]
             tfm.trans[idx] = factor
