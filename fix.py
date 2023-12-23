@@ -346,14 +346,15 @@ class Fixer(DriverUser):
             wmat = ob.matrix_world.copy()
             ob.parent = nrig
             setWorldMatrix(ob, wmat)
-            mod = getModifier(ob, 'ARMATURE')
-            if mod:
-                mod.object = nrig
-            skeys = ob.data.shape_keys
-            if skeys:
-                enableDrivers(skeys)
-                for skey in skeys.key_blocks:
-                    skey.mute = False
+            if ob.type == 'MESH':
+                mod = getModifier(ob, 'ARMATURE')
+                if mod:
+                    mod.object = nrig
+                skeys = ob.data.shape_keys
+                if skeys:
+                    enableDrivers(skeys)
+                    for skey in skeys.key_blocks:
+                        skey.mute = False
 
         activateObject(context, rig)
         return nrig
@@ -420,7 +421,7 @@ class Fixer(DriverUser):
             for fcu in rig.animation_data.drivers:
                 bname,channel = getBoneChannel(fcu)
                 if bname and bname in bnames:
-                    self.messages.append("%s is disabled because\n%s has drivers" % (string, words[1]))
+                    self.messages.append("%s is disabled because\n%s has drivers" % (string, bname))
                     return True
         return False
 
