@@ -703,7 +703,7 @@ class MorphLoader(LoadMorph):
         transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
 
 
-def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True):
+def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True, needsTarget=True):
     if not snames:
         return
     activateObject(context, ob)
@@ -712,7 +712,7 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
     theFilePaths = LS.theFilePaths
     LS.theFilePaths = snames
     try:
-        bpy.ops.daz.transfer_shapekeys(useDrivers=useDrivers, useOverwrite=useOverwrite)
+        bpy.ops.daz.transfer_shapekeys(useDrivers=useDrivers, useOverwrite=useOverwrite, needsTarget=needsTarget)
     except DazError:
         pass
     finally:

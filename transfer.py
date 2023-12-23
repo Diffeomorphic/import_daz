@@ -39,6 +39,8 @@ from .driver import DriverUser
 #-------------------------------------------------------------
 
 class MatchOperator(DazPropsOperator):
+    needsTarget : BoolProperty(default = True)
+
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
         self.mesh = context.object
@@ -99,7 +101,7 @@ class MatchOperator(DazPropsOperator):
                     self.transferMethod != 'BY_NUMBER'):
                     msg = '"%s" parent is not same as\n"%s" parent' % (ob.name, src.name)
                     self.addWarning(msg)
-        if not objects and not ES.easy:
+        if not objects and not ES.easy and self.needsTarget:
             raise DazError("No target meshes with faces selected")
         return objects
 

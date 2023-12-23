@@ -741,16 +741,23 @@ class LoadMorph(DriverUser):
             return
         props = [baseProp(final) for final in self.ercMorphs.keys()]
         snames = [prop for prop in props if prop in skeys.key_blocks.keys()]
-        transferShapesToMeshes(context, ob, meshes, snames)
+        transferShapesToMeshes(context, ob, meshes, snames, needsTarget=False)
 
 
     def applyErcArmature(self, context, ob):
         from .merge import applyArmatureModifier
         from .modifier import getBasicShape, newArmatureModifier
-        from .driver import getPropMinMax
+        from .driver import getPropMinMax, Driver
 
         activateObject(context, ob)
         basic,skeys,new = getBasicShape(ob)
+        drivers = []
+        if skeys.animation_data:
+            for fcu in list(skeys.animation_data.drivers):
+                sname,channel = getShapeChannel(fcu)
+                if channel == "mute":
+                    drivers.append(Driver(fcu, False))
+                    skeys.animation_data.drivers.remove(fcu)
         for skey in skeys.key_blocks:
             skey.mute = True
             skey.value = 0.0
@@ -765,7 +772,6 @@ class LoadMorph(DriverUser):
             self.rig[prop] = 1.0
             updateDrivers(self.amt)
             applyArmatureModifier(ob)
-            self.rig[prop] = 0.0
             name = self.rig.name
             newArmatureModifier(name, ob, self.rig)
             eskey = skeys.key_blocks[-1]
@@ -792,8 +798,11 @@ class LoadMorph(DriverUser):
                 data.co = co
             for fcu,mute in fcus:
                 fcu.mute = mute
+            self.rig[prop] = 0.0
         for skey in skeys.key_blocks:
             skey.mute = False
+        for driver in drivers:
+            driver.createDirect(skeys, {})
         updateDrivers(self.amt)
 
     #-------------------------------------------------------------
