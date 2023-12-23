@@ -122,6 +122,9 @@ class ShellGroup(NodeGroup):
         else:
             self.links.new(self.inputs.outputs["Displacement"], self.outputs.inputs["Displacement"])
 
+        if GS.useUnusedTextures:
+            self.buildUnusedTextures()
+
 
 class OpaqueShellGroup(ShellGroup):
     def addOutput(self, mult, socket, slot):

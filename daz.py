@@ -421,6 +421,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "SSS",
         description = "Method for subsurface scattering")
 
+    useShells : BoolProperty(
+        name = "Shells",
+        description = "Generate shell node groups")
+
     viewportColors : EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),
                  ('RANDOM', "Random", "Random colors for each material"),
@@ -780,6 +784,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "sssMethod")
         box.prop(self, "viewportColors")
         box.prop(self, "useWorld")
+        box.prop(self, "useShells")
         box.prop(self, "useSssSkin")
         box.prop(self, "useAltSss")
         box.prop(self, "useLowerResFolders")
