@@ -82,7 +82,6 @@ class GlobalSettings:
         self.useDazOrientation = False
         self.useSubtractRestpose = True
         self.shellMethod = 'MATERIAL'
-        self.useShells = True
         self.usePruneNodes = True
 
         self.useFakeCaustics = False

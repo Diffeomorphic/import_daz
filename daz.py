@@ -421,10 +421,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "SSS",
         description = "Method for subsurface scattering")
 
-    useShells : BoolProperty(
-        name = "Shells",
-        description = "Generate shell node groups")
-
     viewportColors : EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),
                  ('RANDOM', "Random", "Random colors for each material"),
@@ -602,13 +598,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Simulation",
         description = "Add influence (pinning) vertex groups for simulation")
 
-    if bpy.app.version < (3,1,0):
-        enums = [('MATERIAL', "Material", "Create material node group"),
-                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")]
-    else:
-        enums = [('MATERIAL', "Material", "Create material node group"),
-                 ('GEONODES', "Geometry Nodes (Experimental)", "Create geometry node group"),
-                 ('MESH', "Mesh (Debug)", "Create empty mesh. For debugging only")]
+    enums = [('MATERIAL', "Material", "Create material node groups")]
+    if bpy.app.version >= (3,1,0):
+        enums += [('GEONODES', "Geometry Nodes (Experimental)", "Create geometry node groups")]
+    enums += [('IGNORE', "Ignore", "Ignore shells"),
+              ('MESH', "Mesh (Debug)", "Create empty meshes. For debugging only")]
     shellMethod : EnumProperty(
         items = enums,
         name = "Shell Method",
@@ -784,7 +778,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "sssMethod")
         box.prop(self, "viewportColors")
         box.prop(self, "useWorld")
-        box.prop(self, "useShells")
         box.prop(self, "useSssSkin")
         box.prop(self, "useAltSss")
         box.prop(self, "useLowerResFolders")

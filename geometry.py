@@ -916,7 +916,7 @@ class Geometry(Asset, Channels):
             elif extra["type"] == "studio/node/shell":
                 if "material_uvs" in extra.keys():
                     self.uvs = dict(extra["material_uvs"])
-        if GS.shellMethod != 'MESH':
+        if GS.shellMethod in ['MATERIAL', 'GEONODES']:
             if inst.shellNode:
                 missing = self.addShells(inst.shellNode, inst)
                 for mname,shmat,uv in missing:

@@ -402,7 +402,7 @@ class CyclesTree(Tree):
 
 
     def buildShells(self):
-        if not (GS.shellMethod == 'MATERIAL' and GS.useShells):
+        if GS.shellMethod != 'MATERIAL':
             return
         shells = []
         n = 0
