@@ -623,16 +623,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Merge identical materials",
         default = True)
 
-    useFixShells : BoolProperty(
-        name = "Fix Shells",
-        description = "Fix shell materials for geografts",
-        default = False)
-
-    bodyMaterial : StringProperty(
-        name = "Body Material",
-        description = "Name of the body material use for shell fixing",
-        default = "Torso")
-
     useMergeToes : BoolProperty(
         name = "Merge Toes",
         description = "Merge separate toes into a single toe bone",
@@ -735,9 +725,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "useTransferGeografts")
             self.layout.prop(self, "useTransferClothes")
         self.layout.separator()
-        self.layout.prop(self, "useFixShells")
-        if self.useFixShells:
-            self.subprop("bodyMaterial")
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
@@ -896,20 +883,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 selectSet(ob, True)
             print("Merge materials")
             bpy.ops.daz.merge_materials()
-
-        if self.useFixShells and mainMesh and geografts.get(mainMesh.name) and activateObject(context, mainMesh):
-            for ob in geografts[mainMesh.name][0]:
-                selectSet(ob, True)
-            print("Fix shells")
-            mat0 = mainMesh.active_material
-            try:
-                for mat in mainMesh.data.materials:
-                    if mat.name.startswith(self.bodyMaterial):
-                        mainMesh.active_material = mat
-                        break
-                bpy.ops.daz.fix_shells()
-            finally:
-                mainMesh.active_material = mat0
 
         if self.useApplyTransforms:
             # Apply transforms to meshes
