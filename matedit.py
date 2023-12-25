@@ -1394,6 +1394,19 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, ShellCopy, Selector, IsM
     bl_description = "Copy selected material shells to selected meshes"
     bl_options = {'UNDO'}
 
+    useActive : BoolProperty(
+        name = "From Active Material",
+        description = "Copy shells from active material instead of named materials",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useActive")
+        if self.useActive:
+            box = self.layout.box()
+            box.label(text="Active Material: %s" % context.object.active_material.name)
+        Selector.draw(self, context)
+
+
     def invoke(self, context, event):
         self.getShells(context)
         self.addItems()
@@ -1410,13 +1423,17 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, ShellCopy, Selector, IsM
                     if mname not in shells.keys():
                         shells[mname] = {}
                     shells[mname][node.node_tree.name] = node
+        if self.useActive:
+            mname = stripName(src.active_material.name)
+            print("Copy from %s" % mname)
         for trg in getSelectedMeshes(context):
             if trg != src:
                 for mat in trg.data.materials:
                     if mat is None:
                         continue
-                    mname = stripName(mat.name)
-                    nodes = shells.get(mname)
+                    if not self.useActive:
+                        mname = stripName(mat.name)
+                    nodes = shells.get(mname, {})
                     if nodes:
                         self.copyShells(mat, nodes.values(), trg)
                 driveShellInfluence(trg, {})
