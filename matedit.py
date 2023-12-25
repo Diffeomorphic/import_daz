@@ -39,6 +39,7 @@ from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
 from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
 from .tree import addGroupInput, addGroupOutput, getGroupInput
+from .propgroups import DazIntGroup, DazFloatGroup
 
 #-------------------------------------------------------------
 #   Material selector
@@ -1259,10 +1260,10 @@ class ShellRemover:
     def addItems(self):
         self.selection.clear()
         for name,nodes in self.shells.items():
-                item = self.selection.add()
-                item.name = name
-                item.text = name
-                item.select = False
+            item = self.selection.add()
+            item.name = name
+            item.text = name
+            item.select = False
 
 
     def addShell(self, mat, shell, tree):
@@ -1843,6 +1844,25 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
                 return newpath,res
         return None,""
 
+# ---------------------------------------------------------------------
+#   Utility
+# ---------------------------------------------------------------------
+
+ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]
+ShellOutputs = ["BSDF", "Displacement"]
+
+def isShellNode(node):
+    def hasSlots(data, slots):
+        for slot in slots:
+            if slot not in data.keys():
+                return False
+        return True
+
+    return (node.type == 'GROUP' and
+            not node.name.startswith("DAZ ") and
+            hasSlots(node.inputs, ShellInputs) and
+            hasSlots(node.outputs, ShellOutputs))
+
 #----------------------------------------------------------
 #   Fix shells
 #----------------------------------------------------------
@@ -1905,21 +1925,110 @@ class DAZ_OT_FixShells(MaterialSelector, DazPropsOperator):
 
 
     def getShells(self, mat, shells):
-        def hasSlots(data, slots):
-            for slot in slots:
-                if slot not in data.keys():
-                    return False
-            return True
-
         if mat:
             for node in mat.node_tree.nodes:
-                if (node.type == 'GROUP' and
-                    not node.name.startswith("DAZ ") and
-                    hasSlots(node.inputs, ["Influence", "BSDF", "UV", "Displacement"]) and
-                    hasSlots(node.outputs, ["BSDF", "Displacement"])):
+                if isShellNode(node):
                     if node.label not in shells.keys():
                         shells[node.label] = []
                     shells[node.label].append(node)
+
+#-------------------------------------------------------------
+#   Sort shells
+#-------------------------------------------------------------
+
+class DAZ_OT_SortShells(DazPropsOperator, IsMesh):
+    bl_idname = "daz.sort_shells"
+    bl_label = "Sort Shells"
+    bl_description = "Sort selected material shells"
+    bl_options = {'UNDO'}
+
+    shellOrder : CollectionProperty(type = DazIntGroup)
+
+    useBeautify : BoolProperty(
+        name = "Beautify",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useBeautify")
+        for item in self.shellOrder:
+            self.layout.prop(item, "a", text=item.name)
+
+
+    def invoke(self, context, event):
+        ob = context.object
+        self.shells = {}
+        self.shellOrder.clear()
+        idx = 0
+        for mat in ob.data.materials:
+            if mat is None:
+                continue
+            shells = {}
+            self.shells[mat.name] = (mat, shells)
+            for node in mat.node_tree.nodes:
+                if isShellNode(node):
+                    key = node.label
+                    shells[key] = node
+                    if key not in self.shellOrder.keys():
+                        idx += 1
+                        item = self.shellOrder.add()
+                        item.name = key
+                        item.a = idx
+        return DazPropsOperator.invoke(self, context, event)
+
+
+    def run(self, context):
+        def isFirst(node):
+            for slot in ShellOutputs:
+                links = node.inputs[slot].links
+                if links and not isShellNode(links[0].from_node):
+                    return True
+
+        def isLast(node):
+            for slot in ShellOutputs:
+                links = node.outputs[slot].links
+                if links and not isShellNode(links[0].to_node):
+                    return True
+
+        ob = context.object
+        names = [(item.a, item.name) for item in self.shellOrder]
+        names.sort()
+        for mat,shells in self.shells.values():
+            tree = mat.node_tree
+            first = {}
+            last = {}
+            for node in shells.values():
+                if isFirst(node):
+                    for slot in ShellOutputs:
+                        links = node.inputs[slot].links
+                        if links:
+                            first[slot] = links[0].from_socket
+                        else:
+                            first[slot] = None
+                if isLast(node):
+                    for slot in ShellOutputs:
+                        last[slot] = []
+                        for link in node.outputs[slot].links:
+                            last[slot].append(link.to_socket)
+            if not (first and last):
+                continue
+            prev = first
+            for idx,key in names:
+                node = shells.get(key)
+                if node:
+                    for slot in ShellOutputs:
+                        if prev[slot]:
+                            tree.links.new(prev[slot], node.inputs[slot])
+                        else:
+                            links = node.inputs[slot].links
+                            if links:
+                                tree.links.remove(links[0])
+                        prev[slot] = node.outputs[slot]
+            for slot in ShellOutputs:
+                for socket in last[slot]:
+                    tree.links.new(prev[slot], socket)
+
+            if self.useBeautify:
+                beautifyNodeTree(tree)
 
 #----------------------------------------------------------
 #   Activate diffuse texture
@@ -1988,12 +2097,11 @@ classes = [
     DAZ_OT_ReplaceMaterials,
     DAZ_OT_FindMissingTextures,
     DAZ_OT_FixShells,
+    DAZ_OT_SortShells,
     DAZ_OT_ActivateDiffuse,
 ]
 
 def register():
-    from .propgroups import DazFloatGroup
-
     for cls in classes:
         bpy.utils.register_class(cls)
 
