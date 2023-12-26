@@ -1637,30 +1637,6 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
                 return newpath,res
         return None,""
 
-# ---------------------------------------------------------------------
-#   Utility
-# ---------------------------------------------------------------------
-
-ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]
-ShellOutputs = ["BSDF", "Displacement"]
-
-def isShellNode(node):
-    def hasSlots(data, slots):
-        for slot in slots:
-            if slot not in data.keys():
-                return False
-        return True
-
-    return (node.type == 'GROUP' and
-            not node.name.startswith("DAZ ") and
-            hasSlots(node.inputs, ShellInputs) and
-            hasSlots(node.outputs, ShellOutputs))
-
-
-def isLayeredNode(node):
-    return (node.type == 'GROUP' and
-            node.name.startswith("LIE"))
-
 #----------------------------------------------------------
 #   Activate diffuse texture
 #----------------------------------------------------------

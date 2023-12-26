@@ -226,6 +226,14 @@ class NodeGroup:
         self.ncols = ncols
 
 
+    def remake(self, group):
+        self.group = group
+        self.nodes = self.group.nodes
+        self.links = self.group.links
+        for node in self.nodes:
+            print("NN", node.type)
+
+
     def create(self, node, name, parent, ncols):
         self.make(name, ncols)
         node.name = name
