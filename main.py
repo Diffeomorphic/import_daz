@@ -370,7 +370,21 @@ class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, 
 #   Import DAZ Materials
 #------------------------------------------------------------------
 
-class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsMesh):
+class MaterialLoader(ColorOptions):
+    def loadDazFile(self, filepath, context):
+        from .load_json import JL
+        LS.scene = filepath
+        struct = JL.load(filepath)
+        print("Parsing data")
+        from .files import parseAssetFile
+        main = parseAssetFile(struct, toplevel=True)
+        if main is None:
+            msg = ("File not found:  \n%s      " % filepath)
+            raise DazError(msg)
+        return main
+
+
+class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, IsMesh):
     bl_idname = "daz.import_daz_materials"
     bl_label = "Import DAZ Materials"
     bl_description = "Load materials from a native DAZ file to the active mesh"
@@ -489,19 +503,6 @@ class ImportDAZMaterials(DazOperator, ColorOptions, DazImageFile, MultiFile, IsM
             tree.linkToOutputs(cycles)
         if GS.usePruneNodes:
             pruneNodeTree(mat.node_tree)
-
-
-    def loadDazFile(self, filepath, context):
-        from .load_json import JL
-        LS.scene = filepath
-        struct = JL.load(filepath)
-        print("Parsing data")
-        from .files import parseAssetFile
-        main = parseAssetFile(struct, toplevel=True)
-        if main is None:
-            msg = ("File not found:  \n%s      " % filepath)
-            raise DazError(msg)
-        return main
 
 
     def getMatch(self, dmat, mats):
