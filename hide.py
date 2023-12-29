@@ -508,7 +508,13 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
     bl_description = "Add drivers to selected shapekeys,\ndepending on the visibility of selected clothes"
     bl_options = {'UNDO'}
 
+    useInvert : BoolProperty(
+        name = "Inverted Drivers",
+        description = "Enable shapekey when clothes are visible",
+        default = False)
+
     def draw(self, context):
+        self.layout.prop(self, "useInvert")
         ShapekeySelector.draw(self, context)
 
     def run(self, context):
@@ -518,6 +524,10 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
         clothes = [ob for ob in getSelectedMeshes(context) if ob != hum]
         if len(clothes) < 1:
             raise DazError("At least two meshes must be selected")
+        if self.useInvert:
+            form = "1-%s"
+        else:
+            form = "%s"
         props = []
         for clo in clothes:
             if not clo.DazVisibilityDrivers:
@@ -542,7 +552,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
                 if rig and final in rig.data.keys():
                     addDriverVar(fcu, letter, propRef(final), rig.data)
                     expr = expr + "+%s" % letter
-                fcu.driver.expression = expr[1:]
+                fcu.driver.expression = form % expr[1:]
 
 #----------------------------------------------------------
 #   Initialize

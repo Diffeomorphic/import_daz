@@ -406,7 +406,7 @@ class LoadMorph(DriverUser):
             self.mesh.data.DazGraftGroup and
             self.rig):
             for ob in self.rig.children:
-                if len(ob.data.vertices) == asset.vertex_count:
+                if ob.type == 'MESH' and len(ob.data.vertices) == asset.vertex_count:
                     return ob
         return None
 

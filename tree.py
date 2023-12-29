@@ -289,6 +289,7 @@ NodeSize = {
     "BSDF_HAIR" : 10,
     "SUBSURFACE_SCATTERING" : 10,
     "RGB" : 10,
+    "VALUE" : 5,
     "INVERT" : 5,
     "GAMMA" : 6,
     "SEPRGB" : 7,
