@@ -100,7 +100,8 @@ class GlobalSettings:
         self.imageInterpolation = 'Cubic'
         self.useGhostLight = False
         self.useUnusedTextures = False
-        self.useLayeredInfluence = False
+        self.useShellInfluDrivers = False
+        self.useLayeredInflu = False
         self.useLayeredShells = True
 
         self.useStrengthAdjusters = 'NONE'
@@ -587,7 +588,6 @@ class LocalSettings:
         self.images = {}
         self.protectedImages = {}
         self.protectedGroups = []
-        self.layeredImages = {}
         self.textures = {}
         self.gammas = {}
         self.customShapes = []

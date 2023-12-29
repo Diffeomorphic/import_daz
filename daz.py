@@ -659,9 +659,13 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build Unused Textures",
         description = "Build texture found in unused channels")
 
-    useLayeredInfluence : BoolProperty(
-        name = "Layered Image Influence Drivers",
-        description = "Add drivers to the influence of layered images")
+    useShellInfluDrivers : BoolProperty(
+        name = "Shell Influence Drivers",
+        description = "Add drivers to shell influence")
+
+    useLayeredInflu : BoolProperty(
+        name = "Layered Image Influence",
+        description = "Add layered image influence")
 
     useLayeredShells : BoolProperty(
         name = "Layered Images In Shells",
@@ -787,7 +791,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             box.prop(self, "useFakeCaustics")
         box.prop(self, "useImageInterpolation")
         box.prop(self, "useUnusedTextures")
-        box.prop(self, "useLayeredInfluence")
+        box.prop(self, "useShellInfluDrivers")
+        box.prop(self, "useLayeredInflu")
         box.prop(self, "useLayeredShells")
         box.prop(self, "handleRenderSettings")
         box.prop(self, "handleLightSettings")

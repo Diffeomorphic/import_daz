@@ -342,10 +342,10 @@ class GeoNode(Node, SimNode):
                 scaleEyeMoisture(hdob)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
-                if GS.useLayeredInfluence:
-                    driveShellInfluence(hdob, LS.layeredImages)
-            elif GS.useLayeredInfluence:
-                driveShellInfluence(ob, LS.layeredImages)
+                if GS.useShellInfluDrivers:
+                    driveShellInfluence(hdob)
+            elif GS.useShellInfluDrivers:
+                driveShellInfluence(ob)
             if GS.shellMethod == 'GEONODES':
                 self.buildShells(context)
         if LS.fitFile and ob.type == 'MESH':

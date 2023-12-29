@@ -1217,27 +1217,35 @@ class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            driveShellInfluence(ob, {})
+            driveShellInfluence(ob)
 
 
-def driveShellInfluence(ob, limages):
+def driveShellInfluence(ob):
     from .driver import setFloatProp, addDriver
     for mat in ob.data.materials:
         if mat and mat.node_tree:
             for node in mat.node_tree.nodes:
-                if node.type == 'GROUP' and "Influence" in node.inputs.keys() and node.node_tree:
-                    if "Color" in node.outputs.keys():
-                        key = node.node_tree.name
-                        if key in limages.keys():
-                            prop = limages[key]
-                        else:
-                            prop = "INFLU LI %s" % mat.name
-                            limages[key] = prop
-                    else:
-                        prop = "INFLU %s" % node.label
+                if isShellNode(node):
+                    prop = "INFLU %s" % node.label
                     setFloatProp(ob, prop, 1.0, 0.0, 10.0, True)
                     addDriver(node.inputs["Influence"], "default_value", ob, propRef(prop), "x")
                     ob.DazVisibilityDrivers = True
+
+
+ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]
+ShellOutputs = ["BSDF", "Displacement"]
+
+def isShellNode(node):
+    def hasSlots(data, slots):
+        for slot in slots:
+            if slot not in data.keys():
+                return False
+        return True
+
+    return (node.type == 'GROUP' and
+            not node.name.startswith("DAZ ") and
+            hasSlots(node.inputs, ShellInputs) and
+            hasSlots(node.outputs, ShellOutputs))
 
 #-------------------------------------------------------------
 #   Scale materials

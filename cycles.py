@@ -1929,7 +1929,8 @@ class CyclesTree(Tree):
         node.width = 240
         node.label = name
         self.linkVector(self.texco, node)
-        node.inputs["Influence"].default_value = 1.0
+        if "Influence" in node.inputs.keys():
+            node.inputs["Influence"].default_value = 1.0
         self.layeredGroups[name] = node
         return node
 

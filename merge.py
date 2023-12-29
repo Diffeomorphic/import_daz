@@ -564,6 +564,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if prop not in cob.keys():
                 cob[prop] = value
                 setOverridable(cob, prop)
+                cob.DazVisibilityDrivers = True
         for aob in anatomies:
             for mat in aob.data.materials:
                 if mat and mat.node_tree.animation_data:
