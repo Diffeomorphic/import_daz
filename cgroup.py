@@ -1773,7 +1773,7 @@ class LayeredGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Vector", "Influence"]
-        self.outsockets += ["Color"]
+        self.outsockets += ["Color", "Alpha"]
 
 
     def create(self, node, name, parent):
@@ -1783,13 +1783,17 @@ class LayeredGroup(CyclesGroup):
             addGroupInput(self.group, "NodeSocketFloat", "Influence")
             self.setMinMax("Influence", 0.0, 0.0, 10)
         addGroupOutput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketFloat", "Alpha")
 
 
     def addTextureNodes(self, assets, maps, colorSpace, isMask):
         self.outnode = None
         self.mask = None
+        texnode0 = None
         for asset,map in zip(assets, maps):
             innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, colorSpace)
+            if texnode0 is None:
+                texnode0 = texnode
             if innode:
                 self.links.new(self.inputs.outputs["Vector"], innode.inputs["Vector"])
             if self.outnode is None:
@@ -1805,6 +1809,7 @@ class LayeredGroup(CyclesGroup):
             self.links.new(mixout, self.outputs.inputs["Color"])
         else:
             self.links.new(colorOutput(self.outnode), self.outputs.inputs["Color"])
+        self.links.new(texnode0.outputs["Alpha"], self.outputs.inputs["Alpha"])
         firstnode.select = True
         self.nodes.active = firstnode
 
