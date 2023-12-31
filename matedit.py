@@ -1209,6 +1209,21 @@ class DAZ_OT_SetShellInfluence(DazOperator, IsMesh):
         updateDrivers(ob)
 
 
+class DAZ_OT_ToggleShellInfluence(DazOperator, IsMesh):
+    bl_idname = "daz.toggle_shell_influence"
+    bl_label = "Toggle Shell Influence"
+
+    prop : StringProperty()
+
+    def run(self, context):
+        ob = context.object
+        if ob[self.prop] > 0:
+            ob[self.prop] = 0.0
+        else:
+            ob[self.prop] = 1.0
+        updateDrivers(ob)
+
+
 class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
     bl_idname = "daz.drive_shell_influence"
     bl_label = "Drive Shell Influence"
@@ -1700,6 +1715,7 @@ classes = [
     DAZ_OT_SetShellVisibility,
     DAZ_OT_DriveShellInfluence,
     DAZ_OT_SetShellInfluence,
+    DAZ_OT_ToggleShellInfluence,
     DAZ_OT_SetAllFloats,
     DAZ_OT_ClearAllFloats,
     DAZ_OT_ChangeUnitScale,

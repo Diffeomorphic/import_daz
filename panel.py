@@ -1096,7 +1096,6 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
 class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Visibility"
-    prefix = "Mhh"
 
     @classmethod
     def poll(cls, context):
@@ -1104,34 +1103,26 @@ class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
         return (getRuntimeEnabled(context) and ob and ob.DazVisibilityDrivers)
 
     def draw(self, context):
-        ob = rig = context.object
-        scn = context.scene
-        if ob.type == 'MESH':
-            props = [prop for prop in ob.keys() if prop[0:6] == "INFLU "]
+        pass
+
+
+class DAZ_PT_ClothesVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
+    bl_label = "Clothes"
+    bl_parent_id = "DAZ_PT_Visibility"
+
+    def draw(self, context):
+        rig = context.object
+        if rig.type == 'MESH':
+            rig = rig.parent
+        if rig and rig.type == 'ARMATURE':
+            props = list(rig.keys())
+            props.sort()
             if props:
-                box = self.layout.box()
-                row = box.row()
-                op = row.operator("daz.set_shell_influence", text="All")
-                op.value = 1.0
-                op = row.operator("daz.set_shell_influence", text="None")
-                op.value = 0.0
-                for prop in props:
-                    box.prop(ob, propRef(prop), text=prop[6:])
-            else:
-                self.layout.operator("daz.set_shell_visibility")
-            self.layout.separator()
-            if ob.parent and ob.parent.type == 'ARMATURE':
-                rig = ob.parent
-            else:
-                return
-        props = list(rig.keys())
-        props.sort()
-        if props:
-            row = self.layout.row()
-            row.operator("daz.show_all_vis")
-            row.operator("daz.hide_all_vis")
-            self.drawProps(rig, props, "Mhh")
-            self.drawProps(rig, props, "DzS")
+                row = self.layout.row()
+                row.operator("daz.show_all_vis")
+                row.operator("daz.hide_all_vis")
+                self.drawProps(rig, props, "Mhh")
+                self.drawProps(rig, props, "DzS")
 
     def drawProps(self, rig, props, prefix):
         for prop in props:
@@ -1139,6 +1130,30 @@ class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
                 icon = 'CHECKBOX_HLT' if rig[prop] else 'CHECKBOX_DEHLT'
                 op = self.layout.operator("daz.toggle_vis", text=prop[3:], icon=icon, emboss=False)
                 op.name = prop
+
+
+class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
+    bl_label = "Shells"
+    bl_parent_id = "DAZ_PT_Visibility"
+
+    def draw(self, context):
+        ob = context.object
+        props = [prop for prop in ob.keys() if prop[0:6] == "INFLU "]
+        props.sort()
+        if props:
+            row = self.layout.row()
+            op = row.operator("daz.set_shell_influence", text="All")
+            op.value = 1.0
+            op = row.operator("daz.set_shell_influence", text="None")
+            op.value = 0.0
+            for prop in props:
+                row = self.layout.row()
+                row.prop(ob, propRef(prop), text=prop[6:])
+                icon = 'CHECKBOX_HLT' if ob[prop] > 0 else 'CHECKBOX_DEHLT'
+                op = row.operator("daz.toggle_shell_influence", text="", icon=icon, emboss=False)
+                op.prop = prop
+        else:
+            self.layout.operator("daz.set_shell_visibility")
 
 #------------------------------------------------------------------------
 #   DAZ Rigify props panels
@@ -1223,6 +1238,8 @@ classes = [
     DAZ_PT_CustomMorphs,
     DAZ_PT_CustomMeshMorphs,
     DAZ_PT_Visibility,
+    DAZ_PT_ClothesVisibility,
+    DAZ_PT_ShellVisibility,
     DAZ_PT_DazRigifyProps,
 
     DAZ_PT_DazSimpleLayers,
