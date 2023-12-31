@@ -1616,7 +1616,7 @@ class FavoOptions:
         name = "Ignore URL",
         description = ("Ignore the mesh URL and only use the fingerprint to identify the mesh.\n" +
                        "Use this to load Genesis 8 morphs to Genesis 8.1 figures and vice versa"),
-        default = True)
+        default = False)
 
     ignoreFinger : BoolProperty(
         name = "Ignore Fingerprint",

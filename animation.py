@@ -1575,30 +1575,37 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         description = "Name of loaded pose library",
         default = "PoseLib")
 
-    useAssetBrowser : BoolProperty(
-        name = "Asset Browser",
-        description = "Create asset browser library",
-        default = True)
+    if bpy.app.version < (3,0,0):
+        useAssetBrowser = False
+    else:
+        if bpy.app.version < (3,3,0):
+            useAssetBrowser : BoolProperty(
+                name = "Asset Browser",
+                description = "Create asset browser library",
+                default = True)
+        else:
+            useAssetBrowser = True
 
-    usePreviewImages : BoolProperty(
-        name = "Import Previews",
-        description = "Import preview images for imported poses",
-        default = False)
+        usePreviewImages : BoolProperty(
+            name = "Import Previews",
+            description = "Import preview images for imported poses",
+            default = False)
 
-    assetTags : StringProperty(
-        name = "Tags",
-        description = "List of tags to add to the imported Poses",
-        default = "")
+        assetTags : StringProperty(
+            name = "Tags",
+            description = "List of tags to add to the imported Poses",
+            default = "")
 
-    assetAuthor : StringProperty(
-        name = "Author",
-        description = "Name of the Author",
-        default = "")
+        assetAuthor : StringProperty(
+            name = "Author",
+            description = "Name of the Author",
+            default = "")
 
-    assetDescription : StringProperty(
-        name = "Description",
-        description = "Description to add to all Poses",
-        default = "")
+        assetDescription : StringProperty(
+            name = "Description",
+            description = "Description to add to all Poses",
+            default = "")
+
 
     def draw(self, context):
         AnimatorBase.draw(self, context)
@@ -1607,18 +1614,19 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         if self.makeNewPoseLib:
             self.layout.prop(self, "poseLibName")
         if bpy.app.version >= (3,0,0):
-            self.layout.prop(self, "useAssetBrowser")
-            self.layout.prop(self, "usePreviewImages")
-            self.layout.prop(self, "assetTags")
-            self.layout.prop(self, "assetAuthor")
-            self.layout.prop(self, "assetDescription")
+            if bpy.app.version < (3,3,0):
+                self.layout.prop(self, "useAssetBrowser")
+            if self.useAssetBrowser:
+                #self.layout.prop(self, "usePreviewImages")
+                self.layout.prop(self, "assetTags")
+                self.layout.prop(self, "assetAuthor")
+                self.layout.prop(self, "assetDescription")
 
 
     def clearAnimation(self, ob):
         if self.makeNewPoseLib:
-            if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
+            if self.useAssetBrowser:
                 pass
-                #bpy.ops.asset.catalog_new(parent_path='')
             elif ob.pose_library:
                 ob.pose_library = None
 
@@ -1635,11 +1643,18 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         if rig.type != 'ARMATURE' or rig.animation_data is None:
             return
         name = os.path.splitext(os.path.basename(filepath))[0]
-        if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
-            bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
+        if self.useAssetBrowser:
+            try:
+                bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
+            except RuntimeError as err:
+                words = str(err).split("()")
+                msg = "()\n".join(words)
+                raise DazError(msg)
             act = rig.animation_data.action
             if act is None:
                 return
+            #if self.makeNewPoseLib:
+            #    bpy.ops.asset.catalog_new(parent_path='')
             keep = ["location", "rotation_euler", "rotation_quaternion"]
             if self.affectScale:
                 keep.append("scale")
