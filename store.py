@@ -58,6 +58,11 @@ class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, Mor
         description = "Save action for empties",
         default = True)
 
+    useCurves : BoolProperty(
+        name = "Curves",
+        description = "Save action for curves",
+        default = True)
+
     useCamera : BoolProperty(
         name = "Cameras",
         description = "Save action for cameras",
@@ -72,6 +77,7 @@ class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, Mor
         self.layout.prop(self, "useArmature")
         self.layout.prop(self, "useMesh")
         self.layout.prop(self, "useEmpty")
+        self.layout.prop(self, "useCurves")
         self.layout.prop(self, "useCamera")
         self.layout.prop(self, "useLight")
 
@@ -92,14 +98,17 @@ class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, Mor
         self.exclude = []
         for rig in getVisibleArmatures(context):
             self.excludeChildren(rig)
+        self.exclude = []
         for ob in getVisibleObjects(context):
             if ob in self.exclude:
                 continue
             if not ((ob.type == 'ARMATURE' and self.useArmature) or
                     (ob.type == 'MESH' and self.useMesh) or
                     (ob.type == 'EMPTY' and self.useEmpty) or
+                    (ob.type == 'CURVES' and self.useCurves) or
                     (ob.type == 'CAMERA' and self.useCamera) or
                     (ob.type == 'LIGHT' and self.useLight)):
+                print("SKIP", ob.name, ob.type)
                 continue
             self.setupDriven(ob)
             ostruct = self.saveTransform(ob, struct)
