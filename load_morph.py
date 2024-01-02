@@ -1339,8 +1339,9 @@ class LoadMorph(DriverUser):
         if len(string) > 254:
             msg = "String driver too long:\n"
             for n in range(5):
-                msg += "%s         \n" % (string[30*n, 30*(n+1)])
-            raise DazError(msg)
+                msg += "%s         \n" % (string[30*n:30*(n+1)])
+            reportError(msg)
+            return
 
         self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
 

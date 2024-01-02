@@ -1364,7 +1364,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 else:
                     img = None
                 mat = buildHairMaterial("Hair", self.color, img, context, force=True)
-            if fade:
+            if fade and img:
                 addFade(mat, img)
             hum.data.materials.append(mat)
             self.materials = [mat]
