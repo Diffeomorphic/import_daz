@@ -486,8 +486,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         if self.useNewMesh:
             ename = "%s Merged" % truncString(cob.name, " Mesh")
             me = bpy.data.meshes.new(ename)
-            me.use_auto_smooth = cob.data.use_auto_smooth
-            me.auto_smooth_angle = cob.data.auto_smooth_angle
+            if hasattr(me, "use_auto_smooth"):
+                me.use_auto_smooth = cob.data.use_auto_smooth
+                me.auto_smooth_angle = cob.data.auto_smooth_angle
             eob = bpy.data.objects.new(ename, me)
             #eob.show_wire = True
             for coll in bpy.data.collections:

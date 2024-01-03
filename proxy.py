@@ -1638,7 +1638,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                 if face.use_smooth:
                     bpy.ops.object.shade_smooth()
                     break
-            if ob.data.use_auto_smooth:
+            if hasattr(ob.data, "use_auto_smooth") and ob.data.use_auto_smooth:
                 transfer(data_type='CUSTOM_NORMAL')
                 for nob in nobs:
                     nob.data.use_auto_smooth = True

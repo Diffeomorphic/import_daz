@@ -218,8 +218,13 @@ class GeoNode(Node, SimNode):
             if subDLevel > GS.maxSubdivs:
                 for dmat in self.materials.values():
                     mat = dmat.rna
-                    if mat and mat.cycles.displacement_method == 'DISPLACEMENT':
-                        mat.cycles.displacement_method = 'BOTH'
+                    if mat:
+                        if hasattr(mat, "displacement_method"):
+                            if mat.displacement_method == 'DISPLACEMENT':
+                                mat.displacement_method = 'BOTH'
+                        else:
+                            if mat.cycles.displacement_method == 'DISPLACEMENT':
+                                mat.cycles.displacement_method = 'BOTH'
                 subDLevel = GS.maxSubdivs
         if (self.type == "subdivision_surface" and
             self.data and
@@ -237,7 +242,8 @@ class GeoNode(Node, SimNode):
                 except AttributeError:
                     pass
             self.data.creaseEdges(context, ob)
-            ob.data.use_auto_smooth = False
+            if hasattr(ob.data, "use_auto_smooth"):
+                ob.data.use_auto_smooth = False
 
 
     def addMappings(self, selmap):
@@ -1305,7 +1311,7 @@ class Geometry(Asset, Channels):
         dmat.correctBumpArea(self, me)
         if dmat.uv_set and dmat.uv_set.checkSize(me):
             self.uv_set = dmat.uv_set
-        if GS.useAutoSmooth:
+        if GS.useAutoSmooth and hasattr(me, "use_auto_smooth"):
             me.use_auto_smooth = dmat.getValue(["Smooth On"], False)
             me.auto_smooth_angle = dmat.getValue(["Smooth Angle"], 89.9)*D
 

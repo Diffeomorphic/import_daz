@@ -1734,7 +1734,7 @@ class DecalGroup(CyclesGroup):
         tex.interpolation = GS.imageInterpolation
         tex.extension = 'CLIP'
         self.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
-        alpha = tex.outputs["Alpha"]
+        alpha = tex.outputs.get("Alpha", 1.0)
 
         if mask:
             masktex = self.addNode("ShaderNodeTexImage", 2)
@@ -1809,7 +1809,10 @@ class LayeredGroup(CyclesGroup):
             self.links.new(mixout, self.outputs.inputs["Color"])
         else:
             self.links.new(colorOutput(self.outnode), self.outputs.inputs["Color"])
-        self.links.new(texnode0.outputs["Alpha"], self.outputs.inputs["Alpha"])
+        self.outputs.inputs["Alpha"].default_value = 1.0
+        socket = texnode0.outputs.get("Alpha")
+        if socket:
+            self.links.new(socket, self.outputs.inputs["Alpha"])
         firstnode.select = True
         self.nodes.active = firstnode
 

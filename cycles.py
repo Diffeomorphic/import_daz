@@ -870,13 +870,6 @@ class CyclesTree(Tree):
         return True
 
 
-    def getImageSlot(self, attr):
-        if self.owner.getImageMod(attr, "grayscale_mode") == "alpha":
-            return "Alpha"
-        else:
-            return 0
-
-
     def raiseToPower(self, tex, power, slot, col=None):
         if col is None:
             col = self.column-1
@@ -892,12 +885,15 @@ class CyclesTree(Tree):
 
 
     def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, isMask=False):
-        texslot = self.getImageSlot(attr)
         channel = self.owner.getLayeredChannel(attr)
         if channel is None:
             return default,None,0
         if isinstance(channel, tuple):
             channel = channel[0]
+        if self.owner.getImageMod(attr, "grayscale_mode") == "alpha":
+            texslot = "Alpha"
+        else:
+            texslot = 0
         if useTex:
             tex = self.addTexImageNode(channel, colorSpace, texslot, isMask)
         else:
@@ -1720,7 +1716,10 @@ class CyclesTree(Tree):
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
             mat = self.owner.rna
-            mat.cycles.displacement_method = 'DISPLACEMENT'
+            if hasattr(mat, "displacement_method"):
+                mat.displacement_method = 'DISPLACEMENT'
+            else:
+                mat.cycles.displacement_method = 'DISPLACEMENT'
         return output
 
     #-------------------------------------------------------------
@@ -1887,7 +1886,7 @@ class CyclesTree(Tree):
             innode,texnode,outnode,isnew = self.addSingleTexture(col, asset, map, colorSpace)
             if self.isDecal:
                 texnode.extension = 'CLIP'
-                self.clipsocket = texnode.outputs["Alpha"]
+                self.clipsocket = texnode.outputs.get("Alpha")
             if isnew:
                 self.linkVector(self.texco, innode)
             if texslot == "Alpha":
@@ -1990,7 +1989,7 @@ class CyclesTree(Tree):
         if tex:
             tex = self.multiplyScalarTex(factor, tex, add=add)
             if tex:
-                if texslot:
+                if texslot in tex.outputs.keys():
                     self.links.new(tex.outputs[texslot], node.inputs[slot])
                 else:
                     self.links.new(colorOutput(tex), node.inputs[slot])
@@ -2048,8 +2047,9 @@ class CyclesTree(Tree):
         if slot == "Alpha":
             if tex.type == "GAMMA":
                 tex = tex.inputs["Color"].links[0].from_node
-            if tex.type == "TEX_IMAGE":
-                self.links.new(tex.outputs["Alpha"], socket)
+            alphasocket = tex.outputs.get("Alpha")
+            if alphasocket:
+                self.links.new(alphasocket, socket)
             else:
                 self.links.new(colorOutput(tex), socket)
         else:
