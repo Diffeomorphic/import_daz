@@ -78,8 +78,8 @@ def getEditBones(rig):
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
             copyTables(pb.name, pb.name[:-5])
-        elif pb.name[-2:] == "IK":
-            copyTables(pb.name[:-2], pb.name)
+        #elif pb.name[-2:] == "IK":
+        #    copyTables(pb.name[:-2], pb.name)
 
     processed_bonenames = []
     skeys = None

@@ -383,9 +383,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     tail = Vector(toe.head)
                     head[2] = tail[2]
                     #head[0] = tail[0]
-                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, foot, foot)
+                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root)
                     toeIK = deriveBone(toename, toe, rig, layer, heelIK)
-                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, foot, foot)
+                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, shin)
                     footIK.parent = tarsalIK
                     deriveBone("MCH-%s" % tarsalname, tarsalIK, rig, S_HIDDEN, foot)
                     deriveBone("MCH-%s" % heelname, heelIK, rig, S_HIDDEN, foot)
