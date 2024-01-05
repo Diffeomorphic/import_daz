@@ -297,6 +297,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     def run(self, context):
         rig = context.object
         IK = SimpleIK(self)
+        LS.__init__()
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
