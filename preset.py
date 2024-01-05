@@ -1107,6 +1107,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer):
 
     def run(self, context):
         rig = context.object
+        scn = context.scene
         gen = self.getControlRig(rig)
         act = getCurrentAction(gen)
         if act:
@@ -1121,6 +1122,9 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer):
                 act.name = "%s:BAKED" % actname[0:58]
             if self.useShapekeys:
                 self.bakeShapekeys(context, meshes, actname)
+        else:
+            bpy.ops.nla.bake(frame_start=scn.frame_current, frame_end=scn.frame_current, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
+            rig.animation_data.action = None
         if self.useShapekeys:
             for ob in meshes:
                 for skey in ob.data.shape_keys.key_blocks:
