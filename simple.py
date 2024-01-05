@@ -238,6 +238,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         description = "Improve IK by prebending IK bones",
         default = True)
 
+    useErcIk : BoolProperty(
+        name = "ERC Morphs Affect IK",
+        description = "Let ERC morphs change the IK hands, IK heels, and pole target locations",
+        default = False)
+
     useCopyRotation = True
 
     useRootBone : BoolProperty(
@@ -257,6 +262,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useReverseFoot")
         self.layout.prop(self, "useImproveIk")
+        self.layout.prop(self, "useErcIk")
 
     armTable = {
         "G12" : ("Hand", "HandIK", "Shldr", "Shldr", "ForeArm", "ForeArm", "Collar", "Elbow"),
@@ -334,9 +340,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             zaxis = mat.col[2]
             head = eb.head - 40*rig.DazScale*zaxis
             tail = head + 10*rig.DazScale*Vector((0,0,1))
-            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, eb, eb)
+            erc = (eb if self.useErcIk else None)
+            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, erc, erc)
             strname = self.stretchName(bname)
-            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb)
+            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, erc)
             stretch.hide_select = True
 
         from .mhx import makeBone, deriveBone
@@ -353,7 +360,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useArms:
             for prefix,layer in [("l",S_LARMIK), ("r",S_RARMIK)]:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = self.getEntry(self.armTable, prefix, ebones)
-                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root, hand, hand)
+                erc = (hand if self.useErcIk else None)
+                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root, erc, erc)
                 foreTwist.tail = hand.head
                 if self.useCopyRotation:
                     shikname, foreikname = self.getEntry(self.armTable2, prefix, ebones)
@@ -383,7 +391,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     tail = Vector(toe.head)
                     head[2] = tail[2]
                     #head[0] = tail[0]
-                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root)
+                    erc = (foot if self.useErcIk else None)
+                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, erc, erc)
                     toeIK = deriveBone(toename, toe, rig, layer, heelIK)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, shin)
                     footIK.parent = tarsalIK
