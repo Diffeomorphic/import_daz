@@ -669,7 +669,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     useMakeAllBonesPosable : BoolProperty(
         name = "Make All Bones Posable",
-        description = "Add an extra layer of driven bones, to make them posable",
+        description = "Add an extra layer of driven bones, to make them posable.\nDisabled if ERC Method = Translation",
         default = True)
 
     useFavoMorphs : BoolProperty(
@@ -729,7 +729,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
-        self.layout.prop(self, "useMakeAllBonesPosable")
+        if GS.ercMethod != 'TRANSLATION':
+            self.layout.prop(self, "useMakeAllBonesPosable")
         self.layout.prop(self, "useFinalOptimization")
 
 
@@ -1009,7 +1010,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if mainRig and activateObject(context, mainRig):
             if self.useFinalOptimization:
                 bpy.ops.daz.finalize_meshes()
-            if self.useMakeAllBonesPosable:
+            if self.useMakeAllBonesPosable and GS.ercMethod != 'TRANSLATION':
                 print("Make all bones posable")
                 bpy.ops.daz.make_all_bones_posable()
             if self.useFinalOptimization:
