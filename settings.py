@@ -597,6 +597,8 @@ class LocalSettings:
         self.hiddenMaterial = None
         self.shaders = {}
         self.targetCharacter = None
+        self.headbones = {}
+        self.tailbones = {}
 
         self.nViewChildren = 0
         self.nRenderChildren = 0

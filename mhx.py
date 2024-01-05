@@ -66,10 +66,10 @@ def getBoneCopy(bname, model, rpbs):
 
 
 def deriveBone(bname, eb0, rig, layer, parent):
-    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent)
+    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent, eb0, eb0)
 
 
-def makeBone(bname, rig, head, tail, roll, layer, parent):
+def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbone=None):
     eb = rig.data.edit_bones.new(bname)
     eb.head = head
     eb.tail = tail
@@ -78,6 +78,10 @@ def makeBone(bname, rig, head, tail, roll, layer, parent):
     eb.parent = parent
     eb.use_deform = False
     enableBoneNumLayer(eb, rig, layer)
+    if headbone:
+        LS.headbones[bname] = headbone.name
+    if tailbone:
+        LS.tailbones[bname] = tailbone.name
     return eb
 
 
