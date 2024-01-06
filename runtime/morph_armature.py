@@ -87,6 +87,9 @@ def getEditBones(rig):
         if ob.DazMesh:
             skeys = ob.data.shape_keys
             break
+
+    '''
+    # Disabled because it wreaks havoc to G9 eyes
     if skeys:
         for rigidity_group in rig.data.DazRigidityScaleFactors:
             base_center_coord = rigidity_group.base_center_coord
@@ -113,6 +116,7 @@ def getEditBones(rig):
                 tloffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ tloffsets[bone.name]) + ((1-bone.weight)*tloffsets[bone.name])
                 copyTables(bone.name, "%s(drv)" % bone.name)
                 processed_bonenames.append(bone.name)
+    '''
 
     for pb in rig.pose.bones:
         if pb.bone.get("DazExtraBone") and pb.name not in processed_bonenames :
