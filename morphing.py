@@ -519,15 +519,15 @@ class MorphLoader(LoadMorph):
         default = True)
 
     def getFingeredRigMeshes(self, context):
-        from .finger import getFingeredCharacters
+        from .finger import getFingeredCharacters, getCharacter
         ob = context.object
         self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh, useGenesis=False)
         if ob.type == 'MESH':
             self.meshes = [ob]
+            self.chars = [getCharacter(ob)]
         elif self.rig and not self.meshes:
             self.meshes = getMeshChildren(self.rig)
-        #if len(self.meshes) > 1:
-        #    self.meshes = self.meshes[0:1]
+            self.chars = len(self.meshes)*[None]
 
     def getMorphSet(self, asset):
         return self.morphset

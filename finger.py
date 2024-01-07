@@ -150,7 +150,7 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
     meshes = []
     chars = []
     modded = False
-    char = ""
+    char = None
     if ob is None:
         return None,meshes,chars,False
     elif ob.type == 'MESH':

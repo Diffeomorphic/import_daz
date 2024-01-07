@@ -1469,7 +1469,8 @@ class LoadMorph(DriverUser):
 
     def ensureAnimData(self, rna):
         if rna.animation_data is None:
-            print("Make dummy driver for %s" % rna)
+            if GS.verbosity >= 3:
+                print("Make dummy driver for %s" % rna)
             rna["Dummy"] = 0.0
             fcu = rna.driver_add(propRef("Dummy"))
 
