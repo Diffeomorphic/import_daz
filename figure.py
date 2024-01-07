@@ -415,6 +415,13 @@ def copyBoneInfo(srcpb, trgpb):
 
 
 class ExtraBones(DriverUser):
+    ignoreLocked : BoolProperty(
+        name = "Ignore Locked Location",
+        description = "Don't create posable bones for locked location channels",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "ignoreLocked")
 
     def run(self, context):
         rig = context.object
@@ -713,7 +720,7 @@ class ExtraBones(DriverUser):
                         cns.driver_remove(channel)
 
 
-class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
+class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
     bl_idname = "daz.add_extra_face_bones"
     bl_label = "Add Extra Face Bones"
     bl_description = "Add an extra layer of face bones, which can be both driven and posed"
@@ -733,7 +740,6 @@ class DAZ_OT_SetAddExtraFaceBones(DazOperator, ExtraBones, IsArmature):
         keys = rig.pose.bones.keys()
         bnames = [bname for bname in inface
                   if bname in keys and
-                    not isFinal(bname) and
                     drvBone(bname) not in keys]
         bnames += getAnchoredBoneNames(rig, ["upperFaceRig", "lowerFaceRig"])
         return bnames
@@ -765,7 +771,7 @@ def getAnchoredBoneNames(rig, anchors):
     return bnames
 
 
-class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
+class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
     bl_idname = "daz.make_all_bones_posable"
     bl_label = "Make All Bones Posable"
     bl_description = "Add an extra layer of driven bones, to make them posable"
@@ -780,8 +786,7 @@ class DAZ_OT_MakeAllBonesPosable(DazOperator, ExtraBones, IsArmature):
         exclude = ["lMetatarsals", "rMetatarsals", "l_metatarsal", "r_metatarsal"]
         return [pb.name for pb in rig.pose.bones
                 if not isDrvBone(pb.name) and
-                    not isFinal(pb.name) and
-                    isBoneDriven(rig, pb) and
+                    isBoneDriven(rig, pb, self.ignoreLocked) and
                     drvBone(pb.name) not in rig.pose.bones.keys() and
                     pb.name not in exclude]
 

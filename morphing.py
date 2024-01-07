@@ -1959,9 +1959,15 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
+    useMakePosable : BoolProperty(
+        name = "Make All Bones Posable",
+        description = "Make all bones posable after the morphs have been loaded",
+        default = False)
+
     def draw(self, context):
         MorphSuffix.draw(self, context)
         RigidTransfer.draw(self, context)
+        self.layout.prop(self, "useMakePosable")
 
     def run(self, context):
         self.rig = getRigFromContext(context)
@@ -1993,6 +1999,9 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                             ignoreRigidity = self.ignoreRigidity)
                     finally:
                         LS.theFilePaths = filepaths
+            if self.useMakePosable and activateObject(context, self.rig):
+                print("Make all bones posable")
+                bpy.ops.daz.make_all_bones_posable()
         else:
             for ob in getSelectedMeshes(context):
                 self.addFavoMorphs(ob, context)

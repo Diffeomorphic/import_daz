@@ -418,7 +418,7 @@ class BoneInstance(Instance):
             pg.s = self.name
         if self.id != self.name:
             pb.bone["DazTrueName"] = unquote(self.id)
-        if isBoneDriven(rig, pb):
+        if isBoneDriven(rig, pb, ignoreLocked=True):
             pb.rotation_mode = self.getRotationMode(pb, True)
             enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
         else:

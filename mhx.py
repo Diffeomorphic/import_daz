@@ -66,7 +66,7 @@ def getBoneCopy(bname, model, rpbs):
 
 
 def deriveBone(bname, eb0, rig, layer, parent):
-    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent, eb0, eb0)
+    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent)
 
 
 def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbone=None):
@@ -1803,7 +1803,7 @@ def getBoneLayer(pb, rig):
     if pb.name in BD.HeadBones:
         return L_HEAD, False
     elif (isDrvBone(pb.name) or
-        isBoneDriven(rig, pb) or
+        isBoneDriven(rig, pb, ignoreLocked=True) or
         pb.name in BD.FaceRigs):
         return L_HELP, False
     elif pb.name in BD.Teeth:

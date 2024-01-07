@@ -241,7 +241,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     useErcIk : BoolProperty(
         name = "ERC Morphs Affect IK",
         description = "Let ERC morphs change the IK hands, IK heels, and pole target locations",
-        default = False)
+        default = True)
 
     useCopyRotation = True
 
@@ -262,7 +262,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useReverseFoot")
         self.layout.prop(self, "useImproveIk")
-        self.layout.prop(self, "useErcIk")
+        if GS.ercMethod == 'ARMATURE':
+            self.layout.prop(self, "useErcIk")
 
     armTable = {
         "G12" : ("Hand", "HandIK", "Shldr", "Shldr", "ForeArm", "ForeArm", "Collar", "Elbow"),
@@ -306,7 +307,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.makeNewBones(rig, IK)
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
-        if GS.ercMethod == 'ARMATURE':
+        if GS.ercMethod == 'ARMATURE' and self.useErcIk:
             copyOffsetDrivers(rig)
         if self.useImproveIk:
             improveIk(rig)
@@ -341,10 +342,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             zaxis = mat.col[2]
             head = eb.head - 40*rig.DazScale*zaxis
             tail = head + 10*rig.DazScale*Vector((0,0,1))
-            erc = (eb if self.useErcIk else None)
-            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, erc, erc)
+            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, eb, eb)
             strname = self.stretchName(bname)
-            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, erc)
+            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb)
             stretch.hide_select = True
 
         from .mhx import makeBone, deriveBone
@@ -361,8 +361,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useArms:
             for prefix,layer in [("l",S_LARMIK), ("r",S_RARMIK)]:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = self.getEntry(self.armTable, prefix, ebones)
-                erc = (hand if self.useErcIk else None)
-                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root, erc, erc)
+                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root, hand, hand)
                 foreTwist.tail = hand.head
                 if self.useCopyRotation:
                     shikname, foreikname = self.getEntry(self.armTable2, prefix, ebones)
@@ -392,9 +391,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     tail = Vector(toe.head)
                     head[2] = tail[2]
                     #head[0] = tail[0]
-                    erc = (foot if self.useErcIk else None)
-                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, erc, erc)
-                    toeIK = deriveBone(toename, toe, rig, layer, heelIK)
+                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, foot, foot)
+                    toeIK = makeBone(toename, rig, toe.head, toe.tail, toe.roll, layer, heelIK, toe, toe)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, shin)
                     footIK.parent = tarsalIK
                     deriveBone("MCH-%s" % tarsalname, tarsalIK, rig, S_HIDDEN, foot)
@@ -840,7 +838,9 @@ def copyOffsetDrivers(rig):
                     fcu1.data_path = 'pose.bones["%s"].%s' % (bname1, attr)
                     fcu1.array_index = fcu0.array_index
             else:
-                missing.append(bname0)
+                missing.append((bname1,bname0))
+        for bname1,bname0 in bones.items():
+            print("MISS", bname1, bname0)
 
     from .driver import setFloatProp
     copyDrivers(rig, LS.headbones, "HdOffset")

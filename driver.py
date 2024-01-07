@@ -241,8 +241,8 @@ def getDriver(rna, channel, idx):
     return None
 
 
-def isBoneDriven(rig, pb):
-    return (getBoneDrivers(rig, pb) != [])
+def isBoneDriven(rig, pb, ignoreLocked=False):
+    return (getBoneDrivers(rig, pb, ignoreLocked) != [])
 
 
 def getDrivenBones(rig):
@@ -254,12 +254,16 @@ def getDrivenBones(rig):
     return {}
 
 
-def getBoneDrivers(rig, pb):
+def getBoneDrivers(rig, pb, ignoreLocked=False):
     if rig.animation_data:
+        if ignoreLocked and not isLocationUnlocked(pb):
+            skip = ("HdOffset","TlOffset",".location")
+        else:
+            skip = ("HdOffset","TlOffset")
         path = 'pose.bones["%s"]' % pb.name
         return [fcu for fcu in rig.animation_data.drivers
                 if (fcu.data_path.startswith(path) and
-                    not fcu.data_path.endswith(("HdOffset","TlOffset")))]
+                    not fcu.data_path.endswith(skip))]
     else:
         return []
 
