@@ -496,7 +496,26 @@ class MorphSuffix:
             return string
 
 
-class MorphLoader(LoadMorph):
+class PosableMaker:
+    useMakePosable : BoolProperty(
+        name = "Make All Bones Posable",
+        description = "Make all bones posable after the morphs have been loaded",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useMakePosable")
+
+    def makePosable(self, context, rig, useActivate=True, useEasy=False):
+        if (self.useMakePosable and
+            (useEasy or not ES.easy) and
+            rig and
+            rig.type == 'ARMATURE' and
+            (not useActivate or activateObject(context, rig))):
+            print("Make all bones posable")
+            bpy.ops.daz.make_all_bones_posable()
+
+
+class MorphLoader(LoadMorph, PosableMaker):
     category = ""
     adjuster = None
     bodypart = "Face"
@@ -506,11 +525,6 @@ class MorphLoader(LoadMorph):
         description = ("Add an adjuster for the morph type.\n" +
                        "Dependence on FBM and FHM morphs is ignored.\n" +
                        "Useful if the character is baked"),
-        default = False)
-
-    useMakePosable : BoolProperty(
-        name = "Make All Bones Posable",
-        description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
     useTransferFace : BoolProperty(
@@ -637,9 +651,7 @@ class MorphLoader(LoadMorph):
                     msg += "    %s\n" % prop
         elif self.erc and GS.verbosity >= 3:
             msg += "\nFound morphs that want to\nchange the rest pose."
-        if self.useMakePosable and not ES.easy and self.rig and activateObject(context, self.rig):
-            print("Make all bones posable")
-            bpy.ops.daz.make_all_bones_posable()
+        self.makePosable(context, self.rig)
         if self.faceshapes and self.useTransferFace and self.rig and self.meshes:
             self.transferToFaceMeshes(context)
         if msg:
@@ -744,7 +756,6 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
     suppressError = True
     ignoreHD = False
     hideable = True
-    useMakePosable = False
     disableErc = True
 
     def drawOptions(self, layout):
@@ -1274,7 +1285,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "useAdjusters")
-        self.layout.prop(self, "useMakePosable")
+        PosableMaker.draw(self, context)
 
     def invoke(self, context, event):
         if not self.setupCharacter(context):
@@ -1316,9 +1327,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             for mesh in meshes:
                 if len(mesh.data.DazBulges) > 0 and activateObject(context, mesh):
                     createBulges(mesh, self.rig, ignoreFingers=self.ignoreFingers)
-        if self.useMakePosable and self.rig and activateObject(context, self.rig):
-            print("Make all bones posable")
-            bpy.ops.daz.make_all_bones_posable()
+        self.makePosable(context, self.rig)
         self.faceshapes = self.allfaceshapes
         if self.faceshapes and self.useTransferFace and self.rig and self.meshes:
             self.transferToFaceMeshes(context)
@@ -1388,7 +1397,6 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
     morphset = "Custom"
     hideable = True
     category = ""
-    useMakePosable = False
 
     def findPropGroup(self, prop):
         if self.rig is None:
@@ -1503,7 +1511,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         self.layout.prop(self, "onlyProperties")
         self.layout.prop(self, "useProtected")
         self.layout.prop(self, "treatHD")
-        self.layout.prop(self, "useMakePosable")
+        PosableMaker.draw(self, context)
 
 
     def invoke(self, context, event):
@@ -1635,7 +1643,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         self.layout.prop(self, "ignoreUrl")
         self.layout.prop(self, "ignoreFinger")
         self.layout.prop(self, "useAdjusters")
-        self.layout.prop(self, "useMakePosable")
+        PosableMaker.draw(self, context)
 
     def invoke(self, context, event):
         return SingleFile.invoke(self, context, event)
@@ -1675,9 +1683,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
             if url not in lstruct.keys():
                 return
             self.loadSinglePreset(ob, rig, lstruct[url], context)
-        if self.useMakePosable and rig and activateObject(context, rig):
-            print("Make all bones posable")
-            bpy.ops.daz.make_all_bones_posable()
+        self.makePosable(context, rig)
 
 
     def loadSinglePreset(self, ob, rig, ustruct, context):
@@ -1954,20 +1960,15 @@ class RigidTransfer:
                 self.layout.prop(self, "ignoreRigidity")
 
 
-class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, IsMeshArmature):
+class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, PosableMaker, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
-    useMakePosable : BoolProperty(
-        name = "Make All Bones Posable",
-        description = "Make all bones posable after the morphs have been loaded",
-        default = False)
-
     def draw(self, context):
         MorphSuffix.draw(self, context)
         RigidTransfer.draw(self, context)
-        self.layout.prop(self, "useMakePosable")
+        PosableMaker.draw(self, context)
 
     def run(self, context):
         self.rig = getRigFromContext(context)
@@ -1999,9 +2000,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                             ignoreRigidity = self.ignoreRigidity)
                     finally:
                         LS.theFilePaths = filepaths
-            if self.useMakePosable and activateObject(context, self.rig):
-                print("Make all bones posable")
-                bpy.ops.daz.make_all_bones_posable()
+            self.makePosable(context, self.rig)
         else:
             for ob in getSelectedMeshes(context):
                 self.addFavoMorphs(ob, context)

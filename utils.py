@@ -255,7 +255,10 @@ def getCollection(context, ob):
             return coll
     return context.scene.collection
 
+
 def activateObject(context, ob):
+    if ob is None:
+        return False
     try:
         context.view_layer.objects.active = ob
         bpy.ops.object.mode_set(mode='OBJECT')

@@ -32,7 +32,7 @@ from mathutils import Vector, Quaternion, Matrix
 from .error import *
 from .utils import *
 from .fileutils import MultiFile, DbzFile
-from .morphing import PropDrivers
+from .morphing import PropDrivers, PosableMaker
 from .category import addToCategories
 from .uilist import updateScrollbars
 
@@ -383,7 +383,7 @@ def b2d(v):
     return Vector((v[0], v[2], -v[1]))/GS.unitScale
 
 
-class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmature):
+class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMaker, IsMeshArmature):
     bl_idname = "daz.import_dbz"
     bl_label = "Import DBZ Morphs"
     bl_description = "Import DBZ or JSON file(s) (*.dbz, *.json) as morphs"
@@ -403,6 +403,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, IsMeshArmat
     def draw(self, context):
         PropDrivers.draw(self, context)
         self.layout.prop(self, "ercMethod")
+        PosableMaker.draw(self, context)
 
     def storeState(self, context):
         DazOperator.storeState(self, context)

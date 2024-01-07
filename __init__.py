@@ -96,7 +96,7 @@ def importModules():
         modnames = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
                     "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
                     "bone_data", "transform", "node", "figure", "bone", "geometry",
-                    "layers", "fix", "modifier", "animation", "simple", "load_morph", "morphing", "category", "dbzfile", "panel",
+                    "layers", "fix", "modifier", "load_morph", "morphing", "animation", "simple", "category", "dbzfile", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "tables", "proxy", "hide", "store",

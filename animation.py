@@ -34,6 +34,7 @@ from .error import *
 from .utils import *
 from .transform import Transform
 from .fileutils import *
+from .morphing import PosableMaker
 from .load_json import JL
 from .bone_data import BD
 
@@ -515,7 +516,7 @@ def getGeograftItems(scn, context):
     return enums
 
 
-class MorphOptions:
+class MorphOptions(PosableMaker):
     onMorphSuffix = 'NONE'
 
     affectMorphs : BoolProperty(
@@ -559,11 +560,6 @@ class MorphOptions:
         name = "Affect Geograft",
         description = "Add morphs to this merged geograft")
 
-    useMakePosable : BoolProperty(
-        name = "Make All Bones Posable",
-        description = "Make all bones posable after the morphs have been loaded",
-        default = False)
-
     def drawMorphs(self, context):
         self.layout.prop(self, "affectMorphs")
         if self.affectMorphs:
@@ -577,7 +573,7 @@ class MorphOptions:
                 self.layout.prop(self, "useLoadMissing")
                 if self.useLoadMissing:
                     self.layout.prop(self, "category")
-                    self.layout.prop(self, "useMakePosable")
+                    PosableMaker.draw(self, context)
             self.layout.prop(self, "affectGeograft")
 
 
@@ -808,10 +804,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         nanims,locks,self.bonemap = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
-            if rig.type == 'ARMATURE' and self.useMakePosable:
-                print("Make all bones posable")
-                bpy.ops.daz.make_all_bones_posable()
-            elif rig.type == 'MESH':
+            self.makePosable(context, rig, False)
+            if rig.type == 'MESH':
                 skeys = rig.data.shape_keys
                 if skeys and self.shapekeys != skeys.key_blocks:
                     self.shapekeys = skeys.key_blocks

@@ -30,7 +30,7 @@ import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
-from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions
+from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions, PosableMaker
 from .merge import MergeRigsOptions, MergeGeograftOptions, UVLayerMergerOptions
 from .daz import MaterialMethodItems
 
@@ -597,7 +597,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker, DazImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -667,11 +667,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Merge selected geografts to active object.\nGeometry nodes are not used.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
         default = False)
 
-    useMakeAllBonesPosable : BoolProperty(
-        name = "Make All Bones Posable",
-        description = "Add an extra layer of driven bones, to make them posable.\nDisabled if ERC Method = Translation",
-        default = True)
-
     useFavoMorphs : BoolProperty(
         name = "Use Favorite Morphs",
         description = "Load a favorite morphs instead of loading standard morphs",
@@ -687,6 +682,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Dependence on FBM and FHM morphs is ignored.\n" +
                        "Useful if the character is baked"),
         default = False)
+
+    useMakePosable : BoolProperty(
+        name = "Make All Bones Posable",
+        description = "Make all bones posable after the morphs have been loaded",
+        default = True)
 
     useFinalOptimization : BoolProperty(
         name = "Final Optimizations",
@@ -729,8 +729,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
-        if GS.ercMethod != 'TRANSLATION':
-            self.layout.prop(self, "useMakeAllBonesPosable")
+        PosableMaker.draw(self, context)
         self.layout.prop(self, "useFinalOptimization")
 
 
@@ -967,7 +966,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 activateObject(context, meshes[0])
             for ob in meshes[1:]:
                 selectSet(ob, True)
-            bpy.ops.daz.import_daz_favorites()
+            bpy.ops.daz.import_daz_favorites(
+                useTransferOthers=False,
+                useMakePosable=False)
 
         if self.fitMeshes == 'MORPHED' and mainMesh:
             print("Transfer to all meshes")
@@ -1010,9 +1011,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if mainRig and activateObject(context, mainRig):
             if self.useFinalOptimization:
                 bpy.ops.daz.finalize_meshes()
-            if self.useMakeAllBonesPosable and GS.ercMethod != 'TRANSLATION':
-                print("Make all bones posable")
-                bpy.ops.daz.make_all_bones_posable()
+            self.makePosable(context, mainRig, False, True)
             if self.useFinalOptimization:
                 bpy.ops.daz.optimize_drivers()
                 bpy.ops.daz.finalize_armature()
