@@ -37,7 +37,7 @@ from .error import *
 from .utils import *
 from .load_json import JL
 from .selector import Selector
-from .fileutils import SingleFile, MultiFile, DazImageFile, JsonFile, ensureExt
+from .fileutils import SingleFile, MultiFile, DazFile, JsonFile, ensureExt
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup, DazBulgeGroup
 from .load_morph import LoadMorph
 from .driver import isProtected
@@ -1458,7 +1458,7 @@ class PropDrivers:
 #   Import custom morphs
 #------------------------------------------------------------------------
 
-class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, DazImageFile, MultiFile, IsMeshArmature):
+class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, DazFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_custom_morphs"
     bl_label = "Import Custom Morphs"
     bl_description = "Import selected morphs from native DAZ files (*.duf, *.dsf)"
