@@ -33,6 +33,7 @@ from .error import *
 from .utils import *
 from .selector import JCMSelector
 from .driver import DriverUser
+from .morphing import RigidTransfer
 
 #-------------------------------------------------------------
 #
@@ -212,7 +213,7 @@ class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
 #   Morphs transfer
 #----------------------------------------------------------
 
-class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
+class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTransfer, IsShape):
     bl_idname = "daz.transfer_shapekeys"
     bl_label = "Transfer Shapekeys"
     bl_description = "Transfer shapekeys from active mesh to selected meshes"
@@ -262,11 +263,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
         description = "Only copy to selected vertices",
         default = False)
 
-    ignoreRigidity : BoolProperty(
-        name = "Ignore Rigidity Groups",
-        description = "Ignore rigidity groups when auto-transfer morphs.\nMorphs may differ from DAZ Studio.",
-        default = False)
-
     def draw(self, context):
         self.layout.prop(self, "transferMethod", expand=True)
         row = self.layout.row()
@@ -277,8 +273,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
         row = self.layout.row()
         row.prop(self, "useStrength")
         row.prop(self, "useSelectedOnly")
-        row.prop(self, "ignoreRigidity")
-        row.label(text="")
+        row.prop(self, "skipRigidMeshes")
+        if self.skipRigidMeshes:
+            row.label(text="")
+        else:
+            row.prop(self, "ignoreRigidity")
         JCMSelector.draw(self, context)
 
 
@@ -383,6 +382,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, IsShape):
             if cskey:
                 cskey.name = sname
                 printName(" *", sname)
+            elif self.skipRigidMeshes and "Rigidity" in trg.vertex_groups.keys():
+                printName(" R", sname)
+                continue
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
                 printName(" +", sname)

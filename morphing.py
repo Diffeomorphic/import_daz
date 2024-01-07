@@ -1930,20 +1930,69 @@ class ScanFinder:
 #   Import DAZ Favorites
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, IsMeshArmature):
+class RigidTransfer:
+    useTransferOthers : BoolProperty(
+        name = "Transfer To Other Meshes",
+        description = "Transfer shapekeys from main mesh to other meshes",
+        default = True)
+
+    skipRigidMeshes : BoolProperty(
+        name = "Skip Rigid Meshes",
+        description = "Skip meshes with rigidity groups when auto-transfer morphs.\nVendor morphs are transferred",
+        default = True)
+
+    ignoreRigidity : BoolProperty(
+        name = "Ignore Rigidity Groups",
+        description = "Ignore rigidity groups when auto-transfer morphs.\nMorphs may differ from DAZ Studio.",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useTransferOthers")
+        if self.useTransferOthers:
+            self.layout.prop(self, "skipRigidMeshes")
+            if not self.skipRigidMeshes:
+                self.layout.prop(self, "ignoreRigidity")
+
+
+class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
     def draw(self, context):
         MorphSuffix.draw(self, context)
+        RigidTransfer.draw(self, context)
 
     def run(self, context):
         self.rig = getRigFromContext(context)
         self.setupDuplicates()
         if self.rig:
+            loaded = []
             for ob in getMeshChildren(self.rig):
-                self.addFavoMorphs(ob, context)
+                skeys = ob.data.shape_keys
+                if skeys:
+                    oldkeynames = list(skeys.key_blocks.keys())
+                else:
+                    oldkeynames = ["Basic"]
+                if self.addFavoMorphs(ob, context):
+                    skeys = ob.data.shape_keys
+                    if skeys:
+                        keynames = [skey.name for skey in skeys.key_blocks
+                                    if skey.name not in oldkeynames]
+                        loaded.append((ob, keynames))
+            if self.useTransferOthers and len(loaded) == 1:
+                src,keynames = loaded[0]
+                if activateObject(context, src):
+                    for ob in getMeshChildren(self.rig):
+                        ob.select_set(True)
+                    filepaths = LS.theFilePaths
+                    LS.theFilePaths = keynames
+                    try:
+                        bpy.ops.daz.transfer_shapekeys(
+                            skipRigidMeshes = self.skipRigidMeshes,
+                            ignoreRigidity = self.ignoreRigidity)
+                    finally:
+                        LS.theFilePaths = filepaths
         else:
             for ob in getSelectedMeshes(context):
                 self.addFavoMorphs(ob, context)
@@ -1959,6 +2008,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
+            return True
+        return False
 
 #-------------------------------------------------------------
 #   Register
