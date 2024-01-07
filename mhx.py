@@ -755,8 +755,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addBoneGroups(rig)
         rig.MhxRig = True
         rig.data.MhaFeatures |= F_IDPROPS
-        T = True
-        F = False
         enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK, L_LHAND, L_RHAND])
         rig.DazRig = "mhx"
 

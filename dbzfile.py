@@ -445,6 +445,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
             for ob in meshes:
                 addToCategories(ob, props, None, self.category)
                 ob.DazMeshMorphs = True
+        self.makePosable(context, rig)
         updateScrollbars(context)
 
 
