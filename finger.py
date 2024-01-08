@@ -164,7 +164,7 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
             if verbose:
                 print("Did not find fingerprint", finger)
         char = getSingleChar(ob.parent, char)
-        if not useGenesis or char.startswith("Genesis"):
+        if not useGenesis or (char and char.startswith("Genesis")):
             chars = [char]
             meshes = [ob]
         if ob.parent and ob.parent.type == 'ARMATURE':
@@ -209,7 +209,7 @@ def isGenesis(ob):
     chars = getFingeredCharacters(ob, False, verbose=False)[2]
     if chars:
         char = chars[0]
-        return (isinstance(char, str) and char.startswith("Genesis"))
+        return (char and char.startswith("Genesis"))
     return False
 
 

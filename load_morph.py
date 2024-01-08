@@ -741,6 +741,7 @@ class LoadMorph(DriverUser):
             return
         props = [baseProp(final) for final in self.ercMorphs.keys()]
         snames = [prop for prop in props if prop in skeys.key_blocks.keys()]
+        print("Transfer ERC shapes")
         transferShapesToMeshes(context, ob, meshes, snames, needsTarget=False)
 
 
