@@ -190,7 +190,7 @@ class Transform:
             return
         if pb.bone.use_connect or pb.name in driven:
             return
-        if isLocationUnlocked(pb):
+        if not isLocationLocked(pb):
             pb.keyframe_insert("location", frame=frame, group=group)
 
 

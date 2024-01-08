@@ -398,7 +398,6 @@ class BoneInstance(Instance):
 
 
     def buildPose(self, figure, inFace, targets, missing):
-        from .driver import isBoneDriven
         node = self.node
         rig = figure.rna
         if node.name not in rig.pose.bones.keys():
@@ -418,7 +417,7 @@ class BoneInstance(Instance):
             pg.s = self.name
         if self.id != self.name:
             pb.bone["DazTrueName"] = unquote(self.id)
-        if isBoneDriven(rig, pb, ignoreLocked=True):
+        if pb.name in figure.driven.keys():
             pb.rotation_mode = self.getRotationMode(pb, True)
             enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
         else:

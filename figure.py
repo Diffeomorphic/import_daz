@@ -31,7 +31,7 @@ from mathutils import *
 from .utils import *
 from .error import *
 from .node import Node, Instance
-from .driver import DriverUser
+from .driver import DriverUser, getDrivenBoneFcurves
 
 #-------------------------------------------------------------
 #   FigureInstance
@@ -164,6 +164,7 @@ class FigureInstance(Instance):
         from .bone import BoneInstance
         tchildren = {}
         missing = []
+        self.driven = getDrivenBoneFcurves(rig)
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildPose(self, False, tchildren, missing)
@@ -173,10 +174,11 @@ class FigureInstance(Instance):
 
 
     def fixDependencyLoops(self, rig):
-        from .driver import getBoneDrivers, getDrivingBone
+        from .driver import getDrivingBone
         needfix = {}
-        for pb in rig.pose.bones:
-            fcus = getBoneDrivers(rig, pb)
+        driven = getDrivenBoneFcurves(rig)
+        for bname,fcus in driven.items():
+            pb = rig.pose.bones[bname]
             for fcu in fcus:
                 bname = getDrivingBone(fcu, rig)
                 if bname:
@@ -782,13 +784,24 @@ class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
     button = "Make All Bones Posable"
 
     def getBoneNames(self, rig):
-        from .driver import isBoneDriven
         exclude = ["lMetatarsals", "rMetatarsals", "l_metatarsal", "r_metatarsal"]
-        return [pb.name for pb in rig.pose.bones
-                if not isDrvBone(pb.name) and
-                    isBoneDriven(rig, pb, self.ignoreLocked) and
-                    drvBone(pb.name) not in rig.pose.bones.keys() and
-                    pb.name not in exclude]
+        driven = getDrivenBoneFcurves(rig)
+        bnames = {}
+        for pb in rig.pose.bones:
+            if (pb.name in driven.keys() and
+                not isDrvBone(pb.name) and
+                drvBone(pb.name) not in rig.pose.bones.keys() and
+                pb.name not in exclude):
+                if self.ignoreLocked and isLocationLocked(pb):
+                    for fcu in driven[pb.name]:
+                        bname,channel = getBoneChannel(fcu)
+                        if channel != "location":
+                            bnames[pb.name] = True
+                            break
+                else:
+                    bnames[pb.name] = True
+        return bnames
+
 
     def checkAllowed(self, rig):
         if rig.DazRig[0:3] in ["mhx", "rig"]:
@@ -879,19 +892,17 @@ class DAZ_OT_FixLegacyPosable(DazOperator, ExtraBones, IsArmature):
 #-------------------------------------------------------------
 
 def finalizeArmature(rig):
-    from .driver import getBoneDrivers
     extras = ExtraBones()
+    drivers = getDrivenBoneFcurves(rig)
     for pb in rig.pose.bones:
         if not isDrvBone(pb.name):
             drvname = drvBone(pb.name)
             db = rig.pose.bones.get(drvname)
-            if db:
-                drivers = {drvname : getBoneDrivers(rig, db)}
-                if not extras.hasBoneDriver(drvname, drivers):
-                    for cns in pb.constraints:
-                        if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
-                            pb.constraints.remove(cns)
-                            break
+            if db and drvname not in drivers.keys():
+                for cns in pb.constraints:
+                    if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
+                        pb.constraints.remove(cns)
+                        break
     rig.data.DazFinalized = True
 
 
@@ -938,11 +949,10 @@ def toggleLocLocks(self, context):
 #----------------------------------------------------------
 
 def toggleLimits(self, context, attr, type):
-    from .driver import getDrivenBones
     auto = context.scene.tool_settings.use_keyframe_insert_auto
-    driven = getDrivenBones(self)
+    driven = getDrivenBoneFcurves(self)
     for pb in self.pose.bones:
-        if pb.name in driven:
+        if pb.name in driven.keys():
             continue
         for cns in pb.constraints:
             if cns.type == type:

@@ -241,31 +241,18 @@ def getDriver(rna, channel, idx):
     return None
 
 
-def isBoneDriven(rig, pb, ignoreLocked=False):
-    return (getBoneDrivers(rig, pb, ignoreLocked) != [])
-
-
-def getDrivenBones(rig):
+def getDrivenBoneFcurves(rig):
     if rig.animation_data:
-        dlist = [(fcu.data_path.split('"')[1],True)
-                  for fcu in rig.animation_data.drivers
-                  if fcu.data_path.startswith("pose.bones[")]
-        return dict(dlist)
+        driven = {}
+        skip = ["HdOffset", "TlOffset"]
+        for fcu in rig.animation_data.drivers:
+            bname,channel = getBoneChannel(fcu)
+            if channel not in skip:
+                if bname not in driven.keys():
+                    driven[bname] = []
+                driven[bname].append(fcu)
+        return driven
     return {}
-
-
-def getBoneDrivers(rig, pb, ignoreLocked=False):
-    if rig.animation_data:
-        if ignoreLocked and not isLocationUnlocked(pb):
-            skip = ("HdOffset","TlOffset",".location")
-        else:
-            skip = ("HdOffset","TlOffset")
-        path = 'pose.bones["%s"]' % pb.name
-        return [fcu for fcu in rig.animation_data.drivers
-                if (fcu.data_path.startswith(path) and
-                    not fcu.data_path.endswith(skip))]
-    else:
-        return []
 
 
 def getPropDrivers(rig):
@@ -283,14 +270,6 @@ def getDrivingBone(fcu, rig):
             if trg.id == rig:
                 return trg.bone_target
     return None
-
-
-def isFaceBoneDriven(rig, pb):
-    if isBoneDriven(rig, pb):
-        return True
-    else:
-        par = pb.parent
-        return (par and isDrvBone(par.name) and isBoneDriven(rig, par))
 
 
 def getShapekeyDriver(skeys, sname):

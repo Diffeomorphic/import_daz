@@ -694,7 +694,7 @@ class Rigifier(RigifyCommon):
 
 
     def rigifyMeta1(self, context, rig, meta, dazrig):
-        from .driver import getBoneDrivers, getPropDrivers, copyProp
+        from .driver import getDrivenBoneFcurves, getPropDrivers, copyProp
         from .mhx import unhideAllObjects, getBoneLayer
 
         print("Rigify metarig")
@@ -730,11 +730,7 @@ class Rigifier(RigifyCommon):
         print("  Setup extras")
         self.setupExtras(context, rig)
         print("  Get driven bones")
-        driven = {}
-        for pb in rig.pose.bones:
-            fcus = getBoneDrivers(rig, pb)
-            if fcus:
-                driven[pb.name] = fcus
+        driven = getDrivenBoneFcurves(rig)
 
         # Add extra bones to generated rig
         print("  Add extra bones")
@@ -808,7 +804,7 @@ class Rigifier(RigifyCommon):
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
                 self.dazBones[dname].setPose(pb, gen)
-                mhxlayer,unlock = getBoneLayer(pb, gen)
+                mhxlayer,unlock = getBoneLayer(pb, gen, driven)
                 layer = MhxRigifyLayer[mhxlayer]
                 enableBoneNumLayer(pb.bone, gen, layer)
                 if unlock:

@@ -820,10 +820,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for mname, bname in MHX.ExtraRenames:
             self.renamedBones[mname] = self.renamedBones[bname]
 
+        from .driver import getDrivenBoneFcurves
+        driven = getDrivenBoneFcurves(rig)
         for pb in rig.pose.bones:
             if pb.name in fixed:
                 continue
-            layer,unlock = getBoneLayer(pb, rig)
+            layer,unlock = getBoneLayer(pb, rig, driven)
             enableBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
                 pb.lock_location = (False,False,False)
@@ -867,7 +869,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addGizmos(self, rig, context):
-        from .driver import isBoneDriven
+        from .driver import getDrivenBoneFcurves
         setMode('OBJECT')
         self.makeGizmos(True, None)
 
@@ -877,6 +879,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 return data[0], data[1], None
 
+        driven = getDrivenBoneFcurves(rig)
         for pb in rig.pose.bones:
             if (isDrvBone(pb.name) or
                 isFinal(pb.name) or
@@ -902,7 +905,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                         ("pectoral", "GZM_Ball", 0.25, 0) ,
                         ("heel", "GZM_Ball", 0.25, 1)]:
                     if pb.name.startswith(pname):
-                        if isBoneDriven(rig, pb):
+                        if pb.name in driven.keys():
                             setBoneNumLayer(pb.bone, L_HELP)
                             setBoneNumLayer(pb.bone, L_TWEAK, False)
                         else:
@@ -1795,14 +1798,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 #   getBoneLayer, connectToParent used by Rigify
 #-------------------------------------------------------------
 
-def getBoneLayer(pb, rig):
-    from .driver import isBoneDriven
+def getBoneLayer(pb, rig, driven):
     lname = pb.name.lower()
     if pb.name in BD.HeadBones:
         return L_HEAD, False
     elif (isDrvBone(pb.name) or
-        isBoneDriven(rig, pb, ignoreLocked=True) or
-        pb.name in BD.FaceRigs):
+          pb.name in driven.keys() or
+          pb.name in BD.FaceRigs):
         return L_HELP, False
     elif pb.name in BD.Teeth:
         return L_TWEAK, False

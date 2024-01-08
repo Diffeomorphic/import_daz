@@ -566,12 +566,10 @@ def hasObjectTransforms(ob):
             ob.scale != One)
 
 
-def isLocationUnlocked(pb):
+def isLocationLocked(pb):
     if pb.bone.use_connect:
-        return False
-    return (pb.lock_location[0] == False or
-            pb.lock_location[1] == False or
-            pb.lock_location[2] == False)
+        return True
+    return (pb.lock_location[0] and pb.lock_location[1] and pb.lock_location[2])
 
 
 def lockAllTransforms(pb):

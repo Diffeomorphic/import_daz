@@ -1240,7 +1240,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
     def transformBone(self, rig, bname, tfm, n, offset, useTwist):
         from .node import setBoneTransform
-        from .driver import isFaceBoneDriven
 
         if not self.affectBones:
             return
@@ -1815,7 +1814,7 @@ def insertKeys(pb, isbone, frame, btn=None):
     driven = []
     if btn:
         driven = btn.driven.get(pb.name, [])
-    if ((not isbone or isLocationUnlocked(pb))
+    if ((not isbone or not isLocationLocked(pb))
         and "location" not in driven):
         pb.keyframe_insert("location", group=pb.name, frame=frame)
     if isbone and pb.rotation_mode == 'QUATERNION':
@@ -2044,7 +2043,7 @@ class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
                 if act:
                     insertKeys(pb, True, frame)
                 context.view_layer.update()
-                if not isLocationUnlocked(pb):
+                if isLocationLocked(pb):
                     pb.location = Zero
 
 #----------------------------------------------------------

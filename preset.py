@@ -269,7 +269,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         bnames = ["lHand", "rHand", "lFoot", "rFoot",
                   "l_hand", "r_hand", "l_foot", "r_foot"]
         return (self.includeLocks or
-                (isLocationUnlocked(pb) and bname not in bnames))
+                (not isLocationLocked(pb) and bname not in bnames))
 
 
     def getFcurves(self, rig, act):
