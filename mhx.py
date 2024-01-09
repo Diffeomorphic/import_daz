@@ -1969,8 +1969,8 @@ def setToFk(rig, layers, useInsertKeys, frame):
         setValue(rig, prop, 0.0)
     for prop in ["MhaTongueIk", "MhaFingerIk_L", "MhaFingerIk_R"]:
         setValue(rig, prop, 0)
-    for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
-        setValue(rig, prop, False)
+    #for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
+    #    setValue(rig, prop, False)
     if BLENDER3:
         for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
             layers[layer] = True

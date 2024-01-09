@@ -1260,20 +1260,31 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def setBoneTwist(self, tfm, pb, rig):
+        def newEuler(pb, y):
+            if pb.rotation_mode == 'QUATERNION':
+                xyz = BD.getDefaultMode(pb)
+                euler = pb.matrix_basis.to_3x3().to_euler(xyz)
+                euler.y = y*D
+            else:
+                euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
+                euler.y = y*D
+            return euler
+
         if pb.name not in BD.BoneTwistInfo.keys():
             print("Not a twist bone: %s" % pb.name)
             return
         idx,sign = BD.BoneTwistInfo[pb.name]
         y = sign*tfm.rot[idx]
         if pb.rotation_mode == 'QUATERNION':
-            xyz = BD.getDefaultMode(pb)
-            euler = pb.matrix_basis.to_3x3().to_euler(xyz)
-            euler.y = y*D
-            pb.rotation_quaternion = euler.to_quaternion()
+            pb.rotation_quaternion = newEuler(pb, y).to_quaternion()
+        elif pb.lock_rotation[1] and pb.name.startswith("forearm") and pb.children:
+            hand = pb.children[0]
+            if hand.name.startswith("hand"):
+                hand.rotation_euler = newEuler(hand, y)
+            else:
+                pb.rotation_euler = newEuler(pb, y)
         else:
-            euler = pb.matrix_basis.to_3x3().to_euler(pb.rotation_mode)
-            euler.y = y*D
-            pb.rotation_euler = euler
+            pb.rotation_euler = newEuler(pb, y)
 
 
     def addTwists(self, frame):
