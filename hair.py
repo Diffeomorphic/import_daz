@@ -38,7 +38,7 @@ from .material import WHITE, GREY, BLACK, isWhite, isBlack
 from .cycles import CyclesMaterial, CyclesTree
 from .selector import Selector
 from .guess import ColorProp
-from .fix import GizmoUser
+from .fix import GizmoUser, PinOperator
 from .layers import *
 
 #-------------------------------------------------------------
@@ -2078,34 +2078,10 @@ class HairEeveeTree(HairTree):
         self.buildOutput()
 
 # ---------------------------------------------------------------------
-#   Pinning
+#   Add pinning to hair mesh
 # ---------------------------------------------------------------------
 
-class Pinning:
-    def __init__(self):
-        self.nodeGroup = None
-        self.curveMapping = None
-
-    def getCurveMapping(self):
-        if self.nodeGroup is None:
-            self.nodeGroup = bpy.data.node_groups.new('DazPinningData', 'ShaderNodeTree')
-        if self.curveMapping is None:
-            cn = self.nodeGroup.nodes.new('ShaderNodeRGBCurve')
-            self.curveMapping = cn.name
-        return self.nodeGroup.nodes[self.curveMapping]
-
-    def invoke(self, context, event):
-        node = self.getCurveMapping()
-        cu = node.mapping.curves[3]
-        cu.points[0].location = (0,1)
-        cu.points[-1].location = (1,0)
-        return DazPropsOperator.invoke(self, context, event)
-
-    def draw(self, context):
-        self.layout.template_curve_mapping(self.getCurveMapping(), "mapping")
-
-
-class DAZ_OT_MeshAddPinning(Pinning, DazPropsOperator, IsMesh):
+class DAZ_OT_MeshAddPinning(PinOperator, IsMesh):
     bl_idname = "daz.mesh_add_pinning"
     bl_label = "Add Pinning Group"
     bl_description = "Add HairPin group to mesh hair"

@@ -1554,12 +1554,38 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         else:
             return "%s%s" % (bname, string)
 
+# ---------------------------------------------------------------------
+#   Pinning
+# ---------------------------------------------------------------------
+
+class PinOperator(DazPropsOperator):
+    def __init__(self):
+        self.nodeGroup = None
+        self.curveMapping = None
+
+    def getCurveMapping(self):
+        if self.nodeGroup is None:
+            self.nodeGroup = bpy.data.node_groups.new('DazPinningData', 'ShaderNodeTree')
+        if self.curveMapping is None:
+            cn = self.nodeGroup.nodes.new('ShaderNodeRGBCurve')
+            self.curveMapping = cn.name
+        return self.nodeGroup.nodes[self.curveMapping]
+
+    def invoke(self, context, event):
+        node = self.getCurveMapping()
+        cu = node.mapping.curves[3]
+        cu.points[0].location = (0,1)
+        cu.points[-1].location = (1,0)
+        return DazPropsOperator.invoke(self, context, event)
+
+    def draw(self, context):
+        self.layout.template_curve_mapping(self.getCurveMapping(), "mapping")
 
 #-------------------------------------------------------------
 #   Add Winder
 #-------------------------------------------------------------
 
-class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
+class DAZ_OT_AddWinders(PinOperator, GizmoUser, IsArmature):
     bl_idname = "daz.add_winders"
     bl_label = "Add Winders"
     bl_description = "Add winders to selected posebones"
@@ -1601,6 +1627,7 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
 
 
     def draw(self, context):
+        PinOperator.draw(self, context)
         if BLENDER3:
             self.layout.prop(self, "winderLayer")
             self.layout.prop(self, "windedLayer")
@@ -1628,6 +1655,8 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
 
         from .mhx import addWinder
         rig = context.object
+        node = self.getCurveMapping()
+        cu = node.mapping.curves[3]
         self.startGizmos(context, rig)
         self.makeGizmos(False, ["GZM_Knuckle"])
         gizmo = self.gizmos["GZM_Knuckle"]
@@ -1638,11 +1667,19 @@ class DAZ_OT_AddWinders(DazPropsOperator, GizmoUser, IsArmature):
                 layers = [self.winderLayer-1, self.windedLayer-1]
             else:
                 layers = ("Custom", "Deform")
+            dx = 1.0/len(bnames)
+            influs = []
+            for n,bname in enumerate(bnames):
+                y0 = node.mapping.evaluate(cu, n*dx)
+                y1 = node.mapping.evaluate(cu, (n+1)*dx)
+                influs.append(y1-y0)
+                print("II", n, y0, y1, y1-y0, math.sqrt(y1-y0))
             addWinder(rig, windname, bnames, layers,
-                gizmo=gizmo,
-                useBaseLocation=self.useBaseLocation,
-                useLocation=self.useLocation,
-                useScale=self.useScale,
+                gizmo = gizmo,
+                useBaseLocation = self.useBaseLocation,
+                useLocation = self.useLocation,
+                useScale = self.useScale,
+                influs = influs,
                 bboneSegments = self.bboneSegments
                 )
 

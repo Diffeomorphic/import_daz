@@ -359,6 +359,7 @@ def addWinder(rig, windname, bnames, layers,
         useLocation=False,
         useScale=False,
         xaxis=None,
+        influs=None,
         bboneSegments=1):
     if len(bnames) < 3:
         print("Too few bones to wind: %s" % windname)
@@ -397,23 +398,25 @@ def addWinder(rig, windname, bnames, layers,
             cns.use_z = False
 
     windedLayer = layers[1]
-    infl = 2*pb.bone.length/winder.length
     cns = copyRotation(pb, winder, rig)
     setLocks(pb.lock_rotation, cns)
     cns.use_offset = True
-    cns.influence = infl
+    if not influs:
+        infl = 2*pb.bone.length/winder.length
+        influs = len(bnames)*[infl]
+    cns.influence = influs[0]
     addMuteDriver(cns, rig, prop)
     if useScale:
         cns = copyScale(pb, winder, rig)
         setLocks(pb.lock_scale, cns)
-        cns.influence = infl
+        cns.influence = influs[0]
         addMuteDriver(cns, rig, prop)
     if useBaseLocation:
         cns = copyLocation(pb, winder, rig)
-        cns.influence = infl
+        cns.influence = influs[0]
         addMuteDriver(cns, rig, prop)
     enableBoneNumLayer(pb.bone, rig, windedLayer)
-    for bname in bnames[1:]:
+    for bname,infl in zip(bnames[1:], influs[1:]):
         pb = rig.pose.bones[bname]
         pbones.append(pb)
         #infl = 2*pb.bone.length/winder.length
