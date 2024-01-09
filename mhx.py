@@ -1114,6 +1114,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
                 fkwind,pbones = addWinder(rig, windname, bnames, layers, prop1, parname=fingname)
+                if fkwind is None:
+                    continue
                 fingers = rig.pose.bones[fingname]
                 cns = copyRotation(fkwind, fingers, rig, space='LOCAL')
                 cns.use_offset = True
@@ -1151,10 +1153,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def setLayer(self, bname, rig, layer):
-        eb = rig.data.edit_bones[bname]
-        enableBoneNumLayer(eb, rig, layer)
-        self.rolls[bname] = eb.roll
-        return eb
+        eb = rig.data.edit_bones.get(bname)
+        if eb:
+            enableBoneNumLayer(eb, rig, layer)
+            self.rolls[bname] = eb.roll
+            return eb
 
 
     FkIk = {
@@ -1174,6 +1177,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_arm = self.setLayer("upper_arm.%s" % suffix, rig, L_HELP)
             forearm = self.setLayer("forearm.%s" % suffix, rig, L_HELP)
             hand0 = self.setLayer("hand.%s" % suffix, rig, L_DEF)
+            if not (upper_arm and forearm and hand0):
+                raise DazError("Rig missing arm bones")
             hand0.name = "hand0.%s" % suffix
             forearm.tail = hand0.head
             vec = forearm.tail - forearm.head
@@ -1235,10 +1240,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             shin = self.setLayer("shin.%s" % suffix, rig, L_HELP)
             foot = self.setLayer("foot.%s" % suffix, rig, L_HELP)
             toe = self.setLayer("toe.%s" % suffix, rig, L_HELP)
+            if not (thigh and shin and foot):
+                raise DazError("Rig missing leg bones")
             shin.tail = foot.head
-            foot.tail = toe.head
             foot.use_connect = False
-            setConnected(toe, True)
+            if toe:
+                foot.tail = toe.head
+                setConnected(toe, True)
 
             legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, extraLayer, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)

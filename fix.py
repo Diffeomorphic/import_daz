@@ -158,12 +158,13 @@ class Fixer(DriverUser):
     def fixHands(self, rig):
         setMode('EDIT')
         for suffix in ["L", "R"]:
-            forearm = rig.data.edit_bones["forearm.%s" % suffix]
-            hand = rig.data.edit_bones["hand.%s" % suffix]
-            hand.head = forearm.tail
-            flen = (forearm.tail - forearm.head).length
-            vec = hand.tail - hand.head
-            hand.tail = hand.head + 0.35*flen/vec.length*vec
+            forearm = rig.data.edit_bones.get("forearm.%s" % suffix)
+            hand = rig.data.edit_bones.get("hand.%s" % suffix)
+            if forearm and hand:
+                hand.head = forearm.tail
+                flen = (forearm.tail - forearm.head).length
+                vec = hand.tail - hand.head
+                hand.tail = hand.head + 0.35*flen/vec.length*vec
 
 
     def fixCarpals(self, rig):
@@ -1090,13 +1091,12 @@ class BendTwists:
             bname = data[0]
             tname = data[1]
             bendname,twistname = self.getBendTwistNames(bname)
-            if not (bendname in rig.data.edit_bones.keys() and
-                    twistname in rig.data.edit_bones.keys()):
+            bend = rig.data.edit_bones.get(bendname)
+            twist = rig.data.edit_bones.get(twistname)
+            target = rig.data.edit_bones.get(tname)
+            if not (bend and twist and target):
                 continue
             eb = rig.data.edit_bones.new(bname)
-            bend = rig.data.edit_bones[bendname]
-            twist = rig.data.edit_bones[twistname]
-            target = rig.data.edit_bones[tname]
             eb.head = bend.head
             bend.tail = twist.head
             eb.tail = twist.tail
@@ -1123,12 +1123,11 @@ class BendTwists:
             bname = data[0]
             tname = data[1]
             bendname,twistname = self.getBendTwistNames(bname)
-            if not bendname in rig.data.bones.keys():
-                continue
-            srcbone = rig.pose.bones[bendname]
-            trgbone = rig.pose.bones[bname]
-            copyBoneInfo(srcbone, trgbone)
-            trgbone.DazRotLocks = (False, False, False)
+            srcbone = rig.pose.bones.get(bendname)
+            trgbone = rig.pose.bones.get(bname)
+            if srcbone and trgbone:
+                copyBoneInfo(srcbone, trgbone)
+                trgbone.DazRotLocks = (False, False, False)
 
         setMode('EDIT')
         for data in bendTwistBones:
@@ -1207,7 +1206,9 @@ class BendTwists:
         setMode('EDIT')
         for data in bendTwistBones:
             bname = data[0]
-            eb = rig.data.edit_bones[bname]
+            eb = rig.data.edit_bones.get(bname)
+            if eb is None:
+                continue
             vec = eb.tail - eb.head
             bendname,twistname = self.getSubBoneNames(bname)
             bend = rig.data.edit_bones.new(bendname)
