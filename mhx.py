@@ -359,8 +359,7 @@ def addWinder(rig, windname, bnames, layers,
         useLocation=False,
         useScale=False,
         xaxis=None,
-        influs=None,
-        bboneSegments=1):
+        influs=None):
     if len(bnames) < 3:
         print("Too few bones to wind: %s" % windname)
         return None, []
@@ -384,7 +383,7 @@ def addWinder(rig, windname, bnames, layers,
     #winder.lock_location = pb.lock_location
     winder.lock_rotation = pb.lock_rotation
     #winder.lock_scale = pb.lock_scale
-    if not useLocation:
+    if not (useLocation or useBaseLocation):
         winder.lock_location = (True, True, True)
     if not useScale:
         winder.lock_scale = (True, True, True)
@@ -401,35 +400,36 @@ def addWinder(rig, windname, bnames, layers,
     cns = copyRotation(pb, winder, rig)
     setLocks(pb.lock_rotation, cns)
     cns.use_offset = True
+    infl = 2*pb.bone.length/winder.length
     if not influs:
-        infl = 2*pb.bone.length/winder.length
         influs = len(bnames)*[infl]
     cns.influence = influs[0]
     addMuteDriver(cns, rig, prop)
     if useScale:
         cns = copyScale(pb, winder, rig)
         setLocks(pb.lock_scale, cns)
-        cns.influence = influs[0]
+        if pb.bone.inherit_scale != "NONE":
+            cns.influence = infl
         addMuteDriver(cns, rig, prop)
-    if useBaseLocation:
+    if useBaseLocation or useLocation:
         cns = copyLocation(pb, winder, rig)
-        cns.influence = influs[0]
         addMuteDriver(cns, rig, prop)
     enableBoneNumLayer(pb.bone, rig, windedLayer)
     for bname,infl in zip(bnames[1:], influs[1:]):
         pb = rig.pose.bones[bname]
         pbones.append(pb)
-        #infl = 2*pb.bone.length/winder.length
         cns = copyRotation(pb, winder, rig)
         setLocks(pb.lock_rotation, cns)
         cns.use_offset = True
         cns.influence = infl
         addMuteDriver(cns, rig, prop)
+        infl = 2*pb.bone.length/winder.length
         if useScale:
             cns = copyScale(pb, winder, rig, space='LOCAL')
             setLocks(pb.lock_scale, cns)
             cns.use_offset = True
-            cns.influence = infl
+            if pb.bone.inherit_scale != "NONE":
+                cns.influence = infl
             addMuteDriver(cns, rig, prop)
         if useLocation:
             cns = copyLocation(pb, winder, rig, space='LOCAL')
@@ -437,9 +437,6 @@ def addWinder(rig, windname, bnames, layers,
             cns.influence = infl
             addMuteDriver(cns, rig, prop)
         enableBoneNumLayer(pb.bone, rig, windedLayer)
-    if bboneSegments > 1:
-        for pb in pbones:
-            pb.bone.bbone_segments = bboneSegments
     return winder, pbones
 
 
@@ -1017,7 +1014,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             shaftbones = self.getShaftBones(rig)
             shaftbones.sort()
             layers = [L_CUSTOM, L_CUSTOM2]
-            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl", useBaseLocation=True, useScale=True)
+            influs = [1/(n+1)**2 for n in range(len(shaftbones))]
+            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl",
+                useBaseLocation=True,
+                useScale=True,
+                influs=influs)
 
     #-------------------------------------------------------------
     #   Spine tweaks

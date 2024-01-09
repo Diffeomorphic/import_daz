@@ -1620,21 +1620,21 @@ class DAZ_OT_AddWinders(PinOperator, GizmoUser, IsArmature):
         description = "Add driver for scale",
         default = False)
 
-    bboneSegments : IntProperty(
-        name = "B-Bone Segments",
-        description = "Number of b-bone segments",
-        default = 1)
-
+    strength : FloatProperty(
+        name = "Strength",
+        description = "An overall strength factor for copy rotation influence",
+        min = 0.0, max = 5.0,
+        default = 1.0)
 
     def draw(self, context):
         PinOperator.draw(self, context)
+        self.layout.prop(self, "strength")
         if BLENDER3:
             self.layout.prop(self, "winderLayer")
             self.layout.prop(self, "windedLayer")
         self.layout.prop(self, "useBaseLocation")
         self.layout.prop(self, "useLocation")
         self.layout.prop(self, "useScale")
-        self.layout.prop(self, "bboneSegments")
 
     def invoke(self, context, event):
         if BLENDER3:
@@ -1672,15 +1672,14 @@ class DAZ_OT_AddWinders(PinOperator, GizmoUser, IsArmature):
             for n,bname in enumerate(bnames):
                 y0 = node.mapping.evaluate(cu, n*dx)
                 y1 = node.mapping.evaluate(cu, (n+1)*dx)
-                influs.append(y1-y0)
-                print("II", n, y0, y1, y1-y0, math.sqrt(y1-y0))
+                infl = self.strength*max(0, y1-y0)
+                influs.append(infl)
             addWinder(rig, windname, bnames, layers,
                 gizmo = gizmo,
                 useBaseLocation = self.useBaseLocation,
                 useLocation = self.useLocation,
                 useScale = self.useScale,
-                influs = influs,
-                bboneSegments = self.bboneSegments
+                influs = influs
                 )
 
 
