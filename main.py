@@ -919,6 +919,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                   self.useFacsexpr or
                   self.useBody or
                   self.useJcms or
+                  self.useMasculine or
+                  self.useFeminine or
                   self.useFlexions or
                   self.useBulges):
                 if activateObject(context, mainRig):
@@ -933,6 +935,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useBody = self.useBody,
                         useMhxOnly = self.useMhxOnly,
                         useJcms = (self.useJcms and GS.useShapekeys),
+                        useMasculine = (self.useMasculine and GS.useShapekeys),
+                        useFeminine = (self.useFeminine and GS.useShapekeys),
                         useFlexions = (self.useFlexions and GS.useShapekeys),
                         useBulges = (self.useBulges and GS.useShapekeys),
                         useAdjusters = self.useAdjusters,
