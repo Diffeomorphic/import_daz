@@ -38,11 +38,25 @@
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Correctives/"
 	},
+	"masculine" : {
+		"prefix" : ["basemasculine_body_cbs_"],
+		"strip" : ["basemasculine_body_cbs_"],
+		"include" : ["basemasculine_body_cbs_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Masculine 9/"
+	},
+	"feminine" : {
+		"prefix" : ["basefeminine_body_cbs_"],
+		"strip" : ["basefeminine_body_cbs_"],
+		"include" : ["basefeminine_body_cbs_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Feminine 9/"
+	},
 	"body" : {
 		"prefix" : "body_",
 		"include" : ["body_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Pose/"
 	}
-}	
-		
+}
+

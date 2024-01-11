@@ -51,7 +51,7 @@ class MorphSets:
     def __init__(self):
         self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
         self.Customs = ["Custom", "Baked"]
-        self.JCMs = ["Jcms", "Flexions"]
+        self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
         self.Adjusters = {
@@ -68,6 +68,8 @@ class MorphSets:
             "Body" : "Adjust Body Morphs",
             "Head" : "Adjust Head Morphs",
             "Jcms" : "Adjust JCMs",
+            "Masculine" : "Adjust JCMs",
+            "Feminine" : "Adjust JCMs",
             "Flexions" : "Adjust Flexions",
         }
 
@@ -1047,6 +1049,30 @@ class DAZ_OT_ImportJCMs(DazOperator, FingerSkip, StandardMorphSelector, Standard
     isJcm = True
 
 
+class DAZ_OT_ImportMasculine(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMesh):
+    bl_idname = "daz.import_masculine"
+    bl_label = "Import Masculine"
+    bl_description = "Import selected masculine JCMs"
+    bl_options = {'UNDO'}
+
+    morphset = "Masculine"
+    bodypart = "Body"
+    hideable = False
+    isJcm = True
+
+
+class DAZ_OT_ImportFeminine(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMesh):
+    bl_idname = "daz.import_feminine"
+    bl_label = "Import Feminine"
+    bl_description = "Import selected import_feminine JCMs"
+    bl_options = {'UNDO'}
+
+    morphset = "Feminine"
+    bodypart = "Body"
+    hideable = False
+    isJcm = True
+
+
 class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMesh):
     bl_idname = "daz.import_flexions"
     bl_label = "Import Flexions"
@@ -1231,6 +1257,16 @@ class MorphTypeOptions:
         description = "Import all JCMs",
         default = False)
 
+    useMasculine : BoolProperty(
+        name = "Masculine",
+        description = "Import all maskuline JCMs",
+        default = False)
+
+    useFeminine : BoolProperty(
+        name = "Feminine",
+        description = "Import all feminine JCMs",
+        default = False)
+
     useFlexions : BoolProperty(
         name = "Flexions",
         description = "Import all flexions",
@@ -1263,6 +1299,8 @@ class MorphTypeOptions:
         self.layout.prop(self, "useJcms")
         if self.useJcms or self.useBulges:
             self.subprop("ignoreFingers")
+        self.layout.prop(self, "useMasculine")
+        self.layout.prop(self, "useFeminine")
         self.layout.prop(self, "useFlexions")
 
 
@@ -1318,6 +1356,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useBody, "Body", "Body")
         self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body", ignoreFingers=self.ignoreFingers)
+        self.loadMorphType(context, self.useMasculine, "Masculine", "Body")
+        self.loadMorphType(context, self.useFeminine, "Feminine", "Body")
         self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useBulges:
             if ob.type == 'MESH':
@@ -1386,7 +1426,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 
 
     def addToMorphSet(self, prop, asset, hidden, protected):
-        self.hideable = (self.morphset in ["Jcms", "Flexions"])
+        self.hideable = (self.morphset in MS.JCMs)
         StandardMorphLoader.addToMorphSet(self, prop, asset, hidden, protected)
 
 #------------------------------------------------------------------------
@@ -1811,7 +1851,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                         self.addPath(path, cat, "Face", facepaths)
                     elif self.useFacs and match(["facs"]):
                         self.addPath(path, cat, "Face", facepaths)
-                    elif self.useJcms and match(["pjcm", "body_cbs", "ctrlmd_n"]):
+                    elif self.useJcms and match(["pjcm", "body_cbs", "ctrlmd_n", "basemasculine_body_cbs", "basefeminine_body_cbs"]):
                         self.addPath(path, cat, "Body", bodypaths)
         self.isJcm = False
         for cat,namepaths in facepaths.items():
@@ -2044,6 +2084,8 @@ classes = [
     DAZ_OT_ImportStandardMorphs,
     DAZ_OT_ImportCustomMorphs,
     DAZ_OT_ImportJCMs,
+    DAZ_OT_ImportMasculine,
+    DAZ_OT_ImportFeminine,
 
     DAZ_OT_SaveFavoMorphs,
     DAZ_OT_LoadFavoMorphs,
