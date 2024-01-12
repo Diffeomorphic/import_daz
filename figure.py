@@ -131,7 +131,7 @@ class FigureInstance(Instance):
         from .bone import BoneInstance
         rig = self.rna
         activateObject(context, rig)
-        setMode('POSE')
+        setMode('OBJECT')
         self.poseArmature(rig)
         rig.DazRotLocks = rig.DazHasRotLocks = GS.useLockRot
         rig.DazLocLocks = rig.DazHasLocLocks = GS.useLockLoc
@@ -197,7 +197,7 @@ class FigureInstance(Instance):
                 eb.use_connect = False
                 cb.use_connect = False
                 cb.parent = eb.parent
-            setMode('POSE')
+            setMode('OBJECT')
             for bname in needfix.keys():
                 fcus = needfix[bname][1]
                 self.clearBendDrivers(fcus)
@@ -647,7 +647,7 @@ class ExtraBones(DriverUser):
 
         if not ES.easy:
             print("  Change constraints")
-        setMode('POSE')
+        setMode('OBJECT')
         store = ConstraintStore()
         for bname in self.bnames:
             pb = rig.pose.bones[bname]
@@ -850,7 +850,7 @@ class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
         for eb in list(rig.data.edit_bones):
             if isDrvBone(eb.name):
                 rig.data.edit_bones.remove(eb)
-        setMode('POSE')
+        setMode('OBJECT')
 
 #-------------------------------------------------------------
 #   Fix legacy posable bones

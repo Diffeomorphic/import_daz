@@ -1068,7 +1068,7 @@ class BendTwists:
 
 
     def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
-        setMode('POSE')
+        setMode('OBJECT')
         rotmodes = {}
         for data in bendTwistBones:
             bname = data[0]
@@ -1286,7 +1286,7 @@ class BendTwists:
 
     def constrainBendTwists(self, rig, bendTwistBones):
         from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
-        setMode('POSE')
+        setMode('OBJECT')
         for bname,trgname,stretch,prop in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):

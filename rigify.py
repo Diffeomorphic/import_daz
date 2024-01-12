@@ -706,7 +706,7 @@ class Rigifier(RigifyCommon):
             coll.objects.link(rig)
         self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
 
-        setMode('POSE')
+        setMode('OBJECT')
         try:
             bpy.ops.pose.rigify_generate()
         except:
@@ -794,7 +794,7 @@ class Rigifier(RigifyCommon):
             setMode('EDIT')
             self.addTongueIkBones(gen, R_FACE, R_DEF)
 
-        setMode('POSE')
+        setMode('OBJECT')
 
         # Lock extras
         print("  Lock extras")

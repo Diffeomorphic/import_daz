@@ -424,7 +424,6 @@ class HideOperator(DazOperator):
 
     def restoreState(self, context):
         from .driver import muteDazFcurves
-        DazOperator.restoreState(self, context)
         if self.rig:
             if BLENDER3:
                 self.rig.data.layers = self.boneLayers
@@ -437,6 +436,7 @@ class HideOperator(DazOperator):
         for ob,hide in self.obhides:
             ob.hide_set(hide)
         context.view_layer.objects.active = self.activeObject
+        DazOperator.restoreState(self, context)
 
 #-------------------------------------------------------------
 #   BoneOptions
@@ -799,7 +799,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         self.trgCharacter = getCharacterFromRig(rig)
         anims = self.parseScene(struct["scene"], rig)
         if rig.type == 'ARMATURE':
-            setMode('POSE')
+            setMode('OBJECT')
             self.prepareRig(rig, scn.frame_current)
         nanims,locks,self.bonemap = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)

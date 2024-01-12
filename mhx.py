@@ -311,7 +311,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         eb = deriveBone(bname, defb, rig, lspine, mchb)
 
     from .figure import copyBoneInfo
-    setMode('POSE')
+    setMode('OBJECT')
     wind = rig.pose.bones["MCH-%s" % windname]
     fkwind = rig.pose.bones[windname]
     ikwind = rig.pose.bones["ik_%s" % windname]
@@ -371,7 +371,7 @@ def addWinder(rig, windname, bnames, layers,
         from .bone import setRoll
         setRoll(windbone, xaxis)
 
-    setMode('POSE')
+    setMode('OBJECT')
     pb = rig.pose.bones[bnames[0]]
     pbones = [pb]
     winder = rig.pose.bones[windname]
@@ -448,7 +448,7 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
     parent = rig.data.edit_bones[parname]
     last = rig.data.edit_bones[bnames[-1]]
     makeBone(ikname, rig, last.tail, 2*last.tail-last.head, last.roll, layers[0], parent)
-    setMode('POSE')
+    setMode('OBJECT')
     ikgoal = rig.pose.bones[ikname]
     first = rig.pose.bones[bnames[0]]
     influ = 1.0/(nbones+1)
@@ -748,7 +748,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.fixCustomShape(rig, ["head"], 4)
         showProgress(22, 25, "  Collect deform bones")
         self.collectDeformBones(rig)
-        setMode('POSE')
+        setMode('OBJECT')
         showProgress(23, 25, "  Rename face bones")
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
@@ -1062,7 +1062,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     if eb.name in self.noTweakParents:
                         eb.parent = sb
 
-        setMode('POSE')
+        setMode('OBJECT')
         from .figure import copyBoneInfo
         rpbs = rig.pose.bones
         for bname in self.tweakBones:

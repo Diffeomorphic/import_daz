@@ -1716,7 +1716,7 @@ def applyRestPoses(context, rig, subrigs):
         if not setActiveObject(context, subrig):
             continue
         constraints = applyLimitConstraints(subrig)
-        setMode('POSE')
+        setMode('OBJECT')
         bpy.ops.pose.armature_apply()
         for cns,mute in constraints:
             cns.mute = mute
