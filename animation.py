@@ -1646,6 +1646,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
     def addToPoseLib(self, rig, filepath):
         if rig.type != 'ARMATURE' or rig.animation_data is None:
             return
+        setMode('POSE')
         name = os.path.splitext(os.path.basename(filepath))[0]
         if self.useAssetBrowser:
             try:
@@ -1694,6 +1695,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
             bpy.ops.poselib.pose_add(frame=frame)
             pmarker = rig.pose_library.pose_markers.active
             pmarker.name = name
+        setMode('OBJECT')
 
 
     def getPreviewFile(self, filepath, name):
