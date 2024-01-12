@@ -706,11 +706,12 @@ class Rigifier(RigifyCommon):
             coll.objects.link(rig)
         self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
 
-        setMode('OBJECT')
+        setMode('POSE')
         try:
             bpy.ops.pose.rigify_generate()
         except:
             raise DazError("Cannot rigify %s rig %s    " % (rig.DazRig, rig.name))
+        setMode('OBJECT')
 
         scn = context.scene
         gen = context.object
