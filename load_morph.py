@@ -1597,12 +1597,25 @@ class LoadMorph(DriverUser):
         for fcu in self.amt.animation_data.drivers:
             if fcu.array_index == 0:
                 drivers[fcu.data_path] = fcu
+
+        def changeTarget(fcu, skeys):
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    prop = baseProp(getProp(trg.data_path))
+                    if (prop in skeys.key_blocks.keys() and
+                        trg.id_type == 'ARMATURE' and
+                        trg.id == self.amt):
+                        trg.id_type = 'KEY'
+                        trg.id = skeys
+                        trg.data_path = 'key_blocks["%s"].value' % prop
+
         for prop in self.drivers.keys():
             skey = skeys.key_blocks.get(prop)
             if skey:
                 final = finalProp(prop)
                 fcu = drivers.get(propRef(final))
                 if fcu:
+                    changeTarget(fcu, skeys)
                     skey.driver_remove("value")
                     fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
                     fcu2.data_path = 'key_blocks["%s"].value' % prop
