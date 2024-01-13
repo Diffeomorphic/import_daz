@@ -930,7 +930,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             return
         for fcu in rna.animation_data.drivers:
             prop = getProp(fcu.data_path)
-            if prop is None:
+            if not prop:
                 continue
             elif someMatch([":Loc:", ":Rot:", ":Sca:", ":Hdo:", ":Tlo:"], fcu.data_path):
                 self.sumdrivers[fcu.data_path] = fcu, prop

@@ -469,7 +469,7 @@ def getProp(path):
     if isPropRef(path):
         return path[2:-2]
     else:
-        return None
+        return ""
 
 def baseName(name):
     words = name.rsplit(".",1)
