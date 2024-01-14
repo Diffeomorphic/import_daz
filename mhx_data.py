@@ -291,12 +291,14 @@ class MhxData:
     ]
 
     BendTwistBones = [
-        ("thigh.L", "shin.L", False, "MhaLegStretch_L"),
-        ("forearm.L", "hand.L", True, "MhaArmStretch_L"),
-        ("upper_arm.L", "forearm.L", False, "MhaArmStretch_L"),
-        ("thigh.R", "shin.R", False, "MhaLegStretch_R"),
-        ("forearm.R", "hand.R", True, "MhaArmStretch_R"),
-        ("upper_arm.R", "forearm.R", False, "MhaArmStretch_R"),
+        ("shin.L", "foot.L", "MhaLegStretch_L"),
+        ("thigh.L", "shin.L", None),
+        ("forearm.L", "hand.L", "MhaArmStretch_L"),
+        ("upper_arm.L", "forearm.L", None),
+        ("shin.R", "foot.R", "MhaLegStretch_R"),
+        ("thigh.R", "shin.R", None),
+        ("forearm.R", "hand.R", "MhaArmStretch_R"),
+        ("upper_arm.R", "forearm.R", None),
     ]
 
     BendTwistGenesis38 = [
@@ -317,11 +319,6 @@ class MhxData:
         ("forearm.R", "r_forearm", ["r_forearmtwist1", "r_forearmtwist2"]),
     ]
 
-    ShinBendTwists = [
-        ("shin.L", "foot.L", True, "MhaLegStretch_L"),
-        ("shin.R", "foot.R", True, "MhaLegStretch_R"),
-    ]
-
     Knees = [
         ("thigh.L", "shin.L", Vector((0,-1,0))),
         ("thigh.R", "shin.R", Vector((0,-1,0))),
@@ -336,6 +333,15 @@ class MhxData:
 
     LimbBones = ["upper_arm", "forearm", "thigh", "shin"]
 
+    BoneParents = {
+        "ShldrBend" : "upper_arm.bend",
+        "ShldrTwist" : "upper_arm.twist",
+        "ForearmBend" : "forearm.bend",
+        "ForearmTwist" : "forearm.twist",
+        "ThighBend" : "thigh.bend",
+        "ThighTwist" : "thigh.twist",
+        "Shin" : "shin.twist",
+    }
 
     BoneDrivers = {
         "upper_armBend.L" : "upper_arm.bend.L",

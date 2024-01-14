@@ -476,12 +476,12 @@ def unhideAllObjects(context, rig):
 def applyBoneChildren(context, rig):
     from .node import clearParent
     unhideAllObjects(context, rig)
-    bchildren = []
+    bonechildren = []
     for ob in rig.children:
         if ob.parent_type == 'BONE':
-            bchildren.append((ob, ob.parent_bone))
+            bonechildren.append((ob, ob.parent_bone))
             clearParent(ob)
-    return bchildren
+    return bonechildren
 
 #-------------------------------------------------------------
 #   Convert to MHX button
@@ -509,6 +509,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         name = "Pole Targets",
         description = "Use pole targets for IK.\nEnable for perfect FK/IK snapping",
         default = False)
+
+    useStretch : BoolProperty(
+        name = "Stretchy Limbs",
+        description = "Enable stretchiness for arms and legs",
+        default = True)
 
     useSpineIk : BoolProperty(
         name = "Spine IK",
@@ -567,6 +572,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.usePoleTargets:
             self.layout.prop(self, "showLinks")
             self.layout.prop(self, "useFixKnees")
+        self.layout.prop(self, "useStretch")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
         self.layout.prop(self, "elbowParent")
@@ -665,7 +671,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         bendTwistBones = list(MHX.BendTwistBones)
         self.constraints = {}
         enableAllRigLayers(rig)
-        bchildren = applyBoneChildren(context, rig)
+        bonechildren = applyBoneChildren(context, rig)
         for pb in rig.pose.bones:
             pb.driver_remove("HdOffset")
             pb.driver_remove("TlOffset")
@@ -763,7 +769,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if pb.custom_shape:
                 pb.bone.show_wire = True
 
-        self.restoreBoneChildren(bchildren, context, rig)
+        self.restoreBoneChildren(bonechildren, context, rig)
         updateAll(context)
         if self.keepRig:
             self.tieBones(context, nrig, rig)
@@ -833,36 +839,33 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.checkFingerIk(rig)
 
 
-    def restoreBoneChildren(self, bchildren, context, rig):
+    def restoreBoneChildren(self, bonechildren, context, rig):
+        def getMhxBone(bname):
+            mname = MHX.BoneParents.get(bname[1:])
+            if mname:
+                bname = "%s.%s" % (mname, bname[0].upper())
+            if bname in rig.data.bones.keys():
+                return rig.data.bones[bname]
+            if bname in MHX.Skeleton.keys():
+                mname = MHX.Skeleton[bname][0]
+                if mname in rig.data.bones.keys():
+                    return rig.data.bones[mname]
+                else:
+                    print("Missing MHX bone:", bname, mname)
+            return None
+
         from .node import setParent
         layers = getRigLayers(rig)
         enableAllRigLayers(rig)
-        for (ob, bname) in bchildren:
-            bone = self.getMhxBone(rig, bname)
+        for (ob, bname) in bonechildren:
+            bone = getMhxBone(bname)
             if bone is None and isDrvBone(bname):
-                bone = self.getMhxBone(rig, baseBone(bname))
+                bone = getMhxBone(baseBone(bname))
             if bone:
                 setParent(context, ob, rig, bone.name)
             else:
                 print("Could not restore bone parent %s for %s" % (bname, ob.name))
         setRigLayers(rig, layers)
-
-
-    def getMhxBone(self, rig, bname):
-        if bname in rig.data.bones.keys():
-            return rig.data.bones[bname]
-        if bname in MHX.Skeleton.keys():
-            mname = MHX.Skeleton[bname][0]
-            if mname[-2] == ".":
-                if mname[-6:-2] == "Bend":
-                    mname = "%s.bend.%s" % (mname[:-6],  mname[-1])
-                elif mname[-7:-2] == "Twist":
-                    mname = "%s.twist.%s" % (mname[:-7],  mname[-1])
-            if mname in rig.data.bones.keys():
-                return rig.data.bones[mname]
-            else:
-                print("Missing MHX bone:", bname, mname)
-        return None
 
     #-------------------------------------------------------------
     #   Gizmos
@@ -1571,7 +1574,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ("foot", "Leg"),
                 ("foot.fk", "Leg")]:
                 prop = "Mha%sStretch_%s" % (part, suffix)
-                setMhx(rig, prop, 0.0)
+                if self.useStretch:
+                    setMhx(rig, prop, 1.0)
+                else:
+                    setMhx(rig, prop, 0.0)
                 pb = rig.pose.bones["%s.%s" % (bname, suffix)]
                 cns = copyLocation(pb, pb.parent, rig, prop, "1-x")
                 cns.head_tail = 1.0

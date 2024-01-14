@@ -1070,9 +1070,7 @@ class BendTwists:
     def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
         setMode('OBJECT')
         rotmodes = {}
-        for data in bendTwistBones:
-            bname = data[0]
-            tname = data[1]
+        for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getBendTwistNames(bname)
             if not (bendname in rig.pose.bones.keys() and
                     twistname in rig.pose.bones.keys()):
@@ -1087,9 +1085,7 @@ class BendTwists:
             self.deleteBoneDrivers(rig, twistname)
 
         setMode('EDIT')
-        for data in bendTwistBones:
-            bname = data[0]
-            tname = data[1]
+        for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getBendTwistNames(bname)
             bend = rig.data.edit_bones.get(bendname)
             twist = rig.data.edit_bones.get(twistname)
@@ -1119,9 +1115,7 @@ class BendTwists:
                 pb.DazRotMode = rotmode
 
         from .figure import copyBoneInfo
-        for data in bendTwistBones:
-            bname = data[0]
-            tname = data[1]
+        for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getBendTwistNames(bname)
             srcbone = rig.pose.bones.get(bendname)
             trgbone = rig.pose.bones.get(bname)
@@ -1130,9 +1124,7 @@ class BendTwists:
                 trgbone.DazRotLocks = (False, False, False)
 
         setMode('EDIT')
-        for data in bendTwistBones:
-            bname = data[0]
-            tname = data[1]
+        for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getBendTwistNames(bname)
             if bendname in rig.data.edit_bones.keys():
                 eb = rig.data.edit_bones[bendname]
@@ -1204,8 +1196,7 @@ class BendTwists:
 
     def createBendTwists(self, rig, bendTwistBones):
         setMode('EDIT')
-        for data in bendTwistBones:
-            bname = data[0]
+        for bname,tname,stretch in bendTwistBones:
             eb = rig.data.edit_bones.get(bname)
             if eb is None:
                 continue
@@ -1287,7 +1278,7 @@ class BendTwists:
     def constrainBendTwists(self, rig, bendTwistBones):
         from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('OBJECT')
-        for bname,trgname,stretch,prop in bendTwistBones:
+        for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
             if not hasPoseBones(rig, [bname, bendname, twistname]):
                 continue
@@ -1295,12 +1286,12 @@ class BendTwists:
             bend = rig.pose.bones[bendname]
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
-            pb2 = rig.pose.bones[trgname]
-            dampedTrack(bend, pb2, rig)
+            trg = rig.pose.bones[tname]
+            dampedTrack(bend, trg, rig)
             copyTransform(twist, pb, rig)
             if stretch:
-                cns = stretchTo(bend, pb2, rig, prop, "x")
-                cns = stretchTo(twist, pb2, rig, prop, "x")
+                cns = stretchTo(bend, trg, rig, stretch, "x")
+                cns = stretchTo(twist, trg, rig, stretch, "x")
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
