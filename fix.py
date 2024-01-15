@@ -860,6 +860,47 @@ class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
                 bone.select = (match in bone.name.lower())
 
 #-------------------------------------------------------------
+#   Select seg01
+#-------------------------------------------------------------
+
+class DAZ_OT_LockBoneChannels(DazPropsOperator, IsArmature):
+    bl_idname = "daz.lock_bone_channels"
+    bl_label = "Lock Bone Channels"
+    bl_description = "Lock certain channels"
+    bl_options = {'UNDO'}
+
+    useNonzero : BoolProperty(
+        name = "Nonzero Channels",
+        description = "Don't lock non-zero channels",
+        default = True)
+
+    useTwist : BoolProperty(
+        name = "Twist",
+        description = "Don't lcok local Y rotation",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useNonzero")
+        self.layout.prop(self, "useTwist")
+
+    def run(self, context):
+        def lockAll(pb, channel, lockchannel, default):
+            values = getattr(pb, channel)
+            locks = getattr(pb, lockchannel)
+            for n in range(3):
+                if not self.useNonzero or abs(values[n]-default) < 1e-7:
+                    locks[n] = True
+                    values[n] = default
+
+        for rig in getSelectedArmatures(context):
+            for pb in rig.pose.bones:
+                lockAll(pb, "location", "lock_location", 0)
+                lockAll(pb, "rotation_euler", "lock_rotation", 0)
+                lockAll(pb, "scale", "lock_scale", 1)
+                if self.useTwist:
+                    pb.lock_rotation[1] = False
+
+#-------------------------------------------------------------
 #   Constraints class
 #-------------------------------------------------------------
 
@@ -1795,6 +1836,7 @@ class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
 #----------------------------------------------------------
 
 classes = [
+    DAZ_OT_LockBoneChannels,
     DAZ_OT_AddIkGoals,
     DAZ_OT_AddWinders,
     DAZ_OT_ChangePrefixToSuffix,

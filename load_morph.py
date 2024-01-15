@@ -496,22 +496,12 @@ class LoadMorph(DriverUser):
         return adj
 
 
-    def addShapeDriver(self, skey, final, expr="a"):
-        from .driver import removeModifiers
-
-        def addDriver(channel):
-            skey.driver_remove(channel)
-            fcu = skey.driver_add(channel)
-            fcu.driver.type = 'SCRIPTED'
-            removeModifiers(fcu)
-            self.addPathVar(fcu, "a", self.amt, propRef(final))
-            fcu.driver.expression = expr
-            return fcu
-
-        fcu = addDriver("value")
+    def addShapeDriver(self, skey, final, expr="x"):
+        from .driver import makePropDriver
+        path = propRef(final)
+        makePropDriver(path, skey, "value", self.amt, "x")
         if GS.useMuteDrivers:
-            fcu = addDriver("mute")
-            fcu.driver.expression = "abs(%s)<0.0001" % fcu.driver.expression
+            makePropDriver(path, skey, "mute", self.amt, "abs(x)<0.0001")
 
 
     def adjustStrength(self, adj, pb, string, vars):
