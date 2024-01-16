@@ -255,11 +255,11 @@ class DazLoader:
 #   Import DAZ
 #------------------------------------------------------------------
 
-class ImportDAZ(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, MultiFile):
+class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, MultiFile):
     """Load a DAZ File"""
-    bl_idname = "daz.import_daz"
-    bl_label = "Import DAZ"
-    bl_description = "Load a native DAZ file"
+    bl_idname = "daz.import_daz_manually"
+    bl_label = "Import DAZ Manually"
+    bl_description = "Load a native DAZ file.\nFurther operations must be done manually"
     bl_options = {'UNDO', 'PRESET'}
 
     def draw(self, context):
@@ -768,7 +768,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     def easyImport(self, context):
         time1 = perf_counter()
-        bpy.ops.daz.import_daz(
+        bpy.ops.daz.import_daz_manually(
             materialMethod = self.materialMethod,
             skinColor = self.skinColor,
             clothesColor = self.clothesColor,
@@ -1194,12 +1194,11 @@ class DAZ_OT_QuoteUnquote(bpy.types.Operator):
 #----------------------------------------------------------
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportDAZ.bl_idname, text="DAZ (.duf, .dsf)")
-    self.layout.operator(EasyImportDAZ.bl_idname, text="Easy DAZ (.duf, .dsf)")
+    self.layout.operator(EasyImportDAZ.bl_idname, text="DAZ (.duf, .dsf)")
 
 
 classes = [
-    ImportDAZ,
+    ImportDAZManually,
     ImportDAZMaterials,
     EasyImportDAZ,
     DAZ_OT_DecodeFile,

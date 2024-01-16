@@ -68,10 +68,10 @@ class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        self.layout.operator("daz.import_daz")
-        self.layout.separator()
         self.layout.operator("daz.easy_import_daz")
         self.layout.prop(scn, "DazFavoPath")
+        self.layout.separator()
+        self.layout.operator("daz.import_daz_manually")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
         self.layout.prop(scn, "DazPreferredRoot")
