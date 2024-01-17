@@ -71,8 +71,6 @@ class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.easy_import_daz")
         self.layout.prop(scn, "DazFavoPath")
         self.layout.separator()
-        self.layout.operator("daz.import_daz_manually")
-        self.layout.separator()
         self.layout.operator("daz.global_settings")
         self.layout.prop(scn, "DazPreferredRoot")
 
@@ -230,7 +228,7 @@ class DAZ_PT_Advanced(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Advanced Setup"
 
     def draw(self, context):
-        pass
+        self.layout.operator("daz.import_daz_manually")
 
 
 class DAZ_PT_AdvancedLowpoly(DAZ_PT_SetupTab, bpy.types.Panel):

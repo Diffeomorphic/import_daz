@@ -259,7 +259,7 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
     """Load a DAZ File"""
     bl_idname = "daz.import_daz_manually"
     bl_label = "Import DAZ Manually"
-    bl_description = "Load a native DAZ file.\nFurther operations must be done manually"
+    bl_description = "Load a native DAZ file.\nFurther operations must be done manually.\nThis tool is mainly for debugging"
     bl_options = {'UNDO', 'PRESET'}
 
     def draw(self, context):
