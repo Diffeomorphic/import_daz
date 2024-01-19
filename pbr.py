@@ -527,6 +527,8 @@ class PbrTree(CyclesTree):
             #  principled clearcoat roughness = 0
             self.owner.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
+            if not BLENDER3:
+                self.replaceSlot(pbr, "Coat IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
             strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
             clearcoat = (ior-1)*10*strength
@@ -545,6 +547,8 @@ class PbrTree(CyclesTree):
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0)
             self.replaceSlot(pbr, "IOR", 1.0)
+            if not BLENDER3:
+                self.replaceSlot(pbr, "Coat IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
 
         else:

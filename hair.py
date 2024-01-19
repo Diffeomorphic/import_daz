@@ -1357,12 +1357,11 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         else:
             mname = self.activeMaterial
             mat = hair.data.materials[mname]
+            img = None
             if not keepmat:
                 node = mat.node_tree.nodes.active
                 if self.useActiveTexture and node and node.type == 'TEX_IMAGE':
                     img = node.image
-                else:
-                    img = None
                 mat = buildHairMaterial("Hair", self.color, img, context, force=True)
             if fade and img:
                 addFade(mat, img)
