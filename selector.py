@@ -504,6 +504,7 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        ob = context.object
         rig = getRigFromContext(context, strict=False)
         scn = context.scene
         if rig is None:
@@ -511,8 +512,8 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
         elif rig.type == 'ARMATURE':
             setMorphs(0.0, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
-        elif rig.type == 'MESH':
-            setShapes(0.0, rig, self, scn, scn.frame_current)
+        if ob.type == 'MESH':
+            setShapes(0.0, ob, self, scn, scn.frame_current)
 
 
 class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):

@@ -1345,74 +1345,6 @@ class DAZ_OT_ScaleMaterials(MaterialScaler, DazPropsOperator, IsMesh):
             self.scaleMaterials(ob)
 
 #-------------------------------------------------------------
-#   Change unit scale
-#-------------------------------------------------------------
-
-class DAZ_OT_ChangeUnitScale(MaterialScaler, DazPropsOperator, IsMeshArmature):
-    bl_idname = "daz.change_unit_scale"
-    bl_label = "Change Unit Scale"
-    bl_description = "Safely change the unit scale of selected object and children"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
-        ob = context.object
-        while ob.parent:
-            ob = ob.parent
-        self.meshes = []
-        self.rigs = []
-        self.parents = {}
-        self.addObjects(ob)
-        for ob in self.meshes:
-            self.applyScale(context, ob)
-            self.scaleMaterials(ob)
-        for rig in self.rigs:
-            self.applyScale(context, rig)
-            self.fixRig(rig)
-        for rig in self.rigs:
-            self.restoreParent(context, rig)
-        for ob in self.meshes:
-            self.restoreParent(context, ob)
-
-
-    def addObjects(self, ob):
-        if ob.type == 'MESH':
-            if ob not in self.meshes:
-                self.meshes.append(ob)
-        elif ob.type == 'ARMATURE':
-            if ob not in self.rigs:
-                self.rigs.append(ob)
-        for child in ob.children:
-            self.addObjects(child)
-
-
-    def applyScale(self, context, ob):
-        scale = self.unit / ob.DazScale
-        if ob.type in ['MESH', 'ARMATURE'] and activateObject(context, ob):
-            self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)
-            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-            lock = list(ob.lock_scale)
-            ob.lock_scale = (False,False,False)
-            ob.scale *= scale
-            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
-
-    def fixRig(self, rig):
-        scale = self.unit / rig.DazScale
-        for pb in rig.pose.bones:
-            for cns in pb.constraints:
-                if cns.type == 'STRETCH_TO':
-                    cns.rest_length *= scale
-
-
-    def restoreParent(self, context, ob):
-        ob.DazScale = self.unit
-        if ob.name in self.parents.keys():
-            wmat = ob.matrix_world.copy()
-            (ob.parent, ob.parent_type, ob.parent_bone) = self.parents[ob.name]
-            setWorldMatrix(ob, wmat)
-
-#-------------------------------------------------------------
 #   Make Material set
 #-------------------------------------------------------------
 
@@ -1718,7 +1650,6 @@ classes = [
     DAZ_OT_ToggleShellInfluence,
     DAZ_OT_SetAllFloats,
     DAZ_OT_ClearAllFloats,
-    DAZ_OT_ChangeUnitScale,
     DAZ_OT_ScaleMaterials,
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,

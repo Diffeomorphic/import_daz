@@ -63,7 +63,7 @@ class GlobalSettings:
         self.rootPaths = []
         self.absPaths = {}
 
-        self.unitScale = 0.01
+        self.scale = 0.01
         self.verbosity = 2
         self.rememberLastFolder = False
         self.silentMode = False
@@ -540,7 +540,6 @@ class LocalSettings:
         self.theSources = {}
         self.theTrace = []
 
-        self.scale = 0.1
         self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None
         self.clothesColor = None
@@ -679,7 +678,6 @@ class LocalSettings:
     def forImport(self, btn):
         self.__init__()
         self.reset(btn)
-        self.scale = GS.unitScale
         self.useNodes = True
         self.useGeometries = True
         self.useImages = True
@@ -707,7 +705,6 @@ class LocalSettings:
     def forAnimation(self, btn, ob):
         self.__init__()
         self.reset(btn)
-        self.scale = ob.DazScale
         self.useNodes = True
         if hasattr(btn, "fps"):
             self.fps = btn.fps
@@ -717,8 +714,6 @@ class LocalSettings:
     def forMorphLoad(self, ob):
         self.__init__()
         self.reset()
-        if ob:
-            self.scale = ob.DazScale
         self.useMorph = True
         self.useMorphOnly = True
         self.useFormulas = True
@@ -729,14 +724,12 @@ class LocalSettings:
     def forUV(self, ob):
         self.__init__()
         self.reset()
-        self.scale = ob.DazScale
         self.useUV = True
 
 
     def forMaterial(self, btn, ob):
         self.__init__()
         self.reset(btn)
-        self.scale = ob.DazScale
         self.useImages = True
         self.useMaterials = True
         self.useAnimations = True

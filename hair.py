@@ -339,7 +339,7 @@ class HairSystem:
     def setHairSettings(self, psys, ob):
         btn = self.button
         pset = psys.settings
-        pset.hair_length = btn.hairLength * GS.unitScale * 100
+        pset.hair_length = btn.hairLength * GS.scale * 100
         if btn.nViewChildren or btn.nRenderChildren:
             pset.child_type = 'SIMPLE'
         else:
@@ -1793,7 +1793,7 @@ class HairTree(CyclesTree):
         if False and strength:
             bump = self.addNode("ShaderNodeBump", col=2)
             bump.inputs["Strength"].default_value = strength
-            bump.inputs["Distance"].default_value = 0.1 * LS.scale
+            bump.inputs["Distance"].default_value = 0.1 * GS.scale
             bump.inputs["Height"].default_value = 1
             self.normal = bump
 

@@ -944,7 +944,7 @@ class Morph(FormulaAsset):
     def addMorphToVerts(self, me):
         if self.value == 0.0:
             return
-        scale = self.value * LS.scale
+        scale = self.value * GS.scale
         for delta in self.deltas:
             vn = delta[0]
             me.vertices[vn].co += scale * d2bu(delta[1:])
@@ -955,9 +955,9 @@ class Morph(FormulaAsset):
                    strength=1):
 
         def buildShapeKey(ob, skey, strength):
-            if strength != 1:
-                scale = LS.scale
-                LS.scale *= strength
+            #if strength != 1:
+            #    scale = GS.scale
+            #    GS.scale *= strength
             for v in ob.data.vertices:
                 skey.data[v.index].co = v.co
             if GS.zup:
@@ -976,8 +976,8 @@ class Morph(FormulaAsset):
                 for delta in self.deltas:
                     vn = delta[0]
                     skey.data[vn].co += d2b00(delta[1:])
-            if strength != 1:
-                LS.scale = scale
+            #if strength != 1:
+            #    GS.scale = scale
 
         sname = self.getName()
         rig = ob.parent

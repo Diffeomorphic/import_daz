@@ -339,7 +339,6 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Rigging"
 
     def draw(self, context):
-        self.layout.operator("daz.change_unit_scale")
         self.layout.operator("daz.add_extra_face_bones")
         self.layout.separator()
         self.layout.operator("daz.change_prefix_to_suffix")
@@ -349,6 +348,7 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.add_winders")
         self.layout.separator()
         self.layout.operator("daz.lock_channels")
+        self.layout.operator("daz.clear_center")
         self.layout.operator("daz.categorize_objects")
         self.layout.separator()
         self.layout.operator("daz.batch_set_custom_shape")

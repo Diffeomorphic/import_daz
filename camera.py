@@ -79,9 +79,9 @@ class CameraInstance(Instance):
         camera = self.node.data
         for key,value in props.items():
             if key == "znear" :
-                camera.clip_start = value * LS.scale
+                camera.clip_start = value * GS.scale
             elif key == "zfar" :
-                camera.clip_end = value * LS.scale
+                camera.clip_end = value * GS.scale
             elif key == "yfov" :
                 pass
             elif key == "focal_length" :
@@ -89,7 +89,7 @@ class CameraInstance(Instance):
             elif key == "depth_of_field" :
                 camera.dof.use_dof = value
             elif key == "focal_distance" :
-                camera.dof.focus_distance = value * LS.scale
+                camera.dof.focus_distance = value * GS.scale
             elif key == "fstop" :
                 camera.dof.aperture_fstop = value
             else:
@@ -104,15 +104,15 @@ class CameraInstance(Instance):
             if value is None:
                 continue
             elif key == "Lens Shift X" :
-                camera.shift_x = value * LS.scale
+                camera.shift_x = value * GS.scale
             elif key == "Lens Shift Y" :
-                camera.shift_y = value * LS.scale
+                camera.shift_y = value * GS.scale
             elif key == "Focal Length":
                 camera.lens = value         # in mm
             elif key == "DOF":
                 camera.dof.use_dof = value
             elif key == "Depth of Field":
-                camera.dof.focus_distance = value * LS.scale
+                camera.dof.focus_distance = value * GS.scale
             elif key == "Frame Width":
                 camera.sensor_height = value
             elif key == "Aspect Ratio":

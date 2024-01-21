@@ -1840,7 +1840,7 @@ class WidgetConverter:
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
         euler = Euler((0,180*D,90*D))
         if rig.DazScale == 0:
-            factor = 1.0/GS.unitScale
+            factor = 1.0/GS.scale
         else:
             factor = 1.0/rig.DazScale
         mat = euler.to_matrix()*factor

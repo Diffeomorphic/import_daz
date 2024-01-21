@@ -711,7 +711,7 @@ def getCoord(p):
 
 
 def d2b90(v):
-    return LS.scale*Vector((v[0], -v[2], v[1]))
+    return GS.scale*Vector((v[0], -v[2], v[1]))
 
 def d2b90u(v):
     return Vector((v[0], -v[2], v[1]))
@@ -721,7 +721,7 @@ def d2b90s(v):
 
 
 def d2b00(v):
-    return LS.scale*Vector(v)
+    return GS.scale*Vector(v)
 
 def d2b00u(v):
     return Vector(v)

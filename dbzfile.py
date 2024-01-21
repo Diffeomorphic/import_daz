@@ -245,7 +245,7 @@ def loadDbzFile(filepath):
                 orient = xyz = origin = None
             bname = bone["name"]
             rmat = wsmat.to_4x4()
-            rmat.col[3][0:3] = LS.scale*head
+            rmat.col[3][0:3] = GS.scale*head
             restdata[bname] = (head, tail, orient, xyz, origin, wsmat, dazhead)
             transforms[bname] = (rmat, head, rmat.to_euler(), (1,1,1))
 
@@ -380,7 +380,7 @@ def fitToFile(filepath, nodes):
 #----------------------------------------------------------
 
 def b2d(v):
-    return Vector((v[0], v[2], -v[1]))/GS.unitScale
+    return Vector((v[0], v[2], -v[1]))/GS.scale
 
 
 class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMaker, IsMeshArmature):
@@ -417,7 +417,6 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
     def run(self, context):
         from .driver import setFloatProp, makePropDriver
         rig = getRigFromContext(context)
-        LS.scale = rig.DazScale
         if rig.type == 'ARMATURE':
             meshes = getMeshChildren(rig)
         else:

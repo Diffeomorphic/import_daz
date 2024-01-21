@@ -1500,10 +1500,11 @@ class NodePose:
                 else:
                     trans = Zero
                     rot = Zero
-                self.addTransform(node, "translation", banims, key, trans)
-                self.addTransform(node, "rotation", banims, key, rot)
+                self.addTransform(node, "translation", banims, key, Zero)
+                self.addTransform(node, "rotation", banims, key, Zero)
                 self.addTransform(node, "scale", banims, key, One)
                 #self.addTransform(node, "general_scale", banims, key)
+                print("\nNN", key, banims[key])
         elif self.verbose:
             print("No nodes in this file")
 

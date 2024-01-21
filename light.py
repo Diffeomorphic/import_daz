@@ -40,12 +40,12 @@ from .error import reportError
 
 def getMinLightSettings():
     return [("use_shadow", "=", True),
-            ("shadow_buffer_clip_start", "<", 1.0*LS.scale),
+            ("shadow_buffer_clip_start", "<", 1.0*GS.scale),
             ("shadow_buffer_bias", "<", 0.01),
             ("use_contact_shadow", "=", True),
             ("contact_shadow_bias", "<", 0.01),
-            ("contact_shadow_distance", "<", 1.0*LS.scale),
-            ("contact_shadow_thickness", "<", 10*LS.scale),
+            ("contact_shadow_distance", "<", 1.0*GS.scale),
+            ("contact_shadow_thickness", "<", 10*GS.scale),
            ]
 
 
@@ -87,8 +87,8 @@ class Light(Node):
         lgeo = inst.getValue(["Light Geometry"], 0)
         self.twosided = inst.getValue(["Two Sided"], False)
         usePhoto = inst.getValue(["Photometric Mode"], False)
-        width = inst.getValue(["Width"], 10) * LS.scale
-        height = inst.getValue(["Height"], 10) * LS.scale
+        width = inst.getValue(["Width"], 10) * GS.scale
+        height = inst.getValue(["Height"], 10) * GS.scale
 
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
         if self.type == 'POINT':
@@ -104,7 +104,7 @@ class Light(Node):
             light = bpy.data.lights.new(self.name, "AREA")
             light.shape = ('RECTANGLE' if lgeo == 1 else 'DISK')
             if lgeo == 0:
-                light.size = light.size_y = 0.1*LS.scale
+                light.size = light.size_y = 0.1*GS.scale
             else:
                 light.size = width
                 light.size_y = height

@@ -406,7 +406,7 @@ class BoneInstance(Instance):
         pb = rig.pose.bones[node.name]
         self.rna = pb
         pb.bone.inherit_scale = self.defaultInherit()
-        pb.bone.bbone_x = pb.bone.bbone_z = GS.unitScale
+        pb.bone.bbone_x = pb.bone.bbone_z = GS.scale
 
         mapped = self.node.mapped
         if (mapped and
@@ -558,8 +558,8 @@ class BoneInstance(Instance):
                     xyz = self.IndexComp[idx]
                     setattr(cns, "use_min_%s" % xyz, True)
                     setattr(cns, "use_max_%s" % xyz, True)
-                    setattr(cns, "min_%s" % xyz, mind*LS.scale)
-                    setattr(cns, "max_%s" % xyz, maxd*LS.scale)
+                    setattr(cns, "min_%s" % xyz, mind*GS.scale)
+                    setattr(cns, "max_%s" % xyz, maxd*GS.scale)
 
 #-------------------------------------------------------------
 #   Utilities

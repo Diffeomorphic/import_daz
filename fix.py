@@ -860,7 +860,7 @@ class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
                 bone.select = (match in bone.name.lower())
 
 #-------------------------------------------------------------
-#   Select seg01
+#   Lock channels
 #-------------------------------------------------------------
 
 class DAZ_OT_LockChannels(DazPropsOperator, IsObject):
@@ -903,6 +903,23 @@ class DAZ_OT_LockChannels(DazPropsOperator, IsObject):
                     lockAll(pb, "scale", "lock_scale", 1)
                     if self.useTwist:
                         pb.lock_rotation[1] = False
+
+#-------------------------------------------------------------
+#   Clear center
+#-------------------------------------------------------------
+
+class DAZ_OT_ClearCenter(DazOperator, IsObject):
+    bl_idname = "daz.clear_center"
+    bl_label = "Clear Center"
+    bl_description = "Move object to DAZ center"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedObjects(context):
+            if ob.parent is None:
+                ob.location = d2b(ob.DazCenter)
+            ob.DazCenter = Zero
+        bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
 
 #-------------------------------------------------------------
 #   Constraints class
@@ -1841,6 +1858,7 @@ class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
 
 classes = [
     DAZ_OT_LockChannels,
+    DAZ_OT_ClearCenter,
     DAZ_OT_AddIkGoals,
     DAZ_OT_AddWinders,
     DAZ_OT_ChangePrefixToSuffix,

@@ -155,7 +155,7 @@ class GeoNode(Node, SimNode):
             else:
                 shell = makeShell(shgeonode.name, shmats, ob)
                 shgeonode.rna = shell
-            offset = LS.scale * shgeonode.push
+            offset = GS.scale * shgeonode.push
             makeShellModifier(shell, ob, offset, mnames, mats, shmats)
 
 
@@ -1394,7 +1394,7 @@ class Geometry(Asset, Channels):
 
 
 def d2bList(verts):
-    s = LS.scale
+    s = GS.scale
     if GS.zup:
         return [[s*v[0], -s*v[2], s*v[1]] for v in verts]
     else:

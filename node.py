@@ -353,7 +353,7 @@ class Instance(Accessor, Channels, SimNode):
             x = self.getValue(["ClippingWidth"], 50)
             y = self.getValue(["ClippingDepth"], 50)
             z = self.getValue(["ClippingHeight"], 50)
-            diag = 2*LS.scale*Matrix.Diagonal((x,y,z))
+            diag = 2*GS.scale*Matrix.Diagonal((x,y,z))
             texco = findTexco(self.mappingNode)
             empty = texco.object = self.rna
             empty.empty_display_type = 'CUBE'
@@ -924,7 +924,7 @@ class Node(Asset, Formula, Channels):
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)
         ob.DazScene = LS.scene
-        ob.DazScale = LS.scale
+        ob.DazScale = GS.scale
         ob.DazOrient = inst.attributes["orientation"]
         ob.DazCenter = inst.attributes["center_point"]
         self.subtractCenter(ob, inst, center)
@@ -1102,6 +1102,6 @@ def flipAxes(vec, pb):
 def isUnitMatrix(mat):
     diff = mat - Matrix()
     maxelt = max([abs(diff[i][j]) for i in range(3) for j in range(4)])
-    return (maxelt < 0.01*LS.scale)  # Ignore shifts < 0.1 mm
+    return (maxelt < 0.01*GS.scale)  # Ignore shifts < 0.1 mm
 
 

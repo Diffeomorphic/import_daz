@@ -133,7 +133,7 @@ class CyclesMaterial(Material):
     def addGeoBump(self, tex, socket):
         bumpmin = self.getValue("getChannelBumpMin", -0.01)
         bumpmax = self.getValue("getChannelBumpMax", 0.01)
-        socket.default_value = (bumpmax-bumpmin) * LS.scale
+        socket.default_value = (bumpmax-bumpmin) * GS.scale
         key = tex.name
         if key not in self.geobump.keys():
             self.geobump[key] = (tex, [])
@@ -181,7 +181,7 @@ class CyclesMaterial(Material):
         setWorldMatrix(ob, wmat)
         bpy.data.meshes.remove(me2, do_unlink=True)
 
-        area *= 1e-4/(LS.scale*LS.scale)
+        area *= 1e-4/(GS.scale*GS.scale)
         for socket in self.geoemit:
             socket.default_value /= area
             for link in self.tree.links:
@@ -606,7 +606,7 @@ class CyclesTree(Tree):
                 self.normaltex = tex
 
         if GS.useAutoSmooth and self.getValue(["Smooth On"], False):
-            rad = self.getValue(["Round Corners Radius"], 0) * 100 * LS.scale
+            rad = self.getValue(["Round Corners Radius"], 0) * 100 * GS.scale
             if rad != 0:
                 node = self.addNode("ShaderNodeBevel")
                 node.samples = 32
@@ -694,8 +694,8 @@ class CyclesTree(Tree):
             return
         weight,wttex,texslot = self.getColorTex(["Detail Weight"], "NONE", 0.0, isMask=True)
         texco = self.texco
-        ox = LS.scale*self.getValue(["Detail Horizontal Offset"], 0)
-        oy = LS.scale*self.getValue(["Detail Vertical Offset"], 0)
+        ox = GS.scale*self.getValue(["Detail Horizontal Offset"], 0)
+        oy = GS.scale*self.getValue(["Detail Vertical Offset"], 0)
         kx = self.getValue(["Detail Horizontal Tiles"], 1)
         ky = self.getValue(["Detail Vertical Tiles"], 1)
         self.mapTexco(ox, oy, kx, ky)
@@ -1431,7 +1431,7 @@ class CyclesTree(Tree):
             trans = BLACK
 
         rad,radtex = self.sumColors(ssscolor, ssstex, trans, transtex)
-        radius = rad * 2.0 * LS.scale
+        radius = rad * 2.0 * GS.scale
         return radius,radtex
 
 
@@ -1744,8 +1744,8 @@ class CyclesTree(Tree):
             node = self.addGroup(DisplacementGroup, "DAZ Displacement")
             self.links.new(colorOutput(tex), node.inputs["Texture"])
             node.inputs["Strength"].default_value = strength
-            node.inputs["Max"].default_value = LS.scale * dmax
-            node.inputs["Min"].default_value = LS.scale * dmin
+            node.inputs["Max"].default_value = GS.scale * dmax
+            node.inputs["Min"].default_value = GS.scale * dmin
             self.linkNormal(node)
             self.displacement = node.outputs["Displacement"]
 
