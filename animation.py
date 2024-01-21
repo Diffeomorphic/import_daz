@@ -1155,11 +1155,17 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             setShapeValue(rig, prop, value, n, offset)
         elif rig.type == 'ARMATURE':
             key = self.getRigKey(prop, rig, value)
-            if self.useShapekeys or key is None:
+            final = finalProp(prop)
+            if self.useShapekeys:
                 for ob in rig.children:
                     setShapeValue(ob, prop, value, n, offset)
             elif key:
                 setRigProp(rig, key, value, n, offset)
+            elif final in rig.data.keys():
+                setRigProp(rig.data, final, value, n, offset)
+            else:
+                for ob in rig.children:
+                    setShapeValue(ob, prop, value, n, offset)
 
 
     def addToPoseLib(self, rig, filepath):
@@ -1501,13 +1507,11 @@ class NodePose:
         elif self.verbose:
             print("No nodes in this file")
 
-
         if "modifiers" in struct.keys() and self.affectMorphs:
             for mod in struct["modifiers"]:
-                key = mod.get("id")
-                channel = mod.get("channel")
-                if key and channel:
-                    value = channel.get("current_value")
+                if "id" in mod.keys() and "channel" in mod.keys():
+                    key = unquote(mod["id"])
+                    value = mod["channel"].get("current_value")
                     if value is not None:
                         vanims[key] = [[0, value]]
 
@@ -1766,10 +1770,10 @@ class DAZ_OT_ImportNodePose(NodePose, HideOperator, PoseBase, StandardAnimation,
     bl_description = "Import a pose from DAZ scene file(s) (not pose preset files)"
     bl_options = {'UNDO', 'PRESET'}
 
-    preferredFolders = [""]
+    preferredFolders = []
 
     def invoke(self, context, event):
-        self.affectMorphs = False
+        self.affectMorphs = True
         return AnimatorBase.invoke(self, context, event)
 
     def run(self, context):
