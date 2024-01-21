@@ -863,9 +863,9 @@ class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
 #   Select seg01
 #-------------------------------------------------------------
 
-class DAZ_OT_LockBoneChannels(DazPropsOperator, IsArmature):
-    bl_idname = "daz.lock_bone_channels"
-    bl_label = "Lock Bone Channels"
+class DAZ_OT_LockChannels(DazPropsOperator, IsObject):
+    bl_idname = "daz.lock_channels"
+    bl_label = "Lock Channels"
     bl_description = "Lock certain channels"
     bl_options = {'UNDO'}
 
@@ -892,13 +892,17 @@ class DAZ_OT_LockBoneChannels(DazPropsOperator, IsArmature):
                     locks[n] = True
                     values[n] = default
 
-        for rig in getSelectedArmatures(context):
-            for pb in rig.pose.bones:
-                lockAll(pb, "location", "lock_location", 0)
-                lockAll(pb, "rotation_euler", "lock_rotation", 0)
-                lockAll(pb, "scale", "lock_scale", 1)
-                if self.useTwist:
-                    pb.lock_rotation[1] = False
+        for ob in getSelectedObjects(context):
+            lockAll(ob, "location", "lock_location", 0)
+            lockAll(ob, "rotation_euler", "lock_rotation", 0)
+            lockAll(ob, "scale", "lock_scale", 1)
+            if ob.type == 'ARMATURE':
+                for pb in ob.pose.bones:
+                    lockAll(pb, "location", "lock_location", 0)
+                    lockAll(pb, "rotation_euler", "lock_rotation", 0)
+                    lockAll(pb, "scale", "lock_scale", 1)
+                    if self.useTwist:
+                        pb.lock_rotation[1] = False
 
 #-------------------------------------------------------------
 #   Constraints class
@@ -1836,7 +1840,7 @@ class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_LockBoneChannels,
+    DAZ_OT_LockChannels,
     DAZ_OT_AddIkGoals,
     DAZ_OT_AddWinders,
     DAZ_OT_ChangePrefixToSuffix,
