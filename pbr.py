@@ -521,20 +521,35 @@ class PbrTree(CyclesTree):
         if self.owner.isThinWall:
             # if thin walled is on then there's no volume
             # and we use the clearcoat channel for reflections
-            #  principled ior = 1
-            #  principled roughness = 0
-            #  principled clearcoat = (iray refraction index - 1) * 10 * iray glossy layered weight
-            #  principled clearcoat roughness = 0
+            #
+            # principled ior = 1
+            # principled roughness = 0
+            # BLENDER 3:
+            #   principled clearcoat = (iray refraction index - 1) * 10 * iray glossy layered weight
+            #   principled clearcoat roughness = 0
+            # BLENDER 4:
+            #   coat weight = iray glossy layered weight
+            #   coat roughness = iray glossy roughness
+            #   coat ior = iray refraction index
+            #   coat tint = iray glossy color
             self.owner.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
-            if not BLENDER3:
-                self.replaceSlot(pbr, "Coat IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
             strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
-            clearcoat = (ior-1)*10*strength
-            self.removeLink(pbr, PBR.CoatWeight)
-            self.linkScalar(strtex, pbr, clearcoat, PBR.CoatWeight, texslot=texslot)
-            self.replaceSlot(pbr, PBR.CoatRoughness, 0)
+            if BLENDER3:
+                clearcoat = (ior-1)*10*strength
+                self.removeLink(pbr, "Clearcoat")
+                self.linkScalar(strtex, pbr, clearcoat, "Clearcoat", texslot=texslot)
+                self.replaceSlot(pbr, "Clearcoat Roughness", 0)
+            else:
+                self.removeLink(pbr, "Coat Weight")
+                self.linkScalar(strtex, pbr, strength, "Coat Weight", texslot=texslot)
+                self.removeLink(pbr, "Coat IOR")
+                self.linkScalar(iortex, pbr, ior, "Coat IOR")
+                self.removeLink(pbr, "Coat Roughness")
+                self.linkScalar(roughtex, pbr, roughness, "Coat Roughness")
+                self.removeLink(pbr, "Coat Tint")
+                self.linkColor(coltex, pbr, color, "Coat Tint")
             if LS.materialMethod == 'EXTENDED_PRINCIPLED':
                 from .cgroup import RayClipGroup
                 clip = self.addGroup(RayClipGroup, "DAZ Ray Clip", col=6)
@@ -547,8 +562,6 @@ class PbrTree(CyclesTree):
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0)
             self.replaceSlot(pbr, "IOR", 1.0)
-            if not BLENDER3:
-                self.replaceSlot(pbr, "Coat IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
 
         else:

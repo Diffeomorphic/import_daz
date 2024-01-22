@@ -1490,7 +1490,7 @@ def loadAltMorphs(rig):
 
 class NodePose:
     def parseAnimations(self, struct, banims, vanims, rig):
-        rigid = rig.DazId.rsplit("#",1)[-1]
+        rigid = rig.DazUrl.rsplit("#",1)[-1]
         active = False
         if "nodes" in struct.keys() and self.affectBones and rig and rig.pose:
             for node in struct["nodes"]:
@@ -1512,7 +1512,7 @@ class NodePose:
 
         meshids = []
         for ob in getMeshChildren(rig):
-            meshid = ob.DazId.rsplit("#",1)[-1]
+            meshid = ob.DazUrl.rsplit("#",1)[-1]
             meshids.append("#%s" % meshid)
         if "modifiers" in struct.keys() and self.affectMorphs:
             for mod in struct["modifiers"]:
