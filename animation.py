@@ -1490,31 +1490,36 @@ def loadAltMorphs(rig):
 
 class NodePose:
     def parseAnimations(self, struct, banims, vanims, rig):
+        rigid = rig.DazId.rsplit("#",1)[-1]
+        active = False
         if "nodes" in struct.keys() and self.affectBones and rig and rig.pose:
             for node in struct["nodes"]:
                 key = node["id"]
-                if key in rig.pose.bones.keys():
-                    pb = rig.pose.bones[key]
-                    trans = pb.DazTranslation
-                    rot = pb.DazRotation
-                else:
-                    trans = Zero
-                    rot = Zero
+                if key == rigid:
+                    active = True
+                    key = "@selection"
+                elif not active:
+                    continue
+                elif node.get("geometries"):
+                    break
+                key = skipName(key)
                 self.addTransform(node, "translation", banims, key, Zero)
                 self.addTransform(node, "rotation", banims, key, Zero)
                 self.addTransform(node, "scale", banims, key, One)
                 #self.addTransform(node, "general_scale", banims, key)
-                print("\nNN", key, banims[key])
         elif self.verbose:
             print("No nodes in this file")
 
+        meshids = []
+        for ob in getMeshChildren(rig):
+            meshid = ob.DazId.rsplit("#",1)[-1]
+            meshids.append("#%s" % meshid)
         if "modifiers" in struct.keys() and self.affectMorphs:
             for mod in struct["modifiers"]:
-                if "id" in mod.keys() and "channel" in mod.keys():
-                    key = unquote(mod["id"])
-                    value = mod["channel"].get("current_value")
-                    if value is not None:
-                        vanims[key] = [[0, value]]
+                key = unquote(mod.get("id", ""))
+                value = mod.get("channel", {}).get("current_value")
+                if mod.get("parent") in meshids and value is not None:
+                    vanims[key] = [[0, value]]
 
 
     def addTransform(self, node, channel, banims, key, default):
@@ -1773,12 +1778,21 @@ class DAZ_OT_ImportNodePose(NodePose, HideOperator, PoseBase, StandardAnimation,
 
     preferredFolders = []
 
+    def storeState(self, context):
+        self.selObjects = getSelectedObjects(context)
+        HideOperator.storeState(self, context)
+
+    def hideLayerColls(self, rig, layer):
+        pass
+
     def invoke(self, context, event):
         self.affectMorphs = True
         return AnimatorBase.invoke(self, context, event)
 
     def run(self, context):
-        StandardAnimation.run(self, context)
+        for ob in getSelectedObjects(context):
+            activateObject(context, ob)
+            StandardAnimation.run(self, context)
 
 #-------------------------------------------------------------
 #   Save current frame
