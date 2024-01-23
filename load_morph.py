@@ -959,6 +959,7 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def buildDrivers(self):
+        from .driver import setFloatProp
         if GS.verbosity >= 3:
             print("Building drivers")
         for output,drivers in self.drivers.items():
@@ -974,7 +975,7 @@ class LoadMorph(DriverUser):
             else:
                 final = finalProp(output)
                 if final not in self.amt.keys():
-                    self.amt[final] = 0.0
+                    setFloatProp(self.amt, final, 0.0, None, None, True)
 
 
     def isDriverType(self, dtype, drivers):

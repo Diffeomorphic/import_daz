@@ -521,11 +521,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Armature",
         description = "Create armatures for imported figures")
 
-    useOrientation : BoolProperty(
-        name = "DAZ Orientation (Experimental)",
-        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
-
-    useOrientation : BoolProperty(
+    useDazOrientation : BoolProperty(
         name = "DAZ Orientation (Experimental)",
         description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
 
@@ -729,7 +725,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
-        box.prop(self, "useOrientation")
+        box.prop(self, "useDazOrientation")
         box.prop(self, "useSubtractRestpose")
         box.prop(self, "useQuaternions")
         box.prop(self, "useLockLoc")

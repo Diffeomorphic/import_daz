@@ -1063,10 +1063,11 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
             mat = mat.to_quaternion().to_matrix().to_4x4()
             mat.col[3] = trans
         if pb.name in TestBones:
-            print("SBT", pb.name, tfm.rot)
+            print("SBT", pb.name, tfm.rot, GS.useDazOrientation, oldStyle)
             print("ROT", getAngle(tfm.getRotMat(pb), pb.DazRotMode))
             print("REST", Vector(pb.DazRestRotation))
             print("BBB", getAngle(mat, pb.rotation_mode))
+            print(mat)
         pb.matrix_basis = mat
         return
 
