@@ -1379,7 +1379,6 @@ class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_AddWinders,
     DAZ_OT_ChangePrefixToSuffix,
     DAZ_OT_ChangeSuffixToPrefix,
     DAZ_OT_ChangeArmature,
