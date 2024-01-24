@@ -516,6 +516,10 @@ class PbrTree(CyclesTree):
         pbr = self.cycles = self.pbr
         color,coltex,roughness,roughtex = self.getRefractionColor()
         ior,iortex,_ = self.getColorTex("getChannelIOR", "NONE", 1.45)
+        strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
+        tint = None
+        if self.getValue(["Share Glossy Inputs"], False):
+            tint = Tint(1.0)
         self.postPBR = True
 
         if self.owner.isThinWall:
@@ -535,7 +539,6 @@ class PbrTree(CyclesTree):
             self.owner.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
-            strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
             if BLENDER3:
                 clearcoat = (ior-1)*10*strength
                 self.removeLink(pbr, "Clearcoat")
@@ -568,20 +571,27 @@ class PbrTree(CyclesTree):
             # principled transmission = 1
             # principled metallic = 0
             # principled specular = 0.5
+            # specular tint = iray glossy color * iray glossy layered weight
             # principled ior = iray refraction index
             # principled roughness = iray glossy roughness
             self.owner.setTransSettings(True, False, color, 0.2)
-            transcolor,transtex,_ = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
-            dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
-            if not (isBlack(transcolor) or isWhite(transcolor) or dist == 0.0):
-                coltex = self.mixTexs('MULTIPLY', coltex, transtex)
-                color = self.compProd(color, transcolor)
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0.5)
             self.removeLink(pbr, "IOR")
             self.linkScalar(iortex, pbr, ior, "IOR")
             self.removeLink(pbr, "Roughness")
             self.setRoughness(pbr, "Roughness", roughness, roughtex, square=False)
+            if not BLENDER3:
+                self.removeLink(pbr, "Specular Tint")
+                tint = self.compProd(color, (strength, strength, strength))
+                tinttex = self.mixTexs('MULTIPLY', coltex, strtex)
+                self.linkColor(tinttex, pbr, tint, "Specular Tint")
+                tint = None
+            transcolor,transtex,_ = self.getColorTex(["Transmitted Color"], "COLOR", BLACK)
+            dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
+            if not (isBlack(transcolor) or isWhite(transcolor) or dist == 0.0):
+                coltex = self.mixTexs('MULTIPLY', coltex, transtex)
+                color = self.compProd(color, transcolor)
 
         self.removeLink(pbr, "Base Color")
         self.linkColor(coltex, pbr, color, "Base Color")
@@ -589,8 +599,8 @@ class PbrTree(CyclesTree):
         if BLENDER3:
             self.removeLink(pbr, "Subsurface Color")
             pbr.inputs["Subsurface Color"].default_value[0:3] = WHITE
-        if self.getValue(["Share Glossy Inputs"], False):
-            self.replaceSlot(pbr, "Specular Tint", Tint(1.0))
+        if tint:
+            self.replaceSlot(pbr, "Specular Tint", tint)
         self.addColumn()
 
     #-------------------------------------------------------------
