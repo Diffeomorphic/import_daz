@@ -343,7 +343,6 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.change_suffix_to_prefix")
-        self.layout.operator("daz.add_winders")
         self.layout.separator()
         self.layout.operator("daz.batch_set_custom_shape")
         self.layout.operator("daz.optimize_pose")
