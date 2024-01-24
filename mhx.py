@@ -1389,10 +1389,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             prop = "MhaArmHinge_%s" % suffix
             setMhx(rig, prop, 0.0)
-            cns = copyTransform(armParent, armSocket, rig)
-            addDriver(cns, "influence", rig, mhxProp(prop), "1-x")
-            cns = copyLocation(armParent, armSocket, rig)
-            addDriver(cns, "influence", rig, mhxProp(prop), "x")
+            copyLocation(armParent, armSocket, rig)
+            copyTransform(armParent, armSocket, rig, prop, "1-x")
 
             ikprop = "MhaArmIk_%s" % suffix
             setMhx(rig, ikprop, 1.0)
@@ -1457,10 +1455,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
             prop = "MhaLegHinge_%s" % suffix
             setMhx(rig, prop, 0.0)
-            cns = copyTransform(legParent, legSocket, rig)
-            addDriver(cns, "influence", rig, mhxProp(prop), "1-x")
-            cns = copyLocation(legParent, legSocket, rig)
-            addDriver(cns, "influence", rig, mhxProp(prop), "x")
+            copyLocation(legParent, legSocket, rig)
+            copyTransform(legParent, legSocket, rig, prop, "1-x")
 
             prop1 = "MhaLegIk_%s" % suffix
             setMhx(rig, prop1, 1.0)
