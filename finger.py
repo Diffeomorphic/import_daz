@@ -136,15 +136,15 @@ def getFingerPrint(ob):
 
 def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
     def getSingleChar(rig, char):
-        if isinstance(char, tuple) and rig:
-            url = rig.DazUrl.rsplit("#",1)[-1]
-            if url.startswith("Genesis"):
-                if "Female" in url:
-                    return char[0]
-                elif "Male" in url:
-                    return char[1]
-            else:
-                return char[0]
+        if isinstance(char, tuple):
+            if rig:
+                url = rig.DazUrl.rsplit("#",1)[-1]
+                if url.startswith("Genesis"):
+                    if "Female" in url:
+                        return char[0]
+                    elif "Male" in url:
+                        return char[1]
+            return char[0]
         return char
 
     meshes = []
