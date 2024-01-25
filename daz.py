@@ -280,10 +280,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     scale : FloatProperty(
         name = "Unit Scale",
-        description = "Scale used to convert between DAZ and Blender units. Default unit meters",
+        description = "Scale used to convert between DAZ and Blender units.\nDefault unit meters",
         default = 0.01,
-        precision = 3,
-        min = 0.001, max = 100.0)
+        precision = 4,
+        min = 1e-6)
 
     verbosity : IntProperty(
         name = "Verbosity",

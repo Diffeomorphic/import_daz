@@ -99,7 +99,7 @@ def importModules():
                     "layers", "fix", "modifier", "load_morph", "morphing", "animation", "simple", "category", "dbzfile", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
-                    "matedit", "tables", "proxy", "hide", "store",
+                    "matedit", "scale", "tables", "proxy", "hide", "store",
                     "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
                     "udim", "hdmorphs", "preset", "moho", "facecap", "scan", "api",
                     "runtime.morph_armature"]
@@ -124,7 +124,7 @@ regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "fix", "animation", "morphing", "category", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
-            "matedit", "proxy", "rigify", "merge", "hide", "store",
+            "matedit", "scale", "proxy", "rigify", "merge", "hide", "store",
             "mhx", "hair", "transfer", "dforce",
             "hdmorphs", "facecap", "preset", "moho", "udim", "scan"]
 

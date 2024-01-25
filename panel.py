@@ -397,6 +397,9 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         ob = context.object
         scn = context.scene
         layout = self.layout
+        layout.operator("daz.set_units")
+        layout.operator("daz.scale_objects")
+        layout.separator()
         layout.operator("daz.save_settings_file")
         layout.operator("daz.load_settings_file")
         layout.operator("daz.add_content_dirs")

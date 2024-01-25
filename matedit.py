@@ -1263,88 +1263,6 @@ def isShellNode(node):
             hasSlots(node.outputs, ShellOutputs))
 
 #-------------------------------------------------------------
-#   Scale materials
-#-------------------------------------------------------------
-
-class MaterialScaler:
-    unit : FloatProperty(
-        name = "New Unit Scale",
-        description = "Scale used to convert between DAZ and Blender units. Default unit meters",
-        default = 0.01,
-        precision = 3,
-        min = 0.001, max = 100.0)
-
-    def draw(self, context):
-        self.layout.prop(self, "unit")
-        self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
-
-    def invoke(self, context, event):
-        if context.object:
-            self.unit = context.object.DazScale
-        return DazPropsOperator.invoke(self, context, event)
-
-    def scaleMaterials(self, ob):
-        for mat in ob.data.materials:
-            if mat:
-                if mat.DazScale == 0:
-                    mat.DazScale = ob.DazScale
-                scale = self.unit / mat.DazScale
-                for node in mat.node_tree.nodes:
-                    if node.type == 'GROUP':
-                        self.fixNode(node, node.node_tree.name, scale)
-                    else:
-                        self.fixNode(node, node.type, scale)
-                mat.DazScale = self.unit
-                if self.auto:
-                    mat.keyframe_insert("DazScale")
-
-    if BLENDER3:
-        NodeScale = {
-            "BUMP" : ["Distance"],
-            "BSDF_PRINCIPLED" : ["Subsurface Radius"],
-            "DAZ Translucent" : ["Radius"],
-            "DAZ Subsurface" : ["Radius"],
-            "DAZ Top Coat" : ["Distance"],
-            "DAZ Displacement" : ["Max", "Min"],
-        }
-    else:
-        NodeScale = {
-            "BUMP" : ["Distance"],
-            "BSDF_PRINCIPLED" : ["Subsurface Scale"],
-            "DAZ Translucent" : ["Radius"],
-            "DAZ Subsurface" : ["Scale"],
-            "DAZ Top Coat" : ["Distance"],
-            "DAZ Displacement" : ["Max", "Min"],
-        }
-
-
-
-    def fixNode(self, node, nodetype, scale):
-        if nodetype in self.NodeScale.keys():
-            for sname in self.NodeScale[nodetype]:
-                socket = node.inputs.get(sname)
-                if socket is None:
-                    continue
-                elif isinstance(socket.default_value, float):
-                    socket.default_value *= scale
-                else:
-                    socket.default_value = scale*Vector(socket.default_value)
-                if self.auto:
-                    socket.keyframe_insert("default_value")
-
-
-class DAZ_OT_ScaleMaterials(MaterialScaler, DazPropsOperator, IsMesh):
-    bl_idname = "daz.scale_materials"
-    bl_label = "Scale Materials"
-    bl_description = "Scale material properties with dimension of length\n(bump distance, subsurface radius, etc.)"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        self.auto = context.scene.tool_settings.use_keyframe_insert_auto
-        for ob in getSelectedMeshes(context):
-            self.scaleMaterials(ob)
-
-#-------------------------------------------------------------
 #   Make Material set
 #-------------------------------------------------------------
 
@@ -1650,7 +1568,6 @@ classes = [
     DAZ_OT_ToggleShellInfluence,
     DAZ_OT_SetAllFloats,
     DAZ_OT_ClearAllFloats,
-    DAZ_OT_ScaleMaterials,
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,
     DAZ_OT_FindMissingTextures,
