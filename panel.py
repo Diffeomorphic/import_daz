@@ -372,6 +372,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.transfer_animation_to_shapekeys")
         self.layout.operator("daz.transfer_mesh_to_shape")
         self.layout.operator("daz.save_morph_preset")
+        self.layout.operator("daz.save_figure_preset")
         self.layout.prop(scn, "DazMorphPath")
         self.layout.separator()
         self.layout.operator("daz.add_shapekey_drivers")

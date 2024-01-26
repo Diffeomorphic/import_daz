@@ -749,6 +749,10 @@ def d2bs(v):
         return d2b00s(v)
 
 
+def b2d(v):
+    return Vector((v[0], v[2], -v[1]))/GS.scale
+
+
 D2R = "%.6f*" % (math.pi/180)
 D = math.pi/180
 

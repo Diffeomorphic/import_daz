@@ -379,10 +379,6 @@ def fitToFile(filepath, nodes):
 #   Import DBZ as morph
 #----------------------------------------------------------
 
-def b2d(v):
-    return Vector((v[0], v[2], -v[1]))/GS.scale
-
-
 class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMaker, IsMeshArmature):
     bl_idname = "daz.import_dbz"
     bl_label = "Import DBZ Morphs"

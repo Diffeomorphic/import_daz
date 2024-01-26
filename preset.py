@@ -912,27 +912,14 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 #   Save morph presets
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
-    bl_idname = "daz.save_morph_preset"
-    bl_label = "Save Morph Preset"
-    bl_description = "Save selected shapekeys as a morph preset"
-
+class MorphPreset(Selector):
     directory: StringProperty(
         name = "Directory",
         description = "Directory")
 
-    presentation: EnumProperty(
-        items = [("Modifier/Pose", "Pose Control", "Pose control"),
-                 ("Modifier/Shape", "Shape", "Shape")],
-        name = "Presentation",
-        description = "Presentation",
-        default = "Modifier/Pose")
-
     def draw(self, context):
         self.layout.prop(self, "directory")
         Selector.draw(self, context)
-        #DazExporter.draw(self, context)
-        #self.layout.prop(self, "presentation")
 
     def getKeys(self, rig, ob):
         keys = []
@@ -953,17 +940,20 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
         from .load_json import saveJson
         from .asset import normalizeUrl
         ob = context.object
-        rig = ob.parent
+        rig = None
+        rigs = getSelectedArmatures(context)
+        if rigs:
+            rig = rigs[0]
         parent = None
-        if rig:
-            parent = normalizeUrl(rig.DazUrl)
+        if ob.parent:
+            parent = normalizeUrl(ob.parent.DazUrl)
         for item in self.getSelectedItems():
             filename = ("%s.duf" % item.name).replace(" ", "_")
             filepath = os.path.join(self.directory, filename)
             struct,filepath = self.makeDazStruct("modifier", filepath)
             modlib = struct["modifier_library"] = []
             skey = ob.data.shape_keys.key_blocks[item.name]
-            mstruct = self.addLibModifier(skey, ob, parent)
+            mstruct = self.addLibModifier(skey, ob, rig, parent)
             modlib.append(mstruct)
             modlist = []
             struct["scene"] = {"modifiers" : modlist}
@@ -974,7 +964,7 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
             print("Morph preset %s saved" % filepath)
 
 
-    def addLibModifier(self, skey, ob, parent):
+    def addLibModifier(self, skey, ob, rig, parent):
         from collections import OrderedDict
         mname = skey.name.replace(" ", "_")
         struct = OrderedDict()
@@ -1002,22 +992,88 @@ class DAZ_OT_SaveMorphPreset(DazOperator, DazExporter, Selector, IsMesh):
             "display_as_percent" : True,
             "step_size" : 0.01
         }
-        if self.presentation == "Modifier/Pose":
-            struct["group"] = "/Pose Controls"
-        elif self.presentation == "Modifier/Shape":
-            struct["region"] = "Actor"
-            struct["group"] = "/Full Body/People"
+        self.addGroup(struct)
+        self.addErcMorphs(ob, rig, parent, mname, struct)
         nverts = len(ob.data.vertices)
         mstruct = struct["morph"] = OrderedDict()
         mstruct["vertex_count"] = nverts
         dstruct = mstruct["deltas"] = OrderedDict()
-        factor = 1/ob.DazScale
+        factor = 1/GS.scale
         eps = 0.001 # 0.01 mm
         diffs = [factor*(skey.data[vn].co - v.co) for vn,v in enumerate(ob.data.vertices)]
         deltas = [[vn, delta[0], delta[2], -delta[1]] for vn,delta in enumerate(diffs) if delta.length > eps]
         dstruct["count"] = len(deltas)
         dstruct["values"] = deltas
         return struct
+
+
+class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, DazExporter, IsMesh):
+    bl_idname = "daz.save_morph_preset"
+    bl_label = "Save Morph Preset"
+    bl_description = "Save selected shapekeys as a morph preset"
+
+    presentation = "Modifier/Pose"
+
+    def addGroup(self, struct):
+        struct["group"] = "/Pose Controls"
+
+    def addErcMorphs(self, ob, rig, parent, mname, struct):
+        pass
+
+
+class DAZ_OT_SaveFigurePreset(DazOperator, MorphPreset, DazExporter, IsMesh):
+    bl_idname = "daz.save_figure_preset"
+    bl_label = "Save Figure Preset"
+    bl_description = "Save selected shapekeys as a figure preset.\nAdd formulas for selected rig"
+
+    presentation = "Modifier/Shape"
+
+    def addGroup(self, struct):
+        struct["region"] = "Actor"
+        struct["group"] = "/Full Body/People"
+
+
+    def addErcMorphs(self, ob, rig, parent, mname, struct):
+        if rig and ob.parent and ob.parent.type == 'ARMATURE':
+            formulas = self.addFormulas(ob, rig, parent, mname)
+            if formulas:
+                struct["formulas"] = formulas
+
+
+    def addFormulas(self, ob, rig, parent, mname):
+        def addFormula(bname, path, char, channel, comp, mname, offs):
+            if abs(offs) < 1e-3:
+                return None
+            return {
+                "output" : "%s:%s#%s?%s/%s" % (bname, path, bname, channel, comp),
+                "operations" : [
+                    { "op" : "push", "url" : "%s:#%s?value" % (char, mname) },
+                    { "op" : "push", "val" : offs },
+                    { "op" : "mult" }
+                ]
+            }
+
+        rig0 = ob.parent
+        if rig == rig0:
+            print("Same armature")
+            return None
+        path,char = parent.split("#")
+        formulas = []
+        for bone0 in rig0.data.bones:
+            bone = rig.data.bones.get(bone0.name)
+            if bone is None:
+                continue
+            offset = b2d(bone.head_local - bone0.head_local)
+            for n,comp in enumerate(["x", "y", "z"]):
+                formula = addFormula(bone.name, path, char, "center_point", comp, mname, offset[n])
+                if formula:
+                    formulas.append(formula)
+            offset = b2d(bone.tail_local - bone0.tail_local)
+            for n,comp in enumerate(["x", "y", "z"]):
+                formula = addFormula(bone.name, path, char, "end_point", comp, mname, offset[n])
+                if formula:
+                    formulas.append(formula)
+        return formulas
 
 #-------------------------------------------------------------
 #   Bake deform rig
@@ -1211,6 +1267,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
                     if final in rig.data.keys():
                         addDriver(skeys, 'key_blocks["%s"].value' % skey.name, rig.data, propRef(final), "x")
 
+
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
@@ -1218,6 +1275,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPreset,
+    DAZ_OT_SaveFigurePreset,
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,
