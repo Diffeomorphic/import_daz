@@ -912,66 +912,49 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 #   Save morph presets
 #-------------------------------------------------------------
 
-class MorphPreset(Selector):
+class MorphPreset:
     directory: StringProperty(
         name = "Directory",
         description = "Directory")
 
-    def draw(self, context):
+    def drawFiles(self, context):
+        scn = context.scene
+        self.layout.prop(scn, "DazPreferredRoot")
         self.layout.prop(self, "directory")
-        Selector.draw(self, context)
 
-    def getKeys(self, rig, ob):
-        keys = []
-        for skey in ob.data.shape_keys.key_blocks[1:]:
-            keys.append((skey.name, skey.name, "All"))
-        return keys
+    def getDefaultDirectory(self, ob):
+        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
+        self.directory = "%s/Morphs/%s" % (folder, self.author)
 
-    def invoke(self, context, event):
-        ob = context.object
-        if ob.data.shape_keys is None:
-            msg = "Object %s has no shapekeys" % ob.name
-            invokeErrorMessage(msg)
-            return {'CANCELLED'}
-        self.directory = context.scene.DazMorphPath
-        return Selector.invoke(self, context, event)
 
-    def run(self, context):
+    def saveFile(self, context, filename, ob, skey, mname):
         from .load_json import saveJson
         from .asset import normalizeUrl
-        ob = context.object
-        rig = None
-        rigs = getSelectedArmatures(context)
-        if rigs:
-            rig = rigs[0]
-        parent = None
-        if ob.parent:
-            parent = normalizeUrl(ob.parent.DazUrl)
-        for item in self.getSelectedItems():
-            filename = ("%s.duf" % item.name).replace(" ", "_")
-            filepath = os.path.join(self.directory, filename)
-            struct,filepath = self.makeDazStruct("modifier", filepath)
-            modlib = struct["modifier_library"] = []
-            skey = ob.data.shape_keys.key_blocks[item.name]
-            mstruct = self.addLibModifier(skey, ob, rig, parent)
-            modlib.append(mstruct)
-            modlist = []
-            struct["scene"] = {"modifiers" : modlist}
-            mname = item.name.replace(" ", "_")
-            mstruct = {"id" : "%s-1" % mname, "url" : normalizeUrl(mname)}
-            modlist.append(mstruct)
-            saveJson(struct, filepath, binary=self.useCompress)
-            print("Morph preset %s saved" % filepath)
+        folder = "%s/%s" % (context.scene.DazPreferredRoot, self.directory)
+        filename = filename.replace(" ", "_")
+        filepath = "%s/%s" % (folder, filename)
+        filepath = filepath.replace("//", "/")
+        struct,filepath = self.makeDazStruct("modifier", filepath)
+        modlib = struct["modifier_library"] = []
+        mstruct = self.addLibModifier(ob, skey)
+        modlib.append(mstruct)
+        modlist = []
+        struct["scene"] = {"modifiers" : modlist}
+        mstruct = {"id" : "%s-1" % mname, "url" : normalizeUrl(mname)}
+        modlist.append(mstruct)
+        saveJson(struct, filepath, binary=self.useCompress, strict=False)
+        print("Morph preset %s saved" % filepath)
 
 
-    def addLibModifier(self, skey, ob, rig, parent):
+    def addLibModifier(self, ob, skey):
         from collections import OrderedDict
+        from .asset import normalizeUrl
         mname = skey.name.replace(" ", "_")
         struct = OrderedDict()
         struct["id"] = mname
         struct["name"] = mname
-        if parent:
-            struct["parent"] = parent
+        if ob.parent:
+            struct["parent"] = normalizeUrl(ob.parent.DazUrl)
         struct["presentation"] = {
             "type" : self.presentation,
             "label" : skey.name,
@@ -993,54 +976,126 @@ class MorphPreset(Selector):
             "step_size" : 0.01
         }
         self.addGroup(struct)
-        self.addErcMorphs(ob, rig, parent, mname, struct)
+        self.addFormulas(ob, skey, mname, struct)
         nverts = len(ob.data.vertices)
         mstruct = struct["morph"] = OrderedDict()
         mstruct["vertex_count"] = nverts
         dstruct = mstruct["deltas"] = OrderedDict()
-        factor = 1/GS.scale
-        eps = 0.001 # 0.01 mm
-        diffs = [factor*(skey.data[vn].co - v.co) for vn,v in enumerate(ob.data.vertices)]
-        deltas = [[vn, delta[0], delta[2], -delta[1]] for vn,delta in enumerate(diffs) if delta.length > eps]
+        deltas = self.getDeltas(ob, skey)
         dstruct["count"] = len(deltas)
         dstruct["values"] = deltas
         return struct
 
+#-------------------------------------------------------------
+#   Save morph preset
+#-------------------------------------------------------------
 
-class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, DazExporter, IsMesh):
+class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, Selector, DazExporter, IsMesh):
     bl_idname = "daz.save_morph_preset"
     bl_label = "Save Morph Preset"
     bl_description = "Save selected shapekeys as a morph preset"
 
     presentation = "Modifier/Pose"
 
+    def draw(self, context):
+        self.drawFiles(context)
+        Selector.draw(self, context)
+
     def addGroup(self, struct):
         struct["group"] = "/Pose Controls"
 
-    def addErcMorphs(self, ob, rig, parent, mname, struct):
+    def addFormulas(self, ob, skey, mname, struct):
         pass
 
+    def getKeys(self, rig, ob):
+        keys = []
+        for skey in ob.data.shape_keys.key_blocks[1:]:
+            keys.append((skey.name, skey.name, "All"))
+        return keys
 
-class DAZ_OT_SaveFigurePreset(DazOperator, MorphPreset, DazExporter, IsMesh):
+    def invoke(self, context, event):
+        ob = context.object
+        if ob.data.shape_keys is None:
+            msg = "Object %s has no shapekeys" % ob.name
+            invokeErrorMessage(msg)
+            return {'CANCELLED'}
+        self.getDefaultDirectory(ob)
+        return Selector.invoke(self, context, event)
+
+    def run(self, context):
+        ob = context.object
+        for item in self.getSelectedItems():
+            filename = "%s.duf" % item.name
+            skey = ob.data.shape_keys.key_blocks[item.name]
+            mname = item.name.replace(" ", "_")
+            self.saveFile(context, filename, ob, skey, mname)
+
+    def getDeltas(self, ob, skey):
+        factor = 1/GS.scale
+        eps = 0.001 # 0.01 mm
+        diffs = [factor*(skey.data[vn].co - v.co) for vn,v in enumerate(ob.data.vertices)]
+        return [[vn, delta[0], delta[2], -delta[1]] for vn,delta in enumerate(diffs) if delta.length > eps]
+
+#-------------------------------------------------------------
+#   Save figure preset
+#-------------------------------------------------------------
+
+class DAZ_OT_SaveFigurePreset(DazPropsOperator, MorphPreset, DazExporter, IsMesh):
     bl_idname = "daz.save_figure_preset"
     bl_label = "Save Figure Preset"
     bl_description = "Save selected shapekeys as a figure preset.\nAdd formulas for selected rig"
 
     presentation = "Modifier/Shape"
 
+    filename: StringProperty(
+        name = "Filename",
+        description = "Filename")
+
+    def draw(self, context):
+        self.drawFiles(context)
+        self.layout.prop(self, "filename")
+        DazExporter.draw(self, context)
+
+    def invoke(self, context, event):
+        ob = context.object
+        self.getDefaultDirectory(ob)
+        self.filename = "%s.dsf" % ob.name.lower()
+        return DazPropsOperator.invoke(self, context, event)
+
     def addGroup(self, struct):
         struct["region"] = "Actor"
         struct["group"] = "/Full Body/People"
 
 
-    def addErcMorphs(self, ob, rig, parent, mname, struct):
-        if rig and ob.parent and ob.parent.type == 'ARMATURE':
-            formulas = self.addFormulas(ob, rig, parent, mname)
-            if formulas:
-                struct["formulas"] = formulas
+    def run(self, context):
+        trg = context.object
+        ob = None
+        for ob1 in getSelectedMeshes(context):
+            if ob1 != trg:
+                ob = ob1
+                break
+        if ob is None:
+            raise DazError("Two meshes must be selected")
+        self.saveFile(context, self.filename, ob, trg, trg.name)
 
 
-    def addFormulas(self, ob, rig, parent, mname):
+    def getDeltas(self, ob, trg):
+        factor = 1/GS.scale
+        eps = 0.001 # 0.01 mm
+        diffs = [factor*(tv.co - v.co) for tv,v in zip(trg.data.vertices, ob.data.vertices)]
+        return [[vn, delta[0], delta[2], -delta[1]] for vn,delta in enumerate(diffs) if delta.length > eps]
+
+
+    def addFormulas(self, ob, trg, mname, struct):
+        rig = trg.parent
+        rig0 = ob.parent
+        if rig is None or rig0 is None:
+            print("Lacking rig")
+            return
+        elif rig == rig0:
+            print("Same armature")
+            return
+
         def addFormula(bname, path, char, channel, comp, mname, offs):
             if abs(offs) < 1e-3:
                 return None
@@ -1053,11 +1108,7 @@ class DAZ_OT_SaveFigurePreset(DazOperator, MorphPreset, DazExporter, IsMesh):
                 ]
             }
 
-        rig0 = ob.parent
-        if rig == rig0:
-            print("Same armature")
-            return None
-        path,char = parent.split("#")
+        path,char = rig.DazUrl.split("#")
         formulas = []
         for bone0 in rig0.data.bones:
             bone = rig.data.bones.get(bone0.name)
@@ -1073,7 +1124,8 @@ class DAZ_OT_SaveFigurePreset(DazOperator, MorphPreset, DazExporter, IsMesh):
                 formula = addFormula(bone.name, path, char, "end_point", comp, mname, offset[n])
                 if formula:
                     formulas.append(formula)
-        return formulas
+        if formulas:
+            struct["formulas"] = formulas
 
 #-------------------------------------------------------------
 #   Bake deform rig

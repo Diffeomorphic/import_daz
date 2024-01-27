@@ -500,7 +500,7 @@ class DazExporter:
     author : StringProperty(
         name = "Author",
         description = "Author info in preset file",
-        default = "")
+        default = "Myself")
 
     email : StringProperty(
         name = "Email",
