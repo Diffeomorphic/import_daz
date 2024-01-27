@@ -43,17 +43,36 @@ from .bone_data import BD
 #----------------------------------------------------------
 
 class Preset:
+    useDazDirectory : BoolProperty(
+        name = "DAZ Directory",
+        description = "Save the file where it can be found by DAZ Studio",
+        default = False)
+
     reldir: StringProperty(
         name = "Directory",
         description = "Directory relative to root path")
 
+    def draw(self, context):
+        self.layout.prop(self, "useDazDirectory")
+        if self.useDazDirectory:
+            self.drawFiles(context)
+
     def drawFiles(self, context):
-        scn = context.scene
-        self.layout.prop(scn, "DazPreferredRoot")
+        self.layout.prop(context.scene, "DazPreferredRoot")
         self.layout.prop(self, "reldir")
 
     def getFullDirectory(self, scn):
         return canonicalPath("%s/%s" % (scn.DazPreferredRoot, self.reldir))
+
+    def getFilepath(self, context):
+        if self.useDazDirectory:
+            folder = self.getFullDirectory(context.scene)
+            filename = os.path.basename(self.filepath)
+            if len(os.path.splitext(filename)) == 1:
+                filename = "%s.%s" % (filename, self.extension)
+            return "%s/%s" % (folder, filename)
+        else:
+            return self.filepath
 
 #----------------------------------------------------------
 #   Framer class
@@ -941,7 +960,9 @@ class MorphPreset(Preset):
         modlib.append(mstruct)
         modlist = []
         struct["scene"] = {"modifiers" : modlist}
-        mstruct = {"id" : "%s-1" % mname, "url" : normalizeUrl(mname)}
+        mstruct = {
+            "id" : "%s-1" % mname,
+            "url" : "#%s" % normalizeUrl(mname)}
         modlist.append(mstruct)
         saveJson(struct, filepath, binary=self.useCompress, strict=False)
         print("Morph preset %s saved" % filepath)
@@ -1002,21 +1023,26 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, I
         self.drawFiles(context)
         Selector.draw(self, context)
 
+
     def getDefaultDirectory(self, ob):
         folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
         self.reldir = "%s/Morphs/%s" % (folder, self.author)
 
+
     def addGroup(self, struct):
         struct["group"] = "/Pose Controls"
 
+
     def addFormulas(self, ob, skey, mname, struct):
         pass
+
 
     def getKeys(self, rig, ob):
         keys = []
         for skey in ob.data.shape_keys.key_blocks[1:]:
             keys.append((skey.name, skey.name, "All"))
         return keys
+
 
     def invoke(self, context, event):
         self.fromGS()
@@ -1028,6 +1054,7 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, I
         self.getDefaultDirectory(ob)
         return Selector.invoke(self, context, event)
 
+
     def run(self, context):
         self.toGS()
         ob = context.object
@@ -1037,6 +1064,7 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, I
             skey = ob.data.shape_keys.key_blocks[item.name]
             mname = bpy.path.clean_name(item.name)
             self.saveFile(context, filepath, ob, skey, mname)
+
 
     def getDeltas(self, ob, skey):
         factor = 1/GS.scale
@@ -1048,35 +1076,32 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, I
 #   Save figure preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveFigurePreset(DazOperator, DufFile, SingleFile, MorphPreset, DazExporter, IsMesh):
-    bl_idname = "daz.save_figure_preset"
-    bl_label = "Save Figure Preset"
-    bl_description = "Save selected shapekeys as a figure preset.\nAdd formulas for selected rig"
+class DAZ_OT_SaveDazFigure(DazOperator, DufFile, SingleFile, MorphPreset, DazExporter, IsMesh):
+    bl_idname = "daz.save_daz_figure"
+    bl_label = "Save DAZ Figure"
+    bl_description = "Save active mesh as a DAZ figure relative to the other mesh"
 
     presentation = "Modifier/Shape"
-
-    useDazDirectory : BoolProperty(
-        name = "DAZ Directory",
-        description = "Save the file where it can be found by DAZ Studio",
-        default = False)
+    extension = ".dsf"
 
     def draw(self, context):
-        self.layout.prop(self, "useDazDirectory")
-        if self.useDazDirectory:
-            self.drawFiles(context)
+        Preset.draw(self, context)
         DazExporter.draw(self, context)
+
 
     def invoke(self, context, event):
         ob = context.object
         self.fromGS()
         self.getDefaultDirectory(ob)
         folder = self.getFullDirectory(context.scene)
-        self.setFilepath(ob.name, folder, "dsf")
+        self.setFilepath(ob.name, folder)
         return SingleFile.invoke(self, context, event)
+
 
     def getDefaultDirectory(self, ob):
         folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
         self.reldir = "%s/Morphs/%s" % (folder, self.author)
+
 
     def addGroup(self, struct):
         struct["region"] = "Actor"
@@ -1093,11 +1118,7 @@ class DAZ_OT_SaveFigurePreset(DazOperator, DufFile, SingleFile, MorphPreset, Daz
                 break
         if ob is None:
             raise DazError("Two meshes must be selected")
-        if self.useDazDirectory:
-            folder = self.getFullDirectory(context.scene)
-            filepath = "%s/%s.dsf" % (folder, trg.name.lower())
-        else:
-            filepath = self.filepath
+        filepath = self.getFilepath(context)
         self.saveFile(context, filepath, ob, trg, trg.name)
 
 
@@ -1131,6 +1152,8 @@ class DAZ_OT_SaveFigurePreset(DazOperator, DufFile, SingleFile, MorphPreset, Daz
             }
 
         path,char = rig.DazUrl.split("#")
+        path = quote(path)
+        char = quote(char)
         formulas = []
         for bone0 in rig0.data.bones:
             bone = rig.data.bones.get(bone0.name)
@@ -1349,7 +1372,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPresets,
-    DAZ_OT_SaveFigurePreset,
+    DAZ_OT_SaveDazFigure,
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,

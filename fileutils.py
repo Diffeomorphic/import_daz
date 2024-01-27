@@ -366,6 +366,8 @@ def getExistingFilePath(filepath, ext):
 
 
 class SingleFile(ImportHelper):
+    extension = ".duf"
+
     filepath : StringProperty(
         name="File Path",
         description="Filepath used for importing the file",
@@ -376,9 +378,10 @@ class SingleFile(ImportHelper):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-    def setFilepath(self, filename, folder=None, ext=".duf"):
+    def setFilepath(self, filename, folder=None):
         if not GS.rememberLastFolder:
-            filename = bpy.path.clean_name("%s.%s" % (filename, ext))
+            words = os.path.splitext(filename)
+            filename = "%s%s" % (bpy.path.clean_name(words[0]), self.extension)
             if folder and os.path.exists(folder):
                 self.filepath = "%s/%s" % (folder, filename)
             else:
@@ -505,6 +508,8 @@ def openSettingsFile(filepath):
 #-------------------------------------------------------------
 
 class DazExporter:
+    extension = ".duf"
+
     author : StringProperty(
         name = "Author",
         description = "Author info in preset file",
@@ -546,7 +551,7 @@ class DazExporter:
         from .asset import normalizeUrl
         from datetime import datetime
         file,ext = os.path.splitext(filepath)
-        filepath = normalizePath("%s.duf" % file)
+        filepath = normalizePath("%s%s" % (file, self.extension))
         struct = OrderedDict()
         struct["file_version"] = "0.6.0.0"
         astruct = {}

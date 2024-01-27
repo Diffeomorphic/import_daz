@@ -316,8 +316,6 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.apply_subsurf")
         self.layout.operator("daz.copy_modifiers")
         self.layout.operator("daz.find_seams")
-        self.layout.operator("daz.save_figure_preset")
-
 
 
 class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -374,6 +372,7 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.transfer_animation_to_shapekeys")
         self.layout.operator("daz.transfer_mesh_to_shape")
         self.layout.operator("daz.save_morph_presets")
+        self.layout.operator("daz.save_daz_figure")
         self.layout.separator()
         self.layout.operator("daz.add_shapekey_drivers")
         self.layout.operator("daz.remove_shapekey_drivers")
