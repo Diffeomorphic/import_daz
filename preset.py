@@ -33,7 +33,9 @@ from math import pi
 from collections import OrderedDict
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, DufFile, DazExporter
+from .fileutils import SingleFile, DufFile
+from .asset import normalizeRef, normalizeUrl
+from .load_json import saveJson
 from .selector import Selector
 from .animation import HideOperator, FrameConverter
 from .bone_data import BD
@@ -52,14 +54,42 @@ class Preset:
         name = "Directory",
         description = "Directory relative to root path")
 
+    author : StringProperty(
+        name = "Author",
+        description = "Author info in preset file",
+        default = "Myself")
+
+    email : StringProperty(
+        name = "Email",
+        description = "Email info in preset file",
+        default = "")
+
+    website : StringProperty(
+        name = "Website",
+        description = "Website info in preset file",
+        default = "")
+
+    useCompress: BoolProperty(
+        name = "Compress File",
+        description = "Gzip the output file",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useDazDirectory")
         if self.useDazDirectory:
             self.drawFiles(context)
+        self.layout.prop(self, "author")
+        self.layout.prop(self, "email")
+        self.layout.prop(self, "website")
+        self.layout.prop(self, "useCompress")
 
     def drawFiles(self, context):
         self.layout.prop(context.scene, "DazPreferredRoot")
         self.layout.prop(self, "reldir")
+
+    def getDefaultDirectory(self, ob):
+        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
+        self.reldir = "%s/%s/%s" % (folder, self.subdir, self.author)
 
     def getFullDirectory(self, scn):
         return canonicalPath("%s/%s" % (scn.DazPreferredRoot, self.reldir))
@@ -73,6 +103,41 @@ class Preset:
             return "%s/%s" % (folder, filename)
         else:
             return self.filepath
+
+    def setDefaultFilepath(self, ob, scn, fname):
+        self.fromGS()
+        self.getDefaultDirectory(ob)
+        folder = self.getFullDirectory(scn)
+        self.setFilepath(fname, folder)
+
+    def fromGS(self):
+        self.author = GS.author
+        self.email = GS.email
+        self.website = GS.website
+
+    def toGS(self):
+        GS.author = self.author
+        GS.email = self.email
+        GS.website = self.website
+
+    def makeDazStruct(self, type, filepath):
+        from collections import OrderedDict
+        from datetime import datetime
+        file,ext = os.path.splitext(filepath)
+        filepath = normalizePath("%s%s" % (file, self.extension))
+        struct = OrderedDict()
+        struct["file_version"] = "0.6.0.0"
+        astruct = {}
+        astruct["id"] = normalizeUrl(filepath)
+        astruct["type"] = type
+        astruct["contributor"] = {
+            "author" : self.author,
+            "email" : self.email,
+            "website" : self.website,
+        }
+        astruct["modified"] = str(datetime.now())
+        struct["asset_info"] = astruct
+        return struct, filepath
 
 #----------------------------------------------------------
 #   Framer class
@@ -156,7 +221,7 @@ class FakeCurve:
         return self.value
 
 
-class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, FrameConverter, Framer, IsObject):
+class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConverter, Framer, IsObject):
     bl_idname = "daz.save_pose_preset"
     bl_label = "Save Pose Preset"
     bl_description = "Save the active action as a pose preset,\nto be used in DAZ Studio"
@@ -214,7 +279,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
         default = 30)
 
     def draw(self, context):
-        DazExporter.draw(self, context)
+        Preset.draw(self, context)
         self.layout.prop(self, "type")
         self.useBones = self.type in ['POSE', 'POSE_MORPH', 'HIERARCHICAL']
         self.useHierarchical = self.type == 'HIERARCHICAL'
@@ -717,21 +782,20 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def saveHierarchicalPreset(self, rig):
-        from .load_json import saveJson
         struct, filepath = self.makeDazStruct("preset_hierarchical_pose", self.filepath)
         struct["scene"] = {}
         struct["scene"]["nodes"] = self.getNodes(rig)
         struct["scene"]["animations"] = self.getAnimations(rig)
-        saveJson(struct, filepath, binary=self.useCompress)
+        saveJson(struct, filepath, binary=self.useCompress, strict=False)
         print("Pose preset %s saved" % filepath)
 
 
     def savePosePreset(self, rig):
-        from .load_json import saveJson
+
         struct, filepath = self.makeDazStruct("preset_pose", self.filepath)
         struct["scene"] = {}
         struct["scene"]["animations"] = self.getAnimations(rig)
-        saveJson(struct, filepath, binary=self.useCompress)
+        saveJson(struct, filepath, binary=self.useCompress, strict=False)
         print("Pose preset %s saved" % filepath)
 
 
@@ -800,7 +864,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def getMorph(self, prop, fcu, anims):
-        from .asset import normalizeRef
         if prop in self.alias.keys():
             prop = self.alias[prop]
         anim = {}
@@ -952,8 +1015,6 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 class MorphPreset(Preset):
     def saveFile(self, context, filepath, ob, skey, mname):
-        from .load_json import saveJson
-        from .asset import normalizeUrl
         struct,filepath = self.makeDazStruct("modifier", filepath)
         modlib = struct["modifier_library"] = []
         mstruct = self.addLibModifier(ob, skey)
@@ -970,7 +1031,6 @@ class MorphPreset(Preset):
 
     def addLibModifier(self, ob, skey):
         from collections import OrderedDict
-        from .asset import normalizeUrl
         mname = bpy.path.clean_name(skey.name)
         struct = OrderedDict()
         struct["id"] = mname
@@ -1012,21 +1072,17 @@ class MorphPreset(Preset):
 #   Save morph preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, IsMesh):
+class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
     bl_idname = "daz.save_morph_presets"
     bl_label = "Save Morph Presets"
     bl_description = "Save selected shapekeys as a morph preset"
 
     presentation = "Modifier/Pose"
+    subdir = "Morphs"
 
     def draw(self, context):
         self.drawFiles(context)
         Selector.draw(self, context)
-
-
-    def getDefaultDirectory(self, ob):
-        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
-        self.reldir = "%s/Morphs/%s" % (folder, self.author)
 
 
     def addGroup(self, struct):
@@ -1076,31 +1132,19 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, I
 #   Save figure preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveDazFigure(DazOperator, DufFile, SingleFile, MorphPreset, DazExporter, IsMesh):
+class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMesh):
     bl_idname = "daz.save_daz_figure"
     bl_label = "Save DAZ Figure"
     bl_description = "Save active mesh as a DAZ figure relative to the other mesh"
 
     presentation = "Modifier/Shape"
+    subdir = "Morphs"
     extension = ".dsf"
-
-    def draw(self, context):
-        Preset.draw(self, context)
-        DazExporter.draw(self, context)
-
 
     def invoke(self, context, event):
         ob = context.object
-        self.fromGS()
-        self.getDefaultDirectory(ob)
-        folder = self.getFullDirectory(context.scene)
-        self.setFilepath(ob.name, folder)
+        self.setDefaultFilepath(ob, context.scene, ob.name)
         return SingleFile.invoke(self, context, event)
-
-
-    def getDefaultDirectory(self, ob):
-        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
-        self.reldir = "%s/Morphs/%s" % (folder, self.author)
 
 
     def addGroup(self, struct):
@@ -1171,6 +1215,59 @@ class DAZ_OT_SaveDazFigure(DazOperator, DufFile, SingleFile, MorphPreset, DazExp
                     formulas.append(formula)
         if formulas:
             struct["formulas"] = formulas
+
+#-------------------------------------------------------------
+#   Save UVs
+#-------------------------------------------------------------
+
+class DAZ_OT_SaveUV(DazOperator, Preset, DufFile, SingleFile):
+    bl_idname = "daz.save_uv"
+    bl_label = "Save UV Set"
+    bl_description = "Save the active UV set as a duf file"
+
+    subdir = "UV Sets"
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and ob.data.uv_layers.active)
+
+    def invoke(self, context, event):
+        ob = context.object
+        self.setDefaultFilepath(ob, context.scene, ob.data.uv_layers.active.name)
+        return SingleFile.invoke(self, context, event)
+
+    def run(self, context):
+        ob = context.object
+        self.toGS()
+        uvlayer = ob.data.uv_layers.active
+        filepath = self.getFilepath(context)
+        struct, filepath = self.makeDazStruct("uv_set", filepath)
+        uvstruct = OrderedDict()
+        uvstruct["id"] = uvlayer.name
+        uvstruct["name"] = uvlayer.name
+        uvstruct["label"] = uvlayer.name
+        uvstruct["vertex_count"] = len(ob.data.vertices)
+        uvs = OrderedDict()
+        uvs["count"] = len(uvlayer.data)
+        uvs["values"] = [list(uv.uv) for uv in uvlayer.data]
+        uvstruct["uvs"] = uvs
+        polys = []
+        m = 0
+        for f in ob.data.polygons:
+            for vn in f.vertices:
+                polys.append([f.index, vn, m])
+                m += 1
+        uvstruct["polygon_vertex_indices"] = polys
+        struct["uv_set_library"] = [uvstruct]
+        scene = {"uvs": [
+            { "id" : "%s-1" % uvlayer.name,
+              "url" : "#%s" % normalizeRef(uvlayer.name) }
+            ]
+        }
+        struct["scene"] = scene
+        saveJson(struct, filepath, binary=self.useCompress, strict=False)
+        print("UV set %s saved" % filepath)
 
 #-------------------------------------------------------------
 #   Bake deform rig
@@ -1373,6 +1470,8 @@ classes = [
     DAZ_OT_SavePosePreset,
     DAZ_OT_SaveMorphPresets,
     DAZ_OT_SaveDazFigure,
+    DAZ_OT_SaveUV,
+
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,

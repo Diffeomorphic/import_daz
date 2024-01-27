@@ -286,7 +286,6 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.scale_materials")
         self.layout.separator()
         self.layout.operator("daz.load_uv")
-        self.layout.operator("daz.save_uv")
         self.layout.separator()
         self.layout.operator("daz.prune_node_trees")
         self.layout.operator("daz.prune_uv_maps")
@@ -371,8 +370,6 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.convert_morphs_to_shapekeys")
         self.layout.operator("daz.transfer_animation_to_shapekeys")
         self.layout.operator("daz.transfer_mesh_to_shape")
-        self.layout.operator("daz.save_morph_presets")
-        self.layout.operator("daz.save_daz_figure")
         self.layout.separator()
         self.layout.operator("daz.add_shapekey_drivers")
         self.layout.operator("daz.remove_shapekey_drivers")
@@ -385,6 +382,19 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.import_dbz")
         self.layout.operator("daz.copy_drivers")
         self.layout.operator("daz.update_morph_paths")
+
+#----------------------------------------------------------
+#   Export panel
+#----------------------------------------------------------
+
+class DAZ_PT_Export(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_label = "Export"
+
+    def draw(self, context):
+        self.layout.operator("daz.save_pose_preset")
+        self.layout.operator("daz.save_morph_presets")
+        self.layout.operator("daz.save_daz_figure")
+        self.layout.operator("daz.save_uv")
 
 #----------------------------------------------------------
 #   Utilities panel
@@ -514,7 +524,6 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.bake_shapekeys")
         self.layout.operator("daz.mute_control_rig")
         self.layout.operator("daz.unmute_control_rig")
-        self.layout.operator("daz.save_pose_preset")
         self.layout.operator("daz.transfer_to_gaze")
         self.layout.operator("daz.transfer_from_gaze")
         self.layout.separator()
@@ -1203,6 +1212,7 @@ classes = [
     DAZ_PT_AdvancedRigging,
     DAZ_PT_AdvancedMorphs,
 
+    DAZ_PT_Export,
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,

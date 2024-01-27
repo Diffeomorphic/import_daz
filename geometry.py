@@ -37,7 +37,7 @@ from .utils import *
 from .error import *
 from .load_json import JL
 from .node import Node, Instance, SimNode
-from .fileutils import SingleFile, DufFile, DazExporter
+from .fileutils import SingleFile, DufFile
 
 #-------------------------------------------------------------
 #   Geonode
@@ -1727,58 +1727,6 @@ class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
                         uvlayer.data[m].uv = uv
                     m += 1
 
-#-------------------------------------------------------------
-#   Save UVs
-#-------------------------------------------------------------
-
-class DAZ_OT_SaveUV(DazOperator, DufFile, SingleFile, DazExporter):
-    bl_idname = "daz.save_uv"
-    bl_label = "Save UV Set"
-    bl_description = "Save the active UV set as a duf file"
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and ob.data.uv_layers.active)
-
-    def invoke(self, context, event):
-        self.fromGS()
-        self.setFilepath(context.object.data.uv_layers.active.name)
-        return SingleFile.invoke(self, context, event)
-
-    def run(self, context):
-        from .load_json import saveJson
-        ob = context.object
-        self.toGS()
-        uvlayer = ob.data.uv_layers.active
-        struct, filepath = self.makeDazStruct("uv_set", self.filepath)
-        uvstruct = OrderedDict()
-        uvstruct["id"] = uvlayer.name
-        uvstruct["name"] = uvlayer.name
-        uvstruct["label"] = uvlayer.name
-        uvstruct["vertex_count"] = len(ob.data.vertices)
-        uvs = OrderedDict()
-        uvs["count"] = len(uvlayer.data)
-        uvs["values"] = [list(uv.uv) for uv in uvlayer.data]
-        uvstruct["uvs"] = uvs
-        polys = []
-        m = 0
-        for f in ob.data.polygons:
-            for vn in f.vertices:
-                polys.append([f.index, vn, m])
-                m += 1
-        uvstruct["polygon_vertex_indices"] = polys
-        struct["uv_set_library"] = [uvstruct]
-        scene = {"uvs": [
-            { "id" : "%s-1" % uvlayer.name,
-              "url" : "#%s" % normalizeRef(uvlayer.name) }
-            ]
-        }
-        struct["scene"] = scene
-        saveJson(struct, filepath, binary=self.useCompress)
-        print("UV set %s saved" % filepath)
-
-
 #----------------------------------------------------------
 #   Prune vertex groups
 #----------------------------------------------------------
@@ -1970,7 +1918,6 @@ classes = [
     DAZ_OT_CollapseUDims,
     DAZ_OT_RestoreUDims,
     DAZ_OT_LoadUV,
-    DAZ_OT_SaveUV,
     DAZ_OT_LimitVertexGroups,
     DAZ_OT_FinalizeMeshes,
 ]
