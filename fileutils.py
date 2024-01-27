@@ -378,15 +378,6 @@ class SingleFile(ImportHelper):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-    def setFilepath(self, filename, folder=None):
-        if not GS.rememberLastFolder:
-            words = os.path.splitext(filename)
-            filename = "%s%s" % (bpy.path.clean_name(words[0]), self.extension)
-            if folder and os.path.exists(folder):
-                self.filepath = "%s/%s" % (folder, filename)
-            else:
-                self.filepath = filename
-
 
 class MultiFile(ImportHelper):
     files : CollectionProperty(

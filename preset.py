@@ -104,6 +104,15 @@ class Preset:
         else:
             return self.filepath
 
+    def setFilepath(self, filename, folder=None):
+        if not GS.rememberLastFolder:
+            words = os.path.splitext(filename)
+            filename = "%s%s" % (bpy.path.clean_name(words[0]), self.extension)
+            if folder and os.path.exists(folder):
+                self.filepath = "%s/%s" % (folder, filename)
+            else:
+                self.filepath = filename
+
     def setDefaultFilepath(self, ob, scn, fname):
         self.fromGS()
         self.getDefaultDirectory(ob)
@@ -280,6 +289,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
     def draw(self, context):
         Preset.draw(self, context)
+        self.layout.separator()
         self.layout.prop(self, "type")
         self.useBones = self.type in ['POSE', 'POSE_MORPH', 'HIERARCHICAL']
         self.useHierarchical = self.type == 'HIERARCHICAL'
@@ -298,13 +308,28 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             Framer.draw(self, context)
             self.layout.prop(self, "fps")
 
+    Folders = {
+        "Genesis" : "People/Genesis/",
+        "Genesis2-female" : "People/Genesis 2 Female/",
+        "Genesis2-male" : "People/Genesis 2 Male/",
+        "Genesis3-female" : "People/Genesis 3 Female/",
+        "Genesis3-male" : "People/Genesis 3 Male/",
+        "Genesis8-female" : "People/Genesis 8 Female/",
+        "Genesis8-male" : "People/Genesis 8 Male/",
+        "Genesis9" : "People/Genesis 9/Base/",
+    }
+
+    def getDefaultDirectory(self, ob):
+        folder = self.Folders.get(ob.DazMesh, "")
+        self.reldir = "%sPoses/%s" % (folder, self.author)
+
 
     def invoke(self, context, event):
-        self.fromGS()
         self.useMorphs = self.useBones = self.useHierarchical = False
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
         self.setActiveRange(context, rig)
+        self.setDefaultFilepath(rig, context.scene, "my_pose")
         return SingleFile.invoke(self, context, event)
 
 
@@ -346,9 +371,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         elif self.useObject:
             self.setupObjectFrames(rig)
         if self.useHierarchical:
-            self.saveHierarchicalPreset(rig)
+            self.saveHierarchicalPreset(context, rig)
         else:
-            self.savePosePreset(rig)
+            self.savePosePreset(context, rig)
 
 
     def initData(self):
@@ -781,8 +806,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 pb.name in ["Root"])
 
 
-    def saveHierarchicalPreset(self, rig):
-        struct, filepath = self.makeDazStruct("preset_hierarchical_pose", self.filepath)
+    def saveHierarchicalPreset(self, context, rig):
+        filepath = self.getFilepath(context)
+        struct, filepath = self.makeDazStruct("preset_hierarchical_pose", filepath)
         struct["scene"] = {}
         struct["scene"]["nodes"] = self.getNodes(rig)
         struct["scene"]["animations"] = self.getAnimations(rig)
@@ -790,9 +816,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         print("Pose preset %s saved" % filepath)
 
 
-    def savePosePreset(self, rig):
-
-        struct, filepath = self.makeDazStruct("preset_pose", self.filepath)
+    def savePosePreset(self, context, rig):
+        filepath = self.getFilepath(context)
+        struct, filepath = self.makeDazStruct("preset_pose", filepath)
         struct["scene"] = {}
         struct["scene"]["animations"] = self.getAnimations(rig)
         saveJson(struct, filepath, binary=self.useCompress, strict=False)
