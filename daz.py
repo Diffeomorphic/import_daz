@@ -667,6 +667,18 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Layered Images In Shells",
         description = "Use layered images in shells (experimental)")
 
+    author : StringProperty(
+        name = "Author",
+        description = "Author info in preset files")
+
+    email : StringProperty(
+        name = "Email",
+        description = "Email info in preset files")
+
+    website : StringProperty(
+        name = "Website",
+        description = "Website info in preset files")
+
     def draw(self, context):
         split = self.layout.split(factor=0.33)
         col = split.column()
@@ -770,6 +782,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useSubmeshes")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
+
+        box = col.box()
+        box.label(text = "Presets")
+        box.prop(self, "author")
+        box.prop(self, "email")
+        box.prop(self, "website")
 
         col = split.column()
         box = col.box()

@@ -655,6 +655,10 @@ def someMatch(keys, string):
             return True
     return False
 
+
+def canonicalPath(path):
+    return path.replace("//", "/")
+
 #-------------------------------------------------------------
 #   Profiling
 #-------------------------------------------------------------

@@ -39,6 +39,23 @@ from .animation import HideOperator, FrameConverter
 from .bone_data import BD
 
 #----------------------------------------------------------
+#   Preset base class
+#----------------------------------------------------------
+
+class Preset:
+    reldir: StringProperty(
+        name = "Directory",
+        description = "Directory relative to root path")
+
+    def drawFiles(self, context):
+        scn = context.scene
+        self.layout.prop(scn, "DazPreferredRoot")
+        self.layout.prop(self, "reldir")
+
+    def getFullDirectory(self, scn):
+        return canonicalPath("%s/%s" % (scn.DazPreferredRoot, self.reldir))
+
+#----------------------------------------------------------
 #   Framer class
 #----------------------------------------------------------
 
@@ -199,6 +216,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def invoke(self, context, event):
+        self.fromGS()
         self.useMorphs = self.useBones = self.useHierarchical = False
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
@@ -207,6 +225,7 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 
 
     def run(self, context):
+        self.toGS()
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
         if self.useHierarchical and rig.DazRig.startswith(("mhx", "rigify")):
@@ -912,28 +931,10 @@ class DAZ_OT_SavePosePreset(HideOperator, DazExporter, SingleFile, DufFile, Fram
 #   Save morph presets
 #-------------------------------------------------------------
 
-class MorphPreset:
-    directory: StringProperty(
-        name = "Directory",
-        description = "Directory")
-
-    def drawFiles(self, context):
-        scn = context.scene
-        self.layout.prop(scn, "DazPreferredRoot")
-        self.layout.prop(self, "directory")
-
-    def getDefaultDirectory(self, ob):
-        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
-        self.directory = "%s/Morphs/%s" % (folder, self.author)
-
-
-    def saveFile(self, context, filename, ob, skey, mname):
+class MorphPreset(Preset):
+    def saveFile(self, context, filepath, ob, skey, mname):
         from .load_json import saveJson
         from .asset import normalizeUrl
-        folder = "%s/%s" % (context.scene.DazPreferredRoot, self.directory)
-        filename = filename.replace(" ", "_")
-        filepath = "%s/%s" % (folder, filename)
-        filepath = filepath.replace("//", "/")
         struct,filepath = self.makeDazStruct("modifier", filepath)
         modlib = struct["modifier_library"] = []
         mstruct = self.addLibModifier(ob, skey)
@@ -949,7 +950,7 @@ class MorphPreset:
     def addLibModifier(self, ob, skey):
         from collections import OrderedDict
         from .asset import normalizeUrl
-        mname = skey.name.replace(" ", "_")
+        mname = bpy.path.clean_name(skey.name)
         struct = OrderedDict()
         struct["id"] = mname
         struct["name"] = mname
@@ -990,9 +991,9 @@ class MorphPreset:
 #   Save morph preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, Selector, DazExporter, IsMesh):
-    bl_idname = "daz.save_morph_preset"
-    bl_label = "Save Morph Preset"
+class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, DazExporter, IsMesh):
+    bl_idname = "daz.save_morph_presets"
+    bl_label = "Save Morph Presets"
     bl_description = "Save selected shapekeys as a morph preset"
 
     presentation = "Modifier/Pose"
@@ -1000,6 +1001,10 @@ class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, Selector, DazExporter, Is
     def draw(self, context):
         self.drawFiles(context)
         Selector.draw(self, context)
+
+    def getDefaultDirectory(self, ob):
+        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
+        self.reldir = "%s/Morphs/%s" % (folder, self.author)
 
     def addGroup(self, struct):
         struct["group"] = "/Pose Controls"
@@ -1014,6 +1019,7 @@ class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, Selector, DazExporter, Is
         return keys
 
     def invoke(self, context, event):
+        self.fromGS()
         ob = context.object
         if ob.data.shape_keys is None:
             msg = "Object %s has no shapekeys" % ob.name
@@ -1023,12 +1029,14 @@ class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, Selector, DazExporter, Is
         return Selector.invoke(self, context, event)
 
     def run(self, context):
+        self.toGS()
         ob = context.object
+        folder = self.getFullDirectory(context.scene)
         for item in self.getSelectedItems():
-            filename = "%s.duf" % item.name
+            filepath = "%s/%s.duf" % (folder, item.name)
             skey = ob.data.shape_keys.key_blocks[item.name]
-            mname = item.name.replace(" ", "_")
-            self.saveFile(context, filename, ob, skey, mname)
+            mname = bpy.path.clean_name(item.name)
+            self.saveFile(context, filepath, ob, skey, mname)
 
     def getDeltas(self, ob, skey):
         factor = 1/GS.scale
@@ -1040,27 +1048,35 @@ class DAZ_OT_SaveMorphPreset(DazOperator, MorphPreset, Selector, DazExporter, Is
 #   Save figure preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveFigurePreset(DazPropsOperator, MorphPreset, DazExporter, IsMesh):
+class DAZ_OT_SaveFigurePreset(DazOperator, DufFile, SingleFile, MorphPreset, DazExporter, IsMesh):
     bl_idname = "daz.save_figure_preset"
     bl_label = "Save Figure Preset"
     bl_description = "Save selected shapekeys as a figure preset.\nAdd formulas for selected rig"
 
     presentation = "Modifier/Shape"
 
-    filename: StringProperty(
-        name = "Filename",
-        description = "Filename")
+    useDazDirectory : BoolProperty(
+        name = "DAZ Directory",
+        description = "Save the file where it can be found by DAZ Studio",
+        default = False)
 
     def draw(self, context):
-        self.drawFiles(context)
-        self.layout.prop(self, "filename")
+        self.layout.prop(self, "useDazDirectory")
+        if self.useDazDirectory:
+            self.drawFiles(context)
         DazExporter.draw(self, context)
 
     def invoke(self, context, event):
         ob = context.object
+        self.fromGS()
         self.getDefaultDirectory(ob)
-        self.filename = "%s.dsf" % ob.name.lower()
-        return DazPropsOperator.invoke(self, context, event)
+        folder = self.getFullDirectory(context.scene)
+        self.setFilepath(ob.name, folder, "dsf")
+        return SingleFile.invoke(self, context, event)
+
+    def getDefaultDirectory(self, ob):
+        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
+        self.reldir = "%s/Morphs/%s" % (folder, self.author)
 
     def addGroup(self, struct):
         struct["region"] = "Actor"
@@ -1068,6 +1084,7 @@ class DAZ_OT_SaveFigurePreset(DazPropsOperator, MorphPreset, DazExporter, IsMesh
 
 
     def run(self, context):
+        self.toGS()
         trg = context.object
         ob = None
         for ob1 in getSelectedMeshes(context):
@@ -1076,7 +1093,12 @@ class DAZ_OT_SaveFigurePreset(DazPropsOperator, MorphPreset, DazExporter, IsMesh
                 break
         if ob is None:
             raise DazError("Two meshes must be selected")
-        self.saveFile(context, self.filename, ob, trg, trg.name)
+        if self.useDazDirectory:
+            folder = self.getFullDirectory(context.scene)
+            filepath = "%s/%s.dsf" % (folder, trg.name.lower())
+        else:
+            filepath = self.filepath
+        self.saveFile(context, filepath, ob, trg, trg.name)
 
 
     def getDeltas(self, ob, trg):
@@ -1326,7 +1348,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 
 classes = [
     DAZ_OT_SavePosePreset,
-    DAZ_OT_SaveMorphPreset,
+    DAZ_OT_SaveMorphPresets,
     DAZ_OT_SaveFigurePreset,
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,

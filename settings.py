@@ -75,6 +75,10 @@ class GlobalSettings:
         self.showHiddenObjects = False
         self.useIgnoreHiddenObjects = False
 
+        self.author = "Myself"
+        self.email = ""
+        self.website = ""
+
         self.materialMethod = 'SELECT'
         self.sssMethod = 'BURLEY'
         self.viewportColors = 'GUESS'

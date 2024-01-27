@@ -37,7 +37,7 @@ from .utils import *
 from .error import *
 from .load_json import JL
 from .node import Node, Instance, SimNode
-from .fileutils import SingleFile, DazFile, DazExporter
+from .fileutils import SingleFile, DufFile, DazExporter
 
 #-------------------------------------------------------------
 #   Geonode
@@ -1731,7 +1731,7 @@ class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
 #   Save UVs
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter):
+class DAZ_OT_SaveUV(DazOperator, DufFile, SingleFile, DazExporter):
     bl_idname = "daz.save_uv"
     bl_label = "Save UV Set"
     bl_description = "Save the active UV set as a duf file"
@@ -1742,13 +1742,14 @@ class DAZ_OT_SaveUV(DazOperator, DazFile, SingleFile, DazExporter):
         return (ob and ob.type == 'MESH' and ob.data.uv_layers.active)
 
     def invoke(self, context, event):
-        if not GS.rememberLastFolder:
-            self.filepath = "%s.duf" % bpy.path.clean_name(context.object.data.uv_layers.active.name)
+        self.fromGS()
+        self.setFilepath(context.object.data.uv_layers.active.name)
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
         from .load_json import saveJson
         ob = context.object
+        self.toGS()
         uvlayer = ob.data.uv_layers.active
         struct, filepath = self.makeDazStruct("uv_set", self.filepath)
         uvstruct = OrderedDict()

@@ -428,7 +428,7 @@ def normalizeRef(id):
             ref = "%s#%s" % (words[0].lower(), words[1])
         else:
             ref = ref.lower()
-    return ref.replace("//", "/")
+    return canonicalPath(ref)
 
 
 def normalizeUrl(filepath):

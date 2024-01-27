@@ -31,13 +31,13 @@ import bpy
 from .utils import *
 from .error import *
 from .selector import MorphGroup
-from .fileutils import SingleFile, JsonFile, DazExporter
+from .fileutils import SingleFile, JsonFile
 
 #------------------------------------------------------------------
 #   Save and Load pose to action
 #------------------------------------------------------------------
 
-class DAZ_OT_SavePosesToFile(DazOperator, DazExporter, SingleFile, JsonFile, MorphGroup):
+class DAZ_OT_SavePosesToFile(DazOperator, SingleFile, JsonFile, MorphGroup):
     bl_idname = "daz.save_poses_to_file"
     bl_label = "Save Poses To File"
     bl_description = "Save the current scene poses as a json file"

@@ -335,9 +335,7 @@ class MorphPaths:
                         isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
                         key = fname.lower()
                         if isright and key not in typeNames.keys():
-                            string = "%s/%s" % (abspath, file)
-                            string = string.replace("//", "/")
-                            typeFiles[name] = string
+                            typeFiles[name] = canonicalPath("%s/%s" % (abspath, file))
                             typeNames[key] = name
 
 
@@ -2131,11 +2129,6 @@ def register():
     folder = os.path.expanduser("~/Documents")
     if not os.path.exists(folder):
         folder = os.path.expanduser("~")
-    bpy.types.Scene.DazMorphPath = StringProperty(
-        name = "Morph Path",
-        description = "Path to morphs",
-        subtype = 'DIR_PATH',
-        default = folder.replace("\\","/"))
 
 
 def unregister():

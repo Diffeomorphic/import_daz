@@ -329,8 +329,8 @@ class DazFile:
 
 
 class DufFile:
-    filename_ext = ".duf"
-    filter_glob : StringProperty(default="*.duf", options={'HIDDEN'})
+    filename_ext = ".dsf;.duf"
+    filter_glob : StringProperty(default="*.dsf;*.duf", options={'HIDDEN'})
 
 
 class DatFile:
@@ -375,6 +375,14 @@ class SingleFile(ImportHelper):
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+    def setFilepath(self, filename, folder=None, ext=".duf"):
+        if not GS.rememberLastFolder:
+            filename = bpy.path.clean_name("%s.%s" % (filename, ext))
+            if folder and os.path.exists(folder):
+                self.filepath = "%s/%s" % (folder, filename)
+            else:
+                self.filepath = filename
 
 
 class MultiFile(ImportHelper):
@@ -522,6 +530,16 @@ class DazExporter:
         self.layout.prop(self, "email")
         self.layout.prop(self, "website")
         self.layout.prop(self, "useCompress")
+
+    def fromGS(self):
+        self.author = GS.author
+        self.email = GS.email
+        self.website = GS.website
+
+    def toGS(self):
+        GS.author = self.author
+        GS.email = self.email
+        GS.website = self.website
 
     def makeDazStruct(self, type, filepath):
         from collections import OrderedDict
