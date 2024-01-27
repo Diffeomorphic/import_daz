@@ -1688,7 +1688,7 @@ class DAZ_OT_RestoreUDims(DazOperator):
 #   Load UVs
 #-------------------------------------------------------------
 
-class DAZ_OT_LoadUV(DazOperator, DazFile, SingleFile, IsMesh):
+class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
     bl_idname = "daz.load_uv"
     bl_label = "Load UV Set"
     bl_description = "Load a UV set to the active mesh"
