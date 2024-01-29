@@ -81,15 +81,15 @@ def getEditBones(rig):
         #elif pb.name[-2:] == "IK":
         #    copyTables(pb.name[:-2], pb.name)
 
+    '''
+    # Disabled because it wreaks havoc to G9 eyes
     processed_bonenames = []
     skeys = None
     for ob in rig.children:
-        if ob.DazMesh:
+        if ob.type == 'MESH' and ob.DazMesh:
             skeys = ob.data.shape_keys
             break
 
-    '''
-    # Disabled because it wreaks havoc to G9 eyes
     if skeys:
         for rigidity_group in rig.data.DazRigidityScaleFactors:
             base_center_coord = rigidity_group.base_center_coord

@@ -89,7 +89,7 @@ class Preset:
 
     def getDefaultDirectory(self, ob):
         folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
-        self.reldir = "%s/%s/%s" % (folder, self.subdir, self.author)
+        return "%s/%s/%s" % (folder, self.subdir, self.author)
 
     def getFullDirectory(self, scn):
         return canonicalPath("%s/%s" % (scn.DazPreferredRoot, self.reldir))
@@ -115,7 +115,7 @@ class Preset:
 
     def setDefaultFilepath(self, ob, scn, fname):
         self.fromGS()
-        self.getDefaultDirectory(ob)
+        self.reldir = self.getDefaultDirectory(ob)
         folder = self.getFullDirectory(scn)
         self.setFilepath(fname, folder)
 
@@ -321,7 +321,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
     def getDefaultDirectory(self, ob):
         folder = self.Folders.get(ob.DazMesh, "")
-        self.reldir = "%sPoses/%s" % (folder, self.author)
+        return "%sPoses/%s" % (folder, self.author)
 
 
     def invoke(self, context, event):
@@ -1043,7 +1043,7 @@ class MorphPreset(Preset):
     def saveFile(self, context, filepath, ob, skey, mname):
         struct,filepath = self.makeDazStruct("modifier", filepath)
         modlib = struct["modifier_library"] = []
-        mstruct = self.addLibModifier(ob, skey)
+        mstruct = self.addLibModifier(ob, skey, mname)
         modlib.append(mstruct)
         modlist = []
         struct["scene"] = {"modifiers" : modlist}
@@ -1055,9 +1055,8 @@ class MorphPreset(Preset):
         print("Morph preset %s saved" % filepath)
 
 
-    def addLibModifier(self, ob, skey):
+    def addLibModifier(self, ob, skey, mname):
         from collections import OrderedDict
-        mname = bpy.path.clean_name(skey.name)
         struct = OrderedDict()
         struct["id"] = mname
         struct["name"] = mname
@@ -1065,7 +1064,7 @@ class MorphPreset(Preset):
             struct["parent"] = normalizeUrl(ob.parent.DazUrl)
         struct["presentation"] = {
             "type" : self.presentation,
-            "label" : skey.name,
+            "label" : mname,
             "description" : "",
             "icon_large" : "",
             "colors" : [ [ 0.1607843, 0.1607843, 0.1607843 ], [ 0.4980392, 0, 0 ] ]
@@ -1074,7 +1073,7 @@ class MorphPreset(Preset):
             "id" : "value",
             "type" : "float",
             "name" : mname,
-            "label" : skey.name,
+            "label" : mname,
             "auto_follow" : True,
             "value" : 0,
             "min" : 0,
@@ -1133,7 +1132,7 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
             msg = "Object %s has no shapekeys" % ob.name
             invokeErrorMessage(msg)
             return {'CANCELLED'}
-        self.getDefaultDirectory(ob)
+        self.reldir = self.getDefaultDirectory(ob)
         return Selector.invoke(self, context, event)
 
 
@@ -1158,7 +1157,7 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
 #   Save figure preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMesh):
+class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMeshArmature):
     bl_idname = "daz.save_daz_figure"
     bl_label = "Save DAZ Figure"
     bl_description = "Save active mesh as a DAZ figure relative to the other mesh"
@@ -1180,16 +1179,42 @@ class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMesh
 
     def run(self, context):
         self.toGS()
-        trg = context.object
-        ob = None
-        for ob1 in getSelectedMeshes(context):
-            if ob1 != trg:
-                ob = ob1
-                break
-        if ob is None:
-            raise DazError("Two meshes must be selected")
-        filepath = self.getFilepath(context)
-        self.saveFile(context, filepath, ob, trg, trg.name)
+        trg = getRigFromContext(context, strict=False)
+        print("TRG", trg)
+        self.rootpath = context.scene.DazPreferredRoot
+        self.filename = os.path.basename(self.filepath)
+        if len(os.path.splitext(self.filename)) == 1:
+            self.filename = "%s.%s" % (self.filename, self.extension)
+        self.morphname = trg.name
+        self.saveFiles(context, trg, context.view_layer.objects)
+
+
+    def getObjectPath(self, ob):
+        folder = self.getDefaultDirectory(ob)
+        return canonicalPath("%s/%s/%s" % (self.rootpath, folder, self.filename))
+
+
+    def saveFiles(self, context, trg, objects):
+        ref = self.getMatchingObject(objects, trg)
+        if ref is None:
+            return
+        elif trg.type == 'ARMATURE':
+            for child in trg.children:
+                self.saveFiles(context, child, ref.children)
+        elif trg.type == 'MESH':
+            filepath = self.getObjectPath(trg)
+            print("\nKK", trg.name)
+            print("RR", ref.name)
+            print("FF", filepath)
+            print("MM", self.morphname)
+            self.saveFile(context, filepath, ref, trg, self.morphname)
+
+
+    def getMatchingObject(self, objects, trg):
+        for ob in objects:
+            if ob != trg and ob.DazUrl == trg.DazUrl:
+                return ob
+        return None
 
 
     def getDeltas(self, ob, trg):

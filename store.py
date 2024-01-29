@@ -296,7 +296,10 @@ class DAZ_OT_LoadPosesFromFile(DazOperator, SingleFile, JsonFile):
             if value is not None:
                 setattr(pb, key, value)
                 if self.auto:
-                    pb.keyframe_insert(key)
+                    try:
+                        pb.keyframe_insert(key)
+                    except RuntimeError:
+                        pass
 
 #-------------------------------------------------------------
 #   Register

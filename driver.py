@@ -748,7 +748,7 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
                 self.copyDrivers(rig1.data, rig2.data, rig1, rig2, False)
                 if self.useShapekeys:
                     for ob in getShapeChildren(rig2):
-                        self.retargetShapes(ob.data.shape_keys, rig1, rig2)
+                        retargetShapes(ob.data.shape_keys, rig1, rig2)
 
 
     def copyDrivers(self, rna1, rna2, rig1, rig2, ovr):
@@ -778,42 +778,45 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
             bname,channel = getBoneChannel(fcu1)
             if bname and bname not in rig2.data.bones.keys():
                 continue
-            self.ensureProp(fcu1, rna1, rna2, ovr)
+            ensureProp(fcu1, rna1, rna2, ovr)
             fcu2 = rna2.animation_data.drivers.from_existing(src_driver=fcu1)
-            self.retargetFcurve(fcu2, rig1, rig2)
+            retargetFcurve(fcu2, rig1, rig2)
         if dummy:
             rna2.driver_remove(propRef("Dummy"))
             del rna2["Dummy"]
 
+#----------------------------------------------------------
+#   Retargeting
+#----------------------------------------------------------
 
-    def ensureProp(self, fcu, rna1, rna2, ovr):
-        if isPropRef(fcu.data_path):
-            prop = getProp(fcu.data_path)
-            if prop and prop not in rna2.keys():
-                rna2[prop] = rna1.get(prop, 0.0)
-                ui = getPropUi(rna1, prop)
-                min = ui.get("min", -1e6)
-                max = ui.get("max", 1e6)
-                default = ui.get("default", 0.0)
-                setPropMinMax(rna2, prop, default, min, max, ovr)
-
-
-    def retargetFcurve(self, fcu, rig1, rig2):
-        for var in fcu.driver.variables:
-            for trg in var.targets:
-                if trg.id_type == 'OBJECT' and trg.id == rig1:
-                    self.ensureProp(trg, rig1, rig2, True)
-                    trg.id = rig2
-                elif trg.id_type == 'ARMATURE' and trg.id == rig1.data:
-                    self.ensureProp(trg, rig1.data, rig2.data, False)
-                    trg.id = rig2.data
+def ensureProp(fcu, rna1, rna2, ovr):
+    if isPropRef(fcu.data_path):
+        prop = getProp(fcu.data_path)
+        if prop and prop not in rna2.keys():
+            rna2[prop] = rna1.get(prop, 0.0)
+            ui = getPropUi(rna1, prop)
+            min = ui.get("min", -1e6)
+            max = ui.get("max", 1e6)
+            default = ui.get("default", 0.0)
+            setPropMinMax(rna2, prop, default, min, max, ovr)
 
 
-    def retargetShapes(self, skeys, rig1, rig2):
-        if skeys.animation_data is None:
-            return
-        for fcu in skeys.animation_data.drivers:
-            self.retargetFcurve(fcu, rig1, rig2)
+def retargetFcurve(fcu, rig1, rig2):
+    for var in fcu.driver.variables:
+        for trg in var.targets:
+            if trg.id_type == 'OBJECT' and trg.id == rig1:
+                ensureProp(trg, rig1, rig2, True)
+                trg.id = rig2
+            elif trg.id_type == 'ARMATURE' and trg.id == rig1.data:
+                ensureProp(trg, rig1.data, rig2.data, False)
+                trg.id = rig2.data
+
+
+def retargetShapes(skeys, rig1, rig2):
+    if skeys.animation_data is None:
+        return
+    for fcu in skeys.animation_data.drivers:
+        retargetFcurve(fcu, rig1, rig2)
 
 #----------------------------------------------------------
 #   Optimize drivers

@@ -1522,6 +1522,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):
+        from .driver import retargetShapes
         for ob,data in info.objects:
             partype, parbone = data
             if partype in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
@@ -1537,6 +1538,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 ob.parent_bone = info.getBoneKey(parbone)
             setWorldMatrix(ob, wmat)
             self.addToCollections(ob, adds, hdadds, removes)
+            if info.rig and info.rig != rig:
+                if ob.type == 'MESH' and ob.data.shape_keys:
+                    retargetShapes(ob.data.shape_keys, info.rig, rig)
 
 
     def createNewCollections(self, rig):
