@@ -1040,10 +1040,10 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 #-------------------------------------------------------------
 
 class MorphPreset(Preset):
-    def saveFile(self, context, filepath, ob, skey, mname):
+    def saveFile(self, context, filepath, ob, skey, mname, first):
         struct,filepath = self.makeDazStruct("modifier", filepath)
         modlib = struct["modifier_library"] = []
-        mstruct = self.addLibModifier(ob, skey, mname)
+        mstruct = self.addLibModifier(ob, skey, mname, first)
         modlib.append(mstruct)
         modlist = []
         struct["scene"] = {"modifiers" : modlist}
@@ -1055,7 +1055,7 @@ class MorphPreset(Preset):
         print("Morph preset %s saved" % filepath)
 
 
-    def addLibModifier(self, ob, skey, mname):
+    def addLibModifier(self, ob, skey, mname, first):
         from collections import OrderedDict
         struct = OrderedDict()
         struct["id"] = mname
@@ -1083,7 +1083,8 @@ class MorphPreset(Preset):
             "step_size" : 0.01
         }
         self.addGroup(struct)
-        self.addFormulas(ob, skey, mname, struct)
+        if first:
+            self.addFormulas(ob, skey, mname, struct)
         nverts = len(ob.data.vertices)
         mstruct = struct["morph"] = OrderedDict()
         mstruct["vertex_count"] = nverts
@@ -1144,7 +1145,7 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
             filepath = "%s/%s.duf" % (folder, item.name)
             skey = ob.data.shape_keys.key_blocks[item.name]
             mname = bpy.path.clean_name(item.name)
-            self.saveFile(context, filepath, ob, skey, mname)
+            self.saveFile(context, filepath, ob, skey, mname, True)
 
 
     def getDeltas(self, ob, skey):
@@ -1157,7 +1158,7 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
 #   Save figure preset
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMeshArmature):
+class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmature):
     bl_idname = "daz.save_daz_figure"
     bl_label = "Save DAZ Figure"
     bl_description = "Save active mesh as a DAZ figure relative to the other mesh"
@@ -1165,11 +1166,21 @@ class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMesh
     presentation = "Modifier/Shape"
     subdir = "Morphs"
     extension = ".dsf"
+    dialogWidth = 600
+
+    def draw(self, context):
+        self.layout.prop(context.scene, "DazPreferredRoot")
+        self.layout.prop(self, "reldir")
+        self.layout.prop(self, "author")
+        self.layout.prop(self, "email")
+        self.layout.prop(self, "website")
+        self.layout.prop(self, "useCompress")
+
 
     def invoke(self, context, event):
         ob = context.object
         self.setDefaultFilepath(ob, context.scene, ob.name)
-        return SingleFile.invoke(self, context, event)
+        return DazPropsOperator.invoke(self, context, event)
 
 
     def addGroup(self, struct):
@@ -1186,7 +1197,7 @@ class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMesh
         if len(os.path.splitext(self.filename)) == 1:
             self.filename = "%s.%s" % (self.filename, self.extension)
         self.morphname = trg.name
-        self.saveFiles(context, trg, context.view_layer.objects)
+        self.saveFiles(context, trg, context.view_layer.objects, 2)
 
 
     def getObjectPath(self, ob):
@@ -1194,20 +1205,20 @@ class DAZ_OT_SaveDazFigure(DazOperator, MorphPreset, DufFile, SingleFile, IsMesh
         return canonicalPath("%s/%s/%s" % (self.rootpath, folder, self.filename))
 
 
-    def saveFiles(self, context, trg, objects):
+    def saveFiles(self, context, trg, objects, first):
         ref = self.getMatchingObject(objects, trg)
         if ref is None:
             return
         elif trg.type == 'ARMATURE':
             for child in trg.children:
-                self.saveFiles(context, child, ref.children)
+                self.saveFiles(context, child, ref.children, max(0,first-1))
         elif trg.type == 'MESH':
             filepath = self.getObjectPath(trg)
             print("\nKK", trg.name)
             print("RR", ref.name)
             print("FF", filepath)
             print("MM", self.morphname)
-            self.saveFile(context, filepath, ref, trg, self.morphname)
+            self.saveFile(context, filepath, ref, trg, self.morphname, first)
 
 
     def getMatchingObject(self, objects, trg):
