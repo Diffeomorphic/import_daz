@@ -1168,7 +1168,13 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
     extension = ".dsf"
     dialogWidth = 600
 
+    morphname : StringProperty(
+        name = "Morph Name",
+        description = "Name of the morph")
+
     def draw(self, context):
+        self.layout.prop(self, "morphname")
+        self.layout.separator()
         self.layout.prop(context.scene, "DazPreferredRoot")
         self.layout.prop(self, "reldir")
         self.layout.prop(self, "author")
@@ -1179,6 +1185,7 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
 
     def invoke(self, context, event):
         ob = context.object
+        self.morphname = ob.name
         self.setDefaultFilepath(ob, context.scene, ob.name)
         return DazPropsOperator.invoke(self, context, event)
 
@@ -1191,12 +1198,8 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
     def run(self, context):
         self.toGS()
         trg = getRigFromContext(context, strict=False)
-        print("TRG", trg)
         self.rootpath = context.scene.DazPreferredRoot
-        self.filename = os.path.basename(self.filepath)
-        if len(os.path.splitext(self.filename)) == 1:
-            self.filename = "%s.%s" % (self.filename, self.extension)
-        self.morphname = trg.name
+        self.filename = "%s%s" % (self.morphname, self.extension)
         self.saveFiles(context, trg, context.view_layer.objects, 2)
 
 
@@ -1210,14 +1213,22 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
         if ref is None:
             return
         elif trg.type == 'ARMATURE':
+            first = max(0,first-1)
+            urls = []
             for child in trg.children:
-                self.saveFiles(context, child, ref.children, max(0,first-1))
+                self.saveFiles(context, child, ref.children, first)
+                urls.append(child.DazUrl)
+            if first:
+                rigs = [ob for ob in ref.children if ob.type == 'ARMATURE' and ob.DazUrl not in urls]
+                meshes = [ob for ob in trg.children if ob.type == 'MESH']
+                for rig in rigs:
+                    for ob in rig.children:
+                        trg = self.getMatchingObject(meshes, ob)
+                        if trg:
+                            filepath = self.getObjectPath(trg)
+                            self.saveFile(context, filepath, ob, trg, self.morphname, False)
         elif trg.type == 'MESH':
             filepath = self.getObjectPath(trg)
-            print("\nKK", trg.name)
-            print("RR", ref.name)
-            print("FF", filepath)
-            print("MM", self.morphname)
             self.saveFile(context, filepath, ref, trg, self.morphname, first)
 
 
