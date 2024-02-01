@@ -839,7 +839,7 @@ def copyOffsetDrivers(rig):
                     fcu1.array_index = fcu0.array_index
             else:
                 missing.append((bname1,bname0))
-        for bname1,bname0 in bones.items():
+        for bname1,bname0 in missing:
             print("MISS", bname1, bname0)
 
     from .driver import setFloatProp

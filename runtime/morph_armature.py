@@ -81,9 +81,9 @@ def getEditBones(rig):
         #elif pb.name[-2:] == "IK":
         #    copyTables(pb.name[:-2], pb.name)
 
+    processed_bonenames = []
     '''
     # Disabled because it wreaks havoc to G9 eyes
-    processed_bonenames = []
     skeys = None
     for ob in rig.children:
         if ob.type == 'MESH' and ob.DazMesh:
