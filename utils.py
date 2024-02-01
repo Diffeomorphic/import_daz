@@ -164,10 +164,16 @@ else:
                 coll.is_visible = True
 
     def assignOtherBones(rig, layer):
+        taken = {}
+        for coll in rig.data.collections:
+            for bone in rig.data.bones:
+                if bone.name in coll.bones:
+                    taken[bone.name] = True
         coll = rig.data.collections.get(layer)
         if coll:
             for bone in rig.data.bones:
-                coll.assign(bone)
+                if not taken.get(bone.name):
+                    coll.assign(bone)
 
     def clearBoneCollections(rig):
         for coll in rig.data.collections:
