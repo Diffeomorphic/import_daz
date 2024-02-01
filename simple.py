@@ -753,21 +753,15 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                         addHint(foreIK, rig)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
                     if self.genesis == "G38":
-                        cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp, space='LOCAL')
-                        setEulerOrder(cns, BD.getDefaultMode(shldrBend))
-                        cns.use_y = False
-                        cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='LOCAL')
+                        cns = dampedTrack(shldrBend, foreIK, rig, prop=armProp)
+                        cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='POSE')
                         setEulerOrder(cns, shldrTwist.rotation_mode)
-                        cns.use_x = cns.use_z = False
                     else:
-                        cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp, space='LOCAL')
+                        cns = copyRotation(shldrBend, shldrIK, rig, prop=armProp, space='POSE')
                         setEulerOrder(cns, BD.getDefaultMode(shldrBend))
-                    cns = copyRotation(foreBend, foreIK, rig, prop=armProp, space='LOCAL')
-                    setEulerOrder(cns, foreBend.rotation_mode)
-                    cns.use_y = False
-                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='POSE')
+                    cns = dampedTrack(foreBend, handIK, rig, prop=armProp)
+                    cns = copyRotation(foreTwist, foreIK, rig, prop=armProp, space='POSE')
                     setEulerOrder(cns, foreTwist.rotation_mode)
-                    cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
                     self.setCustomShape(shldrIK, "CS_Arrows")
                     setBonegroup(shldrIK, rig, "IK", self.BoneGroups["IK"])
                 if self.useLegs:
@@ -782,16 +776,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                         addHint(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     if self.genesis == "G38":
-                        cns = copyRotation(thighBend, thighIK, rig, prop=legProp, space='LOCAL')
-                        setEulerOrder(cns, BD.getDefaultMode(thighBend))
-                        cns.use_y = False
-                        cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='LOCAL')
+                        cns = dampedTrack(thighBend, shinIK, rig, prop=legProp)
+                        cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='POSE')
                         setEulerOrder(cns, thighTwist.rotation_mode)
-                        cns.use_x = cns.use_z = False
                     else:
-                        cns = copyRotation(thighBend, thighIK, rig, prop=legProp, space='LOCAL')
+                        cns = copyRotation(thighBend, shinIK, rig, prop=legProp, space='POSE')
                         setEulerOrder(cns, BD.getDefaultMode(thighBend))
-                    cns = copyRotation(shin, shinIK, rig, prop=legProp)
+                    cns = copyRotation(shin, shinIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, shin.rotation_mode)
                     self.setCustomShape(thighIK, "CS_Arrows")
                     setBonegroup(thighIK, rig, "IK", self.BoneGroups["IK"])
