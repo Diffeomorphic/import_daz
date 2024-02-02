@@ -488,6 +488,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Display Rotation Limits",
         description = "Display rotation limits as IK limits")
 
+    useBoneColors : BoolProperty(
+        name = "Bone Colors",
+        description = "Colorize bones. For debugging in Blender 4")
 
     useDump : BoolProperty(
         name = "Dump Debug Info",
@@ -746,6 +749,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useLimitRot")
         box.prop(self, "useInheritScale")
         box.prop(self, "displayLimitRot")
+        box.prop(self, "useBoneColors")
 
         box = col.box()
         box.label(text = "Objects")

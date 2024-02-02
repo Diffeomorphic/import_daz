@@ -786,7 +786,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     else:
                         cns = copyRotation(thighBend, shinIK, rig, prop=legProp, space='POSE')
                         setEulerOrder(cns, BD.getDefaultMode(thighBend))
-                    cns = copyRotation(shin, shinIK, rig, prop=legProp, space='POSE')
+                    cns = copyTransform(shin, shinIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, shin.rotation_mode)
                     self.setCustomShape(thighIK, "CS_Arrows")
                     shinIK.custom_shape = None

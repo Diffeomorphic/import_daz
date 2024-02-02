@@ -180,10 +180,11 @@ else:
             rig.data.collections.remove(coll)
 
     def setBonegroup(pb, rig, bgname, color):
-        pb.color.palette = 'CUSTOM'
-        pb.color.custom.normal = color
-        pb.color.custom.select = (0.6, 0.9, 1.0)
-        pb.color.custom.active = (1.0, 1.0, 0.8)
+        if GS.useBoneColors:
+            pb.color.palette = 'CUSTOM'
+            pb.color.custom.normal = color
+            pb.color.custom.select = (0.6, 0.9, 1.0)
+            pb.color.custom.active = (1.0, 1.0, 0.8)
 
 #-------------------------------------------------------------
 #   Standard layers

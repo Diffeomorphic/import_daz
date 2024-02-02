@@ -132,6 +132,7 @@ class GlobalSettings:
         self.useLimitRot = True
         self.useInheritScale = False
         self.displayLimitRot = False
+        self.useBoneColors = True
 
         self.useInstancing = True
         self.useHairGuides = False
