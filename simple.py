@@ -648,7 +648,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = self.getEntry(self.armTable, prefix, rpbs)
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
                 setStretchLine(elbow)
-                cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
+                cns = copyTransform(hand, handIK, rig, prop=armProp, space='POSE')
                 setEulerOrder(cns, hand.rotation_mode)
                 self.addToLayer(handIK, S_ARMIK, rig, "IK")
             if self.useLegs:
@@ -660,7 +660,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
                     self.addToLayer(footIK, S_LEGIK, rig, "IK")
-                    cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
+                    cns = copyTransform(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                 else:
                     toe, heelIK, toeIK, tarsalIK = self.getEntry(self.footTable, prefix, rpbs)
@@ -669,7 +669,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toeIK.lock_location = tarsalIK.lock_location = (True,True,True)
                     toeIK.lock_rotation = tarsalIK.lock_rotation = (False, True, True)
                     driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
-                    cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
+                    cns = copyTransform(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                     cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, toe.rotation_mode)
