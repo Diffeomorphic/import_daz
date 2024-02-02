@@ -380,8 +380,11 @@ class MorphGroup:
             morphs = list(skeys.key_blocks[1:])
             return morphs, skeys
         filtered = self.getFiltered()
+        cats = []
         if self.category:
-            cats = [ob.DazMorphCats[self.category]]
+            cat = ob.DazMorphCats.get(self.category)
+            if cat:
+                cats = [cat]
         else:
             cats = ob.DazMorphCats
         morphs = []
