@@ -25,12 +25,11 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 
-
 bl_info = {
     "name": "DAZ importer",
     "author": "Thomas Larsson",
-    "version": (1,7,2),
-    "blender": (3,6,0),
+    "version": (1,7,4),
+    "blender": (4,0,0),
     "location": "UI > DAZ Setup, DAZ Runtime",
     "description": "Import native DAZ files (.duf, .dsf)",
     "warning": "",
@@ -88,11 +87,11 @@ def importModules():
         theModules = []
 
     if theModules:
-        print("\nReloading DAZ")
+        print("\nReloading DAZ Importer v %d.%d.%d" % bl_info["version"])
         for mod in theModules:
             importlib.reload(mod)
     else:
-        print("\nLoading DAZ")
+        print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
         modnames = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
                     "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
                     "bone_data", "transform", "node", "figure", "bone", "geometry",
@@ -101,7 +100,7 @@ def importModules():
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "scale", "tables", "proxy", "hide", "store",
                     "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
-                    "udim", "hdmorphs", "preset", "moho", "facecap", "scan", "api",
+                    "udim", "hdmorphs", "ctrl_rig", "moho", "facecap", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
             modnames.append("geonodes")
@@ -126,9 +125,17 @@ regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "guess", "convert", "main", "finger",
             "matedit", "scale", "proxy", "rigify", "merge", "hide", "store",
             "mhx", "hair", "transfer", "dforce",
-            "hdmorphs", "facecap", "preset", "moho", "udim", "scan"]
+            "hdmorphs", "facecap", "ctrl_rig", "moho", "udim", "scan"]
+
+isRegistered = False
 
 def register():
+    global isRegistered
+    if isRegistered:
+        print("DAZ Importer already registered")
+        return
+    print("Register DAZ Importer")
+    isRegistered = True
     for mod in theModules:
         modname = mod.__name__.rsplit(".",1)[-1]
         if modname in regnames:
@@ -139,6 +146,8 @@ def register():
 
 
 def unregister():
+    global isRegistered
+    isRegistered = False
     bpy.utils.unregister_class(DazPreferences)
     for mod in reversed(theModules):
         modname = mod.__name__.rsplit(".",1)[-1]

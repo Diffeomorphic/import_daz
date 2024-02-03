@@ -63,7 +63,7 @@ class DAZ_PT_RuntimeTab:
 #----------------------------------------------------------
 
 class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_label = "DAZ Setup (version 1.7.3.%04d)" % BUILD
+    bl_label = "DAZ Setup (version 1.7.4.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
@@ -384,19 +384,6 @@ class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.update_morph_paths")
 
 #----------------------------------------------------------
-#   Export panel
-#----------------------------------------------------------
-
-class DAZ_PT_Export(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_label = "Export"
-
-    def draw(self, context):
-        self.layout.operator("daz.save_pose_preset")
-        self.layout.operator("daz.save_morph_presets")
-        self.layout.operator("daz.save_daz_figure")
-        self.layout.operator("daz.save_uv")
-
-#----------------------------------------------------------
 #   Utilities panel
 #----------------------------------------------------------
 
@@ -490,7 +477,7 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "DAZ Runtime (version 1.7.3.%04d)" % BUILD
+    bl_label = "DAZ Runtime (version 1.7.4.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
@@ -1212,7 +1199,6 @@ classes = [
     DAZ_PT_AdvancedRigging,
     DAZ_PT_AdvancedMorphs,
 
-    DAZ_PT_Export,
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
