@@ -239,7 +239,7 @@ class PbrTree(CyclesTree):
         self.buildSpecular(useTex)
         anisotropy = self.buildAnisotropy()
         self.buildRoughness(anisotropy, useTex)
-        if not useTopCoatNode:
+        if LS.materialMethod == 'EXTENDED_PRINCIPLED' and not useTopCoatNode:
             self.addClearCoat(useTex, uvname)
         self.buildSheen()
 
@@ -297,15 +297,13 @@ class PbrTree(CyclesTree):
         gamma.inputs["Gamma"].default_value = 3.5
         self.linkColor(transtex, gamma, transcolor, "Color")
         self.linkSubsurfColor(transwt, wttex, gamma.outputs["Color"])
-        self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight, texslot=texslot)
+        self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
 
 
     def linkSubsurfColor(self, transwt, wttex, socket):
         if BLENDER3:
             self.links.new(socket, self.pbr.inputs["Subsurface Color"])
-        else:
-            if transwt == 0:
-                return
+        elif transwt > 0 and LS.materialMethod == 'EXTENDED_PRINCIPLED':
             mix,a,b,out = self.addMixRgbNode('MIX')
             self.linkScalar(wttex, mix, transwt, 0)
             self.linkColor(self.diffuseTex, mix, self.diffuseColor, MixRGB.Color1)

@@ -644,7 +644,8 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildBump(self, uvname):
-        if not self.isEnabled("Bump"):
+        if (not self.isEnabled("Bump") or
+            (LS.materialMethod == 'SINGLE_PRINCIPLED' and self.normal)):
             return
         bumpmode = self.owner.getLayeredValue(["Bump Mode"], 0)
         if bumpmode == 0:
@@ -1901,7 +1902,8 @@ class CyclesTree(Tree):
             maps = maps[1:]
         if len(assets) == 0:
             return None
-        elif len(assets) == 1:
+        elif (len(assets) == 1 or
+              LS.materialMethod == 'SINGLE_PRINCIPLED'):
             return newTexture(assets[0], maps[0])
 
         from .cgroup import LayeredGroup
