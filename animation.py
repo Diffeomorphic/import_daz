@@ -114,7 +114,7 @@ class FrameConverter:
         twists = {}
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
-        elif self.trgRig:
+        elif self.trgRig and not rig.DazRig.startswith("genesis"):
             srctype = self.trgRig
         else:
             srctype = getRigType(banims, False)
