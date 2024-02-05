@@ -104,6 +104,7 @@ def getChannel(url):
 #-------------------------------------------------------------
 
 class FrameConverter:
+    trgRig = None
 
     def getConv(self, banims, rig):
         from .figure import getRigType
@@ -113,6 +114,8 @@ class FrameConverter:
         twists = {}
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
+        elif self.trgRig:
+            srctype = self.trgRig
         else:
             srctype = getRigType(banims, False)
         if srctype:
