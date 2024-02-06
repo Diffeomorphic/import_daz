@@ -2035,6 +2035,8 @@ class CyclesTree(Tree):
             return None
         elif (tex and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
+        elif LS.materialMethod == 'SINGLE_PRINCIPLED':
+            return tex
         if col is None:
             col = self.column-1
         mult,a,b,out = self.addMixRgbNode('MULTIPLY', col)
@@ -2064,6 +2066,8 @@ class CyclesTree(Tree):
         elif factor == 0 or tex is None:
             return None
         elif (not force and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
+            return tex
+        elif LS.materialMethod == 'SINGLE_PRINCIPLED':
             return tex
         if col is None:
             col = self.column-1

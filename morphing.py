@@ -1612,8 +1612,14 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
     bl_label = "Save Favorite Morphs"
     bl_description = "Save favorite morphs"
 
-    def invoke(self, context, event):
-        return SingleFile.invoke(self, context, event)
+    useAbsolutePaths : BoolProperty(
+        name = "Absolute Paths",
+        description = "Save morph URLs as absolute paths.\nNot portable but required by Xin's HD addon",
+        default = False)
+
+    def draw(self, context):
+        #SingleFile.draw(self, context)
+        self.layout.prop(self, "useAbsolutePaths")
 
     def run(self, context):
         from .load_json import saveJson
@@ -1651,7 +1657,10 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
                 key = item.morphset
             if key not in mstruct.keys():
                 mstruct[key] = []
-            path = GS.getRelativePath(item.name)
+            if self.useAbsolutePaths:
+                path = os.path.normpath(bpy.path.abspath(item.name)).replace("\\", "/")
+            else:
+                path = GS.getRelativePath(item.name)
             data = (quote(path), item.text, item.bodypart)
             if data not in mstruct[key]:
                 mstruct[key].append(data)
