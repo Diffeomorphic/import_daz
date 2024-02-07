@@ -478,13 +478,19 @@ else:
         rna_idprop_ui_create(rna, prop, default=default, min=min, max=max, soft_min=min, soft_max=max, description=None, overridable=ovr)
 
     def getPropUi(rna, prop):
-        prop_ui = rna.id_properties_ui(prop)
-        return prop_ui.as_dict()
+        try:
+            prop_ui = rna.id_properties_ui(prop)
+            return prop_ui.as_dict()
+        except KeyError:
+            return {}
 
     def setProtected(rna, prop, on):
-        prop_ui = rna.id_properties_ui(prop)
-        desc = ("***" if on else "")
-        prop_ui.update(description = desc)
+        try:
+            prop_ui = rna.id_properties_ui(prop)
+            desc = ("***" if on else "")
+            prop_ui.update(description = desc)
+        except KeyError:
+            pass
 
 
 def isProtected(rna, prop):
