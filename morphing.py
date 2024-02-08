@@ -1497,8 +1497,9 @@ class PropDrivers:
         elif self.useMeshCats and self.shapekeys:
             from .category import addToCategories
             props = self.shapekeys.keys()
-            addToCategories(self.mesh, props, None, self.category)
-            self.mesh.DazMeshMorphs = True
+            for mesh in self.meshes:
+                addToCategories(mesh, props, None, self.category)
+                mesh.DazMeshMorphs = True
 
 #------------------------------------------------------------------------
 #   Import custom morphs
