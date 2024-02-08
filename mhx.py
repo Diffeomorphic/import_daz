@@ -1790,8 +1790,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             rb.name.startswith(("hand0.", "foot."))):
             space = 'POSE'
         elif (pb.name in facebones or
-              ".twist" in rb.name or
-              rb.name.startswith("shin")):
+              ".twist" in rb.name):
             space = 'LOCAL'
         else:
             space = 'POSE'
