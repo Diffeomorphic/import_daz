@@ -102,7 +102,7 @@ def addMuteDriver(cns, rig, prop):
 #   Constraints
 #-------------------------------------------------------------
 
-def copyTransform(bone, target, rig, prop=None, expr="x", space='WORLD'):
+def copyTransform(bone, target, rig, prop=None, expr="x", space='POSE'):
     cns = bone.constraints.new('COPY_TRANSFORMS')
     cns.name = "Copy Transform %s" % target.name
     cns.target = rig
@@ -125,7 +125,7 @@ def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
             addDriver(cnsIk, "mute", rig, mhxProp(prop2), "x")
 
 
-def copyLocation(bone, target, rig, prop=None, expr="x", space='WORLD'):
+def copyLocation(bone, target, rig, prop=None, expr="x", space='POSE'):
     cns = bone.constraints.new('COPY_LOCATION')
     cns.name = "Copy Location %s" % target.name
     cns.target = rig
@@ -333,7 +333,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         copyBoneInfo(defb, pb)
         defb.bone.inherit_scale = 'NONE'
         defbones.append(defb)
-        cns = copyTransform(defb, pb, rig, space='WORLD')
+        cns = copyTransform(defb, pb, rig, space='POSE')
         #addMuteDriver(cns, rig, prop1)
         cns = copyTransform(mchb, wind, rig, space='LOCAL')
         cns.influence = factor/nbones
@@ -572,11 +572,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.usePoleTargets:
             self.layout.prop(self, "showLinks")
             self.layout.prop(self, "useFixKnees")
+            self.layout.prop(self, "elbowParent")
+            self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
-        self.layout.prop(self, "elbowParent")
-        self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useFoot2")
         self.layout.prop(self, "useRaiseError")
 
@@ -694,9 +694,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
             showProgress(4, 25, "  Rename bones")
-            if not self.reuseBendTwists:
-                self.deleteBendTwistDrvBones(rig)
-                self.joinBendTwistVGroups(rig, MHX.BendTwistGenesis9)
             self.rename2Mhx(rig)
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
@@ -713,8 +710,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.fixHands(rig)
         showProgress(8, 25, "  Store all constraints")
         self.storeAllConstraints(rig)
-        showProgress(9, 25, "  Create bend and twist bones")
-        self.createBendTwists(rig, bendTwistBones)
+        if rig.DazRig != "genesis9":
+            showProgress(9, 25, "  Create bend and twist bones")
+            self.createBendTwists(rig, bendTwistBones)
         #showProgress(10, 25, "  Fix bone drivers")
         #self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
 
@@ -935,7 +933,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     for layer in layers:
                         if isInNumLayer(pb.bone, rig, layer):
                             pb.bone_group = bgrp
-        else:
+        elif GS.useBoneColors:
             for _bgname,color,layers in MHX.BoneGroups:
                 for layer in layers:
                     coll = rig.data.collections.get(layer)
@@ -1217,11 +1215,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, layer, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
-            if self.usePoleTargets:
-                upper_armIkTwist = deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, extraLayer, upper_armIk)
+            if rig.DazRig != "genesis9":
+                if self.usePoleTargets:
+                    deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, extraLayer, upper_armIk)
+                forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, extraLayer, forearmIk)
             else:
-                upper_armIkTwist = None
-            forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, extraLayer, forearmIk)
+                forearmIkTwist = forearmIk
             handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, armIkLayer, master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
@@ -1273,11 +1272,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, layer, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
             setConnected(shinIk, shin.use_connect)
-            if self.usePoleTargets:
-                thighIkTwist = deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, extraLayer, thighIk)
-            else:
-                thighIkTwist = None
-            shinIkTwist = deriveBone("shin.ik.twist.%s" % suffix, shin, rig, extraLayer, shinIk)
+            if rig.DazRig != "genesis9":
+                if self.usePoleTargets:
+                    deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, extraLayer, thighIk)
+                deriveBone("shin.ik.twist.%s" % suffix, shin, rig, extraLayer, shinIk)
 
             if "heel.%s" % suffix in rig.data.edit_bones.keys():
                 heel = rig.data.edit_bones["heel.%s" % suffix]
@@ -1383,7 +1381,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = rpbs["upper_arm.ik.%s" % suffix]
             forearmIk = rpbs["forearm.ik.%s" % suffix]
             upper_armIkTwist = rpbs.get("upper_arm.ik.twist.%s" % suffix, upper_armIk)
-            forearmIkTwist = rpbs["forearm.ik.twist.%s" % suffix]
+            forearmIkTwist = rpbs.get("forearm.ik.twist.%s" % suffix, forearmIk)
             handIk = rpbs["hand.ik.%s" % suffix]
             hand0Ik = rpbs["hand0.ik.%s" % suffix]
 
@@ -1446,7 +1444,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             thighIk = rpbs["thigh.ik.%s" % suffix]
             shinIk = rpbs["shin.ik.%s" % suffix]
             thighIkTwist = rpbs.get("thigh.ik.twist.%s" % suffix, thighIk)
-            shinIkTwist = rpbs["shin.ik.twist.%s" % suffix]
+            shinIkTwist = rpbs.get("shin.ik.twist.%s" % suffix, shinIk)
             footIk = rpbs["foot.ik.%s" % suffix]
             toeRev = rpbs["toe.rev.%s" % suffix]
             footRev = rpbs["foot.rev.%s" % suffix]

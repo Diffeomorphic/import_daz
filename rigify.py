@@ -1403,7 +1403,7 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
     def draw(self, context):
         Fixer.draw(self, context)
 
-    def drawMeta(self):
+    def drawMeta(self, rig):
         pass
 
     @classmethod

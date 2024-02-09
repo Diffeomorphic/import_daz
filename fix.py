@@ -71,14 +71,15 @@ class Fixer(DriverUser):
         default = False)
 
     def draw(self, context):
-        self.drawMeta()
+        self.drawMeta(context.object)
         self.drawRigify()
 
-    def drawMeta(self):
+    def drawMeta(self, rig):
         self.layout.prop(self, "keepRig")
         if self.keepRig:
             self.layout.prop(self, "useModifyDazRig")
-        self.layout.prop(self, "reuseBendTwists")
+        if rig.DazRig in ["genesis3", "genesis8"]:
+            self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useFingerIk")
 
     def drawRigify(self):
