@@ -757,7 +757,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns.use_x = cns.use_z = False
                     setEulerOrder(cns, BD.getDefaultMode(shldrBend))
                     cns = dampedTrack(foreBend, handIK, rig, prop=armProp)
-                    cns = copyRotation(foreTwist, foreIK, rig, prop=armProp, space='LOCAL')
+                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL')
                     cns.use_x = cns.use_z = False
                     setEulerOrder(cns, foreTwist.rotation_mode)
                     self.setCustomShape(shldrIK, "CS_Arrows")
