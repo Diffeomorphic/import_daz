@@ -510,6 +510,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Use pole targets for IK.\nEnable for perfect FK/IK snapping",
         default = False)
 
+    useQuaternions : BoolProperty(
+        name = "Quaternions",
+        description = "Use quaternions for ball-and-socket joints (shoulders and hips).\nDisable for backward compatibility",
+        default = True)
+
     useStretch : BoolProperty(
         name = "Stretchy Limbs",
         description = "Enable stretchiness for arms and legs",
@@ -575,6 +580,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "elbowParent")
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
+        self.layout.prop(self, "useQuaternions")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
         self.layout.prop(self, "useFoot2")
@@ -1346,7 +1352,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 bone = rpbs["%s.%s" % (bname, suffix)]
                 fkbone = rpbs["%s.fk.%s" % (bname, suffix)]
                 copyBoneInfo(bone, fkbone)
-                fkbone.rotation_mode = 'QUATERNION'
+                #fkbone.rotation_mode = 'QUATERNION'
                 bone.lock_rotation = (False, False, False)
 
         for bname in ["hip", "pelvis"]:
@@ -1354,14 +1360,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.rotation_mode = 'YZX'
 
         rotmodes = {
-            'QUATERNION' : ["upper_arm", "upper_arm.fk", "upper_arm.ik", "thigh", "thigh.fk", "thigh.ik"],
-            'YZX': ["shin", "shin.fk", "shin.ik", "thigh.ik.twist", "shin.ik.twist",
-                    "forearm", "forearm.fk", "forearm.ik", "upper_arm.ik.twist", "forearm.ik.twist",
-                    "foot", "foot.fk", "toe", "toe.fk", "foot.2", "toe.2",
-                    "foot.rev", "toe.rev",
+            'YZX': ["shin", "shin.fk", "shin.ik", "shin.ik.twist",
+                    "thigh", "thigh.fk", "thigh.ik", "thigh.ik.twist",
+                    "forearm", "forearm.fk", "forearm.ik", "forearm.ik.twist",
+                    "foot", "foot.fk", "foot.rev",
+                    "toe", "toe.fk", "foot.2", "toe.2", "toe.rev",
                     "knee.pt.ik", "elbow.pt.ik", "elbowPoleA", "kneePoleA",
                    ],
-            'YXZ' : ["hand", "hand.fk", "hand.ik", "hand0.ik"],
+            'YXZ' : ["upper_arm", "upper_arm.fk", "upper_arm.ik", "upper_arm.ik.twist",
+                     "hand", "hand.fk", "hand.ik", "hand0.ik"],
         }
         for suffix in ["L", "R"]:
             for rmode,bnames in rotmodes.items():
@@ -1369,6 +1376,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     pb = rpbs.get("%s.%s" % (bname,suffix))
                     if pb:
                         pb.rotation_mode = rmode
+            if self.useQuaternions:
+                for bname in ["upper_arm", "upper_arm.fk", "upper_arm.ik", "thigh", "thigh.fk", "thigh.ik"]:
+                    pb = rpbs.get("%s.%s" % (bname,suffix))
+                    if pb:
+                        pb.rotation_mode = 'QUATERNION'
 
             armSocket = rpbs["armSocket.%s" % suffix]
             armParent = rpbs["arm_parent.%s" % suffix]
