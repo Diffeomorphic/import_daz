@@ -564,7 +564,8 @@ def pruneNodeTree(tree,
                 if (gamma.label == "Linear" and
                     gamma.type == 'GAMMA'):
                     if isSRGBImage(img) and img.name in LS.protectedImages.keys():
-                        print("Protected image: %s" % img.name)
+                        if GS.verbosity >= 3:
+                            print("Protected image: %s" % img.name)
                     else:
                         setColorSpaceNone(img)
                         for link in gamma.outputs["Color"].links:
