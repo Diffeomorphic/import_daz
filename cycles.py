@@ -1563,7 +1563,7 @@ class CyclesTree(Tree):
             if alpha < 1 or tex:
                 self.owner.setTransSettings(None, False, WHITE, alpha)
             LS.usedFeatures["Transparent"] = True
-            if self.emit and GS.useGhostLight:
+            if self.emit and GS.useGhostLights:
                 self.addColumn()
                 from .cgroup import GhostLightGroup
                 ghost = self.addGroup(GhostLightGroup, "DAZ Ghost Light")
@@ -1584,9 +1584,8 @@ class CyclesTree(Tree):
             self.addColumn()
             emit = self.addGroup(EmissionGroup, "DAZ Emission")
             self.addEmitColor(emit, "Color")
-            socket = emit.inputs["Strength"]
-            strength = self.getLuminance(socket)
-            socket.default_value = strength
+            strength,lumtex = self.getLuminance(emit.inputs["Strength"])
+            self.linkScalar(lumtex, emit, strength, "Strength")
             self.linkCycles(emit, "BSDF")
             self.cycles = self.emit = emit
             self.addOneSided()
@@ -1594,8 +1593,6 @@ class CyclesTree(Tree):
 
     def addEmitColor(self, emit, slot):
         color,tex,_ = self.getColorTex("getChannelEmissionColor", "COLOR", BLACK)
-        if tex is None:
-            _,tex,_ = self.getColorTex(["Luminance"], "COLOR", BLACK)
         temp = self.getValue(["Emission Temperature"], None)
         if temp is None:
             self.linkColor(tex, emit, color, slot)
@@ -1615,7 +1612,7 @@ class CyclesTree(Tree):
 
 
     def getLuminance(self, socket):
-        lum = self.getValue(["Luminance"], 1500)
+        lum,lumtex,_ = self.getColorTex(["Luminance"], "NONE", 1500, useFactor=False)
         # "cd/m^2", "kcd/m^2", "cd/ft^2", "cd/cm^2", "lm", "W"
         units = self.getValue(["Luminance Units"], 3)
         factors = [1, 1000, 10.764, 10000, 1, 1]
@@ -1624,7 +1621,7 @@ class CyclesTree(Tree):
             self.owner.geoemit.append(socket)
             if units == 5:
                 strength *= self.getValue(["Luminous Efficacy"], 1)
-        return strength
+        return strength, lumtex
 
 
     def addOneSided(self):

@@ -200,7 +200,9 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildCutout(self):
-        if self.pbr and "Alpha" in self.pbr.inputs.keys() and not self.postPBR:
+        if (self.pbr and
+            "Alpha" in self.pbr.inputs.keys() and
+            not self.postPBR):
             alpha,tex,texslot = self.getColorTex("getChannelCutoutOpacity", "NONE", 1)
             if alpha < 1 or tex:
                 self.owner.setTransSettings(None, False, WHITE, alpha)
@@ -222,8 +224,8 @@ class PbrTree(CyclesTree):
                 self.addEmitColor(self.pbr, PBR.EmitColor)
                 if "Emission Strength" in self.pbr.inputs.keys():
                     socket = self.pbr.inputs["Emission Strength"]
-                    strength = self.getLuminance(socket)
-                    socket.default_value = strength
+                    lum,lumtex = self.getLuminance(socket)
+                    self.linkScalar(lumtex, self.pbr, lum, "Emission Strength")
         else:
             CyclesTree.buildEmission(self)
             self.postPBR = True

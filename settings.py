@@ -102,7 +102,7 @@ class GlobalSettings:
         self.useMaterialsByIndex = False
         self.useMaterialsByName = False
         self.imageInterpolation = 'Cubic'
-        self.useGhostLight = False
+        self.useGhostLights = False
         self.useUnusedTextures = False
         self.useShellInfluDrivers = False
         self.useLayeredInflu = False
