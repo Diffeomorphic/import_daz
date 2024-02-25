@@ -727,8 +727,7 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
         bpy.ops.daz.transfer_shapekeys(
             useDrivers=useDrivers,
             useOverwrite=useOverwrite,
-            needsTarget=needsTarget,
-            useNonConforming=False)
+            needsTarget=needsTarget)
     except DazError:
         pass
     finally:
@@ -1988,7 +1987,7 @@ class RigidTransfer:
     useNonConforming: BoolProperty(
         name = "Non-conforming Meshes",
         description = "Transfer shapekeys to non-conforming meshes",
-        default = True)
+        default = False)
 
     ignoreRigidity : BoolProperty(
         name = "Ignore Rigidity Groups",
