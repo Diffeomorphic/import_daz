@@ -147,6 +147,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
         self.layout.operator("daz.transfer_shapekeys")
+        self.layout.operator("daz.remove_shapekeys")
 
 
 class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):

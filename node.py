@@ -848,6 +848,7 @@ class Node(Asset, Formula, Channels):
                     geonode.parse(geostruct)
                     geonode.update(geostruct)
                     geonode.extra = self.extra
+                    geonode.conform_target = struct.get("conform_target")
                     self.geometries.append(geonode)
             elif channel in self.attributes.keys():
                 self.setAttribute(channel, data)

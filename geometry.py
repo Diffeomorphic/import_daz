@@ -85,6 +85,7 @@ class GeoNode(Node, SimNode):
         self.shellPrefix = ""
         self.push = 0
         self.assigned = False
+        self.conform_target = None
         SimNode.__init__(self)
 
 
@@ -207,9 +208,9 @@ class GeoNode(Node, SimNode):
             self.hdobject = inst.hdobject = ob
 
         if ob and self.data:
-            self.data.buildRigidity(ob)
+            self.data.buildRigidity(ob, self.conform_target)
             if self.hdType == 'MULTIRES':
-                self.data.buildRigidity(self.hdobject)
+                self.data.buildRigidity(self.hdobject, self.conform_target)
 
         renderLevel = 0
         subDLevel = 0
@@ -1353,7 +1354,7 @@ class Geometry(Asset, Channels):
                 reportError(msg)
 
 
-    def buildRigidity(self, ob):
+    def buildRigidity(self, ob, conforms):
         from .modifier import buildVertexGroup
         if self.rigidity:
             if "weights" in self.rigidity.keys():
@@ -1371,6 +1372,8 @@ class Geometry(Asset, Channels):
                 for vn in group["mask_vertices"]["values"]:
                     vert = rgroup.mask_vertices.add()
                     vert.a = vn
+        if conforms:
+            ob.data["DazConforms"] = True
 
 
     def makeShell(self, shname, shmat, uv):

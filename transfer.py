@@ -94,7 +94,9 @@ class MatchOperator(DazPropsOperator):
         self.checkTransforms(src)
         objects = []
         for ob in getSelectedMeshes(context):
-            if ob != src and len(ob.data.polygons) > 0:
+            if (ob != src and
+                len(ob.data.polygons) > 0 and
+                (ob.data.get("DazConforms", False) or self.useNonConforming)):
                 objects.append(ob)
                 self.checkTransforms(ob)
                 if (ob.parent and
@@ -273,11 +275,8 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         row = self.layout.row()
         row.prop(self, "useStrength")
         row.prop(self, "useSelectedOnly")
-        row.prop(self, "skipRigidMeshes")
-        if self.skipRigidMeshes:
-            row.label(text="")
-        else:
-            row.prop(self, "ignoreRigidity")
+        row.prop(self, "useNonConforming")
+        row.prop(self, "ignoreRigidity")
         JCMSelector.draw(self, context)
 
 
@@ -382,9 +381,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             if cskey:
                 cskey.name = sname
                 printName(" *", sname)
-            elif self.skipRigidMeshes and "Rigidity" in trg.vertex_groups.keys():
-                printName(" R", sname)
-                continue
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
                 printName(" +", sname)
@@ -444,7 +440,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     def correctForRigidity(self, ob, skey):
         from mathutils import Matrix
         for rgroup in ob.data.DazRigidityGroups:
-            if not ES.easy:
+            if GS.verbosity >= 3 and not ES.easy:
                 print("Rigidity group: %s" % rgroup.id)
             rotmode = rgroup.rotation_mode
             maskverts = [elt.a for elt in rgroup.mask_vertices]

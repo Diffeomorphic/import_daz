@@ -911,6 +911,29 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
                 removeFromPropGroup(cat.morphs, prop)
 
 
+class DAZ_OT_RemoveShapekeys(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
+    bl_idname = "daz.remove_shapekeys"
+    bl_label = "Remove Shapekeys"
+    bl_description = "Remove shapekeys and drivers from active mesh"
+    bl_options = {'UNDO'}
+
+    def draw(self, context):
+        Selector.draw(self, context)
+
+    def includeShapekey(self, skeys, sname):
+        return True
+
+    def handleShapekey(self, sname, rig, ob):
+        skey = ob.data.shape_keys.key_blocks[sname]
+        skey.driver_remove("value")
+        skey.driver_remove("slider_min")
+        skey.driver_remove("slider_max")
+        ob.shape_key_remove(skey)
+
+    def getCategory(self, rig, ob, sname):
+        return ""
+
+
 class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
     bl_idname = "daz.remove_shapekey_drivers"
     bl_label = "Remove Shapekey Drivers"
@@ -1220,6 +1243,7 @@ classes = [
     DAZ_OT_RemoveAllDrivers,
     DAZ_OT_AddShapekeyDrivers,
     DAZ_OT_RemoveShapekeyDrivers,
+    DAZ_OT_RemoveShapekeys,
 
     DAZ_OT_ConvertMorphsToShapes,
     DAZ_OT_TransferAnimationToShapekeys,

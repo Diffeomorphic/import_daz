@@ -724,7 +724,11 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
     theFilePaths = LS.theFilePaths
     LS.theFilePaths = snames
     try:
-        bpy.ops.daz.transfer_shapekeys(useDrivers=useDrivers, useOverwrite=useOverwrite, needsTarget=needsTarget)
+        bpy.ops.daz.transfer_shapekeys(
+            useDrivers=useDrivers,
+            useOverwrite=useOverwrite,
+            needsTarget=needsTarget,
+            useNonConforming=False)
     except DazError:
         pass
     finally:
@@ -1981,9 +1985,9 @@ class RigidTransfer:
         description = "Transfer shapekeys from main mesh to other meshes",
         default = True)
 
-    skipRigidMeshes : BoolProperty(
-        name = "Skip Rigid Meshes",
-        description = "Skip meshes with rigidity groups when auto-transfer morphs.\nVendor morphs are transferred",
+    useNonConforming: BoolProperty(
+        name = "Non-conforming Meshes",
+        description = "Transfer shapekeys to non-conforming meshes",
         default = True)
 
     ignoreRigidity : BoolProperty(
@@ -1994,9 +1998,8 @@ class RigidTransfer:
     def draw(self, context):
         self.layout.prop(self, "useTransferOthers")
         if self.useTransferOthers:
-            self.layout.prop(self, "skipRigidMeshes")
-            if not self.skipRigidMeshes:
-                self.layout.prop(self, "ignoreRigidity")
+            self.layout.prop(self, "useNonConforming")
+            self.layout.prop(self, "ignoreRigidity")
 
 
 class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, PosableMaker, IsMeshArmature):
@@ -2035,7 +2038,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     LS.theFilePaths = keynames
                     try:
                         bpy.ops.daz.transfer_shapekeys(
-                            skipRigidMeshes = self.skipRigidMeshes,
+                            useNonConforming = self.useNonConforming,
                             ignoreRigidity = self.ignoreRigidity)
                     finally:
                         LS.theFilePaths = filepaths
