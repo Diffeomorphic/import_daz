@@ -1221,12 +1221,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_armIk = deriveBone("upper_arm.ik.%s" % suffix, upper_arm, rig, layer, armParent)
             forearmIk = deriveBone("forearm.ik.%s" % suffix, forearm, rig, L_HELP2, upper_armIk)
             setConnected(forearmIk, forearm.use_connect)
-            if rig.DazRig != "genesis9":
-                if self.usePoleTargets:
-                    deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, extraLayer, upper_armIk)
-                forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, extraLayer, forearmIk)
-            else:
-                forearmIkTwist = forearmIk
+            deriveBone("upper_arm.ik.twist.%s" % suffix, upper_arm, rig, extraLayer, upper_armIk)
+            forearmIkTwist = deriveBone("forearm.ik.twist.%s" % suffix, forearm, rig, extraLayer, forearmIk)
             handIk = deriveBone("hand.ik.%s" % suffix, hand, rig, armIkLayer, master)
             hand0Ik = deriveBone("hand0.ik.%s" % suffix, hand, rig, L_HELP2, forearmIkTwist)
 
@@ -1278,10 +1274,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, layer, thigh.parent)
             shinIk = deriveBone("shin.ik.%s" % suffix, shin, rig, L_HELP2, thighIk)
             setConnected(shinIk, shin.use_connect)
-            if rig.DazRig != "genesis9":
-                if self.usePoleTargets:
-                    deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, extraLayer, thighIk)
-                deriveBone("shin.ik.twist.%s" % suffix, shin, rig, extraLayer, shinIk)
+            deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, extraLayer, thighIk)
+            deriveBone("shin.ik.twist.%s" % suffix, shin, rig, extraLayer, shinIk)
 
             if "heel.%s" % suffix in rig.data.edit_bones.keys():
                 heel = rig.data.edit_bones["heel.%s" % suffix]
@@ -1682,8 +1676,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def copyIkLimits(self, rig, bname, suffix):
         iktwist = rig.pose.bones.get("%s.ik.twist.%s" % (bname, suffix))
-        if iktwist:
-            iktwist.lock_rotation = (True,False,True)
+        iktwist.lock_rotation = (True,False,True)
         fkbone = rig.pose.bones["%s.fk.%s" % (bname, suffix)]
         ikbone = rig.pose.bones["%s.ik.%s" % (bname, suffix)]
         ikbone.lock_ik_x = fkbone.lock_rotation[0]
