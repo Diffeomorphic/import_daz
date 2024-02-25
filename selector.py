@@ -507,12 +507,11 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        scn = context.scene
-        for rig in getSelectedArmatures(context):
+        rig = getRigFromContext(context)
+        if rig:
+            scn = context.scene
             setMorphs(0.0, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
-        for ob in getSelectedMeshes(context):
-            setShapes(0.0, ob, self, scn, scn.frame_current)
 
 
 class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
