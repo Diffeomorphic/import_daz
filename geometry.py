@@ -1373,7 +1373,7 @@ class Geometry(Asset, Channels):
                     vert = rgroup.mask_vertices.add()
                     vert.a = vn
         if conforms:
-            ob.data["DazConforms"] = True
+            ob["DazConforms"] = True
 
 
     def makeShell(self, shname, shmat, uv):

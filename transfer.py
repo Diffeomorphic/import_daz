@@ -96,7 +96,7 @@ class MatchOperator(DazPropsOperator):
         for ob in getSelectedMeshes(context):
             if (ob != src and
                 len(ob.data.polygons) > 0 and
-                (ob.data.get("DazConforms", False) or self.useNonConforming)):
+                (ob.get("DazConforms", False) or self.useNonConforming)):
                 objects.append(ob)
                 self.checkTransforms(ob)
                 if (ob.parent and
