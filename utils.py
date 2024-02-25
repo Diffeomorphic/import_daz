@@ -622,6 +622,20 @@ def getRigFromContext(context, useMesh=False, strict=True, activate=False):
         return ob
 
 
+def getRigsFromContext(context):
+    rigs = {}
+    for ob in getSelectedObjects(context):
+        if ob.type == 'MESH':
+            rig = getRigFromMesh(ob)
+        elif ob.type == 'ARMATURE':
+            rig = ob
+        else:
+            continue
+        if rig.name not in rigs.keys():
+            rigs[rig.name] = rig
+    return rigs.values()
+
+
 def getMeshChildren(rig):
     return [ob for ob in rig.children if ob.type == 'MESH' and ob.parent_type != 'BONE']
 
