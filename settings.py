@@ -81,6 +81,7 @@ class GlobalSettings:
 
         self.materialMethod = 'SELECT'
         self.sssMethod = 'BURLEY'
+        self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
         self.useDazOrientation = False
@@ -91,8 +92,6 @@ class GlobalSettings:
         self.useFakeCaustics = False
         self.handleRenderSettings = "UPDATE"
         self.handleLightSettings = "WARN"
-        self.useSssSkin = False
-        self.useAltSss = False
         self.useVolume = True
         self.useDisplacement = True
         self.useEmission = True

@@ -240,7 +240,7 @@ def showBox(scn, attr, layout):
 
 
 MaterialMethodItems = [
-    ('BSDF', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only unless SSS Skin is enabled"),
+    ('BSDF', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only when the Skin method is set to IRAY"),
     ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
     ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
 ]
@@ -631,16 +631,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Reflection",
         description = "Use reflection maps")
 
-    useSssSkin : BoolProperty(
-        name = "SSS Skin",
-        description = (
-            "Replace translucency with SSS for volumetric skin materials.\n" +
-            "Limited IRAY conversion but faster rendering and more conventional skin materials.\n" +
-            "Works with both Cycles and Eevee but some screen effects may not work"))
-
-    useAltSss : BoolProperty(
-        name = "Alternative SSS",
-        description = "Use alternative handling of SSS suggested by Midnight Arrow")
+    skinMethod : EnumProperty(
+        items = [('IRAY', "IRAY", "Use translucency and volume nodes.\nUsually the most accurate conversion of volumetric skin materials,\nbut only works with Cycles and the BSDF material method"),
+                 ('SSS1', "SSS 1", "Replace translucency and volume with subsurface scattering"),
+                 ('SSS2', "SSS 2", "Alternative handling of SSS suggested by Midnight Arrow")],
+        name = "Skin Method",
+        description = "Conversion method for volumetric skin materials")
 
     useVolume : BoolProperty(
         name = "Volume",
@@ -798,10 +794,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Materials")
         box.prop(self, "materialMethod")
         box.prop(self, "sssMethod")
+        box.prop(self, "skinMethod")
         box.prop(self, "viewportColors")
         box.prop(self, "useWorld")
-        box.prop(self, "useSssSkin")
-        box.prop(self, "useAltSss")
         box.prop(self, "useLowerResFolders")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")

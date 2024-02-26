@@ -245,7 +245,7 @@ class Material(Asset, Channels):
             self.useTranslucency = False
             self.useVolume = False
         elif LS.materialMethod == 'BSDF':
-            if GS.useSssSkin and self.isVoluSkinMaterial():
+            if GS.skinMethod != 'IRAY' and self.isVoluSkinMaterial():
                 self.useTranslucency = False
                 self.useVolume = False
             if self.isThinWall:
