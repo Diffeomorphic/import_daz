@@ -633,8 +633,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     skinMethod : EnumProperty(
         items = [('IRAY', "IRAY", "Use translucency and volume nodes.\nUsually the most accurate conversion of volumetric skin materials,\nbut only works with Cycles and the BSDF material method"),
-                 ('SSS1', "SSS 1", "Replace translucency and volume with subsurface scattering"),
-                 ('SSS2', "SSS 2", "Alternative handling of SSS suggested by Midnight Arrow")],
+                 ('SSS', "SSS", "Replace translucency and volume with subsurface scattering"),
+                 ('AltSSS', "Alternative SSS", "Alternative handling of SSS suggested by Midnight Arrow")],
         name = "Skin Method",
         description = "Conversion method for volumetric skin materials")
 
