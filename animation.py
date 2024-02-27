@@ -109,9 +109,6 @@ class FrameConverter:
     def getConv(self, banims, rig):
         from .figure import getRigType
         from .convert import getConverter
-        srctype = None
-        conv = {}
-        twists = {}
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
         elif self.trgRig and not rig.DazRig.startswith("genesis"):
@@ -120,12 +117,13 @@ class FrameConverter:
             srctype = getRigType(banims, False)
         if srctype:
             print("Auto-detected %s character in duf/dsf file" % srctype)
-            conv,twists = getConverter(srctype, rig)
-            if not conv:
-                conv = {}
+            return getConverter(srctype, rig)
+        elif rig.DazRig.startswith(("mhx", "rigify")):
+            print("Convert to %s" % rig.DazRig)
+            return getConverter("genesis3", rig)
         else:
             print("Could not auto-detect character in duf/dsf file")
-        return conv, twists
+            return {}, {}
 
 
     def getRigifyLocks(self, rig, conv):
