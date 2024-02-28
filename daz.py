@@ -936,7 +936,6 @@ def register():
     bpy.types.Object.DazHasLocLimits = BoolProperty(default=False)
     bpy.types.Object.DazHasRotLimits = BoolProperty(default=False)
 
-    bpy.types.Material.DazRenderEngine = StringProperty(default='NONE')
     bpy.types.Material.DazShader = StringProperty(default='NONE')
 
     bpy.types.Object.DazUDimsCollapsed = BoolProperty(default=False)

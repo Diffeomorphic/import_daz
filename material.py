@@ -354,7 +354,6 @@ class Material(Asset, Channels):
             mat = self.rna = bpy.data.materials.new(self.name)
             LS.materials[mat.name] = mat
         scn = self.scene = context.scene
-        mat.DazRenderEngine = scn.render.engine
         mat.DazShader = self.shader
         if self.uv_set:
             self.uv_sets[self.uv_set.name] = self.uv_set
@@ -1175,6 +1174,9 @@ class MaterialCombiner:
                     if norm(mat.diffuse_color) < norm(mat2.diffuse_color):
                         diffuse[mat2.name] = (mat.name, mat.diffuse_color)
                     taken = True
+                    if mat.DazMaterialType == 'SKIN':
+                        mat2.DazMaterialType = 'SKIN'
+                        print("%s is skin material" % mat2.name)
                     break
             if not taken:
                 table[mat.name] = mat
