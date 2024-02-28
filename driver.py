@@ -210,7 +210,7 @@ class DriverUser:
         self.createTmp()
         try:
             for key,fcu in drivers.items():
-                sname,channel = key.split(":")
+                sname,channel = key.rsplit(":", 1)
                 if (getShapekeyDriver(skeys, sname, channel) or
                     sname not in skeys.key_blocks.keys()):
                     continue
