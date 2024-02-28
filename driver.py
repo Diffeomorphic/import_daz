@@ -197,8 +197,8 @@ class DriverUser:
 
         for fcu in ob.data.shape_keys.animation_data.drivers:
             sname,channel = getShapeChannel(fcu)
-            if sname and channel == "value":
-                drivers[sname] = fcu
+            if sname:
+                drivers["%s:%s" % (sname,channel)] = fcu
 
         return drivers
 
@@ -209,8 +209,9 @@ class DriverUser:
             return
         self.createTmp()
         try:
-            for sname,fcu in drivers.items():
-                if (getShapekeyDriver(skeys, sname) or
+            for key,fcu in drivers.items():
+                sname,channel = key.split(":")
+                if (getShapekeyDriver(skeys, sname, channel) or
                     sname not in skeys.key_blocks.keys()):
                     continue
                 #skey = skeys.key_blocks[sname]
@@ -272,12 +273,12 @@ def getDrivingBone(fcu, rig):
     return None
 
 
-def getShapekeyDriver(skeys, sname):
-    return getRnaDriver(skeys, 'key_blocks["%s"].value' % (sname), None)
+def getShapekeyDriver(skeys, sname, channel = "value"):
+    return getRnaDriver(skeys, 'key_blocks["%s"].%s' % (sname, channel), None)
 
 
-def getShapekeyPropDriver(skeys, sname):
-    return getRnaDriver(skeys, 'key_blocks["%s"].value' % (sname), 'SINGLE_PROP')
+def getShapekeyPropDriver(skeys, sname, channel = "value"):
+    return getRnaDriver(skeys, 'key_blocks["%s"].%s' % (sname, channel), 'SINGLE_PROP')
 
 
 def getRnaDriver(rna, path, type=None):
