@@ -804,7 +804,7 @@ class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
 
 
     def checkAllowed(self, rig):
-        if rig.startswith(("mhx", "rigify")):
+        if rig.DazRig.startswith(("mhx", "rigify")):
             msg = "Rig type = %s" % rig.DazRig
         elif rig.DazSimpleIK:
             msg = "Rig has simple IK"

@@ -162,6 +162,7 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
     bl_options = {'UNDO'}
 
     transferMethod = 'NEAREST'
+    useNonConforming = True
 
     def draw(self, context):
         self.layout.prop(self, "threshold")
