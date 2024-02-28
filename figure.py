@@ -752,7 +752,7 @@ class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
     def changeLayer(self, eb, rig):
         if rig.DazRig == "mhx":
             enableBoneNumLayer(eb, rig, L_FACE)
-        elif rig.DazRig[0:6] == "rigify":
+        elif rig.DazRig.startswith("rigify"):
             enableBoneNumLayer(eb, rig, R_DETAIL)
 
     def hasBoneDriver(self, bname, drivers):
@@ -804,7 +804,7 @@ class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
 
 
     def checkAllowed(self, rig):
-        if rig.DazRig[0:3] in ["mhx", "rig"]:
+        if rig.startswith(("mhx", "rigify")):
             msg = "Rig type = %s" % rig.DazRig
         elif rig.DazSimpleIK:
             msg = "Rig has simple IK"

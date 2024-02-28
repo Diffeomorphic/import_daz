@@ -792,7 +792,7 @@ class DAZ_OT_ChangePrefixToSuffix(DazOperator, GizmoUser, IsArmature):
     def run(self, context):
         self.renamedBones = {}
         for rig in getSelectedArmatures(context):
-            if rig.DazRig[-7:] == ".suffix":
+            if rig.DazRig.endswith(".suffix"):
                 raise DazError("%s already has suffix bones" % rig.name)
             if rig.DazRig.startswith(("mhx", "rigify")):
                 raise DazError("Cannot change a %s rig to suffix" % rig.DazRig)
@@ -812,7 +812,7 @@ class DAZ_OT_ChangeSuffixToPrefix(DazOperator, GizmoUser, IsArmature):
     def run(self, context):
         self.renamedBones = {}
         for rig in getSelectedArmatures(context):
-            if rig.DazRig[-7:] != ".suffix":
+            if not rig.DazRig.endswith(".suffix"):
                 raise DazError("%s does not have suffix bones" % rig.name)
             self.rigtype = rig.DazRig = rig.DazRig[:-7]
             self.renameFaceBones(rig)

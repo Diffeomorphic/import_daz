@@ -114,7 +114,7 @@ class ControlRigMuter:
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig not in ["mhx", "rigify", "rigify2"])
+        return (ob and ob.type == 'ARMATURE' and not ob.DazRig.startswith(("mhx", "rigify")))
 
     def getProps(self, rig, gen):
         props = {}

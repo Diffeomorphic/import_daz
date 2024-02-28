@@ -128,7 +128,7 @@ class FrameConverter:
 
     def getRigifyLocks(self, rig, conv):
         locks = []
-        if rig.DazRig[0:6] == "rigify":
+        if rig.DazRig.startswith("rigify"):
             for bname in conv.values():
                 if (bname in rig.pose.bones.keys() and
                     bname not in ["torso"]):
@@ -982,7 +982,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def getMasterBone(self, rig):
         if rig.DazRig == "mhx":
             master = "master"
-        elif rig.DazRig[0:6] == "rigify":
+        elif rig.DazRig.startswith("rigify"):
             master = "root"
         elif rig.DazSimpleIK:
             master = "Root"
