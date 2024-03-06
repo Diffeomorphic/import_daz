@@ -832,9 +832,9 @@ class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
         data = skey.data
         offsets = [d.co - v.co for v,d in zip(verts, data)]
         skey.driver_remove("value")
+        skey.driver_remove("mute")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")
-        skey.driver_remove("mute")
         ob.shape_key_remove(skey)
         for v,offs in zip(verts,offsets):
             v.co += offs

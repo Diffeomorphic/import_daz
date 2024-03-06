@@ -239,6 +239,7 @@ class MorphRemover(CategoryBasic):
                     skey = skeys.key_blocks[raw]
                     if self.useDeleteShapekeys or self.useDeleteDrivers:
                         skey.driver_remove("value")
+                        skey.driver_remove("mute")
                         skey.driver_remove("slider_min")
                         skey.driver_remove("slider_max")
                     if self.useDeleteShapekeys:
@@ -926,6 +927,7 @@ class DAZ_OT_RemoveShapekeys(DazOperator, AddRemoveDriver, CustomSelector, IsSha
     def handleShapekey(self, sname, rig, ob):
         skey = ob.data.shape_keys.key_blocks[sname]
         skey.driver_remove("value")
+        skey.driver_remove("mute")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")
         ob.shape_key_remove(skey)
@@ -961,6 +963,7 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
     def handleShapekey(self, sname, rig, ob):
         skey = ob.data.shape_keys.key_blocks[sname]
         skey.driver_remove("value")
+        skey.driver_remove("mute")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")
         if self.useSubmeshes and rig:
@@ -969,6 +972,7 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
                     skey = clo.data.shape_keys.key_blocks.get(sname)
                     if skey:
                         skey.driver_remove("value")
+                        skey.driver_remove("mute")
                         skey.driver_remove("slider_min")
                         skey.driver_remove("slider_max")
         if self.useRemoveProps:
