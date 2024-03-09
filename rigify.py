@@ -94,10 +94,11 @@ def addDicts(structs):
 class RigifyCommon:
     gizmoFile = "mhx"
 
-    GroupBones = [
-        ("Face ", R_FACE, 2, 6),
-        ("Face (detail) ", R_DETAIL, 2, 3),
-        ("Custom ", R_CUSTOM, 13, 6)]
+    if BLENDER3:
+        GroupBones = [
+            ("Face ", R_FACE, 2, 6),
+            ("Face (detail) ", R_DETAIL, 2, 3),
+            ("Custom ", R_CUSTOM, 13, 6)]
 
     def setupDazSkeleton(self, rig):
         if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
@@ -298,7 +299,7 @@ class MetaMaker(RigifyCommon):
 
         self.fixHands(meta)
         self.fitLimbs(meta, hip)
-        if meta["DazCustomLayers"]:
+        if BLENDER3 and meta["DazCustomLayers"]:
             self.addGroupBones(meta, rig)
 
         for eb in meta.data.edit_bones:
@@ -312,7 +313,7 @@ class MetaMaker(RigifyCommon):
         self.reparentBones(meta, RF.MetaParents)
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
-        if meta["DazCustomLayers"]:
+        if BLENDER3 and meta["DazCustomLayers"]:
             self.setupGroupBones(meta)
 
         print("  Set connected")
@@ -386,30 +387,38 @@ class MetaMaker(RigifyCommon):
         return connect, disconnect
 
 
-    def addGroupBones(self, meta, rig):
-        tail = (0,0,10*rig.DazScale)
-        for bname,layer,row,group in self.GroupBones:
-            eb = meta.data.edit_bones.new(bname)
-            eb.head = (0,0,0)
-            eb.tail = tail
-            enableBoneNumLayer(eb, meta, layer)
+    if BLENDER3:
+        def addGroupBones(self, meta, rig):
+            tail = (0,0,10*rig.DazScale)
+            for bname,layer,row,group in self.GroupBones:
+                eb = meta.data.edit_bones.new(bname)
+                eb.head = (0,0,0)
+                eb.tail = tail
+                enableBoneNumLayer(eb, meta, layer)
 
-
-    def setupGroupBones(self, meta):
-        for bname,layer,row,group in self.GroupBones:
-            pb = meta.pose.bones[bname]
-            pb["rigify_type"] = "basic.pivot"
-            enableRigNumLayer(meta, layer)
-            if BLENDER3:
+        def setupGroupBones(self, meta):
+            for bname,layer,row,group in self.GroupBones:
+                pb = meta.pose.bones[bname]
+                pb["rigify_type"] = "basic.pivot"
+                enableRigNumLayer(meta, layer)
                 rlayer = meta.data.rigify_layers[layer]
                 rlayer.name = bname
                 rlayer.row = row
                 rlayer.group = group
-        if BLENDER3:
             meta.data.layers[0] = False
             rlayer = meta.data.rigify_layers[0]
             rlayer.name = ""
             rlayer.group = 6
+    else:
+        def addRigUI(self, gen):
+            root = gen.data.collections.get("Root")
+            custom = gen.data.collections.get("Custom")
+            if root and custom:
+                row = root.rigify_ui_row
+                custom.rigify_ui_row = row - 1
+                custom.rigify_color_set_id = 3
+                custom.rigify_sel_set = False
+                custom.rigify_ui_title = "Custom"
 
 
     def getChildren(self, pb):
@@ -715,7 +724,9 @@ class Rigifier(RigifyCommon):
 
         scn = context.scene
         gen = context.object
-        makeBoneCollections(gen, RigifyLayers)
+        if not BLENDER3:
+            makeBoneCollections(gen, RigifyLayers)
+            self.addRigUI(gen)
         if gen.name in scn.collection.objects:
             scn.collection.objects.unlink(gen)
         if gen.name not in coll.objects:
@@ -755,8 +766,8 @@ class Rigifier(RigifyCommon):
                 enableBoneNumLayer(eb, gen, R_HELP)
 
         # Group bones
-        print("  Create group bones")
-        if meta["DazCustomLayers"]:
+        if BLENDER3 and meta["DazCustomLayers"]:
+            print("  Create group bones")
             for data in self.GroupBones:
                 eb = gen.data.edit_bones[data[0]]
                 enableBoneNumLayer(eb, gen, R_HELP)
@@ -1135,7 +1146,6 @@ class Rigifier(RigifyCommon):
                     vgrp.name = bendname
         else:
             splitBone()
-
 
 
     def mergeVertexGroups(self, rname, dnames, ob):
