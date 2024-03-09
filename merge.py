@@ -1633,18 +1633,27 @@ class DAZ_OT_CopyPose(DazOperator, IsArmature):
         if not subrigs:
             raise DazError("No target armature")
 
+        def snapBone(pb, gmats):
+            M1 = gmats.get(pb.name)
+            if M1 is None:
+                return
+            R1 = pb.bone.matrix_local
+            if pb.parent:
+                M0 = gmats.get(pb.parent.name)
+                if M0 is None:
+                    return
+                R0 = pb.parent.bone.matrix_local
+                pb.matrix_basis = R1.inverted() @ R0 @ M0.inverted() @ M1
+            else:
+                pb.matrix_basis = R1.inverted() @ M1
+
+        gmats = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
         for subrig in subrigs:
-            if not setActiveObject(context, subrig):
-                continue
             print("Copy bones to %s:" % subrig.name)
             setWorldMatrix(subrig, rig.matrix_world)
-            #updateScene(context)
-            bpy.context.view_layer.update()
             for pb in subrig.pose.bones:
                 if pb.name in rig.pose.bones.keys():
-                    pb.matrix = rig.pose.bones[pb.name].matrix
-                    bpy.context.view_layer.update()
-                    #updateScene(context)
+                    snapBone(pb, gmats)
 
 #-------------------------------------------------------------
 #   Apply rest pose
