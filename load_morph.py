@@ -698,7 +698,7 @@ class LoadMorph(DriverUser):
             setattr(pb, attr, Zero)
         vec = Vector((0,0,0))
         vec[idx] = factor
-        self.setFcurves(pb, vec, prop, attr, "pose")
+        self.setFcurves(pb, vec, prop, attr, "pose", useDrv=False)
 
 
     def makeErcMorphs(self):
@@ -841,7 +841,7 @@ class LoadMorph(DriverUser):
         return success
 
 
-    def setFcurves(self, pb, vec, prop, channel, pose="pose"):
+    def setFcurves(self, pb, vec, prop, channel, pose="pose", useDrv=True):
         def getBoneFcurves(pb, channel):
             if isinstance(pb, bpy.types.Object):
                 path = channel
@@ -854,7 +854,7 @@ class LoadMorph(DriverUser):
                         fcurves[fcu.array_index] = fcu
             return fcurves
 
-        if drvBone(pb.name) in self.rig.pose.bones.keys():
+        if useDrv and drvBone(pb.name) in self.rig.pose.bones.keys():
             pb = self.rig.pose.bones[drvBone(pb.name)]
         fcurves = getBoneFcurves(pb, channel)
         for idx,factor in self.getFactors(vec):
