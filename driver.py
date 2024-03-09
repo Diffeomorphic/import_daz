@@ -1008,6 +1008,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                     hskey = hskeys.key_blocks.get(skey.name)
                     if hskey:
                         skey.driver_remove("value")
+                        skey.driver_remove("mute")
                         skey.driver_remove("slider_min")
                         skey.driver_remove("slider_max")
                         addGeneralDriver(skey, "value", hskeys, 'key_blocks["%s"].value' % hskey.name, "x")
