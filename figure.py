@@ -91,7 +91,7 @@ class FigureInstance(Instance):
                 mesh.DazMesh = char
         Instance.finalize(self, context)
         if rig:
-            enableRigNumLayers(rig, [T_BONES])
+            enableRigNumLayers(rig, [T_BONES, T_WIDGETS])
             if chars:
                 activateObject(context, rig)
                 self.selectChildren(rig)

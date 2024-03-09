@@ -1023,7 +1023,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if mainMesh:
             mainMesh.update_tag()
         if mainRig:
-            enableRigNumLayers(mainRig, [T_BONES])
+            enableRigNumLayers(mainRig, [T_BONES, T_WIDGETS])
             mainRig.update_tag()
             activateObject(context, mainRig)
         updateAll(context)

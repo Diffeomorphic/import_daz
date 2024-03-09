@@ -1826,7 +1826,7 @@ class DAZ_OT_CopyModifiers(DazPropsOperator, IsMesh):
 #----------------------------------------------------------
 
 class WidgetConverter:
-    deleteUnused = False
+    deleteUnused = True
 
     def convertWidgets(self, context, rig, ob):
         from .node import createHiddenCollection
@@ -1898,6 +1898,7 @@ class WidgetConverter:
         else:
             for bname in self.unused.keys():
                 bone = rig.data.bones[bname]
+                bone.use_deform = False
                 enableBoneNumLayer(bone, rig, T_HIDDEN)
 
 
