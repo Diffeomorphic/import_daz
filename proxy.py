@@ -1898,7 +1898,7 @@ class WidgetConverter:
         else:
             for bname in self.unused.keys():
                 bone = rig.data.bones[bname]
-                bone.hide = True
+                enableBoneNumLayer(bone, rig, T_HIDDEN)
 
 
     def inheritLimits(self, pb, pb2, rig):
