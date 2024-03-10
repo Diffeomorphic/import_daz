@@ -87,7 +87,7 @@ class BoneInstance(Instance):
         self.name = self.node.name
         self.roll = 0.0
         self.useRoll = False
-        node.inherits_scale = False
+        #node.inherits_scale = False
         self.axes = [0,1,2]
         self.flipped = [False,False,False]
         self.flopped = [False,False,False]
@@ -664,9 +664,6 @@ class Bone(Node):
                 self.translation = data
             elif channel == "scale":
                 self.scale = data
-            elif channel == "general_scale":
-                if not data.get("visible", True):
-                    self.inherits_scale = True
         if isinstance(self.parent, Figure):
             self.figure = self.parent
         elif isinstance(self.parent, Bone):

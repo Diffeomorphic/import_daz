@@ -650,8 +650,7 @@ def getConstraint(ob, type):
 
 
 def inheritsParentScale(pb):
-    return (GS.useInheritScale and
-            pb.parent and
+    return (pb.parent and
             isinstance(pb, bpy.types.PoseBone) and
             pb.bone.inherit_scale not in ['NONE', 'NONE_LEGACY'])
 
