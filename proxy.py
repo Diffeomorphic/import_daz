@@ -1474,7 +1474,14 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         # Add mannequin objects for selected meshes
         for ob in meshes:
             obs[ob.name] = ob
+            masks = []
+            for mod in ob.modifiers:
+                if mod.type == 'MASK':
+                    masks.append((mod, mod.vertex_group))
+                    mod.vertex_group = ""
             nobs[ob.name] = self.addMannequin(ob, context, rig, coll, mangrp)
+            for mod,vgrp in masks:
+                mod.vertex_group = vgrp
 
         for ob in getSelectedObjects(context):
             if ob in selected:
