@@ -596,7 +596,7 @@ class Bone(Node):
     def __init__(self, fileref):
         Node.__init__(self, fileref)
         self.mapped = None
-        self.inherits_scale = False
+        #self.inherits_scale = False
 
 
     def __repr__(self):
@@ -664,6 +664,9 @@ class Bone(Node):
                 self.translation = data
             elif channel == "scale":
                 self.scale = data
+            elif channel == "general_scale":
+                if not data.get("visible", True):
+                    self.inherits_scale = True
         if isinstance(self.parent, Figure):
             self.figure = self.parent
         elif isinstance(self.parent, Bone):

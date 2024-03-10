@@ -1228,7 +1228,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             return
         for frame,smats in self.scales.items():
             for pb in rig.pose.bones:
-                if pb.parent and inheritsScale(pb) and self.isAvailable(pb, rig):
+                if inheritsParentScale(pb) and self.isAvailable(pb, rig):
                     smat = smats[pb.name] @ smats[pb.parent.name].inverted()
                     pb.scale = smat.to_scale()
                     if self.useInsertKeys:
