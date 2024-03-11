@@ -649,7 +649,7 @@ def getConstraint(ob, type):
     return None
 
 
-def inheritsParentScale(pb):
+def inheritsScale(pb):
     return (pb.parent and
             isinstance(pb, bpy.types.PoseBone) and
             pb.bone.inherit_scale not in ['NONE', 'NONE_LEGACY'])

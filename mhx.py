@@ -1120,7 +1120,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 prop2 = "MhaFingerIk_%s" % suffix
                 setMhx(rig, prop2, 0.0)
             layers = [handlayer, finglayer, L_HELP, L_HELP2, L_DEF]
-            fingname = self.makeFingerMaster(rig, suffix, fklayer, iklayer)
+            fingname = self.makeFingerMaster(rig, suffix, handlayer)
             for m in range(5):
                 bnames = self.getFingerNames(rig, m, suffix)
                 windname = "%s.%s" % (MHX.Fingers[m], suffix)
@@ -1142,14 +1142,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     lock = (False,True,True)
 
 
-    def makeFingerMaster(self, rig, suffix, fklayer, iklayer):
+    def makeFingerMaster(self, rig, suffix, handlayer):
         hand0name = "hand0.%s" % suffix
         fingname = "fingers.%s" % suffix
         linkname = self.getFingerNames(rig, 2, suffix)[0]
         setMode('EDIT')
         hand0 = rig.data.edit_bones[hand0name]
-        fingers = deriveBone(fingname, hand0, rig, iklayer, hand0)
-        setBoneNumLayer(fingers, rig, fklayer)
+        fingers = deriveBone(fingname, hand0, rig, handlayer, hand0)
         link = rig.data.edit_bones[linkname]
         fingers.roll = link.roll
         setMode('OBJECT')
