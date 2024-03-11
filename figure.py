@@ -753,6 +753,7 @@ class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
         if rig.DazRig == "mhx":
             enableBoneNumLayer(eb, rig, L_FACE)
         elif rig.DazRig.startswith("rigify"):
+            from .layers import R_DETAIL
             enableBoneNumLayer(eb, rig, R_DETAIL)
 
     def hasBoneDriver(self, bname, drivers):
