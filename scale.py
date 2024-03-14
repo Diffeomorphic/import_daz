@@ -213,6 +213,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
 
     def applyScale(self, context, ob):
+        from .merge import safeTransformApply
         scale = self.scale / ob.DazScale
         if ob.type in ['MESH', 'ARMATURE'] and activateObject(context, ob):
             self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)
@@ -220,7 +221,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
             lock = list(ob.lock_scale)
             ob.lock_scale = (False,False,False)
             ob.scale *= scale
-            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+            safeTransformApply(False)
 
 
     def fixRig(self, rig):

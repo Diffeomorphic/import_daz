@@ -337,9 +337,13 @@ class Driver:
 
 
     def createDirect(self, rna, assoc):
-        fcu = rna.driver_add(self.data_path, self.array_index)
-        removeModifiers(fcu)
-        return self.fill(fcu, False, assoc)
+        try:
+            fcu = rna.driver_add(self.data_path, self.array_index)
+            removeModifiers(fcu)
+            return self.fill(fcu, False, assoc)
+        except (TypeError, AttributeError):
+            print("Missing driver: %s, %s, %s" % (rna.name, self.data_path, self.array_index))
+            return None
 
 
     def fill(self, fcu, fixDrv=False, assoc={}):
@@ -1222,6 +1226,68 @@ class DAZ_OT_EnableDrivers(DazOperator):
             ob.DazDriversDisabled = False
 
 #----------------------------------------------------------
+#   Clean drivers
+#----------------------------------------------------------
+
+class DAZ_OT_RemoveCorruptDrivers(DazOperator, IsMeshArmature):
+    bl_idname = "daz.remove_corrupt_drivers"
+    bl_label = "Remove Corrupt Drivers"
+    bl_description = "Remove corrupt drivers and drivers leading to dependencey loops"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        cleanAllDrivers(context.object)
+
+
+def cleanAllDrivers(rig):
+    if rig.type == 'ARMATURE':
+        cleanDrivers(rig)
+        cleanDrivers(rig.data)
+        for ob in getMeshChildren(rig):
+            cleanDrivers(ob)
+            cleanDrivers(ob.data.shape_keys)
+    elif rig.type == 'MESH':
+        cleanDrivers(rig)
+        cleanDrivers(rig.data.shape_keys)
+
+
+def cleanDrivers(rna):
+    def illegal(fcu):
+        words = fcu.data_path.split('"')
+        if words[0] == "modifiers[":
+            mod = getModifier(rna, words[1])
+            return (mod is None)
+        elif words[0] == "key_blocks[":
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    if trg.id == rna:
+                        return True
+        else:
+            prop = getProp(fcu.data_path)
+            if prop and prop not in rna.keys():
+                return True
+        return False
+
+    if rna and rna.animation_data:
+        deletes = []
+        for fcu in rna.animation_data.drivers:
+            if illegal(fcu):
+                deletes.append(fcu)
+            else:
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        prop = getProp(trg.data_path)
+                        if prop and prop not in trg.id.keys():
+                            deletes.append(fcu)
+        if deletes:
+            print("Delete %d corrupt drivers from %s" % (len(deletes), rna.name))
+        for fcu in deletes:
+            try:
+                rna.animation_data.drivers.remove(fcu)
+            except RuntimeError:
+                pass
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -1231,6 +1297,7 @@ classes = [
     DAZ_OT_EnableDrivers,
     DAZ_OT_OptimizeDrivers,
     DAZ_OT_CopyDrivers,
+    DAZ_OT_RemoveCorruptDrivers,
 ]
 
 def register():

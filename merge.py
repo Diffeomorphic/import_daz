@@ -198,7 +198,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         DriverUser.__init__(self)
 
     def run(self, context):
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        safeTransformApply()
         from .finger import isGenesis
         cob = context.object
         ncverts = len(cob.data.vertices)
@@ -1389,7 +1389,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         bpy.ops.object.select_all(action='DESELECT')
         for subrig in conforming:
             selectSet(subrig, True)
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        safeTransformApply()
         return info, subinfos, repars
 
 
@@ -1421,10 +1421,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     partype,parbone = data
                     if partype != 'BONE' and ob.type in ['MESH', 'ARMATURE']:
                         selectSet(ob, True)
-        try:
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        except RuntimeError:
-            print("Failed to apply transform")
+        safeTransformApply()
 
 
     def getSubRigs(self, rig):
@@ -1736,11 +1733,18 @@ def applyRestPoses(context, rig, subrigs):
     setActiveObject(context, rig)
 
 
+def safeTransformApply(useLocRot=True):
+    try:
+        bpy.ops.object.transform_apply(location=useLocRot, rotation=useLocRot, scale=True)
+    except RuntimeError as err:
+        print("Cannot apply transforms")
+
+
 def applyAllObjectTransforms(rigs):
     bpy.ops.object.select_all(action='DESELECT')
     for rig in rigs:
         selectSet(rig, True)
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    safeTransformApply()
     bpy.ops.object.select_all(action='DESELECT')
     status = []
     try:
@@ -1751,7 +1755,7 @@ def applyAllObjectTransforms(rigs):
                     ob.hide_set(False)
                     ob.hide_select = False
                     selectSet(ob, True)
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        safeTransformApply()
         for ob,hide,select in status:
             ob.hide_set(hide)
             ob.hide_select = select

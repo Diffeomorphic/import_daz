@@ -651,7 +651,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def convertMhx(self, context):
         from .figure import finalizeArmature
+        from .driver import cleanAllDrivers
         rig = context.object
+        cleanAllDrivers(rig)
         self.rigname = rig.name
         rig.DazMhxLegacy = False
         self.makeRealParents(context, rig)

@@ -270,6 +270,9 @@ class Fixer(DriverUser):
 
         channel = fcu.data_path
         idx = self.getArrayIndex(fcu)
+        if fcu.driver is None:
+            print("How could this happen?" , fcu.data_path)
+            return
         for var in fcu.driver.variables:
             if not setVar(var):
                 if idx >= 0:

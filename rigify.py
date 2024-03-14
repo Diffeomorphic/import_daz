@@ -185,7 +185,7 @@ class MetaMaker(RigifyCommon):
         from collections import OrderedDict
         from .mhx import connectToParent, unhideAllObjects
         from .figure import getRigType, finalizeArmature
-        from .merge import mergeBones, mergeVertexGroups
+        from .merge import mergeBones, mergeVertexGroups, safeTransformApply
 
         print("Create metarig")
         rig = context.object
@@ -220,7 +220,7 @@ class MetaMaker(RigifyCommon):
         bpy.ops.object.rotation_clear()
         bpy.ops.object.scale_clear()
         bpy.ops.transform.resize(value=(100*scale, 100*scale, 100*scale))
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        safeTransformApply(False)
 
         print("  Fix metarig")
         meta = context.object
@@ -243,9 +243,8 @@ class MetaMaker(RigifyCommon):
 
         setupRigifyData(meta)
 
-        activateObject(context, rig)
-        rig.select_set(True)
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        if activateObject(context, rig):
+            safeTransformApply()
 
         print("  Fix bones", rig.DazRig)
         if rig.DazRig in ["genesis", "genesis1", "genesis2"]:

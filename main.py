@@ -802,6 +802,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     def treatRig(self, context, rigname):
         from .finger import isGenesis, getFingerPrint
+        from .merge import safeTransformApply
         rigs = self.rigs[rigname]
         meshes = self.meshes[rigname]
         objects = self.objects[rigname]
@@ -902,7 +903,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         selectSet(ob, True)
                 except ReferenceError:
                     pass
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            safeTransformApply()
             for ob,wmat in wmats:
                 setWorldMatrix(ob, wmat)
             for ob,hide,select in status:
