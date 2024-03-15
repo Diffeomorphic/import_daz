@@ -781,23 +781,6 @@ class AddRemoveDriver:
         return self.invokeDialog(context)
 
 
-    def createRawFinPair(self, rig, raw, rna, channel, value, min, max):
-        from .driver import addDriverVar, setFloatProp, removeModifiers
-        final = finalProp(raw)
-        setFloatProp(rig, raw, value, min, max, True)
-        setFloatProp(rig.data, final, value, min, max, False)
-        fcu = rig.data.driver_add(propRef(final))
-        removeModifiers(fcu)
-        fcu.driver.type = 'SCRIPTED'
-        addDriverVar(fcu, "a", propRef(raw), rig)
-        fcu.driver.expression = "a"
-        fcu = rna.driver_add(channel)
-        removeModifiers(fcu)
-        fcu.driver.type = 'SCRIPTED'
-        addDriverVar(fcu, "a", propRef(final), rig.data)
-        fcu.driver.expression = "a"
-
-
 class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEnums, CategoryString, IsShape):
     bl_idname = "daz.add_shape_to_category"
     bl_label = "Add Shapekey To Category"
@@ -853,12 +836,16 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
 
 
     def handleShapekey(self, sname, rig, ob):
-        from .driver import getShapekeyDriver
+        from .driver import setFloatProp, makePropDriver
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[sname]
-        if getShapekeyDriver(skeys, skey.name):
-            raise DazError("Shapekey %s is already driven" % skey.name)
-        self.createRawFinPair(rig, sname, skey, "value", skey.value, skey.slider_min, skey.slider_max)
+        final = finalProp(sname)
+        setFloatProp(rig, sname, skey.value, skey.slider_min, skey.slider_max, True)
+        setFloatProp(rig.data, final, skey.value, skey.slider_min, skey.slider_max, False)
+        makePropDriver(propRef(sname), rig.data, propRef(final), rig, "x")
+        makePropDriver(propRef(final), skey, "value", rig.data, "x")
+        if GS.useMuteDrivers:
+            makePropDriver(propRef(final), skey, "mute", rig.data, "abs(x)<0.0001")
         addToCategories(rig, [sname], None, self.category)
         rig.DazCustomMorphs = True
 
