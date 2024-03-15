@@ -1363,15 +1363,15 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         description = "How to make the mannequin head",
         default = 'JAW')
 
-    useGroup : BoolProperty(
-        name = "Add To Collection",
-        description = "Add mannequin to collection",
-        default = True)
-
-    group : StringProperty(
-        name = "Collection",
+    mannColl : StringProperty(
+        name = "Mannequin Collection",
         description = "Add mannequin to this collection",
         default = "Mannequin")
+
+    meshColl : StringProperty(
+        name = "Mesh Collection",
+        description = "Add base meshes to this collection",
+        default = "Meshes")
 
     useNormals : BoolProperty(
         name = "Transfer Normals",
@@ -1407,8 +1407,8 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
 
     def draw(self, context):
         self.layout.prop(self, "headType")
-        self.layout.prop(self, "useGroup")
-        self.layout.prop(self, "group")
+        self.layout.prop(self, "mannColl")
+        self.layout.prop(self, "meshColl")
         self.layout.prop(self, "useNormals")
         self.layout.prop(self, "useVertexGroups")
         if self.useVertexGroups:
@@ -1467,9 +1467,13 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         coll = rigcoll = getCollection(context, rig)
         obs = {}
         nobs = {}
-        if self.useGroup:
-            from .hide import createSubCollection
-            coll = createSubCollection(rigcoll, self.group)
+        from .hide import createSubCollection
+        colls = list(rigcoll.children)
+        meshcoll = createSubCollection(rigcoll, self.meshColl)
+        for coll in colls:
+            rigcoll.children.unlink(coll)
+            meshcoll.children.link(coll)
+        manncoll = createSubCollection(rigcoll, self.mannColl)
 
         # Add mannequin objects for selected meshes
         for ob in meshes:
@@ -1479,7 +1483,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                 if mod.type == 'MASK':
                     masks.append((mod, mod.vertex_group))
                     mod.vertex_group = ""
-            nobs[ob.name] = self.addMannequin(ob, context, rig, coll, mangrp)
+            nobs[ob.name] = self.addMannequin(ob, context, rig, manncoll, mangrp)
             for mod,vgrp in masks:
                 mod.vertex_group = vgrp
 
@@ -1490,6 +1494,10 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
                 selectSet(ob, False)
         setRigLayers(rig, oldlayers)
         rig.data.pose_position = oldpose
+        for ob in list(rigcoll.objects):
+            if ob.type != 'ARMATURE':
+                meshcoll.objects.link(ob)
+                rigcoll.objects.unlink(ob)
         return obs, nobs, rig
 
 
