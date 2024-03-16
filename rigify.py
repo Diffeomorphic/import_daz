@@ -408,16 +408,6 @@ class MetaMaker(RigifyCommon):
             rlayer = meta.data.rigify_layers[0]
             rlayer.name = ""
             rlayer.group = 6
-    else:
-        def addRigUI(self, gen):
-            root = gen.data.collections.get("Root")
-            custom = gen.data.collections.get("Custom")
-            if root and custom:
-                row = root.rigify_ui_row
-                custom.rigify_ui_row = row - 1
-                custom.rigify_color_set_id = 3
-                custom.rigify_sel_set = False
-                custom.rigify_ui_title = "Custom"
 
 
     def getChildren(self, pb):
@@ -724,8 +714,16 @@ class Rigifier(RigifyCommon):
         scn = context.scene
         gen = context.object
         if not BLENDER3:
+            # Add rig UI
             makeBoneCollections(gen, RigifyLayers)
-            self.addRigUI(gen)
+            root = gen.data.collections.get("Root")
+            custom = gen.data.collections.get("Custom")
+            if root and custom:
+                row = root.rigify_ui_row
+                custom.rigify_ui_row = row - 1
+                custom.rigify_color_set_id = 3
+                custom.rigify_sel_set = False
+                custom.rigify_ui_title = "Custom"
         if gen.name in scn.collection.objects:
             scn.collection.objects.unlink(gen)
         if gen.name not in coll.objects:
