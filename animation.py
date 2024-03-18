@@ -603,6 +603,7 @@ class MorphOptions(PosableMaker):
                 mloader.morphset = morphset
                 mloader.category = ""
                 mloader.hideable = True
+                mloader.useMakePosable = self.useMakePosable
                 print("\nLoading missing %s morphs" % morphset)
                 mloader.getAllMorphs(namepathTable[morphset], context)
         if self.useLoadMissing and "Custom" in namepathTable.keys():

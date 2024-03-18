@@ -502,6 +502,9 @@ class PosableMaker:
         description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
+    def __init__(self):
+        self.useMakePosable = False
+
     def draw(self, context):
         self.layout.prop(self, "useMakePosable")
 
@@ -519,6 +522,10 @@ class MorphLoader(LoadMorph, PosableMaker):
     category = ""
     adjuster = None
     bodypart = "Face"
+
+    def __init__(self):
+        LoadMorph.__init__(self)
+        PosableMaker.__init__(self)
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
@@ -2001,7 +2008,7 @@ class RigidTransfer:
             self.layout.prop(self, "ignoreRigidity")
 
 
-class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, PosableMaker, IsMeshArmature):
+class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"

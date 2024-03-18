@@ -63,6 +63,7 @@ class LoadMorph(DriverUser):
     disableErc = False
 
     def __init__(self):
+        DriverUser.__init__(self)
         self.rig = None
         self.amt = None
         self.mesh = None
