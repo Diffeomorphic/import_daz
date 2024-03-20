@@ -1569,7 +1569,9 @@ def makeNewUvLayer(me, name, setActive):
 #-------------------------------------------------------------
 
 def pruneUvMaps(ob):
-    if ob.data is None or len(ob.data.uv_layers) <= 1:
+    if (ob.data is None or
+        len(ob.data.uv_layers) <= 1 or
+        GS.shellMethod == 'GEONODES'):
         return
     used = {}
     for uvlayer in ob.data.uv_layers:
