@@ -167,12 +167,6 @@ class MergeGeograftOptions(UVLayerMergerOptions):
         description = "Merge geografts using geometry nodes",
         default = False)
 
-    useNewMesh : BoolProperty(
-        name = "Merge To New Mesh",
-        description = "Merge meshes in a new, empty mesh",
-        default = False)
-
-
 
 class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerger, DriverUser, IsMesh):
     bl_idname = "daz.merge_geografts"
@@ -181,10 +175,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
     bl_options = {'UNDO'}
 
     def draw(self, context):
-        if bpy.app.version >= (3,1,0):
+        if bpy.app.version >= (3,4,0):
             self.layout.prop(self, "useGeoNodes")
-            if self.useGeoNodes:
-                self.layout.prop(self, "useNewMesh")
         if not self.useGeoNodes:
             self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useSubDDisplacement")
@@ -309,7 +301,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         # Select body verts to delete
         self.vdeleted = dict([(vn,False) for vn in range(nverts)])
+        self.amasks = {}
         for aob in anatomies:
+            amask = self.amasks[aob.name] = dict([(vn,False) for vn in range(nverts)])
             paired = [pair.b for pair in aob.data.DazGraftGroup]
             for face in aob.data.DazMaskGroup:
                 fverts = cob.data.polygons[face.a].vertices
@@ -326,6 +320,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 for vn in vdelete:
                     cob.data.vertices[vn].select = True
                     self.vdeleted[vn] = True
+                    amask[vn] = True
 
         # Build association tables between new and old vertex numbers
         assoc = {}
@@ -353,12 +348,13 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         deselectAllVerts(cob)
 
         # Select verts on common boundary
-        self.cedge = dict([(vn,False) for vn in range(nverts)])
+        self.cedges = {}
         self.aedges = {}
         for aob in anatomies:
             selectSet(aob, True)
             naverts = len(aob.data.vertices)
             aedge = self.aedges[aob.name] = dict([(vn,False) for vn in range(naverts)])
+            cedge = self.cedges[aob.name] = dict([(vn,False) for vn in range(nverts)])
             pg = cob.data.DazMergedGeografts.add()
             pg.name = aob.name
             for pair in aob.data.DazGraftGroup:
@@ -367,7 +363,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     aedge[pair.a] = True
                     cvn = assoc[pair.b]
                     cob.data.vertices[cvn].select = True
-                    self.cedge[pair.b] = True
+                    cedge[pair.b] = True
 
         # Retarget shell modifiers
         if bpy.app.version >= (3,1,0):
@@ -458,95 +454,77 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
+        from .dforce import ModStore
+        stores = []
+        showmods = []
+        geogroup = None
+        grpname = "Geografts %s" % cob.name
+        for mod in list(cob.modifiers):
+            if (mod.type == 'NODES' and
+                mod.node_group.name.startswith("Geograft")):
+                showmods.append((mod, mod.show_viewport))
+                mod.show_viewport = False
+                if mod.node_group.name == grpname:
+                    geogroup = mod.node_group
+            elif mod.type != 'ARMATURE':
+                stores.append(ModStore(mod))
+                cob.modifiers.remove(mod)
+        if geogroup is None:
+            from .geonodes import GeograftGroup
+            group = GeograftGroup()
+            group.create(grpname)
+            group.addNodes()
+            geogroup = group.group
+
+        cuvname = getActiveUvLayer(cob).name
+        self.replaceTexco(cob, cuvname, True)
+
         def addVertexGroup(ob, vgname, struct):
             vgrp = ob.vertex_groups.new(name=vgname)
             verts = [vn for vn,ok in struct.items() if ok]
             for vn in verts:
                 vgrp.add([vn], 1, 'REPLACE')
+            return vgrp
 
-        maskname = "%s Mask" % cob.name
-        edgename = "%s Edge" % cob.name
-        addVertexGroup(cob, maskname, self.vdeleted)
-        addVertexGroup(cob, edgename, self.cedge)
         for aob in anatomies:
-            addVertexGroup(aob, edgename, self.aedges[aob.name])
+            maskname = "%s Mask" % aob.name
+            edgename = "%s Edge" % aob.name
+            cmask = addVertexGroup(cob, maskname, self.amasks[aob.name])
+            cedge = addVertexGroup(cob, edgename, self.cedges[aob.name])
+            aedge = addVertexGroup(aob, edgename, self.aedges[aob.name])
             for vgrp in aob.vertex_groups:
                 if vgrp.name not in list(cob.vertex_groups.keys()):
                     cob.vertex_groups.new(name=vgrp.name)
-            if bpy.app.version < (3,3,0) and not self.useNewMesh:
-                amod = getModifier(aob, 'ARMATURE')
-                amod.show_viewport = amod.show_render = False
             for amod in list(aob.modifiers):
                 if amod.type in ['SUBSURF']:
                     amod.show_viewport = amod.show_render = False
                     aob.modifiers.remove(amod)
-        cuvname = getActiveUvLayer(cob).name
-        self.replaceTexco(cob, cuvname, True)
 
-        if self.useNewMesh:
-            ename = "%s Merged" % truncString(cob.name, " Mesh")
-            me = bpy.data.meshes.new(ename)
-            if hasattr(me, "use_auto_smooth"):
-                me.use_auto_smooth = cob.data.use_auto_smooth
-                me.auto_smooth_angle = cob.data.auto_smooth_angle
-            eob = bpy.data.objects.new(ename, me)
-            #eob.show_wire = True
-            for coll in bpy.data.collections:
-                if cob.name in coll.objects.keys():
-                    coll.objects.link(eob)
-            activateObject(context, eob)
-            self.activeObject = eob
-            tob = cob
-            mod = eob.modifiers.new("Geografts", 'NODES')
-            for cmod in list(cob.modifiers):
-                if cmod.type in ['SUBSURF']:
-                    emod = eob.modifiers.new(cmod.name, cmod.type)
-                    copyModifier(cmod, emod)
-                    cmod.show_viewport = cmod.show_render = False
-                    cob.modifiers.remove(cmod)
-            cob.hide_set(True)
-            cob.hide_render = True
-        else:
-            tob = None
-            #cob.show_wire = True
-            mod = getModifier(cob, 'NODES')
-            if mod is None:
-                mod = cob.modifiers.new("Geografts", 'NODES')
-                amtmod = getModifier(cob, 'ARMATURE')
-                nmods = len(cob.modifiers)
-                if bpy.app.version < (3,3,0) or amtmod is None:
-                    nups = nmods-1
-                else:
-                    nups = nmods-2
-                for n in range(nups):
-                    bpy.ops.object.modifier_move_up(modifier=mod.name)
-
-        mod.node_group = self.makeGeograftGroup(cob, tob, anatomies)
-        mod["Input_1_attribute_name"] = edgename
-        mod["Input_2_attribute_name"] = maskname
-        mod["Input_3"] = 0.01*cob.DazScale
-        if BLENDER3:
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_1_use_attribute"), modifier_name=mod.name)
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
-        else:
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=edgename, modifier_name=mod.name)
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=maskname, modifier_name=mod.name)
-        for aob in anatomies:
+            mod = cob.modifiers.new("Geograft %s" % aob.name, 'NODES')
+            mod.node_group = geogroup
+            if BLENDER3:
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_3_use_attribute"), modifier_name=mod.name)
+                mod["Input_1"] = aob
+                mod["Input_2_attribute_name"] = edgename
+                mod["Input_3_attribute_name"] = maskname
+                mod["Input_4"] = 0.01*cob.DazScale
+            else:
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_2", modifier_name=mod.name)
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_3", modifier_name=mod.name)
+                mod["Socket_1"] = aob
+                mod["Socket_2_attribute_name"] = edgename
+                mod["Socket_3_attribute_name"] = maskname
+                mod["Socket_4"] = 0.01*cob.DazScale
             aob.hide_set(True)
             aob.hide_render = True
             for mod in aob.modifiers:
                 if mod.type == 'NODES':
-                    print("MOD", aob.name, mod.name)
                     mod.show_viewport = mod.show_render = True
-
-
-    def makeGeograftGroup(self, cob, tob, anatomies):
-        from .geonodes import GeograftGroup
-        name = "Geografts %s" % cob.name
-        group = GeograftGroup()
-        group.create(name)
-        group.addNodes(tob, anatomies)
-        return group.group
+        for mod,show in showmods:
+            mod.show_viewport = show
+        for store in stores:
+            store.restore(cob)
 
 
     def retargetShellModifiers(self, cob, anatomies):

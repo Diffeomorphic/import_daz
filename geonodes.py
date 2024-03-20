@@ -56,59 +56,51 @@ class GeoTree(Tree, NodeGroup):
 
 class GeograftGroup(GeoTree):
     def create(self, name):
-        NodeGroup.make(self, name, 5)
+        NodeGroup.make(self, name, 6)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketObject", "Geograft")
         addGroupInput(self.group, "NodeSocketFloat", "Geograft Edge")
         addGroupInput(self.group, "NodeSocketFloat", "Geograft Area")
         addGroupInput(self.group, "NodeSocketFloat", "Merge Distance")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
-    def addNodes(self, cob, anatomies):
-        if cob is None:
-            char = self.inputs
-        else:
-            char = self.addNode("GeometryNodeObjectInfo", 0)
-            char.inputs[0].default_value = cob
+    def addNodes(self):
+        graft = self.addNode("GeometryNodeObjectInfo", 1)
+        self.links.new(self.inputs.outputs["Geograft"], graft.inputs[0])
 
-        captureEdge = self.addNode("GeometryNodeCaptureAttribute", 1)
+        captureEdge = self.addNode("GeometryNodeCaptureAttribute", 2)
         captureEdge.data_type = 'FLOAT'
         captureEdge.domain = 'POINT'
-        self.links.new(char.outputs["Geometry"], captureEdge.inputs["Geometry"])
+        self.links.new(self.inputs.outputs["Geometry"], captureEdge.inputs["Geometry"])
         self.links.new(self.inputs.outputs["Geograft Edge"], captureEdge.inputs[VALUE])
         union = captureEdge.outputs[VALUE]
 
-        deleteMask = self.addNode("GeometryNodeDeleteGeometry", 2)
+        deleteMask = self.addNode("GeometryNodeDeleteGeometry", 3)
         self.links.new(captureEdge.outputs["Geometry"], deleteMask.inputs["Geometry"])
         self.links.new(self.inputs.outputs["Geograft Area"], deleteMask.inputs["Selection"])
 
-        joinGeo = self.addNode("GeometryNodeJoinGeometry", 3)
+        joinGeo = self.addNode("GeometryNodeJoinGeometry", 4)
         joins = []
-        if bpy.app.version < (3,3,0):
-            joins = [deleteMask]
-        for aob in anatomies:
-            objinfo = self.addNode("GeometryNodeObjectInfo", 0)
-            objinfo.inputs[0].default_value = aob
 
-            captureAnatomy = self.addNode("GeometryNodeCaptureAttribute", 1)
-            captureAnatomy.data_type = 'FLOAT'
-            captureAnatomy.domain = 'POINT'
-            self.links.new(objinfo.outputs["Geometry"], captureAnatomy.inputs["Geometry"])
-            self.links.new(self.inputs.outputs["Geograft Edge"], captureAnatomy.inputs[VALUE])
-            joins.append(captureAnatomy)
+        captureAnatomy = self.addNode("GeometryNodeCaptureAttribute", 2)
+        captureAnatomy.data_type = 'FLOAT'
+        captureAnatomy.domain = 'POINT'
+        self.links.new(graft.outputs["Geometry"], captureAnatomy.inputs["Geometry"])
+        self.links.new(self.inputs.outputs["Geograft Edge"], captureAnatomy.inputs[VALUE])
+        joins.append(captureAnatomy)
 
-            node = self.addNode("FunctionNodeBooleanMath", 2)
-            node.operation = 'OR'
-            self.links.new(union, node.inputs[0])
-            self.links.new(captureAnatomy.outputs[VALUE], node.inputs[1])
-            union = node.outputs[0]
-        if bpy.app.version >= (3,3,0):
-            joins.append(deleteMask)
+        node = self.addNode("FunctionNodeBooleanMath", 3)
+        node.operation = 'OR'
+        self.links.new(union, node.inputs[0])
+        self.links.new(captureAnatomy.outputs[VALUE], node.inputs[1])
+        union = node.outputs[0]
+        joins.append(deleteMask)
         joins.reverse()
         for node in joins:
             self.links.new(node.outputs["Geometry"], joinGeo.inputs["Geometry"])
 
-        mergeDist = self.addNode("GeometryNodeMergeByDistance", 4)
+        mergeDist = self.addNode("GeometryNodeMergeByDistance", 5)
         mergeDist.inputs["Distance"].default_value = 1e-4
         self.links.new(self.inputs.outputs["Merge Distance"], mergeDist.inputs["Distance"])
         self.links.new(joinGeo.outputs["Geometry"], mergeDist.inputs["Geometry"])
