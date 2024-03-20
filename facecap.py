@@ -153,6 +153,7 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
             raise DazError("No rig selected")
         setMhx(rig, "MhaGaze_L", 0.0)
         setMhx(rig, "MhaGaze_R", 0.0)
+        self.getSource(context, rig)
         self.facstable = {}
         for facsType in ["FaceCap", "LiveLink"]:
             for key,value in FacsTables[facsType].items():
@@ -182,6 +183,10 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
             act = rig.animation_data.action
             if act:
                 act.name = self.actionName
+
+
+    def getSource(self, context, rig):
+        pass
 
 
     def build(self, rig, context):
@@ -518,6 +523,57 @@ class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
                 print(key)
 
 #------------------------------------------------------------------
+#   Copy FACS animation
+#------------------------------------------------------------------
+
+class CopyFacsAnimation(DazPropsOperator, FACSImporter):
+    bl_idname = "daz.copy_facs_animation"
+    bl_label = "Copy FACS Animation"
+    bl_description = "Copy FACS animation from selected mesh to active character"
+    bl_options = {'UNDO'}
+
+    def getSource(self, context, rig):
+        self.action = None
+        for ob in getSelectedMeshes(context):
+            if ob != rig:
+                skeys = ob.data.shape_keys
+                if skeys and skeys.animation_data and skeys.animation_data.action:
+                    self.action = skeys.animation_data.action
+                    return
+        raise DazError("No source mesh found")
+
+
+    def parse(self):
+        fcus = []
+        tmin = 99999
+        tmax = -99999
+        for fcu in self.action.fcurves:
+            sname,channel = getShapeChannel(fcu)
+            if sname and channel == "value":
+                fcus.append((sname, fcu))
+                times = [kp.co[0] for kp in fcu.keyframe_points]
+                t0 = int(min(times))
+                t1 = int(max(times))
+                if t0 < tmin:
+                    tmin = t0
+                if t1 > tmax:
+                    tmax = t1
+        for t in range(tmin, tmax+1):
+            self.bskeys[t] = []
+            self.hlockeys[t] = Zero
+            self.hrotkeys[t] = Euler((0,0,0))
+            self.leyekeys[t] = Euler((0,0,0))
+            self.reyekeys[t] = Euler((0,0,0))
+        for sname,fcu in fcus:
+            self.bshapes.append(sname.lower())
+            for t in range(tmin, tmax+1):
+                self.bskeys[t].append(fcu.evaluate(t))
+
+
+    def getFrame(self, t):
+        return t
+
+#------------------------------------------------------------------
 #   Gaze transfer
 #------------------------------------------------------------------
 
@@ -683,6 +739,7 @@ class TransferFromGaze(DazOperator, GazeTransferer):
 classes = [
     ImportFaceCap,
     ImportLiveLink,
+    CopyFacsAnimation,
     TransferToGaze,
     TransferFromGaze,
 ]

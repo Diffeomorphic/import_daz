@@ -752,6 +752,7 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
     def preamble(self, layout, rig):
         layout.operator("daz.import_facecap")
         layout.operator("daz.import_livelink")
+        layout.operator("daz.copy_facs_animation")
         DAZ_PT_Morphs.preamble(self, layout, rig)
 
 
