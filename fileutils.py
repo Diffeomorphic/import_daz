@@ -333,6 +333,11 @@ class DufFile:
     filter_glob : StringProperty(default="*.dsf;*.duf", options={'HIDDEN'})
 
 
+class FbxFile:
+    filename_ext = ".fbx"
+    filter_glob : StringProperty(default="*.fbx", options={'HIDDEN'})
+
+
 class DatFile:
     filename_ext = ".dat"
     filter_glob : StringProperty(default="*.dat", options={'HIDDEN'})

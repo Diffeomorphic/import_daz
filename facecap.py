@@ -31,7 +31,7 @@ from mathutils import Vector, Euler, Matrix
 from .error import *
 from .utils import *
 from .animation import ActionOptions
-from .fileutils import SingleFile, TextFile, CsvFile
+from .fileutils import SingleFile, TextFile, CsvFile, FbxFile
 
 #------------------------------------------------------------------
 #   Utility class BoneHandler
@@ -76,13 +76,7 @@ class BoneHandler:
 #   Generic FACS importer
 #------------------------------------------------------------------
 
-class FACSImporter(SingleFile, ActionOptions, BoneHandler):
-
-    useShapekeys : BoolProperty(
-        name = "Load To Shapekeys",
-        description = "Load morphs to mesh shapekeys instead of rig properties",
-        default = False)
-
+class HeadUser:
     useHeadLoc : BoolProperty(
         name = "Head Location",
         description = "Include head location animation",
@@ -117,6 +111,44 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
         min = 0.0, max = 1.0,
         default = 0.05)
 
+    def draw(self, context):
+        self.layout.prop(self, "useHeadLoc")
+        self.layout.prop(self, "useHeadRot")
+        if self.useHeadRot:
+            box = self.layout.box()
+            box.prop(self, "headDist")
+            box.prop(self, "neckUpperDist")
+            box.prop(self, "neckLowerDist")
+            box.prop(self, "abdomenDist")
+
+    def setupHead(self, rig):
+        self.head = self.getBones(["head"], rig)
+        self.neckUpper = self.getBones(["neckUpper", "neck2", "neck-1"], rig)
+        self.neckLower = self.getBones(["neckLower", "neck1", "neck"], rig)
+        self.abdomen = self.getBones(["abdomenUpper", "spine2", "spine-1", "spine_fk.002"], rig)
+        self.hip = self.getBones(["hip", "torso"], rig)
+        if self.head is None:
+            self.headDist = 0
+        if self.neckUpper is None:
+            self.neckUpperDist = 0
+        if self.neckLower is None:
+            self.neckLowerDist = 0
+        if self.abdomen is None:
+            self.abdomenDist = 0
+        distsum = self.headDist + self.neckUpperDist + self.neckLowerDist + self.abdomenDist
+        self.headDist /= distsum
+        self.neckUpperDist /= distsum
+        self.neckLowerDist /= distsum
+        self.abdomenDist /= distsum
+
+
+class FACSImporter(SingleFile, ActionOptions, BoneHandler):
+
+    useShapekeys : BoolProperty(
+        name = "Load To Shapekeys",
+        description = "Load morphs to mesh shapekeys instead of rig properties",
+        default = False)
+
     useEyes : BoolProperty(
         name = "Eyes",
         description = "Include eyes animation",
@@ -133,15 +165,6 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
         if self.makeNewAction:
             self.layout.prop(self, "actionName")
         self.layout.prop(self, "useShapekeys")
-        self.layout.separator()
-        self.layout.prop(self, "useHeadLoc")
-        self.layout.prop(self, "useHeadRot")
-        if self.useHeadRot:
-            box = self.layout.box()
-            box.prop(self, "headDist")
-            box.prop(self, "neckUpperDist")
-            box.prop(self, "neckLowerDist")
-            box.prop(self, "abdomenDist")
         self.layout.prop(self, "useEyes")
         self.layout.prop(self, "useTongue")
 
@@ -169,7 +192,7 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
             for ob in getShapeChildren(rig):
                 for skey in ob.data.shape_keys.key_blocks:
                     self.shapekeys[skey.name] = True
-        self.parse()
+        self.parse(context)
         first = list(self.bskeys.values())[0]
         print("Blendshapes: %d\nKeys: %d" % (len(self.bshapes), len(first)))
         if self.makeNewAction and rig.animation_data:
@@ -285,24 +308,11 @@ class FACSImporter(SingleFile, ActionOptions, BoneHandler):
     def setupBones(self, rig):
         self.leye = self.getBones(["lEye", "l_eye", "eye.L"], rig)
         self.reye = self.getBones(["rEye", "r_eye", "eye.R"], rig)
-        self.head = self.getBones(["head"], rig)
-        self.neckUpper = self.getBones(["neckUpper", "neck2", "neck-1"], rig)
-        self.neckLower = self.getBones(["neckLower", "neck1", "neck"], rig)
-        self.abdomen = self.getBones(["abdomenUpper", "spine2", "spine-1", "spine_fk.002"], rig)
-        self.hip = self.getBones(["hip", "torso"], rig)
-        if self.head is None:
-            self.headDist = 0
-        if self.neckUpper is None:
-            self.neckUpperDist = 0
-        if self.neckLower is None:
-            self.neckLowerDist = 0
-        if self.abdomen is None:
-            self.abdomenDist = 0
-        distsum = self.headDist + self.neckUpperDist + self.neckLowerDist + self.abdomenDist
-        self.headDist /= distsum
-        self.neckUpperDist /= distsum
-        self.neckLowerDist /= distsum
-        self.abdomenDist /= distsum
+        self.setupHead(rig)
+
+
+    def setupHead(self, rig):
+        pass
 
 
     def setBoneFrame(self, t, frame, context):
@@ -438,13 +448,11 @@ FacsTables = {
 #   FaceCap
 #------------------------------------------------------------------
 
-class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
+class ImportFaceCap(HeadUser, FACSImporter, DazOperator, TextFile, IsMeshArmature):
     bl_idname = "daz.import_facecap"
     bl_label = "Import FaceCap File"
     bl_description = "Import a text file with facecap data"
     bl_options = {'UNDO'}
-
-    FacsType = "FaceCap",
 
     fps : FloatProperty(
         name = "Frame Rate",
@@ -455,6 +463,7 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
     def draw(self, context):
         self.layout.prop(self, "fps")
         FACSImporter.draw(self, context)
+        HeadUser.draw(self, context)
 
     def getFrame(self, t):
         return self.fps * 1e-3 * t
@@ -465,7 +474,7 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
     # left-eye eulerAngles xy,
     # right-eye eulerAngles xy,
     # blendshapes
-    def parse(self):
+    def parse(self, context):
         with open(self.filepath, "r", encoding="utf-8-sig") as fp:
             for line in fp:
                 line = line.strip()
@@ -488,18 +497,20 @@ class ImportFaceCap(FACSImporter, DazOperator, TextFile, IsMeshArmature):
 #   Unreal Live Link
 #------------------------------------------------------------------
 
-class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
+class ImportLiveLink(HeadUser, FACSImporter, DazOperator, CsvFile, IsMeshArmature):
     bl_idname = "daz.import_livelink"
     bl_label = "Import Live Link File"
     bl_description = "Import a csv file with Unreal's Live Link data"
     bl_options = {'UNDO'}
 
-    FacsType = "LiveLink"
+    def draw(self, context):
+        FACSImporter.draw(self, context)
+        HeadUser.draw(self, context)
 
     def getFrame(self, t):
         return t+1
 
-    def parse(self):
+    def parse(self, context):
         from csv import reader
         with open(self.filepath, newline='', encoding="utf-8-sig") as fp:
             lines = list(reader(fp))
@@ -526,28 +537,15 @@ class ImportLiveLink(FACSImporter, DazOperator, CsvFile, IsMeshArmature):
 #   Copy FACS animation
 #------------------------------------------------------------------
 
-class CopyFacsAnimation(DazPropsOperator, FACSImporter):
-    bl_idname = "daz.copy_facs_animation"
-    bl_label = "Copy FACS Animation"
-    bl_description = "Copy FACS animation from selected mesh to active character"
-    bl_options = {'UNDO'}
+class FACSCopier:
+    useHeadLoc = False
+    useHeadRot = False
 
-    def getSource(self, context, rig):
-        self.action = None
-        for ob in getSelectedMeshes(context):
-            if ob != rig:
-                skeys = ob.data.shape_keys
-                if skeys and skeys.animation_data and skeys.animation_data.action:
-                    self.action = skeys.animation_data.action
-                    return
-        raise DazError("No source mesh found")
-
-
-    def parse(self):
+    def getFcurves(self, act):
         fcus = []
         tmin = 99999
         tmax = -99999
-        for fcu in self.action.fcurves:
+        for fcu in act.fcurves:
             sname,channel = getShapeChannel(fcu)
             if sname and channel == "value":
                 fcus.append((sname, fcu))
@@ -571,7 +569,63 @@ class CopyFacsAnimation(DazPropsOperator, FACSImporter):
 
 
     def getFrame(self, t):
-        return t
+        return t+1
+
+
+class CopyFacsAnimation(DazPropsOperator, FACSImporter, FACSCopier):
+    bl_idname = "daz.copy_facs_animation"
+    bl_label = "Copy FACS Animation"
+    bl_description = "Copy FACS animation from selected mesh to active character"
+    bl_options = {'UNDO'}
+
+    def getSource(self, context, rig):
+        self.action = None
+        for ob in getSelectedMeshes(context):
+            if ob != rig:
+                skeys = ob.data.shape_keys
+                if skeys and skeys.animation_data and skeys.animation_data.action:
+                    self.action = skeys.animation_data.action
+                    return
+        raise DazError("No source mesh found")
+
+    def parse(self, context):
+        self.getFcurves(self.action)
+
+#------------------------------------------------------------------
+#   BVH
+#------------------------------------------------------------------
+
+class ImportFbxFacs(FACSImporter, DazOperator, FbxFile, FACSCopier, IsMeshArmature):
+    bl_idname = "daz.import_fbx_facs"
+    bl_label = "Import FACS From FBX File"
+    bl_description = "Import a fbx file with FACS animation"
+    bl_options = {'UNDO'}
+
+    def parse(self, context):
+        print("Importing FBX file")
+        existing_objects = set(context.scene.objects)
+        try:
+            bpy.ops.import_scene.fbx(filepath = self.filepath, automatic_bone_orientation=True, ignore_leaf_bones=True)
+        except AttributeError:
+            raise DazError("Blender's built-in FBX importer must be enabled")
+        imported_objects = set(context.scene.objects) - existing_objects
+        print("Temporary FBX objects imported: %s" % imported_objects)
+        actions = []
+        for ob in imported_objects:
+            if ob and ob.animation_data and ob.animation_data.action:
+                actions.append(ob.animation_data.action)
+            if ob.type == 'MESH':
+                skeys = ob.data.shape_keys
+                if skeys and skeys.animation_data:
+                    act = skeys.animation_data.action
+                    if act:
+                        print("FBX MESH:", ob.name, skeys.name)
+                        actions.append(act)
+                        self.getFcurves(act)
+        print("Deleting temporary FBX objects")
+        for act in actions:
+            bpy.data.actions.remove(act)
+        deleteObjects(context, imported_objects)
 
 #------------------------------------------------------------------
 #   Gaze transfer
@@ -740,6 +794,7 @@ classes = [
     ImportFaceCap,
     ImportLiveLink,
     CopyFacsAnimation,
+    ImportFbxFacs,
     TransferToGaze,
     TransferFromGaze,
 ]
