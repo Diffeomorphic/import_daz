@@ -301,9 +301,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         # Select body verts to delete
         self.vdeleted = dict([(vn,False) for vn in range(nverts)])
-        self.amasks = {}
+        self.cmasks = {}
         for aob in anatomies:
-            amask = self.amasks[aob.name] = dict([(vn,False) for vn in range(nverts)])
+            cmask = self.cmasks[aob.name] = dict([(vn,False) for vn in range(nverts)])
             paired = [pair.b for pair in aob.data.DazGraftGroup]
             for face in aob.data.DazMaskGroup:
                 fverts = cob.data.polygons[face.a].vertices
@@ -320,7 +320,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 for vn in vdelete:
                     cob.data.vertices[vn].select = True
                     self.vdeleted[vn] = True
-                    amask[vn] = True
+                    cmask[vn] = True
 
         # Build association tables between new and old vertex numbers
         assoc = {}
@@ -480,16 +480,18 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.replaceTexco(cob, cuvname, True)
 
         def addVertexGroup(ob, vgname, struct):
-            vgrp = ob.vertex_groups.new(name=vgname)
-            verts = [vn for vn,ok in struct.items() if ok]
-            for vn in verts:
-                vgrp.add([vn], 1, 'REPLACE')
+            vgrp = ob.vertex_groups.get(vgname)
+            if vgrp is None:
+                vgrp = ob.vertex_groups.new(name=vgname)
+                verts = [vn for vn,ok in struct.items() if ok]
+                for vn in verts:
+                    vgrp.add([vn], 1, 'REPLACE')
             return vgrp
 
         for aob in anatomies:
             maskname = "%s Mask" % aob.name
             edgename = "%s Edge" % aob.name
-            cmask = addVertexGroup(cob, maskname, self.amasks[aob.name])
+            cmask = addVertexGroup(cob, maskname, self.cmasks[aob.name])
             cedge = addVertexGroup(cob, edgename, self.cedges[aob.name])
             aedge = addVertexGroup(aob, edgename, self.aedges[aob.name])
             for vgrp in aob.vertex_groups:
