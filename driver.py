@@ -312,6 +312,13 @@ class Driver:
             self.variables.append(Variable(var))
 
 
+    def __repr__(self):
+        string = "<Driver %s %d %s" % (self.data_path, self.array_index, self.type)
+        for var in self.variables:
+            string += "\n  %s" % var
+        return string + ">"
+
+
     def getChannel(self):
         words = self.data_path.split('"')
         if words[0] == "pose.bones[" and len(words) == 5:
@@ -374,6 +381,12 @@ class Variable:
         for trg in var.targets:
             self.targets.append(Target(trg))
 
+    def __repr__(self):
+        string = "<Var %s %s" % (self.name,self.type)
+        for trg in self.targets:
+            string += "\n    %s" % trg
+        return string + ">"
+
     def create(self, var, fixDrv=False, assoc={}):
         var.name = self.name
         var.type = self.type
@@ -397,6 +410,10 @@ class Target:
             self.name = words[1]
         else:
             self.name = words[0]
+
+    def __repr__(self):
+        string = "<Trg %s %s %s>" % (self.id_type, self.id.name, self.transform_type)
+        return string
 
     def create(self, trg, fixDrv=False, assoc={}):
         if self.id_type != 'OBJECT':
@@ -1275,10 +1292,11 @@ def cleanDrivers(rna):
                 deletes.append(fcu)
             else:
                 for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        prop = getProp(trg.data_path)
-                        if prop and prop not in trg.id.keys():
-                            deletes.append(fcu)
+                    if var.type == 'SINGLE_PROP':
+                        for trg in var.targets:
+                            prop = getProp(trg.data_path)
+                            if prop not in trg.id.keys():
+                                deletes.append(fcu)
         if deletes:
             print("Delete %d corrupt drivers from %s" % (len(deletes), rna.name))
         for fcu in deletes:
