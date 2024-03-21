@@ -505,7 +505,7 @@ class PosableMaker:
         default = False)
 
     def draw(self, context):
-        PosableMaker.draw(self, context)
+        self.layout.prop(self, "useMakePosable")
 
     def makePosable(self, context, rig, useActivate=True, useEasy=False):
         if (self.useMakePosable and
@@ -540,7 +540,9 @@ class MorphLoader(LoadMorph, PosableMaker):
             self.useMakePosable = useMakePosable
 
     def draw(self, context):
-        self.layout.prop(self, "useMakePosable")
+        LoadMorph.draw(self, context)
+        PosableMaker.draw(self, context)
+
 
     def getFingeredRigMeshes(self, context):
         from .finger import getFingeredCharacters, getCharacter
