@@ -598,12 +598,11 @@ class MorphOptions(PosableMaker):
         from .morphing import CustomMorphLoader, StandardMorphLoader
         for morphset in namepathTable.keys():
             if self.useLoadMissing:
-                mloader = StandardMorphLoader()
+                mloader = StandardMorphLoader(self.useMakePosable)
                 mloader.getFingeredRigMeshes(context)
                 mloader.morphset = morphset
                 mloader.category = ""
                 mloader.hideable = True
-                mloader.useMakePosable = self.useMakePosable
                 print("\nLoading missing %s morphs" % morphset)
                 mloader.getAllMorphs(namepathTable[morphset], context)
         if self.useLoadMissing and "Custom" in namepathTable.keys():
@@ -616,7 +615,7 @@ class MorphOptions(PosableMaker):
                     customs[cat] = []
                 customs[cat].append(namepath)
             for cat, namepaths in customs.items():
-                mloader = CustomMorphLoader()
+                mloader = CustomMorphLoader(self.useMakePosable)
                 rig.DazCustomMorphs = True
                 mloader.getFingeredRigMeshes(context)
                 mloader.morphset = "Custom"
@@ -806,7 +805,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         nanims,locks,self.bonemap = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
-            self.makePosable(context, rig, False)
+            self.makePosable(context, rig, useActivate=False)
             if rig.type == 'MESH':
                 skeys = rig.data.shape_keys
                 if skeys and self.shapekeys != skeys.key_blocks:

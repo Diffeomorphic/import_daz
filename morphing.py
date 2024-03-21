@@ -497,16 +497,15 @@ class MorphSuffix:
 
 
 class PosableMaker:
+    caller = None
+
     useMakePosable : BoolProperty(
         name = "Make All Bones Posable",
         description = "Make all bones posable after the morphs have been loaded",
         default = False)
 
-    def __init__(self):
-        self.useMakePosable = False
-
     def draw(self, context):
-        self.layout.prop(self, "useMakePosable")
+        PosableMaker.draw(self, context)
 
     def makePosable(self, context, rig, useActivate=True, useEasy=False):
         if (self.useMakePosable and
@@ -523,10 +522,6 @@ class MorphLoader(LoadMorph, PosableMaker):
     adjuster = None
     bodypart = "Face"
 
-    def __init__(self):
-        LoadMorph.__init__(self)
-        PosableMaker.__init__(self)
-
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
         description = ("Add an adjuster for the morph type.\n" +
@@ -538,6 +533,14 @@ class MorphLoader(LoadMorph, PosableMaker):
         name = "Transfer To Face Meshes",
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
         default = True)
+
+    def __init__(self, useMakePosable=None):
+        LoadMorph.__init__(self)
+        if useMakePosable is not None:
+            self.useMakePosable = useMakePosable
+
+    def draw(self, context):
+        self.layout.prop(self, "useMakePosable")
 
     def getFingeredRigMeshes(self, context):
         from .finger import getFingeredCharacters, getCharacter

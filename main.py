@@ -729,7 +729,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
-        PosableMaker.draw(self, context)
+        self.layout.prop(self, "useMakePosable")
         self.layout.prop(self, "useFinalOptimization")
 
 
@@ -1016,7 +1016,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if mainRig and activateObject(context, mainRig):
             if self.useFinalOptimization:
                 bpy.ops.daz.finalize_meshes()
-            self.makePosable(context, mainRig, False, True)
+            self.makePosable(context, mainRig, useActivate=False, useEasy=True)
             if self.useFinalOptimization:
                 bpy.ops.daz.optimize_drivers()
                 bpy.ops.daz.finalize_armature()
