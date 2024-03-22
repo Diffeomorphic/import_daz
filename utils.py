@@ -81,7 +81,7 @@ if BLENDER3:
     def makeBoneCollections(rig, table):
         return
 
-    def clearBoneCollections(rig):
+    def clearBoneCollections(rig, cnames):
         pass
 
     def assignOtherBones(rig, layer):
@@ -175,9 +175,11 @@ else:
                 if not taken.get(bone.name):
                     coll.assign(bone)
 
-    def clearBoneCollections(rig):
-        for coll in rig.data.collections:
-            rig.data.collections.remove(coll)
+    def clearBoneCollections(rig, cnames):
+        for cname in cnames:
+            coll = rig.data.collections.get(cname)
+            if coll:
+                rig.data.collections.remove(coll)
 
     def setBonegroup(pb, rig, bgname, color):
         if GS.useBoneColors:

@@ -77,7 +77,7 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbon
     eb.use_connect = False
     eb.parent = parent
     eb.use_deform = False
-    enableBoneNumLayer(eb, rig, layer)
+    setBoneNumLayer(eb, rig, layer)
     if headbone:
         LS.headbones[bname] = headbone.name
     if tailbone:
@@ -664,7 +664,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             nrig = None
         self.storeAllDrivers(rig, nrig, self.meshes)
         finalizeArmature(rig)
-        clearBoneCollections(rig)
+        clearBoneCollections(rig, [T_BONES, T_HIDDEN])
+        enableAllRigLayers(rig, False)
         makeBoneCollections(rig, MhxLayers)
         self.createBoneGroups(rig)
         self.startGizmos(context, rig)
@@ -819,7 +820,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 mname,layer = MHX.Skeleton[bname]
                 if bname != mname:
                     bone.name = mname
-                enableBoneNumLayer(bone, rig, layer)
+                setBoneNumLayer(bone, rig, layer)
                 fixed.append(mname)
             else:
                 continue
@@ -838,7 +839,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if pb.name in fixed:
                 continue
             layer,unlock = getBoneLayer(pb, rig, driven)
-            enableBoneNumLayer(pb.bone, rig, layer)
+            setBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
                 pb.lock_location = (False,False,False)
         self.checkTongueIk(rig)
@@ -1167,7 +1168,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def setLayer(self, bname, rig, layer):
         eb = rig.data.edit_bones.get(bname)
         if eb:
-            enableBoneNumLayer(eb, rig, layer)
+            setBoneNumLayer(eb, rig, layer)
             self.rolls[bname] = eb.roll
             return eb
 
