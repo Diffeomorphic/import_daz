@@ -131,7 +131,7 @@ class GeoNode(Node, SimNode):
     def buildShells(self, context):
         if not self.shellGeos:
             return
-        from .geonodes import makeShell, makeShellModifier
+        from .geonodes import makeShell, linkShell, makeShellModifier
         ob = self.rna
         hdob = self.hdobject
         if hdob and getModifier(hdob, 'MULTIRES'):
@@ -153,6 +153,8 @@ class GeoNode(Node, SimNode):
 
             if shgeonode.rna:
                 shell = shgeonode.rna
+                unlinkAll(shell, False)
+                linkShell(shell)
             else:
                 shell = makeShell(shgeonode.name, shmats, ob)
                 shgeonode.rna = shell

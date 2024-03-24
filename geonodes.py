@@ -177,9 +177,15 @@ def makeShell(shname, shmats, ob):
     for shmat in shmats:
         me.materials.append(shmat)
     shell = bpy.data.objects.new(shname, me)
-    LS.collection.objects.link(shell)
+    linkShell(shell)
     shell.parent = ob
     return shell
+
+
+def linkShell(shell):
+    coll = bpy.data.collections.new(shell.name)
+    LS.collection.children.link(coll)
+    coll.objects.link(shell)
 
 
 def makeShellModifier(shell, ob, offset, mnames, mats, shmats):

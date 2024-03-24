@@ -54,7 +54,8 @@ class UnitsOperator(DazPropsOperator):
 
     def draw(self, context):
         self.layout.prop(self, "units")
-        self.layout.prop(self, "scale")
+        if self.units == "Manual":
+            self.layout.prop(self, "scale")
 
     def invoke(self, context, event):
         self.scale = GS.scale
@@ -63,17 +64,6 @@ class UnitsOperator(DazPropsOperator):
     def setUnitScale(self):
         if self.units != "Manual":
             self.scale = 1/float(self.units)
-
-
-class DAZ_OT_SetUnits(UnitsOperator):
-    bl_idname = "daz.set_units"
-    bl_label = "Set Units"
-    bl_description = "Set global unit scale"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        self.setUnitScale()
-        GS.scale = self.scale
 
 #-------------------------------------------------------------
 #   Scale materials
@@ -97,7 +87,7 @@ class MaterialScaler(UnitsOperator):
         if context.object:
             self.layout.label(text = "Object Scale: %.4f" % self.objectScale)
         self.layout.prop(self, "useUpdate")
-        self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
+        #self.layout.prop(context.scene.tool_settings, "use_keyframe_insert_auto")
 
     def invoke(self, context, event):
         if context.object:
@@ -244,7 +234,6 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_SetUnits,
     DAZ_OT_ScaleMaterials,
     DAZ_OT_ScaleObjects,
 ]
