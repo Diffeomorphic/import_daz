@@ -1270,6 +1270,8 @@ def cleanAllDrivers(rig):
 
 def cleanDrivers(rna):
     def illegal(fcu):
+        if fcu.driver is None:
+            return True
         words = fcu.data_path.split('"')
         if words[0] == "modifiers[":
             mod = rna.modifiers.get(words[1])
@@ -1297,7 +1299,7 @@ def cleanDrivers(rna):
                     if var.type == 'SINGLE_PROP':
                         for trg in var.targets:
                             prop = getProp(trg.data_path)
-                            if prop not in trg.id.keys():
+                            if trg.id is None or prop not in trg.id.keys():
                                 deletes.append(fcu)
         if deletes:
             print("Delete %d corrupt drivers from %s" % (len(deletes), rna.name))
