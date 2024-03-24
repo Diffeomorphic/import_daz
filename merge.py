@@ -365,20 +365,20 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     cob.data.vertices[cvn].select = True
                     cedge[pair.b] = True
 
-        # Retarget shell modifiers
-        if bpy.app.version >= (3,1,0):
-            self.retargetShellModifiers(cob, anatomies)
-        self.retargetShellInfluence(cob, anatomies, influs)
-
         # Also select cob graft group. These will not be removed.
         if cob.data.DazGraftGroup:
             for pair in cob.data.DazGraftGroup:
                 cvn = assoc[pair.a]
                 cob.data.vertices[cvn].select = True
 
-        if self.useGeoNodes and bpy.app.version >= (3,1,0):
+        # Retarget shells
+        self.retargetShellInfluence(cob, anatomies, influs)
+        if bpy.app.version < (3,1,0):
+            self.mergeDestructively(context, cob, anatomies, cgrafts)
+        elif self.useGeoNodes:
             self.mergeWithGeoNodes(context, cob, anatomies, cgrafts)
         else:
+            self.retargetShellModifiers(cob, anatomies)
             self.mergeDestructively(context, cob, anatomies, cgrafts)
 
         self.copyShapeKeyDrivers(cob, drivers)
@@ -531,13 +531,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
     def retargetShellModifiers(self, cob, anatomies):
         from .tree import findLinksFrom
+        socket1 = ("Input_1" if BLENDER3 else "Socket_1")
         for ob in bpy.data.objects:
             if ob.type == 'MESH':
                 for mod in ob.modifiers:
                     if mod.type == 'NODES':
-                        aob = mod.get("Input_1")
+                        aob = mod.get(socket1)
                         if aob and aob in anatomies:
-                            mod["Input_1"] = cob
+                            mod[socket1] = cob
 
 
     def retargetShellInfluence(self, cob, anatomies, influs):

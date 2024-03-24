@@ -116,7 +116,7 @@ class GeoshellGroup(GeoTree):
     def create(self, name, mnames):
         NodeGroup.make(self, name, 7)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
-        addGroupInput(self.group, "NodeSocketObject", "Shell Geometry")
+        addGroupInput(self.group, "NodeSocketObject", "Base Object")
         addGroupInput(self.group, "NodeSocketFloat", "Shell Offset")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
@@ -124,7 +124,7 @@ class GeoshellGroup(GeoTree):
     def addNodes(self, mnames, mats, shmats):
         # Geoshell
         objinfo = self.addNode("GeometryNodeObjectInfo", 1)
-        self.links.new(self.inputs.outputs["Shell Geometry"], objinfo.inputs["Object"])
+        self.links.new(self.inputs.outputs["Base Object"], objinfo.inputs["Object"])
         normal = self.addNode("GeometryNodeInputNormal", 1)
 
         mult = self.addNode("ShaderNodeVectorMath", 2)
@@ -202,7 +202,7 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     shell.visible_shadow = False
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
-    group.create(ob.name, mnames)
+    group.create(ob.name.rstrip(" Mesh"), mnames)
     group.addNodes(mnames, mats, shmats)
     mod.node_group = group.group
     if BLENDER3:
