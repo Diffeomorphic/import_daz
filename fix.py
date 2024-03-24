@@ -958,8 +958,8 @@ class ConstraintStore:
         self.drivers = {}
         storeDrivers(rig.data, "_RIG_")
         for ob in meshes:
-            skeys = ob.data.shape_keys
-            storeDrivers(skeys, ob.name)
+            storeDrivers(ob.data.shape_keys, "_SKEY_%s" % ob.name)
+            storeDrivers(ob, "_OB_%s" % ob.name)
 
 
     def restoreAllDrivers(self, rig, nrig, meshes, renamed):
@@ -979,7 +979,8 @@ class ConstraintStore:
         if nrig:
             assoc = {}
         for ob in meshes:
-            restoreDrivers(ob.data.shape_keys, ob.name, assoc)
+            restoreDrivers(ob.data.shape_keys, "_SKEY_%s" % ob.name, assoc)
+            restoreDrivers(ob, "_OB_%s" % ob.name, assoc)
 
 #-------------------------------------------------------------
 #   BendTwist class

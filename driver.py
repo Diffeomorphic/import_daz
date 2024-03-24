@@ -1272,9 +1272,11 @@ def cleanDrivers(rna):
     def illegal(fcu):
         words = fcu.data_path.split('"')
         if words[0] == "modifiers[":
-            mod = getModifier(rna, words[1])
+            mod = rna.modifiers.get(words[1])
             return (mod is None)
         elif words[0] == "key_blocks[":
+            if words[1] not in rna.key_blocks.keys():
+                return True
             for var in fcu.driver.variables:
                 for trg in var.targets:
                     if trg.id == rna:
