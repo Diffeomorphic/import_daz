@@ -1299,7 +1299,8 @@ def cleanDrivers(rna):
                     if var.type == 'SINGLE_PROP':
                         for trg in var.targets:
                             prop = getProp(trg.data_path)
-                            if trg.id is None or prop not in trg.id.keys():
+                            if (trg.id is None or
+                                (isPropRef(trg.data_path) and prop not in trg.id.keys())):
                                 deletes.append(fcu)
         if deletes:
             print("Delete %d corrupt drivers from %s" % (len(deletes), rna.name))
