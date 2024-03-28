@@ -334,9 +334,21 @@ class GeoNode(Node, SimNode):
         if ob.type == 'MESH':
             if GS.usePruneNodes:
                 pruneUvMaps(ob)
+            smooth = False
+            angle = 89.9*D
             for mnum,dmat in enumerate(self.materials.values()):
                 if dmat:
                     dmat.correctEmitArea(ob, mnum)
+                    smooth = (smooth or dmat.getValue(["Smooth On"], False))
+                    angle = min(angle, dmat.getValue(["Smooth Angle"], 89.9)*D)
+            if GS.useAutoSmooth:
+                if hasattr(ob.data, "use_auto_smooth"):
+                    ob.data.use_auto_smooth = smooth
+                    ob.data.auto_smooth_angle = angle
+                elif bpy.app.version >= (4,1,0):
+                    if smooth:
+                        activateObject(context, ob)
+                        bpy.ops.object.shade_smooth_by_angle(angle=angle, keep_sharp_edges=True)
             scaleEyeMoisture(ob)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
@@ -1314,17 +1326,6 @@ class Geometry(Asset, Channels):
         dmat.correctBumpArea(self, me)
         if dmat.uv_set and dmat.uv_set.checkSize(me):
             self.uv_set = dmat.uv_set
-        if GS.useAutoSmooth:
-            smooth = dmat.getValue(["Smooth On"], False)
-            angle = dmat.getValue(["Smooth Angle"], 89.9)*D
-            if hasattr(me, "use_auto_smooth"):
-                me.use_auto_smooth = smooth
-                me.auto_smooth_angle = angle
-            elif hasattr(me, "shade_smooth"):
-                if smooth:
-                    me.shade_smooth()
-                else:
-                    me.shade_flat()
 
 
     def validateMesh(self, me):
