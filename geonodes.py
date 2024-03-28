@@ -32,12 +32,6 @@ from .tree import Tree, NodeGroup, XSIZE, YSIZE, addNodeGroup
 from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .selector import Selector
 
-VECTOR = 1
-VALUE = 2
-RGBA = 3
-BOOLEAN = 4
-INT = 5
-
 # ---------------------------------------------------------------------
 #   Geometry nodes, tree
 # ---------------------------------------------------------------------
@@ -73,8 +67,8 @@ class GeograftGroup(GeoTree):
         captureEdge.data_type = 'FLOAT'
         captureEdge.domain = 'POINT'
         self.links.new(self.inputs.outputs["Geometry"], captureEdge.inputs["Geometry"])
-        self.links.new(self.inputs.outputs["Geograft Edge"], captureEdge.inputs[VALUE])
-        union = captureEdge.outputs[VALUE]
+        self.links.new(self.inputs.outputs["Geograft Edge"], captureEdge.inputs["Value"])
+        union = captureEdge.outputs["Attribute"]
 
         deleteMask = self.addNode("GeometryNodeDeleteGeometry", 3)
         self.links.new(captureEdge.outputs["Geometry"], deleteMask.inputs["Geometry"])
@@ -87,13 +81,13 @@ class GeograftGroup(GeoTree):
         captureAnatomy.data_type = 'FLOAT'
         captureAnatomy.domain = 'POINT'
         self.links.new(graft.outputs["Geometry"], captureAnatomy.inputs["Geometry"])
-        self.links.new(self.inputs.outputs["Geograft Edge"], captureAnatomy.inputs[VALUE])
+        self.links.new(self.inputs.outputs["Geograft Edge"], captureAnatomy.inputs["Value"])
         joins.append(captureAnatomy)
 
         node = self.addNode("FunctionNodeBooleanMath", 3)
         node.operation = 'OR'
         self.links.new(union, node.inputs[0])
-        self.links.new(captureAnatomy.outputs[VALUE], node.inputs[1])
+        self.links.new(captureAnatomy.outputs["Attribute"], node.inputs[1])
         union = node.outputs[0]
         joins.append(deleteMask)
         joins.reverse()
