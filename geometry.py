@@ -1314,9 +1314,17 @@ class Geometry(Asset, Channels):
         dmat.correctBumpArea(self, me)
         if dmat.uv_set and dmat.uv_set.checkSize(me):
             self.uv_set = dmat.uv_set
-        if GS.useAutoSmooth and hasattr(me, "use_auto_smooth"):
-            me.use_auto_smooth = dmat.getValue(["Smooth On"], False)
-            me.auto_smooth_angle = dmat.getValue(["Smooth Angle"], 89.9)*D
+        if GS.useAutoSmooth:
+            smooth = dmat.getValue(["Smooth On"], False)
+            angle = dmat.getValue(["Smooth Angle"], 89.9)*D
+            if hasattr(me, "use_auto_smooth"):
+                me.use_auto_smooth = smooth
+                me.auto_smooth_angle = angle
+            elif hasattr(me, "shade_smooth"):
+                if smooth:
+                    me.shade_smooth()
+                else:
+                    me.shade_flat()
 
 
     def validateMesh(self, me):
