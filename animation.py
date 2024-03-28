@@ -311,6 +311,10 @@ class FrameConverter:
     #   Convert morph animations
     #-------------------------------------------------------------
 
+    def zeroFrame(self, frames):
+        return len(frames) == 1 and list(frames.values())[0] == 0
+
+
     def convertMorphAnim(self, vanim, rig):
         if not self.affectMorphs:
             return vanim
@@ -323,7 +327,8 @@ class FrameConverter:
         for prop,frames in struct.items():
             formulas,alias = self.getFormulas(rig, prop)
             if formulas is None:
-                self.used[alias] = True
+                if not self.zeroFrame(frames):
+                    self.used[alias] = True
                 continue
             for nprop,factor in formulas.items():
                 if factor == 0:
@@ -554,7 +559,7 @@ class MorphOptions(PosableMaker):
     useScanned : BoolProperty(
         name = "Use Scanned Database",
         description = "Use the scanned database to find morphs",
-        default = True)
+        default = False)
 
     affectGeograft : EnumProperty(
         items = getGeograftItems,
@@ -662,7 +667,7 @@ class MorphOptions(PosableMaker):
 
 
     def handleMissingMorphs(self, context, rig):
-        if self.useShapekeys or not self.useLoadMissing:
+        if self.useShapekeys or not self.useLoadMissing or not self.used:
             return False
         missing = []
         for prop in self.used:
@@ -685,8 +690,8 @@ class MorphOptions(PosableMaker):
         self.loadMissingOld(context, rig, missing)
         if self.unfound:
             print("Missing morphs not found:\n  %s" % self.unfound)
-            return True
-        return False
+        return True
+
 
 theMorphTables = {}
 
