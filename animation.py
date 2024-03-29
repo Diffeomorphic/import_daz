@@ -329,10 +329,7 @@ class FrameConverter:
             if formulas is None:
                 if not self.zeroFrame(frames):
                     self.used[alias] = True
-                    if again:
-                        nstruct[alias] = frames
-                    else:
-                        nstruct[prop] = frames
+                    nstruct[alias] = frames
                 continue
             for nprop,factor in formulas.items():
                 if factor == 0:

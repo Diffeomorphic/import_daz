@@ -683,11 +683,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                        "Useful if the character is baked"),
         default = False)
 
-    useMakePosable : BoolProperty(
-        name = "Make All Bones Posable",
-        description = "Make all bones posable after the morphs have been loaded",
-        default = True)
-
     useFinalOptimization : BoolProperty(
         name = "Final Optimizations",
         description = "Make final optimizations to the rig and mesh.\nAdditional morphs can not be loaded if this is enabled",
@@ -729,7 +724,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
-        self.layout.prop(self, "useMakePosable")
+        PosableMaker.draw(self, context)
         self.layout.prop(self, "useFinalOptimization")
 
 
@@ -943,7 +938,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useAdjusters = self.useAdjusters,
                         ignoreFingers = self.ignoreFingers,
                         ignoreHdMorphs = self.ignoreHdMorphs,
-                        useTransferFace = False)
+                        useTransferFace = False,
+                        useMakePosable=False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
                 if (useExpressions or self.useFacs or self.useJcms):
@@ -961,7 +957,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
                         useAdjusters = self.useAdjusters,
-                        useTransferFace = False)
+                        useTransferFace = False,
+                        useMakePosable=False)
 
         # Import DAZ favorites
         if self.useDazFavorites and meshes:

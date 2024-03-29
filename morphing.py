@@ -502,7 +502,7 @@ class PosableMaker:
     useMakePosable : BoolProperty(
         name = "Make All Bones Posable",
         description = "Make all bones posable after the morphs have been loaded",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useMakePosable")
