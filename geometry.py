@@ -229,9 +229,7 @@ class GeoNode(Node, SimNode):
                             if mat.cycles.displacement_method == 'DISPLACEMENT':
                                 mat.cycles.displacement_method = 'BOTH'
                 subDLevel = GS.maxSubdivs
-        if (self.type == "subdivision_surface" and
-            self.data and
-            (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0 or subDLevel > 0)):
+        if self.isSubdivided():
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
             renderLevel = max(self.data.SubDIALevel + self.data.SubDRenderLevel, subDLevel)
             mod.render_levels = min(renderLevel, GS.maxSubdivs)
@@ -247,6 +245,12 @@ class GeoNode(Node, SimNode):
             self.data.creaseEdges(context, ob)
             if hasattr(ob.data, "use_auto_smooth"):
                 ob.data.use_auto_smooth = False
+
+
+    def isSubdivided(self):
+        return (self.type == "subdivision_surface" and
+                self.data and
+                (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0 or subDLevel > 0))
 
 
     def addMappings(self, selmap):
@@ -342,13 +346,16 @@ class GeoNode(Node, SimNode):
                     smooth = (smooth or dmat.getValue(["Smooth On"], False))
                     angle = min(angle, dmat.getValue(["Smooth Angle"], 89.9)*D)
             if GS.useAutoSmooth:
-                if hasattr(ob.data, "use_auto_smooth"):
-                    ob.data.use_auto_smooth = smooth
-                    ob.data.auto_smooth_angle = angle
-                elif bpy.app.version >= (4,1,0):
+                if bpy.app.version >= (4,1,0):
                     if smooth:
                         activateObject(context, ob)
-                        bpy.ops.object.shade_smooth_by_angle(angle=angle, keep_sharp_edges=True)
+                        if self.isSubdivided():
+                            bpy.ops.object.shade_smooth()
+                        else:
+                            bpy.ops.object.shade_smooth_by_angle(angle=angle, keep_sharp_edges=True)
+                elif hasattr(ob.data, "use_auto_smooth"):
+                    ob.data.use_auto_smooth = smooth
+                    ob.data.auto_smooth_angle = angle
             scaleEyeMoisture(ob)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
