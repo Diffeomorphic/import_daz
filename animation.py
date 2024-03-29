@@ -161,7 +161,7 @@ class FrameConverter:
                         nbanim[bname] = frames
             else:
                 nbanim = banim
-            nvanim = self.convertMorphAnim(vanim, rig)
+            nvanim = self.convertMorphAnim(vanim, rig, again)
             nanims.append((nbanim,nvanim))
         if self.affectBones and not again:
             if self.useConvert:
@@ -315,7 +315,7 @@ class FrameConverter:
         return len(frames) == 1 and list(frames.values())[0] == 0
 
 
-    def convertMorphAnim(self, vanim, rig):
+    def convertMorphAnim(self, vanim, rig, again):
         if not self.affectMorphs:
             return vanim
 
@@ -329,6 +329,10 @@ class FrameConverter:
             if formulas is None:
                 if not self.zeroFrame(frames):
                     self.used[alias] = True
+                    if again:
+                        nstruct[alias] = frames
+                    else:
+                        nstruct[prop] = frames
                 continue
             for nprop,factor in formulas.items():
                 if factor == 0:
@@ -585,6 +589,7 @@ class MorphOptions(PosableMaker):
 
     def loadMissingOld(self, context, rig, missing):
         global theMorphTables
+        unfound = []
         if rig.DazId in theMorphTables.keys():
             table = theMorphTables[rig.DazId]
         else:
@@ -598,9 +603,10 @@ class MorphOptions(PosableMaker):
                     namepathTable[morphset] = []
                 namepathTable[morphset].append((mname, path, morphset))
             else:
-                self.unfound.append(mname)
+                unfound.append(mname)
 
         from .morphing import CustomMorphLoader, StandardMorphLoader
+        hasLoaded = False
         for morphset in namepathTable.keys():
             if self.useLoadMissing:
                 mloader = StandardMorphLoader(self.useMakePosable)
@@ -610,6 +616,7 @@ class MorphOptions(PosableMaker):
                 mloader.hideable = True
                 print("\nLoading missing %s morphs" % morphset)
                 mloader.getAllMorphs(namepathTable[morphset], context)
+                hasLoaded = True
         if self.useLoadMissing and "Custom" in namepathTable.keys():
             customs = {}
             for namepath in namepathTable["Custom"]:
@@ -628,6 +635,10 @@ class MorphOptions(PosableMaker):
                 mloader.hideable = True
                 print("\nLoading morphs in category %s" % cat)
                 mloader.getAllMorphs(namepaths, context)
+                hasLoaded = True
+        if hasLoaded:
+            self.setupAlias(rig)
+        return unfound
 
 
     def setupMorphTable(self, rig):
@@ -686,10 +697,9 @@ class MorphOptions(PosableMaker):
             from .scan import loadMissingMorphs
             if loadMissingMorphs(self, context, rig, missing, self.category):
                 return True
-        self.unfound = []
-        self.loadMissingOld(context, rig, missing)
-        if self.unfound:
-            print("Missing morphs not found:\n  %s" % self.unfound)
+        unfound = self.loadMissingOld(context, rig, missing)
+        if unfound:
+            print("Missing morphs not found:\n  %s" % unfound)
         return True
 
 
@@ -1423,14 +1433,7 @@ class StandardAnimation:
         if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
             found = loadScannedInfo(self, name, rig, relpath)
         if not found and rig.type == 'ARMATURE':
-            from .driver import getPropMinMax
-            alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
-            alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
-            self.alias = dict(alias1 + alias2)
-            for prop in rig.data.keys():
-                if isFinal(prop):
-                    key = normKey(baseProp(prop))
-                    self.minmax[key] = getPropMinMax(rig.data, prop, False)[0:2]
+            self.setupAlias(rig)
         scn = context.scene
         if scn.tool_settings.use_keyframe_insert_auto:
             self.useInsertKeys = True
@@ -1478,6 +1481,17 @@ class StandardAnimation:
             else:
                 bone.select = (bone.name in select)
         return selected
+
+
+    def setupAlias(self, rig):
+        from .driver import getPropMinMax
+        alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
+        alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
+        self.alias = dict(alias1 + alias2)
+        for prop in rig.data.keys():
+            if isFinal(prop):
+                key = normKey(baseProp(prop))
+                self.minmax[key] = getPropMinMax(rig.data, prop, False)[0:2]
 
 
 def loadAltMorphs(rig):
