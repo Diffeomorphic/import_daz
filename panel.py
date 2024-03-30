@@ -747,10 +747,8 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
     uilist = "DAZ_UL_Facs"
 
     def preamble(self, layout, rig):
-        layout.operator("daz.import_facecap")
-        layout.operator("daz.import_livelink")
-        layout.operator("daz.import_fbx_facs")
-        layout.operator("daz.copy_facs_animation")
+        layout.label(text="FaceCap and LiveLink")
+        layout.label(text="moved to BVH Retargeter")
         DAZ_PT_Morphs.preamble(self, layout, rig)
 
 

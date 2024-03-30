@@ -100,7 +100,7 @@ def importModules():
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "scale", "tables", "proxy", "hide", "store",
                     "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
-                    "udim", "hdmorphs", "ctrl_rig", "moho", "facecap", "scan", "api",
+                    "udim", "hdmorphs", "ctrl_rig", "moho", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
             modnames.append("geonodes")
@@ -125,7 +125,7 @@ regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "guess", "convert", "main", "finger",
             "matedit", "scale", "proxy", "rigify", "merge", "hide", "store",
             "mhx", "hair", "transfer", "dforce",
-            "hdmorphs", "facecap", "ctrl_rig", "moho", "udim", "scan"]
+            "hdmorphs", "ctrl_rig", "moho", "udim", "scan"]
 
 isRegistered = False
 
