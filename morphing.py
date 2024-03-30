@@ -1628,6 +1628,15 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
     bl_label = "Save Favorite Morphs"
     bl_description = "Save favorite morphs"
 
+    useCompact: BoolProperty(
+        name = "Compact View",
+        description = "Spread each category on multiple lines.\nUseful for manual editing of json files",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useCompact")
+
+
     def run(self, context):
         from .load_json import saveJson
         rig = self.rig = getRigFromContext(context)
@@ -1671,6 +1680,9 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
             data = (quote(path), item.text, item.bodypart)
             if data not in mstruct[key]:
                 mstruct[key].append(data)
+        if not self.useCompact:
+            for key,datas in list(mstruct.items()):
+                mstruct[key] = [list(data) for data in datas]
 
 
 class FavoOptions:
