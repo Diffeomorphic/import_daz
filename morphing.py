@@ -1633,8 +1633,14 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
         description = "Spread each category on multiple lines.\nUseful for manual editing of json files",
         default = True)
 
+    useRemoveDuplicates : BoolProperty(
+        name = "Remove Duplicates",
+        description = "Remove morphs from extra categories",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useCompact")
+        self.layout.prop(self, "useRemoveDuplicates")
 
 
     def run(self, context):
@@ -1680,6 +1686,28 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
             data = (quote(path), item.text, item.bodypart)
             if data not in mstruct[key]:
                 mstruct[key].append(data)
+
+        if self.useRemoveDuplicates:
+            def removeDuplicates(datas, taken):
+                ndatas = []
+                datas.sort()
+                datas.reverse()     # alias last
+                for data in datas:
+                    path,prop,bodypart = data
+                    if prop not in taken.keys():
+                        ndatas.append(data)
+                        taken[prop] = True
+                ndatas.reverse()
+                return ndatas
+
+            taken = {}
+            for key,datas in list(mstruct.items()):
+                if not key.startswith("Custom/"):
+                    mstruct[key] = removeDuplicates(datas, taken)
+            for key,datas in list(mstruct.items()):
+                if key.startswith("Custom/"):
+                    mstruct[key] = removeDuplicates(datas, taken)
+
         if not self.useCompact:
             for key,datas in list(mstruct.items()):
                 mstruct[key] = [list(data) for data in datas]
