@@ -1966,7 +1966,78 @@ class DAZ_OT_PruneAction(DazOperator):
 #   Bake to FK
 #----------------------------------------------------------
 
-class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
+class FrameRange(DazPropsOperator):
+    startFrame : IntProperty(
+        name = "Start Frame",
+        description = "Starting frame for the animation",
+        default = 1)
+
+    endFrame : IntProperty(
+        name = "Last Frame",
+        description = "Last frame for the animation",
+        default = 250)
+
+    def draw(self, context):
+        self.layout.prop(self, "startFrame")
+        self.layout.prop(self, "endFrame")
+
+    def getActiveFrames(self):
+        def getActiveFrames0(rig):
+            active = {}
+            if rig.animation_data is None:
+                return active
+            action = rig.animation_data.action
+            if action is None:
+                return active
+            for fcu in action.fcurves:
+                for kp in fcu.keyframe_points:
+                    active[kp.co[0]] = True
+            return active
+
+        active = getActiveFrames0(self.rig)
+        frames = list(active.keys())
+        if not frames:
+            return frames
+        frames.sort()
+        while frames[0] < self.startFrame:
+            frames = frames[1:]
+        frames.reverse()
+        while frames[0] > self.endFrame:
+            frames = frames[1:]
+        frames.reverse()
+        return frames
+
+
+    def invoke(self, context, event):
+        rig = context.object
+        adata = rig.animation_data
+        if adata and adata.action:
+            tmin = tmax = 1
+            for fcu in adata.action.fcurves:
+                times = [kp.co[0] for kp in fcu.keyframe_points]
+                if times:
+                    tmin = min(int(min(times)), tmin)
+                    tmax = max(int(max(times)), tmax)
+            self.startFrame = tmin
+            self.endFrame = tmax
+        else:
+            self.startFrame = self.endFrame = context.scene.frame_current
+        return DazPropsOperator.invoke(self, context, event)
+
+
+    def setInterpolation(self):
+        if not self.rig.animation_data:
+            return
+        act = self.rig.animation_data.action
+        if not act:
+            return
+        for fcu in act.fcurves:
+            for pt in fcu.keyframe_points:
+                pt.interpolation = 'LINEAR'
+            fcu.extrapolation = 'CONSTANT'
+
+
+class DAZ_OT_BakeToFkRig(FrameRange, IsArmature):
     bl_idname = "daz.bake_pose_to_fk_rig"
     bl_label = "Bake Pose To FK Rig"
     bl_description = "Bake pose to the FK rig before saving pose preset.\nIK arms and legs must be baked separately"
@@ -2012,9 +2083,8 @@ class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
             if rig.animation_data and rig.animation_data.action:
                 act = rig.animation_data.action
                 self.removeFromAction(act, rig)
-                first,last = self.getRange(act)
                 matrices = []
-                for frame in range(first, last+1):
+                for frame in range(self.startFrame, self.endFrame+1):
                     scn.frame_current = frame
                     updateScene(context)
                     matrices.append((frame, self.addMats()))
@@ -2043,16 +2113,6 @@ class DAZ_OT_BakeToFkRig(HideOperator, IsArmature):
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
                 bakedBones.append(pb)
-
-
-    def getRange(self, act):
-        maxs = []
-        mins = []
-        for fcu in act.fcurves:
-            times = [kp.co[0] for kp in fcu.keyframe_points]
-            maxs.append(max(times))
-            mins.append(min(times))
-        return int(min(mins)), int(max(maxs))
 
 
     def addMats(self):

@@ -32,6 +32,7 @@ from .utils import *
 from .error import *
 from .layers import *
 from .bone_data import BD
+from .animation import FrameRange
 
 
 S_ARMIK = (S_LARMIK, S_RARMIK)
@@ -128,6 +129,17 @@ class SimpleIK:
                     for pt in fcu.keyframe_points:
                         pt.interpolation = 'LINEAR'
                     fcu.extrapolation = 'CONSTANT'
+
+
+    def changeLayers(self, rig, on, off):
+        if BLENDER3:
+            rig.data.layers[on] = True
+            rig.data.layers[off] = False
+        else:
+            coll = rig.data.collections[SimpleLayers[on]]
+            coll.is_visible = True
+            coll = rig.data.collections[SimpleLayers[off]]
+            coll.is_visible = False
 
 
     def getGenesisType(self, rig):
@@ -865,38 +877,53 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
 #----------------------------------------------------------
 
 class SimpleFKSnapper(SimpleIK):
-    def snapSimpleFK(self, rig, prefix, type, on, off):
+    def snapSimpleFK(self, rig, prefix, type):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if bnames:
             prop = self.getIKProp(prefix, type)
-            self.setProp(rig, prop, True)
-            updatePose()
             self.snapBones(rig, bnames, prop)
-            if BLENDER3:
-                rig.data.layers[on] = True
-                rig.data.layers[off] = False
-            else:
-                coll = rig.data.collections[SimpleLayers[on]]
-                coll.is_visible = True
-                coll = rig.data.collections[SimpleLayers[off]]
-                coll.is_visible = False
             self.setProp(rig, prop, False)
             self.linearizeFcurve(rig, prop)
 
 
     def snapBones(self, rig, bnames, prop):
+        pbones,gmats = self.getSnapBones(rig, bnames)
+        useGlobal = False
+        self.setProp(rig, prop, 0.0)
+        if useGlobal:
+            updatePose()
+        for pb in pbones:
+            if useGlobal:
+                pb.matrix = gmats[pb.name]
+                updatePose()
+            else:
+                self.snapFkBone(pb, gmats)
+
+
+    def getSnapBones(self, rig, bnames):
         from .fix import getPreSufName
-        mats = []
+        pbones = []
+        gmats = {}
         for bname in bnames:
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
-                mats.append((pb, pb.matrix.copy()))
-        self.setProp(rig, prop, 0.0)
-        updatePose()
-        for pb,mat in mats:
-            pb.matrix = mat
-            updatePose()
-            self.keyPose(pb)
+                pbones.append(pb)
+                gmats[pb.name] = pb.matrix.copy()
+                if pb.parent and pb.parent.name not in gmats.keys():
+                    gmats[pb.parent.name] = pb.parent.matrix.copy()
+        return pbones, gmats
+
+
+    def snapFkBone(self, pb, gmats):
+        M1 = gmats[pb.name]
+        R1 = pb.bone.matrix_local
+        if pb.parent:
+            M0 = gmats[pb.parent.name]
+            R0 = pb.parent.bone.matrix_local
+            pb.matrix_basis = R1.inverted() @ R0 @ M0.inverted() @ M1
+        else:
+            pb.matrix_basis = R1.inverted() @ M1
+        self.keyPose(pb)
 
 
 class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
@@ -917,7 +944,8 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        self.snapSimpleFK(rig, self.prefix, self.type, self.on, self.off)
+        self.snapSimpleFK(rig, self.prefix, self.type)
+        self.changeLayers(rig, self.on, self.off)
 
 
 class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
@@ -934,15 +962,94 @@ class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
             ("r", "Arm", S_RARMFK, S_RARMIK),
             ("l", "Leg", S_LLEGFK, S_LLEGIK),
             ("r", "Leg", S_RLEGFK, S_RLEGIK)]:
-            self.snapSimpleFK(rig, prefix, type, on, off)
+            self.snapSimpleFK(rig, prefix, type)
+            self.changeLayers(rig, on, off)
+
+
+class DAZ_OT_SnapAnimationFK(FrameRange, SimpleFKSnapper):
+    bl_idname = "daz.snap_simple_fk_animation"
+    bl_label = "Snap FK Animation"
+    bl_description = "Snap FK animation for selected frames"
+    bl_options = {'UNDO'}
+
+    useLeftArm : BoolProperty(
+        name = "Left Arm",
+        description = "Include animation for left arm",
+        default = True)
+
+    useRightArm : BoolProperty(
+        name = "Right Arm",
+        description = "Include animation for right arm",
+        default = True)
+
+    useLeftLeg : BoolProperty(
+        name = "Left Leg",
+        description = "Include animation for left leg",
+        default = True)
+
+    useRightLeg : BoolProperty(
+        name = "Right Leg",
+        description = "Include animation for right leg",
+        default = True)
+
+    useLayerChange : BoolProperty(
+        name = "Change Layers",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useLeftArm")
+        self.layout.prop(self, "useRightArm")
+        self.layout.prop(self, "useLeftLeg")
+        self.layout.prop(self, "useRightLeg")
+        self.layout.prop(self, "useLayerChange")
+        FrameRange.draw(self, context)
+
+    def run(self, context):
+        rig = context.object
+        scn = context.scene
+        self.auto = True
+        bnamess = []
+        props = []
+        if self.useLeftArm:
+            bnamess.append(self.getLimbBoneNames(rig, "l", "Arm"))
+            props.append(self.getIKProp("l", "Arm"))
+        if self.useRightArm:
+            bnamess.append(self.getLimbBoneNames(rig, "r", "Arm"))
+            props.append(self.getIKProp("r", "Arm"))
+        if self.useLeftLeg:
+            bnamess.append(self.getLimbBoneNames(rig, "l", "Leg"))
+            props.append(self.getIKProp("l", "Leg"))
+        if self.useRightLeg:
+            bnamess.append(self.getLimbBoneNames(rig, "r", "Leg"))
+            props.append(self.getIKProp("r", "Leg"))
+        for frame in range(self.startFrame, self.endFrame+1):
+            scn.frame_current = self.frame = frame
+            updateScene(context)
+            for bnames in bnamess:
+                pbones,gmats = self.getSnapBones(rig, bnames)
+                for pb in pbones:
+                    self.snapFkBone(pb, gmats)
+        if self.useLayerChange:
+            for frame in (self.startFrame, self.endFrame):
+                for prop in props:
+                    self.setProp(rig, prop, False)
+            for prop in props:
+                self.linearizeFcurve(rig, prop)
+            if self.useLeftArm:
+                self.changeLayers(rig, S_LARMFK, S_LARMIK)
+            if self.useRightArm:
+                self.changeLayers(rig, S_RARMFK, S_RARMIK)
+            if self.useLeftLeg:
+                self.changeLayers(rig, S_LLEGFK, S_LLEGIK)
+            if self.useRightLeg:
+                self.changeLayers(rig, S_RLEGFK, S_RLEGIK)
 
 #----------------------------------------------------------
 #   IK Snap
 #----------------------------------------------------------
 
 class SimpleIKSnapper(SimpleIK):
-
-    def snapSimpleIK(self, rig, prefix, type, pole, on, off):
+    def snapSimpleIK(self, rig, prefix, type, pole):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if type == "Leg":
             revbones = self.getRevBones(prefix, rig)
@@ -961,14 +1068,6 @@ class SimpleIKSnapper(SimpleIK):
             self.setProp(rig, prop, 0.0)
             updatePose()
             self.snapBones(rig, bnames, prop, pole, shldrik, revbones)
-            if BLENDER3:
-                rig.data.layers[on] = True
-                rig.data.layers[off] = False
-            else:
-                coll = rig.data.collections[SimpleLayers[on]]
-                coll.is_visible = True
-                coll = rig.data.collections[SimpleLayers[off]]
-                coll.is_visible = False
             self.setProp(rig, prop, 1.0)
             self.linearizeFcurve(rig, prop)
 
@@ -1074,7 +1173,7 @@ class SimpleIKSnapper(SimpleIK):
 class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
     bl_idname = "daz.snap_simple_ik"
     bl_label = "Snap IK"
-    bl_description = "Snap IK bones to FK bones"
+    bl_description = "Snap IK bones to FK bones.\nSnapping is only approximate"
     bl_options = {'UNDO'}
 
     prefix : StringProperty()
@@ -1090,13 +1189,14 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
     def run(self, context):
         rig = context.object
         self.initAuto(context)
-        self.snapSimpleIK(rig, self.prefix, self.type, self.pole, self.on, self.off)
+        self.snapSimpleIK(rig, self.prefix, self.type, self.pole)
+        self.changeLayers(rig, self.on, self.off)
 
 
 class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
     bl_idname = "daz.snap_all_simple_ik"
     bl_label = "Snap IK All"
-    bl_description = "Snap all IK bones to FK bones"
+    bl_description = "Snap all IK bones to FK bones.\nSnapping is only approximate"
     bl_options = {'UNDO'}
 
     pole : StringProperty()
@@ -1109,7 +1209,25 @@ class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
             ("r", "Arm", "rElbow", S_RARMIK, S_RARMFK),
             ("l", "Leg", "lKnee", S_LLEGIK, S_LLEGFK),
             ("r", "Leg", "rKnee", S_RLEGIK, S_RLEGFK)]:
-            self.snapSimpleIK(rig, prefix, type, pole, on, off)
+            self.snapSimpleIK(rig, prefix, type, pole)
+            self.changeLayers(rig, on, off)
+
+#----------------------------------------------------------
+#   Connect bone chains
+#----------------------------------------------------------
+
+class DAZ_OT_ToggleFkIk(DazOperator, SimpleIKSnapper):
+    bl_idname = "daz.toggle_fk_ik"
+    bl_label = "Toggle FK IK"
+    bl_description = "Toggle FK/IK"
+    bl_options = {'UNDO'}
+
+    prop : StringProperty()
+    value : FloatProperty()
+
+    def run(self, context):
+        rig = context.object
+        setattr(rig, self.prop, self.value)
 
 #----------------------------------------------------------
 #   Connect bone chains
@@ -1480,6 +1598,8 @@ classes = [
     DAZ_OT_SnapSimpleIK,
     DAZ_OT_SnapAllSimpleFK,
     DAZ_OT_SnapAllSimpleIK,
+    DAZ_OT_SnapAnimationFK,
+    DAZ_OT_ToggleFkIk,
     DAZ_OT_ConnectBoneChains,
     DAZ_OT_SelectNamedLayers,
     DAZ_OT_UnSelectNamedLayers,

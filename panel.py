@@ -1012,21 +1012,35 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
         return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
 
     def draw(self, context):
+        def toggleFKIK(row, prop, limb):
+            if getattr(rig, prop) > 0.5:
+                text = "IK"
+                value = 0.0
+            else:
+                text = "FK"
+                value = 1.0
+            op = row.operator("daz.toggle_fk_ik", text="%s %s" % (limb, text))
+            op.prop = prop
+            op.value = value
+
         rig = context.object
         layout = self.layout
+        row = layout.row()
+        row.label(text = "Left")
+        row.label(text = "Right")
+        row = layout.row()
+        toggleFKIK(row, "DazArmIK_L", "Arm")
+        toggleFKIK(row, "DazArmIK_R", "Arm")
+        row = layout.row()
+        toggleFKIK(row, "DazLegIK_L", "Leg")
+        toggleFKIK(row, "DazLegIK_R", "Leg")
         layout.label(text="IK Influence")
-        split = layout.split(factor=0.2)
-        split.label(text="")
-        split.label(text="Left")
-        split.label(text="Right")
-        split = layout.split(factor=0.2)
-        split.label(text="Arm")
-        split.prop(rig, "DazArmIK_L", text="")
-        split.prop(rig, "DazArmIK_R", text="")
-        split = layout.split(factor=0.2)
-        split.label(text="Leg")
-        split.prop(rig, "DazLegIK_L", text="")
-        split.prop(rig, "DazLegIK_R", text="")
+        row = layout.row()
+        row.prop(rig, "DazArmIK_L", text="Arm")
+        row.prop(rig, "DazArmIK_R", text="Arm")
+        row = layout.row()
+        row.prop(rig, "DazLegIK_L", text="Leg")
+        row.prop(rig, "DazLegIK_R", text="Leg")
 
         layout.label(text="Snap FK bones")
         row = layout.row()
@@ -1081,9 +1095,10 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
         op.off = S_RLEGFK
 
         layout.separator()
+        layout.operator("daz.disable_locks_limits")
         layout.operator("daz.snap_all_simple_fk")
         layout.operator("daz.snap_all_simple_ik")
-        layout.prop(rig, "DazRotLimits")
+        layout.operator("daz.snap_simple_fk_animation")
 
 #------------------------------------------------------------------------
 #   Visibility panels
