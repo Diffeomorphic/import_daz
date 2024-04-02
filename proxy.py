@@ -1894,6 +1894,8 @@ class WidgetConverter:
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
                 pb.custom_shape = gzm
+                scale = GS.scale / pb.bone.length
+                setCustomShapeTransform(pb, scale)
                 pb.bone.show_wire = True
                 self.assignLayer(pb, rig)
                 if len(pb.children) == 1:

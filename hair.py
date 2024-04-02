@@ -2487,11 +2487,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         lname,r0,r1 = bones[-1]
         pb = rig.pose.bones[lname]
         pb.custom_shape = gizmo
-        s = self.hairLength/25
-        if hasattr(pb, "custom_shape_scale_xyz"):
-            pb.custom_shape_scale_xyz = (s,s,s)
-        else:
-            pb.custom_shape_scale = s
+        setCustomShapeTransform(pb, self.hairLength/25)
 
 
     def addIkConstraint(self, key, data, rig, gizmo):

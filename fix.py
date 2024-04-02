@@ -146,10 +146,7 @@ class Fixer(DriverUser):
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
                 if pb.custom_shape:
-                    if hasattr(pb, "custom_shape_scale"):
-                        pb.custom_shape_scale = scale
-                    else:
-                        pb.custom_shape_scale_xyz = (scale, scale, scale)
+                    setCustomShapeTransform(pb, scale)
                     if offset:
                         for v in pb.custom_shape.data.vertices:
                             v.co += offset
@@ -727,25 +724,11 @@ class GizmoUser:
 
 def setCustomShape(pb, shape, scale=None, offset=None, rotation=None):
     pb.custom_shape = shape
-    if scale is None:
-        pass
-    elif hasattr(pb, "custom_shape_scale"):
-        if isinstance(scale, tuple):
-            x,y,z = scale
-            scale = (x+y+z)/3
-        pb.custom_shape_scale = scale
-    elif isinstance(scale, tuple):
-        pb.custom_shape_scale_xyz = scale
-    else:
-        pb.custom_shape_scale_xyz = (scale, scale, scale)
-    if not hasattr(pb, "custom_shape_translation"):
-        return
     if isinstance(offset, tuple):
-        pb.custom_shape_translation = Vector(offset)*pb.bone.length
+        offset = Vector(offset)*pb.bone.length
     elif offset is not None:
-        pb.custom_shape_translation.y = offset*pb.bone.length
-    if isinstance(rotation, tuple):
-        pb.custom_shape_rotation_euler = rotation
+        offset = offset*pb.bone.length
+    setCustomShapeTransform(pb, scale, offset, rotation)
 
 #----------------------------------------------------------
 #   Get suffix name

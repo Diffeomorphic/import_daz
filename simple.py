@@ -425,9 +425,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         else:
             scale = Vector([s0*s for s0,s in zip(scale0,scale)])
         pb.custom_shape = shape
-        pb.custom_shape_scale_xyz = scale
-        pb.custom_shape_translation = Vector(offset)*pb.bone.length
-        pb.custom_shape_rotation_euler = rotation
+        setCustomShapeTransform(pb, scale, Vector(offset)*pb.bone.length, rotation)
 
 
     def makeCustomShapes(self, context, rig, IK):
@@ -1574,19 +1572,10 @@ class DAZ_OT_BatchSetCustomShape(DazPropsOperator, IsArmature):
                     break
             if ob is None:
                 raise DazError("No custom shape object selected")
-            x,y,z = self.scale
-            scale = (x+y+z)/3
             for pb in rig.pose.bones:
                 if pb.bone.select:
                     pb.custom_shape = ob
-                    if hasattr(pb, "custom_shape_scale_xyz"):
-                        pb.custom_shape_scale_xyz = self.scale
-                    elif hasattr(pb, "custom_shape_scale"):
-                        pb.custom_shape_scale = scale
-                    if hasattr(pb, "custom_shape_translation"):
-                        pb.custom_shape_translation = self.translation
-                    if hasattr(pb, "custom_shape_rotation_euler"):
-                        pb.custom_shape_rotation_euler = Vector(self.rotation)*D
+                    setCustomShapeTransform(pb, self.scale, self.translation, Vector(self.rotation)*D)
 
 #----------------------------------------------------------
 #   Initialize

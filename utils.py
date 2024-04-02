@@ -591,6 +591,25 @@ def sorted(seq):
     return slist
 
 
+def setCustomShapeTransform(pb, scale, trans=None, rot=None):
+    if hasattr(pb, "custom_shape_scale_xyz"):
+        if isinstance(scale, (int,float)):
+            scale = (scale, scale, scale)
+        pb.custom_shape_scale_xyz = scale
+    elif hasattr(pb, "custom_shape_scale"):
+        if isinstance(scale, (int,float)):
+            pb.custom_shape_scale = scale
+        else:
+            x,y,z = scale
+            pb.custom_shape_scale = (x+y+z)/3
+    if trans and hasattr(pb, "custom_shape_translation"):
+        if isinstance(trans, (int,float)):
+            trans = (0, trans, 0)
+        pb.custom_shape_translation = trans
+    if rot and hasattr(pb, "custom_shape_rotation_euler"):
+        pb.custom_shape_rotation_euler = rot
+
+
 def getModifier(ob, type):
     for mod in ob.modifiers:
         if mod.type == type:
