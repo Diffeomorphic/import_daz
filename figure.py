@@ -150,7 +150,7 @@ class FigureInstance(Instance):
         from .fileutils import DF
         self.altmorphs = {}
         url = unquote(self.node.id)
-        if url.lower() in DF.FaceControls:
+        if url.lower() in DF.WidgetControls:
             if (isinstance(self.parent, BoneInstance) and
                 isinstance(self.parent.figure, FigureInstance)):
                     fig = unquote(self.parent.figure.node.id)

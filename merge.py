@@ -1177,7 +1177,7 @@ class RigInfo:
         self.copyProps(self.rig, rig, True)
         self.copyProps(self.rig.data, rig.data, False)
         self.button.copyDrivers(self.rig.data, rig.data, self.rig, rig)
-        self.button.copyDrivers(self.rig, rig, self.rig, rig)
+        self.button.copyDrivers(self.rig, rig, self.rig, rig)   # causes warnings
         setActiveObject(context, rig)
         wmat = rig.matrix_world.inverted() @ self.matrix
         for bname,data in self.posebones.items():
@@ -1229,7 +1229,7 @@ class MergeRigsOptions:
 
     useMergeNonConforming : EnumProperty(
         items = [('NEVER', "Never", "Don't merge non-conforming bones"),
-                 ('CONTROLS', "Face Controls", "Only merge face controls"),
+                 ('CONTROLS', "Widget Controls", "Only merge known widget controls"),
                  ('ALWAYS', "Always", "Always merge non-conforming bones")],
         name = "Non-conforming Rigs",
         description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
@@ -1345,11 +1345,10 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         conforming = []
         info = RigInfo(rig, True, self)
         for subrig in subrigs:
-            if subrig.parent and subrig.parent_type == 'BONE':
-                if subrig.parent == rig:
-                    conforms = self.isConforming(subrig, rig, info)
-                else:
-                    continue
+            if subrig.parent is None:
+                conforms = (self.useMergeNonConforming == 'ALWAYS')
+            elif subrig.parent == rig:
+                conforms = self.isConforming(subrig, rig, info)
             elif subrig.parent in repars:
                 continue
             else:
@@ -1378,7 +1377,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         if self.useMergeNonConforming == 'ALWAYS':
             return True
         elif self.useMergeNonConforming == 'CONTROLS':
-            if subrig.DazUrl.lower() in DF.FaceControls:
+            if subrig.DazUrl.lower() in DF.WidgetControls:
                 if info.foundControl:
                     subrig.hide_viewport = True
                     for child in subrig.children:
@@ -1386,6 +1385,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     return False
                 info.foundControl = list(subrig.children)
                 return True
+        elif subrig.parent is None or subrig.parent_type == 'BONE':
+            return False
         for bname in subrig.data.bones.keys():
             if bname in rig.data.bones.keys():
                 return True
@@ -1500,7 +1501,11 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
 
     def reparentObjects(self, info, rig, adds, hdadds, removes):
-        from .driver import retargetShapes
+        from .driver import retargetDrivers
+        if info.rig and info.rig != rig:
+            retargetDrivers(rig, info.rig, rig)
+            retargetDrivers(rig.data, info.rig, rig)
+
         for ob,data in info.objects:
             partype, parbone = data
             if partype in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
@@ -1518,7 +1523,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             self.addToCollections(ob, adds, hdadds, removes)
             if info.rig and info.rig != rig:
                 if ob.type == 'MESH' and ob.data.shape_keys:
-                    retargetShapes(ob.data.shape_keys, info.rig, rig)
+                    retargetDrivers(ob.data.shape_keys, info.rig, rig)
 
 
     def createNewCollections(self, rig):

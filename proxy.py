@@ -1934,7 +1934,7 @@ class WidgetConverter:
         assoc = {}
         for v in ob.data.vertices:
             grps = [(g.weight,g.group) for g in v.groups]
-            if len(grps) != 1:
+            if len(grps) < 1:
                 raise DazError("Not a custom shape mesh")
             grps.sort()
             idx = grps[-1][1]

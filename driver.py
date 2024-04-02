@@ -781,7 +781,7 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
                 self.copyDrivers(rig1.data, rig2.data, rig1, rig2, False)
                 if self.useShapekeys:
                     for ob in getShapeChildren(rig2):
-                        retargetShapes(ob.data.shape_keys, rig1, rig2)
+                        retargetDrivers(ob.data.shape_keys, rig1, rig2)
 
 
     def copyDrivers(self, rna1, rna2, rig1, rig2, ovr):
@@ -834,22 +834,27 @@ def ensureProp(fcu, rna1, rna2, ovr):
             setPropMinMax(rna2, prop, default, min, max, ovr)
 
 
-def retargetFcurve(fcu, rig1, rig2):
+def retargetFcurve(fcu, rig1, rig2, force=False):
     for var in fcu.driver.variables:
         for trg in var.targets:
-            if trg.id_type == 'OBJECT' and trg.id == rig1:
-                ensureProp(trg, rig1, rig2, True)
-                trg.id = rig2
-            elif trg.id_type == 'ARMATURE' and trg.id == rig1.data:
-                ensureProp(trg, rig1.data, rig2.data, False)
-                trg.id = rig2.data
+            if trg.id_type == 'OBJECT':
+                if trg.id == rig1:
+                    ensureProp(trg, rig1, rig2, True)
+                    trg.id = rig2
+            elif trg.id_type == 'ARMATURE':
+                if trg.id == rig1.data:
+                    ensureProp(trg, rig1.data, rig2.data, False)
+                    trg.id = rig2.data
+            elif trg.id_type not in ['KEY']:
+                print("Unexpected id: %s %s" % (trg.id_type, trg.id))
 
 
-def retargetShapes(skeys, rig1, rig2):
-    if skeys.animation_data is None:
+def retargetDrivers(rna, rig1, rig2, force=False):
+    if rna.animation_data is None:
         return
-    for fcu in skeys.animation_data.drivers:
-        retargetFcurve(fcu, rig1, rig2)
+    for fcu in rna.animation_data.drivers:
+        fcu.mute = False
+        retargetFcurve(fcu, rig1, rig2, force)
 
 #----------------------------------------------------------
 #   Optimize drivers

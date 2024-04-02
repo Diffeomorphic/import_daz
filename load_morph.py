@@ -427,7 +427,6 @@ class LoadMorph(DriverUser):
         self.adjustable[prop] = True
         if isinstance(asset, Formula):
             exprs,self.rig2 = asset.evalFormulas(self.rig, self.mesh, True)
-            print("RR", self.rig, self.rig2)
         elif isinstance(asset, Alias):
             exprs = {}
             alias = asset.getAlias()
@@ -1819,7 +1818,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
 
     def buildValueDriver(exprs, raw):
         lm = LoadMorph()
-        lm.initRig(rig)
+        lm.initRig(rig, rig)
         for idx,expr in exprs.items():
             bname = expr["bone"]
             if (bname not in rig.pose.bones.keys() and

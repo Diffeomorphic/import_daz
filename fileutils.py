@@ -109,9 +109,10 @@ class DataFolders:
         ]
         self.TwistBones["genesis8"] = self.TwistBones["genesis3"]
 
-        self.FaceControls = [
+        self.WidgetControls = [
             "/data/daz 3d/genesis 8/genesis 8_1 face controls/genesis 8.1 face controls.dsf#genesis 8.1 face controls",
             "/data/daz 3d/genesis 8/genesis 8_1 male face controls/genesis 8.1 male face controls.dsf#genesis 8.1 male face controls",
+            "/data/laudanum/advance pussy/advancepussy_controls_v2/advance_pussy_controls_2073.dsf#advance_pussy_controls_2073",
         ]
 
         self.RestPoseItems = []

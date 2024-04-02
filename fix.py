@@ -572,6 +572,7 @@ class Fixer(DriverUser):
                     return True
             return False
 
+        from .driver import retargetDrivers
         if not ES.easy:
             print("Tie bones of %s to %s" % (rig.name, gen.name))
         facebones = self.setupFaceBones(rig)
@@ -1299,6 +1300,7 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
         self.layout.prop(self, "useRetarget")
 
     def run(self, context):
+        from .driver import retargetDrivers
         rig = context.object
         subrigs = {}
         for ob in getSelectedMeshes(context):
@@ -1345,21 +1347,6 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                     eb.parent = rig.data.edit_bones[pname]
                 eb.matrix = mat
             setMode('OBJECT')
-
-
-def retargetDrivers(rna, orig, nrig, force):
-    if not (rna and rna.animation_data):
-        return
-    for fcu in rna.animation_data.drivers:
-        fcu.mute = False
-        for var in fcu.driver.variables:
-            for trg in var.targets:
-                if trg.id_type == 'OBJECT' and (force or trg.id == orig):
-                    trg.id = nrig
-                elif trg.id_type == 'ARMATURE' and (force or trg.id == orig.data):
-                    trg.id = nrig.data
-                elif trg.id_type not in ['KEY']:
-                    print("Unexpected id: %s %s" % (trg.id_type, trg.id))
 
 #-------------------------------------------------------------
 #   Fix limit rotation constraints
