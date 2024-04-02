@@ -200,7 +200,7 @@ class Scanner:
         if isinstance(asset, Morph):
             ref,key = asset.id.rsplit("#",1)
             key = normKey(key)
-            exprs = asset.evalFormulas(self.rig, self.mesh, False)
+            exprs,rig2 = asset.evalFormulas(self.rig, self.mesh, False)
             info,prop = self.evalExprs(asset, exprs)
             prop = normKey(prop)
         elif isinstance(asset, Alias):
@@ -212,7 +212,7 @@ class Scanner:
                 if key != target:
                     self.alias[key] = target
         elif isinstance(asset, Formula) and self.useFormulas:
-            exprs = asset.evalFormulas(self.rig, self.mesh, False)
+            exprs,rig2 = asset.evalFormulas(self.rig, self.mesh, False)
             info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
             key = normKey(key)

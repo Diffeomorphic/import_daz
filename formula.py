@@ -127,11 +127,12 @@ class Formula:
     def evalFormulas(self, rig, mesh, force):
         success = False
         exprs = {}
+        rig2 = rig
         for formula in self.formulas:
-            self.evalFormula(formula, exprs, rig, mesh, force)
+            rig2 = self.evalFormula(formula, exprs, rig, mesh, force)
         if not exprs and GS.verbosity > 3 and self.formulas:
             print("Could not parse formulas", self.formulas)
-        return exprs
+        return exprs,rig2
 
     Genesis = [
         "Genesis",
@@ -151,12 +152,13 @@ class Formula:
         from .modifier import ChannelAsset
         output,channel,fileref,url = self.getPropAndType(formula["output"], rig)
         pb = None
+        rig2 = rig
         if channel == "value":
             if mesh is None and rig is None and force:
                 if GS.verbosity > 2:
                     print("Cannot drive properties", output)
                     print("  ", unquote(formula["output"]))
-                return False
+                return rig2
         elif output in self.Genesis:
             output = "RIG"
         elif rig:
@@ -171,12 +173,12 @@ class Formula:
                     inst = list(asset.instances.values())[0]
                     rig2 = inst.figure.rna
                     pb = inst.rna
-                    LS.otherRigBones["%s => %s" % (rig.name, rig2.name)] = True
+                    #LS.otherRigBones["%s => %s/%s" % (rig.name, rig2.name, pb.name)] = True
                     reportError("Found bone in other rig: %s/%s (%s)" % (rig2.name, pb.name, output), trigger=(3,5))
-                    return False
+                    #return False
                 else:
                     reportError("Missing bone (evalFormula): %s" % output)
-                    return False
+                    return rig
 
         path,idx,default = self.parseChannel(channel)
         expr = setFormulaExpr(exprs, output, path, channel, idx, fileref)
@@ -184,6 +186,7 @@ class Formula:
             self.evalStage(formula, expr, rig, mesh)
         else:
             self.evalOperations(formula, expr, rig, mesh)
+        return rig2
 
 
     def evalStage(self, formula, expr, rig, mesh):

@@ -66,6 +66,8 @@ class LoadMorph(DriverUser):
         DriverUser.__init__(self)
         self.rig = None
         self.amt = None
+        self.rig2 = None
+        self.amt2 = None
         self.mesh = None
         self.meshes = []
         self.char = None
@@ -89,16 +91,19 @@ class LoadMorph(DriverUser):
         return
 
 
-    def initRig(self, rig):
+    def initRig(self, rig, rig2):
         self.rig = rig
+        self.rig2 = rig2
         self.initAmt()
 
 
     def initAmt(self):
+        self.amt = self.amt2 = None
         if self.rig:
             self.amt = self.rig.data
-        else:
-            self.amt = None
+        if self.rig2:
+            self.amt2 = self.rig2.data
+
 
     def setupUniqueSuffix(self):
         self.uniqueSuffix = ""
@@ -421,7 +426,8 @@ class LoadMorph(DriverUser):
         self.addNewProp(prop, asset, skey)
         self.adjustable[prop] = True
         if isinstance(asset, Formula):
-            exprs = asset.evalFormulas(self.rig, self.mesh, True)
+            exprs,self.rig2 = asset.evalFormulas(self.rig, self.mesh, True)
+            print("RR", self.rig, self.rig2)
         elif isinstance(asset, Alias):
             exprs = {}
             alias = asset.getAlias()
@@ -1196,7 +1202,7 @@ class LoadMorph(DriverUser):
                         idx2,sign = d2bBone(pb, channel, idx)
                         signchar = ("" if sign == 1 else "-")
                         mstring += "%s%s*" % (signchar, varname)
-                        addTransformVar(fcu, varname, ttypes[idx2], self.rig, bname)
+                        addTransformVar(fcu, varname, ttypes[idx2], self.rig, self.rig2, bname)
                         varname = nextLetter(varname)
             return "%s%s" % (mstring, string)
         else:
@@ -1394,7 +1400,7 @@ class LoadMorph(DriverUser):
         if ttypes is None:
             return None
         for j,vname,bname in vars:
-            addTransformVar(fcu, vname, ttypes[j], self.rig, bname)
+            addTransformVar(fcu, vname, ttypes[j], self.rig, self.rig2, bname)
         self.addMissingVars(fcu, vvars)
         return fcu
 
@@ -1746,7 +1752,7 @@ class LoadMorph(DriverUser):
 def buildBoneFormula(asset, rig, altmorphs, errors):
     def buildChannel(exprs, pb, channel):
         lm = LoadMorph()
-        lm.initRig(rig)
+        lm.initRig(rig2, rig)
         for idx,expr in exprs.items():
             driver = expr["bone"]
             if driver:
@@ -1758,7 +1764,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                 factor = 1.0
             else:
                 continue
-            unit = getUnit(path, rig)
+            unit = getUnit(path, rig2)
             if driver in rig.pose.bones.keys():
                 pbDriver = rig.pose.bones[driver]
                 if pbDriver.parent == pb:
@@ -1832,20 +1838,20 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         for idx,expr in exprs.items():
             expr["factor"] *= factor
 
-    exprs = asset.evalFormulas(rig, None, True)
+    exprs,rig2 = asset.evalFormulas(rig, None, True)
     for driven,expr in exprs.items():
         if "rotation" in expr.keys():
-            if driven in rig.pose.bones.keys():
-                pb = rig.pose.bones[driven]
+            if driven in rig2.pose.bones.keys():
+                pb = rig2.pose.bones[driven]
                 buildChannel(expr["rotation"], pb, "rotation_euler")
         if "translation" in expr.keys():
-            if driven in rig.pose.bones.keys():
-                pb = rig.pose.bones[driven]
+            if driven in rig2.pose.bones.keys():
+                pb = rig2.pose.bones[driven]
                 buildChannel(expr["translation"], pb, "location")
         if "scale" in expr.keys() and not GS.useInheritScale:
-            if driven in rig.pose.bones.keys():
-                pb = rig.pose.bones[driven]
-                if canOptimizeScale(expr["scale"], pb, rig):
+            if driven in rig2.pose.bones.keys():
+                pb = rig2.pose.bones[driven]
+                if canOptimizeScale(expr["scale"], pb, rig2):
                     pb.bone.inherit_scale = 'FULL'
                 else:
                     buildChannel(expr["scale"], pb, "scale")

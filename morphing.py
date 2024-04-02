@@ -1201,7 +1201,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
         fcu = skey.driver_add("value")
         fcu.driver.type = 'SCRIPTED'
         fcu.driver.expression = "%.4f*x if x > 0 else %.4f*x" % (pos, neg)
-        addTransformVar(fcu, "x", rottypes[idx], rig, bname)
+        addTransformVar(fcu, "x", rottypes[idx], rig, rig, bname)
         removeModifiers(fcu)
 
     ob.data.DazBulges.clear()
