@@ -1606,20 +1606,19 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         default = True)
 
     poseLibName : StringProperty(
-        name = "Pose Library Name",
+        name = "PoseLib Name",
         description = "Name of loaded pose library",
         default = "PoseLib")
 
     if bpy.app.version < (3,0,0):
         useAssetBrowser = False
+    elif bpy.app.version < (3,3,0):
+        useAssetBrowser : BoolProperty(
+            name = "Asset Browser",
+            description = "Create asset browser library",
+            default = True)
     else:
-        if bpy.app.version < (3,3,0):
-            useAssetBrowser : BoolProperty(
-                name = "Asset Browser",
-                description = "Create asset browser library",
-                default = True)
-        else:
-            useAssetBrowser = True
+        useAssetBrowser = True
 
         usePreviewImages : BoolProperty(
             name = "Import Previews",
@@ -1631,31 +1630,37 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
             description = "List of tags to add to the imported Poses",
             default = "")
 
-        assetAuthor : StringProperty(
-            name = "Author",
-            description = "Name of the Author",
-            default = "")
-
-        assetDescription : StringProperty(
-            name = "Description",
-            description = "Description to add to all Poses",
-            default = "")
+        assetAuthor : StringProperty(name = "Author")
+        assetDescription : StringProperty(name = "Description")
+        assetLicense : StringProperty(name = "License")
+        assetCopyright : StringProperty(name = "Copyright")
 
 
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
-        self.layout.prop(self, "makeNewPoseLib")
-        if self.makeNewPoseLib:
-            self.layout.prop(self, "poseLibName")
-        if bpy.app.version >= (3,0,0):
-            if bpy.app.version < (3,3,0):
-                self.layout.prop(self, "useAssetBrowser")
-            if self.useAssetBrowser:
-                self.layout.prop(self, "usePreviewImages")
-                self.layout.prop(self, "assetTags")
-                self.layout.prop(self, "assetAuthor")
-                self.layout.prop(self, "assetDescription")
+        if bpy.app.version >= (3,0,0) and bpy.app.version < (3,3,0):
+            self.layout.prop(self, "useAssetBrowser")
+        if self.useAssetBrowser:
+            self.layout.prop(self, "usePreviewImages")
+            self.layout.prop(self, "assetTags")
+            self.layout.prop(self, "assetAuthor")
+            self.layout.prop(self, "assetDescription")
+            self.layout.prop(self, "assetLicense")
+            self.layout.prop(self, "assetCopyright")
+        else:
+            self.layout.prop(self, "makeNewPoseLib")
+            if self.makeNewPoseLib:
+                self.layout.prop(self, "poseLibName")
+
+
+    def drawMorphs(self, context):
+        pass
+
+
+    def invoke(self, context, event):
+        self.affectMorphs = False
+        return AnimatorBase.invoke(self, context, event)
 
 
     def clearAnimation(self, ob):
@@ -1668,7 +1673,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
 
     def nameAnimation(self, ob, dazfiles):
         if self.makeNewPoseLib:
-            if bpy.app.version >= (3,0,0) and self.useAssetBrowser:
+            if self.useAssetBrowser:
                 pass
             elif ob.pose_library:
                 ob.pose_library.name = self.poseLibName
@@ -1680,53 +1685,66 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         setMode('POSE')
         name = os.path.splitext(os.path.basename(filepath))[0]
         if self.useAssetBrowser:
-            try:
-                bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
-            except RuntimeError as err:
-                words = str(err).split("()")
-                msg = "()\n".join(words)
-                raise DazError(msg)
-            act = rig.animation_data.action
-            if act is None:
-                return
-            #if self.makeNewPoseLib:
-            #    bpy.ops.asset.catalog_new(parent_path='')
-            keep = ["location", "rotation_euler", "rotation_quaternion"]
-            if self.affectScale:
-                keep.append("scale")
-            for fcu in list(act.fcurves):
-                words = fcu.data_path.rsplit(".", 1)
-                if words[-1] not in keep:
-                    act.fcurves.remove(fcu)
-            if self.usePreviewImages:
-                previewFile = self.getPreviewFile(filepath, name)
-            else:
-                previewFile = None
-            with bpy.context.temp_override(id=act):
-                if previewFile:
-                    bpy.ops.ed.lib_id_load_custom_preview(filepath=previewFile)
-                else:
-                    bpy.ops.ed.lib_id_generate_preview()
-            if self.assetTags:
-                tagList=self.assetTags.split(",")
-                for newTag in tagList:
-                    act.id_data.asset_data.tags.new(newTag)
-            if self.assetAuthor:
-                act.id_data.asset_data.author=self.assetAuthor
-            if self.assetDescription:
-                act.id_data.asset_data.description=self.assetDescription
+            self.addToAssetBrowser(rig, filepath, name)
         else:
-            if rig.pose_library:
-                pmarkers = rig.pose_library.pose_markers
-                frame = 0
-                for pmarker in pmarkers:
-                    if pmarker.frame >= frame:
-                        frame = pmarker.frame + 1
+            self.addToOldPoseLib(rig, filepath, name)
+
+
+    def addToAssetBrowser(self, rig, filepath, name):
+        try:
+            bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
+        except RuntimeError as err:
+            words = str(err).split("()")
+            msg = "()\n".join(words)
+            raise DazError(msg)
+        setMode('OBJECT')
+        act = rig.animation_data.action
+        if act is None:
+            return
+        keep = ["location", "rotation_euler", "rotation_quaternion"]
+        if self.affectScale:
+            keep.append("scale")
+        for fcu in list(act.fcurves):
+            words = fcu.data_path.rsplit(".", 1)
+            if words[-1] not in keep:
+                act.fcurves.remove(fcu)
+        if self.usePreviewImages:
+            previewFile = self.getPreviewFile(filepath, name)
+        else:
+            previewFile = None
+        with bpy.context.temp_override(id=act):
+            if previewFile:
+                bpy.ops.ed.lib_id_load_custom_preview(filepath=previewFile)
             else:
-                frame = 0
-            bpy.ops.poselib.pose_add(frame=frame)
-            pmarker = rig.pose_library.pose_markers.active
-            pmarker.name = name
+                bpy.ops.ed.lib_id_generate_preview()
+
+        assetdata = act.id_data.asset_data
+        if self.assetTags:
+            tagList=self.assetTags.split(",")
+            for newTag in tagList:
+                assetdata.tags.new(newTag)
+        if self.assetAuthor:
+            assetdata.author=self.assetAuthor
+        if self.assetDescription:
+            assetdata.description=self.assetDescription
+        if self.assetLicense:
+            assetdata.license=self.assetLicense
+        if self.assetCopyright:
+            assetdata.copyright=self.assetCopyright
+
+
+    def addToOldPoseLib(self, rig, filepath, name):
+        if rig.pose_library:
+            pmarkers = rig.pose_library.pose_markers
+            frame = 0
+            for pmarker in pmarkers:
+                if pmarker.frame >= frame:
+                    frame = pmarker.frame + 1
+        else:
+            frame = 0
+        bpy.ops.poselib.pose_add(frame=frame)
+        pmarker = rig.pose_library.pose_markers.active
+        pmarker.name = name
         setMode('OBJECT')
 
 
