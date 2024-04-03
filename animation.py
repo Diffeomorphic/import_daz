@@ -1624,7 +1624,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         usePreviewImages : BoolProperty(
             name = "Import Previews",
             description = "Import preview images for imported poses",
-            default = False)
+            default = True)
 
         assetTags : StringProperty(
             name = "Tags",
@@ -1652,7 +1652,7 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
             if bpy.app.version < (3,3,0):
                 self.layout.prop(self, "useAssetBrowser")
             if self.useAssetBrowser:
-                #self.layout.prop(self, "usePreviewImages")
+                self.layout.prop(self, "usePreviewImages")
                 self.layout.prop(self, "assetTags")
                 self.layout.prop(self, "assetAuthor")
                 self.layout.prop(self, "assetDescription")
@@ -1700,12 +1700,13 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
                     act.fcurves.remove(fcu)
             if self.usePreviewImages:
                 previewFile = self.getPreviewFile(filepath, name)
-                if previewFile:
-                    bpy.ops.ed.lib_id_load_custom_preview({"id": act}, filepath=previewFile)
-                else:
-                    act.asset_generate_preview()
             else:
-                act.asset_generate_preview()
+                previewFile = None
+            with bpy.context.temp_override(id=act):
+                if previewFile:
+                    bpy.ops.ed.lib_id_load_custom_preview(filepath=previewFile)
+                else:
+                    bpy.ops.ed.lib_id_generate_preview()
             if self.assetTags:
                 tagList=self.assetTags.split(",")
                 for newTag in tagList:
@@ -1730,10 +1731,12 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
 
 
     def getPreviewFile(self, filepath, name):
-        basename3,ext3 = os.path.splitext(filepath)
-        for path in ["%s.tip.png" % basename3, "%s.png" % filepath, "%s.png" % basename3]:
-            if os.path.exists(path):
-                return path
+        basename,ext = os.path.splitext(filepath)
+        for ext in ["png", "jpg", "jpeg"]:
+            for pathname in ["%s.tip" % basename, filepath, basename]:
+                path = "%s.%s" % (pathname, ext)
+                if os.path.exists(path):
+                    return path
         print("No preview file found for %s" % name)
 
 
