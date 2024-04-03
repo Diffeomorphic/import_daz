@@ -744,10 +744,10 @@ def loadImage(url):
     else:
         try:
             img = bpy.data.images.load(filepath)
-        except TypeError:
+        except (RuntimeError, TypeError):
             img = None
         if img is None:
-            reportError('Error when reading image:\n"%s"' % filepath)
+            reportError('Error when reading image:\n"%s"\n"%s"' % (url,filepath), trigger=(2,3))
             return None
         imname = os.path.splitext(os.path.basename(filepath))[0]
         img.name = unquote(bpy.path.clean_name(imname))

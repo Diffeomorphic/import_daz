@@ -165,9 +165,15 @@ class DAZ_OT_LoadRootPaths(bpy.types.Operator, SingleFile, JsonFile):
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)
             GS.saveSettings(GS.settingsPath)
+            try:
+                global theGlobalDialog
+                if theGlobalDialog:
+                    GS.toDialog(theGlobalDialog)
+            except ReferenceError:
+                return {'FINISHED'}
         else:
             print("No root paths found in", self.filepath)
-        return {'FINISHED'}
+        return {'PASS_THROUGH'}
 
 #-------------------------------------------------------------
 #   Add content dirs
