@@ -603,7 +603,8 @@ class MorphLoader(LoadMorph, PosableMaker):
             path = namepaths[0][0]
             folder = os.path.dirname(path)
         else:
-            raise DazError("No morphs selected")
+            reportError('No morphs selected for "%s"' % ob.name)
+            return
         self.loadAllMorphs(namepaths)
         return self.finishLoading(namepaths, context, t1)
 
