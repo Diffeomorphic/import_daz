@@ -152,6 +152,11 @@ class MergeGeograftOptions(UVLayerMergerOptions):
             "but affects viewport performance"),
         default = False)
 
+    keepOriginal : BoolProperty(
+        name = "Keep Original Mesh",
+        description = "Keep the original mesh in a separate collection",
+        default = True)
+
     useFixTiles : BoolProperty(
         name = "Fix UV Tiles",
         description = "Move geograft UVs to tile based on texture names",
@@ -178,6 +183,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         if bpy.app.version >= (3,4,0):
             self.layout.prop(self, "useGeoNodes")
         if not self.useGeoNodes:
+            self.layout.prop(self, "keepOriginal")
             self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useSubDDisplacement")
         box = self.layout.box()
@@ -193,10 +199,13 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         safeTransformApply()
         from .finger import isGenesis
         cob = context.object
+        meshes = getSelectedMeshes(context)
+        if self.keepOriginal and not self.useGeoNodes:
+            self.duplicateMesh(context, cob)
         ncverts = len(cob.data.vertices)
         chars = {ncverts : cob}
         prio = {ncverts : False}
-        for ob in getSelectedMeshes(context):
+        for ob in meshes:
             ob.active_shape_key_index = 0
             nverts = len(ob.data.vertices)
             if nverts not in chars.keys() or isGenesis(ob):
@@ -206,7 +215,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         grafts = dict([(ncverts, []) for ncverts in chars.keys()])
         ngrafts = 0
         misses = []
-        for aob in getSelectedMeshes(context):
+        for aob in meshes:
             if aob.data.DazGraftGroup:
                 ncverts = aob.data.DazVertexCount
                 if ncverts in grafts.keys():
@@ -231,6 +240,32 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         for ncverts,cob in chars.items():
             if not prio[ncverts]:
                 self.mergeGeografts(context, ncverts, cob, grafts[ncverts])
+
+
+    def duplicateMesh(self, context, cob):
+        dob = None
+        if activateObject(context, cob):
+            bpy.ops.object.duplicate()
+            for ob in getSelectedMeshes(context):
+                if ob != cob:
+                    dob = ob
+                    break
+        if dob is None:
+            return
+        cname = baseName(cob.name)
+        basename = cname.rstrip("Mesh")
+        coll = getCollection(context, cob)
+        unlinkAll(cob, False)
+        unlinkAll(dob, False)
+        coll1 = bpy.data.collections.new("%sOriginal" % basename)
+        coll2 = bpy.data.collections.new("%sMerged" % basename)
+        coll.children.link(coll1)
+        coll.children.link(coll2)
+        coll1.objects.link(dob)
+        coll2.objects.link(cob)
+        cob.name = "%s Merged" % basename
+        dob.name = cname
+        activateObject(context, cob)
 
 
     def mergeGeografts(self, context, ncverts, cob, anatomies):
