@@ -153,9 +153,9 @@ class MergeGeograftOptions(UVLayerMergerOptions):
         default = False)
 
     keepOriginal : BoolProperty(
-        name = "Keep Original Mesh",
-        description = "Keep the original mesh in a separate collection",
-        default = True)
+        name = "Keep Original Meshes",
+        description = "Keep the original mesh and geografts in separate collections",
+        default = False)
 
     useFixTiles : BoolProperty(
         name = "Fix UV Tiles",
@@ -200,8 +200,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         from .finger import isGenesis
         cob = context.object
         meshes = getSelectedMeshes(context)
-        if self.keepOriginal and not self.useGeoNodes:
-            self.duplicateMesh(context, cob)
         ncverts = len(cob.data.vertices)
         chars = {ncverts : cob}
         prio = {ncverts : False}
@@ -242,29 +240,42 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 self.mergeGeografts(context, ncverts, cob, grafts[ncverts])
 
 
-    def duplicateMesh(self, context, cob):
+    def duplicateMeshes(self, context, cob, anatomies):
+        from .finger import getFingerPrint
         dob = None
+        danatomies = []
         if activateObject(context, cob):
+            finger = getFingerPrint(cob)
+            for aob in anatomies:
+                aob.select_set(True)
             bpy.ops.object.duplicate()
             for ob in getSelectedMeshes(context):
-                if ob != cob:
-                    dob = ob
-                    break
+                if getFingerPrint(ob) == finger:
+                    if ob != cob:
+                        dob = ob
+                elif ob not in anatomies:
+                    danatomies.append(ob)
         if dob is None:
             return
         cname = baseName(cob.name)
         basename = cname.rstrip("Mesh")
         coll = getCollection(context, cob)
-        unlinkAll(cob, False)
-        unlinkAll(dob, False)
         coll1 = bpy.data.collections.new("%sOriginal" % basename)
-        coll2 = bpy.data.collections.new("%sMerged" % basename)
         coll.children.link(coll1)
-        coll.children.link(coll2)
+        unlinkAll(dob, False)
         coll1.objects.link(dob)
-        coll2.objects.link(cob)
         cob.name = "%s Merged" % basename
+        coll2 = bpy.data.collections.new("%sMerged" % basename)
+        coll.children.link(coll2)
+        unlinkAll(cob, False)
+        coll2.objects.link(cob)
         dob.name = cname
+        coll3 = bpy.data.collections.new("%sGeografts" % basename)
+        coll.children.link(coll3)
+        for aob in danatomies:
+            unlinkAll(aob, False)
+            coll3.objects.link(aob)
+            aob.name = baseName(aob.name)
         activateObject(context, cob)
 
 
@@ -277,6 +288,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             print("No ref")
             return
 
+        if self.keepOriginal and not self.useGeoNodes:
+            self.duplicateMeshes(context, cob, anatomies)
         self.initUvNames()
         subDLevels = 0
         self.setActiveUvLayer(cob)

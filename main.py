@@ -724,6 +724,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
             self.subprop("useMergeUvs")
+            self.subprop("keepOriginal")
         PosableMaker.draw(self, context)
         self.layout.prop(self, "useFinalOptimization")
 
@@ -991,7 +992,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     for aob in aobs:
                         selectSet(aob, True)
                 print("Merge geografts")
-                bpy.ops.daz.merge_geografts(useMergeUvs = self.useMergeUvs)
+                bpy.ops.daz.merge_geografts(
+                    useMergeUvs = self.useMergeUvs,
+                    keepOriginal = self.keepOriginal)
                 if GS.viewportColors == 'GUESS':
                     from .guess import guessMaterialColor
                     LS.skinColor = self.skinColor
