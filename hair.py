@@ -203,7 +203,7 @@ class HairOptions:
         name = "Render Children",
         description = "Number of hair children displayed in renders",
         min = 0,
-        default = 50)
+        default = 10)
 
     strandShape : EnumProperty(
         items = [('STANDARD', "Standard", "Standard strand shape"),
@@ -247,7 +247,7 @@ class HairOptions:
         name = "Hair radius (mm)",
         description = "Strand diameter",
         min = 0,
-        default = 0.3)
+        default = 0.1)
 
     hairShape : FloatProperty(
         name = "Hair Shape",
@@ -265,7 +265,7 @@ class HairOptions:
         name = "Viewport Factor",
         description = "The fraction of children displayed in the viewport",
         min = 0, max = 1,
-        default = 0.1)
+        default = 1.0)
 
     childRadius : FloatProperty(
         name = "Child radius (mm)",

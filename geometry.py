@@ -662,7 +662,7 @@ class DAZ_OT_MakeMultires(DazOperator, IsMesh):
                 makeArmatureModifier(rig.name, context, hdob, rig)
 
 
-def copyUvLayers(ob, hdob):
+def copyUvLayers(ob, hdob, selection=None):
     def setupLoopsMapping():
         loopsMapping = {}
         for f in hdob.data.polygons:
@@ -690,14 +690,14 @@ def copyUvLayers(ob, hdob):
 
     loopsMapping = setupLoopsMapping()
     for uvlayer in ob.data.uv_layers:
-        if uvlayer.name in hdob.data.uv_layers.keys():
-            print('UV layer "%s" already exists' % uvlayer.name)
-            continue
-        hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
-        ok = copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
-        if not ok:
-            hdob.data.uv_layers.remove(hdlayer)
-
+        if selection is None or uvlayer.name in selection:
+            if uvlayer.name in hdob.data.uv_layers.keys():
+                print('UV layer "%s" already exists' % uvlayer.name)
+                continue
+            hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
+            ok = copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
+            if not ok:
+                hdob.data.uv_layers.remove(hdlayer)
 
 #-------------------------------------------------------------
 #   UnGeometry
