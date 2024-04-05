@@ -685,7 +685,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     useFinalOptimization : BoolProperty(
         name = "Final Optimizations",
-        description = "Make final optimizations to the rig and mesh.\nAdditional morphs can not be loaded if this is enabled",
+        description = "Make final optimizations to the rig and mesh",
         default = False)
 
     def draw(self, context):
@@ -1018,7 +1018,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 bpy.ops.daz.finalize_meshes()
             self.makePosable(context, mainRig, useActivate=False, useEasy=True)
             if self.useFinalOptimization:
-                bpy.ops.daz.optimize_drivers()
+                #bpy.ops.daz.optimize_drivers()
                 bpy.ops.daz.finalize_armature()
 
         if mainMesh:

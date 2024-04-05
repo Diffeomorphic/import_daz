@@ -259,23 +259,30 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             return
         cname = baseName(cob.name)
         basename = cname.rstrip("Mesh")
+        cob.name = "%s Merged" % basename
         coll = getCollection(context, cob)
+        dob.name = cname
+
         coll1 = bpy.data.collections.new("%sOriginal" % basename)
         coll.children.link(coll1)
         unlinkAll(dob, False)
         coll1.objects.link(dob)
-        cob.name = "%s Merged" % basename
+        lcoll1 = getLayerCollection(context, coll1)
+        lcoll1.exclude = True
+
         coll2 = bpy.data.collections.new("%sMerged" % basename)
         coll.children.link(coll2)
         unlinkAll(cob, False)
         coll2.objects.link(cob)
-        dob.name = cname
+
         coll3 = bpy.data.collections.new("%sGeografts" % basename)
         coll.children.link(coll3)
         for aob in danatomies:
             unlinkAll(aob, False)
             coll3.objects.link(aob)
             aob.name = baseName(aob.name)
+        lcoll3 = getLayerCollection(context, coll3)
+        lcoll3.exclude = True
         activateObject(context, cob)
 
 

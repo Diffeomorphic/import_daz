@@ -1166,7 +1166,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def setLayer(self, bname, rig, layer):
         eb = rig.data.edit_bones.get(bname)
         if eb:
-            setBoneNumLayer(eb, rig, layer)
+            enableBoneNumLayer(eb, rig, layer)
             self.rolls[bname] = eb.roll
             return eb
 

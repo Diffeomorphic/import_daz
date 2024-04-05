@@ -514,7 +514,7 @@ class PosableMaker:
             rig.type == 'ARMATURE' and
             (not useActivate or activateObject(context, rig))):
             print("Make all bones posable")
-            bpy.ops.daz.make_all_bones_posable()
+            bpy.ops.daz.make_all_bones_posable(errorOnFail=False)
 
 
 class MorphLoader(LoadMorph, PosableMaker):

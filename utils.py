@@ -92,13 +92,12 @@ if BLENDER3:
 
 else:
     def enableBoneNumLayer(bone, rig, layer):
-        coll0 = rig.data.collections.get(layer)
-        if coll0 is None:
-            coll0 = rig.data.collections.new(layer)
-        coll0.assign(bone)
         for coll in rig.data.collections:
-            if coll != coll0:
-                coll.unassign(bone)
+            coll.unassign(bone)
+        coll = rig.data.collections.get(layer)
+        if coll is None:
+            coll = rig.data.collections.new(layer)
+        coll.assign(bone)
 
     def setBoneNumLayer(bone, rig, layer, value=True):
         coll = rig.data.collections.get(layer)

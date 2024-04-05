@@ -422,12 +422,17 @@ class ExtraBones(DriverUser):
         description = "Don't create posable bones for locked location channels",
         default = True)
 
+    errorOnFail : BoolProperty(
+        name = "Fail On Error",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "ignoreLocked")
 
     def run(self, context):
         rig = context.object
-        self.checkAllowed(rig)
+        if not self.checkAllowed(rig):
+            return
         t1 = perf_counter()
         oldvis = getRigLayers(rig)
         enableAllRigLayers(rig)
@@ -747,7 +752,7 @@ class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
         return bnames
 
     def checkAllowed(self, rig):
-        pass
+        return True
 
     def changeLayer(self, eb, rig):
         if rig.DazRig == "mhx":
@@ -812,11 +817,14 @@ class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
         elif rig.data.DazFinalized:
             msg = "Rig has been finalized"
         else:
-            msg = ""
-        if msg:
-            msg = "Cannot make bones posable.     \n%s" % msg
-            print(msg)
+            return True
+        msg = "Cannot make bones posable.     \n%s" % msg
+        print(msg)
+        if self.errorOnFail:
             raise DazError(msg)
+        else:
+            return False
+
 
     def changeLayer(self, eb, rig):
         pass
