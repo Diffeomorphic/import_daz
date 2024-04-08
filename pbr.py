@@ -137,6 +137,7 @@ class PbrTree(CyclesTree):
         self.column = 7
         if self.owner.useTranslucency:
             self.buildTranslucency(uvname)
+            self.postPBR = True
         if self.buildMakeup():
             self.postPBR = True
         if self.buildOverlay():
