@@ -1111,7 +1111,7 @@ class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (getRuntimeEnabled(context) and ob and ob.DazVisibilityDrivers)
+        return (getRuntimeEnabled(context) and ob)
 
     def draw(self, context):
         pass
@@ -1149,7 +1149,19 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     def draw(self, context):
         ob = context.object
-        props = [prop for prop in ob.keys() if prop[0:6] == "INFLU "]
+        scn = context.scene
+        rig = getRigFromContext(context)
+        meshes = []
+        if ob.type == 'MESH' and ob.DazVisibilityDrivers:
+            meshes = [ob]
+        if rig:
+            meshes += [ob1 for ob1 in rig.children if ob1 != ob and ob1.DazVisibilityDrivers]
+        props = {}
+        for ob in meshes:
+            for prop in ob.keys():
+                if prop[0:6] == "INFLU " and prop not in props.keys():
+                    props[prop] = ob
+        props = list(props.items())
         props.sort()
         if props:
             row = self.layout.row()
@@ -1157,12 +1169,13 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
             op.value = 1.0
             op = row.operator("daz.set_shell_influence", text="None")
             op.value = 0.0
-            for prop in props:
+            for prop,ob in props:
                 row = self.layout.row()
                 row.prop(ob, propRef(prop), text=prop[6:])
                 icon = 'CHECKBOX_HLT' if ob[prop] > 0 else 'CHECKBOX_DEHLT'
                 op = row.operator("daz.toggle_shell_influence", text="", icon=icon, emboss=False)
                 op.prop = prop
+                op.object = ob.name
         else:
             self.layout.operator("daz.set_shell_visibility")
 

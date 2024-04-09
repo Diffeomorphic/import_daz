@@ -1209,15 +1209,18 @@ class DAZ_OT_SetShellInfluence(DazOperator, IsMesh):
         updateDrivers(ob)
 
 
-class DAZ_OT_ToggleShellInfluence(DazOperator, IsMesh):
+class DAZ_OT_ToggleShellInfluence(DazOperator, IsMeshArmature):
     bl_idname = "daz.toggle_shell_influence"
     bl_label = "Toggle Shell Influence"
 
     prop : StringProperty()
+    object : StringProperty()
 
     def run(self, context):
-        ob = context.object
-        if ob[self.prop] > 0:
+        ob = bpy.data.objects.get(self.object)
+        if ob is None:
+            return
+        elif ob[self.prop] > 0:
             ob[self.prop] = 0.0
         else:
             ob[self.prop] = 1.0

@@ -246,15 +246,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         danatomies = []
         if activateObject(context, cob):
             finger = getFingerPrint(cob)
-            for aob in anatomies:
-                aob.select_set(True)
             bpy.ops.object.duplicate()
             for ob in getSelectedMeshes(context):
                 if getFingerPrint(ob) == finger:
                     if ob != cob:
                         dob = ob
-                elif ob not in anatomies:
-                    danatomies.append(ob)
         if dob is None:
             return
         cname = baseName(cob.name)
@@ -275,14 +271,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         unlinkAll(cob, False)
         coll2.objects.link(cob)
 
-        coll3 = bpy.data.collections.new("%sGeografts" % basename)
-        coll.children.link(coll3)
-        for aob in danatomies:
-            unlinkAll(aob, False)
-            coll3.objects.link(aob)
-            aob.name = baseName(aob.name)
-        lcoll3 = getLayerCollection(context, coll3)
-        lcoll3.exclude = True
         activateObject(context, cob)
 
 
