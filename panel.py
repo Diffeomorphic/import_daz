@@ -1148,20 +1148,8 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Visibility"
 
     def draw(self, context):
-        ob = context.object
-        scn = context.scene
-        rig = getRigFromContext(context)
-        meshes = []
-        if ob.type == 'MESH' and ob.DazVisibilityDrivers:
-            meshes = [ob]
-        if rig:
-            meshes += [ob1 for ob1 in rig.children if ob1 != ob and ob1.DazVisibilityDrivers]
-        props = {}
-        for ob in meshes:
-            for prop in ob.keys():
-                if prop[0:6] == "INFLU " and prop not in props.keys():
-                    props[prop] = ob
-        props = list(props.items())
+        from .matedit import getShellProps
+        props = getShellProps(context)
         props.sort()
         if props:
             row = self.layout.row()
@@ -1169,6 +1157,7 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
             op.value = 1.0
             op = row.operator("daz.set_shell_influence", text="None")
             op.value = 0.0
+            self.layout.prop(context.scene, "DazFilter", icon='VIEWZOOM', text="")
             for prop,ob in props:
                 row = self.layout.row()
                 row.prop(ob, propRef(prop), text=prop[6:])

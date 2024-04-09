@@ -1202,11 +1202,29 @@ class DAZ_OT_SetShellInfluence(DazOperator, IsMesh):
     value : FloatProperty()
 
     def run(self, context):
-        ob = context.object
-        for prop in ob.keys():
-            if prop[0:6] == "INFLU ":
-                ob[prop] = self.value
+        props = getShellProps(context)
+        for prop,ob in props:
+            ob[prop] = self.value
         updateDrivers(ob)
+
+
+def getShellProps(context):
+    ob = context.object
+    filter = context.scene.DazFilter.lower()
+    rig = getRigFromContext(context)
+    meshes = []
+    if ob.type == 'MESH' and ob.DazVisibilityDrivers:
+        meshes = [ob]
+    if rig:
+        meshes += [ob1 for ob1 in rig.children if ob1 != ob and ob1.DazVisibilityDrivers]
+    props = {}
+    for ob in meshes:
+        for prop in ob.keys():
+            if (prop[0:6] == "INFLU " and
+                filter in prop[6:].lower() and
+                prop not in props.keys()):
+                props[prop] = ob
+    return list(props.items())
 
 
 class DAZ_OT_ToggleShellInfluence(DazOperator, IsMeshArmature):
@@ -1590,6 +1608,12 @@ def register():
     bpy.types.Material.DazSlots = CollectionProperty(type = EditSlotGroup)
     #bpy.types.Object.DazSlots = CollectionProperty(type = EditSlotGroup)
     bpy.types.Scene.DazFloats = CollectionProperty(type = DazFloatGroup)
+
+    bpy.types.Scene.DazFilter = StringProperty(
+        name = "Filter",
+        description = "Show only items containing this string",
+        default = ""
+    )
 
 
 def unregister():
