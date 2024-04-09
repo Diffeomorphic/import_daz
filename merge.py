@@ -1530,8 +1530,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     if ob.type == 'MESH':
                         self.changeArmatureModifier(ob, rig)
                         subinfo.renameVertexGroups(ob)
-                        if ob.name[-5:] == " Mesh":
-                            ob.name = ob.name[:-5]
                 self.reparentObjects(subinfo, rig, adds, hdadds, removes)
                 pg = rig.data.DazMergedRigs.add()
                 pg.name = str(idx+nmerged)
@@ -1539,6 +1537,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 pg.b = (subinfo.parbone is not None)
                 subinfo.rig.parent = None
                 deleteObjects(context, [subinfo.rig])
+                for ob,_ in subinfo.objects:
+                    if ob.type == 'MESH' and ob.name[-5:] == " Mesh":
+                        ob.name = ob.name[:-5]
             else:
                 subinfo.reParent(rig)
                 self.reparentObjects(subinfo, subinfo.rig, adds, hdadds, removes)
