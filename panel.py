@@ -158,6 +158,7 @@ class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.add_shrinkwrap")
         self.layout.operator("daz.make_invisible")
         self.layout.operator("daz.create_masks")
+        self.layout.operator("daz.copy_masks")
         self.layout.operator("daz.add_visibility_drivers")
         self.layout.operator("daz.remove_visibility_drivers")
         self.layout.operator("daz.add_shape_vis_drivers")

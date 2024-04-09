@@ -345,6 +345,62 @@ class DAZ_OT_CreateMasks(DazOperator, MeshSelector, SingleGroup, IsMesh):
         mod.invert_vertex_group = True
 
 #------------------------------------------------------------------------
+#   Copy Masks
+#------------------------------------------------------------------------
+
+class DAZ_OT_CopyMasks(DazOperator, Selector, IsMesh):
+    bl_idname = "daz.copy_masks"
+    bl_label = "Copy Masks"
+    bl_description = "Copy selected mask modifiers and vertex groups from active to selected"
+    bl_options = {'UNDO'}
+
+    columnWidth = 300
+    ncols = 4
+
+    def invoke(self, context, event):
+        ob = context.object
+        self.selection.clear()
+        for mod in ob.modifiers:
+            if mod.type == 'MASK':
+                item = self.selection.add()
+                item.name = mod.name
+                item.text = mod.name
+                item.select = False
+        return self.invokeDialog(context)
+
+
+    def run(self, context):
+        src = context.object
+        masks = []
+        for mod in src.modifiers:
+            item = self.selection.get(mod.name)
+            if item and item.select:
+                masks.append(mod)
+        masknames = []
+        for mask in masks:
+            vgrp = src.vertex_groups.get(mask.vertex_group)
+            if vgrp:
+                src.vertex_groups.active = vgrp
+                masknames.append(vgrp.name)
+                bpy.ops.object.data_transfer(
+                    data_type = "VGROUP_WEIGHTS",
+                    vert_mapping = 'NEAREST',
+                    layers_select_src = 'ACTIVE',
+                    layers_select_dst = 'NAME')
+        for trg in getSelectedMeshes(context):
+            if trg != src:
+                self.copyModifiers(masks, trg)
+
+
+    def copyModifiers(self, masks, trg):
+        for mask in masks:
+            mod = trg.modifiers.get(mask.name)
+            if mod is None:
+                mod = trg.modifiers.new(mask.name, 'MASK')
+            mod.vertex_group = mask.vertex_group
+            mod.invert_vertex_group = mask.invert_vertex_group
+
+#------------------------------------------------------------------------
 #   Shrinkwrap
 #------------------------------------------------------------------------
 
@@ -564,6 +620,7 @@ classes = [
     DAZ_OT_ShowAllVis,
     DAZ_OT_HideAllVis,
     DAZ_OT_CreateMasks,
+    DAZ_OT_CopyMasks,
     DAZ_OT_AddShrinkwrap,
     DAZ_OT_ToggleVis,
     DAZ_OT_MakeInvisible,
