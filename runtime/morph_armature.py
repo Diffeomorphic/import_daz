@@ -133,7 +133,7 @@ def morphArmature(data):
     rig, heads, tails, hdoffsets, tloffsets = data
     for eb in rig.data.edit_bones:
         head = heads[eb.name] + hdoffsets[eb.name]
-        tail = tails[eb.name] + tloffsets[eb.name]
+        tail = tails[eb.name] + hdoffsets[eb.name]
         if eb.use_connect and eb.parent:
             eb.parent.tail = head
         eb.head = head
