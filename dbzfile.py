@@ -427,17 +427,10 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
 
 
     def buildRigMorph(self, context, rig, meshes, dbz):
-        def match(rig, restdata):
-            for bname in rig.data.bones.keys():
-                if baseBone(bname) not in restdata.keys():
-                    return False
-            return True
-
+        self.builtBones = {}
         for name,dbzrig in dbz.rigs.items():
             for restdata, transforms, center in dbzrig:
-                if match(rig, restdata):
-                    self.buildDbzMorphs(context, rig, meshes, restdata, dbz)
-                    return
+                self.buildDbzMorphs(context, rig, meshes, restdata, dbz)
 
 
     def buildDbzMorphs(self, context, rig, meshes, restdata, dbz):
@@ -462,8 +455,11 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
     def makeErcFormulas(self, context, rig, meshes, lm, expr, restdata):
         lm.ercBones = {}
         for pb in rig.pose.bones:
-            if isDrvBone(pb.name):
+            if (self.builtBones.get(pb.name, False) or
+                isDrvBone(pb.name) or
+                pb.name not in restdata.keys()):
                 continue
+            self.builtBones[pb.name] = True
             (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
             vec = Vector(head) - b2d(pb.bone.head_local)
             for idx,comp in enumerate(vec):
@@ -481,8 +477,11 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
 
     def makeOffsetFormulas(self, rig, lm, expr, restdata):
         for pb in rig.pose.bones:
-            if isDrvBone(pb.name):
+            if (self.builtBones.get(pb.name, False) or
+                isDrvBone(pb.name) or
+                pb.name not in restdata.keys()):
                 continue
+            self.builtBones[pb.name] = True
             (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
             vec = Vector(head) - b2d(pb.bone.head_local)
             for idx,comp in enumerate(vec):
