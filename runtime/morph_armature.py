@@ -55,14 +55,12 @@ def getEditBones(rig):
         if bname1 in heads.keys():
             heads[bname2] = heads[bname1]
             tails[bname2]= tails[bname1]
-            hdoffsets[bname2] = hdoffsets[bname1]
-            tloffsets[bname2] = tloffsets[bname1]
+
 
     scale = rig.DazScale
     heads = {}
     tails = {}
     hdoffsets = {}
-    tloffsets = {}
     for pb in rig.pose.bones:
         if isOutlier(pb.DazHeadLocal):
             pb.DazHeadLocal = pb.bone.head_local
@@ -71,15 +69,11 @@ def getEditBones(rig):
         heads[pb.name] = Vector(pb.DazHeadLocal)
         tails[pb.name] = Vector(pb.DazTailLocal)
         hdoffsets[pb.name] = d2b90(pb.HdOffset)
-        if isOutlier(pb.TlOffset):
-            tloffsets[pb.name] = hdoffsets[pb.name]
-        else:
-            tloffsets[pb.name] = d2b90(pb.TlOffset)
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":
-            copyTables(pb.name, pb.name[:-5])
-        #elif pb.name[-2:] == "IK":
-        #    copyTables(pb.name[:-2], pb.name)
+            bname = pb.name[:-5]
+            if bname in rig.pose.bones.keys():
+                hdoffsets[bname] = hdoffsets[pb.name] = hdoffsets[bname] + hdoffsets[pb.name]
 
     processed_bonenames = []
     '''
@@ -111,9 +105,7 @@ def getEditBones(rig):
                 while parent and parent.bone.get("DazExtraBone"):
                     parent = parent.parent
                 heads[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (heads[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(heads[bone.name]+ hdoffsets[parent.name]))
-                tails[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (tails[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(tails[bone.name]+ tloffsets[parent.name]))
                 hdoffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ hdoffsets[bone.name]) + ((1-bone.weight)*hdoffsets[bone.name])
-                tloffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ tloffsets[bone.name]) + ((1-bone.weight)*tloffsets[bone.name])
                 copyTables(bone.name, "%s(drv)" % bone.name)
                 processed_bonenames.append(bone.name)
     '''
@@ -125,12 +117,11 @@ def getEditBones(rig):
                 parent = parent.parent
             if parent:
                 hdoffsets[pb.name] = hdoffsets[pb.name] + hdoffsets[parent.name]
-                tloffsets[pb.name] = tloffsets[pb.name] + tloffsets[parent.name]
-    return (rig, heads, tails, hdoffsets, tloffsets)
+    return (rig, heads, tails, hdoffsets)
 
 
 def morphArmature(data):
-    rig, heads, tails, hdoffsets, tloffsets = data
+    rig, heads, tails, hdoffsets = data
     for eb in rig.data.edit_bones:
         head = heads[eb.name] + hdoffsets[eb.name]
         tail = tails[eb.name] + hdoffsets[eb.name]
@@ -198,7 +189,6 @@ def register():
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
-    bpy.types.PoseBone.TlOffset = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     unregister()
     bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 

@@ -506,10 +506,6 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
             for idx,comp in enumerate(vec):
                 expr["factor"] = comp
                 lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)
-            vec = Vector(tail) - b2d(pb.bone.tail_local)
-            for idx,comp in enumerate(vec):
-                expr["factor"] = comp
-                lm.makeOffsetFormula("TlOffset", pb.name, idx, expr)
 
 
     def setDriver(self, fcu, rig, prop, expr):

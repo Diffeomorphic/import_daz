@@ -911,8 +911,6 @@ def register():
     bpy.types.Bone.DazHead = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazAngle = FloatProperty(default=0)
     bpy.types.Bone.DazNormal = FloatVectorProperty(size=3, default=(0,0,0))
-    bpy.types.PoseBone.HdOffset = FloatVectorProperty(size=3, default=(0,0,0))
-    bpy.types.PoseBone.TlOffset = FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTranslation = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.PoseBone.DazRotation = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.PoseBone.DazRestRotation = FloatVectorProperty(size=3, default=(0,0,0))
@@ -932,7 +930,6 @@ def register():
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
-    bpy.types.PoseBone.TlOffset = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
 
     bpy.types.Armature.DazExtraFaceBones = BoolProperty(default = False)
     bpy.types.Armature.DazExtraDrivenBones = BoolProperty(default = False)

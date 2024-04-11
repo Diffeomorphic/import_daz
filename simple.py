@@ -842,7 +842,6 @@ def copyOffsetDrivers(rig):
 
     from .driver import setFloatProp
     copyDrivers(rig, LS.headbones, "HdOffset")
-    copyDrivers(rig, LS.tailbones, "TlOffset")
 
 
 def getPoseBone(rig, bnames):

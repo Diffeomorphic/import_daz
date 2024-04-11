@@ -466,12 +466,6 @@ class LoadMorph(DriverUser):
                             self.makeErcFormula(output, idx, expr)
                         elif GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
-                    elif key == "end_point":
-                        self.erc = True
-                        if self.disableErc:
-                            pass
-                        elif GS.ercMethod == 'ARMATURE':
-                            self.makeOffsetFormula("TlOffset", output, idx, expr)
         return True
 
 
@@ -1678,9 +1672,7 @@ class LoadMorph(DriverUser):
         adj = None
         pb = None
         bname = prefix[:-6]
-        if (bname in self.rig.pose.bones.keys()
-            # and prefix[-6:-1] in [":Loc:", ":Hdo:", ":Tlo:"]
-            ):
+        if bname in self.rig.pose.bones.keys():
             adj = self.getStrengthAdjuster()
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():
