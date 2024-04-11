@@ -388,27 +388,9 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
     hasAdjusters = False
     useAdjusters = False
 
-    ercMethod : EnumProperty(
-        items = [('NONE', "None", "ERC morphs are ignored"),
-                 ('TRANSLATION', "Translation", "ERC morphs are translations"),
-                 ('ARMATURE', "Armature", "ERC morphs change the rest pose")],
-        name = "ERC Method",
-        description = "Support for ERC morphs that change the rest pose",
-        default = 'TRANSLATION')
-
     def draw(self, context):
         PropDrivers.draw(self, context)
-        self.layout.prop(self, "ercMethod")
         PosableMaker.draw(self, context)
-
-    def storeState(self, context):
-        DazOperator.storeState(self, context)
-        self.gsERC = GS.ercMethod
-        GS.ercMethod = self.ercMethod
-
-    def restoreState(self, context):
-        DazOperator.restoreState(self, context)
-        GS.ercMethod = self.gsERC
 
     def run(self, context):
         from .driver import setFloatProp, makePropDriver
@@ -431,7 +413,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
                 final = finalProp(prop)
                 setFloatProp(rig.data, final, 0.0, GS.customMin, GS.customMax, False)
                 makePropDriver(propRef(prop), rig.data, propRef(final), rig, "x")
-                if self.ercMethod != 'NONE':
+                if GS.ercMethod != 'NONE':
                     self.buildRigMorph(context, rig, meshes, dbz)
         if self.usePropDrivers and rig:
             addToCategories(rig, props, None, self.category)

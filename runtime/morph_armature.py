@@ -105,6 +105,7 @@ def getEditBones(rig):
                 while parent and parent.bone.get("DazExtraBone"):
                     parent = parent.parent
                 heads[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (heads[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(heads[bone.name]+ hdoffsets[parent.name]))
+                tails[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (tails[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(tails[bone.name]+ hdoffsets[parent.name]))
                 hdoffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ hdoffsets[bone.name]) + ((1-bone.weight)*hdoffsets[bone.name])
                 copyTables(bone.name, "%s(drv)" % bone.name)
                 processed_bonenames.append(bone.name)
