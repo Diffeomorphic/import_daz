@@ -543,6 +543,7 @@ class LoadMorph(DriverUser):
                         return
                     asset.min,asset.max,default,ovr = getPropMinMax(self.amt, finalias, False)
             if skey and not visible:
+                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
                 return final
             elif asset.type == "bool":
                 setBoolProp(self.rig, raw, asset.value, True)
