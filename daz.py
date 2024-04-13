@@ -350,6 +350,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Show Final Morph Values",
         description = "Display the \"final\" values of morphs")
 
+    showUsedPropsOnly : BoolProperty(
+        name = "Show Used Morphs Only",
+        description = "Only display morphs with nonzero \"final\" value")
+
     showInTerminal : BoolProperty(
         name = "Show In Terminal",
         description = "Display full morph names when loading and transferring morphs")
@@ -779,6 +783,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "customMin")
         box.prop(self, "customMax")
         box.prop(self, "showFinalProps")
+        box.prop(self, "showUsedPropsOnly")
         box.prop(self, "showInTerminal")
         box.prop(self, "useShapekeys")
         box.prop(self, "useMuteDrivers")
