@@ -1114,6 +1114,55 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 #   Merge rigs
 #-------------------------------------------------------------
 
+class EditBoneInfo:
+    def __init__(self, eb, riginfo):
+        self.head = eb.head.copy()
+        self.tail = eb.tail.copy()
+        self.roll = eb.roll
+        self.parent = None
+        if eb.parent:
+            self.parent = eb.parent.name
+        self.riginfo = riginfo
+
+    def set(self, eb, ebones):
+        eb.head = self.head
+        eb.tail = self.tail
+        eb.roll = self.roll
+        if self.parent:
+            self.setParent(eb, self.parent, ebones)
+        elif self.riginfo.parbone:
+            self.setParent(eb, self.riginfo.parbone, ebones)
+
+    def setParent(self, eb, parent, ebones):
+        parkey = self.riginfo.getBoneKey(parent)
+        if parent in ebones.keys():
+            eb.parent = ebones[parent]
+        elif parkey in ebones.keys():
+            eb.parent = ebones[parkey]
+        else:
+            print("Parent not found", eb.name, parent)
+
+
+class PoseBoneInfo:
+    def __init__(self, pb):
+        self.bone = pb
+        self.matrix = pb.matrix.copy()
+        self.shape = pb.custom_shape
+        if hasattr(pb, "custom_shape_translation"):
+            self.scale = pb.custom_shape_scale_xyz
+            self.trans = pb.custom_shape_translation
+            self.rot = pb.custom_shape_rotation_euler
+
+    def set(self, pb):
+        pb.matrix = self.matrix
+        pb.custom_shape = self.shape
+        if hasattr(pb, "custom_shape_translation"):
+            pb.custom_shape_scale_xyz = self.scale
+            pb.custom_shape_translation = self.trans
+            pb.custom_shape_rotation_euler = self.rot
+        return self.bone
+
+
 class RigInfo:
     def __init__(self, rig, conforms, btn):
         self.name = rig.name
@@ -1161,12 +1210,8 @@ class RigInfo:
         setMode('EDIT')
         for eb in self.rig.data.edit_bones:
             if eb.name not in mainbones:
-                if eb.parent:
-                    parent = eb.parent.name
-                else:
-                    parent = None
                 key = self.getBoneKey(eb.name)
-                self.editbones[key] = (eb.head.copy(), eb.tail.copy(), eb.roll, parent)
+                self.editbones[key] = EditBoneInfo(eb, self)
         setMode('OBJECT')
         for pb in self.rig.pose.bones:
             if pb.name in mainbones:
@@ -1174,7 +1219,7 @@ class RigInfo:
             else:
                 key = self.getBoneKey(pb.name)
                 extrabones.append(pb.name)
-                self.posebones[key] = (pb, pb.matrix.copy())
+                self.posebones[key] = PoseBoneInfo(pb)
                 if not self.button.useCreateDuplicates:
                     mainbones.append(pb.name)
             self.bones[key] = pb.bone.use_deform
@@ -1183,30 +1228,14 @@ class RigInfo:
     def addEditBones(self, rig, idx, layer):
         setMode('EDIT')
         ebones = rig.data.edit_bones
-        for bname,data in self.editbones.items():
+        for bname,ebinfo in self.editbones.items():
             eb = ebones.new(bname)
-            parent = data[3]
-            eb = ebones[bname]
-            if parent:
-                self.setParent(eb, parent, ebones)
-            elif self.parbone:
-                self.setParent(eb, self.parbone, ebones)
-            eb.head, eb.tail, eb.roll, parent = data
+            ebinfo.set(eb, ebones)
             enableBoneNumLayer(eb, rig, layer)
         setMode('OBJECT')
         for bname in self.editbones.keys():
             bone = rig.data.bones[bname]
             bone["DazRigIndex"] = idx
-
-
-    def setParent(self, eb, parent, ebones):
-        parkey = self.getBoneKey(parent)
-        if parent in ebones.keys():
-            eb.parent = ebones[parent]
-        elif parkey in ebones.keys():
-            eb.parent = ebones[parkey]
-        else:
-            print("Parent not found", eb.name, parent)
 
 
     def copyPose(self, context, rig):
@@ -1223,9 +1252,9 @@ class RigInfo:
         self.button.copyDrivers(self.rig, rig, self.rig, rig)   # causes warnings
         setActiveObject(context, rig)
         wmat = rig.matrix_world.inverted() @ self.matrix
-        for bname,data in self.posebones.items():
+        for bname,pbinfo in self.posebones.items():
             pb = rig.pose.bones[bname]
-            subpb, pb.matrix = data
+            subpb = pbinfo.set(pb)
             copyBoneInfo(subpb, pb)
             copyConstraints(subpb, pb, rig)
         for bname,deform in self.bones.items():
