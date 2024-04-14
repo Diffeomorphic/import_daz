@@ -427,15 +427,16 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
 
 
     def buildRigMorph(self, context, rig, meshes, dbz):
-        self.builtBones = {}
-        for name,dbzrig in dbz.rigs.items():
-            for restdata, transforms, center in dbzrig:
-                self.buildDbzMorphs(context, rig, meshes, restdata, dbz)
-
-
-    def buildDbzMorphs(self, context, rig, meshes, restdata, dbz):
         from .formula import makeExpression
         from .load_morph import LoadMorph
+        restdata = {}
+        for name,dbzrig in dbz.rigs.items():
+            for rdata, transforms, center in dbzrig:
+                for key,data in rdata.items():
+                    if key not in restdata.keys():
+                        restdata[key] = data
+
+        self.builtBones = {}
         lm = LoadMorph()
         lm.rig = rig
         lm.initAll()
@@ -515,12 +516,15 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
     def makeShape(self, ob, rig, sname, objects, dbz):
         for name in objects.keys():
             verts = objects[name][0].verts
-            print("Try %s (%d verts)" % (name, len(verts)))
+            if GS.verbosity >= 3:
+                print("Try %s (%d verts)" % (name, len(verts)))
             if len(verts) == len(ob.data.vertices):
                 skey = ob.shape_key_add(name=sname)
                 for vn,co in enumerate(verts):
                     skey.data[vn].co = co
-                print("Morph %s created" % sname)
+                skey.slider_min = GS.customMin
+                skey.slider_max = GS.customMax
+                print("Morph created for %s" % name)
                 if self.usePropDrivers and rig:
                     fcu = skey.driver_add("value")
                     self.setDriver(fcu, rig, dbz.name, "a")

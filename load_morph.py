@@ -1460,7 +1460,8 @@ class LoadMorph(DriverUser):
                         sumfcu.data_path = 'pose.bones["%s"].%s' % (pb.name, channel)
                         sumfcu.array_index = idx
                     self.clearTmpDriver(0)
-            printName(" +", bname)
+            if GS.verbosity >= 3:
+                printName(" +", bname)
 
 
     def ensureAnimData(self, rna):
