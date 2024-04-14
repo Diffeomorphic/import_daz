@@ -27,6 +27,7 @@
 
 import os
 import bpy
+from mathutils import Matrix
 
 from .error import *
 from .utils import *
@@ -613,22 +614,17 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
         updateRigDrivers(context, rig)
         print("Slider limits updated")
 
+
 #------------------------------------------------------------------
 #   Remove all morph drivers
 #------------------------------------------------------------------
 
-class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMeshArmature):
-    bl_idname = "daz.remove_all_drivers"
-    bl_label = "Remove All Drivers"
-    bl_description = "Remove all drivers from selected objects"
-    bl_options = {'UNDO'}
-
-    useDeleteDrivers = True
-
+class RemoveAll(MorphRemover):
     def draw(self, context):
         self.layout.prop(self, "useDeleteProps")
         if self.useDeleteProps:
             self.layout.prop(self, "useDeleteShapekeys")
+
 
     def run(self, context):
         self.targets = {}
@@ -638,23 +634,26 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMesh
             for ob in rig.children:
                 if ob.type == 'MESH' and ob not in meshes:
                     meshes.append(ob)
-        for ob in meshes:
-            skeys = ob.data.shape_keys
-            if skeys:
-                self.removeDrivers(skeys)
-                if self.useDeleteShapekeys:
-                    skeylist = list(skeys.key_blocks)
-                    skeylist.reverse()
-                    for skey in skeylist:
-                        ob.shape_key_remove(skey)
+        self.runAll(context, rigs, meshes)
+        if self.useDeleteProps:
+            self.deleteProps(context, rigs)
 
-        for rig in rigs:
-            self.removeDrivers(rig.data)
-            self.removeDrivers(rig)
 
-        if not self.useDeleteProps:
+    def removeDrivers(self, rna):
+        if not rna.animation_data:
             return
+        for fcu in list(rna.animation_data.drivers):
+            if fcu.driver:
+                if getProp(fcu.data_path):
+                    self.targets[fcu.data_path] = rna
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        self.targets[trg.data_path] = trg.id
+            idx = self.getArrayIndex(fcu)
+            self.removeDriver(rna, fcu.data_path, idx)
 
+
+    def deleteProps(self, context, rigs):
         for path,rna in self.targets.items():
             words = path.split('"')
             if len(words) == 5 and words[0] == "pose.bones[" and words[4] == "]":
@@ -686,18 +685,93 @@ class DAZ_OT_RemoveAllDrivers(DazPropsOperator, MorphRemover, DriverUser, IsMesh
         updateScrollbars(context)
 
 
-    def removeDrivers(self, rna):
-        if not rna.animation_data:
-            return
-        for fcu in list(rna.animation_data.drivers):
-            if fcu.driver:
-                if getProp(fcu.data_path):
-                    self.targets[fcu.data_path] = rna
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        self.targets[trg.data_path] = trg.id
-            idx = self.getArrayIndex(fcu)
-            self.removeDriver(rna, fcu.data_path, idx)
+
+class DAZ_OT_RemoveAllDrivers(DazPropsOperator, RemoveAll, DriverUser, IsMeshArmature):
+    bl_idname = "daz.remove_all_drivers"
+    bl_label = "Remove All Drivers"
+    bl_description = "Remove all drivers from selected objects"
+    bl_options = {'UNDO'}
+
+    useDeleteDrivers = True
+
+    def runAll(self, context, rigs, meshes):
+        for ob in meshes:
+            skeys = ob.data.shape_keys
+            if skeys:
+                self.removeDrivers(skeys)
+                if self.useDeleteShapekeys:
+                    skeylist = list(skeys.key_blocks)
+                    skeylist.reverse()
+                    for skey in skeylist:
+                        ob.shape_key_remove(skey)
+        for rig in rigs:
+            self.removeDrivers(rig.data)
+            self.removeDrivers(rig)
+
+#------------------------------------------------------------------
+#   Bake all morph drivers
+#------------------------------------------------------------------
+
+class DAZ_OT_BakeAllErcDrivers(DazPropsOperator, RemoveAll, DriverUser, IsArmature):
+    bl_idname = "daz.bake_all_erc_drivers"
+    bl_label = "Bake All ERC Drivers"
+    bl_description = "Bake all ERC drivers to selected rigs and children.\nOnly works if ERC method is Armature or Armature All"
+    bl_options = {'UNDO'}
+
+    def runAll(self, context, rigs, meshes):
+        self.bones = {}
+        self.shapes = {}
+        for rig in rigs:
+            bones = self.bones[rig.name] = {}
+            for pb in rig.pose.bones:
+                bones[pb.name] = (pb.head, pb.tail)
+        for ob in meshes:
+            skeys = ob.data.shape_keys
+            shapes = self.shapes[ob.name] = {}
+            for skey in skeys.key_blocks:
+                shapes[skey.name] = skey.value
+
+        for rig in rigs:
+            self.removeDrivers(rig.data)
+            self.removeDrivers(rig)
+        for ob in meshes:
+            self.removeDrivers(ob.data.shape_keys)
+
+        for rig in rigs:
+            for pb in rig.pose.bones:
+                pb.matrix_basis = Matrix()
+            if activateObject(context, rig):
+                bones = self.bones[rig.name]
+                setMode('EDIT')
+                for eb in rig.data.edit_bones:
+                    (eb.head, eb.tail) = bones[eb.name]
+                setMode('OBJECT')
+        for ob in meshes:
+            skeys = ob.data.shape_keys
+            shapes = self.shapes[ob.name]
+            for skey in skeys.key_blocks:
+                skey.value = shapes[skey.name]
+            if self.useDeleteShapekeys:
+                bakeAllShapes(ob)
+
+
+def bakeAllShapes(ob):
+    from numpy import array
+    skeys = ob.data.shape_keys
+    if skeys is None:
+        return
+    verts = ob.data.vertices
+    varr = array([v.co for v in verts])
+    tarr = varr.copy()
+    blocks = list(skeys.key_blocks)
+    for skey in blocks:
+        sarr = array([v.co for v in skey.data])
+        tarr += skey.value * (sarr - varr)
+    blocks.reverse()
+    for skey in blocks:
+        ob.shape_key_remove(skey)
+    for v,co in zip(verts, tarr):
+        v.co = co
 
 #-------------------------------------------------------------
 #   Add driven value nodes
@@ -1232,6 +1306,7 @@ classes = [
     DAZ_OT_UpdateSliderLimits,
     DAZ_OT_AddDrivenValueNodes,
     DAZ_OT_RemoveAllDrivers,
+    DAZ_OT_BakeAllErcDrivers,
     DAZ_OT_AddShapekeyDrivers,
     DAZ_OT_RemoveShapekeyDrivers,
     DAZ_OT_RemoveShapekeys,
