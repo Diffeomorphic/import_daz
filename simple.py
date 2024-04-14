@@ -274,7 +274,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useReverseFoot")
         self.layout.prop(self, "useImproveIk")
-        if GS.ercMethod == 'ARMATURE':
+        if GS.ercMethod in ('ARMATURE', 'ALL'):
             self.layout.prop(self, "useErcIk")
 
     armTable = {
@@ -319,7 +319,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.makeNewBones(rig, IK)
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
-        if GS.ercMethod == 'ARMATURE' and self.useErcIk:
+        if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
             copyOffsetDrivers(rig)
         if self.useImproveIk:
             improveIk(rig)

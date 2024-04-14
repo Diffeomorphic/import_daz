@@ -210,7 +210,7 @@ class GlobalSettings:
     def toggleMorphArmatures(self, scn):
         from .runtime.morph_armature import onFrameChangeDaz, unregister
         unregister()
-        if scn.DazAutoMorphArmatures and self.ercMethod == 'ARMATURE':
+        if scn.DazAutoMorphArmatures and self.ercMethod in ('ARMATURE', 'ALL'):
             bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 
 

@@ -445,7 +445,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
             lm.createTmp()
             if GS.ercMethod == 'TRANSLATION':
                 self.makeErcFormulas(context, rig, meshes, lm, expr, restdata)
-            elif GS.ercMethod == 'ARMATURE':
+            elif GS.ercMethod in ('ARMATURE', 'ALL'):
                 self.makeOffsetFormulas(rig, lm, expr, restdata)
                 lm.buildSumDrivers()
         finally:
