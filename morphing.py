@@ -532,7 +532,7 @@ class MorphLoader(LoadMorph, PosableMaker):
     useTransferFace : BoolProperty(
         name = "Transfer To Face Meshes",
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
-        default = False)
+        default = True)
 
     def __init__(self, useMakePosable=None):
         LoadMorph.__init__(self)
@@ -725,6 +725,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         from .main import getFaceMeshes
         ob = self.meshes[0]
         meshes = getFaceMeshes(self.rig, ob)
+        meshes = [ob for ob in meshes if not ob.DazMesh]
         transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
 
 

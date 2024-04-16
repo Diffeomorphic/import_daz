@@ -1010,7 +1010,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.transferShapes(context, mainMesh, hairs, True, "All")
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
             print("Transfer to face meshes")
-            self.transferShapes(context, mainMesh, lashes, True, "All")
+            faceMeshes = [ob for ob in lashes if not ob.DazMesh]
+            self.transferShapes(context, mainMesh, faceMeshes, True, "All")
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
