@@ -121,7 +121,6 @@ class GlobalSettings:
         self.ercMethod = 'NONE'
         self.useStripCategory = False
         self.useModifiedMesh = False
-        self.useSubmeshes = True
         self.useDefaultDrivers = True
         self.useOptimizeJcms = False
 

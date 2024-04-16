@@ -382,10 +382,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Import To Modified Meshes",
         description = "Import morphs to meshes that have been modified by merging geografts or lashes.\nWarning: can give incorrect shapekeys if meshes have been modified in edit mode")
 
-    useSubmeshes : BoolProperty(
-        name = "Import To Submeshes",
-        description = "Import morphs to the figure's submeshes,\ne.g. Genesis 9 eyes, mouth, lashes, and tears")
-
     useDefaultDrivers : BoolProperty(
         name = "Default Drivers",
         description = "Create default drivers defined in the scene file")
@@ -791,7 +787,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useModifiedMesh")
-        box.prop(self, "useSubmeshes")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
 

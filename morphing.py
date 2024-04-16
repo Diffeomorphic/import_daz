@@ -532,7 +532,7 @@ class MorphLoader(LoadMorph, PosableMaker):
     useTransferFace : BoolProperty(
         name = "Transfer To Face Meshes",
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
-        default = True)
+        default = False)
 
     def __init__(self, useMakePosable=None):
         LoadMorph.__init__(self)
@@ -808,10 +808,8 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
     def run(self, context):
         if self.rig is None and not self.meshes:
             self.setupCharacter(context)
-            MP.setupMorphPaths(False)
-            self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
-        else:
-            MP.setupMorphPaths(False)
+        MP.setupMorphPaths(False)
+        self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
         self.errors = {}
         self.faceshapes = {}
         t1 = perf_counter()
@@ -827,12 +825,9 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
             self.findIked()
         self.adjuster = MS.Adjusters[self.morphset]
         namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
-        if not GS.useSubmeshes:
-            return namepaths
-        trivial = self.trivial
         faceshapes = self.faceshapes
         for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-            self.loadToMesh(mesh, char, trivial)
+            self.loadToMesh(mesh, char, None)
         self.faceshapes = faceshapes
         return namepaths
 
@@ -1587,12 +1582,10 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         if not self.meshes:
             self.getFingeredRigMeshes(context)
         namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
-        if GS.useSubmeshes:
-            trivial = self.trivial
-            faceshapes = self.faceshapes
-            for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-                self.loadToMesh(mesh, char, trivial)
-            self.faceshapes = faceshapes
+        faceshapes = self.faceshapes
+        for mesh, char in zip(self.meshes[1:], self.chars[1:]):
+            self.loadToMesh(mesh, char, None)
+        self.faceshapes = faceshapes
         self.addPropDrivers()
         msg = self.finishLoading(namepaths, context, t1)
         updateScrollbars(context)

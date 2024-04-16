@@ -1474,11 +1474,13 @@ class LoadMorph(DriverUser):
 
     def getChannelPrefix(self, pb, channel, idx):
         key = channel[0:3].capitalize()
-        return "%s:%s:%s" % (pb.name[0:54], key, idx)
+        bname = baseBone(pb.name)
+        return "%s:%s:%s" % (bname[0:54], key, idx)
 
 
     def getFinalScaleProp(self, pb, idx):
-        return "%s:Sca:%d" % (pb.name[0:54], idx)
+        bname = baseBone(pb.name)
+        return "%s:Sca:%d" % (bname[0:54], idx)
 
 
     def getTermDriverName(self, prefix, n):
