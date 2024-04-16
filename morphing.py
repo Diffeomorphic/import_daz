@@ -725,7 +725,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         from .main import getFaceMeshes
         ob = self.meshes[0]
         meshes = getFaceMeshes(self.rig, ob)
-        meshes = [ob for ob in meshes if not ob.DazMesh]
+        meshes = [mesh for mesh in meshes if not mesh.DazMesh]
         transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
 
 
