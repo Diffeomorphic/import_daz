@@ -853,130 +853,43 @@ def deselectEverything(ob, context):
 #   Make Proxy
 #-------------------------------------------------------------
 
-class MakeProxy(IsMesh):
+class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
+    bl_idname = "daz.make_lowpoly"
+    bl_label = "Make Low Poly"
+    bl_description = "Replace all selected meshes by low-poly versions"
+    bl_options = {'UNDO'}
+
+    useQuads : BoolProperty(
+        name = "Quads",
+        description = "Convert lowpoly mesh to quads if possible",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useQuads")
 
     def run(self, context):
-        active = context.object
-        meshes = getSelectedMeshes(context)
-        print("-----")
-        errors = []
-        for ob in meshes:
+        for ob in getSelectedMeshes(context):
             if activateObject(context, ob):
-                print("\nMake %s low-poly" % ob.name)
-                self.makeProxy(ob, context, errors)
-        restoreSelectedObjects(context, meshes, active)
-        if errors:
-            msg = "Cannot make low-poly version\nof meshes with shapekeys:"
-            for ob in errors:
-                msg += ("\n  %s" % ob.name)
-            raise DazError(msg)
-
-
-class DAZ_OT_MakeQuickProxy(MakeProxy, DazPropsOperator):
-    bl_idname = "daz.make_quick_proxy"
-    bl_label = "Make Quick Low-poly"
-    bl_description = "Replace all selected meshes by low-poly versions, using a quick algorithm that does not preserve UV seams"
-    bl_options = {'UNDO'}
-
-    iterations : IntProperty(
-        name = "Iterations",
-        description = "Number of iterations when ",
-        min = 0, max = 10,
-        default = 2)
-
-    def makeProxy(self, ob, context, errors):
-        scn = context.scene
-        if ob.data.shape_keys:
-            errors.append(ob)
-            return None
-        applyShapeKeys(ob)
-        printStatistics(ob)
-        mod = ob.modifiers.new("Proxy", 'DECIMATE')
-        mod.decimate_type = 'UNSUBDIV'
-        mod.iterations = self.iterations
-        bpy.ops.object.modifier_apply(modifier=mod.name)
-        printStatistics(ob)
-        return ob
-
-
-class DAZ_OT_MakeFaithfulProxy(MakeProxy, DazOperator):
-    bl_idname = "daz.make_faithful_proxy"
-    bl_label = "Make Faithful Low-poly"
-    bl_description = "Replace all selected meshes by low-poly versions, using a experimental algorithm that does preserve UV seams"
-    bl_options = {'UNDO'}
-
-    def makeProxy(self, ob, context, _errors):
-        return Proxifier(ob).make(ob, context)
-
-
-#-------------------------------------------------------------
-#   Quadify
-#-------------------------------------------------------------
-
-class DAZ_OT_Quadify(MakeProxy, DazOperator, IsMesh):
-    bl_idname = "daz.quadify"
-    bl_label = "Quadify Triangles"
-    bl_description = "Join triangles to quads"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        active = context.object
-        meshes = getSelectedMeshes(context)
-        print("-----")
-        errors = []
-        for ob in meshes:
-            if activateObject(context, ob):
-                print("\nQuadify %s" % ob.name)
-                printStatistics(ob)
                 setMode('EDIT')
-                bpy.ops.mesh.select_mode(type='FACE')
                 bpy.ops.mesh.select_all(action='SELECT')
-                bpy.ops.mesh.tris_convert_to_quads()
+                bpy.ops.uv.select_all(action='SELECT')
+                bpy.ops.uv.seams_from_islands()
+                bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
+                bpy.ops.mesh.select_all(action='DESELECT')
                 setMode('OBJECT')
-                printStatistics(ob)
-        restoreSelectedObjects(context, meshes, active)
-
-
-def restoreSelectedObjects(context, meshes, active):
-    for ob in meshes:
-        selectSet(ob, True)
-    setActiveObject(context, active)
-
-#-------------------------------------------------------------
-#   Split n-gons
-#-------------------------------------------------------------
-
-def splitNgons(ob, context):
-    if not activateObject(context, ob):
+                for e in ob.data.edges:
+                    if e.use_seam:
+                        e.select = True
+                setMode('EDIT')
+                bpy.ops.mesh.select_more()
+                bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
+                bpy.ops.mesh.select_all(action='INVERT')
+                bpy.ops.mesh.unsubdivide()
+                bpy.ops.mesh.select_all(action='SELECT')
+                if self.useQuads:
+                    bpy.ops.mesh.tris_convert_to_quads(seam=True)
+                setMode('OBJECT')
         return
-    printStatistics(ob)
-    setMode('EDIT')
-    bpy.ops.mesh.select_mode(type='FACE')
-    bpy.ops.mesh.select_all(action='DESELECT')
-    setMode('OBJECT')
-    for f in ob.data.polygons:
-        if (len(f.vertices) > 4 and not f.hide):
-            f.select = True
-    setMode('EDIT')
-    bpy.ops.mesh.quads_convert_to_tris(ngon_method='BEAUTY')
-    #bpy.ops.mesh.tris_convert_to_quads()
-    setMode('OBJECT')
-    printStatistics(ob)
-
-
-class DAZ_OT_SplitNgons(DazOperator, IsMesh):
-    bl_idname = "daz.split_ngons"
-    bl_label = "Split n-gons"
-    bl_description = "Split all polygons with five or more corners into triangles"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        active = context.object
-        meshes = getSelectedMeshes(context)
-        for ob in meshes:
-            print("\nSplit n-gons of %s" % ob.name)
-            splitNgons(ob, context)
-        restoreSelectedObjects(context, meshes, active)
 
 #-------------------------------------------------------------
 #   Find seams
@@ -2067,10 +1980,7 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
 
 classes = [
     DAZ_OT_FindPolys,
-    DAZ_OT_MakeQuickProxy,
-    DAZ_OT_MakeFaithfulProxy,
-    DAZ_OT_Quadify,
-    DAZ_OT_SplitNgons,
+    DAZ_OT_MakeLowPoly,
     DAZ_OT_FindSeams,
     DAZ_OT_SelectRandomStrands,
     DAZ_OT_SelectStrandsByWidth,
