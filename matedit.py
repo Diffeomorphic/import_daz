@@ -1118,84 +1118,11 @@ class DAZ_OT_ResetMaterials(DazOperator, ChannelSetter, IsMesh):
     def multiplyTex(self, node, fromsocket, tosocket, tree, item):
         pass
 
-# ---------------------------------------------------------------------
-#   Set Shell Visibility
-# ---------------------------------------------------------------------
-
-class DAZ_OT_SetAllFloats(bpy.types.Operator):
-    bl_idname = "daz.set_all_floats"
-    bl_label = "All"
-    bl_description = "Set all entries to 1.0"
-
-    def execute(self, context):
-        for item in context.scene.DazFloats:
-            item.f = 1.0
-        return {'PASS_THROUGH'}
-
-
-class DAZ_OT_ClearAllFloats(bpy.types.Operator):
-    bl_idname = "daz.clear_all_floats"
-    bl_label = "None"
-    bl_description = "Set all entries to 0.0"
-
-    def execute(self, context):
-        for item in context.scene.DazFloats:
-            item.f = 0.0
-        return {'PASS_THROUGH'}
-
-
-class DAZ_OT_SetShellVisibility(DazPropsOperator, IsMesh):
-    bl_idname = "daz.set_shell_visibility"
-    bl_label = "Set Shell Visibility"
-    bl_description = "Control the visility of geometry shells"
-    bl_options = {'UNDO'}
-
-    def draw(self, context):
-        scn = context.scene
-        row = self.layout.row()
-        row.prop(scn.tool_settings, "use_keyframe_insert_auto")
-        row.operator("daz.set_all_floats")
-        row.operator("daz.clear_all_floats")
-        self.layout.separator()
-        for item in context.scene.DazFloats:
-            self.layout.prop(item, "f", text=item.name)
-
-    def run(self, context):
-        scn = context.scene
-        self.auto = scn.tool_settings.use_keyframe_insert_auto
-        for item in scn.DazFloats:
-            for node in self.shells[item.name]:
-                node.inputs["Influence"].default_value = item.f
-                if self.auto:
-                    node.inputs["Influence"].keyframe_insert("default_value")
-
-    def invoke(self, context, event):
-        self.shells = {}
-        scn = context.scene
-        scn.DazFloats.clear()
-        for ob in getSelectedMeshes(context):
-            for mat in ob.data.materials:
-                if mat:
-                    for node in mat.node_tree.nodes:
-                        if (node.type == 'GROUP' and
-                            "Influence" in node.inputs.keys()):
-                            if "Color" in node.outputs.keys():
-                                key = "%s Layers" % mat.name
-                            else:
-                                key = node.label
-                            if key not in self.shells.keys():
-                               self.shells[key] = []
-                               item = scn.DazFloats.add()
-                               item.name = key
-                               item.f = node.inputs["Influence"].default_value
-                            self.shells[key].append(node)
-        return DazPropsOperator.invoke(self, context, event)
-
 #----------------------------------------------------------
 #   Drive shell influence
 #----------------------------------------------------------
 
-class DAZ_OT_SetShellInfluence(DazOperator, IsMesh):
+class DAZ_OT_SetShellInfluence(DazOperator, IsMeshArmature):
     bl_idname = "daz.set_shell_influence"
     bl_label = "Set Shell Influence"
 
@@ -1583,12 +1510,9 @@ classes = [
     DAZ_OT_ResetMaterials,
     DAZ_OT_MakeComboMaterials,
     DAZ_OT_MakeDecal,
-    DAZ_OT_SetShellVisibility,
     DAZ_OT_DriveShellInfluence,
     DAZ_OT_SetShellInfluence,
     DAZ_OT_ToggleShellInfluence,
-    DAZ_OT_SetAllFloats,
-    DAZ_OT_ClearAllFloats,
     DAZ_OT_MakePalette,
     DAZ_OT_ReplaceMaterials,
     DAZ_OT_FindMissingTextures,

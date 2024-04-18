@@ -1167,8 +1167,6 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
                 op = row.operator("daz.toggle_shell_influence", text="", icon=icon, emboss=False)
                 op.prop = prop
                 op.object = ob.name
-        else:
-            self.layout.operator("daz.set_shell_visibility")
 
 #------------------------------------------------------------------------
 #   DAZ Rigify props panels
