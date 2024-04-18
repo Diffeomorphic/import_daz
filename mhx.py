@@ -1924,7 +1924,7 @@ LRGizmos = {
     "foot.rev" :        ("GZM_FootRev", 1),
     "foot.ik" :         ("GZM_Cube", 0.25),
     "toe.rev" :         ("GZM_ToeRev", 1),
-    "foot.2" :          ("GZM_Foot", 1),
+    "foot.2" :          ("GZM_HandIK", 0.7),
     "toe.2" :           ("GZM_Toe", 1),
     "knee.pt.ik" :      ("GZM_Cone", 0.25),
     "kneePoleA" :       ("GZM_Knuckle", 1),
