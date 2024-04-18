@@ -77,7 +77,7 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbon
     eb.use_connect = False
     eb.parent = parent
     eb.use_deform = False
-    setBoneNumLayer(eb, rig, layer)
+    enableBoneNumLayer(eb, rig, layer)
     if headbone:
         LS.headbones[bname] = headbone.name
     if tailbone:
@@ -818,7 +818,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 mname,layer = MHX.Skeleton[bname]
                 if bname != mname:
                     bone.name = mname
-                setBoneNumLayer(bone, rig, layer)
+                enableBoneNumLayer(bone, rig, layer)
                 fixed.append(mname)
             else:
                 continue
@@ -837,7 +837,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if pb.name in fixed:
                 continue
             layer,unlock = getBoneLayer(pb, rig, driven)
-            setBoneNumLayer(pb.bone, rig, layer)
+            enableBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
                 pb.lock_location = (False,False,False)
         self.checkTongueIk(rig)
