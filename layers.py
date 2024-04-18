@@ -42,6 +42,7 @@ if BLENDER3:
     L_LLEGFK =  5
     L_LHAND =   6
     L_LFINGER = 7
+    L_LLEG2IK = 12
     L_LEXTRA =  12
     L_LTOE =    13
 
@@ -51,6 +52,7 @@ if BLENDER3:
     L_RLEGFK =  21
     L_RHAND =   22
     L_RFINGER = 23
+    L_RLEG2IK = 28
     L_REXTRA =  28
     L_RTOE =    29
 
@@ -75,6 +77,7 @@ else:
     L_LLEGFK =  "FK Leg Left"
     L_LHAND =   "Hand Left"
     L_LFINGER = "Fingers Left"
+    L_LLEG2IK = "IK 2 Leg Left"
     L_LEXTRA =  "Extra Left"
     L_LTOE =    "Toes Left"
 
@@ -84,6 +87,7 @@ else:
     L_RLEGFK =  "FK Leg Right"
     L_RHAND =   "Hand Right"
     L_RFINGER = "Fingers Right"
+    L_RLEG2IK = "IK 2 Leg Right"
     L_REXTRA =  "Extra Right"
     L_RTOE =    "Toes Right"
 
@@ -110,6 +114,7 @@ MhxLayers = {
     L_LLEGFK :  "FK Leg Left",
     L_LHAND :   "Hand Left",
     L_LFINGER : "Fingers Left",
+    L_LLEG2IK : "IK 2 Leg Left",
     L_LEXTRA :  "Extra Left",
     L_LTOE :    "Toes Left",
 
@@ -119,6 +124,7 @@ MhxLayers = {
     L_RLEGFK :  "FK Leg Right",
     L_RHAND :   "Hand Right",
     L_RFINGER : "Fingers Right",
+    L_RLEG2IK : "IK 2 Leg Right",
     L_REXTRA :  "Extra Right",
     L_RTOE :    "Toes Right",
 
