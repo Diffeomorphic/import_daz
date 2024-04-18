@@ -766,7 +766,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.addBoneGroups(rig)
         rig.MhxRig = True
         rig.data.MhaFeatures |= F_IDPROPS
-        enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK, L_LHAND, L_RHAND])
+        enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK])
         rig.DazRig = "mhx"
 
         for pb in rig.pose.bones:
@@ -996,7 +996,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addBack(self, rig):
         backbones = self.getExistingBones(rig, MHX.BackBones)
-        layers = [L_MAIN, L_SPINE, L_HELP, L_HELP2, L_DEF]
+        layers = [L_SPINE2, L_SPINE, L_HELP, L_HELP2, L_DEF]
         setMhx(rig, "MhaSpineControl", True)
         if self.useSpineIk:
             rig.data.MhaFeatures |= F_SPINE
@@ -1183,8 +1183,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         hip = rig.data.edit_bones["hip"]
         master = rig.data.edit_bones["master"]
         for suffix, armFkLayer, armIkLayer, legFkLayer, legIkLayer, extraLayer, leg2Layer in [
-            ("L", L_LARMFK, L_LARMIK, L_LLEGFK, L_LLEGIK, L_LEXTRA, L_LLEG2IK),
-            ("R", L_RARMFK, L_RARMIK, L_RLEGFK, L_RLEGIK, L_REXTRA, L_RLEG2IK)]:
+            ("L", L_LARMFK, L_LARMIK, L_LLEGFK, L_LLEGIK, L_LEXTRA, L_LANKLEIK),
+            ("R", L_RARMFK, L_RARMIK, L_RLEGFK, L_RLEGIK, L_REXTRA, L_RANKLEIK)]:
             upper_arm = self.setLayer("upper_arm.%s" % suffix, rig, L_HELP)
             forearm = self.setLayer("forearm.%s" % suffix, rig, L_HELP)
             hand0 = self.setLayer("hand.%s" % suffix, rig, L_DEF)
@@ -1883,9 +1883,7 @@ Gizmos = {
     "ik_shaft" :        ("GZM_Cone", -0.2),
 
     #Spine
-    "root" :            ("GZM_CrownHips", 1),
-    "hip" :             ("GZM_CrownHips", 1),
-    "hips" :            ("GZM_CircleHips", 1),
+    "hip" :             ("GZM_Cube", 1, 0.5),
     "pelvis" :          ("GZM_CircleHips", 1),
     "spine" :           ("GZM_CircleSpine", 1),
     "spine-1" :         ("GZM_CircleSpine", 1),
@@ -1924,7 +1922,7 @@ LRGizmos = {
     "toe.fk" :          ("GZM_Toe", 1),
     "legSocket" :       ("GZM_Cube", 0.25),
     "foot.rev" :        ("GZM_FootRev", 1),
-    "foot.ik" :         ("GZM_FootIK", 1),
+    "foot.ik" :         ("GZM_Cube", 0.25),
     "toe.rev" :         ("GZM_ToeRev", 1),
     "foot.2" :          ("GZM_Foot", 1),
     "toe.2" :           ("GZM_Toe", 1),

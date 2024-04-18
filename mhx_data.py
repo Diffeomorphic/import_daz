@@ -270,7 +270,7 @@ class MhxData:
 
 
     BoneGroups = [
-        ('Spine',    (1,1,0),   (L_MAIN, L_SPINE)),
+        ('Spine',    (1,1,0),   (L_MAIN, L_SPINE, L_SPINE2)),
         ('Left Arm FK',  (0.5,0,0), (L_LARMFK,)),
         ('Right Arm FK', (0,0,0.5), (L_RARMFK,)),
         ('Left Arm IK',  (1,0,0),   (L_LARMIK,)),

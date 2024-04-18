@@ -604,7 +604,7 @@ def setCustomShapeTransform(pb, scale, trans=None, rot=None):
     if trans and hasattr(pb, "custom_shape_translation"):
         if isinstance(trans, (int,float)):
             trans = (0, trans, 0)
-        pb.custom_shape_translation = trans
+        pb.custom_shape_translation = Vector(trans)*pb.bone.length
     if rot and hasattr(pb, "custom_shape_rotation_euler"):
         pb.custom_shape_rotation_euler = rot
 

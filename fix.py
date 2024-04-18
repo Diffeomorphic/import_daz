@@ -691,7 +691,12 @@ class GizmoUser:
         pb.bone.show_wire = True
         if blen:
             scale *= blen/pb.bone.length
-        setCustomShape(pb, gizmo, scale, offset)
+        pb.custom_shape = gizmo
+        if isinstance(offset, tuple):
+            offset = Vector(offset)*pb.bone.length
+        elif offset is not None:
+            offset = offset*pb.bone.length
+        setCustomShapeTransform(pb, scale, offset, None)
 
 
     def renameFaceBones(self, rig, extra=[]):
@@ -717,18 +722,6 @@ class GizmoUser:
 
     def getOtherName(self, bname):
         return getSuffixName(bname, True)
-
-#----------------------------------------------------------
-#  Set custom shape
-#----------------------------------------------------------
-
-def setCustomShape(pb, shape, scale=None, offset=None, rotation=None):
-    pb.custom_shape = shape
-    if isinstance(offset, tuple):
-        offset = Vector(offset)*pb.bone.length
-    elif offset is not None:
-        offset = offset*pb.bone.length
-    setCustomShapeTransform(pb, scale, offset, rotation)
 
 #----------------------------------------------------------
 #   Get suffix name

@@ -42,7 +42,7 @@ if BLENDER3:
     L_LLEGFK =  5
     L_LHAND =   6
     L_LFINGER = 7
-    L_LLEG2IK = 12
+    L_LANKLEIK = 12
     L_LEXTRA =  12
     L_LTOE =    13
 
@@ -52,14 +52,14 @@ if BLENDER3:
     L_RLEGFK =  21
     L_RHAND =   22
     L_RFINGER = 23
-    L_RLEG2IK = 28
+    L_RANKLEIK = 28
     L_REXTRA =  28
     L_RTOE =    29
 
     L_FACE =    8
     L_TWEAK =   9
     L_HEAD =    10
-    L_UNUSED =  11
+    L_SPINE2 =  11
     L_CUSTOM =  16
     L_CUSTOM2 = 17
 
@@ -77,7 +77,7 @@ else:
     L_LLEGFK =  "FK Leg Left"
     L_LHAND =   "Hand Left"
     L_LFINGER = "Fingers Left"
-    L_LLEG2IK = "IK 2 Leg Left"
+    L_LANKLEIK = "IK Ankle Left"
     L_LEXTRA =  "Extra Left"
     L_LTOE =    "Toes Left"
 
@@ -87,14 +87,14 @@ else:
     L_RLEGFK =  "FK Leg Right"
     L_RHAND =   "Hand Right"
     L_RFINGER = "Fingers Right"
-    L_RLEG2IK = "IK 2 Leg Right"
+    L_RANKLEIK = "IK Ankle Right"
     L_REXTRA =  "Extra Right"
     L_RTOE =    "Toes Right"
 
     L_FACE =    "Face"
     L_TWEAK =   "Tweak"
     L_HEAD =    "Head"
-    L_UNUSED =  "Unused"
+    L_SPINE2 =  "Spine 2"
     L_CUSTOM =  "Custom"
     L_CUSTOM2 = "Custom 2"
 
@@ -114,7 +114,7 @@ MhxLayers = {
     L_LLEGFK :  "FK Leg Left",
     L_LHAND :   "Hand Left",
     L_LFINGER : "Fingers Left",
-    L_LLEG2IK : "IK 2 Leg Left",
+    L_LANKLEIK : "IK Ankle Left",
     L_LEXTRA :  "Extra Left",
     L_LTOE :    "Toes Left",
 
@@ -124,14 +124,14 @@ MhxLayers = {
     L_RLEGFK :  "FK Leg Right",
     L_RHAND :   "Hand Right",
     L_RFINGER : "Fingers Right",
-    L_RLEG2IK : "IK 2 Leg Right",
+    L_RANKLEIK : "IK Ankle Right",
     L_REXTRA :  "Extra Right",
     L_RTOE :    "Toes Right",
 
     L_FACE :    "Face",
     L_TWEAK :   "Tweak",
     L_HEAD :    "Head",
-    L_UNUSED :  "Unused",
+    L_SPINE2 :  "Spine 2",
     L_CUSTOM :  "Custom",
     L_CUSTOM2 : "Custom 2",
 
