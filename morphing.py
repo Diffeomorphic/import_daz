@@ -609,14 +609,13 @@ class MorphLoader(LoadMorph, PosableMaker):
         return self.finishLoading(namepaths, context, t1)
 
 
-    def loadToMesh(self, mesh, char, trivial):
+    def loadToMesh(self, mesh, char):
         mesh0 = self.mesh
         char0 = self.char
         self.mesh = mesh
         self.char = char
-        self.trivial = {}
         namepaths = []
-        namepaths = self.getActiveMorphFiles(trivial)
+        namepaths = self.getActiveMorphFiles()
         if not ES.easy:
             print("Load %d morphs to %s" % (len(namepaths), self.mesh.name))
         if namepaths:
@@ -825,15 +824,17 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
             self.rig.DazMorphPrefixes = False
             self.findIked()
         self.adjuster = MS.Adjusters[self.morphset]
-        namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
+        morphset = self.morphset
+        namepaths = self.loadToMesh(self.meshes[0], self.chars[0])
         faceshapes = self.faceshapes
         for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-            self.loadToMesh(mesh, char, None)
+            self.morphset = morphset
+            self.loadToMesh(mesh, char)
         self.faceshapes = faceshapes
         return namepaths
 
 
-    def getActiveMorphFiles(self, trivial):
+    def getActiveMorphFiles(self):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
@@ -846,7 +847,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
             for item in self.getSelectedItems():
                 key = item.name
                 path = morphFiles.get(key)
-                if path and (trivial is None or trivial.get(key, True)):
+                if path:
                     namepaths.append((item.text, path, self.bodypart))
         return namepaths
 
@@ -1408,7 +1409,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             print("%s loaded in %.1f seconds" % (morphset, t2-t1))
 
 
-    def getActiveMorphFiles(self, trivial):
+    def getActiveMorphFiles(self):
         namepaths = []
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
@@ -1417,8 +1418,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             if self.morphset == "Body" and self.useMhxOnly:
                 morphFiles = self.selectMhxMorphs(morphFiles)
             for key,path in morphFiles.items():
-                if trivial is None or trivial.get(key, True):
-                    namepaths.append((key, path, self.bodypart))
+                namepaths.append((key, path, self.bodypart))
         return namepaths
 
 
@@ -1582,10 +1582,10 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         t1 = perf_counter()
         if not self.meshes:
             self.getFingeredRigMeshes(context)
-        namepaths = self.loadToMesh(self.meshes[0], self.chars[0], None)
+        namepaths = self.loadToMesh(self.meshes[0], self.chars[0])
         faceshapes = self.faceshapes
         for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-            self.loadToMesh(mesh, char, None)
+            self.loadToMesh(mesh, char)
         self.faceshapes = faceshapes
         self.addPropDrivers()
         msg = self.finishLoading(namepaths, context, t1)
@@ -1594,19 +1594,14 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
             raise DazError(msg, warning=True)
 
 
-    def getActiveMorphFiles(self, trivial):
+    def getActiveMorphFiles(self):
         from .finger import replaceHomeDir
         char0 = self.chars[0]
         namepaths = []
         folder = ""
         for path in self.getMultiFiles(["duf", "dsf"]):
             name = os.path.splitext(os.path.basename(path))[0]
-            if trivial is None:
-                namepaths.append((name,path,self.bodypart))
-            elif trivial.get(name, True):
-                npath = replaceHomeDir(path, char0, self.char)
-                if npath:
-                    namepaths.append((name,npath,self.bodypart))
+            namepaths.append((name,path,self.bodypart))
         return namepaths
 
 

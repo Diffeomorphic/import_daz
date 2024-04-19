@@ -9,13 +9,13 @@
 	},
 	"facs" : {
 		"prefix" : "facs_",
-		"include" : ["facs_"],
+		"include" : ["facs_ctrl_", "facs_bs_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/Daz 3D/FACS/"
 	},
 	"facsdetails" : {
 		"prefix" : "facsdetails_facs_",
-		"include" : ["facsdetails_facs_"],
+		"include" : ["facsdetails_facs_bs_", "facsdetails_facs_bs_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs/Daz 3D/FACS Details/"
 	},

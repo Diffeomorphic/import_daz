@@ -73,6 +73,7 @@ class LoadMorph(DriverUser):
         self.char = None
         self.chars = []
         self.modded = False
+        self.inFigure = {}
         self.duplicates = []
         self.baked = []
         self.mult = []
@@ -80,7 +81,6 @@ class LoadMorph(DriverUser):
         self.adjustable = {}
         self.currentAsset = None
         self.origMorphset = ""
-        self.trivial = {}
 
 
     def getAdjustProp(self):
@@ -230,7 +230,7 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def makeSingleMorph(self, name, asset, bodypart, force):
-        from .modifier import Alias, ChannelAsset
+        from .modifier import Alias, ChannelAsset, FormulaAsset
         self.currentAsset = asset
         self.setupUniqueSuffix()
         if not force:
@@ -242,14 +242,12 @@ class LoadMorph(DriverUser):
             return " _"
         self.bodypart = bodypart
         skey,ok = self.buildShape(asset)
-        if skey:
-            self.trivial[name] = False
         if not ok:
             return " #"
-        elif self.rig and self.usePropDrivers:
+        prop = asset.name
+        if self.rig and self.usePropDrivers:
             self.ercBones = {}
-            if self.makeFormulas(asset, skey):
-                self.trivial[name] = False
+            self.makeFormulas(asset, skey)
             if self.ercBones:
                 self.makeErcMorphs()
         return " *"
@@ -525,7 +523,7 @@ class LoadMorph(DriverUser):
     def addNewProp(self, raw, asset=None, skey=None):
         from .driver import setBoolProp, getPropMinMax, setProtected
         from .selector import setActivated
-        from .modifier import Alias
+        from .modifier import Alias, FormulaAsset
         final = finalProp(raw)
         if raw not in self.drivers.keys():
             self.drivers[raw] = []
@@ -544,10 +542,13 @@ class LoadMorph(DriverUser):
                     if final == finalias:
                         return
                     asset.min,asset.max,default,ovr = getPropMinMax(self.amt, finalias, False)
+            elif (self.inFigure.get(raw) and
+                  raw in self.rig.keys()):
+                return final
             if skey and not visible:
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
                 return final
-            elif asset.type == "bool":
+            if asset.type == "bool":
                 setBoolProp(self.rig, raw, asset.value, True)
                 setBoolProp(self.amt, final, asset.value, False)
             elif asset.type == "float" or asset.type == "alias":
@@ -974,7 +975,7 @@ class LoadMorph(DriverUser):
                             self.buildBoneDriver(output, bname, expr, False)
                 elif self.isDriverType('PROP', drivers):
                     self.buildPropDriver(rawProp(output), drivers)
-            elif self.visible[output]:
+            elif self.visible[output] and not self.inFigure.get(output):
                 self.buildPropDriver(rawProp(output), drivers)
             else:
                 final = finalProp(output)
@@ -1026,6 +1027,7 @@ class LoadMorph(DriverUser):
             return
         self.addMissingVars(fcu, vvars)
         self.removeUnusedVars(fcu)
+        self.inFigure[raw] = True
 
 
     def buildNewPropDriver(self, fcu, rna, channel, string, raw, drivers, string0, vvars):
