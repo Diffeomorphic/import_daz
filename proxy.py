@@ -864,12 +864,18 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
         description = "Keep UV islands",
         default = True)
 
+    iterations : IntProperty(
+        name = "Iterations",
+        description = "Number of times to unsubdivide",
+        default = 2)
+
     useQuads : BoolProperty(
         name = "Quads",
         description = "Convert as many triangles to quads as possible",
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "iterations")
         self.layout.prop(self, "keepUvIslands")
         self.layout.prop(self, "useQuads")
 
@@ -891,10 +897,10 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
                     bpy.ops.mesh.select_more()
                     bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
                     bpy.ops.mesh.select_all(action='INVERT')
-                bpy.ops.mesh.unsubdivide()
+                bpy.ops.mesh.unsubdivide(iterations = self.iterations)
                 bpy.ops.mesh.select_all(action='SELECT')
                 if self.useQuads:
-                    bpy.ops.mesh.tris_convert_to_quads(seam=True)
+                    bpy.ops.mesh.tris_convert_to_quads(face_threshold=180*D, seam=True)
                 setMode('OBJECT')
         return
 
