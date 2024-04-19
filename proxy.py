@@ -859,12 +859,18 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
     bl_description = "Replace all selected meshes by low-poly versions"
     bl_options = {'UNDO'}
 
+    keepUvIslands : BoolProperty(
+        name = "Keep UV Islands",
+        description = "Keep UV islands",
+        default = True)
+
     useQuads : BoolProperty(
         name = "Quads",
-        description = "Convert lowpoly mesh to quads if possible",
+        description = "Convert as many triangles to quads as possible",
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "keepUvIslands")
         self.layout.prop(self, "useQuads")
 
     def run(self, context):
@@ -872,18 +878,19 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
             if activateObject(context, ob):
                 setMode('EDIT')
                 bpy.ops.mesh.select_all(action='SELECT')
-                bpy.ops.uv.select_all(action='SELECT')
-                bpy.ops.uv.seams_from_islands()
-                bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
-                bpy.ops.mesh.select_all(action='DESELECT')
-                setMode('OBJECT')
-                for e in ob.data.edges:
-                    if e.use_seam:
-                        e.select = True
-                setMode('EDIT')
-                bpy.ops.mesh.select_more()
-                bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
-                bpy.ops.mesh.select_all(action='INVERT')
+                if self.keepUvIslands:
+                    bpy.ops.uv.select_all(action='SELECT')
+                    bpy.ops.uv.seams_from_islands()
+                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    setMode('OBJECT')
+                    for e in ob.data.edges:
+                        if e.use_seam:
+                            e.select = True
+                    setMode('EDIT')
+                    bpy.ops.mesh.select_more()
+                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
+                    bpy.ops.mesh.select_all(action='INVERT')
                 bpy.ops.mesh.unsubdivide()
                 bpy.ops.mesh.select_all(action='SELECT')
                 if self.useQuads:
