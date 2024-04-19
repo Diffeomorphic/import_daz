@@ -880,6 +880,7 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useQuads")
 
     def run(self, context):
+        from math import pi
         for ob in getSelectedMeshes(context):
             if activateObject(context, ob):
                 setMode('EDIT')
@@ -900,7 +901,9 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
                 bpy.ops.mesh.unsubdivide(iterations = self.iterations)
                 bpy.ops.mesh.select_all(action='SELECT')
                 if self.useQuads:
-                    bpy.ops.mesh.tris_convert_to_quads(face_threshold=180*D, seam=True)
+                    setMode('OBJECT')
+                    setMode('EDIT')
+                    bpy.ops.mesh.tris_convert_to_quads(face_threshold=pi, shape_threshold=pi, seam=True)
                 setMode('OBJECT')
         return
 
