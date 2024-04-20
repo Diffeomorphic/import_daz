@@ -175,8 +175,10 @@ else:
                     coll.assign(bone)
 
     def clearBoneCollections(rig, cnames):
-        for coll in rig.data.collections:
-            if coll.name in cnames or coll.name.startswith("Layer"):
+        for coll in list(rig.data.collections):
+            if coll is None:
+                print("What?", list(rig.data.collections))
+            elif coll.name in cnames or coll.name.startswith("Layer"):
                 rig.data.collections.remove(coll)
 
     def setBonegroup(pb, rig, bgname, color):
