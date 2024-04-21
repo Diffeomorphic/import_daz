@@ -509,9 +509,6 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.unmute_control_rig")
         self.layout.operator("daz.transfer_to_gaze")
         self.layout.operator("daz.transfer_from_gaze")
-        self.layout.separator()
-        self.layout.operator("daz.save_poses_to_file")
-        self.layout.operator("daz.load_poses_from_file")
 
 
 class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):

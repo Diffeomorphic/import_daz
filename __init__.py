@@ -29,7 +29,7 @@ bl_info = {
     "name": "DAZ importer",
     "author": "Thomas Larsson",
     "version": (1,7,4),
-    "blender": (4,0,0),
+    "blender": (4,1,0),
     "location": "UI > DAZ Setup, DAZ Runtime",
     "description": "Import native DAZ files (.duf, .dsf)",
     "warning": "",
@@ -98,7 +98,7 @@ def importModules():
                     "layers", "fix", "modifier", "load_morph", "morphing", "animation", "simple", "category", "dbzfile", "panel",
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
-                    "matedit", "scale", "tables", "proxy", "hide", "store",
+                    "matedit", "scale", "tables", "proxy", "hide",
                     "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
                     "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
                     "runtime.morph_armature"]
@@ -123,7 +123,7 @@ regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "fix", "animation", "morphing", "category", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
-            "matedit", "scale", "proxy", "rigify", "merge", "hide", "store",
+            "matedit", "scale", "proxy", "rigify", "merge", "hide",
             "mhx", "hair", "transfer", "dforce", "gaze",
             "hdmorphs", "ctrl_rig", "moho", "udim", "scan"]
 
