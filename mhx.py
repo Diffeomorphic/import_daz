@@ -1462,6 +1462,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             toeRev.lock_location = TTrue
             footRev = rpbs["foot.rev.%s" % suffix]
             footRev.lock_location = TTrue
+            footRev.lock_rotation = (False,True,True)
             footInvIk = rpbs["foot.inv.ik.%s" % suffix]
             toeInvIk = rpbs["toe.inv.ik.%s" % suffix]
 
