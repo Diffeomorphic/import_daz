@@ -688,7 +688,7 @@ class LoadMorph(DriverUser):
         if pb.name not in self.ercBones.keys():
             tfm.setTrans(factor, prop, index=idx)
             self.ercBones[pb.name] = (tfm, tfm.trans)
-            pb.lock_location = (False, False, False)
+            pb.lock_location = FFalse
             cns = getConstraint(pb, 'LIMIT_LOCATION')
             if cns:
                 cns.mute = True

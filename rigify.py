@@ -817,7 +817,7 @@ class Rigifier(RigifyCommon):
                 layer = MhxRigifyLayer[mhxlayer]
                 enableBoneNumLayer(pb.bone, gen, layer)
                 if unlock:
-                    pb.lock_location = (False, False, False)
+                    pb.lock_location = FFalse
                 self.copyBoneInfo(dname, rname, rig, gen)
 
         # Rescale custom shapes
@@ -932,7 +932,7 @@ class Rigifier(RigifyCommon):
                     bname = "%s.fk.%s" % (rname, suffix)
                     pb = gen.pose.bones.get(bname)
                 if pb:
-                    pb.lock_rotation = (False, False, False)
+                    pb.lock_rotation = FFalse
 
         # Face bone and gizmos
         if rig.DazRig == "genesis9":

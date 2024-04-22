@@ -568,6 +568,8 @@ def averageColor(value):
 
 Zero = Vector((0,0,0))
 One = Vector((1,1,1))
+TTrue = (True, True, True)
+FFalse = (False, False, False)
 
 def hasObjectTransforms(ob):
     return (ob.location != Zero or
@@ -582,7 +584,7 @@ def isLocationLocked(pb):
 
 
 def lockAllTransforms(pb):
-    pb.lock_location = pb.lock_rotation = pb.lock_scale = (True,True,True)
+    pb.lock_location = pb.lock_rotation = pb.lock_scale = TTrue
 
 
 def sorted(seq):

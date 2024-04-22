@@ -58,10 +58,12 @@ def mhxProp(prop):
 #
 #-------------------------------------------------------------
 
-def getBoneCopy(bname, model, rpbs):
+def getBoneCopy(bname, model, rpbs, lock):
     pb = rpbs[bname]
     pb.DazRotMode = model.DazRotMode
     pb.rotation_mode = model.rotation_mode
+    if lock:
+        pb.lock_location = TTrue
     return pb
 
 
@@ -384,9 +386,9 @@ def addWinder(rig, windname, bnames, layers,
     winder.lock_rotation = pb.lock_rotation
     #winder.lock_scale = pb.lock_scale
     if not (useLocation or useBaseLocation):
-        winder.lock_location = (True, True, True)
+        winder.lock_location = TTrue
     if not useScale:
-        winder.lock_scale = (True, True, True)
+        winder.lock_scale = TTrue
 
     def setLocks(locks, cns):
         if locks[0]:
@@ -839,7 +841,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             layer,unlock = getBoneLayer(pb, rig, driven)
             enableBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
-                pb.lock_location = (False,False,False)
+                pb.lock_location = FFalse
         self.checkTongueIk(rig)
         self.checkFingerIk(rig)
 
@@ -1077,9 +1079,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if bname and bname in rpbs.keys():
                 tname = self.getTweakBoneName(bname)
                 tb = rpbs[tname]
-                pb = getBoneCopy(bname, tb, rpbs)
+                pb = getBoneCopy(bname, tb, rpbs, False)
                 copyBoneInfo(tb, pb)
-                tb.lock_location = tb.lock_rotation = tb.lock_scale = (False,False,False)
+                tb.lock_location = tb.lock_rotation = tb.lock_scale = FFalse
         setMode('OBJECT')
 
 
@@ -1349,7 +1351,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 fkbone = rpbs["%s.fk.%s" % (bname, suffix)]
                 copyBoneInfo(bone, fkbone)
                 #fkbone.rotation_mode = 'QUATERNION'
-                bone.lock_rotation = (False, False, False)
+                bone.lock_rotation = FFalse
 
         for bname in ["hip", "pelvis"]:
             pb = rpbs[bname]
@@ -1383,9 +1385,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             upper_arm = rpbs["upper_arm.%s" % suffix]
             forearm = rpbs["forearm.%s" % suffix]
             hand = rpbs["hand.%s" % suffix]
-            upper_armFk = getBoneCopy("upper_arm.fk.%s" % suffix, upper_arm, rpbs)
-            forearmFk = getBoneCopy("forearm.fk.%s" % suffix, forearm, rpbs)
-            handFk = getBoneCopy("hand.fk.%s" % suffix, hand, rpbs)
+            upper_armFk = getBoneCopy("upper_arm.fk.%s" % suffix, upper_arm, rpbs, True)
+            forearmFk = getBoneCopy("forearm.fk.%s" % suffix, forearm, rpbs, True)
+            handFk = getBoneCopy("hand.fk.%s" % suffix, hand, rpbs, True)
             upper_armIk = rpbs["upper_arm.ik.%s" % suffix]
             forearmIk = rpbs["forearm.ik.%s" % suffix]
             upper_armIkTwist = rpbs.get("upper_arm.ik.twist.%s" % suffix, upper_armIk)
@@ -1409,9 +1411,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if self.usePoleTargets:
                 elbowPt = rpbs["elbow.pt.ik.%s" % suffix]
                 elbowLink = rpbs["elbow.link.%s" % suffix]
+                elbowLink.lock_location = TTrue
                 elbowPoleA = rpbs["elbowPoleA.%s" % suffix]
                 elbowPoleP = rpbs["elbowPoleP.%s" % suffix]
-                elbowPoleA.lock_location = (True,True,True)
+                elbowPoleA.lock_location = TTrue
                 elbowPoleA.lock_rotation = (True,False,True)
                 dampedTrack(elbowPoleA, handIk, rig)
                 cns = copyLocation(elbowPoleA, handIk, rig)
@@ -1421,7 +1424,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
                 stretchTo(elbowLink, elbowPt, rig)
                 elbowPt.rotation_euler[0] = -90*D
-                elbowPt.lock_rotation = (True,True,True)
+                elbowPt.lock_rotation = TTrue
             else:
                 ikConstraint(forearmIk, handIk, None, 0, 2, rig)
 
@@ -1444,18 +1447,21 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if self.useAnkleIk:
                 foot2 = rpbs["foot.2.%s" % suffix]
                 toe2 = rpbs["toe.2.%s" % suffix]
+                toe2.lock_location = TTrue
             ankleIk = rpbs["ankle.ik.%s" % suffix]
-            thighFk = getBoneCopy("thigh.fk.%s" % suffix, thigh, rpbs)
-            shinFk = getBoneCopy("shin.fk.%s" % suffix, shin, rpbs)
-            footFk = getBoneCopy("foot.fk.%s" % suffix, foot, rpbs)
-            toeFk = getBoneCopy("toe.fk.%s" % suffix, toe, rpbs)
+            thighFk = getBoneCopy("thigh.fk.%s" % suffix, thigh, rpbs, True)
+            shinFk = getBoneCopy("shin.fk.%s" % suffix, shin, rpbs, True)
+            footFk = getBoneCopy("foot.fk.%s" % suffix, foot, rpbs, True)
+            toeFk = getBoneCopy("toe.fk.%s" % suffix, toe, rpbs, True)
             thighIk = rpbs["thigh.ik.%s" % suffix]
             shinIk = rpbs["shin.ik.%s" % suffix]
             thighIkTwist = rpbs.get("thigh.ik.twist.%s" % suffix, thighIk)
             shinIkTwist = rpbs.get("shin.ik.twist.%s" % suffix, shinIk)
             footIk = rpbs["foot.ik.%s" % suffix]
             toeRev = rpbs["toe.rev.%s" % suffix]
+            toeRev.lock_location = TTrue
             footRev = rpbs["foot.rev.%s" % suffix]
+            footRev.lock_location = TTrue
             footInvIk = rpbs["foot.inv.ik.%s" % suffix]
             toeInvIk = rpbs["toe.inv.ik.%s" % suffix]
 
@@ -1472,7 +1478,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             else:
                 prop2 = None
 
-            footRev.lock_rotation = (False,True,True)
             copyTransformFkIk(thigh, thighFk, thighIkTwist, rig, prop1)
             copyTransformFkIk(shin, shinFk, shinIkTwist, rig, prop1)
             copyTransformFkIk(foot, footFk, footInvIk, rig, prop1, prop2)
@@ -1482,9 +1487,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if self.usePoleTargets:
                 kneePt = rpbs["knee.pt.ik.%s" % suffix]
                 kneeLink = rpbs["knee.link.%s" % suffix]
+                kneeLink.lock_location = TTrue
                 kneePoleA = rpbs["kneePoleA.%s" % suffix]
                 kneePoleP = rpbs["kneePoleP.%s" % suffix]
-                kneePoleA.lock_location = (True,True,True)
+                kneePoleA.lock_location = TTrue
                 kneePoleA.lock_rotation = (True,False,True)
                 dampedTrack(kneePoleA, ankleIk, rig)
                 cns = copyLocation(kneePoleA, ankleIk, rig)
@@ -1495,7 +1501,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
                 stretchTo(kneeLink, kneePt, rig)
                 kneePt.rotation_euler[0] = 90*D
-                kneePt.lock_rotation = (True,True,True)
+                kneePt.lock_rotation = TTrue
             else:
                 ikConstraint(shinIk, ankleIk, None, 0, 2, rig)
 
@@ -1508,27 +1514,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 addMuteDriver(cns, rig, prop2)
 
             self.addGazeConstraint(rig, suffix)
-
-            locks = [
-                upper_armFk, forearmFk,
-                #upper_armIkTwist, forearmIkTwist, thighIkTwist, shinIkTwist,
-                thighFk, shinFk, toeFk,
-                footRev, toeRev, toe2
-            ]
-            if self.usePoleTargets:
-                locks += [elbowLink, kneeLink]
-            self.lockLocations(locks)
-            handFk.lock_location = footFk.lock_location = (False,False,False)
+            handFk.lock_location = FFalse
+            footFk.lock_location = FFalse
             setMhx(rig, "MhaToeTarsal_%s" % suffix, False)
 
         self.addGazeFollowsHead(rig)
         setMhx(rig, "MhaLimitsOn", True)
-
-
-    def lockLocations(self, bones):
-        for pb in bones:
-            lock = (not pb.bone.use_connect)
-            pb.lock_location = (lock,lock,lock)
 
     #-------------------------------------------------------------
     #   Restore constraints for bend-twist bones

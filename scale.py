@@ -209,7 +209,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
             self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)
             bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
             lock = list(ob.lock_scale)
-            ob.lock_scale = (False,False,False)
+            ob.lock_scale = FFalse
             ob.scale *= scale
             safeTransformApply(False)
 

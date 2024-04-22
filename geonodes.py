@@ -192,7 +192,7 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
         for n,shmat in shmatlist:
             if shmat not in shmats:
                 shell.data.materials.pop(index=n)
-    shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
+    shell.lock_location = shell.lock_rotation = shell.lock_scale = TTrue
     shell.visible_shadow = False
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()

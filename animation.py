@@ -134,7 +134,7 @@ class FrameConverter:
                     bname not in ["torso"]):
                     pb = rig.pose.bones[bname]
                     locks.append((pb, tuple(pb.lock_location)))
-                    pb.lock_location = (True, True, True)
+                    pb.lock_location = TTrue
         return locks
 
     #-------------------------------------------------------------

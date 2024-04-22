@@ -454,7 +454,7 @@ class Fixer(DriverUser):
             rig.data.MhaFeatures |= F_TONGUE
             for bname in self.tongueBones:
                 pb = rig.pose.bones[bname]
-                pb.lock_location = (True, True, True)
+                pb.lock_location = TTrue
                 for cns in list(pb.constraints):
                     if cns.type == 'LIMIT_ROTATION':
                         addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
@@ -1078,7 +1078,7 @@ class BendTwists:
             trgbone = rig.pose.bones.get(bname)
             if srcbone and trgbone:
                 copyBoneInfo(srcbone, trgbone)
-                trgbone.DazRotLocks = (False, False, False)
+                trgbone.DazRotLocks = FFalse
 
         setMode('EDIT')
         for bname,tname,stretch in bendTwistBones:

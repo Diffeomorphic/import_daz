@@ -945,7 +945,7 @@ def toggleLocks(self, context, attr, lock):
             setattr(pb, lock, getattr(pb, attr))
     else:
         for pb in self.pose.bones:
-            setattr(pb, lock, (False,False,False))
+            setattr(pb, lock, FFalse)
 
 def toggleRotLocks(self, context):
     toggleLocks(self, context, "DazRotLocks", "lock_rotation")
@@ -1015,7 +1015,7 @@ class DAZ_OT_DisableLocksLimits(DazOperator, LockEnabler, IsMeshArmature):
     limit = 0.0
 
     def setLocks(self, pb):
-        pb.lock_location = pb.lock_rotation = (False, False, False)
+        pb.lock_location = pb.lock_rotation = FFalse
 
 #----------------------------------------------------------
 #   Toggle Inherit Scale

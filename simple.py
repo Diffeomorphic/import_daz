@@ -676,7 +676,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toe, heelIK, toeIK, tarsalIK = self.getEntry(self.footTable, prefix, rpbs)
                     toeIK.rotation_mode = toe.rotation_mode
                     tarsalIK.rotation_mode = foot.rotation_mode
-                    toeIK.lock_location = tarsalIK.lock_location = (True,True,True)
+                    toeIK.lock_location = tarsalIK.lock_location = TTrue
                     toeIK.lock_rotation = tarsalIK.lock_rotation = (False, True, True)
                     driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
                     cns = copyTransform(foot, footIK, rig, prop=legProp, space='POSE')
@@ -731,21 +731,21 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
             if IK.usePoleTargets:
                 if self.useArms:
-                    elbow.lock_rotation = (True,True,True)
+                    elbow.lock_rotation = TTrue
                     self.setCustomShape(elbow, "CS_Pole")
                     self.addToLayer(elbow, S_ARMIK, rig, "IK")
                     stretch = rpbs[self.stretchName(elbow.name)]
                     stretchTo(stretch, elbow, rig)
                     self.addToLayer(stretch, S_ARMIK, rig, "IK")
-                    stretch.lock_rotation = stretch.lock_location = (True,True,True)
+                    stretch.lock_rotation = stretch.lock_location = TTrue
                 if self.useLegs:
-                    knee.lock_rotation = (True,True,True)
+                    knee.lock_rotation = TTrue
                     self.setCustomShape(knee, "CS_Pole")
                     self.addToLayer(knee, S_LEGIK, rig, "IK")
                     stretch = rpbs[self.stretchName(knee.name)]
                     stretchTo(stretch, knee, rig)
                     self.addToLayer(stretch, S_LEGIK, rig, "IK")
-                    stretch.lock_rotation = stretch.lock_location = (True,True,True)
+                    stretch.lock_rotation = stretch.lock_location = TTrue
             else:
                 elbow = knee = None
 
@@ -758,7 +758,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     copyBoneProps(foreBend, foreIK)
                     foreIK.lock_ik_z = True
                     shldrIK.lock_rotation = (True, False, True)
-                    shldrIK.lock_location = foreIK.lock_location = (True, True, True)
+                    shldrIK.lock_location = foreIK.lock_location = TTrue
                     if self.useImproveIk:
                         addHint(foreIK, rig)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
@@ -780,7 +780,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     copyBoneProps(shin, shinIK)
                     shinIK.lock_ik_y = shinIK.lock_ik_z = True
                     thighIK.lock_rotation = (True, False, True)
-                    thighIK.lock_location = shinIK.lock_location = (True, True, True)
+                    thighIK.lock_location = shinIK.lock_location = TTrue
                     if self.useImproveIk:
                         addHint(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
@@ -1326,7 +1326,7 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
         if self.unlock:
             for chain in self.chains:
                 pb = rig.pose.bones[chain[-1]]
-                pb.lock_location = (False,False,False)
+                pb.lock_location = FFalse
         setMode('OBJECT')
         for ob,wmat in wmats:
             setWorldMatrix(ob, wmat)
@@ -1512,8 +1512,8 @@ def improveIk(rig, exclude=[]):
                 pb.rotation_euler[0] = 30*D
                 pb.lock_rotation[0] = True
     for pb,cns,mute in ikconstraints:
-        pb.lock_rotation = (True, True, True)
-        pb.lock_location = (True, True, True)
+        pb.lock_rotation = TTrue
+        pb.lock_location = TTrue
         cns.mute = mute
         pb.use_ik_limit_y = pb.use_ik_limit_z = False
         pb.lock_ik_y = pb.lock_ik_z = True

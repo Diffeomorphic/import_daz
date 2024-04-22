@@ -919,13 +919,13 @@ def register():
     bpy.types.PoseBone.DazRotLocks = BoolVectorProperty(
         name = "Rotation Locks",
         size = 3,
-        default = (False,False,False)
+        default = FFalse
     )
 
     bpy.types.PoseBone.DazLocLocks = BoolVectorProperty(
         name = "Location Locks",
         size = 3,
-        default = (False,False,False)
+        default = FFalse
     )
 
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
