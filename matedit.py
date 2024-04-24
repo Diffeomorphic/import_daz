@@ -1136,16 +1136,14 @@ class DAZ_OT_SetShellInfluence(DazOperator, IsMeshArmature):
 
 
 def getShellProps(context):
-    ob = context.object
     filter = context.scene.DazFilter.lower()
     rig = getRigFromContext(context)
-    meshes = [rig]
-    if ob.type == 'MESH' and ob.DazVisibilityDrivers:
-        meshes = [ob]
     if rig:
-        meshes += [ob1 for ob1 in rig.children if ob1 != ob and ob1.DazVisibilityDrivers]
+        objects = [rig] + [ob for ob in rig.children if ob.DazVisibilityDrivers]
+    else:
+        objects = [context.object]
     props = {}
-    for ob in meshes:
+    for ob in objects:
         for prop in ob.keys():
             if (prop[0:6] == "INFLU " and
                 filter in prop[6:].lower() and
@@ -1185,13 +1183,16 @@ class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
 
 def driveShellInfluence(ob):
     from .driver import setFloatProp, addDriver
+    rig = ob
+    if GS.shellDriverType == 'ARMATURE' and ob.parent:
+        rig = ob.parent
     for mat in ob.data.materials:
         if mat and mat.node_tree:
             for node in mat.node_tree.nodes:
                 if isShellNode(node):
                     prop = "INFLU %s" % node.label
-                    setFloatProp(ob, prop, 1.0, 0.0, 10.0, True)
-                    addDriver(node.inputs["Influence"], "default_value", ob, propRef(prop), "x")
+                    setFloatProp(rig, prop, 1.0, 0.0, 10.0, True)
+                    addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
                     ob.DazVisibilityDrivers = True
 
 

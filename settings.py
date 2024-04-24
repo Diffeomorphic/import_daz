@@ -103,7 +103,7 @@ class GlobalSettings:
         self.imageInterpolation = 'Cubic'
         self.useGhostLights = False
         self.useUnusedTextures = False
-        self.useShellInfluDrivers = False
+        self.shellDriverType = 'NONE'
         self.useLayeredInflu = False
         self.useLayeredShells = True
 

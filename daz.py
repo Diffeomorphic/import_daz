@@ -661,7 +661,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build Unused Textures",
         description = "Build texture found in unused channels")
 
-    useShellInfluDrivers : BoolProperty(
+    shellDriverType : EnumProperty(
+        items = [('NONE', "None", "Don't create shell influence drivers"),
+                 ('MESH', "Mesh", "Shell influence driven by mesh properties"),
+                 ('ARMATURE', "Armature", "Shell influence driven by armature properties")],
         name = "Shell Influence Drivers",
         description = "Add drivers to shell influence")
 
@@ -811,7 +814,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             box.prop(self, "useFakeCaustics")
         box.prop(self, "useImageInterpolation")
         box.prop(self, "useUnusedTextures")
-        box.prop(self, "useShellInfluDrivers")
+        box.prop(self, "shellDriverType")
         box.prop(self, "useLayeredInflu")
         box.prop(self, "useLayeredShells")
         box.prop(self, "handleRenderSettings")
