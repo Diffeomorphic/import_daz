@@ -1035,6 +1035,10 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
         row = layout.row()
         row.prop(rig, "DazLegIK_L", text="Leg")
         row.prop(rig, "DazLegIK_R", text="Leg")
+        layout.label(text="IK Stretchiness")
+        row = layout.row()
+        row.prop(rig, "DazStretchArms", text="Arms")
+        row.prop(rig, "DazStretchLegs", text="Legs")
 
         layout.label(text="Snap FK bones")
         row = layout.row()
