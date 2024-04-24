@@ -104,7 +104,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         if not flt_flags:
             flt_flags = [self.bitflag_filter_item] * len(morphs)
 
-        if GS.showUsedPropsOnly:
+        if GS.showUsedPropsOnly and isinstance(data, bpy.types.Object):
             amt = data.data
             flt_flags = [flag * (amt.get(finalProp(morph.name), 0.0) != 0.0)
                          for flag,morph in zip(flt_flags, morphs)]

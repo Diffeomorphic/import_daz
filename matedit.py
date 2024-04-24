@@ -1139,7 +1139,7 @@ def getShellProps(context):
     ob = context.object
     filter = context.scene.DazFilter.lower()
     rig = getRigFromContext(context)
-    meshes = []
+    meshes = [rig]
     if ob.type == 'MESH' and ob.DazVisibilityDrivers:
         meshes = [ob]
     if rig:
