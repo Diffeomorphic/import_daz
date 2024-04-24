@@ -132,8 +132,11 @@ def copyLocation(bone, target, rig, prop=None, expr="x", space='POSE'):
     cns.name = "Copy Location %s" % target.name
     cns.target = rig
     cns.subtarget = target.name
-    if prop is not None:
+    if isinstance(prop, str):
         addDriver(cns, "influence", rig, mhxProp(prop), expr)
+    elif prop is not None:
+        prop1,prop2 = prop
+        addDriver(cns, "influence", rig, (mhxProp(prop1), mhxProp(prop2)), expr)
     cns.owner_space = space
     cns.target_space = space
     return cns
