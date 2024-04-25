@@ -660,7 +660,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 hand, handIK, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbow = self.getEntry(self.armTable, prefix, rpbs)
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
                 setStretchLine(elbow)
-                copyLocation(hand, handIK, rig, ("DazStretchArms", armProp), expr="x1*x2", space='POSE')
+                cns = copyLocation(hand, handIK, rig, space='POSE')
+                addDriver(cns, "influence", rig, (mhxProp("DazStretchArms"), mhxProp(armProp)), "x1*x2")
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
                 setEulerOrder(cns, hand.rotation_mode)
                 self.addToLayer(handIK, S_ARMIK, rig, "IK")
@@ -673,7 +674,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
                     self.addToLayer(footIK, S_LEGIK, rig, "IK")
-                    copyLocation(foot, footIK, rig, ("DazStretchLegs", legProp), expr="x1*x2", space='POSE')
+                    cns = copyLocation(foot, footIK, rig, space='POSE')
+                    addDriver(cns, "influence", rig, (mhxProp("DazStretchLegs"), mhxProp(legProp)), "x1*x2")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                 else:
@@ -683,7 +685,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toeIK.lock_location = tarsalIK.lock_location = TTrue
                     toeIK.lock_rotation = tarsalIK.lock_rotation = (False, True, True)
                     driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
-                    copyLocation(foot, footIK, rig, ("DazStretchLegs", legProp), expr="x1*x2", space='POSE')
+                    cns = copyLocation(foot, footIK, rig, space='POSE')
+                    addDriver(cns, "influence", rig, (mhxProp("DazStretchLegs"), mhxProp(legProp)), "x1*x2")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                     cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
