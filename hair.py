@@ -2093,6 +2093,16 @@ class PinOperator(DazPropsOperator):
             self.curveMapping = cn.name
         return self.nodeGroup.nodes[self.curveMapping]
 
+    def initMapping(self):
+        node = self.getCurveMapping()
+        self.mapping = node.mapping
+        self.curve = node.mapping.curves[3]
+
+    def addWeight(self, vgrp, vn, w):
+        x = min(1.0, max(0.0, w))
+        w = self.mapping.evaluate(self.curve, x)
+        vgrp.add([vn], w, 'REPLACE')
+
     def invoke(self, context, event):
         node = self.getCurveMapping()
         cu = node.mapping.curves[3]
@@ -2114,14 +2124,8 @@ class DAZ_OT_MeshAddPinning(PinOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        def addWeight(vn, w):
-            x = min(1.0, max(0.0, w))
-            w = node.mapping.evaluate(cu, x)
-            vgrp.add([vn], w, 'REPLACE')
-
         ob = context.object
-        node = self.getCurveMapping()
-        cu = node.mapping.curves[3]
+        self.initMapping()
         if "HairPinning" in ob.vertex_groups.keys():
             vgrp = ob.vertex_groups["HairPinning"]
             ob.vertex_groups.remove(vgrp)
@@ -2131,7 +2135,7 @@ class DAZ_OT_MeshAddPinning(PinOperator, IsMesh):
             m = 0
             for f in ob.data.polygons:
                 for n,vn in enumerate(f.vertices):
-                    addWeight(vn, 1-uvs[m+n].uv[1])
+                    self.addWeight(vgrp, vn, 1-uvs[m+n].uv[1])
                 m += len(f.vertices)
         elif "Distance" in ob.vertex_groups.keys():
             distgrp = ob.vertex_groups["Distance"]
@@ -2139,8 +2143,56 @@ class DAZ_OT_MeshAddPinning(PinOperator, IsMesh):
             for v in ob.data.vertices:
                 for g in v.groups:
                     if g.group == idx:
-                        addWeight(v.index, 1-g.weight)
+                        self.addWeight(vgrp, v.index, 1-g.weight)
                         break
+# ---------------------------------------------------------------------
+#   Modify vertex group
+# ---------------------------------------------------------------------
+
+class DAZ_OT_ModifyVertexGroup(PinOperator, IsMesh):
+    bl_idname = "daz.modify_vertex_group"
+    bl_label = "Modify Vertex Group"
+    bl_description = "Modify the active vertex group"
+    bl_options = {'UNDO'}
+
+    direction : EnumProperty(
+        items = [("+X", "+X", "+X"),
+                 ("-X", "-X", "-X"),
+                 ("+Y", "+Y", "+Y"),
+                 ("-Y", "-Y", "-Y"),
+                 ("+Z", "+Z", "+Z"),
+                 ("-Z", "-Z", "-Z")],
+        name = "Direction")
+
+
+    def draw(self, context):
+        PinOperator.draw(self, context)
+        ob = context.object
+        vgrp = ob.vertex_groups.active
+        box = self.layout.box()
+        box.label(text="Vertex group: %s" % vgrp.name)
+        self.layout.prop(self, "direction")
+
+
+    def run(self, context):
+        vectors = {
+            "+X" : (1,0,0),
+            "-X" : (-1,0,0),
+            "+Y" : (0,1,0),
+            "-Y" : (0,-1,0),
+            "+Z" : (0,0,1),
+            "-Z" : (0,0,-1)
+        }
+        ob = context.object
+        vgrp = ob.vertex_groups.active
+        self.initMapping()
+        ez = Vector(vectors[self.direction])
+        zs = [ez.dot(v.co) for v in ob.data.vertices]
+        z0 = min(zs)
+        z1 = max(zs)
+        for v in ob.data.vertices:
+            w = (ez.dot(v.co) - z0)/(z1 - z0)
+            self.addWeight(vgrp, v.index, w)
 
 # ---------------------------------------------------------------------
 #   Initialize
@@ -2656,6 +2708,7 @@ classes = [
     DAZ_OT_ColorHair,
     DAZ_OT_ConnectHair,
     DAZ_OT_MeshAddPinning,
+    DAZ_OT_ModifyVertexGroup,
     DAZ_OT_AddHairRig,
 ]
 
