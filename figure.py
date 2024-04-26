@@ -791,7 +791,7 @@ class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
 
     def getBoneNames(self, rig):
         exclude = ["lMetatarsals", "rMetatarsals", "l_metatarsal", "r_metatarsal"]
-        driven = getDrivenBoneFcurves(rig)
+        driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
         bnames = {}
         for pb in rig.pose.bones:
             if (pb.name in driven.keys() and
@@ -902,7 +902,7 @@ class DAZ_OT_FixLegacyPosable(DazOperator, ExtraBones, IsArmature):
 
 def finalizeArmature(rig):
     extras = ExtraBones()
-    drivers = getDrivenBoneFcurves(rig)
+    drivers = getDrivenBoneFcurves(rig, useRigifySafe=True)
     for pb in rig.pose.bones:
         if not isDrvBone(pb.name):
             drvname = drvBone(pb.name)
@@ -957,39 +957,44 @@ def toggleLocLocks(self, context):
 #   Toggle Limits
 #----------------------------------------------------------
 
-def toggleLimits(self, context, attr, type):
+def toggleLimits(rig, context, attr, type, exclude):
     auto = context.scene.tool_settings.use_keyframe_insert_auto
-    driven = getDrivenBoneFcurves(self)
-    for pb in self.pose.bones:
+    driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
+    for pb in rig.pose.bones:
         if pb.name in driven.keys():
             continue
         for cns in pb.constraints:
-            if cns.type == type:
+            if cns.type == type and cns.name not in exclude:
                 cns.mute = False
-                cns.influence = getattr(self, attr)
+                cns.influence = getattr(rig, attr)
                 if auto:
                     cns.keyframe_insert("influence")
 
-def toggleRotLimits(self, context):
-    toggleLimits(self, context, "DazRotLimits", "LIMIT_ROTATION")
+def toggleRotLimits(rig, context):
+    exclude = ["Hint"] if rig.DazRig == "mhx" else []
+    toggleLimits(rig, context, "DazRotLimits", "LIMIT_ROTATION", exclude)
 
-def toggleLocLimits(self, context):
-    toggleLimits(self, context, "DazLocLimits", "LIMIT_LOCATION")
+def toggleLocLimits(rig, context):
+    toggleLimits(rig, context, "DazLocLimits", "LIMIT_LOCATION", [])
 
 
 class LockEnabler:
     def run(self, context):
         rig = getRigFromContext(context)
+        exclude = ["Hint"] if rig.DazRig == "mhx" else []
+        driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
         rig.DazLocLocks = self.lock
         rig.DazRotLocks = self.lock
         rig.DazLocLimits = self.limit
         rig.DazRotLimits = self.limit
         for pb in rig.pose.bones:
+            if pb.name in driven.keys():
+                continue
             self.setLocks(pb)
             for cns in pb.constraints:
                 if cns.type == 'LIMIT_LOCATION':
                     cns.influence = self.limit
-                elif cns.type == 'LIMIT_ROTATION':
+                elif cns.type == 'LIMIT_ROTATION' and cns.name not in exclude:
                     cns.influence = self.limit
 
 

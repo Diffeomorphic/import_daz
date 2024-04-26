@@ -242,9 +242,13 @@ def getDriver(rna, channel, idx):
     return None
 
 
-def getDrivenBoneFcurves(rig):
+def getDrivenBoneFcurves(rig, useRigifySafe=False):
+    driven = {}
+    if useRigifySafe:
+        for pb in rig.pose.bones:
+            if pb.name.startswith(("DEF-", "ORG-", "MCH-")):
+                driven[pb.name] = []
     if rig.animation_data:
-        driven = {}
         skip = ["HdOffset", "TlOffset"]
         for fcu in rig.animation_data.drivers:
             bname,channel = getBoneChannel(fcu)
@@ -252,8 +256,7 @@ def getDrivenBoneFcurves(rig):
                 if bname not in driven.keys():
                     driven[bname] = []
                 driven[bname].append(fcu)
-        return driven
-    return {}
+    return driven
 
 
 def getPropDrivers(rig):
