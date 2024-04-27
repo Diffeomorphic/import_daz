@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import bpy
+from bpy.props import BoolProperty
 import os
 from .asset import Asset
 from .channels import Channels
@@ -334,12 +335,12 @@ class DAZ_OT_RenderFrames(bpy.types.Operator):
     bl_label = "Render Frames"
     bl_description = "Render a range of frames as still images.\nTo overcome problems with morphing armatures and rendering"
 
-    useAllArmatures : bpy.props.BoolProperty(
+    useAllArmatures : BoolProperty(
         name = "All Armatures",
         description = "Auto morph all visible armatures instead of just the visible ones",
         default = True)
 
-    useOpenGl : bpy.props.BoolProperty(
+    useOpenGl : BoolProperty(
         name = "Open GL",
         description = "Open GL rendering",
         default = False)
@@ -390,7 +391,7 @@ class DAZ_OT_RenderFrames(bpy.types.Operator):
         context.evaluated_depsgraph_get().update()
         scn.render.filepath = "%s%04d" % (self.filepath, scn.frame_current)
         try:
-            if self.rigs:
+            if self.rigs and GS.ercMethod.startswith("Armature"):
                 from .runtime.morph_armature import onFrameChangeDaz
                 onFrameChangeDaz(scn)
             if self.useOpenGl:

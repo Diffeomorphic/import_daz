@@ -1014,8 +1014,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 for skey in ob.data.shape_keys.key_blocks:
                     if self.useShapekeys or skey.name not in rig.keys():
                         skey.value = 0.0
-                        if self.useInsertKeys:
-                            skey.keyframe_insert("value", frame=frame)
+                        #if self.useInsertKeys:
+                        #    skey.keyframe_insert("value", frame=frame)
 
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()

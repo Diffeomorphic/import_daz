@@ -465,6 +465,7 @@ class CyclesTree(Tree):
     def getFromMaterial(self, mat):
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
+        # self.texco should be a socket, not a node?
         self.texco = findTexco(self)
         self.normal = findNode(self, 'NORMAL_MAP')
         self.bump = findNode(self, 'BUMP')
@@ -568,7 +569,7 @@ class CyclesTree(Tree):
             modulo,mapping = self.addMappingNode((dx,dy,sx,sy,0), None)
             if mapping:
                 self.linkVector(self.texco, modulo, 0)
-                self.texco = mapping
+                self.texco = mapping.outputs["Vector"]
 
 
     def addMappingNode(self, data, map, imgname=""):

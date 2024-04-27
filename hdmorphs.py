@@ -212,7 +212,7 @@ class DispAdder:
 
     def loadDispMaps(self, mat, args):
         from .tree import findNodes, pruneNodeTree, XSIZE
-        from .cycles import findTree, findTexco
+        from .cycles import findTree
         from .driver import makePropDriver
         if not self.checkTileUsed(mat, args):
             return
@@ -319,7 +319,7 @@ class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from .driver import makePropDriver
         from .tree import findNode, findLinksTo, XSIZE, pruneNodeTree
-        from .cycles import findTree, findTexco
+        from .cycles import findTree
         from .material import NORMAL
 
         if not self.checkTileUsed(mat, args):
