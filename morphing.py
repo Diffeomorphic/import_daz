@@ -616,8 +616,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         self.char = char
         namepaths = []
         namepaths = self.getActiveMorphFiles()
-        if not ES.easy:
-            print("Load %d morphs to %s" % (len(namepaths), self.mesh.name))
+        print("Load %s to %s (%d morphs)" % (self.morphset, self.mesh.name, len(namepaths)))
         if namepaths:
             LS.forMorphLoad(self.mesh)
             self.loadAllMorphs(namepaths)
@@ -724,14 +723,15 @@ class MorphLoader(LoadMorph, PosableMaker):
         from .main import getFaceMeshes
         ob = self.meshes[0]
         meshes = getFaceMeshes(self.rig, ob)
-        meshes = [mesh for mesh in meshes if not mesh.DazMesh]
-        transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
+        transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys(), includeRigid=False)
 
 
-def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True, needsTarget=True):
+def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True, needsTarget=True, includeRigid=True):
     if not snames:
         return
     activateObject(context, ob)
+    if not includeRigid:
+        meshes = [mesh for mesh in meshes if "Rigidity" not in mesh.vertex_groups.keys()]
     for mesh in meshes:
         selectSet(mesh, True)
     theFilePaths = LS.theFilePaths
@@ -1392,7 +1392,6 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             self.morphset = morphset
             self.bodypart = bodypart
             self.faceshapes = {}
-            print("Load %s" % morphset)
             self.morphFiles,msg = MP.getAllMorphFiles(self.chars, self.morphset)
             if ignoreFingers:
                 for char,struct in list(self.morphFiles.items()):
