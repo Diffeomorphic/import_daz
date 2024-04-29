@@ -123,6 +123,7 @@ class GlobalSettings:
         self.useModifiedMesh = False
         self.useDefaultDrivers = True
         self.useOptimizeJcms = False
+        self.usePartialRigidity = True
 
         self.useArmature = True
         self.useLockLoc = True

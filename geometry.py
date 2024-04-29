@@ -1376,7 +1376,11 @@ class Geometry(Asset, Channels):
         from .modifier import buildVertexGroup
         if self.rigidity:
             if "weights" in self.rigidity.keys():
-                buildVertexGroup(ob, "Rigidity", self.rigidity["weights"]["values"])
+                rweights = self.rigidity["weights"]["values"]
+                wvalues = [w for vn,w in rweights]
+                if min(wvalues) > 0.9999:
+                    ob.data["DazFullyRigid"] = True
+                buildVertexGroup(ob, "Rigidity", rweights)
             if "groups" not in self.rigidity.keys():
                 return
             for group in self.rigidity["groups"]:

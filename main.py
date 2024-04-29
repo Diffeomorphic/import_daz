@@ -1004,13 +1004,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Transfer shapekeys to clothes and lashes
         if self.useTransferClothes and self.fitMeshes != 'MORPHED':
             print("Transfer to clothes")
-            self.transferShapes(context, mainMesh, clothes, True, "NoFace", includeRigid=False)
+            self.transferShapes(context, mainMesh, clothes, True, "NoFace")
         if self.useTransferHair and self.fitMeshes != 'MORPHED':
             print("Transfer to hair meshes")
-            self.transferShapes(context, mainMesh, hairs, True, "All", includeRigid=False)
+            self.transferShapes(context, mainMesh, hairs, True, "All")
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
             print("Transfer to face meshes")
-            self.transferShapes(context, mainMesh, lashes, True, "All", includeRigid=False)
+            self.transferShapes(context, mainMesh, lashes, True, "All")
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
@@ -1037,7 +1037,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         return None
 
 
-    def transferShapes(self, context, ob, meshes, useDrivers, bodypart, includeRigid=True):
+    def transferShapes(self, context, ob, meshes, useDrivers, bodypart):
         if not (ob and meshes):
             return
         from .selector import classifyShapekeys
@@ -1053,7 +1053,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             else:
                 snames = [sname for sname,bpart in bodyparts.items() if bpart != bodypart]
             snames = [sname for sname in snames if not getBulgeBone(sname)]
-            transferShapesToMeshes(context, ob, meshes, snames, useDrivers=useDrivers, useOverwrite=False, includeRigid=includeRigid)
+            transferShapesToMeshes(context, ob, meshes, snames, useDrivers=useDrivers, useOverwrite=False)
 
 #------------------------------------------------------------------
 #   Utilities

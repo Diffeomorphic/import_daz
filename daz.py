@@ -390,6 +390,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Optimize JCM Drivers",
         description = "Optimize drivers when loading JCMs and flexions. Experimental")
 
+    usePartialRigidity : BoolProperty(
+        name = "Partial Rigidity",
+        description = "Ignore fully rigid meshes in shapekey transfer.\nSpeeds up easy import but can lead to wrong results for some shapekeys")
+
     useMakeHiddenSliders : BoolProperty(
         name = "Make Hidden Sliders",
         description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
@@ -792,6 +796,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useModifiedMesh")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
+        box.prop(self, "usePartialRigidity")
 
         box = col.box()
         box.label(text = "Presets")

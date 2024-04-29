@@ -723,15 +723,13 @@ class MorphLoader(LoadMorph, PosableMaker):
         from .main import getFaceMeshes
         ob = self.meshes[0]
         meshes = getFaceMeshes(self.rig, ob)
-        transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys(), includeRigid=False)
+        transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
 
 
-def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True, needsTarget=True, includeRigid=True):
+def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True):
     if not snames:
         return
     activateObject(context, ob)
-    if not includeRigid:
-        meshes = [mesh for mesh in meshes if "Rigidity" not in mesh.vertex_groups.keys()]
     for mesh in meshes:
         selectSet(mesh, True)
     theFilePaths = LS.theFilePaths
@@ -740,7 +738,8 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
         bpy.ops.daz.transfer_shapekeys(
             useDrivers=useDrivers,
             useOverwrite=useOverwrite,
-            needsTarget=needsTarget)
+            onRigidity=('PARTIAL' if GS.usePartialRigidity else 'FULL'),
+            needsTarget=False)
     except DazError:
         pass
     finally:
@@ -2030,16 +2029,19 @@ class RigidTransfer:
         description = "Transfer shapekeys to non-conforming meshes",
         default = False)
 
-    ignoreRigidity : BoolProperty(
-        name = "Ignore Rigidity Groups",
-        description = "Ignore rigidity groups when auto-transfer morphs.\nMorphs may differ from DAZ Studio.",
-        default = False)
+    onRigidity : EnumProperty(
+        items = [('NONE', "None", "Ignore all rigidity groups.\nMorphs can differ from DAZ Studio"),
+                 ('PARTIAL', "Partial", "Ignore rigidity for fully rigid meshes.\nMorphs can differ from DAZ Studio"),
+                 ('FULL', "Full", "Use rigidity groups")],
+        name = "Rigidity",
+        description = "Handling of rigidity groups when auto-transfer morphs",
+        default = 'FULL')
 
     def draw(self, context):
         self.layout.prop(self, "useTransferOthers")
         if self.useTransferOthers:
             self.layout.prop(self, "useNonConforming")
-            self.layout.prop(self, "ignoreRigidity")
+            self.layout.prop(self, "onRigidity")
 
 
 class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, IsMeshArmature):
@@ -2079,7 +2081,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     try:
                         bpy.ops.daz.transfer_shapekeys(
                             useNonConforming = self.useNonConforming,
-                            ignoreRigidity = self.ignoreRigidity)
+                            onRigidity = self.onRigidity)
                     finally:
                         LS.theFilePaths = filepaths
             self.makePosable(context, self.rig)
