@@ -122,13 +122,13 @@ class TileFixer:
                         node.label = "%s_%d" % (base, mattile)
 
 
-    def udimsFromGraft(self, aob, cob):
-        cuvlayer = cob.data.uv_layers.active
+    def udimsFromGraft(self, graft, hum):
+        cuvlayer = hum.data.uv_layers.active
         ucoord = []
         vcoord = []
-        fmasked = [face.a for face in aob.data.DazMaskGroup]
+        fmasked = [face.a for face in graft.data.DazMaskGroup]
         m = 0
-        for fn,f in enumerate(cob.data.polygons):
+        for fn,f in enumerate(hum.data.polygons):
             if fn in fmasked:
                 for j,vn in enumerate(f.vertices):
                     uv = cuvlayer.data[m+j].uv
@@ -136,8 +136,8 @@ class TileFixer:
                     vcoord.append(uv[1])
             m += len(f.vertices)
         tile,udim,vdim = self.getTile(ucoord, vcoord)
-        print("Move %s UVs to tile %d" % (aob.name, tile))
-        auvlayer = aob.data.uv_layers.active
+        print("Move %s UVs to tile %d" % (graft.name, tile))
+        auvlayer = graft.data.uv_layers.active
         for data in auvlayer.data:
             uvs = data.uv
             uvs[0] += udim - int(uvs[0])
@@ -215,10 +215,10 @@ class DAZ_OT_TilesFromGraft(DazOperator, TileFixer, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        cob = context.object
-        for aob in getSelectedMeshes(context):
-            if aob != cob:
-                self.udimsFromGraft(aob, cob)
+        hum = context.object
+        for graft in getSelectedMeshes(context):
+            if graft != hum:
+                self.udimsFromGraft(graft, hum)
 
 #----------------------------------------------------------
 #   Fix Texture Tiles

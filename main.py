@@ -861,11 +861,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             for ob in meshes[1:]:
                 finger = getFingerPrint(ob)
                 if ob.data.DazGraftGroup:
-                    cob = self.getGraftParent(ob, meshes)
-                    if cob:
-                        if cob.name not in geografts.keys():
-                            geografts[cob.name] = ([], cob)
-                        geografts[cob.name][0].append(ob)
+                    hum = self.getGraftParent(ob, meshes)
+                    if hum:
+                        if hum.name not in geografts.keys():
+                            geografts[hum.name] = ([], hum)
+                        geografts[hum.name][0].append(ob)
                     else:
                         clothes.append(ob)
                 elif ob in lmeshes:
@@ -981,16 +981,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if geografts:
             if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
                 print("Transfer to geografts")
-                for aobs,cob in geografts.values():
-                    if cob == mainMesh:
-                        self.transferShapes(context, cob, aobs, (not self.useMergeGeografts), "NoFace")
-                for aobs,cob in geografts.values():
-                    if cob != mainMesh:
-                        self.transferShapes(context, cob, aobs, (not self.useMergeGeografts), "All")
+                for grafts,hum in geografts.values():
+                    if hum == mainMesh:
+                        self.transferShapes(context, hum, grafts, (not self.useMergeGeografts), "NoFace")
+                for grafts,hum in geografts.values():
+                    if hum != mainMesh:
+                        self.transferShapes(context, hum, grafts, (not self.useMergeGeografts), "All")
             if self.useMergeGeografts and activateObject(context, mainMesh):
-                for aobs,cob in geografts.values():
-                    for aob in aobs:
-                        selectSet(aob, True)
+                for grafts,hum in geografts.values():
+                    for graft in grafts:
+                        selectSet(graft, True)
                 print("Merge geografts")
                 bpy.ops.daz.merge_geografts(
                     useMergeUvs = self.useMergeUvs,
@@ -1031,9 +1031,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def getGraftParent(self, ob, meshes):
-        for cob in meshes:
-            if len(cob.data.vertices) == ob.data.DazVertexCount:
-                return cob
+        for hum in meshes:
+            if len(hum.data.vertices) == ob.data.DazVertexCount:
+                return hum
         return None
 
 

@@ -248,9 +248,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             finger = getFingerPrint(hum)
             bpy.ops.object.duplicate()
             for ob in getSelectedMeshes(context):
-                if getFingerPrint(ob) == finger:
-                    if ob != hum:
-                        dup = ob
+                if getFingerPrint(ob) == finger and ob != hum:
+                    dup = ob
         if dup is None:
             return
         cname = baseName(hum.name)
@@ -626,8 +625,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if ob.type == 'MESH':
                 for mod in ob.modifiers:
                     if mod.type == 'NODES':
-                        aob = mod.get(socket1)
-                        if aob and aob in grafts:
+                        graft = mod.get(socket1)
+                        if graft and graft in grafts:
                             mod[socket1] = hum
 
 
@@ -637,8 +636,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 hum[prop] = value
                 setOverridable(hum, prop)
                 hum.DazVisibilityDrivers = True
-        for aob in grafts:
-            for mat in aob.data.materials:
+        for graft in grafts:
+            for mat in graft.data.materials:
                 if mat and mat.node_tree.animation_data:
                     for fcu in mat.node_tree.animation_data.drivers:
                         for var in fcu.driver.variables:
@@ -707,7 +706,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 print('New active UV layer: "%s"' % uvlayer.name)
 
 
-    def renameUvLayers(self, aob):
+    def renameUvLayers(self, graft):
         def replaceUvMaps(tree):
             for node in tree.nodes:
                 if node.type in ['NORMAL_MAP', 'UVMAP']:
@@ -717,19 +716,19 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     replaceUvMaps(node.node_tree)
 
         renamed = {}
-        for uvlayer in aob.data.uv_layers:
+        for uvlayer in graft.data.uv_layers:
             if uvlayer.name.startswith(("Base", "Default")):
-                newname = "%s:%s" % (uvlayer.name, aob.name)
+                newname = "%s:%s" % (uvlayer.name, graft.name)
                 renamed[uvlayer.name] = newname
                 uvlayer.name = newname
         if renamed:
-            for mat in aob.data.materials:
+            for mat in graft.data.materials:
                 if mat:
                     replaceUvMaps(mat.node_tree)
 
 
-    def copyBodyPart(self, aob, hum):
-        apgs = aob.data.DazBodyPart
+    def copyBodyPart(self, graft, hum):
+        apgs = graft.data.DazBodyPart
         cpgs = hum.data.DazBodyPart
         for sname,apg in apgs.items():
             if sname not in cpgs.keys():
@@ -738,52 +737,52 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 cpg.s = apg.s
 
 
-    def moveGraftVerts(self, aob, hum, cvgrps):
+    def moveGraftVerts(self, graft, hum, cvgrps):
         from .modifier import addShapekey, getBasicShape
         cvgroups = dict([(vgrp.index, vgrp.name) for vgrp in hum.vertex_groups])
-        averts = aob.data.vertices
+        averts = graft.data.vertices
         cverts = hum.data.vertices
-        for pair in aob.data.DazGraftGroup:
+        for pair in graft.data.DazGraftGroup:
             avert = averts[pair.a]
             cvert = cverts[pair.b]
             avert.co = cvert.co
             for cg in cvert.groups:
                 vgname = cvgroups[cg.group]
-                if vgname in aob.vertex_groups.keys():
-                    avgrp = aob.vertex_groups[vgname]
+                if vgname in graft.vertex_groups.keys():
+                    avgrp = graft.vertex_groups[vgname]
                 else:
-                    avgrp = aob.vertex_groups.new(name=vgname)
+                    avgrp = graft.vertex_groups.new(name=vgname)
                 avgrp.add([pair.a], cg.weight, 'REPLACE')
 
         # Create empty shapekeys
         cskeys = hum.data.shape_keys
         if cskeys:
-            abasic,askeys,new = getBasicShape(aob)
+            abasic,askeys,new = getBasicShape(graft)
             for cskey in cskeys.key_blocks:
                 if cskey.name not in askeys.key_blocks.keys():
-                    aob.shape_key_add(name = cskey.name)
+                    graft.shape_key_add(name = cskey.name)
 
         # Move shapekey positions
-        askeys = aob.data.shape_keys
+        askeys = graft.data.shape_keys
         if askeys:
             for askey in askeys.key_blocks:
                 if cskeys and askey.name in cskeys.key_blocks.keys():
                     cdata = cskeys.key_blocks[askey.name].data
                 else:
                     cdata = cverts
-                for pair in aob.data.DazGraftGroup:
+                for pair in graft.data.DazGraftGroup:
                     askey.data[pair.a].co = cdata[pair.b].co
 
         # Copy vertex groups
-        for pair in aob.data.DazGraftGroup:
-            for agrp in aob.vertex_groups:
+        for pair in graft.data.DazGraftGroup:
+            for agrp in graft.vertex_groups:
                 agrp.remove([pair.a])
             cv = cverts[pair.b]
             for g in cv.groups:
                 vname = cvgrps[g.group]
-                if vname not in aob.vertex_groups.keys():
-                    aob.vertex_groups.new(name=vname)
-                agrp = aob.vertex_groups[vname]
+                if vname not in graft.vertex_groups.keys():
+                    graft.vertex_groups.new(name=vname)
+                agrp = graft.vertex_groups[vname]
                 agrp.add([pair.a], g.weight, 'REPLACE')
 
 
@@ -865,23 +864,24 @@ class DAZ_OT_CreateGraftGroups(DazOperator):
         return (ob and ob.type == 'MESH' and ob.data.DazGraftGroup)
 
     def run(self, context):
-        aob = context.object
+        graft = context.object
         objects = []
         for ob in getSelectedMeshes(context):
-            if ob != aob:
+            if ob != graft:
                 objects.append(ob)
         if len(objects) != 1:
             raise DazError("Exactly two meshes must be selected.    ")
         hum = objects[0]
-        gname = "Graft_" + aob.data.name
-        mname = "Mask_" + aob.data.name
-        self.createVertexGroup(aob, gname, [pair.a for pair in aob.data.DazGraftGroup])
-        graft = [pair.b for pair in aob.data.DazGraftGroup]
-        self.createVertexGroup(hum, gname, graft)
+        gname = "%s:Graft" % graft.data.name
+        mname = "%s:Mask" % graft.data.name
+        avnums = [pair.a for pair in graft.data.DazGraftGroup]
+        self.createVertexGroup(graft, gname, avnums)
+        bvnums = [pair.b for pair in graft.data.DazGraftGroup]
+        self.createVertexGroup(hum, gname, bvnums)
         mask = {}
-        for face in aob.data.DazMaskGroup:
+        for face in graft.data.DazMaskGroup:
             for vn in hum.data.polygons[face.a].vertices:
-                if vn not in graft:
+                if vn not in bvnums:
                     mask[vn] = True
         self.createVertexGroup(hum, mname, mask.keys())
 
@@ -963,9 +963,9 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, 
     def run(self, context):
         hum = context.object
         self.initUvNames()
-        for aob in getSelectedMeshes(context):
-            if aob != hum:
-                self.storeUvName(aob)
+        for ob in getSelectedMeshes(context):
+            if ob != hum:
+                self.storeUvName(ob)
         for mod in hum.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
