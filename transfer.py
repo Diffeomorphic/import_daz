@@ -288,7 +288,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         src = context.object
         if not src.data.shape_keys:
             raise DazError("Cannot transfer because object    \n%s has no shapekeys   " % (src.name))
-        self.eps = 0.01*GS.scale    # 0.1 mm
+        self.eps = 0.02*GS.scale    # 0.2 mm
         if not self.useDrivers:
             self.useStrength = False
         targets = self.getTargets(src, context)
@@ -388,9 +388,14 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 pass
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
-                printName(" +", sname)
                 if cskey and self.onRigidity == 'FULL':
-                    self.correctForRigidity(trg, cskey)
+                    if self.correctForRigidity(trg, cskey):
+                        trg.shape_key_remove(cskey)
+                        cskey = None
+                    else:
+                        printName(" +", sname)
+                else:
+                    printName(" +", sname)
 
             if cskey:
                 from .driver import addGeneralDriver
@@ -472,6 +477,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
             base_center_coords = np.average(base_coords, axis=0)
             shapekey_center_coords = np.average(shapekey_coords, axis=0)
+            if ob.data.get("DazFullyRigid", False):
+                diff = base_center_coords-shapekey_center_coords
+                dist = np.sum(np.abs(diff))
+                if dist < self.eps:
+                    return True
 
             # Transfrom Base Coordinate to be relative to its center
             base_coords_relative_to_base_center_coords = base_coords - base_center_coords
@@ -571,6 +581,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
                     shapekey_scalefactor.shapekey_center_coord = shapekey_center_vector
                     shapekey_scalefactor.scale = [smat[j][i] for i in range(len(smat)) for j in range(len(smat))]
+        return False
 
 
     def computeShapeBox(self, src, hskey):
