@@ -53,10 +53,6 @@ class GeograftGroup(GeoTree):
         NodeGroup.make(self, name, 6)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketObject", "Geograft")
-        # addGroupInput(self.group, "NodeSocketFloat", "Geograft Edge")
-        # addGroupInput(self.group, "NodeSocketFloat", "Geograft Area")
-        # addGroupInput(self.group, "NodeSocketFloat", "Merge Distance")
-
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
@@ -73,11 +69,11 @@ class GeograftGroup(GeoTree):
         # Connect all objets to be joined to the Join Geometry node, which is to say....2
         for node in joins:
             self.links.new(node.outputs["Geometry"], joinGeo.inputs["Geometry"])
-        
+
         # Retrieve the body vertex indices we stored in the attribute
         paired_verts_node = self.addNode("GeometryNodeInputNamedAttribute", 2)
         # ONLY FLOAT, INT, FLOAT_VECTOR, FLOAT_COLOR, BOOLEAN, QUATERNION
-        paired_verts_node.data_type = 'INT' 
+        paired_verts_node.data_type = 'INT'
 
         ####### This needs to match the attribute created in merge.py!! #######
         paired_verts_node.inputs["Name"].default_value = vert_attribute_name
@@ -96,7 +92,7 @@ class GeograftGroup(GeoTree):
         captureBodyPosition.domain = 'POINT'
         self.links.new(captureNamedAttribute.outputs["Geometry"], captureBodyPosition.inputs["Geometry"])
         self.links.new(position_node.outputs["Position"], captureBodyPosition.inputs["Value"])
-        
+
         # union = captureBodyPosition.outputs["Attribute"]
 
         # Evaluate At Index node for getting the POSITION at whatever index is referenced by the Named Attribute
@@ -104,7 +100,7 @@ class GeograftGroup(GeoTree):
         evaluateIndex = self.addNode("GeometryNodeFieldAtIndex", 4)
         evaluateIndex.data_type = 'FLOAT_VECTOR'
         evaluateIndex.domain = 'POINT'
-        self.links.new(captureNamedAttribute.outputs["Attribute"], evaluateIndex.inputs["Index"])        
+        self.links.new(captureNamedAttribute.outputs["Attribute"], evaluateIndex.inputs["Index"])
         self.links.new(position_node.outputs["Position"], evaluateIndex.inputs["Value"])
 
         # Switch node to determine which vertices stay put, and which snap to their paired body vertex
@@ -115,7 +111,7 @@ class GeograftGroup(GeoTree):
         greaterThan.data_type = 'INT'
         greaterThan.operation = 'GREATER_THAN'
         self.links.new(captureNamedAttribute.outputs["Attribute"], greaterThan.inputs["A"])
-        
+
         self.links.new(greaterThan.outputs["Result"], switchNode.inputs["Switch"])
         self.links.new(evaluateIndex.outputs["Value"], switchNode.inputs["True"])
         self.links.new(captureBodyPosition.outputs["Attribute"], switchNode.inputs["False"])
@@ -134,19 +130,19 @@ class GeograftFinish(GeoTree):
         NodeGroup.make(self, name, 4)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
-    
-    
+
+
     def addDeleteMasks(self, graft_names):
         delete_masks = list()
         for graft in graft_names:
-            socket_name = f"{graft} Delete"
+            socket_name = "Delete %s" % graft
             addGroupInput(self.group, "NodeSocketFloat", socket_name)
 
             delete_mask = self.addNode("GeometryNodeDeleteGeometry", 2)
             delete_masks.append(delete_mask)
 
             self.links.new(self.inputs.outputs[socket_name], delete_mask.inputs["Selection"])
-        
+
         for i, mask in enumerate(delete_masks):
             # First delete mask--connect the input to it
             if i == 0:
@@ -160,8 +156,6 @@ class GeograftFinish(GeoTree):
         mergeDist.inputs["Distance"].default_value = 1e-4
         self.links.new(delete_masks[len(delete_masks)-1].outputs["Geometry"], mergeDist.inputs["Geometry"])
         self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
-
-
 
 # ---------------------------------------------------------------------
 #   Geoshell group
