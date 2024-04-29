@@ -163,7 +163,7 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
 
     transferMethod = 'NEAREST'
     useNonConforming = True
-    onRigidity = 'IGNORE'
+    ignoreRigidity = False
 
     def draw(self, context):
         self.layout.prop(self, "threshold")
@@ -278,7 +278,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         row.prop(self, "useStrength")
         row.prop(self, "useSelectedOnly")
         row.prop(self, "useNonConforming")
-        row.prop(self, "onRigidity")
+        row.prop(self, "ignoreRigidity")
         JCMSelector.draw(self, context)
 
 
@@ -383,12 +383,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             if cskey:
                 cskey.name = sname
                 printName(" *", sname)
-            elif (self.onRigidity == 'PARTIAL'
-                  and trg.data.get("DazFullyRigid", False)):
-                pass
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
-                if cskey and self.onRigidity == 'FULL':
+                if cskey and not self.ignoreRigidity:
                     if self.correctForRigidity(trg, cskey):
                         trg.shape_key_remove(cskey)
                         cskey = None
