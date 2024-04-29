@@ -420,7 +420,6 @@ class SkipZeroUvGroup(CyclesGroup):
         CyclesGroup.create(self, node, name, parent, 3)
         addGroupInput(self.group, "NodeSocketVector", "UV")
         addGroupOutput(self.group, "NodeSocketFloat", "Influence")
-        self.setMinMax("Influence", 0.0, 0.0, 10)
 
 
     def addNodes(self, args=None):
