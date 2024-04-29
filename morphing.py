@@ -612,6 +612,7 @@ class MorphLoader(LoadMorph, PosableMaker):
     def loadToMesh(self, mesh, char):
         mesh0 = self.mesh
         char0 = self.char
+        morphset0 = self.morphset
         self.mesh = mesh
         self.char = char
         namepaths = []
@@ -622,6 +623,7 @@ class MorphLoader(LoadMorph, PosableMaker):
             self.loadAllMorphs(namepaths)
         self.mesh = mesh0
         self.char = char0
+        self.morphset = morphset0
         return namepaths
 
 
