@@ -347,6 +347,12 @@ NodeSize = {
     "BOOLEAN_MATH" : 6,
     "CAPTURE_ATTRIBUTE" : 10,
     "MERGE_BY_DISTANCE" : 8,
+
+    "INPUT_ATTRIBUTE" : 5,
+    "POSITION" : 3,
+    "FIELD_AT_INDEX" : 6,
+    "COMPARE" : 6,
+    "SWITCH" : 6
 }
 
 GroupSize = {

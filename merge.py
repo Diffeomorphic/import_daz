@@ -199,21 +199,22 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         safeTransformApply()
         from .finger import isGenesis
         cob = context.object
-        meshes = getSelectedMeshes(context)
+        selected_meshes = getSelectedMeshes(context)
         ncverts = len(cob.data.vertices)
         chars = {ncverts : cob}
         prio = {ncverts : False}
-        for ob in meshes:
+        for ob in selected_meshes:
             ob.active_shape_key_index = 0
             nverts = len(ob.data.vertices)
             if nverts not in chars.keys() or isGenesis(ob):
                 chars[nverts] = ob
                 prio[nverts] = (not (not ob.data.DazGraftGroup))
 
-        grafts = dict([(ncverts, []) for ncverts in chars.keys()])
+        grafts = dict([(vert_count, []) for vert_count in chars.keys()])
         ngrafts = 0
         misses = []
-        for aob in meshes:
+        # Store geograft objects in grafts dictionary--lookup by number of vertices
+        for aob in selected_meshes:
             if aob.data.DazGraftGroup:
                 ncverts = aob.data.DazVertexCount
                 if ncverts in grafts.keys():
@@ -232,10 +233,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 msg = "No geograft selected"
             raise DazError(msg)
 
-        for ncverts,cob in chars.items():
+        for ncverts, cob in chars.items():
             if prio[ncverts]:
                 self.mergeGeografts(context, ncverts, cob, grafts[ncverts])
-        for ncverts,cob in chars.items():
+        for ncverts, cob in chars.items():
             if not prio[ncverts]:
                 self.mergeGeografts(context, ncverts, cob, grafts[ncverts])
 
@@ -274,7 +275,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         activateObject(context, cob)
 
 
-    def mergeGeografts(self, context, ncverts, cob, anatomies):
+    def mergeGeografts(self, context, nverts, cob, anatomies):
         if not anatomies:
             return
         try:
@@ -285,10 +286,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         if self.keepOriginal and not self.useGeoNodes:
             self.duplicateMeshes(context, cob, anatomies)
+
         self.initUvNames()
         subDLevels = 0
         self.setActiveUvLayer(cob)
-        influs = dict([(prop, value) for prop,value in cob.items() if prop[0:6] == "INFLU "])
+        influs = dict([(prop, value) for prop, value in cob.items() if prop[0:6] == "INFLU "])
         for aob in anatomies:
             self.renameUvLayers(aob)
             self.storeUvName(aob)
@@ -297,7 +299,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 fixer = TileFixer()
                 fixer.udimsFromGraft(aob, cob)
             self.copyBodyPart(aob, cob)
-            for prop,value in aob.items():
+            for prop, value in aob.items():
                 if prop[0:6] == "INFLU " and prop not in influs.keys():
                     influs[prop] = value
             for mod in list(aob.modifiers):
@@ -336,9 +338,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         # If cob is itself a geograft, make sure to keep tbe boundary
         if cob.data.DazGraftGroup:
-            cgrafts = [pair.a for pair in cob.data.DazGraftGroup]
+            body_pair_a_verts = [pair.a for pair in cob.data.DazGraftGroup]
         else:
-            cgrafts = []
+            body_pair_a_verts = []
 
         deselectAllVerts(cob)
 
@@ -346,16 +348,18 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.vdeleted = dict([(vn,False) for vn in range(nverts)])
         self.cmasks = {}
         for aob in anatomies:
-            cmask = self.cmasks[aob.name] = dict([(vn,False) for vn in range(nverts)])
-            paired = [pair.b for pair in aob.data.DazGraftGroup]
+            cmask = self.cmasks[aob.name] = dict([(vn, False) for vn in range(nverts)])
+            graft_pair_b_verts = [pair.b for pair in aob.data.DazGraftGroup]
             for face in aob.data.DazMaskGroup:
                 fverts = cob.data.polygons[face.a].vertices
                 vdelete = []
                 for vn in fverts:
-                    if vn in cgrafts:
+                    # Don't delete if it's on the edge to be merged--these will be merged by distance later
+                    if vn in body_pair_a_verts:
                         pass
-                    elif vn not in paired:
+                    elif vn not in graft_pair_b_verts:
                         vdelete.append(vn)
+                    # Slate the vertex for deletion, as it's not one to be merged and is one of the body vertices that will be replaced by the graft
                     else:
                         mfaces = [fn for fn in self.vfaces[vn] if self.fmasked[fn]]
                         if len(mfaces) == len(self.vfaces[vn]):
@@ -400,13 +404,36 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             cedge = self.cedges[aob.name] = dict([(vn,False) for vn in range(nverts)])
             pg = cob.data.DazMergedGeografts.add()
             pg.name = aob.name
+
+            # Add custom attribute which will store the vertex to be paired, and accessible via geometry node
+            # If this is the graft...
+            attribute_name = f"paired_body_vert_{aob.name}"
+            if not hasattr(aob.data.attributes, attribute_name):
+                # print(f"Creating paired body vert attribute: {attribute_name}")
+                attribute = aob.data.attributes.new(attribute_name, type="INT", domain="POINT")
+            else:
+                # print(f"{attribute_name} already exists")
+                attribute = aob.data.attributes[attribute_name]
+
+            # Create a dictionary, default all to -1, but values will be populated with the paired body vertex
+            # To set in foreach_set method, needs to be the same length as the # of vertices
+            paired_vert_list = dict()
+            for idx, v in enumerate(aob.data.vertices):
+                paired_vert_list[idx] = -1
+
             for pair in aob.data.DazGraftGroup:
                 aob.data.vertices[pair.a].select = True
                 if pair.b in assoc.keys():
+                    # Set value to be added as attribute
+                    paired_vert_list[pair.a] = pair.b
+
                     aedge[pair.a] = True
                     cvn = assoc[pair.b]
                     cob.data.vertices[cvn].select = True
                     cedge[pair.b] = True
+
+            # Set the attribute values for all the vertices
+            attribute.data.foreach_set("value", list(paired_vert_list.values()))
 
         # Also select cob graft group. These will not be removed.
         if cob.data.DazGraftGroup:
@@ -417,12 +444,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Retarget shells
         self.retargetShellInfluence(cob, anatomies, influs)
         if bpy.app.version < (3,1,0):
-            self.mergeDestructively(context, cob, anatomies, cgrafts)
+            self.mergeDestructively(context, cob, anatomies, body_pair_a_verts)
         elif self.useGeoNodes:
-            self.mergeWithGeoNodes(context, cob, anatomies, cgrafts)
+            self.mergeWithGeoNodes(context, cob, anatomies, body_pair_a_verts)
         else:
             self.retargetShellModifiers(cob, anatomies)
-            self.mergeDestructively(context, cob, anatomies, cgrafts)
+            self.mergeDestructively(context, cob, anatomies, body_pair_a_verts)
 
         self.copyShapeKeyDrivers(cob, drivers)
         updateDrivers(cob)
@@ -497,30 +524,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def mergeWithGeoNodes(self, context, cob, anatomies, cgrafts):
-        from .dforce import ModStore
-        stores = []
-        showmods = []
-        geogroup = None
-        grpname = "Geografts %s" % cob.name
-        for mod in list(cob.modifiers):
-            if (mod.type == 'NODES' and
-                mod.node_group.name.startswith("Geograft")):
-                showmods.append((mod, mod.show_viewport))
-                mod.show_viewport = False
-                if mod.node_group.name == grpname:
-                    geogroup = mod.node_group
-            elif mod.type != 'ARMATURE':
-                stores.append(ModStore(mod))
-                cob.modifiers.remove(mod)
-        if geogroup is None:
-            from .geonodes import GeograftGroup
-            group = GeograftGroup()
-            group.create(grpname)
-            group.addNodes()
-            geogroup = group.group
-
-        cuvname = getActiveUvLayer(cob).name
-        self.replaceTexco(cob, cuvname, True)
 
         def addVertexGroup(ob, vgname, struct):
             vgrp = ob.vertex_groups.get(vgname)
@@ -531,7 +534,57 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     vgrp.add([vn], 1, 'REPLACE')
             return vgrp
 
+
+        from .dforce import ModStore
+        stores = []
+        showmods = []
+        # geogroup = None
+        # grpname = "Geografts %s" % cob.name
+        for mod in list(cob.modifiers):
+            # if (mod.type == 'NODES' and
+            #     mod.node_group.name.startswith("Geograft")):
+            #     showmods.append((mod, mod.show_viewport))
+            #     mod.show_viewport = False
+            #     if mod.node_group.name == grpname:
+            #         geogroup = mod.node_group
+            # elif mod.type != 'ARMATURE':
+            #     stores.append(ModStore(mod))
+            #     cob.modifiers.remove(mod)
+            if mod.type != 'ARMATURE':
+                stores.append(ModStore(mod))
+                cob.modifiers.remove(mod)
+
+        # if geogroup is None:
+        #     from .geonodes import GeograftGroup
+        #     group = GeograftGroup()
+        #     group.create(grpname)
+        #     group.addNodes(paired_attr_name)
+        #     geogroup = group.group
+
+        cuvname = getActiveUvLayer(cob).name
+        self.replaceTexco(cob, cuvname, True)
+
+
+        existing_graft_mods = list()
+        for existing_mod in list(cob.modifiers):
+            # Store any existing geograft modifiers that are NOT the delete modifier in a list.
+            # Since the delete modifier will be recreated every time, we need to get the delete masks for any grafts
+            # for this mesh which are already created as well as those that are selected
+            if (existing_mod.type == 'NODES' and "Geograft" in existing_mod.node_group.name \
+                # This is key--we only want to get existing geograft modifiers on the current mesh.  All of them would bork things if we have nested geografts.
+                and cob.name in existing_mod.node_group.name \
+                and "END" not in existing_mod.node_group.name):
+                existing_graft_mods.append(existing_mod.name)
+
+        from .geonodes import GeograftGroup
         for aob in anatomies:
+            grpname = f"Geografts {cob.name} {aob.name}"
+
+            group = GeograftGroup()
+            group.create(grpname)
+            group.addNodes(f"paired_body_vert_{aob.name}")
+            geogroup = group.group
+
             maskname = "%s Mask" % aob.name
             edgename = "%s Edge" % aob.name
             cmask = addVertexGroup(cob, maskname, self.cmasks[aob.name])
@@ -548,24 +601,97 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             mod = cob.modifiers.new("Geograft %s" % aob.name, 'NODES')
             mod.node_group = geogroup
             if BLENDER3:
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_3_use_attribute"), modifier_name=mod.name)
+                # bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_2_use_attribute"), modifier_name=mod.name)
+                # bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef("Input_3_use_attribute"), modifier_name=mod.name)
                 mod["Input_1"] = aob
-                mod["Input_2_attribute_name"] = edgename
-                mod["Input_3_attribute_name"] = maskname
-                mod["Input_4"] = 0.01*cob.DazScale
+                # mod["Input_2_attribute_name"] = edgename
+                # mod["Input_3_attribute_name"] = maskname
+                # mod["Input_4"] = 0.01*cob.DazScale
             else:
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_2", modifier_name=mod.name)
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_3", modifier_name=mod.name)
+                # bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_2", modifier_name=mod.name)
+                # bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_3", modifier_name=mod.name)
                 mod["Socket_1"] = aob
-                mod["Socket_2_attribute_name"] = edgename
-                mod["Socket_3_attribute_name"] = maskname
-                mod["Socket_4"] = 0.01*cob.DazScale
+                # mod["Socket_2_attribute_name"] = edgename
+                # mod["Socket_3_attribute_name"] = maskname
+                # mod["Socket_4"] = 0.01*cob.DazScale
+
             aob.hide_set(True)
             aob.hide_render = True
             for mod in aob.modifiers:
                 if mod.type == 'NODES':
                     mod.show_viewport = mod.show_render = True
+
+
+        # Handle the delete geometry / merge by distance modifier
+        # Each geometry we want to delete will be named {GeograftName}{G9whatever}{Mask} (maskname above)
+        # 1 modifer with all deletes & 1 merge by distance per cob.name (mesh being merged to)
+        # If it already exists, delete & recreate.  We want to keep this modifier AFTER the main geograft modifiers
+        for del_mod in list(cob.modifiers):
+            if (del_mod.type == 'NODES' and "Geograft" in del_mod.node_group.name \
+                and "END" in del_mod.node_group.name \
+                and cob.name in del_mod.node_group.name):
+                print(f"Removing existing delete modifier: {del_mod.name}")
+                cob.modifiers.remove(del_mod)
+                break
+
+        from .geonodes import GeograftFinish
+        delete_group = GeograftFinish()
+        print(f"Creating GeoFinish Nodes: Geograft {cob.name} END")
+
+        # Create the geonodes (node group)
+        delete_group.create(f"Geograft {cob.name} END")
+
+        # Add a delete node for every geograft that needs vertices deleted (after merge done in original modifier(s))
+        delete_masks = list()
+        for aob in anatomies:
+            delete_masks.append(aob.name)
+        for existing_merge in existing_graft_mods:
+            delete_masks.append(existing_merge.replace("Geograft", "").strip())
+
+        delete_group.addDeleteMasks(delete_masks)
+
+        # Create the modifier
+        del_mod = cob.modifiers.new(f"Geograft {cob.name} END", 'NODES')
+        del_mod.node_group = delete_group.group
+
+
+        # 1st for loops: Add the masks to the modifier per the selected anatomies
+        # 2nd for loops: Add the masks for geograft modifiers that were already there for this mesh (since this will be recreated regardless)
+        max_graft_mask = 0
+        index_offset = 2
+        if BLENDER3:
+            for i, aob in enumerate(anatomies):
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef(f"Input_{i+index_offset}_use_attribute"), modifier_name=del_mod.name)
+                maskname = f"{aob.name} Mask"
+                del_mod[f"Input_{i+index_offset}_attribute_name"] = maskname
+                max_graft_mask += 1
+
+            for i, existing_merge in enumerate(existing_graft_mods):
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=propRef(f"Input_{i+index_offset+max_graft_mask}_use_attribute"), modifier_name=existing_merge)
+                maskname = existing_merge.replace("Geograft", "").strip() + " Mask"
+                del_mod[f"Input_{i+index_offset+max_graft_mask}_attribute_name"] = maskname
+                print(f"Mask: {maskname}")
+        else:
+            for i, aob in enumerate(anatomies):
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=f"Socket_{i+index_offset}", modifier_name=del_mod.name)
+                maskname = f"{aob.name} Mask"
+                del_mod[f"Socket_{i+index_offset}_attribute_name"] = maskname
+                max_graft_mask += 1
+                # DEBUGGING
+                # print(f"Mask: {maskname}")
+                # print(f"Modifier name: {del_mod.name}")
+                # print(f'Input name: {f"Socket_{i+index_offset}_attribute_name"}')
+
+            for i, existing_merge in enumerate(existing_graft_mods):
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=f"Socket_{i+index_offset+max_graft_mask}", modifier_name=existing_merge)
+                maskname = existing_merge.replace("Geograft", "").strip() + " Mask"
+                del_mod[f"Socket_{i+index_offset+max_graft_mask}_attribute_name"] = maskname
+                # DEBUGGING
+                # print(f"Mask: {maskname}")
+                # print(f"Modifier name: {existing_merge}")
+                # print(f'Input Name: {f"Socket_{i+index_offset+max_graft_mask}_attribute_name"}')
+
+
         for mod,show in showmods:
             mod.show_viewport = show
         for store in stores:

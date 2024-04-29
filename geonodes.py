@@ -53,54 +53,115 @@ class GeograftGroup(GeoTree):
         NodeGroup.make(self, name, 6)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketObject", "Geograft")
-        addGroupInput(self.group, "NodeSocketFloat", "Geograft Edge")
-        addGroupInput(self.group, "NodeSocketFloat", "Geograft Area")
-        addGroupInput(self.group, "NodeSocketFloat", "Merge Distance")
+        # addGroupInput(self.group, "NodeSocketFloat", "Geograft Edge")
+        # addGroupInput(self.group, "NodeSocketFloat", "Geograft Area")
+        # addGroupInput(self.group, "NodeSocketFloat", "Merge Distance")
+
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
-    def addNodes(self):
+    def addNodes(self, vert_attribute_name = None):
+        # Object node for the geograft
         graft = self.addNode("GeometryNodeObjectInfo", 1)
+        # Connect the Group Input-Geograft socket to this input
         self.links.new(self.inputs.outputs["Geograft"], graft.inputs[0])
 
-        captureEdge = self.addNode("GeometryNodeCaptureAttribute", 2)
-        captureEdge.data_type = 'FLOAT'
-        captureEdge.domain = 'POINT'
-        self.links.new(self.inputs.outputs["Geometry"], captureEdge.inputs["Geometry"])
-        self.links.new(self.inputs.outputs["Geograft Edge"], captureEdge.inputs["Value"])
-        union = captureEdge.outputs["Attribute"]
-
-        deleteMask = self.addNode("GeometryNodeDeleteGeometry", 3)
-        self.links.new(captureEdge.outputs["Geometry"], deleteMask.inputs["Geometry"])
-        self.links.new(self.inputs.outputs["Geograft Area"], deleteMask.inputs["Selection"])
-
-        joinGeo = self.addNode("GeometryNodeJoinGeometry", 4)
-        joins = []
-
-        captureAnatomy = self.addNode("GeometryNodeCaptureAttribute", 2)
-        captureAnatomy.data_type = 'FLOAT'
-        captureAnatomy.domain = 'POINT'
-        self.links.new(graft.outputs["Geometry"], captureAnatomy.inputs["Geometry"])
-        self.links.new(self.inputs.outputs["Geograft Edge"], captureAnatomy.inputs["Value"])
-        joins.append(captureAnatomy)
-
-        node = self.addNode("FunctionNodeBooleanMath", 3)
-        node.operation = 'OR'
-        self.links.new(union, node.inputs[0])
-        self.links.new(captureAnatomy.outputs["Attribute"], node.inputs[1])
-        union = node.outputs[0]
-        joins.append(deleteMask)
+        # Join the geograft & body objects into 1 mesh (to the end of having 1 list of vertices)\
+        joinGeo = self.addNode("GeometryNodeJoinGeometry", 2)
+        joins = [self.inputs, graft]
         joins.reverse()
+        # Connect all objets to be joined to the Join Geometry node, which is to say....2
         for node in joins:
             self.links.new(node.outputs["Geometry"], joinGeo.inputs["Geometry"])
+        
+        # Retrieve the body vertex indices we stored in the attribute
+        paired_verts_node = self.addNode("GeometryNodeInputNamedAttribute", 2)
+        # ONLY FLOAT, INT, FLOAT_VECTOR, FLOAT_COLOR, BOOLEAN, QUATERNION
+        paired_verts_node.data_type = 'INT' 
 
-        mergeDist = self.addNode("GeometryNodeMergeByDistance", 5)
+        ####### This needs to match the attribute created in merge.py!! #######
+        paired_verts_node.inputs["Name"].default_value = vert_attribute_name
+        #######################################################################
+
+        captureNamedAttribute = self.addNode("GeometryNodeCaptureAttribute", 3)
+        captureNamedAttribute.data_type = 'INT'
+        captureNamedAttribute.domain = 'POINT'
+        self.links.new(joinGeo.outputs["Geometry"], captureNamedAttribute.inputs["Geometry"])
+        self.links.new(paired_verts_node.outputs["Attribute"], captureNamedAttribute.inputs["Value"])
+
+        position_node = self.addNode("GeometryNodeInputPosition", 2)
+
+        captureBodyPosition = self.addNode("GeometryNodeCaptureAttribute", 3)
+        captureBodyPosition.data_type = 'FLOAT_VECTOR'
+        captureBodyPosition.domain = 'POINT'
+        self.links.new(captureNamedAttribute.outputs["Geometry"], captureBodyPosition.inputs["Geometry"])
+        self.links.new(position_node.outputs["Position"], captureBodyPosition.inputs["Value"])
+        
+        # union = captureBodyPosition.outputs["Attribute"]
+
+        # Evaluate At Index node for getting the POSITION at whatever index is referenced by the Named Attribute
+        # (paired_body_vertex)
+        evaluateIndex = self.addNode("GeometryNodeFieldAtIndex", 4)
+        evaluateIndex.data_type = 'FLOAT_VECTOR'
+        evaluateIndex.domain = 'POINT'
+        self.links.new(captureNamedAttribute.outputs["Attribute"], evaluateIndex.inputs["Index"])        
+        self.links.new(position_node.outputs["Position"], evaluateIndex.inputs["Value"])
+
+        # Switch node to determine which vertices stay put, and which snap to their paired body vertex
+        switchNode = self.addNode("GeometryNodeSwitch", 4)
+        switchNode.input_type = 'VECTOR'
+
+        greaterThan = self.addNode("FunctionNodeCompare", 4)
+        greaterThan.data_type = 'INT'
+        greaterThan.operation = 'GREATER_THAN'
+        self.links.new(captureNamedAttribute.outputs["Attribute"], greaterThan.inputs["A"])
+        
+        self.links.new(greaterThan.outputs["Result"], switchNode.inputs["Switch"])
+        self.links.new(evaluateIndex.outputs["Value"], switchNode.inputs["True"])
+        self.links.new(captureBodyPosition.outputs["Attribute"], switchNode.inputs["False"])
+
+        # Set Position node will do the actual vertex "snapping" - just on the vertices of the graft edge to the body
+        setPosition = self.addNode("GeometryNodeSetPosition", 5)
+        self.links.new(captureBodyPosition.outputs["Geometry"], setPosition.inputs["Geometry"])
+        self.links.new(switchNode.outputs["Output"], setPosition.inputs["Position"])
+
+        self.links.new(setPosition.outputs["Geometry"], self.outputs.inputs["Geometry"])
+
+
+
+class GeograftFinish(GeoTree):
+    def create(self, name):
+        NodeGroup.make(self, name, 4)
+        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
+    
+    
+    def addDeleteMasks(self, graft_names):
+        delete_masks = list()
+        for graft in graft_names:
+            socket_name = f"{graft} Delete"
+            addGroupInput(self.group, "NodeSocketFloat", socket_name)
+
+            delete_mask = self.addNode("GeometryNodeDeleteGeometry", 2)
+            delete_masks.append(delete_mask)
+
+            self.links.new(self.inputs.outputs[socket_name], delete_mask.inputs["Selection"])
+        
+        for i, mask in enumerate(delete_masks):
+            # First delete mask--connect the input to it
+            if i == 0:
+                self.links.new(self.inputs.outputs["Geometry"], mask.inputs["Geometry"])
+            # Any in between, connect the one before to the currently iterated one
+            else:
+                self.links.new(delete_masks[i-1].outputs["Geometry"], delete_masks[i].inputs["Geometry"])
+
+        # Lastly, add merge by distance to the end
+        mergeDist = self.addNode("GeometryNodeMergeByDistance", 3)
         mergeDist.inputs["Distance"].default_value = 1e-4
-        self.links.new(self.inputs.outputs["Merge Distance"], mergeDist.inputs["Distance"])
-        self.links.new(joinGeo.outputs["Geometry"], mergeDist.inputs["Geometry"])
-        self.links.new(union, mergeDist.inputs["Selection"])
-
+        self.links.new(delete_masks[len(delete_masks)-1].outputs["Geometry"], mergeDist.inputs["Geometry"])
         self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
+
+
 
 # ---------------------------------------------------------------------
 #   Geoshell group
@@ -192,7 +253,7 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
         for n,shmat in shmatlist:
             if shmat not in shmats:
                 shell.data.materials.pop(index=n)
-    shell.lock_location = shell.lock_rotation = shell.lock_scale = TTrue
+    shell.lock_location = shell.lock_rotation = shell.lock_scale = (True, True, True)
     shell.visible_shadow = False
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
