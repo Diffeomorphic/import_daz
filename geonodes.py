@@ -28,7 +28,7 @@
 import bpy
 from .error import *
 from .utils import *
-from .tree import Tree, NodeGroup, XSIZE, YSIZE, addNodeGroup
+from .tree import Tree, NodeGroup, XSIZE, YSIZE
 from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .selector import Selector
 
@@ -53,10 +53,11 @@ class GeograftGroup(GeoTree):
         NodeGroup.make(self, name, 6)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketObject", "Geograft")
+        addGroupInput(self.group, "NodeSocketString", "Pairs")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
-    def addNodes(self, vert_attribute_name = None):
+    def addNodes(self):
         # Object node for the geograft
         graft = self.addNode("GeometryNodeObjectInfo", 1)
         # Connect the Group Input-Geograft socket to this input
@@ -74,10 +75,7 @@ class GeograftGroup(GeoTree):
         paired_verts_node = self.addNode("GeometryNodeInputNamedAttribute", 2)
         # ONLY FLOAT, INT, FLOAT_VECTOR, FLOAT_COLOR, BOOLEAN, QUATERNION
         paired_verts_node.data_type = 'INT'
-
-        ####### This needs to match the attribute created in merge.py!! #######
-        paired_verts_node.inputs["Name"].default_value = vert_attribute_name
-        #######################################################################
+        self.links.new(self.inputs.outputs["Pairs"], paired_verts_node.inputs["Name"])
 
         captureNamedAttribute = self.addNode("GeometryNodeCaptureAttribute", 3)
         captureNamedAttribute.data_type = 'INT'

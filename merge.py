@@ -535,12 +535,19 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         delmasks = []
         for mod in list(hum.modifiers):
             if mod.type == 'NODES':
-                words = mod.node_group.name.split(":")
-                if words[0] == "Geograft" and len(words) == 3:
-                    if baseName(words[2]) == "END":
-                        hum.modifiers.remove(mod)
+                if mod.node_group.name == "DAZ Geograft":
+                    if BLENDER3:
+                        graft = mod["Input_1"]
                     else:
-                        delmasks.append(words[2])
+                        graft = mod["Socket_1"]
+                    if graft:
+                        delmasks.append(graft.name)
+                    else:
+                        hum.modifiers.remove(mod)
+                else:
+                    words = mod.node_group.name.split(":")
+                    if words[0] == "Geograft" and baseName(words[-1]) == "END":
+                        hum.modifiers.remove(mod)
             elif mod.type != 'ARMATURE':
                 stores.append(ModStore(mod))
                 hum.modifiers.remove(mod)
@@ -549,14 +556,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.replaceTexco(hum, cuvname, True)
 
         from .geonodes import GeograftGroup
+        from .tree import addNodeGroup
         for graft in grafts:
-            grpname = "Geograft:%s:%s" % (hum.name, graft.name)
-
-            group = GeograftGroup()
-            group.create(grpname)
-            group.addNodes("paired_body_vert_%s" % graft.name)
-            geogroup = group.group
-
             maskname = "%s Mask" % graft.name
             edgename = "%s Edge" % graft.name
             hummask = addVertexGroup(hum, maskname, self.hummasks[graft.name])
@@ -571,11 +572,13 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     graft.modifiers.remove(amod)
 
             mod = hum.modifiers.new("Geograft %s" % graft.name, 'NODES')
-            mod.node_group = geogroup
+            mod.node_group = addNodeGroup(GeograftGroup, "DAZ Geograft")
             if BLENDER3:
                 mod["Input_1"] = graft
+                mod["Input_2"] = "paired_body_vert_%s" % graft.name
             else:
                 mod["Socket_1"] = graft
+                mod["Socket_2"] = "paired_body_vert_%s" % graft.name
 
             graft.hide_set(True)
             graft.hide_render = True
@@ -599,7 +602,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         del_mod.node_group = delgrp.group
         if BLENDER3:
             for i, graft in enumerate(delmasks):
-                path = "Input_%d_use_attribute" % (i+2)
+                path = propRef("Input_%d_use_attribute" % (i+2))
                 bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=path, modifier_name=del_mod.name)
                 maskname = "%s Mask" % graft
                 modname = "Input_%d_attribute_name" % (i+2)
@@ -612,8 +615,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 modname = "Socket_%d_attribute_name" % (i+2)
                 del_mod[modname] = maskname
 
-        #for mod,show in showmods:
-        #    mod.show_viewport = show
         for store in stores:
             store.restore(hum)
 
