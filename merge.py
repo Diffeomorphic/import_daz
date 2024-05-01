@@ -519,7 +519,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.mergeUvs(hum)
         #pruneMaterials(hum)
 
-
+    #
+    # Based on ideas of Midnight Arrow
+    # https://bitbucket.org/Diffeomorphic/import_daz/issues/869/non-destructive-geografts
+    # Modifications by GeneralProtectionFault
+    # https://bitbucket.org/Diffeomorphic/import_daz/issues/2005/geometry-node-merge-geografts-geometry
+    #
     def mergeWithGeoNodes(self, context, hum, grafts, cgrafts):
         def addVertexGroup(ob, vgname, struct):
             vgrp = ob.vertex_groups.get(vgname)
@@ -601,18 +606,20 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         del_mod = hum.modifiers.new(groupname, 'NODES')
         del_mod.node_group = delgrp.group
         if BLENDER3:
+            del_mod["Input_1"] = 0.01*GS.scale
             for i, graft in enumerate(delmasks):
-                path = propRef("Input_%d_use_attribute" % (i+2))
+                path = propRef("Input_%d_use_attribute" % (i+3))
                 bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=path, modifier_name=del_mod.name)
                 maskname = "%s Mask" % graft
-                modname = "Input_%d_attribute_name" % (i+2)
+                modname = "Input_%d_attribute_name" % (i+3)
                 del_mod[modname] = maskname
         else:
+            del_mod["Socket_1"] = 0.01*GS.scale
             for i, graft in enumerate(delmasks):
-                path = "Socket_%d" % (i+2)
+                path = "Socket_%d" % (i+3)
                 bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=path, modifier_name=del_mod.name)
                 maskname = "%s Mask" % graft
-                modname = "Socket_%d_attribute_name" % (i+2)
+                modname = "Socket_%d_attribute_name" % (i+3)
                 del_mod[modname] = maskname
 
         for store in stores:

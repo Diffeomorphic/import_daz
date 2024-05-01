@@ -127,6 +127,7 @@ class GeograftFinish(GeoTree):
     def create(self, name):
         NodeGroup.make(self, name, 4)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketFloat", "Distance")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
@@ -151,7 +152,8 @@ class GeograftFinish(GeoTree):
 
         # Lastly, add merge by distance to the end
         mergeDist = self.addNode("GeometryNodeMergeByDistance", 3)
-        mergeDist.inputs["Distance"].default_value = 1e-4
+        self.links.new(self.inputs.outputs["Distance"], mergeDist.inputs["Distance"])
+        #mergeDist.inputs["Distance"].default_value = 1e-4
         self.links.new(delete_masks[len(delete_masks)-1].outputs["Geometry"], mergeDist.inputs["Geometry"])
         self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
