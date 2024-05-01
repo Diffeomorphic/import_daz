@@ -1374,16 +1374,11 @@ class Geometry(Asset, Channels):
 
     def buildRigidity(self, ob, conforms):
         from .modifier import buildVertexGroup
+        if not conforms:
+            ob["DazConforms"] = False
         if self.rigidity:
-            if "weights" in self.rigidity.keys():
-                rweights = self.rigidity["weights"]["values"]
-                wvalues = [w for vn,w in rweights]
-                if min(wvalues) > 0.9999:
-                    ob.data["DazFullyRigid"] = True
-                buildVertexGroup(ob, "Rigidity", rweights)
-            if "groups" not in self.rigidity.keys():
-                return
-            for group in self.rigidity["groups"]:
+            strange = False
+            for group in self.rigidity.get("groups", []):
                 rgroup = ob.data.DazRigidityGroups.add()
                 rgroup.id = group["id"]
                 rgroup.rotation_mode = group["rotation_mode"]
@@ -1394,8 +1389,29 @@ class Geometry(Asset, Channels):
                 for vn in group["mask_vertices"]["values"]:
                     vert = rgroup.mask_vertices.add()
                     vert.a = vn
-        if not conforms:
-            ob["DazConforms"] = False
+                if group["rotation_mode"] != "none":
+                    strange = True
+                for mode in group["scale_modes"]:
+                    if mode != "none":
+                        strange = True
+
+            if "weights" in self.rigidity.keys():
+                nverts = len(ob.data.vertices)
+                rweights = self.rigidity["weights"]["values"]
+                buildVertexGroup(ob, "Rigidity", rweights)
+                if strange:
+                    return
+                wvalues = [w for vn,w in rweights]
+                if len(rweights) == nverts and min(wvalues) > 0.9999:
+                    ob.data["DazFullyRigid"] = True
+                else:
+                    rweights = dict(rweights)
+                    fweights = [(vn, 1-rweights.get(vn,0)) for vn in range(nverts)]
+                    vgrp = ob.vertex_groups.get("Flexibility")
+                    if vgrp is None:
+                        vgrp = ob.vertex_groups.new(name="Flexibility")
+                    for vn,w in fweights:
+                        vgrp.add([vn], w, 'REPLACE')
 
 
     def makeShell(self, shname, shmat, uv):

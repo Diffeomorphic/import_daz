@@ -449,14 +449,28 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         for rgroup in ob.data.DazRigidityGroups:
             if GS.verbosity >= 3 and not ES.easy:
                 print("Rigidity group: %s" % rgroup.id)
-            rotmode = rgroup.rotation_mode
-            maskverts = [elt.a for elt in rgroup.mask_vertices]
             refverts = [elt.a for elt in rgroup.reference_vertices]
-            nrefverts = len(refverts)
-
-            if nrefverts == 0:
+            if len(refverts) == 0:
                 continue
 
+            base_coords = [ob.data.vertices[vn].co for vn in refverts]
+            shapekey_coords = [skey.data[vn].co for vn in refverts]
+            base_center_coords = np.average(base_coords, axis=0)
+            shapekey_center_coords = np.average(shapekey_coords, axis=0)
+
+            # If the center doesn't move, we can remove the shapekey if the mesh is fully rigid,
+            # or use Flexibility vertex group otherwise
+            diff = base_center_coords-shapekey_center_coords
+            dist = np.sum(np.abs(diff))
+            if dist < self.eps:
+                if ob.data.get("DazFullyRigid", False):
+                    return True
+                elif "Flexibility" in ob.vertex_groups.keys():
+                    skey.vertex_group = "Flexibility"
+                    return False
+
+            rotmode = rgroup.rotation_mode
+            maskverts = [elt.a for elt in rgroup.mask_vertices]
             if rotmode != "none":
                 msg = ("Not yet implemented: Rigidity rotmode = %s\n" % rotmode +
                        "Object: %s\n" % ob.name +
@@ -465,20 +479,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
             scalemodes = rgroup.scale_modes.split(" ")
 
-            base_coords = [ob.data.vertices[vn].co for vn in refverts]
-            shapekey_coords = [skey.data[vn].co for vn in refverts]
-
             # I think Daz3d use Singular Value Decomposition to determine which X,Y,Z scaling between shapekey_coords and base_coords
             # https://www.daz3d.com/forums/discussion/comment/636426/
             # https://gregorygundersen.com/blog/2018/12/10/svd/
-
-            base_center_coords = np.average(base_coords, axis=0)
-            shapekey_center_coords = np.average(shapekey_coords, axis=0)
-            if ob.data.get("DazFullyRigid", False):
-                diff = base_center_coords-shapekey_center_coords
-                dist = np.sum(np.abs(diff))
-                if dist < self.eps:
-                    return True
 
             # Transfrom Base Coordinate to be relative to its center
             base_coords_relative_to_base_center_coords = base_coords - base_center_coords
