@@ -458,16 +458,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             base_center_coords = np.average(base_coords, axis=0)
             shapekey_center_coords = np.average(shapekey_coords, axis=0)
 
-            # If the center doesn't move, we can remove the shapekey if the mesh is fully rigid,
-            # or use Flexibility vertex group otherwise
+            # If the center doesn't move, we can remove the shapekey if the mesh is fully rigid.
             diff = base_center_coords-shapekey_center_coords
             dist = np.sum(np.abs(diff))
-            if dist < self.eps:
-                if ob.data.get("DazFullyRigid", False):
-                    return True
-                elif "Flexibility" in ob.vertex_groups.keys():
-                    skey.vertex_group = "Flexibility"
-                    return False
+            if dist < self.eps and ob.data.get("DazFullyRigid", False):
+                return True
 
             rotmode = rgroup.rotation_mode
             maskverts = [elt.a for elt in rgroup.mask_vertices]

@@ -1404,14 +1404,6 @@ class Geometry(Asset, Channels):
                 wvalues = [w for vn,w in rweights]
                 if len(rweights) == nverts and min(wvalues) > 0.9999:
                     ob.data["DazFullyRigid"] = True
-                else:
-                    rweights = dict(rweights)
-                    fweights = [(vn, 1-rweights.get(vn,0)) for vn in range(nverts)]
-                    vgrp = ob.vertex_groups.get("Flexibility")
-                    if vgrp is None:
-                        vgrp = ob.vertex_groups.new(name="Flexibility")
-                    for vn,w in fweights:
-                        vgrp.add([vn], w, 'REPLACE')
 
 
     def makeShell(self, shname, shmat, uv):
@@ -1906,6 +1898,10 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
 
 def clearMeshProps(ob):
     me = ob.data
+    for gname in ["Rigidity"]:
+        vgrp = ob.vertex_groups.get(gname)
+        if vgrp:
+            ob.vertex_groups.remove(vgrp)
     me.DazRigidityGroups.clear()
     me.DazOrigVerts.clear()
     #me.DazFingerPrint = getFingerPrint(ob)

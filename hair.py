@@ -967,6 +967,8 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
         elif self.output in ['HAIR_CURVES', 'PARTICLES']:
             ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
         coll.objects.link(ob)
+        ob.name = hair.name
+        ob.name = hair.name
         rig = hum.parent
         if rig and rig.type == 'ARMATURE':
             head = rig.data.bones.get("head")
