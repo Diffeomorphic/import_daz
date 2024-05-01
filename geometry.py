@@ -505,7 +505,7 @@ class GeoNode(Node, SimNode):
         fnums = self.data.getPolyGroup(hidden)
         self.data.hidePolyGroup(self.rna, fnums)
         if self.hdobject and self.hdobject != self.rna:
-            self.data.hidePolyGroup(self.hdobject.rna, fnums)
+            self.data.hidePolyGroup(self.hdobject, fnums)
 
 
 def shiftMesh(ob, mat):
