@@ -183,11 +183,11 @@ class FrameConverter:
         missing = []
         for banim,vanim in anims:
             for bname in banim.keys():
-                if bname in truenames.keys():
-                    bonemap[bname] = truenames[bname]
-                    continue
                 if bname in conv.keys():
                     bonemap[bname] = conv[bname]
+                    continue
+                if bname in truenames.keys():
+                    bonemap[bname] = truenames[bname]
                     continue
                 if len(bname) < 2:
                     bonemap[bname] = bname
