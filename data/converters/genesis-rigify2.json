@@ -75,8 +75,8 @@
     "lFoot" : "foot_fk.L", 
     "l_foot" : "foot_fk.L", 
     "lMetatarsals" : "", 
-    "lToe" : "toe_fk.L", 
-    "l_toes" : "toe_fk.L", 
+    "lToe" : ["toe.L", "toe_fk.L"], 
+    "l_toes" : ["toe.L", "toe_fk.L"], 
     "lHeel" : "", 
 
     "rThigh" : "thigh_fk.R", 
@@ -88,8 +88,8 @@
     "rFoot" : "foot_fk.R", 
     "r_foot" : "foot_fk.R", 
     "rMetatarsals" : "", 
-    "rToe" : "toe_fk.R", 
-    "r_toes" : "toe_fk.R", 
+    "rToe" : ["toe.R", "toe_fk.R"], 
+    "r_toes" : ["toe.R", "toe_fk.R"], 
     "rHeel" : "", 
 
     "lBigToe" : "", 

@@ -129,10 +129,11 @@ class FrameConverter:
     def getRigifyLocks(self, rig, conv):
         locks = []
         if rig.DazRig.startswith("rigify"):
-            for bname in conv.values():
-                if (bname in rig.pose.bones.keys() and
-                    bname not in ["torso"]):
-                    pb = rig.pose.bones[bname]
+            for bname in conv.keys():
+                rname = self.getConvBone(conv[bname], rig)
+                if (rname in rig.pose.bones.keys() and
+                    rname not in ["torso"]):
+                    pb = rig.pose.bones[rname]
                     locks.append((pb, tuple(pb.lock_location)))
                     pb.lock_location = TTrue
         return locks
@@ -184,7 +185,7 @@ class FrameConverter:
         for banim,vanim in anims:
             for bname in banim.keys():
                 if bname in conv.keys():
-                    bonemap[bname] = conv[bname]
+                    bonemap[bname] = self.getConvBone(conv[bname], rig)
                     continue
                 if bname in truenames.keys():
                     bonemap[bname] = truenames[bname]
@@ -232,6 +233,16 @@ class FrameConverter:
             print("Missing bones:")
             print(missing)
         return bonemap, locks
+
+
+    def getConvBone(self, bnames, rig):
+        if isinstance(bnames, str):
+            return bnames
+        else:
+            for bname in bnames:
+                if bname in rig.pose.bones.keys():
+                    return bname
+            return bnames[0]
 
 
     def convertAllFrames(self, anims, rig, bonemap):
