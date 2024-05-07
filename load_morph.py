@@ -1583,6 +1583,7 @@ class LoadMorph(DriverUser):
 
     def optimizeJcmDrivers(self):
         if (not GS.useOptimizeJcms or
+            GS.useMakeHiddenSliders or
             self.rig is None or
             self.amt is None or
             self.amt.animation_data is None or

@@ -823,6 +823,7 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
                 item = self.colors.add()
                 item.name = mat.name
                 item.color = mat.diffuse_color
+                self.color = mat.diffuse_color
                 node = mat.node_tree.nodes.active
                 if node and node.type == 'TEX_IMAGE' and node.image:
                     item.image = node.image.name
