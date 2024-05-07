@@ -532,6 +532,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Add windoer for Dicktator/Futalicious shaft",
         default = False)
 
+    shaftName : StringProperty(
+        name = "Shaft Name",
+        description = "Shaft bones start with this string (case insensitive)",
+        default = "Shaft")
+
     useFixKnees : BoolProperty(
         name = "Fix Elbows And Knees",
         description = "Change elbow and knee location for better IK",
@@ -588,10 +593,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "useAnkleIk")
         self.layout.prop(self, "useRaiseError")
 
+
     def drawRigify(self):
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useShaftWinder")
+        if self.useShaftWinder:
+            self.layout.prop(self, "shaftName")
+
 
     def invoke(self, context, event):
         self.createBoneGroups(context.object)
@@ -1013,7 +1022,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def getShaftBones(self, rig):
         def isShaft(bname):
-            return (bname.lower()[0:5] == "shaft" and bname[5:].isdigit())
+            shaft = self.shaftName.lower()
+            nchars = len(shaft)
+            return bname.lower()[0:nchars] == shaft and bname[nchars:].isdigit()
 
         return [bone.name for bone in rig.data.bones if isShaft(bone.name)]
 
