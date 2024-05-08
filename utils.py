@@ -526,7 +526,7 @@ def truncString(string, ending):
     return string
 
 def isDrvBone(string):
-    return string.endswith(("(drv)", "twist1", "twist2"))
+    return string.endswith("(drv)")
 
 def baseBone(string):
     if string[-5:] in ["(fin)", "(drv)"]:
