@@ -186,6 +186,7 @@
     "l_midmetacarpal" : "",
     "l_ringmetacarpal" : "",
     "l_pinkymetacarpal" : "",
+    "l_hand_anchor" : "",
     
     "rCarpal1" : "",
     "rCarpal2" : "",
@@ -195,6 +196,7 @@
     "r_midmetacarpal" : "",
     "r_ringmetacarpal" : "",
     "r_pinkymetacarpal" : "",
+    "r_hand_anchor" : "",
     
     "l_upperarmtwist1" : "",
     "l_upperarmtwist2" : "",

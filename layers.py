@@ -223,7 +223,7 @@ if BLENDER3:
     S_RARMIK = 27
     S_LLEGIK = 28
     S_RLEGIK = 29
-    S_TWEAK = T_TWEAK
+    S_TWEAK = 2
     S_SPECIAL = 30
     S_HIDDEN = 31
 else:
