@@ -1440,7 +1440,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ikConstraint(forearmIk, handIk, None, 0, 2, rig)
 
             prop = "MhaForearmFollow_%s" % suffix
-            setMhx(rig, prop, True)
+            setMhx(rig, prop, False)
             cns1 = copyRotation(forearm, handFk, rig, space='LOCAL')
             cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, space='LOCAL')
             cns1.use_x = cns1.use_z = cns2.use_x = cns2.use_z = False

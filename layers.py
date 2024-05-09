@@ -223,6 +223,7 @@ if BLENDER3:
     S_RARMIK = 27
     S_LLEGIK = 28
     S_RLEGIK = 29
+    S_TWEAK = T_TWEAK
     S_SPECIAL = 30
     S_HIDDEN = 31
 else:
@@ -240,6 +241,7 @@ else:
     S_RARMIK = "IK Arm Right"
     S_LLEGIK = "IK Leg Left"
     S_RLEGIK = "IK Leg Right"
+    S_TWEAK = "Tweak"
     S_SPECIAL = "Special"
     S_HIDDEN = "Hidden"
 
@@ -259,6 +261,7 @@ SimpleLayers = {
     S_RARMIK : "IK Arm Right",
     S_LLEGIK : "IK Leg Left",
     S_RLEGIK : "IK Leg Right",
+    S_TWEAK : "Tweak",
     S_SPECIAL : "Special",
     S_HIDDEN : "Hidden"
 }

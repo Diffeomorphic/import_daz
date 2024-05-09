@@ -496,13 +496,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             lname = pb.name.lower()
             if pb.bone.hide:
                 pass
-            elif lname in ["upperfacerig", "lowerfacerig"]:
-                enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
-            elif lname in ["upperteeth", "lowerteeth"]:
-                self.addToLayer(pb, S_SPECIAL, rig, "Special")
+            elif isInNumLayer(pb.bone, rig, T_TWEAK):
+                pass
+                #self.addToLayer(pb, S_TWEAK, rig, "Tweak")
+            elif isInNumLayer(pb.bone, rig, T_HIDDEN):
+                pass
             elif not isInNumLayer(pb.bone, rig, T_BONES):
-                if not isInNumLayer(pb.bone, rig, T_HIDDEN):
-                    self.addToLayer(pb, S_SPECIAL, rig, "Special")
+                self.addToLayer(pb, S_SPECIAL, rig, "Special")
             elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
                     self.setCustomShape(pb, "CS_Line")

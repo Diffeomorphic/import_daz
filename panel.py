@@ -982,7 +982,7 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
             (S_LLEGIK, S_RLEGIK),
             (S_LHAND, S_RHAND),
             (S_LFOOT, S_RFOOT),
-            (S_SPECIAL, None)]
+            (S_TWEAK, S_SPECIAL)]
         for m,n in layers:
             row = self.layout.row()
             if BLENDER3:

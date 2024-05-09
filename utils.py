@@ -195,11 +195,13 @@ else:
 if BLENDER3:
     T_BONES = 0
     T_CUSTOM = 1
+    T_TWEAK = 2
     T_WIDGETS = 3
     T_HIDDEN = 31
 else:
     T_BONES = "Bones"
     T_CUSTOM = "Custom"
+    T_TWEAK = "Tweak"
     T_WIDGETS = "Widgets"
     T_HIDDEN = "Hidden"
 

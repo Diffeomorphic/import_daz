@@ -360,14 +360,13 @@ class BoneInstance(Instance):
             self.figure.hiddenBones[self.name] = True
             bone = rig.data.bones[self.name]
             bone.hide = True
-        if self.name.endswith(("twist1", "twist2")):
+        if (self.name.endswith(
+                ("twist1", "twist2", "metatarsal", "Metatarsals",
+                 "facerig", "FaceRig", "carpal", "hand_anchor")) or
+            self.name.startswith(("lCarpal", "rCarpal")) or
+            self.name in ["upperteeth", "lowerteeth", "upperTeeth", "lowerTeeth"]):
             bone = rig.data.bones[self.name]
-            enableBoneNumLayer(bone, rig, T_CUSTOM)
-        elif (self.name.endswith(("metatarsal", "Metatarsals", "facerig", "FaceRig", "carpal", "hand_anchor")) or
-              self.name.startswith(("lCarpal", "rCarpal")) or
-              self.name in ["upperteeth", "lowerteeth", "upperTeeth", "lowerTeeth"]):
-            bone = rig.data.bones[self.name]
-            enableBoneNumLayer(bone, rig, T_HIDDEN)
+            enableBoneNumLayer(bone, rig, T_TWEAK)
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildFormulas(rig, hide)
