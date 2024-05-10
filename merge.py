@@ -1650,8 +1650,12 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             setWorldMatrix(ob, wmat)
             self.addToCollections(ob, adds, hdadds, removes)
             if info.rig and info.rig != rig:
-                if ob.type == 'MESH' and ob.data.shape_keys:
-                    retargetDrivers(ob.data.shape_keys, info.rig, rig)
+                if ob.type == 'MESH':
+                    if ob.data.shape_keys:
+                        retargetDrivers(ob.data.shape_keys, info.rig, rig)
+                    for mat in ob.data.materials:
+                        if mat:
+                            retargetDrivers(mat.node_tree, info.rig, rig)
 
 
     def createNewCollections(self, rig):
