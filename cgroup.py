@@ -61,6 +61,8 @@ class CyclesGroup(NodeGroup, CyclesTree):
 # ---------------------------------------------------------------------
 
 class ShellGroup(NodeGroup):
+    GroupSize = 11
+
     def __init__(self, push):
         CyclesTree.__init__(self, None)
         NodeGroup.__init__(self)
@@ -70,7 +72,7 @@ class ShellGroup(NodeGroup):
 
 
     def create(self, node, name, parent):
-        NodeGroup.create(self, node, name, parent, 11)
+        NodeGroup.create(self, node, name, parent, self.GroupSize)
         addGroupInput(self.group, "NodeSocketFloat", "Influence")
         self.setMinMax("Influence", 0.0, 0.0, 10)
         addGroupInput(self.group, "NodeSocketShader", "BSDF")
