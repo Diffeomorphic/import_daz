@@ -649,7 +649,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Volume",
         description = "Use volume for volumetice materials")
 
-    useImageInterpolation : EnumProperty(
+    imageInterpolation : EnumProperty(
         items = [('Linear', "Linear", "Linear"),
                  ('Closest', "Closest", "Closest"),
                  ('Cubic', "Cubic", "Cubic"),
@@ -812,7 +812,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useMaterialsByName")
         if bpy.app.version < (3,4,0):
             box.prop(self, "useFakeCaustics")
-        box.prop(self, "useImageInterpolation")
+        box.prop(self, "imageInterpolation")
         box.prop(self, "useUnusedTextures")
         box.prop(self, "shellDriverType")
         box.prop(self, "useLayeredInflu")
