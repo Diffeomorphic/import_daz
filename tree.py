@@ -51,6 +51,9 @@ if BLENDER3:
 
     def getGroupInputs(group):
         return group.inputs.keys()
+
+    def getGroupOutputs(group):
+        return group.outputs.keys()
 else:
     def addGroupInput(group, type, slot):
         return group.interface.new_socket(slot, socket_type=type, in_out='INPUT')
@@ -66,6 +69,10 @@ else:
     def getGroupInputs(group):
         return [item.name for item in group.interface.items_tree
                 if item.item_type == 'SOCKET' and item.in_out == 'INPUT']
+
+    def getGroupOutputs(group):
+        return [item.name for item in group.interface.items_tree
+                if item.item_type == 'SOCKET' and item.in_out == 'OUTPUT']
 
 #-------------------------------------------------------------
 #   Mix RGB

@@ -38,7 +38,6 @@ from .pbr import PBR
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
 from .tree import TNode, getSocket, XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
-from .tree import addGroupInput, addGroupOutput, getGroupInput
 from .propgroups import DazIntGroup, DazFloatGroup
 
 #-------------------------------------------------------------
@@ -841,6 +840,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
 
 
     def makeGroup(self, ob):
+        from .tree import addGroupInput, addGroupOutput
         gname = "%s:%s Combo" % (ob.name, ob.active_material.name)
         group = bpy.data.node_groups.new(gname, "ShaderNodeTree")
         xlocs = [node.location[0] for node in self.nodes.values()]
@@ -1202,14 +1202,22 @@ ShellOutputs = ["BSDF", "Displacement"]
 def isShellNode(node):
     def hasSlots(data, slots):
         for slot in slots:
-            if slot not in data.keys():
+            if slot not in data:
                 return False
         return True
 
-    return (node.type == 'GROUP' and
-            not node.name.startswith("DAZ ") and
-            hasSlots(node.inputs, ShellInputs) and
-            hasSlots(node.outputs, ShellOutputs))
+    if isinstance(node, bpy.types.NodeTree):
+        from .tree import getGroupInputs, getGroupOutputs
+        inputs = getGroupInputs(node)
+        outputs = getGroupOutputs(node)
+    elif (node.type == 'GROUP' and
+          not node.name.startswith("DAZ ")):
+        inputs = node.inputs.keys()
+        outputs = node.outputs.keys()
+    else:
+        return False
+    return (hasSlots(inputs, ShellInputs) and
+            hasSlots(outputs, ShellOutputs))
 
 #-------------------------------------------------------------
 #   Make Material set

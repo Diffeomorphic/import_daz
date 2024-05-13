@@ -75,7 +75,7 @@ class UVLayerMerger:
                         return getUvMap(node.inputs.get("Vector"), default)
             return default
 
-        from .udim import isShellNode
+        from .matedit import isShellNode
         active = getActiveUvLayer(ob)
         uvmaps = {}
         shellmaps = {}
