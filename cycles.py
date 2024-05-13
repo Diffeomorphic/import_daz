@@ -134,6 +134,12 @@ class CyclesMaterial(Material):
         bumpmin = self.getValue("getChannelBumpMin", -0.01)
         bumpmax = self.getValue("getChannelBumpMax", 0.01)
         socket.default_value = (bumpmax-bumpmin) * GS.scale
+        while tex and tex.type != 'TEX_IMAGE':
+            links = tex.inputs["Color"].links
+            if links:
+                tex = links[0].from_node
+            else:
+                return
         key = tex.name
         if key not in self.geobump.keys():
             self.geobump[key] = (tex, [])
