@@ -133,7 +133,7 @@ class CyclesMaterial(Material):
     def addGeoBump(self, tex, socket):
         bumpmin = self.getValue("getChannelBumpMin", -0.01)
         bumpmax = self.getValue("getChannelBumpMax", 0.01)
-        socket.default_value = (bumpmax-bumpmin) * GS.scale
+        socket.default_value = (bumpmax-bumpmin) * GS.scale * GS.bumpMultiplier
         while tex and tex.type != 'TEX_IMAGE':
             links = tex.inputs["Color"].links
             if links:
@@ -170,7 +170,7 @@ class CyclesMaterial(Material):
             if density > 0:
                 height = 3.0/math.sqrt(density)
             for socket in sockets:
-                socket.default_value = height
+                socket.default_value = height * GS.bumpMultiplier
 
 
     def correctEmitArea(self, ob, mnum):

@@ -638,6 +638,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Reflection",
         description = "Use reflection maps")
 
+    bumpMultiplier : FloatProperty(
+        name = "Bump Multiplier",
+        description = "Factor to multiply bump distance")
+
     skinMethod : EnumProperty(
         items = [('IRAY', "IRAY", "Use translucency and volume nodes.\nUsually the most accurate conversion of volumetric skin materials,\nbut only works with Cycles and the BSDF material method"),
                  ('SSS', "SSS", "Replace translucency and volume with subsurface scattering"),
@@ -665,7 +669,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         items = [('NONE', "None", "Don't create shell influence drivers"),
                  ('MESH', "Mesh", "Shell influence driven by mesh properties"),
                  ('ARMATURE', "Armature", "Shell influence driven by armature properties")],
-        name = "Shell Influence Drivers",
+        name = "Shell Driver Type",
         description = "Add drivers to shell influence")
 
     useLayeredInflu : BoolProperty(
@@ -825,6 +829,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useVolume")
         box.prop(self, "useGhostLights")
         box.prop(self, "useReflection")
+        box.prop(self, "bumpMultiplier")
 
 
     def run(self, context):

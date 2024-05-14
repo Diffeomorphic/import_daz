@@ -96,6 +96,7 @@ class GlobalSettings:
         self.useDisplacement = True
         self.useEmission = True
         self.useReflection = True
+        self.bumpMultiplier = 1.0
         self.useWorld = 'DOME'
         self.useLowerResFolders = True
         self.useMaterialsByIndex = False
