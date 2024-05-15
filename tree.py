@@ -481,14 +481,15 @@ def getFromSocket(socket):
 #-------------------------------------------------------------
 
 def pruneNodeTree(tree,
-                  active=None,
-                  useDeleteUnusedNodes=True,
-                  useHideTexNodes=True,
-                  usePruneTexco=True,
-                  useHideOutputs=True,
-                  keepUnusedTextures=True,
-                  useFixColorSpace=True,
-                  useBeautify=True,
+                  active = None,
+                  useDeleteUnusedNodes = True,
+                  useHideTexNodes = True,
+                  usePruneTexco = True,
+                  useHideOutputs = True,
+                  keepUnusedTextures = True,
+                  useFixColorSpace = True,
+                  useBeautify = True,
+                  useGroups = True,
                   ):
     marked = {}
     if not tree:
@@ -497,6 +498,7 @@ def pruneNodeTree(tree,
     for node in tree.nodes:
         if (node.type == 'GROUP' and
             not node.name.startswith("DAZ ") and
+            useGroups and
             node.outputs and
             node.node_tree not in LS.protectedGroups):
             pruneNodeTree(node.node_tree,
@@ -507,7 +509,8 @@ def pruneNodeTree(tree,
                           useHideOutputs,
                           keepUnusedTextures,
                           useFixColorSpace,
-                          useBeautify)
+                          useBeautify,
+                          useGroups)
             LS.protectedGroups.append(node.node_tree)
 
     if usePruneTexco:
