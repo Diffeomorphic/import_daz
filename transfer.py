@@ -793,6 +793,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
 #----------------------------------------------------------
 #   Apply all shapekeys
+#   Used by hair
 #----------------------------------------------------------
 
 class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
@@ -803,20 +804,24 @@ class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            skeys = ob.data.shape_keys
-            if skeys:
-                nverts = len(ob.data.vertices)
-                verts = np.array([v.co for v in ob.data.vertices])
-                coords = verts.copy()
-                for skey in skeys.key_blocks:
-                    scoords = np.array([skey.data[n].co for n in range(nverts)])
-                    coords += skey.value*(scoords - verts)
-                blocks = list(skeys.key_blocks)
-                blocks.reverse()
-                for skey in blocks:
-                    ob.shape_key_remove(skey)
-                for v,co in zip(ob.data.vertices, coords):
-                    v.co = co
+            applyAllShapekeys(ob)
+
+
+def applyAllShapekeys(ob):
+    skeys = ob.data.shape_keys
+    if skeys:
+        nverts = len(ob.data.vertices)
+        verts = np.array([v.co for v in ob.data.vertices])
+        coords = verts.copy()
+        for skey in skeys.key_blocks:
+            scoords = np.array([skey.data[n].co for n in range(nverts)])
+            coords += skey.value*(scoords - verts)
+        blocks = list(skeys.key_blocks)
+        blocks.reverse()
+        for skey in blocks:
+            ob.shape_key_remove(skey)
+        for v,co in zip(ob.data.vertices, coords):
+            v.co = co
 
 #----------------------------------------------------------
 #   Apply selectedshapekeys
