@@ -652,7 +652,7 @@ class CyclesTree(Tree):
 
     def buildBump(self, uvname):
         if (not self.isEnabled("Bump") or
-            (LS.materialMethod == 'FBX_COMPATIBLE' and self.normal)):
+            LS.materialMethod == 'FBX_COMPATIBLE'):
             return
         bumpmode = self.owner.getLayeredValue(["Bump Mode"], 0)
         if bumpmode == 0:

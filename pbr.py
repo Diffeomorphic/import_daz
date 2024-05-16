@@ -271,7 +271,9 @@ class PbrTree(CyclesTree):
         self.pbr.subsurface_method = GS.sssMethod
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
-        if GS.skinMethod == 'AltSSS' and LS.materialMethod != 'FBX_COMPATIBLE':
+        if LS.materialMethod == 'FBX_COMPATIBLE':
+            pass
+        elif GS.skinMethod == 'AltSSS':
             self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex, texslot)
         else:
             self.addSubsurfaceColor(transwt, wttex, transcolor, transtex, texslot)
@@ -296,12 +298,9 @@ class PbrTree(CyclesTree):
 
 
     def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex, texslot):
-        if LS.materialMethod == 'FBX_COMPATIBLE':
-            gamma = transtex
-        else:
-            gamma = self.addNode("ShaderNodeGamma", size=7)
-            gamma.inputs["Gamma"].default_value = 3.5
-            self.linkColor(transtex, gamma, transcolor, "Color")
+        gamma = self.addNode("ShaderNodeGamma", size=7)
+        gamma.inputs["Gamma"].default_value = 3.5
+        self.linkColor(transtex, gamma, transcolor, "Color")
         self.linkSubsurfColor(transwt, wttex, gamma.outputs["Color"])
         self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
 
@@ -309,7 +308,7 @@ class PbrTree(CyclesTree):
     def linkSubsurfColor(self, transwt, wttex, socket):
         if BLENDER3:
             self.links.new(socket, self.pbr.inputs["Subsurface Color"])
-        elif transwt > 0 and LS.materialMethod != 'FBX_COMPATIBLE':
+        elif transwt > 0:
             mix,a,b,out = self.addMixRgbNode('MIX')
             self.linkScalar(wttex, mix, transwt, 0)
             self.linkColor(self.diffuseTex, mix, self.diffuseColor, MixRGB.Color1)
