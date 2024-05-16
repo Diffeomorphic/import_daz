@@ -1184,7 +1184,7 @@ class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
 def driveShellInfluence(ob):
     from .driver import setFloatProp, addDriver
     rig = ob
-    if GS.shellDriverType == 'ARMATURE' and ob.parent:
+    if ob.parent and ob.parent.type == 'ARMATURE':
         rig = ob.parent
     for mat in ob.data.materials:
         if mat and mat.node_tree:
@@ -1193,7 +1193,7 @@ def driveShellInfluence(ob):
                     prop = "INFLU %s" % node.label
                     setFloatProp(rig, prop, 1.0, 0.0, 10.0, True)
                     addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-                    ob.DazVisibilityDrivers = True
+                    ob.DazVisibilityDrivers = rig.DazVisibilityDrivers = True
 
 
 ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]

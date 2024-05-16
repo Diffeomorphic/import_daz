@@ -370,9 +370,9 @@ class GeoNode(Node, SimNode):
                 scaleEyeMoisture(hdob)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
-                if GS.shellDriverType != 'NONE':
+                if GS.useShellDrivers:
                     driveShellInfluence(hdob)
-            elif GS.shellDriverType != 'NONE':
+            elif GS.useShellDrivers:
                 driveShellInfluence(ob)
             if GS.shellMethod == 'GEONODES':
                 self.buildShells(context)
