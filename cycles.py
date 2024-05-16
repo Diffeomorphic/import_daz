@@ -652,7 +652,7 @@ class CyclesTree(Tree):
 
     def buildBump(self, uvname):
         if (not self.isEnabled("Bump") or
-            (LS.materialMethod == 'SINGLE_PRINCIPLED' and self.normal)):
+            (LS.materialMethod == 'FBX_COMPATIBLE' and self.normal)):
             return
         bumpmode = self.owner.getLayeredValue(["Bump Mode"], 0)
         if bumpmode == 0:
@@ -855,7 +855,7 @@ class CyclesTree(Tree):
 
     def buildOverlay(self):
         if (not self.getValue(["Diffuse Overlay Weight"], 0) or
-            LS.materialMethod == 'SINGLE_PRINCIPLED'):
+            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
             return False
         self.addColumn()
         fac,factex,texslot = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, isMask=True)
@@ -937,7 +937,7 @@ class CyclesTree(Tree):
     def buildMakeup(self):
         if (not self.isEnabled("Makeup") or
             not self.getValue(["Makeup Weight"], 0) or
-            LS.materialMethod == 'SINGLE_PRINCIPLED'):
+            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
             return False
         from .cgroup import MakeupGroup
         self.addColumn()
@@ -958,7 +958,7 @@ class CyclesTree(Tree):
     def buildFlakes(self):
         if (not self.isEnabled("Metallic Flakes") or
             not self.getValue(["Metallic Flakes Weight"], 0) or
-            LS.materialMethod == 'SINGLE_PRINCIPLED'):
+            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
             return False
         from .cgroup import FlakesGroup
         self.addColumn()
@@ -1145,7 +1145,7 @@ class CyclesTree(Tree):
 
     def prepareWeighted(self):
         if (self.owner.basemix == 2 and
-            LS.materialMethod != 'SINGLE_PRINCIPLED'):
+            LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED']):
             self.diffuseCycles = self.cycles
             self.cycles = None
             return True
@@ -1155,7 +1155,7 @@ class CyclesTree(Tree):
 
     def buildWeighted(self):
         if (self.owner.basemix != 2 or
-            LS.materialMethod == 'SINGLE_PRINCIPLED'):
+            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
             return False
         diffweight,difftex,_ = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex,texslot = self.getColorTex(["Glossy Weight"], "NONE", 0)
@@ -1184,7 +1184,7 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def checkTopCoat(self):
-        return (LS.materialMethod != 'SINGLE_PRINCIPLED' and
+        return (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
                 self.isEnabled("Top Coat") and
                 self.getValue(["Top Coat Weight"], 0))
 
@@ -1907,7 +1907,7 @@ class CyclesTree(Tree):
         if len(assets) == 0:
             return None
         elif (len(assets) == 1 or
-              LS.materialMethod == 'SINGLE_PRINCIPLED'):
+              LS.materialMethod == 'FBX_COMPATIBLE'):
             return newTexture(assets[0], maps[0])
 
         from .cgroup import LayeredGroup
@@ -2039,7 +2039,7 @@ class CyclesTree(Tree):
             return None
         elif (tex and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
-        elif LS.materialMethod == 'SINGLE_PRINCIPLED':
+        elif LS.materialMethod == 'FBX_COMPATIBLE':
             return tex
         if col is None:
             col = self.column-1
@@ -2071,7 +2071,7 @@ class CyclesTree(Tree):
             return None
         elif (not force and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
             return tex
-        elif LS.materialMethod == 'SINGLE_PRINCIPLED':
+        elif LS.materialMethod == 'FBX_COMPATIBLE':
             return tex
         if col is None:
             col = self.column-1

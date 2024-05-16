@@ -248,7 +248,8 @@ def showBox(scn, attr, layout):
 MaterialMethodItems = [
     ('BSDF', "BSDF (Cycles Only)", "Best IRAY materials, slow rendering.\nUses BSDF nodes with translucency and volume nodes.\nWorks with Cycles only when the Skin method is set to IRAY"),
     ('EXTENDED_PRINCIPLED', "Extended Principled", "Limited iray materials, fast rendering.\nUses principled plus bsdf nodes for extra features.\nWorks with Cycles and Eevee"),
-    ('SINGLE_PRINCIPLED', "Single Principled", "Extremely limited iray materials, very fast rendering.\nUses only the principled node.\nWorks with Cycles and Eevee and helps exporting to game engines"),
+    ('SINGLE_PRINCIPLED', "Single Principled", "Very limited iray materials, very fast rendering.\nUses only the principled node and works with Cycles and Eevee."),
+    ('FBX_COMPATIBLE', "FBX Compatible", "Extremely limited iray materials, suitable for export to game engines"),
 ]
 
 class DAZ_OT_GlobalSettings(DazPropsOperator):

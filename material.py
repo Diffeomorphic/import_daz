@@ -256,7 +256,7 @@ class Material(Asset, Channels):
                 self.useTranslucency = False
             elif self.isVolume():
                 self.useVolume = True
-        elif LS.materialMethod == 'SINGLE_PRINCIPLED':
+        elif LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']:
             self.useTranslucency = False
             self.useVolume = False
 
