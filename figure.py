@@ -143,6 +143,7 @@ class FigureInstance(Instance):
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildFormulas(rig, False)
+        self.addPointingConstraints(rig)
 
 
     def loadAltMorphs(self):
@@ -203,6 +204,19 @@ class FigureInstance(Instance):
                 self.clearBendDrivers(fcus)
 
 
+    def addPointingConstraints(self, rig):
+        from .mhx import dampedTrack
+        for bname,trgname in self.node.pointing.items():
+            pb = rig.pose.bones.get(bname)
+            trg = rig.pose.bones.get(drvBone(trgname))
+            if pb and trg:
+                dampedTrack(pb, trg, rig)
+            else:
+                trg = rig.pose.bones.get(trgname)
+                if pb and trg:
+                    dampedTrack(pb, trg, rig)
+
+
     def clearBendDrivers(self, fcus):
         for fcu in fcus:
             if fcu.array_index != 1:
@@ -232,6 +246,7 @@ class Figure(Node):
         self.bones = {}
         self.presentation = None
         self.figure = self
+        self.pointing = {}
 
 
     def __repr__(self):
@@ -285,11 +300,31 @@ class Figure(Node):
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
                 child.buildEdit(self, inst, rig, None, center, False)
+        if self.pointing:
+            self.pointBones(rig)
         setMode('OBJECT')
         rig.DazRig = self.rigtype = getRigType1(inst.bones.keys(), True)
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)
+
+
+    def pointBones(self, rig):
+        for bname,trgname in self.pointing.items():
+            eb = rig.data.edit_bones.get(bname)
+            trg = rig.data.edit_bones.get(trgname)
+            if eb and trg:
+                eb.tail = (eb.head + trg.head)/2
+        for bname,trgname in self.pointing.items():
+            if trgname in self.pointing.keys():
+                trg = rig.data.edit_bones.get(trgname)
+                drv = rig.data.edit_bones.new(drvBone(trgname))
+                enableBoneNumLayer(drv, rig, T_HIDDEN)
+                drv.head = trg.head
+                drv.tail = trg.tail
+                drv.roll = trg.roll
+                drv.parent = trg.parent
+                trg.parent = drv
 
 
 def getRigType(data, strict):

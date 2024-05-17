@@ -600,7 +600,7 @@ class Bone(Node):
     def __init__(self, fileref):
         Node.__init__(self, fileref)
         self.mapped = None
-        #self.inherits_scale = False
+        self.pointAt = None
 
 
     def __repr__(self):
@@ -676,8 +676,14 @@ class Bone(Node):
 
     def update(self, struct):
         Node.update(self, struct)
-        if "url" in struct.keys():
-            self.mapped = unquote(struct["url"]).rsplit("#")[-1]
+        url = struct.get("url")
+        if url:
+            self.mapped = unquote(url).rsplit("#")[-1]
+        pointAt = self.channels.get("Point At")
+        if pointAt:
+            node = pointAt.get("node")
+            if node and node[0] == "#":
+                self.figure.pointing[self.name] = node[1:]
 
 
     def build(self, context, inst=None):
