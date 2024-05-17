@@ -116,7 +116,8 @@ def optimizePose(context, useApplyRestPose):
     rig = context.object
     char = getCharacterFromRig(rig)
     if char is None:
-        raise DazError("Did not recognize character")
+        reportError("Could not optimize pose because the character was not recognized.")
+        return
     entry = DF.loadEntry(char, "ikposes")
     loadPose(context, rig, entry)
     if useApplyRestPose:
