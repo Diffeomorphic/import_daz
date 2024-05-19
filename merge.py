@@ -86,8 +86,9 @@ class UVLayerMerger:
                 if node.type == 'TEX_IMAGE':
                     uvname = getUvMap(node.inputs.get("Vector"), active.name)
                     uvmaps[uvname] = True
-                elif False and isShellNode(node):
+                elif isShellNode(node):
                     uvname = getUvMap(node.inputs.get("UV"), "**")
+                    mat["DazShellMap"] = uvname
                     shellmaps[uvname] = True
 
         for uvname in uvmaps.keys():
