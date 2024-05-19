@@ -106,6 +106,37 @@ def get_canonical_filepath(filepath):
     return getCanonicalFilePath(unquote(filepath))
 
 #-------------------------------------------------------------
+#   Get and set global setting
+#-------------------------------------------------------------
+
+def get_global_setting(setting):
+    """get_global_setting(setting)
+
+    Returns:
+    The value of the global setting "setting", or None if that is missing.
+
+    Arguments:
+    ?setting: Name of the global setting
+    """
+    return (getattr(GS, setting) if hasattr(GS, setting) else None)
+
+
+def set_global_setting(setting, value):
+    """set_global_setting(setting, value)
+
+    Returns:
+    Sets the value of the global setting "setting".
+
+    Arguments:
+    ?setting: Name of the global setting
+    ?value: New value of the global setting
+    """
+    try:
+        setattr(GS, setting, value)
+    except:
+        pass
+
+#-------------------------------------------------------------
 #   Active file paths used from python
 #-------------------------------------------------------------
 
