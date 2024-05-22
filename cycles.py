@@ -898,7 +898,8 @@ class CyclesTree(Tree):
             return default,None,0
         if isinstance(channel, tuple):
             channel = channel[0]
-        if self.owner.getImageMod(attr, "grayscale_mode") == "alpha":
+        imgmod = channel.get("image_modification", {})
+        if imgmod.get("grayscale_mode") == "alpha":
             texslot = "Alpha"
         else:
             texslot = 0
@@ -906,6 +907,9 @@ class CyclesTree(Tree):
             tex = self.addTexImageNode(channel, colorSpace, texslot, isMask)
         else:
             tex = None
+        if tex and imgmod:
+            print("IMGMOD", self.owner.name, attr, imgmod)
+            tex = self.modifyTex(tex, imgmod)
         if value is not None:
             pass
         elif channel["type"] in ["color", "float_color"]:
@@ -929,6 +933,18 @@ class CyclesTree(Tree):
             if isVector(default):
                 value = (value, value, value)
         return value,tex,texslot
+
+
+    def modifyTex(self, tex, imgmod):
+        scale = imgmod.get("scale")
+        offset = imgmod.get("offset")
+        horiztiles = imgmod.get("horizontal_tiles")
+        horizoffset = imgmod.get("horizontal_tiling_offset")
+        verttiles = imgmod.get("vertical_tiles")
+        vertoffset = imgmod.get("vertical_tiling_offset")
+        if imgmod.get("invert"):
+            tex = self.invertTex(tex, self.column+1)
+        return tex
 
     #-------------------------------------------------------------
     #  Makeup
@@ -1837,8 +1853,10 @@ class CyclesTree(Tree):
                 innode.extension = 'CLIP'
                 self.linkVector(mapping, innode)
                 innode = modulo
-            if map.invert:
-                color,outnode = self.invertColor(map.color, outnode, col+1)
+            #if map.invert:
+            #    color,outnode = self.invertColor(map.color, outnode, col+1)
+            if map.gamma != 1.0:
+                outnode = self.addGamma(col+1, outnode, "Gamma", map.gamma)
         return innode, texnode, outnode, isnew
 
 

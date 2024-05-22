@@ -590,6 +590,7 @@ class LocalSettings:
         self.deflectors = {}
         self.materials = {}
         self.images = {}
+        self.imageMaps = {}
         self.protectedImages = {}
         self.protectedGroups = []
         self.textures = {}

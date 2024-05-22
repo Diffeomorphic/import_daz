@@ -420,16 +420,6 @@ class Material(Asset, Channels):
         addUdimTree(mat.node_tree, udim, 0)
 
 
-    def getGamma(self, channel):
-        url = self.getImageFile(channel)
-        gamma = 0
-        if url in LS.gammas.keys():
-            gamma = LS.gammas[url]
-        elif "default_image_gamma" in channel.keys():
-            gamma = channel["default_image_gamma"]
-        return gamma
-
-
     def getDisplacementStrength(self):
         if (self.enabled["Displacement"] and
             GS.useDisplacement):
@@ -591,15 +581,6 @@ class Material(Asset, Channels):
             return srgbToLinearGamma22(color)
 
 
-    def getImageMod(self, attr, key):
-        channel = self.getLayeredChannel(attr)
-        if channel and "image_modification" in channel.keys():
-            mod = channel["image_modification"]
-            if key in mod.keys():
-                return mod[key]
-        return None
-
-
     def getTextures(self, channel):
         if isinstance(channel, tuple):
             channel = channel[0]
@@ -615,8 +596,11 @@ class Material(Asset, Channels):
                 else:
                     maps = []
         elif "image_file" in channel.keys():
-            map = Map({}, False)
-            map.url = channel["image_file"]
+            url = channel["image_file"]
+            map = LS.imageMaps.get(url)
+            if map is None:
+                map = Map({}, False)
+                map.url = channel["image_file"]
             maps = [map]
         elif "map" in channel.keys():
             maps = Maps(self.fileref)
@@ -684,6 +668,7 @@ class Map:
         self.color = (1,1,1)
         self.ismask = ismask
         self.image = None
+        self.gamma = 1.0
         self.size = None
         for key,default in [
             ("url", None),
@@ -706,7 +691,7 @@ class Map:
 
 
     def __repr__(self):
-        return ("<Map %s %s %s (%s %s)>" % (self.image, self.ismask, self.size, self.xoffset, self.yoffset))
+        return ("<Map %s %s %s %s %.2f (%s %s)>" % (self.url, self.image, self.ismask, self.size, self.gamma, self.xoffset, self.yoffset))
 
 
     def getTexture(self):
@@ -720,6 +705,26 @@ class Map:
 
 
     def build(self):
+        def getImage(url):
+            if url in LS.images.keys():
+                return LS.images[url]
+            filepath = GS.getAbsPath(url)
+            if not filepath:
+                reportError('Image not found:  \n"%s"' % filepath, trigger=(3,5))
+                return None
+            else:
+                try:
+                    img = bpy.data.images.load(filepath)
+                except (RuntimeError, TypeError):
+                    img = None
+                if img is None:
+                    reportError('Error when reading image:\n"%s"\n"%s"' % (url,filepath), trigger=(2,3))
+                    return None
+                imname = os.path.splitext(os.path.basename(filepath))[0]
+                img.name = unquote(bpy.path.clean_name(imname))
+                LS.images[url] = img
+            return img
+
         if self.image:
             return self.image
         elif self.url:
@@ -729,45 +734,19 @@ class Map:
             return self
 
 
-def getImage(url):
-    if url in LS.images.keys():
-        return LS.images[url]
-    else:
-        return loadImage(url)
-
-
-def loadImage(url):
-    filepath = GS.getAbsPath(url)
-    if not filepath:
-        reportError('Image not found:  \n"%s"' % filepath, trigger=(3,5))
-        return None
-    else:
-        try:
-            img = bpy.data.images.load(filepath)
-        except (RuntimeError, TypeError):
-            img = None
-        if img is None:
-            reportError('Error when reading image:\n"%s"\n"%s"' % (url,filepath), trigger=(2,3))
-            return None
-        imname = os.path.splitext(os.path.basename(filepath))[0]
-        img.name = unquote(bpy.path.clean_name(imname))
-        LS.images[url] = img
-    return img
-
 
 class Images(Asset):
     def __init__(self, fileref):
         Asset.__init__(self, fileref)
         self.maps = []
 
-
     def __repr__(self):
         return ("<Images %s r: %s>" % (self.id, self.maps))
 
-
     def parse(self, struct):
         Asset.parse(self, struct)
-        mapSize = None
+        size = None
+        gamma = 1.0
         for key,data in struct.items():
             if key == "map":
                 for mstruct in data:
@@ -775,35 +754,16 @@ class Images(Asset):
                         self.maps.append(Map(mstruct["mask"], True))
                     self.maps.append(Map(mstruct, False))
             elif key == "map_size":
-                mapSize = data
-        if mapSize is not None:
-            for map in self.maps:
-                map.size = mapSize
-        self.parseGamma(struct)
-
-
-    def update(self, struct):
-        self.parseGamma(struct)
-        print("UO", self)
-
-
-    def parseGamma(self, struct):
-        if "map_gamma" in struct.keys():
-            gamma = struct["map_gamma"]
-            for map in self.maps:
-                LS.gammas[map.url] = gamma
-
-
-    def build(self):
-        images = []
+                size = data
+            elif key == "map_gamma" and data != 0.0:
+                gamma = data
         for map in self.maps:
-            img = map.build()
-            images.append(img)
-        return images
+            map.size = size
+            map.gamma = gamma
+            LS.imageMaps[map.url] = map
 
 
 class Texture:
-
     def __init__(self, map):
         self.rna = None
         self.map = map
@@ -852,7 +812,9 @@ class Texture:
 
 
     def hasMapping(self, map):
-        return (map and map.size is not None)
+        return (map and
+                (map.size is not None or
+                 map.gamma != 1.0))
 
 
     def getMapping(self, mat, map):
