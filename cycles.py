@@ -898,18 +898,11 @@ class CyclesTree(Tree):
             return default,None,0
         if isinstance(channel, tuple):
             channel = channel[0]
-        imgmod = channel.get("image_modification", {})
-        if imgmod.get("grayscale_mode") == "alpha":
-            texslot = "Alpha"
-        else:
-            texslot = 0
         if useTex:
-            tex = self.addTexImageNode(channel, colorSpace, texslot, isMask)
+            tex,texslot = self.addTexImageNode(channel, colorSpace, isMask)
         else:
             tex = None
-        if tex and imgmod:
-            print("IMGMOD", self.owner.name, attr, imgmod)
-            tex = self.modifyTex(tex, imgmod)
+            texslot = 0
         if value is not None:
             pass
         elif channel["type"] in ["color", "float_color"]:
@@ -933,18 +926,6 @@ class CyclesTree(Tree):
             if isVector(default):
                 value = (value, value, value)
         return value,tex,texslot
-
-
-    def modifyTex(self, tex, imgmod):
-        scale = imgmod.get("scale")
-        offset = imgmod.get("offset")
-        horiztiles = imgmod.get("horizontal_tiles")
-        horizoffset = imgmod.get("horizontal_tiling_offset")
-        verttiles = imgmod.get("vertical_tiles")
-        vertoffset = imgmod.get("vertical_tiling_offset")
-        if imgmod.get("invert"):
-            tex = self.invertTex(tex, self.column+1)
-        return tex
 
     #-------------------------------------------------------------
     #  Makeup
@@ -1752,7 +1733,7 @@ class CyclesTree(Tree):
         if strength == 0:
             return
         channel = self.owner.getChannelDisplacement()
-        tex = self.addTexImageNode(channel, "NONE", 0, False)
+        tex,texslot = self.addTexImageNode(channel, "NONE", False)
         if tex:
             dmin = self.getValue("getChannelDispMin", -0.05)
             dmax = self.getValue("getChannelDispMax", 0.05)
@@ -1804,7 +1785,7 @@ class CyclesTree(Tree):
         for key,channel in self.owner.channels.items():
             if key not in self.owner.usedChannels.keys():
                 colorspace = getColorSpace(key.lower())
-                texnode = self.addTexImageNode(channel, colorspace, 0, False)
+                texnode,texslot = self.addTexImageNode(channel, colorspace, False)
                 if texnode:
                     texnodes[key] = texnode
         if texnodes:
@@ -1820,7 +1801,7 @@ class CyclesTree(Tree):
     #   Textures
     #-------------------------------------------------------------
 
-    def addSingleTexture(self, col, asset, map, colorSpace):
+    def addSingleTexture(self, col, asset, map, imgmod, colorSpace):
         if asset is None:
             from .material import srgbToLinearCorrect
             texnode = self.addNode("ShaderNodeRGB", col)
@@ -1839,13 +1820,28 @@ class CyclesTree(Tree):
             texnode = outnode = self.addTextureNode(col, img, imgname)
             self.setTexNode(imgname, texnode, outnode, "COLOR")
             if colorSpace in ["COLOR", "NONE"]:
-                gamma = self.addGamma(col, texnode, "Linear", 1/2.2)
+                gamma = self.addGamma(col, texnode, "Linear", 1/2.2, hide=True)
                 self.setTexNode(imgname, texnode, gamma, "NONE")
                 if colorSpace == "NONE":
                     outnode = gamma
             isnew = True
 
         innode = texnode
+
+        #scale = imgmod.get("scale", 1)
+        #offset = imgmod.get("offset", 0)
+        tx = imgmod.get("horizontal_tiles", 1)
+        dx = imgmod.get("horizontal_tiling_offset", 0)
+        ty = imgmod.get("vertical_tiles", 1)
+        dy = imgmod.get("vertical_tiling_offset", 0)
+        data = (dx, dy/2, 1/tx, 1/ty, 0)
+        modulo,mapping = self.addMappingNode(data, None)
+        if mapping:
+            self.linkVector(mapping, texnode)
+            innode = modulo
+        if imgmod.get("invert"):
+            outnode = self.invertTex(outnode, self.column+1)
+
         if asset.hasMapping(map):
             data = asset.getImageMapping(img, self.owner, map)
             modulo,mapping = self.addMappingNode(data, None, imgname)
@@ -1860,12 +1856,13 @@ class CyclesTree(Tree):
         return innode, texnode, outnode, isnew
 
 
-    def addGamma(self, col, texnode, label, value):
-        gamma = self.addNode("ShaderNodeGamma", col=col, size=2)
+    def addGamma(self, col, texnode, label, value, hide=False):
+        gamma = self.addNode("ShaderNodeGamma", col=col, size=(2 if hide else 6))
         gamma.label = label
         gamma.inputs["Gamma"].default_value = value
         self.links.new(texnode.outputs["Color"], gamma.inputs["Color"])
-        gamma.hide = True
+        if hide:
+            gamma.hide = True
         return gamma
 
 
@@ -1904,9 +1901,9 @@ class CyclesTree(Tree):
             self.links.new(texco.outputs["UV"], node.inputs[slot])
 
 
-    def addTexImageNode(self, channel, colorSpace, texslot, isMask):
+    def addTexImageNode(self, channel, colorSpace, isMask):
         def newTexture(asset, map):
-            innode,texnode,outnode,isnew = self.addSingleTexture(col, asset, map, colorSpace)
+            innode,texnode,outnode,isnew = self.addSingleTexture(col, asset, map, imgmod, colorSpace)
             if self.isDecal:
                 texnode.extension = 'CLIP'
                 self.clipsocket = texnode.outputs.get("Alpha")
@@ -1918,15 +1915,20 @@ class CyclesTree(Tree):
                 return outnode
 
         col = self.column-1
+        imgmod = channel.get("image_modification", {})
+        if imgmod.get("grayscale_mode") == "alpha":
+            texslot = "Alpha"
+        else:
+            texslot = 0
         assets,maps = self.owner.getTextures(channel)
         if self.inShell and len(assets) >= 2 and not GS.useLayeredShells:
             assets = assets[1:]
             maps = maps[1:]
         if len(assets) == 0:
-            return None
+            return None,texslot
         elif (len(assets) == 1 or
               LS.materialMethod == 'FBX_COMPATIBLE'):
-            return newTexture(assets[0], maps[0])
+            return newTexture(assets[0], maps[0]), texslot
 
         from .cgroup import LayeredGroup
         if "image" in channel.keys():
@@ -1935,7 +1937,7 @@ class CyclesTree(Tree):
                 name = name[1:]
             name = "LIE %s" % name
             if name in self.layeredGroups.keys():
-                return self.layeredGroups[name]
+                return self.layeredGroups[name], texslot
         else:
             name = "LIE Layered"
         node = self.addNode("ShaderNodeGroup", col)
@@ -1946,7 +1948,7 @@ class CyclesTree(Tree):
         else:
             group = LayeredGroup()
             group.create(node, name, self)
-            group.addTextureNodes(assets, maps, colorSpace, isMask)
+            group.addTextureNodes(assets, maps, imgmod, colorSpace, isMask)
             if name != "LIE Layered":
                 LS.layeredGroups[name] = node.node_tree
         node.width = 240
@@ -1955,7 +1957,7 @@ class CyclesTree(Tree):
         if "Influence" in node.inputs.keys():
             node.inputs["Influence"].default_value = 1.0
         self.layeredGroups[name] = node
-        return node
+        return node, texslot
 
 
     def mixTexs(self, op, tex1, tex2, color1=None, color2=None, fac=1, factex=None):
@@ -2022,7 +2024,7 @@ class CyclesTree(Tree):
 
     def addSlot(self, channel, node, slot, value, value0, invert, isMask=False):
         node.inputs[slot].default_value = value
-        tex = self.addTexImageNode(channel, "NONE", 0, isMask)
+        tex,texslot = self.addTexImageNode(channel, "NONE", isMask)
         if tex:
             _,tex = self.multiplySomeTex(value0, tex)
             if invert:

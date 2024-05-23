@@ -38,7 +38,6 @@ class FileAsset(Asset):
         Asset.__init__(self, fileref)
         self.nodes = []
         self.modifiers = []
-        self.uvs = []
         self.materials = []
         self.animations = {}
         self.instances = {}
@@ -68,7 +67,6 @@ class FileAsset(Asset):
             from .geometry import Uvset
             for ustruct in struct["uv_set_library"]:
                 asset = self.parseTypedAsset(ustruct, Uvset)
-                self.uvs.append(asset)
 
         if LS.useGeometries and "geometry_library" in struct.keys():
             from .geometry import Geometry

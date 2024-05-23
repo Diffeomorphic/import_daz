@@ -1787,12 +1787,12 @@ class LayeredGroup(CyclesGroup):
         addGroupOutput(self.group, "NodeSocketFloat", "Alpha")
 
 
-    def addTextureNodes(self, assets, maps, colorSpace, isMask):
+    def addTextureNodes(self, assets, maps, imgmod, colorSpace, isMask):
         self.outnode = None
         self.mask = None
         texnode0 = None
         for asset,map in zip(assets, maps):
-            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, colorSpace)
+            innode,texnode,outnode,isnew = self.addSingleTexture(2, asset, map, imgmod, colorSpace)
             if texnode0 is None:
                 texnode0 = texnode
             if innode:

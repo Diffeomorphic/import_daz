@@ -720,8 +720,8 @@ class Map:
                 if img is None:
                     reportError('Error when reading image:\n"%s"\n"%s"' % (url,filepath), trigger=(2,3))
                     return None
-                imname = os.path.splitext(os.path.basename(filepath))[0]
-                img.name = unquote(bpy.path.clean_name(imname))
+                imgname = os.path.splitext(os.path.basename(filepath))[0]
+                img.name = unquote(bpy.path.clean_name(imgname))
                 LS.images[url] = img
             return img
 
