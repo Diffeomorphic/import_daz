@@ -202,34 +202,30 @@ class Formula:
             if prop in ignore:
                 pass
             elif type == "value":
-                expr["mults"].append(prop)
+                expr["prop"].mults.append(prop)
             elif comp >= 0:
                 bname = getMappedBone(prop, rig, mesh)
                 if bname in rig.pose.bones.keys():
-                    expr["mults"].append((bname,path,comp))
+                    expr["bone"].mults.append(path)
 
 
     def evalOperations(self, formula, expr, rig, mesh):
         from .bone import getMappedBone
         opers = formula["operations"]
         prop,type,path,comp = self.evalUrl(opers[0], rig)
-        factor = "factor"
         if type == "value":
             if expr["prop"] is None:
-                expr["prop"] = prop
+                target = expr["prop"] = ExprTarget(prop, -1)
             else:
-                expr["prop2"] = prop
-                factor = "factor2"
-                expr["comp2"] = comp
-        elif expr["bone"] is None:
-            expr["bone"] = getMappedBone(prop, rig, mesh)
-            expr["comp"] = comp
+                target = expr["prop2"] = ExprTarget(prop, -1)
         else:
-            expr["bone2"] = getMappedBone(prop, rig, mesh)
-            factor = "factor2"
-            expr["comp2"] = comp
+            bname = getMappedBone(prop, rig, mesh)
+            if expr["bone"] is None:
+                target = expr["bone"] = ExprTarget(bname, comp)
+            else:
+                target = expr["bone2"] = ExprTarget(bname, comp)
         expr["path"] = path
-        self.evalMainOper(opers, expr, factor)
+        self.evalMainOper(opers, target)
 
 
     def evalUrl(self, oper, rig):
@@ -252,18 +248,18 @@ class Formula:
         return prop,type,unquote(fileref),url
 
 
-    def evalMainOper(self, opers, expr, factor):
+    def evalMainOper(self, opers, target):
         if len(opers) == 1:
-            expr[factor] = 1
+            target.factor = 1
             return
         oper = opers[-1]
         op = oper["op"]
         if op == "mult":
-            expr[factor] = opers[1]["val"]
+            target.factor = opers[1]["val"]
         elif op == "spline_tcb":
-            expr["points"] = [opers[n]["val"] for n in range(1,len(opers)-2)]
+            target.points = [opers[n]["val"] for n in range(1,len(opers)-2)]
         elif op == "spline_linear":
-            expr["points"] = [opers[n]["val"] for n in range(1,len(opers)-2)]
+            target.points = [opers[n]["val"] for n in range(1,len(opers)-2)]
         else:
             reportError("Unknown formula %s" % opers, trigger=(2,6))
             return
@@ -344,16 +340,33 @@ def buildBakedMorph(inst, ref, value):
 
 def makeExpression():
     return {
-        "factor" : 0,
-        "factor2" : 0,
         "prop" : None,
         "prop2" : None,
         "bone" : None,
         "bone2" : None,
         "path" : None,
-        "comp" : -1,
-        "comp2" : -1,
-        "mults" : []}
+    }
+
+
+class ExprTarget:
+    def __init__(self, key, comp):
+        self.key = key
+        self.comp = comp
+        self.factor = 0.0
+        self.points = []
+        self.mults = []
+
+    def __repr__(self):
+        return "<ExprTarget %s %d %.3f %s %s>" % (self.key, self.comp, self.factor, self.points, self.mults)
+
+
+class Expression:
+    def __init__(self):
+        self.prop = None
+        self.prop2 = None
+        self.bone = None
+        self.bone2 = None
+        self.path = None
 
 def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
     if output not in exprs.keys():

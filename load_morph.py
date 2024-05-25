@@ -122,7 +122,8 @@ class LoadMorph(DriverUser):
         self.primary = {}
         self.visible = {}
         self.erc = False
-        self.drivers = {}
+        self.propDrivers = {}
+        self.boneDrivers = {}
         self.shapekeys = {}
         self.faceshapes = {}
         self.mults = {}
@@ -525,8 +526,8 @@ class LoadMorph(DriverUser):
         from .selector import setActivated
         from .modifier import Alias, FormulaAsset
         final = finalProp(raw)
-        if raw not in self.drivers.keys():
-            self.drivers[raw] = []
+        if raw not in self.propDrivers.keys():
+            self.propDrivers[raw] = []
             self.visible[raw] = False
             self.primary[raw] = False
         if asset:
@@ -603,29 +604,34 @@ class LoadMorph(DriverUser):
 
     def makeValueFormula(self, output, expr):
         output = self.getUniqueName(output)
-        if expr["prop"]:
+        print("MVAL", output, expr)
+        target = expr["prop"]
+        if target:
             self.addNewProp(output)
-            prop = self.getUniqueName(expr["prop"])
-            factor = expr["factor"]
-            if "points" in expr.keys():
-                factor = self.cheatSplineTCB(expr["points"], factor)
-            self.drivers[output].append(("PROP", prop, factor))
-            if expr["prop2"]:
-                prop2 = self.getUniqueName(expr["prop2"])
-                factor2 = expr["factor2"]
-                self.drivers[output].append(("PROP", prop2, factor2))
-        for mult in expr["mults"]:
-            if isinstance(mult, str):
-                mult = self.getUniqueName(mult)
-                self.addNewProp(mult)
-            if output not in self.mults.keys():
-                self.mults[output] = []
-            self.mults[output].append(mult)
-        if expr["bone"]:
-            bname = expr["bone"]
-            if output not in self.drivers.keys():
-                self.drivers[output] = []
-            self.drivers[output].append(("BONE", bname, expr))
+            prop = self.getUniqueName(target.key)
+            if target.points:
+                factor = self.cheatSplineTCB(target.points, target.factor)
+            self.propDrivers[output].append((prop, target.factor))
+            target2 = expr["prop2"]
+            if target2:
+                prop2 = self.getUniqueName(target2.key)
+                self.propDrivers[output].append((prop2, target2.factor))
+            for mult in target.mults:
+                if isinstance(mult, str):
+                    mult = self.getUniqueName(mult)
+                    self.addNewProp(mult)
+                if output not in self.mults.keys():
+                    self.mults[output] = []
+                self.mults[output].append(mult)
+        target = expr["bone"]
+        if target:
+            if output not in self.boneDrivers.keys():
+                self.boneDrivers[output] = {}
+            self.boneDrivers[output][target.key] = expr
+            target2 = expr["bone2"]
+            if target2:
+                self.boneDrivers[output][target2.key] = expr
+
 
 
     def getBoneData(self, bname, expr):
@@ -636,13 +642,15 @@ class LoadMorph(DriverUser):
             pb = self.rig
         else:
             pb = self.rig.pose.bones[bname]
-        factor = expr["factor"]
+        print("BGP", expr)
+        target = expr["prop"]
+        factor = target.factor
         if "points" in expr.keys():
-            factor = self.cheatSplineTCB(expr["points"], factor)
-        raw = rawProp(self.getUniqueName(expr["prop"]))
+            factor = self.cheatSplineTCB(target.points, target.factor)
+        raw = rawProp(self.getUniqueName(target.key))
         final = self.addNewProp(raw)
         tfm = Transform()
-        return tfm, pb, final, factor
+        return tfm, pb, final, target.factor
 
 
     def cheatSplineTCB(self, points, factor):
@@ -967,21 +975,19 @@ class LoadMorph(DriverUser):
         from .driver import setFloatProp
         if GS.verbosity >= 3:
             print("Building drivers")
-        for output,drivers in self.drivers.items():
+        for output,drivers in self.propDrivers.items():
             if drivers:
-                bonedrivers = [driver for driver in drivers if driver[0] == 'BONE']
-                propdrivers = [driver for driver in drivers if driver[0] == 'PROP']
-                if propdrivers:
-                    self.buildPropDriver(rawProp(output), propdrivers)
-                if bonedrivers:
-                    for dtype,bname,expr in bonedrivers:
-                        self.buildBoneDriver(output, bname, expr, False)
+                self.buildPropDriver(rawProp(output), drivers)
             elif self.visible[output] and not self.inFigure.get(output):
                 self.buildPropDriver(rawProp(output), drivers)
             else:
                 final = finalProp(output)
                 if final not in self.amt.keys():
                     setFloatProp(self.amt, final, 0.0, None, None, True)
+        for output,drivers in self.boneDrivers.items():
+            if drivers:
+                for bname,expr in drivers.items():
+                    self.buildBoneDriver(output, bname, expr, False)
 
 
     def isDriverType(self, dtype, drivers):
@@ -1076,8 +1082,8 @@ class LoadMorph(DriverUser):
                 return "%+g*%s" % (factor, varname)
 
         channels = [var.targets[0].data_path for var in fcu.driver.variables]
-        for dtype,subraw,factor in drivers[0:MAX_TERMS2]:
-            if dtype != 'PROP' or factor == 0.0:
+        for subraw,factor in drivers[0:MAX_TERMS2]:
+            if factor == 0.0:
                 continue
             subraw = rawProp(subraw)
             subfinal = finalProp(subraw)
@@ -1138,9 +1144,8 @@ class LoadMorph(DriverUser):
 
     def addRestDrivers(self, rest, drivers):
         struct = self.restdrivers[rest] = {}
-        for dtype,raw,factor in drivers:
-            if dtype == 'PROP':
-                struct[finalProp(raw)] = factor
+        for raw,factor in drivers:
+            struct[finalProp(raw)] = factor
 
 
     def addPathVar(self, fcu, varname, rna, path):
@@ -1258,22 +1263,23 @@ class LoadMorph(DriverUser):
         rna,path = self.getDrivenChannel(raw)
         #rna.driver_remove(path)
         channel = expr["path"]
-        comp = expr["comp"]
+        target = expr["bone"]
+        bname = target.key
         unit = getUnit(channel, self.rig)
         self.getMultipliers(raw)
         if "points" in expr.keys():
-            uvec,xys = getSplinePoints(expr, pb, comp)
+            uvec,xys = getSplinePoints(expr, pb, target.comp)
             self.makeSplineBoneDriver(channel, uvec, xys, rna, path, -1, bname, keep)
         else:
-            factor = expr["factor"]
-            uvec = unit*getBoneVector(factor, comp, pb)
-            bname2 = expr.get("bone2")
+            uvec = unit*getBoneVector(target.factor, target.comp, pb)
+            bname2 = None
             uvec2 = None
-            if bname2 and bname2 in self.rig.pose.bones.keys():
-                pb2 = self.rig.pose.bones[bname2]
-                factor2 = expr["factor2"]
-                comp2 = expr["comp2"]
-                uvec2 = unit*getBoneVector(factor2, comp2, pb2)
+            target2 = expr["bone2"]
+            if target2:
+                bname2 = target2.key
+                pb2 = self.rig.pose.bones.get(bname2)
+                if pb2:
+                    uvec2 = unit*getBoneVector(target2.factor, target2.comp, pb2)
             self.makeSimpleBoneDriver(channel, uvec, rna, path, -1, bname, keep, bname2, uvec2)
 
     #-------------------------------------------------------------
@@ -1401,6 +1407,8 @@ class LoadMorph(DriverUser):
                 self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
         if propDriver:
+            print("DD", propDriver.expression)
+            print("SS", string)
             fcu.driver.expression = "%s + %s" % (propDriver.expression, string)
             for var in propDriver.variables:
                 var.create(fcu.driver.variables.new())
@@ -1621,7 +1629,7 @@ class LoadMorph(DriverUser):
                         trg.id = skeys
                         trg.data_path = 'key_blocks["%s"].value' % prop
 
-        for prop in self.drivers.keys():
+        for prop in self.propDrivers.keys():
             skey = skeys.key_blocks.get(prop)
             if skey:
                 final = finalProp(prop)
@@ -1766,19 +1774,17 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         lm = LoadMorph()
         lm.initRig(rig2, rig)
         for idx,expr in exprs.items():
-            driver = expr["bone"]
-            if driver:
-                factor = expr["factor"]
+            target = expr["bone"]
+            if target:
+                bname = target.key
+                factor = target.factor
                 channel = expr["path"]
-                comp = expr["comp"]
-            elif expr["mults"]:
-                driver,channel,comp = expr["mults"][0]
-                factor = 1.0
+                comp = target.comp
             else:
                 continue
             unit = getUnit(channel, rig2)
-            if driver in rig.pose.bones.keys():
-                pbDriver = rig.pose.bones[driver]
+            pbDriver = rig.pose.bones.get(bname)
+            if pbDriver:
                 if pbDriver.parent == pb:
                     if path == "scale":
                         pbDriver.bone.inherit_scale = pb.bone.inherit_scale = 'FULL'
@@ -1787,7 +1793,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                     continue
                 if factor:
                     tvec,idx2 = getTransformVector(factor, path, comp, pbDriver, pb, idx)
-                    lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, driver, False)
+                    lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, False)
 
 
     def canOptimizeScale(exprs, pb, rig):
@@ -1803,8 +1809,8 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         for idx,expr in exprs.items():
             if idx < 0:
                 pass
-            elif not expr["bone"] and expr["mults"]:
-                driver,path,comp = expr["mults"][0]
+            elif expr["bone"].mults:
+                driver,path,comp = expr["bone"].mults
                 if not (driver in parents and path == "scale" and comp == idx):
                     return False
             else:
