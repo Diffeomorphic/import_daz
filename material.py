@@ -665,14 +665,14 @@ class Map:
         self.url = None
         self.label = None
         self.operation = "alpha_blend"
-        self.color = (1,1,1)
+        self.color = WHITE
         self.ismask = ismask
         self.image = None
         self.gamma = 1.0
         self.size = None
         for key,default in [
             ("url", None),
-            ("color", BLACK),
+            ("color", WHITE),
             ("label", None),
             ("operation", None),
             ("invert", False),

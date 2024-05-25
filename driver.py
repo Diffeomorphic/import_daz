@@ -285,7 +285,9 @@ def getShapekeyPropDriver(skeys, sname, channel = "value"):
 
 
 def getRnaDriver(rna, path, type=None):
-    if rna and rna.animation_data:
+    if (rna and
+        not isinstance(rna, bpy.types.PoseBone) and
+        rna.animation_data):
         for fcu in rna.animation_data.drivers:
             if path == fcu.data_path:
                 if not type:

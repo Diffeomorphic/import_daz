@@ -969,12 +969,13 @@ class LoadMorph(DriverUser):
             print("Building drivers")
         for output,drivers in self.drivers.items():
             if drivers:
-                if self.isDriverType('BONE', drivers):
-                    for dtype,bname,expr in drivers:
-                        if dtype == 'BONE':
-                            self.buildBoneDriver(output, bname, expr, False)
-                elif self.isDriverType('PROP', drivers):
-                    self.buildPropDriver(rawProp(output), drivers)
+                bonedrivers = [driver for driver in drivers if driver[0] == 'BONE']
+                propdrivers = [driver for driver in drivers if driver[0] == 'PROP']
+                if propdrivers:
+                    self.buildPropDriver(rawProp(output), propdrivers)
+                if bonedrivers:
+                    for dtype,bname,expr in bonedrivers:
+                        self.buildBoneDriver(output, bname, expr, False)
             elif self.visible[output] and not self.inFigure.get(output):
                 self.buildPropDriver(rawProp(output), drivers)
             else:
@@ -1241,7 +1242,6 @@ class LoadMorph(DriverUser):
             n = len(points)
             if (points[0][0] > points[n-1][0]):
                 points.reverse()
-
             diff = points[n-1][0] - points[0][0]
             uvec = getBoneVector(unit/diff, comp, pb)
             xys = []
@@ -1255,15 +1255,15 @@ class LoadMorph(DriverUser):
         if pb is None:
             print("Cannot build driver for non-existing bone: %s" % bname)
             return
-        rna,channel = self.getDrivenChannel(raw)
-        #rna.driver_remove(channel)
-        path = expr["path"]
+        rna,path = self.getDrivenChannel(raw)
+        #rna.driver_remove(path)
+        channel = expr["path"]
         comp = expr["comp"]
-        unit = getUnit(path, self.rig)
+        unit = getUnit(channel, self.rig)
         self.getMultipliers(raw)
         if "points" in expr.keys():
             uvec,xys = getSplinePoints(expr, pb, comp)
-            self.makeSplineBoneDriver(path, uvec, xys, rna, channel, -1, bname, keep)
+            self.makeSplineBoneDriver(channel, uvec, xys, rna, path, -1, bname, keep)
         else:
             factor = expr["factor"]
             uvec = unit*getBoneVector(factor, comp, pb)
@@ -1274,7 +1274,7 @@ class LoadMorph(DriverUser):
                 factor2 = expr["factor2"]
                 comp2 = expr["comp2"]
                 uvec2 = unit*getBoneVector(factor2, comp2, pb2)
-            self.makeSimpleBoneDriver(path, uvec, rna, channel, -1, bname, keep, bname2, uvec2)
+            self.makeSimpleBoneDriver(channel, uvec, rna, path, -1, bname, keep, bname2, uvec2)
 
     #-------------------------------------------------------------
     #   Bone drivers
@@ -1322,6 +1322,8 @@ class LoadMorph(DriverUser):
                 zstring = ("%s%s" % (zs, getPrint(zi*umax)))
                 if zstring[0:2] == "+-":
                     zstring = zstring[1:]
+                elif zstring[0:2] == "--":
+                    zstring = "+%s" % zstring[2:]
             term1 = "%s%s" % (getMult(kij*umax, var), zstring)
             if term1 != term:
                 string += prev
@@ -1345,11 +1347,15 @@ class LoadMorph(DriverUser):
 
 
     def makeBoneDriver(self, string, vars, channel, rna, path, idx, keep):
-        from .driver import addTransformVar, Variable, getRnaDriver, removeModifiers
+        from .driver import addTransformVar, Driver, Variable, getRnaDriver, removeModifiers
         bvars = []
         vvars = {}
-        if keep:
-            fcu0 = getRnaDriver(rna, path, None)
+        propDriver = None
+        fcu0 = getRnaDriver(rna, path, None)
+        if channel == "value":
+            channel = "rotation"
+            propDriver = Driver(fcu0, False)
+        elif keep:
             if fcu0 and fcu0.driver.type == 'SCRIPTED':
                 vtargets,btargets = self.getVarBoneTargets(fcu0)
                 if btargets:
@@ -1394,7 +1400,12 @@ class LoadMorph(DriverUser):
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
                 self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
-        fcu.driver.expression = string
+        if propDriver:
+            fcu.driver.expression = "%s + %s" % (propDriver.expression, string)
+            for var in propDriver.variables:
+                var.create(fcu.driver.variables.new())
+        else:
+            fcu.driver.expression = string
         ttypes = self.getTransformTypes(channel)
         if ttypes is None:
             return None
@@ -1751,32 +1762,32 @@ class LoadMorph(DriverUser):
 #-------------------------------------------------------------
 
 def buildBoneFormula(asset, rig, altmorphs, errors):
-    def buildChannel(exprs, pb, channel):
+    def buildPath(exprs, pb, path):
         lm = LoadMorph()
         lm.initRig(rig2, rig)
         for idx,expr in exprs.items():
             driver = expr["bone"]
             if driver:
                 factor = expr["factor"]
-                path = expr["path"]
+                channel = expr["path"]
                 comp = expr["comp"]
             elif expr["mults"]:
-                driver,path,comp = expr["mults"][0]
+                driver,channel,comp = expr["mults"][0]
                 factor = 1.0
             else:
                 continue
-            unit = getUnit(path, rig2)
+            unit = getUnit(channel, rig2)
             if driver in rig.pose.bones.keys():
                 pbDriver = rig.pose.bones[driver]
                 if pbDriver.parent == pb:
-                    if channel == "scale":
+                    if path == "scale":
                         pbDriver.bone.inherit_scale = pb.bone.inherit_scale = 'FULL'
                     elif GS.verbosity >= 3:
                         print("Dependency loop: %s %s" % (pbDriver.name, pb.name))
                     continue
                 if factor:
-                    tvec,idx2 = getTransformVector(factor, channel, comp, pbDriver, pb, idx)
-                    lm.makeSimpleBoneDriver(path, tvec, pb, channel, idx2, driver, False)
+                    tvec,idx2 = getTransformVector(factor, path, comp, pbDriver, pb, idx)
+                    lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, driver, False)
 
 
     def canOptimizeScale(exprs, pb, rig):
@@ -1844,18 +1855,18 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         if "rotation" in expr.keys():
             if driven in rig2.pose.bones.keys():
                 pb = rig2.pose.bones[driven]
-                buildChannel(expr["rotation"], pb, "rotation_euler")
+                buildPath(expr["rotation"], pb, "rotation_euler")
         if "translation" in expr.keys():
             if driven in rig2.pose.bones.keys():
                 pb = rig2.pose.bones[driven]
-                buildChannel(expr["translation"], pb, "location")
+                buildPath(expr["translation"], pb, "location")
         if "scale" in expr.keys() and not GS.useInheritScale:
             if driven in rig2.pose.bones.keys():
                 pb = rig2.pose.bones[driven]
                 if canOptimizeScale(expr["scale"], pb, rig2):
                     pb.bone.inherit_scale = 'FULL'
                 else:
-                    buildChannel(expr["scale"], pb, "scale")
+                    buildPath(expr["scale"], pb, "scale")
 
         if "value" in expr.keys():
             formulas = expr["value"]
