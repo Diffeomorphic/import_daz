@@ -1914,6 +1914,8 @@ class CyclesTree(Tree):
             else:
                 return outnode
 
+        if channel is None:
+            return None, 0
         col = self.column-1
         imgmod = channel.get("image_modification", {})
         if imgmod.get("grayscale_mode") == "alpha":
