@@ -198,15 +198,17 @@ class Formula:
                   "facs_ctrl_FACSDetailStrength",]
         if formula["stage"] == "mult":
             opers = formula["operations"]
-            prop,type,path,comp = self.evalUrl(opers[0], rig)
-            if prop in ignore:
+            key,type,path,comp = self.evalUrl(opers[0], rig)
+            if key in ignore:
                 pass
             elif type == "value":
-                expr["prop"].mults.append(prop)
+                expr.prop.mults.append(key)
             elif comp >= 0:
-                bname = getMappedBone(prop, rig, mesh)
+                bname = getMappedBone(key, rig, mesh)
                 if bname in rig.pose.bones.keys():
-                    expr["bone"].mults.append(path)
+                    if expr.bone is None:
+                        expr.bone = ExprTarget(bname, type, comp)
+                    expr.bone.mults.append((bname, path, comp))
 
 
     def evalOperations(self, formula, expr, rig, mesh):
@@ -214,17 +216,17 @@ class Formula:
         opers = formula["operations"]
         prop,type,path,comp = self.evalUrl(opers[0], rig)
         if type == "value":
-            if expr["prop"] is None:
-                target = expr["prop"] = ExprTarget(prop, -1)
+            if expr.prop is None:
+                target = expr.prop = ExprTarget(prop, type, -1)
             else:
-                target = expr["prop2"] = ExprTarget(prop, -1)
+                target = expr.prop2 = ExprTarget(prop, type, -1)
         else:
             bname = getMappedBone(prop, rig, mesh)
-            if expr["bone"] is None:
-                target = expr["bone"] = ExprTarget(bname, comp)
+            if expr.bone is None:
+                target = expr.bone = ExprTarget(bname, type, comp)
             else:
-                target = expr["bone2"] = ExprTarget(bname, comp)
-        expr["path"] = path
+                target = expr.bone2 = ExprTarget(bname, type, comp)
+        expr.path = path
         self.evalMainOper(opers, target)
 
 
@@ -338,26 +340,17 @@ def buildBakedMorph(inst, ref, value):
 #   Formula
 #-------------------------------------------------------------
 
-def makeExpression():
-    return {
-        "prop" : None,
-        "prop2" : None,
-        "bone" : None,
-        "bone2" : None,
-        "path" : None,
-    }
-
-
 class ExprTarget:
-    def __init__(self, key, comp):
+    def __init__(self, key, type, comp):
         self.key = key
+        self.type = type.rsplit("/",1)[0]
         self.comp = comp
         self.factor = 0.0
         self.points = []
         self.mults = []
 
     def __repr__(self):
-        return "<ExprTarget %s %d %.3f %s %s>" % (self.key, self.comp, self.factor, self.points, self.mults)
+        return "<ExprTarget %s %s %d %.3f %s %s>" % (self.key, self.type, self.comp, self.factor, self.points, self.mults)
 
 
 class Expression:
@@ -368,11 +361,15 @@ class Expression:
         self.bone2 = None
         self.path = None
 
+    def __repr__(self):
+        return "<Expression\n  %s\n  %s\n  %s\n  %s\n  %s>" % (self.prop, self.prop2, self.bone, self.bone2, self.path)
+
+
 def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
     if output not in exprs.keys():
         exprs[output] = {"*fileref" : (fileref, channel)}
     if path not in exprs[output].keys():
         exprs[output][path] = {}
     if idx not in exprs[output][path].keys():
-        exprs[output][path][idx] = makeExpression()
+        exprs[output][path][idx] = Expression()
     return exprs[output][path][idx]

@@ -433,8 +433,9 @@ class LoadMorph(DriverUser):
                 print("Alias is same: %s" % prop)
                 return
             expr = setFormulaExpr(exprs, alias, "value", "value", 0)
-            expr["prop"] = prop
-            expr["factor"] = 1
+            target = expr.prop
+            target.key = prop
+            target.factor = 1
         else:
             return False
         if not exprs:
@@ -604,15 +605,16 @@ class LoadMorph(DriverUser):
 
     def makeValueFormula(self, output, expr):
         output = self.getUniqueName(output)
-        print("MVAL", output, expr)
-        target = expr["prop"]
+        target = expr.prop
         if target:
             self.addNewProp(output)
             prop = self.getUniqueName(target.key)
             if target.points:
                 factor = self.cheatSplineTCB(target.points, target.factor)
-            self.propDrivers[output].append((prop, target.factor))
-            target2 = expr["prop2"]
+            else:
+                factor = target.factor
+            self.propDrivers[output].append((prop, factor))
+            target2 = expr.prop2
             if target2:
                 prop2 = self.getUniqueName(target2.key)
                 self.propDrivers[output].append((prop2, target2.factor))
@@ -623,12 +625,12 @@ class LoadMorph(DriverUser):
                 if output not in self.mults.keys():
                     self.mults[output] = []
                 self.mults[output].append(mult)
-        target = expr["bone"]
+        target = expr.bone
         if target:
             if output not in self.boneDrivers.keys():
                 self.boneDrivers[output] = {}
             self.boneDrivers[output][target.key] = expr
-            target2 = expr["bone2"]
+            target2 = expr.bone2
             if target2:
                 self.boneDrivers[output][target2.key] = expr
 
@@ -642,8 +644,7 @@ class LoadMorph(DriverUser):
             pb = self.rig
         else:
             pb = self.rig.pose.bones[bname]
-        print("BGP", expr)
-        target = expr["prop"]
+        target = expr.prop
         factor = target.factor
         if "points" in expr.keys():
             factor = self.cheatSplineTCB(target.points, target.factor)
@@ -1242,8 +1243,7 @@ class LoadMorph(DriverUser):
 
 
     def buildBoneDriver(self, raw, bname, expr, keep):
-        def getSplinePoints(expr, pb, comp):
-            points = expr["points"]
+        def getSplinePoints(points, pb, comp):
             n = len(points)
             if (points[0][0] > points[n-1][0]):
                 points.reverse()
@@ -1262,19 +1262,19 @@ class LoadMorph(DriverUser):
             return
         rna,path = self.getDrivenChannel(raw)
         #rna.driver_remove(path)
-        channel = expr["path"]
-        target = expr["bone"]
+        channel = expr.path
+        target = expr.bone
         bname = target.key
-        unit = getUnit(channel, self.rig)
+        unit = getUnit(channel)/getUnit(target.type)
         self.getMultipliers(raw)
-        if "points" in expr.keys():
-            uvec,xys = getSplinePoints(expr, pb, target.comp)
+        if target.points:
+            uvec,xys = getSplinePoints(target.points, pb, target.comp)
             self.makeSplineBoneDriver(channel, uvec, xys, rna, path, -1, bname, keep)
         else:
             uvec = unit*getBoneVector(target.factor, target.comp, pb)
             bname2 = None
             uvec2 = None
-            target2 = expr["bone2"]
+            target2 = expr.bone2
             if target2:
                 bname2 = target2.key
                 pb2 = self.rig.pose.bones.get(bname2)
@@ -1312,7 +1312,6 @@ class LoadMorph(DriverUser):
 
         var,vars,umax = self.getVarData(uvec, bname, "A")
         lt = ("<" if umax > 0 else ">")
-
         n = len(points)
         xi,yi = points[0]
         string = "("
@@ -1387,6 +1386,10 @@ class LoadMorph(DriverUser):
         for bvar in bvars:
             var = fcu.driver.variables.new()
             bvar.create(var)
+        if propDriver:
+            string = "%s + %s" % (propDriver.expression, string)
+            for var in propDriver.variables:
+                var.create(fcu.driver.variables.new())
         if string[0:5] != "clamp" and self.currentAsset and bpy.app.version >= (2,93,0):
             words = string.split("else ")
             if len(words) == 3:
@@ -1406,14 +1409,7 @@ class LoadMorph(DriverUser):
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
                 self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
-        if propDriver:
-            print("DD", propDriver.expression)
-            print("SS", string)
-            fcu.driver.expression = "%s + %s" % (propDriver.expression, string)
-            for var in propDriver.variables:
-                var.create(fcu.driver.variables.new())
-        else:
-            fcu.driver.expression = string
+        fcu.driver.expression = string
         ttypes = self.getTransformTypes(channel)
         if ttypes is None:
             return None
@@ -1774,15 +1770,14 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         lm = LoadMorph()
         lm.initRig(rig2, rig)
         for idx,expr in exprs.items():
-            target = expr["bone"]
-            if target:
-                bname = target.key
-                factor = target.factor
-                channel = expr["path"]
-                comp = target.comp
-            else:
+            target = expr.bone
+            if target is None:
                 continue
-            unit = getUnit(channel, rig2)
+            bname = target.key
+            factor = target.factor
+            channel = expr.path
+            comp = target.comp
+            unit = getUnit(channel)/getUnit(target.type)
             pbDriver = rig.pose.bones.get(bname)
             if pbDriver:
                 if pbDriver.parent == pb:
@@ -1808,12 +1803,13 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                 parents.append(parent.name)
         for idx,expr in exprs.items():
             if idx < 0:
-                pass
-            elif expr["bone"].mults:
-                driver,path,comp = expr["bone"].mults
-                if not (driver in parents and path == "scale" and comp == idx):
-                    return False
-            else:
+                continue
+            ok = False
+            for driver,path,comp in expr.bone.mults:
+                if path == "scale" and driver in parents and comp == idx:
+                    ok = True
+                    break
+            if not ok:
                 return False
         return True
 
@@ -1839,7 +1835,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         lm = LoadMorph()
         lm.initRig(rig, rig)
         for idx,expr in exprs.items():
-            bname = expr["bone"]
+            bname = expr.bone
             if (bname not in rig.pose.bones.keys() and
                 bname[-2:] == "-1"):
                 bname = bname[:-2]
@@ -1966,10 +1962,10 @@ def getSign(u):
     else:
         return "+", u
 
-def getUnit(path, rig):
-    if path == "translation":
-        return 1/rig.DazScale
-    elif path == "rotation":
-        return 1/D
+def getUnit(type):
+    if type == "translation":
+        return GS.scale
+    elif type == "rotation":
+        return D
     else:
         return 1
