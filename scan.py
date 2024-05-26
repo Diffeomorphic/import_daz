@@ -259,7 +259,7 @@ class Scanner:
                     expr = value[0]
                     target = expr.prop
                     prop = normKey(target.key)
-                    info[normKey(output)] = target.factor
+                    info[normKey(output)] = (target.points if target.points else target.factor)
                 elif key in ["translation", "rotation", "scale", "general_scale"]:
                     return info,prop
         return info,prop

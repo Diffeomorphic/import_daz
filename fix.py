@@ -1025,6 +1025,7 @@ class BendTwists:
 
 
     def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
+        bendTwistChildren = {}
         setMode('OBJECT')
         rotmodes = {}
         for bname,tname,stretch in bendTwistBones:
@@ -1057,8 +1058,15 @@ class BendTwists:
             eb.parent = bend.parent
             eb.use_deform = False
             eb.use_connect = bend.use_connect
-            children = [eb for eb in bend.children if eb != twist] + list(twist.children)
-            for child in children:
+            nbendname,ntwistname = self.getSubBoneNames(bname)
+            for child in bend.children:
+                if child != twist:
+                    if isDrvBone(child.name):
+                        bendTwistChildren[child.name] = nbendname
+                    child.parent = eb
+            for child in twist.children:
+                if isDrvBone(child.name):
+                    bendTwistChildren[child.name] = ntwistname
                 child.parent = eb
 
         for bname3,bname2 in renames.items():
@@ -1096,6 +1104,7 @@ class BendTwists:
                 else:
                     rig.data.edit_bones.remove(eb)
         setMode('OBJECT')
+        return bendTwistChildren
 
 
     def deleteBoneDrivers(self, rig, bname):
@@ -1151,7 +1160,7 @@ class BendTwists:
         return bendname,twistname
 
 
-    def createBendTwists(self, rig, bendTwistBones):
+    def createBendTwists(self, rig, bendTwistBones, bendTwistChildren):
         setMode('EDIT')
         for bname,tname,stretch in bendTwistBones:
             eb = rig.data.edit_bones.get(bname)
@@ -1209,6 +1218,13 @@ class BendTwists:
                     twistgrp = ob.vertex_groups.get("%sTwist.%s" % (base, suffix))
                     if twistgrp:
                         twistgrp.name = tvgname
+
+        for bname, parname in bendTwistChildren.items():
+            eb = rig.data.edit_bones.get(bname)
+            par = rig.data.edit_bones.get(parname)
+            if eb and par:
+                eb.parent = par
+
 
 
     def splitVertexGroup(self, ob, vgname, bvgname, tvgname, head, tail):

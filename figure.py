@@ -303,7 +303,7 @@ class Figure(Node):
         if self.pointing:
             self.pointBones(rig)
         setMode('OBJECT')
-        rig.DazRig = self.rigtype = getRigType1(inst.bones.keys(), True)
+        rig.DazRig = self.rigtype = getRigType1(inst.bones.keys(), False)
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)
@@ -342,15 +342,15 @@ def getRigType1(bones, strict):
         return True
 
     strictBones = {
-        "genesis12" : ["abdomen", "lShldr", "lMid3", "rMid3", "upperJaw"],
-        "genesis38" : ["abdomenLower", "lShldrBend", "lMid3", "rMid3", "lSmallToe2_2", "rSmallToe2_2", "lNasolabialLower"],
-        "genesis9" : ["spine1", "l_upperarm", "l_mid3", "r_mid3", "l_midtoe2", "r_midtoe2", "l_nostril"],
+        "genesis12" : ["abdomen", "lShldr", "rThigh", "lMid3", "rMid3", "upperJaw"],
+        "genesis38" : ["abdomenLower", "lShldrBend", "rThighTwist", "lMid3", "rMid3", "lSmallToe2_2", "rSmallToe2_2", "lNasolabialLower"],
+        "genesis9" : ["spine1", "l_upperarm", "r_thigh", "l_mid3", "r_mid3", "l_midtoe2", "r_midtoe2", "l_nostril"],
     }
 
     laxBones = {
-        "genesis12" : ["abdomen", "lShldr"],
-        "genesis38" : ["abdomenLower", "lShldrBend"],
-        "genesis9" : ["spine1", "l_upperarm"],
+        "genesis12" : ["abdomen", "lShldr", "rThigh"],
+        "genesis38" : ["abdomenLower", "lShldrBend", "rThighTwist"],
+        "genesis9" : ["spine1", "l_upperarm", "r_thigh"],
     }
 
     if strict:

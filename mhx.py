@@ -687,6 +687,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
         showProgress(1, 25, "  Fix DAZ rig")
         bendTwistBones = list(MHX.BendTwistBones)
+        bendTwistChildren = {}
         self.constraints = {}
         enableAllRigLayers(rig)
         bonechildren = applyBoneChildren(context, rig)
@@ -705,7 +706,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 self.joinBendTwistVGroups(rig, MHX.BendTwistGenesis38)
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
-            self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
+            bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
         elif rig.DazRig == "genesis9":
@@ -730,7 +731,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.storeAllConstraints(rig)
         if rig.DazRig != "genesis9":
             showProgress(9, 25, "  Create bend and twist bones")
-            self.createBendTwists(rig, bendTwistBones)
+            self.createBendTwists(rig, bendTwistBones, bendTwistChildren)
         #showProgress(10, 25, "  Fix bone drivers")
         #self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
 
