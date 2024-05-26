@@ -930,9 +930,9 @@ class LoadMorph(DriverUser):
                 if path:
                     name = os.path.splitext(ref.rsplit("/",1)[-1])[0]
                     data = (name, path, self.bodypart)
-                    morphset = self.getPathMorphSet(path, morphfiles)
-                    if morphset:
-                        groupedpaths[morphset].append(data)
+                    mset = self.getPathMorphSet(path, morphfiles)
+                    if mset:
+                        groupedpaths[mset].append(data)
                     else:
                         namepaths.append(data)
         if someMissing:

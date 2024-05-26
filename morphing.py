@@ -442,7 +442,7 @@ class DAZ_OT_SelectAllMorphs(DazOperator):
         scn = context.scene
         names = MP.morphNames[self.morphset]
         for name in names.values():
-            scn["Daz"+name] = self.value
+            scn["Daz%s" % name] = self.value
 
 #------------------------------------------------------------------
 #   Load typed morphs base class
@@ -799,7 +799,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         return True
 
     def findPropGroup(self, prop):
-        return getattr(self.rig, "Daz"+self.morphset)
+        return getattr(self.rig, "Daz%s" % self.morphset)
 
     def getPaths(self, context):
         return
@@ -1451,7 +1451,7 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
         if self.rig is None:
             return None
         if self.morphset != "Custom":
-            return getattr(self.rig, "Daz"+self.morphset)
+            return getattr(self.rig, "Daz%s" % self.morphset)
         cats = self.rig.DazMorphCats
         if self.category not in cats.keys():
             cat = cats.add()
@@ -1825,7 +1825,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
                 cat = cats[self.category]
             return cat.morphs
         else:
-            return getattr(self.rig, "Daz"+self.morphset)
+            return getattr(self.rig, "Daz%s" % self.morphset)
 
 #-------------------------------------------------------------
 #   Import baked
