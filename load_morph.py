@@ -646,7 +646,7 @@ class LoadMorph(DriverUser):
             pb = self.rig.pose.bones[bname]
         target = expr.prop
         factor = target.factor
-        if "points" in expr.keys():
+        if target.points:
             factor = self.cheatSplineTCB(target.points, target.factor)
         raw = rawProp(self.getUniqueName(target.key))
         final = self.addNewProp(raw)
@@ -1387,7 +1387,8 @@ class LoadMorph(DriverUser):
             var = fcu.driver.variables.new()
             bvar.create(var)
         if propDriver:
-            string = "%s + %s" % (propDriver.expression, string)
+            plus = ("" if string[0] == "-" else "+")
+            string = "%s%s%s" % (propDriver.expression, plus, string)
             for var in propDriver.variables:
                 var.create(fcu.driver.variables.new())
         if string[0:5] != "clamp" and self.currentAsset and bpy.app.version >= (2,93,0):

@@ -202,6 +202,8 @@ class Formula:
             if key in ignore:
                 pass
             elif type == "value":
+                if expr.prop is None:
+                    expr.prop = ExprTarget(key, type, comp)
                 expr.prop.mults.append(key)
             elif comp >= 0:
                 bname = getMappedBone(key, rig, mesh)
