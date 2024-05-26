@@ -1,0 +1,27 @@
+﻿{
+    "name" : "GoldenPalace_G9",
+    "url" : "/data/meipex/GoldenPalace_Genitalia_G9/G9GoldenPalace_Graft/GoldenPalace_G9_9694.dsf#GoldenPalace_G9",
+    "directory" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base",
+    "modified" : "1716720739.9698358",
+    "version" : 6,
+    "definitions" : {
+        "gp_anus_contraction_shape3" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_anuscontraction_shape3.dsf",
+        "gp_clitoris_frame1" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_clitorisframe1.dsf",
+        "gp_clitoris_frame2" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_clitorisframe2.dsf",
+        "gp_hood_puffy" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_hood_puffy1.dsf",
+        "gp_hood_wrinkles" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_hood_wrinkles1.dsf",
+        "gp_majora_back_smooth" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_majoraback_smooth.dsf",
+        "gp_minoraback_rounder" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_minora_backrounder.dsf",
+        "gp_minoraback_forward" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_minora_back_forward.dsf",
+        "gp_tentacles_hight" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_tentacles_high.dsf",
+        "gp_tentacles_medium_rounder" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_tentacle_medium_rounder.dsf",
+        "gp_urethralopening_widen1" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_urethraopen1.dsf",
+        "gp_vagina_pushback" : "/data/meipex/goldenpalace_genitalia_g9/g9goldenpalace_graft/morphs/meipex/base/gp_vagina_moveback.dsf"
+    },
+    "alias" : {},
+    "formulas" : {},
+    "minmax" : {},
+    "geograft" : {
+        "vertex_count" : 25182
+    }
+}

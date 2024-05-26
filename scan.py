@@ -211,7 +211,7 @@ class Scanner:
                 target = normKey(target[:-6])
                 if key != target:
                     self.alias[key] = target
-        elif isinstance(asset, Formula) and self.useFormulas:
+        elif isinstance(asset, Formula):
             exprs,rig2 = asset.evalFormulas(self.rig, self.mesh, False)
             info,_ = self.evalExprs(asset, exprs)
             ref,key = asset.id.rsplit("#",1)
@@ -230,7 +230,7 @@ class Scanner:
                 key != normKey(name) or
                 folder != self.directory):
                 self.defins[key] = filepath
-        if info:
+        if info and self.useFormulas:
             if prop:
                 self.formulas[normKey(prop)] = info
             else:
@@ -257,12 +257,11 @@ class Scanner:
                     ref,channel = value
                 elif key == "value":
                     expr = value[0]
-                    prop = normKey(expr["prop"])
-                    factor = expr["factor"]
+                    target = expr.prop
+                    prop = normKey(target.key)
+                    info[normKey(output)] = target.factor
                 elif key in ["translation", "rotation", "scale", "general_scale"]:
                     return info,prop
-                if prop and factor and channel == "value":
-                    info[normKey(output)] = factor
         return info,prop
 
 #----------------------------------------------------------
@@ -274,8 +273,12 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
     bl_label = "Scan Morph Directory"
     bl_description = "Scan a single directory for morphs for the present mesh,\nand build a database"
 
-    useFormulas = True
     useMinmax = False
+
+    useFormulas : BoolProperty(
+        name = "Formulas",
+        description = "Include formulas",
+        default = True)
 
     useSubdirs : BoolProperty(
         name = "Subdirectories",
@@ -288,6 +291,7 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "useFormulas")
         self.layout.prop(self, "useDefins")
         self.layout.prop(self, "useSubdirs")
 
@@ -306,7 +310,7 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
         url = self.mesh.DazUrl
         name = url.rsplit("#", 1)[-1]
         scanpath = getScanPath(name)
-        self.directory = GS.getRelativePath(folder)
+        self.directory = GS.getRelativePath(folder).lower()
         struct = self.setupScanner(name, url)
         LS.forMorphLoad(ob)
         self.scanMorphs(folder, len(folder))
@@ -314,7 +318,7 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
             for file in os.listdir(folder):
                 subdir = "%s/%s" % (folder, file)
                 if os.path.isdir(subdir):
-                    self.directory = GS.getRelativePath(subdir)
+                    self.directory = GS.getRelativePath(subdir).lower()
                     self.scanMorphs(subdir, len(subdir))
         if ob.data.DazGraftGroup:
             graft = struct["geograft"] = {}
@@ -324,7 +328,6 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
 
 
     def scanMorphs(self, folderpath, nskip):
-        print("SCA", folderpath)
         for file in os.listdir(folderpath):
             path = os.path.join(folderpath, file)
             if os.path.isfile(path):
