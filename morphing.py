@@ -1936,11 +1936,13 @@ class ScanFinder:
 
 
     def findMorphs(self, morph, ob):
-        if morph in self.formulas.keys():
-            for morph1,value1 in self.formulas[morph].items():
+        formulas = self.formulas.get(morph)
+        if formulas:
+            for morph1,value1 in formulas.items():
                 self.findMorphs1(morph1, ob)
+            return True
         else:
-            self.findMorphs1(morph, ob)
+            return self.findMorphs1(morph, ob)
 
 
     def findMorphs1(self, morph, ob):
@@ -1955,13 +1957,15 @@ class ScanFinder:
                 self.addNamePath(alias, path, self.namepaths)
                 morph = alias
             if self.geograft:
-                formulas = self.geograft["formulas"].get(morph)
+                graftFormulas = self.geograft.get("formulas", {})
+                graftDefs = self.geograft.get("definitions", {})
+                formulas = graftFormulas.get(morph)
                 if formulas:
                     pmorphs = formulas.keys()
                 else:
                     pmorphs = [morph]
                 for pmorph in pmorphs:
-                    path = self.geograft["definitions"].get(pmorph)
+                    path = graftDefs.get(pmorph)
                     self.addNamePath(pmorph, path, self.parpaths)
             exprs = self.formulas.get(morph, {})
             for prop,factor in exprs.items():
@@ -1970,7 +1974,11 @@ class ScanFinder:
         if not self.found:
             morph = unquote(morph)
             path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
-            self.addNamePath(morph, path, self.namepaths)
+            if path:
+                self.addNamePath(morph, path, self.namepaths)
+                return True
+            else:
+                return False
 
 
     def getDefinedPath(self, morph):
@@ -2055,6 +2063,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
     def run(self, context):
         self.rig = getRigFromContext(context)
         self.setupDuplicates()
+        self.missing = []
         if self.rig:
             loaded = []
             for ob in getMeshChildren(self.rig):
@@ -2087,14 +2096,20 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             for ob in getSelectedMeshes(context):
                 self.addFavoMorphs(ob, context)
         updateScrollbars(context)
+        if self.missing:
+            msg = "Favorites not found:\n  %s" % self.missing
+            raise DazError(msg, warning=True)
+
 
 
     def addFavoMorphs(self, ob, context):
         if len(ob.data.DazFavorites) > 0:
             self.setupScanned(ob)
             for favo in ob.data.DazFavorites.keys():
-                morph = normKey(favo.split("/",1)[0])
-                self.findMorphs(morph, ob)
+                favo = favo.split("/",1)[0]
+                morph = normKey(favo)
+                if not self.findMorphs(morph, ob):
+                    self.missing.append(favo)
             self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)

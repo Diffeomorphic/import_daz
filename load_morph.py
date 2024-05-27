@@ -1261,11 +1261,10 @@ class LoadMorph(DriverUser):
             print("Cannot build driver for non-existing bone: %s" % bname)
             return
         rna,path = self.getDrivenChannel(raw)
-        #rna.driver_remove(path)
         channel = expr.path
         target = expr.bone
         bname = target.key
-        unit = getUnit(channel)/getUnit(target.type)
+        unit = 1/getUnit(target.type)
         self.getMultipliers(raw)
         if target.points:
             uvec,xys = getSplinePoints(target.points, pb, target.comp)
@@ -1836,7 +1835,9 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         lm = LoadMorph()
         lm.initRig(rig, rig)
         for idx,expr in exprs.items():
-            bname = expr.bone
+            if not expr.bone:
+                continue
+            bname = expr.bone.key
             if (bname not in rig.pose.bones.keys() and
                 bname[-2:] == "-1"):
                 bname = bname[:-2]
