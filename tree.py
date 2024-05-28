@@ -691,6 +691,58 @@ def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePrune
     for mat in ob.data.materials:
         if mat:
             pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures, useFixColorSpace, useBeautify)
+            #makeDazImages(mat.node_tree)
+
+
+def makeDazImages(tree):
+    def getBefore(node):
+        socket = node.inputs["Vector"]
+        for link in socket.links:
+            if link.from_node.type in ['VECT_MATH', 'MAPPING']:
+                before.append(link.from_node)
+                getBefore(link.from_node)
+
+    def getAfter(node):
+        socket = node.outputs["Color"]
+        if len(socket.links) == 1:
+            for link in socket.links:
+                if link.to_node.type in ['GAMMA', 'INVERT']:
+                    after.append(link.to_node)
+                    getAfter(link.to_node)
+
+    dazimgs = []
+    for node in tree.nodes:
+        if node.type == 'TEX_IMAGE':
+            before = []
+            after = []
+            getBefore(node)
+            getAfter(node)
+            if after or before:
+                dazimgs.append((node, after, before))
+
+    for tex,after,before in dazimgs:
+        print("IMG", tex.image)
+        print("AF", after)
+        print("BE", before)
+
+        group = bpy.data.node_groups.new(tex.image.name, "ShaderNodeTree")
+        addGroupInput(group, "NodeSocketVector", "Vector")
+        addGroupOutput(group, "NodeSocketColor", "Color")
+        addGroupOutput(group, "NodeSocketFloat", "Alpha")
+
+        grpnode = tree.nodes.new("ShaderNodeGroup")
+        grpnode.node_tree = group
+        grpnode.location = tex.location
+        last = (after[-1] if after else tex)
+        for link in list(last.outputs["Color"].links):
+            tree.links.new(grpnode.outputs["Color"], link.to_socket)
+        for link in list(tex.outputs["Alpha"].links):
+            tree.links.new(grpnode.outputs["Alpha"], link.to_socket)
+        first = (before[-1] if before else tex)
+        for link in list(first.inputs["Vector"].links):
+            tree.links.new(link.from_socket, grpnode.inputs["Vector"])
+
+
 
 # ---------------------------------------------------------------------
 #   TNode and TLink
