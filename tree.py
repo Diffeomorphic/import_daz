@@ -489,6 +489,7 @@ def pruneNodeTree(tree,
                   keepUnusedTextures = True,
                   useFixColorSpace = True,
                   useBeautify = True,
+                  useDazImages = True,
                   useGroups = True,
                   ):
     marked = {}
@@ -510,6 +511,7 @@ def pruneNodeTree(tree,
                           keepUnusedTextures,
                           useFixColorSpace,
                           useBeautify,
+                          useDazImages,
                           useGroups)
             LS.protectedGroups.append(node.node_tree)
 
@@ -618,6 +620,8 @@ def pruneNodeTree(tree,
             if not marked[node.name]:
                 tree.nodes.remove(node)
 
+    if useDazImages:
+        makeDazImages(tree)
     if useBeautify:
         beautifyNodeTree(tree)
     return marked
@@ -684,17 +688,17 @@ def beautifyNodeTree(tree):
 #   Prune materials
 #-------------------------------------------------------------
 
-def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True, useFixColorSpace=True, useBeautify=False):
+def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True, useFixColorSpace=True, useBeautify=False, useDazImages=True):
     from .geometry import getActiveUvLayer
     LS.__init__()
     active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
-            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures, useFixColorSpace, useBeautify)
-            #makeDazImages(mat.node_tree)
+            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures, useFixColorSpace, useBeautify, useDazImages)
 
 
 def makeDazImages(tree):
+    from .cgroup import CyclesGroup
     def getBefore(node):
         socket = node.inputs["Vector"]
         for link in socket.links:
@@ -721,28 +725,47 @@ def makeDazImages(tree):
                 dazimgs.append((node, after, before))
 
     for tex,after,before in dazimgs:
-        print("IMG", tex.image)
-        print("AF", after)
-        print("BE", before)
-
-        group = bpy.data.node_groups.new(tex.image.name, "ShaderNodeTree")
-        addGroupInput(group, "NodeSocketVector", "Vector")
-        addGroupOutput(group, "NodeSocketColor", "Color")
-        addGroupOutput(group, "NodeSocketFloat", "Alpha")
+        after.reverse()
+        before.reverse()
 
         grpnode = tree.nodes.new("ShaderNodeGroup")
-        grpnode.node_tree = group
         grpnode.location = tex.location
-        last = (after[-1] if after else tex)
+        ctree = CyclesGroup()
+        name = "DIMG %s" % tex.image.name
+        ctree.create(grpnode, name, None, len(before) + len(after))
+        addGroupInput(ctree.group, "NodeSocketVector", "Vector")
+        addGroupOutput(ctree.group, "NodeSocketColor", "Color")
+        addGroupOutput(ctree.group, "NodeSocketFloat", "Alpha")
+
+        first = (before[0] if before else tex)
+        for link in list(first.inputs["Vector"].links):
+            tree.links.new(link.from_socket, grpnode.inputs["Vector"])
+        socket = ctree.inputs.outputs["Vector"]
+        for node in before:
+            cnode = copyNode(node, ctree)
+            cnode.hide = False
+            ctree.links.new(socket, cnode.inputs["Vector"])
+            socket = cnode.outputs["Vector"]
+        ctex = copyNode(tex, ctree)
+        ctex.hide = False
+        ctree.links.new(socket, ctex.inputs["Vector"])
+
+        last = (after[0] if after else tex)
         for link in list(last.outputs["Color"].links):
             tree.links.new(grpnode.outputs["Color"], link.to_socket)
         for link in list(tex.outputs["Alpha"].links):
             tree.links.new(grpnode.outputs["Alpha"], link.to_socket)
-        first = (before[-1] if before else tex)
-        for link in list(first.inputs["Vector"].links):
-            tree.links.new(link.from_socket, grpnode.inputs["Vector"])
+        socket = ctree.outputs.inputs["Color"]
+        for node in after:
+            cnode = copyNode(node, ctree)
+            cnode.hide = False
+            ctree.links.new(cnode.outputs["Color"], socket)
+            socket = cnode.inputs["Color"]
+        ctree.links.new(ctex.outputs["Color"], socket)
 
-
+        beautifyNodeTree(ctree)
+        for node in after + before + [tex]:
+            tree.nodes.remove(node)
 
 # ---------------------------------------------------------------------
 #   TNode and TLink
@@ -787,7 +810,7 @@ class TNode:
 #   Copy node tree
 #-------------------------------------------------------------
 
-def copyNodeTree(src, trg):
+def copyNode(node, trg):
     def copy_attributes(attributes, old_prop, new_prop):
         for attr in attributes:
             if hasattr( new_prop, attr ):
@@ -804,29 +827,32 @@ def copyNodeTree(src, trg):
                 attributes.append(attr.identifier)
         return attributes
 
-    def copy_nodes(src, trg):
-        input_attributes = ( "default_value", "name" )
-        output_attributes = ( "default_value", "name" )
-        for node in src.nodes:
-            new_node = trg.nodes.new( node.bl_idname )
-            node_attributes = get_node_attributes( node )
-            copy_attributes( node_attributes, node, new_node )
-            for i, inp in enumerate(node.inputs):
-                copy_attributes( input_attributes, inp, new_node.inputs[i] )
-            for i, out in enumerate(node.outputs):
-                copy_attributes( output_attributes, out, new_node.outputs[i] )
+    input_attributes = ( "default_value", "name" )
+    output_attributes = ( "default_value", "name" )
+    new_node = trg.nodes.new( node.bl_idname )
+    node_attributes = get_node_attributes( node )
+    copy_attributes( node_attributes, node, new_node )
+    for i, inp in enumerate(node.inputs):
+        copy_attributes( input_attributes, inp, new_node.inputs[i] )
+    for i, out in enumerate(node.outputs):
+        copy_attributes( output_attributes, out, new_node.outputs[i] )
+    return new_node
 
-    def copy_links(src, trg):
-        for node in src.nodes:
-            new_node = trg.nodes[ node.name ]
-            for i, inp in enumerate( node.inputs ):
-                for link in inp.links:
-                    connected_node = trg.nodes[ link.from_node.name ]
-                    trg.links.new( connected_node.outputs[ link.from_socket.name ], new_node.inputs[i] )
 
+def copyLinks(src, trg):
+    for node in src.nodes:
+        new_node = trg.nodes[ node.name ]
+        for i, inp in enumerate( node.inputs ):
+            for link in inp.links:
+                connected_node = trg.nodes[ link.from_node.name ]
+                trg.links.new( connected_node.outputs[ link.from_socket.name ], new_node.inputs[i] )
+
+
+def copyNodeTree(src, trg):
     trg.nodes.clear()
-    copy_nodes( src, trg )
-    copy_links( src, trg )
+    for node in src.nodes:
+        copyNode(node, trg)
+    copyLinks( src, trg )
 
 #-------------------------------------------------------------
 #   Save node trees

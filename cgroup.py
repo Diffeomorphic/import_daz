@@ -41,7 +41,8 @@ from .error import *
 
 class CyclesGroup(NodeGroup, CyclesTree):
     def create(self, node, name, parent, ncols):
-        CyclesTree.__init__(self, parent.owner)
+        owner = (parent.owner if parent else None)
+        CyclesTree.__init__(self, owner)
         NodeGroup.create(self, node, name, parent, ncols)
 
 
