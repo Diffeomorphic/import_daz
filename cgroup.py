@@ -1781,6 +1781,7 @@ class LayeredGroup(CyclesGroup):
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 6)
         addGroupInput(self.group, "NodeSocketVector", "Vector")
+        self.hideSlot("Vector")
         if GS.useLayeredInflu:
             addGroupInput(self.group, "NodeSocketFloat", "Influence")
             self.setMinMax("Influence", 0.0, 0.0, 10)

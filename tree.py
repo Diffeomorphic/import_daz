@@ -734,6 +734,7 @@ def makeDazImages(tree):
         name = "DIMG %s" % tex.image.name
         ctree.create(grpnode, name, None, len(before) + len(after))
         addGroupInput(ctree.group, "NodeSocketVector", "Vector")
+        ctree.hideSlot("Vector")
         addGroupOutput(ctree.group, "NodeSocketColor", "Color")
         addGroupOutput(ctree.group, "NodeSocketFloat", "Alpha")
 

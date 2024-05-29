@@ -1640,11 +1640,6 @@ class CyclesTree(Tree):
     #   Volume
     #-------------------------------------------------------------
 
-    def invertColor(self, color, tex, col):
-        inverse = (1-color[0], 1-color[1], 1-color[2])
-        return inverse, self.invertTex(tex, col)
-
-
     def buildVolume(self):
         if self.pureMetal:
             return
@@ -1826,8 +1821,6 @@ class CyclesTree(Tree):
                     outnode = gamma
             isnew = True
 
-        innode = texnode
-
         #scale = imgmod.get("scale", 1)
         #offset = imgmod.get("offset", 0)
         tx = imgmod.get("horizontal_tiles", 1)
@@ -1835,25 +1828,29 @@ class CyclesTree(Tree):
         ty = imgmod.get("vertical_tiles", 1)
         dy = imgmod.get("vertical_tiling_offset", 0)
         data = (dx, dy/2, 1/tx, 1/ty, 0)
+        innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma)
+        if asset.hasMapping(map) and not changed:
+            data = asset.getImageMapping(img, self.owner, map)
+            innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, map.invert, map.gamma)
+        return innode, texnode, outnode, isnew
+
+
+    def modifyTexture(self, col, texnode, outnode, data, invert, gamma):
+        innode = texnode
+        changed = False
         modulo,mapping = self.addMappingNode(data, None)
         if mapping:
+            texnode.extension = 'CLIP'
             self.linkVector(mapping, texnode)
             innode = modulo
-        if imgmod.get("invert"):
-            outnode = self.invertTex(outnode, self.column+1)
-
-        if asset.hasMapping(map):
-            data = asset.getImageMapping(img, self.owner, map)
-            modulo,mapping = self.addMappingNode(data, None, imgname)
-            if mapping:
-                innode.extension = 'CLIP'
-                self.linkVector(mapping, innode)
-                innode = modulo
-            #if map.invert:
-            #    color,outnode = self.invertColor(map.color, outnode, col+1)
-            if map.gamma != 1.0:
-                outnode = self.addGamma(col+1, outnode, "Gamma", map.gamma)
-        return innode, texnode, outnode, isnew
+            changed = True
+        if invert:
+            outnode = self.invertTex(outnode, col+1)
+            changed = True
+        if gamma != 1.0:
+            outnode = self.addGamma(col+1, outnode, "Gamma", gamma)
+            changed = True
+        return innode, outnode, changed
 
 
     def addGamma(self, col, texnode, label, value, hide=False):
