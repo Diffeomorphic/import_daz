@@ -462,12 +462,12 @@ class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, Category
 
 class DAZ_OT_ProtectCategories(DazOperator, CategorySelector, CategoryBasic, IsArmature):
     bl_idname = "daz.protect_categories"
-    bl_label = "Protect Categories"
+    bl_label = "Protect/Unprotect Categories"
     bl_description = "Protect/unprotect all morphs in selected categories"
     bl_options = {'UNDO'}
 
     useProtect : BoolProperty(
-        name = "Protect Morphs",
+        name = "Protect",
         description = "Protect all morphs in selected categories if enabled, otherwise unprotect them",
         default = True)
 
@@ -484,6 +484,37 @@ class DAZ_OT_ProtectCategories(DazOperator, CategorySelector, CategoryBasic, IsA
                 setProtected(ob, pg.name, self.useProtect)
                 if self.useProtect:
                     setActivated(ob, pg.name, False)
+
+#------------------------------------------------------------------------
+#   Protect Morphs
+#------------------------------------------------------------------------
+
+class DAZ_OT_ProtectMorphs(DazOperator, GeneralMorphSelector, IsArmature):
+    bl_idname = "daz.protect_morphs"
+    bl_label = "Protect/Unprotect Morphs"
+    bl_description = "Protect/unprotect selected morphs"
+    bl_options = {'UNDO'}
+
+    useProtect : BoolProperty(
+        name = "Protect",
+        description = "Protect morphs if enabled, otherwise unprotect them",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useProtect")
+        GeneralMorphSelector.draw(self, context)
+
+    def run(self, context):
+        from .driver import setProtected
+        from .selector import setActivated
+        ob = context.object
+        for item in self.getSelectedItems():
+            prop = item.name
+            print("PP", item.name)
+            setProtected(ob, prop, self.useProtect)
+            if self.useProtect:
+                setActivated(ob, prop, False)
+        updateScrollbars(context)
 
 #------------------------------------------------------------------------
 #   Apply morphs
@@ -1302,6 +1333,7 @@ classes = [
     DAZ_OT_RemoveCategories,
     DAZ_OT_JoinCategories,
     DAZ_OT_ProtectCategories,
+    DAZ_OT_ProtectMorphs,
 
     DAZ_OT_UpdateSliderLimits,
     DAZ_OT_AddDrivenValueNodes,
