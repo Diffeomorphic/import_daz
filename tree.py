@@ -762,6 +762,7 @@ def makeDazImages(tree):
             ctree.links.new(cnode.outputs["Color"], socket)
             socket = cnode.inputs["Color"]
         ctree.links.new(ctex.outputs["Color"], socket)
+        ctree.links.new(ctex.outputs["Alpha"], ctree.outputs.inputs["Alpha"])
 
         beautifyNodeTree(ctree)
         for node in after + before + [tex]:
