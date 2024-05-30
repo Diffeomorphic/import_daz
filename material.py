@@ -657,7 +657,7 @@ def addUdimTree(tree, udim, vdim):
             addUdimTree(node.node_tree, udim, vdim)
 
 #-------------------------------------------------------------
-#   Textures
+#   Maps
 #-------------------------------------------------------------
 
 class Map:
@@ -705,26 +705,6 @@ class Map:
 
 
     def build(self):
-        def getImage(url):
-            if url in LS.images.keys():
-                return LS.images[url]
-            filepath = GS.getAbsPath(url)
-            if not filepath:
-                reportError('Image not found:  \n"%s"' % filepath, trigger=(3,5))
-                return None
-            else:
-                try:
-                    img = bpy.data.images.load(filepath)
-                except (RuntimeError, TypeError):
-                    img = None
-                if img is None:
-                    reportError('Error when reading image:\n"%s"\n"%s"' % (url,filepath), trigger=(2,3))
-                    return None
-                imgname = os.path.splitext(os.path.basename(filepath))[0]
-                img.name = unquote(bpy.path.clean_name(imgname))
-                LS.images[url] = img
-            return img
-
         if self.image:
             return self.image
         elif self.url:
@@ -733,7 +713,33 @@ class Map:
         else:
             return self
 
+#-------------------------------------------------------------
+#   getImage used by shell editor
+#-------------------------------------------------------------
 
+def getImage(url):
+    if url in LS.images.keys():
+        return LS.images[url]
+    filepath = GS.getAbsPath(url)
+    if not filepath:
+        reportError('Image not found:  \n"%s"' % filepath, trigger=(3,5))
+        return None
+    else:
+        try:
+            img = bpy.data.images.load(filepath)
+        except (RuntimeError, TypeError):
+            img = None
+        if img is None:
+            reportError('Error when reading image:\n"%s"\n"%s"' % (url,filepath), trigger=(2,3))
+            return None
+        imgname = os.path.splitext(os.path.basename(filepath))[0]
+        img.name = unquote(bpy.path.clean_name(imgname))
+        LS.images[url] = img
+    return img
+
+#-------------------------------------------------------------
+#   Images
+#-------------------------------------------------------------
 
 class Images(Asset):
     def __init__(self, fileref):
@@ -762,6 +768,9 @@ class Images(Asset):
             map.gamma = gamma
             LS.imageMaps[map.url] = map
 
+#-------------------------------------------------------------
+#   Texture
+#-------------------------------------------------------------
 
 class Texture:
     def __init__(self, map):
