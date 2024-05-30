@@ -510,7 +510,6 @@ class DAZ_OT_ProtectMorphs(DazOperator, GeneralMorphSelector, IsArmature):
         ob = context.object
         for item in self.getSelectedItems():
             prop = item.name
-            print("PP", item.name)
             setProtected(ob, prop, self.useProtect)
             if self.useProtect:
                 setActivated(ob, prop, False)

@@ -1049,10 +1049,12 @@ class LoadMorph(DriverUser):
         if not string:
             if vvars:
                 fcu.driver.expression = string0
-                print("Keep old driver: %s" % raw)
+                if GS.verbosity >= 3:
+                    print("Keep old driver: %s" % raw)
                 return True
             else:
-                print("Remove driver: %s" % raw)
+                if GS.verbosity >= 3:
+                    print("Remove driver: %s" % raw)
                 rna.driver_remove(channel)
                 return False
         if self.getMultipliers(raw):

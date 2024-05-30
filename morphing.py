@@ -1582,10 +1582,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         if not self.meshes:
             self.getFingeredRigMeshes(context)
         namepaths = self.loadToMesh(self.meshes[0], self.chars[0])
-        faceshapes = self.faceshapes
-        for mesh, char in zip(self.meshes[1:], self.chars[1:]):
-            self.loadToMesh(mesh, char)
-        self.faceshapes = faceshapes
         self.addPropDrivers()
         msg = self.finishLoading(namepaths, context, t1)
         updateScrollbars(context)
