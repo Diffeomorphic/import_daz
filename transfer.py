@@ -40,8 +40,6 @@ from .morphing import RigidTransfer
 #-------------------------------------------------------------
 
 class MatchOperator(DazPropsOperator):
-    needsTarget : BoolProperty(default = True)
-
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
         self.mesh = context.object
@@ -164,6 +162,7 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
     transferMethod = 'NEAREST'
     useNonConforming = True
     ignoreRigidity = False
+    needsTarget : BoolProperty(default = True)
 
     def draw(self, context):
         self.layout.prop(self, "threshold")
@@ -225,6 +224,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
     usePropDriver = True
     defaultSelect = True
+    needsTarget : BoolProperty(default = True)
 
     transferMethod : EnumProperty(
         items = [('NEAREST', "Nearest Face", "Transfer shapekeys from nearest source face.\nUse to transfer shapekeys to clothes"),

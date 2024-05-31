@@ -406,12 +406,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
             # Add custom attribute which will store the vertex to be paired, and accessible via geometry node
             # If this is the graft...
-            attribute_name = f"paired_body_vert_{graft.name}"
-            if not hasattr(graft.data.attributes, attribute_name):
-                # print(f"Creating paired body vert attribute: {attribute_name}")
+            attribute_name = "paired_body_vert_%s" % graft.name
+            if not hasattr(graft.data, "attributes"):
+                attribute = None
+            elif not hasattr(graft.data.attributes, attribute_name):
+                # print("Creating paired body vert attribute: %s" % attribute_name)
                 attribute = graft.data.attributes.new(attribute_name, type="INT", domain="POINT")
             else:
-                # print(f"{attribute_name} already exists")
+                # print("%s already exists" % attribute_name)
                 attribute = graft.data.attributes[attribute_name]
 
             # Create a dictionary, default all to -1, but values will be populated with the paired body vertex
@@ -431,7 +433,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     humedge[pair.b] = True
 
             # Set the attribute values for all the vertices
-            attribute.data.foreach_set("value", list(paired_vert_list.values()))
+            if attribute:
+                attribute.data.foreach_set("value", list(paired_vert_list.values()))
 
         # Also select hum graft group. These will not be removed.
         if hum.data.DazGraftGroup:
