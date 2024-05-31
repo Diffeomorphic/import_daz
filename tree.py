@@ -731,7 +731,7 @@ def makeDazImages(tree):
         grpnode = tree.nodes.new("ShaderNodeGroup")
         grpnode.location = tex.location
         ctree = CyclesGroup()
-        name = "DIMG %s" % tex.image.name
+        name = "DIMG %s" % (tex.image.name if tex.image else "")
         ctree.create(grpnode, name, None, len(before) + len(after))
         addGroupInput(ctree.group, "NodeSocketVector", "Vector")
         ctree.hideSlot("Vector")
