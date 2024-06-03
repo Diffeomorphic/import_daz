@@ -1316,6 +1316,8 @@ class LoadMorph(DriverUser):
                 return zstring[1:]
             elif zstring[0:2] == "--":
                 return "+%s" % zstring[2:]
+            elif zstring in ["+0", "-0"]:
+                return ""
             else:
                 return zstring
 
@@ -1348,15 +1350,25 @@ class LoadMorph(DriverUser):
         def splineSpline(var, umax, lt):
             xi,yi = points[0]
             string = ""
-            for xj,yj in points[1:]:
+            cond = ""
+            last = len(points)-2
+            for j,pt in enumerate(points[1:]):
+                xj,yj = pt
+                if yi == 0 and yj == 0:
+                    xi = xj
+                    continue
+                string += cond
                 ypi = getPrint(yi)
                 ypj = getPrint(yj)
                 xpi = truncMinus("-%s" % getPrint(xi/umax))
                 xpj = getPrint(xj/umax)
-                string += "+smoothstep(%s,%s,%s%s) if %s%s%s" % (ypi, ypj, var, xpi, var, lt, xpj)
+                factor = getPrint(umax/(xj-xi))
+                string += "smoothstep(%s,%s,%s*(%s%s))" % (ypi, ypj, factor, var, xpi)
+                if j < last:
+                    cond = " if %s%s%s else " % (var, lt, xpj)
                 xi = xj
                 yi = yj
-            return "(%s else %s)" % (string[1:], getPrint(yi))
+            return string
 
         var,vars,umax = self.getVarData(uvec, bname, "A")
         lt = ("<" if umax > 0 else ">")
@@ -1415,7 +1427,9 @@ class LoadMorph(DriverUser):
             string = "%s%s%s" % (propDriver.expression, plus, string)
             for var in propDriver.variables:
                 var.create(fcu.driver.variables.new())
-        if string[0:5] != "clamp" and self.currentAsset and bpy.app.version >= (2,93,0):
+        if (not string.startswith(("clamp", "smoothstep")) and
+            self.currentAsset and
+            bpy.app.version >= (2,93,0)):
             words = string.split("else ")
             if len(words) == 3:
                 words = words[1].split(" if")
