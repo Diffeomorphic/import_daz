@@ -1311,44 +1311,67 @@ class LoadMorph(DriverUser):
         #[1 if x< -1.983 else -x-0.983 if x< -0.983  else 0 for x in [+0.988*A]][0]
         #1 if A< -1.983/0.988 else -0.988*A-0.983 if A< -0.983/0.988  else 0
 
+        def truncMinus(zstring):
+            if zstring[0:2] == "+-":
+                return zstring[1:]
+            elif zstring[0:2] == "--":
+                return "+%s" % zstring[2:]
+            else:
+                return zstring
+
+        def linearSpline(var, umax, lt):
+            n = len(points)
+            xi,yi = points[0]
+            string = ""
+            term = getPrint(yi)
+            prev = "%s if %s%s %s" % (term, var, lt, getPrint(xi/umax))
+            tie = ""
+            for i in range(1, n):
+                xj,yj = points[i]
+                kij = (yj-yi)/(xj-xi)
+                zs,zi = getSign((yi - kij*xi)/umax)
+                zstring = ""
+                if abs(zi) > 5e-4:
+                    zstring = truncMinus("%s%s" % (zs, getPrint(zi*umax)))
+                term1 = "%s%s" % (getMult(kij*umax, var), zstring)
+                if term1 != term:
+                    string += prev
+                    term = term1
+                    tie = " else "
+                prev = ("%s%s if %s%s %s " % (tie, term, var, lt, getPrint(xj/umax)))
+                xi,yi = xj,yj
+            default = getPrint(yj)
+            if default != term:
+                string += prev
+            return "(%s else %s)" % (string, default)
+
+        def splineSpline(var, umax, lt):
+            xi,yi = points[0]
+            string = ""
+            for xj,yj in points[1:]:
+                ypi = getPrint(yi)
+                ypj = getPrint(yj)
+                xpi = truncMinus("-%s" % getPrint(xi/umax))
+                xpj = getPrint(xj/umax)
+                string += "+smoothstep(%s,%s,%s%s) if %s%s%s" % (ypi, ypj, var, xpi, var, lt, xpj)
+                xi = xj
+                yi = yj
+            return "(%s else %s)" % (string[1:], getPrint(yi))
+
         var,vars,umax = self.getVarData(uvec, bname, "A")
         lt = ("<" if umax > 0 else ">")
-        n = len(points)
-        xi,yi = points[0]
-        string = "("
-        term = getPrint(yi)
-        prev = "%s if %s%s %s" % (term, var, lt, getPrint(xi/umax))
-        tie = ""
-        for i in range(1, n):
-            xj,yj = points[i]
-            kij = (yj-yi)/(xj-xi)
-            zs,zi = getSign((yi - kij*xi)/umax)
-            zstring = ""
-            if abs(zi) > 5e-4:
-                zstring = ("%s%s" % (zs, getPrint(zi*umax)))
-                if zstring[0:2] == "+-":
-                    zstring = zstring[1:]
-                elif zstring[0:2] == "--":
-                    zstring = "+%s" % zstring[2:]
-            term1 = "%s%s" % (getMult(kij*umax, var), zstring)
-            if term1 != term:
-                string += prev
-                term = term1
-                tie = " else "
-            prev = ("%s%s if %s%s %s " % (tie, term, var, lt, getPrint(xj/umax)))
-            xi,yi = xj,yj
-        default = getPrint(yj)
-        if default != term:
-            string += prev
-        string += " else %s)" % default
-
+        if GS.useSplineDrivers:
+            string = splineSpline(var, umax, lt)
+            if len(string) > 254:
+                string = linearSpline(var, umax, lt)
+        else:
+            string = linearSpline(var, umax, lt)
         if len(string) > 254:
             msg = "String driver too long:\n"
             for n in range(5):
                 msg += "%s         \n" % (string[30*n:30*(n+1)])
             reportError(msg)
             return
-
         self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
 
 

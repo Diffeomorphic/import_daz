@@ -391,6 +391,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Optimize JCM Drivers",
         description = "Optimize drivers when loading JCMs and flexions. Experimental")
 
+    useSplineDrivers : BoolProperty(
+        name = "Spline Drivers",
+        description = "Use smoothstep for spline TCB drivers instead of linear functions")
+
     useMakeHiddenSliders : BoolProperty(
         name = "Make Hidden Sliders",
         description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
@@ -794,6 +798,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useModifiedMesh")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
+        box.prop(self, "useSplineDrivers")
 
         box = col.box()
         box.label(text = "Presets")
