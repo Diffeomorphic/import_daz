@@ -609,10 +609,7 @@ class LoadMorph(DriverUser):
         if target:
             self.addNewProp(output)
             prop = self.getUniqueName(target.key)
-            if target.points:
-                factor = self.cheatSplineTCB(target.points, target.factor)
-            else:
-                factor = target.factor
+            factor = target.getData()
             self.propDrivers[output].append((prop, factor))
             target2 = expr.prop2
             if target2:
@@ -645,9 +642,7 @@ class LoadMorph(DriverUser):
         else:
             pb = self.rig.pose.bones[bname]
         target = expr.prop
-        factor = target.factor
-        if target.points:
-            factor = self.cheatSplineTCB(target.points, target.factor)
+        factor = target.getData()
         raw = rawProp(self.getUniqueName(target.key))
         final = self.addNewProp(raw)
         tfm = Transform()
@@ -1081,6 +1076,10 @@ class LoadMorph(DriverUser):
                 return "+%s" % varname
             elif factor == -1:
                 return "-%s" % varname
+            elif isinstance(factor, list):
+                points = factor
+                term = self.makeSplineString(points, varname, 1.0)
+                return "+(%s)" % term
             else:
                 return "%+g*%s" % (factor, varname)
 
@@ -1306,11 +1305,7 @@ class LoadMorph(DriverUser):
         self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
 
 
-    def makeSplineBoneDriver(self, channel, uvec, points, rna, path, idx, bname, keep):
-        # Only make spline for one component
-        #[1 if x< -1.983 else -x-0.983 if x< -0.983  else 0 for x in [+0.988*A]][0]
-        #1 if A< -1.983/0.988 else -0.988*A-0.983 if A< -0.983/0.988  else 0
-
+    def makeSplineString(self, points, var, umax):
         def truncMinus(zstring):
             if zstring[0:2] == "+-":
                 return zstring[1:]
@@ -1370,7 +1365,6 @@ class LoadMorph(DriverUser):
                 yi = yj
             return string
 
-        var,vars,umax = self.getVarData(uvec, bname, "A")
         lt = ("<" if umax > 0 else ">")
         if GS.useSplineDrivers:
             string = splineSpline(var, umax, lt)
@@ -1383,7 +1377,13 @@ class LoadMorph(DriverUser):
             for n in range(5):
                 msg += "%s         \n" % (string[30*n:30*(n+1)])
             reportError(msg)
-            return
+            return ""
+        return string
+
+
+    def makeSplineBoneDriver(self, channel, uvec, points, rna, path, idx, bname, keep):
+        var,vars,umax = self.getVarData(uvec, bname, "A")
+        string = self.makeSplineString(points, var, umax)
         self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
 
 

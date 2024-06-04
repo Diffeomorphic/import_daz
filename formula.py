@@ -354,6 +354,12 @@ class ExprTarget:
     def __repr__(self):
         return "<ExprTarget %s %s %d %.3f %s %s>" % (self.key, self.type, self.comp, self.factor, self.points, self.mults)
 
+    def getData(self):
+        if self.points:
+            return [point[0:2] for point in self.points]
+        else:
+            return self.factor
+
 
 class Expression:
     def __init__(self):
