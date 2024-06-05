@@ -609,7 +609,7 @@ class LoadMorph(DriverUser):
         if target:
             self.addNewProp(output)
             prop = self.getUniqueName(target.key)
-            factor = target.getData()
+            factor = target.getFactor(True)
             self.propDrivers[output].append((prop, factor))
             target2 = expr.prop2
             if target2:
@@ -642,30 +642,11 @@ class LoadMorph(DriverUser):
         else:
             pb = self.rig.pose.bones[bname]
         target = expr.prop
-        factor = target.getData()
+        factor = target.getFactor(False)
         raw = rawProp(self.getUniqueName(target.key))
         final = self.addNewProp(raw)
         tfm = Transform()
-        return tfm, pb, final, target.factor
-
-
-    def cheatSplineTCB(self, points, factor):
-        x0 = y0 = None
-        for n,point in enumerate(points):
-            x,y = point[0:2]
-            if x == 0 and y == 0:
-                x0 = x
-                y0 = y
-                n0 = n
-                break
-        if x0 is None:
-            return factor
-        if n0 == 0:
-            x1,y1 = points[-1][0:2]
-        else:
-            x1,y1 = points[0][0:2]
-        factor = (y1-y0)/(x1-x0)
-        return factor
+        return tfm, pb, final, factor
 
 
     def makeRotFormula(self, bname, idx, expr):

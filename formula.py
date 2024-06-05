@@ -351,14 +351,33 @@ class ExprTarget:
         self.points = []
         self.mults = []
 
+
     def __repr__(self):
         return "<ExprTarget %s %s %d %.3f %s %s>" % (self.key, self.type, self.comp, self.factor, self.points, self.mults)
 
-    def getData(self):
-        if self.points:
+
+    def getFactor(self, useSplines):
+        if not self.points:
+            return self.factor
+        elif useSplines and GS.useSplineDrivers:
             return [point[0:2] for point in self.points]
         else:
-            return self.factor
+            x0 = y0 = None
+            for n,point in enumerate(self.points):
+                x,y = point[0:2]
+                if x == 0 and y == 0:
+                    x0 = x
+                    y0 = y
+                    n0 = n
+                    break
+            if x0 is None:
+                return self.factor
+            if n0 == 0:
+                x1,y1 = self.points[-1][0:2]
+            else:
+                x1,y1 = self.points[0][0:2]
+            factor = (y1-y0)/(x1-x0)
+            return factor
 
 
 class Expression:
