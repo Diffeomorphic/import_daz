@@ -1326,26 +1326,23 @@ class LoadMorph(DriverUser):
         def splineSpline(var, umax, lt):
             xi,yi = points[0]
             string = ""
-            cond = ""
-            last = len(points)-2
+            first = True
             for j,pt in enumerate(points[1:]):
                 xj,yj = pt
                 if yi == 0 and yj == 0:
                     xi = xj
                     continue
-                string += cond
                 ypj = getPrint(yj)
                 xpi = getPrint(xi/umax)
                 xpj = getPrint(xj/umax)
                 factor = getPrint(yj-yi)
-                if yi != 0:
-                    string += "%s+" % getPrint(yi)
-                string += "%s*smoothstep(%s,%s,%s)" % (factor, xpi, xpj, var)
-                if j < last:
-                    cond = " if %s%s%s else " % (var, lt, xpj)
+                if first and yi != 0:
+                    string += "+%s" % getPrint(yi)
+                string += "+%s*smoothstep(%s,%s,%s)" % (factor, xpi, xpj, var)
                 xi = xj
                 yi = yj
-            return string
+                first = False
+            return string[1:]
 
         lt = ("<" if umax > 0 else ">")
         if GS.useSplineDrivers:
