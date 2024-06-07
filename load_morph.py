@@ -1334,12 +1334,13 @@ class LoadMorph(DriverUser):
                     xi = xj
                     continue
                 string += cond
-                ypi = getPrint(yi)
                 ypj = getPrint(yj)
-                xpi = truncMinus("-%s" % getPrint(xi/umax))
+                xpi = getPrint(xi/umax)
                 xpj = getPrint(xj/umax)
-                factor = getPrint(umax/(xj-xi))
-                string += "smoothstep(%s,%s,%s*(%s%s))" % (ypi, ypj, factor, var, xpi)
+                factor = getPrint(yj-yi)
+                if yi != 0:
+                    string += "%s+" % getPrint(yi)
+                string += "%s*smoothstep(%s,%s,%s)" % (factor, xpi, xpj, var)
                 if j < last:
                     cond = " if %s%s%s else " % (var, lt, xpj)
                 xi = xj
