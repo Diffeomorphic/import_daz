@@ -1745,10 +1745,10 @@ class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
         LS.forUV(ob)
         struct = JL.load(self.filepath)
         asset = parseAssetFile(struct)
-        if asset is None or len(asset.uvs) == 0:
+        if asset is None or len(asset.uvsets) == 0:
             raise DazError ("Not an UV asset:\n  '%s'" % self.filepath)
 
-        for uvset in asset.uvs:
+        for uvset in asset.uvsets:
             polyverts = uvset.getPolyVerts(me)
             uvset.checkPolyverts(me, polyverts, True)
             uvlayer = makeNewUvLayer(me, uvset.getLabel(), False)

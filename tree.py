@@ -488,8 +488,8 @@ def pruneNodeTree(tree,
                   useHideOutputs = True,
                   keepUnusedTextures = True,
                   useFixColorSpace = True,
+                  useDazImages = False,
                   useBeautify = True,
-                  useDazImages = True,
                   useGroups = True,
                   ):
     marked = {}
@@ -510,8 +510,8 @@ def pruneNodeTree(tree,
                           useHideOutputs,
                           keepUnusedTextures,
                           useFixColorSpace,
-                          useBeautify,
                           useDazImages,
+                          useBeautify,
                           useGroups)
             LS.protectedGroups.append(node.node_tree)
 
@@ -688,13 +688,29 @@ def beautifyNodeTree(tree):
 #   Prune materials
 #-------------------------------------------------------------
 
-def pruneMaterials(ob, useDeleteUnusedNodes=True, useHideTexNodes=True, usePruneTexco=True, useHideOutputs=True, keepUnusedTextures=True, useFixColorSpace=True, useBeautify=False, useDazImages=True):
+def pruneMaterials(ob,
+                   useDeleteUnusedNodes=True,
+                   useHideTexNodes=True,
+                   usePruneTexco=True,
+                   useHideOutputs=True,
+                   keepUnusedTextures=True,
+                   useFixColorSpace=True,
+                   useDazImages=False,
+                   useBeautify=False):
     from .geometry import getActiveUvLayer
     LS.__init__()
     active = getActiveUvLayer(ob)
     for mat in ob.data.materials:
         if mat:
-            pruneNodeTree(mat.node_tree, active, useDeleteUnusedNodes, useHideTexNodes, usePruneTexco, useHideOutputs, keepUnusedTextures, useFixColorSpace, useBeautify, useDazImages)
+            pruneNodeTree(mat.node_tree, active,
+                          useDeleteUnusedNodes,
+                          useHideTexNodes,
+                          usePruneTexco,
+                          useHideOutputs,
+                          keepUnusedTextures,
+                          useFixColorSpace,
+                          useDazImages,
+                          useBeautify)
 
 
 def makeDazImages(tree):

@@ -39,6 +39,7 @@ class FileAsset(Asset):
         self.nodes = []
         self.modifiers = []
         self.materials = []
+        self.uvsets = []
         self.animations = {}
         self.instances = {}
         self.extras = []
@@ -67,6 +68,7 @@ class FileAsset(Asset):
             from .geometry import Uvset
             for ustruct in struct["uv_set_library"]:
                 asset = self.parseTypedAsset(ustruct, Uvset)
+                self.uvsets.append(asset)   # used by daz.load_uv
 
         if LS.useGeometries and "geometry_library" in struct.keys():
             from .geometry import Geometry

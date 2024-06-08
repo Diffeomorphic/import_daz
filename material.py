@@ -1928,6 +1928,11 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         name = "Fix Color Space",
         default = True)
 
+    useDazImages : BoolProperty(
+        name = "DAZ Images",
+        description = "Make node groups for DAZ images",
+        default = False)
+
     useBeautify : BoolProperty(
         name = "Beautify",
         description = "Beautify node tree",
@@ -1940,6 +1945,7 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         self.layout.prop(self, "useHideOutputs")
         self.layout.prop(self, "keepUnusedTextures")
         self.layout.prop(self, "useFixColorSpace")
+        self.layout.prop(self, "useDazImages")
         self.layout.prop(self, "useBeautify")
 
 
@@ -1953,7 +1959,9 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
                            self.useHideOutputs,
                            self.keepUnusedTextures,
                            self.useFixColorSpace,
-                           self.useBeautify)
+                           self.useDazImages,
+                           self.useBeautify,
+                           )
 
 #----------------------------------------------------------
 #   Utility
