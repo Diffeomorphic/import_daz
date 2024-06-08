@@ -488,7 +488,7 @@ def pruneNodeTree(tree,
                   useHideOutputs = True,
                   keepUnusedTextures = True,
                   useFixColorSpace = True,
-                  useDazImages = False,
+                  useDazImages = True,
                   useBeautify = True,
                   useGroups = True,
                   ):
@@ -695,7 +695,7 @@ def pruneMaterials(ob,
                    useHideOutputs=True,
                    keepUnusedTextures=True,
                    useFixColorSpace=True,
-                   useDazImages=False,
+                   useDazImages=True,
                    useBeautify=False):
     from .geometry import getActiveUvLayer
     LS.__init__()
@@ -718,9 +718,11 @@ def makeDazImages(tree):
     def getBefore(node):
         socket = node.inputs["Vector"]
         for link in socket.links:
-            if link.from_node.type in ['VECT_MATH', 'MAPPING']:
-                before.append(link.from_node)
-                getBefore(link.from_node)
+            fromnode = link.from_node
+            if (fromnode.type in ['VECT_MATH', 'MAPPING'] and
+                len(fromnode.outputs["Vector"].links) == 1):
+                before.append(fromnode)
+                getBefore(fromnode)
 
     def getAfter(node):
         socket = node.outputs["Color"]
@@ -740,6 +742,7 @@ def makeDazImages(tree):
             if after or before:
                 dazimgs.append((node, after, before))
 
+    deletes = []
     for tex,after,before in dazimgs:
         after.reverse()
         before.reverse()
@@ -783,7 +786,10 @@ def makeDazImages(tree):
 
         beautifyNodeTree(ctree)
         for node in after + before + [tex]:
-            tree.nodes.remove(node)
+            deletes.append(node)
+
+    for node in set(deletes):
+        tree.nodes.remove(node)
 
 # ---------------------------------------------------------------------
 #   TNode and TLink
