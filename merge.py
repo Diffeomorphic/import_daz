@@ -76,6 +76,7 @@ class UVLayerMerger:
             return default
 
         from .matedit import isShellNode
+        from .cycles import isTexImage
         active = getActiveUvLayer(ob)
         uvmaps = {}
         shellmaps = {}
@@ -83,7 +84,7 @@ class UVLayerMerger:
             if not (mat and mat.node_tree):
                 continue
             for node in mat.node_tree.nodes:
-                if node.type == 'TEX_IMAGE':
+                if isTexImage(node):
                     uvname = getUvMap(node.inputs.get("Vector"), active.name)
                     uvmaps[uvname] = True
                 elif isShellNode(node):
@@ -696,12 +697,13 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 return findUvMap(socket.links[0].from_node)
             return None
 
+        from .cycles import isTexImage
         uvmaps = {}
         for mat in ob.data.materials:
             if mat is None:
                 continue
             for node in mat.node_tree.nodes:
-                if node.type == 'TEX_IMAGE':
+                if isTexImage(node):
                     uvmap = findUvMap(node)
                     if uvmap is None or uvmap.type == 'TEX_COORD':
                         return

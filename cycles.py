@@ -134,10 +134,10 @@ class CyclesMaterial(Material):
         bumpmin = self.getValue("getChannelBumpMin", -0.01)
         bumpmax = self.getValue("getChannelBumpMax", 0.01)
         socket.default_value = (bumpmax-bumpmin) * GS.scale * GS.bumpMultiplier
-        while tex and tex.type != 'TEX_IMAGE':
-            links = tex.inputs["Color"].links
-            if links:
-                tex = links[0].from_node
+        while tex and not isTexImage(tex):
+            colsocket = tex.inputs.get("Color")
+            if colsocket and colsocket.links:
+                tex = colsocket.links[0].from_node
             else:
                 return
         key = tex.name
@@ -2175,6 +2175,18 @@ class CyclesTree(Tree):
 #-------------------------------------------------------------
 #   Utilities
 #-------------------------------------------------------------
+
+def isGroupType(node, gtypes):
+    return (node and
+            node.type == 'GROUP' and
+            node.node_tree and
+            node.node_tree.name.startswith(gtypes))
+
+
+def isTexImage(node):
+    return (node.type == 'TEX_IMAGE' or
+            isGroupType(node, ("DIMG", "LIE")))
+
 
 def findMaterial(mat):
     dmat = CyclesMaterial(None)

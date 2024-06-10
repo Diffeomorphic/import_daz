@@ -667,7 +667,7 @@ def beautifyNodeTree(tree):
             size = 2
         elif node.type == "GROUP":
             grpname = node.name.split(".",1)[0]
-            if grpname.startswith("LIE"):
+            if grpname.startswith(("LIE", "DIMG")):
                 size = 6
             elif grpname.endswith("Combo"):
                 size = 30

@@ -34,6 +34,7 @@ from mathutils import Vector
 from .error import *
 from .utils import *
 from .material import WHITE, isWhite
+from .cycles import isGroupType
 from .pbr import PBR
 from collections import OrderedDict
 from .fileutils import SingleFile, ImageFile
@@ -402,10 +403,10 @@ class ChannelSetter:
                     pass
                 elif self.setNodeValue(node, fromnode, fromsocket, socket, mat, ncomps, item):
                     pass
-                elif isGroupType(fromnode, ["DAZ Log Color"]):
+                elif isGroupType(fromnode, "DAZ Log Color"):
                     self.ensureColor(ncomps, item)
                     fromnode.inputs["Color"].default_value = self.getItemValue(4, item)
-                elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
+                elif isGroupType(fromnode, ("DAZ Color Effect", "DAZ Tinted Effect")):
                     if slot == "Fac":
                         socket = fromnode.inputs["Fac"]
                         socket.default_value = self.getItemValue(1, item)
@@ -482,6 +483,7 @@ class ChannelSetter:
 
 
     def getEditChannel(self, ob, key):
+        from .cycles import isTexImage
         nodeType, slot, ncomps = getTweakableChannel(key)
         mat = ob.active_material
         if not mat.use_nodes:
@@ -500,11 +502,11 @@ class ChannelSetter:
                         return fromnode.inputs[0].default_value, ncomps
                     elif fromnode.type == 'GAMMA':
                         return fromnode.inputs[0].default_value, ncomps
-                    elif fromnode.type == 'TEX_IMAGE':
+                    elif isTexImage(fromnode):
                         return WHITE, ncomps
-                    elif isGroupType(fromnode, ["DAZ Log Color"]):
+                    elif isGroupType(fromnode, "DAZ Log Color"):
                         return fromnode.inputs["Color"].default_value, ncomps
-                    elif isGroupType(fromnode, ["DAZ Color Effect", "DAZ Tinted Effect"]):
+                    elif isGroupType(fromnode, ("DAZ Color Effect", "DAZ Tinted Effect")):
                         if slot.endswith("Color"):
                             slot = "Color"
                         return fromnode.inputs[slot].default_value, ncomps
@@ -556,10 +558,6 @@ class ChannelSetter:
               nodeType in bpy.data.node_groups.keys()):
             return (node.node_tree == bpy.data.node_groups[nodeType])
         return False
-
-
-def isGroupType(node, gtypes):
-    return (node.type == 'GROUP' and node.node_tree.name in gtypes)
 
 # ---------------------------------------------------------------------
 #   Launch button
@@ -802,7 +800,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
             node = link.to_node
             if node.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA', 'INVERT']:
                 pass
-            elif isGroupType(node, ["DAZ Log Color", "DAZ Color Effect", "DAZ Tinted Effect"]):
+            elif isGroupType(node, ("DAZ Log Color", "DAZ Color Effect", "DAZ Tinted Effect")):
                 pass
             elif node.type == 'GROUP':
                 treename = node.node_tree.name
@@ -827,7 +825,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                 if node.name not in self.nodes.keys():
                     self.nodes[node.name] = node
                     self.tnodes[node.name] = TNode(node)
-                if isGroupType(node, ["DAZ Color Effect", "DAZ Tinted Effect"]):
+                if isGroupType(node, ("DAZ Color Effect", "DAZ Tinted Effect")):
                     if slot.endswith("Fac"):
                         self.selectNodes(node.inputs["Fac"], slot)
                     elif slot.endswith("Color"):
