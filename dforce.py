@@ -338,8 +338,8 @@ class Settings:
              "collQuality", "gsmFactor", "collDist"]
 
     def invoke(self, context, event):
-        from .fileutils import openSettingsFile
-        struct = openSettingsFile(self.filepath)
+        from .load_json import loadJson
+        struct = loadJson(self.filepath)
         if struct:
             print("Load settings from", self.filepath)
             self.readSettings(struct)

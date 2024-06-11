@@ -102,6 +102,7 @@ def loadJson(filepath, mustOpen=False, silent=False):
                     return "%s %s" % (string[:n], string[n1:])
         return None
 
+    filepath = os.path.expanduser(filepath)
     if not os.path.exists(filepath):
         if silent:
             return {}

@@ -159,8 +159,8 @@ class DAZ_OT_LoadRootPaths(bpy.types.Operator, SingleFile, JsonFile):
         self.layout.prop(self, "useCloud")
 
     def execute(self, context):
-        from .fileutils import openSettingsFile
-        struct = openSettingsFile(self.filepath)
+        from .load_json import loadJson
+        struct = loadJson(self.filepath)
         if struct:
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)

@@ -267,8 +267,8 @@ class GlobalSettings:
                     print("No such path:", path)
             return fixed
 
-        from .fileutils import openSettingsFile
-        struct = openSettingsFile(filepath)
+        from .load_json import loadJson
+        struct = loadJson(filepath)
         if struct and "daz-settings" in struct.keys():
             print("Load settings from", filepath)
             settings = struct["daz-settings"]
