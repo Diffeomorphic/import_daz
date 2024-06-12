@@ -1248,7 +1248,7 @@ class BendTwists:
         ob.vertex_groups.remove(vgrp)
 
 
-    def constrainBendTwists(self, rig, bendTwistBones):
+    def constrainBendTwists(self, rig, bendTwistBones, useStretch):
         from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('OBJECT')
         for bname,tname,stretch in bendTwistBones:
@@ -1262,9 +1262,9 @@ class BendTwists:
             trg = rig.pose.bones[tname]
             dampedTrack(bend, trg, rig)
             copyTransform(twist, pb, rig)
-            if stretch:
-                cns = stretchTo(bend, trg, rig, stretch, "x")
-                cns = stretchTo(twist, trg, rig, stretch, "x")
+            if useStretch and stretch:
+                stretchTo(bend, trg, rig, stretch, "x")
+                stretchTo(twist, trg, rig, stretch, "x")
             if self.addTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
