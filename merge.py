@@ -1150,7 +1150,8 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                     }
                     partype = partypes[ob.parent_type]
                     bpy.ops.object.parent_set(type=partype)
-                    print("%s parent: %s > %s" % (ob.parent_type, ob.parent.name, child.name))
+                    if GS.verbosity >= 3:
+                        print("%s parent: %s > %s" % (ob.parent_type, ob.parent.name, child.name))
                     deletes.append(ob)
                 else:
                     raise DazError("Unknown parent type: %s %s" % (child.name, ob.parent_type))

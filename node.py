@@ -493,29 +493,30 @@ class Instance(Accessor, Channels, SimNode):
             geonode.finalize(context, self)
         self.buildChannels(ob)
 
-        if self.rigidFollow and self.parent and self.parent.geometries:
-            par = self.parent.geometries[0].rna
+        def addRigidFollow(ob):
+            from .bone import BoneInstance
+            parent = self.parent
+            if isinstance(parent, BoneInstance):
+                parent = parent.figure
+            if not (parent and parent.geometries):
+                return
+            mesh = parent.geometries[0].rna
             vcount = self.nodeExtra.get("vertex_count")
             riggrp = self.nodeExtra.get("rigidity_group")
-            if par and riggrp and vcount and len(par.data.vertices) == vcount:
+            if mesh and riggrp and vcount and len(mesh.data.vertices) == vcount:
                 refverts = riggrp["reference_vertices"]["values"]
-                ob.parent = par
-                if len(refverts) >= 3:
-                    vnums = [refverts[n] for n in [0,1,-1]]
-                    xs = [par.data.vertices[vn].co for vn in vnums]
-                    x = (xs[0] + xs[1] + xs[-1])/3
-                    ob.parent_type = 'VERTEX_3'
-                    ob.parent_vertices = vnums
-                else:
-                    vn = refverts[0]
-                    x = par.data.vertices[vn].co
-                    ob.parent_type = 'VERTEX'
-                    ob.parent_vertices[0] = vn
-                loc,quat,scale = ob.matrix_world.decompose()
+                loc = ob.matrix_world.to_translation()
+                ob.parent = mesh
+                vn = refverts[0]
+                x = mesh.data.vertices[vn].co
+                ob.parent_type = 'VERTEX'
+                ob.parent_vertices[0] = vn
                 ob.location = loc-x
                 ob.rotation_euler = Zero
                 ob.scale = One
 
+        if self.rigidFollow:
+            addRigidFollow(ob)
         if self.dynsim:
             self.dynsim.build(context)
         if self.dyngenhair:
