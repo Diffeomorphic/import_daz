@@ -1138,20 +1138,19 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                     setWorldMatrix(child, wmat)
                     deletes.append(ob)
                 elif ob.parent_type in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
-                    activateObject(context, ob.parent)
-                    deselectAllVerts(ob.parent)
-                    for vn in ob.parent_vertices:
-                        ob.parent.data.vertices[vn].select = True
-                    child.select_set(True)
-                    partypes = {
-                        'VERTEX' : 'VERTEX',
-                        'VERTEX_3' : 'VERTEX_TRI',
-                        'VERTEX_TRI' : 'VERTEX_TRI',
-                    }
-                    partype = partypes[ob.parent_type]
-                    bpy.ops.object.parent_set(type=partype)
-                    if GS.verbosity >= 3:
-                        print("%s parent: %s > %s" % (ob.parent_type, ob.parent.name, child.name))
+                    if activateObject(context, child):
+                        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+                    if activateObject(context, ob.parent):
+                        child.select_set(True)
+                        partypes = {
+                            'VERTEX' : 'VERTEX',
+                            'VERTEX_3' : 'VERTEX_TRI',
+                            'VERTEX_TRI' : 'VERTEX_TRI',
+                        }
+                        partype = partypes[ob.parent_type]
+                        bpy.ops.object.parent_set(type=partype)
+                        if GS.verbosity >= 3:
+                            print("%s parent: %s > %s" % (ob.parent_type, ob.parent.name, child.name))
                     deletes.append(ob)
                 else:
                     raise DazError("Unknown parent type: %s %s" % (child.name, ob.parent_type))
