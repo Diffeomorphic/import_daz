@@ -183,6 +183,9 @@ class DazLoader:
         for asset in main.materials:
             asset.postbuild()
 
+        for inst,mesh,objects in LS.rigidFollow.values():
+            inst.makeRigidFollow(context, mesh, objects)
+
         from .node import finishNodeInstances
         finishNodeInstances(context)
 

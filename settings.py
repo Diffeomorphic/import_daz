@@ -588,6 +588,7 @@ class LocalSettings:
         self.legacySkin = []
         self.invalidMeshes = []
         self.polyLines = {}
+        self.rigidFollow = {}
         self.deflectors = {}
         self.materials = {}
         self.images = {}

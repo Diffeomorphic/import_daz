@@ -493,7 +493,7 @@ class Instance(Accessor, Channels, SimNode):
             geonode.finalize(context, self)
         self.buildChannels(ob)
 
-        def addRigidFollow(ob):
+        if self.rigidFollow:
             from .bone import BoneInstance
             parent = self.parent
             if isinstance(parent, BoneInstance):
@@ -501,28 +501,31 @@ class Instance(Accessor, Channels, SimNode):
             if not (parent and parent.geometries):
                 return
             mesh = parent.geometries[0].rna
-            vcount = self.nodeExtra.get("vertex_count")
-            riggrp = self.nodeExtra.get("rigidity_group")
-            if mesh and riggrp and vcount and len(mesh.data.vertices) == vcount:
-                refverts = riggrp["reference_vertices"]["values"]
-                loc = ob.matrix_world.to_translation()
-                ob.parent = mesh
-                vn = refverts[0]
-                x = mesh.data.vertices[vn].co
-                ob.parent_type = 'VERTEX'
-                ob.parent_vertices[0] = vn
-                ob.location = loc-x
-                ob.rotation_euler = Zero
-                ob.scale = One
+            follows = LS.rigidFollow.get(mesh.name)
+            if follows is None:
+                follows = LS.rigidFollow[mesh.name] = (parent, mesh, [])
+            follows[2].append(ob)
 
-        if self.rigidFollow:
-            addRigidFollow(ob)
         if self.dynsim:
             self.dynsim.build(context)
         if self.dyngenhair:
             self.dyngenhair.build(context)
         if self.dynhairflw:
             self.dynhairflw.build(context)
+
+
+    def makeRigidFollow(self, context, mesh, objects):
+        if not objects:
+            return
+        ob = objects[0]
+        if activateObject(context, ob):
+            for ob in objects:
+                ob.select_set(True)
+            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+        if activateObject(context, mesh):
+            for ob in objects:
+                ob.select_set(True)
+            bpy.ops.object.parent_set(type='VERTEX_TRI')
 
 
     def formulate(self, key, value):
