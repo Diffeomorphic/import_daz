@@ -620,7 +620,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useApplyTransforms : BoolProperty(
         name = "Apply Transforms",
         description = "Apply all transforms to objects that are not bone parented",
-        default = True)
+        default = False)
 
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
@@ -801,7 +801,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     def treatRig(self, context, rigname):
         from .finger import isGenesis, getFingerPrint
-        from .merge import safeTransformApply
         rigs = self.rigs[rigname]
         meshes = self.meshes[rigname]
         objects = self.objects[rigname]
@@ -886,30 +885,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             bpy.ops.daz.merge_materials()
 
         if self.useApplyTransforms:
-            # Apply transforms to meshes
-            print("Apply transforms")
-            bpy.ops.object.select_all(action='DESELECT')
-            wmats = []
-            status = []
-            for ob in objects:
-                try:
-                    status.append((ob, ob.hide_get(), ob.hide_select))
-                    ob.hide_set(False)
-                    ob.hide_select = False
-                    if ob.parent and ob.parent_type == 'BONE':
-                        wmats.append((ob, ob.matrix_world.copy()))
-                    elif ob.parent and ob.parent_type.startswith('VERTEX'):
-                        pass
-                    elif ob.type in ['MESH', 'ARMATURE']:
-                        selectSet(ob, True)
-                except ReferenceError:
-                    pass
-            safeTransformApply()
-            for ob,wmat in wmats:
-                setWorldMatrix(ob, wmat)
-            for ob,hide,select in status:
-                ob.hide_set(hide)
-                ob.hide_select = select
+            applyTransforms(objects)
 
         if mainChar and mainRig and mainMesh:
             if (  self.useUnits or
@@ -1148,6 +1124,55 @@ class DAZ_OT_DecodeFile(DazOperator, DazFile, SingleFile):
             fp.write(string)
         print("%s written" % newfile)
 
+
+#------------------------------------------------------------------
+#   Apply transforms
+#------------------------------------------------------------------
+
+class DAZ_OT_ApplyTransforms(DazOperator):
+    bl_idname = "daz.apply_transforms"
+    bl_label = "Apply Transforms"
+    bl_description = "Apply transforms to selected objects and its children"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        def addChildren(ob):
+            objects.append(ob)
+            for child in ob.children:
+                addChildren(child)
+
+        objects = []
+        for ob in getSelectedObjects(context):
+            addChildren(ob)
+        applyTransforms(set(objects))
+
+
+def applyTransforms(objects):
+    from .merge import safeTransformApply
+    print("Apply transforms")
+    bpy.ops.object.select_all(action='DESELECT')
+    wmats = []
+    status = []
+    for ob in objects:
+        try:
+            status.append((ob, ob.hide_get(), ob.hide_select))
+            ob.hide_set(False)
+            ob.hide_select = False
+            if ob.parent and ob.parent_type == 'BONE':
+                wmats.append((ob, ob.matrix_world.copy()))
+            elif ob.parent and ob.parent_type.startswith('VERTEX'):
+                pass
+            elif ob.type in ['MESH', 'ARMATURE']:
+                selectSet(ob, True)
+        except ReferenceError:
+            pass
+    safeTransformApply()
+    for ob,wmat in wmats:
+        setWorldMatrix(ob, wmat)
+    for ob,hide,select in status:
+        ob.hide_set(hide)
+        ob.hide_select = select
+
 #------------------------------------------------------------------
 #   Launch quoter
 #------------------------------------------------------------------
@@ -1207,6 +1232,7 @@ classes = [
     ImportDAZManually,
     ImportDAZMaterials,
     EasyImportDAZ,
+    DAZ_OT_ApplyTransforms,
     DAZ_OT_DecodeFile,
     DAZ_OT_Quote,
     DAZ_OT_Unquote,
