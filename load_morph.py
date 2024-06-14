@@ -1868,10 +1868,6 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                 rig.data[final] = 0.0
             lm.buildBoneDriver(raw, bname, expr, True)
 
-    def correctExprs(exprs, factor):
-        for idx,expr in exprs.items():
-            expr["factor"] *= factor
-
     exprs,rig2 = asset.evalFormulas(rig, None, True)
     for driven,expr in exprs.items():
         if "rotation" in expr.keys():
@@ -1895,7 +1891,8 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
             if driven in altmorphs.keys():
                 for alt,factor in altmorphs[driven].items():
                     if factor != 1:
-                        correctExprs(formulas, factor)
+                        for idx,expr in formulas.items():
+                            expr.multFactors(factor)
                     buildValueDriver(formulas, alt)
             else:
                 buildValueDriver(formulas, driven)

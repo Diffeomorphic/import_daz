@@ -291,14 +291,6 @@ class Formula:
         return attr, idx, default
 
 
-    def getExprValue(self, expr, key):
-        if ("factor" in expr.keys() and
-            key in expr["factor"].keys()):
-            return expr["factor"][key]
-        else:
-            return None
-
-
     def getRefKey(self, string):
         base = string.split(":",1)[-1]
         return base.rsplit("?",1)
@@ -390,6 +382,11 @@ class Expression:
 
     def __repr__(self):
         return "<Expression\n  %s\n  %s\n  %s\n  %s\n  %s>" % (self.prop, self.prop2, self.bone, self.bone2, self.path)
+
+    def multFactors(self, factor):
+        for trg in [self.prop, self.bone]:
+            if trg:
+                trg.factor *= factor
 
 
 def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):
