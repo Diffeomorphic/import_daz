@@ -1518,7 +1518,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     return False
                 info.foundControl = list(subrig.children)
                 return True
-        elif subrig.parent is None or subrig.parent_type == 'BONE':
+        elif subrig.parent is None or subrig.parent_type != 'OBJECT':
             return False
         for bname in subrig.data.bones.keys():
             if bname in rig.data.bones.keys():
@@ -1534,7 +1534,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 selectSet(subinfo.rig, True)
                 for ob,data in subinfo.objects:
                     partype,parbone = data
-                    if partype != 'BONE' and ob.type in ['MESH', 'ARMATURE']:
+                    if partype == 'OBJECT' and ob.type in ['MESH', 'ARMATURE']:
                         selectSet(ob, True)
         safeTransformApply()
 
@@ -1579,7 +1579,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
         if not ES.easy:
             print("Merge infos to %s:" % rig.name)
-        #self.applyTransforms(info, subinfos)
+        self.applyTransforms(info, subinfos)
         mainbones = list(rig.pose.bones.keys())
         extrabones = []
         for subinfo in subinfos:
@@ -1845,7 +1845,7 @@ def applyRestPoses(context, rig, subrigs):
     for subrig in rigs:
         setRestRotation(subrig)
         for ob in getMeshChildren(subrig):
-            if not ob.parent_type == 'BONE':
+            if ob.parent_type == 'OBJECT':
                 setRestPose(ob, subrig, context)
         if not setActiveObject(context, subrig):
             continue
@@ -1894,7 +1894,7 @@ def setRestPose(ob, rig, context):
     if not setActiveObject(context, ob):
         return
     setParent(context, ob, rig)
-    if ob.parent_type == 'BONE' or ob.type != 'MESH':
+    if ob.parent_type != 'OBJECT' or ob.type != 'MESH':
         return
 
     if LS.fitFile:
