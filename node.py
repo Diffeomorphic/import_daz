@@ -157,6 +157,7 @@ class Instance(Accessor, Channels, SimNode):
         self.refcoll = None
         self.isGroupNode = False
         self.rigidFollow = None
+        self.followTarget = None
         self.isStrandHair = False
         self.ignore = False
         self.instanceTarget = None
@@ -297,6 +298,8 @@ class Instance(Accessor, Channels, SimNode):
                 pass
             elif key == "Point At":
                 pass
+            elif key == "Follow Target":
+                self.followTarget = self.getChannelInstance(channel)
 
 
     def hideViewport(self, value, ob):
@@ -493,18 +496,20 @@ class Instance(Accessor, Channels, SimNode):
             geonode.finalize(context, self)
         self.buildChannels(ob)
 
-        if self.rigidFollow:
+        target = None
+        if self.followTarget:
+            target = self.followTarget
+        elif self.rigidFollow:
             from .bone import BoneInstance
-            parent = self.parent
-            if isinstance(parent, BoneInstance):
-                parent = parent.figure
-            if not (parent and parent.geometries):
-                return
-            mesh = parent.geometries[0].rna
+            target = self.parent
+            if isinstance(target, BoneInstance):
+                target = target.figure
+        if target and target.geometries:
+            mesh = target.geometries[0].rna
             if mesh:
                 follows = LS.rigidFollow.get(mesh.name)
                 if follows is None:
-                    follows = LS.rigidFollow[mesh.name] = (parent, mesh, [])
+                    follows = LS.rigidFollow[mesh.name] = (target, mesh, [])
                 follows[2].append(ob)
 
         if self.dynsim:
