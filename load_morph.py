@@ -417,7 +417,7 @@ class LoadMorph(DriverUser):
 
 
     def makeFormulas(self, asset, skey):
-        from .formula import Formula, setFormulaExpr
+        from .formula import Formula, setFormulaExpr, ExprTarget
         from .modifier import Alias
         prop = rawProp(self.getUniqueName(asset.getName()))
         if prop != asset.name:
@@ -433,8 +433,7 @@ class LoadMorph(DriverUser):
                 print("Alias is same: %s" % prop)
                 return
             expr = setFormulaExpr(exprs, alias, "value", "value", 0)
-            target = expr.prop
-            target.key = prop
+            target = expr.prop = ExprTarget(prop, "value", -1)
             target.factor = 1
         else:
             return False
