@@ -192,6 +192,13 @@ class DazLoader:
         if LS.useLoadBaked:
             self.postloadMorphs(context, filepath)
 
+        # Do this at the very end, because it deletes nodes
+        if GS.usePruneNodes:
+            from .tree import pruneNodeTree
+            for mat in LS.materials.values():
+                if mat:
+                    pruneNodeTree(mat.node_tree)
+
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
         return main

@@ -1931,7 +1931,7 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
     useDazImages : BoolProperty(
         name = "DAZ Images",
         description = "Make node groups for DAZ images",
-        default = False)
+        default = True)
 
     useBeautify : BoolProperty(
         name = "Beautify",

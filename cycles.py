@@ -2122,34 +2122,16 @@ class CyclesTree(Tree):
 
 
     def postbuild(self):
-        if GS.usePruneNodes:
-            from .geometry import getActiveUvLayer
-            active = None
-            if self.owner.geometry:
-                ob = self.owner.geometry.rna
-                if ob:
-                    active = getActiveUvLayer(ob)
-            difftexname = diffname = None
-            if self.diffuseTex:
-                difftexname = self.diffuseTex.name
-            if self.diffuse:
-                diffname = self.diffuse.name
-            marked = pruneNodeTree(self, active)
-            hasDiffuseTex = difftexname and marked.get(difftexname)
-            hasDiffuse = diffname and marked.get(diffname)
-        else:
-            hasDiffuseTex = self.diffuseTex
-            hasDiffuse = self.diffuse
         for node in self.nodes:
             node.select = False
-        if hasDiffuseTex:
+        if self.diffuseTex:
             try:
                 self.diffuseTex.select = True
                 self.nodes.active = self.diffuseTex
             except UnicodeDecodeError:
                 print("Illegal diffuse texture in %s:\n %s" % (self.owner.name, self.diffuseTex))
                 self.diffuseTex = None
-        elif hasDiffuse:
+        elif self.diffuse:
             self.diffuse.select = True
             self.nodes.active = self.diffuse
 

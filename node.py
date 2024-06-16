@@ -501,10 +501,11 @@ class Instance(Accessor, Channels, SimNode):
             if not (parent and parent.geometries):
                 return
             mesh = parent.geometries[0].rna
-            follows = LS.rigidFollow.get(mesh.name)
-            if follows is None:
-                follows = LS.rigidFollow[mesh.name] = (parent, mesh, [])
-            follows[2].append(ob)
+            if mesh:
+                follows = LS.rigidFollow.get(mesh.name)
+                if follows is None:
+                    follows = LS.rigidFollow[mesh.name] = (parent, mesh, [])
+                follows[2].append(ob)
 
         if self.dynsim:
             self.dynsim.build(context)
@@ -517,6 +518,7 @@ class Instance(Accessor, Channels, SimNode):
     def makeRigidFollow(self, context, mesh, objects):
         if not objects:
             return
+        hides = unhide(objects)
         ob = objects[0]
         if activateObject(context, ob):
             for ob in objects:
@@ -526,7 +528,7 @@ class Instance(Accessor, Channels, SimNode):
             for ob in objects:
                 ob.select_set(True)
             bpy.ops.object.parent_set(type='VERTEX_TRI')
-
+        rehide(hides)
 
     def formulate(self, key, value):
         pass

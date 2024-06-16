@@ -271,6 +271,8 @@ def activateObject(context, ob):
     if ob is None:
         return False
     try:
+        ob.hide_viewport = False
+        ob.hide_set(False)
         context.view_layer.objects.active = ob
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
@@ -279,6 +281,20 @@ def activateObject(context, ob):
     except:
         print("Could not activate", ob.name)
         return False
+
+
+def unhide(objects):
+    hides = [(ob, ob.hide_get(), ob.hide_viewport) for ob in objects]
+    for ob in objects:
+        ob.hide_viewport = False
+        ob.hide_set(False)
+    return hides
+
+
+def rehide(hides):
+    for ob, hide1, hide2 in hides:
+        ob.hide_set(hide1)
+        ob.hide_viewport = hide2
 
 
 def selectSet(ob, value):

@@ -725,6 +725,10 @@ def makeDazImages(tree):
                 getBefore(fromnode)
 
     def getAfter(node):
+        if node.type == 'GAMMA':
+            gamma = node.inputs["Gamma"].default_value
+            if abs(gamma - 1/2.2) < 1e-4:
+                linear.append(node)
         socket = node.outputs["Color"]
         if len(socket.links) == 1:
             for link in socket.links:
@@ -737,9 +741,12 @@ def makeDazImages(tree):
         if node.type == 'TEX_IMAGE':
             before = []
             after = []
+            linear = []
             getBefore(node)
             getAfter(node)
-            if after or before:
+            if (before or
+                len(after) > 1 or
+                (after and len(linear) == 0)):
                 dazimgs.append((node, after, before))
 
     deletes = []
@@ -750,7 +757,7 @@ def makeDazImages(tree):
         grpnode = tree.nodes.new("ShaderNodeGroup")
         grpnode.location = tex.location
         ctree = CyclesGroup()
-        name = "DIMG %s" % (tex.image.name if tex.image else "")
+        name = "DIMG %s" % tex.label
         ctree.create(grpnode, name, None, len(before) + len(after))
         addGroupInput(ctree.group, "NodeSocketVector", "Vector")
         ctree.hideSlot("Vector")
