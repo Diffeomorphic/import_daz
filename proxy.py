@@ -1117,6 +1117,33 @@ class DAZ_OT_SelectStrandsBySize(DazOperator, IsMesh, Selector):
             setMode('EDIT')
 
 #-------------------------------------------------------------
+#   Select parent verts
+#-------------------------------------------------------------
+
+class DAZ_OT_SelectParentVerts(DazOperator):
+    bl_idname = "daz.select_parent_verts"
+    bl_label = "Select Parent Vertices"
+    bl_description = "Select parent vertices"
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.parent and ob.parent_type.startswith('VERTEX'))
+
+    def run(self, context):
+        ob = context.object
+        mesh = ob.parent
+        if activateObject(context, mesh):
+            setMode('EDIT')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            setMode('OBJECT')
+            for vn in ob.parent_vertices:
+                mesh.data.vertices[vn].select = True
+
+    def sequel(self, context):
+        setMode('EDIT')
+
+#-------------------------------------------------------------
 #  Apply morphs
 #-------------------------------------------------------------
 
@@ -2001,6 +2028,7 @@ classes = [
     DAZ_OT_SelectRandomStrands,
     DAZ_OT_SelectStrandsByWidth,
     DAZ_OT_SelectStrandsBySize,
+    DAZ_OT_SelectParentVerts,
     DAZ_OT_ApplyMorphs,
     DAZ_OT_ApplySubsurf,
     DAZ_OT_PrintStatistics,

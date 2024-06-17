@@ -425,6 +425,8 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
                 box.prop(ob.data, "DazFingerPrint")
             box.prop(ob, "DazScale")
             factor = 1/ob.DazScale
+            if ob.parent and ob.parent_type.startswith('VERTEX'):
+                self.propRow(box, ob, "parent_vertices", "ParVerts")
         else:
             box.label(text = "No active object")
             factor = 1
@@ -453,12 +455,15 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         layout.operator("daz.set_silent_mode", icon=icon, emboss=False)
         layout.operator("daz.get_finger_print")
         layout.operator("daz.inspect_world_matrix")
+        layout.operator("daz.select_parent_verts")
         layout.operator("daz.enable_all_layers")
 
 
-    def propRow(self, layout, rna, prop):
+    def propRow(self, layout, rna, prop, text=None):
+        if text is None:
+            text = prop[3:]
         row = layout.row()
-        row.label(text=prop[3:])
+        row.label(text=text)
         attr = getattr(rna, prop)
         for n in range(3):
             if isinstance(attr[n], float):
