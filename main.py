@@ -137,12 +137,13 @@ class DazLoader:
             raise DazError(msg)
         showProgress(20, 100)
 
+        if LS.fitFile:
+            fitToFile(filepath, main.nodes)
+
         print("Preprocessing...")
         for asset,inst in main.nodes:
             inst.preprocess(context)
 
-        if LS.fitFile:
-            fitToFile(filepath, main.nodes)
         showProgress(30, 100)
 
         for asset,inst in main.modifiers:
@@ -617,7 +618,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useEliminateEmpties : BoolProperty(
         name = "Eliminate Empties",
         description = "Delete non-hidden empties, parenting its children to its parent instead",
-        default = True)
+        default = False)
 
     useMergeRigs : BoolProperty(
         name = "Merge Rigs",

@@ -189,6 +189,9 @@ class Instance(Accessor, Channels, SimNode):
     def getRig(self):
         return None
 
+    def getNodeId(self):
+        return unquote(self.node.id.rsplit("#", 1)[-1])
+
     def isMainFigure(self, level):
         from .figure import FigureInstance
         par = self.parent
@@ -553,12 +556,19 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
 
-        trans = d2b00(attributes["translation"])
-        rot = Vector(attributes["rotation"])*D
-        gen = attributes["general_scale"]
-        scale = Vector(attributes["scale"]) * gen
+        if self.restdata:
+            head,tail,orient,xyz,origin,wsmat,dazhead = self.restdata
+            trans = Zero
+            rot = wsmat.to_euler(xyz)
+            scale = wsmat.to_scale()
+            cpoint = d2b00(head)
+        else:
+            trans = d2b00(attributes["translation"])
+            cpoint = d2b00(attributes["center_point"])
+            rot = Vector(attributes["rotation"])*D
+            gen = attributes["general_scale"]
+            scale = Vector(attributes["scale"]) * gen
         orient = Vector(attributes["orientation"])*D
-        cpoint = d2b00(attributes["center_point"])
 
         lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
         self.lscale = Matrix.Diagonal(scale).to_4x4()

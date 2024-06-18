@@ -49,7 +49,7 @@ function exportToBlender()
                 var clname = node.className();
                 if (clname != "DzBone")
                 {
-                    startObject(fp, node, "");
+                    startObject(fp, node, "", "");
                     fp.writeLine("    }," );    
                 }
             }
@@ -92,7 +92,7 @@ function exportToBlender()
 function doFigure (fp, figure)
 {
     figure.finalize();
-    startObject(fp, figure, ",");
+    startObject(fp, figure, "", ",");
 
     var obj = figure.getObject();
     if (obj != null) 
@@ -110,7 +110,7 @@ function doFigure (fp, figure)
     {
         bone = bones[i];
         bone.finalize();
-        startObject(fp, bone, ",")
+        startObject(fp, bone, "        ", ",")
         fp.writeLine("                \"origin\": " + bone.getOrigin());             
         if (i == n-1) c = "";
         fp.writeLine("            }" + c );
@@ -123,18 +123,18 @@ function doFigure (fp, figure)
 //
 //===============================================================================
 
-function startObject(fp, node, endchar)
+function startObject(fp, node, pad, endchar)
 {        
-    fp.writeLine("    {" );
-    fp.writeLine("        \"name\": \"" + node.name + "\",");
-    fp.writeLine("        \"center_point\": " + node.getOrigin() + ",");
-    fp.writeLine("        \"end_point\": " + node.getEndPoint() + ",");     
-    fp.writeLine("        \"orientation\": " + node.getOrientation() + ",");             
-    fp.writeLine("        \"rotation_order\": \"" + node.getRotationOrder() + "\",");             
-    fp.writeLine("        \"ws_pos\": " + node.getWSPos() + ",");     
-    fp.writeLine("        \"ws_rot\": " + node.getWSRot() + ",");     
-    fp.writeLine("        \"ws_scale\": " + node.getWSScale() + ",");     
-    fp.writeLine("        \"ws_transform\": " + node.getWSTransform() + endchar);             
+    fp.writeLine(pad + "    {" );
+    fp.writeLine(pad + "        \"name\": \"" + node.assetId + "\",");
+    fp.writeLine(pad + "        \"center_point\": " + node.getOrigin() + ",");
+    fp.writeLine(pad + "        \"end_point\": " + node.getEndPoint() + ",");     
+    fp.writeLine(pad + "        \"orientation\": " + node.getOrientation() + ",");             
+    fp.writeLine(pad + "        \"rotation_order\": \"" + node.getRotationOrder() + "\",");             
+    fp.writeLine(pad + "        \"ws_pos\": " + node.getWSPos() + ",");     
+    fp.writeLine(pad + "        \"ws_rot\": " + node.getWSRot() + ",");     
+    fp.writeLine(pad + "        \"ws_scale\": " + node.getWSScale() + ",");     
+    fp.writeLine(pad + "        \"ws_transform\": " + node.getWSTransform() + endchar);             
 }
 
 
@@ -159,7 +159,7 @@ function doMesh (fp, obj, start, node, str1, str2)
         return false;
 
     if (start)
-        startObject(fp, node, ",");
+        startObject(fp, node, "", ",");
     if (clname == "DzStrandHairNode")    
     {
     	fp.writeLine("        \"node\": {");

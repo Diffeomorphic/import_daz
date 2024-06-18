@@ -137,6 +137,14 @@ class DBZObject:
     def __repr__(self):
         return "<DBZ v:%d f:%d p:%d>" % (len(self.verts), len(self.faces), len(self.polylines))
 
+
+class DBZNode:
+    def __init__(self, center):
+        self.center = center
+
+    def __repr__(self):
+        return "<DBN c:%s>" % self.center
+
 #------------------------------------------------------------------
 #   Load DBZ file
 #------------------------------------------------------------------
@@ -166,6 +174,7 @@ def loadDbzFile(filepath):
         if name not in dbz.objects.keys():
             dbz.objects[name] = []
 
+        verts = []
         if "vertices" in figure.keys():
             verts = d2bList(figure["vertices"])
             edges = faces = polylines = polymats = uvs = matgroups = []
@@ -211,45 +220,44 @@ def loadDbzFile(filepath):
                     matgroups = value
             dbz.hdobjects[name].append(DBZObject(verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center))
 
-        if "bones" not in figure.keys():
-            continue
-
         restdata = {}
         transforms = {}
         if name not in dbz.rigs.keys():
             dbz.rigs[name] = []
         dbz.rigs[name].append((restdata, transforms, center))
-        for bone in figure["bones"]:
-            head = dazhead = Vector(bone["center_point"])
-            tail = Vector(bone["end_point"])
-            vec = tail - head
-            if "ws_transform" in bone.keys():
-                ws = bone["ws_transform"]
-                wsmat = Matrix([ws[0:3], ws[3:6], ws[6:9]])
-                head = Vector(ws[9:12])
-                tail = head + vec @ wsmat
-            else:
-                head = Vector(bone["ws_pos"])
-                x,y,z,w = bone["ws_rot"]
-                quat = Quaternion((w,x,y,z))
-                rmat = quat.to_matrix().to_3x3()
-                ws = bone["ws_scale"]
-                smat = Matrix([ws[0:3], ws[3:6], ws[6:9]])
-                tail = head + vec @ smat @ rmat
-                wsmat = smat @ rmat
-            if "orientation" in bone.keys():
-                orient = bone["orientation"]
-                xyz = bone["rotation_order"]
-                origin = bone["origin"]
-            else:
-                orient = xyz = origin = None
-            bname = bone["name"]
-            rmat = wsmat.to_4x4()
-            rmat.col[3][0:3] = GS.scale*head
-            restdata[bname] = (head, tail, orient, xyz, origin, wsmat, dazhead)
-            transforms[bname] = (rmat, head, rmat.to_euler(), (1,1,1))
-
+        addDbzData(figure, "NODE", restdata, transforms)
+        for bone in figure.get("bones", []):
+            addDbzData(bone, bone["name"], restdata, transforms)
     return dbz
+
+
+def addDbzData(node, bname, restdata, transforms):
+    head = dazhead = Vector(node["center_point"])
+    tail = Vector(node["end_point"])
+    vec = tail - head
+    if "ws_transform" in node.keys():
+        ws = node["ws_transform"]
+        wsmat = Matrix([ws[0:3], ws[3:6], ws[6:9]])
+        head = Vector(ws[9:12])
+        tail = head + vec @ wsmat
+    elif "ws_pos" in node.keys():
+        head = Vector(node["ws_pos"])
+        x,y,z,w = node["ws_rot"]
+        quat = Quaternion((w,x,y,z))
+        rmat = quat.to_matrix().to_3x3()
+        ws = node["ws_scale"]
+        smat = Matrix([ws[0:3], ws[3:6], ws[6:9]])
+        tail = head + vec @ smat @ rmat
+        wsmat = smat @ rmat
+    else:
+        wsmat = Matrix()
+    orient = node.get("orientation", Zero)
+    xyz = node.get("rotation_order", 'XYZ')
+    origin = node.get("origin")
+    rmat = wsmat.to_4x4()
+    rmat.col[3][0:3] = GS.scale*head
+    restdata[bname] = (head, tail, orient, xyz, origin, wsmat, dazhead)
+    transforms[bname] = (rmat, head, rmat.to_euler(), (1,1,1))
 
 #------------------------------------------------------------------
 #
@@ -289,6 +297,16 @@ def fitToFile(filepath, nodes):
         if isinstance(inst, FigureInstance):
             if inst.node.name in dbz.rigs.keys():
                 dbz.fitFigure(inst, takenfigs)
+        elif isinstance(inst, BoneInstance):
+            continue
+        elif not inst.geometries:
+            nodeid = inst.getNodeId()
+            nodes = dbz.rigs.get(nodeid)
+            if nodes:
+                restdata, transforms, center = nodes[0]
+                inst.restdata = restdata["NODE"]
+            else:
+                print("Nodes not found", inst.id, node.name, nodeid)
 
         for geonode in inst.geometries:
             geo = geonode.data

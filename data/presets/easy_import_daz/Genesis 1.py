@@ -14,12 +14,8 @@ op.useFlexions = False
 op.useBulges = True
 op.bodyMaterial = "Torso"
 
-op.useEliminateEmpties = True
 op.useMergeRigs = True
-op.useApplyTransforms = True
 op.useMergeMaterials = True
-op.useFixShells = False
-op.useMergeToes = False
 op.useBakedCorrectives = False
 op.useDazFavorites = True
 op.useTransferClothes = True

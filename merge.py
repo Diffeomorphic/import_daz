@@ -1141,6 +1141,11 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                     if activateObject(context, child):
                         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
                     if activateObject(context, ob.parent):
+                        setMode('EDIT')
+                        bpy.ops.mesh.select_all(action='DESELECT')
+                        setMode('OBJECT')
+                        for vn in ob.parent_vertices:
+                            ob.parent.data.vertices[vn].select = True
                         child.select_set(True)
                         partypes = {
                             'VERTEX' : 'VERTEX',

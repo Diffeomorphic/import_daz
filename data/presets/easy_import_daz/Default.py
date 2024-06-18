@@ -13,11 +13,10 @@ op.useJcms = False
 op.useBulges = False
 op.useFlexions = False
 
-op.useEliminateEmpties = True
+op.useEliminateEmpties = False
 op.useMergeRigs = True
-op.useApplyTransforms = True
+op.useApplyTransforms = False
 op.useMergeMaterials = True
-op.useFixShells = False
 op.useMergeToes = False
 op.useBakedCorrectives = False
 op.useDazFavorites = False
