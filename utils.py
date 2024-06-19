@@ -704,12 +704,12 @@ def hasPoseBones(rig, bnames):
 
 
 def getCurrentValue(struct, default=None):
-    if "current_value" in struct.keys():
-        return struct["current_value"]
-    elif "value" in struct.keys():
-        return struct["value"]
-    else:
+    if not struct.get("visible", True):
         return default
+    elif "current_value" in struct.keys():
+        return struct["current_value"]
+    else:
+        return struct.get("value", default)
 
 
 def someMatch(keys, string):

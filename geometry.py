@@ -80,6 +80,7 @@ class GeoNode(Node, SimNode):
         self.hdobject = None
         self.hdType = 'NONE'
         self.index = figure.count
+        self.matSubDLevel = 0.0
         self.isShell = False
         self.shellGeos = []
         self.shellPrefix = ""
@@ -215,10 +216,9 @@ class GeoNode(Node, SimNode):
                 self.data.buildRigidity(self.hdobject, self.conform_target)
 
         renderLevel = 0
-        subDLevel = 0
         if self.materials:
-            subDLevel = max([dmat.getSubDLevel(0) for dmat in self.materials.values()])
-            if subDLevel > GS.maxSubdivs:
+            self.matSubDLevel = max([dmat.getSubDLevel(0) for dmat in self.materials.values()])
+            if self.matSubDLevel > GS.maxSubdivs:
                 for dmat in self.materials.values():
                     mat = dmat.rna
                     if mat:
@@ -228,12 +228,15 @@ class GeoNode(Node, SimNode):
                         else:
                             if mat.cycles.displacement_method == 'DISPLACEMENT':
                                 mat.cycles.displacement_method = 'BOTH'
-                subDLevel = GS.maxSubdivs
+                self.matSubDLevel = GS.maxSubdivs
         if self.isSubdivided():
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
-            renderLevel = max(self.data.SubDIALevel + self.data.SubDRenderLevel, subDLevel)
+            meshSubDLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
+            renderLevel = max(meshSubDLevel, self.matSubDLevel)
             mod.render_levels = min(renderLevel, GS.maxSubdivs)
             mod.levels = min(self.data.SubDIALevel, GS.maxSubdivs)
+            if meshSubDLevel == 0:
+                mod.subdivision_type = 'SIMPLE'
             if hasattr(mod, "use_limit_surface"):
                 mod.use_limit_surface = False
             if self.data.SubDEdgeInterpolateLevel == 1:
@@ -248,9 +251,15 @@ class GeoNode(Node, SimNode):
 
 
     def isSubdivided(self):
-        return (self.type == "subdivision_surface" and
-                self.data and
-                (self.data.SubDIALevel > 0 or self.data.SubDRenderLevel > 0 or subDLevel > 0))
+        if not self.data:
+            return False
+        elif self.matSubDLevel > 0:
+            return True
+        elif (self.type == "subdivision_surface" and
+              self.data.SubDIALevel + self.data.SubDRenderLevel > 0):
+            return True
+        else:
+            return False
 
 
     def addMappings(self, selmap):

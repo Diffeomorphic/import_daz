@@ -1629,26 +1629,19 @@ class DisplacementGroup(CyclesGroup):
 
 
     def addNodes(self, args=None):
-        bw = self.addNode("ShaderNodeRGBToBW", 1)
-        self.links.new(self.inputs.outputs["Texture"], bw.inputs[0])
-
         sub = self.addNode("ShaderNodeMath", 1)
         sub.operation = 'SUBTRACT'
         self.links.new(self.inputs.outputs["Max"], sub.inputs[0])
         self.links.new(self.inputs.outputs["Min"], sub.inputs[1])
 
         mult = self.addNode("ShaderNodeMath", 2)
-        mult.operation = 'MULTIPLY'
-        self.links.new(bw.outputs[0], mult.inputs[0])
+        mult.operation = 'MULTIPLY_ADD'
+        self.links.new(self.inputs.outputs["Texture"], mult.inputs[0])
         self.links.new(sub.outputs[0], mult.inputs[1])
-
-        add = self.addNode("ShaderNodeMath", 2)
-        add.operation = 'ADD'
-        self.links.new(mult.outputs[0], add.inputs[0])
-        self.links.new(self.inputs.outputs["Min"], add.inputs[1])
+        self.links.new(self.inputs.outputs["Min"], mult.inputs[2])
 
         disp = self.addNode("ShaderNodeDisplacement", 3)
-        self.links.new(add.outputs[0], disp.inputs["Height"])
+        self.links.new(mult.outputs[0], disp.inputs["Height"])
         disp.inputs["Midlevel"].default_value = 0
         self.links.new(self.inputs.outputs["Strength"], disp.inputs["Scale"])
         self.links.new(self.inputs.outputs["Normal"], disp.inputs["Normal"])
