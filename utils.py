@@ -704,7 +704,7 @@ def hasPoseBones(rig, bnames):
 
 
 def getCurrentValue(struct, default=None):
-    if not struct.get("visible", True):
+    if not struct.get("visible", True) and default is not None:
         return default
     elif "current_value" in struct.keys():
         return struct["current_value"]

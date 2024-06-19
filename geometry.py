@@ -228,7 +228,6 @@ class GeoNode(Node, SimNode):
                         else:
                             if mat.cycles.displacement_method == 'DISPLACEMENT':
                                 mat.cycles.displacement_method = 'BOTH'
-                self.matSubDLevel = GS.maxSubdivs
         if self.isSubdivided():
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
             meshSubDLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
