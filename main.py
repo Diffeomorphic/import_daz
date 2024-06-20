@@ -618,7 +618,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useEliminateEmpties : BoolProperty(
         name = "Eliminate Empties",
         description = "Delete non-hidden empties, parenting its children to its parent instead",
-        default = False)
+        default = True)
 
     useMergeRigs : BoolProperty(
         name = "Merge Rigs",

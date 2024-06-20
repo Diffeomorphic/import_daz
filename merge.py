@@ -29,6 +29,7 @@
 import os
 import json
 import bpy
+import bmesh
 from mathutils import Matrix
 
 from .utils import *
@@ -1067,7 +1068,7 @@ def getSelectedRigs(context):
 class DAZ_OT_EliminateEmpties(DazPropsOperator):
     bl_idname = "daz.eliminate_empties"
     bl_label = "Eliminate Empties"
-    bl_description = "Delete empties, parenting its children to its parent instead.\nEmpties with vertex parents are not deleted"
+    bl_description = "Delete empties, parenting its children to its parent instead"
     bl_options = {'UNDO'}
 
     useAllEmpties : BoolProperty(
@@ -1108,50 +1109,58 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
             self.eliminateEmpties(root, context, False, coll)
 
 
-    def eliminateEmpties(self, ob, context, sub, coll):
+    def eliminateEmpties(self, empty, context, sub, coll):
         deletes = []
-        elim = self.doEliminate(ob)
+        elim = self.doEliminate(empty)
         if elim:
             if coll:
-                subcoll = bpy.data.collections.new(ob.name)
+                subcoll = bpy.data.collections.new(empty.name)
                 coll.children.link(subcoll)
                 sub = True
                 coll = subcoll
         elif sub and coll:
-            if ob.name not in coll.objects:
-                unlinkAll(ob, False)
-                coll.objects.link(ob)
-        for child in ob.children:
+            if empty.name not in coll.objects:
+                unlinkAll(empty, False)
+                coll.objects.link(empty)
+        for child in empty.children:
             self.eliminateEmpties(child, context, sub, coll)
-        if elim and ob.type == 'EMPTY' and ob.parent:
-            if not ob.children:
-                deletes.append(ob)
-            elif ob.parent_type == 'OBJECT':
-                deletes.append(ob)
-                for child in ob.children:
+        par = empty.parent
+        if elim and empty.type == 'EMPTY' and par:
+            if not empty.children:
+                deletes.append(empty)
+            elif empty.parent_type == 'OBJECT':
+                deletes.append(empty)
+                for child in empty.children:
                     wmat = child.matrix_world.copy()
-                    child.parent = ob.parent
+                    child.parent = par
                     child.parent_type = 'OBJECT'
                     setWorldMatrix(child, wmat)
-            elif ob.parent_type == 'BONE':
-                deletes.append(ob)
-                for child in ob.children:
+            elif empty.parent_type == 'BONE':
+                deletes.append(empty)
+                for child in empty.children:
                     wmat = child.matrix_world.copy()
-                    child.parent = ob.parent
+                    child.parent = par
                     child.parent_type = 'BONE'
-                    child.parent_bone = ob.parent_bone
+                    child.parent_bone = empty.parent_bone
                     setWorldMatrix(child, wmat)
-            elif ob.parent_type.startswith('VERTEX'):
-                if False:
-                    wmats = [(child, child.matrix_basis.copy()) for child in ob.children]
-                    for child in ob.children:
-                        child.parent = ob.parent
-                        child.parent_type = ob.parent_type
-                        child.parent_vertices = ob.parent_vertices
-                    for child,wmat in wmats:
-                        child.matrix_basis = wmat
+            elif empty.parent_type.startswith('VERTEX'):
+                if activateObject(context, empty.children[0]):
+                    deletes.append(empty)
+                    for child in empty.children:
+                        child.select_set(True)
+                    bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+                    par.select_set(True)
+                    context.view_layer.objects.active = par
+                    setMode('EDIT')
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    bm = bmesh.from_edit_mesh(par.data)
+                    for vn in empty.parent_vertices:
+                        bm.verts[vn].select = True
+                    bmesh.update_edit_mesh(par.data)
+                    bpy.ops.object.vertex_parent_set()
+                    setMode('OBJECT')
             else:
-                raise DazError("Unknown parent type: %s %s" % (child.name, ob.parent_type))
+                raise DazError("Unknown parent type: %s %s" % (child.name, empty.parent_type))
         for empty in set(deletes):
             deleteObjects(context, [empty])
 
@@ -1256,7 +1265,7 @@ class RigInfo:
     def addObjects(self, ob):
         for child in ob.children:
             if (getHideViewport(child) or
-                child.parent_type in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']):
+                child.parent_type.startswith('VERTEX')):
                 continue
             elif child.type != 'ARMATURE':
                 partype = child.parent_type
@@ -1640,7 +1649,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
         for ob,data in info.objects:
             partype, parbone = data
-            if partype in ['VERTEX', 'VERTEX_3', 'VERTEX_TRI']:
+            if partype.startswith('VERTEX'):
                 continue
             wmat = ob.matrix_world.copy()
             ob.parent = rig
