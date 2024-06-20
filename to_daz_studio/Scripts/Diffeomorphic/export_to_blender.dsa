@@ -49,7 +49,7 @@ function exportToBlender()
                 var clname = node.className();
                 if (clname != "DzBone")
                 {
-                    startObject(fp, node, "", "");
+                    startObject(fp, node, node.assetId, "", "");
                     fp.writeLine("    }," );    
                 }
             }
@@ -92,7 +92,7 @@ function exportToBlender()
 function doFigure (fp, figure)
 {
     figure.finalize();
-    startObject(fp, figure, "", ",");
+    startObject(fp, figure, figure.name, "", ",");
 
     var obj = figure.getObject();
     if (obj != null) 
@@ -110,7 +110,7 @@ function doFigure (fp, figure)
     {
         bone = bones[i];
         bone.finalize();
-        startObject(fp, bone, "        ", ",")
+        startObject(fp, bone, bone.name, "        ", ",")
         fp.writeLine("                \"origin\": " + bone.getOrigin());             
         if (i == n-1) c = "";
         fp.writeLine("            }" + c );
@@ -123,17 +123,14 @@ function doFigure (fp, figure)
 //
 //===============================================================================
 
-function startObject(fp, node, pad, endchar)
+function startObject(fp, node, name, pad, endchar)
 {        
     fp.writeLine(pad + "    {" );
-    fp.writeLine(pad + "        \"name\": \"" + node.assetId + "\",");
+    fp.writeLine(pad + "        \"name\": \"" + name + "\",");
     fp.writeLine(pad + "        \"center_point\": " + node.getOrigin() + ",");
     fp.writeLine(pad + "        \"end_point\": " + node.getEndPoint() + ",");     
     fp.writeLine(pad + "        \"orientation\": " + node.getOrientation() + ",");             
     fp.writeLine(pad + "        \"rotation_order\": \"" + node.getRotationOrder() + "\",");             
-    fp.writeLine(pad + "        \"ws_pos\": " + node.getWSPos() + ",");     
-    fp.writeLine(pad + "        \"ws_rot\": " + node.getWSRot() + ",");     
-    fp.writeLine(pad + "        \"ws_scale\": " + node.getWSScale() + ",");     
     fp.writeLine(pad + "        \"ws_transform\": " + node.getWSTransform() + endchar);             
 }
 
@@ -159,7 +156,7 @@ function doMesh (fp, obj, start, node, str1, str2)
         return false;
 
     if (start)
-        startObject(fp, node, "", ",");
+        startObject(fp, node, node.name, "", ",");
     if (clname == "DzStrandHairNode")    
     {
     	fp.writeLine("        \"node\": {");

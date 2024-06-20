@@ -90,6 +90,15 @@ function exportHighdefToBlender(filepath, useHdUvs)
             {
                 doMesh(fp, obj, true, node, "        ]", "    },", useHdUvs);
             }
+            else
+            {
+                var clname = node.className();
+                if (clname != "DzBone")
+                {
+                    startObject(fp, node, node.assetId, "", "");
+                    fp.writeLine("    }," );    
+                }
+            }
         }
     }
 
@@ -129,7 +138,7 @@ function exportHighdefToBlender(filepath, useHdUvs)
 function doFigure(fp, figure, useHdUvs)
 {
     figure.finalize();
-    startObject(fp, figure);
+    startObject(fp, figure, figure.name, "", ",");
 
     var obj = figure.getObject();
     if (obj != null)
@@ -147,17 +156,8 @@ function doFigure(fp, figure, useHdUvs)
     {
         bone = bones[i];
         bone.finalize();
-        fp.writeLine("            {");
-        fp.writeLine("                \"name\": \""+ bone.name + "\",");
-        fp.writeLine("                \"center_point\": " + bone.getOrigin() + ",");
-        fp.writeLine("                \"end_point\": " + bone.getEndPoint() + ",");
-        fp.writeLine("                \"orientation\": " + bone.getOrientation() + ",");
-        fp.writeLine("                \"origin\": " + bone.getOrigin() + ",");
-        fp.writeLine("                \"rotation_order\": \"" + bone.getRotationOrder() + "\",");
-        fp.writeLine("                \"ws_pos\": " + bone.getWSPos() + ",");
-        fp.writeLine("                \"ws_rot\": " + bone.getWSRot() + ",");
-        fp.writeLine("                \"ws_scale\": " + bone.getWSScale() + ",");
-        fp.writeLine("                \"ws_transform\": " + bone.getWSTransform() );
+        startObject(fp, bone, bone.name, "        ", ",")
+        fp.writeLine("                \"origin\": " + bone.getOrigin());             
         if (i == n-1) c = "";
         fp.writeLine("            }" + c );
     }
@@ -169,18 +169,15 @@ function doFigure(fp, figure, useHdUvs)
 //
 //===============================================================================
 
-function startObject(fp, node)
+function startObject(fp, node, name, pad, endchar)
 {        
-    fp.writeLine("    {" );
-    fp.writeLine("        \"name\": \"" + node.name + "\",");
-    fp.writeLine("        \"center_point\": " + node.getOrigin() + ",");
-    fp.writeLine("        \"end_point\": " + node.getEndPoint() + ",");     
-    fp.writeLine("        \"orientation\": " + node.getOrientation() + ",");             
-    fp.writeLine("        \"rotation_order\": \"" + node.getRotationOrder() + "\",");             
-    fp.writeLine("        \"ws_pos\": " + node.getWSPos() + ",");     
-    fp.writeLine("        \"ws_rot\": " + node.getWSRot() + ",");     
-    fp.writeLine("        \"ws_scale\": " + node.getWSScale() + ",");     
-    fp.writeLine("        \"ws_transform\": " + node.getWSTransform() + ",");             
+    fp.writeLine(pad + "    {" );
+    fp.writeLine(pad + "        \"name\": \"" + name + "\",");
+    fp.writeLine(pad + "        \"center_point\": " + node.getOrigin() + ",");
+    fp.writeLine(pad + "        \"end_point\": " + node.getEndPoint() + ",");     
+    fp.writeLine(pad + "        \"orientation\": " + node.getOrientation() + ",");             
+    fp.writeLine(pad + "        \"rotation_order\": \"" + node.getRotationOrder() + "\",");             
+    fp.writeLine(pad + "        \"ws_transform\": " + node.getWSTransform() + endchar);             
 }
 
 
@@ -198,7 +195,7 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     var level = shape.getSubDDrawLevel();
 
     if (start)
-        startObject(fp, node);
+        startObject(fp, node, node.name, "", ",");
 
     // Write HD data
     //obj.forceCacheUpdate(node,false);
