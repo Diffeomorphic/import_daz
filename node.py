@@ -558,10 +558,10 @@ class Instance(Accessor, Channels, SimNode):
 
         if self.restdata:
             head,tail,orient,xyz,origin,wsmat,dazhead = self.restdata
-            trans = Zero
+            trans = d2b00(head)
             rot = wsmat.to_euler(xyz)
             scale = wsmat.to_scale()
-            cpoint = d2b00(head)
+            cpoint = Zero
         else:
             trans = d2b00(attributes["translation"])
             cpoint = d2b00(attributes["center_point"])
@@ -917,6 +917,7 @@ class Node(Asset, Formula, Channels):
         else:
             ob = bpy.data.objects.new(obname, self.data)
         self.rna = inst.rna = ob
+        ob.empty_display_size = GS.scale
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)
         self.subdivideObject(ob, inst, context)
@@ -924,6 +925,7 @@ class Node(Asset, Formula, Channels):
             LS.objects[LS.rigname].append(ob2)
             self.arrangeObject(ob2, inst, context, center)
             ob2.parent = ob
+            ob2.empty_display_size = GS.scale
 
 
     def getObjectName(self, inst):
