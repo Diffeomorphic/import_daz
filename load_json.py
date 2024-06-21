@@ -104,9 +104,14 @@ def loadJson(filepath, mustOpen=False, silent=False):
 
     filepath = os.path.expanduser(filepath)
     if not os.path.exists(filepath):
+        msg = 'File does not exist:\n"%s"' % filepath
         if silent:
             return {}
-        raise DazError('File does not exist:\n"%s"' % filepath)
+        elif mustOpen:
+            raise DazError(msg)
+        else:
+            print(msg)
+            return {}
     try:
         with gzip.open(filepath, 'rb') as fp:
             bytes = fp.read()
