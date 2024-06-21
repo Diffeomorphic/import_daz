@@ -26,6 +26,7 @@
 # either expressed or implied, of the FreeBSD Project.
 
 import bpy
+import bmesh
 import math
 import numpy as np
 from mathutils import Matrix, Vector, Euler
@@ -507,13 +508,31 @@ class Instance(Accessor, Channels, SimNode):
             target = self.parent
             if isinstance(target, BoneInstance):
                 target = target.figure
-        if target and target.geometries:
+
+        def addFollower(target):
             mesh = target.geometries[0].rna
-            if mesh:
+            if mesh and mesh.type == 'MESH':
+                vcount = self.nodeExtra.get("vertex_count", -1)
+                if len(mesh.data.vertices) != vcount and vcount >= 0:
+                    print("Vertex count mismatch", mesh.name, vcount, len(mesh.data.vertices))
+                    return
+                riggrp = self.nodeExtra.get("rigidity_group")
+                if riggrp:
+                    refverts = riggrp.get("reference_vertices", {}).get("values", [])
+                else:
+                    refverts = []
+                nverts = len(refverts)
+                if nverts < 3:
+                    refverts = []
+                elif nverts > 3:
+                    refverts = [refverts[0], refverts[nverts//2], refverts[-1]]
                 follows = LS.rigidFollow.get(mesh.name)
                 if follows is None:
                     follows = LS.rigidFollow[mesh.name] = (target, mesh, [])
-                follows[2].append(ob)
+                follows[2].append((ob, refverts))
+
+        if target and target.geometries:
+            addFollower(target)
 
         if self.dynsim:
             self.dynsim.build(context)
@@ -523,19 +542,33 @@ class Instance(Accessor, Channels, SimNode):
             self.dynhairflw.build(context)
 
 
-    def makeRigidFollow(self, context, mesh, objects):
-        if not objects:
+    def makeRigidFollow(self, context, mesh, data):
+        if not data:
             return
+        objects = [ob for ob,refverts in data]
         hides = unhide(objects)
-        ob = objects[0]
-        if activateObject(context, ob):
+        if activateObject(context, objects[0]):
             for ob in objects:
                 ob.select_set(True)
             bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
         if activateObject(context, mesh):
-            for ob in objects:
+            for ob,refverts in data:
                 ob.select_set(True)
-            bpy.ops.object.parent_set(type='VERTEX_TRI')
+                if not refverts:
+                    print("No refverts", ob.name, mesh.name)
+                    bpy.ops.object.parent_set(type='VERTEX_TRI')
+                else:
+                    setMode('EDIT')
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    bm = bmesh.from_edit_mesh(mesh.data)
+                    bm.verts.ensure_lookup_table()
+                    for vn in refverts:
+                        bm.verts[vn].select = True
+                    bmesh.update_edit_mesh(mesh.data)
+                    bm.free()
+                    bpy.ops.object.vertex_parent_set()
+                    setMode('OBJECT')
+                ob.select_set(False)
         rehide(hides)
 
     def formulate(self, key, value):

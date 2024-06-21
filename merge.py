@@ -1154,9 +1154,11 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                     setMode('EDIT')
                     bpy.ops.mesh.select_all(action='DESELECT')
                     bm = bmesh.from_edit_mesh(par.data)
+                    bm.verts.ensure_lookup_table()
                     for vn in empty.parent_vertices:
                         bm.verts[vn].select = True
                     bmesh.update_edit_mesh(par.data)
+                    bm.free()
                     bpy.ops.object.vertex_parent_set()
                     setMode('OBJECT')
             else:
