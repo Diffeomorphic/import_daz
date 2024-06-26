@@ -1853,7 +1853,7 @@ def applyRestPoses(context, rig, subrigs):
     applyAllObjectTransforms(rigs)
     for subrig in rigs:
         setRestRotation(subrig)
-        for ob in getMeshChildren(subrig):
+        for ob in subrig.children:
             if ob.parent_type == 'OBJECT':
                 setRestPose(ob, subrig, context)
         if not setActiveObject(context, subrig):
@@ -1882,7 +1882,7 @@ def applyAllObjectTransforms(rigs):
     status = []
     try:
         for rig in rigs:
-            for ob in getMeshChildren(rig):
+            for ob in rig.children:
                 if ob.parent_type != 'BONE':
                     status.append((ob, ob.hide_get(), ob.hide_select))
                     ob.hide_set(False)
@@ -1894,7 +1894,7 @@ def applyAllObjectTransforms(rigs):
             ob.hide_select = select
         return True
     except RuntimeError:
-        print("Could not apply object transformations to meshes")
+        print("Could not apply object transformations")
         return False
 
 
