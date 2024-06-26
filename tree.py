@@ -713,16 +713,25 @@ def pruneMaterials(ob,
                           useBeautify)
 
 
+def getVectorSocket(sockets):
+    socket = sockets.get("Vector")
+    if socket:
+        return socket
+    else:
+        return sockets.get("UV")
+
+
 def makeDazImages(tree):
     from .cgroup import CyclesGroup
     def getBefore(node):
-        socket = node.inputs["Vector"]
-        for link in socket.links:
-            fromnode = link.from_node
-            if (fromnode.type in ['VECT_MATH', 'MAPPING'] and
-                len(fromnode.outputs["Vector"].links) == 1):
-                before.append(fromnode)
-                getBefore(fromnode)
+        socket = getVectorSocket(node.inputs)
+        if socket:
+            for link in socket.links:
+                fromnode = link.from_node
+                if (fromnode.type in ['VECT_MATH', 'MAPPING'] and
+                    len(fromnode.outputs["Vector"].links) == 1):
+                    before.append(fromnode)
+                    getBefore(fromnode)
 
     def getAfter(node):
         if node.type == 'GAMMA':
@@ -765,30 +774,34 @@ def makeDazImages(tree):
         addGroupOutput(ctree.group, "NodeSocketFloat", "Alpha")
 
         first = (before[0] if before else tex)
-        for link in list(first.inputs["Vector"].links):
+        insocket = getVectorSocket(first.inputs)
+        if insocket is None:
+            continue
+        for link in list(insocket.links):
             tree.links.new(link.from_socket, grpnode.inputs["Vector"])
-        socket = ctree.inputs.outputs["Vector"]
+        outsocket = ctree.inputs.outputs["Vector"]
         for node in before:
             cnode = copyNode(node, ctree)
             cnode.hide = False
-            ctree.links.new(socket, cnode.inputs["Vector"])
-            socket = cnode.outputs["Vector"]
+            insocket = getVectorSocket(cnode.inputs)
+            ctree.links.new(outsocket, insocket)
+            outsocket = getVectorSocket(cnode.outputs)
         ctex = copyNode(tex, ctree)
         ctex.hide = False
-        ctree.links.new(socket, ctex.inputs["Vector"])
+        ctree.links.new(outsocket, getVectorSocket(ctex.inputs))
 
         last = (after[0] if after else tex)
         for link in list(last.outputs["Color"].links):
             tree.links.new(grpnode.outputs["Color"], link.to_socket)
         for link in list(tex.outputs["Alpha"].links):
             tree.links.new(grpnode.outputs["Alpha"], link.to_socket)
-        socket = ctree.outputs.inputs["Color"]
+        insocket = ctree.outputs.inputs["Color"]
         for node in after:
             cnode = copyNode(node, ctree)
             cnode.hide = False
-            ctree.links.new(cnode.outputs["Color"], socket)
-            socket = cnode.inputs["Color"]
-        ctree.links.new(ctex.outputs["Color"], socket)
+            ctree.links.new(cnode.outputs["Color"], insocket)
+            insocket = cnode.inputs["Color"]
+        ctree.links.new(ctex.outputs["Color"], insocket)
         ctree.links.new(ctex.outputs["Alpha"], ctree.outputs.inputs["Alpha"])
 
         beautifyNodeTree(ctree)

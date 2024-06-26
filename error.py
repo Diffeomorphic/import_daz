@@ -64,7 +64,7 @@ def invokeErrorMessage(value, warning=False):
         #LS.theMessage = "WARNING:\n%s" % value
         LS.theMessage = value
     else:
-        LS.theMessage = "ERROR (4.1.0.%04d):\n%s" % (BUILD, value)
+        LS.theMessage = "ERROR (4.2.0.%04d):\n%s" % (BUILD, value)
     if GS.silentMode:
         print(LS.theMessage)
     else:
@@ -279,7 +279,7 @@ class DazOperator(bpy.types.Operator):
             for key,value in rig.items():
                 if isinstance(value, (int, float, bool)):
                     self.rvalues[key] = value
-                    rig[key] = 0.0
+                    rig[key] = 0
 
 
     def restoreRig(self, rig):
