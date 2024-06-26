@@ -717,28 +717,26 @@ class ExtraBones(DriverUser):
         if not ES.easy:
             print("  Update vertex groups")
         setMode('OBJECT')
-        for ob in getMeshChildren(rig):
-            for vgrp in ob.vertex_groups:
-                if isDrvBone(vgrp.name):
-                    vgname = baseBone(vgrp.name)
-                    if vgname in self.bnames:
-                        vgrp.name = vgname
+        for ob in rig.children:
             if ob.parent_type == 'BONE' and isDrvBone(ob.parent_bone):
                 bname = baseBone(ob.parent_bone)
                 if bname in self.bnames:
                     wmat = ob.matrix_world.copy()
                     ob.parent_bone = bname
                     setWorldMatrix(ob, wmat)
-
-        if not ES.easy:
-            print("  Update shapekeys")
-        for ob in getShapeChildren(rig):
-            skeys = ob.data.shape_keys
-            for skey in skeys.key_blocks[1:]:
-                fcu = getShapekeyDriver(skeys, skey.name)
-                if fcu:
-                    self.correctDriver(fcu, rig)
-            updateDrivers(ob)
+            if ob.type == 'MESH':
+                for vgrp in ob.vertex_groups:
+                    if isDrvBone(vgrp.name):
+                        vgname = baseBone(vgrp.name)
+                        if vgname in self.bnames:
+                            vgrp.name = vgname
+                skeys = ob.data.shape_keys
+                if skeys:
+                    for skey in skeys.key_blocks[1:]:
+                        fcu = getShapekeyDriver(skeys, skey.name)
+                        if fcu:
+                            self.correctDriver(fcu, rig)
+                    updateDrivers(ob)
 
         if rig.animation_data and rig.animation_data.action:
             for fcu in rig.animation_data.action.fcurves:
