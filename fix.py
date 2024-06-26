@@ -882,13 +882,25 @@ class ConstraintStore:
         return None
 
 
-    def restoreAllConstraints(self, rig, ignore):
+    def restoreAllConstraints(self, context, rig, ignore):
         for key,clist in self.constraints.items():
             if key:
                 pb = self.getFkBone(key, rig)
                 if pb and pb.name not in ignore:
                     for struct in clist:
                         self.restoreConstraint(struct, pb)
+
+        def fixBendTwistMixup(bname):
+            return bname.replace("Bend.", ".bend.").replace("Twist.", ".twist.")
+
+        for ob in context.view_layer.objects:
+            for cns in ob.constraints:
+                if cns.target == rig and hasattr(cns, "subtarget"):
+                    bname = cns.subtarget
+                    if bname not in rig.data.bones:
+                        bname1 = fixBendTwistMixup(bname)
+                        if bname1 in rig.data.bones:
+                            cns.subtarget = bname1
 
 
     def restoreConstraints(self, key, pb, target=None):

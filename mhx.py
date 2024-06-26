@@ -762,7 +762,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.constrainBendTwists(rig, bendTwistBones, self.useStretch)
         self.addCopyLocConstraints(rig)
         showProgress(20, 25, "  Restore constraints")
-        self.restoreFixConstraints(rig)
+        self.restoreFixConstraints(context, rig)
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
         self.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
@@ -1538,7 +1538,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #   Restore constraints for bend-twist bones
     #-------------------------------------------------------------
 
-    def restoreFixConstraints(self, rig):
+    def restoreFixConstraints(self, context, rig):
         def getLimitRot(clist):
             for elt in clist:
                 if elt["type"] == 'LIMIT_ROTATION':
@@ -1555,7 +1555,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             ignore += self.tongueBones
         if self.useShaftWinder:
             ignore += self.getShaftBones(rig)
-        self.restoreAllConstraints(rig, ignore)
+        self.restoreAllConstraints(context, rig, ignore)
         if rig.DazRig not in ["genesis3", "genesis8"]:
             return
         for bname, bendname, twistnames in MHX.BendTwistGenesis38:
