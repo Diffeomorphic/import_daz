@@ -93,6 +93,7 @@ def addDicts(structs):
 
 class RigifyCommon:
     gizmoFile = "mhx"
+    reuseBendTwists = True
 
     if BLENDER3:
         GroupBones = [
@@ -257,7 +258,7 @@ class MetaMaker(RigifyCommon):
             mergeBones(rig, mergers, RF.Genesis38Parents, context)
             if dazrig:
                 pass
-            elif meta["DazReuseBendTwists"]:
+            elif self.reuseBendTwists:
                 mergeVertexGroups(rig, RF.Genesis38Mergers2)
             else:
                 mergeVertexGroups(rig, mergers)
@@ -265,7 +266,7 @@ class MetaMaker(RigifyCommon):
         elif rig.DazRig == "genesis9":
             if dazrig:
                 pass
-            elif meta["DazReuseBendTwists"]:
+            elif self.reuseBendTwists:
                 self.removeVertexGroups(rig, RF.Genesis9Removes)
             else:
                 mergeBones(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
@@ -1130,7 +1131,7 @@ class Rigifier(RigifyCommon):
         ldname = dname.lower()
         if meta["DazSplitShin"] and "shin" in ldname:
             splitBone()
-        elif meta["DazReuseBendTwists"] or "shin" in ldname:
+        elif self.reuseBendTwists or "shin" in ldname:
             vgrps = [(vgrp.name.lower(),vgrp) for vgrp in ob.vertex_groups
                       if vgrp.name.lower().startswith(ldname)]
             for vname,vgrp in vgrps:
