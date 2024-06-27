@@ -590,17 +590,14 @@ class Instance(Accessor, Channels, SimNode):
         # global_transform = global_translation * global_rotation * global_scale
 
         if self.restdata:
-            head,tail,orient,xyz,origin,wsmat,dazhead = self.restdata
+            head = self.restdata[0]
             trans = d2b00(head)
-            rot = wsmat.to_euler(xyz)
-            scale = wsmat.to_scale()
-            cpoint = Zero
         else:
             trans = d2b00(attributes["translation"])
-            cpoint = d2b00(attributes["center_point"])
-            rot = Vector(attributes["rotation"])*D
-            gen = attributes["general_scale"]
-            scale = Vector(attributes["scale"]) * gen
+        cpoint = d2b00(attributes["center_point"])
+        rot = Vector(attributes["rotation"])*D
+        gen = attributes["general_scale"]
+        scale = Vector(attributes["scale"]) * gen
         orient = Vector(attributes["orientation"])*D
 
         lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
