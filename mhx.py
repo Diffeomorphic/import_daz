@@ -537,11 +537,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Shaft bones start with this string (case insensitive)",
         default = "Shaft")
 
-    useFixKnees : BoolProperty(
-        name = "Fix Elbows And Knees",
-        description = "Change elbow and knee location for better IK",
-        default = True)
-
     elbowParent : EnumProperty(
         items = [('HAND', "Hand", "Parent elbow pole target to IK hand"),
                  ('SHOULDER', "Shoulder", "Parent elbow pole target to shoulder"),
@@ -583,7 +578,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.layout.prop(self, "usePoleTargets")
         if self.usePoleTargets:
             self.layout.prop(self, "showLinks")
-            self.layout.prop(self, "useFixKnees")
             self.layout.prop(self, "elbowParent")
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
@@ -702,8 +696,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             connectToParent(rig, connectAll=False)
             showProgress(4, 25, "  Rename bones")
             self.deleteBendTwistDrvBones(rig)
-            if not self.reuseBendTwists:
-                self.joinBendTwistVGroups(rig, MHX.BendTwistGenesis38)
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
             bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
@@ -971,7 +963,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def fixKnees(self, rig):
-        if not (self.useFixKnees and self.usePoleTargets):
+        if not self.usePoleTargets:
             return
         from .bone import setRoll
         eps = 0.5

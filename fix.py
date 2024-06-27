@@ -55,11 +55,6 @@ class Fixer(DriverUser):
         description = "Generate IK controls for tongue",
         default = False)
 
-    reuseBendTwists : BoolProperty(
-        name = "Reuse Bend And Twist Bones",
-        description = "Use the original bend-twist bones and vertex groups",
-        default = True)
-
     keepRig : BoolProperty(
         name = "Keep DAZ Rig",
         description = "Keep the original DAZ rig for deformation",
@@ -78,8 +73,6 @@ class Fixer(DriverUser):
         self.layout.prop(self, "keepRig")
         if self.keepRig:
             self.layout.prop(self, "useModifyDazRig")
-        if rig.DazRig in ["genesis3", "genesis8"]:
-            self.layout.prop(self, "reuseBendTwists")
         self.layout.prop(self, "useFingerIk")
 
     def drawRigify(self):

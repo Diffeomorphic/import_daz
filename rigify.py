@@ -237,7 +237,6 @@ class MetaMaker(RigifyCommon):
             self.splitNeck(meta)
         meta["DazUseSplitNeck"] = useSplitNeck
         meta["DazSplitShin"] = self.useSplitShin
-        meta["DazReuseBendTwists"] = self.reuseBendTwists
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
