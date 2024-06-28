@@ -947,7 +947,7 @@ class Node(Asset, Formula, Channels):
         else:
             ob = bpy.data.objects.new(obname, self.data)
         self.rna = inst.rna = ob
-        ob.empty_display_size = GS.scale
+        ob.empty_display_size = 10*GS.scale
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)
         self.subdivideObject(ob, inst, context)
@@ -955,7 +955,7 @@ class Node(Asset, Formula, Channels):
             LS.objects[LS.rigname].append(ob2)
             self.arrangeObject(ob2, inst, context, center)
             ob2.parent = ob
-            ob2.empty_display_size = GS.scale
+            ob2.empty_display_size = 10*GS.scale
 
 
     def getObjectName(self, inst):

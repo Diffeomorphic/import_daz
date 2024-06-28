@@ -1125,8 +1125,8 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
         for child in empty.children:
             self.eliminateEmpties(child, context, sub, coll)
         par = empty.parent
-        if elim and empty.type == 'EMPTY' and par:
-            if not empty.children:
+        if elim and empty.type == 'EMPTY':
+            if par is None or not empty.children:
                 deletes.append(empty)
             elif empty.parent_type == 'OBJECT':
                 deletes.append(empty)

@@ -173,6 +173,7 @@ function startObject(fp, node, name, pad, endchar)
 {        
     fp.writeLine(pad + "    {" );
     fp.writeLine(pad + "        \"name\": \"" + name + "\",");
+    fp.writeLine(pad + "        \"id\": \"" + node.assetId + "\",");
     fp.writeLine(pad + "        \"center_point\": " + node.getOrigin() + ",");
     fp.writeLine(pad + "        \"end_point\": " + node.getEndPoint() + ",");     
     fp.writeLine(pad + "        \"orientation\": " + node.getOrientation() + ",");             
