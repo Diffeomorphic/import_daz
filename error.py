@@ -277,9 +277,15 @@ class DazOperator(bpy.types.Operator):
         if rig:
             rig.data.pose_position = 'REST'
             for key,value in rig.items():
-                if isinstance(value, (int, float, bool)):
+                if isinstance(value, int):
                     self.rvalues[key] = value
                     rig[key] = 0
+                elif isinstance(value, float):
+                    self.rvalues[key] = value
+                    rig[key] = 0.0
+                elif isinstance(value, bool):
+                    self.rvalues[key] = value
+                    rig[key] = False
 
 
     def restoreRig(self, rig):
@@ -294,14 +300,20 @@ class DazOperator(bpy.types.Operator):
         self.svalues = {}
         self.mvalues = {}
         for key,value in ob.items():
-            if isinstance(value, (int, float, bool)):
+            if isinstance(value, int):
                 self.mvalues[key] = value
                 ob[key] = 0
+            elif isinstance(value, float):
+                self.mvalues[key] = value
+                ob[key] = 0.0
+            elif isinstance(value, bool):
+                self.mvalues[key] = value
+                ob[key] = False
         skeys = ob.data.shape_keys
         if skeys:
             for skey in skeys.key_blocks:
                 self.svalues[skey.name] = skey.value
-                skey.value = 0
+                skey.value = 0.0
 
 
     def restoreMesh(self, ob):
