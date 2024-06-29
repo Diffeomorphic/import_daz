@@ -589,12 +589,6 @@ One = Vector((1,1,1))
 TTrue = (True, True, True)
 FFalse = (False, False, False)
 
-def hasObjectTransforms(ob):
-    return (ob.location != Zero or
-            Vector(ob.rotation_euler) != Zero or
-            ob.scale != One)
-
-
 def isLocationLocked(pb):
     if pb.bone.use_connect:
         return True

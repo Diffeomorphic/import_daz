@@ -55,6 +55,7 @@ class MatchOperator(DazPropsOperator):
 
 
     def checkTransforms(self, ob):
+        from .hair import hasObjectTransforms
         if hasObjectTransforms(ob):
             raise DazError("Apply object transformations to %s first" % ob.name)
 

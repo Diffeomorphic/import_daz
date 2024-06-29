@@ -42,6 +42,24 @@ from .fix import GizmoUser
 from .layers import *
 
 #-------------------------------------------------------------
+#   Utilities
+#-------------------------------------------------------------
+
+def hasObjectTransforms(ob):
+    return (ob.location != Zero or
+            Vector(ob.rotation_euler) != Zero or
+            ob.scale != One)
+
+
+def setPosePosition(ob, newmode):
+    rig = ob.parent
+    if rig and rig.type == 'ARMATURE':
+        oldmode = rig.data.pose_position
+        print("SET", oldmode, newmode)
+        rig.data.pose_position = newmode
+        return oldmode
+
+#-------------------------------------------------------------
 #   Classes
 #-------------------------------------------------------------
 
@@ -831,14 +849,21 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
 
 
     def run(self, context):
-        t1 = perf_counter()
-        self.clocks = []
         hair,hum = getHairAndHuman(context, True)
         if hasObjectTransforms(hair):
             raise DazError("Apply object transformations to %s first" % hair.name)
         if hasObjectTransforms(hum):
             raise DazError("Apply object transformations to %s first" % hum.name)
+        posepos = setPosePosition(hum, 'REST')
+        try:
+            self.makeHair(context, hair, hum)
+        finally:
+            setPosePosition(hum, posepos)
 
+
+    def makeHair(self, context, hair, hum):
+        t1 = perf_counter()
+        self.clocks = []
         if self.keepMesh:
             activateObject(context, hair)
             bpy.ops.object.duplicate()
