@@ -40,6 +40,7 @@ from .selector import Selector
 from .guess import ColorProp
 from .fix import GizmoUser
 from .layers import *
+from .transfer import MatchOperator
 
 #-------------------------------------------------------------
 #   Utilities
@@ -49,15 +50,6 @@ def hasObjectTransforms(ob):
     return (ob.location != Zero or
             Vector(ob.rotation_euler) != Zero or
             ob.scale != One)
-
-
-def setPosePosition(ob, newmode):
-    rig = ob.parent
-    if rig and rig.type == 'ARMATURE':
-        oldmode = rig.data.pose_position
-        print("SET", oldmode, newmode)
-        rig.data.pose_position = newmode
-        return oldmode
 
 #-------------------------------------------------------------
 #   Classes
@@ -748,7 +740,7 @@ class CombineHair:
 #   Make Hair
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separator):
+class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator):
     bl_idname = "daz.make_hair"
     bl_label = "Make Hair"
     bl_description = "Make particle hair from mesh hair"
@@ -854,14 +846,6 @@ class DAZ_OT_MakeHair(DazPropsOperator, CombineHair, IsMesh, HairOptions, Separa
             raise DazError("Apply object transformations to %s first" % hair.name)
         if hasObjectTransforms(hum):
             raise DazError("Apply object transformations to %s first" % hum.name)
-        posepos = setPosePosition(hum, 'REST')
-        try:
-            self.makeHair(context, hair, hum)
-        finally:
-            setPosePosition(hum, posepos)
-
-
-    def makeHair(self, context, hair, hum):
         t1 = perf_counter()
         self.clocks = []
         if self.keepMesh:

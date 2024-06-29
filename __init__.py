@@ -99,7 +99,7 @@ def importModules():
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "scale", "tables", "proxy", "hide",
-                    "mhx_data", "mhx", "rigify_data", "rigify", "hair", "transfer", "dforce", "main",
+                    "mhx_data", "mhx", "rigify_data", "rigify", "transfer", "hair", "dforce", "main",
                     "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
