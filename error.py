@@ -296,7 +296,7 @@ class DazOperator(bpy.types.Operator):
         for key,value in ob.items():
             if isinstance(value, (int, float, bool)):
                 self.mvalues[key] = value
-                ob[key] = 0.0
+                ob[key] = 0
         skeys = ob.data.shape_keys
         if skeys:
             for skey in skeys.key_blocks:
