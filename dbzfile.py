@@ -40,6 +40,20 @@ from .uilist import updateScrollbars
 #   DBZ fitting
 #------------------------------------------------------------------
 
+def getDbzEntry(struct, inst):
+    if inst.label in struct.keys():
+        return struct[inst.label]
+    elif inst.name in struct.keys():
+        return struct[inst.name]
+    id = unquote(inst.id)
+    if id in struct.keys():
+        return struct[id]
+    elif inst.node.name in struct.keys():
+        return struct[inst.node.name]
+    elif struct:
+        print("NO DBZ KEY", inst, struct.keys())
+
+
 class DBZInfo:
     def __init__(self, filepath):
         if filepath:
@@ -51,18 +65,14 @@ class DBZInfo:
         self.rigs = {}
 
 
-    def fitFigure(self, inst, takenfigs):
+    def fitFigure(self, inst):
         from .figure import FigureInstance
         from .bone import BoneInstance
         name = inst.node.name
         if name in self.rigs.keys():
-            if inst.id in takenfigs[name]:
-                return
-            elif inst.index < len(self.rigs[name]):
-                restdata,transforms,center = self.rigs[name][inst.index]
-                takenfigs[name].append(inst.id)
-            else:
-                print("Cannot fit %s" % name, inst.index, len(self.rigs[name]))
+            dbzrig = getDbzEntry(self.rigs[name], inst)
+            if dbzrig is None:
+                print("Cannot fit %s" % inst)
                 return
         else:
             print("No fitting info for figure %s" % name)
@@ -72,24 +82,24 @@ class DBZInfo:
 
         for child in inst.children.values():
             if isinstance(child, FigureInstance):
-                self.fitFigure(child, takenfigs)
+                self.fitFigure(child)
             elif isinstance(child, BoneInstance):
-                self.fitBone(child, restdata, transforms, takenfigs)
+                self.fitBone(child, dbzrig)
 
 
-    def fitBone(self, inst, restdata, transforms, takenfigs):
+    def fitBone(self, inst, dbzrig):
         from .figure import FigureInstance
         from .bone import BoneInstance
-        if inst.node.name not in restdata.keys():
+        if inst.node.name not in dbzrig.restdata.keys():
             return
-        inst.restdata = restdata[inst.node.name]
-        rmat,wsloc,wsrot,wsscale = transforms[inst.node.name]
+        inst.restdata = dbzrig.restdata[inst.node.name]
+        rmat,wsloc,wsrot,wsscale = dbzrig.transforms[inst.node.name]
 
         for child in inst.children.values():
             if isinstance(child, FigureInstance):
-                self.fitFigure(child, takenfigs)
+                self.fitFigure(child)
             if isinstance(child, BoneInstance):
-                self.fitBone(child, restdata, transforms, takenfigs)
+                self.fitBone(child, dbzrig)
 
 
     def tryGetName(self, name):
@@ -119,7 +129,8 @@ class DBZInfo:
 
 
 class DBZObject:
-    def __init__(self, verts, uvs, edges, faces, polylines, matgroups, polymats, props, lod, center):
+    def __init__(self, label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, lod, center):
+        self.label = label
         self.verts = verts
         self.uvs = uvs
         self.edges = edges
@@ -135,7 +146,18 @@ class DBZObject:
         self.center = center
 
     def __repr__(self):
-        return "<DBZ v:%d f:%d p:%d>" % (len(self.verts), len(self.faces), len(self.polylines))
+        return "<DBZ %s v:%d f:%d p:%d>" % (self.label, len(self.verts), len(self.faces), len(self.polylines))
+
+
+class DBZRig:
+    def __init__(self, label, restdata, transforms, center):
+        self.label = label
+        self.restdata = restdata
+        self.transforms = transforms
+        self.center = center
+
+    def __repr__(self):
+        return "<DRIG %s r:%d t:%d c:%s>" % (self.label, len(self.restdata), len(self.transforms), self.center)
 
 
 class DBZNode:
@@ -164,15 +186,14 @@ def loadDbzFile(filepath):
     for figure in struct["figures"]:
         if "num verts" in figure.keys() and figure["num verts"] == 0:
             continue
-
-        if "center_point" in figure.keys():
-            center = Vector(figure["center_point"])
-        else:
-            center = None
-
+        center = figure.get("center_point")
+        if center:
+            center = Vector(center)
         name = figure["name"]
         if name not in dbz.objects.keys():
-            dbz.objects[name] = []
+            dbz.objects[name] = {}
+        id = figure.get("id", name)
+        label = figure.get("label", id)
 
         verts = []
         if "vertices" in figure.keys():
@@ -194,12 +215,12 @@ def loadDbzFile(filepath):
                     matgroups = value
                 elif key == "node":
                     props = value["properties"]
-            dbz.objects[name].append(DBZObject(verts, uvs, edges, faces, polylines, matgroups, polymats, props, 0, center))
+            dbz.objects[name][label] = DBZObject(label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, 0, center)
 
         if GS.useHighDef and "hd vertices" in figure.keys() and "hd faces" in figure.keys():
             LS.useHDObjects = True
             if name not in dbz.hdobjects.keys():
-                dbz.hdobjects[name] = []
+                dbz.hdobjects[name] = {}
             verts = faces = polylines = polymats = uvs = matgroups = []
             lod = 0
             props = {}
@@ -218,16 +239,16 @@ def loadDbzFile(filepath):
                     faces = value
                 elif key == "material groups":
                     matgroups = value
-            dbz.hdobjects[name].append(DBZObject(verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center))
+            dbz.hdobjects[name][label] = DBZObject(label, verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center)
 
         restdata = {}
         transforms = {}
         if name not in dbz.rigs.keys():
-            dbz.rigs[name] = []
-        dbz.rigs[name].append((restdata, transforms, center))
+            dbz.rigs[name] = {}
         addDbzData(figure, "NODE", restdata, transforms)
         for bone in figure.get("bones", []):
             addDbzData(bone, bone["name"], restdata, transforms)
+        dbz.rigs[name][label] = DBZRig(label, restdata, transforms, center)
     return dbz
 
 
@@ -287,8 +308,6 @@ def fitToFile(filepath, nodes):
     dbz = loadDbzFile(filepath)
     subsurfaced = False
 
-    taken = dict([(name,0) for name in dbz.objects.keys()])
-    takenfigs = dict([(name,[]) for name in dbz.rigs.keys()])
     unfitted = []
     for node,inst in nodes:
         if inst is None:
@@ -296,17 +315,18 @@ def fitToFile(filepath, nodes):
             continue
         if isinstance(inst, FigureInstance):
             if inst.node.name in dbz.rigs.keys():
-                dbz.fitFigure(inst, takenfigs)
+                dbz.fitFigure(inst)
         elif isinstance(inst, BoneInstance):
             continue
         elif not inst.geometries:
             nodeid = inst.getNodeId()
             nodes = dbz.rigs.get(nodeid)
             if nodes:
-                restdata, transforms, center = nodes[0]
-                inst.restdata = restdata["NODE"]
+                dbzobj = getDbzEntry(nodes, inst)
+                if dbzobj:
+                    inst.restdata = dbzobj.restdata["NODE"]
             else:
-                print("Nodes not found", inst.id, node.name, nodeid)
+                print("Nodes not found", inst.label, node.name, nodeid)
 
         for geonode in inst.geometries:
             geo = geonode.data
@@ -318,24 +338,17 @@ def fitToFile(filepath, nodes):
                 nname = dbz.tryGetName("a"+node.name)
 
             if nname:
-                idx = taken[nname]
-                if idx >= len(dbz.objects[nname]):
-                    msg = ("Too many instances of object %s: %d" % (nname, idx))
-                    ok = False
-                else:
-                    base = dbz.objects[nname][idx]
-                    highdef = None
-                    if dbz.hdobjects:
-                        hdobjs = dbz.hdobjects.get(nname,[])
-                        if idx < len(hdobjs):
-                            highdef = hdobjs[idx]
-                            print("Highdef", nname, highdef.lod, len(highdef.verts))
-                    taken[nname] += 1
-                    ok = True
+                base = getDbzEntry(dbz.objects[nname], inst)
+                highdef = None
+                if dbz.hdobjects:
+                    hdobjs = dbz.hdobjects.get(nname,{})
+                    highdef = getDbzEntry(hdobjs, inst)
+                    if highdef:
+                        print("Highdef", nname, highdef.lod, len(highdef.verts))
                 if highdef and not highdef.faces:
                     highdef = None
-                if not ok:
-                    print(msg)
+                if base is None:
+                    print("Cannot fit: %s" % inst)
                     unfitted.append(node)
                 elif subsurfaced:
                     if len(verts) < len(geo.verts):
@@ -448,9 +461,9 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
         from .formula import makeExpression
         from .load_morph import LoadMorph
         restdata = {}
-        for name,dbzrig in dbz.rigs.items():
-            for rdata, transforms, center in dbzrig:
-                for key,data in rdata.items():
+        for name,dbzrigs in dbz.rigs.items():
+            for dbzrig in dbzrigs:
+                for key,data in dbzrig.restdata.items():
                     if key not in restdata.keys():
                         restdata[key] = data
 
