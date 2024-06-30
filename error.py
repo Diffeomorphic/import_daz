@@ -277,22 +277,15 @@ class DazOperator(bpy.types.Operator):
         if rig:
             rig.data.pose_position = 'REST'
             for key,value in rig.items():
-                if isinstance(value, int):
-                    self.rvalues[key] = value
-                    rig[key] = 0
-                elif isinstance(value, float):
-                    self.rvalues[key] = value
-                    rig[key] = 0.0
-                elif isinstance(value, bool):
-                    self.rvalues[key] = value
-                    rig[key] = False
+                self.rvalues[key] = value
+                setTypedPropValue(rig, key, value, 0)
 
 
     def restoreRig(self, rig):
         if rig:
             rig.data.pose_position = 'POSE'
             for key,value in self.rvalues.items():
-                rig[key] = value
+                setTypedPropValue(rig, key, value, value)
             updateDrivers(rig)
 
 
@@ -300,15 +293,8 @@ class DazOperator(bpy.types.Operator):
         self.svalues = {}
         self.mvalues = {}
         for key,value in ob.items():
-            if isinstance(value, int):
-                self.mvalues[key] = value
-                ob[key] = 0
-            elif isinstance(value, float):
-                self.mvalues[key] = value
-                ob[key] = 0.0
-            elif isinstance(value, bool):
-                self.mvalues[key] = value
-                ob[key] = False
+            self.mvalues[key] = value
+            setTypedPropValue(ob, key, value, 0)
         skeys = ob.data.shape_keys
         if skeys:
             for skey in skeys.key_blocks:
@@ -319,7 +305,7 @@ class DazOperator(bpy.types.Operator):
     def restoreMesh(self, ob):
         skeys = self.mesh.data.shape_keys
         for key,value in self.mvalues.items():
-            ob[key] = value
+            setTypedPropValue(ob, key, value, value)
         updateDrivers(ob)
         if skeys:
             for key,value in self.svalues.items():
@@ -332,6 +318,15 @@ class DazOperator(bpy.types.Operator):
         if self.warnings:
             self.warnings += "\n"
         self.warnings += msg
+
+
+def setTypedPropValue(ob, key, value, newvalue):
+    if isinstance(value, float):
+        ob[key] = float(newvalue)
+    elif isinstance(value, bool):
+        ob[key] = bool(newvalue)
+    elif isinstance(value, int):
+        ob[key] = int(newvalue)
 
 
 class DazPropsOperator(DazOperator):
