@@ -117,8 +117,9 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         ob = context.object
+        rig = getRigFromContext(context)
         if ob and ob.type in ['ARMATURE', 'MESH'] and ob.DazId:
-            if ob.DazDriversDisabled:
+            if rig and rig.DazDriversDisabled:
                 self.layout.label(text = "Morph Drivers Disabled")
                 self.layout.operator("daz.enable_drivers")
                 return

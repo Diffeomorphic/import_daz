@@ -326,12 +326,12 @@ class Material(Asset, Channels):
                 self.shader = 'BRICK'
             else:
                 self.shader = 'BRICK'
-                LS.shaders[shadername] = True
+                self.addUnsupportedShader(shadername)
         elif struct["type"] == "studio/material/daz_shader":
             self.shader = 'DAZ_SHADER'
             if "definition" in struct.keys():
                 shadername = struct["definition"]
-                LS.shaders[shadername] = True
+                self.addUnsupportedShader(shadername)
         elif struct["type"].startswith("studio/material/"):
             n = len("studio/material/")
             shadername = struct["type"][n:]
@@ -339,7 +339,13 @@ class Material(Asset, Channels):
                 "strand_hair_rsl" : "RSL Strand Shader",
             }
             shadername = table.get(shadername, shadername)
-            LS.shaders[shadername] = True
+            self.addUnsupportedShader(shadername)
+
+
+    def addUnsupportedShader(self, shadername):
+        if shadername not in LS.shaders.keys():
+            LS.shaders[shadername] = []
+        LS.shaders[shadername].append(self.name)
 
 
     def build(self, context):

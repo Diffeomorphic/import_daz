@@ -1230,14 +1230,17 @@ class DAZ_OT_DisableDrivers(DazOperator):
 
     @classmethod
     def poll(self, context):
-        ob = context.object
-        return (ob and not ob.DazDriversDisabled)
+        rig = getRigFromContext(context)
+        return (rig and not rig.DazDriversDisabled)
 
     def run(self, context):
         setMode('OBJECT')
-        for ob in getSelectedObjects(context):
-            muteDazFcurves(ob, True)
-            ob.DazDriversDisabled = True
+        rig = getRigFromContext(context)
+        rigs = getSelectedArmatures(context)
+        rigs.append(rig)
+        for rig in set(rigs):
+            muteDazFcurves(rig, True)
+            rig.DazDriversDisabled = True
 
 
 class DAZ_OT_EnableDrivers(DazOperator):
@@ -1248,14 +1251,17 @@ class DAZ_OT_EnableDrivers(DazOperator):
 
     @classmethod
     def poll(self, context):
-        ob = context.object
-        return (ob and ob.DazDriversDisabled)
+        rig = getRigFromContext(context)
+        return (rig and rig.DazDriversDisabled)
 
     def run(self, context):
         setMode('OBJECT')
-        for ob in getSelectedObjects(context):
-            muteDazFcurves(ob, False)
-            ob.DazDriversDisabled = False
+        rig = getRigFromContext(context)
+        rigs = getSelectedArmatures(context)
+        rigs.append(rig)
+        for rig in set(rigs):
+            muteDazFcurves(rig, False)
+            rig.DazDriversDisabled = False
 
 #----------------------------------------------------------
 #   Clean drivers
