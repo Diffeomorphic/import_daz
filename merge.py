@@ -1518,7 +1518,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     def isConforming(self, subrig, rig, info):
         if self.useMergeNonConforming == 'ALWAYS':
             return True
-        elif self.useMergeNonConforming == 'CONTROLS':
+        if self.useMergeNonConforming == 'CONTROLS':
             if subrig.DazUrl.lower() in DF.WidgetControls:
                 if info.foundControl:
                     subrig.hide_viewport = True
@@ -1527,7 +1527,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     return False
                 info.foundControl = list(subrig.children)
                 return True
-        elif subrig.parent is None or subrig.parent_type != 'OBJECT':
+        if subrig.parent is None or subrig.parent_type != 'OBJECT':
             return False
         for bname in subrig.data.bones.keys():
             if bname in rig.data.bones.keys():
