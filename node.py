@@ -154,6 +154,7 @@ class Instance(Accessor, Channels, SimNode):
         self.center = Vector((0,0,0))
         self.cpoint = Vector((0,0,0))
         self.wmat = self.wrot = self.wscale = Matrix()
+        self.wtrans = Vector((0,0,0))
         self.lscale = Matrix()
         self.refcoll = None
         self.isGroupNode = False
@@ -589,6 +590,7 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
 
+        from .bone import BoneInstance
         if self.restdata:
             head = self.restdata[0]
             trans = d2b00(head)
@@ -605,7 +607,12 @@ class Instance(Accessor, Channels, SimNode):
         ormat = Euler(orient).to_matrix().to_4x4()
 
         if parent:
-            coffset = cpoint - parent.cpoint
+            if isinstance(parent, BoneInstance) and parent.restdata:
+                head = d2b00(parent.restdata[0])
+                head0 = d2b00(parent.attributes["center_point"])
+                coffset = cpoint - head0 + head
+            else:
+                coffset = cpoint - parent.cpoint
             wtrans = parent.wmat @ (coffset + trans)
             wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
             oscale = ormat @ self.lscale @ ormat.inverted()
