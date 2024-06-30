@@ -1228,7 +1228,7 @@ class MaterialCombiner:
             attr1 = attr2 = None
             if (prop[0] == "_" or
                 prop[0:3] == "Daz" or
-                prop in ["select"]):
+                prop in ["select", "session_uid"]):
                 pass
             elif hasattr(rna1, prop) and hasattr(rna2, prop):
                 attr1 = getattr(rna1, prop)
