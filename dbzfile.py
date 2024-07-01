@@ -452,11 +452,11 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
 
 
     def buildRigMorph(self, context, rig, meshes, dbz):
-        from .formula import makeExpression
+        from .formula import Expression, ExprTarget
         from .load_morph import LoadMorph
         restdata = {}
         for name,dbzrigs in dbz.rigs.items():
-            for dbzrig in dbzrigs:
+            for dbzrig in dbzrigs.values():
                 for key,data in dbzrig.restdata.items():
                     if key not in restdata.keys():
                         restdata[key] = data
@@ -465,8 +465,9 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
         lm = LoadMorph()
         lm.rig = rig
         lm.initAll()
-        expr = makeExpression()
-        expr["prop"] = dbz.name
+        expr = Expression()
+        expr.prop = ExprTarget(dbz.name, "value", -1)
+        expr.prop.factor = 1
         try:
             lm.createTmp()
             if GS.ercMethod == 'TRANSLATION':
@@ -489,7 +490,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
             (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
             vec = Vector(head) - b2d(pb.bone.head_local)
             for idx,comp in enumerate(vec):
-                expr["factor"] = comp
+                expr.prop.factor = comp
                 lm.makeErcFormula(pb.name, idx, expr)
         if lm.ercBones:
             lm.makeErcMorphs()
@@ -511,7 +512,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
             (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
             vec = Vector(head) - b2d(pb.bone.head_local)
             for idx,comp in enumerate(vec):
-                expr["factor"] = comp
+                expr.prop.factor = comp
                 lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)
 
 
