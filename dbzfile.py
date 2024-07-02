@@ -296,10 +296,30 @@ def getFitFile(filepath):
 
 
 def fitToFile(filepath, nodes):
-    from .geometry import Geometry
+    from .geometry import Geometry, UnGeometry
     from .figure import FigureInstance
     from .bone import BoneInstance
     from .node import Instance
+
+    def makeMeshFromDbz(base, geonode, verbose):
+        geonode.edges = [e[0:2] for e in base.edges]
+        geonode.faces = [f[0] for f in base.faces]
+        geonode.polylines = base.polylines
+        geonode.polyline_materials = base.polyline_materials
+        if len(base.polylines) > 0 and len(base.faces) == 0:
+            geonode.verts = base.verts
+            msg = "Polylines %s" % node.name
+        elif len(base.verts) > len(geo.verts) and len(base.faces) == 0:
+            geonode.verts = base.verts[0:len(geo.verts)]
+            msg = "Hair guides %s: %d => %d" % (node.name, len(base.verts), len(geo.verts))
+        else:
+            geonode.verts = base.verts
+            msg = "Mismatch %s, %s: %d != %d. " % (node.name, geo.name, len(base.verts), len(geo.verts))
+        if verbose:
+            print(msg)
+        geonode.properties = base.properties
+        geonode.center = base.center
+        geonode.highdef = highdef
 
     print("Fitting objects with dbz file...")
     filepath = getFitFile(filepath)
@@ -325,7 +345,7 @@ def fitToFile(filepath, nodes):
 
         for geonode in inst.geometries:
             geo = geonode.data
-            if not isinstance(geo, Geometry):
+            if not isinstance(geo, (Geometry, UnGeometry)):
                 continue
             nname = dbz.tryGetName(node.name)
             if (nname is None and
@@ -344,6 +364,8 @@ def fitToFile(filepath, nodes):
                 if base is None:
                     print("Cannot fit: %s" % inst)
                     unfitted.append(node)
+                elif isinstance(geo, UnGeometry):
+                    makeMeshFromDbz(base, geonode, False)
                 elif subsurfaced:
                     if len(verts) < len(geo.verts):
                         msg = ("Mismatch %s, %s: %d < %d" % (node.name, geo.name, len(base.verts), len(geo.verts)))
@@ -363,23 +385,7 @@ def fitToFile(filepath, nodes):
                                 ok = True
                                 break
                         if not ok:
-                            geonode.edges = [e[0:2] for e in base.edges]
-                            geonode.faces = [f[0] for f in base.faces]
-                            geonode.polylines = base.polylines
-                            geonode.polyline_materials = base.polyline_materials
-                            if len(base.polylines) > 0 and len(base.faces) == 0:
-                                geonode.verts = base.verts
-                                msg = "Polylines %s" % node.name
-                            elif len(base.verts) > len(geo.verts) and len(base.faces) == 0:
-                                geonode.verts = base.verts[0:len(geo.verts)]
-                                msg = "Hair guides %s: %d => %d" % (node.name, len(base.verts), len(geo.verts))
-                            else:
-                                geonode.verts = base.verts
-                                msg = "Mismatch %s, %s: %d != %d. " % (node.name, geo.name, len(base.verts), len(geo.verts))
-                            print(msg)
-                            geonode.properties = base.properties
-                            geonode.center = base.center
-                            geonode.highdef = highdef
+                            makeMeshFromDbz(base, geonode, True)
                     else:
                         geonode.verts = base.verts
                         geonode.center = base.center

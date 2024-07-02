@@ -716,10 +716,14 @@ class UnGeometry(Asset, Channels):
     def __init__(self, etype, fileref):
         Asset.__init__(self, fileref)
         Channels.__init__(self)
+        self.verts = []
         self.etype = etype
         if self.etype == "studio_geometry_channels":
             self.polygon_material_groups = []
         self.uv_sets = {}
+
+    def __repr__(self):
+        return "<UnGeometry %s>" % (self.id)
 
     def parse(self, struct):
         Asset.parse(self, struct)
