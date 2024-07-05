@@ -180,6 +180,7 @@ class PbrTree(CyclesTree):
             self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])
             self.cycles = mix
         self.replaceSlot(self.pbr, PBR.SubsurfWeight, 0.0)
+        self.useThickness = False
         if BLENDER3:
             self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
         self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))

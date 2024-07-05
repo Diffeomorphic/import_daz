@@ -2028,16 +2028,16 @@ def checkRenderSettings(context, force):
         handle = "UPDATE"
     msg = ""
     msg += checkSettings(scn.cycles, renderSettingsCycles, handle, "Cycles Settings", force)
-    msg += checkSettings(scn.eevee, renderSettingsEevee, handle, "Eevee Settings", force)
     msg += checkSettings(scn.render, renderSettingsRender, handle, "Render Settings", force)
-
-    handle = GS.handleLightSettings
-    if force:
-        handle = "UPDATE"
-    for light in getVisibleObjects(context):
-        if light.type == 'LIGHT':
-            header = ('Light "%s" settings' % light.name)
-            msg += checkSettings(light.data, lightSettings, handle, header, force)
+    if bpy.app.version < (4,2,0):
+        msg += checkSettings(scn.eevee, renderSettingsEevee, handle, "Eevee Settings", force)
+        handle = GS.handleLightSettings
+        if force:
+            handle = "UPDATE"
+        for light in getVisibleObjects(context):
+            if light.type == 'LIGHT':
+                header = ('Light "%s" settings' % light.name)
+                msg += checkSettings(light.data, lightSettings, handle, header, force)
 
     if msg and not ES.easy:
         msg += "See http://diffeomorphic.blogspot.com/2020/04/render-settings.html for details."
