@@ -1176,12 +1176,7 @@ class DAZ_OT_ApplyMorphs(DazOperator, IsMesh):
 #   Apply subsurf modifier
 #-------------------------------------------------------------
 
-class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
-    bl_idname = "daz.apply_subsurf"
-    bl_label = "Apply Subsurf"
-    bl_description = "Apply subsurf modifier, maintaining shapekeys"
-    bl_options = {'UNDO'}
-
+class SubsurfApplier(DazOperator):
     def storeState(self, context):
         scn = context.scene
         self.simplify = scn.render.use_simplify
@@ -1194,12 +1189,12 @@ class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
     def run(self, context):
         from .driver import Driver
         ob = context.object
-        mod = getModifier(ob, 'SUBSURF')
+        mod = getModifier(ob, self.modifierType)
         if not mod:
-            raise DazError("Object %s\n has no subsurface modifier.    " % ob.name)
+            raise DazError("Object %s\n has no %s modifier.    " % (ob.name, self.modifierType))
         modname = mod.name
 
-        startProgress("Apply Subsurf Modifier")
+        startProgress("Apply %s Modifier" % self.modifierType)
         coords = []
         drivers = []
         skeys = ob.data.shape_keys
@@ -1261,6 +1256,24 @@ class DAZ_OT_ApplySubsurf(DazOperator, IsMesh):
                     if nskey:
                         fcu = nskey.driver_add(channel)
                         driver.fill(fcu)
+
+
+class DAZ_OT_ApplySubsurf(SubsurfApplier, IsMesh):
+    bl_idname = "daz.apply_subsurf"
+    bl_label = "Apply Subsurf"
+    bl_description = "Apply subsurf modifier, maintaining shapekeys"
+    bl_options = {'UNDO'}
+
+    modifierType = 'SUBSURF'
+
+
+class DAZ_OT_ApplyMultires(SubsurfApplier, IsMesh):
+    bl_idname = "daz.apply_multires"
+    bl_label = "Apply Multires"
+    bl_description = "Apply multires modifier, maintaining shapekeys"
+    bl_options = {'UNDO'}
+
+    modifierType = 'MULTIRES'
 
 #-------------------------------------------------------------
 #   Print statistics
@@ -2031,6 +2044,7 @@ classes = [
     DAZ_OT_SelectParentVerts,
     DAZ_OT_ApplyMorphs,
     DAZ_OT_ApplySubsurf,
+    DAZ_OT_ApplyMultires,
     DAZ_OT_PrintStatistics,
     DAZ_OT_AddMannequin,
     DAZ_OT_AddPush,

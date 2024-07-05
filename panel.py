@@ -314,6 +314,7 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.modify_vertex_group")
         self.layout.separator()
         self.layout.operator("daz.apply_subsurf")
+        self.layout.operator("daz.apply_multires")
         self.layout.operator("daz.copy_modifiers")
         self.layout.operator("daz.find_seams")
 
