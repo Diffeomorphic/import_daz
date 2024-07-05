@@ -528,7 +528,9 @@ class CyclesTree(Tree):
 
 
     def addTexco(self, slot):
-        if self.owner.uvNodeType == 'TEXCO' or not self.owner.uv_set:
+        if (self.owner.uvNodeType == 'TEXCO' or
+            self.owner.uvNodeType == 'UVMAP' or
+            not self.owner.uv_set):
             node = self.addNode("ShaderNodeTexCoord")
             node.hide = True
             hideAllBut(node, ["UV"])
