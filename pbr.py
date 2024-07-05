@@ -179,10 +179,6 @@ class PbrTree(CyclesTree):
             self.links.new(trans.outputs["BSDF"], mix.inputs[1])
             self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])
             self.cycles = mix
-
-        #effect = self.getValue(["Base Color Effect"], 0)
-        #tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-        self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, self.pbr, colorslot="Base Color")
         self.replaceSlot(self.pbr, PBR.SubsurfWeight, 0.0)
         if BLENDER3:
             self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
