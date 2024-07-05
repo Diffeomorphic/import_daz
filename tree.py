@@ -284,8 +284,13 @@ class NodeGroup:
 #   Utilities
 #-------------------------------------------------------------
 
+if BLENDER3:
+    PRINCIPLE_SIZE = 26
+else:
+    PRINCIPLE_SIZE = 14
+
 NodeSize = {
-    "BSDF_PRINCIPLED" : 30,
+    "BSDF_PRINCIPLED" : PRINCIPLE_SIZE,
     "BSDF_TRANSPARENT" : 5,
     "BSDF_BLACKBODY" : 5,
     "BSDF_TRANSLUCENT" : 10,

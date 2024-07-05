@@ -1815,7 +1815,7 @@ class CyclesTree(Tree):
             texnode = outnode = self.addTextureNode(col, img, imgname)
             self.setTexNode(imgname, texnode, outnode, "COLOR")
             if colorSpace in ["COLOR", "NONE"]:
-                gamma = self.addGamma(col, texnode, "Linear", 1/2.2, hide=True)
+                gamma = self.addGamma(col, WHITE, texnode, "Linear", 1/2.2, hide=True)
                 self.setTexNode(imgname, texnode, gamma, "NONE")
                 if colorSpace == "NONE":
                     outnode = gamma
@@ -1848,16 +1848,18 @@ class CyclesTree(Tree):
             outnode = self.invertTex(outnode, col+1)
             changed = True
         if gamma != 1.0:
-            outnode = self.addGamma(col+1, outnode, "Gamma", gamma)
+            outnode = self.addGamma(col+1, WHITE, outnode, "Gamma", gamma)
             changed = True
         return innode, outnode, changed
 
 
-    def addGamma(self, col, texnode, label, value, hide=False):
+    def addGamma(self, col, color, tex, label, value, hide=False):
         gamma = self.addNode("ShaderNodeGamma", col=col, size=(2 if hide else 6))
         gamma.label = label
         gamma.inputs["Gamma"].default_value = value
-        self.links.new(texnode.outputs["Color"], gamma.inputs["Color"])
+        gamma.inputs["Color"].default_value[0:3] = color
+        if tex:
+            self.links.new(colorOutput(tex), gamma.inputs["Color"])
         if hide:
             gamma.hide = True
         return gamma
@@ -2088,7 +2090,7 @@ class CyclesTree(Tree):
             return tex
         elif factor == 0 or tex is None:
             return None
-        elif (not force and tex.type not in ['TEX_IMAGE', 'GAMMA', 'GROUP']):
+        elif (not force and tex.type not in ['TEX_IMAGE', 'GAMMA', 'INVERT', 'GROUP']):
             return tex
         elif LS.materialMethod == 'FBX_COMPATIBLE':
             return tex

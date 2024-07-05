@@ -182,7 +182,7 @@ class PbrTree(CyclesTree):
 
         #effect = self.getValue(["Base Color Effect"], 0)
         #tint = self.getColor(["SSS Reflectance Tint"], WHITE)
-        #self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, self.pbr, colorslot="Base Color")
+        self.buildColorEffect(effect, self.diffuseColor, self.diffuseTex, tint, fac, factex, self.pbr, colorslot="Base Color")
         self.replaceSlot(self.pbr, PBR.SubsurfWeight, 0.0)
         if BLENDER3:
             self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
@@ -254,29 +254,42 @@ class PbrTree(CyclesTree):
         from .cycles import findTextureNode
         if not self.isEnabled("Diffuse"):
             color = WHITE
-            tex = None
+            tex = factex = None
+            effect = None
         else:
             color,tex = self.getDiffuseColor()
-        self.diffuseInput = self.linkColor(tex, self.pbr, color, "Base Color")
-        self.pbr.inputs[PBR.SubsurfWeight].default_value = 0
-
-        if not (self.isEnabled("Subsurface") or not self.owner.useTranslucency):
-            return
-        self.column -= 1
+            effect = self.getValue(["Base Color Effect"], 0)
+            tint = self.getColor(["SSS Reflectance Tint"], WHITE)
+            fac,factex = self.getFacFromTranslucency()
         transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
-        if isBlack(transcolor):
-            self.column += 1
+
+        self.pbr.inputs[PBR.SubsurfWeight].default_value = 0
+        self.diffuseInput = tex
+        if (LS.materialMethod == 'FBX_COMPATIBLE' or
+            not self.isEnabled("Subsurface")):
+            self.linkColor(tex, self.pbr, color, "Base Color")
             return
+        if effect:
+            node = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
+            sub = self.addNode("ShaderNodeMath", 3)
+            sub.operation = 'SUBTRACT'
+            sub.inputs[0].default_value = 1
+            self.links.new(node.outputs["Transmit Fac"], sub.inputs[1])
+            self.links.new(sub.outputs[0], self.pbr.inputs[PBR.SubsurfWeight])
+            transwt = 1
+            wttex = sub
+            color = WHITE
+            tex = node
+        else:
+            self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
+        if BLENDER3:
+            self.linkBaseColor3(transwt, wttex, transcolor, transtex, color, tex)
+        else:
+            self.linkBaseColor4(transwt, wttex, transcolor, transtex, color, tex)
+
         self.pbr.subsurface_method = GS.sssMethod
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
-
-        if LS.materialMethod == 'FBX_COMPATIBLE':
-            pass
-        elif GS.skinMethod == 'AltSSS':
-            self.addSubsurfaceMidnight(transwt, wttex, sss, ssstex, transcolor, transtex, texslot)
-        else:
-            self.addSubsurfaceColor(transwt, wttex, transcolor, transtex, texslot)
 
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
@@ -297,37 +310,23 @@ class PbrTree(CyclesTree):
         self.endSSS()
 
 
-    def addSubsurfaceColor(self, transwt, wttex, transcolor, transtex, texslot):
-        gamma = self.addNode("ShaderNodeGamma", size=7)
-        gamma.inputs["Gamma"].default_value = 3.5
-        self.linkColor(transtex, gamma, transcolor, "Color")
-        self.linkSubsurfColor(transwt, wttex, gamma.outputs["Color"])
-        self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
+    def linkBaseColor3(self, transwt, wttex, transcolor, transtex, color, tex):
+        self.linkColor(tex, self.pbr, color, "Base Color")
+        if transwt > 0:
+            gamma = self.addGamma(3, transcolor, transtex, "Gamma", 3.5)
+            self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
 
 
-    def linkSubsurfColor(self, transwt, wttex, socket):
-        if BLENDER3:
-            self.links.new(socket, self.pbr.inputs["Subsurface Color"])
-        elif transwt > 0:
+    def linkBaseColor4(self, transwt, wttex, transcolor, transtex, color, tex):
+        if transwt > 0:
+            gamma = self.addGamma(3, transcolor, transtex, "Gamma", 3.5)
             mix,a,b,out = self.addMixRgbNode('MIX')
             self.linkScalar(wttex, mix, transwt, 0)
-            self.linkColor(self.diffuseTex, mix, self.diffuseColor, MixRGB.Color1)
-            self.links.new(socket, b)
+            self.linkColor(tex, mix, color, MixRGB.Color1)
+            self.links.new(gamma.outputs["Color"], b)
             self.links.new(out, self.pbr.inputs["Base Color"])
-
-
-    def addSubsurfaceMidnight(self, transwt, wttex, sss, ssstex, transcolor, transtex, texslot):
-        from .cgroup import AltSSSGroup
-        fix = self.addGroup(AltSSSGroup, "DAZ Alt SSS")
-        self.linkScalar(ssstex, fix, sss, "SSS Amount")
-        fix.inputs["Diffuse Color"].default_value[0:3] = self.diffuseColor
-        if self.diffuseInput:
-            self.links.new(colorOutput(self.diffuseInput), fix.inputs["Diffuse Color"])
-        self.linkColor(transtex, fix, transcolor, "Translucent Color")
-        self.linkScalar(wttex, fix, transwt, "Translucency Weight", texslot=texslot)
-        self.links.new(fix.outputs["Base Color"], self.pbr.inputs["Base Color"])
-        self.linkSubsurfColor(transwt, wttex, fix.outputs["Subsurface Color"])
-        self.links.new(fix.outputs["Subsurface"], self.pbr.inputs[PBR.SubsurfWeight])
+        else:
+            self.linkColor(tex, self.pbr, color, "Base Color")
 
     #-------------------------------------------------------------
     #   Metallic
