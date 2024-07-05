@@ -93,7 +93,7 @@ class Light(Node):
         # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
         if self.type == 'POINT':
             light = bpy.data.lights.new(self.name, "POINT")
-            light.shadow_soft_size = 0
+            light.shadow_soft_size = height/2
             inst.fluxFactor = 3
             self.twosided = False
         elif self.type == 'DIRECTIONAL':
