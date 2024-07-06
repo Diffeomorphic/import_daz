@@ -253,7 +253,7 @@ class CyclesTree(Tree):
         self.clipsocket = None
         self.useCutout = False
         self.pureMetal = False
-        self.useThickness = True
+        self.useThickness = False
 
 
     def isEnabled(self, channel):
@@ -1394,6 +1394,7 @@ class CyclesTree(Tree):
         self.column += 1
         self.linkBumpNormal(node)
         LS.usedFeatures["Transparent"] = True
+        self.useThickness = True
         self.endSSS()
 
 
@@ -1826,7 +1827,7 @@ class CyclesTree(Tree):
             texnode = outnode = self.addTextureNode(col, img, imgname)
             self.setTexNode(imgname, texnode, outnode, "COLOR")
             if colorSpace in ["COLOR", "NONE"]:
-                gamma = self.addGamma(col, WHITE, texnode, "Linear", 1/2.2, hide=True)
+                gamma = self.addGamma(WHITE, texnode, "Linear", 1/2.2, hide=True)
                 self.setTexNode(imgname, texnode, gamma, "NONE")
                 if colorSpace == "NONE":
                     outnode = gamma
@@ -1859,13 +1860,13 @@ class CyclesTree(Tree):
             outnode = self.invertTex(outnode, col+1)
             changed = True
         if gamma != 1.0:
-            outnode = self.addGamma(col+1, WHITE, outnode, "Gamma", gamma)
+            outnode = self.addGamma(WHITE, outnode, "Gamma", gamma)
             changed = True
         return innode, outnode, changed
 
 
-    def addGamma(self, col, color, tex, label, value, hide=False):
-        gamma = self.addNode("ShaderNodeGamma", col=col, size=(2 if hide else 6))
+    def addGamma(self, color, tex, label, value, hide=False):
+        gamma = self.addNode("ShaderNodeGamma", size=(2 if hide else 6))
         gamma.label = label
         gamma.inputs["Gamma"].default_value = value
         gamma.inputs["Color"].default_value[0:3] = color

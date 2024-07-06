@@ -132,6 +132,7 @@ class PbrTree(CyclesTree):
         self.buildDetail(uvname)
         self.column = 5
         useTopCoatNode = self.checkTopCoat()
+        self.column = 4
         self.buildPBRNode(useTopCoatNode, uvname)
         self.postPBR = False
         self.column = 7
@@ -267,6 +268,7 @@ class PbrTree(CyclesTree):
             not self.isEnabled("Subsurface")):
             self.linkColor(tex, self.pbr, color, "Base Color")
             return
+
         if effect:
             node = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
             sub = self.addNode("ShaderNodeMath", 3)
@@ -280,10 +282,24 @@ class PbrTree(CyclesTree):
             tex = node
         else:
             self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
+
         if BLENDER3:
-            self.linkBaseColor3(transwt, wttex, transcolor, transtex, color, tex)
+            self.linkColor(tex, self.pbr, color, "Base Color")
+            if transwt > 0:
+                gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
+                self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
+                self.useThickness = True
         else:
-            self.linkBaseColor4(transwt, wttex, transcolor, transtex, color, tex)
+            if transwt > 0:
+                gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
+                mix,a,b,out = self.addMixRgbNode('MIX')
+                self.linkScalar(wttex, mix, transwt, 0)
+                self.linkColor(tex, mix, color, MixRGB.Color1)
+                self.links.new(gamma.outputs["Color"], b)
+                self.links.new(out, self.pbr.inputs["Base Color"])
+                self.useThickness = True
+            else:
+                self.linkColor(tex, self.pbr, color, "Base Color")
 
         self.pbr.subsurface_method = GS.sssMethod
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
@@ -305,25 +321,6 @@ class PbrTree(CyclesTree):
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
         self.column += 1
         self.endSSS()
-
-
-    def linkBaseColor3(self, transwt, wttex, transcolor, transtex, color, tex):
-        self.linkColor(tex, self.pbr, color, "Base Color")
-        if transwt > 0:
-            gamma = self.addGamma(3, transcolor, transtex, "Gamma", 3.5)
-            self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
-
-
-    def linkBaseColor4(self, transwt, wttex, transcolor, transtex, color, tex):
-        if transwt > 0:
-            gamma = self.addGamma(3, transcolor, transtex, "Gamma", 3.5)
-            mix,a,b,out = self.addMixRgbNode('MIX')
-            self.linkScalar(wttex, mix, transwt, 0)
-            self.linkColor(tex, mix, color, MixRGB.Color1)
-            self.links.new(gamma.outputs["Color"], b)
-            self.links.new(out, self.pbr.inputs["Base Color"])
-        else:
-            self.linkColor(tex, self.pbr, color, "Base Color")
 
     #-------------------------------------------------------------
     #   Metallic
