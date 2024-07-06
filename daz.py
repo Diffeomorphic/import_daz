@@ -573,8 +573,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Add Armature To HD Meshes",
         description = "Add armature modifier and vertex groups to true HD meshes")
 
-    useMultires : BoolProperty(
-        name = "Add Multires",
+    onMultires : EnumProperty(
+        items = [('IGNORE', "Ignore", "Don't add multires modifier but keep the original HD mesh"),
+                 ('CONSISTENT', "Consistent", "Only add multires modifier if the multires and base topologies are identical"),
+                 ('ALWAYS', "Always", "Always add multires modifier if possible.\nVertex groups and materials may be assigned incorrectly")],
+        name = "Multires",
         description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
 
     useMultiUvLayers : BoolProperty(
@@ -737,7 +740,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useBulgeWeights")
         box.prop(self, "useHighDef")
         box.prop(self, "keepBaseMesh")
-        box.prop(self, "useMultires")
+        box.prop(self, "onMultires")
         box.prop(self, "useMultiUvLayers")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")

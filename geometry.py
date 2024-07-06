@@ -196,7 +196,7 @@ class GeoNode(Node, SimNode):
             if not GS.useMultiUvLayers:
                 self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
-            if GS.useMultires and hdob.data.polygons:
+            if GS.onMultires != 'IGNORE' and hdob.data.polygons:
                 self.hdType = addMultires(context, ob, hdob, False)
             if self.hdType == 'MULTIRES':
                 if GS.useMultiUvLayers:
@@ -287,6 +287,7 @@ class GeoNode(Node, SimNode):
         uvs = self.highdef.uvs
         if not uvs:
             if hdob.name not in LS.hdUvMissing:
+                print("No HD UVs for %s" % hdob.name)
                 LS.hdUvMissing.append(hdob.name)
             return
         uvfaces = self.stripNegatives([f[1] for f in self.highdef.faces])
@@ -295,10 +296,7 @@ class GeoNode(Node, SimNode):
         else:
             uvname = "UV Layer"
         uvlayer = makeNewUvLayer(hdob.data, uvname, True)
-        if len(uvs) > len(uvlayer.data):
-            print("%s has too many UVs: %d > %d" % (hdob.name, len(uvs), len(uvlayer.data)))
-            LS.hdUvMismatch.append(hdob.name)
-            return
+        print("Add HD UVs to %s" % hdob.name)
         m = 0
         for f in uvfaces:
             for vn in f:
@@ -605,7 +603,7 @@ def addMultires(context, ob, hdob, strict):
     if ok:
         finger = getFingerPrint(ob)
         hdfinger = getFingerPrint(hdob)
-        if hdfinger == finger:
+        if hdfinger == finger or GS.onMultires == 'ALWAYS':
             print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
             hdob.DazMultires = True
             mod.levels = mod.sculpt_levels = 0
@@ -662,7 +660,9 @@ class DAZ_OT_MakeMultires(DazOperator, IsMesh):
         hdtype = addMultires(context, baseob, hdob, True)
         if hdtype == 'MULTIRES':
             copyUvLayers(baseob, hdob)
-            copyVertexGroups(baseob, hdob)
+            ok,msg = copyVertexGroups(baseob, hdob)
+            if not ok:
+                print("Cannot copy vertex groups: %s" % msg)
         if hdtype != 'NONE':
             rig = baseob.parent
             hdob.parent = rig

@@ -202,16 +202,12 @@ class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
         src = context.object
         if not src.vertex_groups:
             raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
-        srcfinger = getFingerPrint(src)
         for trg in getSelectedMeshes(context):
             if trg != src:
-                trgfinger = getFingerPrint(trg)
-                if trgfinger != srcfinger:
-                    msg = ("Cannot copy vertex groups between meshes with different topology:\n" +
-                           "Source: %s %s\n" % (srcfinger, src.name) +
-                           "Target: %s %s" % (trgfinger, trg.name))
+                ok,msg = copyVertexGroups(src, trg)
+                if not ok:
+                    msg = "Cannot copy vertex groups %s" % msg
                     raise DazError(msg)
-                copyVertexGroups(src, trg)
 
 #----------------------------------------------------------
 #   Morphs transfer

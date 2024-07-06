@@ -450,12 +450,13 @@ class SkinBinding(Modifier):
         self.addVertexGroups(ob, geonode, rig)
         hdob = geonode.hdobject
         if (hdob and hdob != ob and
-            (GS.useHDArmature or (hdob.DazMultires and GS.useMultires))):
+            (GS.useHDArmature or (hdob.DazMultires and GS.onMultires != 'IGNORE'))):
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
             if geonode.hdType == 'MULTIRES':
-                if not copyVertexGroups(ob, hdob):
-                    LS.hdWeights.append(hdob.name)
+                ok,msg = copyVertexGroups(ob, hdob)
+                if not ok:
+                    LS.hdWeights.append(msg)
 
 
     Removes = {"genesis9" : ["l_upperarm", "r_upperarm"]}
@@ -744,21 +745,20 @@ def newArmatureModifier(name, ob, rig):
         bpy.ops.object.modifier_move_up(modifier=mod.name)
 
 
-
 def copyVertexGroups(ob, hdob):
     def addVertexGroup(hdob, vgname, vnums):
         vgrp = hdob.vertex_groups.get(vgname)
         if vgrp:
-            print("DEL", vgrp)
             hdob.vertex_groups.remove(vgrp)
         vgrp = hdob.vertex_groups.new(name=vgname)
         for vn in vnums:
             vgrp.add([vn], 1.0, 'REPLACE')
 
-    from .finger import getFingerPrint
-    if getFingerPrint(ob) != getFingerPrint(hdob):
-        return False
-
+    nverts = len(ob.data.vertices)
+    nhdverts = len(hdob.data.vertices)
+    if nverts != nhdverts:
+        msg = ("%s => %s (%d != %d)" % (ob.name, hdob.name, nverts, nhdverts))
+        return False, msg
     hdvgrps = {}
     for vgrp in ob.vertex_groups:
         hdvgrp = hdob.vertex_groups.new(name=vgrp.name)
@@ -767,7 +767,7 @@ def copyVertexGroups(ob, hdob):
         vn = v.index
         for g in v.groups:
             hdvgrps[g.group].add([vn], g.weight, 'REPLACE')
-    return True
+    return True, ""
 
 
 class LegacySkinBinding(SkinBinding):
