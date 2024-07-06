@@ -180,6 +180,8 @@ class PbrTree(CyclesTree):
             self.links.new(trans.outputs["BSDF"], mix.inputs[1])
             self.links.new(self.pbr.outputs["BSDF"], mix.inputs[2])
             self.cycles = mix
+        for link in self.pbr.inputs[PBR.SubsurfWeight].links:
+            self.links.new(link.from_socket, trans.inputs["Fac"])
         self.replaceSlot(self.pbr, PBR.SubsurfWeight, 0.0)
         self.useThickness = False
         if BLENDER3:
@@ -283,7 +285,10 @@ class PbrTree(CyclesTree):
         else:
             self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
 
-        if BLENDER3:
+        if self.owner.useTranslucency:
+            self.linkColor(tex, self.pbr, color, "Base Color")
+            return
+        elif BLENDER3:
             self.linkColor(tex, self.pbr, color, "Base Color")
             if transwt > 0:
                 gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
