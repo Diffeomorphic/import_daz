@@ -980,7 +980,6 @@ class Node(Asset, Formula, Channels):
         }
         ob.rotation_mode = blenderRotMode[self.rotation_order]
         ob.DazRotMode = self.rotation_order
-        ob.DazMorphPrefixes = False
         inst.collection.objects.link(ob)
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)

@@ -821,7 +821,6 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
 
     def loadStandardMorphs(self):
         if self.rig:
-            self.rig.DazMorphPrefixes = False
             self.findIked()
         self.adjuster = MS.Adjusters[self.morphset]
         morphset = self.morphset
@@ -1348,8 +1347,6 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         MP.setupMorphPaths(False)
         self.errors = {}
         self.allfaceshapes = {}
-        if self.rig:
-            self.rig.DazMorphPrefixes = False
         self.message = None
         self.isJcm = False
         useShapekeys = GS.useShapekeys
@@ -2154,7 +2151,6 @@ def register():
     bpy.types.Object.DazMeshMorphs = BoolProperty(default = False)
     bpy.types.Object.DazMorphAuto = BoolProperty(default = False)
 
-    bpy.types.Object.DazMorphPrefixes = BoolProperty(default = True)
     for morphset in MS.Morphsets:
         setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
         setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))

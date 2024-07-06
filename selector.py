@@ -333,10 +333,6 @@ class MorphGroup:
             return morphs
         if self.morphset == "Custom":
             return self.getCustomMorphs(scn, rig)
-        elif rig.DazMorphPrefixes:
-            for key in rig.keys():
-                if key[0:2] == "Dz":
-                    raise DazError("OLD morphs", rig, key)
         elif self.morphset == "All":
             from .morphing import MS
             if adjusters:

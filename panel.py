@@ -123,8 +123,6 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
                 self.layout.label(text = "Morph Drivers Disabled")
                 self.layout.operator("daz.enable_drivers")
                 return
-            elif ob.DazMorphPrefixes:
-                return
             self.layout.operator("daz.import_units")
             self.layout.operator("daz.import_expressions")
             self.layout.operator("daz.import_visemes")
