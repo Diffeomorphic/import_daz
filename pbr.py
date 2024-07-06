@@ -183,7 +183,7 @@ class PbrTree(CyclesTree):
         for link in self.pbr.inputs[PBR.SubsurfWeight].links:
             self.links.new(link.from_socket, trans.inputs["Fac"])
         self.replaceSlot(self.pbr, PBR.SubsurfWeight, 0.0)
-        self.useThickness = False
+        self.thickness = None
         if BLENDER3:
             self.replaceSlot(self.pbr, "Subsurface Color", (1,1,1,1))
         self.replaceSlot(self.pbr, "Subsurface Radius", (0,0,0))
@@ -293,7 +293,7 @@ class PbrTree(CyclesTree):
             if transwt > 0:
                 gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
                 self.links.new(gamma.outputs["Color"], self.pbr.inputs["Subsurface Color"])
-                self.useThickness = True
+                self.thickness = 1.0
         else:
             if transwt > 0:
                 gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
@@ -302,7 +302,7 @@ class PbrTree(CyclesTree):
                 self.linkColor(tex, mix, color, MixRGB.Color1)
                 self.links.new(gamma.outputs["Color"], b)
                 self.links.new(out, self.pbr.inputs["Base Color"])
-                self.useThickness = True
+                self.thickness = 1.0
             else:
                 self.linkColor(tex, self.pbr, color, "Base Color")
 
@@ -522,6 +522,7 @@ class PbrTree(CyclesTree):
         if self.getValue(["Share Glossy Inputs"], False):
             tint = Tint(1.0)
         self.postPBR = True
+        self.thickness = 0.0
 
         if self.owner.isThinWall:
             # if thin walled is on then there's no volume

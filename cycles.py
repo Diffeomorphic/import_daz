@@ -253,7 +253,7 @@ class CyclesTree(Tree):
         self.clipsocket = None
         self.useCutout = False
         self.pureMetal = False
-        self.useThickness = False
+        self.thickness = None
 
 
     def isEnabled(self, channel):
@@ -1337,7 +1337,7 @@ class CyclesTree(Tree):
             self.linkBumpNormal(node)
         self.linkTranslucency(node)
         LS.usedFeatures["Transparent"] = True
-        self.useThickness = False
+        self.thickness = None
         return node
 
 
@@ -1394,7 +1394,7 @@ class CyclesTree(Tree):
         self.column += 1
         self.linkBumpNormal(node)
         LS.usedFeatures["Transparent"] = True
-        self.useThickness = True
+        self.thickness = 1.0
         self.endSSS()
 
 
@@ -1506,6 +1506,7 @@ class CyclesTree(Tree):
         if weight == 0:
             return weight,wttex
         node,color = self.buildRefractionNode()
+        self.thickness = 0.0
         self.mixWithActive(weight, wttex, texslot, node)
         if (GS.useFakeCaustics and
             bpy.app.version < (3,4,0) and
@@ -1721,13 +1722,9 @@ class CyclesTree(Tree):
                 mat.displacement_method = 'DISPLACEMENT'
             else:
                 mat.cycles.displacement_method = 'DISPLACEMENT'
-        if bpy.app.version >= (4,2,0) and self.useThickness:
+        if bpy.app.version >= (4,2,0) and self.thickness is not None:
             node = self.addNode("ShaderNodeValue")
-            if self.owner.isRefractive():
-                value = 0.0
-            else:
-                value = 1.0
-            node.outputs["Value"].default_value = value
+            node.outputs["Value"].default_value = self.thickness
             self.links.new(node.outputs["Value"], output.inputs["Thickness"])
         return output
 
