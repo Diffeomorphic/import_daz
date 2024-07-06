@@ -449,14 +449,16 @@ class SkinBinding(Modifier):
         makeArmatureModifier(self.name, context, ob, rig)
         self.addVertexGroups(ob, geonode, rig)
         hdob = geonode.hdobject
-        if (hdob and hdob != ob and
-            (GS.useHDArmature or (hdob.DazMultires and GS.onMultires != 'IGNORE'))):
+        if hdob and hdob != ob and GS.useHDArmature:
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
             if geonode.hdType == 'MULTIRES':
                 ok,msg = copyVertexGroups(ob, hdob)
-                if not ok:
-                    LS.hdWeights.append(msg)
+            else:
+                ok = False
+            if not ok:
+                from .transfer import transferVertexGroups
+                transferVertexGroups(context, ob, [hdob], 1e-3)
 
 
     Removes = {"genesis9" : ["l_upperarm", "r_upperarm"]}

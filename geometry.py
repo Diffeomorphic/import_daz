@@ -196,7 +196,7 @@ class GeoNode(Node, SimNode):
             if not GS.useMultiUvLayers:
                 self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
-            if GS.onMultires != 'IGNORE' and hdob.data.polygons:
+            if GS.useMultires and hdob.data.polygons:
                 self.hdType = addMultires(context, ob, hdob, False)
             if self.hdType == 'MULTIRES':
                 if GS.useMultiUvLayers:
@@ -591,6 +591,7 @@ def addMultires(context, ob, hdob, strict):
     bpy.ops.mesh.delete_loose()
     setMode('OBJECT')
 
+    finger = getFingerPrint(ob)
     nmods = len(hdob.modifiers)
     mod = hdob.modifiers.new("Multires", 'MULTIRES')
     for n in range(nmods-1):
@@ -601,9 +602,8 @@ def addMultires(context, ob, hdob, strict):
     except RuntimeError:
         ok = False
     if ok:
-        finger = getFingerPrint(ob)
         hdfinger = getFingerPrint(hdob)
-        if hdfinger == finger or GS.onMultires == 'ALWAYS':
+        if hdfinger == finger or not strict:
             print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
             hdob.DazMultires = True
             mod.levels = mod.sculpt_levels = 0
@@ -640,11 +640,19 @@ def addMultires(context, ob, hdob, strict):
     return 'HIGHDEF'
 
 
-class DAZ_OT_MakeMultires(DazOperator, IsMesh):
+class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
     bl_idname = "daz.make_multires"
     bl_label = "Make Multires"
     bl_description = "Convert HD mesh into mesh with multires modifier,\nand add vertex groups and extra UV layers"
     bl_options = {'UNDO'}
+
+    useNewUvs : BoolProperty(
+        name = "New UV Layers",
+        description = "Copy UV layers to multires mesh even if it already has UVs",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useNewUvs")
 
     def run(self, context):
         from .modifier import makeArmatureModifier, copyVertexGroups
@@ -656,10 +664,15 @@ class DAZ_OT_MakeMultires(DazOperator, IsMesh):
                 break
         if hdob is None:
             raise DazError("Two meshes must be selected, \none subdivided and one at base resolution.")
+        if len(baseob.data.vertices) > len(hdob.data.vertices):
+            tmp = baseob
+            baseob = hdob
+            hdob = tmp
         print('Base "%s", HD "%s"' % (baseob.name, hdob.name))
-        hdtype = addMultires(context, baseob, hdob, True)
+        hdtype = addMultires(context, baseob, hdob, False)
         if hdtype == 'MULTIRES':
-            copyUvLayers(baseob, hdob)
+            if self.useNewUvs or hdob.data.uv_layers is None:
+                copyUvLayers(baseob, hdob)
             ok,msg = copyVertexGroups(baseob, hdob)
             if not ok:
                 print("Cannot copy vertex groups: %s" % msg)

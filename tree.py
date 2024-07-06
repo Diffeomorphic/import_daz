@@ -364,7 +364,9 @@ NodeSize = {
     "POSITION" : 3,
     "FIELD_AT_INDEX" : 6,
     "COMPARE" : 6,
-    "SWITCH" : 6
+    "SWITCH" : 6,
+
+    "FRAME" : 20,
 }
 
 GroupSize = {

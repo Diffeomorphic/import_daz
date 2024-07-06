@@ -143,8 +143,8 @@ class GlobalSettings:
         self.keepTriaxWeights = False
         self.useTriaxApply = True
         self.keepBaseMesh = False
-        self.onMultires = 'CONSISTENT'
-        self.useMultiUvLayers = True
+        self.useMultires = True
+        self.useMultiUvLayers = False
         self.useMultiShapes = True
         self.useHDArmature = True
         self.useAutoSmooth = True
