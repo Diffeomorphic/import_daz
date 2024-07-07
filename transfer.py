@@ -40,6 +40,11 @@ from .morphing import RigidTransfer
 #-------------------------------------------------------------
 
 class MatchOperator(DazPropsOperator):
+    transferMethod = 'NEAREST'
+    useNonConforming = True
+    ignoreRigidity = False
+    needsTarget = True
+
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
         self.mesh = context.object
@@ -160,11 +165,6 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
     bl_description = "Transfer vertex groups from active to selected"
     bl_options = {'UNDO'}
 
-    transferMethod = 'NEAREST'
-    useNonConforming = True
-    ignoreRigidity = False
-    needsTarget : BoolProperty(default = True)
-
     def draw(self, context):
         self.layout.prop(self, "threshold")
 
@@ -186,7 +186,7 @@ def transferVertexGroups(context, src, targets, threshold):
         trg.vertex_groups.clear()
     print("Transfer vertex groups %s => %s" % (src.name, [trg.name for trg in targets]))
     bpy.ops.object.data_transfer(
-        data_type = "VGROUP_WEIGHTS",
+        data_type = 'VGROUP_WEIGHTS',
         vert_mapping = 'POLYINTERP_NEAREST',
         layers_select_src = 'ALL',
         layers_select_dst = 'NAME')
@@ -194,6 +194,41 @@ def transferVertexGroups(context, src, targets, threshold):
         for trg in targets:
             pruneVertexGroups(trg, threshold, [], False)
 
+#----------------------------------------------------------
+#   UV layer transfer
+#----------------------------------------------------------
+
+class DAZ_OT_TransferUvLayers(DazOperator, IsMesh):
+    bl_idname = "daz.transfer_uv_layers"
+    bl_label = "Transfer UV Layers"
+    bl_description = "Transfer UV layers from active to selected"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        src = context.object
+        if not src.data.uv_layers:
+            raise DazError("No UV layers found")
+        targets = [ob for ob in getSelectedMeshes(context) if ob != src]
+        t1 = perf_counter()
+        transferUvLayers(context, src, targets)
+        t2 = perf_counter()
+        print("UV layers transferred in %.1f seconds" % (t2-t1))
+
+
+def transferUvLayers(context, src, targets):
+    activateObject(context, src)
+    for trg in targets:
+        trg.select_set(True)
+    print("Transfer UV layers %s => %s" % (src.name, [trg.name for trg in targets]))
+    bpy.ops.object.data_transfer(
+        data_type = 'UV',
+        loop_mapping = 'NEAREST_POLYNOR',
+        layers_select_src = 'ALL',
+        layers_select_dst = 'NAME')
+
+#----------------------------------------------------------
+#   Copy vertex groups by number
+#----------------------------------------------------------
 
 class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
     bl_idname = "daz.copy_vertex_groups_by_number"
@@ -1140,6 +1175,7 @@ class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsShape):
 
 classes = [
     DAZ_OT_TransferVertexGroups,
+    DAZ_OT_TransferUvLayers,
     DAZ_OT_CopyVertexGroupsByNumber,
     DAZ_OT_TransferShapekeys,
     DAZ_OT_PruneVertexGroups,

@@ -577,10 +577,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Multires",
         description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
 
-    useMultiUvLayers : BoolProperty(
-        name = "Multiple UV Layers",
-        description = "Use multiple UV layers for HD meshes with multires modifiers")
-
     useAutoSmooth : BoolProperty(
         name = "Auto Smooth",
         description = (
@@ -738,7 +734,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useHighDef")
         box.prop(self, "keepBaseMesh")
         box.prop(self, "useMultires")
-        box.prop(self, "useMultiUvLayers")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
         box.prop(self, "useAutoSmooth")

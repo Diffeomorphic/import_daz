@@ -309,6 +309,7 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.prune_vertex_groups")
         self.layout.operator("daz.create_graft_groups")
         self.layout.operator("daz.transfer_vertex_groups")
+        self.layout.operator("daz.transfer_uv_layers")
         self.layout.operator("daz.modify_vertex_group")
         self.layout.separator()
         self.layout.operator("daz.apply_subsurf")

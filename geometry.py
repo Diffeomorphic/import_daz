@@ -193,20 +193,18 @@ class GeoNode(Node, SimNode):
             self.addHDMaterials(ob.data.materials, "")
             center = Vector((0,0,0))
             self.arrangeObject(hdob, inst, context, center)
-            if not GS.useMultiUvLayers:
-                self.addHDUvs(ob, hdob)
+            self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
             if GS.useMultires and hdob.data.polygons:
                 self.hdType = addMultires(context, ob, hdob, False)
-            if self.hdType == 'MULTIRES':
-                if GS.useMultiUvLayers:
-                    copyUvLayers(ob, hdob)
+            if self.hdType in ['MULTIRES', 'HIGHDEF']:
+                if (len(ob.data.uv_layers) > 1 or
+                    len(hdob.data.uv_layers) == 0):
+                    copyUvLayers(context, ob, hdob)
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
-            elif self.hdType == 'HIGHDEF' and GS.useMultiUvLayers:
-                self.addHDUvs(ob, hdob)
         elif LS.useHDObjects:
             self.hdobject = inst.hdobject = ob
 
@@ -466,8 +464,7 @@ class GeoNode(Node, SimNode):
                 return nmat
 
         uvmap = None
-        useMulti = (getModifier(hdob, 'MULTIRES') and GS.useMultiUvLayers)
-        if not useMulti and len(ob.data.uv_layers) > 1:
+        if len(ob.data.uv_layers) > 1:
             if hdob.data.uv_layers:
                 uvmap = hdob.data.uv_layers[0].name
             elif hdob.name not in LS.hdUvMissing:
@@ -672,7 +669,7 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
         hdtype = addMultires(context, baseob, hdob, False)
         if hdtype == 'MULTIRES':
             if self.useNewUvs or hdob.data.uv_layers is None:
-                copyUvLayers(baseob, hdob)
+                copyUvLayers(context, baseob, hdob)
             ok,msg = copyVertexGroups(baseob, hdob)
             if not ok:
                 print("Cannot copy vertex groups: %s" % msg)
@@ -683,7 +680,7 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
                 makeArmatureModifier(rig.name, context, hdob, rig)
 
 
-def copyUvLayers(ob, hdob, selection=None):
+def copyUvLayers(context, ob, hdob, selection=None):
     def setupLoopsMapping():
         loopsMapping = {}
         for f in hdob.data.polygons:
@@ -694,31 +691,39 @@ def copyUvLayers(ob, hdob, selection=None):
             loopsMapping[fid] = loops
         return loopsMapping
 
-    def copyUvLayer(uvdata, hddata, loopsMapping):
+    def copyLayer(uvdata, hddata, loopsMapping):
         for f in ob.data.polygons:
             fid = tuple( sorted(list(f.vertices)) )
             if fid not in loopsMapping:
-                msg =("Missing face_id: %s\nCannot copy UV layer to HD mesh.\nDisable Multiple UV Layers before importing" % (fid,))
-                raise DazError(msg)
+                return False
             for i,vn in enumerate(f.vertices):
                 if vn not in loopsMapping[fid]:
-                    print("Bad vert", vn)
+                    print("Bad vertex", vn)
                     continue
                 hdLoop = loopsMapping[fid][vn]
                 loop = f.loop_indices[i]
                 hddata[hdLoop].uv = uvdata[loop].uv
         return True
 
-    loopsMapping = setupLoopsMapping()
-    for uvlayer in ob.data.uv_layers:
-        if selection is None or uvlayer.name in selection:
-            if uvlayer.name in hdob.data.uv_layers.keys():
-                print('UV layer "%s" already exists' % uvlayer.name)
-                continue
-            hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
-            ok = copyUvLayer(uvlayer.data, hdlayer.data, loopsMapping)
-            if not ok:
-                hdob.data.uv_layers.remove(hdlayer)
+    def copyAllLayers():
+        loopsMapping = setupLoopsMapping()
+        for uvlayer in list(ob.data.uv_layers):
+            if selection is None or uvlayer.name in selection:
+                if uvlayer.name in hdob.data.uv_layers.keys():
+                    print('UV layer "%s" already exists' % uvlayer.name)
+                    continue
+                hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
+                ok = copyLayer(uvlayer.data, hdlayer.data, loopsMapping)
+                if not ok:
+                    hdob.data.uv_layers.remove(hdlayer)
+                    return False
+        return True
+
+    ok = copyAllLayers()
+    if not ok:
+        print("Cannot copy UV layer to HD mesh.")
+        from .transfer import transferUvLayers
+        transferUvLayers(context, ob, [hdob])
 
 #-------------------------------------------------------------
 #   UnGeometry
