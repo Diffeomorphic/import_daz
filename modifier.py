@@ -133,7 +133,7 @@ class Modifier(Asset):
                 rig = ob.parent
             else:
                 rig = None
-            return ob, rig, inst
+            return ob, inst.hdobject, rig, inst
         elif isinstance(inst, FigureInstance):
             # This happens for library characters
             rig = inst.rna
@@ -142,11 +142,11 @@ class Modifier(Asset):
                 ob = geonode.rna
             else:
                 ob = geonode = None
-            return ob, rig, geonode
+            return ob, geonode.hdobject, rig, geonode
         else:
             msg = ("Expected geonode or figure but got:\n  %s" % inst)
             reportError(msg)
-            return None,None,None
+            return None,None,None,None
 
 #-------------------------------------------------------------
 #   DForm
@@ -174,7 +174,7 @@ class DForm(Modifier):
 
 
     def build(self, context, inst):
-        ob,rig,geonode = self.getGeoRig(context, inst)
+        ob,hdob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or ob.type != 'MESH':
             return
         if ("influence_vertex_count" in self.dform.keys() and
@@ -440,7 +440,7 @@ class SkinBinding(Modifier):
 
 
     def build(self, context, inst):
-        ob,rig,geonode = self.getGeoRig(context, inst)
+        ob,hdob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
         if GS.verbosity >= 4:
@@ -591,23 +591,57 @@ class SkinBinding(Modifier):
     }
 
     def postbuild(self, context, inst):
+        from .mhx import deriveBone, copyRotation
         if not self.hasTriax or GS.keepTriaxWeights:
             return
-        ob,rig,geonode = self.getGeoRig(context, inst)
+        ob,hdob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
+        twists = self.postTriax(context, ob, rig)
+        if hdob:
+            self.postTriax(context, hdob, rig)
+        if activateObject(context, rig):
+            print("Add triax twist bones: %s" % rig.name)
+            setMode('EDIT')
+            for bname in twists.keys():
+                eb = rig.data.edit_bones[bname]
+                twist = deriveBone("%s.twist" % bname, eb, rig, T_HIDDEN, eb.parent)
+            setMode('OBJECT')
+            for bname in twists.keys():
+                data = self.TwistBones[bname]
+                pb = rig.pose.bones[bname]
+                twist = rig.pose.bones["%s.twist" % bname]
+                twist.bone.use_deform = True
+                twist.rotation_mode = data[1]
+                cns = copyRotation(twist, pb, rig, space='LOCAL')
+                setEulerOrder(cns, data[1])
+                cns.use_y = False
 
+
+    def postTriax(self, context, ob, rig):
         def getTriaxGroup(pb, m):
             return ob.vertex_groups.get("%s:%s" % (pb.name, chr(m+ord("x"))))
 
-        from .mhx import deriveBone, copyRotation
+        def addWeightMix(ob, group_a, group_b, mix_mode):
+            mod = ob.modifiers.new(group_a, 'VERTEX_WEIGHT_MIX')
+            mod.vertex_group_a = group_a
+            mod.vertex_group_b = group_b
+            mod.mix_set = 'OR'
+            mod.mix_mode = mix_mode
+            mod.normalize = False
+            return mod
+
         from .dforce import ModStore
         if not activateObject(context, ob):
             return
         stores = []
+        multi = None
         for mod in list(ob.modifiers):
-            stores.append(ModStore(mod))
-            ob.modifiers.remove(mod)
+            if mod.type == 'MULTIRES':
+                multi = mod
+            else:
+                stores.append(ModStore(mod))
+                ob.modifiers.remove(mod)
         zgroups = []
         twists = {}
         for pb in rig.pose.bones:
@@ -647,24 +681,14 @@ class SkinBinding(Modifier):
                 if vgrp2:
                     zgroups.append(vgrp2.name)
             if vgrp1 and vgrp3:
-                mod = ob.modifiers.new(vgrp1.name, 'VERTEX_WEIGHT_MIX')
-                mod.vertex_group_a = vgrp1.name
-                mod.vertex_group_b = vgrp3.name
-                mod.mix_set = 'OR'
-                mod.mix_mode = 'AVG'
-                mod.normalize = False
+                mod = addWeightMix(ob, vgrp1.name, vgrp3.name, 'AVG')
                 if GS.useTriaxApply:
                     zgroups.append(vgrp3.name)
                     bpy.ops.object.modifier_apply(modifier=mod.name)
 
         for bname in twists.keys():
             data = self.TwistBones[bname]
-            mod = ob.modifiers.new(bname, 'VERTEX_WEIGHT_MIX')
-            mod.vertex_group_a = bname
-            mod.vertex_group_b = "%s.twist" % bname
-            mod.mix_set = 'OR'
-            mod.mix_mode = data[2]
-            mod.normalize = False
+            mod = addWeightMix(ob, bname, "%s.twist" % bname, data[2])
             if GS.useTriaxApply:
                 bpy.ops.object.modifier_apply(modifier=mod.name)
 
@@ -682,7 +706,9 @@ class SkinBinding(Modifier):
 
         for store in stores:
             store.restore(ob)
-        if GS.useTriaxApply:
+        if multi:
+            nmods = len(ob.modifiers)
+        elif GS.useTriaxApply:
             for vgname in zgroups:
                 vgrp = ob.vertex_groups.get(vgname)
                 if vgrp:
@@ -691,23 +717,7 @@ class SkinBinding(Modifier):
             setMode('WEIGHT_PAINT')
             bpy.ops.object.vertex_group_smooth(group_select_mode='BONE_DEFORM', factor=0.5, repeat=4, expand=0.0)
             setMode('OBJECT')
-
-        if activateObject(context, rig):
-            print("Add triax twist bones: %s" % rig.name)
-            setMode('EDIT')
-            for bname in twists.keys():
-                eb = rig.data.edit_bones[bname]
-                twist = deriveBone("%s.twist" % bname, eb, rig, T_HIDDEN, eb.parent)
-            setMode('OBJECT')
-            for bname in twists.keys():
-                data = self.TwistBones[bname]
-                pb = rig.pose.bones[bname]
-                twist = rig.pose.bones["%s.twist" % bname]
-                twist.bone.use_deform = True
-                twist.rotation_mode = data[1]
-                cns = copyRotation(twist, pb, rig, space='LOCAL')
-                setEulerOrder(cns, data[1])
-                cns.use_y = False
+        return twists
 
 
 def buildVertexGroup(ob, vgname, weights, default=None):
@@ -782,7 +792,7 @@ class LegacySkinBinding(SkinBinding):
         SkinBinding.parse(self, struct)
 
     def build(self, context, inst):
-        ob,rig,geonode = self.getGeoRig(context, inst)
+        ob,hdob,rig,geonode = self.getGeoRig(context, inst)
         LS.legacySkin.append((ob, rig))
         SkinBinding.build(self, context, inst)
 
