@@ -715,7 +715,7 @@ class SkinBinding(Modifier):
                     ob.vertex_groups.remove(vgrp)
             print("Smooth triax weights: %s" % ob.name)
             setMode('WEIGHT_PAINT')
-            bpy.ops.object.vertex_group_smooth(group_select_mode='BONE_DEFORM', factor=0.5, repeat=4, expand=0.0)
+            bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=4, expand=0.0)
             setMode('OBJECT')
         return twists
 
