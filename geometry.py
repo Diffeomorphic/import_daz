@@ -604,6 +604,8 @@ def addMultires(context, ob, hdob, strict):
             print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
             hdob.DazMultires = True
             mod.levels = mod.sculpt_levels = 0
+            if hdfinger != finger:
+                LS.hdMismatch.append(hdob.name)
             return 'MULTIRES'
 
     nhdverts = len(hdob.data.vertices)

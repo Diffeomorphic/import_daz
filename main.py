@@ -343,17 +343,13 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         if LS.hdFailures:
             self.msg += "Could not rebuild subdivisions for the following HD objects:       \n"
             self.addItems(LS.hdFailures)
-        if LS.hdWeights:
-            self.msg += "Could not copy vertex weights to the following HD objects:         \n"
-            self.addItems(LS.hdWeights)
+        if LS.hdMismatch:
+            self.msg += "Multires vertex count mismatch. Vertex groups transferred from base objects.     \n"
+            #self.msg += "Enter Geometry editor before exporting HD meshes with geografts:\n"
+            self.addItems(LS.hdMismatch)
         if LS.hdUvMissing:
-            self.msg += "HD objects missing UV layers:\n"
+            self.msg += "HD objects missing exported UV layers. UVs transferred from base objects:\n"
             self.addItems(LS.hdUvMissing)
-            self.msg += "Export from DAZ Studio with Multires disabled.        \n"
-        if LS.hdUvMismatch:
-            self.msg += "HD objects with UV mismatch:\n"
-            self.addItems(LS.hdUvMismatch)
-            self.msg += "Enter Geometry editor before exporting HD meshes with geografts"
         if self.msg:
             clearErrorMessage()
             handleDazError(context, warning=True, dump=True)

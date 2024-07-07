@@ -60,7 +60,7 @@ class FigureInstance(Instance):
 
     def postbuild(self, context):
         Instance.postbuild(self, context)
-        if LS.fitFile and LS.useArmature:
+        if LS.fitFile and GS.useArmature:
             self.shiftBones(context, self.rna, self.worldmat.inverted())
 
 
@@ -126,7 +126,7 @@ class FigureInstance(Instance):
 
 
     def poseRig(self, context):
-        if not LS.useArmature:
+        if not GS.useArmature:
             return
         from .bone import BoneInstance
         rig = self.rna
@@ -275,7 +275,7 @@ class Figure(Node):
         for geonode in inst.geometries:
             geonode.buildObject(context, inst, center)
             geonode.rna.location = Zero
-        if LS.useArmature:
+        if GS.useArmature:
             amt = self.data = bpy.data.armatures.new(inst.name)
             self.buildObject(context, inst, center)
             rig = self.rna
@@ -292,7 +292,7 @@ class Figure(Node):
             geonode.parent = geonode.figure = self
             geonode.rna.parent = rig
             geonode.addLSMesh(geonode.rna, inst, LS.rigname)
-        if not LS.useArmature:
+        if not GS.useArmature:
             return
         center = inst.attributes["center_point"]
         activateObject(context, rig)

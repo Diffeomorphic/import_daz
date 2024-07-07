@@ -562,7 +562,6 @@ class LocalSettings:
         self.useMorphOnly = False
         self.useFormulas = False
         self.useHDObjects = False
-        self.useArmature = GS.useArmature
         self.applyMorphs = False
         self.useAnimations = False
         self.useUV = False
@@ -578,9 +577,8 @@ class LocalSettings:
         self.missingAssets = {}
         self.hasInstanceChildren = {}
         self.hdFailures = []
-        self.hdWeights = []
+        self.hdMismatch = []
         self.hdUvMissing = []
-        self.hdUvMismatch = []
         self.partialMaterials = []
         self.triax = {}
         self.otherRigBones = {}

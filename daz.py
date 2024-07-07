@@ -570,11 +570,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Keep base resolution meshes if HD mesh is built")
 
     useHDArmature : BoolProperty(
-        name = "Add Armature To HD Meshes",
-        description = "Add armature modifier and vertex groups to true HD meshes")
+        name = "Add HD Armatures",
+        description = "Add armature modifier and vertex groups to HD and multires meshes")
 
     useMultires : BoolProperty(
-        name = "Multires",
+        name = "Add Multires",
         description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
 
     useAutoSmooth : BoolProperty(
