@@ -768,15 +768,19 @@ class DAZ_OT_CopyGraftsToHD(DazOperator, IsMesh):
         from .transfer import transferVertexGroups, transferUvLayers
         hdob = context.object
         grafts = [ob for ob in getSelectedMeshes(context) if ob.data.DazVertexCount]
+        if len(grafts) != 1:
+            raise DazError("Need exactly one graft")
+        graft = grafts[0]
 
         # Create HD graft
-        nmats = len(hdob.data.materials)
+        nbasemats = len(hdob.data.materials) - len(graft.data.materials)
+        print("Base materials: %d" % nbasemats)
         activateObject(context, hdob)
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
         for f in hdob.data.polygons:
-            if f.material_index >= nmats or f.material_index < 0:
+            if f.material_index >= nbasemats:
                 f.select = True
         setMode('EDIT')
         bpy.ops.mesh.duplicate()
@@ -792,9 +796,6 @@ class DAZ_OT_CopyGraftsToHD(DazOperator, IsMesh):
         hdgraft.select_set(True)
         transferVertexGroups(context, graft, [hdgraft], 1e-3)
         transferUvLayers(context, graft, [hdgraft])
-        for mat in graft.data.materials:
-            if mat.name not in hdob.data.materials:
-                hdob.data.materials.append(mat)
 
         # Copy UV layers from HD graft to HD object
         print("LOO", len(hdob.data.loops), len(hdgraft.data.loops))

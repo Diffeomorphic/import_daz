@@ -131,7 +131,8 @@ class DBZInfo:
 
 
 class DBZObject:
-    def __init__(self, label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, lod, center):
+    def __init__(self, name, label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, lod, center):
+        self.name = name
         self.label = label
         self.verts = verts
         self.uvs = uvs
@@ -148,7 +149,7 @@ class DBZObject:
         self.center = center
 
     def __repr__(self):
-        return "<DBZ %s v:%d f:%d p:%d>" % (self.label, len(self.verts), len(self.faces), len(self.polylines))
+        return "<DBZ %s l:%s v:%d f:%d p:%d mg:%d>" % (self.name, self.label, len(self.verts), len(self.faces), len(self.polylines), len(self.matgroups))
 
 
 class DBZRig:
@@ -214,7 +215,7 @@ def loadDbzFile(filepath):
                     matgroups = value
                 elif key == "node":
                     props = value["properties"]
-            dbzobj = DBZObject(label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, 0, center)
+            dbzobj = DBZObject(name, label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, 0, center)
             dbz.addEntry("objects", name, label, dbzobj)
 
         if GS.useHighDef and "hd vertices" in figure.keys() and "hd faces" in figure.keys():
@@ -235,9 +236,9 @@ def loadDbzFile(filepath):
                     polymats = value
                 elif key == "hd faces":
                     faces = value
-                elif key == "material groups":
+                elif key == "hd material groups":
                     matgroups = value
-            dbzobj = DBZObject(label, verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center)
+            dbzobj = DBZObject(name, label, verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center)
             dbz.addEntry("hdobjects", name, label, dbzobj)
 
         restdata = {}
@@ -358,9 +359,9 @@ def fitToFile(filepath, nodes):
                 if dbz.hdobjects:
                     highdef = dbz.getEntry("hdobjects", nname, inst)
                     if highdef:
-                        print("Highdef", nname, highdef.lod, len(highdef.verts))
-                if highdef and not highdef.faces:
-                    highdef = None
+                        print("Highdef", highdef)
+                #if highdef and not highdef.faces:
+                #    highdef = None
                 if base is None:
                     print("Cannot fit: %s" % inst)
                     unfitted.append(node)

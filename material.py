@@ -351,6 +351,11 @@ class Material(Asset, Channels):
     def build(self, context):
         from .geometry import Geometry, GeoNode
         self.setupBasics()
+        if self.ignore:
+            for mname,mat in list(LS.materials.items()):
+                if self.name.endswith(mname):
+                    LS.materials[self.name] = mat
+            return False
         if self.dontBuild():
             return False
         if GS.verbosity >= 4:
@@ -358,7 +363,7 @@ class Material(Asset, Channels):
         mat = self.rna
         if mat is None:
             mat = self.rna = bpy.data.materials.new(self.name)
-            LS.materials[mat.name] = mat
+            LS.materials[self.name] = mat
         scn = self.scene = context.scene
         mat.DazShader = self.shader
         if self.uv_set:

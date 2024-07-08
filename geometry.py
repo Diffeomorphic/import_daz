@@ -190,7 +190,7 @@ class GeoNode(Node, SimNode):
             self.hdobject = inst.hdobject = hdob
             LS.hdmeshes[LS.rigname].append(hdob)
             hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
-            self.addHDMaterials(ob.data.materials, "")
+            self.addHDMaterials(self.highdef.matgroups, ob.data.materials, "")
             center = Vector((0,0,0))
             self.arrangeObject(hdob, inst, context, center)
             self.addHDUvs(ob, hdob)
@@ -302,7 +302,14 @@ class GeoNode(Node, SimNode):
                 m += 1
 
 
-    def addHDMaterials(self, mats, prefix):
+    def addHDMaterials(self, matgroups, mats, prefix):
+        if matgroups:
+            table = dict([(key.rsplit("-",1)[0], mat.name) for key,mat in LS.materials.items()])
+            for mname in matgroups:
+                pg = self.hdobject.data.DazHDMaterials.add()
+                pg.name = mname
+                pg.text = table.get(mname)
+            return
         for mat in mats:
             pg = self.hdobject.data.DazHDMaterials.add()
             pg.name = prefix + mat.name.rsplit("-",1)[0]
@@ -318,7 +325,7 @@ class GeoNode(Node, SimNode):
                     insts.append(inst)
                     par = inst.parent.geometries[0]
                     if par and par.hdobject and par.hdobject != par.rna:
-                        par.addHDMaterials(mats, inst.name + "?" + prefix)
+                        par.addHDMaterials(mats, "%s?%s" % (inst.name, prefix))
 
 
     def stripNegatives(self, faces):
