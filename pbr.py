@@ -504,6 +504,7 @@ class PbrTree(CyclesTree):
             weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
                 self.linkScalar(wttex, self.pbr, weight, PBR.TransmitWeight, texslot=texslot)
+                self.thickness = 0.0
                 self.setRefractivePrincipled()
             else:
                 self.column = col
@@ -563,7 +564,6 @@ class PbrTree(CyclesTree):
 
         elif self.owner.isVolume():
             self.owner.setTransSettings(True, False, color, 0.1)
-            self.thickness = 0.0
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0)
             self.replaceSlot(pbr, "IOR", 1.0)
@@ -577,7 +577,6 @@ class PbrTree(CyclesTree):
             # principled ior = iray refraction index
             # principled roughness = iray glossy roughness
             self.owner.setTransSettings(True, False, color, 0.2)
-            self.thickness = 0.0
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0.5)
             self.removeLink(pbr, "IOR")

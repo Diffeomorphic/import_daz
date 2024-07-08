@@ -2058,7 +2058,7 @@ def checkRenderSettings(context, force):
                 header = ('Light "%s" settings' % light.name)
                 msg += checkSettings(light.data, lightSettings, handle, header, force)
 
-    if msg and not ES.easy:
+    if msg:
         msg += "See http://diffeomorphic.blogspot.com/2020/04/render-settings.html for details."
         print(msg)
         return msg
