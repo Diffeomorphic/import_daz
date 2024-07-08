@@ -522,7 +522,6 @@ class PbrTree(CyclesTree):
         if self.getValue(["Share Glossy Inputs"], False):
             tint = Tint(1.0)
         self.postPBR = True
-        self.thickness = 0.0
 
         if self.owner.isThinWall:
             # if thin walled is on then there's no volume
@@ -564,6 +563,7 @@ class PbrTree(CyclesTree):
 
         elif self.owner.isVolume():
             self.owner.setTransSettings(True, False, color, 0.1)
+            self.thickness = 0.0
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0)
             self.replaceSlot(pbr, "IOR", 1.0)
@@ -577,6 +577,7 @@ class PbrTree(CyclesTree):
             # principled ior = iray refraction index
             # principled roughness = iray glossy roughness
             self.owner.setTransSettings(True, False, color, 0.2)
+            self.thickness = 0.0
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, PBR.Specular, 0.5)
             self.removeLink(pbr, "IOR")

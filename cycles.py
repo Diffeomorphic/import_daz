@@ -1506,7 +1506,6 @@ class CyclesTree(Tree):
         if weight == 0:
             return weight,wttex
         node,color = self.buildRefractionNode()
-        self.thickness = 0.0
         self.mixWithActive(weight, wttex, texslot, node)
         if (GS.useFakeCaustics and
             bpy.app.version < (3,4,0) and
@@ -1528,6 +1527,7 @@ class CyclesTree(Tree):
             node = self.addGroup(ThinWallGroup, "DAZ Thin Wall")
         else:
             node = self.addGroup(RefractionGroup, "DAZ Refraction")
+            self.thickness = 0.0
         node.width = 240
 
         color,tex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
