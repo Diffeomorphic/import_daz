@@ -758,75 +758,88 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
 #
 #----------------------------------------------------------
 
-class DAZ_OT_CopyGraftsToHD(DazOperator, IsMesh):
-    bl_idname = "daz.copy_grafts_to_hd"
-    bl_label = "Copy Grafts To HD"
-    bl_description = "Copy materials and vertex groups\nfrom selected geografts to HD mesh"
+class DAZ_OT_CopyGraftGroups(DazOperator, IsMesh):
+    bl_idname = "daz.copy_grafts_groups"
+    bl_label = "Copy Grafts Groups"
+    bl_description = "Copy vertex groups from selected geografts to HD mesh"
     bl_options = {'UNDO'}
 
     def run(self, context):
-        from .transfer import transferVertexGroups, transferUvLayers
         hdob = context.object
-        grafts = [ob for ob in getSelectedMeshes(context) if ob.data.DazVertexCount]
+        baseob = None
+        grafts = []
+        for ob in getSelectedMeshes(context):
+            if ob.data.DazVertexCount:
+                grafts.append(ob)
+            elif ob != hdob:
+                baseob = ob
         if len(grafts) != 1:
             raise DazError("Need exactly one graft")
-        graft = grafts[0]
+        elif baseob is None:
+            raise DazError("No base object selected")
+        copyGraftGroups(context, hdob, baseob, grafts)
 
-        # Create HD graft
-        nbasemats = len(hdob.data.materials) - len(graft.data.materials)
-        print("Base materials: %d" % nbasemats)
-        activateObject(context, hdob)
-        setMode('EDIT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
-        for f in hdob.data.polygons:
-            if f.material_index >= nbasemats:
-                f.select = True
-        setMode('EDIT')
-        bpy.ops.mesh.duplicate()
-        bpy.ops.mesh.separate(type='SELECTED')
-        setMode('OBJECT')
 
-        # Copy vertex groups and UV layers from graft to HD graft
-        hdgrafts = [ob for ob in getSelectedMeshes(context) if ob != hdob]
-        hdgraft = hdgrafts[0]
-        graft = grafts[0]
-        nmats = len(graft.data.materials)
-        activateObject(context, graft)
-        hdgraft.select_set(True)
-        transferVertexGroups(context, graft, [hdgraft], 1e-3)
-        transferUvLayers(context, graft, [hdgraft])
+def copyGraftGroups(context, hdob, baseob, grafts):
+    from .transfer import transferVertexGroups, transferUvLayers
+    graft = grafts[0]
+    print("HDOB", hdob)
+    print("BASE", baseob)
+    print("GGR", graft)
 
-        # Copy UV layers from HD graft to HD object
-        print("LOO", len(hdob.data.loops), len(hdgraft.data.loops))
-        offset = len(hdob.data.loops) - len(hdgraft.data.loops)
-        for uvlayer1 in hdgraft.data.uv_layers:
-            if uvlayer1.name not in hdob.data.uv_layers:
-                uvlayer2 = hdob.data.uv_layers.new(name=uvlayer1.name)
-                print("ADD", uvlayer1.name, uvlayer2.name, offset)
-                for uv2 in uvlayer2.uv[:offset]:
-                    uv2.vector = (0,0)
-                for uv1,uv2 in zip(uvlayer1.uv, uvlayer2.uv[offset:]):
-                    uv2.vector = uv1.vector
+    # Create HD graft
+    nbasemats = len(baseob.data.materials)
+    nhdmats = len(hdob.data.materials)
+    print("NNN", nbasemats, nhdmats)
+    if nhdmats == nbasemats:
+        print("No extra HD materials")
+        return
+    print("Base materials: %d" % nbasemats)
+    activateObject(context, hdob)
+    setMode('EDIT')
+    bpy.ops.mesh.select_all(action='DESELECT')
+    setMode('OBJECT')
+    for f in hdob.data.polygons:
+        if f.material_index >= nbasemats:
+            f.select = True
+    setMode('EDIT')
+    bpy.ops.mesh.duplicate()
+    bpy.ops.mesh.separate(type='SELECTED')
+    setMode('OBJECT')
 
-        # Copy vertex groups from HD graft to HD object
-        for vgrp in hdob.vertex_groups:
-            for loop in hdob.data.loops[offset:]:
-                vgrp.remove([loop.vertex_index])
-        grps = dict([(vgrp.index,{}) for vgrp in hdgraft.vertex_groups])
-        for v in hdgraft.data.vertices:
-            for g in v.groups:
-                grps[g.group][v.index] = g.weight
-        for vgrp1 in hdgraft.vertex_groups:
-            weights = grps[vgrp1.index]
-            if vgrp1.name in hdob.vertex_groups:
-                vgrp2 = hdob.vertex_groups[vgrp1.name]
-            else:
-                vgrp2 = hdob.vertex_groups.new(name=vgrp1.name)
-            for loop1,loop2 in zip(hdgraft.data.loops, hdob.data.loops[offset:]):
-                w = weights.get(loop1.vertex_index)
-                if w is not None:
-                    vgrp2.add([loop2.vertex_index], w, 'REPLACE')
+    # Copy vertex groups and UV layers from graft to HD graft
+    hdgrafts = [ob for ob in getSelectedMeshes(context) if ob != hdob]
+    hdgraft = hdgrafts[0]
+    graft = grafts[0]
+    nmats = len(graft.data.materials)
+    activateObject(context, graft)
+    hdgraft.select_set(True)
+    transferVertexGroups(context, graft, [hdgraft], 1e-3)
+
+    # Copy vertex groups from HD graft to HD object
+    print("Copy vertex groups to HD mesh")
+    offset = len(hdob.data.loops) - len(hdgraft.data.loops)
+    print("OFFS", offset, len(hdob.data.loops))
+    for vgrp in hdob.vertex_groups:
+        for loop in hdob.data.loops[offset:]:
+            vgrp.remove([loop.vertex_index])
+    grps = dict([(vgrp.index,{}) for vgrp in hdgraft.vertex_groups])
+    for v in hdgraft.data.vertices:
+        for g in v.groups:
+            grps[g.group][v.index] = g.weight
+    for vgrp1 in hdgraft.vertex_groups:
+        weights = grps[vgrp1.index]
+        if vgrp1.name in hdob.vertex_groups:
+            vgrp2 = hdob.vertex_groups[vgrp1.name]
+        else:
+            vgrp2 = hdob.vertex_groups.new(name=vgrp1.name)
+        for loop1,loop2 in zip(hdgraft.data.loops, hdob.data.loops[offset:]):
+            w = weights.get(loop1.vertex_index)
+            if w is not None:
+                vgrp2.add([loop2.vertex_index], w, 'REPLACE')
+
+    # Delete HD graft
+    deleteObjects(context, [hdgraft])
 
 #----------------------------------------------------------
 #   Select .dhdm and jcm files
@@ -878,7 +891,7 @@ classes = [
     DAZ_OT_LoadNormalMap,
     DAZ_OT_BakeMaps,
     DAZ_OT_LoadBakedMaps,
-    DAZ_OT_CopyGraftsToHD,
+    DAZ_OT_CopyGraftGroups,
 ]
 
 def register():

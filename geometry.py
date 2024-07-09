@@ -196,7 +196,6 @@ class GeoNode(Node, SimNode):
             self.arrangeObject(hdob, inst, context, center)
             self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
-            '''
             if GS.useMultires and hdob.data.polygons:
                 self.hdType = addMultires(context, ob, hdob, False)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
@@ -207,7 +206,6 @@ class GeoNode(Node, SimNode):
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
-            '''
         elif LS.useHDObjects:
             self.hdobject = inst.hdobject = ob
 
@@ -400,40 +398,30 @@ class GeoNode(Node, SimNode):
             shiftMesh(ob, inst.worldmat.inverted())
             if hdob and hdob != ob:
                 shiftMesh(hdob, inst.worldmat.inverted())
-        if hdob and not GS.keepBaseMesh:
-            if hdob == ob:
-                if hdob.name in LS.collection.objects:
-                    LS.collection.objects.unlink(hdob)
-                hdob.name = "%s_HD" % ob.name
-                LS.hdmeshes[LS.rigname].append(hdob)
-            else:
-                unlinkAll(ob, True)
-            if hdob.parent and hdob.parent.name in LS.collection.objects:
-                LS.collection.objects.unlink(hdob.parent)
 
 
     def finishHD(self, context, ob, hdob, inst):
         from .finger import getFingerPrint
+        if hdob == ob and ob.data.DazGraftGroup:
+            return
+        if LS.hdcollection is None:
+            from .main import makeRootCollection
+            LS.hdcollection = makeRootCollection(LS.collection.name + "_HD", context)
+        if hdob.name not in LS.hdcollection.objects:
+            LS.hdcollection.objects.link(hdob)
+        if hdob.parent and hdob.parent.name not in LS.hdcollection.objects:
+            LS.hdcollection.objects.link(hdob.parent)
+        if hdob == ob:
+            return
         if self.hdType in ['HIGHDEF','MULTIRES']:
             self.copyHDMaterials(ob, hdob, context, inst)
         hdob.parent = ob.parent
         hdob.parent_type = ob.parent_type
         hdob.parent_bone = ob.parent_bone
         setWorldMatrix(hdob, ob.matrix_world)
-        if LS.hdcollection is None:
-            from .main import makeRootCollection
-            LS.hdcollection = makeRootCollection(LS.collection.name + "_HD", context)
-        if hdob.name in LS.hdcollection.objects:
-            print("DUPHD", hdob.name)
-            return
-        LS.hdcollection.objects.link(hdob)
-        if hdob.parent and hdob.parent.name not in LS.hdcollection.objects:
-            LS.hdcollection.objects.link(hdob.parent)
         hdob.data.DazFingerPrint = getFingerPrint(hdob)
         if hdob.data.DazFingerPrint == ob.data.DazFingerPrint:
             hdob.DazMesh = ob.DazMesh
-        if hdob == ob:
-            return
         setWorldMatrix(hdob, ob.matrix_world)
         if hdob.name in inst.collection.objects:
             inst.collection.objects.unlink(hdob)

@@ -565,10 +565,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build HD Meshes",
         description = "Build HD meshes if included in .dbz file")
 
-    keepBaseMesh : BoolProperty(
-        name = "Keep Base Meshes",
-        description = "Keep base resolution meshes if HD mesh is built")
-
     useHDArmature : BoolProperty(
         name = "Add HD Armatures",
         description = "Add armature modifier and vertex groups to HD and multires meshes")
@@ -732,7 +728,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useTriaxImprove")
         box.prop(self, "useBulgeWeights")
         box.prop(self, "useHighDef")
-        box.prop(self, "keepBaseMesh")
         box.prop(self, "useMultires")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")

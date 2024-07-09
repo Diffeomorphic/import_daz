@@ -810,9 +810,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         objects = self.objects[rigname]
         hdmeshes = self.hdmeshes[rigname]
         hairs = self.hairs[rigname]
-        if hdmeshes and not GS.keepBaseMesh:
-            meshes = hdmeshes
-            hdmeshes = []
         if len(rigs) > 0:
             mainRig = rigs[0]
         else:
@@ -881,7 +878,25 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 else:
                     clothes.append(ob)
 
-        if self.useMergeMaterials and meshes and activateObject(context, meshes[0]):
+        def getBaseMesh(hdob, meshes):
+            hdname = hdob.name.rstrip("_HD")
+            basename = "%s Mesh" % hdname
+            for ob in meshes:
+                if ob.name in (hdname, basename):
+                    return ob
+
+        if GS.useHDArmature:
+            from .hdmorphs import copyGraftGroups
+            for hdob in hdmeshes:
+                baseob = getBaseMesh(hdob, meshes)
+                if baseob:
+                    if baseob.name in geografts.keys():
+                        grafts,hum = geografts[baseob.name]
+                        copyGraftGroups(context, hdob, baseob, grafts)
+
+        if (self.useMergeMaterials and
+            meshes and
+            activateObject(context, meshes[0])):
             # Merge material slots
             for ob in meshes[1:]:
                 selectSet(ob, True)

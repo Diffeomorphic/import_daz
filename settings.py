@@ -142,7 +142,6 @@ class GlobalSettings:
         self.useBulgeWeights = True
         self.keepTriaxWeights = False
         self.useTriaxApply = True
-        self.keepBaseMesh = False
         self.useMultires = True
         self.useMultiShapes = True
         self.useHDArmature = True

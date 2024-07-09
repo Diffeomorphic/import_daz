@@ -252,7 +252,7 @@ class DAZ_PT_AdvancedHDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "HDMesh"
 
     def draw(self, context):
-        self.layout.operator("daz.copy_grafts_to_hd")
+        self.layout.operator("daz.copy_grafts_groups")
         if bpy.app.version >= (2,90,0):
             self.layout.operator("daz.make_multires")
             self.layout.separator()
