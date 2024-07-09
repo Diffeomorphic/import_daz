@@ -190,8 +190,6 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         return false;
     var name = obj.getName();
     var clname = node.className();
-    if (clname == "DzGeometryShellNode")
-        return false;
     var lodctrl = shape.getLODControl();
     var lodvalue = lodctrl.getValue();
     var level = shape.getSubDDrawLevel();
@@ -203,6 +201,13 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     //obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
     var geom0 = shape.getGeometry();
+    if (clname == "DzGeometryShellNode") {
+        if (useHdUvs)
+            doUVs(fp, geom, "hd ");
+        doMaterialGroups(fp, geom, "hd ", "");
+        fp.writeLine(str2);
+	return true;
+    }
     var nv = geom.getNumVertices();
     var nv0 = geom0.getNumVertices();
     fp.writeLine("        \"lod\": " + lodvalue + ",");
@@ -214,7 +219,7 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         if (useHdUvs)
             doUVs(fp, geom, "hd ");
         doFaces(fp, geom, "hd ");
-        doMaterialGroups(fp, geom, "hd ");
+        doMaterialGroups(fp, geom, "hd ", ",");
     }
 
     // Turn off high resolution
@@ -236,7 +241,7 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     var nf = geom.getNumFacets();
     if (nf == 0)
         doPolylines(fp, geom, "");
-    doMaterialGroups(fp, geom, "");
+    doMaterialGroups(fp, geom, "", ",");
     doVertices(fp, geom, "");
     fp.writeLine(str1);
     fp.writeLine(str2);
@@ -270,7 +275,7 @@ function doProperties(fp, mat, pad)
     fp.writeLine(buf);
 }
 
-function doMaterialGroups(fp, geom, hd)
+function doMaterialGroups(fp, geom, hd, endchar)
 {
     var nm = geom.getNumMaterialGroups();
     fp.writeLine("        \"" + hd + "material groups\": [" );
@@ -282,7 +287,7 @@ function doMaterialGroups(fp, geom, hd)
         if (i == nm-1) c = "";
         fp.writeLine("            \"" + mat.name + "\"" + c);
     }
-    fp.writeLine("        ],");
+    fp.writeLine("        ]" + endchar);
 }
 
 function doVertices(fp, geom, hd)
