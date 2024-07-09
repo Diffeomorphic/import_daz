@@ -350,18 +350,13 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         if LS.hdUvMissing:
             self.msg += "HD objects missing exported UV layers. UVs transferred from base objects:\n"
             self.addItems(LS.hdUvMissing)
+
+        from .material import checkRenderSettings
+        self.msg += checkRenderSettings(context, False)
         if self.msg:
             clearErrorMessage()
             handleDazError(context, warning=True, dump=True)
             print(self.msg)
-            LS.warning = True
-            raise DazError(self.msg, warning=True)
-
-        from .material import checkRenderSettings
-        self.msg = checkRenderSettings(context, False)
-        if ES.easy:
-            self.msg = ""
-        if self.msg:
             LS.warning = True
             raise DazError(self.msg, warning=True)
         LS.reset()

@@ -504,6 +504,7 @@ class PbrTree(CyclesTree):
             weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)
             if weight > 0:
                 self.linkScalar(wttex, self.pbr, weight, PBR.TransmitWeight, texslot=texslot)
+                self.thickness = 0.0
                 self.setRefractivePrincipled()
             else:
                 self.column = col
@@ -522,7 +523,6 @@ class PbrTree(CyclesTree):
         if self.getValue(["Share Glossy Inputs"], False):
             tint = Tint(1.0)
         self.postPBR = True
-        self.thickness = 0.0
 
         if self.owner.isThinWall:
             # if thin walled is on then there's no volume

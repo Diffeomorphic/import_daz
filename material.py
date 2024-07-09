@@ -2000,7 +2000,7 @@ def checkRenderSettings(context, force):
         "Volume" : [("volume_bounces", ">", 4)],
     }
 
-    renderSettingsEevee = {
+    renderSettingsEeveeOld = {
         "Transparent" : [
                  ("use_ssr", "=", True),
                  ("use_ssr_refraction", "=", True),
@@ -2019,6 +2019,18 @@ def checkRenderSettings(context, force):
                 ],
     }
 
+    renderSettingsEeveeNew = {
+        "Transparent" : [
+            ("use_raytracing", "=", True),
+            ("ray_tracing_method", "=", 'SCREEN'),
+            ("ray_tracing_options", "&", [
+                ("resolution_scale", "=", "1"),
+                ("trace_max_roughness", ">", 0.2)
+            ]),
+        ]
+    }
+
+
     renderSettingsRender = {
         "Bounces" : [("hair_type", "=", 'STRIP')],
     }
@@ -2034,8 +2046,10 @@ def checkRenderSettings(context, force):
     msg = ""
     msg += checkSettings(scn.cycles, renderSettingsCycles, handle, "Cycles Settings", force)
     msg += checkSettings(scn.render, renderSettingsRender, handle, "Render Settings", force)
-    if bpy.app.version < (4,2,0):
-        msg += checkSettings(scn.eevee, renderSettingsEevee, handle, "Eevee Settings", force)
+    if bpy.app.version >= (4,2,0):
+        msg += checkSettings(scn.eevee, renderSettingsEeveeNew, handle, "Eevee Settings", force)
+    else:
+        msg += checkSettings(scn.eevee, renderSettingsEeveeOld, handle, "Eevee Settings", force)
         handle = GS.handleLightSettings
         if force:
             handle = "UPDATE"
@@ -2044,7 +2058,7 @@ def checkRenderSettings(context, force):
                 header = ('Light "%s" settings' % light.name)
                 msg += checkSettings(light.data, lightSettings, handle, header, force)
 
-    if msg and not ES.easy:
+    if msg:
         msg += "See http://diffeomorphic.blogspot.com/2020/04/render-settings.html for details."
         print(msg)
         return msg
@@ -2053,21 +2067,28 @@ def checkRenderSettings(context, force):
 
 
 def checkSettings(engine, settings, handle, header, force):
+    def updateSettings(engine, data, ok):
+        for attr,op,minval in data:
+            if not hasattr(engine, attr):
+                continue
+            val = getattr(engine, attr)
+            if op == "&":
+                ok = updateSettings(val, minval, ok)
+            else:
+                fix,minval = checkSetting(attr, op, val, minval, ok, header)
+                if fix:
+                    ok = False
+                    if handle == "UPDATE":
+                        setattr(engine, attr, minval)
+        return ok
+
     msg = ""
     if handle == "IGNORE":
         return msg
     ok = True
     for key,used in LS.usedFeatures.items():
         if (force or used) and key in settings.keys():
-            for attr,op,minval in settings[key]:
-                if not hasattr(engine, attr):
-                    continue
-                val = getattr(engine, attr)
-                fix,minval = checkSetting(attr, op, val, minval, ok, header)
-                if fix:
-                    ok = False
-                    if handle == "UPDATE":
-                        setattr(engine, attr, minval)
+            ok = updateSettings(engine, settings[key], ok)
     if not ok:
         if handle == "WARN":
             msg = ("%s are insufficient to render this scene correctly.\n" % header)
