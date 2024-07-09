@@ -196,20 +196,26 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
 
     if (start)
         startObject(fp, node, node.name, "", ",");
+        fp.writeLine("        \"class\": \"" + clname + "\",");
 
     // Write HD data
     //obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
     var geom0 = shape.getGeometry();
+    var nv = geom.getNumVertices();
+    var nv0 = geom0.getNumVertices();
+
     if (clname == "DzGeometryShellNode") {
+        fp.writeLine("        \"num verts\": " + nv0 + ",");
+        fp.writeLine("        \"num hd verts\": " + nv + ",");
         if (useHdUvs)
             doUVs(fp, geom, "hd ");
+        doFaces(fp, geom, "hd ");
         doMaterialGroups(fp, geom, "hd ", "");
         fp.writeLine(str2);
 	return true;
     }
-    var nv = geom.getNumVertices();
-    var nv0 = geom0.getNumVertices();
+
     fp.writeLine("        \"lod\": " + lodvalue + ",");
     if (nv != nv0)
     {

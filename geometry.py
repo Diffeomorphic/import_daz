@@ -77,6 +77,7 @@ class GeoNode(Node, SimNode):
         self.polylines = []
         self.polyline_materials = []
         self.highdef = None
+        self.hdshells = {}
         self.hdobject = None
         self.hdType = 'NONE'
         self.index = figure.count
@@ -195,16 +196,18 @@ class GeoNode(Node, SimNode):
             self.arrangeObject(hdob, inst, context, center)
             self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
+            '''
             if GS.useMultires and hdob.data.polygons:
                 self.hdType = addMultires(context, ob, hdob, False)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
-                if (len(ob.data.uv_layers) > 1 or
-                    len(hdob.data.uv_layers) == 0):
+                if len(ob.data.uv_layers) > len(hdob.data.uv_layers):
+                    print("COPY UVS", ob.name, hdob.name)
                     copyUvLayers(context, ob, hdob)
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
                 self.hdobject = inst.hdobject = None
                 deleteObjects(context, [hdob])
+            '''
         elif LS.useHDObjects:
             self.hdobject = inst.hdobject = ob
 
@@ -282,24 +285,30 @@ class GeoNode(Node, SimNode):
 
 
     def addHDUvs(self, ob, hdob):
-        uvs = self.highdef.uvs
-        if not uvs:
+        if not self.highdef.uvs:
             if hdob.name not in LS.hdUvMissing:
                 print("No HD UVs for %s" % hdob.name)
                 LS.hdUvMissing.append(hdob.name)
             return
-        uvfaces = self.stripNegatives([f[1] for f in self.highdef.faces])
+
+        def addUvLayer(uvname, uvs, faces, setActive):
+            uvfaces = self.stripNegatives([f[1] for f in faces])
+            uvlayer = makeNewUvLayer(hdob.data, uvname, setActive)
+            print("Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
+            m = 0
+            for f in uvfaces:
+                for vn in f:
+                    uvlayer.data[m].uv = uvs[vn]
+                    m += 1
+
         if len(ob.data.uv_layers) > 0:
             uvname = ob.data.uv_layers[0].name
         else:
             uvname = "UV Layer"
-        uvlayer = makeNewUvLayer(hdob.data, uvname, True)
-        print("Add HD UVs to %s" % hdob.name)
-        m = 0
-        for f in uvfaces:
-            for vn in f:
-                uvlayer.data[m].uv = uvs[vn]
-                m += 1
+        addUvLayer(uvname, self.highdef.uvs, self.highdef.faces, True)
+        for hdshell in self.hdshells.values():
+            uvname = LS.shellUvs.get(hdshell.name, hdshell.name)
+            addUvLayer(uvname, hdshell.uvs, hdshell.faces, False)
 
 
     def addHDMaterials(self, matgroups, mats, prefix):
@@ -376,8 +385,8 @@ class GeoNode(Node, SimNode):
                     hduvlayer = hdob.data.uv_layers.get(uvlayer.name)
                     if hduvlayer:
                         hduvlayer.active = hduvlayer.active_render = True
-                if GS.usePruneNodes:
-                    pruneUvMaps(hdob)
+                #if GS.usePruneNodes:
+                #    pruneUvMaps(hdob)
                 scaleEyeMoisture(hdob)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
@@ -1485,11 +1494,13 @@ class Shell:
         self.single = first
         self.match = match
         self.tree = None
+        if first:
+            LS.shellUvs[self.name] = uv
 
 
     def __repr__(self):
         dmat = self.material
-        return ("<Shell %s %s S:%s D:%s>" % (self.name, dmat.name, self.single, dmat.getDiffuse()))
+        return ("<Shell %s %s S:%s D:%s U:%s>" % (self.name, dmat.name, self.single, dmat.getDiffuse(), self.uv))
 
 
     def build(self, me):

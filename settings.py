@@ -595,6 +595,7 @@ class LocalSettings:
         self.textures = {}
         self.gammas = {}
         self.customShapes = []
+        self.shellUvs = {}
         self.singleUser = False
         self.scene = ""
         self.render = None

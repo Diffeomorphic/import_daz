@@ -48,6 +48,7 @@ class DBZInfo:
             self.name = "None"
         self.objects = {}
         self.hdobjects = {}
+        self.hdshells = {}
         self.rigs = {}
 
 
@@ -187,7 +188,9 @@ def loadDbzFile(filepath):
         raise DazError(msg)
 
     for figure in struct["figures"]:
-        if "num verts" in figure.keys() and figure["num verts"] == 0:
+        nverts = figure.get("num verts", 0)
+        nhdverts = figure.get("num hd verts", 0)
+        if nverts == 0 and nhdverts == 0:
             continue
         center = figure.get("center_point")
         if center:
@@ -218,7 +221,7 @@ def loadDbzFile(filepath):
             dbzobj = DBZObject(name, label, verts, uvs, edges, faces, polylines, matgroups, polymats, props, 0, center)
             dbz.addEntry("objects", name, label, dbzobj)
 
-        if GS.useHighDef and "hd vertices" in figure.keys() and "hd faces" in figure.keys():
+        if GS.useHighDef and nhdverts > 0:
             LS.useHDObjects = True
             verts = faces = polylines = polymats = uvs = matgroups = []
             lod = 0
@@ -239,7 +242,10 @@ def loadDbzFile(filepath):
                 elif key == "hd material groups":
                     matgroups = value
             dbzobj = DBZObject(name, label, verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center)
-            dbz.addEntry("hdobjects", name, label, dbzobj)
+            if nverts == 0:
+                dbz.addEntry("hdshells", nhdverts, label, dbzobj)
+            else:
+                dbz.addEntry("hdobjects", name, label, dbzobj)
 
         restdata = {}
         transforms = {}
@@ -356,12 +362,13 @@ def fitToFile(filepath, nodes):
             if nname:
                 base = dbz.getEntry("objects", nname, inst)
                 highdef = None
+                hdshells = {}
                 if dbz.hdobjects:
                     highdef = dbz.getEntry("hdobjects", nname, inst)
                     if highdef:
-                        print("Highdef", highdef)
-                #if highdef and not highdef.faces:
-                #    highdef = None
+                        hdshells = dbz.hdshells.get(len(highdef.verts), {})
+                        print("HD mesh", highdef)
+                        print("HD shells", list(hdshells.values()))
                 if base is None:
                     print("Cannot fit: %s" % inst)
                     unfitted.append(node)
@@ -375,6 +382,7 @@ def fitToFile(filepath, nodes):
                         geonode.verts = verts[0:len(geo.verts)]
                         geonode.center = base.center
                         geonode.highdef = highdef
+                        geonode.hdshells = hdshells
                 else:
                     if len(base.verts) != len(geo.verts):
                         ok = False
@@ -391,6 +399,7 @@ def fitToFile(filepath, nodes):
                         geonode.verts = base.verts
                         geonode.center = base.center
                         geonode.highdef = highdef
+                        geonode.hdshells = hdshells
             elif len(geo.verts) == 0:
                 if GS.verbosity >= 3:
                     print("Zero verts:", node.name)
