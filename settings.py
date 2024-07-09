@@ -81,6 +81,7 @@ class GlobalSettings:
 
         self.materialMethod = 'SELECT'
         self.sssMethod = 'BURLEY'
+        self.displacement_method = 'BOTH'
         self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False

@@ -223,10 +223,10 @@ class GeoNode(Node, SimNode):
                     if mat:
                         if hasattr(mat, "displacement_method"):
                             if mat.displacement_method == 'DISPLACEMENT':
-                                mat.displacement_method = 'BOTH'
+                                mat.displacement_method = GS.displacement_method
                         else:
                             if mat.cycles.displacement_method == 'DISPLACEMENT':
-                                mat.cycles.displacement_method = 'BOTH'
+                                mat.cycles.displacement_method = GS.displacement_method
         if self.isSubdivided():
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
             meshSubDLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
