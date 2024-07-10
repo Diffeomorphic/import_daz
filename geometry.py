@@ -329,7 +329,11 @@ class GeoNode(Node, SimNode):
             return ""
 
         if matgroups:
-            table = dict([(key.rsplit("-",1)[0], mat.name) for key,mat in LS.materials.items()])
+            table = {}
+            for key,mat in LS.materials.items():
+                mname = key.rsplit("-",1)[0]
+                if mname not in table.keys():
+                    table[mname] = mat.name
             for mg in matgroups:
                 pg = self.hdobject.data.DazHDMaterials.add()
                 pg.name = mg
@@ -463,45 +467,21 @@ class GeoNode(Node, SimNode):
         def getDataMaterial(mname):
             while True:
                 for mat in LS.materials.values():
-                    if baseName(mat.name):
+                    if baseName(mat.name) == mname:
                         return mat
                 words = mname.split("_",1)
                 if len(words) == 1:
                     return None
                 mname = words[1]
 
-        def fixHDMaterial(mat, uvmap):
-            keep = True
-            for node in mat.node_tree.nodes:
-                if node.type in ['UVMAP', 'ATTRIBUTE', 'NORMAL_MAP']:
-                    keep = False
-                    break
-            if keep:
-                return mat
-            else:
-                nmat = mat.copy()
-                for node in nmat.node_tree.nodes:
-                    if node.type in ['UVMAP', 'ATTRIBUTE', 'NORMAL_MAP']:
-                        node.uv_map = uvmap
-                return nmat
-
-        uvmap = None
-        if len(ob.data.uv_layers) > 1:
-            if hdob.data.uv_layers:
-                uvmap = hdob.data.uv_layers[0].name
-            elif hdob.name not in LS.hdUvMissing:
-                LS.hdUvMissing.append(hdob.name)
         matnames = dict([(pg.name,pg.text) for pg in hdob.data.DazHDMaterials])
         for mn,mname in enumerate(self.highdef.matgroups):
             mat = None
             if mname in matnames.keys():
                 mname = matnames[mname]
-            if mname in LS.materials.keys():
-                mat = LS.materials[mname]
-            else:
+            mat = LS.materials.get(mname)
+            if mat is None:
                 mat = getDataMaterial(mname)
-            if uvmap and mat:
-                mat = fixHDMaterial(mat, uvmap)
             hdob.data.materials.append(mat)
         inst.parentObject(context, self.hdobject)
 

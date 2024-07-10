@@ -27,6 +27,7 @@
 
 import os
 import sys
+from collections import OrderedDict
 import bpy
 from urllib.parse import unquote
 
@@ -587,7 +588,7 @@ class LocalSettings:
         self.polyLines = {}
         self.rigidFollow = {}
         self.deflectors = {}
-        self.materials = {}
+        self.materials = OrderedDict()
         self.images = {}
         self.imageMaps = {}
         self.protectedImages = {}
