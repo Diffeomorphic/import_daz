@@ -31,8 +31,8 @@ from .settings import GS, LS
 from .utils import *
 
 def clearErrorMessage():
-    LS.theMessage = ""
-    LS.theErrorLines = []
+    LS.message = ""
+    LS.errorLines = []
 
 
 class ErrorOperator(bpy.types.Operator):
@@ -43,30 +43,32 @@ class ErrorOperator(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
-        LS.theErrorLines = LS.theMessage.split('\n')
+        LS.errorLines = LS.message.split('\n')
         maxlen = len(self.bl_label)
-        for line in LS.theErrorLines:
+        for line in LS.errorLines:
             if len(line) > maxlen:
                 maxlen = len(line)
         width = 40+5*maxlen
-        height = 20+5*len(LS.theErrorLines)
+        height = 20+5*len(LS.errorLines)
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=width)
 
     def draw(self, context):
-        for line in LS.theErrorLines:
+        for line in LS.errorLines:
             self.layout.label(text=line)
 
 
 def invokeErrorMessage(value, warning=False):
     from .buildnumber import BUILD
     if warning:
-        #LS.theMessage = "WARNING:\n%s" % value
-        LS.theMessage = value
+        LS.message = value
     else:
-        LS.theMessage = "ERROR (4.2.0.%04d):\n%s" % (BUILD, value)
+        LS.message = "ERROR (4.2.0.%04d):\n%s" % (BUILD, value)
     if GS.silentMode:
-        print(LS.theMessage)
+        print(LS.message)
+    elif ES.easy:
+        ES.message += "%s\n" % LS.message
+        LS.message = ""
     else:
         bpy.ops.daz.error('INVOKE_DEFAULT')
 
@@ -77,7 +79,7 @@ class DazError(Exception):
         invokeErrorMessage(value, warning)
 
     def __str__(self):
-        return repr(LS.theMessage)
+        return repr(LS.message)
 
 
 def addItem(pgs):
@@ -120,7 +122,7 @@ def handleDazError(context, warning=False, dump=False):
     except:
         print("Could not write to %s" % filepath)
         return
-    fp.write(LS.theMessage)
+    fp.write(LS.message)
 
     try:
         if False and warning:
@@ -134,7 +136,7 @@ def handleDazError(context, warning=False, dump=False):
     finally:
         fp.write("\n")
         fp.close()
-        print(LS.theMessage)
+        print(LS.message)
         LS.reset()
 
 
@@ -162,21 +164,21 @@ def printTraceBack(context, fp):
     from .node import Node
 
     fp.write("\n\nFILES VISITED:\n")
-    for string in LS.theTrace:
+    for string in LS.trace:
         fp.write("  %s\n" % string)
 
     fp.write("\nASSETS:")
-    refs = list(LS.theAssets.keys())
+    refs = list(LS.assets.keys())
     refs.sort()
     for ref in refs:
-        asset = LS.theAssets[ref]
+        asset = LS.assets[ref]
         asset.errorWrite(ref, fp)
 
     fp.write("\n\nOTHER ASSETS:\n")
-    refs = list(LS.theOtherAssets.keys())
+    refs = list(LS.otherAssets.keys())
     refs.sort()
     for ref in refs:
-        fp.write('"%s"\n    %s\n\n' % (ref, LS.theOtherAssets[ref]))
+        fp.write('"%s"\n    %s\n\n' % (ref, LS.otherAssets[ref]))
 
     fp.write("\nDAZ ROOT PATHS:\n")
     for n, path in enumerate(GS.rootPaths):
@@ -227,7 +229,7 @@ class DazOperator(bpy.types.Operator):
         except DazError:
             handleDazError(context)
         except KeyboardInterrupt:
-            LS.theMessage = "Keyboard interrupt"
+            LS.message = "Keyboard interrupt"
             bpy.ops.daz.error('INVOKE_DEFAULT')
         finally:
             self.sequel(context)

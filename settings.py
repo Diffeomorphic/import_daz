@@ -537,14 +537,13 @@ class GlobalSettings:
 class LocalSettings:
     def __init__(self):
         self.button = None
-        self.theMessage = ""
-        self.theErrorLines = []
-        self.theFilePaths = []
-        self.theDazPaths = []
-        self.theAssets = {}
-        self.theOtherAssets = {}
-        self.theSources = {}
-        self.theTrace = []
+        self.message = ""
+        self.errorLines = []
+        self.filepaths = []
+        self.assets = {}
+        self.otherAssets = {}
+        self.sources = {}
+        self.trace = []
 
         self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None
@@ -751,11 +750,12 @@ class LocalSettings:
 class EasySettings:
     def __init__(self):
         self.easy = False
+        self.message = ""
 
 
 
 GS = GlobalSettings()
 LS = LocalSettings()
-LS.theTrace = []
+LS.trace = []
 ES = EasySettings()
 

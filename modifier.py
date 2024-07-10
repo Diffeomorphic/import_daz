@@ -436,7 +436,7 @@ class SkinBinding(Modifier):
             if asset != self.parent:
                 self.parent.source = asset
                 asset.sourcing = self.parent
-            LS.theAssets[url] = self.parent
+            LS.assets[url] = self.parent
 
 
     def build(self, context, inst):

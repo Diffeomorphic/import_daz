@@ -734,8 +734,8 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
     activateObject(context, ob)
     for mesh in meshes:
         selectSet(mesh, True)
-    theFilePaths = LS.theFilePaths
-    LS.theFilePaths = snames
+    theFilePaths = LS.filepaths
+    LS.filepaths = snames
     try:
         bpy.ops.daz.transfer_shapekeys(
             useDrivers=useDrivers,
@@ -744,7 +744,7 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
     except DazError:
         pass
     finally:
-        LS.theFilePaths = theFilePaths
+        LS.filepaths = theFilePaths
 
 #------------------------------------------------------------------
 #
@@ -838,8 +838,8 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
             return []
-        elif LS.theFilePaths:
-            for path in LS.theFilePaths:
+        elif LS.filepaths:
+            for path in LS.filepaths:
                 text = os.path.splitext(os.path.basename(path))[0]
                 namepaths.append((text, path, self.bodypart))
         else:
@@ -2076,14 +2076,14 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                 if activateObject(context, src):
                     for ob in getMeshChildren(self.rig):
                         ob.select_set(True)
-                    filepaths = LS.theFilePaths
-                    LS.theFilePaths = keynames
+                    filepaths = LS.filepaths
+                    LS.filepaths = keynames
                     try:
                         bpy.ops.daz.transfer_shapekeys(
                             useNonConforming = self.useNonConforming,
                             ignoreRigidity = self.ignoreRigidity)
                     finally:
-                        LS.theFilePaths = filepaths
+                        LS.filepaths = filepaths
             self.makePosable(context, self.rig)
         else:
             for ob in getSelectedMeshes(context):

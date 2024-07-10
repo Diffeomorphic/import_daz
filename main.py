@@ -739,10 +739,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     def storeState(self, context):
         ES.easy = True
+        ES.message = ""
 
 
     def restoreState(self, context):
         ES.easy = False
+        ES.message = ""
 
 
     def run(self, context):
@@ -753,15 +755,18 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             raise DazError("No valid files selected")
         if self.useFavoMorphs:
             self.favoPath = getExistingFilePath(self.favoPath, ".json")
-        theFilePaths = LS.theFilePaths
+        theFilePaths = LS.filepaths
         for filepath in filepaths:
-            LS.theFilePaths = [filepath]
+            LS.filepaths = [filepath]
             try:
                 self.easyImport(context)
             except DazError as msg:
-                raise DazError(msg)
+                ES.message = msg
             finally:
-                LS.theFilePaths = theFilePaths
+                LS.filepaths = theFilePaths
+        if ES.message:
+            ES.easy = False
+            raise DazError(ES.message[:-1], warning=True)
 
 
     def easyImport(self, context):

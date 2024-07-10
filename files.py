@@ -56,7 +56,7 @@ class FileAsset(Asset):
 
     def parse(self, struct):
         msg = ("+FILE %s" % self.fileref)
-        LS.theTrace.append(msg)
+        LS.trace.append(msg)
         if GS.verbosity >= 4:
             print(msg)
 
@@ -164,7 +164,7 @@ class FileAsset(Asset):
                 self.parseRender(scene)
 
         msg = ("-FILE %s" % self.fileref)
-        LS.theTrace.append(msg)
+        LS.trace.append(msg)
         if GS.verbosity >= 4:
             print(msg)
         return self

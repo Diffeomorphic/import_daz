@@ -42,7 +42,7 @@ def get_error_message():
     The error message from previous operator invokation if it raised
     an error, or the empty string if the operator exited without errors.
     """
-    return LS.theMessage
+    return LS.message
 
 
 def get_silent_mode():
@@ -145,7 +145,7 @@ def clear_selection():
 
     Clear the active file selection to be loaded by consecutive operators.
     """
-    LS.theFilePaths = []
+    LS.filepaths = []
     print("File paths cleared")
 
 
@@ -157,7 +157,7 @@ def get_selection():
     Returns:
     The active list of file paths (strings).
     """
-    return LS.theFilePaths
+    return LS.filepaths
 
 
 def set_selection(files):
@@ -169,7 +169,7 @@ def set_selection(files):
     ?files: A list of file paths (strings).
     """
     if isinstance(files, list):
-        LS.theFilePaths = [file.replace("\\", "/") for file in files]
+        LS.filepaths = [file.replace("\\", "/") for file in files]
     else:
         try:
             raise DazError("File paths must be a list of strings")
