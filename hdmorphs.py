@@ -27,6 +27,7 @@
 
 import os
 import bpy
+from collections import OrderedDict
 
 from .error import *
 from .utils import *
@@ -761,7 +762,7 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
 class DAZ_OT_CopyGraftGroups(DazOperator, IsMesh):
     bl_idname = "daz.copy_grafts_groups"
     bl_label = "Copy Grafts Groups"
-    bl_description = "Copy vertex groups from selected geografts to HD mesh"
+    bl_description = "Copy vertex groups from selected geografts to HD mesh.\nThe base mesh must also be selected"
     bl_options = {'UNDO'}
 
     def run(self, context):
@@ -773,24 +774,17 @@ class DAZ_OT_CopyGraftGroups(DazOperator, IsMesh):
                 grafts.append(ob)
             elif ob != hdob:
                 baseob = ob
-        if len(grafts) != 1:
-            raise DazError("Need exactly one graft")
+        if len(grafts) == 0:
+            raise DazError("No grafts selected")
         elif baseob is None:
             raise DazError("No base object selected")
         copyGraftGroups(context, hdob, baseob, grafts)
 
 
 def copyGraftGroups(context, hdob, baseob, grafts):
-    from .transfer import transferVertexGroups, transferUvLayers
-    graft = grafts[0]
-    print("HDOB", hdob)
-    print("BASE", baseob)
-    print("GGR", graft)
-
     # Create HD graft
     nbasemats = len(baseob.data.materials)
     nhdmats = len(hdob.data.materials)
-    print("NNN", nbasemats, nhdmats)
     if nhdmats == nbasemats:
         print("No extra HD materials")
         return
@@ -806,15 +800,44 @@ def copyGraftGroups(context, hdob, baseob, grafts):
     bpy.ops.mesh.duplicate()
     bpy.ops.mesh.separate(type='SELECTED')
     setMode('OBJECT')
+    for ob in getSelectedMeshes(context):
+        if ob != hdob:
+            hdgraft = ob
 
-    # Copy vertex groups and UV layers from graft to HD graft
-    hdgrafts = [ob for ob in getSelectedMeshes(context) if ob != hdob]
-    hdgraft = hdgrafts[0]
-    graft = grafts[0]
-    nmats = len(graft.data.materials)
-    activateObject(context, graft)
-    hdgraft.select_set(True)
-    transferVertexGroups(context, graft, [hdgraft], 1e-3)
+    # Copy vertex groups from grafts to HD graft
+    from .transfer import transferVertexGroups
+    if len(grafts) == 1:
+        transferVertexGroups(context, grafts[0], [hdgraft], 1e-3)
+    else:
+        weights = OrderedDict([(vgrp.name, []) for vgrp in hdgraft.vertex_groups])
+        for graft in grafts:
+            transferVertexGroups(context, graft, [hdgraft], 1e-3)
+            vgroups = {}
+            for vgrp in graft.vertex_groups:
+                hdvgrp = hdgraft.vertex_groups.get(vgrp.name)
+                if hdvgrp:
+                    vgroups[hdvgrp.index] = hdvgrp.name
+                    if hdvgrp.index not in weights.keys():
+                        weights[hdvgrp.name] = []
+            mnums = []
+            for mn,mat in enumerate(hdgraft.data.materials):
+                if mat and mat.name in graft.data.materials:
+                    mnums.append(mn)
+            hdverts = hdgraft.data.vertices
+            for f in hdgraft.data.polygons:
+                if f.material_index in mnums:
+                    for vn in f.vertices:
+                        v = hdverts[vn]
+                        for g in v.groups:
+                            vgname = vgroups[g.group]
+                            weights[vgname].append((vn, g.weight))
+
+        hdgraft.vertex_groups.clear()
+        for vgname,data in weights.items():
+            if data:
+                vgrp = hdgraft.vertex_groups.new(name=vgname)
+                for vn,w in data:
+                    vgrp.add([vn], w, 'REPLACE')
 
     # Copy vertex groups from HD graft to HD object
     print("Copy vertex groups to HD mesh")

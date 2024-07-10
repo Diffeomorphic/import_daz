@@ -1356,6 +1356,8 @@ class CyclesTree(Tree):
             return
         self.addColumn()
         transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
+        if transtex is None:
+            transtex = self.diffuseTex
         transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
         node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface")
