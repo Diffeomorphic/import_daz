@@ -1165,7 +1165,6 @@ class MaterialCombiner:
                     taken = True
                     if mat.DazMaterialType == 'SKIN':
                         mat2.DazMaterialType = 'SKIN'
-                        print("%s is skin material" % mat2.name)
                     break
             if not taken:
                 table[mat.name] = mat

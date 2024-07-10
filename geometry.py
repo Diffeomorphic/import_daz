@@ -318,11 +318,19 @@ class GeoNode(Node, SimNode):
 
 
     def addHDMaterials(self, matgroups, mats, prefix):
+        def hasMaterial(mname, mats):
+            for mat in mats:
+                if mat and mat.name == mname:
+                    return True
+
         def searchMaterial(mg):
             key = mg
             while key:
-                mname = table.get(key)
-                if mname is not None:
+                mnames = table.get(key, [])
+                for mname in mnames:
+                    if hasMaterial(mname, mats):
+                        return mname
+                for mname in mnames:
                     return mname
                 key = key.split("_", 1)[-1]
             print("Did not find HD material %s" % mg)
@@ -333,12 +341,14 @@ class GeoNode(Node, SimNode):
             for key,mat in LS.materials.items():
                 mname = key.rsplit("-",1)[0]
                 if mname not in table.keys():
-                    table[mname] = mat.name
+                    table[mname] = []
+                table[mname].append(mat.name)
             for mg in matgroups:
                 pg = self.hdobject.data.DazHDMaterials.add()
                 pg.name = mg
                 pg.text = searchMaterial(mg)
             return
+
         for mat in mats:
             pg = self.hdobject.data.DazHDMaterials.add()
             pg.name = prefix + mat.name.rsplit("-",1)[0]
