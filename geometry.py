@@ -290,6 +290,9 @@ class GeoNode(Node, SimNode):
             return
 
         def addUvLayer(uvname, uvs, faces, setActive):
+            if uvname in hdob.data.uv_layers:
+                print("HD UV layer %s already exists" % uvname)
+                return
             uvfaces = self.stripNegatives([f[1] for f in faces])
             uvlayer = makeNewUvLayer(hdob.data, uvname, setActive)
             print("Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
@@ -305,17 +308,32 @@ class GeoNode(Node, SimNode):
             uvname = "UV Layer"
         addUvLayer(uvname, self.highdef.uvs, self.highdef.faces, True)
         for hdshell in self.hdshells.values():
-            uvname = LS.shellUvs.get(hdshell.name, hdshell.name)
+            uvname = LS.shellUvs.get(hdshell.label)
+            if uvname is None:
+                uvname = LS.shellUvs.get(hdshell.name)
+            if uvname is None:
+                uvname = hdshell.label
+                print("Missing shell UV layer: %s" % uvname)
             addUvLayer(uvname, hdshell.uvs, hdshell.faces, False)
 
 
     def addHDMaterials(self, matgroups, mats, prefix):
+        def searchMaterial(mg):
+            key = mg
+            while key:
+                mname = table.get(key)
+                if mname is not None:
+                    return mname
+                key = key.split("_", 1)[-1]
+            print("Did not find HD material %s" % mg)
+            return ""
+
         if matgroups:
             table = dict([(key.rsplit("-",1)[0], mat.name) for key,mat in LS.materials.items()])
-            for mname in matgroups:
+            for mg in matgroups:
                 pg = self.hdobject.data.DazHDMaterials.add()
-                pg.name = mname
-                pg.text = table.get(mname)
+                pg.name = mg
+                pg.text = searchMaterial(mg)
             return
         for mat in mats:
             pg = self.hdobject.data.DazHDMaterials.add()
