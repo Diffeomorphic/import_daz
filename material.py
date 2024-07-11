@@ -348,22 +348,9 @@ class Material(Asset, Channels):
         LS.shaders[shadername].append(self.name)
 
 
-    MaterialKeys = {
-        "HeadLight_L_608_Nipples-3": "HeadLight_L_608_Nipples-3",
-        "HeadLight_R_608_Nipples-3": "HeadLight_R_608_Nipples-2",
-    }
-
     def build(self, context):
         from .geometry import Geometry, GeoNode
         self.setupBasics()
-        if self.ignore:
-            key = self.MaterialKeys.get(self.name, self.name)
-            for mname,mat in list(LS.materials.items()):
-                if key.endswith(mname):
-                    LS.materials[key] = mat
-                    return False
-            return False
-
         if self.dontBuild():
             return False
         if GS.verbosity >= 4:
