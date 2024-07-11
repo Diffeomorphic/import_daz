@@ -146,6 +146,7 @@ class GlobalSettings:
         self.useTriaxApply = True
         self.useMultires = True
         self.useMultiShapes = True
+        self.keepBaseMesh = True
         self.useHDArmature = True
         self.useAutoSmooth = True
         self.maxSubdivs = 4

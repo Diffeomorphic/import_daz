@@ -639,7 +639,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useDazFavorites : BoolProperty(
         name = "DAZ Favorites",
         description = "Import DAZ favorite morphs",
-        default = True)
+        default = False)
 
     useTransferClothes : BoolProperty(
         name = "Transfer To Clothes",
@@ -1029,6 +1029,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useFinalOptimization:
                 #bpy.ops.daz.optimize_drivers()
                 bpy.ops.daz.finalize_armature()
+
+        # Delete base meshes and rig
+        if not GS.keepBaseMesh and hdmeshes and meshes:
+            deletes = [ob for ob in meshes if ob not in hdmeshes]
+            mainMesh = None
+            meshes = []
+            if not GS.useHDArmature and mainRig:
+                deletes.append(mainRig)
+                mainRig = None
+            print("Deleting objects: %s" % [ob.name for ob in deletes])
+            deleteObjects(context, deletes)
 
         if mainMesh:
             mainMesh.update_tag()
