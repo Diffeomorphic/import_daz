@@ -997,6 +997,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 for grafts,hum in geografts.values():
                     for graft in grafts:
                         selectSet(graft, True)
+                        meshes.remove(graft)
+                geografts = {}
                 print("Merge geografts")
                 bpy.ops.daz.merge_geografts(
                     useMergeUvs = self.useMergeUvs,
@@ -1017,9 +1019,22 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
             print("Transfer to face meshes")
             self.transferShapes(context, mainMesh, lashes, True, "All")
-        if self.useTransferHD:
+        if self.useTransferHD and mainMesh:
             print("Transfer to HD meshes")
             self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
+            if False and not self.useMergeGeografts and mainMesh.name in geografts.keys():
+                grafts,hum = geografts[mainMesh.name]
+                for graft in grafts:
+                    hdgraft = None
+                    hdname = "%s_HD" % graft.name
+                    for hdob in hdmeshes:
+                        if hdob.name == hdname:
+                            hdgraft = hdob
+                            break
+                    if hdgraft:
+                        self.transferShapes(context, graft, [hdgraft], True, "All", useNonConforming=True)
+                    else:
+                        self.transferShapes(context, graft, hdmeshes[:1], True, "All", useNonConforming=True)
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
