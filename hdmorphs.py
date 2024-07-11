@@ -766,11 +766,12 @@ class DAZ_OT_CopyGraftGroups(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        from .geometry import isGeograft
         hdob = context.object
         baseob = None
         grafts = []
         for ob in getSelectedMeshes(context):
-            if ob.data.DazVertexCount:
+            if isGeograft(ob):
                 grafts.append(ob)
             elif ob != hdob:
                 baseob = ob

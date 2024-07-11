@@ -361,6 +361,7 @@ class Material(Asset, Channels):
             for mname,mat in list(LS.materials.items()):
                 if key.endswith(mname):
                     LS.materials[key] = mat
+                    return False
             return False
 
         if self.dontBuild():

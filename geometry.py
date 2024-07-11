@@ -191,7 +191,6 @@ class GeoNode(Node, SimNode):
             self.hdobject = inst.hdobject = hdob
             LS.hdmeshes[LS.rigname].append(hdob)
             hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
-            self.addHDMaterials(self.highdef.matgroups, ob.data.materials, "")
             center = Vector((0,0,0))
             self.arrangeObject(hdob, inst, context, center)
             self.addHDUvs(ob, hdob)
@@ -317,13 +316,15 @@ class GeoNode(Node, SimNode):
             addUvLayer(uvname, hdshell.uvs, hdshell.faces, False)
 
 
-    def addHDMaterials(self, matgroups, mats, prefix):
+    def addHDMaterials(self, matgroups, inst, mats, prefix):
+        from .figure import FigureInstance
+
         def hasMaterial(mname, mats):
             for mat in mats:
                 if mat and mat.name == mname:
                     return True
 
-        def searchMaterial(mg):
+        def searchMaterial(mg, mats):
             key = mg
             while key:
                 mnames = table.get(key, [])
@@ -336,7 +337,17 @@ class GeoNode(Node, SimNode):
             print("Did not find HD material %s" % mg)
             return ""
 
+        def addMeshMaterials(inst, mats):
+            for child in inst.children.values():
+                if isinstance(child, FigureInstance):
+                    for geo in child.geometries:
+                        ob = geo.rna
+                        if isGeograft(ob):
+                            mats += [mat for mat in ob.data.materials if mat]
+
         if matgroups:
+            mats = list(mats)
+            addMeshMaterials(inst, mats)
             table = {}
             for key,mat in LS.materials.items():
                 mname = key.rsplit("-",1)[0]
@@ -346,7 +357,7 @@ class GeoNode(Node, SimNode):
             for mg in matgroups:
                 pg = self.hdobject.data.DazHDMaterials.add()
                 pg.name = mg
-                pg.text = searchMaterial(mg)
+                pg.text = searchMaterial(mg, mats)
             return
 
         for mat in mats:
@@ -364,7 +375,7 @@ class GeoNode(Node, SimNode):
                     insts.append(inst)
                     par = inst.parent.geometries[0]
                     if par and par.hdobject and par.hdobject != par.rna:
-                        par.addHDMaterials(mats, "%s?%s" % (inst.name, prefix))
+                        par.addHDMaterials(matgroups, None, mats, "%s?%s" % (inst.name, prefix))
 
 
     def stripNegatives(self, faces):
@@ -446,6 +457,7 @@ class GeoNode(Node, SimNode):
         if hdob == ob:
             return
         if self.hdType in ['HIGHDEF','MULTIRES']:
+            self.addHDMaterials(self.highdef.matgroups, inst, ob.data.materials, "")
             self.copyHDMaterials(ob, hdob, context, inst)
         hdob.parent = ob.parent
         hdob.parent_type = ob.parent_type
@@ -1476,6 +1488,10 @@ def d2bList(verts):
         return [[s*v[0], -s*v[2], s*v[1]] for v in verts]
     else:
         return [[s*v[0], s*v[1], s*v[2]] for v in verts]
+
+
+def isGeograft(ob):
+    return (ob.data.DazVertexCount > 0)
 
 #-------------------------------------------------------------
 #   Shell
