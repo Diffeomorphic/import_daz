@@ -180,19 +180,23 @@ class GeoNode(Node, SimNode):
         inst.center = center
 
 
+    def buildHDObject(self, context, ob, inst, me):
+        hdname = getHDName(ob.name)
+        hdob = bpy.data.objects.new(hdname, me)
+        self.hdobject = inst.hdobject = hdob
+        LS.hdmeshes[LS.rigname].append(hdob)
+        hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
+        center = Vector((0,0,0))
+        self.arrangeObject(hdob, inst, context, center)
+        return hdob
+
+
     def subdivideObject(self, ob, inst, context):
         if not isinstance(self.data, Geometry):
             return
         if self.highdef:
-            from .finger import getFingerPrint
             me = self.buildHDMesh(ob)
-            hdname = "%s_HD" % truncString(ob.name, " Mesh")
-            hdob = bpy.data.objects.new(hdname, me)
-            self.hdobject = inst.hdobject = hdob
-            LS.hdmeshes[LS.rigname].append(hdob)
-            hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
-            center = Vector((0,0,0))
-            self.arrangeObject(hdob, inst, context, center)
+            hdob = self.buildHDObject(context, ob, inst, me)
             self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
             if GS.useMultires and hdob.data.polygons:
@@ -203,11 +207,9 @@ class GeoNode(Node, SimNode):
                     copyUvLayers(context, ob, hdob)
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
-                self.hdobject = inst.hdobject = None
-                deleteObjects(context, [hdob])
         elif LS.useHDObjects:
-            self.hdobject = inst.hdobject = ob
-
+            print("No HD object, use base mesh %s" %  ob.name)
+            hdob = self.buildHDObject(context, ob, inst, ob.data)
         if ob and self.data:
             self.data.buildRigidity(ob, self.conform_target)
             if self.hdType == 'MULTIRES':
@@ -226,6 +228,7 @@ class GeoNode(Node, SimNode):
                         else:
                             if mat.cycles.displacement_method == 'DISPLACEMENT':
                                 mat.cycles.displacement_method = GS.displacement_method
+
         if self.isSubdivided():
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
             meshSubDLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
@@ -1492,6 +1495,10 @@ def d2bList(verts):
 
 def isGeograft(ob):
     return (ob.data.DazVertexCount > 0)
+
+
+def getHDName(string):
+    return "%s_HD" % truncString(string, " Mesh")
 
 #-------------------------------------------------------------
 #   Shell

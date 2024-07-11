@@ -891,6 +891,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 if ob.name in (hdname, basename):
                     return ob
 
+        isSingleHD = False
         if GS.useHDArmature:
             from .hdmorphs import copyGraftGroups
             for hdob in hdmeshes:
@@ -898,7 +899,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 if baseob:
                     if baseob.name in geografts.keys():
                         grafts,hum = geografts[baseob.name]
-                        copyGraftGroups(context, hdob, baseob, grafts)
+                        isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
         if (self.useMergeMaterials and
             meshes and
@@ -983,6 +984,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print("Transfer to all meshes")
             self.transferShapes(context, mainMesh, meshes[1:], True, "All")
 
+        # Transfer to HD meshes
+        hdgrafts = []
+        if self.useTransferHD and mainMesh:
+            from .geometry import getHDName
+            print("Transfer to HD meshes", isSingleHD)
+            self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
+            if mainMesh.name in geografts.keys() and isSingleHD:
+                grafts,hum = geografts[mainMesh.name]
+                for graft in grafts:
+                    self.transferShapes(context, graft, hdmeshes[:1], True, "All", useNonConforming=True)
+
         # Merge geografts
         if geografts:
             if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
@@ -1019,22 +1031,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
             print("Transfer to face meshes")
             self.transferShapes(context, mainMesh, lashes, True, "All")
-        if self.useTransferHD and mainMesh:
-            print("Transfer to HD meshes")
-            self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
-            if False and not self.useMergeGeografts and mainMesh.name in geografts.keys():
-                grafts,hum = geografts[mainMesh.name]
-                for graft in grafts:
-                    hdgraft = None
-                    hdname = "%s_HD" % graft.name
-                    for hdob in hdmeshes:
-                        if hdob.name == hdname:
-                            hdgraft = hdob
-                            break
-                    if hdgraft:
-                        self.transferShapes(context, graft, [hdgraft], True, "All", useNonConforming=True)
-                    else:
-                        self.transferShapes(context, graft, hdmeshes[:1], True, "All", useNonConforming=True)
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
@@ -1077,7 +1073,16 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             return
         from .selector import classifyShapekeys
         from .morphing import getBulgeBone, transferShapesToMeshes
-        meshes = [mesh for mesh in meshes if not (mesh.parent and mesh.parent_type == 'BONE')]
+        meshes1 = []
+        for mesh in meshes:
+            if mesh.parent and mesh.parent_type == 'BONE':
+                pass
+            elif mesh.data != ob.data:
+                meshes1.append(mesh)
+        meshes = meshes1
+        if not meshes:
+            print("No valid meshes to transfer from %s" % ob.name)
+            return
         skeys = ob.data.shape_keys
         if skeys:
             bodyparts = classifyShapekeys(ob, skeys)

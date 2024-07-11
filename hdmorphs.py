@@ -788,7 +788,7 @@ def copyGraftGroups(context, hdob, baseob, grafts):
     nhdmats = len(hdob.data.materials)
     if nhdmats == nbasemats:
         print("No extra HD materials")
-        return
+        return False
     print("Base materials: %d" % nbasemats)
     activateObject(context, hdob)
     setMode('EDIT')
@@ -864,6 +864,7 @@ def copyGraftGroups(context, hdob, baseob, grafts):
 
     # Delete HD graft
     deleteObjects(context, [hdgraft])
+    return True
 
 #----------------------------------------------------------
 #   Select .dhdm and jcm files

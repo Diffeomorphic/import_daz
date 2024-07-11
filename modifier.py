@@ -449,7 +449,7 @@ class SkinBinding(Modifier):
         makeArmatureModifier(self.name, context, ob, rig)
         self.addVertexGroups(ob, geonode, rig)
         hdob = geonode.hdobject
-        if hdob and hdob != ob and GS.useHDArmature:
+        if hdob and hdob != ob and hdob.data != ob.data and GS.useHDArmature:
             hdob.parent = ob.parent
             makeArmatureModifier(self.name, context, hdob, rig)
             if geonode.hdType == 'MULTIRES':
