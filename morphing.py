@@ -728,7 +728,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         transferShapesToMeshes(context, ob, meshes, self.faceshapes.keys())
 
 
-def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True):
+def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOverwrite=True, useNonConforming=False):
     if not snames:
         return
     activateObject(context, ob)
@@ -740,6 +740,7 @@ def transferShapesToMeshes(context, ob, meshes, snames, useDrivers=True, useOver
         bpy.ops.daz.transfer_shapekeys(
             useDrivers=useDrivers,
             useOverwrite=useOverwrite,
+            useNonConforming=useNonConforming,
             needsTarget=False)
     except DazError:
         pass

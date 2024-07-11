@@ -639,7 +639,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     useDazFavorites : BoolProperty(
         name = "DAZ Favorites",
         description = "Import DAZ favorite morphs",
-        default = False)
+        default = True)
 
     useTransferClothes : BoolProperty(
         name = "Transfer To Clothes",
@@ -663,6 +663,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         name = "Transfer To Hair",
         description = "Transfer shapekeys from character to hair meshes",
         default = False)
+
+    useTransferHD : BoolProperty(
+        name = "Transfer To HD Meshes",
+        description = "Transfer shapekeys from character to HD meshes",
+        default = True)
 
     useMergeGeografts : BoolProperty(
         name = "Merge Geografts",
@@ -722,6 +727,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.layout.prop(self, "useTransferHair")
             self.layout.prop(self, "useTransferGeografts")
             self.layout.prop(self, "useTransferClothes")
+            self.layout.prop(self, "useTransferHD")
         self.layout.separator()
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
@@ -1011,6 +1017,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
             print("Transfer to face meshes")
             self.transferShapes(context, mainMesh, lashes, True, "All")
+        if self.useTransferHD:
+            print("Transfer to HD meshes")
+            self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
@@ -1037,7 +1046,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         return None
 
 
-    def transferShapes(self, context, ob, meshes, useDrivers, bodypart):
+    def transferShapes(self, context, ob, meshes, useDrivers, bodypart, useNonConforming=False):
         if not (ob and meshes):
             return
         from .selector import classifyShapekeys
@@ -1053,7 +1062,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             else:
                 snames = [sname for sname,bpart in bodyparts.items() if bpart != bodypart]
             snames = [sname for sname in snames if not getBulgeBone(sname)]
-            transferShapesToMeshes(context, ob, meshes, snames, useDrivers=useDrivers, useOverwrite=False)
+            transferShapesToMeshes(context, ob, meshes, snames, useDrivers=useDrivers, useOverwrite=False, useNonConforming=useNonConforming)
 
 #------------------------------------------------------------------
 #   Utilities
