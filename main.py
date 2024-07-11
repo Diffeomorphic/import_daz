@@ -990,7 +990,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             from .geometry import getHDName
             print("Transfer to HD meshes", isSingleHD)
             self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
-            if mainMesh.name in geografts.keys() and isSingleHD:
+            if False and mainMesh.name in geografts.keys() and isSingleHD:
                 grafts,hum = geografts[mainMesh.name]
                 for graft in grafts:
                     self.transferShapes(context, graft, hdmeshes[:1], True, "All", useNonConforming=True)

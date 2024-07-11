@@ -108,6 +108,16 @@ class GeoNode(Node, SimNode):
             return ob.parent
         return None
 
+    def isGraft(self):
+        return (self.data and self.data.vertex_count > 0)
+
+    def getGraftParent(self):
+        if self.isGraft() and self.figureInst:
+            figpar = self.figureInst.parent
+            if figpar and figpar.geometries:
+                return figpar.geometries[0]
+
+
     def preprocess(self, context, inst):
         if isinstance(self.data, Geometry):
             self.data.preprocess(context, inst)
@@ -208,8 +218,17 @@ class GeoNode(Node, SimNode):
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
         elif LS.useHDObjects:
-            print("No HD object, use base mesh %s" %  ob.name)
-            hdob = self.buildHDObject(context, ob, inst, ob.data)
+            from .finger import getFingerPrint, FingerPrintsHD
+            parent = self.getGraftParent()
+            fing = None
+            if parent.hdobject:
+                fing = getFingerPrint(parent.hdobject)
+            if fing and fing not in FingerPrintsHD.keys():
+                print("Ignore HD graft %s" % ob.name)
+                hdob = None
+            else:
+                print("No HD object, use base mesh %s" %  ob.name)
+                hdob = self.buildHDObject(context, ob, inst, ob.data)
         if ob and self.data:
             self.data.buildRigidity(ob, self.conform_target)
             if self.hdType == 'MULTIRES':
