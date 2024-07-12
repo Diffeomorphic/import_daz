@@ -468,15 +468,15 @@ class GeoNode(Node, SimNode):
 
     def finishHD(self, context, ob, hdob, inst):
         from .finger import getFingerPrint
-        if hdob == ob and ob.data.DazGraftGroup:
+        if hdob == ob and isGeograft(ob):
             return
         if LS.hdcollection is None:
             from .main import makeRootCollection
             LS.hdcollection = makeRootCollection(HDName(LS.collection.name), context)
         if hdob.name not in LS.hdcollection.objects:
             LS.hdcollection.objects.link(hdob)
-        if hdob.parent and hdob.parent.name not in LS.hdcollection.objects:
-            LS.hdcollection.objects.link(hdob.parent)
+        if ob.parent and ob.parent.name not in LS.hdcollection.objects:
+            LS.hdcollection.objects.link(ob.parent)
         if hdob == ob:
             return
         if self.hdType in ['HIGHDEF','MULTIRES']:
