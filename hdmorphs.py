@@ -843,7 +843,6 @@ def copyGraftGroups(context, hdob, baseob, grafts):
     # Copy vertex groups from HD graft to HD object
     print("Copy vertex groups to HD mesh")
     offset = len(hdob.data.loops) - len(hdgraft.data.loops)
-    print("OFFS", offset, len(hdob.data.loops))
     for vgrp in hdob.vertex_groups:
         for loop in hdob.data.loops[offset:]:
             vgrp.remove([loop.vertex_index])

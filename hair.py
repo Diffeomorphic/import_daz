@@ -2321,6 +2321,13 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             raise DazError("Hair start location cannot exceed head end location")
         if self.useSeparateRig or self.controlMethod == 'BBONE':
             rig = self.addSeparateRig(context, hairname, rig)
+            print("RR", rig.name)
+            wmat = ob.matrix_world.copy()
+            ob.parent = rig
+            setWorldMatrix(ob, wmat)
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                mod.object = rig
             activateObject(context, ob)
         self.startGizmos(context, rig)
 
