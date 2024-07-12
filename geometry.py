@@ -217,14 +217,16 @@ class GeoNode(Node, SimNode):
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
         elif LS.useHDObjects:
-            from .finger import getFingerPrint, FingerPrintsHD
-            parent = self.getGraftParent()
-            fing = None
-            if parent.hdobject:
-                fing = getFingerPrint(parent.hdobject)
-            if fing and fing not in FingerPrintsHD.keys():
+            def ignoreHDGraft():
+                from .finger import getFingerPrint, FingerPrintsHD
+                parent = self.getGraftParent()
+                if parent and parent.hdobject:
+                    fing = getFingerPrint(parent.hdobject)
+                    if fing and fing not in FingerPrintsHD.keys():
+                        return True
+
+            if ignoreHDGraft():
                 print("Ignore HD graft %s" % ob.name)
-                hdob = None
             else:
                 print("No HD object, use base mesh %s" %  ob.name)
                 hdob = self.buildHDObject(context, ob, inst, ob.data)

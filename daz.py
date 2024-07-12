@@ -434,9 +434,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Method for subsurface scattering")
 
     displacement_method : EnumProperty(
-        items = [('BUMP', "Bump", "Bump"),
+        items = [('BUMP', "Bump Only", "Bump"),
                  ('DISPLACEMENT', "Displacement Only", "Details are not visible if the subdivision is not enough, renders smooth"),
-                 ('BOTH', "Displacement Only Bump", "Fake details with a bump map if the subdivision is not enough, renders flat.")],
+                 ('BOTH', "Displacement and Bump", "Fake details with a bump map if the subdivision is not enough, renders flat.")],
         name = "Displacement Method",
         description = "Displacement method")
 
