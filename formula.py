@@ -205,7 +205,7 @@ class Formula:
                 if expr.prop is None:
                     expr.prop = ExprTarget(key, type, comp)
                 expr.prop.mults.append(key)
-            elif comp >= 0:
+            elif comp >= 0 and rig:
                 bname = getMappedBone(key, rig, mesh)
                 if bname in rig.pose.bones.keys():
                     if expr.bone is None:
