@@ -543,6 +543,9 @@ def truncString(string, ending):
         return string[:-len(ending)]
     return string
 
+def HDName(string):
+    return "%s_HD" % truncString(baseName(string), " Mesh")
+
 def isDrvBone(string):
     return string.endswith("(drv)")
 

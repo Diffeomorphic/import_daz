@@ -191,8 +191,7 @@ class GeoNode(Node, SimNode):
 
 
     def buildHDObject(self, context, ob, inst, me):
-        hdname = getHDName(ob.name)
-        hdob = bpy.data.objects.new(hdname, me)
+        hdob = bpy.data.objects.new(HDName(ob.name), me)
         self.hdobject = inst.hdobject = hdob
         LS.hdmeshes[LS.rigname].append(hdob)
         hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
@@ -291,7 +290,7 @@ class GeoNode(Node, SimNode):
         faces = self.stripNegatives([f[0] for f in self.highdef.faces])
         mnums = [f[4] for f in self.highdef.faces]
         nverts = len(verts)
-        me = bpy.data.meshes.new(ob.data.name + "_HD")
+        me = bpy.data.meshes.new(HDName(ob.data.name))
         print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
         me.from_pydata(verts, edges, faces)
         print("HD mesh %s built" % me.name)
@@ -372,10 +371,10 @@ class GeoNode(Node, SimNode):
             addMeshMaterials(inst, mats)
             table = {}
             for mat in mats:
-                mname = mat.name.rsplit("-",1)[0]
+                mname = stripName(mat.name)
                 if mname not in table.keys():
                     table[mname] = []
-                table[mname].append(mat.name)
+                table[mname].append(baseName(mat.name))
             for mg in matgroups:
                 pg = self.hdobject.data.DazHDMaterials.add()
                 pg.name = mg
@@ -384,7 +383,7 @@ class GeoNode(Node, SimNode):
 
         for mat in mats:
             pg = self.hdobject.data.DazHDMaterials.add()
-            pg.name = prefix + mat.name.rsplit("-",1)[0]
+            pg.name = prefix + stripName(mat.name)
             pg.text = mat.name
         if self.data and self.data.vertex_pairs:
             # Geograft
@@ -471,7 +470,7 @@ class GeoNode(Node, SimNode):
             return
         if LS.hdcollection is None:
             from .main import makeRootCollection
-            LS.hdcollection = makeRootCollection(LS.collection.name + "_HD", context)
+            LS.hdcollection = makeRootCollection(HDName(LS.collection.name), context)
         if hdob.name not in LS.hdcollection.objects:
             LS.hdcollection.objects.link(hdob)
         if hdob.parent and hdob.parent.name not in LS.hdcollection.objects:
@@ -569,7 +568,7 @@ def scaleEyeMoisture(ob):
     if GS.useScaleEyeMoisture and ob.DazMesh:
         mdict = {}
         for mn,mat in enumerate(ob.data.materials):
-            if mat.name.lower().startswith(("eyemoisture", "eyereflection")):
+            if mat and mat.name.lower().startswith(("eyemoisture", "eyereflection")):
                 for f in ob.data.polygons:
                     if f.material_index == mn:
                         for vn in f.vertices:
@@ -1514,10 +1513,6 @@ def d2bList(verts):
 
 def isGeograft(ob):
     return (ob.data.DazVertexCount > 0)
-
-
-def getHDName(string):
-    return "%s_HD" % truncString(string, " Mesh")
 
 #-------------------------------------------------------------
 #   Shell

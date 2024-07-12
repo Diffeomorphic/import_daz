@@ -1672,14 +1672,14 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         mcoll = hdcoll = None
         for coll in bpy.data.collections:
             if rig in coll.objects.values():
-                if coll.name.endswith("HD"):
+                if baseName(coll.name).endswith("_HD"):
                     if hdcoll is None:
-                        hdcoll = bpy.data.collections.new(name= rig.name + " Meshes_HD")
+                        hdcoll = bpy.data.collections.new(name= baseName(rig.name) + " Meshes_HD")
                         hdadds = [hdcoll]
                     coll.children.link(hdcoll)
                 else:
                     if mcoll is None:
-                        mcoll = bpy.data.collections.new(name= rig.name + " Meshes")
+                        mcoll = bpy.data.collections.new(name= baseName(rig.name) + " Meshes")
                         adds = [mcoll]
                     coll.children.link(mcoll)
                 removes.append(coll)

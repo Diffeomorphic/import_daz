@@ -885,7 +885,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     clothes.append(ob)
 
         def getBaseMesh(hdob, meshes):
-            hdname = hdob.name.rstrip("_HD")
+            hdname = truncString(baseName(hdob.name), "_HD")
             basename = "%s Mesh" % hdname
             for ob in meshes:
                 if ob.name in (hdname, basename):
@@ -987,7 +987,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Transfer to HD meshes
         hdgrafts = []
         if self.useTransferHD and mainMesh:
-            from .geometry import getHDName
             print("Transfer to HD meshes", isSingleHD)
             self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
             if False and mainMesh.name in geografts.keys() and isSingleHD:

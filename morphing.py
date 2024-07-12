@@ -1736,7 +1736,8 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         rig.DazMorphUrls.clear()
         self.loadPreset(rig, rig, struct, context)
         for ob in getMeshChildren(rig):
-            self.loadPreset(ob, rig, struct, context)
+            if not baseName(ob.name).endswith("_HD"):
+                self.loadPreset(ob, rig, struct, context)
         updateScrollbars(context)
 
 
@@ -2061,6 +2062,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         if self.rig:
             loaded = []
             for ob in getMeshChildren(self.rig):
+                if baseName(ob.name).endswith("_HD"):
+                    continue
                 skeys = ob.data.shape_keys
                 if skeys:
                     oldkeynames = list(skeys.key_blocks.keys())
@@ -2088,7 +2091,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.makePosable(context, self.rig)
         else:
             for ob in getSelectedMeshes(context):
-                self.addFavoMorphs(ob, context)
+                if not baseName(ob.name).endswith("_HD"):
+                    self.addFavoMorphs(ob, context)
         updateScrollbars(context)
         if self.missing:
             msg = "Favorites not found:\n  %s" % self.missing
