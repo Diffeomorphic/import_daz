@@ -985,13 +985,21 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.transferShapes(context, mainMesh, meshes[1:], True, "All")
 
         # Transfer to HD meshes
-        hdgrafts = []
         if self.useTransferHD and mainMesh:
             print("Transfer to HD meshes", isSingleHD)
             self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
 
         # Merge geografts
+        hdgrafts = []
         if geografts:
+            if not isSingleHD and mainMesh.name in geografts.keys():
+                hdgraftNames = []
+                for grafts,hum in geografts.values():
+                    hdgraftNames += [HDName(graft.name) for graft in grafts]
+                for hdob in list(hdmeshes):
+                    if baseName(hdob.name) in hdgraftNames:
+                        hdgrafts.append(hdob)
+
             if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
                 print("Transfer to geografts")
                 for grafts,hum in geografts.values():
@@ -1000,21 +1008,34 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 for grafts,hum in geografts.values():
                     if hum != mainMesh:
                         self.transferShapes(context, hum, grafts, (not self.useMergeGeografts), "All")
-            if self.useMergeGeografts and activateObject(context, mainMesh):
-                for grafts,hum in geografts.values():
+
+            if self.useMergeGeografts:
+                def mergeGeografts(context, hum, grafts, meshes):
+                    if not activateObject(context, hum):
+                        return
                     for graft in grafts:
                         selectSet(graft, True)
                         meshes.remove(graft)
+                    print("Merge geografts")
+                    bpy.ops.daz.merge_geografts(
+                        useMergeUvs = self.useMergeUvs,
+                        keepOriginal = self.keepOriginal)
+                    if GS.viewportColors == 'GUESS':
+                        from .guess import guessMaterialColor
+                        LS.skinColor = self.skinColor
+                        for mat in mainMesh.data.materials:
+                            guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
+
+                grafts = []
+                for grafts0,hum in geografts.values():
+                    grafts += grafts0
+                mergeGeografts(context, mainMesh, grafts, meshes)
                 geografts = {}
-                print("Merge geografts")
-                bpy.ops.daz.merge_geografts(
-                    useMergeUvs = self.useMergeUvs,
-                    keepOriginal = self.keepOriginal)
-                if GS.viewportColors == 'GUESS':
-                    from .guess import guessMaterialColor
-                    LS.skinColor = self.skinColor
-                    for mat in mainMesh.data.materials:
-                        guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
+                if hdgrafts:
+                    hdmain = hdmeshes[0]
+                    mergeGeografts(context, hdmain, hdgrafts, hdmeshes)
+                    hdgrafts = []
+
 
         # Transfer shapekeys to clothes and lashes
         if self.useTransferClothes and self.fitMeshes != 'MORPHED':
