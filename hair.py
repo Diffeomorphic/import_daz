@@ -324,6 +324,13 @@ class HairOptions:
         description = "Type of hair material node tree",
         default = 'HAIR_BSDF')
 
+    # Proxy mesh
+
+    useProxyMesh : BoolProperty(
+        name = "Add Proxy Mesh",
+        description = "Add a proxy mesh for posing the hair",
+        default = True)
+
 #-------------------------------------------------------------
 #   Hair system class
 #-------------------------------------------------------------
@@ -518,7 +525,9 @@ class HairSystem:
         deflector = findDeflector(hum)
 
 
-    def buildMesh(self, context, strands, hair, hum, mnames):
+    def buildMesh(self, context, strands, hair, hum, mnames,
+            useHead = False,
+            useUVs = False):
         nverts = 0
         verts = []
         edges = []
@@ -533,13 +542,19 @@ class HairSystem:
         me.DazHairType = 'LINE'
         ob = self.buildObject(me, hair, hum, mnames)
 
-        vgrp = ob.vertex_groups.new(name="Distance")
+        vgrp = ob.vertex_groups.new(name="Root Distance")
         m = 0
         for strand in strands:
             nverts = len(strand)
             for n in range(nverts):
                 vgrp.add([m+n], n/(nverts-1), 'REPLACE')
             m += nverts
+
+        if useHead:
+            vgrp = ob.vertex_groups.new(name = "head")
+            for vn in range(len(ob.data.vertices)):
+                vgrp.add([vn], 1.0, 'REPLACE')
+
         return ob
 
 
@@ -822,6 +837,9 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator
             box.prop(self, "childRadius")
             box.prop(self, "hairRadius")
             box.prop(self, "strandShape")
+            box = col.box()
+            box.label(text = "Proxy")
+            box.prop(self, "useProxyMesh")
 
 
     def invoke(self, context, event):
@@ -972,23 +990,39 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator
 
 
     def buildOutput(self, context, hsys, strands, hair, hum, mnames, coll):
+        proxy = None
         if self.output == 'MESH':
             ob = hsys.buildMesh(context, strands, hair, hum, mnames)
         elif self.output == 'CURVES':
             ob = hsys.buildCurves(context, strands, hair, hum, mnames)
-        elif self.output in ['HAIR_CURVES', 'PARTICLES']:
+        elif self.output == 'HAIR_CURVES':
             ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
-        coll.objects.link(ob)
+            if self.useProxyMesh:
+                proxy = hsys.buildMesh(context, strands, hair, hum, mnames, useHead=True, useUVs=True)
+                proxy.parent = hair.parent
+                proxy.hide_render = True
+                mod = proxy.modifiers.new("Armature", 'ARMATURE')
+                mod.object = hair.parent
+        elif self.output == 'PARTICLES':
+            ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
+
+        def linkHair(ob, hum, coll):
+            coll.objects.link(ob)
+            rig = hum.parent
+            if rig and rig.type == 'ARMATURE':
+                head = rig.data.bones.get("head")
+                if head:
+                    wmat = ob.matrix_world.copy()
+                    ob.parent = rig
+                    ob.parent_type = 'BONE'
+                    ob.parent_bone = head.name
+                    setWorldMatrix(ob, wmat)
+
         ob.name = "Hair %s" % baseName(hair.name)
-        rig = hum.parent
-        if rig and rig.type == 'ARMATURE':
-            head = rig.data.bones.get("head")
-            if head:
-                wmat = ob.matrix_world.copy()
-                ob.parent = rig
-                ob.parent_type = 'BONE'
-                ob.parent_bone = head.name
-                setWorldMatrix(ob, wmat)
+        linkHair(ob, hum, coll)
+        if proxy:
+            proxy.name = "Proxy %s" % baseName(hair.name)
+            linkHair(proxy, hum, coll)
 
         if self.output == 'PARTICLES':
             activateObject(context, ob)
@@ -1010,6 +1044,13 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator
                     mod = ob.modifiers.new(name, 'NODES')
                     mod.node_group = group
                     return mod
+
+            if proxy:
+                from .geonodes import FollowProxyGroup
+                from .tree import addNodeGroup
+                mod = ob.modifiers.new("Follow %s" % proxy.name, 'NODES')
+                mod.node_group = addNodeGroup(FollowProxyGroup, "DAZ Follow Proxy")
+                mod["Socket_1"] = proxy
 
             mod = addMod(ob, "Set Hair Curve Profile")
             if mod:
@@ -2150,8 +2191,8 @@ class DAZ_OT_MeshAddPinning(PinOperator, IsMesh):
                 for n,vn in enumerate(f.vertices):
                     self.addWeight(vgrp, vn, 1-uvs[m+n].uv[1])
                 m += len(f.vertices)
-        elif "Distance" in ob.vertex_groups.keys():
-            distgrp = ob.vertex_groups["Distance"]
+        elif "Root Distance" in ob.vertex_groups.keys():
+            distgrp = ob.vertex_groups["Root Distance"]
             idx = distgrp.index
             for v in ob.data.vertices:
                 for g in v.groups:
@@ -2636,13 +2677,13 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         bones,blocs,xaxis = data
         blocs = blocs[None,:,:]
         for hair,data in sector:
+            heights = self.getHeights(hair)
             hair.vertex_groups.clear()
             hgrp = hair.vertex_groups.new(name=self.headName)
             vgrps = [hgrp]
             for bname,r0,r1 in bones:
                 vgrp = hair.vertex_groups.new(name=bname)
                 vgrps.append(vgrp)
-            heights = self.getUvHeights(hair)
             if self.weightingMethod == 'REAL':
                 weights = self.getWeightsFromLocs(hair, blocs, heights)
             elif self.weightingMethod == 'UV':
@@ -2653,20 +2694,31 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                         vgrp.add([vn], w, 'REPLACE')
 
 
-    def getUvHeights(self, hair):
-        uvlayer = hair.data.uv_layers[0]
-        heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
-            for f in hair.data.polygons
-            for i,vn in enumerate(f.vertices)
-            ])
-        ylist = list(heights.values())
-        ymin = min(ylist)
-        ymax = max(ylist)
-        k = 1/(ymax-ymin)
-        hlist = list()
-        hlist.sort()
-        heights = dict([(vn,k*(y-ymin)) for vn,y in heights.items()])
-        return heights
+    def getHeights(self, hair):
+        if hair.data.uv_layers:
+            uvlayer = hair.data.uv_layers[0]
+            heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
+                for f in hair.data.polygons
+                for i,vn in enumerate(f.vertices)
+                ])
+            ylist = list(heights.values())
+            ymin = min(ylist)
+            ymax = max(ylist)
+            k = 1/(ymax-ymin)
+            hlist = list()
+            hlist.sort()
+            heights = dict([(vn,k*(y-ymin)) for vn,y in heights.items()])
+            return heights
+        elif "Root Distance" in hair.vertex_groups.keys():
+            vgrp = hair.vertex_groups["Root Distance"]
+            heights = {}
+            for v in hair.data.vertices:
+                for g in v.groups:
+                    if g.group == vgrp.index:
+                        heights[v.index] = 1-g.weight
+            return heights
+        else:
+            raise DazError("No height information found")
 
 
     def getWeightsFromLocs(self, hair, blocs, heights):
