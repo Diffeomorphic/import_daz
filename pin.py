@@ -28,19 +28,13 @@
 import bpy
 from .error import *
 from .utils import *
-from .dforce import Cloth, Collision
 
 # ---------------------------------------------------------------------
 #   Pinning
 # ---------------------------------------------------------------------
 
-class Pinner(Cloth, Collision):
+class Pinner:
     fixedPin = True
-
-    useClothSimulation : BoolProperty(
-        name = "Cloth Simulation",
-        description = "Add a cloth simulation",
-        default = True)
 
     def __init__(self):
         self.nodeGroup = None
@@ -79,14 +73,6 @@ class Pinner(Cloth, Collision):
 
     def draw(self, context):
         self.drawMapping(context, self.layout)
-        self.layout.separator()
-        self.drawSimulation(context, self.layout)
-
-    def drawSimulation(self, context, layout):
-        layout.prop(self, "useClothSimulation")
-        if self.useClothSimulation:
-            Cloth.drawCloth(self, context, layout)
-            Collision.drawCollision(self, context, layout)
 
     def drawMapping(self, context, layout):
         layout.template_curve_mapping(self.getCurveMapping(), "mapping")
@@ -116,6 +102,10 @@ class Pinner(Cloth, Collision):
         else:
             raise DazError("Cannot determine root distance")
 
+        mod = getModifier(ob, 'CLOTH')
+        if mod and vgrp:
+            mod.settings.vertex_group_mass = vgrp.name
+
 # ---------------------------------------------------------------------
 #   Add pinning to hair mesh
 # ---------------------------------------------------------------------
@@ -129,8 +119,6 @@ class DAZ_OT_MeshAddPinning(Pinner, DazPropsOperator, IsMesh):
     def run(self, context):
         ob = context.object
         self.addHairPinning(ob)
-        if self.useClothSimulation:
-            self.addCloth(ob)
 
 # ---------------------------------------------------------------------
 #   Modify vertex group

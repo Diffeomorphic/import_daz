@@ -42,6 +42,7 @@ from .fix import GizmoUser
 from .layers import *
 from .transfer import MatchOperator
 from .pin import Pinner
+from .dforce import Cloth, Collision
 
 #-------------------------------------------------------------
 #   Utilities
@@ -527,7 +528,7 @@ class HairSystem:
 #   HairBuilder class
 #-------------------------------------------------------------
 
-class HairBuilder(Pinner):
+class HairBuilder(Pinner, Cloth, Collision):
     proxyType : EnumProperty(
         items = [('NONE', "None", "No proxy mesh"),
                  ('LINE', "Linear", "Linear proxy mesh"),
@@ -550,13 +551,21 @@ class HairBuilder(Pinner):
         description = "Add a pinning group to the hair proxy",
         default = True)
 
+    useClothSimulation : BoolProperty(
+        name = "Cloth Simulation",
+        description = "Add a cloth simulation",
+        default = True)
+
     def drawProxy(self, context, layout):
         layout.prop(self, "proxyType")
         layout.prop(self, "proxyWidth")
         layout.prop(self, "usePinGroup")
         if self.usePinGroup:
             #self.drawMapping(context, layout)
-            self.drawSimulation(context, layout)
+            layout.prop(self, "useClothSimulation")
+            if self.useClothSimulation:
+                Cloth.drawCloth(self, context, layout)
+                Collision.drawCollision(self, context, layout)
 
 
     def buildMesh(self, context, hname, strands, hair, hum, mnames, useHead = False):
