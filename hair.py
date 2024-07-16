@@ -215,7 +215,7 @@ class HairOptions:
         name = "Render Children",
         description = "Number of hair children displayed in renders",
         min = 0,
-        default = 0)
+        default = 10)
 
     strandShape : EnumProperty(
         items = [('STANDARD', "Standard", "Standard strand shape"),
@@ -277,7 +277,7 @@ class HairOptions:
         name = "Viewport Factor",
         description = "The fraction of children displayed in the viewport",
         min = 0, max = 1,
-        default = 1.0)
+        default = 0.1)
 
     childRadius : FloatProperty(
         name = "Child radius (mm)",
@@ -325,11 +325,6 @@ class HairOptions:
         name = "Hair Material Method",
         description = "Type of hair material node tree",
         default = 'HAIR_BSDF')
-
-    useHairProxy : BoolProperty(
-        name = "Hair Proxy",
-        description = "Add a hair proxy mesh for posing or simulation",
-        default = True)
 
 #-------------------------------------------------------------
 #   Hair system class
@@ -529,44 +524,6 @@ class HairSystem:
 #-------------------------------------------------------------
 
 class HairBuilder(Pinner, Cloth, Collision):
-    proxyType : EnumProperty(
-        items = [('NONE', "None", "No proxy mesh"),
-                 ('LINE', "Linear", "Linear proxy mesh"),
-                 ('SHEET', "Sheet", "Sheet proxy mesh"),
-                 ('TUBE', "Tube", "Tubular proxy mesh")],
-        name = "Proxy Mesh",
-        description = "Add a proxy mesh for posing the hair",
-        default = 'SHEET')
-
-    proxyWidth : FloatProperty(
-        name = "Proxy width (mm)",
-        description = "Width of the proxy strands",
-        min = 0.001,
-        max = 10,
-        precision = 3,
-        default = 1.0)
-
-    usePinGroup : BoolProperty(
-        name = "Pinning Group",
-        description = "Add a pinning group to the hair proxy",
-        default = True)
-
-    useClothSimulation : BoolProperty(
-        name = "Cloth Simulation",
-        description = "Add a cloth simulation",
-        default = True)
-
-    def drawProxy(self, context, layout):
-        layout.prop(self, "proxyType")
-        layout.prop(self, "proxyWidth")
-        layout.prop(self, "usePinGroup")
-        if self.usePinGroup:
-            #self.drawMapping(context, layout)
-            layout.prop(self, "useClothSimulation")
-            if self.useClothSimulation:
-                Cloth.drawCloth(self, context, layout)
-                Collision.drawCollision(self, context, layout)
-
 
     def buildMesh(self, context, hname, strands, hair, hum, mnames, useHead = False):
         def getVectors(coords):
@@ -576,8 +533,6 @@ class HairBuilder(Pinner, Cloth, Collision):
             norm = tang.cross(Vector((0,0,1)))
             return tang.normalized(), norm.normalized()
 
-        if self.proxyType == 'NONE':
-            self.proxyType = 'LINE'
         nverts = 0
         verts = []
         edges = []
@@ -586,13 +541,15 @@ class HairBuilder(Pinner, Cloth, Collision):
             verts += strand
         nverts = len(verts)
         dr = self.proxyWidth * 0.1 * GS.scale
-        if self.proxyType == 'LINE':
+        if self.hairPoseSim == 'NONE':
+            return
+        elif self.hairPoseSim == 'POSING' and self.proxyType == 'LINE':
             m = 0
             for strand in strands:
                 nsverts = len(strand)
                 edges += [(m+n, m+n+1) for n in range(nsverts-1)]
                 m += nsverts
-        elif self.proxyType == 'SHEET':
+        elif self.proxyType in ['SHEET', 'LINE']:
             for strand in strands:
                 if not strand:
                     continue
@@ -647,7 +604,7 @@ class HairBuilder(Pinner, Cloth, Collision):
 
         me = bpy.data.meshes.new(hname)
         me.from_pydata(verts, edges, faces)
-        me.DazHairType = self.proxyType
+        #me.DazHairType = self.proxyType
         ob = self.buildObject(hname, me, hair, hum, mnames)
 
         def addWeights(vgrp, strands, m):
@@ -659,15 +616,17 @@ class HairBuilder(Pinner, Cloth, Collision):
 
         vgrp = ob.vertex_groups.new(name="Root Distance")
         addWeights(vgrp, strands, 0)
-        if self.proxyType in ['SHEET', 'TUBE']:
+        if self.hairPoseSim == 'SIMULATION':
             addWeights(vgrp, strands, nverts)
-        if self.proxyType == 'TUBE':
-            addWeights(vgrp, strands, 2*nverts)
+            if self.proxyType == 'TUBE':
+                addWeights(vgrp, strands, 2*nverts)
 
         if useHead:
             vgrp = ob.vertex_groups.new(name = "head")
             for vn in range(len(ob.data.vertices)):
                 vgrp.add([vn], 1.0, 'REPLACE')
+            mod = ob.modifiers.new("Armature", 'ARMATURE')
+            mod.object = hair.parent
 
         return ob
 
@@ -677,12 +636,10 @@ class HairBuilder(Pinner, Cloth, Collision):
         if mat is None:
             mat = bpy.data.materials.new("Hair Proxy")
             mat.diffuse_color[0:3] = (1,0,0)
-        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name], useHead=True)
-        proxy.parent = hair.parent
+        useHead = (self.hairPoseSim == 'POSING')
+        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name], useHead=useHead)
         proxy.hide_render = True
-        mod = proxy.modifiers.new("Armature", 'ARMATURE')
-        mod.object = hair.parent
-        if self.usePinGroup:
+        if self.hairPoseSim == 'SIMULATION' and self.usePinGroup:
             self.addHairPinning(proxy)
             if self.useClothSimulation:
                 self.addCloth(proxy)
@@ -892,10 +849,45 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
     bl_description = "Make particle hair from mesh hair"
     bl_options = {'UNDO'}
 
-    dialogWidth = 600
+    dialogWidth = 1000
+
+    hairPoseSim : EnumProperty(
+        items = [('NONE', "None", "Neither posing nor simulation"),
+                 ('POSING', "Posing", "Posing"),
+                 ('SIMULATION', "Simulation", "Simulation")],
+        name = "Hair Posing/Simulation",
+        description = "Add a hair proxy mesh for posing or simulation",
+        default = 'SIMULATION')
+
+    proxyType : EnumProperty(
+        items = [('LINE', "Line", "Line proxy mesh"),
+                 ('SHEET', "Sheet", "Sheet proxy mesh"),
+                 ('TUBE', "Tube", "Tubular proxy mesh")],
+        name = "Proxy Mesh",
+        description = "Proxy mesh type",
+        default = 'SHEET')
+
+    proxyWidth : FloatProperty(
+        name = "Proxy width (mm)",
+        description = "Width of the proxy strands",
+        min = 0.001,
+        max = 10,
+        precision = 3,
+        default = 1.0)
+
+    usePinGroup : BoolProperty(
+        name = "Pinning Group",
+        description = "Add a pinning group to the hair proxy",
+        default = True)
+
+    useClothSimulation : BoolProperty(
+        name = "Cloth Simulation",
+        description = "Add a cloth simulation",
+        default = True)
 
     def draw(self, context):
-        row = self.layout.row()
+        split = self.layout.split(factor=0.7)
+        row = split.row()
         col = row.column()
         box = col.box()
         box.label(text="Create")
@@ -946,10 +938,10 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             else:
                 box.prop(self, "color")
 
+        col = row.column()
+        box = col.box()
+        box.label(text="Settings")
         if self.output == 'PARTICLES':
-            col = row.column()
-            box = col.box()
-            box.label(text="Settings")
             box.prop(self, "nViewChildren")
             box.prop(self, "nRenderChildren")
             box.prop(self, "hairLength")
@@ -960,18 +952,30 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             box.prop(self, "nRenderStep")
             box.prop(self, "strandShape")
         elif self.output ==  'HAIR_CURVES':
-            col = row.column()
-            box = col.box()
-            box.label(text="Settings")
             box.prop(self, "nRenderChildren")
             box.prop(self, "viewFactor")
             box.prop(self, "childRadius")
             box.prop(self, "hairRadius")
             box.prop(self, "strandShape")
-            box = col.box()
-            box.prop(self, "useHairProxy")
-            if self.useHairProxy:
-                self.drawProxy(context, box)
+
+        col = split.column()
+        box = col.box()
+        box.label(text="Posing/Simulation")
+        if self.output ==  'HAIR_CURVES':
+            box.prop(self, "hairPoseSim")
+            if self.hairPoseSim == 'POSING':
+                box.prop(self, "proxyType")
+            elif self.hairPoseSim == 'SIMULATION':
+                box.prop(self, "proxyType")
+                box.prop(self, "proxyWidth")
+                box.prop(self, "usePinGroup")
+                if self.usePinGroup:
+                    self.drawMapping(context, box)
+                    box.separator()
+                box.prop(self, "useClothSimulation")
+                if self.useClothSimulation:
+                    self.drawCloth(context, box)
+                    self.drawCollision(context, box)
 
 
     def invoke(self, context, event):
@@ -1130,28 +1134,29 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             ob = self.buildCurves(context, hname, strands, hair, hum, mnames)
         elif self.output == 'HAIR_CURVES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
-            if self.proxyType != 'NONE':
+            if self.hairPoseSim != 'NONE':
                 proxy = self.buildHairProxy(context, hname, strands, hair, hum)
         elif self.output == 'PARTICLES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
 
-        def linkHair(ob, hum, coll):
+        def linkHair(ob, hum, coll, useBone):
             coll.objects.link(ob)
             rig = hum.parent
             if rig and rig.type == 'ARMATURE':
                 head = rig.data.bones.get("head")
-                if head:
-                    wmat = ob.matrix_world.copy()
-                    ob.parent = rig
+                wmat = ob.matrix_world.copy()
+                ob.parent = rig
+                if head and useBone:
                     ob.parent_type = 'BONE'
                     ob.parent_bone = head.name
-                    setWorldMatrix(ob, wmat)
+                setWorldMatrix(ob, wmat)
 
+        useBone = (self.hairPoseSim != 'POSING')
         ob.name = "Hair %s" % baseName(hair.name)
-        linkHair(ob, hum, coll)
+        linkHair(ob, hum, coll, useBone)
         if proxy:
             proxy.name = "Proxy %s" % baseName(hair.name)
-            linkHair(proxy, hum, coll)
+            linkHair(proxy, hum, coll, useBone)
 
         if self.output == 'PARTICLES':
             activateObject(context, ob)
