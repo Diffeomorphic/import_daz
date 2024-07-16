@@ -324,16 +324,10 @@ class HairOptions:
         description = "Type of hair material node tree",
         default = 'HAIR_BSDF')
 
-    # Proxy mesh
-
-    proxyType : EnumProperty(
-        items = [('NONE', "None", "No proxy mesh"),
-                 ('LINE', "Linear", "Linear proxy mesh"),
-                 ('SHEET', "Sheet", "Sheet proxy mesh"),
-                 ('TUBE', "Tube", "Tubular proxy mesh")],
-        name = "Proxy Mesh",
-        description = "Add a proxy mesh for posing the hair",
-        default = 'SHEET')
+    useHairProxy : BoolProperty(
+        name = "Hair Proxy",
+        description = "Add a hair proxy mesh for posing or simulation",
+        default = True)
 
 #-------------------------------------------------------------
 #   Hair system class
@@ -528,8 +522,35 @@ class HairSystem:
         cset.mass = 0.05
         deflector = findDeflector(hum)
 
+#-------------------------------------------------------------
+#   HairBuilder class
+#-------------------------------------------------------------
 
-    def buildMesh(self, context, strands, hair, hum, mnames, proxyType, useHead = False):
+class HairBuilder:
+    proxyType : EnumProperty(
+        items = [('NONE', "None", "No proxy mesh"),
+                 ('LINE', "Linear", "Linear proxy mesh"),
+                 ('SHEET', "Sheet", "Sheet proxy mesh"),
+                 ('TUBE', "Tube", "Tubular proxy mesh")],
+        name = "Proxy Mesh",
+        description = "Add a proxy mesh for posing the hair",
+        default = 'SHEET')
+
+    proxyWidth : FloatProperty(
+        name = "Proxy width (mm)",
+        description = "Width of the proxy strands",
+        min = 0.001,
+        max = 10,
+        precision = 3,
+        default = 1.0)
+
+
+    def drawProxy(self, context, layout):
+        layout.prop(self, "proxyType")
+        layout.prop(self, "proxyWidth")
+
+
+    def buildMesh(self, context, hname, strands, hair, hum, mnames, useHead = False):
         def getVectors(coords):
             if len(coords) == 1:
                 return Vector((1,0,0)), Vector((0,1,0))
@@ -537,8 +558,8 @@ class HairSystem:
             norm = tang.cross(Vector((0,0,1)))
             return tang.normalized(), norm.normalized()
 
-        if proxyType == 'NONE':
-            proxyType = 'LINE'
+        if self.proxyType == 'NONE':
+            self.proxyType = 'LINE'
         nverts = 0
         verts = []
         edges = []
@@ -546,14 +567,14 @@ class HairSystem:
         for strand in strands:
             verts += strand
         nverts = len(verts)
-        dr = GS.scale
-        if proxyType == 'LINE':
+        dr = self.proxyWidth * 0.1 * GS.scale
+        if self.proxyType == 'LINE':
             m = 0
             for strand in strands:
                 nsverts = len(strand)
                 edges += [(m+n, m+n+1) for n in range(nsverts-1)]
                 m += nsverts
-        elif proxyType == 'SHEET':
+        elif self.proxyType == 'SHEET':
             for strand in strands:
                 if not strand:
                     continue
@@ -572,7 +593,7 @@ class HairSystem:
                     faces.append((m1, m1+1, m2+1, m2))
                     m1 += 1
                     m2 += 1
-        elif proxyType == 'TUBE':
+        elif self.proxyType == 'TUBE':
             for strand in strands:
                 if not strand:
                     continue
@@ -606,10 +627,10 @@ class HairSystem:
                     m3 += 1
                 faces.append((m1, m3, m2))
 
-        me = bpy.data.meshes.new(self.name)
+        me = bpy.data.meshes.new(hname)
         me.from_pydata(verts, edges, faces)
-        me.DazHairType = proxyType
-        ob = self.buildObject(me, hair, hum, mnames)
+        me.DazHairType = self.proxyType
+        ob = self.buildObject(hname, me, hair, hum, mnames)
 
         def addWeights(vgrp, strands, m):
             for strand in strands:
@@ -620,9 +641,9 @@ class HairSystem:
 
         vgrp = ob.vertex_groups.new(name="Root Distance")
         addWeights(vgrp, strands, 0)
-        if proxyType in ['SHEET', 'TUBE']:
+        if self.proxyType in ['SHEET', 'TUBE']:
             addWeights(vgrp, strands, nverts)
-        if proxyType == 'TUBE':
+        if self.proxyType == 'TUBE':
             addWeights(vgrp, strands, 2*nverts)
 
         if useHead:
@@ -633,8 +654,16 @@ class HairSystem:
         return ob
 
 
-    def buildCurves(self, context, strands, hair, hum, mnames):
-        cu = bpy.data.curves.new(self.name, 'CURVE')
+    def getProxyMaterial(self):
+        mat = bpy.data.materials.get("Hair Proxy")
+        if mat is None:
+            mat = bpy.data.materials.new("Hair Proxy")
+            mat.diffuse_color[0:3] = (1,0,0)
+        return mat.name
+
+
+    def buildCurves(self, context, hname, strands, hair, hum, mnames):
+        cu = bpy.data.curves.new(hname, 'CURVE')
         cu.dimensions = '3D'
         cu.twist_mode = 'TANGENT'
         for strand in strands:
@@ -643,10 +672,10 @@ class HairSystem:
             spline.points.add(npoints-1)
             for co,point in zip(strand, spline.points):
                 point.co[0:3] = co
-        return self.buildObject(cu, hair, hum, mnames)
+        return self.buildObject(hname, cu, hair, hum, mnames)
 
 
-    def buildHairCurves(self, context, strands, hair, hum, mnames):
+    def buildHairCurves(self, context, hname, strands, hair, hum, mnames):
         from .geometry import getActiveUvLayer
         curves = bpy.data.hair_curves.new(self.name)
         sizes = [len(strand) for strand in strands]
@@ -658,11 +687,11 @@ class HairSystem:
         uvlayer = getActiveUvLayer(hum)
         if uvlayer:
             curves.surface_uv_map = uvlayer.name
-        return self.buildObject(curves, hair, hum, mnames)
+        return self.buildObject(hname, curves, hair, hum, mnames)
 
 
-    def buildObject(self, data, hair, hum, mnames):
-        ob = bpy.data.objects.new(self.name, data)
+    def buildObject(self, hname, data, hair, hum, mnames):
+        ob = bpy.data.objects.new(hname, data)
         wmat = ob.matrix_world.copy()
         ob.parent = hum
         ob.parent_bone = hair.parent_bone
@@ -830,7 +859,7 @@ class CombineHair:
 #   Make Hair
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator):
+class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuilder, Separator):
     bl_idname = "daz.make_hair"
     bl_label = "Make Hair"
     bl_description = "Make particle hair from mesh hair"
@@ -913,8 +942,9 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator
             box.prop(self, "hairRadius")
             box.prop(self, "strandShape")
             box = col.box()
-            box.label(text = "Proxy")
-            box.prop(self, "proxyType")
+            box.prop(self, "useHairProxy")
+            if self.useHairProxy:
+                self.drawProxy(context, box)
 
 
     def invoke(self, context, event):
@@ -1053,33 +1083,34 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, Separator
             print("No hair system found")
         elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES', 'PARTICLES']:
             for hsys in hsystems.values():
-                self.buildOutput(context, hsys, hsys.strands, hair, hum, [hsys.material], coll)
+                self.buildOutput(context, hsys.name, hsys.strands, hair, hum, [hsys.material], coll)
         elif self.output == 'POLYLINES':
             subcoll = bpy.data.collections.new(name = "Mesh Hairs")
             coll.children.link(subcoll)
             for hsys in hsystems.values():
                 for strand in hsys.strands:
-                    ob = hsys.buildMesh(context, [strand], hair, hum, [hsys.material], self.proxyType)
+                    ob = self.buildMesh(context, hsys.name, [strand], hair, hum, [hsys.material])
                     subcoll.objects.link(ob)
         print("Done")
 
 
-    def buildOutput(self, context, hsys, strands, hair, hum, mnames, coll):
+    def buildOutput(self, context, hname, strands, hair, hum, mnames, coll):
         proxy = None
         if self.output == 'MESH':
-            ob = hsys.buildMesh(context, strands, hair, hum, mnames, self.proxyType)
+            ob = self.buildMesh(context, hname, strands, hair, hum, mnames)
         elif self.output == 'CURVES':
-            ob = hsys.buildCurves(context, strands, hair, hum, mnames)
+            ob = self.buildCurves(context, hname, strands, hair, hum, mnames)
         elif self.output == 'HAIR_CURVES':
-            ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
+            ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
             if self.proxyType != 'NONE':
-                proxy = hsys.buildMesh(context, strands, hair, hum, mnames, self.proxyType, useHead=True)
+                mname = self.getProxyMaterial()
+                proxy = self.buildMesh(context, hname, strands, hair, hum, [mname], useHead=True)
                 proxy.parent = hair.parent
                 proxy.hide_render = True
                 mod = proxy.modifiers.new("Armature", 'ARMATURE')
                 mod.object = hair.parent
         elif self.output == 'PARTICLES':
-            ob = hsys.buildHairCurves(context, strands, hair, hum, mnames)
+            ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
 
         def linkHair(ob, hum, coll):
             coll.objects.link(ob)
