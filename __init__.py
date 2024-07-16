@@ -99,7 +99,8 @@ def importModules():
                     "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
                     "guess", "convert", "files", "merge", "finger",
                     "matedit", "scale", "tables", "proxy", "hide",
-                    "mhx_data", "mhx", "rigify_data", "rigify", "transfer", "hair", "dforce", "main",
+                    "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
+                    "dforce", "pin", "hair", "main",
                     "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
                     "runtime.morph_armature"]
         if bpy.app.version >= (3,1,0):
@@ -124,7 +125,7 @@ regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
             "matedit", "scale", "proxy", "rigify", "merge", "hide",
-            "mhx", "hair", "transfer", "dforce", "gaze",
+            "mhx", "pin", "hair", "transfer", "dforce", "gaze",
             "hdmorphs", "ctrl_rig", "moho", "udim", "scan"]
 
 isRegistered = False

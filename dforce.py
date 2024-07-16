@@ -129,8 +129,8 @@ class Collision:
         min = 1.0, max = 20.0,
         default = 1.0)
 
-    def draw(self, context):
-        self.layout.prop(self, "collDist")
+    def drawCollision(self, context, layout):
+        layout.prop(self, "collDist")
 
     def addCollision(self, ob):
         subsurf = hideModifier(ob, 'SUBSURF')
@@ -148,6 +148,9 @@ class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
     bl_description = "Add collision modifiers to selected meshes"
     bl_options = {'UNDO'}
 
+    def draw(self, context):
+        self.drawCollision(context, self.layout)
+
     def run(self, context):
         for ob in getSelectedMeshes(context):
             self.addCollision(ob)
@@ -157,6 +160,8 @@ class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
 #-------------------------------------------------------------
 
 class Cloth:
+    fixedPin = False
+
     simPreset : EnumProperty(
         items = [('cotton.json', "Cotton", "Cotton"),
                  ('denim.json', "Denim", "Denim"),
@@ -176,9 +181,15 @@ class Cloth:
         description = "Simulation Quality",
         default = 16)
 
+    useCollision : BoolProperty(
+        name = "Collision",
+        description = "Use collision",
+        default = True)
+
     collQuality : IntProperty(
         name = "Collision Quality",
         description = "Collision Quality",
+        min = 1,
         default = 4)
 
     gsmFactor : FloatProperty(
@@ -187,12 +198,14 @@ class Cloth:
         min = 0.0,
         default = 0.5)
 
-    def draw(self, context):
-        self.layout.prop(self, "simPreset")
-        self.layout.prop(self, "pinGroup")
-        self.layout.prop(self, "simQuality")
-        self.layout.prop(self, "collQuality")
-        self.layout.prop(self, "gsmFactor")
+    def drawCloth(self, context, layout):
+        layout.prop(self, "simPreset")
+        if not self.fixedPin:
+            layout.prop(self, "pinGroup")
+        layout.prop(self, "simQuality")
+        layout.prop(self, "useCollision")
+        layout.prop(self, "collQuality")
+        layout.prop(self, "gsmFactor")
 
 
     def addCloth(self, ob):
@@ -209,10 +222,11 @@ class Cloth:
         cset.quality = self.simQuality
         # Collision settings
         colset = cloth.collision_settings
+        colset.use_collision = self.useCollision
         colset.distance_min = 0.1*scale*self.collDist
         colset.self_distance_min = 0.1*scale*self.collDist
         colset.collision_quality = self.collQuality
-        colset.use_self_collision = True
+        colset.use_self_collision = False
         # Pinning
         cset.vertex_group_mass = self.pinGroup
         cset.pin_stiffness = 1.0
@@ -243,8 +257,8 @@ class DAZ_OT_MakeCloth(DazPropsOperator, Cloth, Collision, IsMesh):
     bl_options = {'UNDO'}
 
     def draw(self, context):
-        Cloth.draw(self, context)
-        Collision.draw(self, context)
+        self.drawCloth(context, self.layout)
+        self.drawCollision(context, self.layout)
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
@@ -371,8 +385,8 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
     bl_options = {'UNDO'}
 
     def draw(self, context):
-        Cloth.draw(self, context)
-        Collision.draw(self, context)
+        self.drawCloth(context, self.layout)
+        self.drawCollision(context, self.layout)
 
     def run(self, context):
         for ob in getVisibleMeshes(context):

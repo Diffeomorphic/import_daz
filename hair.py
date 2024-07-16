@@ -41,6 +41,7 @@ from .guess import ColorProp
 from .fix import GizmoUser
 from .layers import *
 from .transfer import MatchOperator
+from .pin import Pinner
 
 #-------------------------------------------------------------
 #   Utilities
@@ -526,7 +527,7 @@ class HairSystem:
 #   HairBuilder class
 #-------------------------------------------------------------
 
-class HairBuilder:
+class HairBuilder(Pinner):
     proxyType : EnumProperty(
         items = [('NONE', "None", "No proxy mesh"),
                  ('LINE', "Linear", "Linear proxy mesh"),
@@ -544,10 +545,18 @@ class HairBuilder:
         precision = 3,
         default = 1.0)
 
+    usePinGroup : BoolProperty(
+        name = "Pinning Group",
+        description = "Add a pinning group to the hair proxy",
+        default = True)
 
     def drawProxy(self, context, layout):
         layout.prop(self, "proxyType")
         layout.prop(self, "proxyWidth")
+        layout.prop(self, "usePinGroup")
+        if self.usePinGroup:
+            #self.drawMapping(context, layout)
+            self.drawSimulation(context, layout)
 
 
     def buildMesh(self, context, hname, strands, hair, hum, mnames, useHead = False):
@@ -654,12 +663,21 @@ class HairBuilder:
         return ob
 
 
-    def getProxyMaterial(self):
+    def buildHairProxy(self, context, hname, strands, hair, hum):
         mat = bpy.data.materials.get("Hair Proxy")
         if mat is None:
             mat = bpy.data.materials.new("Hair Proxy")
             mat.diffuse_color[0:3] = (1,0,0)
-        return mat.name
+        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name], useHead=True)
+        proxy.parent = hair.parent
+        proxy.hide_render = True
+        mod = proxy.modifiers.new("Armature", 'ARMATURE')
+        mod.object = hair.parent
+        if self.usePinGroup:
+            self.addHairPinning(proxy)
+            if self.useClothSimulation:
+                self.addCloth(proxy)
+        return proxy
 
 
     def buildCurves(self, context, hname, strands, hair, hum, mnames):
@@ -960,6 +978,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                 node = mat.node_tree.nodes.active
                 if node and node.type == 'TEX_IMAGE' and node.image:
                     item.image = node.image.name
+        self.invokePinner()
         return DazPropsOperator.invoke(self, context, event)
 
 
@@ -1103,12 +1122,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         elif self.output == 'HAIR_CURVES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
             if self.proxyType != 'NONE':
-                mname = self.getProxyMaterial()
-                proxy = self.buildMesh(context, hname, strands, hair, hum, [mname], useHead=True)
-                proxy.parent = hair.parent
-                proxy.hide_render = True
-                mod = proxy.modifiers.new("Armature", 'ARMATURE')
-                mod.object = hair.parent
+                proxy = self.buildHairProxy(context, hname, strands, hair, hum)
         elif self.output == 'PARTICLES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
 
@@ -2237,124 +2251,6 @@ class HairEeveeTree(HairTree):
         self.buildOutput()
 
 # ---------------------------------------------------------------------
-#   Pinning
-# ---------------------------------------------------------------------
-
-class PinOperator(DazPropsOperator):
-    def __init__(self):
-        self.nodeGroup = None
-        self.curveMapping = None
-
-    def getCurveMapping(self):
-        if self.nodeGroup is None:
-            self.nodeGroup = bpy.data.node_groups.new('DazPinningData', 'ShaderNodeTree')
-        if self.curveMapping is None:
-            cn = self.nodeGroup.nodes.new('ShaderNodeRGBCurve')
-            self.curveMapping = cn.name
-        return self.nodeGroup.nodes[self.curveMapping]
-
-    def initMapping(self):
-        node = self.getCurveMapping()
-        self.mapping = node.mapping
-        self.curve = node.mapping.curves[3]
-
-    def addWeight(self, vgrp, vn, w):
-        x = min(1.0, max(0.0, w))
-        w = self.mapping.evaluate(self.curve, x)
-        vgrp.add([vn], w, 'REPLACE')
-
-    def invoke(self, context, event):
-        node = self.getCurveMapping()
-        cu = node.mapping.curves[3]
-        cu.points[0].location = (0,1)
-        cu.points[-1].location = (1,0)
-        return DazPropsOperator.invoke(self, context, event)
-
-    def draw(self, context):
-        self.layout.template_curve_mapping(self.getCurveMapping(), "mapping")
-
-# ---------------------------------------------------------------------
-#   Add pinning to hair mesh
-# ---------------------------------------------------------------------
-
-class DAZ_OT_MeshAddPinning(PinOperator, IsMesh):
-    bl_idname = "daz.mesh_add_pinning"
-    bl_label = "Add Pinning Group"
-    bl_description = "Add HairPin group to mesh hair"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        ob = context.object
-        self.initMapping()
-        if "HairPinning" in ob.vertex_groups.keys():
-            vgrp = ob.vertex_groups["HairPinning"]
-            ob.vertex_groups.remove(vgrp)
-        vgrp = ob.vertex_groups.new(name="HairPinning")
-        if ob.data.polygons:
-            uvs = ob.data.uv_layers.active.data
-            m = 0
-            for f in ob.data.polygons:
-                for n,vn in enumerate(f.vertices):
-                    self.addWeight(vgrp, vn, 1-uvs[m+n].uv[1])
-                m += len(f.vertices)
-        elif "Root Distance" in ob.vertex_groups.keys():
-            distgrp = ob.vertex_groups["Root Distance"]
-            idx = distgrp.index
-            for v in ob.data.vertices:
-                for g in v.groups:
-                    if g.group == idx:
-                        self.addWeight(vgrp, v.index, 1-g.weight)
-                        break
-# ---------------------------------------------------------------------
-#   Modify vertex group
-# ---------------------------------------------------------------------
-
-class DAZ_OT_ModifyVertexGroup(PinOperator, IsMesh):
-    bl_idname = "daz.modify_vertex_group"
-    bl_label = "Modify Vertex Group"
-    bl_description = "Modify the active vertex group"
-    bl_options = {'UNDO'}
-
-    direction : EnumProperty(
-        items = [("+X", "+X", "+X"),
-                 ("-X", "-X", "-X"),
-                 ("+Y", "+Y", "+Y"),
-                 ("-Y", "-Y", "-Y"),
-                 ("+Z", "+Z", "+Z"),
-                 ("-Z", "-Z", "-Z")],
-        name = "Direction")
-
-
-    def draw(self, context):
-        PinOperator.draw(self, context)
-        ob = context.object
-        vgrp = ob.vertex_groups.active
-        box = self.layout.box()
-        box.label(text="Vertex group: %s" % vgrp.name)
-        self.layout.prop(self, "direction")
-
-
-    def run(self, context):
-        vectors = {
-            "+X" : (1,0,0),
-            "-X" : (-1,0,0),
-            "+Y" : (0,1,0),
-            "-Y" : (0,-1,0),
-            "+Z" : (0,0,1),
-            "-Z" : (0,0,-1)
-        }
-        ob = context.object
-        vgrp = ob.vertex_groups.active
-        self.initMapping()
-        ez = Vector(vectors[self.direction])
-        zs = [ez.dot(v.co) for v in ob.data.vertices]
-        z0 = min(zs)
-        z1 = max(zs)
-        for v in ob.data.vertices:
-            w = (ez.dot(v.co) - z0)/(z1 - z0)
-            self.addWeight(vgrp, v.index, w)
-
-# ---------------------------------------------------------------------
 #   Initialize
 # ---------------------------------------------------------------------
 
@@ -2884,8 +2780,6 @@ classes = [
     DAZ_OT_UpdateHair,
     DAZ_OT_ColorHair,
     DAZ_OT_ConnectHair,
-    DAZ_OT_MeshAddPinning,
-    DAZ_OT_ModifyVertexGroup,
     DAZ_OT_AddHairRig,
 ]
 
