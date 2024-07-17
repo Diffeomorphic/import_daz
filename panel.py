@@ -180,12 +180,13 @@ class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.label(text = "  Hair:  %s" % (hair.name if hair else None))
         self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
         self.layout.separator()
+        self.layout.operator("daz.make_hair_proxy")
+        self.layout.operator("daz.mesh_add_pinning")
+        self.layout.operator("daz.add_hair_rig")
+        self.layout.separator()
         self.layout.operator("daz.update_hair")
         self.layout.operator("daz.color_hair")
         self.layout.operator("daz.combine_hairs")
-        self.layout.separator()
-        self.layout.operator("daz.mesh_add_pinning")
-        self.layout.operator("daz.add_hair_rig")
 
 
 class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):

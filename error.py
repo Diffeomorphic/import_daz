@@ -356,6 +356,11 @@ class IsArmature:
     def poll(self, context):
         return (context.object and context.object.type == 'ARMATURE')
 
+class IsCurves:
+    @classmethod
+    def poll(self, context):
+        return (context.object and context.object.type == 'CURVES')
+
 class IsMeshArmature:
     @classmethod
     def poll(self, context):

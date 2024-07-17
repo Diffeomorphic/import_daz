@@ -304,6 +304,7 @@ class ModStore:
         self.name = mod.name
         self.type = mod.type
         self.data = {}
+        self.items = {}
         self.store(mod, self.data)
         self.settings = {}
         if hasattr(mod, "settings"):
@@ -321,13 +322,17 @@ class ModStore:
                 continue
             value = getattr(data, key)
             if (isSimpleType(value) or
-                isinstance(value, bpy.types.Object)):
+                isinstance(value, (bpy.types.Object, bpy.types.NodeTree))):
                 struct[key] = value
+        for key,value in data.items():
+            self.items[key] = value
 
 
     def restore(self, ob):
         mod = ob.modifiers.new(self.name, self.type)
         self.restoreData(self.data, mod)
+        for key,value in self.items.items():
+            mod[key] = value
         if self.settings:
             self.restoreData(self.settings, mod.settings)
         if self.collision_settings:
