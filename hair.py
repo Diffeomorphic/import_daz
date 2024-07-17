@@ -98,7 +98,15 @@ class Separator:
                 if self.checkStrip(context, hair):
                     hairs.append(hair)
         if self.sparsity > 1:
-            hairs = [hair for n,hair in enumerate(hairs) if n % self.sparsity == 0]
+            keeps = []
+            deletes = []
+            for n,hair in enumerate(hairs):
+                if n % self.sparsity == 0:
+                    keeps.append(hair)
+                else:
+                    deletes.append(hair)
+            hairs = keeps
+            deleteObjects(context, deletes)
         return hairs
 
 
@@ -1226,7 +1234,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                 pset.hair_step = len(hair.hair_keys) - 1
                 pset.count = len(psys.particles)
                 hsys.setHairSettings(psys, hum)
-        elif self.output == 'HAIR_CURVES':
+        if self.output == 'HAIR_CURVES':
             def addMod(ob, name):
                 group = bpy.data.node_groups.get(name)
                 if group:
@@ -1299,7 +1307,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         setActiveObject(context, hair)
         hsystems = {}
         verts = range(len(hair.data.vertices))
-        for _,tfaces in trects:
+        for mfaces,tfaces in trects:
             if not self.quadsOnly(hair, tfaces):
                 continue
             _,vertfaces = getVertFaces(None, verts, tfaces, self.faceverts)
@@ -1462,13 +1470,14 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
         singlets = [(uvcenters[fn][0]+uvcenters[fn][1], fn) for fn in types[1]]
         singlets.sort()
+        nix = (None,None,None,None)
         if len(singlets) > 0:
             if len(singlets) != 2:
                 sys.stdout.write("S")
-                return None,None,None,None
+                return nix
             if (types[3] != [] or types[4] != []):
                 sys.stdout.write("T")
-                return None,None,None,None
+                return nix
             first = singlets[0][1]
             corner = types[1]
             boundary = types[2]
@@ -1479,12 +1488,12 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             if len(doublets) > 4:
                 sys.stdout.write(">")
                 self.selectFaces(ob, [fn for _,fn in doublets])
-                return None,None,None,None
+                return nix
             if len(doublets) < 4:
                 if len(doublets) == 2:
                     sys.stdout.write("2")
                     self.selectFaces(ob, neighbors.keys())
-                return None,None,None,None
+                return nix
             first = doublets[0][1]
             corner = types[2]
             boundary = types[3]
