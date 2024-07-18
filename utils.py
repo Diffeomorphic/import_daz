@@ -143,8 +143,9 @@ else:
             coll.is_visible = False
         for layer in layers:
             coll = rig.data.collections.get(layer)
-            if coll:
-                coll.is_visible = True
+            if coll is None:
+                coll = rig.data.collections.new(layer)
+            coll.is_visible = True
 
     def enableAllRigLayers(rig, value=True):
         for coll in rig.data.collections:

@@ -111,7 +111,9 @@ class Separator:
 
 
     def checkStrip(self, context, hair):
-        if not self.useCheckStrips or len(hair.data.polygons) < 50:
+        if (not self.useCheckStrips or
+            len(hair.data.polygons) < 50 or
+            hair.data.uv_layers.active is None):
             return True
         uvs = hair.data.uv_layers.active.data
         xs = [uv.uv[0] for uv in uvs]
@@ -675,7 +677,7 @@ class HairBuilder(Pinner, Cloth, Collision):
 
         vgrp = ob.vertex_groups.new(name="Root Distance")
         addWeights(vgrp, strands, 0)
-        if self.hairPoseSim == 'SIMULATION':
+        if self.proxyType == 'SHEET':
             addWeights(vgrp, strands, nverts)
             if self.proxyType == 'TUBE':
                 addWeights(vgrp, strands, 2*nverts)
@@ -696,7 +698,7 @@ class HairBuilder(Pinner, Cloth, Collision):
             mat = bpy.data.materials.new("Hair Proxy")
             mat.diffuse_color[0:3] = (1,0,0)
         useHead = (self.hairPoseSim == 'POSING')
-        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name], useHead=useHead)
+        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name], useHead=False)
         proxy.hide_render = True
         if self.hairPoseSim == 'SIMULATION' and self.usePinGroup:
             self.addHairPinning(proxy)
@@ -746,14 +748,14 @@ class HairBuilder(Pinner, Cloth, Collision):
         return ob
 
 
-    def linkHair(self, ob, hum, coll, useBone):
+    def linkHair(self, ob, hum, coll):
         coll.objects.link(ob)
         rig = hum.parent
         if rig and rig.type == 'ARMATURE':
             head = rig.data.bones.get("head")
             wmat = ob.matrix_world.copy()
             ob.parent = rig
-            if head and useBone:
+            if head:
                 ob.parent_type = 'BONE'
                 ob.parent_bone = head.name
             setWorldMatrix(ob, wmat)
@@ -804,8 +806,7 @@ class DAZ_OT_MakeHairProxy(DazPropsOperator, HairBuilder, IsCurves):
             strands.append(strand)
         proxy = self.buildHairProxy(context, hname, strands, hair, hum)
         proxy.name = "Proxy %s" % baseName(hair.name)
-        useBone = (self.hairPoseSim != 'POSING')
-        self.linkHair(proxy, hum, context.collection, useBone)
+        self.linkHair(proxy, hum, context.collection)
         self.addFollowProxy(hair, proxy)
 
 #-------------------------------------------------------------
@@ -1058,7 +1059,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         self.strandType = ob.data.DazHairType
         self.colors.clear()
         for mat in ob.data.materials:
-            if mat:
+            if mat and mat.node_tree:
                 item = self.colors.add()
                 item.name = mat.name
                 item.color = mat.diffuse_color
@@ -1214,12 +1215,11 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         elif self.output == 'PARTICLES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
 
-        useBone = (self.hairPoseSim != 'POSING')
         ob.name = "Hair %s" % baseName(hair.name)
-        self.linkHair(ob, hum, coll, useBone)
+        self.linkHair(ob, hum, coll)
         if proxy:
             proxy.name = "Proxy %s" % baseName(hair.name)
-            self.linkHair(proxy, hum, coll, useBone)
+            self.linkHair(proxy, hum, coll)
 
         if self.output == 'PARTICLES':
             activateObject(context, ob)
@@ -2387,7 +2387,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     weightingMethod : EnumProperty(
         items = [('REAL', "Real Space", "Use location in real space"),
-                 ('UV', "UV Space", "Use location in UV space"),
+                 ('ROOTDIST', "Root Distance", "Use distance from root,\neither using \"Root Distance\" vertex group\nor location in UV space"),
                  ('AUTO', "Auto", "Use Blender automatic bone weighting")],
         name = "Weighting Method",
         description = "Method for weighting mesh",
@@ -2440,10 +2440,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             wmat = ob.matrix_world.copy()
             ob.parent = rig
             setWorldMatrix(ob, wmat)
-            mod = getModifier(ob, 'ARMATURE')
-            if mod:
-                mod.object = rig
             activateObject(context, ob)
+        mod = getModifier(ob, 'ARMATURE')
+        if mod is None:
+            mod = ob.modifiers.new(rig.name, 'ARMATURE')
+        mod.object = rig
         self.startGizmos(context, rig)
 
         hairs = self.getMeshHairs(context, ob, None)
@@ -2519,6 +2520,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             mod.object = rig
             mod.name = "Armature Hair"
         enableRigNumLayer(rig, T_WIDGETS)
+        enableRigNumLayer(rig, T_HIDDEN, False)
 
 
     def mergeObjects(self, context, hairs, hairname, rig):
@@ -2542,7 +2544,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         hairrig.parent_bone = self.headName
         hairrig.show_in_front = True
         context.collection.objects.link(hairrig)
-        enableRigNumLayers(hairrig, [T_CUSTOM])
         activateObject(context, rig)
         setMode('EDIT')
         eb = rig.data.edit_bones[self.headName]
@@ -2559,6 +2560,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         eb.hide_select = True
         setMode('OBJECT')
         setWorldMatrix(hairrig, rig.matrix_world)
+        bone = amt.bones[self.headName]
+        enableBoneNumLayer(bone, hairrig, T_HIDDEN)
         return hairrig
 
 
@@ -2712,14 +2715,15 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.useSeparateRig:
             rig.data.display_type = 'BBONE'
             head = rig.data.bones[self.headName]
-            head.bbone_x = handleSize
-            head.bbone_z = handleSize
+            head.bbone_x = 0.1*handleSize
+            head.bbone_z = 0.1*handleSize
             for n,bdata in enumerate(bones):
                 bname,r0,r1 = bdata
                 bone = rig.data.bones[bname]
                 enableBoneNumLayer(bone, rig, T_WIDGETS)
 
         handle = getHandle(0)
+        enableBoneNumLayer(handle, rig, T_WIDGETS)
         for n,bdata in enumerate(bones):
             bname,r0,r1 = bdata
             pb = rig.pose.bones[bname]
@@ -2730,6 +2734,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             pb.bone.bbone_handle_type_start = 'ABSOLUTE'
             pb.bone.bbone_custom_handle_start = handle.bone
             handle = getHandle(n+1)
+            enableBoneNumLayer(handle, rig, T_WIDGETS)
             pb.bone.bbone_handle_type_end = 'ABSOLUTE'
             pb.bone.bbone_custom_handle_end = handle.bone
             stretchTo(pb, handle, rig)
@@ -2737,7 +2742,12 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     def hideBones(self, data, rig):
         bones,locs,xaxis = data
-        if self.controlMethod == 'NONE' or not self.useHideBones:
+        if self.controlMethod == 'BBONE':
+            for bname,r0,r1 in bones:
+                bone = rig.data.bones[bname]
+                enableBoneNumLayer(bone, rig, T_WIDGETS)
+                bone.hide_select = True
+        elif self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
                 enableBoneNumLayer(bone, rig, T_WIDGETS)
@@ -2745,15 +2755,16 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
                 enableBoneNumLayer(bone, rig, T_HIDDEN)
-                #bone.hide_select = True
 
 
     def buildVertexGroups(self, key, sector, data):
         bones,blocs,xaxis = data
         blocs = blocs[None,:,:]
         for hair,data in sector:
+            for vgrp in list(hair.vertex_groups):
+                if vgrp.name not in ["Root Distance"]:
+                    hair.vertex_groups.remove(vgrp)
             heights = self.getHeights(hair)
-            hair.vertex_groups.clear()
             hgrp = hair.vertex_groups.new(name=self.headName)
             vgrps = [hgrp]
             for bname,r0,r1 in bones:
@@ -2761,7 +2772,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 vgrps.append(vgrp)
             if self.weightingMethod == 'REAL':
                 weights = self.getWeightsFromLocs(hair, blocs, heights)
-            elif self.weightingMethod == 'UV':
+            elif self.weightingMethod == 'ROOTDIST':
                 weights = self.getWeightsFromUvs(hair, heights)
             for gn,vgrp in enumerate(vgrps):
                 for vn,w in enumerate(weights[:,gn]):
@@ -2770,7 +2781,15 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def getHeights(self, hair):
-        if hair.data.uv_layers:
+        if "Root Distance" in hair.vertex_groups.keys():
+            vgrp = hair.vertex_groups["Root Distance"]
+            heights = {}
+            for v in hair.data.vertices:
+                for g in v.groups:
+                    if g.group == vgrp.index:
+                        heights[v.index] = 1-g.weight
+            return heights
+        elif hair.data.uv_layers:
             uvlayer = hair.data.uv_layers[0]
             heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
                 for f in hair.data.polygons
@@ -2783,14 +2802,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             hlist = list()
             hlist.sort()
             heights = dict([(vn,k*(y-ymin)) for vn,y in heights.items()])
-            return heights
-        elif "Root Distance" in hair.vertex_groups.keys():
-            vgrp = hair.vertex_groups["Root Distance"]
-            heights = {}
-            for v in hair.data.vertices:
-                for g in v.groups:
-                    if g.group == vgrp.index:
-                        heights[v.index] = 1-g.weight
             return heights
         else:
             raise DazError("No height information found")
@@ -2821,14 +2832,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     def getWeightsFromUvs(self, hair, heights):
         nverts = len(hair.data.vertices)
-        k = self.hairLength+1
+        k = self.hairLength
         weights = np.zeros([nverts, k+1], dtype=float)
         for vn,y in heights.items():
             s = k*(1-y)
             m = int(math.floor(s))
             a = s-m
             if a < 0.5:
-                if m > 0:
+                if m > 0 and m < k:
                     weights[vn,m] = a + 0.5
                     weights[vn,m-1] = 0.5 - a
                 else:
