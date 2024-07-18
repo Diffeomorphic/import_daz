@@ -271,17 +271,19 @@ class PbrTree(CyclesTree):
             self.linkColor(tex, self.pbr, color, "Base Color")
             return
 
+        effnode = None
         if effect:
-            node = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
+            effnode = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
+        if effnode:
             sub = self.addNode("ShaderNodeMath", 3)
             sub.operation = 'SUBTRACT'
             sub.inputs[0].default_value = 1
-            self.links.new(node.outputs["Transmit Fac"], sub.inputs[1])
+            self.links.new(effnode.outputs["Transmit Fac"], sub.inputs[1])
             self.links.new(sub.outputs[0], self.pbr.inputs[PBR.SubsurfWeight])
             transwt = 1
             wttex = sub
             color = WHITE
-            tex = node
+            tex = effnode
         else:
             self.linkScalar(wttex, self.pbr, transwt, PBR.SubsurfWeight)
 
