@@ -2386,12 +2386,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         default = "head")
 
     weightingMethod : EnumProperty(
-        items = [('REAL', "Real Space", "Use location in real space"),
-                 ('ROOTDIST', "Root Distance", "Use distance from root,\neither using \"Root Distance\" vertex group\nor location in UV space"),
-                 ('AUTO', "Auto", "Use Blender automatic bone weighting")],
+        items = [('ROOTDIST', "Root Distance", "Use distance from root,\neither using \"Root Distance\" vertex group\nor location in UV space"),
+                 ('REAL', "Real Space", "Use location in real space"),
+                 ('ENVELOPE', "Envelope", "Use envelope"),
+                 ('ENVELOPE_WEIGHTS', "Envelope Weights", "Use envelope weights"),
+                 ],
         name = "Weighting Method",
         description = "Method for weighting mesh",
-        default = 'REAL')
+        default = 'ROOTDIST')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
@@ -2435,15 +2437,17 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             raise DazError('No head bone named "%s"' % self.headName)
         if self.startHair > self.endHead:
             raise DazError("Hair start location cannot exceed head end location")
+        mod = getModifier(ob, 'ARMATURE')
+        if mod:
+            ob.modifiers.remove(mod)
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
         if self.useSeparateRig or self.controlMethod == 'BBONE':
             rig = self.addSeparateRig(context, hairname, rig)
             wmat = ob.matrix_world.copy()
             ob.parent = rig
             setWorldMatrix(ob, wmat)
             activateObject(context, ob)
-        mod = getModifier(ob, 'ARMATURE')
-        if mod is None:
-            mod = ob.modifiers.new(rig.name, 'ARMATURE')
+        mod = ob.modifiers.new(rig.name, 'ARMATURE')
         mod.object = rig
         self.startGizmos(context, rig)
 
@@ -2503,17 +2507,12 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 layers = [T_WIDGETS, T_HIDDEN]
                 addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=True, xaxis=xaxis)
 
-        if self.weightingMethod != 'AUTO':
+        if not self.weightingMethod.startswith('ENVELOPE'):
             for key,data in binbones.items():
                 self.buildVertexGroups(key, sectors[key], data)
         ob = self.mergeObjects(context, hairs, hairname, rig)
-        if self.weightingMethod == 'AUTO':
-            mod = getModifier(ob, 'ARMATURE')
-            if mod:
-                ob.modifiers.remove(mod)
-            activateObject(context, rig)
-            ob.select_set(True)
-            bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        if self.weightingMethod.startswith('ENVELOPE'):
+            self.makeEnvelope(context, ob, rig)
         elif self.useSeparateRig:
             ob.parent = rig
             mod = getModifier(ob, 'ARMATURE')
@@ -2533,6 +2532,33 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         ob.name = hairname
         bpy.ops.object.shade_smooth()
         return ob
+
+
+    def makeEnvelope(self, context, ob, rig):
+        for bone in rig.data.bones:
+            if bone.name == self.headName:
+                bone.envelope_distance = 20*GS.scale
+                bone.head_radius = 10*GS.scale
+                bone.tail_radius = 10*GS.scale
+            elif bone.use_deform:
+                bone.envelope_distance = 50*GS.scale/self.nSectors
+                bone.head_radius = 20*GS.scale/self.nSectors
+                bone.tail_radius = 20*GS.scale/self.nSectors
+            else:
+                bone.envelope_distance = 0.1*GS.scale
+                bone.head_radius = 0.1*GS.scale
+                bone.tail_radius = 0.1*GS.scale
+        mod = getModifier(ob, 'ARMATURE')
+        if self.weightingMethod == 'ENVELOPE':
+            mod.use_vertex_groups = False
+            mod.use_bone_envelopes = True
+        elif self.weightingMethod == 'ENVELOPE_WEIGHTS':
+            ob.modifiers.remove(mod)
+            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+            activateObject(context, rig)
+            ob.select_set(True)
+            bpy.ops.object.parent_set(type='ARMATURE_ENVELOPE')
+
 
 
     def addSeparateRig(self, context, hairname, rig):
@@ -2557,7 +2583,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         eb.head = head
         eb.tail = tail
         eb.roll = roll
-        eb.hide_select = True
         setMode('OBJECT')
         setWorldMatrix(hairrig, rig.matrix_world)
         bone = amt.bones[self.headName]
@@ -2710,13 +2735,13 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
         from .mhx import stretchTo
         bones,locs,xaxis = data
-        bboneSize = 0.001
-        handleSize = 0.005
+        bboneSize = 0.1*GS.scale
+        handleSize = 0.5*GS.scale
         if self.useSeparateRig:
             rig.data.display_type = 'BBONE'
             head = rig.data.bones[self.headName]
-            head.bbone_x = 0.1*handleSize
-            head.bbone_z = 0.1*handleSize
+            head.bbone_x = 0.1*bboneSize
+            head.bbone_z = 0.1*bboneSize
             for n,bdata in enumerate(bones):
                 bname,r0,r1 = bdata
                 bone = rig.data.bones[bname]
@@ -2746,7 +2771,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
                 enableBoneNumLayer(bone, rig, T_WIDGETS)
-                bone.hide_select = True
+                if self.weightingMethod != 'ENVELOPE':
+                    bone.hide_select = True
         elif self.controlMethod == 'NONE' or not self.useHideBones:
             for bname,r0,r1 in bones:
                 bone = rig.data.bones[bname]
