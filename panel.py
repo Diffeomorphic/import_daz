@@ -183,6 +183,7 @@ class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.make_hair_proxy")
         self.layout.operator("daz.mesh_add_pinning")
         self.layout.operator("daz.add_hair_rig")
+        self.layout.operator("daz.set_envelopes")
         self.layout.separator()
         self.layout.operator("daz.update_hair")
         self.layout.operator("daz.color_hair")
