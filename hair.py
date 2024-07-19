@@ -2343,7 +2343,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'IK')
+        default = 'BBONE')
 
     useHideBones : BoolProperty(
         name = "Hide IK Deform Bones",
@@ -2354,12 +2354,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         name = "Lock Deform Bones",
         description = "Make deform bones unselectable",
         default = True)
-
-    roundness : FloatProperty(
-        name = "Roundness",
-        description = "Expand the joints radially from the head to make the bones rounder",
-        min = 0.0, max = 1.0,
-        default = 0.5)
 
     useSeparateRig : BoolProperty(
         name = "Separate Hair Rig",
@@ -2396,7 +2390,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.layout.prop(self, "sectorOffset")
         self.layout.prop(self, "hairLength")
         self.layout.prop(self, "weightingMethod")
-        self.layout.prop(self, "roundness")
         self.layout.prop(self, "controlMethod")
         if self.controlMethod == 'IK':
             self.layout.prop(self, "useHideBones")
@@ -2496,10 +2489,15 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         ob = self.mergeObjects(context, hairs, hairname, rig)
         self.makeEnvelope(context, ob, rig)
         if self.useSeparateRig:
+            wmat = ob.matrix_world.copy()
             ob.parent = rig
             mod = getModifier(ob, 'ARMATURE')
             mod.object = rig
             mod.name = "Armature Hair"
+            if self.weightingMethod == 'ENVELOPE':
+                mod.use_vertex_groups = False
+                mod.use_bone_envelopes = True
+            setWorldMatrix(ob, wmat)
         enableRigNumLayer(rig, T_WIDGETS)
         enableRigNumLayer(rig, T_HIDDEN, False)
 
@@ -2530,10 +2528,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                 bone.envelope_distance = 0.1*GS.scale
                 bone.head_radius = 0.1*GS.scale
                 bone.tail_radius = 0.1*GS.scale
-        mod = getModifier(ob, 'ARMATURE')
-        mod.use_vertex_groups = False
-        mod.use_bone_envelopes = True
-
 
 
     def addSeparateRig(self, context, hairname, rig):
@@ -2580,36 +2574,40 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         coord = data[1]
         for hair,data in sector[1:]:
             coord = np.append(coord, data[1], axis=0)
-        zmin = np.min(coord[:,2])
-        zmax = np.max(coord[:,2])
+        z = coord[:,2]
+        zmin = np.min(z)
+        zmax = np.max(z)
+        dz = (zmax - zmin)/self.hairLength
+        joints = []
+        for n in range(self.hairLength+1):
+            c = zmax - n*dz - 0.5*dz
+            idxs = np.argwhere(np.abs(z-c) <= dz)
+            batch = coord[idxs]
+            r = np.average(batch, axis=0)
+            r = r.reshape((3,))
+            joints.append(r)
+
+        angle = (key*360/self.nSectors + self.sectorOffset)
+        x = math.cos(angle*D)
+        y = math.sin(angle*D)
         c = np.array(head.tail)
         dr = coord-c
         dr[:,2] = 0
         norm = np.linalg.norm(dr, axis=1)
         nmin = np.min(norm)
         nmax = np.max(norm)
-        angle = (key*360/self.nSectors + self.sectorOffset)
-        x = math.cos(angle*D)
-        y = math.sin(angle*D)
         rmin = np.array((nmin*x + c[0], nmin*y + c[1], zmax))
         rmax = np.array((nmax*x + c[0], nmax*y + c[1], zmin))
         e1 = rmin - c
         e2 = rmax - c
         xaxis = Vector(np.cross(e1, e2))
         xaxis.normalize()
-        dmin = np.linalg.norm(e1)
-        dmax = np.linalg.norm(e2)
-        r0 = rmin
-        d0 = dmin
+
         bones = []
-        parent = head
         locs = []
-        for n in range(self.hairLength):
-            s = (n+1)/self.hairLength
-            r1 = (1-s)*rmin + s*rmax
-            d1 = (1-s)*dmin + s*dmax
-            f = d1/np.linalg.norm(r1-c)
-            r1 = (1-self.roundness)*r1 + self.roundness*(c + f*(r1-c))
+        parent = head
+        r0 = joints[0]
+        for n,r1 in enumerate(joints[1:]):
             bname = "Hair_%d_%d" % (key, n)
             eb = rig.data.edit_bones.new(bname)
             eb.head = r0
@@ -2729,9 +2727,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         handleSize = 0.5*GS.scale
 
         rig.data.display_type = 'BBONE'
-        head = rig.data.bones[self.headName]
-        head.bbone_x = 0.1*bboneSize
-        head.bbone_z = 0.1*bboneSize
+        for bname in [self.headName, "Skull"]:
+            bone = rig.data.bones[bname]
+            bone.bbone_x = 1*GS.scale
+            bone.bbone_z = 1*GS.scale
         for n,bdata in enumerate(bones):
             bname,r0,r1 = bdata
             bone = rig.data.bones[bname]
