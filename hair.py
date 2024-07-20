@@ -2350,7 +2350,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ('WINDER', "Winder", "Winder")],
         name = "Control Method",
         description = "Method for controlling hair posing",
-        default = 'BBONE')
+        default = 'NONE')
 
     useHideBones : BoolProperty(
         name = "Hide IK Deform Bones",
@@ -2374,7 +2374,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
                  ],
         name = "Weighting Method",
         description = "Method for weighting mesh",
-        default = 'STRAND')
+        default = 'HEIGHT')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
@@ -2577,8 +2577,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         zmax = np.max(z)
         dz = (zmax - zmin)/self.hairLength
         npoints = self.hairLength+1
-        weights = np.zeros((coord.shape[0], npoints), dtype=float)
-        skullweights = np.zeros(coord.shape[0], dtype=float)
         joints = []
         for n in range(npoints):
             c = zmax - n*dz - 0.5*dz
@@ -2588,27 +2586,36 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             r = r.reshape((3,))
             r[2] = zmax - n*dz
             joints.append(r)
-            weights[:,n] = np.clip(1-np.abs(z-c)/dz, 0.0, 1.0)
-            if n == 0:
-                weights[:,0] += np.clip((z-c)/dz, 0.0, 1.0)
-            elif n == npoints-1:
-                weights[:,n] += np.clip(1-(z-c)/dz, 0.0, 1.0)
 
         angle = (key*360/self.nSectors + self.sectorOffset)
-        x = math.cos(angle*D)
-        y = math.sin(angle*D)
-        c = np.array(head.tail)
-        dr = coord-c
+        x0 = math.cos(angle*D)
+        y0 = math.sin(angle*D)
+        c0 = np.array(head.tail)
+        dr = coord-c0
         dr[:,2] = 0
         norm = np.linalg.norm(dr, axis=1)
         nmin = np.min(norm)
         nmax = np.max(norm)
-        rmin = np.array((nmin*x + c[0], nmin*y + c[1], zmax))
-        rmax = np.array((nmax*x + c[0], nmax*y + c[1], zmin))
-        e1 = rmin - c
-        e2 = rmax - c
+        rmin = np.array((nmin*x0 + c0[0], nmin*y0 + c0[1], zmax))
+        rmax = np.array((nmax*x0 + c0[0], nmax*y0 + c0[1], zmin))
+        e1 = rmin - c0
+        e2 = rmax - c0
         xaxis = Vector(np.cross(e1, e2))
         xaxis.normalize()
+
+        weights = np.zeros((coord.shape[0], npoints), dtype=float)
+        c = zmax - 0.5*dz
+        weights[:,0] = np.clip((z-c)/dz, 0.0, 1.0)
+        for n in range(1,npoints):
+            c = zmax - n*dz + 0.5*dz
+            weights[:,n] = np.clip(1-np.abs(z-c)/dz, 0.0, 1.0)
+        idxs = np.argwhere(z < zmin + 0.5*dz)
+        weights[idxs,npoints-1] = 1.0
+        x = coord[:,0]
+        y = coord[:,1]
+        idxs = np.argwhere((x*x0 < 0) | (y*y0 < 0))
+        weights[idxs,:] = 0
+        weights[idxs,0] = 1.0
 
         bones = []
         locs = []
@@ -2764,6 +2771,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def buildVertexGroups(self, key, sector, bininfo):
+        print("Build sector %d weights: %d" % (key, len(sector)))
         for hair,data in sector:
             for vgrp in list(hair.vertex_groups):
                 if vgrp.name not in ["Root Distance"]:
@@ -2778,15 +2786,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             elif self.weightingMethod == 'STRAND':
                 heights = self.getHeights(hair)
                 weights = self.getWeightsFromHeights(hair, heights)
-
-            def addWeights(vgrp, weights):
-                for vn,w in enumerate(weights):
+            for gn,vgrp in enumerate(vgrps):
+                for vn,w in enumerate(weights[:,gn]):
                     if w > 0.001:
                         vgrp.add([vn], w, 'REPLACE')
-
-            #addWeights(hgrp, hweights)
-            for gn,vgrp in enumerate(vgrps):
-                addWeights(vgrp, weights[:,gn])
 
 
     def getHeights(self, hair):
