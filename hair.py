@@ -2308,6 +2308,13 @@ class HairEeveeTree(HairTree):
 #   Add Hair Rig
 # ---------------------------------------------------------------------
 
+class HairBoneInfo:
+    def __init__(self, bones, weights, xaxis):
+        self.bones = bones
+        self.weights = weights
+        self.xaxis = xaxis
+
+
 class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
     bl_idname = "daz.add_hair_rig"
     bl_label = "Add Hair Rig"
@@ -2350,11 +2357,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         description = "Hide the deform bones if using IK",
         default = True)
 
-    useLockDeformBones : BoolProperty(
-        name = "Lock Deform Bones",
-        description = "Make deform bones unselectable",
-        default = True)
-
     useSeparateRig : BoolProperty(
         name = "Separate Hair Rig",
         description = "Make a separate rig parented to the head bone,\ninstead of adding bones to the main rig",
@@ -2366,12 +2368,13 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         default = "head")
 
     weightingMethod : EnumProperty(
-        items = [('ROOTDIST', "Root Distance", "Use distance from root,\neither using \"Root Distance\" vertex group\nor location in UV space"),
+        items = [('HEIGHT', "Height", "Use Z coordinate in real space"),
+                 ('STRAND', "Strand", "Use distance on strand from root,\neither using \"Root Distance\" vertex group\nor location in UV space"),
                  ('ENVELOPE', "Envelope", "Use envelope"),
                  ],
         name = "Weighting Method",
         description = "Method for weighting mesh",
-        default = 'ROOTDIST')
+        default = 'STRAND')
 
     startHair : FloatProperty(
         name = "Hair Start Location",
@@ -2393,7 +2396,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.layout.prop(self, "controlMethod")
         if self.controlMethod == 'IK':
             self.layout.prop(self, "useHideBones")
-        self.layout.prop(self, "useLockDeformBones")
         if self.controlMethod != 'BBONE':
             self.layout.prop(self, "useSeparateRig")
         self.layout.prop(self, "useCheckStrips")
@@ -2427,12 +2429,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.startGizmos(context, rig)
 
         hairs = self.getMeshHairs(context, ob, None)
-        datas = []
-        for hair in hairs:
-            data = self.getData(hair)
-            datas.append(data)
         sectors = {}
-        for hair,data in zip(hairs, datas):
+        for hair in hairs:
+            data = self.getAngleCoord(hair)
             angle = data[0] - self.sectorOffset
             key = int(math.floor(self.nSectors*angle/360 + 0.5))
             if key >= self.nSectors:
@@ -2450,42 +2449,41 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         for key,sector in sectors.items():
             binbones[key] = self.buildBones(key, sector, head, rig)
         if self.controlMethod == 'IK':
-            for key,data in binbones.items():
-                self.addIkBone(key, data, head, rig)
+            for key,bininfo in binbones.items():
+                self.addIkBone(key, bininfo, head, rig)
         elif self.controlMethod == 'BBONE':
             rig.data.display_type = 'BBONE'
-            for key,data in binbones.items():
-                self.addBendyBones(key, data, head, rig)
+            for key,bininfo in binbones.items():
+                self.addBendyBones(key, bininfo, head, rig)
         self.addSkull(rig, binbones)
 
         setMode('OBJECT')
-        for key,data in binbones.items():
-            self.hideBones(data, rig)
+        for key,bininfo in binbones.items():
+            self.hideBones(bininfo, rig)
         if self.controlMethod == 'IK':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
-            for key,data in binbones.items():
-                self.addIkConstraint(key, data, rig, gizmo)
+            for key,bininfo in binbones.items():
+                self.addIkConstraint(key, bininfo, rig, gizmo)
         elif self.controlMethod == 'BBONE':
-            for key,data in binbones.items():
-                self.addBendyConstraints(key, data, rig)
-        elif self.controlMethod == 'NONE':
+            for key,bininfo in binbones.items():
+                self.addBendyConstraints(key, bininfo, rig)
+        elif False and self.controlMethod == 'NONE':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
-            for data in binbones.values():
-                self.addAutoIk(data, rig, gizmo)
+            for bininfo in binbones.values():
+                self.addAutoIk(bininfo, rig, gizmo)
         elif self.controlMethod == 'WINDER':
             from .mhx import addWinder
             self.makeGizmos(False, ["GZM_Knuckle"])
             gizmo = self.gizmos["GZM_Knuckle"]
-            for key,data in binbones.items():
-                bones,locs,xaxis = data
-                bnames = [bone[0] for bone in bones]
+            for key,bininfo in binbones.items():
+                bnames = [bone[0] for bone in bininfo.bones]
                 windname = "Wind_%s" % bnames[0]
                 layers = [T_WIDGETS, T_HIDDEN]
-                addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=True, xaxis=xaxis)
+                addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=True, xaxis=bininfo.xaxis)
 
         if self.weightingMethod != 'ENVELOPE':
-            for key,data in binbones.items():
-                self.buildVertexGroups(key, sectors[key], data)
+            for key,bininfo in binbones.items():
+                self.buildVertexGroups(key, sectors[key], bininfo)
         ob = self.mergeObjects(context, hairs, hairname, rig)
         self.makeEnvelope(context, ob, rig)
         if self.useSeparateRig:
@@ -2559,7 +2557,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         return hairrig
 
 
-    def getData(self, hair):
+    def getAngleCoord(self, hair):
         coord = np.array([list(v.co) for v in hair.data.vertices])
         x,y,z = np.average(coord, axis=0)
         angle = math.atan2(y, x)/D
@@ -2578,14 +2576,23 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         zmin = np.min(z)
         zmax = np.max(z)
         dz = (zmax - zmin)/self.hairLength
+        npoints = self.hairLength+1
+        weights = np.zeros((coord.shape[0], npoints), dtype=float)
+        skullweights = np.zeros(coord.shape[0], dtype=float)
         joints = []
-        for n in range(self.hairLength+1):
+        for n in range(npoints):
             c = zmax - n*dz - 0.5*dz
             idxs = np.argwhere(np.abs(z-c) <= dz)
             batch = coord[idxs]
             r = np.average(batch, axis=0)
             r = r.reshape((3,))
+            r[2] = zmax - n*dz
             joints.append(r)
+            weights[:,n] = np.clip(1-np.abs(z-c)/dz, 0.0, 1.0)
+            if n == 0:
+                weights[:,0] += np.clip((z-c)/dz, 0.0, 1.0)
+            elif n == npoints-1:
+                weights[:,n] += np.clip(1-(z-c)/dz, 0.0, 1.0)
 
         angle = (key*360/self.nSectors + self.sectorOffset)
         x = math.cos(angle*D)
@@ -2618,22 +2625,20 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             if n > 0:
                 eb.use_connect = True
             bones.append((bname, r0, r1))
-            locs.append((r0+r1)/2)
             r0 = r1
             parent = eb
-        return bones, np.array(locs), xaxis
+        return HairBoneInfo(bones, weights, xaxis)
 
 
     def getIkName(self, key):
         return "Hair_%d_IK" % key
 
 
-    def addIkBone(self, key, data, head, rig):
+    def addIkBone(self, key, bininfo, head, rig):
         def normalize(v):
             return v/np.linalg.norm(v)
 
-        bones,locs,xaxis = data
-        lastname,r0,r1 = bones[-1]
+        lastname,r0,r1 = bininfo.bones[-1]
         eb = rig.data.edit_bones.new(self.getIkName(key))
         eb.head = r1
         eb.tail = r1 + rig.DazScale*normalize(r1-r0)
@@ -2644,7 +2649,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         return "Handle_%d_%d" % (key, n)
 
 
-    def addBendyBones(self, key, data, head, rig):
+    def addBendyBones(self, key, bininfo, head, rig):
         def addHandle(n):
             handle = rig.data.edit_bones.new(self.getHandleName(key, n))
             handle.head = r0 - eps*dr
@@ -2653,10 +2658,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             handle.parent = None
             return handle
 
-        #rig.data.display_type = 'BBONE'
-        bones,locs,xaxis = data
         eps = 0.05
-        for n,bdata in enumerate(bones):
+        for n,bdata in enumerate(bininfo.bones):
             bname,r0,r1 = bdata
             dr = r1 - r0
             vec = dr/np.linalg.norm(dr)
@@ -2667,14 +2670,13 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             bb.head = r0 + eps*dr
             bb.tail = r1 - eps*dr
         r0 = r1
-        handle = addHandle(len(bones))
+        handle = addHandle(len(bininfo.bones))
 
 
     def addSkull(self, rig, binbones):
         centers = []
-        for data in binbones.values():
-            bones,locs,xaxis = data
-            centers.append(bones[0][1])
+        for bininfo in binbones.values():
+            centers.append(bininfo.bones[0][1])
         coord = np.array(centers)
         x,y,z = np.average(coord, axis=0)
         head = rig.data.edit_bones.get(self.headName)
@@ -2685,24 +2687,22 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         enableBoneNumLayer(skull, rig, T_HIDDEN)
 
 
-    def addAutoIk(self, data, rig, gizmo):
-        bones,locs,xaxis = data
-        lname,r0,r1 = bones[-1]
+    def addAutoIk(self, bininfo, rig, gizmo):
+        lname,r0,r1 = bininfo.bones[-1]
         pb = rig.pose.bones[lname]
         pb.custom_shape = gizmo
         setCustomShapeTransform(pb, self.hairLength/25)
 
 
-    def addIkConstraint(self, key, data, rig, gizmo):
-        bones,locs,xaxis = data
+    def addIkConstraint(self, key, bininfo, rig, gizmo):
         ikname = self.getIkName(key)
-        lastname,r0,r1 = bones[-1]
+        lastname,r0,r1 = bininfo.bones[-1]
         pb = rig.pose.bones[lastname]
         cns = pb.constraints.new('IK')
         cns.name = "IK %s" % ikname
         cns.target = rig
         cns.subtarget = ikname
-        cns.chain_count = len(bones)
+        cns.chain_count = len(bininfo.bones)
         cns.use_location = True
         cns.use_rotation = True
         pb = rig.pose.bones[ikname]
@@ -2712,7 +2712,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         enableBoneNumLayer(pb.bone, rig, T_WIDGETS)
 
 
-    def addBendyConstraints(self, key, data, rig):
+    def addBendyConstraints(self, key, bininfo, rig):
         def getHandle(n):
             handlename = self.getHandleName(key, n)
             handle = rig.pose.bones[handlename]
@@ -2722,7 +2722,6 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             return handle
 
         from .mhx import stretchTo
-        bones,locs,xaxis = data
         bboneSize = 0.1*GS.scale
         handleSize = 0.5*GS.scale
 
@@ -2731,14 +2730,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             bone = rig.data.bones[bname]
             bone.bbone_x = 1*GS.scale
             bone.bbone_z = 1*GS.scale
-        for n,bdata in enumerate(bones):
+        for n,bdata in enumerate(bininfo.bones):
             bname,r0,r1 = bdata
             bone = rig.data.bones[bname]
             enableBoneNumLayer(bone, rig, T_WIDGETS)
 
         handle = getHandle(0)
         enableBoneNumLayer(handle, rig, T_WIDGETS)
-        for n,bdata in enumerate(bones):
+        for n,bdata in enumerate(bininfo.bones):
             bname,r0,r1 = bdata
             pb = rig.pose.bones[bname]
             lockAllTransforms(pb)
@@ -2754,37 +2753,40 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             stretchTo(pb, handle, rig)
 
 
-    def hideBones(self, data, rig):
-        bones,locs,xaxis = data
+    def hideBones(self, bininfo, rig):
         if self.controlMethod == 'IK' and self.useHideBones:
             layer = T_HIDDEN
         else:
             layer = T_WIDGETS
-        for bname,r0,r1 in bones:
+        for bname,r0,r1 in bininfo.bones:
             bone = rig.data.bones[bname]
             enableBoneNumLayer(bone, rig, layer)
-            bone.hide_select = self.useLockDeformBones
 
 
-    def buildVertexGroups(self, key, sector, data):
-        bones,blocs,xaxis = data
-        blocs = blocs[None,:,:]
+    def buildVertexGroups(self, key, sector, bininfo):
         for hair,data in sector:
             for vgrp in list(hair.vertex_groups):
                 if vgrp.name not in ["Root Distance"]:
                     hair.vertex_groups.remove(vgrp)
-            heights = self.getHeights(hair)
             hgrp = hair.vertex_groups.new(name="Skull")
             vgrps = [hgrp]
-            for bname,r0,r1 in bones:
+            for bname,r0,r1 in bininfo.bones:
                 vgrp = hair.vertex_groups.new(name=bname)
                 vgrps.append(vgrp)
-            if self.weightingMethod == 'ROOTDIST':
+            if self.weightingMethod == 'HEIGHT':
+                weights = bininfo.weights
+            elif self.weightingMethod == 'STRAND':
+                heights = self.getHeights(hair)
                 weights = self.getWeightsFromHeights(hair, heights)
-            for gn,vgrp in enumerate(vgrps):
-                for vn,w in enumerate(weights[:,gn]):
+
+            def addWeights(vgrp, weights):
+                for vn,w in enumerate(weights):
                     if w > 0.001:
                         vgrp.add([vn], w, 'REPLACE')
+
+            #addWeights(hgrp, hweights)
+            for gn,vgrp in enumerate(vgrps):
+                addWeights(vgrp, weights[:,gn])
 
 
     def getHeights(self, hair):
@@ -2864,35 +2866,15 @@ class DAZ_OT_SetEnvelopes(DazPropsOperator, IsArmature):
         precision = 4,
         default = 0.01)
 
-    useEnvelope : BoolProperty(
-        name = "Envelope",
-        description = "Edit envelopes",
-        default = True)
-
-    useLockDeformBones : BoolProperty(
-        name = "Lock Deform Bones",
-        description = "Make deform bones unselectable",
-        default = True)
-
     def draw(self, context):
-        self.layout.prop(self, "useLockDeformBones")
-        self.layout.prop(self, "useEnvelope")
-        if self.useEnvelope:
-            self.layout.prop(self, "envelope_distance")
-            self.layout.prop(self, "head_radius")
-            self.layout.prop(self, "tail_radius")
-
-    def isHairBone(self, bone):
-        words = bone.name.split("_")
-        return (bone.use_deform and
-                len(words) >= 3 and
-                words[1].isdigit() and
-                words[2].isdigit())
+        self.layout.prop(self, "envelope_distance")
+        self.layout.prop(self, "head_radius")
+        self.layout.prop(self, "tail_radius")
 
     def invoke(self, context, event):
         rig = context.object
         for bone in rig.data.bones:
-            if self.isHairBone(bone):
+            if isHairBone(bone):
                 self.envelope_distance = bone.envelope_distance
                 self.head_radius = bone.head_radius
                 self.tail_radius = bone.tail_radius
@@ -2902,12 +2884,37 @@ class DAZ_OT_SetEnvelopes(DazPropsOperator, IsArmature):
     def run(self, context):
         rig = context.object
         for bone in rig.data.bones:
-            if self.isHairBone(bone):
-                if self.useEnvelope:
-                    bone.envelope_distance = self.envelope_distance
-                    bone.head_radius = self.head_radius
-                    bone.tail_radius = self.tail_radius
-                bone.hide_select = self.useLockDeformBones
+            if isHairBone(bone):
+                bone.envelope_distance = self.envelope_distance
+                bone.head_radius = self.head_radius
+                bone.tail_radius = self.tail_radius
+
+# ---------------------------------------------------------------------
+#   Toggle Hair Locks
+# ---------------------------------------------------------------------
+
+class DAZ_OT_ToggleHairLocks(DazOperator, IsArmature):
+    bl_idname = "daz.toggle_hair_locks"
+    bl_label = "Toggle Hair Locks"
+    bl_description = "Disable/enable locking of all deform bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        lock = None
+        for bone in rig.data.bones:
+            if isHairBone(bone):
+                if lock is None:
+                    lock = (not bone.hide_select)
+                bone.hide_select = lock
+
+
+def isHairBone(bone):
+    words = bone.name.split("_")
+    return (bone.use_deform and
+            len(words) >= 3 and
+            words[1].isdigit() and
+            words[2].isdigit())
 
 # ---------------------------------------------------------------------
 #   Initialize
@@ -2924,6 +2931,7 @@ classes = [
     DAZ_OT_ConnectHair,
     DAZ_OT_AddHairRig,
     DAZ_OT_SetEnvelopes,
+    DAZ_OT_ToggleHairLocks,
 ]
 
 def register():
