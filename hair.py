@@ -2309,10 +2309,11 @@ class HairEeveeTree(HairTree):
 # ---------------------------------------------------------------------
 
 class HairBoneInfo:
-    def __init__(self, bones, weights, xaxis):
+    def __init__(self, bones, weights, xaxis, hairs):
         self.bones = bones
         self.weights = weights
         self.xaxis = xaxis
+        self.hairs = hairs
 
 
 class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
@@ -2447,7 +2448,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         head = rig.data.edit_bones[self.headName]
         binbones = {}
         for key,sector in sectors.items():
-            binbones[key] = self.buildBones(key, sector, head, rig)
+            binbones[key] = self.buildBones(context, key, sector, head, rig)
         if self.controlMethod == 'IK':
             for key,bininfo in binbones.items():
                 self.addIkBone(key, bininfo, head, rig)
@@ -2458,6 +2459,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.addSkull(rig, binbones)
 
         setMode('OBJECT')
+        hairs = []
+        for key,bininfo in binbones.items():
+            hair = self.mergeObjects(context, bininfo.hairs, "Sector %d" % key)
+            bininfo.hairs = [hair]
+            hairs.append(hair)
         for key,bininfo in binbones.items():
             self.hideBones(bininfo, rig)
         if self.controlMethod == 'IK':
@@ -2484,7 +2490,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.weightingMethod != 'ENVELOPE':
             for key,bininfo in binbones.items():
                 self.buildVertexGroups(key, sectors[key], bininfo)
-        ob = self.mergeObjects(context, hairs, hairname, rig)
+        ob = self.mergeObjects(context, hairs, hairname)
         self.makeEnvelope(context, ob, rig)
         if self.useSeparateRig:
             wmat = ob.matrix_world.copy()
@@ -2500,7 +2506,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         enableRigNumLayer(rig, T_HIDDEN, False)
 
 
-    def mergeObjects(self, context, hairs, hairname, rig):
+    def mergeObjects(self, context, hairs, hairname):
         print("Merge %d objects to %s" % (len(hairs), hairs[0].name))
         activateObject(context, hairs[0])
         for hair in hairs:
@@ -2566,12 +2572,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         return angle,coord
 
 
-    def buildBones(self, key, sector, head, rig):
+    def buildBones(self, context, key, sector, head, rig):
         from .bone import setRoll
         hair,data = sector[0]
         coord = data[1]
+        hairs = [hair]
         for hair,data in sector[1:]:
             coord = np.append(coord, data[1], axis=0)
+            hairs.append(hair)
         z = coord[:,2]
         zmin = np.min(z)
         zmax = np.max(z)
@@ -2588,18 +2596,19 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             joints.append(r)
 
         angle = (key*360/self.nSectors + self.sectorOffset)
-        x0 = math.cos(angle*D)
-        y0 = math.sin(angle*D)
-        c0 = np.array(head.tail)
-        dr = coord-c0
+        x = math.cos(angle*D)
+        y = math.sin(angle*D)
+        arrow = np.array((x,y,0))
+        c = np.array(head.tail)
+        dr = coord-c
         dr[:,2] = 0
         norm = np.linalg.norm(dr, axis=1)
         nmin = np.min(norm)
         nmax = np.max(norm)
-        rmin = np.array((nmin*x0 + c0[0], nmin*y0 + c0[1], zmax))
-        rmax = np.array((nmax*x0 + c0[0], nmax*y0 + c0[1], zmin))
-        e1 = rmin - c0
-        e2 = rmax - c0
+        rmin = np.array((nmin*x + c[0], nmin*y + c[1], zmax))
+        rmax = np.array((nmax*x + c[0], nmax*y + c[1], zmin))
+        e1 = rmin - c
+        e2 = rmax - c
         xaxis = Vector(np.cross(e1, e2))
         xaxis.normalize()
 
@@ -2611,9 +2620,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             weights[:,n] = np.clip(1-np.abs(z-c)/dz, 0.0, 1.0)
         idxs = np.argwhere(z < zmin + 0.5*dz)
         weights[idxs,npoints-1] = 1.0
-        x = coord[:,0]
-        y = coord[:,1]
-        idxs = np.argwhere((x*x0 < 0) | (y*y0 < 0))
+        idxs = np.argwhere(np.dot(coord, arrow) < 0)
         weights[idxs,:] = 0
         weights[idxs,0] = 1.0
 
@@ -2634,7 +2641,8 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             bones.append((bname, r0, r1))
             r0 = r1
             parent = eb
-        return HairBoneInfo(bones, weights, xaxis)
+
+        return HairBoneInfo(bones, weights, xaxis, hairs)
 
 
     def getIkName(self, key):
@@ -2772,7 +2780,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
     def buildVertexGroups(self, key, sector, bininfo):
         print("Build sector %d weights: %d" % (key, len(sector)))
-        for hair,data in sector:
+        for hair in bininfo.hairs:
             for vgrp in list(hair.vertex_groups):
                 if vgrp.name not in ["Root Distance"]:
                     hair.vertex_groups.remove(vgrp)
