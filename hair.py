@@ -2344,6 +2344,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         min = 2, max = 10,
         default = 5)
 
+    keepVertexNumbers : BoolProperty(
+        name = "Keep Vertex Numbers",
+        description = "Keep vertex numbers.\nThis is necessary for hair proxy meshes",
+        default = True)
+
     controlMethod : EnumProperty(
         items = [('NONE', "None", "Don't add control bones"),
                  ('IK', "IK", "IK controls"),
@@ -2377,22 +2382,12 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         description = "Method for weighting mesh",
         default = 'HEIGHT')
 
-    startHair : FloatProperty(
-        name = "Hair Start Location",
-        description = "Location in UV space where hair starts",
-        min = 0.0, max = 1.0,
-        default = 0.1)
-
-    endHead : FloatProperty(
-        name = "Head End Location",
-        description = "Location in UV space where head ends",
-        min = 0.0, max = 1.0,
-        default = 0.2)
 
     def draw(self, context):
         self.layout.prop(self, "nSectors")
         self.layout.prop(self, "sectorOffset")
         self.layout.prop(self, "hairLength")
+        self.layout.prop(self, "keepVertexNumbers")
         self.layout.prop(self, "weightingMethod")
         self.layout.prop(self, "controlMethod")
         if self.controlMethod == 'IK':
@@ -2413,22 +2408,47 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             raise DazError("Hair must have an armature")
         if self.headName not in rig.data.bones.keys():
             raise DazError('No head bone named "%s"' % self.headName)
-        if self.startHair > self.endHead:
-            raise DazError("Hair start location cannot exceed head end location")
-        mod = getModifier(ob, 'ARMATURE')
-        if mod:
-            ob.modifiers.remove(mod)
         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+
+        # Remove old vertex groups
+        for vgrp in list(ob.vertex_groups):
+            if vgrp.name not in ["Root Distance"]:
+                ob.vertex_groups.remove(vgrp)
+
+        # Create a separate hair rig
         if self.useSeparateRig or self.controlMethod == 'BBONE':
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                ob.modifiers.remove(mod)
             rig = self.addSeparateRig(context, hairname, rig)
             wmat = ob.matrix_world.copy()
             ob.parent = rig
             setWorldMatrix(ob, wmat)
-            activateObject(context, ob)
-        mod = ob.modifiers.new(rig.name, 'ARMATURE')
-        mod.object = rig
-        self.startGizmos(context, rig)
 
+        # Add armature modifier if there is none
+        mod = getModifier(ob, 'ARMATURE')
+        if mod is None:
+            mod = ob.modifiers.new(rig.name, 'ARMATURE')
+            mod.object = rig
+            activateObject(context, ob)
+
+        # Duplicate mesh and store original vertex number in an attribute
+        self.startGizmos(context, rig)
+        activateObject(context, ob)
+        origMesh = None
+        if self.keepVertexNumbers and not BLENDER3:
+            bpy.ops.object.duplicate()
+            for ob1 in getSelectedMeshes(context):
+                if ob1 != ob:
+                    origMesh = ob
+                    ob = ob1
+                    ob.name = "DUPLI"
+                    break
+            activateObject(context, ob)
+        if origMesh:
+            self.storeOrigVerts(ob)
+
+        # Divide hair into sectors
         hairs = self.getMeshHairs(context, ob, None)
         sectors = {}
         for hair in hairs:
@@ -2444,11 +2464,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             sectors[key].append((hair,data))
         activateObject(context, rig)
 
+        # Build deform bones and compute weights
         setMode('EDIT')
         head = rig.data.edit_bones[self.headName]
         binbones = {}
         for key,sector in sectors.items():
             binbones[key] = self.buildBones(context, key, sector, head, rig)
+
+        # Build control bones
         if self.controlMethod == 'IK':
             for key,bininfo in binbones.items():
                 self.addIkBone(key, bininfo, head, rig)
@@ -2466,6 +2489,13 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             hairs.append(hair)
         for key,bininfo in binbones.items():
             self.hideBones(bininfo, rig)
+
+        # Add vertex groups
+        if self.weightingMethod != 'ENVELOPE':
+            for key,bininfo in binbones.items():
+                self.buildVertexGroups(key, bininfo)
+
+        # Add constraints for control bones
         if self.controlMethod == 'IK':
             gizmo = self.makeEmptyGizmo("GZM_Cone", 'CONE')
             for key,bininfo in binbones.items():
@@ -2481,16 +2511,21 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             from .mhx import addWinder
             self.makeGizmos(False, ["GZM_Knuckle"])
             gizmo = self.gizmos["GZM_Knuckle"]
+            activateObject(context, rig)
             for key,bininfo in binbones.items():
                 bnames = [bone[0] for bone in bininfo.bones]
                 windname = "Wind_%s" % bnames[0]
                 layers = [T_WIDGETS, T_HIDDEN]
                 addWinder(rig, windname, bnames, layers, gizmo=gizmo, useLocation=True, xaxis=bininfo.xaxis)
+            activateObject(context, ob)
 
-        if self.weightingMethod != 'ENVELOPE':
-            for key,bininfo in binbones.items():
-                self.buildVertexGroups(key, sectors[key], bininfo)
+       # Merge rigs
         ob = self.mergeObjects(context, hairs, hairname)
+        if origMesh:
+            self.restoreOrigVerts(origMesh, ob)
+            deleteObjects(context, [ob])
+            ob = origMesh
+
         self.makeEnvelope(context, ob, rig)
         if self.useSeparateRig:
             wmat = ob.matrix_world.copy()
@@ -2516,6 +2551,28 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         ob.name = hairname
         bpy.ops.object.shade_smooth()
         return ob
+
+
+    def storeOrigVerts(self, ob):
+        ovi:Attribute = ob.data.attributes.new("orig_vertex", 'INT', 'POINT')
+        for v in ob.data.vertices:
+            ovi.data[v.index].value = v.index
+
+
+    def restoreOrigVerts(self, origMesh, ob):
+        origMesh.vertex_groups.clear()
+        weights = {}
+        ngrps = {}
+        for gn,vgrp in enumerate(ob.vertex_groups):
+            ngrp = origMesh.vertex_groups.new(name = vgrp.name)
+            ngrps[gn] = ngrp
+        for v in ob.data.vertices:
+            weights[v.index] = dict([(g.group, g.weight) for g in v.groups])
+        ovi = ob.data.attributes["orig_vertex"]
+        for vn,elt in enumerate(ovi.data):
+            ovn = elt.value
+            for gn,w in weights[vn].items():
+                ngrps[gn].add([ovn], w, 'REPLACE')
 
 
     def makeEnvelope(self, context, ob, rig):
@@ -2778,12 +2835,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             enableBoneNumLayer(bone, rig, layer)
 
 
-    def buildVertexGroups(self, key, sector, bininfo):
-        print("Build sector %d weights: %d" % (key, len(sector)))
+    def buildVertexGroups(self, key, bininfo):
+        print("Build sector %d weights: %d" % (key, len(bininfo.hairs)))
         for hair in bininfo.hairs:
-            for vgrp in list(hair.vertex_groups):
-                if vgrp.name not in ["Root Distance"]:
-                    hair.vertex_groups.remove(vgrp)
             hgrp = hair.vertex_groups.new(name="Skull")
             vgrps = [hgrp]
             for bname,r0,r1 in bininfo.bones:
