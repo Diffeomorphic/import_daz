@@ -2107,7 +2107,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                 favo = favo.split("/",1)[0]
                 morph = normKey(favo)
                 if not self.findMorphs(morph, ob):
-                    self.missing.append(favo)
+                    #self.missing.append(favo)
+                    self.addNamePath(morph, ob.DazScene, self.namepaths)
             self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
