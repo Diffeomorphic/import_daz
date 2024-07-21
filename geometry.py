@@ -398,6 +398,7 @@ class GeoNode(Node, SimNode):
         hdob = self.hdobject
         if hdob:
             self.finishHD(context, self.rna, hdob, inst)
+        return
         if ob.type == 'MESH':
             if GS.usePruneNodes:
                 pruneUvMaps(ob)
@@ -422,7 +423,7 @@ class GeoNode(Node, SimNode):
             scaleEyeMoisture(ob)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
-            if hdob and hdob != ob:
+            if hdob and hdob.data != ob.data:
                 uvlayer = getActiveUvLayer(ob)
                 if uvlayer:
                     hduvlayer = hdob.data.uv_layers.get(uvlayer.name)
@@ -435,13 +436,13 @@ class GeoNode(Node, SimNode):
                     sortMaterialsByName(hdob)
                 if GS.useShellDrivers:
                     driveShellInfluence(hdob)
-            elif GS.useShellDrivers:
+            if GS.useShellDrivers:
                 driveShellInfluence(ob)
             if GS.shellMethod == 'GEONODES':
                 self.buildShells(context)
         if LS.fitFile and ob.type == 'MESH':
             shiftMesh(ob, inst.worldmat.inverted())
-            if hdob and hdob != ob:
+            if hdob and hdob.data != ob.data:
                 shiftMesh(hdob, inst.worldmat.inverted())
 
 
