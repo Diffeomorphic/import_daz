@@ -765,35 +765,33 @@ class CyclesTree(Tree):
     #   Color effect
     #-------------------------------------------------------------
 
-    def buildColorEffect(self, value, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color"):
+    def buildColorEffect(self, effect, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color"):
         # [ "Scatter Only", "Scatter & Transmit", "Scatter & Transmit Intensity" ]
         if fac == 0:
             return None
-        elif value == 0:     # Scatter Only
+        elif effect == 0 or (isWhite(color) and isWhite(tint)):
             if facslot:
                 self.linkScalar(factex, node, fac, facslot)
             if colorslot:
                 return self.linkColor(tex, node, color, colorslot)
         else:
             from .cgroup import ColorEffectGroup
-            effect = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
-            if tint is None:
-                tint = WHITE
-            effect.inputs["Tint"].default_value[0:3] = tint
-            self.linkScalar(factex, effect, fac, "Fac")
-            colorInput = self.linkColor(tex, effect, color, "Color")
-            self.moveTex(tex, effect)
+            effnode = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
+            effnode.inputs["Tint"].default_value[0:3] = tint
+            self.linkScalar(factex, effnode, fac, "Fac")
+            colorInput = self.linkColor(tex, effnode, color, "Color")
+            self.moveTex(tex, effnode)
             outfac = {
                 1:  "Transmit Fac", # Scatter & Transmit
                 2:  "Intensity Fac" # Scatter & Transmit Intensity
             }
             if facslot:
                 node.inputs[facslot].default_value = fac
-                self.links.new(effect.outputs[outfac[value]], node.inputs[facslot])
+                self.links.new(effnode.outputs[outfac[effect]], node.inputs[facslot])
             if colorslot:
                 node.inputs[colorslot].default_value[0:3] = color
-                self.links.new(effect.outputs["Color"], node.inputs[colorslot])
-            return effect
+                self.links.new(effnode.outputs["Color"], node.inputs[colorslot])
+            return effnode
 
 
     def compProd(self, x, y):
@@ -873,7 +871,7 @@ class CyclesTree(Tree):
         from .cgroup import DiffuseGroup
         node = self.addGroup(DiffuseGroup, "DAZ Overlay")
         effect = self.getValue(["Diffuse Overlay Color Effect"], 0)
-        self.buildColorEffect(effect, color, tex, None, fac, factex, node)
+        self.buildColorEffect(effect, color, tex, WHITE, fac, factex, node)
         roughness,roughtex,_ = self.getColorTex(["Diffuse Overlay Roughness"], "NONE", 0, False)
         self.setRoughness(node, "Roughness", roughness, roughtex)
         self.linkBumpNormal(node)
@@ -966,7 +964,7 @@ class CyclesTree(Tree):
         color,tex,_ = self.getColorTex(["Metallic Flakes Color"], "COLOR", WHITE, False)
         fac,factex,texslot = self.getColorTex(["Metallic Flakes Weight"], "NONE", 0.0, False, isMask=True)
         effect = self.getValue(["Metallic Flakes Color Effect"], 0)
-        self.buildColorEffect(effect, color, tex, None, fac, factex, node)
+        self.buildColorEffect(effect, color, tex, WHITE, fac, factex, node)
         roughness,roughtex,_ = self.getColorTex(["Metallic Flakes Roughness"], "NONE", 0.0, False)
         self.linkScalar(roughtex, node, roughness, "Roughness")
         size = max(0.01, self.getValue(["Metallic Flakes Size"], 1))
@@ -1102,7 +1100,7 @@ class CyclesTree(Tree):
         fac,factex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 0)
         color,tex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, False)
         effect = self.getValue(["Glossy Color Effect"], 0)
-        self.buildColorEffect(effect, color, tex, None, fac, factex, glossy)
+        self.buildColorEffect(effect, color, tex, WHITE, fac, factex, glossy)
         ior,iortex = self.getFresnelIOR()
         self.linkScalar(iortex, glossy, ior, "IOR")
         channel,value,roughness,invert = self.owner.getGlossyRoughness(0.0)
@@ -1231,7 +1229,7 @@ class CyclesTree(Tree):
         top = self.addGroup(TopCoatGroup, "DAZ Top Coat")
         top.width = 200
         effect = self.getValue(["Top Coat Color Effect"], 0)
-        self.buildColorEffect(effect, color, coltex, None, fac, factex, top)
+        self.buildColorEffect(effect, color, coltex, WHITE, fac, factex, top)
         self.linkScalar(spec0tex, top, spec0, "Specular0")
         self.linkScalar(spec90tex, top, spec90, "Specular90")
         self.linkScalar(powertex, top, power, "Power")
