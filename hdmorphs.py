@@ -820,18 +820,13 @@ def copyGraftGroups(context, hdob, baseob, grafts):
                     vgroups[hdvgrp.index] = hdvgrp.name
                     if hdvgrp.index not in weights.keys():
                         weights[hdvgrp.name] = []
-            mnums = []
-            for mn,mat in enumerate(hdgraft.data.materials):
-                if mat and mat.name in graft.data.materials:
-                    mnums.append(mn)
+            vnums = getHDMaterialVertNums(graft.data, hdgraft.data)
             hdverts = hdgraft.data.vertices
-            for f in hdgraft.data.polygons:
-                if f.material_index in mnums:
-                    for vn in f.vertices:
-                        v = hdverts[vn]
-                        for g in v.groups:
-                            vgname = vgroups[g.group]
-                            weights[vgname].append((vn, g.weight))
+            for vn in vnums:
+                v = hdverts[vn]
+                for g in v.groups:
+                    vgname = vgroups[g.group]
+                    weights[vgname].append((vn, g.weight))
 
         hdgraft.vertex_groups.clear()
         for vgname,data in weights.items():
@@ -864,6 +859,15 @@ def copyGraftGroups(context, hdob, baseob, grafts):
     # Delete HD graft
     deleteObjects(context, [hdgraft])
     return True
+
+
+def getHDMaterialVertNums(me, hdme):
+    mnums = [mn for mn,mat in enumerate(hdme.materials)
+             if mat and mat.name in me.materials]
+    vnumlists = [list(f.vertices) for f in hdme.polygons
+                 if f.material_index in mnums]
+    vnums = [vn for fverts in vnumlists for vn in fverts]
+    return set(vnums)
 
 #----------------------------------------------------------
 #   Select .dhdm and jcm files

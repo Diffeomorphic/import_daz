@@ -901,15 +901,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         grafts,hum = geografts[baseob.name]
                         isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
-        if (self.useMergeMaterials and
-            meshes and
-            activateObject(context, meshes[0])):
-            # Merge material slots
-            for ob in meshes[1:]:
-                selectSet(ob, True)
-            print("Merge materials")
-            bpy.ops.daz.merge_materials()
-
         if self.useApplyTransforms:
             applyTransforms(objects)
 
@@ -988,6 +979,32 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useTransferHD and mainMesh:
             print("Transfer to HD meshes", isSingleHD)
             self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
+            if isSingleHD and geografts and hdmeshes:
+                from .hdmorphs import getHDMaterialVertNums
+                hdmesh = hdmeshes[0]
+                hdverts = hdmesh.data.vertices
+                for grafts,hum in geografts.values():
+                    for graft in grafts:
+                        vnums = getHDMaterialVertNums(graft.data, hdmesh.data)
+                        if vnums and activateObject(context, hdmesh):
+                            setMode('EDIT')
+                            bpy.ops.mesh.select_all(action='DESELECT')
+                            setMode('OBJECT')
+                            for vn in vnums:
+                                hdverts[vn].select = True
+                            self.transferShapes(context, graft, [hdmesh], True, "All", useNonConforming=True, useSelectedOnly=True)
+
+        # Merge material slots
+        # Must be done after shapekeys have been transferred to HD.
+        if (self.useMergeMaterials and
+            meshes and
+            activateObject(context, meshes[0])):
+            for ob in meshes[1:]:
+                selectSet(ob, True)
+            for ob in hdmeshes:
+                selectSet(ob, True)
+            print("Merge materials")
+            bpy.ops.daz.merge_materials()
 
         # Merge geografts
         hdgrafts = []
@@ -1084,7 +1101,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         return None
 
 
-    def transferShapes(self, context, ob, meshes, useDrivers, bodypart, useNonConforming=False):
+    def transferShapes(self, context, ob, meshes, useDrivers, bodypart,
+                       useNonConforming=False,
+                       useSelectedOnly=False):
         if not (ob and meshes):
             return
         from .selector import classifyShapekeys
@@ -1109,7 +1128,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             else:
                 snames = [sname for sname,bpart in bodyparts.items() if bpart != bodypart]
             snames = [sname for sname in snames if not getBulgeBone(sname)]
-            transferShapesToMeshes(context, ob, meshes, snames, useDrivers=useDrivers, useOverwrite=False, useNonConforming=useNonConforming)
+            transferShapesToMeshes(context, ob, meshes, snames,
+                useDrivers=useDrivers,
+                useOverwrite=False,
+                useNonConforming=useNonConforming,
+                useSelectedOnly=useSelectedOnly)
 
 #------------------------------------------------------------------
 #   Utilities
