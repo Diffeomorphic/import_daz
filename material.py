@@ -2019,7 +2019,7 @@ def checkRenderSettings(context, force):
             ("ray_tracing_method", "=", 'SCREEN'),
             ("ray_tracing_options", "&", [
                 ("resolution_scale", "=", "1"),
-                ("trace_max_roughness", ">", 0.2)
+                ("trace_max_roughness", ">", 0.5)
             ]),
         ]
     }
