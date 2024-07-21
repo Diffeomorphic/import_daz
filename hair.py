@@ -2373,22 +2373,17 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         description = "Name of the head bone",
         default = "head")
 
-    weightingMethod : EnumProperty(
-        items = [('HEIGHT', "Height", "Use Z coordinate in real space"),
-                 ('STRAND', "Strand", "Use distance on strand from root,\neither using \"Root Distance\" vertex group\nor location in UV space"),
-                 ('ENVELOPE', "Envelope", "Use envelope"),
-                 ],
-        name = "Weighting Method",
-        description = "Method for weighting mesh",
-        default = 'HEIGHT')
-
+    useVertexGroups : BoolProperty(
+        name = "Vertex Groups",
+        description = "Create vertex groups based on Z coordinate",
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "nSectors")
         self.layout.prop(self, "sectorOffset")
         self.layout.prop(self, "hairLength")
         self.layout.prop(self, "keepVertexNumbers")
-        self.layout.prop(self, "weightingMethod")
+        self.layout.prop(self, "useVertexGroups")
         self.layout.prop(self, "controlMethod")
         if self.controlMethod == 'IK':
             self.layout.prop(self, "useHideBones")
@@ -2408,6 +2403,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             raise DazError("Hair must have an armature")
         if self.headName not in rig.data.bones.keys():
             raise DazError('No head bone named "%s"' % self.headName)
+        mod = getModifier(ob, 'ARMATURE')
+        if mod:
+            ob.modifiers.remove(mod)
         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
 
         # Remove old vertex groups
@@ -2417,20 +2415,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
         # Create a separate hair rig
         if self.useSeparateRig or self.controlMethod == 'BBONE':
-            mod = getModifier(ob, 'ARMATURE')
-            if mod:
-                ob.modifiers.remove(mod)
             rig = self.addSeparateRig(context, hairname, rig)
-            wmat = ob.matrix_world.copy()
-            ob.parent = rig
-            setWorldMatrix(ob, wmat)
-
-        # Add armature modifier if there is none
-        mod = getModifier(ob, 'ARMATURE')
-        if mod is None:
-            mod = ob.modifiers.new(rig.name, 'ARMATURE')
-            mod.object = rig
-            activateObject(context, ob)
 
         # Duplicate mesh and store original vertex number in an attribute
         self.startGizmos(context, rig)
@@ -2476,10 +2461,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for key,bininfo in binbones.items():
                 self.addIkBone(key, bininfo, head, rig)
         elif self.controlMethod == 'BBONE':
-            rig.data.display_type = 'BBONE'
             for key,bininfo in binbones.items():
                 self.addBendyBones(key, bininfo, head, rig)
-        self.addSkull(rig, binbones)
+            rig.data.display_type = 'BBONE'
+        #self.addSkull(rig, binbones)
 
         setMode('OBJECT')
         hairs = []
@@ -2491,7 +2476,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             self.hideBones(bininfo, rig)
 
         # Add vertex groups
-        if self.weightingMethod != 'ENVELOPE':
+        if self.useVertexGroups:
             for key,bininfo in binbones.items():
                 self.buildVertexGroups(key, bininfo)
 
@@ -2527,16 +2512,14 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             ob = origMesh
 
         self.makeEnvelope(context, ob, rig)
-        if self.useSeparateRig:
-            wmat = ob.matrix_world.copy()
-            ob.parent = rig
-            mod = getModifier(ob, 'ARMATURE')
-            mod.object = rig
-            mod.name = "Armature Hair"
-            if self.weightingMethod == 'ENVELOPE':
-                mod.use_vertex_groups = False
-                mod.use_bone_envelopes = True
-            setWorldMatrix(ob, wmat)
+        activateObject(context, ob)
+        wmat = ob.matrix_world.copy()
+        ob.parent = rig
+        ob.parent_type = 'OBJECT'
+        if self.useVertexGroups:
+            addArmatureModifier(ob, rig, "Armature Hair")
+        setWorldMatrix(ob, wmat)
+        bpy.ops.object.transform_apply()
         enableRigNumLayer(rig, T_WIDGETS)
         enableRigNumLayer(rig, T_HIDDEN, False)
 
@@ -2608,13 +2591,16 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         roll = eb.roll
         setMode('OBJECT')
         activateObject(context, hairrig)
+        setWorldMatrix(hairrig, rig.matrix_world)
+        bpy.ops.object.transform_apply()
         setMode('EDIT')
         eb = amt.edit_bones.new(self.headName)
         eb.head = head
         eb.tail = tail
         eb.roll = roll
         setMode('OBJECT')
-        setWorldMatrix(hairrig, rig.matrix_world)
+        hairrig.data.display_type = 'STICK'
+        hairrig.lock_location = TTrue
         bone = amt.bones[self.headName]
         enableBoneNumLayer(bone, hairrig, T_HIDDEN)
         return hairrig
@@ -2649,7 +2635,10 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             batch = coord[idxs]
             r = np.average(batch, axis=0)
             r = r.reshape((3,))
-            r[2] = zmax - n*dz
+            if n == 0:
+                r[0] = 0
+            else:
+                r[2] = zmax - n*dz
             joints.append(r)
 
         angle = (key*360/self.nSectors + self.sectorOffset)
@@ -2731,17 +2720,19 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             return handle
 
         eps = 0.05
+        bb = None
         for n,bdata in enumerate(bininfo.bones):
             bname,r0,r1 = bdata
             dr = r1 - r0
-            vec = dr/np.linalg.norm(dr)
+            if bb:
+                bb.tail = r0 - eps*dr
             bb = rig.data.edit_bones[bname]
-            handle = addHandle(n)
             bb.use_connect = False
+            handle = addHandle(n)
             bb.parent = handle
             bb.head = r0 + eps*dr
-            bb.tail = r1 - eps*dr
         r0 = r1
+        bb.tail = r0 - eps*dr
         handle = addHandle(len(bininfo.bones))
 
 
@@ -2798,10 +2789,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         handleSize = 0.5*GS.scale
 
         rig.data.display_type = 'BBONE'
-        for bname in [self.headName, "Skull"]:
-            bone = rig.data.bones[bname]
-            bone.bbone_x = 1*GS.scale
-            bone.bbone_z = 1*GS.scale
+        head = rig.data.bones[self.headName]
+        head.bbone_x = 1*GS.scale
+        head.bbone_z = 1*GS.scale
         for n,bdata in enumerate(bininfo.bones):
             bname,r0,r1 = bdata
             bone = rig.data.bones[bname]
@@ -2823,6 +2813,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             pb.bone.bbone_handle_type_end = 'ABSOLUTE'
             pb.bone.bbone_custom_handle_end = handle.bone
             stretchTo(pb, handle, rig)
+            pb.bone.hide_select = True
 
 
     def hideBones(self, bininfo, rig):
@@ -2838,70 +2829,33 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
     def buildVertexGroups(self, key, bininfo):
         print("Build sector %d weights: %d" % (key, len(bininfo.hairs)))
         for hair in bininfo.hairs:
-            hgrp = hair.vertex_groups.new(name="Skull")
+            hgrp = hair.vertex_groups.new(name=self.headName)
             vgrps = [hgrp]
             for bname,r0,r1 in bininfo.bones:
                 vgrp = hair.vertex_groups.new(name=bname)
                 vgrps.append(vgrp)
-            if self.weightingMethod == 'HEIGHT':
-                weights = bininfo.weights
-            elif self.weightingMethod == 'STRAND':
-                heights = self.getHeights(hair)
-                weights = self.getWeightsFromHeights(hair, heights)
+            weights = bininfo.weights
             for gn,vgrp in enumerate(vgrps):
                 for vn,w in enumerate(weights[:,gn]):
                     if w > 0.001:
                         vgrp.add([vn], w, 'REPLACE')
 
 
-    def getHeights(self, hair):
-        if "Root Distance" in hair.vertex_groups.keys():
-            vgrp = hair.vertex_groups["Root Distance"]
-            heights = {}
-            for v in hair.data.vertices:
-                for g in v.groups:
-                    if g.group == vgrp.index:
-                        heights[v.index] = 1-g.weight
-            return heights
-        elif hair.data.uv_layers:
-            uvlayer = hair.data.uv_layers[0]
-            heights = dict([(vn, uvlayer.data[f.loop_indices[i]].uv[1])
-                for f in hair.data.polygons
-                for i,vn in enumerate(f.vertices)
-                ])
-            ylist = list(heights.values())
-            ymin = min(ylist)
-            ymax = max(ylist)
-            k = 1/(ymax-ymin)
-            hlist = list()
-            hlist.sort()
-            heights = dict([(vn,k*(y-ymin)) for vn,y in heights.items()])
-            return heights
-        else:
-            raise DazError("No height information found")
-
-
-    def getWeightsFromHeights(self, hair, heights):
-        nverts = len(hair.data.vertices)
-        k = self.hairLength
-        weights = np.zeros([nverts, k+1], dtype=float)
-        for vn,y in heights.items():
-            s = k*(1-y)
-            m = int(math.floor(s))
-            a = s-m
-            if a < 0.5:
-                if m > 0 and m < k:
-                    weights[vn,m] = a + 0.5
-                    weights[vn,m-1] = 0.5 - a
-                else:
-                    weights[vn,m] = 1.0
-            else:
-                if m < k:
-                    weights[vn,m] = 1.5 - a
-                    weights[vn,m+1] = a - 0.5
-                else:
-                    weights[vn,m] = 1.0
-        return weights
+def addArmatureModifier(ob, rig, modname):
+    from .dforce import ModStore
+    mod = getModifier(ob, 'ARMATURE')
+    if mod is None:
+        stores = []
+        for mod in ob.modifiers:
+            stores.append(ModStore(mod))
+            ob.modifiers.remove(mod)
+        mod = ob.modifiers.new(modname, 'ARMATURE')
+        mod.object = rig
+        for store in stores:
+            store.restore(ob)
+    else:
+        mod.object = rig
+        mod.name = modname
 
 # ---------------------------------------------------------------------
 #   Add Hair Rig

@@ -324,8 +324,11 @@ class ModStore:
             if (isSimpleType(value) or
                 isinstance(value, (bpy.types.Object, bpy.types.NodeTree))):
                 struct[key] = value
-        for key,value in data.items():
-            self.items[key] = value
+        try:
+            for key,value in data.items():
+                self.items[key] = value
+        except TypeError:
+            pass
 
 
     def restore(self, ob):
