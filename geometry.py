@@ -340,47 +340,26 @@ class GeoNode(Node, SimNode):
 
 
     def addHDMaterials(self, matgroups, inst, mats, prefix):
-        from .figure import FigureInstance
+        def addToTable(mats, prefix):
+            for mat in mats:
+                if mat:
+                    mname = "%s%s" % (prefix, stripName(mat.name))
+                    table[mname] = baseName(mat.name)
 
-        SpecialIndex = {
-            "HeadLight_L_608_Nipples" : 1,
-            "HeadLight_R_608_Nipples" : 0,
-        }
-
-        def searchMaterial(mg, mg0):
-            key = mg
-            while key:
-                mnames = table.get(key, [])
-                if len(mnames) == 1:
-                    return mnames[0]
-                elif len(mnames) > 1:
-                    idx = SpecialIndex.get(mg0, 0)
-                    return mnames[idx]
-                key = key.split("_", 1)[-1]
-            print("Did not find HD material %s" % mg)
-            return ""
-
-        def addMeshMaterials(inst, mats):
+        if matgroups:
+            from .figure import FigureInstance
+            table = {}
+            addToTable(mats, "")
             for child in inst.children.values():
                 if isinstance(child, FigureInstance):
                     for geo in child.geometries:
                         ob = geo.rna
                         if isGeograft(ob):
-                            mats += [mat for mat in ob.data.materials if mat]
-
-        if matgroups:
-            mats = list(mats)
-            addMeshMaterials(inst, mats)
-            table = {}
-            for mat in mats:
-                mname = stripName(mat.name)
-                if mname not in table.keys():
-                    table[mname] = []
-                table[mname].append(baseName(mat.name))
+                            addToTable(ob.data.materials, "%s_" % child.id)
             for mg in matgroups:
                 pg = self.hdobject.data.DazHDMaterials.add()
                 pg.name = mg
-                pg.text = searchMaterial(mg, mg)
+                pg.text = table.get(mg, mg)
             return
 
         for mat in mats:
