@@ -2366,7 +2366,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
     useSeparateRig : BoolProperty(
         name = "Separate Hair Rig",
         description = "Make a separate rig parented to the head bone,\ninstead of adding bones to the main rig",
-        default = False)
+        default = True)
 
     headName : StringProperty(
         name = "Head",
@@ -2387,7 +2387,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         self.layout.prop(self, "controlMethod")
         if self.controlMethod == 'IK':
             self.layout.prop(self, "useHideBones")
-        if self.controlMethod != 'BBONE':
+        if False and self.controlMethod != 'BBONE':
             self.layout.prop(self, "useSeparateRig")
         self.layout.prop(self, "useCheckStrips")
         self.layout.prop(self, "headName")
@@ -2582,7 +2582,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         hairrig.parent_type = 'BONE'
         hairrig.parent_bone = self.headName
         hairrig.show_in_front = True
-        context.collection.objects.link(hairrig)
+        for coll in bpy.data.collections:
+            if rig.name in coll.objects:
+                coll.objects.link(hairrig)
         activateObject(context, rig)
         setMode('EDIT')
         eb = rig.data.edit_bones[self.headName]
