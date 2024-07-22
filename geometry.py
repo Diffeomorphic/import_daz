@@ -398,7 +398,6 @@ class GeoNode(Node, SimNode):
         hdob = self.hdobject
         if hdob:
             self.finishHD(context, self.rna, hdob, inst)
-        return
         if ob.type == 'MESH':
             if GS.usePruneNodes:
                 pruneUvMaps(ob)
