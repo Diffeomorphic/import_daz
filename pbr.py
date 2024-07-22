@@ -274,7 +274,7 @@ class PbrTree(CyclesTree):
         effnode = None
         if effect:
             effnode = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
-        if effnode:
+        if effnode and effnode.type == 'GROUP':
             sub = self.addNode("ShaderNodeMath", 3)
             sub.operation = 'SUBTRACT'
             sub.inputs[0].default_value = 1
