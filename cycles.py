@@ -768,12 +768,13 @@ class CyclesTree(Tree):
     def buildColorEffect(self, effect, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color"):
         # [ "Scatter Only", "Scatter & Transmit", "Scatter & Transmit Intensity" ]
         if fac == 0:
-            return None
+            return False, None
         elif effect == 0 or (isWhite(color) and isWhite(tint)):
             if facslot:
                 self.linkScalar(factex, node, fac, facslot)
             if colorslot:
-                return self.linkColor(tex, node, color, colorslot)
+                self.linkColor(tex, node, color, colorslot)
+                return False, tex
         else:
             from .cgroup import ColorEffectGroup
             effnode = self.addGroup(ColorEffectGroup, "DAZ Color Effect", col=self.column-1)
@@ -791,7 +792,7 @@ class CyclesTree(Tree):
             if colorslot:
                 node.inputs[colorslot].default_value[0:3] = color
                 self.links.new(effnode.outputs["Color"], node.inputs[colorslot])
-            return effnode
+            return True, effnode
 
 
     def compProd(self, x, y):
@@ -820,7 +821,7 @@ class CyclesTree(Tree):
         self.diffuse = self.addGroup(DiffuseGroup, "DAZ Diffuse")
         tint = self.getColor(["SSS Reflectance Tint"], WHITE)
         effect = self.getValue(["Base Color Effect"], 0)
-        self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, fac, factex, self.diffuse)
+        hasEffect,self.diffuseInput = self.buildColorEffect(effect, color, tex, tint, fac, factex, self.diffuse)
         if self.cycles:
             self.links.new(self.cycles.outputs["BSDF"], self.diffuse.inputs["BSDF"])
         self.cycles = self.diffuse

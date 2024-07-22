@@ -271,10 +271,9 @@ class PbrTree(CyclesTree):
             self.linkColor(tex, self.pbr, color, "Base Color")
             return
 
-        effnode = None
         if effect:
-            effnode = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
-        if effnode and effnode.type == 'GROUP':
+            hasEffect,effnode = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
+        if effect and hasEffect:
             sub = self.addNode("ShaderNodeMath", 3)
             sub.operation = 'SUBTRACT'
             sub.inputs[0].default_value = 1
