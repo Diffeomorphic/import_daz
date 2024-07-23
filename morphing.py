@@ -731,7 +731,6 @@ class MorphLoader(LoadMorph, PosableMaker):
 def transferShapesToMeshes(context, ob, meshes, snames,
                            useDrivers=True,
                            useOverwrite=True,
-                           useNonConforming=False,
                            useSelectedOnly=False):
     if not snames:
         return
@@ -744,7 +743,6 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         bpy.ops.daz.transfer_shapekeys(
             useDrivers=useDrivers,
             useOverwrite=useOverwrite,
-            useNonConforming=useNonConforming,
             useSelectedOnly=useSelectedOnly,
             needsTarget=False)
     except DazError:

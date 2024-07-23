@@ -231,9 +231,11 @@ class GeoNode(Node, SimNode):
                 print("No HD object, use base mesh %s" %  ob.name)
                 hdob = self.buildHDObject(context, ob, inst, ob.data)
         if ob and self.data:
-            self.data.buildRigidity(ob, self.conform_target)
+            if not self.conform_target:
+                ob["DazConforms"] = False
+            self.data.buildRigidity(ob)
             if self.hdType == 'MULTIRES':
-                self.data.buildRigidity(self.hdobject, self.conform_target)
+                self.data.buildRigidity(self.hdobject)
 
         renderLevel = 0
         if self.materials:
@@ -1430,10 +1432,8 @@ class Geometry(Asset, Channels):
                 reportError(msg)
 
 
-    def buildRigidity(self, ob, conforms):
+    def buildRigidity(self, ob):
         from .modifier import buildVertexGroup
-        if not conforms:
-            ob["DazConforms"] = False
         if self.rigidity:
             strange = False
             for group in self.rigidity.get("groups", []):

@@ -820,14 +820,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             mainRig = rigs[0]
         else:
             mainRig = None
-        if meshes and meshes[0].DazMesh.startswith("Genesis"):
-            mainMesh = meshes[0]
-        else:
-            mainMesh = None
-        if mainRig:
-            mainChar = isGenesis(mainRig)
-        else:
-            mainChar = None
+        firstMesh = (meshes[0] if meshes else None)
+        mainMesh = (firstMesh if firstMesh and firstMesh.DazMesh.startswith("Genesis") else None)
+        mainChar = (isGenesis(mainRig) if mainRig else None)
         if mainChar:
             print("Main character: %s" % mainChar)
         elif mainMesh:
@@ -960,25 +955,25 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useMakePosable=False)
 
         # Import DAZ favorites
-        if self.useDazFavorites and meshes:
+        if self.useDazFavorites and firstMesh:
             if mainRig:
                 activateObject(context, mainRig)
             else:
-                activateObject(context, meshes[0])
+                activateObject(context, firstMesh)
             for ob in meshes[1:]:
                 selectSet(ob, True)
             bpy.ops.daz.import_daz_favorites(
                 useTransferOthers=False,
                 useMakePosable=False)
 
-        if self.fitMeshes == 'MORPHED' and mainMesh:
+        if self.fitMeshes == 'MORPHED' and firstMesh:
             print("Transfer to all meshes")
-            self.transferShapes(context, mainMesh, meshes[1:], True, "All")
+            self.transferShapes(context, firstMesh, meshes[1:], True, "All")
 
         # Transfer to HD meshes
-        if self.useTransferHD and mainMesh:
+        if self.useTransferHD and firstMesh:
             print("Transfer to HD meshes", isSingleHD)
-            self.transferShapes(context, mainMesh, hdmeshes, True, "All", useNonConforming=True)
+            self.transferShapes(context, firstMesh, hdmeshes, True, "All")
             if isSingleHD and geografts and hdmeshes:
                 from .hdmorphs import getHDMaterialVertNums
                 hdmesh = hdmeshes[0]
@@ -992,7 +987,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                             setMode('OBJECT')
                             for vn in vnums:
                                 hdverts[vn].select = True
-                            self.transferShapes(context, graft, [hdmesh], True, "All", useNonConforming=True, useSelectedOnly=True)
+                            self.transferShapes(context, graft, [hdmesh], True, "All", useSelectedOnly=True)
 
         # Merge material slots
         # Must be done after shapekeys have been transferred to HD.
@@ -1009,7 +1004,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Merge geografts
         hdgrafts = []
         if geografts:
-            if not isSingleHD and mainMesh.name in geografts.keys():
+            if not isSingleHD and firstMesh.name in geografts.keys():
                 hdgraftNames = []
                 for grafts,hum in geografts.values():
                     hdgraftNames += [HDName(graft.name) for graft in grafts]
@@ -1020,10 +1015,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
                 print("Transfer to geografts")
                 for grafts,hum in geografts.values():
-                    if hum == mainMesh:
+                    if hum == firstMesh:
                         self.transferShapes(context, hum, grafts, (not self.useMergeGeografts), "NoFace")
                 for grafts,hum in geografts.values():
-                    if hum != mainMesh:
+                    if hum != firstMesh:
                         self.transferShapes(context, hum, grafts, (not self.useMergeGeografts), "All")
 
             if self.useMergeGeografts:
@@ -1040,13 +1035,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     if GS.viewportColors == 'GUESS':
                         from .guess import guessMaterialColor
                         LS.skinColor = self.skinColor
-                        for mat in mainMesh.data.materials:
+                        for mat in firstMesh.data.materials:
                             guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
 
                 grafts = []
                 for grafts0,hum in geografts.values():
                     grafts += grafts0
-                mergeGeografts(context, mainMesh, grafts, meshes)
+                mergeGeografts(context, firstMesh, grafts, meshes)
                 geografts = {}
                 if hdgrafts:
                     hdmain = hdmeshes[0]
@@ -1057,13 +1052,13 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Transfer shapekeys to clothes and lashes
         if self.useTransferClothes and self.fitMeshes != 'MORPHED':
             print("Transfer to clothes")
-            self.transferShapes(context, mainMesh, clothes, True, "NoFace")
+            self.transferShapes(context, firstMesh, clothes, True, "NoFace")
         if self.useTransferHair and self.fitMeshes != 'MORPHED':
             print("Transfer to hair meshes")
-            self.transferShapes(context, mainMesh, hairs, True, "All")
+            self.transferShapes(context, firstMesh, hairs, True, "All")
         if self.useTransferFace and self.fitMeshes != 'MORPHED':
             print("Transfer to face meshes")
-            self.transferShapes(context, mainMesh, lashes, True, "All")
+            self.transferShapes(context, firstMesh, lashes, True, "All")
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
@@ -1077,7 +1072,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         # Delete base meshes and rig
         if not GS.keepBaseMesh and hdmeshes and meshes:
             deletes = [ob for ob in meshes if ob not in hdmeshes]
-            mainMesh = None
+            firstMesh = mainMesh = None
             meshes = []
             if not GS.useHDArmature and mainRig:
                 deletes.append(mainRig)
@@ -1085,8 +1080,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print("Deleting objects: %s" % [ob.name for ob in deletes])
             deleteObjects(context, deletes)
 
-        if mainMesh:
-            mainMesh.update_tag()
+        if firstMesh:
+            firstMesh.update_tag()
         if mainRig:
             enableRigNumLayers(mainRig, [T_BONES, T_WIDGETS])
             mainRig.update_tag()
@@ -1102,7 +1097,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def transferShapes(self, context, ob, meshes, useDrivers, bodypart,
-                       useNonConforming=False,
                        useSelectedOnly=False):
         if not (ob and meshes):
             return
@@ -1131,7 +1125,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             transferShapesToMeshes(context, ob, meshes, snames,
                 useDrivers=useDrivers,
                 useOverwrite=False,
-                useNonConforming=useNonConforming,
                 useSelectedOnly=useSelectedOnly)
 
 #------------------------------------------------------------------
