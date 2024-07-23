@@ -1192,59 +1192,23 @@ class SubsurfApplier(DazOperator):
         mod = getModifier(ob, self.modifierType)
         if not mod:
             raise DazError("Object %s\n has no %s modifier.    " % (ob.name, self.modifierType))
-        modname = mod.name
 
         startProgress("Apply %s Modifier" % self.modifierType)
-        coords = []
+        nob = copyObject(ob, "XXX")
+        applyShape(nob, 0)
+        applyModifier(context, nob, mod.name)
         drivers = []
         skeys = ob.data.shape_keys
         if skeys:
-            # Store shapekey coordinates
-            for skey in skeys.key_blocks:
-                coord = [v.co.copy() for v in skey.data]
-                coords.append((skey.name, coord))
             if skeys.animation_data:
                 for fcu in skeys.animation_data.drivers:
                     drivers.append(Driver(fcu, True))
-            # Remove shapekeys
-            skeys = list(ob.data.shape_keys.key_blocks)
-            skeys.reverse()
-            for skey in skeys:
-                ob.shape_key_remove(skey)
-
-        # Duplicate object and apply subsurf modifier
-        activateObject(context, ob)
-        bpy.ops.object.duplicate()
-        nob = context.object
-        bpy.ops.object.modifier_apply(modifier=modname)
-        nskeys = len(coords)
-
-        # For each shapekey, duplicate shapekey and apply subsurf modifier.
-        # Then create subsurfed shapekey
-        idx = 0
-        if coords:
-            nob.shape_key_add(name=coords[0][0])
-            for sname,coord in coords[1:]:
-                idx += 1
-                showProgress(idx, nskeys)
-                print("Copy shapekey", sname)
-                activateObject(context, ob)
-                bpy.ops.object.duplicate()
-                tob = context.object
-                verts = tob.data.vertices
-                for vn,co in enumerate(coord):
-                    verts[vn].co = co
-                bpy.ops.object.modifier_apply(modifier=modname)
-                skey = nob.shape_key_add(name=sname)
-                for vn,v in enumerate(tob.data.vertices):
-                    skey.data[vn].co = v.co.copy()
-                activateObject(context, tob)
-                bpy.ops.object.delete(use_global=False)
-
-        # Delete original object and activate the subsurfed one
-        activateObject(context, ob)
-        bpy.ops.object.delete(use_global=False)
-        activateObject(context, nob)
+            for idx,skey in enumerate(skeys.key_blocks):
+                tmp = copyObject(ob, skey.name)
+                applyShape(tmp, idx)
+                applyModifier(context, tmp, mod.name)
+                copyShape(tmp, nob, skey.name)
+                deleteObjects(context, [tmp])
 
         # Restore drivers
         nskeys = nob.data.shape_keys
@@ -1256,6 +1220,42 @@ class SubsurfApplier(DazOperator):
                     if nskey:
                         fcu = nskey.driver_add(channel)
                         driver.fill(fcu)
+
+        nob.name = ob.name
+        activateObject(context, nob)
+        deleteObjects(context, [ob])
+
+
+def copyObject(ob, name):
+    nob = ob.copy()
+    nob.name = name
+    if ob.data:
+        nob.data = ob.data.copy()
+        nob.data.name = name
+    for coll in bpy.data.collections:
+        if ob.name in coll.objects:
+            coll.objects.link(nob)
+    return nob
+
+
+def applyShape(ob, idx):
+    sblocks = ob.data.shape_keys.key_blocks
+    for n,skey in reversed(list(enumerate(sblocks))):
+        if n != idx:
+            ob.shape_key_remove(skey)
+    ob.shape_key_remove(sblocks[0])
+
+
+def applyModifier(context, ob, modname):
+    activateObject(context, ob)
+    bpy.ops.object.modifier_apply(modifier=modname)
+
+
+def copyShape(src, trg, sname):
+    skey = trg.shape_key_add(name=sname)
+    data = skey.data
+    for vn,v in enumerate(src.data.vertices):
+        data[vn].co = v.co.copy()
 
 
 class DAZ_OT_ApplySubsurf(SubsurfApplier, IsMesh):

@@ -380,12 +380,24 @@ def deselectAllVerts(ob):
 
 
 def deleteObjects(context, objects):
-    selectObjects(context, objects)
-    bpy.ops.object.delete(use_global=False)
+    bpy.ops.object.select_all(action='DESELECT')
     for ob in objects:
-        unlinkAll(ob, True)
         if ob:
-            del ob
+            dtype = ob.type
+            if ob.data:
+                data = ob.data
+                users = ob.data.users
+            else:
+                users = 0
+            unlinkAll(ob, True)
+            bpy.data.objects.remove(ob)
+            if users == 1:
+                if dtype == 'MESH':
+                    bpy.data.meshes.remove(data)
+                elif dtype == 'ARMATURE':
+                    bpy.data.armatures.remove(data)
+                elif dtype == 'CURVES':
+                    bpy.data.curves.remove(data)
 
 
 def setWorldMatrix(ob, wmat):
