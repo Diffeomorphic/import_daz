@@ -459,7 +459,7 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
         if self.usePropDrivers and rig:
             addToCategories(rig, props, None, self.category)
             rig.DazCustomMorphs = True
-        elif self.useMeshCats:
+        elif GS.useShapeCats:
             for ob in meshes:
                 addToCategories(ob, props, None, self.category)
                 ob.DazMeshMorphs = True

@@ -363,6 +363,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Shapekeys",
         description = "Load shapekeys for morphs")
 
+    useShapeCats : BoolProperty(
+        name = "Shapekey Categories",
+        description = "Display undriven shapekeys as categories")
+
     useMuteDrivers : BoolProperty(
         name = "Shapekey Mute Drivers",
         description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
@@ -794,6 +798,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "showUsedPropsOnly")
         box.prop(self, "showInTerminal")
         box.prop(self, "useShapekeys")
+        box.prop(self, "useShapeCats")
         box.prop(self, "useMuteDrivers")
         box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")

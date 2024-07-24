@@ -1489,26 +1489,17 @@ class PropDrivers:
         description = "Drive shapekeys with rig properties",
         default = True)
 
-    useMeshCats : BoolProperty(
-        name = "Mesh Categories",
-        description = "Mesh categories",
-        default = False)
-
     def draw(self, context):
         self.layout.prop(self, "usePropDrivers")
-        if self.usePropDrivers:
+        if self.usePropDrivers or GS.useShapeCats:
             self.layout.prop(self, "category")
-            if self.hasAdjusters:
-                self.layout.prop(self, "useAdjusters")
-        else:
-            self.layout.prop(self, "useMeshCats")
-            if self.useMeshCats:
-                self.layout.prop(self, "category")
+        if self.usePropDrivers and self.hasAdjusters:
+            self.layout.prop(self, "useAdjusters")
 
     def addPropDrivers(self):
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True
-        elif self.useMeshCats and self.shapekeys:
+        elif GS.useShapeCats and self.shapekeys:
             from .category import addToCategories
             props = self.shapekeys.keys()
             for mesh in self.meshes:
@@ -2115,7 +2106,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
     def addFavoMorphs(self, ob, context, hasRig):
         if len(ob.data.DazFavorites) > 0:
             oldshapes = []
-            if not hasRig and ob.data.shape_keys:
+            if not hasRig and GS.useShapeCats and ob.data.shape_keys:
                 oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
             self.setupScanned(ob)
             for favo in ob.data.DazFavorites.keys():
@@ -2127,13 +2118,14 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
-            if not hasRig and ob.data.shape_keys:
+            if not hasRig and GS.useShapeCats and ob.data.shape_keys:
                 shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
-                from .category import addToCategories
                 for shape in oldshapes:
                     shapes.remove(shape)
-                addToCategories(ob, shapes, None, self.category)
-                ob.DazMeshMorphs = True
+                if shapes:
+                    from .category import addToCategories
+                    addToCategories(ob, shapes, None, self.category)
+                    ob.DazMeshMorphs = True
             return True
         return False
 

@@ -120,6 +120,7 @@ class GlobalSettings:
         self.showUsedPropsOnly = False
         self.showInTerminal = True
         self.useShapekeys = True
+        self.useShapeCats = True
         self.useMuteDrivers = False
         self.ercMethod = 'NONE'
         self.useStripCategory = False
