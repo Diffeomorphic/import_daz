@@ -2062,19 +2062,24 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
 
     def run(self, context):
         self.rig = getRigFromContext(context)
+        meshes = getSelectedMeshes(context)
         self.setupDuplicates()
         self.missing = []
+        used = []
+
+        # Import figure favorites
         if self.rig:
             loaded = []
             for ob in getMeshChildren(self.rig):
                 if baseName(ob.name).endswith("_HD"):
                     continue
+                used.append(ob)
                 skeys = ob.data.shape_keys
                 if skeys:
                     oldkeynames = list(skeys.key_blocks.keys())
                 else:
                     oldkeynames = ["Basic"]
-                if self.addFavoMorphs(ob, context):
+                if self.addFavoMorphs(ob, context, True):
                     skeys = ob.data.shape_keys
                     if skeys:
                         keynames = [skey.name for skey in skeys.key_blocks
@@ -2094,19 +2099,24 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     finally:
                         LS.filepaths = filepaths
             self.makePosable(context, self.rig)
-        else:
-            for ob in getSelectedMeshes(context):
-                if not baseName(ob.name).endswith("_HD"):
-                    self.addFavoMorphs(ob, context)
+
+        # Import prop favorites
+        self.rig = None
+        for ob in meshes:
+            if (ob not in used and
+                not baseName(ob.name).endswith("_HD")):
+                self.addFavoMorphs(ob, context, False)
         updateScrollbars(context)
         if self.missing:
             msg = "Favorites not found:\n  %s" % self.missing
             raise DazError(msg, warning=True)
 
 
-
-    def addFavoMorphs(self, ob, context):
+    def addFavoMorphs(self, ob, context, hasRig):
         if len(ob.data.DazFavorites) > 0:
+            oldshapes = []
+            if not hasRig and ob.data.shape_keys:
+                oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
             self.setupScanned(ob)
             for favo in ob.data.DazFavorites.keys():
                 favo = favo.split("/",1)[0]
@@ -2117,6 +2127,13 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
+            if not hasRig and ob.data.shape_keys:
+                shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
+                from .category import addToCategories
+                for shape in oldshapes:
+                    shapes.remove(shape)
+                addToCategories(ob, shapes, None, self.category)
+                ob.DazMeshMorphs = True
             return True
         return False
 
