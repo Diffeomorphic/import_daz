@@ -972,9 +972,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Transfer to HD meshes
         if self.useTransferHD and firstMesh:
-            print("Transfer to HD meshes", isSingleHD)
-            self.transferShapes(context, firstMesh, hdmeshes, True, "All")
+            print("Transfer from %s to HD meshes" % firstMesh.name)
+            self.transferShapes(context, firstMesh, hdmeshes, True, "All", useShapeAsDriver=False)
             if isSingleHD and geografts and hdmeshes:
+                print("Single HD %s, transfer geografts" % hdmeshes[0].name)
                 from .hdmorphs import getHDMaterialVertNums
                 hdmesh = hdmeshes[0]
                 hdverts = hdmesh.data.vertices
@@ -987,7 +988,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                             setMode('OBJECT')
                             for vn in vnums:
                                 hdverts[vn].select = True
-                            self.transferShapes(context, graft, [hdmesh], True, "All", useSelectedOnly=True)
+                            self.transferShapes(context, graft, [hdmesh], True, "All", useSelectedOnly=True, useShapeAsDriver=False)
 
         # Merge material slots
         # Must be done after shapekeys have been transferred to HD.
@@ -1071,14 +1072,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         # Delete base meshes and rig
         if not GS.keepBaseMesh and hdmeshes and meshes:
+            firstMesh = hdmeshes[0]
+            activateObject(context, firstMesh)
             deletes = [ob for ob in meshes if ob not in hdmeshes]
-            firstMesh = mainMesh = None
+            mainMesh = None
             meshes = []
             if not GS.useHDArmature and mainRig:
                 deletes.append(mainRig)
                 mainRig = None
             print("Deleting objects: %s" % [ob.name for ob in deletes])
             deleteObjects(context, deletes)
+            print("Objects deleted")
 
         if firstMesh:
             firstMesh.update_tag()
@@ -1097,7 +1101,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def transferShapes(self, context, ob, meshes, useDrivers, bodypart,
-                       useSelectedOnly=False):
+                       useSelectedOnly=False,
+                       useShapeAsDriver=False):
         if not (ob and meshes):
             return
         from .selector import classifyShapekeys
@@ -1125,7 +1130,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             transferShapesToMeshes(context, ob, meshes, snames,
                 useDrivers=useDrivers,
                 useOverwrite=False,
-                useSelectedOnly=useSelectedOnly)
+                useSelectedOnly=useSelectedOnly,
+                useShapeAsDriver=useShapeAsDriver)
 
 #------------------------------------------------------------------
 #   Utilities
