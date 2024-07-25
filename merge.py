@@ -858,10 +858,13 @@ def copyModifier(smod, tmod):
     for attr in dir(smod):
         if (attr[0] != "_" and
             attr not in ["bl_rna", "is_override_data", "rna_type", "type"]):
-            try:
-                setattr(tmod, attr, getattr(smod, attr))
-            except AttributeError:
-                print(attr)
+            value = getattr(smod, attr)
+            if (isSimpleType(value) or
+                isinstance(value, (bpy.types.Object, bpy.types.NodeTree))):
+                try:
+                    setattr(tmod, attr, getattr(smod, attr))
+                except AttributeError:
+                    pass
 
 #-------------------------------------------------------------
 #   Create graft and mask vertex groups

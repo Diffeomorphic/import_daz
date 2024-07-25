@@ -1176,7 +1176,7 @@ class DAZ_OT_ApplyMorphs(DazOperator, IsMesh):
 #   Apply subsurf modifier
 #-------------------------------------------------------------
 
-class SubsurfApplier(DazOperator):
+class SubsurfApplier:
     def storeState(self, context):
         scn = context.scene
         self.simplify = scn.render.use_simplify
@@ -1186,10 +1186,14 @@ class SubsurfApplier(DazOperator):
         context.scene.render.use_simplify = self.simplify
 
 
+    def getModifier(self, ob):
+        return getModifier(ob, self.modifierType)
+
+
     def run(self, context):
         from .driver import Driver
         ob = context.object
-        mod = getModifier(ob, self.modifierType)
+        mod = self.getModifier(ob)
         if not mod:
             raise DazError("Object %s\n has no %s modifier.    " % (ob.name, self.modifierType))
 
@@ -1221,9 +1225,31 @@ class SubsurfApplier(DazOperator):
                         fcu = nskey.driver_add(channel)
                         driver.fill(fcu)
 
-        nob.name = ob.name
-        activateObject(context, nob)
+        if self.useRecreate:
+            self.recreate(context, ob, nob)
+        else:
+            activateObject(context, nob)
+        obname = ob.name
+        nob.name = obname
+        nob.name = obname
         deleteObjects(context, [ob])
+
+
+    def recreate(self, context, ob, nob):
+        from .merge import copyModifier
+        if self.useApplyRest:
+            rig = ob.parent
+            if rig and activateObject(context, rig):
+                setMode('POSE')
+                bpy.ops.pose.armature_apply(selected=False)
+                setMode('OBJECT')
+        activateObject(context, nob)
+        nob.modifiers.clear()
+        for mod in ob.modifiers:
+            nmod = nob.modifiers.new(mod.name, mod.type)
+            for key in dir(mod):
+                copyModifier(mod, nmod)
+        nob.parent = ob.parent
 
 
 def copyObject(ob, name):
@@ -1239,11 +1265,12 @@ def copyObject(ob, name):
 
 
 def applyShape(ob, idx):
-    sblocks = ob.data.shape_keys.key_blocks
-    for n,skey in reversed(list(enumerate(sblocks))):
-        if n != idx:
-            ob.shape_key_remove(skey)
-    ob.shape_key_remove(sblocks[0])
+    skeys = ob.data.shape_keys
+    if skeys is not None:
+        for n,skey in reversed(list(enumerate(skeys.key_blocks))):
+            if n != idx:
+                ob.shape_key_remove(skey)
+        ob.shape_key_remove(skeys.key_blocks[0])
 
 
 def applyModifier(context, ob, modname):
@@ -1258,22 +1285,53 @@ def copyShape(src, trg, sname):
         data[vn].co = v.co.copy()
 
 
-class DAZ_OT_ApplySubsurf(SubsurfApplier, IsMesh):
+class DAZ_OT_ApplySubsurf(SubsurfApplier, DazOperator, IsMesh):
     bl_idname = "daz.apply_subsurf"
     bl_label = "Apply Subsurf"
     bl_description = "Apply subsurf modifier, maintaining shapekeys"
     bl_options = {'UNDO'}
 
     modifierType = 'SUBSURF'
+    useRecreate = False
 
 
-class DAZ_OT_ApplyMultires(SubsurfApplier, IsMesh):
+class DAZ_OT_ApplyMultires(SubsurfApplier, DazOperator, IsMesh):
     bl_idname = "daz.apply_multires"
     bl_label = "Apply Multires"
     bl_description = "Apply multires modifier, maintaining shapekeys"
     bl_options = {'UNDO'}
 
     modifierType = 'MULTIRES'
+    useRecreate = False
+
+
+class DAZ_OT_ApplyActiveModifier(SubsurfApplier, DazPropsOperator, IsMesh):
+    bl_idname = "daz.apply_active_modifier"
+    bl_label = "Apply Active Modifier"
+    bl_description = "Apply active modifier, maintaining shapekeys"
+    bl_options = {'UNDO'}
+
+    modifierType = 'ACTIVE'
+
+    useRecreate : BoolProperty(
+        name = "Recreate Modifier",
+        description = "Create a new modifier of the same type",
+        default = True)
+
+    useApplyRest : BoolProperty(
+        name = "Apply Rest Pose",
+        description = "Apply parent rig rest pose",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useRecreate")
+        self.layout.prop(self, "useApplyRest")
+
+    def getModifier(self, ob):
+        mod = ob.modifiers.active
+        if mod:
+            self.modifierType = mod.type
+        return mod
 
 #-------------------------------------------------------------
 #   Print statistics
@@ -2045,6 +2103,7 @@ classes = [
     DAZ_OT_ApplyMorphs,
     DAZ_OT_ApplySubsurf,
     DAZ_OT_ApplyMultires,
+    DAZ_OT_ApplyActiveModifier,
     DAZ_OT_PrintStatistics,
     DAZ_OT_AddMannequin,
     DAZ_OT_AddPush,
