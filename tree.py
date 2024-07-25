@@ -362,9 +362,9 @@ NodeSize = {
 
     "INPUT_ATTRIBUTE" : 5,
     "POSITION" : 3,
-    "FIELD_AT_INDEX" : 6,
+    "FIELD_AT_INDEX" : 7,
     "COMPARE" : 6,
-    "SWITCH" : 6,
+    "SWITCH" : 9,
 
     "FRAME" : 20,
 }

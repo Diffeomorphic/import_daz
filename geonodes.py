@@ -44,6 +44,33 @@ class GeoTree(Tree, NodeGroup):
         self.nodeTreeType = "GeometryNodeTree"
         self.nodeGroupType = "GeometryNodeGroup"
 
+    if bpy.app.version < (4,2,0):
+        def captureInput(self, node, slot, datatype, fromsocket):
+            node.data_type = datatype
+            self.links.new(fromsocket, node.inputs[slot])
+
+        def captureOutput(self, node, slot, datatype, tosocket):
+            node.data_type = datatype
+            self.links.new(node.outputs[slot], tosocket)
+    else:
+        def captureInput(self, node, slot, datatype, fromsocket):
+            for idx,item in enumerate(node.capture_items):
+                if slot == item.name:
+                    self.links.new(fromsocket, node.inputs[idx])
+                    return
+            socktype = ('VECTOR' if datatype == 'FLOAT_VECTOR' else datatype)
+            item = node.capture_items.new(socktype, slot)
+            self.links.new(fromsocket, node.inputs[-2])
+
+        def captureOutput(self, node, slot, datatype, tosocket):
+            for idx,item in enumerate(node.capture_items):
+                if slot == item.name:
+                    self.links.new(node.outputs[idx], tosocket)
+                    return
+            socktype = ('VECTOR' if datatype == 'FLOAT_VECTOR' else datatype)
+            item = node.capture_items.new(socktype, slot)
+            self.links.new(node.inputs[-2], tosocket)
+
 # ---------------------------------------------------------------------
 #   Follow proxy group
 # ---------------------------------------------------------------------
@@ -64,7 +91,8 @@ class FollowProxyGroup(GeoTree):
         index = self.addNode("GeometryNodeInputIndex", 1)
 
         sample = self.addNode("GeometryNodeSampleIndex", 2)
-        sample.data_type = 'FLOAT_VECTOR'
+        if hasattr(sample, "data_type"):
+            sample.data_type = 'FLOAT_VECTOR'
         sample.domain = 'POINT'
         self.links.new(objinfo.outputs["Geometry"], sample.inputs["Geometry"])
         self.links.new(position.outputs["Position"], sample.inputs["Value"])
@@ -110,18 +138,16 @@ class GeograftGroup(GeoTree):
         self.links.new(self.inputs.outputs["Pairs"], paired_verts_node.inputs["Name"])
 
         captureNamedAttribute = self.addNode("GeometryNodeCaptureAttribute", 3)
-        captureNamedAttribute.data_type = 'INT'
         captureNamedAttribute.domain = 'POINT'
         self.links.new(joinGeo.outputs["Geometry"], captureNamedAttribute.inputs["Geometry"])
-        self.links.new(paired_verts_node.outputs["Attribute"], captureNamedAttribute.inputs["Value"])
+        self.captureInput(captureNamedAttribute, "Value", 'INT', paired_verts_node.outputs["Attribute"])
 
         position_node = self.addNode("GeometryNodeInputPosition", 2)
 
         captureBodyPosition = self.addNode("GeometryNodeCaptureAttribute", 3)
-        captureBodyPosition.data_type = 'FLOAT_VECTOR'
         captureBodyPosition.domain = 'POINT'
         self.links.new(captureNamedAttribute.outputs["Geometry"], captureBodyPosition.inputs["Geometry"])
-        self.links.new(position_node.outputs["Position"], captureBodyPosition.inputs["Value"])
+        self.captureInput(captureBodyPosition, "Value", 'FLOAT_VECTOR', position_node.outputs["Position"])
 
         # union = captureBodyPosition.outputs["Attribute"]
 
@@ -130,21 +156,21 @@ class GeograftGroup(GeoTree):
         evaluateIndex = self.addNode("GeometryNodeFieldAtIndex", 4)
         evaluateIndex.data_type = 'FLOAT_VECTOR'
         evaluateIndex.domain = 'POINT'
-        self.links.new(captureNamedAttribute.outputs["Attribute"], evaluateIndex.inputs["Index"])
+        self.captureOutput(captureNamedAttribute, "Attribute", 'FLOAT_VECTOR', evaluateIndex.inputs["Index"])
         self.links.new(position_node.outputs["Position"], evaluateIndex.inputs["Value"])
 
         # Switch node to determine which vertices stay put, and which snap to their paired body vertex
-        switchNode = self.addNode("GeometryNodeSwitch", 4)
+        switchNode = self.addNode("GeometryNodeSwitch", 5)
         switchNode.input_type = 'VECTOR'
 
         greaterThan = self.addNode("FunctionNodeCompare", 4)
         greaterThan.data_type = 'INT'
         greaterThan.operation = 'GREATER_THAN'
-        self.links.new(captureNamedAttribute.outputs["Attribute"], greaterThan.inputs["A"])
+        self.captureOutput(captureNamedAttribute, "Attribute", 'INT', greaterThan.inputs["A"])
 
         self.links.new(greaterThan.outputs["Result"], switchNode.inputs["Switch"])
         self.links.new(evaluateIndex.outputs["Value"], switchNode.inputs["True"])
-        self.links.new(captureBodyPosition.outputs["Attribute"], switchNode.inputs["False"])
+        self.captureOutput(captureBodyPosition, "Attribute", 'BOOLEAN', switchNode.inputs["False"])
 
         # Set Position node will do the actual vertex "snapping" - just on the vertices of the graft edge to the body
         setPosition = self.addNode("GeometryNodeSetPosition", 5)
