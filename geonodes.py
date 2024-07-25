@@ -49,8 +49,7 @@ class GeoTree(Tree, NodeGroup):
             node.data_type = datatype
             self.links.new(fromsocket, node.inputs[slot])
 
-        def captureOutput(self, node, slot, datatype, tosocket):
-            node.data_type = datatype
+        def captureOutput(self, node, slot, tosocket):
             self.links.new(node.outputs[slot], tosocket)
     else:
         def captureInput(self, node, slot, datatype, fromsocket):
@@ -62,14 +61,8 @@ class GeoTree(Tree, NodeGroup):
             item = node.capture_items.new(socktype, slot)
             self.links.new(fromsocket, node.inputs[-2])
 
-        def captureOutput(self, node, slot, datatype, tosocket):
-            for idx,item in enumerate(node.capture_items):
-                if slot == item.name:
-                    self.links.new(node.outputs[idx], tosocket)
-                    return
-            socktype = ('VECTOR' if datatype == 'FLOAT_VECTOR' else datatype)
-            item = node.capture_items.new(socktype, slot)
-            self.links.new(node.inputs[-2], tosocket)
+        def captureOutput(self, node, slot, tosocket):
+            self.links.new(node.outputs[1], tosocket)
 
 # ---------------------------------------------------------------------
 #   Follow proxy group
@@ -156,7 +149,7 @@ class GeograftGroup(GeoTree):
         evaluateIndex = self.addNode("GeometryNodeFieldAtIndex", 4)
         evaluateIndex.data_type = 'FLOAT_VECTOR'
         evaluateIndex.domain = 'POINT'
-        self.captureOutput(captureNamedAttribute, "Attribute", 'FLOAT_VECTOR', evaluateIndex.inputs["Index"])
+        self.captureOutput(captureNamedAttribute, "Attribute", evaluateIndex.inputs["Index"])
         self.links.new(position_node.outputs["Position"], evaluateIndex.inputs["Value"])
 
         # Switch node to determine which vertices stay put, and which snap to their paired body vertex
@@ -166,11 +159,11 @@ class GeograftGroup(GeoTree):
         greaterThan = self.addNode("FunctionNodeCompare", 4)
         greaterThan.data_type = 'INT'
         greaterThan.operation = 'GREATER_THAN'
-        self.captureOutput(captureNamedAttribute, "Attribute", 'INT', greaterThan.inputs["A"])
+        self.captureOutput(captureNamedAttribute, "Attribute", greaterThan.inputs["A"])
 
         self.links.new(greaterThan.outputs["Result"], switchNode.inputs["Switch"])
         self.links.new(evaluateIndex.outputs["Value"], switchNode.inputs["True"])
-        self.captureOutput(captureBodyPosition, "Attribute", 'BOOLEAN', switchNode.inputs["False"])
+        self.captureOutput(captureBodyPosition, "Attribute", switchNode.inputs["False"])
 
         # Set Position node will do the actual vertex "snapping" - just on the vertices of the graft edge to the body
         setPosition = self.addNode("GeometryNodeSetPosition", 5)
@@ -178,7 +171,6 @@ class GeograftGroup(GeoTree):
         self.links.new(switchNode.outputs["Output"], setPosition.inputs["Position"])
 
         self.links.new(setPosition.outputs["Geometry"], self.outputs.inputs["Geometry"])
-
 
 # ---------------------------------------------------------------------
 #   GeograftFinish
