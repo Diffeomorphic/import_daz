@@ -102,15 +102,16 @@ class FollowProxyGroup(GeoTree):
 # ---------------------------------------------------------------------
 
 class GeograftGroup(GeoTree):
-    def create(self, name):
-        NodeGroup.make(self, name, 6)
+    def create(self, node, name, parent):
+        GeoTree.create(self, node, name, parent, 7)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketObject", "Geograft")
         addGroupInput(self.group, "NodeSocketString", "Pairs")
+        addGroupInput(self.group, "NodeSocketBool", "Toggle")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
-    def addNodes(self):
+    def addNodes(self, args):
         # Object node for the geograft
         graft = self.addNode("GeometryNodeObjectInfo", 1)
         # Connect the Group Input-Geograft socket to this input
@@ -170,45 +171,59 @@ class GeograftGroup(GeoTree):
         self.links.new(captureBodyPosition.outputs["Geometry"], setPosition.inputs["Geometry"])
         self.links.new(switchNode.outputs["Output"], setPosition.inputs["Position"])
 
-        self.links.new(setPosition.outputs["Geometry"], self.outputs.inputs["Geometry"])
+        toggle = self.addNode("GeometryNodeSwitch", 6)
+        toggle.input_type = 'GEOMETRY'
+        self.links.new(self.inputs.outputs["Toggle"], toggle.inputs["Switch"])
+        self.links.new(self.inputs.outputs["Geometry"], toggle.inputs["False"])
+        self.links.new(setPosition.outputs["Geometry"], toggle.inputs["True"])
+
+        self.links.new(toggle.outputs["Output"], self.outputs.inputs["Geometry"])
 
 # ---------------------------------------------------------------------
-#   GeograftFinish
+#   GeograftsGroup
 # ---------------------------------------------------------------------
 
-class GeograftFinish(GeoTree):
+class GeograftsGroup(GeoTree):
     def create(self, name):
-        NodeGroup.make(self, name, 4)
+        NodeGroup.make(self, name, 7)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketFloat", "Distance")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
 
-    def addDeleteMasks(self, graft_names):
-        delete_masks = list()
-        for graft in graft_names:
-            socket_name = "Delete %s" % graft
-            addGroupInput(self.group, "NodeSocketFloat", socket_name)
+    def addGrafts(self, grafts):
+        join = self.addNode("GeometryNodeJoinGeometry", 2)
+        self.links.new(self.inputs.outputs["Geometry"], join.inputs["Geometry"])
+        last = join
 
-            delete_mask = self.addNode("GeometryNodeDeleteGeometry", 2)
-            delete_masks.append(delete_mask)
+        for graft in grafts:
+            gname = graft.name
+            addGroupInput(self.group, "NodeSocketObject", "Geograft %s" % gname)
+            addGroupInput(self.group, "NodeSocketString", "Pairs %s" % gname)
+            addGroupInput(self.group, "NodeSocketFloat", "Mask %s" % gname)
+            addGroupInput(self.group, "NodeSocketBool", "Toggle %s" % gname)
 
-            self.links.new(self.inputs.outputs[socket_name], delete_mask.inputs["Selection"])
+            node = self.addGroup(GeograftGroup, "DAZ Geograft", 1)
+            self.links.new(self.inputs.outputs["Geometry"], node.inputs["Geometry"])
+            self.links.new(self.inputs.outputs["Geograft %s" % gname], node.inputs["Geograft"])
+            self.links.new(self.inputs.outputs["Pairs %s" % gname], node.inputs["Pairs"])
+            self.links.new(self.inputs.outputs["Toggle %s" % gname], node.inputs["Toggle"])
+            self.links.new(node.outputs["Geometry"], join.inputs["Geometry"])
 
-        for i, mask in enumerate(delete_masks):
-            # First delete mask--connect the input to it
-            if i == 0:
-                self.links.new(self.inputs.outputs["Geometry"], mask.inputs["Geometry"])
-            # Any in between, connect the one before to the currently iterated one
-            else:
-                self.links.new(delete_masks[i-1].outputs["Geometry"], delete_masks[i].inputs["Geometry"])
+            toggle = self.addNode("GeometryNodeSwitch", 3)
+            toggle.input_type = 'FLOAT'
+            self.links.new(self.inputs.outputs["Toggle %s" % gname], toggle.inputs["Switch"])
+            self.links.new(self.inputs.outputs["Mask %s" % gname], toggle.inputs["True"])
 
-        # Lastly, add merge by distance to the end
-        mergeDist = self.addNode("GeometryNodeMergeByDistance", 3)
-        self.links.new(self.inputs.outputs["Distance"], mergeDist.inputs["Distance"])
-        #mergeDist.inputs["Distance"].default_value = 1e-4
-        self.links.new(delete_masks[len(delete_masks)-1].outputs["Geometry"], mergeDist.inputs["Geometry"])
-        self.links.new(mergeDist.outputs["Geometry"], self.outputs.inputs["Geometry"])
+            delete = self.addNode("GeometryNodeDeleteGeometry", 4)
+            self.links.new(last.outputs["Geometry"], delete.inputs["Geometry"])
+            self.links.new(toggle.outputs["Output"], delete.inputs["Selection"])
+            last = delete
+
+        merge = self.addNode("GeometryNodeMergeByDistance", 4)
+        self.links.new(self.inputs.outputs["Distance"], merge.inputs["Distance"])
+        self.links.new(last.outputs["Geometry"], merge.inputs["Geometry"])
+        self.links.new(merge.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
 # ---------------------------------------------------------------------
 #   Geoshell group

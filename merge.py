@@ -587,52 +587,43 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     amod.show_viewport = amod.show_render = False
                     graft.modifiers.remove(amod)
 
-            mod = hum.modifiers.new("Geograft %s" % graft.name, 'NODES')
-            mod.node_group = addNodeGroup(GeograftGroup, "DAZ Geograft")
-            if BLENDER3:
-                mod["Input_1"] = graft
-                mod["Input_2"] = "paired_body_vert_%s" % graft.name
-            else:
-                mod["Socket_1"] = graft
-                mod["Socket_2"] = "paired_body_vert_%s" % graft.name
+        from .geonodes import GeograftsGroup
+        graftgrp = GeograftsGroup()
+        groupname = "Geografts:%s" % hum.name
+        graftgrp.create(groupname)
+        graftgrp.addGrafts(grafts)
 
+        # Create the modifier
+        mod = hum.modifiers.new(groupname, 'NODES')
+        mod.node_group = graftgrp.group
+        if BLENDER3:
+            mod["Input_1"] = 0.01*GS.scale
+            for i, graft in enumerate(grafts):
+                mod["Input_%d" % (4*i+3)] = graft
+                mod["Input_%d" % (4*i+4)] = "paired_body_vert_%s" % graft.name
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(
+                    prop_path="Input_%d" % (4*i+5),
+                    modifier_name=mod.name)
+                mod["Input_%d_attribute_name" % (4*i+5)] = "%s Mask" % graft.name
+                mod["Input_%d" % (4*i+6)] = True
+        else:
+            mod["Socket_1"] = 0.01*GS.scale
+            for i, graft in enumerate(grafts):
+                mod["Socket_%d" % (4*i+3)] = graft
+                mod["Socket_%d" % (4*i+4)] = "paired_body_vert_%s" % graft.name
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(
+                    input_name="Socket_%d" % (4*i+5),
+                    modifier_name=mod.name)
+                mod["Socket_%d_attribute_name" % (4*i+5)] = "%s Mask" % graft.name
+                mod["Socket_%d" % (4*i+6)] = True
+
+        for graft in grafts:
             graft.hide_set(True)
             graft.hide_render = True
             graft.show_only_shape_key = False
             for mod in graft.modifiers:
                 if mod.type == 'NODES':
                     mod.show_viewport = mod.show_render = True
-
-        from .geonodes import GeograftFinish
-        delgrp = GeograftFinish()
-        groupname = "Geograft:%s:END" % hum.name
-        delgrp.create(groupname)
-        print("Created GeoFinish Nodes: %s" % groupname)
-
-        # Add a delete node for every geograft that needs vertices deleted (after merge done in original modifier(s))
-        for graft in grafts:
-            delmasks.append(graft.name)
-        delgrp.addDeleteMasks(delmasks)
-
-        # Create the modifier
-        del_mod = hum.modifiers.new(groupname, 'NODES')
-        del_mod.node_group = delgrp.group
-        if BLENDER3:
-            del_mod["Input_1"] = 0.01*GS.scale
-            for i, graft in enumerate(delmasks):
-                path = propRef("Input_%d_use_attribute" % (i+3))
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path=path, modifier_name=del_mod.name)
-                maskname = "%s Mask" % graft
-                modname = "Input_%d_attribute_name" % (i+3)
-                del_mod[modname] = maskname
-        else:
-            del_mod["Socket_1"] = 0.01*GS.scale
-            for i, graft in enumerate(delmasks):
-                path = "Socket_%d" % (i+3)
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name=path, modifier_name=del_mod.name)
-                maskname = "%s Mask" % graft
-                modname = "Socket_%d_attribute_name" % (i+3)
-                del_mod[modname] = maskname
 
         for store in stores:
             store.restore(hum)
