@@ -292,7 +292,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         subDLevels = 0
         self.setActiveUvLayer(hum)
         influs = dict([(prop, value) for prop, value in hum.items() if prop[0:6] == "INFLU "])
+        hum.active_shape_key_index = 0
+        hum.show_only_shape_key = True
         for graft in grafts:
+            graft.active_shape_key_index = 0
+            graft.show_only_shape_key = True
             self.renameUvLayers(graft)
             self.storeUvName(graft)
             if self.useFixTiles:
@@ -456,6 +460,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         self.copyShapeKeyDrivers(hum, drivers)
         updateDrivers(hum)
+        hum.show_only_shape_key = False
         for mod in hum.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)
@@ -593,6 +598,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
             graft.hide_set(True)
             graft.hide_render = True
+            graft.show_only_shape_key = False
             for mod in graft.modifiers:
                 if mod.type == 'NODES':
                     mod.show_viewport = mod.show_render = True
