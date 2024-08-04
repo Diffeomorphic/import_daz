@@ -423,7 +423,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
                 if cskey and not self.ignoreRigidity:
-                    if self.correctForRigidity(trg, cskey):
+                    try:
+                        rigid = self.correctForRigidity(trg, cskey)
+                    except IndexError:
+                        rigid = False
+                    if rigid:
                         trg.shape_key_remove(cskey)
                         cskey = None
                     else:

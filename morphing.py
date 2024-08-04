@@ -735,7 +735,8 @@ def transferShapesToMeshes(context, ob, meshes, snames,
                            useShapeAsDriver=False):
     if not snames:
         return
-    activateObject(context, ob)
+    if not activateObject(context, ob):
+        return
     for mesh in meshes:
         selectSet(mesh, True)
     theFilePaths = LS.filepaths
