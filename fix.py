@@ -883,17 +883,21 @@ class ConstraintStore:
                     for struct in clist:
                         self.restoreConstraint(struct, pb)
 
-        def fixBendTwistMixup(bname):
-            return bname.replace("Bend.", ".bend.").replace("Twist.", ".twist.")
+        def fixBendTwistMixup(cns):
+            if hasattr(cns, "target") and cns.target == rig and hasattr(cns, "subtarget"):
+                bname = cns.subtarget
+                if bname not in rig.data.bones:
+                    bname1 = bname.replace("Bend.", ".bend.").replace("Twist.", ".twist.")
+                    if bname1 in rig.data.bones:
+                        cns.subtarget = bname1
 
         for ob in context.view_layer.objects:
             for cns in ob.constraints:
-                if cns.target == rig and hasattr(cns, "subtarget"):
-                    bname = cns.subtarget
-                    if bname not in rig.data.bones:
-                        bname1 = fixBendTwistMixup(bname)
-                        if bname1 in rig.data.bones:
-                            cns.subtarget = bname1
+                fixBendTwistMixup(cns)
+            if ob.type == 'ARMATURE':
+                for pb in ob.pose.bones:
+                    for cns in pb.constraints:
+                        fixBendTwistMixup(cns)
 
 
     def restoreConstraints(self, key, pb, target=None):
