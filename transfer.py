@@ -181,6 +181,9 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
 
 def transferVertexGroups(context, src, targets, threshold):
     activateObject(context, src)
+    targets = [trg for trg in targets if trg.data.polygons]
+    if len(targets) == 0:
+        return
     for trg in targets:
         trg.select_set(True)
         trg.vertex_groups.clear()

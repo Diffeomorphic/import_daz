@@ -289,6 +289,9 @@ class GeoNode(Node, SimNode):
 
 
     def buildHDMesh(self, ob):
+        if not self.highdef.faces:
+            print("HD mesh %s without faces: (%d %d)" % (ob.name, len(ob.data.vertices), len(self.highdef.verts)))
+            return ob.data.copy()
         verts = self.highdef.verts
         edges = []
         faces = self.stripNegatives([f[0] for f in self.highdef.faces])

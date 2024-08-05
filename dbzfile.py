@@ -150,7 +150,7 @@ class DBZObject:
         self.center = center
 
     def __repr__(self):
-        return "<DBZ %s l:%s v:%d f:%d p:%d mg:%d>" % (self.name, self.label, len(self.verts), len(self.faces), len(self.polylines), len(self.matgroups))
+        return "<DBZ %s l:%s v:%d e:%d f:%d p:%d mg:%d>" % (self.name, self.label, len(self.verts), len(self.edges), len(self.faces), len(self.polylines), len(self.matgroups))
 
 
 class DBZRig:
