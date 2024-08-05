@@ -217,7 +217,8 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     }
 
     fp.writeLine("        \"lod\": " + lodvalue + ",");
-    if (nv != nv0)
+    var nf = geom.getNumFacets();
+    if (nv != nv0 && nf > 0)
     {
         fp.writeLine("        \"subd level\": " + level + ",");
         doVertices(fp, geom, "hd ");
