@@ -504,23 +504,33 @@ if bpy.app.version < (3,0,0):
         rna_ui[prop] = struct
 
 else:
-    from rna_prop_ui import rna_idprop_ui_create
-
     def setPropMinMax(rna, prop, default, min, max, ovr):
-        rna_idprop_ui_create(rna, prop, default=default, min=min, max=max, soft_min=min, soft_max=max, description=None, overridable=ovr)
+        if prop not in rna.keys():
+            rna[prop] = default
+        ui = rna.id_properties_ui(prop)
+        if isinstance(default, bool):
+            ui.update(default=default)
+        elif isinstance(default, (int, float)):
+            if ovr:
+                ui.update(default=default, soft_min=min, soft_max=max)
+            else:
+                ui.update(default=default, min=min, max=max)
+        rna.property_overridable_library_set(propRef(prop), ovr)
+
 
     def getPropUi(rna, prop):
         try:
-            prop_ui = rna.id_properties_ui(prop)
-            return prop_ui.as_dict()
+            ui = rna.id_properties_ui(prop)
+            return ui.as_dict()
         except KeyError:
             return {}
 
+
     def setProtected(rna, prop, on):
         try:
-            prop_ui = rna.id_properties_ui(prop)
+            ui = rna.id_properties_ui(prop)
             desc = ("***" if on else "")
-            prop_ui.update(description = desc)
+            ui.update(description = desc)
         except KeyError:
             pass
 
@@ -529,8 +539,8 @@ def isProtected(rna, prop):
     if isinstance(rna, bpy.types.Object) and rna.type != 'ARMATURE':
         return False
     elif isinstance(rna[prop], float):
-        prop_ui = getPropUi(rna, prop)
-        return (prop_ui.get("description") == "***")
+        ui = getPropUi(rna, prop)
+        return (ui.get("description") == "***")
     else:
         return True
 
