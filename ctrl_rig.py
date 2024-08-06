@@ -126,6 +126,8 @@ class ControlRigMuter:
 
     def muteConstraints(self, rig, mute):
         for pb in rig.pose.bones:
+            if pb.get("DazSharedBone"):
+                continue
             for cns in pb.constraints:
                 if cns.type.startswith("COPY"):
                     cns.mute = mute
@@ -194,15 +196,22 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer):
         else:
             actname = "Action"
         meshes = getShapeChildren(rig)
+        bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
+        act = getCurrentAction(rig)
+        shared = dict([(pb.name, pb) for pb in rig.pose.bones if pb.get("DazSharedBone")])
+        if shared:
+            for fcu in list(act.fcurves):
+                bname,channel = getBoneChannel(fcu)
+                if bname in shared.keys():
+                    act.fcurves.remove(fcu)
+            for pb in shared.values():
+                pb.matrix_basis = Matrix()
         if self.useBake:
-            bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
-            act = getCurrentAction(rig)
             if act:
                 act.name = "%s:BAKED" % actname[0:58]
             if self.useShapekeys:
                 self.bakeShapekeys(context, meshes, actname)
         else:
-            bpy.ops.nla.bake(frame_start=scn.frame_current, frame_end=scn.frame_current, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
             rig.animation_data.action = None
         if self.useShapekeys:
             for ob in meshes:
