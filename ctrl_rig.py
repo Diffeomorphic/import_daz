@@ -108,8 +108,14 @@ class ControlRigMuter:
         description = "Mute/unmute shapekeys too",
         default = True)
 
+    useMuteAll : BoolProperty(
+        name = "All Constraints",
+        description = "Mute/unmute all bone constraints, not just copy transform",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useShapekeys")
+        self.layout.prop(self, "useMuteAll")
 
     @classmethod
     def poll(self, context):
@@ -129,7 +135,7 @@ class ControlRigMuter:
             if pb.get("DazSharedBone"):
                 continue
             for cns in pb.constraints:
-                if cns.type.startswith("COPY"):
+                if self.useMuteAll or cns.type.startswith("COPY"):
                     cns.mute = mute
         cns = getConstraint(rig, 'COPY_TRANSFORMS')
         if cns:
@@ -197,15 +203,18 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer):
             actname = "Action"
         meshes = getShapeChildren(rig)
         bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
+
         act = getCurrentAction(rig)
         shared = dict([(pb.name, pb) for pb in rig.pose.bones if pb.get("DazSharedBone")])
-        if shared:
-            for fcu in list(act.fcurves):
-                bname,channel = getBoneChannel(fcu)
-                if bname in shared.keys():
-                    act.fcurves.remove(fcu)
-            for pb in shared.values():
-                pb.matrix_basis = Matrix()
+        for fcu in list(act.fcurves):
+            bname,channel = getBoneChannel(fcu)
+            if (bname in shared.keys() or
+                channel is None or
+                channel.startswith("Daz")):
+                act.fcurves.remove(fcu)
+        for pb in shared.values():
+            pb.matrix_basis = Matrix()
+
         if self.useBake:
             if act:
                 act.name = "%s:BAKED" % actname[0:58]
@@ -269,6 +278,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 
     def draw(self, context):
         self.layout.prop(self, "useClear")
+        ControlRigMuter.draw(self, context)
 
     def run(self, context):
         from .driver import addDriver
