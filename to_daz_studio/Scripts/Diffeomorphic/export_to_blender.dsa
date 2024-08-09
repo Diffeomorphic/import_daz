@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = "\"1.6.2.1041\"";
+var version = "\"4.2.0.2260\"";
 
 function exportToBlender()
 {

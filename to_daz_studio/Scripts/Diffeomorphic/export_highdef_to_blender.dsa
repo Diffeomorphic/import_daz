@@ -1,7 +1,11 @@
 // DAZ Studio Script
 
 var appName = "export_highdef_to_blender";
-var version = "\"1.6.2.1041\"";
+var version = "\"4.2.0.2260\"";
+var useExportHD = false;
+var useHDConvention = false;
+var useHDUVs = false;
+var cancelled = false;
 
 function createDialog()
 {
@@ -36,32 +40,43 @@ function createDialog()
         getScenePath(),
         "DBZ Files (*.dbz *.duf)"
         );
-    if( !filepath )
-    {
+    if( !filepath ) {
         return;
     }
 
-    var uvButton = new DzCheckBox( wDlg );
-    uvButton.text = "Export HD UVs";
-    uvButton.checked = true;
-    wDlg.addWidget( uvButton );
-
-    // Get the minimum size of the dialog
-    var sizeHint = oDlgWgt.minimumSizeHint;
-    // Set the fixed size of the dialog
-    wDlg.setFixedSize( sizeHint.width, sizeHint.height );
-
-    // If the user accepts the dialog
-    if( wDlg.exec() ){
-        exportHighdefToBlender(filepath, uvButton.checked);
-    // If the user rejects the dialog
-    } else {
+    useExportHD = popup("Export HD", false, wDlg, oDlgWgt);
+    if (cancelled)
         return;
+    if (useExportHD) {    
+        useHDConvention = popup("HD Convention", true, wDlg, oDlgWgt);
+        if (cancelled)
+            return;
+        useHDUVs = popup("Export HD UVs", true, wDlg, oDlgWgt);
+        if (cancelled)
+            return;
     }
+    exportHighdefToBlender(filepath);
 }
 
 
-function exportHighdefToBlender(filepath, useHdUvs)
+function popup(text, checked, wDlg, oDlgWgt)
+{
+    var button = new DzCheckBox( wDlg );
+    button.text = text;
+    button.checked = checked;
+    wDlg.addWidget( button );
+    var sizeHint = oDlgWgt.minimumSizeHint;
+    wDlg.setFixedSize( sizeHint.width, sizeHint.height );
+    if ( wDlg.exec() )
+    	checked = button.checked;
+    else
+        cancelled = true;
+    button.hide();
+    return checked;
+}
+
+
+function exportHighdefToBlender(filepath)
 {
     var date1 = new Date();
     var time1 = date1.getTime();
@@ -81,14 +96,14 @@ function exportHighdefToBlender(filepath, useHdUvs)
 
         if ( node.inherits( "DzSkeleton" ) )
         {
-            doFigure(fp, node, useHdUvs);
+            doFigure(fp, node);
         }
         else
         {
             obj = node.getObject();
             if (obj != null)
             {
-                doMesh(fp, obj, true, node, "        ]", "    },", useHdUvs);
+                doMesh(fp, obj, true, node, "        ]", "    },");
             }
             else
             {
@@ -135,7 +150,7 @@ function exportHighdefToBlender(filepath, useHdUvs)
 //
 //===============================================================================
 
-function doFigure(fp, figure, useHdUvs)
+function doFigure(fp, figure)
 {
     figure.finalize();
     startObject(fp, figure, figure.name, "", ",");
@@ -143,7 +158,7 @@ function doFigure(fp, figure, useHdUvs)
     var obj = figure.getObject();
     if (obj != null)
     {
-        doMesh(fp, obj, false, figure, "        ],", "", useHdUvs);
+        doMesh(fp, obj, false, figure, "        ],", "");
     }
 
     var bones = figure.getAllBones();
@@ -182,58 +197,70 @@ function startObject(fp, node, name, pad, endchar)
     fp.writeLine(pad + "        \"ws_transform\": " + node.getWSTransform() + endchar);             
 }
 
+
 function normString(string)
 {
     return string.replace(/\n/g, " ");
 }
 
-function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
+
+function doMesh(fp, obj, start, node, str1, str2)
 {
     var shape = obj.getCurrentShape();
     if (shape == null)
         return false;
-    var name = obj.getName();
     var clname = node.className();
-    var lodctrl = shape.getLODControl();
-    var lodvalue = lodctrl.getValue();
-    var level = shape.getSubDDrawLevel();
-
     if (start)
         startObject(fp, node, node.name, "", ",");
-        fp.writeLine("        \"class\": \"" + clname + "\",");
+    fp.writeLine("        \"class\": \"" + clname + "\",");
+    var useBase = true;
+    var label = node.getLabel();
+    if (useExportHD && (label.endsWith("HD") || !useHDConvention))
+        useBase = doHDMesh(fp, obj, shape, clname, node, str1, str2);
+    if (useBase)
+    	doBaseMesh(fp, obj, shape, clname, node, str1, str2);
+}
 
-    // Write HD data
+
+function doHDMesh(fp, obj, shape, clname, node, str1, str2)
+{
     //obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
     var geom0 = shape.getGeometry();
     var nv = geom.getNumVertices();
     var nv0 = geom0.getNumVertices();
+    var level = shape.getSubDDrawLevel();
 
     if (clname == "DzGeometryShellNode") {
         fp.writeLine("        \"num verts\": " + nv0 + ",");
         fp.writeLine("        \"num hd verts\": " + nv + ",");
-        if (useHdUvs)
+        if (useHDUVs)
             doUVs(fp, geom, "hd ");
         doFaces(fp, geom, "hd ");
         doMaterialGroups(fp, geom, "hd ", "");
         fp.writeLine(str2);
-	return true;
+	return false;
     }
 
-    fp.writeLine("        \"lod\": " + lodvalue + ",");
     var nf = geom.getNumFacets();
     if (nv != nv0 && nf > 0)
     {
         fp.writeLine("        \"subd level\": " + level + ",");
         doVertices(fp, geom, "hd ");
         fp.writeLine("        ],");
-        if (useHdUvs)
+        if (useHDUVs)
             doUVs(fp, geom, "hd ");
         doFaces(fp, geom, "hd ");
         doMaterialGroups(fp, geom, "hd ", ",");
     }
+    return true;
+}
 
-    // Turn off high resolution
+
+function doBaseMesh(fp, obj, shape, clname, node, str1, str2)
+{
+    var lodctrl = shape.getLODControl();
+    var lodvalue = lodctrl.getValue();
     lodctrl.setValue(0);
     obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
@@ -249,6 +276,8 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
         fp.writeLine("        },");
         doFaces(fp, geom, "");
     }
+    
+    fp.writeLine("        \"lod\": " + lodvalue + ",");
     var nf = geom.getNumFacets();
     if (nf == 0)
         doPolylines(fp, geom, "");
@@ -260,12 +289,14 @@ function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
     return true;
 }
 
+
 function endMesh(fp, str1, str2)
 {
     fp.writeLine("        \"dummy\": 0")
     fp.writeLine(str2);
     return false;
 }
+
 
 function doProperties(fp, mat, pad)
 {
