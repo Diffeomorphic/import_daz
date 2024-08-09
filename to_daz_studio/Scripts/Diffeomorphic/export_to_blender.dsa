@@ -1,32 +1,85 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = "\"4.2.0.2260\"";
+var version = "\"4.2.0.2261\"";
+var useExportHD = false;
+var useHDConvention = false;
+var useHDUVs = false;
+var cancelled = false;
 
-function exportToBlender()
+function createDialog()
 {
+    // Get the current style
+    var oStyle = App.getStyle();
+
+    // Get the height for buttons
+    var nBtnHeight = oStyle.pixelMetric( "DZ_ButtonHeight" );
+
+    // Create a basic dialog
+    var wDlg = new DzBasicDialog();
+
+    // Get the wrapped widget for the dialog
+    var oDlgWgt = wDlg.getWidget();
+
+    // Set the title of the dialog
+    wDlg.caption = "Export DBZ";
+
+    // Strip the space for a settings key
+    var sKey = wDlg.caption.replace( / /g, "" ) + "Dlg";
+
+    // Set an [unique] object name on the wrapped dialog widget;
+    // this is used for recording position and size separately
+    // from all other [uniquely named] DzBasicDialog instances
+    oDlgWgt.objectName = sKey;
+
+
     // Write the line
-    var filepath = FileDialog.doFileDialog( 
-        false, 
-        "Save As", 
-        getScenePath(), 
-        "DBZ Files (*.dbz *.duf)" 
+    var filepath = FileDialog.doFileDialog(
+        false,
+        "Save As",
+        getScenePath(),
+        "DBZ Files (*.dbz *.duf)"
         );
-    if( !filepath )
-    {
+    if( !filepath ) {
         return;
     }
-    
+
+    button1 = popup("Export HD", false, wDlg, oDlgWgt);
+    button2 = popup("HD Convention", true, wDlg, oDlgWgt);
+    button3 = popup("Export HD UVs", true, wDlg, oDlgWgt);
+    if ( wDlg.exec() ) {    
+    	useExportHD = button1.checked;
+        useHDConvention = button2.checked;
+        useHDUVs = button3.checked;
+        exportHighdefToBlender(filepath);
+    }
+}
+
+
+function popup(text, checked, wDlg, oDlgWgt)
+{
+    var button = new DzCheckBox( wDlg );
+    button.text = text;
+    button.checked = checked;
+    wDlg.addWidget( button );
+    var sizeHint = oDlgWgt.minimumSizeHint;
+    wDlg.setFixedSize( sizeHint.width, sizeHint.height );
+    return button;
+}
+
+
+function exportHighdefToBlender(filepath)
+{
     var date1 = new Date();
-    var time1 = date1.getTime(); 
+    var time1 = date1.getTime();
     var filepath0 = filepath + "0"
-    var fp = new DzFile( filepath0 );
+    fp = new DzFile( filepath0 );
     fp.open( fp.WriteOnly );
-    
+
     fp.writeLine("{");
-    fp.writeLine("    \"application\": \"" + appName + "\",");
+    fp.writeLine("    \"application\": \"export_highdef_to_blender\",");
     fp.writeLine("    \"version\": " + version + ",");
-    
+
     fp.writeLine("    \"figures\": [");
 
     for ( var i = 0; i < Scene.getNumNodes(); i++ )
@@ -40,7 +93,7 @@ function exportToBlender()
         else
         {
             obj = node.getObject();
-            if (obj != null) 
+            if (obj != null)
             {
                 doMesh(fp, obj, true, node, "        ]", "    },");
             }
@@ -60,28 +113,28 @@ function exportToBlender()
     fp.writeLine("        \"name\": \"dummy\",");
     fp.writeLine("        \"num verts\": 0");
     fp.writeLine("    }" );
-    
+
     fp.writeLine("    ]");
     fp.writeLine("}" );
     fp.close();
-    
+
     var fp1 = new DzGZFile( filepath );
     var ok = fp1.zip(filepath0);
     fp1.close();
     if (ok) {
-    	fp.remove()
+        fp.remove()
     }
     else {
-    	var oDir = fp.dir();
-    	oDir.move(filepath0, filepath)
-    }    	
-    
+        var oDir = fp.dir();
+        oDir.move(filepath0, filepath)
+    }
+
     var date2 = new Date();
-    var time2 = date2.getTime(); 
-    if (ok) 
-    	msg = "GZipped file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";
-    else    	
-    	msg = "Text file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";    	
+    var time2 = date2.getTime();
+    if (ok)
+        msg = "GZipped file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";
+    else
+        msg = "Text file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";
     MessageBox.information( msg, appName, "&OK" );
 }
 
@@ -89,22 +142,22 @@ function exportToBlender()
 //
 //===============================================================================
 
-function doFigure (fp, figure)
+function doFigure(fp, figure)
 {
     figure.finalize();
     startObject(fp, figure, figure.name, "", ",");
 
     var obj = figure.getObject();
-    if (obj != null) 
+    if (obj != null)
     {
-        doMesh(fp, obj, false, figure, "        ],", "")
+        doMesh(fp, obj, false, figure, "        ],", "");
     }
-    
+
     var bones = figure.getAllBones();
     var n = bones.length;
-    
+
     fp.writeLine("        \"bones\": ");
-    fp.writeLine("        [");  
+    fp.writeLine("        [");
     c = ","
     for( var i = 0; i < n; i++ )
     {
@@ -115,8 +168,8 @@ function doFigure (fp, figure)
         if (i == n-1) c = "";
         fp.writeLine("            }" + c );
     }
-    fp.writeLine("        ]");      
-    fp.writeLine("    }," );    
+    fp.writeLine("        ]");
+    fp.writeLine("    }," );
 }
 
 //===============================================================================
@@ -136,121 +189,106 @@ function startObject(fp, node, name, pad, endchar)
     fp.writeLine(pad + "        \"ws_transform\": " + node.getWSTransform() + endchar);             
 }
 
+
 function normString(string)
 {
     return string.replace(/\n/g, " ");
 }
 
-function doMesh (fp, obj, start, node, str1, str2)
+
+function doMesh(fp, obj, start, node, str1, str2)
 {
     var shape = obj.getCurrentShape();
     if (shape == null)
         return false;
     var clname = node.className();
-    if (clname == "DzGeometryShellNode")
-    	return false;
-
-    // Turn off high resolution
-    var lodctrl = shape.getLODControl();
-    var lodvalue = lodctrl.getValue();
-    lodctrl.setValue(0);
-    // update mesh
-    obj.forceCacheUpdate(node,false);   
-
-    var geom = obj.getCachedGeom();
-    if (geom == null)
-        return false;
-
     if (start)
         startObject(fp, node, node.name, "", ",");
-    if (clname == "DzStrandHairNode")    
-    {
-    	fp.writeLine("        \"node\": {");
-    	doProperties(fp, node, "        ");
-    	fp.writeLine("        },");
-    	doFaces(fp, geom);
+    fp.writeLine("        \"class\": \"" + clname + "\",");
+    var useBase = true;
+    var label = node.getLabel();
+    if (useExportHD && (label.endsWith("HD") || !useHDConvention))
+        useBase = doHDMesh(fp, obj, shape, clname, node, str1, str2);
+    if (useBase)
+    	doBaseMesh(fp, obj, shape, clname, node, str1, str2);
+}
+
+
+function doHDMesh(fp, obj, shape, clname, node, str1, str2)
+{
+    //obj.forceCacheUpdate(node,false);
+    var geom = obj.getCachedGeom();
+    var geom0 = shape.getGeometry();
+    var nv = geom.getNumVertices();
+    var nv0 = geom0.getNumVertices();
+    var level = shape.getSubDDrawLevel();
+
+    if (clname == "DzGeometryShellNode") {
+        fp.writeLine("        \"num verts\": " + nv0 + ",");
+        fp.writeLine("        \"num hd verts\": " + nv + ",");
+        if (useHDUVs)
+            doUVs(fp, geom, "hd ");
+        doFaces(fp, geom, "hd ");
+        doMaterialGroups(fp, geom, "hd ", "");
+        fp.writeLine(str2);
+	return false;
     }
+
     var nf = geom.getNumFacets();
-    if (nf == 0)
-        doPolylines(fp, geom);
-    doVerts(fp, geom);
-    fp.writeLine(str1);
-    fp.writeLine(str2);
-    lodctrl.setValue(lodvalue);    
+    if (nv != nv0 && nf > 0)
+    {
+        fp.writeLine("        \"subd level\": " + level + ",");
+        doVertices(fp, geom, "hd ");
+        fp.writeLine("        ],");
+        if (useHDUVs)
+            doUVs(fp, geom, "hd ");
+        doFaces(fp, geom, "hd ");
+        doMaterialGroups(fp, geom, "hd ", ",");
+    }
     return true;
 }
 
-function doVerts(fp, geom)
-{
-    var nv = geom.getNumVertices();
-    var buf = ("        \"num verts\": " + nv + ",\n");
-    buf += ("        \"vertices\": [\n" );
-    
-    var c = ",\n"
-    for (var i = 0; i < nv; i++)
-    {
-        var v = geom.getVertex(i);
-        if (i == nv-1) c = "\n";
-        buf += ("            [" + v.x + ", " + v.y + ", " + v.z + "]" + c)
-    }   
-    fp.writeLine(buf);
-}
 
-function doPolylines(fp, geom)
+function doBaseMesh(fp, obj, shape, clname, node, str1, str2)
 {
-    var npl = geom.getNumPolylines();
-    var buf = ("        \"" + "polylines\": [\n" );
-    var c = ",\n"
-    for (var i = 0; i < npl; i++)
-    {
-        var vlist = geom.getPolylineVertexIndices(i);
-        if (i == npl-1) c = "\n";
-        buf += ("            [" + vlist + "]" + c)
+    var lodctrl = shape.getLODControl();
+    var lodvalue = lodctrl.getValue();
+    lodctrl.setValue(0);
+    obj.forceCacheUpdate(node,false);
+    var geom = obj.getCachedGeom();
+    if (geom == null) {
+        lodctrl.setValue(lodvalue);
+        return endMesh(fp, str1, str2);
     }
-    buf += ("        ],");
-    fp.writeLine(buf);
-    
-    buf = ("        \"" + "polyline_materials\": [" );
-    c = ","
-    for (var i = 0; i < npl; i++) 
-    {
-        var idx = geom.getPolylineMaterialGroupIndex(i);
-        if (i == npl-1) c = "";
-        buf += (idx + c)
-    }
-    buf += ("],");
-    fp.writeLine(buf);        
-}
 
-function doFaces(fp, geom)
-{
+    if (clname == "DzStrandHairNode")
+    {
+        fp.writeLine("        \"node\": {");
+        doProperties(fp, node, "        ");
+        fp.writeLine("        },");
+        doFaces(fp, geom, "");
+    }
+    
+    fp.writeLine("        \"lod\": " + lodvalue + ",");
     var nf = geom.getNumFacets();
-    var buf = "        \"faces\": [\n";
-    c = ",\n"
-    for (var i = 0; i < nf; i++)
-    {
-        var f = geom.getFacet(i);
-        if (i == nf-1) c = "\n";
-        buf += ("            " + f + c)
-    }   
-    buf += "        ],";
-    fp.writeLine(buf);
+    if (nf == 0)
+        doPolylines(fp, geom, "");
+    doMaterialGroups(fp, geom, "", ",");
+    doVertices(fp, geom, "");
+    fp.writeLine(str1);
+    fp.writeLine(str2);
+    lodctrl.setValue(lodvalue);
+    return true;
 }
 
-function doEdges(fp, geom)
+
+function endMesh(fp, str1, str2)
 {
-    var ne = geom.getNumEdges();
-    var buf = "        \"edges\": [\n";
-    c = ",\n"
-    for (var i = 0; i < ne; i++)
-    {
-        var e = geom.getEdge(i);
-        if (i == ne-1) c = "\n";
-        buf += ("            " + e + c)
-    }   
-    buf += "        ],";
-    fp.writeLine(buf);
+    fp.writeLine("        \"dummy\": 0")
+    fp.writeLine(str2);
+    return false;
 }
+
 
 function doProperties(fp, mat, pad)
 {
@@ -266,8 +304,99 @@ function doProperties(fp, mat, pad)
         if (i == np-1) c = "";
         if (prop.isNumeric())
             buf += (pad + "      \"" + prop.name + "\": " + value + c + "\n");
-    }    
+    }
     buf += (pad + "   }");
+    fp.writeLine(buf);
+}
+
+function doMaterialGroups(fp, geom, hd, endchar)
+{
+    var nm = geom.getNumMaterialGroups();
+    fp.writeLine("        \"" + hd + "material groups\": [" );
+
+    var c = ","
+    for (var i = 0; i < nm; i++)
+    {
+        var mat = geom.getMaterialGroup(i);
+        if (i == nm-1) c = "";
+        fp.writeLine("            \"" + mat.name + "\"" + c);
+    }
+    fp.writeLine("        ]" + endchar);
+}
+
+function doVertices(fp, geom, hd)
+{
+    var nv = geom.getNumVertices();
+    var nf = geom.getNumFacets();
+    var buf = ("        \"num " + hd + "verts\": " + nv + ",\n");
+    buf += ("        \"" + hd + "vertices\": [\n" );
+
+    var c = ",\n"
+    for (var i = 0; i < nv; i++)
+    {
+        var v = geom.getVertex(i);
+        if (i == nv-1) c = "";
+        buf += ("            [" + v.x + ", " + v.y + ", " + v.z + "]" + c)
+    }
+    fp.writeLine(buf);
+}
+
+function doUVs(fp, geom, hd)
+{
+    var uvs = geom.getUVs();
+    var nuv = uvs.getNumValues();
+    var label = uvs.getLabel();
+    var buf = ("        \"" + hd + "uvset\": \"" + label + "\",\n");
+    buf += ("        \"" + hd + "uvs\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < nuv; i++)
+    {
+        var uv = uvs.getPnt2Vec(i);
+        if (i == nuv-1) c = "\n";
+        buf += ("            [" + uv.x + ", " + uv.y + "]" + c);
+    }
+    buf += ("        ],");
+    fp.writeLine(buf);
+}
+
+function doPolylines(fp, geom, hd)
+{
+    var npl = geom.getNumPolylines();
+    var buf = ("        \"" + hd + "polylines\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < npl; i++)
+    {
+        var vlist = geom.getPolylineVertexIndices(i);
+        if (i == npl-1) c = "\n";
+        buf += ("            [" + vlist + "]" + c)
+    }
+    buf += ("        ],");
+    fp.writeLine(buf);
+
+    buf = ("        \"" + hd + "polyline_materials\": [" );
+    c = ","
+    for (var i = 0; i < npl; i++) 
+    {
+        var idx = geom.getPolylineMaterialGroupIndex(i);
+        if (i == npl-1) c = "";
+        buf += (idx + c)
+    }
+    buf += ("],");
+    fp.writeLine(buf);    
+}
+
+function doFaces(fp, geom, hd)
+{
+    var nf = geom.getNumFacets();
+    var buf = ("        \"" + hd + "faces\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < nf; i++)
+    {
+        var f = geom.getFacet(i);
+        if (i == nf-1) c = "\n";
+        buf += ("            " + f + c)
+    }
+    buf += ("        ],");
     fp.writeLine(buf);
 }
 
@@ -285,4 +414,4 @@ function getScenePath()
 //==============================================================================
 // Run it
 //==============================================================================
-exportToBlender()
+createDialog()

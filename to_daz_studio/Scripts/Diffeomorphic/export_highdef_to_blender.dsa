@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
-var appName = "export_highdef_to_blender";
-var version = "\"4.2.0.2260\"";
+var appName = "export_to_blender";
+var version = "\"4.2.0.2261\"";
 var useExportHD = false;
 var useHDConvention = false;
 var useHDUVs = false;
@@ -22,7 +22,7 @@ function createDialog()
     var oDlgWgt = wDlg.getWidget();
 
     // Set the title of the dialog
-    wDlg.caption = "HD export";
+    wDlg.caption = "HD Export (deprecated)";
 
     // Strip the space for a settings key
     var sKey = wDlg.caption.replace( / /g, "" ) + "Dlg";
@@ -44,18 +44,15 @@ function createDialog()
         return;
     }
 
-    useExportHD = popup("Export HD", false, wDlg, oDlgWgt);
-    if (cancelled)
-        return;
-    if (useExportHD) {    
-        useHDConvention = popup("HD Convention", true, wDlg, oDlgWgt);
-        if (cancelled)
-            return;
-        useHDUVs = popup("Export HD UVs", true, wDlg, oDlgWgt);
-        if (cancelled)
-            return;
+    button1 = popup("Export HD", false, wDlg, oDlgWgt);
+    button2 = popup("HD Convention", true, wDlg, oDlgWgt);
+    button3 = popup("Export HD UVs", true, wDlg, oDlgWgt);
+    if ( wDlg.exec() ) {    
+    	useExportHD = button1.checked;
+        useHDConvention = button2.checked;
+        useHDUVs = button3.checked;
+        exportHighdefToBlender(filepath);
     }
-    exportHighdefToBlender(filepath);
 }
 
 
@@ -67,12 +64,7 @@ function popup(text, checked, wDlg, oDlgWgt)
     wDlg.addWidget( button );
     var sizeHint = oDlgWgt.minimumSizeHint;
     wDlg.setFixedSize( sizeHint.width, sizeHint.height );
-    if ( wDlg.exec() )
-    	checked = button.checked;
-    else
-        cancelled = true;
-    button.hide();
-    return checked;
+    return button;
 }
 
 
