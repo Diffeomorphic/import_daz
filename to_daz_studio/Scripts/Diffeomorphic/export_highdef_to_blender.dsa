@@ -172,9 +172,9 @@ function doFigure(fp, figure, useHdUvs)
 function startObject(fp, node, name, pad, endchar)
 {        
     fp.writeLine(pad + "    {" );
-    fp.writeLine(pad + "        \"name\": \"" + name + "\",");
-    fp.writeLine(pad + "        \"id\": \"" + node.assetId + "\",");
-    fp.writeLine(pad + "        \"label\": \"" + node.getLabel() + "\",");
+    fp.writeLine(pad + "        \"name\": \"" + normString(name) + "\",");
+    fp.writeLine(pad + "        \"id\": \"" + normString(node.assetId) + "\",");
+    fp.writeLine(pad + "        \"label\": \"" + normString(node.getLabel()) + "\",");
     fp.writeLine(pad + "        \"center_point\": " + node.getOrigin() + ",");
     fp.writeLine(pad + "        \"end_point\": " + node.getEndPoint() + ",");     
     fp.writeLine(pad + "        \"orientation\": " + node.getOrientation() + ",");             
@@ -182,6 +182,10 @@ function startObject(fp, node, name, pad, endchar)
     fp.writeLine(pad + "        \"ws_transform\": " + node.getWSTransform() + endchar);             
 }
 
+function normString(string)
+{
+    return string.replace(/\n/g, " ");
+}
 
 function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
 {
