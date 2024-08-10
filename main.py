@@ -820,6 +820,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             mainRig = rigs[0]
         else:
             mainRig = None
+        basecoll = LS.collection
+        hdcoll = LS.hdcollection
         firstMesh = (meshes[0] if meshes else None)
         mainMesh = (firstMesh if firstMesh and firstMesh.DazMesh.startswith("Genesis") else None)
         mainChar = (isGenesis(mainRig) if mainRig else None)
@@ -1082,7 +1084,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 mainRig = None
             print("Deleting objects: %s" % [ob.name for ob in deletes])
             deleteObjects(context, deletes)
-            print("Objects deleted")
+            print("Unlinking collection")
+            for ob in basecoll.objects:
+                basecoll.objects.unlink(ob)
+            scncoll = context.scene.collection
+            if basecoll.name in scncoll.children:
+                scncoll.children.unlink(basecoll)
 
         if firstMesh:
             firstMesh.update_tag()

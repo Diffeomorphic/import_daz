@@ -208,8 +208,7 @@ class GeoNode(Node, SimNode):
             self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
             if GS.useMultires and hdob.data.polygons:
-                meshSubDLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
-                self.hdType = addMultires(context, ob, hdob, False, meshSubDLevel)
+                self.hdType = addMultires(context, ob, hdob, False, self.data.SubDIALevel)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
                 if len(ob.data.uv_layers) > len(hdob.data.uv_layers):
                     print("COPY UVS", ob.name, hdob.name)
@@ -626,23 +625,27 @@ def addMultires(context, ob, hdob, strict, subdivlevel):
     for n in range(nmods-1):
         bpy.ops.object.modifier_move_up(modifier=mod.name)
     ok = True
+    nlevels = 0
     if subdivlevel is None:
         try:
             bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
+            nlevels = mod.levels
         except RuntimeError:
             ok = False
     else:
         for n in range(subdivlevel):
             try:
                 bpy.ops.object.multires_unsubdivide(modifier="Multires")
+                nlevels = n+1
             except RuntimeError:
                 ok = False
             if not ok:
+                print("Failed to unsubdive %d of %d levels" % (n, subdivlevel))
                 break
     if ok:
         hdfinger = getFingerPrint(hdob)
         if hdfinger == finger or not strict:
-            print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
+            print('Rebuilt %d subdiv levels for "%s"' % (nlevels, hdob.name))
             mod.levels = mod.sculpt_levels = 0
             if hdfinger != finger:
                 LS.hdMismatch.append(hdob.name)

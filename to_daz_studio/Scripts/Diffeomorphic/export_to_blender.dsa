@@ -44,7 +44,7 @@ function createDialog()
         return;
     }
 
-    button1 = popup("Export HD", false, wDlg, oDlgWgt);
+    button1 = popup("Export HD", true, wDlg, oDlgWgt);
     button2 = popup("HD Convention", true, wDlg, oDlgWgt);
     button3 = popup("Export HD UVs", true, wDlg, oDlgWgt);
     if ( wDlg.exec() ) {    

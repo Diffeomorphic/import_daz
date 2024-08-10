@@ -7,10 +7,6 @@ MessageBox.information(
 	"Export a .dbz file which contains the worldspace locations\n" +
 	"of vertices and bones.\n" +
 	"\n" +
-	"Export HD To Blender:\n" + 
-	"Export a .dbz file which also contains high-definition data.\n" +
-	"(Experimental)\n" +
-	"\n" +
 	"Setup Menus:\n" +
 	"Move the two export scripts to the file menu.\n" +
 	"See https://diffeomorphic.blogspot.com/2020/08/automatic-menu-setup.html\n", 
