@@ -128,16 +128,12 @@ class GeoNode(Node, SimNode):
             geo.preprocess(context, inst)
 
 
-    def buildObject(self, context, inst, center):
-        Node.buildObject(self, context, inst, center)
-
-
     def getObjectName(self, inst):
         from .figure import Figure
         if isinstance(self.figure, Figure):
-            return "%s Mesh" % inst.name
+            return "%s Mesh" % noHDName(inst.name)
         else:
-            return inst.name
+            return noHDName(inst.name)
 
 
     def buildShells(self, context):
@@ -191,12 +187,15 @@ class GeoNode(Node, SimNode):
 
 
     def buildHDObject(self, context, ob, inst, me):
-        hdob = bpy.data.objects.new(HDName(ob.name), me)
+        if me == ob.data and not self.isGraft():
+            hdob = ob
+        else:
+            hdob = bpy.data.objects.new(HDName(ob.name), me)
+            hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
+            self.arrangeObject(hdob, inst, context, Zero)
+        hdob["DazHDMesh"] = True
         self.hdobject = inst.hdobject = hdob
         LS.hdmeshes[LS.rigname].append(hdob)
-        hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
-        center = Vector((0,0,0))
-        self.arrangeObject(hdob, inst, context, center)
         return hdob
 
 
@@ -291,7 +290,7 @@ class GeoNode(Node, SimNode):
     def buildHDMesh(self, ob):
         if not self.highdef.faces:
             print("HD mesh %s without faces: (%d %d)" % (ob.name, len(ob.data.vertices), len(self.highdef.verts)))
-            return ob.data.copy()
+            return ob.data
         verts = self.highdef.verts
         edges = []
         faces = self.stripNegatives([f[0] for f in self.highdef.faces])
@@ -306,6 +305,7 @@ class GeoNode(Node, SimNode):
             f.use_smooth = True
         self.data.setHairType(me)
         self.data.validateMesh(me)
+        me["DazHDMesh"] = True
         return me
 
 

@@ -276,7 +276,7 @@ class Figure(Node):
             geonode.buildObject(context, inst, center)
             geonode.rna.location = Zero
         if GS.useArmature:
-            amt = self.data = bpy.data.armatures.new(inst.name)
+            amt = self.data = bpy.data.armatures.new(noHDName(inst.name))
             self.buildObject(context, inst, center)
             rig = self.rna
             LS.rigs[LS.rigname].append(rig)

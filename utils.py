@@ -557,7 +557,18 @@ def truncString(string, ending):
     return string
 
 def HDName(string):
-    return "%s_HD" % truncString(baseName(string), " Mesh")
+    return "%s HD" % truncString(baseName(string), " Mesh")
+
+def noHDName(string):
+    string = baseName(string)
+    return (string[:-3] if string.endswith("HD") else string)
+
+def isHDName(string):
+    return baseName(string).endswith("HD")
+
+def isHDMesh(ob):
+    #return isHDName(ob.name)
+    return ob.get("DazHDMesh", False)
 
 def isDrvBone(string):
     return string.endswith("(drv)")

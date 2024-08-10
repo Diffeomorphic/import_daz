@@ -966,7 +966,7 @@ class Node(Asset, Formula, Channels):
 
 
     def getObjectName(self, inst):
-        return inst.name
+        return noHDName(inst.name)
 
 
     def arrangeObject(self, ob, inst, context, center):

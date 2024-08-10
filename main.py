@@ -880,10 +880,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     clothes.append(ob)
 
         def getBaseMesh(hdob, meshes):
-            hdname = truncString(baseName(hdob.name), "_HD")
-            basename = "%s Mesh" % hdname
+            basename = noHDName(hdob.name)
+            meshname = "%s Mesh" % basename
             for ob in meshes:
-                if ob.name in (hdname, basename):
+                if ob.name in (basename, meshname):
                     return ob
 
         isSingleHD = False

@@ -1672,14 +1672,15 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         mcoll = hdcoll = None
         for coll in bpy.data.collections:
             if rig in coll.objects.values():
-                if baseName(coll.name).endswith("_HD"):
+                rigname = noHDName(rig.name)
+                if isHDName(coll.name):
                     if hdcoll is None:
-                        hdcoll = bpy.data.collections.new(name= baseName(rig.name) + " Meshes_HD")
+                        hdcoll = bpy.data.collections.new(name= "%s Meshes HD" % rigname)
                         hdadds = [hdcoll]
                     coll.children.link(hdcoll)
                 else:
                     if mcoll is None:
-                        mcoll = bpy.data.collections.new(name= baseName(rig.name) + " Meshes")
+                        mcoll = bpy.data.collections.new(name= "%s Meshes" % rigname)
                         adds = [mcoll]
                     coll.children.link(mcoll)
                 removes.append(coll)
@@ -1696,10 +1697,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     def addToCollections(self, ob, adds, hdadds, removes):
         if not self.createMeshCollection:
             return
-        if ob.name.endswith("HD"):
-            adders = hdadds
-        else:
-            adders = adds
+        adders = (hdadds if isHDMesh(ob) else adds)
         for grp in adders:
             if ob.name not in grp.objects:
                 grp.objects.link(ob)

@@ -466,7 +466,7 @@ class Baker:
     def getBaseName(self, ob):
         if self.basename:
             return self.basename
-        obname = truncString(truncString(baseName(ob.name), "_HD"), " Mesh")
+        obname = truncString(noHDName(ob.name), " Mesh")
         return bpy.path.clean_name(obname.lower())
 
 

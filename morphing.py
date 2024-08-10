@@ -1733,7 +1733,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         rig.DazMorphUrls.clear()
         self.loadPreset(rig, rig, struct, context)
         for ob in getMeshChildren(rig):
-            if not baseName(ob.name).endswith("_HD"):
+            if not isHDMesh(ob):
                 self.loadPreset(ob, rig, struct, context)
         updateScrollbars(context)
 
@@ -2063,7 +2063,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         if self.rig:
             loaded = []
             for ob in getMeshChildren(self.rig):
-                if baseName(ob.name).endswith("_HD"):
+                if isHDMesh(ob):
                     continue
                 used.append(ob)
                 skeys = ob.data.shape_keys
@@ -2095,8 +2095,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         # Import prop favorites
         self.rig = None
         for ob in meshes:
-            if (ob not in used and
-                not baseName(ob.name).endswith("_HD")):
+            if ob not in used and not isHDMesh(ob):
                 self.addFavoMorphs(ob, context, False)
         updateScrollbars(context)
         if self.missing:
