@@ -208,7 +208,8 @@ class GeoNode(Node, SimNode):
             self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
             if GS.useMultires and hdob.data.polygons:
-                self.hdType = addMultires(context, ob, hdob, False)
+                meshSubDLevel = self.data.SubDIALevel + self.data.SubDRenderLevel
+                self.hdType = addMultires(context, ob, hdob, False, meshSubDLevel)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
                 if len(ob.data.uv_layers) > len(hdob.data.uv_layers):
                     print("COPY UVS", ob.name, hdob.name)
@@ -603,7 +604,7 @@ def isEmpty(vgrp, ob):
 #   Add multires
 #-------------------------------------------------------------
 
-def addMultires(context, ob, hdob, strict):
+def addMultires(context, ob, hdob, strict, subdivlevel):
     from .finger import getFingerPrint
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
@@ -624,16 +625,24 @@ def addMultires(context, ob, hdob, strict):
     mod = hdob.modifiers.new("Multires", 'MULTIRES')
     for n in range(nmods-1):
         bpy.ops.object.modifier_move_up(modifier=mod.name)
-    try:
-        bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
-        ok = True
-    except RuntimeError:
-        ok = False
+    ok = True
+    if subdivlevel is None:
+        try:
+            bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
+        except RuntimeError:
+            ok = False
+    else:
+        for n in range(subdivlevel):
+            try:
+                bpy.ops.object.multires_unsubdivide(modifier="Multires")
+            except RuntimeError:
+                ok = False
+            if not ok:
+                break
     if ok:
         hdfinger = getFingerPrint(hdob)
         if hdfinger == finger or not strict:
             print('Rebuilt %d subdiv levels for "%s"' % (mod.levels, hdob.name))
-            hdob.DazMultires = True
             mod.levels = mod.sculpt_levels = 0
             if hdfinger != finger:
                 LS.hdMismatch.append(hdob.name)
@@ -657,7 +666,6 @@ def addMultires(context, ob, hdob, strict):
         hdfinger = getFingerPrint(hdob)
         if hdfinger == finger:
             print('Rebuilt %d subdiv levels for "%s"' % (mod.render_levels, hdob.name))
-            hdob.DazMultires = True
             mod.levels = mod.sculpt_levels = 0
             return 'MULTIRES'
 
@@ -699,7 +707,7 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
             baseob = hdob
             hdob = tmp
         print('Base "%s", HD "%s"' % (baseob.name, hdob.name))
-        hdtype = addMultires(context, baseob, hdob, False)
+        hdtype = addMultires(context, baseob, hdob, False, None)
         if hdtype == 'MULTIRES':
             if self.useNewUvs or hdob.data.uv_layers is None:
                 copyUvLayers(context, baseob, hdob)
@@ -2044,7 +2052,6 @@ def register():
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
-    bpy.types.Object.DazMultires = BoolProperty(default=False)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
 
     bpy.types.Object.DazBlendFile = StringProperty(
