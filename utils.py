@@ -551,17 +551,22 @@ def normKey(key):
     else:
         return unquote(key.lower())
 
-def truncString(string, ending):
-    if string[-len(ending):] == ending:
-        return string[:-len(ending)]
+def noMeshName(string):
+    string = baseName(string)
+    if string.endswith(" Mesh"):
+        string = string[:-5]
+    if string.endswith(" HD"):
+        string = string[:-3]
     return string
 
 def HDName(string):
-    return "%s HD" % truncString(baseName(string), " Mesh")
+    return "%s HD" % noMeshName(string)
 
 def noHDName(string):
     string = baseName(string)
-    return (string[:-3] if string.endswith("HD") else string)
+    if string.endswith(" HD"):
+        string = string[:-3]
+    return string
 
 def isHDName(string):
     return baseName(string).endswith("HD")

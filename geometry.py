@@ -102,6 +102,12 @@ class GeoNode(Node, SimNode):
             return self.data.isVisibleMaterial(dmat)
         return True
 
+    def getName(self):
+        if self.figureInst:
+            return self.figureInst.node.name
+        else:
+            return Asset.getName(self)
+
     def getRig(self):
         ob = self.rna
         if ob and ob.parent and ob.parent.type == 'ARMATURE':
@@ -304,7 +310,7 @@ class GeoNode(Node, SimNode):
             f.material_index = mnums[f.index]
             f.use_smooth = True
         self.data.setHairType(me)
-        self.data.validateMesh(me)
+        self.data.validateMesh(me, HDName(ob.name))
         me["DazHDMesh"] = True
         return me
 
@@ -1276,7 +1282,7 @@ class Geometry(Asset, Channels):
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
             ob.DazVisibilityDrivers = True
-        self.validateMesh(me)
+        self.validateMesh(me, obname)
 
         if GS.onFaceMaps == 'POLYGON_GROUPS' and me.polygons:
             self.addFaceMaps(ob, self.polygon_groups, self.polygon_indices)
@@ -1292,7 +1298,7 @@ class Geometry(Asset, Channels):
             self.setHairMatNums(guideMe, guidePolymats)
             for mat in me.materials:
                 guideMe.materials.append(mat)
-            self.validateMesh(guideMe)
+            self.validateMesh(guideMe, guideOb.name)
 
         return ob, guideOb
 
@@ -1409,10 +1415,10 @@ class Geometry(Asset, Channels):
             self.uv_set = dmat.uv_set
 
 
-    def validateMesh(self, me):
+    def validateMesh(self, me, name):
         if me.validate():
             reportError('Invalid mesh "%s". Correcting.' % me.name)
-            LS.invalidMeshes.append(me.name)
+            LS.invalidMeshes.append(noMeshName(name))
 
 
     def addAllMaterials(self, me, geonode):

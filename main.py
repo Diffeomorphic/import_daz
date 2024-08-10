@@ -316,13 +316,14 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
             self.msg += "Some assets were not found. Check that all DAZ root paths have been set up correctly.        \n"
             self.addItems(LS.missingAssets.keys())
         if LS.invalidMeshes:
-            self.msg += "Invalid meshes found and corrected.\nImporting morphs may not work:\n"
+            self.msg += "Invalid meshes found and corrected. Importing morphs may not work:\n"
             self.addItems(LS.invalidMeshes)
         if LS.polyLines:
             self.msg += "Found meshes without faces. Should probably be converted to hair:\n"
             obnames = []
             for geo in LS.polyLines.values():
-                obnames += [geonode.rna.name for geonode in geo.nodes.values() if geonode.rna]
+                obnames += [noMeshName(geonode.rna.name)
+                            for geonode in geo.nodes.values() if geonode.rna]
             self.addItems(obnames)
         if LS.otherRigBones:
             self.msg += "Found formulas for other rigs:\n"
@@ -331,8 +332,7 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
             self.msg += "Triax approximation used for the following meshes:\n"
             self.addItems(LS.triax.keys())
         if LS.hasInstanceChildren:
-            self.msg += ("The following objects have instance children.\n" +
-                   "The result may be incorrect.\n")
+            self.msg += ("The following objects have instance children. The result may be incorrect.\n")
             self.addItems(LS.hasInstanceChildren.keys())
         if LS.partialMaterials:
             self.msg += "The following materials are only partial:\n"
@@ -345,7 +345,6 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
             self.addItems(LS.hdFailures)
         if LS.hdMismatch:
             self.msg += "Multires vertex count mismatch. Vertex groups transferred from base objects.     \n"
-            #self.msg += "Enter Geometry editor before exporting HD meshes with geografts:\n"
             self.addItems(LS.hdMismatch)
         if LS.hdUvMissing:
             self.msg += "HD objects missing exported UV layers. UVs transferred from base objects:\n"
@@ -1084,12 +1083,15 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 mainRig = None
             print("Deleting objects: %s" % [ob.name for ob in deletes])
             deleteObjects(context, deletes)
-            print("Unlinking collection")
-            for ob in basecoll.objects:
-                basecoll.objects.unlink(ob)
-            scncoll = context.scene.collection
-            if basecoll.name in scncoll.children:
-                scncoll.children.unlink(basecoll)
+            print("Unlinking base collection")
+            if basecoll is None:
+                print("No base collection")
+            else:
+                for ob in basecoll.objects:
+                    basecoll.objects.unlink(ob)
+                scncoll = context.scene.collection
+                if basecoll.name in scncoll.children:
+                    scncoll.children.unlink(basecoll)
 
         if firstMesh:
             firstMesh.update_tag()

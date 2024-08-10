@@ -322,7 +322,7 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     shell.visible_shadow = False
     mod = shell.modifiers.new(shell.name, 'NODES')
     group = GeoshellGroup()
-    group.create(truncString(noHDName(ob.name), " Mesh"), mnames)
+    group.create(noMeshName(ob.name), mnames)
     group.addNodes(mnames, mats, shmats)
     mod.node_group = group.group
     if BLENDER3:

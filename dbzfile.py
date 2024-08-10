@@ -57,6 +57,8 @@ class DBZInfo:
         struct = entries.get(key, {})
         if inst.label in struct.keys():
             return struct[inst.label]
+        elif inst.name in struct.keys():
+            return struct[inst.name]
         elif 0 in struct.keys():
             nkeys = len(struct.keys()) - 1
             for n in range(nkeys):
@@ -65,7 +67,7 @@ class DBZInfo:
                     struct[n] = None
                     return entry
             return struct.get(nkeys)
-        print('No DBZ data: %s "%s" "%s"' % (attr, key, inst.label))
+        print('No DBZ data: %s "%s" "%s" "%s"' % (attr, key, inst.label, inst.name))
 
 
     def addEntry(self, attr, key, label, entry):

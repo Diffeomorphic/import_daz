@@ -2115,7 +2115,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                 if not self.findMorphs(morph, ob):
                     #self.missing.append(favo)
                     self.addNamePath(morph, ob.DazScene, self.namepaths)
-            self.setCategory("Favorites %s" % truncString(ob.name, "Mesh"))
+            self.setCategory("Favorites %s" % noMeshName(ob.name))
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
             if not hasRig and GS.useShapeCats and ob.data.shape_keys:
