@@ -127,7 +127,8 @@ class DazLoader:
 
         if LS.useNodes:
             grpname = os.path.splitext(os.path.basename(filepath))[0].capitalize()
-            LS.collection = makeRootCollection(grpname, context)
+            LS.collection = bpy.data.collections.new(name=grpname)
+            context.collection.children.link(LS.collection)
 
         print("Parsing data")
         from .files import parseAssetFile

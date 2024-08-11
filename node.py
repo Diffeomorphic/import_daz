@@ -126,7 +126,6 @@ class Instance(Accessor, Channels, SimNode):
         self.rotation_order = node.rotation_order
         self.inherits_scale = node.inherits_scale
         node.inherits_scale = True
-        self.collection = LS.collection
         if "parent" in struct.keys() and node.parent is not None:
             self.parent = node.parent.getInstance(struct["parent"], node.caller)
             if self.parent == self:
@@ -134,7 +133,6 @@ class Instance(Accessor, Channels, SimNode):
                 self.parent = None
             if self.parent:
                 self.parent.children[self.id] = self
-                self.collection = self.parent.collection
         else:
             self.parent = None
         node.parent = None
@@ -387,7 +385,7 @@ class Instance(Accessor, Channels, SimNode):
         empty = bpy.data.objects.new(obname, None)
         empty.instance_type = 'COLLECTION'
         empty.instance_collection = self.refcoll
-        self.collection.objects.link(empty)
+        LS.collection.objects.link(empty)
         LS.refObjects[ob.name] = (self, empty, self.refcoll)
         unlinkAll(ob, False)
         self.refcoll.objects.link(ob)
@@ -481,7 +479,7 @@ class Instance(Accessor, Channels, SimNode):
                 emptyi = bpy.data.objects.new(ename, None)
                 emptyi.parent = empty
                 emptyi.rotation_mode = empty.rotation_mode
-                self.collection.objects.link(emptyi)
+                LS.collection.objects.link(emptyi)
                 emptyi.instance_type = 'COLLECTION'
                 emptyi.instance_collection = coll
                 mats = self.calcMatrices(item, self)
@@ -980,7 +978,9 @@ class Node(Asset, Formula, Channels):
         }
         ob.rotation_mode = blenderRotMode[self.rotation_order]
         ob.DazRotMode = self.rotation_order
-        inst.collection.objects.link(ob)
+        LS.collection.objects.link(ob)
+        if LS.hdcollection and ob.type != 'MESH':
+            LS.hdcollection.link(ob)
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)
         ob.DazScene = LS.scene

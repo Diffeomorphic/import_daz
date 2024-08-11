@@ -461,8 +461,12 @@ class GeoNode(Node, SimNode):
         if hdob == ob and isGeograft(ob):
             return
         if LS.hdcollection is None:
-            from .main import makeRootCollection
-            LS.hdcollection = makeRootCollection(HDName(LS.collection.name), context)
+            LS.hdcollection = bpy.data.collections.new(name = HDName(LS.collection.name))
+            context.collection.children.link(LS.hdcollection)
+            for ob1 in LS.collection.objects:
+                if (ob1.type != 'MESH' and
+                    ob1.name not in LS.hdcollection.objects):
+                    LS.hdcollection.objects.link(ob1)
         if hdob.name not in LS.hdcollection.objects:
             LS.hdcollection.objects.link(hdob)
         if ob.parent and ob.parent.name not in LS.hdcollection.objects:
@@ -480,8 +484,8 @@ class GeoNode(Node, SimNode):
         if hdob.data.DazFingerPrint == ob.data.DazFingerPrint:
             hdob.DazMesh = ob.DazMesh
         setWorldMatrix(hdob, ob.matrix_world)
-        if hdob.name in inst.collection.objects:
-            inst.collection.objects.unlink(hdob)
+        if hdob.name in LS.collection.objects:
+            LS.collection.objects.unlink(hdob)
 
 
     def postbuild(self, context, inst):
