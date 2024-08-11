@@ -105,8 +105,9 @@ class BoneInstance(Instance):
     def parentObject(self, context, ob):
         pass
 
-    def updateMatrices(self):
-        pass
+    # Matrics must be updated for bone parented objects to work.
+    #def updateMatrices(self):
+    #    pass
 
     def buildExtra(self, context):
         pass
