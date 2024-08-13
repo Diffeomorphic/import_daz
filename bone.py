@@ -121,23 +121,17 @@ class BoneInstance(Instance):
 
     def getHeadTail(self, center, mayfit=True):
         if mayfit and self.restdata:
-            head,tail,orient,xyz,origin,wsmat,dazhead = self.restdata
-            if orient:
-                x,y,z,w = orient
-                orient = Quaternion((-w,x,y,z)).to_euler()
-            else:
-                orient = Euler(self.attributes["orientation"]*D)
-                xyz = self.rotation_order
+            return self.restdata
         else:
+            from .dbzfile import DBZRestData
             head = (self.attributes["center_point"] - center)
             tail = (self.attributes["end_point"] - center)
             orient = Euler(self.attributes["orientation"]*D)
             xyz = self.rotation_order
             wsmat = self.U3
             dazhead = head
-        if (tail-head).length < 0.1:
-            tail = head + Vector((0,1,0))
-        return head,tail,orient,xyz,wsmat,dazhead
+            return DBZRestData(head, tail, orient, xyz, None, wsmat, dazhead)
+
 
     RX = Matrix.Rotation(pi/2, 4, 'X')
     FX = Matrix.Rotation(pi, 4, 'X')
@@ -145,18 +139,17 @@ class BoneInstance(Instance):
 
     def buildEdit(self, figure, figinst, rig, parent, center, isFace):
         self.makeNameUnique(rig.data.edit_bones)
-        head,tail,orient,xyz,wsmat,_ = self.getHeadTail(center)
+        rdata = self.getHeadTail(center)
         eb = rig.data.edit_bones.new(self.name)
         figure.bones[self.name] = eb.name
         figinst.bones[self.name] = self
-        if (head-tail).length < 1e-5:
-            raise RuntimeError("BUG: buildEdit %s %s %s" % (self.name, head, tail))
+        rdata.checkBone(self.name)
         eb.parent = parent
-        eb.head = head = d2b(head)
-        eb.tail = tail = d2b(tail)
+        eb.head = head = d2b(rdata.head)
+        eb.tail = tail = d2b(rdata.tail)
         length = (head-tail).length
-        omat = orient.to_matrix()
-        lsmat = self.getLocalMatrix(wsmat, omat)
+        omat = rdata.orient.to_matrix()
+        lsmat = self.getLocalMatrix(rdata.wsmat, omat)
         if not eulerIsZero(lsmat.to_euler()):
             self.isPosed = True
         omat = omat.to_4x4()
@@ -164,13 +157,13 @@ class BoneInstance(Instance):
             omat = self.RX @ omat
         flip = self.FX
         if not GS.unflipped:
-            omat,flip = self.flipAxes(omat, xyz)
+            omat,flip = self.flipAxes(omat, rdata.xyz)
 
         if self.test:
-            print("BB", self.name, orient)
+            print("BB", self.name, rdata.orient)
 
         #  engetudouiti's fix for posed bones
-        rmat = wsmat.to_4x4()
+        rmat = rdata.wsmat.to_4x4()
         if GS.zup:
             rmat = self.RX @ rmat @ self.RX.inverted()
         if rmat.determinant() > 1e-4:
@@ -327,13 +320,13 @@ class BoneInstance(Instance):
         bone.inherit_scale = self.defaultInherit()
         bone.DazOrient = self.attributes["orientation"]
 
-        head,tail,orient,xyz,wsmat,dazhead = self.getHeadTail(center)
-        head0,tail0,orient0,xyz0,wsmat0,_ = self.getHeadTail(center, False)
-        bone.DazHead = dazhead
+        rdata = self.getHeadTail(center)
+        rdata0 = self.getHeadTail(center, False)
+        bone.DazHead = rdata.dazhead
         bone.DazAngle = 0
 
-        vec = d2b00(tail) - d2b00(head)
-        vec0 = d2b00(tail0) - d2b00(head0)
+        vec = d2b00(rdata.tail) - d2b00(rdata.head)
+        vec0 = d2b00(rdata0.tail) - d2b00(rdata0.head)
         if vec.length > 0 and vec0.length > 0:
             vec /= vec.length
             vec0 /= vec0.length

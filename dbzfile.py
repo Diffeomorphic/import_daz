@@ -284,8 +284,29 @@ def addDbzData(node, bname, restdata, transforms):
     origin = node.get("origin")
     rmat = wsmat.to_4x4()
     rmat.col[3][0:3] = GS.scale*head
-    restdata[bname] = (head, tail, orient, xyz, origin, wsmat, dazhead)
+    restdata[bname] = DBZRestData(head, tail, orient, xyz, origin, wsmat, dazhead)
     transforms[bname] = (rmat, head, rmat.to_euler(), (1,1,1))
+
+
+class DBZRestData:
+    def __init__(self, head, tail, orient, xyz, origin, wsmat, dazhead):
+        self.head = Vector(head)
+        self.tail = Vector(tail)
+        if (self.tail - self.head).length < 0.1:
+            self.tail = self.head + Vector((0,1,0))
+        if len(orient) == 4:
+            x,y,z,w = orient
+            self.orient = Quaternion((-w,x,y,z)).to_euler()
+        else:
+            self.orient = Euler(orient)
+        self.xyz = xyz
+        self.origin = origin
+        self.wsmat = wsmat
+        self.dazhead = dazhead
+
+    def checkBone(self, bname):
+        if (self.head - self.tail).length < 1e-5:
+            raise RuntimeError("Check bone %s %s %s" % (bname, self.head, self.tail))
 
 #------------------------------------------------------------------
 #
@@ -505,8 +526,8 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
                 pb.name not in restdata.keys()):
                 continue
             self.builtBones[pb.name] = True
-            (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
-            vec = Vector(head) - b2d(pb.bone.head_local)
+            rdata = restdata[pb.name]
+            vec = Vector(rdata.head) - b2d(pb.bone.head_local)
             for idx,comp in enumerate(vec):
                 expr.prop.factor = comp
                 lm.makeErcFormula(pb.name, idx, expr)
@@ -527,8 +548,8 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
                 pb.name not in restdata.keys()):
                 continue
             self.builtBones[pb.name] = True
-            (head, tail, orient, xyz, origin, wsmat, dazhead) = restdata[pb.name]
-            vec = Vector(head) - b2d(pb.bone.head_local)
+            rdata = restdata[pb.name]
+            vec = Vector(rdata.head) - b2d(pb.bone.head_local)
             for idx,comp in enumerate(vec):
                 expr.prop.factor = comp
                 lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)

@@ -590,8 +590,8 @@ class Instance(Accessor, Channels, SimNode):
 
         from .bone import BoneInstance
         if self.restdata:
-            head = self.restdata[0]
-            trans = d2b00(head)
+            rdata = self.restdata
+            trans = d2b00(rdata.head)
         else:
             trans = d2b00(attributes["translation"])
         cpoint = d2b00(attributes["center_point"])
@@ -606,7 +606,7 @@ class Instance(Accessor, Channels, SimNode):
 
         if parent:
             if isinstance(parent, BoneInstance) and parent.restdata:
-                head = d2b00(parent.restdata[0])
+                head = d2b00(parent.restdata.head)
                 head0 = d2b00(parent.attributes["center_point"])
                 coffset = cpoint - head0 + head
             else:
