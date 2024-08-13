@@ -450,10 +450,18 @@ class GeoNode(Node, SimNode):
                 driveShellInfluence(ob)
             if GS.shellMethod == 'GEONODES':
                 self.buildShells(context)
+
+        def shiftMesh(ob, inst):
+            from .node import isUnitMatrix
+            if not isUnitMatrix(inst.worldmat):
+                mat = inst.worldmat.inverted()
+                for v in ob.data.vertices:
+                    v.co = mat @ v.co
+
         if LS.fitFile and ob.type == 'MESH':
-            shiftMesh(ob, inst.worldmat.inverted())
+            shiftMesh(ob, inst)
             if hdob and hdob.data != ob.data:
-                shiftMesh(hdob, inst.worldmat.inverted())
+                shiftMesh(hdob, inst)
 
 
     def finishHD(self, context, ob, hdob, inst):
@@ -550,14 +558,6 @@ class GeoNode(Node, SimNode):
         self.data.hidePolyGroup(self.rna, fnums)
         if self.hdobject and self.hdobject != self.rna:
             self.data.hidePolyGroup(self.hdobject, fnums)
-
-
-def shiftMesh(ob, mat):
-    from .node import isUnitMatrix
-    if isUnitMatrix(mat):
-        return
-    for v in ob.data.vertices:
-        v.co = mat @ v.co
 
 
 def scaleEyeMoisture(ob):

@@ -190,15 +190,15 @@ def loadDbzFile(filepath):
         raise DazError(msg)
 
     for figure in struct["figures"]:
-        nverts = figure.get("num verts", 0)
-        nhdverts = figure.get("num hd verts", 0)
-        if nverts == 0 and nhdverts == 0:
-            continue
         center = figure.get("center_point")
         if center:
             center = Vector(center)
+        else:
+            continue
         name = figure["name"]
         label = figure.get("label")
+        nverts = figure.get("num verts", 0)
+        nhdverts = figure.get("num hd verts", 0)
 
         verts = []
         if "vertices" in figure.keys():

@@ -105,12 +105,15 @@ class BoneInstance(Instance):
     def parentObject(self, context, ob):
         pass
 
-    # Matrics must be updated for bone parented objects to work.
-    #def updateMatrices(self):
-    #    pass
+
+    def updateMatrices(self):
+        if not LS.fitFile:
+            Instance.updateMatrices(self)
+
 
     def buildExtra(self, context):
         pass
+
 
     def finalize(self, context):
         pass
