@@ -683,14 +683,20 @@ class SkinBinding(Modifier):
             if vgrp1 and vgrp3:
                 mod = addWeightMix(ob, vgrp1.name, vgrp3.name, 'AVG')
                 if GS.useTriaxApply:
-                    zgroups.append(vgrp3.name)
-                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    try:
+                        zgroups.append(vgrp3.name)
+                        bpy.ops.object.modifier_apply(modifier=mod.name)
+                    except RuntimeError:
+                        pass
 
         for bname in twists.keys():
             data = self.TwistBones[bname]
             mod = addWeightMix(ob, bname, "%s.twist" % bname, data[2])
             if GS.useTriaxApply:
-                bpy.ops.object.modifier_apply(modifier=mod.name)
+                try:
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                except RuntimeError:
+                    pass
 
         for bname,hname in [("lForeArm", "lHand"), ("rForeArm", "rHand")]:
             if not twists.get(bname):
@@ -702,7 +708,10 @@ class SkinBinding(Modifier):
             mod.mix_mode = 'MUL'
             mod.normalize = False
             if GS.useTriaxApply:
-                bpy.ops.object.modifier_apply(modifier=mod.name)
+                try:
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                except RuntimeError:
+                    pass
 
         for store in stores:
             store.restore(ob)

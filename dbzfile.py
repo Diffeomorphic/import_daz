@@ -98,7 +98,7 @@ class DBZInfo:
         if inst.node.name not in dbzrig.restdata.keys():
             return
         inst.restdata = dbzrig.restdata[inst.node.name]
-        rmat,wsloc,wsrot,wsscale = dbzrig.transforms[inst.node.name]
+        #transform = dbzrig.transforms[inst.node.name]
         for child in inst.children.values():
             if isinstance(child, FigureInstance):
                 dbzchild = self.getEntry("rigs", child.node.name, child)
@@ -282,10 +282,8 @@ def addDbzData(node, bname, restdata, transforms):
     orient = node.get("orientation", Zero)
     xyz = node.get("rotation_order", 'XYZ')
     origin = node.get("origin")
-    rmat = wsmat.to_4x4()
-    rmat.col[3][0:3] = GS.scale*head
     restdata[bname] = DBZRestData(head, tail, orient, xyz, origin, wsmat, dazhead)
-    transforms[bname] = (rmat, head, rmat.to_euler(), (1,1,1))
+    transforms[bname] = DBZTransform(wsmat, head)
 
 
 class DBZRestData:
@@ -307,6 +305,16 @@ class DBZRestData:
     def checkBone(self, bname):
         if (self.head - self.tail).length < 1e-5:
             raise RuntimeError("Check bone %s %s %s" % (bname, self.head, self.tail))
+
+
+class DBZTransform:
+    def __init__(self, wsmat, head):
+        self.wsrot = wsmat.to_euler()
+        wsmat = wsmat.to_4x4()
+        wsmat.col[3][0:3] = GS.scale*head
+        self.wsmat = wsmat
+        self.wsloc = head
+        self.wsscale = (1,1,1)
 
 #------------------------------------------------------------------
 #
