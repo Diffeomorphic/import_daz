@@ -8,6 +8,7 @@ op.useHead = False
 op.useFacs = True
 op.useFacsdetails = False
 op.useFacsexpr = True
+op.usePowerpose = False
 op.useBody = False
 op.useJcms = True
 op.useFlexions = True

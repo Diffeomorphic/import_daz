@@ -343,6 +343,7 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
         self.removeMorphType(rig, self.useFacs, "Facs")
         self.removeMorphType(rig, self.useFacsdetails, "Facsdetails")
         self.removeMorphType(rig, self.useFacsexpr, "Facsexpr")
+        self.removeMorphType(rig, self.userPowerpose, "PowerPose")
         self.removeMorphType(rig, self.useBody, "Body")
         self.removeMorphType(rig, self.useJcms, "Jcms")
         self.removeMorphType(rig, self.useFlexions, "Flexions")

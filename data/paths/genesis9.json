@@ -25,6 +25,12 @@
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/Daz 3D/FACSExpressions/"
 	},
+	"powerpose" : {
+		"prefix" : "powerpose_ctrl_",
+		"include" : ["powerpose_ctrl_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/Daz 3D/PowerPose/"
+	},
 	"flexions" : {
 		"prefix" : "body_",
 		"include" : ["body_"],

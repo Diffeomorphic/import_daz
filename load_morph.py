@@ -1710,6 +1710,9 @@ class LoadMorph(DriverUser):
         for final,factor in drivers.items():
             if factor == 0.0:
                 continue
+            if isinstance(factor, list):
+                print("BUG getBatches", final, factor, varname)
+                continue
             string += "%+.4g*%s" % (factor, varname)
             nterms += 1
             vars.append((varname, final))

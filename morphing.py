@@ -39,7 +39,7 @@ from .uilist import updateScrollbars
 
 class MorphSets:
     def __init__(self):
-        self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Body"]
+        self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Powerpose", "Body"]
         self.Customs = ["Custom", "Baked"]
         self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
@@ -55,6 +55,7 @@ class MorphSets:
             "Facs" : "Adjust FACS",
             "Facsdetails" : "Adjust FACS Details",
             "Facsexpr" : "Adjust FACS Expressions",
+            "Powerpose" : "Adjust Powerpose",
             "Body" : "Adjust Body Morphs",
             "Head" : "Adjust Head Morphs",
             "Jcms" : "Adjust JCMs",
@@ -954,6 +955,16 @@ class DAZ_OT_ImportFacsExpressions(DazOperator, StandardMorphSelector, StandardM
     bodypart = "Face"
 
 
+class DAZ_OT_ImportPowerpose(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+    bl_idname = "daz.import_powerpose"
+    bl_label = "Import PowerPose"
+    bl_description = "Import selected PowerPose morphs"
+    bl_options = {'UNDO'}
+
+    morphset = "Powerpose"
+    bodypart = "Face"
+
+
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
     bl_idname = "daz.select_mhx_compatible"
     bl_label = "MHX Compatible"
@@ -1249,6 +1260,11 @@ class MorphTypeOptions:
         description = "Import all FACS expressions",
         default = False)
 
+    usePowerpose : BoolProperty(
+        name = "PowerPose",
+        description = "Import all PowerPose expressions",
+        default = False)
+
     useBody : BoolProperty(
         name = "Body",
         description = "Import all body morphs",
@@ -1299,6 +1315,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useFacsdetails")
         self.layout.prop(self, "useFacsexpr")
+        self.layout.prop(self, "usePowerpose")
         self.layout.prop(self, "useBody")
         if self.useBody and self.isMhxAware:
             self.subprop("useMhxOnly")
@@ -1358,6 +1375,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacs, "Facs", "Face")
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
+        self.loadMorphType(context, self.usePowerpose, "Powerpose", "Face")
         self.loadMorphType(context, self.useBody, "Body", "Body")
         self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body", ignoreFingers=self.ignoreFingers)
@@ -2136,6 +2154,7 @@ classes = [
     DAZ_OT_ImportFacs,
     DAZ_OT_ImportFacsDetails,
     DAZ_OT_ImportFacsExpressions,
+    DAZ_OT_ImportPowerpose,
     DAZ_OT_ImportBodyMorphs,
     DAZ_OT_SelectMhxCompatible,
     DAZ_OT_ImportFlexions,

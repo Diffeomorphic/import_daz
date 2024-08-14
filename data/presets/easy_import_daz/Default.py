@@ -7,6 +7,7 @@ op.useVisemes = False
 op.useHead = False
 op.useFacs = False
 op.useFacsdetails = False
+op.usePowerpose = False
 op.useFacsexpr = False
 op.useBody = False
 op.useJcms = False

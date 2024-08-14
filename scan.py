@@ -517,6 +517,7 @@ def getMorphSet(path):
         ("/daz 3d/facs/", "Facs"),
         ("/daz 3d/facsdetails/", "Facsdetails"),
         ("/daz 3d/facsexpressions/", "Facsexpr"),
+        ("/daz 3d/powerpose/", "Powerpose"),
         ]:
         if isinstance(mgrps, list):
             morphgroup = None

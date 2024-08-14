@@ -126,6 +126,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.operator("daz.import_facs")
             self.layout.operator("daz.import_facs_details")
             self.layout.operator("daz.import_facs_expressions")
+            self.layout.operator("daz.import_powerpose")
             self.layout.operator("daz.import_body_morphs")
             self.layout.separator()
             self.layout.operator("daz.import_jcms")
@@ -779,6 +780,17 @@ class DAZ_PT_FacsExpressions(DAZ_PT_Morphs, bpy.types.Panel):
     uilist = "DAZ_UL_FacsExpressions"
 
 
+class DAZ_UL_Powerpose(DAZ_UL_StandardMorphs):
+    morphset = "Powerpose"
+
+class DAZ_PT_Powerpose(DAZ_PT_Morphs, bpy.types.Panel):
+    bl_label = "PowerPose"
+    bl_parent_id = "DAZ_PT_MorphGroup"
+    morphset = "Powerpose"
+    ftype = "DazPowerpose"
+    uilist = "DAZ_UL_Powerpose"
+
+
 class DAZ_UL_Body(DAZ_UL_StandardMorphs):
     morphset = "Body"
 
@@ -1235,6 +1247,7 @@ classes = [
     DAZ_UL_Facs,
     DAZ_UL_FacsDetails,
     DAZ_UL_FacsExpressions,
+    DAZ_UL_Powerpose,
     DAZ_UL_Body,
     DAZ_UL_JCMs,
     DAZ_UL_Flexions,
@@ -1249,6 +1262,7 @@ classes = [
     DAZ_PT_Facs,
     DAZ_PT_FacsDetails,
     DAZ_PT_FacsExpressions,
+    DAZ_PT_Powerpose,
     DAZ_PT_Body,
     DAZ_PT_JCMs,
     DAZ_PT_Flexions,
