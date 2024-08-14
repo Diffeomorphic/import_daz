@@ -27,10 +27,43 @@ bl_info = {
     "category": "Import-Export"}
 
 #----------------------------------------------------------
-#   Modules
+#   Preferences
 #----------------------------------------------------------
 
 import bpy
+
+class DazPreferences(bpy.types.AddonPreferences):
+    # this must match the addon name, use '__package__'
+    # when defining this in a submodule of a python package.
+    bl_idname = __name__
+
+    showSetupTab : bpy.props.BoolProperty(
+        name = "Show Setup Tab",
+        description = "Show the DAZ Setup tab",
+        default = True)
+
+    showRuntimeTab : bpy.props.BoolProperty(
+        name = "Show Runtime Tab",
+        description = "Show the DAZ Runtime tab",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "showSetupTab")
+        self.layout.prop(self, "showRuntimeTab")
+
+
+def getSetupEnabled(context):
+    prefs = context.preferences.addons[__name__].preferences
+    return (prefs and prefs.showSetupTab)
+
+
+def getRuntimeEnabled(context):
+    prefs = context.preferences.addons[__name__].preferences
+    return (prefs and prefs.showRuntimeTab)
+
+#----------------------------------------------------------
+#   Modules
+#----------------------------------------------------------
 
 def importModules():
     import os
@@ -99,11 +132,13 @@ def register():
             mod.register()
     GS.loadDefaults()
     GS.loadAbsPaths()
+    bpy.utils.register_class(DazPreferences)
 
 
 def unregister():
     global isRegistered
     isRegistered = False
+    bpy.utils.unregister_class(DazPreferences)
     for mod in reversed(theModules):
         modname = mod.__name__.rsplit(".",1)[-1]
         if modname in regnames:

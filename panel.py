@@ -14,7 +14,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 import bpy
+from . import getSetupEnabled, getRuntimeEnabled
 from .utils import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
@@ -31,12 +33,20 @@ class DAZ_PT_SetupTab:
     bl_category = "DAZ Setup"
     bl_options = {'DEFAULT_CLOSED'}
 
+    @classmethod
+    def poll(cls, context):
+        return getSetupEnabled(context)
+
 
 class DAZ_PT_RuntimeTab:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "DAZ Runtime"
     bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        return getRuntimeEnabled(context)
 
 #----------------------------------------------------------
 #   Setup panel
@@ -539,6 +549,8 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     @classmethod
     def poll(self, context):
+        if not getRuntimeEnabled(context):
+            return False
         rig = self.getCurrentRig(self, context)
         return (rig and
                 not rig.DazDriversDisabled and
@@ -640,6 +652,10 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Morphs"
     morphset = "All"
+
+    @classmethod
+    def poll(self, context):
+        return getRuntimeEnabled(context)
 
     def draw(self, context):
         rig = self.getCurrentRig(context)
@@ -953,7 +969,7 @@ class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and ob.DazSimpleIK)
+        return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
 
     def draw(self, context):
         rig = context.object
@@ -993,7 +1009,7 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and ob.DazSimpleIK)
+        return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
 
     def draw(self, context):
         def toggleFKIK(row, prop, limb):
@@ -1097,7 +1113,8 @@ class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object
+        ob = context.object
+        return (getRuntimeEnabled(context) and ob)
 
     def draw(self, context):
         pass
