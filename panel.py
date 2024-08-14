@@ -16,12 +16,17 @@
 
 
 import bpy
-from . import getSetupEnabled, getRuntimeEnabled
 from .utils import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
 from .morphing import MS
 from .layers import *
+
+def getSetupEnabled(context):
+    return True
+
+def getRuntimeEnabled(context):
+    return True
 
 #----------------------------------------------------------
 #   Panels
