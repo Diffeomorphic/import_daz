@@ -57,6 +57,9 @@ class DazTextGroup(bpy.types.PropertyGroup):
     def __lt__(self, other):
         return (self.text < other.text)
 
+    def __repr__(self):
+        return "(%s, %s)" % (self.name, self.text)
+
 
 class DazMorphInfoGroup(bpy.types.PropertyGroup):
     morphset : StringProperty()

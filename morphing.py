@@ -1103,7 +1103,6 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
     morphset = "Flexions"
     bodypart = "Body"
     hideable = False
-    isJcm = True
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1383,11 +1382,11 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.usePowerpose, "Powerpose", "Face")
         self.stripPrefix = ""
         self.loadMorphType(context, self.useBody, "Body", "Body")
+        self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body", ignoreFingers=self.ignoreFingers)
         self.loadMorphType(context, self.useMasculine, "Masculine", "Body")
         self.loadMorphType(context, self.useFeminine, "Feminine", "Body")
-        self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         if self.useBulges:
             if ob.type == 'MESH':
                 meshes = [ob]
