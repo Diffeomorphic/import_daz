@@ -42,6 +42,7 @@ class LoadMorph(DriverUser):
     bodypart = "Custom"
     usePropDrivers = True
     isJcm = False
+    stripPrefix = ""
     treatHD = 'ERROR'
     useAdjusters = False
     onMorphSuffix = 'NONE'
@@ -521,7 +522,9 @@ class LoadMorph(DriverUser):
             self.visible[raw] = False
             self.primary[raw] = False
         if asset:
-            visible = (asset.visible or GS.useMakeHiddenSliders)
+            visible = (asset.visible or
+                       self.stripPrefix or
+                       GS.useMakeHiddenSliders)
             self.visible[raw] = visible
             self.primary[raw] = True
             if isinstance(asset, Alias):
@@ -1709,9 +1712,6 @@ class LoadMorph(DriverUser):
             pb = self.rig.pose.bones[bname]
         for final,factor in drivers.items():
             if factor == 0.0:
-                continue
-            if isinstance(factor, list):
-                print("BUG getBatches", final, factor, varname)
                 continue
             string += "%+.4g*%s" % (factor, varname)
             nterms += 1

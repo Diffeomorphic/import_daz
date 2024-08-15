@@ -691,7 +691,9 @@ class MorphLoader(LoadMorph, PosableMaker):
             label = getCanonicalKey(prop)
             visible = True
         n = len(self.category)
-        if self.hideable and (hidden or not visible) and not protected:
+        if self.stripPrefix and label.startswith(self.stripPrefix):
+            item.text = label[len(self.stripPrefix):]
+        elif self.hideable and (hidden or not visible) and not protected:
             item.text = "[%s]" % label
         else:
             item.text = label
@@ -963,6 +965,7 @@ class DAZ_OT_ImportPowerpose(DazOperator, StandardMorphSelector, StandardMorphLo
 
     morphset = "Powerpose"
     bodypart = "Face"
+    stripPrefix = "powerpose_ctrl_"
 
 
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
@@ -1363,6 +1366,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.allfaceshapes = {}
         self.message = None
         self.isJcm = False
+        self.stripPrefix = ""
         useShapekeys = GS.useShapekeys
         GS.useShapekeys = (not self.ignoreHdMorphs)
         try:
@@ -1375,7 +1379,9 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacs, "Facs", "Face")
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
+        self.stripPrefix = "powerpose_ctrl_"
         self.loadMorphType(context, self.usePowerpose, "Powerpose", "Face")
+        self.stripPrefix = ""
         self.loadMorphType(context, self.useBody, "Body", "Body")
         self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body", ignoreFingers=self.ignoreFingers)

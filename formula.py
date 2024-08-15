@@ -338,11 +338,11 @@ class ExprTarget:
         return "<ExprTarget %s %s %d %.3f %s %s>" % (self.key, self.type, self.comp, self.factor, self.points, self.mults)
 
 
-    def getFactor(self, useSplines):
-        if not self.points:
+    def getFactor(self, ignoreSpline):
+        if not self.points or ignoreSpline:
             return self.factor
-        elif useSplines and GS.useSplineDrivers:
-            return [point[0:2] for point in self.points]
+        #elif useSplines and GS.useSplineDrivers:
+        #    return [point[0:2] for point in self.points]
         else:
             x0 = y0 = None
             for n,point in enumerate(self.points):
