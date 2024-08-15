@@ -691,10 +691,11 @@ class MorphLoader(LoadMorph, PosableMaker):
             label = getCanonicalKey(prop)
             visible = True
         n = len(self.category)
-        if self.stripPrefix and label.startswith(self.stripPrefix):
-            item.text = label[len(self.stripPrefix):]
-        elif self.hideable and (hidden or not visible) and not protected:
-            item.text = "[%s]" % label
+        if self.hideable and (hidden or not visible) and not protected:
+            if self.stripPrefix and label.startswith(self.stripPrefix):
+                item.text = label[len(self.stripPrefix):]
+            else:
+                item.text = "[%s]" % label
         else:
             item.text = label
         return prop
@@ -1102,7 +1103,8 @@ class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoa
 
     morphset = "Flexions"
     bodypart = "Body"
-    hideable = False
+    #hideable = False
+    stripPrefix = "pJCM"
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
@@ -1380,9 +1382,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.stripPrefix = "powerpose_ctrl_"
         self.loadMorphType(context, self.usePowerpose, "Powerpose", "Face")
+        self.stripPrefix = "pJCM"
+        self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         self.stripPrefix = ""
         self.loadMorphType(context, self.useBody, "Body", "Body")
-        self.loadMorphType(context, self.useFlexions, "Flexions", "Body")
         self.isJcm = True
         self.loadMorphType(context, self.useJcms, "Jcms", "Body", ignoreFingers=self.ignoreFingers)
         self.loadMorphType(context, self.useMasculine, "Masculine", "Body")

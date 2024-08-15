@@ -1407,7 +1407,9 @@ class LoadMorph(DriverUser):
                 if len(words) == 2:
                     string = words[0]
             string = "clamp(%s,%g,%g)" % (string, self.currentAsset.min, self.currentAsset.max)
-        if GS.useMakeHiddenSliders and isPath(path) and "u" not in vvars.keys():
+        if ((GS.useMakeHiddenSliders or self.stripPrefix) and
+            isPath(path) and
+            "u" not in vvars.keys()):
             final = unPath(path)
             if isFinal(final):
                 raw = baseProp(final)
