@@ -782,8 +782,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.objects = self.getTypedObjects(visibles, LS.objects)
         self.hdmeshes = self.getTypedObjects(visibles, LS.hdmeshes)
         self.hairs = self.getTypedObjects(visibles, LS.hairs)
-        if self.useEliminateEmpties:
-            bpy.ops.daz.eliminate_empties()
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
         GS.silentMode = False
@@ -826,6 +824,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             print(msg)
 
         if mainRig and activateObject(context, mainRig):
+            if self.useEliminateEmpties:
+                bpy.ops.daz.eliminate_empties(useAllEmpties = False)
+
             # Merge rigs
             # Rigs must be merged before finding face meshes
             for rig in rigs[1:]:
