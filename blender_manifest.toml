@@ -16,6 +16,11 @@ copyright = [
   "2016-2024 Thomas Larsson",
 ]
 
-# Optional list of supported platforms. If omitted, the extension will be available in all operating systems.
-# platforms = ["windows-x64", "macos-arm64", "linux-x64"]
-# Other supported platforms: "windows-arm64", "macos-x64"
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+   ".git*",
+  "/.git/",
+  "runtime/__pycache__/",
+  "runtime/.git/"
+]
