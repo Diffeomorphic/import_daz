@@ -30,44 +30,31 @@ bl_info = {
 #   Modules
 #----------------------------------------------------------
 
-import bpy
+Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
+           "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
+           "bone_data", "transform", "node", "figure", "bone", "geometry",
+           "layers", "fix", "modifier", "load_morph", "morphing", "animation", "simple", "category", "dbzfile", "panel",
+           "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
+           "guess", "convert", "files", "merge", "finger",
+           "matedit", "scale", "tables", "proxy", "hide",
+           "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
+           "dforce", "pin", "hair", "main", "geonodes",
+           "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
+    ]
 
-def importModules():
-    import os
-    import importlib
-    global theModules
+if "bpy" in locals():
+    print("Reloading DAZ Importer v %d.%d.%d" % bl_info["version"])
+    import imp
+    for modname in Modules:
+        exec("imp.reload(%s)" % modname)
+    imp.reload("runtime.morph_armature")
+else:
+    print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
+    import bpy
+    for modname in Modules:
+        exec("from . import %s" % modname)
+    from .runtime import morph_armature
 
-    try:
-        theModules
-    except NameError:
-        theModules = []
-
-    if theModules:
-        print("\nReloading DAZ Importer v %d.%d.%d" % bl_info["version"])
-        for mod in theModules:
-            importlib.reload(mod)
-    else:
-        print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
-        modnames = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
-                    "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
-                    "bone_data", "transform", "node", "figure", "bone", "geometry",
-                    "layers", "fix", "modifier", "load_morph", "morphing", "animation", "simple", "category", "dbzfile", "panel",
-                    "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
-                    "guess", "convert", "files", "merge", "finger",
-                    "matedit", "scale", "tables", "proxy", "hide",
-                    "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
-                    "dforce", "pin", "hair", "main",
-                    "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
-                    "runtime.morph_armature"]
-        if bpy.app.version >= (3,1,0):
-            modnames.append("geonodes")
-        anchor = os.path.basename(__file__[0:-12])
-        theModules = []
-        for modname in modnames:
-            mod = importlib.import_module("." + modname, anchor)
-            theModules.append(mod)
-
-importModules()
 from .settings import GS
 from .api import *
 
@@ -75,7 +62,7 @@ from .api import *
 #   Register
 #----------------------------------------------------------
 
-regnames = ["propgroups", "daz", "uilist", "driver", "selector",
+Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "figure", "geometry", "dbzfile", "simple",
             "fix", "animation", "morphing", "category", "panel",
             "material", "cgroup", "render",
@@ -93,10 +80,9 @@ def register():
         return
     print("Register DAZ Importer")
     isRegistered = True
-    for mod in theModules:
-        modname = mod.__name__.rsplit(".",1)[-1]
-        if modname in regnames:
-            mod.register()
+    for modname in Modules:
+        if modname in Regnames:
+            exec("%s.register()" % modname)
     GS.loadDefaults()
     GS.loadAbsPaths()
 
@@ -104,10 +90,9 @@ def register():
 def unregister():
     global isRegistered
     isRegistered = False
-    for mod in reversed(theModules):
-        modname = mod.__name__.rsplit(".",1)[-1]
-        if modname in regnames:
-            mod.unregister()
+    for modname in reversed(Modules):
+        if modname in Regnames:
+            exec("%s.unregister()" % modname)
 
 
 if __name__ == "__main__":
