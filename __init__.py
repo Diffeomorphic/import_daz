@@ -47,7 +47,7 @@ if "bpy" in locals():
     import imp
     for modname in Modules:
         exec("imp.reload(%s)" % modname)
-    imp.reload("runtime.morph_armature")
+    #imp.reload("runtime.morph_armature")
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     import bpy
