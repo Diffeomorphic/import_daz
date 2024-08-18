@@ -449,10 +449,12 @@ class MultiFile(ImportHelper):
 
 def copyPresets(srcop, trgop):
     import shutil
-    folder = os.path.dirname(__file__)
-    addons = os.path.split(folder)[0]
-    scripts = os.path.split(addons)[0]
-    trgdir = os.path.join(scripts, "presets", "operator", "daz.%s" % trgop)
+    folder = topdir = os.path.dirname(__file__)
+    while topdir and not topdir[-1].isdigit():
+        topdir = os.path.split(topdir)[0]
+    if not topdir:
+        return
+    trgdir = os.path.join(topdir, "scripts", "presets", "operator", "daz.%s" % trgop)
     srcdir = os.path.join(folder, "data", "presets", srcop)
     try:
         if not os.path.exists(trgdir):

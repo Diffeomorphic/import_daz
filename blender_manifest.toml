@@ -16,6 +16,9 @@ copyright = [
   "2016-2024 Thomas Larsson",
 ]
 
+[permissions]
+files = "Import DAZ files from disk"
+
 [build]
 paths_exclude_pattern = [
   "__pycache__/",
