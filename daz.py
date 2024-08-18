@@ -318,9 +318,14 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Custom maximum for sliders",
         min = 0.0, max = 10.0)
 
-    morphMultiplier : FloatProperty(
-        name = "Multiplier",
-        description = "Morph multiplier. Multiply the min and \nmax values for sliders with this factor",
+    sliderMultiplier : FloatProperty(
+        name = "Slider Multiplier",
+        description = "Multiply the min and max values for sliders with this factor",
+        min = 0.0, max = 10.0)
+
+    finalMultiplier : FloatProperty(
+        name = "Final Multiplier",
+        description = "Multiply the min and max values for final properties with this factor",
         min = 0.0, max = 10.0)
 
     enums = [('DAZ', "DAZ", "Use min and max values from DAZ files if available.\nThe limits are multiplied with the factor below"),
@@ -781,7 +786,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useBakedMorphs")
         box.prop(self, "sliderLimits")
         box.prop(self, "finalLimits")
-        box.prop(self, "morphMultiplier")
+        box.prop(self, "sliderMultiplier")
+        box.prop(self, "finalMultiplier")
         box.prop(self, "customMin")
         box.prop(self, "customMax")
         box.prop(self, "showFinalProps")

@@ -103,7 +103,8 @@ class GlobalSettings:
         self.useStrengthAdjusters = 'NONE'
         self.customMin = -1.0
         self.customMax = 1.0
-        self.morphMultiplier = 1.0
+        self.sliderMultiplier = 1.0
+        self.finalMultiplier = 1.0
         self.finalLimits = 'DAZ'
         self.sliderLimits = 'DAZ'
         self.showFinalProps = False

@@ -572,8 +572,12 @@ class LoadMorph(DriverUser):
             print("Baked %s = 0" % baseprop)
         from .driver import setFloatProp
         if limits == 'DAZ':
-            min = GS.morphMultiplier * asset.min
-            max = GS.morphMultiplier * asset.max
+            if ovr:
+                min = GS.sliderMultiplier * asset.min
+                max = GS.sliderMultiplier * asset.max
+            else:
+                min = GS.finalMultiplier * asset.min
+                max = GS.finalMultiplier * asset.max
             setFloatProp(rna, prop, value, min, max, ovr)
         elif limits == 'CUSTOM':
             setFloatProp(rna, prop, value, GS.customMin, GS.customMax, ovr)
@@ -585,8 +589,8 @@ class LoadMorph(DriverUser):
 
     def setShapeLimits(self, limits, skey, asset):
         if limits == 'DAZ':
-            skey.slider_min = GS.morphMultiplier * asset.min
-            skey.slider_max = GS.morphMultiplier * asset.max
+            skey.slider_min = GS.finalMultiplier * asset.min
+            skey.slider_max = GS.finalMultiplier * asset.max
         elif limits == 'CUSTOM':
             skey.slider_min = GS.customMin
             skey.slider_max = GS.customMax
