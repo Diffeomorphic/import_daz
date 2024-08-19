@@ -554,8 +554,12 @@ class LoadMorph(DriverUser):
 
     def setShapeLimits(self, limits, skey, asset):
         if limits == 'DAZ':
-            skey.slider_min = GS.finalMultiplier * asset.min
-            skey.slider_max = GS.finalMultiplier * asset.max
+            if self.rig:
+                skey.slider_min = GS.finalMultiplier * asset.min
+                skey.slider_max = GS.finalMultiplier * asset.max
+            else:
+                skey.slider_min = asset.min
+                skey.slider_max = asset.max
         elif limits == 'CUSTOM':
             skey.slider_min = GS.customMin
             skey.slider_max = GS.customMax
