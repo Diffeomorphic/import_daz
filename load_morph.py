@@ -19,7 +19,7 @@ import os
 import sys
 import numpy as np
 import bpy
-from .driver import DriverUser
+from .driver import DriverUser, setFloatProp
 from .utils import *
 from .error import reportError, DazError, addItem
 from .load_json import JL
@@ -461,46 +461,12 @@ class LoadMorph(DriverUser):
         return True
 
 
-    def getTypeAdjuster(self, raw):
-        if self.useAdjusters and raw in self.adjustable.keys():
-            adj = self.getAdjustProp()
-            return self.getAdjuster(adj)
-        else:
-            return None
-
-
-    def getStrengthAdjuster(self):
-        if (GS.useStrengthAdjusters == 'ALL' or
-            GS.useStrengthAdjusters == self.bodypart):
-            adj = "Adjust Morph Strength"
-            return self.getAdjuster(adj)
-        else:
-            return None
-
-
-    def getAdjuster(self, adj):
-        from .driver import setFloatProp, makePropDriver
-        if adj and adj not in self.rig.keys():
-            final = finalProp(adj)
-            setFloatProp(self.rig, adj, 1.0, 0.0, 1000.0, True)
-            setFloatProp(self.amt, final, 1.0, 0.0, 1000.0, False)
-            makePropDriver(propRef(adj), self.amt, propRef(final), self.rig, "x")
-        return adj
-
-
     def addShapeDriver(self, skey, final, expr="x"):
         from .driver import makePropDriver
         path = propRef(final)
         makePropDriver(path, skey, "value", self.amt, "x")
         if GS.useMuteDrivers:
             makePropDriver(path, skey, "mute", self.amt, "abs(x)<0.0001")
-
-
-    def adjustStrength(self, adj, pb, string, vars):
-        if pb is None or adj is None:
-            return string
-        vars.append(("L", finalProp(adj)))
-        return "L*(%s)" % string
 
 
     def getFileRef(self, filepath):
@@ -570,7 +536,6 @@ class LoadMorph(DriverUser):
             baseprop in ALWAYS_BAKED):
             value = 0
             print("Baked %s = 0" % baseprop)
-        from .driver import setFloatProp
         if limits == 'DAZ':
             if ovr:
                 min = GS.sliderMultiplier * asset.min
@@ -945,7 +910,6 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def buildDrivers(self):
-        from .driver import setFloatProp
         if GS.verbosity >= 3:
             print("Building drivers")
         for output,drivers in self.propDrivers.items():
@@ -1013,10 +977,20 @@ class LoadMorph(DriverUser):
     def buildNewPropDriver(self, fcu, rna, channel, string, raw, drivers, string0, vvars):
         varname = "a"
         if self.visible[raw] or not self.primary[raw]:
-            string += varname
+            if self.useAdjusters and raw in self.adjustable.keys():
+                adj = self.getAdjustProp()
+                if adj:
+                    self.addAdjuster(adj, fcu, "K")
+                    string += "K*"
+            if GS.useStrengthAdjusters in ['ALL', self.bodypart]:
+                adj = "Adjust Morph Strength"
+                self.addAdjuster(adj, fcu, "L")
+                string += "L*"
             self.addPathVar(fcu, varname, self.rig, propRef(raw))
             if raw not in self.rig.keys():
                 self.rig[raw] = 0.0
+            string += varname
+
         string,rdrivers = self.addDriverVars(fcu, string, varname, raw, drivers)
         if not string:
             if vvars:
@@ -1035,6 +1009,12 @@ class LoadMorph(DriverUser):
         if rdrivers:
             self.extendPropDriver(fcu, raw, rdrivers)
         return True
+
+
+    def addAdjuster(self, adj, fcu, var):
+        if adj not in self.rig.keys():
+            setFloatProp(self.rig, adj, 1.0, 0.0, 10.0, True)
+        self.addPathVar(fcu, var, self.rig, propRef(adj))
 
 
     def extractBoneExpression(self, string, varname):
@@ -1144,17 +1124,8 @@ class LoadMorph(DriverUser):
         props = []
         if raw and raw in self.mults.keys():
             props = self.mults[raw]
-        adjs = []
-        adj = self.getTypeAdjuster(raw)
-        if adj:
-            adjs.append(adj)
-        adj = self.getStrengthAdjuster()
-        if adj:
-            adjs.append(adj)
-        if adjs:
-            self.mult = adjs + [prop for prop in props if prop[0:3].lower() not in ["fbm", "fhm"]]
-        else:
-            self.mult = props
+        #self.mult = [prop for prop in props if not prop.lower().startswith(("fbm", "fhm"))]
+        self.mult = props
         return self.mult
 
 
@@ -1425,6 +1396,11 @@ class LoadMorph(DriverUser):
                 self.addPathVar(fcu, "u", self.rig, propRef(raw))
                 self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
+        if self.useAdjusters:
+            adj = self.getAdjustProp()
+            if adj:
+                self.addAdjuster(adj, fcu, "K")
+                string = "K*(%s)" % string
         fcu.driver.expression = string
         ttypes = self.getTransformTypes(channel)
         if ttypes is None:
@@ -1710,12 +1686,8 @@ class LoadMorph(DriverUser):
         nterms = 0
         varname = "a"
         vars = []
-        adj = None
-        pb = None
         bname = prefix[:-6]
-        if bname in self.rig.pose.bones.keys():
-            adj = self.getStrengthAdjuster()
-            pb = self.rig.pose.bones[bname]
+        pb = self.rig.pose.bones.get(bname)
         for final,factor in drivers.items():
             if factor == 0.0:
                 continue
@@ -1725,14 +1697,12 @@ class LoadMorph(DriverUser):
             varname = nextLetter(varname)
             if (nterms > MAX_TERMS or
                 len(string) > MAX_EXPR_LEN):
-                string = self.adjustStrength(adj, pb, string, vars)
                 batches.append((string, vars))
                 string = ""
                 nterms = 0
                 varname = "a"
                 vars = []
         if vars:
-            string = self.adjustStrength(adj, pb, string, vars)
             batches.append((string, vars))
         return batches
 
