@@ -128,6 +128,9 @@ class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
 
 class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
     def draw_item(self, context, layout, cat, morph, icon, active, indexProp):
+        if GS.usePropDrivers:
+            DAZ_UL_MorphList.draw_item(self, context, layout, cat, morph, icon, active, indexProp)
+            return
         ob = context.object
         skeys = ob.data.shape_keys
         key = morph.name
@@ -140,8 +143,18 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
             op.key = key
             op.category = cat.name
 
+    def getMorphCat(self, cat):
+        return "Mesh", cat.name
+
     def getFilterType(self, cat):
         return "Mesh/%s" % cat.name
+
+    def getRigAmt(self, context):
+        ob = context.object
+        if ob.type == 'MESH':
+            return ob, ob.data
+        else:
+            return None, None
 
 #-------------------------------------------------------------
 #   Update scrollbars

@@ -92,6 +92,11 @@ class LoadMorph(DriverUser):
         self.amt = self.amt2 = None
         if self.rig:
             self.amt = self.rig.data
+            self.obj = self.rig
+        elif GS.usePropDrivers and self.mesh:
+            self.obj = self.mesh
+            self.amt = self.mesh.data
+            self.mesh.DazMeshMorphs = True
         if self.rig2:
             self.amt2 = self.rig2.data
 
@@ -135,7 +140,7 @@ class LoadMorph(DriverUser):
         self.adjustable = {}
         self.origMorphset = self.morphset
 
-        if self.amt and self.amt.DazOptimizedDrivers:
+        if self.amt and self.amt.get("DazOptimizedDrivers"):
             raise DazError("Cannot add new morphs to an armature with optimized drivers")
 
         if GS.verbosity >= 3:
@@ -146,7 +151,7 @@ class LoadMorph(DriverUser):
         self.bodypart = namepaths[0][2]
         self.makeMissingMorphs(0)
         self.adjustable = adjustable
-        if self.rig:
+        if self.obj:
             self.createTmp()
             try:
                 self.buildDrivers()
@@ -157,7 +162,7 @@ class LoadMorph(DriverUser):
                 self.correctScaleParents()
             finally:
                 self.deleteTmp()
-            self.rig.update_tag()
+            self.obj.update_tag()
             if self.mesh:
                 if self.ercMorphs:
                     meshes = getMeshChildren(self.rig)
@@ -237,7 +242,7 @@ class LoadMorph(DriverUser):
         if not ok:
             return " #"
         prop = asset.name
-        if self.rig and self.usePropDrivers:
+        if self.obj and self.usePropDrivers:
             self.ercBones = {}
             self.makeFormulas(asset, skey)
             if self.ercBones:
@@ -253,7 +258,7 @@ class LoadMorph(DriverUser):
             if not (parent.data.shape_keys and
                     raw in parent.data.shape_keys.key_blocks.keys()):
                 return False
-        if self.rig and raw in self.rig.keys() and final in self.amt.keys():
+        if self.obj and raw in self.obj.keys() and final in self.amt.keys():
             self.adjustMults(raw, final)
             return True
         return False
@@ -272,7 +277,7 @@ class LoadMorph(DriverUser):
         def loadAlias(filepath):
             struct = JL.load(filepath)
             aliases = {}
-            if self.rig is None:
+            if self.obj is None:
                 return aliases
             elif "modifier_library" in struct.keys():
                 for mod in struct["modifier_library"]:
@@ -297,7 +302,7 @@ class LoadMorph(DriverUser):
 
 
     def setAlias(self, prop, alias):
-        pgs = self.rig.DazAlias
+        pgs = self.obj.DazAlias
         if alias in pgs.keys():
             pg = pgs[alias]
             printName(" ==", "%s %s %s" % (prop, alias, pg.s))
@@ -379,7 +384,7 @@ class LoadMorph(DriverUser):
             elif self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
-            if self.rig and self.usePropDrivers:
+            if self.obj and self.usePropDrivers:
                 final = self.addNewProp(prop)
                 self.addShapeDriver(skey, final)
             pgs = self.mesh.data.DazBodyPart
@@ -416,7 +421,7 @@ class LoadMorph(DriverUser):
         self.addNewProp(prop, asset, skey)
         self.adjustable[prop] = True
         if isinstance(asset, Formula):
-            exprs,self.rig2 = asset.evalFormulas(self.rig, self.mesh, True)
+            exprs,self.rig2 = asset.evalFormulas(self.obj, self.mesh, True)
         elif isinstance(asset, Alias):
             exprs = {}
             alias = asset.getAlias()
@@ -503,28 +508,28 @@ class LoadMorph(DriverUser):
                         return
                     asset.min,asset.max,default,ovr = getPropMinMax(self.amt, finalias, False)
             elif (self.inFigure.get(raw) and
-                  raw in self.rig.keys()):
+                  raw in self.obj.keys()):
                 return final
             if skey and not visible:
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
                 return final
             if asset.type == "bool":
-                setBoolProp(self.rig, raw, asset.value, True)
+                setBoolProp(self.obj, raw, asset.value, True)
                 setBoolProp(self.amt, final, asset.value, False)
             elif asset.type == "float" or asset.type == "alias":
-                self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, None, True)
+                self.setFloatLimits(self.obj, raw, GS.sliderLimits, asset, None, True)
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
             elif asset.type == "int":
-                self.rig[raw] = asset.value
+                self.obj[raw] = asset.value
                 self.amt[final] = asset.value
             else:
-                self.setFloatLimits(self.rig, raw, GS.sliderLimits, asset, None, True)
+                self.setFloatLimits(self.obj, raw, GS.sliderLimits, asset, None, True)
                 self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset))
             if visible:
                 if self.useProtected:
-                    setProtected(self.rig, raw, True)
-                setActivated(self.rig, raw, (not self.useProtected))
+                    setProtected(self.obj, raw, True)
+                setActivated(self.obj, raw, (not self.useProtected))
                 self.addToMorphSet(raw, asset, False, self.useProtected)
         return final
 
@@ -532,7 +537,7 @@ class LoadMorph(DriverUser):
     def setFloatLimits(self, rna, prop, limits, asset, skey, ovr):
         value = asset.value
         baseprop = prop.split(":", 1)[0]
-        if ((self.rig and baseprop in self.rig.DazBaked.keys()) or
+        if ((self.obj and baseprop in self.obj.DazBaked.keys()) or
             baseprop in ALWAYS_BAKED):
             value = 0
             print("Baked %s = 0" % baseprop)
@@ -554,7 +559,7 @@ class LoadMorph(DriverUser):
 
     def setShapeLimits(self, limits, skey, asset):
         if limits == 'DAZ':
-            if self.rig:
+            if self.obj:
                 skey.slider_min = GS.finalMultiplier * asset.min
                 skey.slider_max = GS.finalMultiplier * asset.max
             else:
@@ -758,10 +763,10 @@ class LoadMorph(DriverUser):
     def addObjectDriver(self, tfm):
         success = False
         if tfm.scaleProp:
-            self.setFcurves(self.rig, tfm.scale-One, tfm.scaleProp, "scale")
+            self.setFcurves(self.obj, tfm.scale-One, tfm.scaleProp, "scale")
             success = True
         elif tfm.generalProp:
-            self.setFcurves(self.rig, tfm.general-One, tfm.generalProp, "scale")
+            self.setFcurves(self.obj, tfm.general-One, tfm.generalProp, "scale")
             success = True
         return success
 
@@ -831,8 +836,6 @@ class LoadMorph(DriverUser):
 
     def findSumDriver(self, pb, channel, idx, data):
         bname = pb.name
-        #if drvBone(bname) in self.rig.data.bones.keys():
-        #    bname = drvBone(bname)
         if bname not in self.sumdrivers.keys():
             self.sumdrivers[bname] = {}
         if channel not in self.sumdrivers[bname].keys():
@@ -990,9 +993,9 @@ class LoadMorph(DriverUser):
                 adj = "Adjust Morph Strength"
                 self.addAdjuster(adj, fcu, "L")
                 string += "L*"
-            self.addPathVar(fcu, varname, self.rig, propRef(raw))
-            if raw not in self.rig.keys():
-                self.rig[raw] = 0.0
+            self.addPathVar(fcu, varname, self.obj, propRef(raw))
+            if raw not in self.obj.keys():
+                self.obj[raw] = 0.0
             string += varname
 
         string,rdrivers = self.addDriverVars(fcu, string, varname, raw, drivers)
@@ -1016,9 +1019,9 @@ class LoadMorph(DriverUser):
 
 
     def addAdjuster(self, adj, fcu, var):
-        if adj not in self.rig.keys():
-            setFloatProp(self.rig, adj, 1.0, 0.0, 10.0, True)
-        self.addPathVar(fcu, var, self.rig, propRef(adj))
+        if adj not in self.obj.keys():
+            setFloatProp(self.obj, adj, 1.0, 0.0, 10.0, True)
+        self.addPathVar(fcu, var, self.obj, propRef(adj))
 
 
     def extractBoneExpression(self, string, varname):
@@ -1182,17 +1185,17 @@ class LoadMorph(DriverUser):
     def ensureExists(self, raw, final, default):
         from .driver import removeModifiers, setProtected
         from .selector import setActivated
-        if self.rig is None:
+        if self.obj is None:
             return
-        if raw not in self.rig.keys():
-            self.rig[raw] = default
+        if raw not in self.obj.keys():
+            self.obj[raw] = default
         if final not in self.amt.keys():
             self.amt[final] = default
             fcu = self.amt.driver_add(propRef(final))
             fcu.driver.type = 'SCRIPTED'
             removeModifiers(fcu)
             fcu.driver.expression = "a"
-            self.addPathVar(fcu, "a", self.rig, propRef(raw))
+            self.addPathVar(fcu, "a", self.obj, propRef(raw))
 
 
     def buildBoneDriver(self, raw, bname, expr, keep):
@@ -1396,8 +1399,8 @@ class LoadMorph(DriverUser):
                     string = "u%s" % string
                 else:
                     string = "u+%s" % string
-                self.rig[raw] = 0.0
-                self.addPathVar(fcu, "u", self.rig, propRef(raw))
+                self.obj[raw] = 0.0
+                self.addPathVar(fcu, "u", self.obj, propRef(raw))
                 self.addToMorphSet(raw, None, True, self.useProtected)
         string = self.multiplyMults(fcu, string)
         if self.useAdjusters:
@@ -1410,7 +1413,7 @@ class LoadMorph(DriverUser):
         if ttypes is None:
             return None
         for j,vname,bname in vars:
-            addTransformVar(fcu, vname, ttypes[j], self.rig, self.rig2, bname)
+            addTransformVar(fcu, vname, ttypes[j], self.obj, self.obj2, bname)
         self.addMissingVars(fcu, vvars)
         return fcu
 
@@ -1468,8 +1471,8 @@ class LoadMorph(DriverUser):
                         sumfcu.data_path = propRef(prop)
                         self.addScaleDriver(pb, idx)
                     else:
-                        self.ensureAnimData(self.rig)
-                        sumfcu = self.rig.animation_data.drivers.from_existing(src_driver=fcu)
+                        self.ensureAnimData(self.obj)
+                        sumfcu = self.obj.animation_data.drivers.from_existing(src_driver=fcu)
                         sumfcu.data_path = 'pose.bones["%s"].%s' % (pb.name, channel)
                         sumfcu.array_index = idx
                     self.clearTmpDriver(0)
@@ -1536,7 +1539,7 @@ class LoadMorph(DriverUser):
         for var in sumfcu.driver.variables:
             trg = var.targets[0]
             if trg.id_type == 'OBJECT':
-                fcu2 = getRnaDriver(self.rig, trg.data_path)
+                fcu2 = getRnaDriver(self.obj, trg.data_path)
             else:
                 fcu2 = getRnaDriver(self.amt, trg.data_path)
             if fcu2:
@@ -1631,9 +1634,9 @@ class LoadMorph(DriverUser):
                     skey.driver_remove("value")
                     fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
                     fcu2.data_path = 'key_blocks["%s"].value' % prop
-                    self.rig.driver_remove(propRef(prop))
-                    if prop in self.rig.keys():
-                        del self.rig[prop]
+                    self.obj.driver_remove(propRef(prop))
+                    if prop in self.obj.keys():
+                        del self.obj[prop]
                     self.amt.driver_remove(propRef(final))
                     if final in self.amt.keys():
                         del self.amt[final]
@@ -1661,7 +1664,7 @@ class LoadMorph(DriverUser):
         var.name = "parscale"
         var.type = 'TRANSFORMS'
         trg = var.targets[0]
-        trg.id = self.rig
+        trg.id = self.obj
         trg.bone_target = pb.parent.name
         trg.transform_type = 'SCALE_%s' % chr(ord('X')+idx)
         trg.transform_space = 'LOCAL_SPACE'
@@ -1669,6 +1672,8 @@ class LoadMorph(DriverUser):
 
     def correctScaleParents(self):
         from .driver import getDriver, removeModifiers
+        if self.rig is None:
+            return
         for pb in self.rig.pose.bones:
             if inheritsScale(pb):
                 parchannel = 'pose.bones["%s"].scale' % pb.parent.name
@@ -1734,7 +1739,7 @@ class LoadMorph(DriverUser):
         for n,data in enumerate(pathids.items()):
             path,idtype = data
             if idtype == 'OBJECT':
-                rna = self.rig
+                rna = self.obj
             else:
                 rna = self.amt
             self.addPathVar(sumfcu, "t%.02d" % n, rna, path)

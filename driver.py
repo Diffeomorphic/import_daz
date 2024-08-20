@@ -453,13 +453,13 @@ def addTransformVar(fcu, vname, ttype, rig, rig2, bname):
 #   Prop drivers
 #-------------------------------------------------------------
 
-def makePropDriver(path, rna, channel, rig, expr):
+def makePropDriver(path, rna, channel, ob, expr):
     rna.driver_remove(channel)
     fcu = rna.driver_add(channel)
     fcu.driver.type = 'SCRIPTED'
     fcu.driver.expression = expr
     removeModifiers(fcu)
-    addDriverVar(fcu, "x", path, rig)
+    addDriverVar(fcu, "x", path, ob)
 
 
 def removeModifiers(fcu):
@@ -1088,7 +1088,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                 rna.animation_data.drivers.remove(fcu)
                 if prop in rna.keys():
                     del rna[prop]
-        rna.DazOptimizedDrivers = True
+        rna["DazOptimizedDrivers"] = True
         self.ndeleted += len(self.deldrivers)
         print("Deleted %d drivers from %s" % (len(self.deldrivers), rna.name))
 
@@ -1349,7 +1349,6 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Object.DazDriversDisabled = BoolProperty(default=False)
-    bpy.types.Armature.DazOptimizedDrivers = BoolProperty(default=False)
 
 
 def unregister():

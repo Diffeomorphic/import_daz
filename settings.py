@@ -65,6 +65,7 @@ class GlobalSettings:
         self.useBakedMorphs = False
         self.showHiddenObjects = False
         self.useIgnoreHiddenObjects = False
+        self.usePropDrivers = True
 
         self.author = "Myself"
         self.email = ""
