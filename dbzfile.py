@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import bpy
 import os
 from mathutils import Vector, Quaternion, Matrix
@@ -568,30 +566,40 @@ class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMake
         if sname in skeys.key_blocks.keys():
             skey = skeys.key_blocks[sname]
             ob.shape_key_remove(skey)
-        if self.makeShape(ob, rig, sname, dbz.objects, dbz):
+        if self.makeShape(ob, rig, sname, dbz.objects):
             return
-        elif self.makeShape(ob, rig, sname, dbz.hdobjects, dbz):
+        elif self.makeShape(ob, rig, sname, dbz.hdobjects):
             return
         else:
             print("No matching morph found")
 
 
-    def makeShape(self, ob, rig, sname, objects, dbz):
-        for name in objects.keys():
-            verts = objects[name][0].verts
-            if GS.verbosity >= 3:
-                print("Try %s (%d verts)" % (name, len(verts)))
-            if len(verts) == len(ob.data.vertices):
-                skey = ob.shape_key_add(name=sname)
-                for vn,co in enumerate(verts):
-                    skey.data[vn].co = co
-                skey.slider_min = GS.customMin
-                skey.slider_max = GS.customMax
-                print("Morph created for %s" % name)
-                if self.usePropDrivers and rig:
-                    fcu = skey.driver_add("value")
-                    self.setDriver(fcu, rig, dbz.name, "a")
-                return True
+    def makeShape(self, ob, rig, sname, objects):
+        def setShape(ob, struct):
+            for dbz in struct.values():
+                verts = dbz.verts
+                if GS.verbosity >= 3:
+                    print("Try %s (%d verts)" % (dbz.name, len(verts)))
+                if len(verts) == len(ob.data.vertices):
+                    skey = ob.shape_key_add(name=sname)
+                    for vn,co in enumerate(verts):
+                        skey.data[vn].co = co
+                    skey.slider_min = GS.customMin
+                    skey.slider_max = GS.customMax
+                    print("Morph created for %s" % sname)
+                    if self.usePropDrivers and rig:
+                        fcu = skey.driver_add("value")
+                        self.setDriver(fcu, rig, sname, "a")
+                    return True
+
+        struct = objects.get(ob.data.name)
+        if struct and setShape(ob, struct):
+            return True
+        else:
+            for name in objects.keys():
+                struct = objects[name]
+                if setShape(ob, struct):
+                    return True
         return False
 
 #----------------------------------------------------------
