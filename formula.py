@@ -252,8 +252,10 @@ class Formula:
             target.factor = opers[1]["val"]
         elif op == "spline_tcb":
             target.points = [opers[n]["val"] for n in range(1,len(opers)-2)]
+            target.spline = "TCB"
         elif op == "spline_linear":
             target.points = [opers[n]["val"] for n in range(1,len(opers)-2)]
+            target.spline = "Linear"
         else:
             reportError("Unknown formula %s" % opers, trigger=(2,6))
             return
@@ -332,6 +334,7 @@ class ExprTarget:
         self.factor = 0.0
         self.points = []
         self.mults = []
+        self.spline = None
 
 
     def __repr__(self):
@@ -339,10 +342,9 @@ class ExprTarget:
 
 
     def getFactor(self, ignoreSpline):
-        if not self.points or ignoreSpline:
+        if (not self.points or
+            (ignoreSpline and self.spline == "Linear")):
             return self.factor
-        #elif useSplines and GS.useSplineDrivers:
-        #    return [point[0:2] for point in self.points]
         else:
             x0 = y0 = None
             for n,point in enumerate(self.points):
