@@ -373,7 +373,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, polelayer, shldrBend.parent, shldrBend, shldrTwist)
                     foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, S_HIDDEN, shldrIK, foreBend, foreTwist)
                 if IK.usePoleTargets:
-                    elbow = makePole(elbowname, rig, foreBend, collar)
+                    elbow = makePole(elbowname, rig, foreBend, root)
 
         if self.useLegs:
             for prefix,layer in [("l",S_LLEGIK), ("r",S_RLEGIK)]:
@@ -386,7 +386,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, polelayer, thighBend.parent, thighBend, thighTwist)
                     shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, S_HIDDEN, thighIK, shin, shin)
                 if IK.usePoleTargets:
-                    knee = makePole(kneename, rig, shin, hip)
+                    knee = makePole(kneename, rig, shin, root)
 
                 if self.useReverseFoot:
                     toe, heelIK, toeIK, tarsalIK = self.getEntry(self.footTable, prefix, ebones)
