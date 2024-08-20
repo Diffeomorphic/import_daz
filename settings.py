@@ -64,8 +64,8 @@ class GlobalSettings:
         self.useMakeHiddenSliders = False
         self.useBakedMorphs = False
         self.showHiddenObjects = False
-        self.useIgnoreHiddenObjects = False
-        self.usePropDrivers = True
+        self.ignoreHiddenObjects = False
+        self.useMeshDrivers = True
 
         self.author = "Myself"
         self.email = ""

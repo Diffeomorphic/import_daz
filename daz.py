@@ -410,6 +410,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Ignore Hidden Objects",
         description = "Don't build objects which are hidden in DAZ Studio")
 
+    useMeshDrivers : BoolProperty(
+        name = "Mesh Drivers",
+        description = "Drive shapekeys with mesh object properties")
+
     showPaths : BoolProperty(name = "Paths To DAZ Library", default = False)
     showContentDirs : BoolProperty(name = "Content Directories", default = True)
     showMDLDirs : BoolProperty(name = "MDL Directories", default = False)
@@ -749,6 +753,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "onFaceMaps")
         box.prop(self, "useSimulation")
 
+        box = col.box()
+        box.label(text = "Objects")
+        box.prop(self, "showHiddenObjects")
+        box.prop(self, "ignoreHiddenObjects")
+
         col = split.column()
         box = col.box()
         box.label(text = "Rigging")
@@ -765,9 +774,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useBoneColors")
 
         box = col.box()
-        box.label(text = "Objects")
-        box.prop(self, "showHiddenObjects")
-        box.prop(self, "ignoreHiddenObjects")
+        box.label(text = "Presets")
+        box.prop(self, "author")
+        box.prop(self, "email")
+        box.prop(self, "website")
 
         box = col.box()
         box.label(text = "Debugging")
@@ -795,6 +805,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "showInTerminal")
         box.prop(self, "useShapekeys")
         box.prop(self, "useShapeCats")
+        box.prop(self, "useMeshDrivers")
         box.prop(self, "useMuteDrivers")
         box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")
@@ -802,12 +813,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
         box.prop(self, "useSplineDrivers")
-
-        box = col.box()
-        box.label(text = "Presets")
-        box.prop(self, "author")
-        box.prop(self, "email")
-        box.prop(self, "website")
 
         col = split.column()
         box = col.box()

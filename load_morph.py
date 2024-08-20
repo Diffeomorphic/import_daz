@@ -93,10 +93,12 @@ class LoadMorph(DriverUser):
         if self.rig:
             self.amt = self.rig.data
             self.obj = self.rig
-        elif GS.usePropDrivers and self.mesh:
+        elif GS.useMeshDrivers and self.mesh:
             self.obj = self.mesh
             self.amt = self.mesh.data
             self.mesh.DazMeshMorphs = True
+        else:
+            self.obj = None
         if self.rig2:
             self.amt2 = self.rig2.data
 
@@ -1413,7 +1415,7 @@ class LoadMorph(DriverUser):
         if ttypes is None:
             return None
         for j,vname,bname in vars:
-            addTransformVar(fcu, vname, ttypes[j], self.obj, self.obj2, bname)
+            addTransformVar(fcu, vname, ttypes[j], self.obj, self.rig2, bname)
         self.addMissingVars(fcu, vvars)
         return fcu
 
