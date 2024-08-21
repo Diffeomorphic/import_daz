@@ -649,6 +649,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
         op.category = category
         op.ftype = ftype
 
+
     def drawItems(self, scn, rig):
         self.layout.template_list( self.uilist, "",
                                    rig, "Daz%s" % self.morphset,
@@ -870,7 +871,20 @@ class CustomDrawItems:
             self.drawCustomBox(box, cat, scn, ob)
 
 
-class DAZ_PT_CustomMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
+    def drawCustomBox(self, box, cat, scn, rig):
+        adj = self.getCatAdjuster(cat)
+        if adj in rig.keys():
+            box.prop(rig, propRef(adj))
+        if len(cat.morphs) == 0:
+            return
+        ftype = self.getCatFtype(cat)
+        self.activateLayout(box, cat.name, ftype, rig)
+        self.keyLayout(box, cat.name, ftype, rig)
+        uilist = self.getUIList(cat, scn)
+        self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
+
+
+class DAZ_PT_CustomMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Custom Morphs"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
@@ -881,27 +895,21 @@ class DAZ_PT_CustomMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
     def preamble(self, layout, rig):
         pass
 
-    def drawItems(self, scn, ob):
-        CustomDrawItems.drawItems(self, scn, ob)
-
     def getRna(self, ob):
         return ob
 
-    def drawCustomBox(self, box, cat, scn, rig):
+    def getCatAdjuster(self, cat):
+        return "Adjust Custom/%s" % cat.name
+
+    def getCatFtype(self, cat):
+        return "Custom/%s" % cat.name
+
+    def getUIList(self, cat, scn):
         from .uilist import getCustomUIList
-        adj = "Adjust Custom/%s" % cat.name
-        if adj in rig.keys():
-            box.prop(rig, propRef(adj))
-        if len(cat.morphs) == 0:
-            return
-        ftype = "Custom/%s" % cat.name
-        self.activateLayout(box, cat.name, ftype, rig)
-        self.keyLayout(box, cat.name, ftype, rig)
-        uilist = getCustomUIList(cat, scn)
-        self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
+        return getCustomUIList(cat, scn)
 
 
-class DAZ_PT_CustomMeshMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
+class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Mesh Shape Keys"
     bl_parent_id = "DAZ_PT_MorphGroup"
     morphset = "Custom"
@@ -929,6 +937,10 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
                     self.drawAutoItem(box, ob, skey, sname, item.text)
             self.layout.separator()
         if ob.DazMeshMorphs:
+            if GS.useMeshDrivers:
+                prop = "Adjust Morph Strength"
+                if prop in ob.keys():
+                    self.layout.prop(ob, propRef(prop))
             DAZ_PT_Morphs.draw(self, context)
 
 
@@ -943,16 +955,24 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
     def getCurrentRig(self, context):
         return context.object
 
-    def drawItems(self, scn, ob):
-        CustomDrawItems.drawItems(self, scn, ob)
-
     def getRna(self, ob):
         return ob.data.shape_keys
 
     def setMorphsBtn(self, layout):
         return layout.operator("daz.set_shapes")
 
-    def keyLayout(self, layout, category, ftype, rig):
+    def getCatAdjuster(self, cat):
+        return "Adjust Custom/%s" % cat.name
+
+    def getCatFtype(self, cat):
+        return "Mesh/%s" % cat.name
+
+    def getUIList(self, cat, scn):
+        from .uilist import getShapeUIList
+        return getShapeUIList(cat, scn)
+
+
+    def keyShapeLayout(self, layout, category, ftype, rig):
         split = layout.split(factor=0.333)
         op = split.operator("daz.key_shapes", text="", icon='KEY_HLT')
         op.category = category
@@ -966,14 +986,16 @@ class DAZ_PT_CustomMeshMorphs(DAZ_PT_Morphs, bpy.types.Panel, CustomDrawItems):
 
 
     def drawCustomBox(self, box, cat, scn, ob):
+        if GS.useMeshDrivers:
+            CustomDrawItems.drawCustomBox(self, box, cat, scn, ob)
+            return
         skeys = ob.data.shape_keys
         if skeys is None:
             return
-        from .uilist import getShapeUIList
-        ftype = "Mesh/%s" % cat.name
+        ftype = self.getCatFtype(cat)
         self.activateLayout(box, cat.name, ftype, ob)
-        self.keyLayout(box, cat.name, ftype, ob)
-        uilist = getShapeUIList(cat, scn)
+        self.keyShapeLayout(box, cat.name, ftype, ob)
+        uilist = self.getUIList(cat, scn)
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 #------------------------------------------------------------------------
