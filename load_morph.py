@@ -379,7 +379,7 @@ class LoadMorph(DriverUser):
             prop = rawProp(self.getUniqueName(unquote(skey.name)))
             self.alias[prop] = skey.name
             skey.name = prop
-            self.setShapeLimits(GS.finalLimits, skey, asset)
+            self.setShapeLimits(skey, asset)
             self.shapekeys[prop] = skey
             if GS.ercMethod == 'TRANSLATION' and not self.disableErc:
                 pass
@@ -556,10 +556,13 @@ class LoadMorph(DriverUser):
         else:
             setFloatProp(rna, prop, value, None, None, ovr)
         if skey:
-            self.setShapeLimits(limits, skey, asset)
+            self.setShapeLimits(skey, asset)
 
 
-    def setShapeLimits(self, limits, skey, asset):
+    def setShapeLimits(self, skey, asset):
+        limits = 'NONE'
+        if self.rig is None and not GS.useMeshDrivers:
+            limits = GS.finalLimits
         if limits == 'DAZ':
             if self.obj:
                 skey.slider_min = GS.finalMultiplier * asset.min
