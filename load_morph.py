@@ -27,7 +27,7 @@ from .load_json import JL
 MAX_EXPRESSION_SIZE = 255
 MAX_TERMS = 12
 MAX_TERMS2 = 9
-MAX_EXPR_LEN = 240
+MAX_EXPR_LEN = 200
 
 ALWAYS_BAKED = [
     "CTRLInitialGensShape01",
@@ -582,11 +582,11 @@ class LoadMorph(DriverUser):
             self.addNewProp(output)
             prop = self.getUniqueName(target.key)
             factor = target.getFactor(True)
-            self.propDrivers[output].append((prop, factor))
+            self.propDrivers[output].append((prop, target))
             target2 = expr.prop2
             if target2:
                 prop2 = self.getUniqueName(target2.key)
-                self.propDrivers[output].append((prop2, target2.factor))
+                self.propDrivers[output].append((prop2, target2))
             for mult in target.mults:
                 if isinstance(mult, str):
                     mult = self.getUniqueName(mult)
@@ -1036,22 +1036,33 @@ class LoadMorph(DriverUser):
         return "%s%s+" % (mult, varname)
 
 
-    def addDriverVars(self, fcu, string, varname, raw, drivers):
-        def multiply(factor, varname):
+    def getFactorPoints(self, target, prop):
+        from .formula import ExprTarget
+        if isinstance(target, ExprTarget):
+            return target.factor, target.points
+        else:
+            return target, []
+
+
+    def getFactorPointsString(self, factor, points, varname):
+        if points:
+            points = [pt[0:2] for pt in points]
+            umax = points[-1][1]
+            return "+(%s)" % self.makeSplineString(points, varname, umax)
+        else:
             if factor == 1:
                 return "+%s" % varname
             elif factor == -1:
                 return "-%s" % varname
-            elif isinstance(factor, list):
-                points = factor
-                term = self.makeSplineString(points, varname, 1.0)
-                return "+(%s)" % term
             else:
                 return "%+g*%s" % (factor, varname)
 
+
+    def addDriverVars(self, fcu, string, varname, raw, drivers):
         channels = [var.targets[0].data_path for var in fcu.driver.variables]
-        for subraw,factor in drivers[0:MAX_TERMS2]:
-            if factor == 0.0:
+        for subraw,target in drivers[0:MAX_TERMS2]:
+            factor,points = self.getFactorPoints(target, subraw)
+            if factor == 0.0 and not points:
                 continue
             subraw = rawProp(subraw)
             subfinal = finalProp(subraw)
@@ -1059,7 +1070,7 @@ class LoadMorph(DriverUser):
             if channel in channels:
                 continue
             varname = nextLetter(varname)
-            string += multiply(factor, varname)
+            string += self.getFactorPointsString(factor, points, varname)
             self.ensureExists(subraw, subfinal, 0.0)
             self.addPathVar(fcu, varname, self.amt, channel)
         if len(drivers) > MAX_TERMS2:
@@ -1699,10 +1710,11 @@ class LoadMorph(DriverUser):
         vars = []
         bname = prefix[:-6]
         pb = self.rig.pose.bones.get(bname)
-        for final,factor in drivers.items():
-            if factor == 0.0:
+        for final,target in drivers.items():
+            factor,points = self.getFactorPoints(target, final)
+            if factor == 0.0 and not points:
                 continue
-            string += "%+.4g*%s" % (factor, varname)
+            string += self.getFactorPointsString(factor, points, varname)
             nterms += 1
             vars.append((varname, final))
             varname = nextLetter(varname)
