@@ -1421,7 +1421,6 @@ class LoadMorph(DriverUser):
         string = self.multiplyMults(fcu, string)
         if self.useAdjusters:
             adj = self.getAdjustProp()
-            print("UU", adj)
             if adj:
                 self.addAdjuster(adj, fcu, "K")
                 string = "K*(%s)" % string
