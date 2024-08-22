@@ -1778,69 +1778,23 @@ class DAZ_OT_ApplyRestPoses(DazOperator, IsArmature):
 
 
 def applyRestPoses(context, rig, subrigs):
-
-    def applyLimitConstraints(rig):
-        constraints = []
-        for pb in rig.pose.bones:
-            if pb.rotation_mode != 'QUATERNION':
-                x,y,z = pb.rotation_euler
-                for cns in pb.constraints:
-                    if cns.type == 'LIMIT_ROTATION':
-                        constraints.append((cns,cns.mute))
-                        cns.mute = True
-                        applyLimitComp("min_x", "max_x", "use_limit_x", 0, cns, pb)
-                        applyLimitComp("min_y", "max_y", "use_limit_y", 1, cns, pb)
-                        applyLimitComp("min_z", "max_z", "use_limit_z", 2, cns, pb)
-        return constraints
-
-    def applyLimitComp(min, max, use, idx, cns, pb):
-        x = pb.rotation_euler[idx]
-        if getattr(cns, use):
-            xmax = getattr(cns, max)
-            if x > xmax:
-                x = pb.rotation_euler[idx] = xmax
-            xmax -= x
-            if abs(xmax) < 1e-4:
-                xmax = 0
-            setattr(cns, max, xmax)
-
-            xmin = getattr(cns, min)
-            if x < xmin:
-                x = pb.rotation_euler[idx] = xmin
-            xmin -= x
-            if abs(xmin) < 1e-4:
-                xmin = 0
-            setattr(cns, min, xmin)
-
-    def setRestRotation(rig):
-        for pb in rig.pose.bones:
-            if pb.rotation_mode == 'QUATERNION':
-                rot = pb.rotation_quaternion.to_euler()
-            else:
-                rot = pb.rotation_euler
-            if nonzero(rot):
-                fvec = Vector((0,0,0))
-                for idx in range(3):
-                    idx2 = pb.DazAxes[idx]
-                    fvec[idx] = pb.DazFlips[idx2] * rot[idx2]
-                pb.DazRestRotation = Vector(pb.DazRestRotation) + fvec/D
-
-    LS.forAnimation(None, rig)
-    rigs = [rig] + subrigs
-    applyAllObjectTransforms(rigs)
-    for subrig in rigs:
-        setRestRotation(subrig)
-        for ob in subrig.children:
-            if ob.parent_type == 'OBJECT':
-                setRestPose(ob, subrig, context)
-        if not setActiveObject(context, subrig):
-            continue
-        constraints = applyLimitConstraints(subrig)
+    children = []
+    for child in rig.children:
+        setRestPose(child, rig, context)
+        if activateObject(context, child):
+            children.append((child, child.parent_type, child.parent_bone))
+            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+    if activateObject(context, rig):
+        bpy.ops.object.transform_apply()
         setMode('POSE')
         bpy.ops.pose.armature_apply()
-        for cns,mute in constraints:
-            cns.mute = mute
-    setActiveObject(context, rig)
+        setMode('OBJECT')
+    for child,type,bone in children:
+        wmat = child.matrix_world.copy()
+        child.parent = rig
+        child.parent_type = type
+        child.parent_bone = bone
+        setWorldMatrix(child, wmat)
 
 
 def safeTransformApply(useLocRot=True):
