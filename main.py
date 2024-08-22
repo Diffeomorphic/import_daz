@@ -959,6 +959,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 selectSet(ob, True)
             bpy.ops.daz.import_daz_favorites(
                 useTransferOthers=False,
+                useAdjusters = self.useAdjusters,
                 useMakePosable=False)
 
         if self.fitMeshes == 'MORPHED' and firstMesh:
