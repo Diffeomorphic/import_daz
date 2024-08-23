@@ -1050,7 +1050,11 @@ class LoadMorph(DriverUser):
     def getFactorPointsString(self, factor, points, varname):
         if points:
             points = [pt[0:2] for pt in points]
-            umax = points[-1][1]
+            vals = [pt[1] for pt in points]
+            umax = max(vals)
+            umin = min(vals)
+            if abs(umin) > abs(umax):
+                umax = umin
             return "+(%s)" % self.makeSplineString(points, varname, umax)
         else:
             if factor == 1:
@@ -1577,13 +1581,14 @@ class LoadMorph(DriverUser):
                         if prop not in drivers.keys():
                             try:
                                 factor = float(word1)
+                                drivers[prop] = factor
                             except ValueError:
-                                msg = ("BUG recoverOldDrivers: not a float\n" +
-                                       "FCU2 %s %d" % (fcu2.data_path, fcu2.array_index) +
-                                       "EXPR %s" % fcu2.driver.expression +
-                                       "TARGETS %s" % list(targets.keys()))
-                                reportError(msg, trigger=(0,0))
-                            drivers[prop] = factor
+                                msg = ("BUG recoverOldDrivers: %s not a float: %s\n" % (prop, word1) +
+                                       "  FCU2 %s %d\n" % (fcu2.data_path, fcu2.array_index) +
+                                       "  EXPR %s\n" % fcu2.driver.expression +
+                                       "  TARGETS %s" % list(targets.keys()))
+                                print(msg)
+                                #reportError(msg, trigger=(2,3))
                     word1 = word2[1:]
 
 
