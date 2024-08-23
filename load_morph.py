@@ -1062,7 +1062,7 @@ class LoadMorph(DriverUser):
             elif factor == -1:
                 return "-%s" % varname
             else:
-                return "%+g*%s" % (factor, varname)
+                return "%+.3g*%s" % (factor, varname)
 
 
     def addDriverVars(self, fcu, string, varname, raw, drivers):
@@ -1555,6 +1555,30 @@ class LoadMorph(DriverUser):
 
 
     def recoverOldDrivers(self, sumfcu, drivers):
+        def addToDrivers(tokens, sign):
+            for token in tokens:
+                words = token.split("*")
+                varname = words[-1]
+                if varname in targets.keys():
+                    trg2 = targets[varname]
+                    prop = unPath(trg2.data_path)
+                    if prop not in drivers.keys():
+                        factor = sign
+                        fail = False
+                        if len(words) == 2:
+                            try:
+                                factor *= float(words[0])
+                            except ValueError:
+                                fail = True
+                        if fail:
+                            msg = ("BUG recoverOldDrivers: %s not a float: %s\n" % (prop, word1) +
+                                   "  FCU2 %s %d\n" % (fcu2.data_path, fcu2.array_index) +
+                                   "  EXPR %s\n" % fcu2.driver.expression +
+                                   "  TARGETS %s" % list(targets.keys()))
+                            print(msg)
+                            continue
+                        drivers[prop] = factor
+
         from .driver import getRnaDriver
         for var in sumfcu.driver.variables:
             trg = var.targets[0]
@@ -1571,25 +1595,12 @@ class LoadMorph(DriverUser):
                 string = fcu2.driver.expression
                 while string and string[0] == "(":
                     string = string[1:-1]
-                words = string.split("*")
-                word1 = words[0]
-                for word2 in words[1:]:
-                    varname = word2[0]
-                    if varname in targets.keys():
-                        trg2 = targets[varname]
-                        prop = unPath(trg2.data_path)
-                        if prop not in drivers.keys():
-                            try:
-                                factor = float(word1)
-                                drivers[prop] = factor
-                            except ValueError:
-                                msg = ("BUG recoverOldDrivers: %s not a float: %s\n" % (prop, word1) +
-                                       "  FCU2 %s %d\n" % (fcu2.data_path, fcu2.array_index) +
-                                       "  EXPR %s\n" % fcu2.driver.expression +
-                                       "  TARGETS %s" % list(targets.keys()))
-                                print(msg)
-                                #reportError(msg, trigger=(2,3))
-                    word1 = word2[1:]
+                words = string.split("+")
+                plus = [word.split("-")[0] for word in words if word]
+                minus = flatten([word.split("-")[1:] for word in words if word])
+                addToDrivers(plus, +1)
+                addToDrivers(minus, -1)
+
 
 
     def getOrigo(self, fcu0, pb, channel, idx):

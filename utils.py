@@ -584,7 +584,7 @@ def drvBone(string):
     return string + "(drv)"
 
 def nextLetter(char):
-    return chr(ord(char) + 1)
+    return ("f" if char == "d" else chr(ord(char) + 1))
 
 def isSimpleType(x):
     return (isinstance(x, int) or
@@ -620,10 +620,8 @@ def lockAllTransforms(pb):
     pb.lock_location = pb.lock_rotation = pb.lock_scale = TTrue
 
 
-def sorted(seq):
-    slist = list(seq)
-    slist.sort()
-    return slist
+def flatten(xss):
+    return [x for xs in xss for x in xs]
 
 
 def setCustomShapeTransform(pb, scale, trans=None, rot=None):

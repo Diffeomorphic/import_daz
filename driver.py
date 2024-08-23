@@ -693,12 +693,6 @@ def isNumber(string):
 
 
 def removeDriverFCurves(fcus, rig):
-    def flatten(lists):
-        flat = []
-        for list in lists:
-            flat.extend(list)
-        return flat
-
     for fcu in flatten(fcus):
         try:
             rig.driver_remove(fcu.data_path, fcu.array_index)
