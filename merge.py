@@ -1373,7 +1373,7 @@ class MergeRigsOptions:
         default = True)
 
 
-class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
+class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
     bl_idname = "daz.merge_rigs"
     bl_label = "Merge Rigs"
     bl_description = "Merge selected rigs to active rig"
@@ -1766,7 +1766,7 @@ class DAZ_OT_CopyPose(DazOperator, IsArmature):
 #   Apply rest pose
 #-------------------------------------------------------------
 
-class DAZ_OT_ApplyRestPoses(DazOperator, IsArmature):
+class DAZ_OT_ApplyRestPoses(CollectionShower, DazOperator, IsArmature):
     bl_idname = "daz.apply_rest_pose"
     bl_label = "Apply Rest Pose"
     bl_description = "Apply current pose at rest pose to selected rigs and children"

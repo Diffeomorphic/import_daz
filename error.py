@@ -326,6 +326,35 @@ class DazPropsOperator(DazOperator):
         return wm.invoke_props_dialog(self, width=self.dialogWidth)
 
 #-------------------------------------------------------------
+#   CollectionShower
+#-------------------------------------------------------------
+
+class CollectionShower:
+    def storeState(self, context):
+        def showLayerColls(layer):
+            for child in layer.children:
+                showLayerColls(child)
+            self.layerColls.append((layer, layer.exclude))
+            layer.exclude = False
+
+        self.layerColls = []
+        showLayerColls(context.view_layer.layer_collection)
+        self.obhides = []
+        for ob in context.view_layer.objects:
+            self.obhides.append((ob, ob.hide_get(), ob.hide_viewport))
+            ob.hide_set(False)
+        DazOperator.storeState(self, context)
+
+
+    def restoreState(self, context):
+        DazOperator.restoreState(self, context)
+        for ob,hide,hideview in self.obhides:
+            ob.hide_set(hide)
+            ob.hide_viewport = hideview
+        for layer,exclude in self.layerColls:
+            layer.exclude = exclude
+
+#-------------------------------------------------------------
 #
 #-------------------------------------------------------------
 
