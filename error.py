@@ -349,8 +349,11 @@ class CollectionShower:
     def restoreState(self, context):
         DazOperator.restoreState(self, context)
         for ob,hide,hideview in self.obhides:
-            ob.hide_set(hide)
-            ob.hide_viewport = hideview
+            try:
+                ob.hide_set(hide)
+                ob.hide_viewport = hideview
+            except ReferenceError:
+                pass
         for layer,exclude in self.layerColls:
             layer.exclude = exclude
 
