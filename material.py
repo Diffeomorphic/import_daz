@@ -972,10 +972,26 @@ def srgbToLinearGamma22(srgb):
     return Vector(lin)
 
 #-------------------------------------------------------------
+#   Use hidden textures
+#-------------------------------------------------------------
+
+class HiddenTextureUser:
+    useHiddenMeshes : BoolProperty(
+        name = "Also Hidden Meshes",
+        description = "Also save textures from hidden meshes",
+        default = False)
+
+    def getMeshes(self, context):
+        if self.useHiddenMeshes:
+            return [ob for ob in bpy.data.objects if ob.type == 'MESH']
+        else:
+            return getVisibleMeshes(context)
+
+#-------------------------------------------------------------
 #   Save local textures
 #-------------------------------------------------------------
 
-class LocalTextureSaver:
+class LocalTextureSaver(HiddenTextureUser):
     @classmethod
     def poll(self, context):
         return (bpy.data.filepath and context.object and context.object.type == 'MESH')
@@ -992,7 +1008,7 @@ class LocalTextureSaver:
             os.makedirs(self.texpath)
 
         self.images = []
-        for ob in getVisibleMeshes(context):
+        for ob in self.getMeshes(context):
             for mat in ob.data.materials:
                 if mat:
                     if mat.use_nodes:
@@ -1074,6 +1090,7 @@ class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
 
     def draw(self, context):
         self.layout.prop(self, "keepDirs")
+        self.layout.prop(self, "useHiddenMeshes")
 
     def run(self, context):
         self.saveLocalTextures(context)
@@ -1575,7 +1592,7 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
 #   Resize textures
 # ---------------------------------------------------------------------
 
-class ChangeResolution():
+class ChangeResolution(HiddenTextureUser):
     steps : IntProperty(
         name = "Steps",
         description = "Resize original images with this number of steps",
@@ -1600,7 +1617,7 @@ class ChangeResolution():
 
     def getAllTextures(self, context, resolveUDIM):
         paths = {}
-        for ob in getSelectedMeshes(context):
+        for ob in self.getMeshes(context):
             for mat in ob.data.materials:
                 if mat:
                     self.getTreeTextures(mat.node_tree, paths, resolveUDIM)
@@ -1647,7 +1664,7 @@ class ChangeResolution():
 
 
     def replaceTextures(self, context):
-        for ob in getSelectedMeshes(context):
+        for ob in self.getMeshes(context):
             for mat in ob.data.materials:
                 if mat:
                     self.resizeTree(mat.node_tree)
@@ -1821,6 +1838,7 @@ class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
 
     def draw(self, context):
         self.layout.prop(self, "steps")
+        self.layout.prop(self, "useHiddenMeshes")
 
     def invoke(self, context, event):
         context.window_manager.invoke_props_dialog(self)
@@ -1846,6 +1864,7 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
     def draw(self, context):
         self.layout.prop(self, "steps")
         self.layout.prop(self, "resizeAll")
+        self.layout.prop(self, "useHiddenMeshes")
 
     def invoke(self, context, event):
         texpath = os.path.join(os.path.dirname(bpy.data.filepath), "textures/")

@@ -354,7 +354,7 @@ class CollectionShower:
                 ob.hide_viewport = hideview
             except ReferenceError:
                 pass
-        for layer,exclude in self.layerColls:
+        for layer,exclude in reversed(self.layerColls):
             layer.exclude = exclude
 
 #-------------------------------------------------------------

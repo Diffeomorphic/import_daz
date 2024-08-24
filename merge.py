@@ -27,6 +27,7 @@ from .error import *
 from .driver import DriverUser
 from .fileutils import DF
 from .geometry import getActiveUvLayer
+from .figure import LockEnabler
 
 #-------------------------------------------------------------
 #   Merge UV Layers
@@ -1727,11 +1728,23 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
 #   Copy bone locations
 #-------------------------------------------------------------
 
-class DAZ_OT_CopyPose(DazOperator, IsArmature):
+class DAZ_OT_CopyPose(DazPropsOperator, LockEnabler, IsArmature):
     bl_idname = "daz.copy_pose"
     bl_label = "Copy Pose"
     bl_description = "Copy pose from active rig to selected rigs"
     bl_options = {'UNDO'}
+
+    useDisableLocks : BoolProperty(
+        name = "Disable Locks And Limits",
+        description = "Disable locks and limits",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useDisableLocks")
+
+    def setLocks(self, pb):
+        pb.lock_location = pb.lock_rotation = FFalse
+
 
     def run(self, context):
         rig,subrigs = getSelectedRigs(context)
@@ -1756,6 +1769,8 @@ class DAZ_OT_CopyPose(DazOperator, IsArmature):
 
         gmats = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
         for subrig in subrigs:
+            if self.useDisableLocks:
+                self.enableLocksLimits(rig, False, 0.0)
             print("Copy bones to %s:" % subrig.name)
             setWorldMatrix(subrig, rig.matrix_world)
             for pb in subrig.pose.bones:

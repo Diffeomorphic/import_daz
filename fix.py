@@ -1301,7 +1301,7 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                 if subrig and subrig != rig:
                     subrigs[subrig.name] = subrig
                 mod.object = rig
-                if self.useRetarget:
+                if self.useRetarget and ob.data.shape_keys:
                     retargetDrivers(ob.data.shape_keys, subrig, rig, False)
             if ob.parent and ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()

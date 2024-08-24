@@ -1002,23 +1002,22 @@ def toggleLocLimits(rig, context):
 
 
 class LockEnabler:
-    def run(self, context):
-        rig = getRigFromContext(context)
+    def enableLocksLimits(self, rig, lock, limit):
         exclude = ["Hint"] if rig.DazRig == "mhx" else []
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
-        rig.DazLocLocks = self.lock
-        rig.DazRotLocks = self.lock
-        rig.DazLocLimits = self.limit
-        rig.DazRotLimits = self.limit
+        rig.DazLocLocks = lock
+        rig.DazRotLocks = lock
+        rig.DazLocLimits = limit
+        rig.DazRotLimits = limit
         for pb in rig.pose.bones:
             if pb.name in driven.keys():
                 continue
             self.setLocks(pb)
             for cns in pb.constraints:
                 if cns.type == 'LIMIT_LOCATION':
-                    cns.influence = self.limit
+                    cns.influence = limit
                 elif cns.type == 'LIMIT_ROTATION' and cns.name not in exclude:
-                    cns.influence = self.limit
+                    cns.influence = limit
 
 
 class DAZ_OT_EnableLocksLimits(DazOperator, LockEnabler, IsMeshArmature):
@@ -1026,8 +1025,9 @@ class DAZ_OT_EnableLocksLimits(DazOperator, LockEnabler, IsMeshArmature):
     bl_label = "Enable Locks And Limits"
     bl_description = "Enable locks and limits"
 
-    lock = True
-    limit = 1.0
+    def run(self, context):
+        rig = getRigFromContext(context)
+        self.enableLocksLimits(rig, True, 1.0)
 
     def setLocks(self, pb):
         pb.lock_location = pb.DazLocLocks
@@ -1039,8 +1039,9 @@ class DAZ_OT_DisableLocksLimits(DazOperator, LockEnabler, IsMeshArmature):
     bl_label = "Disable Locks And Limits"
     bl_description = "Disable locks and limits"
 
-    lock = False
-    limit = 0.0
+    def run(self, context):
+        rig = getRigFromContext(context)
+        self.enableLocksLimits(rig, False, 0.0)
 
     def setLocks(self, pb):
         pb.lock_location = pb.lock_rotation = FFalse

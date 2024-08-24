@@ -874,6 +874,7 @@ class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
         self.layout.label(text='Apply shapekey "%s"?' % skey.name)
 
     def run(self, context):
+        t1 = perf_counter()
         ob = context.object
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[ob.active_shape_key_index]
@@ -892,6 +893,8 @@ class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
             data = skey.data
             for d,offs in zip(data,offsets):
                 d.co += offs
+        t2 = perf_counter()
+        print("Shapekey applied in %.1f seconds" % (t2-t1))
 
 #----------------------------------------------------------
 #   Mix Shapekeys
