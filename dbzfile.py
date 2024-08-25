@@ -439,7 +439,7 @@ def fitToFile(filepath, nodes):
 #   Import DBZ as morph
 #----------------------------------------------------------
 
-class DAZ_OT_ImportDBZ(DazOperator, DbzFile, MultiFile, PropDrivers, PosableMaker, IsMeshArmature):
+class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDrivers, PosableMaker, IsMeshArmature):
     bl_idname = "daz.import_dbz"
     bl_label = "Import DBZ Morphs"
     bl_description = "Import DBZ or JSON file(s) (*.dbz, *.json) as morphs"

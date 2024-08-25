@@ -802,7 +802,7 @@ def getAnchoredBoneNames(rig, anchors):
     return bnames
 
 
-class DAZ_OT_MakeAllBonesPosable(DazPropsOperator, ExtraBones, IsArmature):
+class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones, IsArmature):
     bl_idname = "daz.make_all_bones_posable"
     bl_label = "Make All Bones Posable"
     bl_description = "Add an extra layer of driven bones, to make them posable"
