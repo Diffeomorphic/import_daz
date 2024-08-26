@@ -791,6 +791,7 @@ class LoadMorph(DriverUser):
                 pass
             elif pb.rotation_mode == 'QUATERNION':
                 quat[0] -= 1
+                print("QQ", pb.name, quat)
                 self.setFcurves(pb, quat, tfm.rotProp, "rotation_quaternion")
                 success = True
             else:
@@ -1816,7 +1817,14 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                     continue
                 if factor:
                     tvec,idx2 = getTransformVector(factor, path, comp, pbDriver, pb, idx)
-                    lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, False)
+                    if path == "rotation_quaternion":
+                        from .bone_data import BD
+                        xyz = BD.getDefaultMode(pb)
+                        quat = Euler(tvec, xyz).to_quaternion()
+                        tvec = Vector((quat.x, quat.y, quat.z))
+                        lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2+1, bname, False)
+                    else:
+                        lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, False)
 
 
     def canOptimizeScale(exprs, pb, rig):
@@ -1883,7 +1891,10 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
         if "rotation" in expr.keys():
             if driven in rig2.pose.bones.keys():
                 pb = rig2.pose.bones[driven]
-                buildPath(expr["rotation"], pb, "rotation_euler")
+                if pb.rotation_mode == 'QUATERNION':
+                    buildPath(expr["rotation"], pb, "rotation_quaternion")
+                else:
+                    buildPath(expr["rotation"], pb, "rotation_euler")
         if "translation" in expr.keys():
             if driven in rig2.pose.bones.keys():
                 pb = rig2.pose.bones[driven]
