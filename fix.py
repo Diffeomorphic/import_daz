@@ -1314,7 +1314,6 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                 ob.parent = rig
         activateObject(context, rig)
         for subrig in subrigs.values():
-            print("SR", subrig.name, rig.name)
             self.addExtraBones(subrig, rig)
 
 

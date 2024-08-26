@@ -1817,12 +1817,15 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                     continue
                 if factor:
                     tvec,idx2 = getTransformVector(factor, path, comp, pbDriver, pb, idx)
-                    if path == "rotation_quaternion":
-                        from .bone_data import BD
-                        xyz = BD.getDefaultMode(pb)
-                        quat = Euler(tvec, xyz).to_quaternion()
-                        tvec = Vector((quat.x, quat.y, quat.z))
-                        lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2+1, bname, False)
+                    if path == "rotation_quaternion" and idx2 == 1:
+                        from .driver import removeModifiers, addTransformVar
+                        lm.makeSimpleBoneDriver("rotation", tvec, pb, path, idx2+1, bname, False)
+                        pb.driver_remove(path, 0)
+                        fcu = pb.driver_add(path, 0)
+                        fcu.driver.type = 'SCRIPTED'
+                        fcu.driver.expression = "sqrt(1-y*y)"
+                        removeModifiers(fcu)
+                        addTransformVar(fcu, "y", "ROT_Y", rig, None, pb.name)
                     else:
                         lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, False)
 
