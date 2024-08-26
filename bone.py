@@ -337,7 +337,8 @@ class BoneInstance(Instance):
             GS.useDefaultDrivers and
             self.name in rig.pose.bones.keys()):
             pb = rig.pose.bones[self.name]
-            pb.rotation_mode = self.getRotationMode(pb, self.isRotMorph(self.node.formulas))
+            isrot = self.isRotMorph(self.node.formulas)
+            pb.rotation_mode = self.getRotationMode(pb, isrot)
             errors = []
             buildBoneFormula(self.node, rig, self.figure.altmorphs, errors)
         if hide or not self.getValue(["Visible"], True):
@@ -367,10 +368,10 @@ class BoneInstance(Instance):
     def getRotationMode(self, pb, useEulers):
         if GS.unflipped:
             return self.rotation_order
-        elif useEulers:
-            return BD.getDefaultMode(pb)
         elif GS.useQuaternions and pb.name in BD.SocketBones:
             return 'QUATERNION'
+        elif useEulers:
+            return BD.getDefaultMode(pb)
         else:
             return BD.getDefaultMode(pb)
 

@@ -442,8 +442,6 @@ def addTransformVar(fcu, vname, ttype, rig, rig2, bname):
     trg.bone_target = bname
     if pb is None:
         trg.rotation_mode = 'XYZ'
-    elif pb.rotation_mode == 'QUATERNION':
-        trg.rotation_mode = BD.getDefaultMode(pb)
     else:
         trg.rotation_mode = pb.rotation_mode
     trg.transform_type = ttype
