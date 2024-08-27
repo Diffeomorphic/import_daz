@@ -82,6 +82,7 @@ def register():
     isRegistered = True
     for modname in Modules:
         if modname in Regnames:
+            print("  Register %s" % modname)
             exec("%s.register()" % modname)
     GS.loadDefaults()
     GS.loadAbsPaths()
