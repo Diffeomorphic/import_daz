@@ -151,7 +151,9 @@ class Formula:
                 return rig2
         elif output in self.Genesis:
             output = "RIG"
-        elif rig:
+        elif rig and rig.type != 'ARMATURE':
+            output = "RIG"
+        elif rig and rig.type == 'ARMATURE':
             output1 = getMappedBone(output, rig, mesh)
             if output1 and output1 in rig.pose.bones.keys():
                 output = output1

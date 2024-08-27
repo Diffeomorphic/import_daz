@@ -232,24 +232,29 @@ class DazLoader:
             if not isinstance(ob, bpy.types.Object):
                 continue
             lm = BakedMorphLoader()
+            lm.rig = lm.obj = None
+            lm.meshes = []
             if ob.type == 'ARMATURE':
-                rig = lm.rig = ob
-                lm.mesh = getMeshChildren(rig)[0]
+                lm.rig = lm.obj = ob
+                lm.meshes = getMeshChildren(ob)
             elif ob.type == 'MESH':
                 lm.mesh = ob
-                rig = lm.rig = ob.parent
-                if rig is None:
-                    rig = ob
+                lm.meshes = [ob]
+                if ob.parent and ob.parent.type == 'ARMATURE':
+                    lm.obj = lm.rig = ob.parent
+            elif ob:
+                lm.obj = ob
+                lm.meshes = []
             else:
                 print("Bad object (importBakedMorphs): %s" % ob)
                 continue
             lm.getAllMorphs(namepaths, context)
             for prop,data in props[key].items():
                 label,value = data
-                rig[prop] = value
-                setProtected(rig, prop, True)
-                setActivated(rig, prop, False)
-                item = rig.DazBaked.add()
+                lm.obj[prop] = value
+                setProtected(lm.obj, prop, True)
+                setActivated(lm.obj, prop, False)
+                item = lm.obj.DazBaked.add()
                 item.name = prop
                 item.text = label
 

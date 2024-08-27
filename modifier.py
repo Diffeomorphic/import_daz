@@ -826,6 +826,7 @@ class FormulaAsset(Formula, ChannelAsset):
     def getMorphParent(self):
         from .geometry import GeoNode, Geometry
         from .figure import Figure, FigureInstance
+        from .node import Node, Instance
         msg = None
         if isinstance(self.parent, Geometry):
             parent = self.parent.nodes.get(self.parentRef)
@@ -843,6 +844,12 @@ class FormulaAsset(Formula, ChannelAsset):
                 msg = "Missing figure instances"
         elif isinstance(self.parent, FigureInstance):
             return self.parent
+        elif isinstance(self.parent, Node):
+            parent = self.parent.instances.get(self.parentRef)
+            if parent:
+                return parent
+            else:
+                msg = "Missing instances"
         else:
             msg = "Strange morph parent"
         msg = "%s: %s\n  %s\n  %s" % (msg, self.parentRef, self, self.parent)

@@ -582,12 +582,14 @@ class MorphLoader(LoadMorph, PosableMaker):
                 self.char = self.chars[0]
         elif self.rig:
             ob = self.rig
+        elif self.obj:
+            ob = self.obj
         else:
             raise DazError("Neither mesh nor rig selected")
         self.setupDuplicates()
         LS.forMorphLoad(ob)
         if not self.usePropDrivers:
-            self.rig = None
+            self.rig = self.obj = None
         self.errors = {}
         t1 = perf_counter()
         if namepaths:

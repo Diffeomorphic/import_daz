@@ -48,7 +48,7 @@ def getMappedBone(bname, rig, mesh=None):
             return sufname1
         return ""
 
-    if rig is None or bname is None:
+    if rig is None or rig.data is None or bname is None:
         return None
     bname1 = getBone(bname)
     if bname1:

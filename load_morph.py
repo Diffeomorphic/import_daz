@@ -56,6 +56,7 @@ class LoadMorph(DriverUser):
     def __init__(self):
         DriverUser.__init__(self)
         self.rig = None
+        self.obj = None
         self.amt = None
         self.rig2 = None
         self.amt2 = None
@@ -91,8 +92,15 @@ class LoadMorph(DriverUser):
     def initAmt(self):
         self.amt = self.amt2 = None
         if self.rig:
-            self.amt = self.rig.data
             self.obj = self.rig
+            if self.rig.type == 'ARMATURE':
+                self.amt = self.rig.data
+            elif self.obj.data:
+                self.amt = self.obj.data
+                self.rig = None
+            else:
+                self.amt = self.obj
+                self.rig = None
         elif GS.useMeshDrivers and self.mesh:
             self.obj = self.mesh
             self.amt = self.mesh.data
