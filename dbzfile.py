@@ -354,7 +354,6 @@ def fitToFile(filepath, nodes):
 
     unfitted = []
     for node,inst in nodes:
-        print("\nFIT", inst)
         if inst is None:
             print("fitToFile inst is None:\n  ", node)
             continue
@@ -367,7 +366,6 @@ def fitToFile(filepath, nodes):
         elif not inst.geometries:
             nodeid = inst.getNodeId()
             dbzobj = dbz.getEntry("rigs", nodeid, inst)
-            print("NOD", nodeid, dbzobj)
             if dbzobj:
                 inst.restdata = dbzobj.restdata["NODE"]
 

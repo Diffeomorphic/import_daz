@@ -451,9 +451,11 @@ def copyPresets(srcop, trgop):
     import shutil
     folder = topdir = os.path.dirname(__file__)
     while topdir and not topdir[-1].isdigit():
-        topdir = os.path.split(topdir)[0]
-    if not topdir:
-        return
+        dirs = os.path.split(topdir)
+        if len(dirs) > 1:
+            topdir = dirs[0]
+        else:
+            return
     trgdir = os.path.join(topdir, "scripts", "presets", "operator", "daz.%s" % trgop)
     srcdir = os.path.join(folder, "data", "presets", srcop)
     try:
