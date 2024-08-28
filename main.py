@@ -187,9 +187,13 @@ class DazLoader:
         # Do this at the very end, because it deletes nodes
         if GS.usePruneNodes:
             from .tree import pruneNodeTree
-            for mat in LS.materials.values():
-                if mat:
-                    pruneNodeTree(mat.node_tree)
+            from .geometry import getActiveUvLayer
+            for obs in LS.meshes.values():
+                for ob in obs:
+                    active = getActiveUvLayer(ob)
+                    for mat in ob.data.materials:
+                        if mat:
+                            pruneNodeTree(mat.node_tree, active)
 
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))

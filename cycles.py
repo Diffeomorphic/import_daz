@@ -21,7 +21,7 @@ import os
 from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .tree import Tree, NCOLUMNS, XSIZE, YSIZE, MixRGB
-from .tree import findNodes, findNode, getLinkFrom, getLinkTo, pruneNodeTree, hideAllBut, colorOutput
+from .tree import findNodes, findNode, getLinkFrom, getLinkTo, hideAllBut, colorOutput
 from .tree import addGroupInput, getGroupInputs
 from .error import DazError
 from .utils import *
@@ -518,7 +518,6 @@ class CyclesTree(Tree):
 
     def addTexco(self, slot):
         if (self.owner.uvNodeType == 'TEXCO' or
-            self.owner.uvNodeType == 'UVMAP' or
             not self.owner.uv_set):
             node = self.addNode("ShaderNodeTexCoord")
             node.hide = True
