@@ -449,10 +449,12 @@ class MultiFile(ImportHelper):
 
 def copyPresets(srcop, trgop):
     import shutil
+    x,y,z = bpy.app.version
+    bfolder = "%d.%d" % (x,y)
     folder = topdir = os.path.dirname(__file__)
-    while topdir and not topdir[-1].isdigit():
+    while topdir and not topdir.endswith(bfolder):
         dirs = os.path.split(topdir)
-        if len(dirs) > 1:
+        if dirs[0] != topdir:
             topdir = dirs[0]
         else:
             return
