@@ -1061,7 +1061,7 @@ class DAZ_OT_AllButFingers(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
 
-class DAZ_OT_ImportJCMs(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMesh):
+class DAZ_OT_ImportJCMs(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_jcms"
     bl_label = "Import JCMs"
     bl_description = "Import selected joint corrective morphs"
@@ -1073,7 +1073,7 @@ class DAZ_OT_ImportJCMs(DazOperator, FingerSkip, StandardMorphSelector, Standard
     isJcm = True
 
 
-class DAZ_OT_ImportMasculine(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMesh):
+class DAZ_OT_ImportMasculine(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_masculine"
     bl_label = "Import Masculine"
     bl_description = "Import selected masculine JCMs"
@@ -1085,7 +1085,7 @@ class DAZ_OT_ImportMasculine(DazOperator, FingerSkip, StandardMorphSelector, Sta
     isJcm = True
 
 
-class DAZ_OT_ImportFeminine(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMesh):
+class DAZ_OT_ImportFeminine(DazOperator, FingerSkip, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_feminine"
     bl_label = "Import Feminine"
     bl_description = "Import selected import_feminine JCMs"
@@ -1097,7 +1097,7 @@ class DAZ_OT_ImportFeminine(DazOperator, FingerSkip, StandardMorphSelector, Stan
     isJcm = True
 
 
-class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMesh):
+class DAZ_OT_ImportFlexions(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
     bl_idname = "daz.import_flexions"
     bl_label = "Import Flexions"
     bl_description = "Import selected flexion morphs"
