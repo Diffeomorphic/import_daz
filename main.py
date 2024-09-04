@@ -1204,6 +1204,14 @@ class DAZ_OT_DecodeFile(DazOperator, DazFile, SingleFile):
     bl_description = "Decode a gzipped DAZ file (*.duf, *.dsf, *.dbz) to a text file"
     bl_options = {'UNDO'}
 
+    useSaveFile : BoolProperty(
+        name = "Save To File",
+        description = 'Save to a file with extra ".txt"',
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useSaveFile")
+
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -1229,11 +1237,14 @@ class DAZ_OT_DecodeFile(DazOperator, DazFile, SingleFile):
             print(msg)
             raise DazError(msg)
 
-        newfile = self.filepath + ".txt"
-        with safeOpen(newfile, "w") as fp:
-            fp.write(string)
-        print("%s written" % newfile)
-
+        if self.useSaveFile:
+            newfile = self.filepath + ".txt"
+            with safeOpen(newfile, "w") as fp:
+                fp.write(string)
+            print("%s written" % newfile)
+        else:
+            text = bpy.data.texts.new(self.filepath)
+            text.from_string(string)
 
 #------------------------------------------------------------------
 #   Apply transforms

@@ -211,10 +211,12 @@ class DazOperator(bpy.types.Operator):
         self.warnings = ""
         try:
             self.run(context)
+            self.report({'INFO'}, "%s finished" % self.bl_label)
             if self.warnings:
                 print(self.warnings)
                 raise DazError(self.warnings, warning=True)
         except DazError:
+            self.report({'INFO'}, "%s failed" % self.bl_label)
             handleDazError(context)
         except KeyboardInterrupt:
             LS.message = "Keyboard interrupt"
