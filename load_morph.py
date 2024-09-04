@@ -1831,9 +1831,9 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                         pb.driver_remove(path, 0)
                         fcu = pb.driver_add(path, 0)
                         fcu.driver.type = 'SCRIPTED'
-                        fcu.driver.expression = "sqrt(1-y*y)"
+                        fcu.driver.expression = "sqrt(1-%.4f*y*y)" % (factor**2)
                         removeModifiers(fcu)
-                        addTransformVar(fcu, "y", "ROT_Y", rig, None, pb.name)
+                        addTransformVar(fcu, "y", "ROT_Y", rig, None, bname)
                     else:
                         lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, False)
 
