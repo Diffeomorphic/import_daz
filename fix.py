@@ -86,7 +86,7 @@ class Fixer(DriverUser):
     def printMessages(self):
         if self.messages:
             msg = "\n".join(self.messages)
-            raise DazError(msg, warning=True)
+            self.raiseWarning(msg)
 
 
     def copyLocksLimits(self, rig, srcname, trgname, suffix):

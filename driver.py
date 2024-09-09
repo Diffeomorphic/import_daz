@@ -914,7 +914,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         if ES.easy:
             print(msg)
         else:
-            raise DazError(msg, warning=True)
+            self.raiseWarning(msg)
 
 
     def collectHidden(self):

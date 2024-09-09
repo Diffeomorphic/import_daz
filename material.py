@@ -1527,7 +1527,7 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
             raise DazError("No target mesh selected")
         if self.mismatch:
             msg = "Material number mismatch.\n" + self.mismatch
-            raise DazError(msg, warning=True)
+            self.raiseWarning(msg)
 
 
     def addMaterials(self, src, trg):
@@ -2063,7 +2063,7 @@ def checkRenderSettings(context, force):
 
     if msg:
         msg += "See http://diffeomorphic.blogspot.com/2020/04/render-settings.html for details."
-        print(msg)
+        #print(msg)
         return msg
     else:
         return ""

@@ -538,6 +538,7 @@ class LocalSettings:
         self.otherAssets = {}
         self.sources = {}
         self.trace = []
+        self.error = False
 
         self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None
@@ -620,7 +621,6 @@ class LocalSettings:
         self.hairs = { None : [] }
         self.hdmeshes = { None : [] }
         self.bakedmorphs = {}
-        self.warning = False
         self.returnValue = {}
 
         if bpy.app.version < (4,0,0):
@@ -745,6 +745,7 @@ class EasySettings:
     def __init__(self):
         self.easy = False
         self.message = ""
+        self.error = False
 
 
 

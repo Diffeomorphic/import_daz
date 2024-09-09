@@ -818,8 +818,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         t1 = perf_counter()
         namepaths = self.loadStandardMorphs()
         msg = self.finishLoading(namepaths, context, t1)
-        if msg:
-            raise DazError(msg, warning=True)
+        self.raiseWarning(msg)
 
 
     def loadStandardMorphs(self):
@@ -1404,8 +1403,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.faceshapes = self.allfaceshapes
         if self.faceshapes and self.useTransferFace and self.rig and self.meshes:
             self.transferToFaceMeshes(context)
-        if self.message:
-            raise DazError(self.message, warning=True)
+        self.raiseWarning(self.message)
 
 
     def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False):
@@ -1598,8 +1596,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         self.addPropDrivers()
         msg = self.finishLoading(namepaths, context, t1)
         updateScrollbars(context)
-        if msg:
-            raise DazError(msg, warning=True)
+        self.raiseWarning(msg)
 
 
     def getActiveMorphFiles(self):
@@ -2119,7 +2116,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         updateScrollbars(context)
         if self.missing:
             msg = "Favorites not found:\n  %s" % self.missing
-            raise DazError(msg, warning=True)
+            self.raiseWarning(msg)
 
 
     def addFavoMorphs(self, ob, context, hasRig):

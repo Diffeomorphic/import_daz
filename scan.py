@@ -617,7 +617,7 @@ class DAZ_OT_CheckDatabase(DazPropsOperator, CharSelector):
             msg = "The following databases need to be rescanned:\n"
             for name in needs:
                 msg += "    %s\n" % name
-            raise DazError(msg, warning=True)
+            self.raiseWarning(msg)
 
 #----------------------------------------------------------
 #   Initialize

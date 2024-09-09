@@ -48,16 +48,19 @@ class ErrorOperator(bpy.types.Operator):
 
 def invokeErrorMessage(value, warning=False):
     from .buildnumber import BUILD
-    if warning:
-        LS.message = value
-    else:
-        LS.message = "ERROR (4.2.1.%04d):\n%s" % (BUILD, value)
+    LS.message = value
+    if not warning:
+        LS.error = True
     if GS.silentMode:
         print(LS.message)
     elif ES.easy:
         ES.message += "%s\n" % LS.message
+        if not warning:
+            ES.error = True
+        LS.error = False
         LS.message = ""
-    else:
+    elif not warning:
+        LS.message = "ERROR (4.2.1.%04d):\n%s" % (BUILD, LS.message)
         bpy.ops.daz.error('INVOKE_DEFAULT')
 
 
@@ -212,12 +215,15 @@ class DazOperator(bpy.types.Operator):
         try:
             self.run(context)
             self.report({'INFO'}, "%s finished" % self.bl_label)
-            if self.warnings:
-                print(self.warnings)
-                raise DazError(self.warnings, warning=True)
         except DazError:
-            self.report({'INFO'}, "%s failed" % self.bl_label)
-            handleDazError(context)
+            if LS.error:
+                msg = "%s failed" % self.bl_label
+                self.report({'INFO'}, msg)
+                handleDazError(context)
+            elif self.warnings and not ES.easy:
+                msg = "\n%s finished with warnings.\nSee terminal window for details" % self.bl_label
+                self.report({'WARNING'}, msg)
+                print(self.warnings)
         except KeyboardInterrupt:
             LS.message = "Keyboard interrupt"
             bpy.ops.daz.error('INVOKE_DEFAULT')
@@ -309,7 +315,15 @@ class DazOperator(bpy.types.Operator):
     def addWarning(self, msg):
         if self.warnings:
             self.warnings += "\n"
+        else:
+            self.warnings = "\n%s finished with warnings.\n" % self.bl_label
         self.warnings += msg
+
+
+    def raiseWarning(self, msg):
+        if msg:
+            self.addWarning(msg)
+            raise DazError(msg, warning=True)
 
 
 def setTypedPropValue(ob, key, value, newvalue):

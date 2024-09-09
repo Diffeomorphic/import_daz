@@ -354,10 +354,8 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         self.msg += checkRenderSettings(context, False)
         if self.msg:
             clearErrorMessage()
+            self.raiseWarning(self.msg)
             handleDazError(context, warning=True, dump=True)
-            print(self.msg)
-            LS.warning = True
-            raise DazError(self.msg, warning=True)
         LS.reset()
 
 
@@ -771,7 +769,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 LS.filepaths = theFilePaths
         if ES.message:
             ES.easy = False
-            raise DazError(ES.message[:-1], warning=True)
+            msg = ES.message[:-1]
+            if ES.error:
+                ES.error = False
+                raise DazError(msg)
+            else:
+                self.raiseWarning(msg)
 
 
     def easyImport(self, context):
