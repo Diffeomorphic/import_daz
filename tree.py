@@ -187,7 +187,12 @@ class Tree:
                 return node
         group.create(node, name, self)
         group.addNodes(args)
-        node.node_tree.name = name
+        tree = node.node_tree
+        tree.name = name
+        if tree.name != name:
+            tree0 = bpy.data.node_groups[name]
+            tree0.name = "%s.000" % name
+            tree.name = name
         return node
 
 
@@ -243,14 +248,14 @@ class NodeGroup:
 
 
     def checkSockets(self, tree):
-        if not BLENDER3:
-            return True
+        inputs = getGroupInputs(tree)
+        outputs = getGroupOutputs(tree)
         for socket in self.insockets:
-            if socket not in tree.inputs.keys():
+            if socket not in inputs:
                 print("Missing insocket: %s" % socket)
                 return False
         for socket in self.outsockets:
-            if socket not in tree.outputs.keys():
+            if socket not in outputs:
                 print("Missing outsocket: %s" % socket)
                 return False
         return True
