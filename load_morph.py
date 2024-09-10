@@ -1604,9 +1604,12 @@ class LoadMorph(DriverUser):
                 string = fcu2.driver.expression
                 while string and string[0] == "(":
                     string = string[1:-1]
+                string = string.replace("e-", "e_")
                 words = string.split("+")
                 plus = [word.split("-")[0] for word in words if word]
                 minus = flatten([word.split("-")[1:] for word in words if word])
+                plus = [word.replace("e_", "e-") for word in plus]
+                minus = [word.replace("e_", "e-") for word in minus]
                 addToDrivers(plus, +1)
                 addToDrivers(minus, -1)
 
