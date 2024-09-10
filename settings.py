@@ -421,7 +421,7 @@ class GlobalSettings:
             "type" : "scanned_absolute_paths",
             "absolute_paths" : self.absPaths,
         }
-        absScanPath = self.settingsFile(self.absScanFile)
+        absScanPath = self.getDazSettingsPath(self.absScanFile)
         saveJson(struct, absScanPath, strict=False)
         print("Scanned paths saved to %s" % absScanPath)
 

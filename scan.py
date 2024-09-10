@@ -398,7 +398,7 @@ def getCharData(context, error):
 
 
 def getScanPath(name):
-    scanPath = GS.getSettingsFile(GS.scanFile)
+    scanPath = GS.getDazSettingsPath(GS.scanFile)
     if not os.path.exists(scanPath):
         os.makedirs(scanPath)
     return os.path.join(scanPath, "%s.json" % name)

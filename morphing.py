@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import os
 import bpy
 import numpy as np
@@ -1466,6 +1464,7 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
     morphset = "Custom"
     hideable = True
     category = ""
+    useMakePosable = False
 
     def findPropGroup(self, prop):
         if self.rig is None:
