@@ -26,17 +26,21 @@ from urllib.parse import unquote
 #-------------------------------------------------------------
 
 class GlobalSettings:
-
     def __init__(self):
         if sys.platform == 'win32':
-            self.defaultDir = self.fixPath("~/Documents/DAZ Importer")
+            self.settingsDir = self.fixPath("~/Documents/DAZ Importer")
             self.caseSensitivePaths = False
         elif sys.platform == 'darwin':
-            self.defaultDir = self.fixPath("~/DAZ Importer")
+            self.settingsDir = self.fixPath("~/DAZ Importer")
             self.caseSensitivePaths = False
         else:
-            self.defaultDir = self.fixPath("~/DAZ Importer")
+            self.settingsDir = self.fixPath("~/DAZ Importer")
             self.caseSensitivePaths = True
+
+        self.errorFile = "daz_importer_errors.txt"
+        self.scanFile = "Scanned DAZ Database"
+        self.settingsFile = "import_daz_settings.json"
+        self.absScanFile = "import_daz_scanned_absolute_paths.json"
 
         self.contentDirs = [
             self.fixPath("~/Documents/DAZ 3D/Studio/My Library"),
@@ -46,10 +50,6 @@ class GlobalSettings:
             "C:/Program Files/DAZ 3D/DAZStudio4/shaders/iray",
         ]
         self.cloudDirs = []
-        self.errorPath = "%s/%s" % (self.defaultDir, "daz_importer_errors.txt")
-        self.scanPath = "%s/%s" % (self.defaultDir, "Scanned DAZ Database")
-        self.settingsPath = "%s/%s" % (self.defaultDir, "import_daz_settings.json")
-        self.absScanPath = "%s/%s" % (self.defaultDir, "import_daz_scanned_absolute_paths.json")
         self.oldPath = self.fixPath("~/import-daz-settings-28x.json")
         self.rootPaths = []
         self.absPaths = {}
@@ -148,9 +148,32 @@ class GlobalSettings:
         self.onFaceMaps = 'NEVER'
 
 
+    def getSettingsDir(self, context):
+        if context:
+            name = __name__.rsplit(".", 1)[0]
+            addon = context.preferences.addons.get(name)
+            if addon and addon.preferences:
+                prefs = addon.preferences
+                if prefs:
+                    self.settingsDir = self.fixPath(prefs.settingsDir)
+                    print("Settings directory: %s" % self.settingsDir)
+
+
     def fixPath(self, path):
         filepath = os.path.expanduser(path).replace("\\", "/")
         return filepath.rstrip("/ ")
+
+
+    def getDazSettingsPath(self, file):
+        return os.path.join(self.settingsDir, file)
+
+
+    def getSettingsPath(self):
+        return self.getDazSettingsPath(self.settingsFile)
+
+
+    def getErrorPath(self):
+        return self.getDazSettingsPath(self.errorFile)
 
 
     def getDazPaths(self):
@@ -191,14 +214,14 @@ class GlobalSettings:
         for attr in dir(self):
             if (attr[0] != "_" and
                 hasattr(btn, attr) and
-                attr not in ["contentDirs", "cloudDirs", "mdlDirs", "errorPath", "scanPath", "absScanPath"]):
+                attr not in ["contentDirs", "cloudDirs", "mdlDirs", "errorFile", "scanFile", "absScanFile"]):
                 setattr(self, attr, getattr(btn, attr))
         self.contentDirs = getPaths(btn.contentDirs)
         self.mdlDirs = getPaths(btn.mdlDirs)
         self.cloudDirs = getPaths(btn.cloudDirs)
-        self.errorPath = self.fixPath(btn.errorPath)
-        self.scanPath = self.fixPath(btn.scanPath)
-        self.absScanPath = self.fixPath(btn.absScanPath)
+        self.errorFile = btn.errorFile
+        self.scanFile = btn.scanFile
+        self.absScanFile = btn.absScanFile
         self.eliminateDuplicates()
 
 
@@ -207,34 +230,6 @@ class GlobalSettings:
         unregister()
         if scn.DazAutoMorphArmatures and self.ercMethod in ('ARMATURE', 'ALL'):
             bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
-
-
-    def pathsToScene(self, paths, pgs):
-        pgs.clear()
-        for path in paths:
-            pg = pgs.add()
-            pg.name = self.fixPath(path)
-
-
-    def toScene(self, scn):
-        for prop,key in self.SceneTable.items():
-            if hasattr(scn, prop) and hasattr(self, key):
-                value = getattr(self, key)
-                try:
-                    setattr(scn, prop, value)
-                except TypeError:
-                    print("Type Error", prop, key, value)
-            else:
-                print("MIS", prop, key)
-        self.pathsToScene(self.contentDirs, scn.DazContentDirs)
-        self.pathsToScene(self.mdlDirs, scn.DazMDLDirs)
-        self.pathsToScene(self.cloudDirs, scn.DazCloudDirs)
-        path = self.fixPath(self.errorPath)
-        setattr(scn, "DazErrorPath", path)
-        path = self.fixPath(self.scanPath)
-        setattr(scn, "DazScanPath", path)
-        path = self.fixPath(self.absScanPath)
-        setattr(scn, "DazAbsScanPath", path)
 
 
     def loadSettings(self, filepath, strict=True):
@@ -374,7 +369,7 @@ class GlobalSettings:
 
 
     def loadDefaults(self):
-        if not self.loadSettings(self.settingsPath, False):
+        if not self.loadSettings(self.getSettingsPath(), False):
             self.loadSettings(self.oldPath, False)
 
 
@@ -405,7 +400,7 @@ class GlobalSettings:
 
 
     def scanAbsPaths(self):
-        def scanPath(folder, path):
+        def scanDazPath(folder, path):
             lpath = path.lower()
             if lpath not in self.absPaths.keys():
                 self.absPaths[lpath] = [folder]
@@ -415,19 +410,20 @@ class GlobalSettings:
                 nfolder = "%s/%s" % (folder, file)
                 if os.path.isdir(nfolder):
                     npath = "%s/%s" % (path, file)
-                    scanPath(nfolder, npath)
+                    scanDazPath(nfolder, npath)
 
         from .load_json import saveJson
         self.absPaths = {}
         for path in self.getDazPaths():
             print("Scanning", path)
-            scanPath(path, "")
+            scanDazPath(path, "")
         struct = {
             "type" : "scanned_absolute_paths",
             "absolute_paths" : self.absPaths,
         }
-        saveJson(struct, self.absScanPath, strict=False)
-        print("Scanned paths saved to %s" % self.absScanPath)
+        absScanPath = self.settingsFile(self.absScanFile)
+        saveJson(struct, absScanPath, strict=False)
+        print("Scanned paths saved to %s" % absScanPath)
 
 
     def checkAbsPaths(self):
@@ -440,12 +436,13 @@ class GlobalSettings:
 
     def loadAbsPaths(self):
         self.absPaths = {}
-        if os.path.exists(self.absScanPath):
+        absScanPath = self.getDazSettingsPath(self.absScanFile)
+        if os.path.exists(absScanPath):
             from .load_json import loadJson
-            struct = loadJson(self.absScanPath)
+            struct = loadJson(absScanPath)
             if struct.get("type") == "scanned_absolute_paths":
                 self.absPaths = struct.get("absolute_paths", {})
-                print("Absolute paths loaded from %s" % self.absScanPath)
+                print("Absolute paths loaded from %s" % absScanPath)
 
 
     def getAbsPaths(self, path):
@@ -751,6 +748,5 @@ class EasySettings:
 
 GS = GlobalSettings()
 LS = LocalSettings()
-LS.trace = []
 ES = EasySettings()
 

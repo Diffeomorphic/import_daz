@@ -90,14 +90,9 @@ def reportError(msg, instances={}, warnPaths=False, trigger=(2,5), force=False):
         if warnPaths:
             msg += ("\nHave all DAZ library paths been set up correctly?\n" +
                     "See https://diffeomorphic.blogspot.se/p/setting-up-daz-library-paths.html         ")
-        msg += ("\nFor details see\n'%s'" % getErrorPath())
+        msg += ("\nFor details see\n'%s'" % GS.getErrorPath())
         raise DazError(msg)
     return None
-
-
-def getErrorPath():
-    import os
-    return os.path.realpath(os.path.expanduser(GS.errorPath))
 
 
 def handleDazError(context, warning=False, dump=False):
@@ -107,7 +102,7 @@ def handleDazError(context, warning=False, dump=False):
         return
     theUseDumpErrors = False
 
-    filepath = getErrorPath()
+    filepath = GS.getErrorPath()
     try:
         fp = open(filepath, "w", encoding="utf-8-sig")
     except:
@@ -132,7 +127,7 @@ def handleDazError(context, warning=False, dump=False):
 
 
 def dumpErrors(context):
-    filepath = getErrorPath()
+    filepath = GS.getErrorPath()
     with open(filepath, "w", encoding="utf-8-sig") as fp:
         printTraceBack(context, fp)
 

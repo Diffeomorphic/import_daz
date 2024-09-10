@@ -105,7 +105,7 @@ class DAZ_OT_SaveSettingsFile(bpy.types.Operator, SingleFile, JsonExportFile):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        self.properties.filepath = os.path.dirname(GS.settingsPath)
+        self.properties.filepath = GS.settingsDir
         return SingleFile.invoke(self, context, event)
 
 
@@ -154,7 +154,7 @@ class DAZ_OT_LoadRootPaths(bpy.types.Operator, SingleFile, JsonFile):
         if struct:
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)
-            GS.saveSettings(GS.settingsPath)
+            GS.saveSettings(GS.getSettingsPath())
             try:
                 global theGlobalDialog
                 if theGlobalDialog:
@@ -186,7 +186,7 @@ class DAZ_OT_AddContentDirs(bpy.types.Operator, SingleFile):
                 print("Add", folder)
                 change = True
                 GS.contentDirs.append(folder)
-        GS.saveSettings(GS.settingsPath)
+        GS.saveSettings(GS.getSettingsPath())
         return {'FINISHED'}
 
 
@@ -215,14 +215,14 @@ class DAZ_OT_LoadSettingsFile(bpy.types.Operator, SingleFile, JsonFile):
     def execute(self, context):
         try:
             GS.loadSettings(self.filepath)
-            GS.saveSettings(GS.settingsPath)
+            GS.saveSettings(GS.getSettingsPath())
         except DazError:
             handleDazError(context)
         print("Settings file %s saved" % self.filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        self.properties.filepath = os.path.dirname(GS.settingsPath)
+        self.properties.filepath = GS.settingsDir
         return SingleFile.invoke(self, context, event)
 
 
@@ -263,17 +263,21 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "DAZ Cloud Directories",
         description = "Search paths for DAZ Studio cloud content")
 
-    errorPath : StringProperty(
-        name = "Error Path",
-        description = "Path to error report file")
+    settingsDir : StringProperty(
+        name = "Settings Directory",
+        description = "Path to settings directory")
 
-    scanPath : StringProperty(
+    errorFile : StringProperty(
+        name = "Error File",
+        description = "Error report file")
+
+    scanFile : StringProperty(
         name = "Scanned Database Path",
         description = "Path to scanned database")
 
-    absScanPath : StringProperty(
+    absScanFile : StringProperty(
         name = "Absolute Paths File",
-        description = "Path to file with scanned absolute paths")
+        description = "File with scanned absolute paths")
 
     scale : FloatProperty(
         name = "Unit Scale",
@@ -721,12 +725,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             for pg in self.cloudDirs:
                 box.prop(pg, "name", text="")
             box.operator("daz.add_cloud_dir")
-        box.label(text = "Path To Output Errors:")
-        box.prop(self, "errorPath", text="")
-        box.label(text = "Path To Scanned Database:")
-        box.prop(self, "scanPath", text="")
-        box.label(text = "Path To Scanned Case-sensitive Paths:")
-        box.prop(self, "absScanPath", text="")
+
+        box.separator()
+        box.label(text = "Settings Directory: %s" % GS.settingsDir)
+        box.prop(self, "errorFile")
+        box.prop(self, "scanFile")
+        box.prop(self, "absScanFile")
 
         col = split.column()
         box = col.box()
@@ -846,10 +850,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     def run(self, context):
         GS.fromDialog(self)
-        GS.saveSettings(GS.settingsPath)
+        GS.saveSettings(GS.getSettingsPath())
 
     def invoke(self, context, event):
         global theGlobalDialog
+        GS.getSettingsDir(context)
         theGlobalDialog = self
         GS.toDialog(self)
         wm = context.window_manager

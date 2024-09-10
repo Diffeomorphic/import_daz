@@ -60,6 +60,33 @@ from .settings import GS
 from .api import *
 
 #----------------------------------------------------------
+#   Preferences
+#----------------------------------------------------------
+
+import sys
+import os
+
+class DazPreferences(bpy.types.AddonPreferences):
+    bl_idname = __name__
+
+    if sys.platform == 'win32':
+        defaultDir = os.path.expanduser("~\\Documents\\DAZ Importer")
+    elif sys.platform == 'darwin':
+        defaultDir = os.path.expanduser("~/DAZ Importer")
+    else:
+        defaultDir = os.path.expanduser("~/DAZ Importer")
+
+    settingsDir : bpy.props.StringProperty(
+        name = "Settings directory",
+        description = "Directory holding Daz Importer global settings",
+        subtype='DIR_PATH',
+        default = defaultDir
+    )
+
+    def draw(self, context):
+        self.layout.prop(self, "settingsDir")
+
+#----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
@@ -85,6 +112,8 @@ def register():
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
+    bpy.utils.register_class(DazPreferences)
+    GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
     GS.loadAbsPaths()
 
@@ -92,6 +121,7 @@ def register():
 def unregister():
     global isRegistered
     isRegistered = False
+    bpy.utils.unregister_class(DazPreferences)
     for modname in reversed(Modules):
         if modname in Regnames:
             exec("%s.unregister()" % modname)

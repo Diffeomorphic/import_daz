@@ -191,7 +191,7 @@ class Tree:
         tree.name = name
         if tree.name != name:
             tree0 = bpy.data.node_groups[name]
-            tree0.name = "%s.000" % name
+            tree0.name = "%s.001" % name
             tree.name = name
         return node
 
