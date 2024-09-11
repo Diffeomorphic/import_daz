@@ -1080,14 +1080,6 @@ def getBoneMatrix(tfm, pb, rig, bonemap={}):
     from .transform import roundMatrix
     dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap)
     rotmat = tfm.getRotMat(pb)
-    if GS.useSubtractRestpose:
-        rest = getEulerMatrix(pb.DazRestRotation, pb.DazRotMode)
-        rotmat = rotmat @ rest.inverted()
-        if pb.name in TestBones:
-            print("\nAA", pb.name, parent.name)
-            print(getAngle(tfm.getRotMat(pb), pb.DazRotMode))
-            print(getAngle(rest, pb.DazRotMode))
-            print(getAngle(rotmat, pb.DazRotMode))
     wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
     tmat = rmat.inverted() @ tfm.getTransMat() @ rmat
     mat = bmat.inverted() @ tmat @ wmat @ bmat
@@ -1102,44 +1094,19 @@ def getAngle(mat, xyz):
 
 
 def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
-    if (not GS.useDazOrientation or
-        pb.rotation_mode == 'QUATERNION' or
-        oldStyle):
-        mat = getBoneMatrix(tfm, pb, rig, bonemap)
-        if tfm.trans is None or tfm.trans.length == 0.0:
-            mat.col[3] = (0,0,0,1)
-        if tfm.hasNoScale():
-            trans = mat.col[3].copy()
-            mat = mat.to_quaternion().to_matrix().to_4x4()
-            mat.col[3] = trans
-        if pb.name in TestBones:
-            print("SBT", pb.name, tfm.rot, GS.useDazOrientation, oldStyle)
-            print("ROT", getAngle(tfm.getRotMat(pb), pb.DazRotMode))
-            print("REST", Vector(pb.DazRestRotation))
-            print("BBB", getAngle(mat, pb.rotation_mode))
-            print(mat)
-        pb.matrix_basis = mat
-        return
-
-    trans = flipAxes(tfm.evalTrans(), pb)
-    pb.location = d2b00(trans)
-    rot = tfm.evalRot()
-    restrot = Vector(pb.DazRestRotation)
-    if restrot.length > 0 and GS.useSubtractRestpose:
-        restmat = Euler(restrot*D, pb.DazRotMode).to_matrix()
-        rotmat = Euler(rot, pb.DazRotMode).to_matrix()
-        newmat = restmat.inverted() @ rotmat
-        rot = Vector(newmat.to_euler(pb.DazRotMode))
+    mat = getBoneMatrix(tfm, pb, rig, bonemap)
+    if tfm.trans is None or tfm.trans.length == 0.0:
+        mat.col[3] = (0,0,0,1)
+    if tfm.hasNoScale():
+        trans = mat.col[3].copy()
+        mat = mat.to_quaternion().to_matrix().to_4x4()
+        mat.col[3] = trans
     if pb.name in TestBones:
-        print("FFF", pb.name, tuple(pb.DazAxes), tuple(pb.DazFlips))
-        print("  ", rot/D)
-        rot = flipAxes(rot, pb)
-        print("  ", rot/D)
-    else:
-        rot = flipAxes(rot, pb)
-    pb.rotation_euler = rot
-    #scale = flipit(tfm.evalScale(), pb)
-    #pb.scale = scale
+        print("SBT", pb.name, tfm.rot)
+        print("ROT", getAngle(tfm.getRotMat(pb), pb.DazRotMode))
+        print("BBB", getAngle(mat, pb.rotation_mode))
+        print(mat)
+    pb.matrix_basis = mat
 
 
 def flipAxes(vec, pb):

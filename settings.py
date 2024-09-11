@@ -76,8 +76,6 @@ class GlobalSettings:
         self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
         self.useQuaternions = False
-        self.useDazOrientation = False
-        self.useSubtractRestpose = True
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -87,7 +85,6 @@ class GlobalSettings:
         self.useVolume = True
         self.useDisplacement = True
         self.useEmission = True
-        self.useReflection = True
         self.bumpMultiplier = 1.0
         self.useWorld = 'DOME'
         self.useLowerResFolders = True
@@ -112,7 +109,6 @@ class GlobalSettings:
         self.useModifiedMesh = False
         self.useDefaultDrivers = True
         self.useOptimizeJcms = False
-        self.useSplineDrivers = True
 
         self.useArmature = True
         self.useLockLoc = True

@@ -1337,11 +1337,8 @@ class LoadMorph(DriverUser):
             return string[1:]
 
         lt = ("<" if umax > 0 else ">")
-        if GS.useSplineDrivers:
-            string = splineSpline(var, umax, lt)
-            if len(string) > 254:
-                string = linearSpline(var, umax, lt)
-        else:
+        string = splineSpline(var, umax, lt)
+        if len(string) > 254:
             string = linearSpline(var, umax, lt)
         if len(string) > 254:
             msg = "String driver too long:\n"
@@ -1854,19 +1851,13 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
 
 
     def getTransformVector(factor, channel, comp, pbDriver, pb, idx):
-        if (not GS.useDazOrientation or
-            pb.rotation_mode == 'QUATERNION'):
-            uvec = getBoneVector(factor, comp, pbDriver)
-            dvec = getBoneVector(1.0, idx, pb)
-            idx2,sign,x = getDrivenComp(dvec)
-            if channel == "scale":
-                tvec = Vector([abs(y) for y in uvec])
-            else:
-                tvec = sign*uvec
+        uvec = getBoneVector(factor, comp, pbDriver)
+        dvec = getBoneVector(1.0, idx, pb)
+        idx2,sign,x = getDrivenComp(dvec)
+        if channel == "scale":
+            tvec = Vector([abs(y) for y in uvec])
         else:
-            tvec = Vector((0,0,0))
-            idx2,sign = d2bBone(pb, channel, idx)
-            tvec[idx2] = factor*sign
+            tvec = sign*uvec
         return tvec, idx2
 
 

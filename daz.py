@@ -362,10 +362,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Optimize JCM Drivers",
         description = "Optimize drivers when loading JCMs and flexions. Experimental")
 
-    useSplineDrivers : BoolProperty(
-        name = "Spline Drivers",
-        description = "Use smoothstep for spline TCB drivers instead of linear functions")
-
     useMakeHiddenSliders : BoolProperty(
         name = "Make Hidden Sliders",
         description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
@@ -429,10 +425,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
                  ('NEVER', "Never", "Never create world material")],
         name = "World",
         description = "When to create a world material")
-
-    useLowerResFolders : BoolProperty(
-        name = "Lower Resolution Folders",
-        description = "Store lower resolution textures in separate folders.\nTexture names are also modified")
 
     useMaterialsByIndex : BoolProperty(
         name = "Materials By Index",
@@ -517,15 +509,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     useArmature : BoolProperty(
         name = "Armature",
         description = "Create armatures for imported figures")
-
-    useDazOrientation : BoolProperty(
-        name = "DAZ Orientation (Experimental)",
-        description = "Assume that bones are oriented as in DAZ Studio when loading poses.\nKnown not to work in some cases")
-
-    useSubtractRestpose : BoolProperty(
-        name = "Subtract Rest Pose",
-        description = "Subtract rotations baked into the rest pose.\nUseful for prebent figures",
-        default = True)
 
     useQuaternions : BoolProperty(
         name = "Quaternions",
@@ -616,10 +599,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     useGhostLights : BoolProperty(
         name = "Ghost Lights",
         description = "Mimics the iray ghost light bug, that is fixed in DS 4.20.\nDo not use to mimic DS 4.20")
-
-    useReflection : BoolProperty(
-        name = "Reflection",
-        description = "Use reflection maps")
 
     bumpMultiplier : FloatProperty(
         name = "Bump Multiplier",
@@ -734,8 +713,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
-        box.prop(self, "useDazOrientation")
-        box.prop(self, "useSubtractRestpose")
         box.prop(self, "useQuaternions")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
@@ -778,7 +755,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useModifiedMesh")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
-        box.prop(self, "useSplineDrivers")
 
         col = split.column()
         box = col.box()
@@ -789,7 +765,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "skinMethod")
         box.prop(self, "viewportColors")
         box.prop(self, "useWorld")
-        box.prop(self, "useLowerResFolders")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")
         if bpy.app.version < (3,4,0):
@@ -806,7 +781,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useEmission")
         box.prop(self, "useVolume")
         box.prop(self, "useGhostLights")
-        box.prop(self, "useReflection")
         box.prop(self, "bumpMultiplier")
 
 
