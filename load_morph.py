@@ -550,29 +550,30 @@ class LoadMorph(DriverUser):
             baseprop in ALWAYS_BAKED):
             value = 0
             print("Baked %s = 0" % baseprop)
-        if GS.morphLimits == 'NONE':
+        if not GS.useDazLimits:
             min = max = None
-        elif ovr or GS.morphLimits == 'HARD':
-            min = asset.min
-            max = asset.max
-        else:
+        elif (not ovr and
+              (GS.useStrengthAdjusters != 'NONE' or
+               self.useAdjusters)):
             min = 10 * asset.min
             max = 10 * asset.max
+        else:
+            min = asset.min
+            max = asset.max
         setFloatProp(rna, prop, value, min, max, ovr)
         if skey:
             self.setShapeLimits(skey, asset)
 
 
     def setShapeLimits(self, skey, asset):
-        if GS.morphLimits == 'NONE':
+        if (not GS.useDazLimits or
+            GS.useStrengthAdjusters != 'NONE' or
+            self.useAdjusters):
             skey.slider_min = -10
             skey.slider_max = 10
-        elif self.obj is None or GS.morphLimits == 'HARD':
+        else:
             skey.slider_min = asset.min
             skey.slider_max = asset.max
-        else:
-            skey.slider_min = -10
-            skey.slider_max = 10
 
 
     def makeValueFormula(self, output, expr):

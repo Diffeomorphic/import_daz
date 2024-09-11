@@ -98,7 +98,7 @@ class GlobalSettings:
         self.useLayeredShells = True
 
         self.useStrengthAdjusters = 'NONE'
-        self.morphLimits = 'SOFT'
+        self.useDazLimits = True
         self.showFinalProps = False
         self.showUsedPropsOnly = False
         self.showInTerminal = True

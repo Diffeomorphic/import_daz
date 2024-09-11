@@ -311,12 +311,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Add extra sliders to adjust the overall strength",
         default = 'NONE')
 
-    morphLimits : EnumProperty(
-        items = [('NONE', "None", "No morph limits"),
-                 ('SOFT', "Soft", "Soft morph limits"),
-                 ('HARD', "Hard", "Hard morph limits")],
-        name = "Limits",
-        description = "Morph limits")
+    useDazLimits : BoolProperty(
+        name = "DAZ Limits",
+        description = "Use DAZ limits for morphs")
 
     showFinalProps : BoolProperty(
         name = "Show Final Morph Values",
@@ -743,7 +740,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useStrengthAdjusters")
         box.prop(self, "useMakeHiddenSliders")
         box.prop(self, "useBakedMorphs")
-        box.prop(self, "morphLimits")
+        box.prop(self, "useDazLimits")
         box.prop(self, "showFinalProps")
         box.prop(self, "showUsedPropsOnly")
         box.prop(self, "showInTerminal")
