@@ -539,8 +539,8 @@ def isProtected(rna, prop):
 
 def getPropMinMax(rna, prop, ovr=False):
     struct = getPropUi(rna, prop)
-    min = GS.customMin
-    max = GS.customMax
+    min = 0.0
+    max = 1.0
     default = 0.0
     if struct:
         if "min" in struct.keys():

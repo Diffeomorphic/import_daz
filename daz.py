@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import os
 import bpy
 
@@ -312,39 +311,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Add extra sliders to adjust the overall strength",
         default = 'NONE')
 
-    customMin : FloatProperty(
-        name = "Custom Min",
-        description = "Custom minimum for sliders",
-        min = -10.0, max = 0.0)
-
-    customMax : FloatProperty(
-        name = "Custom Max",
-        description = "Custom maximum for sliders",
-        min = 0.0, max = 10.0)
-
-    sliderMultiplier : FloatProperty(
-        name = "Slider Multiplier",
-        description = "Multiply the min and max values for sliders with this factor",
-        min = 0.0, max = 10.0)
-
-    finalMultiplier : FloatProperty(
-        name = "Final Multiplier",
-        description = "Multiply the min and max values for final properties with this factor",
-        min = 0.0, max = 10.0)
-
-    enums = [('DAZ', "DAZ", "Use min and max values from DAZ files if available.\nThe limits are multiplied with the factor below"),
-             ('CUSTOM', "Custom", "Use min and max values from custom sliders"),
-             ('NONE', "None", "Don't limit sliders")]
-
-    finalLimits : EnumProperty(
-        items = enums,
-        name = "Final Limits",
-        description = "Final min and max values for DAZ properties,\nwhen all sliders are taken into account")
-
-    sliderLimits : EnumProperty(
-        items = enums,
-        name = "Slider Limits",
-        description = "Min and max values for sliders")
+    morphLimits : EnumProperty(
+        items = [('NONE', "None", "No morph limits"),
+                 ('SOFT', "Soft", "Soft morph limits"),
+                 ('HARD', "Hard", "Hard morph limits")],
+        name = "Limits",
+        description = "Morph limits")
 
     showFinalProps : BoolProperty(
         name = "Show Final Morph Values",
@@ -357,10 +329,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     showInTerminal : BoolProperty(
         name = "Show In Terminal",
         description = "Display full morph names when loading and transferring morphs")
-
-    useShapekeys : BoolProperty(
-        name = "Shapekeys",
-        description = "Load shapekeys for morphs")
 
     useShapeCats : BoolProperty(
         name = "Shapekey Categories",
@@ -798,16 +766,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useStrengthAdjusters")
         box.prop(self, "useMakeHiddenSliders")
         box.prop(self, "useBakedMorphs")
-        box.prop(self, "sliderLimits")
-        box.prop(self, "finalLimits")
-        box.prop(self, "sliderMultiplier")
-        box.prop(self, "finalMultiplier")
-        box.prop(self, "customMin")
-        box.prop(self, "customMax")
+        box.prop(self, "morphLimits")
         box.prop(self, "showFinalProps")
         box.prop(self, "showUsedPropsOnly")
         box.prop(self, "showInTerminal")
-        box.prop(self, "useShapekeys")
         box.prop(self, "useShapeCats")
         box.prop(self, "useMeshDrivers")
         box.prop(self, "useMuteDrivers")

@@ -2092,11 +2092,8 @@ def checkSettings(engine, settings, handle, header, force):
     for key,used in LS.usedFeatures.items():
         if (force or used) and key in settings.keys():
             ok = updateSettings(engine, settings[key], ok)
-    if not ok:
-        if handle == "WARN":
-            msg = ("%s are insufficient to render this scene correctly.\n" % header)
-        else:
-            msg = ("%s have been updated to minimal requirements for this scene.\n" % header)
+    if not ok and handle == "WARN":
+        msg = ("%s are insufficient to render this scene correctly.\n" % header)
     return msg
 
 

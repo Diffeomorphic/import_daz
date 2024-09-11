@@ -448,7 +448,19 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
     hasAdjusters = False
     useAdjusters = False
 
+    min : FloatProperty(
+        name = "Min",
+        description = "Minimum value for DBZ morph",
+        default = 0.0)
+
+    max : FloatProperty(
+        name = "Max",
+        description = "Maximum value for DBZ morph",
+        default = 1.0)
+
     def draw(self, context):
+        self.layout.prop(self, "min")
+        self.layout.prop(self, "max")
         PropDrivers.draw(self, context)
         PosableMaker.draw(self, context)
 
@@ -469,9 +481,9 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
             for ob in meshes:
                 self.buildMeshMorph(ob, rig, dbz)
             if self.usePropDrivers and rig:
-                setFloatProp(rig, prop, 0.0, GS.customMin, GS.customMax, True)
+                setFloatProp(rig, prop, 0.0, self.min, self.max, True)
                 final = finalProp(prop)
-                setFloatProp(rig.data, final, 0.0, GS.customMin, GS.customMax, False)
+                setFloatProp(rig.data, final, 0.0, self.min, self.max, False)
                 makePropDriver(propRef(prop), rig.data, propRef(final), rig, "x")
                 if GS.ercMethod != 'NONE':
                     self.buildRigMorph(context, rig, meshes, dbz)
@@ -584,8 +596,8 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
                     skey = ob.shape_key_add(name=sname)
                     for vn,co in enumerate(verts):
                         skey.data[vn].co = co
-                    skey.slider_min = GS.customMin
-                    skey.slider_max = GS.customMax
+                    skey.slider_min = self.min
+                    skey.slider_max = self.max
                     print("Morph created for %s" % sname)
                     if self.usePropDrivers and rig:
                         fcu = skey.driver_add("value")

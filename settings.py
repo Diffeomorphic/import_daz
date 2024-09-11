@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import os
 import sys
 from collections import OrderedDict
@@ -102,16 +101,10 @@ class GlobalSettings:
         self.useLayeredShells = True
 
         self.useStrengthAdjusters = 'NONE'
-        self.customMin = -1.0
-        self.customMax = 1.0
-        self.sliderMultiplier = 1.0
-        self.finalMultiplier = 1.0
-        self.finalLimits = 'DAZ'
-        self.sliderLimits = 'DAZ'
+        self.morphLimits = 'SOFT'
         self.showFinalProps = False
         self.showUsedPropsOnly = False
         self.showInTerminal = True
-        self.useShapekeys = True
         self.useShapeCats = True
         self.useMuteDrivers = False
         self.ercMethod = 'NONE'

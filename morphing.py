@@ -1367,14 +1367,9 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.message = None
         self.isJcm = False
         self.stripPrefix = ""
-        useShapekeys = GS.useShapekeys
-        GS.useShapekeys = (not self.ignoreHdMorphs)
-        try:
-            self.loadMorphType(context, self.useUnits, "Units", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
-            self.loadMorphType(context, self.useExpressions, "Expressions", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
-            self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
-        finally:
-            GS.useShapekeys = useShapekeys
+        self.loadMorphType(context, self.useUnits, "Units", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+        self.loadMorphType(context, self.useExpressions, "Expressions", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+        self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
         self.loadMorphType(context, self.useHead, "Head", "Face")
         self.loadMorphType(context, self.useFacs, "Facs", "Face")
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")

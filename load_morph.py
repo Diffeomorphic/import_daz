@@ -335,7 +335,6 @@ class LoadMorph(DriverUser):
         if not (isinstance(asset, Morph) and
                 self.mesh and
                 asset.deltas and
-                GS.useShapekeys and
                 not self.onlyProperties):
             return None,True
 
@@ -521,20 +520,20 @@ class LoadMorph(DriverUser):
                   raw in self.obj.keys()):
                 return final
             if skey and not visible:
-                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
+                self.setFloatLimits(self.amt, final, asset, skey, False)
                 return final
             if asset.type == "bool":
                 setBoolProp(self.obj, raw, asset.value, True)
                 setBoolProp(self.amt, final, asset.value, False)
             elif asset.type == "float" or asset.type == "alias":
-                self.setFloatLimits(self.obj, raw, GS.sliderLimits, asset, None, True)
-                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
+                self.setFloatLimits(self.obj, raw, asset, None, True)
+                self.setFloatLimits(self.amt, final, asset, skey, False)
             elif asset.type == "int":
                 self.obj[raw] = asset.value
                 self.amt[final] = asset.value
             else:
-                self.setFloatLimits(self.obj, raw, GS.sliderLimits, asset, None, True)
-                self.setFloatLimits(self.amt, final, GS.finalLimits, asset, skey, False)
+                self.setFloatLimits(self.obj, raw, asset, None, True)
+                self.setFloatLimits(self.amt, final, asset, skey, False)
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset))
             if visible:
                 if self.useProtected:
@@ -544,43 +543,33 @@ class LoadMorph(DriverUser):
         return final
 
 
-    def setFloatLimits(self, rna, prop, limits, asset, skey, ovr):
+    def setFloatLimits(self, rna, prop, asset, skey, ovr):
         value = asset.value
         baseprop = prop.split(":", 1)[0]
         if ((self.obj and baseprop in self.obj.DazBaked.keys()) or
             baseprop in ALWAYS_BAKED):
             value = 0
             print("Baked %s = 0" % baseprop)
-        if limits == 'DAZ':
-            if ovr:
-                min = GS.sliderMultiplier * asset.min
-                max = GS.sliderMultiplier * asset.max
-            else:
-                min = GS.finalMultiplier * asset.min
-                max = GS.finalMultiplier * asset.max
-            setFloatProp(rna, prop, value, min, max, ovr)
-        elif limits == 'CUSTOM':
-            setFloatProp(rna, prop, value, GS.customMin, GS.customMax, ovr)
+        if GS.morphLimits == 'NONE':
+            min = max = None
+        elif ovr or GS.morphLimits == 'HARD':
+            min = asset.min
+            max = asset.max
         else:
-            setFloatProp(rna, prop, value, None, None, ovr)
+            min = 10 * asset.min
+            max = 10 * asset.max
+        setFloatProp(rna, prop, value, min, max, ovr)
         if skey:
             self.setShapeLimits(skey, asset)
 
 
     def setShapeLimits(self, skey, asset):
-        limits = 'NONE'
-        if self.rig is None and not GS.useMeshDrivers:
-            limits = GS.finalLimits
-        if limits == 'DAZ':
-            if self.obj:
-                skey.slider_min = GS.finalMultiplier * asset.min
-                skey.slider_max = GS.finalMultiplier * asset.max
-            else:
-                skey.slider_min = asset.min
-                skey.slider_max = asset.max
-        elif limits == 'CUSTOM':
-            skey.slider_min = GS.customMin
-            skey.slider_max = GS.customMax
+        if GS.morphLimits == 'NONE':
+            skey.slider_min = -10
+            skey.slider_max = 10
+        elif self.obj is None or GS.morphLimits == 'HARD':
+            skey.slider_min = asset.min
+            skey.slider_max = asset.max
         else:
             skey.slider_min = -10
             skey.slider_max = 10
