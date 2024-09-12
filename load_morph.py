@@ -558,8 +558,8 @@ class LoadMorph(DriverUser):
             min = 10 * asset.min
             max = 10 * asset.max
         else:
-            min = asset.min
-            max = asset.max
+            min = GS.sliderMultiplier * asset.min
+            max = GS.sliderMultiplier * asset.max
         setFloatProp(rna, prop, value, min, max, ovr)
         if skey:
             self.setShapeLimits(skey, asset)
@@ -572,8 +572,8 @@ class LoadMorph(DriverUser):
             skey.slider_min = -10
             skey.slider_max = 10
         else:
-            skey.slider_min = asset.min
-            skey.slider_max = asset.max
+            skey.slider_min = GS.sliderMultiplier * asset.min
+            skey.slider_max = GS.sliderMultiplier * asset.max
 
 
     def makeValueFormula(self, output, expr):

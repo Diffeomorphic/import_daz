@@ -332,6 +332,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "DAZ Limits",
         description = "Use DAZ limits for morphs")
 
+    sliderMultiplier : FloatProperty(
+        name = "Slider Multiplier",
+        description = "Multiply the min and max values for sliders with this factor",
+        min = 0.0, max = 10.0)
+
     showFinalProps : BoolProperty(
         name = "Show Final Morph Values",
         description = "Display the \"final\" values of morphs")
@@ -758,6 +763,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useMakeHiddenSliders")
         box.prop(self, "useBakedMorphs")
         box.prop(self, "useDazLimits")
+        box.prop(self, "sliderMultiplier")
         box.prop(self, "showFinalProps")
         box.prop(self, "showUsedPropsOnly")
         box.prop(self, "showInTerminal")
