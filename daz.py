@@ -529,7 +529,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Armature",
         description = "Create armatures for imported figures")
 
-    useQuaternions : BoolProperty(
+    useQuats : BoolProperty(
         name = "Quaternions",
         description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
 
@@ -709,8 +709,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Meshes")
         box.prop(self, "shellMethod")
-        box.prop(self, "useTriaxImprove")
-        box.prop(self, "useBulgeWeights")
         box.prop(self, "useHighDef")
         box.prop(self, "useMultires")
         box.prop(self, "keepBaseMesh")
@@ -732,7 +730,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
-        box.prop(self, "useQuaternions")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
         box.prop(self, "useLockRot")
@@ -742,19 +739,16 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useBoneColors")
 
         box = col.box()
-        box.label(text = "Presets")
-        box.prop(self, "author")
-        box.prop(self, "email")
-        box.prop(self, "website")
-
-        box = col.box()
         box.label(text = "Debugging")
         box.prop(self, "zup")
         box.prop(self, "unflipped")
         box.prop(self, "useDump")
         box.prop(self, "usePruneNodes")
+        box.prop(self, "useQuats")
+        box.prop(self, "useTriaxImprove")
         box.prop(self, "keepTriaxWeights")
         box.prop(self, "useTriaxApply")
+        box.prop(self, "useBulgeWeights")
 
         col = split.column()
         box = col.box()
@@ -775,6 +769,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useModifiedMesh")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
+
+        box = col.box()
+        box.label(text = "Presets")
+        box.prop(self, "author")
+        box.prop(self, "email")
+        box.prop(self, "website")
 
         col = split.column()
         box = col.box()

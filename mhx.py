@@ -486,6 +486,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     bl_options = {'UNDO', 'PRESET'}
 
     gizmoFile = "mhx"
+    useQuaternions = False
 
     addTweakBones : BoolProperty(
         name = "Tweak Bones",
@@ -501,11 +502,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         name = "Pole Targets",
         description = "Use pole targets for IK.\nEnable for perfect FK/IK snapping",
         default = False)
-
-    useQuaternions : BoolProperty(
-        name = "Quaternions",
-        description = "Use quaternions for ball-and-socket joints (shoulders and hips).\nDisable for backward compatibility",
-        default = True)
 
     useStretch : BoolProperty(
         name = "Stretchy Limbs",
@@ -571,7 +567,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "elbowParent")
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
-        self.layout.prop(self, "useQuaternions")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
         self.layout.prop(self, "useAnkleIk")
