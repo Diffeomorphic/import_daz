@@ -100,7 +100,7 @@ class DAZ_OT_SaveSettingsFile(bpy.types.Operator, SingleFile, JsonExportFile):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        GS.saveSettings(self.filepath)
+        GS.saveSettings(context, self.filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -153,7 +153,7 @@ class DAZ_OT_LoadRootPaths(bpy.types.Operator, SingleFile, JsonFile):
         if struct:
             print("Load root paths from", self.filepath)
             GS.readDazPaths(struct, self)
-            GS.saveSettings(GS.getSettingsPath())
+            GS.saveSettings(context)
             try:
                 global theGlobalDialog
                 if theGlobalDialog:
@@ -185,7 +185,7 @@ class DAZ_OT_AddContentDirs(bpy.types.Operator, SingleFile):
                 print("Add", folder)
                 change = True
                 GS.contentDirs.append(folder)
-        GS.saveSettings(GS.getSettingsPath())
+        GS.saveSettings(context)
         return {'FINISHED'}
 
 
@@ -214,15 +214,32 @@ class DAZ_OT_LoadSettingsFile(bpy.types.Operator, SingleFile, JsonFile):
     def execute(self, context):
         try:
             GS.loadSettings(self.filepath)
-            GS.saveSettings(GS.getSettingsPath())
+            GS.saveSettings(context)
         except DazError:
             handleDazError(context)
-        print("Settings file %s saved" % self.filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
         self.properties.filepath = GS.settingsDir
         return SingleFile.invoke(self, context, event)
+
+#-------------------------------------------------------------
+#   Update settings file
+#-------------------------------------------------------------
+
+class DAZ_OT_UpdateSettings(bpy.types.Operator):
+    bl_idname = "daz.update_settings"
+    bl_label = "Update Settings"
+    bl_description = "Update settings from file"
+
+    def execute(self, context):
+        try:
+            GS.getSettingsDir(context)
+            filepath = GS.getSettingsPath()
+            GS.loadSettings(filepath)
+        except DazError:
+            handleDazError(context)
+        return {'FINISHED'}
 
 
 def showBox(scn, attr, layout):
@@ -783,7 +800,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     def run(self, context):
         GS.fromDialog(self)
-        GS.saveSettings(GS.getSettingsPath())
+        GS.saveSettings(context)
 
     def invoke(self, context, event):
         global theGlobalDialog
@@ -810,6 +827,7 @@ classes = [
     DAZ_OT_AddContentDirs,
     DAZ_OT_SaveSettingsFile,
     DAZ_OT_LoadSettingsFile,
+    DAZ_OT_UpdateSettings,
     DAZ_OT_GlobalSettings,
 
     ErrorOperator

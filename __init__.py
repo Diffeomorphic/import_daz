@@ -85,6 +85,9 @@ class DazPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
+        self.layout.operator("daz.update_settings")
+        self.layout.operator("daz.load_settings_file")
+        self.layout.operator("daz.save_settings_file")
 
 #----------------------------------------------------------
 #   Register

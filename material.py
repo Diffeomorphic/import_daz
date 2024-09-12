@@ -2126,8 +2126,8 @@ def checkSetting(attr, op, val, minval, first, header):
         return False,minval
 
 
-class DAZ_OT_UpdateSettings(DazOperator):
-    bl_idname = "daz.update_settings"
+class DAZ_OT_UpdateRenderSettings(DazOperator):
+    bl_idname = "daz.update_render_settings"
     bl_label = "Update Render Settings"
     bl_description = "Update render and light settings if they are inadequate"
     bl_options = {'UNDO'}
@@ -2205,7 +2205,7 @@ classes = [
     DAZ_OT_PruneNodeTrees,
     DAZ_OT_ChangeResolution,
     DAZ_OT_ResizeTextures,
-    DAZ_OT_UpdateSettings,
+    DAZ_OT_UpdateRenderSettings,
     DAZ_OT_StripMaterialNames,
     DAZ_OT_SortMaterialsByName,
 ]

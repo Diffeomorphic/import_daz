@@ -91,7 +91,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Materials"
 
     def draw(self, context):
-        self.layout.operator("daz.update_settings")
+        self.layout.operator("daz.update_render_settings")
         self.layout.operator("daz.save_local_textures")
         self.layout.operator("daz.resize_textures")
         self.layout.operator("daz.change_resolution")
@@ -400,10 +400,6 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         ob = context.object
         scn = context.scene
         layout = self.layout
-        layout.operator("daz.save_settings_file")
-        layout.operator("daz.load_settings_file")
-        layout.operator("daz.add_content_dirs")
-        layout.separator()
         layout.operator("daz.scan_absolute_paths")
         layout.operator("daz.scan_morph_database")
         layout.operator("daz.scan_morph_directory")
@@ -460,6 +456,7 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         layout.operator("daz.inspect_world_matrix")
         layout.operator("daz.select_parent_verts")
         layout.operator("daz.enable_all_layers")
+        layout.operator("daz.add_content_dirs")
 
 
     def propRow(self, layout, rna, prop, text=None):

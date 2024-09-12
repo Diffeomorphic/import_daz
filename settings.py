@@ -248,10 +248,12 @@ class GlobalSettings:
         from .load_json import loadJson
         struct = loadJson(filepath)
         if struct and "daz-settings" in struct.keys():
-            print("Load settings from", filepath)
+            print("Load settings from %s" % filepath)
             settings = struct["daz-settings"]
             for attr,value in settings.items():
-                if hasattr(self, attr) and isinstance(value, (float, int, bool, str)):
+                if (hasattr(self, attr) and
+                    isinstance(value, (float, int, bool, str)) and
+                    attr not in ["settingsDir"]):
                     setattr(self, attr, value)
             if "contentDirs" in settings.keys():
                 self.contentDirs = readNewDirs("contentDirs", settings)
@@ -263,6 +265,7 @@ class GlobalSettings:
                 self.mdlDirs = readOldDirs("DazMDL", settings)
                 self.cloudDirs = readOldDirs("DazCloud", settings)
             self.eliminateDuplicates()
+            print("Settings loaded from %s" % filepath)
             return True
         elif strict:
             from .error import DazError
@@ -334,12 +337,15 @@ class GlobalSettings:
         return paths
 
 
-    def saveSettings(self, filepath):
+    def saveSettings(self, context, filepath=None):
         def saveDirs(paths, prefix, struct):
             for n,path in enumerate(paths):
                 struct["%s%03d" % (prefix, n+1)] = self.fixPath(path)
 
         from .load_json import saveJson
+        self.getSettingsDir(context)
+        if filepath is None:
+            filepath = GS.getSettingsPath()
         struct = {}
         for attr in dir(self):
             value = getattr(self, attr)

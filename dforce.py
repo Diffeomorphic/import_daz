@@ -365,7 +365,7 @@ class Settings:
                 if key in self.props:
                     setattr(self, key, value)
 
-    def saveSettings(self):
+    def saveSettings(self, context):
         from .load_json import saveJson
         struct = {}
         for key in self.props:
@@ -392,7 +392,7 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
                 self.addCollision(ob)
             if ob.DazCloth:
                 self.addCloth(ob)
-        self.saveSettings()
+        self.saveSettings(context)
 
 #-------------------------------------------------------------
 #   Softbody
