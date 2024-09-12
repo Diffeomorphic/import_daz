@@ -66,6 +66,11 @@ from .api import *
 import sys
 import os
 
+def updateSettings(self, context):
+    GS.getSettingsDir(context)
+    filepath = GS.getSettingsPath()
+    GS.loadSettings(filepath)
+
 class DazPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
 
@@ -80,12 +85,13 @@ class DazPreferences(bpy.types.AddonPreferences):
         name = "Settings directory",
         description = "Directory holding Daz Importer global settings",
         subtype='DIR_PATH',
-        default = defaultDir
+        default = defaultDir,
+        update = updateSettings
     )
 
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
-        self.layout.operator("daz.update_settings")
+        #self.layout.operator("daz.update_settings")
         self.layout.operator("daz.load_settings_file")
         self.layout.operator("daz.save_settings_file")
 
