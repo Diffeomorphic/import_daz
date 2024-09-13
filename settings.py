@@ -75,7 +75,7 @@ class GlobalSettings:
         self.displacement_method = 'BOTH'
         self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
-        self.useQuats = True
+        self.useQuaternions = False
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 

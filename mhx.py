@@ -663,6 +663,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         #-------------------------------------------------------------
 
         showProgress(1, 25, "  Fix DAZ rig")
+        self.bendTwistGenesis = []
         bendTwistBones = list(MHX.BendTwistBones)
         bendTwistChildren = {}
         self.constraints = {}
@@ -672,23 +673,33 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             pb.driver_remove("HdOffset")
             pb.driver_remove("TlOffset")
         if rig.DazRig in ["genesis3", "genesis8"]:
+            self.bendTwistGenesis = MHX.BendTwistGenesis38
             for pb in rig.pose.bones:
                 if pb.name.endswith(("Bend", "Twist")):
                     self.storeConstraints(pb.name, pb)
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
-            showProgress(4, 25, "  Rename bones")
+            showProgress(3, 25, "  Delete bend-twist bones")
             self.deleteBendTwistDrvBones(rig)
+            showProgress(4, 25, "  Rename bones")
             self.rename2Mhx(rig)
             showProgress(5, 25, "  Join bend and twist bones")
             bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
         elif rig.DazRig == "genesis9":
+            self.bendTwistGenesis = MHX.BendTwistGenesis9
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
+            showProgress(3, 25, "  Delete bend-twist bones")
+            self.deleteBendTwistDrvBones(rig)
             showProgress(4, 25, "  Rename bones")
             self.rename2Mhx(rig)
+            showProgress(5, 25, "  Join bend and twist bones")
+            bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
+            for ob in getMeshChildren(rig):
+                self.joinVertexGroups(ob, MHX.BendTwistGenesis9)
+
         elif rig.DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
@@ -704,9 +715,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.fixHands(rig)
         showProgress(8, 25, "  Store all constraints")
         self.storeAllConstraints(rig)
-        if rig.DazRig != "genesis9":
-            showProgress(9, 25, "  Create bend and twist bones")
-            self.createBendTwists(rig, bendTwistBones, bendTwistChildren)
+        showProgress(9, 25, "  Create bend and twist bones")
+        self.createBendTwists(rig, bendTwistBones, bendTwistChildren)
         #showProgress(10, 25, "  Fix bone drivers")
         #self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
 
@@ -1533,7 +1543,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreAllConstraints(context, rig, ignore)
         if rig.DazRig not in ["genesis3", "genesis8"]:
             return
-        for bname, bendname, twistnames in MHX.BendTwistGenesis38:
+        for bname, bendname, twistnames in self.bendTwistGenesis:
             clist = self.constraints.get(bendname, [])
             cinfo = getLimitRot(clist)
             if not cinfo:

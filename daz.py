@@ -529,7 +529,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Armature",
         description = "Create armatures for imported figures")
 
-    useQuats : BoolProperty(
+    useQuaternions : BoolProperty(
         name = "Quaternions",
         description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
 
@@ -730,6 +730,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
+        box.prop(self, "useQuaternions")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
         box.prop(self, "useLockRot")
@@ -744,7 +745,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "unflipped")
         box.prop(self, "useDump")
         box.prop(self, "usePruneNodes")
-        box.prop(self, "useQuats")
         box.prop(self, "useTriaxImprove")
         box.prop(self, "keepTriaxWeights")
         box.prop(self, "useTriaxApply")

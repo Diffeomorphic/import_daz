@@ -368,7 +368,7 @@ class BoneInstance(Instance):
     def getRotationMode(self, pb, useEulers):
         if GS.unflipped:
             return self.rotation_order
-        elif GS.useQuats and pb.name in BD.SocketBones:
+        elif GS.useQuaternions and pb.name in BD.SocketBones:
             return 'QUATERNION'
         elif useEulers:
             return BD.getDefaultMode(pb)

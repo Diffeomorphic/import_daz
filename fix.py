@@ -1113,11 +1113,6 @@ class BendTwists:
                 rig.driver_remove("%s.%s" % (path, channel))
 
 
-    def joinBendTwistVGroups(self, rig, info):
-        for ob in getMeshChildren(rig):
-            self.joinVertexGroups(ob, info)
-
-
     def joinVertexGroups(self, ob, info):
         for bname, bend, twists in info:
             vgbend = ob.vertex_groups.get(bend)
