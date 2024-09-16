@@ -1851,23 +1851,18 @@ def setRestPose(ob, rig, context):
     setParent(context, ob, rig)
     if ob.parent_type != 'OBJECT' or ob.type != 'MESH':
         return
-
-    if LS.fitFile:
-        mod = getModifier(ob, 'ARMATURE')
-        if mod:
-            mod.object = rig
-    elif len(ob.vertex_groups) == 0:
+    if len(ob.vertex_groups) == 0:
         print("Mesh with no vertex groups: %s" % ob.name)
-    else:
-        try:
-            applyArmatureModifier(ob)
-            ok = True
-        except RuntimeError:
-            print("Could not apply armature to %s" % ob.name)
-            ok = False
-        if ok:
-            from .modifier import newArmatureModifier
-            newArmatureModifier(rig.name, ob, rig)
+        return
+    try:
+        applyArmatureModifier(ob)
+        ok = True
+    except RuntimeError:
+        print("Could not apply armature to %s" % ob.name)
+        ok = False
+    if ok:
+        from .modifier import newArmatureModifier
+        newArmatureModifier(rig.name, ob, rig)
 
 
 def applyArmatureModifier(ob):
