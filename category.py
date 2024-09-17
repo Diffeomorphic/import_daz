@@ -343,7 +343,7 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
         self.removeMorphType(rig, self.useFacs, "Facs")
         self.removeMorphType(rig, self.useFacsdetails, "Facsdetails")
         self.removeMorphType(rig, self.useFacsexpr, "Facsexpr")
-        self.removeMorphType(rig, self.userPowerpose, "PowerPose")
+        self.removeMorphType(rig, self.usePowerpose, "PowerPose")
         self.removeMorphType(rig, self.useBody, "Body")
         self.removeMorphType(rig, self.useJcms, "Jcms")
         self.removeMorphType(rig, self.useFlexions, "Flexions")
@@ -1198,10 +1198,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         omin = min(offsets)
         eps = 1e-2 * ob.DazScale    # eps = 0.1 mm
         if abs(omax) < eps and abs(omin) < eps:
-            #idx = skeys.key_blocks.keys().index(skey.name)
-            #ob.active_shape_key_index = idx
             ob.shape_key_remove(skey)
-            #ob.active_shape_key_index = 0
         nmod = ob.modifiers.new(rig.name, "ARMATURE")
         nmod.object = rig
         nmod.use_deform_preserve_volume = True

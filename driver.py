@@ -543,9 +543,13 @@ def getPropMinMax(rna, prop, ovr=False):
     max = 1.0
     default = 0.0
     if struct:
-        if "min" in struct.keys():
+        if "soft_min" in struct.keys():
+            min = struct["soft_min"]
+        elif "min" in struct.keys():
             min = struct["min"]
-        if "max" in struct.keys():
+        if "soft_max" in struct.keys():
+            max = struct["soft_max"]
+        elif "max" in struct.keys():
             max = struct["max"]
         if "default" in struct.keys():
             default = struct["default"]
