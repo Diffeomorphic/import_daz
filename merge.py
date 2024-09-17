@@ -1249,10 +1249,7 @@ class RigInfo:
 
 
     def getBoneKey(self, bname):
-        if self.button.useCreateDuplicates:
-            return "%s:%s" % (self.hash, bname)
-        else:
-            return bname
+        return "%s:%s" % (self.hash, bname)
 
 
     def addObjects(self, ob):
@@ -1281,8 +1278,6 @@ class RigInfo:
                 key = self.getBoneKey(pb.name)
                 extrabones.append(pb.name)
                 self.posebones[key] = PoseBoneInfo(pb)
-                if not self.button.useCreateDuplicates:
-                    mainbones.append(pb.name)
             self.bones[key] = pb.bone.use_deform
 
 
@@ -1345,20 +1340,18 @@ class RigInfo:
 
     def renameVertexGroups(self, ob):
         for key in self.editbones.keys():
-            if self.button.useCreateDuplicates:
-                _,bname = key.split(":", 1)
-            else:
-                bname = key
+            _,bname = key.split(":", 1)
             if bname in ob.vertex_groups.keys():
                 vgrp = ob.vertex_groups[bname]
                 vgrp.name = key
 
 
 class MergeRigsOptions:
-    useCreateDuplicates : BoolProperty(
-        name = "Create Duplicate Bones",
-        description = "Create separate bones if several bones with the same name are found",
-        default = True)
+    duplicateDistance : FloatProperty(
+        name = "Duplicate Distance (cm)",
+        description = "Create separate bones if several bones with the same name are found,\nand they are at least this far apart (in centimeters)",
+        min = 0.0,
+        default = 1.0)
 
     useMergeNonConforming : EnumProperty(
         items = [('NEVER', "Never", "Don't merge non-conforming bones"),
@@ -1402,7 +1395,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
         self.layout.prop(self, "separateCharacters")
         if not self.separateCharacters:
             self.layout.prop(self, "useSubrigsOnly")
-        self.layout.prop(self, "useCreateDuplicates")
+        self.layout.prop(self, "duplicateDistance")
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
         if BLENDER3:
@@ -1612,6 +1605,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                 self.reparentObjects(subinfo, subinfo.rig, adds, hdadds, removes)
             deleteObjects(context, subinfo.deletes)
         activateObject(context, rig)
+        self.combineDuplicates(rig)
         self.cleanVertexGroups(rig)
         setMode('OBJECT')
         if self.useConvertWidgets and info.foundControl:
@@ -1651,6 +1645,48 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                     for mat in ob.data.materials:
                         if mat:
                             retargetDrivers(mat.node_tree, info.rig, rig)
+
+
+    def combineDuplicates(self, rig):
+        def renameVertexGroup(rig, bname1, bname2):
+            for ob in getMeshChildren(rig):
+                vgrp = ob.vertex_groups.get(bname1)
+                if vgrp:
+                    vgrp.name = bname2
+
+        dups = {}
+        for bone in rig.data.bones:
+            words = bone.name.rsplit(":", 1)
+            if len(words) == 2:
+                bname = words[1]
+                if bname not in dups.keys():
+                    dups[bname] = []
+                dups[bname].append(bone)
+        merge = {}
+        for bname,bones in dups.items():
+            if len(bones) == 1:
+                bone = bones[0]
+                renameVertexGroup(rig, bone.name, bname)
+                bone.name = bname
+            else:
+                head = bones[0].head_local
+                diff = False
+                for bone in bones[1:]:
+                    if (bone.head_local - head).length > self.duplicateDistance * GS.scale:
+                        diff = True
+                if not diff:
+                    merge[bname] = [bone.name for bone in bones]
+                    for bone in bones:
+                        renameVertexGroup(rig, bone.name, bname)
+        if merge:
+            setMode('EDIT')
+            for bname,bnames in merge.items():
+                eb = rig.data.edit_bones[bnames[0]]
+                eb.name = bname
+                for bname in bnames[1:]:
+                    eb = rig.data.edit_bones[bname]
+                    rig.data.edit_bones.remove(eb)
+            setMode('OBJECT')
 
 
     def createNewCollections(self, rig):

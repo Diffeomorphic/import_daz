@@ -700,7 +700,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
         if self.useMergeRigs:
-            self.subprop("useCreateDuplicates")
+            self.subprop("duplicateDistance")
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
         self.layout.prop(self, "useApplyTransforms")
@@ -847,7 +847,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 print("Merge rigs")
                 bpy.ops.daz.merge_rigs(
                     useSubrigsOnly = True,
-                    useCreateDuplicates = self.useCreateDuplicates,
+                    duplicateDistance = self.duplicateDistance,
                     useMergeNonConforming = self.useMergeNonConforming)
                 mainRig = context.object
                 rigs = [mainRig]
