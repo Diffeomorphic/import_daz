@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import bpy
 
 import os
@@ -1633,6 +1631,8 @@ class ChangeResolution(HiddenTextureUser):
 
 
     def getTreeTextures(self, tree, paths, resolveUDIM):
+        if tree is None:
+            return
         for node in tree.nodes.values():
             if node.type == 'TEX_IMAGE' and node.image:
                 img = node.image
@@ -1680,6 +1680,8 @@ class ChangeResolution(HiddenTextureUser):
 
 
     def resizeTree(self, tree):
+        if tree is None:
+            return
         for node in tree.nodes.values():
             if node.type == 'TEX_IMAGE':
                 img = self.replaceImage(node.image)

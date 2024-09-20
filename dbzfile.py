@@ -83,7 +83,8 @@ class DBZInfo:
     def fitBone(self, inst, dbzrig):
         from .figure import FigureInstance
         from .bone import BoneInstance
-        if inst.node.name not in dbzrig.restdata.keys():
+        if (dbzrig is None or
+            inst.node.name not in dbzrig.restdata.keys()):
             return
         inst.restdata = dbzrig.restdata[inst.node.name]
         #transform = dbzrig.transforms[inst.node.name]
