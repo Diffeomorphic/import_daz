@@ -192,9 +192,11 @@ class Formula:
             if key in ignore:
                 pass
             elif type == "value":
-                if expr.prop is None:
-                    expr.prop = ExprTarget(key, type, comp)
-                expr.prop.mults.append(key)
+                if not expr.props:
+                    target = ExprTarget(key, type, comp)
+                    expr.props.append(target)
+                target = expr.props[0]
+                target.mults.append(key)
             elif comp >= 0 and rig:
                 bname = getMappedBone(key, rig, mesh)
                 if bname in rig.pose.bones.keys():
@@ -208,12 +210,8 @@ class Formula:
         opers = formula["operations"]
         prop,type,path,comp = self.evalUrl(opers[0], rig)
         if type == "value":
-            if expr.prop is None:
-                target = expr.prop = ExprTarget(prop, type, -1)
-            elif expr.prop2 is None:
-                target = expr.prop2 = ExprTarget(prop, type, -1)
-            else:
-                target = expr.prop3 = ExprTarget(prop, type, -1)
+            target = ExprTarget(prop, type, -1)
+            expr.props.append(target)
         else:
             bname = getMappedBone(prop, rig, mesh)
             if expr.bone is None:
@@ -368,20 +366,19 @@ class ExprTarget:
 
 class Expression:
     def __init__(self):
-        self.prop = None
-        self.prop2 = None
-        self.prop3 = None
+        self.props = []
         self.bone = None
         self.bone2 = None
         self.path = None
 
     def __repr__(self):
-        return "<Expression\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s>" % (self.prop, self.prop2, self.prop3, self.bone, self.bone2, self.path)
+        return "<Expression\n  %s\n  %s\n  %s\n  %s>" % (self.props, self.bone, self.bone2, self.path)
 
     def multFactors(self, factor):
-        for trg in [self.prop, self.bone]:
-            if trg:
-                trg.factor *= factor
+        for target in self.props:
+            target.factor *= factor
+        if self.bone:
+            self.bone.factor *= factor
 
 
 def setFormulaExpr(exprs, output, path, channel, idx, fileref=""):

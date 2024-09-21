@@ -247,8 +247,8 @@ class Scanner:
                     ref,channel = value
                 elif key == "value":
                     expr = value[0]
-                    target = expr.prop
-                    if target:
+                    if expr.props:
+                        target = expr.props[0]
                         prop = normKey(target.key)
                         info[normKey(output)] = (target.points if target.points else target.factor)
                 elif key in ["translation", "rotation", "scale", "general_scale"]:

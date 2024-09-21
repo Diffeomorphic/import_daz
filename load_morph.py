@@ -438,8 +438,9 @@ class LoadMorph(DriverUser):
                 print("Alias is same: %s" % prop)
                 return
             expr = setFormulaExpr(exprs, alias, "value", "value", 0)
-            target = expr.prop = ExprTarget(prop, "value", -1)
+            target = ExprTarget(prop, "value", -1)
             target.factor = 1
+            expr.props.append(target)
         else:
             return False
         if not exprs:
@@ -578,16 +579,13 @@ class LoadMorph(DriverUser):
 
     def makeValueFormula(self, output, expr):
         output = self.getUniqueName(output)
-        target = expr.prop
-        if target:
+        if expr.props:
             self.addNewProp(output)
-            prop = self.getUniqueName(target.key)
-            factor = target.getFactor(True)
-            self.propDrivers[output].append((prop, target))
-            target2 = expr.prop2
-            if target2:
-                prop2 = self.getUniqueName(target2.key)
-                self.propDrivers[output].append((prop2, target2))
+            for target in expr.props:
+                prop = self.getUniqueName(target.key)
+                factor = target.getFactor(True)
+                self.propDrivers[output].append((prop, target))
+            target = expr.props[0]
             for mult in target.mults:
                 if isinstance(mult, str):
                     mult = self.getUniqueName(mult)
@@ -614,7 +612,7 @@ class LoadMorph(DriverUser):
             pb = self.rig
         else:
             pb = self.rig.pose.bones[bname]
-        target = expr.prop
+        target = expr.props[0]
         factor = target.getFactor(False)
         raw = rawProp(self.getUniqueName(target.key))
         final = self.addNewProp(raw)
@@ -1465,14 +1463,12 @@ class LoadMorph(DriverUser):
                     fcu.driver.type = 'SCRIPTED'
                     removeModifiers(fcu)
                     string = ""
-                    for trg,vname in [
-                        (expr.prop, "A"),
-                        (expr.prop2, "B"),
-                        (expr.prop3, "C")]:
-                        if trg:
-                            factor = flips[idx] * scale * trg.getFactor()
-                            string += "+%g*%s" % (factor, vname)
-                            self.addPathVar(fcu, vname, self.obj, propRef(trg.key))
+                    vname = "A"
+                    for target in expr.props:
+                        factor = flips[idx] * scale * target.getFactor()
+                        string += "+%g*%s" % (factor, vname)
+                        self.addPathVar(fcu, vname, self.obj, propRef(target.key))
+                        vname = nextLetter(vname)
                     print("SS", string)
                     fcu.driver.expression = string
 

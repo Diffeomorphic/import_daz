@@ -514,8 +514,9 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
         lm.rig = rig
         lm.initAll()
         expr = Expression()
-        expr.prop = ExprTarget(dbz.name, "value", -1)
-        expr.prop.factor = 1
+        target = ExprTarget(dbz.name, "value", -1)
+        target.factor = 1
+        expr.props.append(target)
         try:
             lm.createTmp()
             if GS.ercMethod == 'TRANSLATION':
@@ -537,8 +538,9 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
             self.builtBones[pb.name] = True
             rdata = restdata[pb.name]
             vec = Vector(rdata.head) - b2d(pb.bone.head_local)
+            target = expr.props[0]
             for idx,comp in enumerate(vec):
-                expr.prop.factor = comp
+                target.factor = comp
                 lm.makeErcFormula(pb.name, idx, expr)
         if lm.ercBones:
             lm.makeErcMorphs()
@@ -559,8 +561,9 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
             self.builtBones[pb.name] = True
             rdata = restdata[pb.name]
             vec = Vector(rdata.head) - b2d(pb.bone.head_local)
+            target = expr.props[0]
             for idx,comp in enumerate(vec):
-                expr.prop.factor = comp
+                target.factor = comp
                 lm.makeOffsetFormula("HdOffset", pb.name, idx, expr)
 
 

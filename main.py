@@ -243,8 +243,6 @@ class DazLoader:
             print("Load baked morphs to %s" % ob.name)
             if not isinstance(ob, bpy.types.Object):
                 continue
-            print("XX", key)
-            print("NN", namepaths)
             lm = BakedMorphLoader()
             lm.rig = lm.obj = None
             lm.meshes = []
@@ -274,10 +272,10 @@ class DazLoader:
                 item.text = label
 
             print("KEY", key)
-            asset = parents.get(key)
-            if asset:
-                print("FF", asset)
-                exprs,rig2 = asset.evalFormulas(ob, None, True)
+            node = parents.get(key)
+            if node:
+                print("FF", node)
+                exprs,rig2 = node.evalFormulas(ob, None, True)
                 for driven,expr in exprs.items():
                     if driven == "RIG":
                         lm.addObjectDrivers(ob, expr)
