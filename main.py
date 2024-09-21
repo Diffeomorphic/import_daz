@@ -201,9 +201,18 @@ class DazLoader:
 
 
     def postloadMorphs(self, context, filepath):
+        def getPath(asset):
+            if asset.url[0] == "#":
+                return filepath
+            else:
+                url = asset.url.rsplit("#")[0]
+                return GS.getAbsPath(url)
+
         namepathss = {}
         objects = {}
         props = {}
+        formulass = {}
+        parents = {}
         for asset in LS.bakedmorphs.values():
             parent = asset.getMorphParent()
             if parent:
@@ -212,21 +221,20 @@ class DazLoader:
                     namepathss[key] = []
                     objects[key] = parent.rna
                     props[key] = {}
-                if asset.url[0] == "#":
-                    path = filepath
-                else:
-                    url = asset.url.rsplit("#")[0]
-                    path = GS.getAbsPath(url)
+                    if asset.parent and asset.parent.formulas:
+                        parents[key] = asset.parent
+                        formulass[key] = asset.parent.formulas
+                path = getPath(asset)
                 namepathss[key].append((asset.name, path, 'BAKED'))
                 props[key][asset.name] = (asset.label, asset.value)
         settings = LS.getSettings()
         try:
-            self.importBakedMorphs(context, namepathss, objects, props)
+            self.importBakedMorphs(context, namepathss, objects, props, parents)
         finally:
             LS.restoreSettings(settings)
 
 
-    def importBakedMorphs(self, context, namepathss, objects, props):
+    def importBakedMorphs(self, context, namepathss, objects, props, parents):
         from .morphing import BakedMorphLoader
         from .driver import setProtected
         from .selector import setActivated
@@ -235,6 +243,8 @@ class DazLoader:
             print("Load baked morphs to %s" % ob.name)
             if not isinstance(ob, bpy.types.Object):
                 continue
+            print("XX", key)
+            print("NN", namepaths)
             lm = BakedMorphLoader()
             lm.rig = lm.obj = None
             lm.meshes = []
@@ -253,6 +263,7 @@ class DazLoader:
                 print("Bad object (importBakedMorphs): %s" % ob)
                 continue
             lm.getAllMorphs(namepaths, context)
+
             for prop,data in props[key].items():
                 label,value = data
                 lm.obj[prop] = value
@@ -261,6 +272,15 @@ class DazLoader:
                 item = lm.obj.DazBaked.add()
                 item.name = prop
                 item.text = label
+
+            print("KEY", key)
+            asset = parents.get(key)
+            if asset:
+                print("FF", asset)
+                exprs,rig2 = asset.evalFormulas(ob, None, True)
+                for driven,expr in exprs.items():
+                    if driven == "RIG":
+                        lm.addObjectDrivers(ob, expr)
 
 #------------------------------------------------------------------
 #   Import DAZ

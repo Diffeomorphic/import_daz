@@ -59,21 +59,30 @@ def parseChannelAsset(asset, struct):
 
 
 def parseMorph(asset, struct, multi):
+    from .node import Node
     morphs = []
-    if "modifier_library" in struct.keys():
-        for mstruct in struct["modifier_library"]:
-            if "morph" in mstruct.keys():
-                morph = asset.parseTypedAsset(mstruct, Morph)
-            elif "formulas" in mstruct.keys():
-                morph = asset.parseTypedAsset(mstruct, FormulaAsset)
-            elif "channel" in mstruct.keys():
-                morph = parseChannelAsset(asset, mstruct)
-            else:
-                continue
-            if multi:
-                morphs.append(morph)
-            else:
-                return morph
+    for mstruct in struct.get("modifier_library", {}):
+        if "morph" in mstruct.keys():
+            morph = asset.parseTypedAsset(mstruct, Morph)
+        elif "formulas" in mstruct.keys():
+            morph = asset.parseTypedAsset(mstruct, FormulaAsset)
+        elif "channel" in mstruct.keys():
+            morph = parseChannelAsset(asset, mstruct)
+        else:
+            continue
+        if multi:
+            morphs.append(morph)
+        else:
+            return morph
+    for nstruct in struct.get("node_library", {}):
+        if "formulas" in nstruct.keys():
+            morph = asset.parseTypedAsset(nstruct, Node)
+        else:
+            continue
+        if multi:
+            morphs.append(morph)
+        else:
+            return morph
     if multi:
         return morphs
 
@@ -287,8 +296,8 @@ class ChannelAsset(Modifier):
         Modifier.__init__(self, fileref)
         self.type = "float"
         self.value = 0
-        self.min = None
-        self.max = None
+        self.min = 0
+        self.max = 1
 
     def __repr__(self):
         return ("<Channel %s %s %s>" % (self.id, self.type, self.value))
@@ -867,6 +876,11 @@ class FormulaAsset(Formula, ChannelAsset):
             Formula.postbuild(self, context, inst)
         elif (LS.fitFile or LS.useMorph) and inst:
             self.buildBakedFormulas(context, inst)
+
+
+    def fromNode(self, node):
+        self.formulas = node.formulas
+        self.name = node.name
 
 #-------------------------------------------------------------
 #   Morph

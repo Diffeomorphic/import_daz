@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import bpy
 
 import math
@@ -212,8 +210,10 @@ class Formula:
         if type == "value":
             if expr.prop is None:
                 target = expr.prop = ExprTarget(prop, type, -1)
-            else:
+            elif expr.prop2 is None:
                 target = expr.prop2 = ExprTarget(prop, type, -1)
+            else:
+                target = expr.prop3 = ExprTarget(prop, type, -1)
         else:
             bname = getMappedBone(prop, rig, mesh)
             if expr.bone is None:
@@ -343,7 +343,7 @@ class ExprTarget:
         return "<ExprTarget %s %s %d %.3f %s %s>" % (self.key, self.type, self.comp, self.factor, self.points, self.mults)
 
 
-    def getFactor(self, ignoreSpline):
+    def getFactor(self, ignoreSpline=True):
         if (not self.points or
             (ignoreSpline and self.spline == "Linear")):
             return self.factor
@@ -370,12 +370,13 @@ class Expression:
     def __init__(self):
         self.prop = None
         self.prop2 = None
+        self.prop3 = None
         self.bone = None
         self.bone2 = None
         self.path = None
 
     def __repr__(self):
-        return "<Expression\n  %s\n  %s\n  %s\n  %s\n  %s>" % (self.prop, self.prop2, self.bone, self.bone2, self.path)
+        return "<Expression\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s>" % (self.prop, self.prop2, self.prop3, self.bone, self.bone2, self.path)
 
     def multFactors(self, factor):
         for trg in [self.prop, self.bone]:

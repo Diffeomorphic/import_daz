@@ -1445,6 +1445,37 @@ class LoadMorph(DriverUser):
             reportError("Unknown channel: %s" % channel)
             return None
 
+
+    def addObjectDrivers(self, ob, exprs):
+        from .driver import removeModifiers
+        mappings = {
+            "translation" : ("location", [0,2,1], [1,1,-1], GS.scale),
+            "rotation" : ("rotation_euler", [0,2,1], [1,1,-1], D),
+            "scale" : ("scale", [0,2,1], [1,1,1], 1.0),
+        }
+
+        for key,mapping in mappings.items():
+            moves = exprs.get(key)
+            if moves:
+                path, bindex, flips, scale = mapping
+                for idx,expr in moves.items():
+                    idx2 = bindex[idx]
+                    ob.driver_remove(path, idx2)
+                    fcu = ob.driver_add(path, idx2)
+                    fcu.driver.type = 'SCRIPTED'
+                    removeModifiers(fcu)
+                    string = ""
+                    for trg,vname in [
+                        (expr.prop, "A"),
+                        (expr.prop2, "B"),
+                        (expr.prop3, "C")]:
+                        if trg:
+                            factor = flips[idx] * scale * trg.getFactor()
+                            string += "+%g*%s" % (factor, vname)
+                            self.addPathVar(fcu, vname, self.obj, propRef(trg.key))
+                    print("SS", string)
+                    fcu.driver.expression = string
+
     #------------------------------------------------------------------
     #   Build sum drivers
     #   For Xin's non-python drivers
