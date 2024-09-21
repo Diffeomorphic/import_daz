@@ -151,6 +151,7 @@ class Instance(Accessor, Channels, SimNode):
         self.isStrandHair = False
         self.ignore = False
         self.instanceTarget = None
+        self.instances = []
         self.shellNode = None
         self.hdobject = None
         #self.modifiers = {}
@@ -197,7 +198,9 @@ class Instance(Accessor, Channels, SimNode):
         self.updateMatrices()
         for key,channel in self.channels.items():
             if key == "Instance Target":
-                self.instanceTarget = self.getChannelInstance(channel)
+                target = self.instanceTarget = self.getChannelInstance(channel)
+                if target:
+                    target.instances.append(self)
             elif key == "Shell Node":
                 self.shellNode = self.getChannelInstance(channel)
             elif key == "Visible" and GS.ignoreHiddenObjects:
@@ -378,7 +381,6 @@ class Instance(Accessor, Channels, SimNode):
         LS.collection.objects.link(empty)
         LS.refObjects[ob.name] = (self, empty, self.refcoll)
         unlinkAll(ob, False)
-        self.rna = empty
         self.refcoll.objects.link(ob)
         return self.refcoll
 
@@ -717,13 +719,13 @@ def createHiddenCollection(context, ob):
 
 def finishNodeInstances(context):
     wmats = {}
-    for node,empty,refcoll in list(LS.refObjects.values()):
-        ob = node.rna
+    for inst,empty,refcoll in list(LS.refObjects.values()):
+        ob = inst.rna
         wmats[empty.name] = ob.matrix_world.copy()
-        node.linkRefChildren(refcoll, node.rna, context, wmats)
+        inst.linkRefChildren(refcoll, inst.rna, context, wmats)
 
-    for node,empty,refcoll in LS.refObjects.values():
-        ob = node.rna
+    for inst,empty,refcoll in LS.refObjects.values():
+        ob = inst.rna
         empty.parent = ob.parent
         empty.parent_type = ob.parent_type
         ob.parent = None
@@ -732,14 +734,17 @@ def finishNodeInstances(context):
                 child.parent = empty
 
     unit = Matrix()
-    for node,empty,refcoll in LS.refObjects.values():
-        ob = node.rna
+    for inst,empty,refcoll in LS.refObjects.values():
+        ob = inst.rna
         setWorldMatrix(ob, unit)
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
             if (child.name not in refcoll.objects and
                 child.name in wmats.keys()):
                 setWorldMatrix(child, wmats[child.name])
+
+    for inst,empty,refcoll in LS.refObjects.values():
+        inst.rna = empty
 
     if LS.refColl:
         layer = getLayerCollection(context, LS.refColl)

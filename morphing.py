@@ -765,6 +765,39 @@ class BakedMorphLoader(MorphLoader):
         pass
 
 
+def postloadMorphs(context, filepath):
+    def getPath(asset):
+        if asset.url[0] == "#":
+            return filepath
+        else:
+            url = asset.url.rsplit("#")[0]
+            return GS.getAbsPath(url)
+
+    from .node import Node
+    namepathss = {}
+    objects = {}
+    props = {}
+    parents = {}
+    for asset in LS.bakedmorphs.values():
+        parent = asset.getMorphParent()
+        if parent:
+            key = parent.id
+            if key not in objects.keys():
+                namepathss[key] = []
+                objects[key] = parent.rna
+                props[key] = {}
+                if isinstance(asset.parent, Node) and asset.parent.formulas:
+                    parents[key] = parent
+            path = getPath(asset)
+            namepathss[key].append((asset.name, path, 'BAKED'))
+            props[key][asset.name] = (asset.label, asset.value)
+    settings = LS.getSettings()
+    try:
+        importBakedMorphs(context, namepathss, objects, props, parents)
+    finally:
+        LS.restoreSettings(settings)
+
+
 def importBakedMorphs(context, namepathss, objects, props, parents):
     from .driver import setProtected
     from .selector import setActivated
@@ -790,15 +823,16 @@ def importBakedMorphs(context, namepathss, objects, props, parents):
             return None
         return lm
 
-    def addProps(props, ob, lm):
+    def addProps(props, ob, lm, factor):
         for prop,data in props.items():
             label,value = data
-            lm.obj[prop] = value
-            setProtected(lm.obj, prop, True)
-            setActivated(lm.obj, prop, False)
-            item = lm.obj.DazBaked.add()
-            item.name = prop
-            item.text = label
+            lm.obj[prop] = value*factor
+            setProtected(ob, prop, True)
+            setActivated(ob, prop, False)
+            if prop not in ob.DazBaked.keys():
+                item = ob.DazBaked.add()
+                item.name = prop
+                item.text = label
 
     def addFormulas(inst, node, ob, lm):
         exprs,rig2 = node.evalFormulas(ob, None, True)
@@ -815,22 +849,31 @@ def importBakedMorphs(context, namepathss, objects, props, parents):
         if lm is None:
             continue
         lm.getAllMorphs(namepaths, context)
-        addProps(props[key], ob, lm)
-        print("KEY", key)
+        addProps(props[key], ob, lm, 1)
+        taken = []
         if key in parents.keys():
             inst = parents[key]
-            print("II", inst)
             if isinstance(inst, Instance):
+                taken.append(inst)
                 node = inst.node
                 addFormulas(inst, node, ob, lm)
                 inst2 = inst.instanceTarget
-                print("II2", inst2)
-                if inst2:
+                if inst.instances:
+                    insts = inst.instances
+                elif inst2:
+                    insts = [inst2] + [inst3 for inst3 in inst2.instances if inst3 != inst]
+                else:
+                    insts = []
+                print("LII", insts)
+                for inst2 in insts:
+                    if inst2 in taken:
+                        continue
+                    taken.append(inst2)
                     ob2 = inst2.rna
                     lm2 = setupMorphLoader(ob2)
                     if lm2 is not None:
                         lm2.getAllMorphs(namepaths, ob2)
-                        addProps(props[key], ob2, lm2)
+                        addProps(props[key], ob2, lm2, 0)
                         addFormulas(inst2, node, ob2, lm2)
 
 #------------------------------------------------------------------

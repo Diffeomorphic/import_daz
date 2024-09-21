@@ -1472,7 +1472,6 @@ class LoadMorph(DriverUser):
                         factor = flips[idx] * scale * target.getFactor()
                         string += "+%g*%s" % (factor, vname)
                         self.addPathVar(fcu, vname, self.obj, propRef(target.key))
-                    print("SS", string)
                     fcu.driver.expression = beautify(string)
 
     #------------------------------------------------------------------

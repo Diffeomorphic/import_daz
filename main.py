@@ -75,7 +75,7 @@ class FitOptions:
     fitMeshes : EnumProperty(
         items = [('SHARED', "Unmorphed Shared (Environments)", "Don't fit meshes. All objects share the same mesh.\nFor environments with identical objects like leaves"),
                  ('UNIQUE', "Unmorped Unique (Environments)", "Don't fit meshes. Each object has unique mesh instance.\nFor environments with objects with same mesh but different materials, like paintings"),
-                 ('MORPHED', "Morphed (Characters)", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
+                 ('MORPHED', "Morphed (Environments)", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
                  ('DBZFILE', "DBZ File (Characters)", "Use exported .dbz (.json) file to fit meshes. Must exist in same directory.\nFor characters and other objects with morphs"),
                 ],
         name = "Mesh Fitting",
@@ -182,7 +182,8 @@ class DazLoader:
         finishNodeInstances(context)
 
         if LS.useLoadBaked:
-            self.postloadMorphs(context, filepath)
+            from .morphing import postloadMorphs
+            postloadMorphs(context, filepath)
 
         # Do this at the very end, because it deletes nodes
         if GS.usePruneNodes:
@@ -198,39 +199,6 @@ class DazLoader:
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
         return main
-
-
-    def postloadMorphs(self, context, filepath):
-        def getPath(asset):
-            if asset.url[0] == "#":
-                return filepath
-            else:
-                url = asset.url.rsplit("#")[0]
-                return GS.getAbsPath(url)
-
-        namepathss = {}
-        objects = {}
-        props = {}
-        parents = {}
-        for asset in LS.bakedmorphs.values():
-            parent = asset.getMorphParent()
-            if parent:
-                key = parent.id
-                if key not in objects.keys():
-                    namepathss[key] = []
-                    objects[key] = parent.rna
-                    props[key] = {}
-                    if asset.parent and asset.parent.formulas:
-                        parents[key] = parent
-                path = getPath(asset)
-                namepathss[key].append((asset.name, path, 'BAKED'))
-                props[key][asset.name] = (asset.label, asset.value)
-        settings = LS.getSettings()
-        from .morphing import importBakedMorphs
-        try:
-            importBakedMorphs(context, namepathss, objects, props, parents)
-        finally:
-            LS.restoreSettings(settings)
 
 #------------------------------------------------------------------
 #   Import DAZ
