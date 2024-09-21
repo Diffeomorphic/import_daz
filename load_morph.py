@@ -105,8 +105,8 @@ class LoadMorph(DriverUser):
             self.obj = self.mesh
             self.amt = self.mesh.data
             self.mesh.DazMeshMorphs = True
-        else:
-            self.obj = None
+        elif self.obj:
+            self.amt = self.obj
         if self.rig2:
             self.amt2 = self.rig2.data
 

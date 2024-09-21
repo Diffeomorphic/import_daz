@@ -378,6 +378,7 @@ class Instance(Accessor, Channels, SimNode):
         LS.collection.objects.link(empty)
         LS.refObjects[ob.name] = (self, empty, self.refcoll)
         unlinkAll(ob, False)
+        self.rna = empty
         self.refcoll.objects.link(ob)
         return self.refcoll
 

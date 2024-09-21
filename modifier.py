@@ -307,6 +307,8 @@ class ChannelAsset(Modifier):
                 self.type = value
         if "current_value" in channels.keys():
             self.value = channels["current_value"]
+        if LS.useLoadBaked:
+            LS.bakedmorphs[self.id] = self
 
 
     def update(self, struct):
@@ -314,6 +316,40 @@ class ChannelAsset(Modifier):
         channels = struct.get("channel", {})
         if "current_value" in channels.keys():
             self.value = channels["current_value"]
+
+
+    def getMorphParent(self):
+        from .geometry import GeoNode, Geometry
+        from .figure import Figure, FigureInstance
+        from .node import Node, Instance
+        msg = None
+        if isinstance(self.parent, Geometry):
+            parent = self.parent.nodes.get(self.parentRef)
+            if parent:
+                return parent
+            else:
+                msg = "Missing geonode %s" % self.parent.nodes.keys()
+        elif isinstance(self.parent, GeoNode):
+            return self.parent
+        elif isinstance(self.parent, Figure):
+            parent = self.parent.instances.get(self.parentRef)
+            if parent:
+                return parent
+            else:
+                msg = "Missing figure instances"
+        elif isinstance(self.parent, FigureInstance):
+            return self.parent
+        elif isinstance(self.parent, Node):
+            parent = self.parent.instances.get(self.parentRef)
+            if parent:
+                return parent
+            else:
+                msg = "Missing instances"
+        else:
+            msg = "Strange morph parent"
+        msg = "%s: %s\n  %s\n  %s" % (msg, self.parentRef, self, self.parent)
+        print(msg)
+        return None
 
 
 def stripPrefix(prop):
@@ -819,42 +855,6 @@ class FormulaAsset(Formula, ChannelAsset):
                 words[0] == "" and
                 words[1] == "Pose Controls"):
                 self.group = words[2]
-        if LS.useLoadBaked:
-            LS.bakedmorphs[self.id] = self
-
-
-    def getMorphParent(self):
-        from .geometry import GeoNode, Geometry
-        from .figure import Figure, FigureInstance
-        from .node import Node, Instance
-        msg = None
-        if isinstance(self.parent, Geometry):
-            parent = self.parent.nodes.get(self.parentRef)
-            if parent:
-                return parent
-            else:
-                msg = "Missing geonode %s" % self.parent.nodes.keys()
-        elif isinstance(self.parent, GeoNode):
-            return self.parent
-        elif isinstance(self.parent, Figure):
-            parent = self.parent.instances.get(self.parentRef)
-            if parent:
-                return parent
-            else:
-                msg = "Missing figure instances"
-        elif isinstance(self.parent, FigureInstance):
-            return self.parent
-        elif isinstance(self.parent, Node):
-            parent = self.parent.instances.get(self.parentRef)
-            if parent:
-                return parent
-            else:
-                msg = "Missing instances"
-        else:
-            msg = "Strange morph parent"
-        msg = "%s: %s\n  %s\n  %s" % (msg, self.parentRef, self, self.parent)
-        print(msg)
-        return None
 
 
     def build(self, context, inst):
