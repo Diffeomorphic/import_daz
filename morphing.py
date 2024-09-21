@@ -748,7 +748,7 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         LS.filepaths = theFilePaths
 
 #------------------------------------------------------------------
-#
+#   Import baked morphs
 #------------------------------------------------------------------
 
 class BakedMorphLoader(MorphLoader):
@@ -764,6 +764,74 @@ class BakedMorphLoader(MorphLoader):
     def finishLoading(self, namepaths, context, t1):
         pass
 
+
+def importBakedMorphs(context, namepathss, objects, props, parents):
+    from .driver import setProtected
+    from .selector import setActivated
+    from .node import Instance
+
+    def setupMorphLoader(ob):
+        lm = BakedMorphLoader()
+        lm.rig = lm.obj = None
+        lm.meshes = []
+        if ob.type == 'ARMATURE':
+            lm.rig = lm.obj = ob
+            lm.meshes = getMeshChildren(ob)
+        elif ob.type == 'MESH':
+            lm.mesh = ob
+            lm.meshes = [ob]
+            if ob.parent and ob.parent.type == 'ARMATURE':
+                lm.obj = lm.rig = ob.parent
+        elif ob:
+            lm.obj = ob
+            lm.meshes = []
+        else:
+            print("Bad object (importBakedMorphs): %s" % ob)
+            return None
+        return lm
+
+    def addProps(props, ob, lm):
+        for prop,data in props.items():
+            label,value = data
+            lm.obj[prop] = value
+            setProtected(lm.obj, prop, True)
+            setActivated(lm.obj, prop, False)
+            item = lm.obj.DazBaked.add()
+            item.name = prop
+            item.text = label
+
+    def addFormulas(inst, node, ob, lm):
+        exprs,rig2 = node.evalFormulas(ob, None, True)
+        for driven,expr in exprs.items():
+            if driven == "RIG":
+                lm.addObjectDrivers(ob, expr)
+
+    for key,namepaths in namepathss.items():
+        ob = objects[key]
+        print("Load baked morphs to %s" % ob.name)
+        if not isinstance(ob, bpy.types.Object):
+            continue
+        lm = setupMorphLoader(ob)
+        if lm is None:
+            continue
+        lm.getAllMorphs(namepaths, context)
+        addProps(props[key], ob, lm)
+        print("KEY", key)
+        if key in parents.keys():
+            inst = parents[key]
+            print("II", inst)
+            if isinstance(inst, Instance):
+                node = inst.node
+                addFormulas(inst, node, ob, lm)
+                inst2 = inst.instanceTarget
+                print("II2", inst2)
+                if inst2:
+                    ob2 = inst2.rna
+                    lm2 = setupMorphLoader(ob2)
+                    if lm2 is not None:
+                        lm2.getAllMorphs(namepaths, ob2)
+                        addProps(props[key], ob2, lm2)
+                        addFormulas(inst2, node, ob2, lm2)
 
 #------------------------------------------------------------------
 #   Load standard morphs

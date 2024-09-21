@@ -211,7 +211,6 @@ class DazLoader:
         namepathss = {}
         objects = {}
         props = {}
-        formulass = {}
         parents = {}
         for asset in LS.bakedmorphs.values():
             parent = asset.getMorphParent()
@@ -222,63 +221,16 @@ class DazLoader:
                     objects[key] = parent.rna
                     props[key] = {}
                     if asset.parent and asset.parent.formulas:
-                        parents[key] = asset.parent
-                        formulass[key] = asset.parent.formulas
+                        parents[key] = parent
                 path = getPath(asset)
                 namepathss[key].append((asset.name, path, 'BAKED'))
                 props[key][asset.name] = (asset.label, asset.value)
         settings = LS.getSettings()
+        from .morphing import importBakedMorphs
         try:
-            self.importBakedMorphs(context, namepathss, objects, props, parents)
+            importBakedMorphs(context, namepathss, objects, props, parents)
         finally:
             LS.restoreSettings(settings)
-
-
-    def importBakedMorphs(self, context, namepathss, objects, props, parents):
-        from .morphing import BakedMorphLoader
-        from .driver import setProtected
-        from .selector import setActivated
-        for key,namepaths in namepathss.items():
-            ob = objects[key]
-            print("Load baked morphs to %s" % ob.name)
-            if not isinstance(ob, bpy.types.Object):
-                continue
-            lm = BakedMorphLoader()
-            lm.rig = lm.obj = None
-            lm.meshes = []
-            if ob.type == 'ARMATURE':
-                lm.rig = lm.obj = ob
-                lm.meshes = getMeshChildren(ob)
-            elif ob.type == 'MESH':
-                lm.mesh = ob
-                lm.meshes = [ob]
-                if ob.parent and ob.parent.type == 'ARMATURE':
-                    lm.obj = lm.rig = ob.parent
-            elif ob:
-                lm.obj = ob
-                lm.meshes = []
-            else:
-                print("Bad object (importBakedMorphs): %s" % ob)
-                continue
-            lm.getAllMorphs(namepaths, context)
-
-            for prop,data in props[key].items():
-                label,value = data
-                lm.obj[prop] = value
-                setProtected(lm.obj, prop, True)
-                setActivated(lm.obj, prop, False)
-                item = lm.obj.DazBaked.add()
-                item.name = prop
-                item.text = label
-
-            print("KEY", key)
-            node = parents.get(key)
-            if node:
-                print("FF", node)
-                exprs,rig2 = node.evalFormulas(ob, None, True)
-                for driven,expr in exprs.items():
-                    if driven == "RIG":
-                        lm.addObjectDrivers(ob, expr)
 
 #------------------------------------------------------------------
 #   Import DAZ

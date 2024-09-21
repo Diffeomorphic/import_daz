@@ -1455,22 +1455,25 @@ class LoadMorph(DriverUser):
         for key,mapping in mappings.items():
             moves = exprs.get(key)
             if moves:
-                path, bindex, flips, scale = mapping
+                channel, bindex, flips, scale = mapping
                 for idx,expr in moves.items():
                     idx2 = bindex[idx]
-                    ob.driver_remove(path, idx2)
-                    fcu = ob.driver_add(path, idx2)
+                    ob.driver_remove(channel, idx2)
+                    fcu = ob.driver_add(channel, idx2)
                     fcu.driver.type = 'SCRIPTED'
                     removeModifiers(fcu)
-                    string = ""
-                    vname = "A"
+                    prop = "%s:%d" % (channel, idx2)
+                    vec = getattr(ob, channel)
+                    ob[prop] = vec[idx2]
+                    string = vname = "A"
+                    self.addPathVar(fcu, vname, self.obj, propRef(prop))
                     for target in expr.props:
+                        vname = nextLetter(vname)
                         factor = flips[idx] * scale * target.getFactor()
                         string += "+%g*%s" % (factor, vname)
                         self.addPathVar(fcu, vname, self.obj, propRef(target.key))
-                        vname = nextLetter(vname)
                     print("SS", string)
-                    fcu.driver.expression = string
+                    fcu.driver.expression = beautify(string)
 
     #------------------------------------------------------------------
     #   Build sum drivers
@@ -2029,3 +2032,6 @@ def getUnit(type):
         return D
     else:
         return 1
+
+def beautify(string):
+    return string.replace("+-", "-").replace("+1*", "+").replace("-1*", "-")
