@@ -317,7 +317,7 @@ class ChannelAsset(Modifier):
         if "current_value" in channels.keys():
             self.value = channels["current_value"]
         if LS.useLoadBaked:
-            LS.bakedmorphs[self.id] = self
+            LS.bakedMorphs[self.id] = self
 
 
     def update(self, struct):

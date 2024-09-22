@@ -182,7 +182,7 @@ class DazLoader:
         finishNodeInstances(context)
 
         if LS.useLoadBaked:
-            from .morphing import postloadMorphs
+            from .baked import postloadMorphs
             postloadMorphs(context, filepath)
 
         # Do this at the very end, because it deletes nodes

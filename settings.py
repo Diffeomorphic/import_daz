@@ -613,7 +613,7 @@ class LocalSettings:
         self.objects = { None : [] }
         self.hairs = { None : [] }
         self.hdmeshes = { None : [] }
-        self.bakedmorphs = {}
+        self.bakedMorphs = {}
         self.returnValue = {}
 
         if bpy.app.version < (4,0,0):
