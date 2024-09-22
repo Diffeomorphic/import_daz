@@ -45,10 +45,11 @@ def postloadMorphs(context, filepath):
             return GS.getAbsPath(url)
 
     from .node import Node
+    from .modifier import FormulaAsset
     namepathss = {}
     objects = {}
     props = {}
-    parents = {}
+    forms = {}
     for asset in LS.bakedMorphs.values():
         parent = asset.getMorphParent()
         if parent:
@@ -57,22 +58,26 @@ def postloadMorphs(context, filepath):
                 namepathss[key] = []
                 objects[key] = parent.rna
                 props[key] = {}
-                if isinstance(asset.parent, Node) and asset.parent.formulas:
-                    parents[key] = parent
+                forms[key] = []
+            if isinstance(asset, FormulaAsset):
+                forms[key].append(asset)
+            elif isinstance(asset.parent, Node) and asset.parent.forms:
+                forms[key].append(parent)
             path = getPath(asset)
             namepathss[key].append((asset.name, path, 'BAKED'))
             props[key][asset.name] = (asset.label, asset.value)
     settings = LS.getSettings()
     try:
-        importBakedMorphs(context, namepathss, objects, props, parents)
+        importBakedMorphs(context, namepathss, objects, props, forms)
     finally:
         LS.restoreSettings(settings)
 
 
-def importBakedMorphs(context, namepathss, objects, props, parents):
+def importBakedMorphs(context, namepathss, objects, props, forms):
     from .driver import setProtected
     from .selector import setActivated
     from .node import Instance
+    from .modifier import FormulaAsset
 
     def setupMorphLoader(ob):
         lm = BakedMorphLoader()
@@ -105,8 +110,8 @@ def importBakedMorphs(context, namepathss, objects, props, parents):
                 item.name = prop
                 item.text = label
 
-    def addFormulas(inst, node, ob, lm):
-        exprs,rig2 = node.evalFormulas(ob, None, True)
+    def addFormulas(form, ob, lm):
+        exprs,rig2 = form.evalFormulas(ob, None, True)
         for driven,expr in exprs.items():
             if driven == "RIG":
                 lm.addObjectDrivers(ob, expr)
@@ -122,12 +127,14 @@ def importBakedMorphs(context, namepathss, objects, props, parents):
         lm.getAllMorphs(namepaths, context)
         addProps(props[key], ob, lm, 1)
         taken = []
-        if key in parents.keys():
-            inst = parents[key]
-            if isinstance(inst, Instance):
+        for form in forms[key]:
+            if isinstance(form, FormulaAsset):
+                addFormulas(form, ob, lm)
+            elif isinstance(form, Instance):
+                inst = form
                 taken.append(inst)
                 node = inst.node
-                addFormulas(inst, node, ob, lm)
+                addFormulas(node, ob, lm)
                 inst2 = inst.instanceTarget
                 if inst.instances:
                     insts = inst.instances
@@ -135,7 +142,6 @@ def importBakedMorphs(context, namepathss, objects, props, parents):
                     insts = [inst2] + [inst3 for inst3 in inst2.instances if inst3 != inst]
                 else:
                     insts = []
-                print("LII", insts)
                 for inst2 in insts:
                     if inst2 in taken:
                         continue
@@ -145,4 +151,4 @@ def importBakedMorphs(context, namepathss, objects, props, parents):
                     if lm2 is not None:
                         lm2.getAllMorphs(namepaths, ob2)
                         addProps(props[key], ob2, lm2, 0)
-                        addFormulas(inst2, node, ob2, lm2)
+                        addFormulas(node, ob2, lm2)
