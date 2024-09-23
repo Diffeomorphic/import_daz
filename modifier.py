@@ -316,7 +316,7 @@ class ChannelAsset(Modifier):
                 self.type = value
         if "current_value" in channels.keys():
             self.value = channels["current_value"]
-        if LS.useLoadBaked:
+        if LS.onLoadBaked:
             LS.bakedMorphs[self.id] = self
 
 

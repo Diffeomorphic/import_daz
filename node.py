@@ -904,7 +904,7 @@ class Node(Asset, Formula, Channels):
                     self.geometries.append(geonode)
             elif channel in self.attributes.keys():
                 self.setAttribute(channel, data)
-        if (LS.useMorph or LS.useLoadBaked) and "preview" in struct.keys():
+        if (LS.useMorph or LS.onLoadBaked) and "preview" in struct.keys():
             preview = struct["preview"]
             pcenter = Vector(preview["center_point"])
             pend = Vector(preview["end_point"])

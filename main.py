@@ -75,7 +75,8 @@ class FitOptions:
     fitMeshes : EnumProperty(
         items = [('SHARED', "Unmorphed Shared (Environments)", "Don't fit meshes. All objects share the same mesh.\nFor environments with identical objects like leaves"),
                  ('UNIQUE', "Unmorped Unique (Environments)", "Don't fit meshes. Each object has unique mesh instance.\nFor environments with objects with same mesh but different materials, like paintings"),
-                 ('MORPHED', "Morphed (Environments)", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
+                 ('SIMPLIFIED', "Morphed Simplified (Environments)", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
+                 ('MORPHED', "Morphed Full", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
                  ('DBZFILE', "DBZ File (Characters)", "Use exported .dbz (.json) file to fit meshes. Must exist in same directory.\nFor characters and other objects with morphs"),
                 ],
         name = "Mesh Fitting",
@@ -91,7 +92,7 @@ class FitOptions:
         box = self.layout.box()
         box.label(text = "Mesh Fitting")
         box.prop(self, "fitMeshes", expand=True)
-        if self.fitMeshes == 'MORPHED':
+        if self.fitMeshes in ['SIMPLIFIED', 'MORPHED']:
             box.prop(self, "morphStrength")
         self.layout.separator()
 
@@ -181,7 +182,7 @@ class DazLoader:
         from .node import finishNodeInstances
         finishNodeInstances(context)
 
-        if LS.useLoadBaked:
+        if LS.onLoadBaked:
             from .baked import postloadMorphs
             postloadMorphs(context, filepath)
 
@@ -657,7 +658,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
-        if self.fitMeshes != 'MORPHED':
+        if self.fitMeshes not in ['SIMPLIFIED', 'MORPHED']:
             self.layout.prop(self, "useTransferFace")
             self.layout.prop(self, "useTransferHair")
             self.layout.prop(self, "useTransferGeografts")
@@ -912,7 +913,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 useAdjusters = self.useAdjusters,
                 useMakePosable=False)
 
-        if self.fitMeshes == 'MORPHED' and firstMesh:
+        if self.fitMeshes in ['SIMPLIFIED', 'MORPHED'] and firstMesh:
             print("Transfer to all meshes")
             self.transferShapes(context, firstMesh, meshes[1:], True, "All")
 
@@ -959,7 +960,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     if baseName(hdob.name) in hdgraftNames:
                         hdgrafts.append(hdob)
 
-            if (self.useTransferGeografts or self.useMergeGeografts) and self.fitMeshes != 'MORPHED':
+            if ((self.useTransferGeografts or self.useMergeGeografts) and
+                self.fitMeshes not in ['SIMPLIFIED', 'MORPHED']):
                 print("Transfer to geografts")
                 for grafts,hum in geografts.values():
                     if hum == firstMesh:
@@ -995,17 +997,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     mergeGeografts(context, hdmain, hdgrafts, hdmeshes)
                     hdgrafts = []
 
-
         # Transfer shapekeys to clothes and lashes
-        if self.useTransferClothes and self.fitMeshes != 'MORPHED':
-            print("Transfer to clothes")
-            self.transferShapes(context, firstMesh, clothes, True, "NoFace")
-        if self.useTransferHair and self.fitMeshes != 'MORPHED':
-            print("Transfer to hair meshes")
-            self.transferShapes(context, firstMesh, hairs, True, "All")
-        if self.useTransferFace and self.fitMeshes != 'MORPHED':
-            print("Transfer to face meshes")
-            self.transferShapes(context, firstMesh, lashes, True, "All")
+        if self.fitMeshes not in ['SIMPLIFIED', 'MORPHED']:
+            if self.useTransferClothes:
+                print("Transfer to clothes")
+                self.transferShapes(context, firstMesh, clothes, True, "NoFace")
+            if self.useTransferHair:
+                print("Transfer to hair meshes")
+                self.transferShapes(context, firstMesh, hairs, True, "All")
+            if self.useTransferFace:
+                print("Transfer to face meshes")
+                self.transferShapes(context, firstMesh, lashes, True, "All")
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):

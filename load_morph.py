@@ -1444,7 +1444,7 @@ class LoadMorph(DriverUser):
             return None
 
 
-    def addObjectDrivers(self, ob, exprs):
+    def addObjectDrivers(self, ob, exprs, useFull):
         from .driver import removeModifiers
         mappings = {
             "translation" : ("location", [0,2,1], [1,1,-1], GS.scale),
@@ -1472,8 +1472,11 @@ class LoadMorph(DriverUser):
                         factor = flips[idx] * scale * target.getFactor()
                         string += "+%g*%s" % (factor, vname)
                         prop = skipName(target.key)
-                        final = finalProp(prop)
-                        self.addPathVar(fcu, vname, self.obj, propRef(prop))
+                        if useFull:
+                            final = finalProp(prop)
+                            self.addPathVar(fcu, vname, self.amt, propRef(final))
+                        else:
+                            self.addPathVar(fcu, vname, self.obj, propRef(prop))
                     fcu.driver.expression = beautify(string)
 
     #------------------------------------------------------------------
