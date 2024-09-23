@@ -69,7 +69,8 @@ def postloadMorphs(context, filepath):
             return None
         return lm
 
-    def addProps(props, ob, factor):
+    def addProps(props, lm, factor):
+        ob = lm.obj
         for prop,data in props.items():
             label,value = data
             ob[prop] = value*factor
@@ -80,7 +81,7 @@ def postloadMorphs(context, filepath):
                 item.name = prop
                 item.text = label
 
-    def addFormFormulas(forms, ob, lm, useFull):
+    def addFormFormulas(forms, ob, lm, useMorphed):
         edict = {}
         for form in forms:
             exprss,rig2 = form.evalFormulas(ob, None, True)
@@ -97,13 +98,13 @@ def postloadMorphs(context, filepath):
                                 else:
                                     edict[key] = (exprs, expr[idx].props)
         for exprs,props in edict.values():
-            lm.addObjectDrivers(ob, exprs, useFull)
+            lm.addObjectDrivers(ob, exprs, useMorphed)
 
-    def addNodeFormulas(node, ob, lm, useFull):
+    def addNodeFormulas(node, ob, lm, useMorphed):
         exprss,rig2 = node.evalFormulas(ob, None, True)
         for driven,exprs in exprss.items():
             if driven == "RIG":
-                lm.addObjectDrivers(ob, exprs, useFull)
+                lm.addObjectDrivers(ob, exprs, useMorphed)
 
     namepathss = {}
     objects = {}
@@ -128,7 +129,7 @@ def postloadMorphs(context, filepath):
             namepathss[key].append((asset.name, path, 'BAKED'))
             props[key][asset.name] = (asset.label, asset.value)
 
-    useFull = (LS.onLoadBaked == 'MORPHED')
+    useMorphed = (LS.onLoadBaked == 'MORPHED')
     settings = LS.getSettings()
     try:
         for key,namepaths in namepathss.items():
@@ -139,17 +140,17 @@ def postloadMorphs(context, filepath):
             lm = setupMorphLoader(ob)
             if lm is None:
                 continue
-            if useFull:
+            if useMorphed:
                 lm.getAllMorphs(namepaths, context)
-            addProps(props[key], ob, 1)
-            addFormFormulas(forms[key], ob, lm, useFull)
+            addProps(props[key], lm, 1.0)
+            addFormFormulas(forms[key], ob, lm, useMorphed)
 
             inst = parents.get(key)
             taken = []
             if isinstance(inst, Instance):
                 taken.append(inst)
                 node = inst.node
-                addNodeFormulas(node, ob, lm, useFull)
+                addNodeFormulas(node, ob, lm, useMorphed)
                 inst2 = inst.instanceTarget
                 if inst.instances:
                     insts = inst.instances
@@ -164,9 +165,9 @@ def postloadMorphs(context, filepath):
                     ob2 = inst2.rna
                     lm2 = setupMorphLoader(ob2)
                     if lm2 is not None:
-                        if useFull:
+                        if useMorphed:
                             lm2.getAllMorphs(namepaths, ob2)
-                        addProps(props[key], ob2, 0)
-                    addNodeFormulas(node, ob2, lm2, useFull)
+                        addProps(props[key], lm2, 0.0)
+                    addNodeFormulas(node, ob2, lm2, useMorphed)
     finally:
         LS.restoreSettings(settings)
