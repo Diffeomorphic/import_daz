@@ -71,7 +71,8 @@ def parseMorph(asset, struct, multi):
         else:
             continue
         if multi:
-            morphs.append(morph)
+            if morph:
+                morphs.append(morph)
         else:
             return morph
     for nstruct in struct.get("node_library", {}):
@@ -80,7 +81,8 @@ def parseMorph(asset, struct, multi):
         else:
             continue
         if multi:
-            morphs.append(morph)
+            if morph:
+                morphs.append(morph)
         else:
             return morph
     if multi:
