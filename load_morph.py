@@ -214,6 +214,8 @@ class LoadMorph(DriverUser):
             else:
                 struct = JL.load(filepath)
                 assets = parseAssetFile(struct, multi=True)
+                if assets is None:
+                    assets = []
                 aliases = self.getAliases(filepath)
                 if self.useMulti:
                     for asset in assets:
