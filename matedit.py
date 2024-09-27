@@ -1174,6 +1174,7 @@ def driveShellInfluence(ob):
     rig = ob
     if ob.parent and ob.parent.type == 'ARMATURE':
         rig = ob.parent
+        rig.hide_viewport = False
     for mat in ob.data.materials:
         if mat and mat.node_tree:
             for node in mat.node_tree.nodes:
