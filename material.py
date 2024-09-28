@@ -977,7 +977,7 @@ class HiddenTextureUser:
     useHiddenMeshes : BoolProperty(
         name = "Also Hidden Meshes",
         description = "Also save textures from hidden meshes",
-        default = False)
+        default = True)
 
     def getMeshes(self, context):
         if self.useHiddenMeshes:

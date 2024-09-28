@@ -687,7 +687,7 @@ class LocalSettings:
             self.singleUser = False
         elif btn.fitMeshes == 'UNIQUE':
             pass
-        elif btn.fitMeshes in ['SIMPLIFIED', 'MORPHED']:
+        elif btn.fitMeshes in ['TRANSFORMED', 'MORPHED']:
             #self.useMorph = True
             self.onLoadBaked = btn.fitMeshes
             self.morphStrength = btn.morphStrength

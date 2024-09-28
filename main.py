@@ -75,8 +75,8 @@ class FitOptions:
     fitMeshes : EnumProperty(
         items = [('SHARED', "Unmorphed Shared (Environments)", "Don't fit meshes. All objects share the same mesh.\nFor environments with identical objects like leaves"),
                  ('UNIQUE', "Unmorped Unique (Environments)", "Don't fit meshes. Each object has unique mesh instance.\nFor environments with objects with same mesh but different materials, like paintings"),
-                 ('SIMPLIFIED', "Morphed Simplified (Environments)", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
-                 ('MORPHED', "Morphed Full", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
+                 ('TRANSFORMED', "Unmorphed Transformed (Environments)", "Don't fit meshes, but load formulas for object transformations"),
+                 ('MORPHED', "Morphed (Characters)", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
                  ('DBZFILE', "DBZ File (Characters)", "Use exported .dbz (.json) file to fit meshes. Must exist in same directory.\nFor characters and other objects with morphs"),
                 ],
         name = "Mesh Fitting",
@@ -92,7 +92,7 @@ class FitOptions:
         box = self.layout.box()
         box.label(text = "Mesh Fitting")
         box.prop(self, "fitMeshes", expand=True)
-        if self.fitMeshes in ['SIMPLIFIED', 'MORPHED']:
+        if self.fitMeshes in ['TRANSFORMED', 'MORPHED']:
             box.prop(self, "morphStrength")
         self.layout.separator()
 
@@ -658,7 +658,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
-        if self.fitMeshes not in ['SIMPLIFIED', 'MORPHED']:
+        if self.fitMeshes not in ['TRANSFORMED', 'MORPHED']:
             self.layout.prop(self, "useTransferFace")
             self.layout.prop(self, "useTransferHair")
             self.layout.prop(self, "useTransferGeografts")
@@ -913,7 +913,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 useAdjusters = self.useAdjusters,
                 useMakePosable=False)
 
-        if self.fitMeshes in ['SIMPLIFIED', 'MORPHED'] and firstMesh:
+        if self.fitMeshes in ['TRANSFORMED', 'MORPHED'] and firstMesh:
             print("Transfer to all meshes")
             self.transferShapes(context, firstMesh, meshes[1:], True, "All")
 
@@ -961,7 +961,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         hdgrafts.append(hdob)
 
             if ((self.useTransferGeografts or self.useMergeGeografts) and
-                self.fitMeshes not in ['SIMPLIFIED', 'MORPHED']):
+                self.fitMeshes not in ['TRANSFORMED', 'MORPHED']):
                 print("Transfer to geografts")
                 for grafts,hum in geografts.values():
                     if hum == firstMesh:
@@ -998,7 +998,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     hdgrafts = []
 
         # Transfer shapekeys to clothes and lashes
-        if self.fitMeshes not in ['SIMPLIFIED', 'MORPHED']:
+        if self.fitMeshes not in ['TRANSFORMED', 'MORPHED']:
             if self.useTransferClothes:
                 print("Transfer to clothes")
                 self.transferShapes(context, firstMesh, clothes, True, "NoFace")
