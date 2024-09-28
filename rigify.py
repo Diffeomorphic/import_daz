@@ -745,7 +745,7 @@ class Rigifier(RigifyCommon):
             eb.roll = dbone.roll
             eb.use_deform = dbone.use_deform
             if eb.use_deform:
-                enableBoneNumLayer(eb, gen, R_FACE)
+                enableBoneNumLayer(eb, gen, R_DETAIL)
                 setBoneNumLayer(eb, gen, R_DEF)
             else:
                 enableBoneNumLayer(eb, gen, R_HELP)
@@ -788,7 +788,7 @@ class Rigifier(RigifyCommon):
         for suffix in ["L", "R"]:
             self.addSingleGazeBone(gen, suffix, R_FACE, R_HELP)
         self.addCombinedGazeBone(gen, R_FACE, R_HELP)
-        self.checkTongueIk(gen)
+        self.checkTongueIk(rig)
         if self.useTongueIk:
             setMode('EDIT')
             self.addTongueIkBones(gen, R_FACE, R_DEF)
@@ -940,7 +940,7 @@ class Rigifier(RigifyCommon):
         for suffix in ["L", "R"]:
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
-        self.addTongueControl(gen)
+        self.addTongueControl(gen, [R_FACE, R_DETAIL])
 
         # Finger IK
         if meta["DazFingerIk"]:
@@ -1193,7 +1193,7 @@ class Rigifier(RigifyCommon):
             "gaze.R" :          ("GZM_Circle", 0.25, R_FACE),
             "ik_tongue" :       ("GZM_Cone", 0.4, R_FACE),
         }
-        self.makeGizmos(True, ["GZM_MJaw", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue"])
+        self.makeGizmos(True, ["GZM_MJaw", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue", "GZM_Knuckle"])
         color = (1.0, 0.5, 0)
         if BLENDER3:
             bgrp = gen.pose.bone_groups.new(name="DAZ")

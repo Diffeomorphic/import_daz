@@ -422,12 +422,12 @@ class Fixer(DriverUser):
             trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, first.parent)
 
 
-    def addTongueControl(self, rig):
+    def addTongueControl(self, rig, layers):
         from .mhx import setMhx, mhxProp, addWinder, stretchTo, addMuteDriver
         from .driver import addDriver
         prop1 = "MhaTongueControl"
         setMhx(rig, prop1, True)
-        winder,pbones = addWinder(rig, "tongue", self.tongueBones, [L_HEAD, L_FACE], prop1, useLocation=True, useScale=True)
+        winder,pbones = addWinder(rig, "tongue", self.tongueBones, layers, prop1, useLocation=True, useScale=True)
         if winder is None:
             return
         self.addGizmo(winder, "GZM_Knuckle", 1.0)

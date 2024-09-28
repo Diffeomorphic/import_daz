@@ -754,7 +754,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(17, 25, "  Add gizmos")
         self.addGizmos(rig, context)
         showProgress(18, 25, "  Add tongue control")
-        self.addTongueControl(rig)
+        self.addTongueControl(rig, [L_HEAD, L_FACE])
         showProgress(19, 25, "  Constrain bend and twist bones")
         self.constrainBendTwists(rig, bendTwistBones, self.useStretch)
         self.addCopyLocConstraints(rig)
