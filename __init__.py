@@ -97,15 +97,6 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.operator("daz.save_settings_file")
 
 #----------------------------------------------------------
-#   Add parent directory to sys.path, so scripts can find import_daz module
-#----------------------------------------------------------
-
-path = os.path.split(os.path.dirname(__file__))[0]
-if path not in sys.path:
-    print('Add "%s" to sys.path' % path)
-    sys.path.append(path)
-
-#----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
