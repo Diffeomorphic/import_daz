@@ -1173,193 +1173,38 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 #   Merge rigs
 #-------------------------------------------------------------
 
-class EditBoneInfo:
-    def __init__(self, eb, riginfo):
-        self.head = eb.head.copy()
-        self.tail = eb.tail.copy()
-        self.roll = eb.roll
-        self.parent = None
-        if eb.parent:
-            self.parent = eb.parent.name
-        self.riginfo = riginfo
-
-    def set(self, eb, ebones):
-        eb.head = self.head
-        eb.tail = self.tail
-        eb.roll = self.roll
-        if self.parent:
-            self.setParent(eb, self.parent, ebones)
-        elif self.riginfo.parbone:
-            self.setParent(eb, self.riginfo.parbone, ebones)
-
-    def setParent(self, eb, parent, ebones):
-        parkey = self.riginfo.getBoneKey(parent)
-        if parent in ebones.keys():
-            eb.parent = ebones[parent]
-        elif parkey in ebones.keys():
-            eb.parent = ebones[parkey]
-        else:
-            print("Parent not found", eb.name, parent)
-
-
-class PoseBoneInfo:
-    def __init__(self, pb):
-        self.bone = pb
-        self.matrix = pb.matrix.copy()
-        self.shape = pb.custom_shape
-        if hasattr(pb, "custom_shape_translation"):
-            self.scale = pb.custom_shape_scale_xyz
-            self.trans = pb.custom_shape_translation
-            self.rot = pb.custom_shape_rotation_euler
-
-    def set(self, pb):
-        pb.matrix = self.matrix
-        pb.custom_shape = self.shape
-        if hasattr(pb, "custom_shape_translation"):
-            pb.custom_shape_scale_xyz = self.scale
-            pb.custom_shape_translation = self.trans
-            pb.custom_shape_rotation_euler = self.rot
-        return self.bone
-
-
-class XRigInfo:
-    def __init__(self, rig, conforms, btn):
-        self.name = rig.name
-        self.rig = rig
-        if len(rig.name) < 64:
-            self.hash = rig.name
-        else:
-            self.hash = str(hash(rig.name))
-        self.button = btn
-        self.objects = []
-        self.deletes = []
-        self.addObjects(rig)
-        self.conforms = conforms
-        self.foundControl = None
-        if rig.parent and rig.parent_type == 'BONE':
-            self.parbone = rig.parent_bone
-        else:
-            self.parbone = None
-        self.matrix = rig.matrix_world.copy()
-        self.editbones = {}
-        self.posebones = {}
-        self.bones = {}
-
-
-    def getBoneKey(self, bname):
-        return "%s:%s" % (self.hash, bname)
-
-
-    def addObjects(self, ob):
-        for child in ob.children:
-            if (getHideViewport(child) or
-                child.parent_type.startswith('VERTEX')):
-                continue
-            elif child.type != 'ARMATURE':
-                partype = child.parent_type
-                parbone = child.parent_bone
-                self.objects.append((child, (partype, parbone)))
-                self.addObjects(child)
-
-
-    def getEditBones(self, mainbones, extrabones):
-        setMode('EDIT')
-        for eb in self.rig.data.edit_bones:
-            if eb.name not in mainbones:
-                key = self.getBoneKey(eb.name)
-                self.editbones[key] = EditBoneInfo(eb, self)
-        setMode('OBJECT')
-        for pb in self.rig.pose.bones:
-            if pb.name in mainbones:
-                key = pb.name
-            else:
-                key = self.getBoneKey(pb.name)
-                extrabones.append(pb.name)
-                self.posebones[key] = PoseBoneInfo(pb)
-            self.bones[key] = pb.bone.use_deform
-
-
-    def addEditBones(self, rig, idx, layer):
-        setMode('EDIT')
-        ebones = rig.data.edit_bones
-        for bname,ebinfo in self.editbones.items():
-            eb = ebones.new(bname)
-            ebinfo.set(eb, ebones)
-            enableBoneNumLayer(eb, rig, layer)
-        setMode('OBJECT')
-        for bname in self.editbones.keys():
-            bone = rig.data.bones[bname]
-            bone["DazRigIndex"] = idx
-
-
-    def copyPose(self, context, rig):
-        from .figure import copyBoneInfo
-        from .fix import copyConstraints
-        for key,pg0 in self.rig.data.DazBoneMap.items():
-            if key not in rig.data.DazBoneMap.keys():
-                pg = rig.data.DazBoneMap.add()
-                pg.name = pg0.name
-                pg.s = pg0.s
-        self.copyProps(self.rig, rig, True)
-        self.copyProps(self.rig.data, rig.data, False)
-        self.button.copyDrivers(self.rig.data, rig.data, self.rig, rig)
-        self.button.copyDrivers(self.rig, rig, self.rig, rig)   # causes warnings
-        setActiveObject(context, rig)
-        wmat = rig.matrix_world.inverted() @ self.matrix
-        for bname,pbinfo in self.posebones.items():
-            pb = rig.pose.bones[bname]
-            subpb = pbinfo.set(pb)
-            copyBoneInfo(subpb, pb)
-            copyConstraints(subpb, pb, rig)
-        for bname,deform in self.bones.items():
-            pb = rig.pose.bones[bname]
-            if deform:
-                pb.bone.use_deform = True
-
-
-    def copyProps(self, src, trg, ovr):
-        from .driver import copyProp
-        for prop,value in src.items():
-            if prop[0:3] != "Daz":
-                copyProp(prop, src, trg, ovr)
-
-
-    def reParent(self, rig):
-        subrig = self.rig
-        wmat = subrig.matrix_world.copy()
-        subrig.parent = rig
-        if self.parbone:
-            subrig.parent_type = 'BONE'
-            subrig.parent_bone = self.parbone
-        else:
-            subrig.parent_type = 'OBJECT'
-        setWorldMatrix(subrig, wmat)
-
-
-    def renameVertexGroups(self, ob):
-        for key in self.editbones.keys():
-            _,bname = key.split(":", 1)
-            if bname in ob.vertex_groups.keys():
-                vgrp = ob.vertex_groups[bname]
-                vgrp.name = key
-
-
 class BoneInfo:
-    def __init__(self, bone, parname):
+    def __init__(self, bone, pb, parname):
         self.head = bone.head_local.copy()
         self.tail = bone.tail_local.copy()
-        self.matrix = bone.matrix_local.copy()
+        self.matrix_local = bone.matrix_local.copy()
         self.parent = parname
-        self.deform = bone.use_deform
+        self.use_deform = bone.use_deform
+        self.pb = pb
+        self.matrix = pb.matrix.copy()
 
-    def set(self, bname, ebones):
+
+    def setEditBone(self, bname, ebones):
         eb = ebones.new(bname)
         eb.head = self.head
         eb.tail = self.tail
-        eb.matrix = self.matrix
-        self.use_deform = self.deform
+        eb.matrix = self.matrix_local
+        self.use_deform = self.use_deform
         if self.parent is not None:
             eb.parent = ebones.get(self.parent)
+
+
+    def setPoseBone(self, pb, rig):
+        from .figure import copyBoneInfo
+        from .fix import copyConstraints
+        copyBoneInfo(self.pb, pb)
+        copyConstraints(self.pb, pb, rig)
+        pb.matrix = self.matrix
+        pb.custom_shape = self.pb.custom_shape
+        if hasattr(pb, "custom_shape_translation"):
+            pb.custom_shape_scale_xyz = self.pb.custom_shape_scale_xyz
+            pb.custom_shape_translation = self.pb.custom_shape_translation
+            pb.custom_shape_rotation_euler = self.pb.custom_shape_rotation_euler
 
 
 class MergeRigsOptions:
@@ -1430,12 +1275,13 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                     info = []
                     infos.append(info)
                 bones = {}
-                for bone in rig.data.bones:
+                for pb in rig.pose.bones:
+                    bone = pb.bone
                     if bone.parent:
                         parname = bone.parent.name
                     else:
                         parname = parentBone
-                    bones[bone.name] = BoneInfo(bone, parname)
+                    bones[bone.name] = BoneInfo(bone, pb, parname)
                 meshes = [child for child in rig.children if child.type == 'MESH']
                 info.append((rig, bones, meshes))
             else:
@@ -1452,6 +1298,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                         return True
             return False
 
+        # Collect info about objects and bones
         roots = [ob for ob in context.view_layer.objects if ob.parent is None]
         objects = []
         infos = []
@@ -1466,6 +1313,8 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
             pg.s = subrig.DazUrl
             pg.b = (subrig.parent_bone is not None)
 
+        # Add info about merge rigs
+        # Rename duplicate bones
         deletes = []
         dupss = []
         for info in infos:
@@ -1487,31 +1336,77 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                 idx += 1
                 addMergedProp(rig, subrig, idx)
 
+        # Create the new editbones
+        hasNew = False
+        taken = []
         for info,dups in zip(infos, dupss):
             rig,bones,_meshes = info[0]
             activateObject(context, rig)
             setMode('EDIT')
-            for subrig,subbones,meshes in info[1:]:
+            for subrig,subbones,_submeshes in info[1:]:
                 for bname,binfo in subbones.items():
-                    if bname not in bones.keys():
+                    if bname not in bones.keys() and bname not in taken:
+                        hasNew = True
                         if bname in dups.keys():
                             dupname = "%s:%s" % (subrig.name, bname)
-                            for mesh in meshes:
-                                vgrp = mesh.vertex_groups.get(bname)
-                                vgrp.name = dupname
-                            bname = dupname
-                        binfo.set(bname, rig.data.edit_bones)
+                            binfo.setEditBone(dupname, rig.data.edit_bones)
+                        else:
+                            binfo.setEditBone(bname, rig.data.edit_bones)
+                            taken.append(bname)
             setMode('OBJECT')
+        if hasNew:
+            enableRigNumLayer(rig, T_CUSTOM)
 
+        from .driver import copyProp
+        def copyProps(src, trg, ovr):
+            for prop,value in src.items():
+                if prop[0:3] != "Daz":
+                    copyProp(prop, src, trg, ovr)
+
+        # Copy rig, armature and posebone properties and drivers
+        for info,dups in zip(infos, dupss):
+            rig,bones,_meshes = info[0]
+            for subrig,subbones,submeshes in info[1:]:
+                for key,pg0 in subrig.data.DazBoneMap.items():
+                    if key not in rig.data.DazBoneMap.keys():
+                        pg = rig.data.DazBoneMap.add()
+                        pg.name = pg0.name
+                        pg.s = pg0.s
+
+                copyProps(subrig, rig, True)
+                copyProps(subrig.data, rig.data, False)
+                self.copyDrivers(subrig.data, rig.data, subrig, rig)
+                self.copyDrivers(subrig, rig, subrig, rig)
+                for bname,binfo in subbones.items():
+                    if bname in bones.keys():
+                        continue
+                    elif bname in dups.keys():
+                        dupname = "%s:%s" % (subrig.name, bname)
+                        for mesh in submeshes:
+                            vgrp = mesh.vertex_groups.get(bname)
+                            if vgrp:
+                                vgrp.name = dupname
+                        pb = rig.pose.bones.get(dupname)
+                    else:
+                        pb = rig.pose.bones.get(bname)
+                    if pb:
+                        binfo.setPoseBone(pb, rig)
+                        enableBoneNumLayer(pb, rig, T_CUSTOM)
+
+        # Widgets
         if widgets:
             from .proxy import WidgetConverter
-            ob = widgets[0]
-            rig = ob.parent
-            print("Convert %s to widgets for %s" % (ob.name, rig.name))
-            wc = WidgetConverter()
-            wc.convertWidgets(context, rig, ob)
-            enableRigNumLayer(rig, T_WIDGETS)
+            wrig = widgets[0]
+            rig = wrig.parent
+            ob = getMeshChildren(wrig)[0]
+            if rig and ob and rig.type == 'ARMATURE':
+                print("Convert %s to widgets for %s" % (ob.name, rig.name))
+                activateObject(context, ob)
+                wc = WidgetConverter()
+                wc.convertWidgets(context, rig, ob)
+                enableRigNumLayer(rig, T_WIDGETS)
 
+        # Restore all objects
         for ob,parent,wmat,hide1,hide2 in objects:
             ob.parent = parent
             setWorldMatrix(ob, wmat)
@@ -1522,389 +1417,8 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                 if mod:
                     mod.object = parent
 
-        def copyPose(subrig, rig):
-            from .figure import copyBoneInfo
-            from .fix import copyConstraints
-            from .driver import copyProp
-
-            for key,pg0 in subrig.data.DazBoneMap.items():
-                if key not in rig.data.DazBoneMap.keys():
-                    pg = rig.data.DazBoneMap.add()
-                    pg.name = pg0.name
-                    pg.s = pg0.s
-
-            def copyProps(self, src, trg, ovr):
-                for prop,value in src.items():
-                    if prop[0:3] != "Daz":
-                        copyProp(prop, src, trg, ovr)
-
-            copyProps(subrig, rig, True)
-            copyProps(subrig.data, rig.data, False)
-            self.copyDrivers(subrig.data, rig.data, subrig, rig)
-            self.copyDrivers(subrig, rig, subrig, rig)   # causes warnings
-            for bname,pbinfo in self.posebones.items():
-                pb = rig.pose.bones[bname]
-                subpb = pbinfo.set(pb)
-                copyBoneInfo(subpb, pb)
-                copyConstraints(subpb, pb, rig)
-
+        # Delete objects
         deleteObjects(context, deletes)
-        return
-
-
-        if not self.separateCharacters:
-            if self.useOnlySelected:
-                rig = context.object
-                subrigs = self.getSubRigs(rig)
-            else:
-                rig,subrigs = getSelectedRigs(context)
-            locmat = rig.matrix_local.copy()
-            rig.matrix_local = Matrix()
-            info,subinfos,repars = self.getRigInfos(context, rig, subrigs)
-            self.mergeRigs(context, info, subinfos, repars)
-            rig.matrix_local = locmat
-        else:
-            rigs = []
-            for rig in getSelectedArmatures(context):
-                if rig.parent is None:
-                    rigs.append(rig)
-            rgroups = []
-            locmats = []
-            for rig in rigs:
-                subrigs = self.getSubRigs(rig)
-                rgroups.append((rig,subrigs))
-                locmat = rig.matrix_local.copy()
-                rig.matrix_local = Matrix()
-                locmats.append(locmat)
-            igroups = []
-            for rig,subrigs in rgroups:
-                igroup = self.getRigInfos(context, rig, subrigs)
-                igroups.append(igroup)
-            for info,subinfos,repars in igroups:
-                activateObject(context, info.rig)
-                self.mergeRigs(context, info, subinfos, repars)
-            for rig,locmat in zip(rigs, locmats):
-                rig.matrix_local = locmat
-
-
-    def getRigInfos(self, context, rig, subrigs):
-        def findSubObjects(rig, subobs):
-            for child in rig.children:
-                subobs.append(child)
-                findSubObjects(child, subobs)
-
-        subobs = []
-        findSubObjects(rig, subobs)
-        repars = []
-        for ob in subobs:
-            if ob.parent and ob.parent_type == 'BONE':
-                if ob.parent in subrigs:
-                    wmat = ob.matrix_world.copy()
-                    repars.append((ob, wmat))
-
-        subinfos = []
-        conforming = []
-        info = RigInfo(rig, True, self)
-        for subrig in subrigs:
-            if subrig.parent is None:
-                conforms = (self.useMergeNonConforming == 'ALWAYS')
-            elif subrig.parent == rig:
-                conforms = self.isConforming(subrig, rig, info)
-            elif subrig.parent in repars:
-                continue
-            else:
-                conforms = True
-            if conforms:
-                conforming.append(subrig)
-            subinfo = RigInfo(subrig, conforms, self)
-            subinfos.append(subinfo)
-
-        bpy.ops.object.select_all(action='DESELECT')
-        for subinfo in subinfos:
-            selectSet(subinfo.rig, True)
-            for ob,_ in subinfo.objects:
-                selectSet(ob, True)
-        for ob in repars:
-            selectSet(ob, True)
-        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-        bpy.ops.object.select_all(action='DESELECT')
-        for subrig in conforming:
-            selectSet(subrig, True)
-        safeTransformApply()
-        return info, subinfos, repars
-
-
-    def isConforming(self, subrig, rig, info):
-        if self.useMergeNonConforming == 'ALWAYS':
-            return True
-        if self.useMergeNonConforming == 'CONTROLS':
-            if subrig.DazUrl.lower() in DF.WidgetControls:
-                if info.foundControl:
-                    subrig.hide_viewport = True
-                    for child in subrig.children:
-                        child.hide_viewport = True
-                    return False
-                info.foundControl = list(subrig.children)
-                return True
-        if subrig.parent is None or subrig.parent_type != 'OBJECT':
-            return False
-        for bname in subrig.data.bones.keys():
-            if bname in rig.data.bones.keys():
-                return True
-        return False
-
-
-    def applyTransforms(self, info, subinfos):
-        bpy.ops.object.select_all(action='DESELECT')
-        selectSet(info.rig, True)
-        for subinfo in subinfos:
-            if subinfo.conforms:
-                selectSet(subinfo.rig, True)
-                for ob,data in subinfo.objects:
-                    partype,parbone = data
-                    if partype == 'OBJECT' and ob.type in ['MESH', 'ARMATURE']:
-                        selectSet(ob, True)
-        safeTransformApply()
-
-
-    def getSubRigs(self, rig):
-        subrigs = []
-        for ob in rig.children:
-            if ob.type == 'ARMATURE' and ob.select_get():
-                subrigs.append(ob)
-                subrigs += self.getSubRigs(ob)
-        return subrigs
-
-
-    def mergeRigs(self, context, info, subinfos, repars):
-        rig = info.rig
-        LS.forAnimation(None, rig)
-        if rig is None:
-            raise DazError("No rigs to merge")
-        oldvis = getRigLayers(rig)
-        enableAllRigLayers(rig)
-        locmat = rig.matrix_local.copy()
-        success = False
-        try:
-            self.mergeRigs1(context, info, subinfos, repars)
-            success = True
-        finally:
-            rig.matrix_local = locmat
-            setRigLayers(rig, oldvis)
-            if success:
-                enableRigNumLayer(rig, T_CUSTOM)
-            if info.foundControl:
-                enableRigNumLayer(rig, T_WIDGETS)
-            setActiveObject(context, rig)
-            updateDrivers(rig)
-            updateDrivers(rig.data)
-
-
-    def mergeRigs1(self, context, info, subinfos, repars):
-        from .node import clearParent
-        scn = context.scene
-        rig = info.rig
-
-        if not ES.easy:
-            print("Merge infos to %s:" % rig.name)
-        self.applyTransforms(info, subinfos)
-        mainbones = list(rig.pose.bones.keys())
-        extrabones = []
-        for subinfo in subinfos:
-            subinfo.getEditBones(mainbones, extrabones)
-        adds, hdadds, removes = self.createNewCollections(rig)
-
-        activateObject(context, rig)
-        nmerged = len(rig.data.DazMergedRigs)
-        if nmerged == 0:
-            pg = rig.data.DazMergedRigs.add()
-            pg.name = "0"
-            pg.s = rig.DazUrl
-            pg.b = False
-            nmerged = 1
-        for idx,subinfo in enumerate(subinfos):
-            if subinfo.conforms:
-                subinfo.addEditBones(rig, idx+nmerged, T_CUSTOM)
-        for bone in rig.data.bones:
-            if bone.name in extrabones:
-                bone["DazExtraBone"] = True
-        self.reparentObjects(info, rig, adds, hdadds, removes)
-        for idx,subinfo in enumerate(subinfos):
-            if subinfo.conforms:
-                subinfo.copyPose(context, rig)
-                for ob,_ in subinfo.objects:
-                    if ob.type == 'MESH':
-                        self.changeArmatureModifier(ob, rig)
-                        subinfo.renameVertexGroups(ob)
-                self.reparentObjects(subinfo, rig, adds, hdadds, removes)
-                pg = rig.data.DazMergedRigs.add()
-                pg.name = str(idx+nmerged)
-                pg.s = subinfo.rig.DazUrl
-                pg.b = (subinfo.parbone is not None)
-                subinfo.rig.parent = None
-                deleteObjects(context, [subinfo.rig])
-                for ob,_ in subinfo.objects:
-                    if ob.type == 'MESH' and ob.name[-5:] == " Mesh":
-                        ob.name = ob.name[:-5]
-            else:
-                subinfo.reParent(rig)
-                self.reparentObjects(subinfo, subinfo.rig, adds, hdadds, removes)
-            #deleteObjects(context, subinfo.deletes)
-        activateObject(context, rig)
-        self.combineDuplicates(rig)
-        self.cleanVertexGroups(rig)
-        setMode('OBJECT')
-        if self.useConvertWidgets and info.foundControl:
-            from .proxy import WidgetConverter
-            ob = info.foundControl[0]
-            print("Convert %s to widgets for %s" % (ob.name, rig.name))
-            wc = WidgetConverter()
-            wc.convertWidgets(context, rig, ob)
-            enableRigNumLayer(rig, T_WIDGETS)
-
-
-    def reparentObjects(self, info, rig, adds, hdadds, removes):
-        from .driver import retargetDrivers
-        if info.rig and info.rig != rig:
-            retargetDrivers(rig, info.rig, rig)
-            retargetDrivers(rig.data, info.rig, rig)
-
-        for ob,data in info.objects:
-            partype, parbone = data
-            if partype.startswith('VERTEX'):
-                continue
-            wmat = ob.matrix_world.copy()
-            ob.parent = rig
-            ob.parent_type = partype
-            if parbone is None:
-                pass
-            elif parbone in rig.data.bones.keys():
-                ob.parent_bone = parbone
-            else:
-                ob.parent_bone = info.getBoneKey(parbone)
-            setWorldMatrix(ob, wmat)
-            self.addToCollections(ob, adds, hdadds, removes)
-            if info.rig and info.rig != rig:
-                if ob.type == 'MESH':
-                    if ob.data.shape_keys:
-                        retargetDrivers(ob.data.shape_keys, info.rig, rig)
-                    for mat in ob.data.materials:
-                        if mat:
-                            retargetDrivers(mat.node_tree, info.rig, rig)
-
-
-    def combineDuplicates(self, rig):
-        def renameVertexGroup(rig, bname1, bname2):
-            for ob in getMeshChildren(rig):
-                vgrp = ob.vertex_groups.get(bname1)
-                if vgrp:
-                    vgrp.name = bname2
-
-        dups = {}
-        for bone in rig.data.bones:
-            words = bone.name.rsplit(":", 1)
-            if len(words) == 2:
-                bname = words[1]
-                if bname not in dups.keys():
-                    dups[bname] = []
-                dups[bname].append(bone)
-        merge = {}
-        for bname,bones in dups.items():
-            if len(bones) == 1:
-                bone = bones[0]
-                renameVertexGroup(rig, bone.name, bname)
-                bone.name = bname
-            else:
-                head = bones[0].head_local
-                diff = False
-                for bone in bones[1:]:
-                    if (bone.head_local - head).length > self.duplicateDistance * GS.scale:
-                        diff = True
-                if not diff:
-                    merge[bname] = [bone.name for bone in bones]
-                    for bone in bones:
-                        renameVertexGroup(rig, bone.name, bname)
-        if merge:
-            setMode('EDIT')
-            for bname,bnames in merge.items():
-                eb = rig.data.edit_bones[bnames[0]]
-                eb.name = bname
-                for bname in bnames[1:]:
-                    eb = rig.data.edit_bones[bname]
-                    rig.data.edit_bones.remove(eb)
-            setMode('OBJECT')
-
-
-    def createNewCollections(self, rig):
-        adds = []
-        hdadds = []
-        removes = []
-        if not self.createMeshCollection:
-            return adds, hdadds, removes
-
-        mcoll = hdcoll = None
-        for coll in bpy.data.collections:
-            if rig in coll.objects.values():
-                rigname = noHDName(rig.name)
-                if isHDName(coll.name):
-                    if hdcoll is None:
-                        hdcoll = bpy.data.collections.new(name= "%s Meshes HD" % rigname)
-                        hdadds = [hdcoll]
-                    coll.children.link(hdcoll)
-                else:
-                    if mcoll is None:
-                        mcoll = bpy.data.collections.new(name= "%s Meshes" % rigname)
-                        adds = [mcoll]
-                    coll.children.link(mcoll)
-                removes.append(coll)
-        return adds, hdadds, removes
-
-
-    def changeVertexGroupNames(self, ob, storage):
-        for bname in storage.keys():
-            if bname in ob.vertex_groups.keys():
-                vgrp = ob.vertex_groups[bname]
-                vgrp.name = storage[bname].realname
-
-
-    def addToCollections(self, ob, adds, hdadds, removes):
-        if not self.createMeshCollection:
-            return
-        adders = (hdadds if isHDMesh(ob) else adds)
-        for grp in adders:
-            if ob.name not in grp.objects:
-                grp.objects.link(ob)
-        for grp in removes:
-            if ob.name in grp.objects:
-                grp.objects.unlink(ob)
-
-
-    def changeArmatureModifier(self, ob, rig):
-        mod = getModifier(ob, 'ARMATURE')
-        if mod:
-            mod.name = "Armature %s" % rig.name
-            mod.object = rig
-            return
-        if len(ob.vertex_groups) == 0:
-            print("Mesh with no vertex groups: %s" % ob.name)
-        else:
-            mod = ob.modifiers.new("Armature %s" % rig.name, "ARMATURE")
-            mod.object = rig
-            mod.use_deform_preserve_volume = True
-
-
-    def cleanVertexGroups(self, rig):
-        def unkey(bname):
-            return bname.split(":",1)[-1]
-
-        bones = dict([(unkey(bname),[]) for bname in rig.data.bones.keys()])
-        for bone in rig.data.bones:
-            bones[unkey(bone.name)].append(bone)
-        for bname,dbones in bones.items():
-            if len(dbones) == 1:
-                bone = dbones[0]
-                if bone.name != bname:
-                    bone.name = bname
 
 #-------------------------------------------------------------
 #   Copy bone locations
