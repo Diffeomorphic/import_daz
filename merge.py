@@ -1222,7 +1222,7 @@ class PoseBoneInfo:
         return self.bone
 
 
-class RigInfo:
+class XRigInfo:
     def __init__(self, rig, conforms, btn):
         self.name = rig.name
         self.rig = rig
@@ -1344,6 +1344,24 @@ class RigInfo:
                 vgrp.name = key
 
 
+class BoneInfo:
+    def __init__(self, bone, parname):
+        self.head = bone.head_local.copy()
+        self.tail = bone.tail_local.copy()
+        self.matrix = bone.matrix_local.copy()
+        self.parent = parname
+        self.deform = bone.use_deform
+
+    def set(self, bname, ebones):
+        eb = ebones.new(bname)
+        eb.head = self.head
+        eb.tail = self.tail
+        eb.matrix = self.matrix
+        self.use_deform = self.deform
+        if self.parent is not None:
+            eb.parent = ebones.get(self.parent)
+
+
 class MergeRigsOptions:
     duplicateDistance : FloatProperty(
         name = "Duplicate Distance (cm)",
@@ -1371,7 +1389,13 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
     bl_description = "Merge selected rigs to active rig"
     bl_options = {'UNDO'}
 
+    useOnlySelected : BoolProperty(
+        name = "Only Selected Rigs",
+        description = "Only merge armatures that are children of selected armatures",
+        default = False)
+
     def draw(self, context):
+        self.layout.prop(self, "useOnlySelected")
         self.layout.prop(self, "duplicateDistance")
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
@@ -1411,19 +1435,30 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                         parname = bone.parent.name
                     else:
                         parname = parentBone
-                    bones[bone.name] = (bone.head_local.copy(), bone.tail_local.copy(), bone.matrix_local.copy(), parname)
-                info.append((rig, bones))
+                    bones[bone.name] = BoneInfo(bone, parname)
+                meshes = [child for child in rig.children if child.type == 'MESH']
+                info.append((rig, bones, meshes))
             else:
                 parent = ob
             for child in ob.children:
                 getObjects(child, parent, objects, infos, widgets, info)
+
+        def hasSelectedRig(ob):
+            if ob.type == 'ARMATURE':
+                return ob.select_get()
+            else:
+                for child in ob.children:
+                    if hasSelectedRig(child):
+                        return True
+            return False
 
         roots = [ob for ob in context.view_layer.objects if ob.parent is None]
         objects = []
         infos = []
         widgets = []
         for root in roots:
-            getObjects(root, None, objects, infos, widgets, [])
+            if not self.useOnlySelected or hasSelectedRig(root):
+                getObjects(root, None, objects, infos, widgets, [])
 
         def addMergedProp(rig, subrig, idx):
             pg = rig.data.DazMergedRigs.add()
@@ -1434,39 +1469,38 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
         deletes = []
         dupss = []
         for info in infos:
-            rig,bones = info[0]
+            rig,bones,_meshes = info[0]
             heads = {}
             dups = {}
             dupss.append(dups)
             idx = 0
             addMergedProp(rig, rig, idx)
-            for subrig,subbones in info[1:]:
+            for subrig,subbones,meshes in info[1:]:
                 deletes.append(subrig)
-                for bname,data in subbones.items():
+                for bname,binfo in subbones.items():
                     if bname not in bones.keys():
-                        head,tail,matrix,parname = data
                         head0 = heads.get(bname)
-                        if head0 and (head-head0).length > self.duplicateDistance * GS.scale:
+                        if head0 and (binfo.head-head0).length > self.duplicateDistance * GS.scale:
                             dups[bname] = True
+                        else:
+                            heads[bname] = binfo.head
                 idx += 1
                 addMergedProp(rig, subrig, idx)
 
         for info,dups in zip(infos, dupss):
-            rig,bones = info[0]
+            rig,bones,_meshes = info[0]
             activateObject(context, rig)
             setMode('EDIT')
-            for subrig,subbones in info[1:]:
-                for bname,data in subbones.items():
+            for subrig,subbones,meshes in info[1:]:
+                for bname,binfo in subbones.items():
                     if bname not in bones.keys():
-                        head,tail,matrix,parname = data
                         if bname in dups.keys():
-                            bname = "%s:%s" % (subrig.name, bname)
-                        eb = rig.data.edit_bones.new(bname)
-                        eb.head = head
-                        eb.tail = tail
-                        eb.matrix = matrix
-                        if parname is not None:
-                            eb.parent = rig.data.edit_bones.get(parname)
+                            dupname = "%s:%s" % (subrig.name, bname)
+                            for mesh in meshes:
+                                vgrp = mesh.vertex_groups.get(bname)
+                                vgrp.name = dupname
+                            bname = dupname
+                        binfo.set(bname, rig.data.edit_bones)
             setMode('OBJECT')
 
         if widgets:
@@ -1485,14 +1519,41 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
             ob.hide_set(hide2)
             if ob.type == 'MESH':
                 mod = getModifier(ob, 'ARMATURE')
-                mod.object = parent
+                if mod:
+                    mod.object = parent
+
+        def copyPose(subrig, rig):
+            from .figure import copyBoneInfo
+            from .fix import copyConstraints
+            from .driver import copyProp
+
+            for key,pg0 in subrig.data.DazBoneMap.items():
+                if key not in rig.data.DazBoneMap.keys():
+                    pg = rig.data.DazBoneMap.add()
+                    pg.name = pg0.name
+                    pg.s = pg0.s
+
+            def copyProps(self, src, trg, ovr):
+                for prop,value in src.items():
+                    if prop[0:3] != "Daz":
+                        copyProp(prop, src, trg, ovr)
+
+            copyProps(subrig, rig, True)
+            copyProps(subrig.data, rig.data, False)
+            self.copyDrivers(subrig.data, rig.data, subrig, rig)
+            self.copyDrivers(subrig, rig, subrig, rig)   # causes warnings
+            for bname,pbinfo in self.posebones.items():
+                pb = rig.pose.bones[bname]
+                subpb = pbinfo.set(pb)
+                copyBoneInfo(subpb, pb)
+                copyConstraints(subpb, pb, rig)
 
         deleteObjects(context, deletes)
         return
 
 
         if not self.separateCharacters:
-            if self.useSubrigsOnly:
+            if self.useOnlySelected:
                 rig = context.object
                 subrigs = self.getSubRigs(rig)
             else:

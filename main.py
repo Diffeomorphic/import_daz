@@ -785,7 +785,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if self.useMergeRigs and len(rigs) > 1:
                 print("Merge rigs")
                 bpy.ops.daz.merge_rigs(
-                    useSubrigsOnly = True,
+                    useOnlySelected = True,
                     duplicateDistance = self.duplicateDistance,
                     useMergeNonConforming = self.useMergeNonConforming)
                 mainRig = context.object
