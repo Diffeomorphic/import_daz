@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import os
 import json
 import bpy
@@ -1373,39 +1371,126 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
     bl_description = "Merge selected rigs to active rig"
     bl_options = {'UNDO'}
 
-    separateCharacters : BoolProperty(
-        name = "Separate Characters",
-        description = "Don't merge armature that belong to different characters",
-        default = False)
-
-    useSubrigsOnly : BoolProperty(
-        name = "Only Child Rigs",
-        description = "Only merge armatures that are children of the active armature",
-        default = False)
-
-    if BLENDER3:
-        createMeshCollection : BoolProperty(
-            name = "Create Mesh Collection",
-            description = "Create a new collection and move all meshes to it",
-            default = True)
-    else:
-        createMeshCollection = False
-
     def draw(self, context):
-        self.layout.prop(self, "separateCharacters")
-        if not self.separateCharacters:
-            self.layout.prop(self, "useSubrigsOnly")
         self.layout.prop(self, "duplicateDistance")
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
-        if BLENDER3:
-            self.layout.prop(self, "createMeshCollection")
 
     def __init__(self):
         DriverUser.__init__(self)
 
-
     def run(self, context):
+        def getObjects(ob, parent, objects, infos, widgets, info):
+            objects.append((ob, parent, ob.matrix_world.copy(), ob.hide_viewport, ob.hide_get()))
+            ob.hide_viewport = False
+            ob.hide_set(False)
+            if ob.type == 'ARMATURE':
+                rig = ob
+                parentBone = None
+                if rig.parent is None or rig.parent.type != 'ARMATURE':
+                    conforms = False
+                elif rig.parent_type == 'BONE':
+                    conforms = False
+                    if self.useMergeNonConforming == 'ALWAYS':
+                        conforms = True
+                        parentBone = rig.parent_bone
+                    elif (self.useMergeNonConforming == 'CONTROLS' and
+                          rig.DazUrl.lower() in DF.WidgetControls):
+                        conforms = True
+                        parentBone = rig.parent_bone
+                        widgets.append(rig)
+                else:
+                    conforms = True
+                if not conforms:
+                    parent = rig
+                    info = []
+                    infos.append(info)
+                bones = {}
+                for bone in rig.data.bones:
+                    if bone.parent:
+                        parname = bone.parent.name
+                    else:
+                        parname = parentBone
+                    bones[bone.name] = (bone.head_local.copy(), bone.tail_local.copy(), bone.matrix_local.copy(), parname)
+                info.append((rig, bones))
+            else:
+                parent = ob
+            for child in ob.children:
+                getObjects(child, parent, objects, infos, widgets, info)
+
+        roots = [ob for ob in context.view_layer.objects if ob.parent is None]
+        objects = []
+        infos = []
+        widgets = []
+        for root in roots:
+            getObjects(root, None, objects, infos, widgets, [])
+
+        def addMergedProp(rig, subrig, idx):
+            pg = rig.data.DazMergedRigs.add()
+            pg.name = str(idx)
+            pg.s = subrig.DazUrl
+            pg.b = (subrig.parent_bone is not None)
+
+        deletes = []
+        dupss = []
+        for info in infos:
+            rig,bones = info[0]
+            heads = {}
+            dups = {}
+            dupss.append(dups)
+            idx = 0
+            addMergedProp(rig, rig, idx)
+            for subrig,subbones in info[1:]:
+                deletes.append(subrig)
+                for bname,data in subbones.items():
+                    if bname not in bones.keys():
+                        head,tail,matrix,parname = data
+                        head0 = heads.get(bname)
+                        if head0 and (head-head0).length > self.duplicateDistance * GS.scale:
+                            dups[bname] = True
+                idx += 1
+                addMergedProp(rig, subrig, idx)
+
+        for info,dups in zip(infos, dupss):
+            rig,bones = info[0]
+            activateObject(context, rig)
+            setMode('EDIT')
+            for subrig,subbones in info[1:]:
+                for bname,data in subbones.items():
+                    if bname not in bones.keys():
+                        head,tail,matrix,parname = data
+                        if bname in dups.keys():
+                            bname = "%s:%s" % (subrig.name, bname)
+                        eb = rig.data.edit_bones.new(bname)
+                        eb.head = head
+                        eb.tail = tail
+                        eb.matrix = matrix
+                        if parname is not None:
+                            eb.parent = rig.data.edit_bones.get(parname)
+            setMode('OBJECT')
+
+        if widgets:
+            from .proxy import WidgetConverter
+            ob = widgets[0]
+            rig = ob.parent
+            print("Convert %s to widgets for %s" % (ob.name, rig.name))
+            wc = WidgetConverter()
+            wc.convertWidgets(context, rig, ob)
+            enableRigNumLayer(rig, T_WIDGETS)
+
+        for ob,parent,wmat,hide1,hide2 in objects:
+            ob.parent = parent
+            setWorldMatrix(ob, wmat)
+            ob.hide_viewport = hide1
+            ob.hide_set(hide2)
+            if ob.type == 'MESH':
+                mod = getModifier(ob, 'ARMATURE')
+                mod.object = parent
+
+        deleteObjects(context, deletes)
+        return
+
+
         if not self.separateCharacters:
             if self.useSubrigsOnly:
                 rig = context.object
@@ -1603,7 +1688,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
             else:
                 subinfo.reParent(rig)
                 self.reparentObjects(subinfo, subinfo.rig, adds, hdadds, removes)
-            deleteObjects(context, subinfo.deletes)
+            #deleteObjects(context, subinfo.deletes)
         activateObject(context, rig)
         self.combineDuplicates(rig)
         self.cleanVertexGroups(rig)
