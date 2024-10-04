@@ -1289,23 +1289,24 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
             for child in ob.children:
                 getObjects(child, parent, objects, infos, widgets, info)
 
-        def hasSelectedRig(ob):
-            if ob.type == 'ARMATURE':
-                return ob.select_get()
-            else:
-                for child in ob.children:
-                    if hasSelectedRig(child):
-                        return True
-            return False
+        def findSelectedRoots(objects):
+            roots = []
+            for ob in objects:
+                if ob.type == 'ARMATURE' and ob.select_get():
+                    roots.append(ob)
+                else:
+                    roots += findSelectedRoots(ob.children)
+            return roots
 
         # Collect info about objects and bones
         roots = [ob for ob in context.view_layer.objects if ob.parent is None]
+        if self.useOnlySelected:
+            roots = findSelectedRoots(roots)
         objects = []
         infos = []
         widgets = []
         for root in roots:
-            if not self.useOnlySelected or hasSelectedRig(root):
-                getObjects(root, None, objects, infos, widgets, [])
+            getObjects(root, root.parent, objects, infos, widgets, [])
 
         def addMergedProp(rig, subrig, idx):
             pg = rig.data.DazMergedRigs.add()
