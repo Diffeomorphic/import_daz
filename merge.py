@@ -1250,8 +1250,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
 
     def run(self, context):
         def getObjects(ob, parent, objects, infos, widgets, info):
-            if (ob.type == 'ARMATURE' or
-                (parent and parent.type == 'ARMATURE')):
+            if parent and parent.type == 'ARMATURE':
                 objects.append((ob, parent, ob.matrix_world.copy(), ob.hide_viewport, ob.hide_get()))
                 ob.hide_viewport = False
                 ob.hide_set(False)

@@ -582,7 +582,7 @@ class Instance(Accessor, Channels, SimNode):
         # global_transform = global_translation * global_rotation * global_scale
 
         from .bone import BoneInstance
-        if self.restdata:
+        if GS.useBakedLocations and self.restdata:
             rdata = self.restdata
             trans = d2b00(rdata.head)
         else:
@@ -598,7 +598,7 @@ class Instance(Accessor, Channels, SimNode):
         ormat = Euler(orient).to_matrix().to_4x4()
 
         if parent:
-            if isinstance(parent, BoneInstance) and parent.restdata:
+            if GS.useBakedLocations and isinstance(parent, BoneInstance) and parent.restdata:
                 head = d2b00(parent.restdata.head)
                 head0 = d2b00(parent.attributes["center_point"])
                 coffset = cpoint - head0 + head

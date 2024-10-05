@@ -95,7 +95,7 @@ class BoneInstance(Instance):
 
 
     def updateMatrices(self):
-        if not LS.fitFile:
+        if not (GS.useBakedLocations and LS.fitFile):
             Instance.updateMatrices(self)
 
 
