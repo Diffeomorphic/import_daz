@@ -72,6 +72,7 @@ class DBZInfo:
         from .bone import BoneInstance
         if dbzrig is None:
             print("Cannot fit %s" % inst)
+        inst.restdata = dbzrig.restdata["NODE"]
         for child in inst.children.values():
             if isinstance(child, FigureInstance):
                 dbzchild = self.getEntry("rigs", child.node.name, child)
@@ -364,7 +365,7 @@ def fitToFile(filepath, nodes):
                 dbz.fitFigure(inst, dbzrig)
         elif isinstance(inst, BoneInstance):
             continue
-        elif not inst.geometries:
+        else:
             nodeid = inst.getNodeId()
             dbzobj = dbz.getEntry("rigs", nodeid, inst)
             if dbzobj:

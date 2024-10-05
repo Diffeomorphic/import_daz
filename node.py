@@ -584,6 +584,11 @@ class Instance(Accessor, Channels, SimNode):
         from .bone import BoneInstance
         if self.rigidFollow and self.restdata:
             trans = d2b00(self.restdata.head)
+            if parent:
+                if parent.restdata:
+                    trans -= d2b00(parent.restdata.head)
+                else:
+                    trans -= d2b00(parent.attributes["translation"])
         else:
             trans = d2b00(attributes["translation"])
         cpoint = d2b00(attributes["center_point"])
