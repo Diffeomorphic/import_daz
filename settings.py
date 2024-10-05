@@ -64,7 +64,6 @@ class GlobalSettings:
         self.useBakedMorphs = False
         self.showHiddenObjects = False
         self.ignoreHiddenObjects = False
-        self.useBakedLocations = False
         self.useMeshDrivers = True
 
         self.author = "Myself"

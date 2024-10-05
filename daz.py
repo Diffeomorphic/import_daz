@@ -397,10 +397,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Ignore Hidden Objects",
         description = "Don't build objects which are hidden in DAZ Studio")
 
-    useBakedLocations : BoolProperty(
-        name = "Baked Locations",
-        description = "Use object locations baked in dbz files.\nThis sometimes improves object locations but distorts pivots of bone parented objects")
-
     useMeshDrivers : BoolProperty(
         name = "Mesh Drivers",
         description = "Drive shapekeys with mesh object properties")
@@ -744,7 +740,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Objects")
         box.prop(self, "showHiddenObjects")
         box.prop(self, "ignoreHiddenObjects")
-        box.prop(self, "useBakedLocations")
 
         box = col.box()
         box.label(text = "Debugging")

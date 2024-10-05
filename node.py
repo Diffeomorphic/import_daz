@@ -195,7 +195,6 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def preprocess(self, context):
-        self.updateMatrices()
         for key,channel in self.channels.items():
             if key == "Instance Target":
                 target = self.instanceTarget = self.getChannelInstance(channel)
@@ -254,6 +253,7 @@ class Instance(Accessor, Channels, SimNode):
                         for dmat in geo.materials.values():
                             dmat.decals.append(self)
 
+        self.updateMatrices()
         for geonode in self.geometries:
             geonode.preprocess(context, self)
 
@@ -582,9 +582,8 @@ class Instance(Accessor, Channels, SimNode):
         # global_transform = global_translation * global_rotation * global_scale
 
         from .bone import BoneInstance
-        if GS.useBakedLocations and self.restdata:
-            rdata = self.restdata
-            trans = d2b00(rdata.head)
+        if self.rigidFollow and self.restdata:
+            trans = d2b00(self.restdata.head)
         else:
             trans = d2b00(attributes["translation"])
         cpoint = d2b00(attributes["center_point"])
@@ -598,12 +597,7 @@ class Instance(Accessor, Channels, SimNode):
         ormat = Euler(orient).to_matrix().to_4x4()
 
         if parent:
-            if GS.useBakedLocations and isinstance(parent, BoneInstance) and parent.restdata:
-                head = d2b00(parent.restdata.head)
-                head0 = d2b00(parent.attributes["center_point"])
-                coffset = cpoint - head0 + head
-            else:
-                coffset = cpoint - parent.cpoint
+            coffset = cpoint - parent.cpoint
             wtrans = parent.wmat @ (coffset + trans)
             wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
             oscale = ormat @ self.lscale @ ormat.inverted()
