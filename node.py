@@ -584,7 +584,9 @@ class Instance(Accessor, Channels, SimNode):
         if self.rigidFollow and self.restdata:
             if parent:
                 if parent.restdata:
-                    trans = d2b00(self.restdata.head @ parent.restdata.wsmat.inverted()- parent.restdata.head)
+                    offs = self.restdata.head - parent.restdata.head
+                    mat = parent.restdata.wsmat
+                    trans = d2b00(offs @ mat.inverted())
                 else:
                     trans = d2b00(self.restdata.head) - d2b00(parent.attributes["translation"])
             else:
