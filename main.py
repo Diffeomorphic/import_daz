@@ -14,9 +14,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import os
 import bpy
+from mathutils import Matrix
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
@@ -92,7 +92,7 @@ class FitOptions:
         box = self.layout.box()
         box.label(text = "Mesh Fitting")
         box.prop(self, "fitMeshes", expand=True)
-        if self.fitMeshes in ['TRANSFORMED', 'MORPHED']:
+        if self.fitMeshes == 'MORPHED':
             box.prop(self, "morphStrength")
         self.layout.separator()
 
@@ -658,7 +658,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
-        if self.fitMeshes not in ['TRANSFORMED', 'MORPHED']:
+        if self.fitMeshes != 'MORPHED':
             self.layout.prop(self, "useTransferFace")
             self.layout.prop(self, "useTransferHair")
             self.layout.prop(self, "useTransferGeografts")
@@ -913,9 +913,23 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 useAdjusters = self.useAdjusters,
                 useMakePosable=False)
 
-        if self.fitMeshes in ['TRANSFORMED', 'MORPHED'] and firstMesh:
+        if self.fitMeshes == 'MORPHED' and firstMesh:
             print("Transfer to all meshes")
-            self.transferShapes(context, firstMesh, meshes[1:], True, "All")
+            data = []
+            for mesh in meshes:
+                mod = getModifier(mesh, 'ARMATURE')
+                data.append((mesh, mesh.matrix_basis.copy(), mesh.parent, mod))
+                if mod:
+                    mod.show_viewport = False
+                    mesh.parent = None
+                    mesh.matrix_basis = Matrix()
+            try:
+                self.transferShapes(context, firstMesh, meshes[1:], True, "All")
+            finally:
+                for mesh,bmat,parent,mod in data:
+                    mod.show_viewport = True
+                    mesh.parent = parent
+                    mesh.matrix_basis = Matrix()
 
         # Transfer to HD meshes
         if self.useTransferHD and firstMesh:
@@ -961,7 +975,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         hdgrafts.append(hdob)
 
             if ((self.useTransferGeografts or self.useMergeGeografts) and
-                self.fitMeshes not in ['TRANSFORMED', 'MORPHED']):
+                self.fitMeshes != 'MORPHED'):
                 print("Transfer to geografts")
                 for grafts,hum in geografts.values():
                     if hum == firstMesh:
@@ -998,7 +1012,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     hdgrafts = []
 
         # Transfer shapekeys to clothes and lashes
-        if self.fitMeshes not in ['TRANSFORMED', 'MORPHED']:
+        if self.fitMeshes != 'MORPHED':
             if self.useTransferClothes:
                 print("Transfer to clothes")
                 self.transferShapes(context, firstMesh, clothes, True, "NoFace")
