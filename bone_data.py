@@ -90,6 +90,14 @@ class BoneData:
         "rShldrTwist" : "YXZ",
         "rHand" : "YXZ",
 
+        "lThigh" : "YZX",
+        "lThighBend" : "YZX",
+        "lThighTwist" : "YZX",
+
+        "rThigh" : "YZX",
+        "rThighBend" : "YZX",
+        "rThighTwist" : "YZX",
+
         "l_shoulder" : "YZX",
         "l_upperarm" : "YXZ",
         "l_upperarmtwist1" : "YXZ",

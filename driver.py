@@ -118,6 +118,7 @@ class DriverUser:
             trg2.bone_target = trg1.bone_target
             trg2.data_path = trg1.data_path
             trg2.transform_type = trg1.transform_type
+            trg2.rotation_mode = trg1.rotation_mode
             trg2.transform_space = trg1.transform_space
 
 
@@ -442,6 +443,8 @@ def addTransformVar(fcu, vname, ttype, rig, rig2, bname):
     trg.bone_target = bname
     if pb is None:
         trg.rotation_mode = 'XYZ'
+    elif pb.rotation_mode == 'QUATERNION':
+        trg.rotation_mode = BD.RotationModes.get(pb.name, 'QUATERNION')
     else:
         trg.rotation_mode = pb.rotation_mode
     trg.transform_type = ttype
