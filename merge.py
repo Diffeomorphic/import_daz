@@ -1329,7 +1329,11 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
             for subrig,subbones,meshes in info[1:]:
                 deletes.append(subrig)
                 for bname,binfo in subbones.items():
-                    if bname not in bones.keys():
+                    if bname in bones.keys():
+                        if binfo.use_deform:
+                            bone = rig.data.bones[bname]
+                            bone.use_deform = True
+                    else:
                         head0 = heads.get(bname)
                         if head0 and (binfo.head-head0).length > self.duplicateDistance * GS.scale:
                             dups[bname] = True
