@@ -1363,7 +1363,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
         if hasNew:
             enableRigNumLayer(rig, T_CUSTOM)
 
-        from .driver import copyProp
+        from .driver import copyProp, retargetDrivers
         def copyProps(src, trg, ovr):
             for prop,value in src.items():
                 if prop[0:3] != "Daz":
@@ -1383,6 +1383,14 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                 copyProps(subrig.data, rig.data, False)
                 self.copyDrivers(subrig.data, rig.data, subrig, rig)
                 self.copyDrivers(subrig, rig, subrig, rig)
+                for submesh in submeshes:
+                    skeys = submesh.data.shape_keys
+                    if skeys:
+                        retargetDrivers(skeys, subrig, rig)
+                    for mat in submesh.data.materials:
+                        if mat:
+                            retargetDrivers(mat.node_tree, subrig, rig)
+
                 for bname,binfo in subbones.items():
                     if bname in bones.keys():
                         continue
