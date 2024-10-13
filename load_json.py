@@ -127,7 +127,10 @@ def loadJson(filepath, mustOpen=False, silent=False):
 
     struct,msg,jsonerr = loadFromString(string)
     if jsonerr:
-        string = smashString(string, jsonerr)
+        try:
+            string = smashString(string, jsonerr)
+        except IndexError:
+            string = ""
         if string:
             struct,msg,jsonerr = loadFromString(string)
     if msg and not silent:
