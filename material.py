@@ -208,6 +208,26 @@ class Material(Asset, Channels):
                 "Velvet" : not self.getValue(["Velvet Active"], False),
             }
 
+        elif self.shader == 'TOON':
+            LS.materialMethod = 'BSDF'
+            self.enabled = {
+                "Diffuse" : True,
+                "Subsurface" : False,
+                "Bump" : True,
+                "Normal" : True,
+                "Displacement" : True,
+                "Metallicity" : False,
+                "Translucency" : False,
+                "Transmission" : False,
+                "Dual Lobe Specular" : False,
+                "Top Coat" : False,
+                "Makeup" : False,
+                "Specular Occlusion" : False,
+                "Detail" : False,
+                "Metallic Flakes" : False,
+                "Velvet" : False,
+        }
+
         elif self.shader == 'BRICK':
             self.enabled = {
                 "Diffuse" : True,
@@ -310,6 +330,8 @@ class Material(Asset, Channels):
             shadername = unquote(self.url.rsplit("#",1)[-1])
             if shadername == "PBRSkin":
                 self.shader = 'PBRSKIN'
+            elif shadername.startswith("FilaToon"):
+                self.shader = 'TOON'
             elif shadername in ["Blended Dual Lobe Hair", "4-Layer Uber PBR MDL"]:
                 self.shader = 'BRICK'
             else:

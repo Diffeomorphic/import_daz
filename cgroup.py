@@ -808,7 +808,7 @@ class ToonDiffuseGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
         self.insockets += ["Color", "Ambience", "Normal"]
-        self.outsockets += ["Color"]
+        self.outsockets += ["Output"]
 
 
     def create(self, node, name, parent):
@@ -817,7 +817,7 @@ class ToonDiffuseGroup(CyclesGroup):
         addGroupInput(self.group, "NodeSocketColor", "Ambience")
         addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
-        addGroupOutput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketColor", "Output")
 
 
     def addNodes(self, args=None):
@@ -844,7 +844,7 @@ class ToonDiffuseGroup(CyclesGroup):
         mult.inputs[0].default_value = 1.0
         self.links.new(self.inputs.outputs["Color"], a)
         self.links.new(mixout, b)
-        self.links.new(multout, self.outputs.inputs["Color"])
+        self.links.new(multout, self.outputs.inputs["Output"])
 
 # ---------------------------------------------------------------------
 #   Toon Glossy Group
@@ -854,18 +854,18 @@ class ToonGlossyGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Color", "Reflection", "Roughness", "Normal"]
-        self.outsockets += ["Color"]
+        self.insockets += ["Input", "Reflection", "Roughness", "Normal"]
+        self.outsockets += ["Output"]
 
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 5)
-        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Input")
         addGroupInput(self.group, "NodeSocketColor", "Reflection")
         addGroupInput(self.group, "NodeSocketFloat", "Roughness")
         addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
-        addGroupOutput(self.group, "NodeSocketColor", "Color")
+        addGroupOutput(self.group, "NodeSocketColor", "Output")
 
 
     def addNodes(self, args=None):
@@ -884,10 +884,10 @@ class ToonGlossyGroup(CyclesGroup):
 
         add,a,b,addout = self.addMixRgbNode('ADD', 4)
         add.inputs[0].default_value = 1.0
-        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(self.inputs.outputs["Input"], a)
         self.links.new(maprange.outputs["Result"], b)
 
-        self.links.new(addout, self.outputs.inputs["Color"])
+        self.links.new(addout, self.outputs.inputs["Output"])
 
 # ---------------------------------------------------------------------
 #   Metal Group

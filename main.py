@@ -237,6 +237,8 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
             self.loadDazFile(filepath, context)
         if LS.render:
             LS.render.build(context)
+        if LS.toons:
+            self.addToons(context)
         if GS.useDump or GS.verbosity >= 4:
             from .error import dumpErrors
             dumpErrors(filepath)
@@ -303,6 +305,20 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
             self.msg += "  %s\n" % unquote(item)
         if len(items) > 10:
             self.msg += "  ... and %d more\n" % (len(items)-10)
+
+
+    def addToons(self, context):
+        scn = context.scene
+        scn.render.use_freestyle = True
+        fset = context.view_layer.freestyle_settings
+        lineset = fset.linesets.active
+        coll = bpy.data.collections.new("DAZ Toon Outline")
+        lineset.collection = coll
+        lineset.select_by_collection = True
+        toons = [geonode.rna for geonode in set(LS.toons) if geonode.rna and geonode.rna.type == 'MESH']
+        print("Toons: %s" % [ob.name for ob in toons])
+        for ob in toons:
+            coll.objects.link(ob)
 
 #------------------------------------------------------------------
 #   Import DAZ Materials
