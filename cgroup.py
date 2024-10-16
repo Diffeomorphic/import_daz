@@ -799,6 +799,95 @@ class GlossyGroup(FacMixGroup):
 
         self.mixCycles(mix.outputs[0], 2)
 
+# ---------------------------------------------------------------------
+#   Toon Diffuse Group
+# ---------------------------------------------------------------------
+
+class ToonDiffuseGroup(CyclesGroup):
+
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Color", "Ambience", "Normal"]
+        self.outsockets += ["Color"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 6)
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Ambience")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
+        self.hideSlot("Normal")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
+
+
+    def addNodes(self, args=None):
+        diffuse = self.addNode("ShaderNodeBsdfDiffuse", 1)
+        diffuse.inputs["Color"].default_value[0:3] = WHITE
+        diffuse.inputs["Roughness"].default_value = 0.0
+        self.links.new(self.inputs.outputs["Normal"], diffuse.inputs["Normal"])
+
+        toRgb = self.addNode("ShaderNodeShaderToRGB", 2)
+        self.links.new(diffuse.outputs["BSDF"], toRgb.inputs["Shader"])
+
+        maprange = self.addMapRange(3)
+        maprange.interpolation_type = 'STEPPED'
+        maprange.inputs["From Max"].default_value = 0.05
+        maprange.inputs["Steps"].default_value = 1
+        self.links.new(toRgb.outputs["Color"], maprange.inputs["Value"])
+
+        mix,a,b,mixout = self.addMixRgbNode('MIX', 4)
+        self.links.new(maprange.outputs["Result"], mix.inputs[0])
+        self.links.new(self.inputs.outputs["Ambience"], a)
+        b.default_value[0:3] = WHITE
+
+        mult,a,b,multout = self.addMixRgbNode('MULTIPLY', 5)
+        mult.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(mixout, b)
+        self.links.new(multout, self.outputs.inputs["Color"])
+
+# ---------------------------------------------------------------------
+#   Toon Glossy Group
+# ---------------------------------------------------------------------
+
+class ToonGlossyGroup(CyclesGroup):
+
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Color", "Reflection", "Roughness", "Normal"]
+        self.outsockets += ["Color"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 5)
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketColor", "Reflection")
+        addGroupInput(self.group, "NodeSocketFloat", "Roughness")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
+        self.hideSlot("Normal")
+        addGroupOutput(self.group, "NodeSocketColor", "Color")
+
+
+    def addNodes(self, args=None):
+        glossy = self.addNode("ShaderNodeBsdfGlossy", 1)
+        self.links.new(self.inputs.outputs["Reflection"], glossy.inputs["Color"])
+        self.links.new(self.inputs.outputs["Roughness"], glossy.inputs["Roughness"])
+        self.links.new(self.inputs.outputs["Normal"], glossy.inputs["Normal"])
+
+        toRgb = self.addNode("ShaderNodeShaderToRGB", 2)
+        self.links.new(glossy.outputs["BSDF"], toRgb.inputs["Shader"])
+
+        maprange = self.addMapRange(3)
+        maprange.interpolation_type = 'SMOOTHERSTEP'
+        maprange.inputs["From Max"].default_value = 0.2
+        self.links.new(toRgb.outputs["Color"], maprange.inputs["Value"])
+
+        add,a,b,addout = self.addMixRgbNode('ADD', 4)
+        add.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Color"], a)
+        self.links.new(maprange.outputs["Result"], b)
+
+        self.links.new(addout, self.outputs.inputs["Color"])
 
 # ---------------------------------------------------------------------
 #   Metal Group
@@ -1880,6 +1969,8 @@ ShaderGroups = {
         "useNormal" : (NormalGroup, "DAZ Normal", ["uvname"]),
         "useDisplacement" : (DisplacementGroup, "DAZ Displacement", []),
         "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
+        "useToonDiffuse" : (ToonDiffuseGroup, "DAZ Toon Diffuse", []),
+        "useToonGlossy" : (ToonGlossyGroup, "DAZ Toon Glossy", []),
     }
 
 class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
@@ -1917,6 +2008,8 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useNormal : BoolProperty(name="Normal", default=False)
     useDisplacement : BoolProperty(name="Displacement", default=False)
     useDecal : BoolProperty(name="Decal", default=False)
+    useToonDiffuse : BoolProperty(name="Toon Diffuse", default=False)
+    useToonGlossy : BoolProperty(name="Toon Glossy", default=False)
 
     def draw(self, context):
         for key in ShaderGroups.keys():
