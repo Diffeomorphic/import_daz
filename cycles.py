@@ -333,6 +333,7 @@ class CyclesTree(Tree):
         self.buildDecals()
         self.buildShells()
         self.buildOutput()
+        self.setRenderSettings()
         if GS.useUnusedTextures:
             self.buildUnusedTextures()
 
@@ -1726,6 +1727,10 @@ class CyclesTree(Tree):
             node.outputs["Value"].default_value = self.thickness
             self.links.new(node.outputs["Value"], output.inputs["Thickness"])
         return output
+
+
+    def setRenderSettings(self):
+        pass
 
     #-------------------------------------------------------------
     #   Displacment

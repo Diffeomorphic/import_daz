@@ -58,9 +58,13 @@ class ToonTree(CyclesTree):
 
 
     def buildShellGroups(self, shells):
-        push,n,shell = shells[0]
-        amb,ambtex,texslot = self.getColorTex(["Ambient"], "COLOR", WHITE)
-        self.linkColor(ambtex, self.diffuse, amb, "Ambience")
+        #push,n,shell = shells[0]
+        threshold = self.getValue(["Shadow Threshold"], 0)
+        if threshold == -1:
+            self.diffuse.inputs["Ambience"].default_value[0:3] = WHITE
+        else:
+            amb,ambtex,texslot = self.getColorTex(["Ambient"], "COLOR", WHITE)
+            self.linkColor(ambtex, self.diffuse, amb, "Ambience")
         LS.toons.append(self.owner.geometry)
 
 
@@ -79,3 +83,8 @@ class ToonTree(CyclesTree):
         self.cycles = glossy
         LS.usedFeatures["Glossy"] = True
 
+
+    def setRenderSettings(self):
+        mat = self.owner.rna
+        if mat:
+            mat.surface_render_method = 'BLENDED'
