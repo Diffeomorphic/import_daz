@@ -209,7 +209,6 @@ class Material(Asset, Channels):
             }
 
         elif self.shader == 'TOON':
-            LS.materialMethod = 'BSDF'
             self.enabled = {
                 "Diffuse" : True,
                 "Subsurface" : False,

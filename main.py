@@ -313,7 +313,10 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         fset = context.view_layer.freestyle_settings
         lineset = fset.linesets.active
         coll = bpy.data.collections.new("DAZ Toon Outline")
-        scn.collection.children.link(coll)
+        LS.collection.children.link(coll)
+        layer = getLayerCollection(context, coll)
+        if layer:
+            layer.exclude = True
         lineset.collection = coll
         lineset.select_by_collection = True
         toons = [geonode.rna for geonode in set(LS.toons) if geonode.rna and geonode.rna.type == 'MESH']

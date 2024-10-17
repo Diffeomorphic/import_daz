@@ -50,22 +50,22 @@ class ToonTree(CyclesTree):
     def buildDiffuse(self):
         from .cgroup import ToonDiffuseGroup
         color,tex = self.getDiffuseColor()
-        self.diffuse = self.addGroup(ToonDiffuseGroup, "DAZ Toon Diffuse")
-        self.linkColor(tex, self.diffuse, color, "Color")
-        self.cycles = self.diffuse
-        self.linkBumpNormal(self.diffuse)
+        node = self.addGroup(ToonDiffuseGroup, "DAZ Toon Diffuse")
+        self.linkColor(tex, node, color, "Color")
+        threshold = self.getValue(["Shadow Threshold"], 0)
+        if threshold == -1:
+            node.inputs["Ambience"].default_value[0:3] = WHITE
+        else:
+            amb,ambtex,texslot = self.getColorTex(["Ambient"], "COLOR", WHITE)
+            self.linkColor(ambtex, node, amb, "Ambience")
+        self.linkBumpNormal(node)
+        self.cycles = self.diffuse = node
         LS.usedFeatures["Diffuse"] = True
 
 
     def buildShellGroups(self, shells):
         #push,n,shell = shells[0]
-        threshold = self.getValue(["Shadow Threshold"], 0)
-        if threshold == -1:
-            self.diffuse.inputs["Ambience"].default_value[0:3] = WHITE
-        else:
-            amb,ambtex,texslot = self.getColorTex(["Ambient"], "COLOR", WHITE)
-            self.linkColor(ambtex, self.diffuse, amb, "Ambience")
-        LS.toons.append(self.owner.geometry)
+        pass
 
 
     def buildGlossy(self):
@@ -88,3 +88,4 @@ class ToonTree(CyclesTree):
         mat = self.owner.rna
         if mat:
             mat.surface_render_method = 'BLENDED'
+        LS.toons.append(self.owner.geometry)
