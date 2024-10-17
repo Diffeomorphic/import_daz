@@ -137,7 +137,7 @@ class WorldMaterial(CyclesMaterial):
         world.use_nodes = True
         self.tree.build()
         scn.world = world
-        if self.envmap is None:
+        if self.envmap is None and self.background is None:
             vis = world.cycles_visibility
             vis.camera = True
             vis.diffuse = False
@@ -148,26 +148,6 @@ class WorldMaterial(CyclesMaterial):
 #-------------------------------------------------------------
 #   World Tree
 #-------------------------------------------------------------
-
-class BackgroundGroup(CyclesGroup):
-    def __init__(self):
-        CyclesGroup.__init__(self)
-        self.insockets += ["Color"]
-        self.outsockets += ["Fac", "Color"]
-
-    def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 2)
-        addGroupInput(self.group, "NodeSocketColor", "Color")
-        addGroupOutput(self.group, "NodeSocketFloat", "Fac")
-        addGroupOutput(self.group, "NodeSocketColor", "Color")
-
-    def addNodes(self, args=None):
-        from .tree import hideAllBut
-        lightpath = self.addNode("ShaderNodeLightPath", 1)
-        hideAllBut(lightpath, ["Is Camera Ray"])
-        self.links.new(lightpath.outputs["Is Camera Ray"], self.outputs.inputs["Fac"])
-        self.links.new(self.inputs.outputs["Color"], self.outputs.inputs["Color"])
-
 
 class WorldTree(CyclesTree):
 
@@ -190,11 +170,14 @@ class WorldTree(CyclesTree):
             bgnode,socket = self.buildBackground(background, backdrop)
 
         if envnode and bgnode:
+            from .tree import hideAllBut
             self.addColumn()
+            lightpath = self.addNode("ShaderNodeLightPath", size=2)
+            hideAllBut(lightpath, ["Is Camera Ray"])
             mix = self.addNode("ShaderNodeMixShader")
-            self.links.new(bgnode.outputs["Fac"], mix.inputs[0])
+            self.links.new(lightpath.outputs["Is Camera Ray"], mix.inputs["Fac"])
             self.links.new(envnode.outputs["Background"], mix.inputs[1])
-            self.links.new(bgnode.outputs["Color"], mix.inputs[2])
+            self.links.new(bgnode.outputs["Background"], mix.inputs[2])
             socket = mix.outputs[0]
 
         self.addColumn()
@@ -270,10 +253,10 @@ class WorldTree(CyclesTree):
                 self.setTexNode(img.name, tex, tex, "COLOR")
                 self.linkVector(texco, tex)
 
-        bgnode = self.addGroup(BackgroundGroup, "DAZ Background")
+        bgnode = self.addNode("ShaderNodeBackground")
         self.linkColor(tex, bgnode, background, "Color")
-        bgnode.inputs["Color"].default_value[0:3] = background
-        socket = bgnode.outputs["Color"]
+        bgnode.inputs["Strength"].default_value = 1.0
+        socket = bgnode.outputs["Background"]
         return bgnode, socket
 
 

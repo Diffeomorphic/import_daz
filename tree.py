@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import bpy
 import os
 from .utils import *
@@ -323,7 +321,7 @@ NodeSize = {
     "ATTRIBUTE" : 2,
     "UVMAP" : 2,
     "FRESNEL" : 6,
-    "MAPPING" : 10,
+    "MAPPING" : 15,
     "BEVEL" : 7,
     "NORMAL_MAP" : 7,
     "BUMP" : 8,
