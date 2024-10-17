@@ -307,6 +307,7 @@ NodeSize = {
     "VALTORGB" : 10,
     "CLAMP" : 5,
     "MIX_RGB" : 8,
+    "SHADERTORGB" : 8,
     "MIX" : 12,
     "MATH" : 8,
     "VECT_MATH" : 6,

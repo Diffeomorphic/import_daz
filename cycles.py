@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 import math
 import os
@@ -86,8 +85,6 @@ class CyclesMaterial(Material):
 
 
     def setupTree(self):
-        from .pbr import PbrTree
-        from .brick import CyclesBrickTree, PbrBrickTree
         if self.isHair():
             from .hair import getHairTree
             geo = self.geometry
@@ -95,14 +92,19 @@ class CyclesMaterial(Material):
                 geo.hairMaterials.append(self)
             return getHairTree(self)
         elif self.shader == 'BRICK':
+            from .brick import CyclesBrickTree, PbrBrickTree
             if LS.materialMethod == 'BSDF':
                 return CyclesBrickTree(self)
             else:
                 return PbrBrickTree(self)
+        elif self.shader == 'TOON':
+            from .toon import ToonTree
+            return ToonTree(self)
         else:
             if LS.materialMethod == 'BSDF':
                 return CyclesTree(self)
             else:
+                from .pbr import PbrTree
                 return PbrTree(self)
 
 
@@ -398,8 +400,6 @@ class CyclesTree(Tree):
 
 
     def buildShells(self):
-        if GS.shellMethod != 'MATERIAL':
-            return
         shells = []
         n = 0
         for shell in self.owner.shells.values():
@@ -412,13 +412,14 @@ class CyclesTree(Tree):
             uvs = geo.uv_sets
         else:
             uvs = {}
-        if self.owner.shader == 'TOON':
-            if shells:
-                push,n,shell = shells[0]
-                self.buildToonShell(shell.material)
-            return
         if shells:
-            self.addColumn()
+            self.buildShellGroups(shells)
+
+
+    def buildShellGroups(self, shells):
+        if GS.shellMethod != 'MATERIAL':
+            return
+        self.addColumn()
         for push,n,shell in shells:
             node = self.addShellGroup(shell, push)
             if node:
@@ -807,10 +808,7 @@ class CyclesTree(Tree):
             return
         self.addColumn()
         color,tex = self.getDiffuseColor()
-        if self.owner.shader == 'TOON':
-            self.buildToonDiffuse(color, tex)
-        else:
-            self.buildStandardDiffuse(color, tex)
+        self.buildStandardDiffuse(color, tex)
         self.cycles = self.diffuse
         self.linkBumpNormal(self.diffuse)
         LS.usedFeatures["Diffuse"] = True
@@ -850,37 +848,6 @@ class CyclesTree(Tree):
                 return 1-wt,None
         else:
             return 1,None
-
-    #-------------------------------------------------------------
-    #   FilaToon
-    #-------------------------------------------------------------
-
-    def buildToonDiffuse(self, color, tex):
-        from .cgroup import ToonDiffuseGroup
-        self.diffuse = self.addGroup(ToonDiffuseGroup, "DAZ Toon Diffuse")
-        self.linkColor(tex, self.diffuse, color, "Color")
-
-
-    def buildToonShell(self, dmat):
-        amb,ambtex,texslot = self.getColorTex(["Ambient"], "COLOR", WHITE)
-        self.linkColor(ambtex, self.diffuse, amb, "Ambience")
-        LS.toons.append(self.owner.geometry)
-
-
-    def buildToonGlossy(self):
-        fac = self.getValue(["Glossy Layered Weight"], 0)
-        if fac == 0:
-            return
-        from .cgroup import ToonGlossyGroup
-        glossy = self.addGroup(ToonGlossyGroup, "DAZ Toon Glossy")
-        refl,refltex,texslot = self.getColorTex(["Glossy Reflectivity"], "COLOR", WHITE)
-        rough,roughtex,texslot = self.getColorTex(["Glossy Roughness"], "NONE", 0.0)
-        self.links.new(self.diffuse.outputs["Output"], glossy.inputs["Input"])
-        self.linkColor(refltex, glossy, refl*fac, "Reflection")
-        self.linkScalar(roughtex, glossy, rough, "Roughness")
-        self.linkBumpNormal(glossy)
-        self.cycles = glossy
-        LS.usedFeatures["Glossy"] = True
 
     #-------------------------------------------------------------
     #   Diffuse Overlay
@@ -1021,9 +988,6 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildGlossyOrDualLobe(self):
-        if self.owner.shader == 'TOON':
-            self.buildToonGlossy()
-            return
         if self.isEnabled("Dual Lobe Specular"):
             dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
         else:

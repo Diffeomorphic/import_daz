@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import os
 import bpy
 from .utils import *
@@ -40,6 +39,8 @@ FingerPrints = {
     "2028-2730-858" : "Lashes9",
     "5079-10079-5000" : "Mouth9",
     "280-500-220" : "Tear9",
+    "400-764-366" : "Toon9-eyesocket",
+    "854-1696-848" : "Toon9-mouth",
 }
 
 HomeDirs = {
@@ -63,6 +64,8 @@ HomeDirs = {
     "Lashes9" : "data/DAZ 3D/Genesis 9/Genesis 9 Eyelashes/Morphs",
     "Tear9" : "data/DAZ 3D/Genesis 9/Genesis 9 Tear/Morphs",
     "Mouth9" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs",
+    "Toon9-eyesocket" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Eye Socket/Morphs",
+    "Toon9-mouth" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs",
 }
 
 VertexCounts = {
@@ -80,6 +83,9 @@ VertexCounts = {
     2028 : "Geneis 9 eyelashes",
     5079 : "Genesis 9 mouth",
     280 : "Genesis 9 tear",
+    400 : "Toon9-eyesocket",
+    854 : "Toon9-mouth",
+
 }
 
 FingerPrintsHD = {

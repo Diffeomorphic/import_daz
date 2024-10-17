@@ -35,7 +35,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "bone_data", "transform", "node", "figure", "bone", "geometry",
            "layers", "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "simple", "category", "dbzfile", "panel",
-           "tree", "material", "cycles", "cgroup", "pbr", "brick", "render", "camera", "light",
+           "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
            "guess", "convert", "files", "merge", "finger",
            "matedit", "scale", "tables", "proxy", "hide",
            "mhx_data", "mhx", "rigify_data", "rigify", "transfer",

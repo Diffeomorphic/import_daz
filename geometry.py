@@ -420,7 +420,9 @@ class GeoNode(Node, SimNode):
                 elif hasattr(ob.data, "use_auto_smooth"):
                     ob.data.use_auto_smooth = smooth
                     ob.data.auto_smooth_angle = angle
-            scaleEyeMoisture(ob)
+
+
+            self.scaleEyeMoisture(ob, ob.DazMesh)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
             if hdob and hdob.data != ob.data:
@@ -431,7 +433,7 @@ class GeoNode(Node, SimNode):
                         hduvlayer.active = hduvlayer.active_render = True
                 #if GS.usePruneNodes:
                 #    pruneUvMaps(hdob)
-                scaleEyeMoisture(hdob)
+                self.scaleEyeMoisture(hdob, ob.DazMesh)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
                 if GS.useShellDrivers:
@@ -452,6 +454,38 @@ class GeoNode(Node, SimNode):
             shiftMesh(ob, inst)
             if hdob and hdob.data != ob.data:
                 shiftMesh(hdob, inst)
+
+
+    def scaleEyeMoisture(self, ob, meshtype):
+        if GS.useScaleEyeMoisture:
+            url = self.url.lower().rsplit("#",1)[0]
+            if (meshtype in ["Genesis8-female", "Genesis8-male"] and
+                url in ["/data/daz%203d/genesis%208/female/genesis8female.dsf",
+                        "/data/daz%203d/genesis%208/female/genesis8male.dsf"]):
+                verts = []
+                for mn,mat in enumerate(ob.data.materials):
+                    if mat and mat.name.lower().startswith(("eyemoisture", "eyereflection")):
+                        for f in ob.data.polygons:
+                            if f.material_index == mn:
+                                verts += f.vertices
+                        break
+                vgrp = ob.vertex_groups.new(name="Displace")
+                for vn in set(verts):
+                    vgrp.add([vn], 1.0, 'REPLACE')
+                strength = 0.01 * GS.scale
+            elif (meshtype == "Toon9-eyesocket" and
+                  url == "/data/daz%203d/g9tooncommon/genesis%209%20toon%20eye%20socket/g9tooneyesocket.dsf"):
+                vgrp = None
+                strength = 0.1 * GS.scale
+            else:
+                return
+
+            from .dforce import addModifierFirst
+            mod = addModifierFirst(ob, "Displace", 'DISPLACE', exclude='ARMATURE')
+            mod.strength = strength
+            mod.mid_level = 0
+            if vgrp:
+                mod.vertex_group = vgrp.name
 
 
     def finishHD(self, context, ob, hdob, inst):
@@ -548,46 +582,6 @@ class GeoNode(Node, SimNode):
         self.data.hidePolyGroup(self.rna, fnums)
         if self.hdobject and self.hdobject != self.rna:
             self.data.hidePolyGroup(self.hdobject, fnums)
-
-
-def scaleEyeMoisture(ob):
-    if GS.useScaleEyeMoisture and ob.DazMesh:
-        mdict = {}
-        for mn,mat in enumerate(ob.data.materials):
-            if mat and mat.name.lower().startswith(("eyemoisture", "eyereflection")):
-                for f in ob.data.polygons:
-                    if f.material_index == mn:
-                        for vn in f.vertices:
-                            mdict[vn] = True
-                break
-        if mdict:
-            if "lEye" in ob.vertex_groups.keys():
-                lgn = ob.vertex_groups["lEye"].index
-            else:
-                return
-            if "rEye" in ob.vertex_groups.keys():
-                rgn = ob.vertex_groups["rEye"].index
-            else:
-                return
-            lmoist = []
-            rmoist = []
-            for vn in mdict.keys():
-                v = ob.data.vertices[vn]
-                for g in v.groups:
-                    if g.group == lgn:
-                        lmoist.append(v)
-                    elif g.group == rgn:
-                        rmoist.append(v)
-            lcenter = sum([v.co for v in lmoist], Vector((0,0,0))) / len(lmoist)
-            rcenter = sum([v.co for v in rmoist], Vector((0,0,0))) / len(rmoist)
-            if GS.verbosity >= 3:
-                print('Scale eye moisture vertices for %s mesh "%s"' % (ob.DazMesh, ob.name))
-                print("Centers:", lcenter, rcenter)
-            for v in lmoist:
-                v.co = lcenter + 1.01*(v.co - lcenter)
-            for v in rmoist:
-                v.co = rcenter + 1.01*(v.co - rcenter)
-
 
 
 def isEmpty(vgrp, ob):

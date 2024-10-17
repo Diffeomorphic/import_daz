@@ -2834,17 +2834,11 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
 def addArmatureModifier(ob, rig, modname):
-    from .dforce import ModStore
+    from .dforce import addModifierFirst
     mod = getModifier(ob, 'ARMATURE')
     if mod is None:
-        stores = []
-        for mod in ob.modifiers:
-            stores.append(ModStore(mod))
-            ob.modifiers.remove(mod)
-        mod = ob.modifiers.new(modname, 'ARMATURE')
+        mod = addModifierFirst(ob, modname, 'ARMATURE')
         mod.object = rig
-        for store in stores:
-            store.restore(ob)
     else:
         mod.object = rig
         mod.name = modname

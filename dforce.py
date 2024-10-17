@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 import os
 import numpy as np
@@ -338,6 +337,18 @@ class ModStore:
                 setattr(data, key, value)
             except:
                 pass
+
+
+def addModifierFirst(ob, modname, modtype, exclude="NONE"):
+    stores = []
+    for mod in ob.modifiers:
+        if mod.type != exclude:
+            stores.append(ModStore(mod))
+            ob.modifiers.remove(mod)
+    mod = ob.modifiers.new(modname, modtype)
+    for store in stores:
+        store.restore(ob)
+    return mod
 
 #-------------------------------------------------------------
 #   Make Simulation
