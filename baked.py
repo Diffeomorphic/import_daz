@@ -73,13 +73,14 @@ def postloadMorphs(context, filepath):
         ob = lm.obj
         for prop,data in props.items():
             label,value = data
-            ob[prop] = value*factor
-            setProtected(ob, prop, True)
-            setActivated(ob, prop, False)
-            if prop not in ob.DazBaked.keys():
-                item = ob.DazBaked.add()
-                item.name = prop
-                item.text = label
+            if isinstance(value, (float, int)):
+                ob[prop] = value*factor
+                setProtected(ob, prop, True)
+                setActivated(ob, prop, False)
+                if prop not in ob.DazBaked.keys():
+                    item = ob.DazBaked.add()
+                    item.name = prop
+                    item.text = label
 
     def addFormFormulas(forms, ob, lm, useMorphed):
         edict = {}

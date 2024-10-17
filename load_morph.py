@@ -426,6 +426,8 @@ class LoadMorph(DriverUser):
     def makeFormulas(self, asset, skey):
         from .formula import Formula, setFormulaExpr, ExprTarget
         from .modifier import Alias
+        if asset.type in ["file"]:
+            return
         prop = rawProp(self.getUniqueName(asset.getName()))
         if prop != asset.name:
             self.setAlias(asset.name, prop)
