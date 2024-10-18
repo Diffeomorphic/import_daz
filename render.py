@@ -167,18 +167,17 @@ class WorldTree(CyclesTree):
         if envmap:
             envnode,socket = self.buildEnvmap(envmap)
         if background:
-            bgnode,socket = self.buildBackground(background, backdrop)
-
-        if envnode and bgnode:
             from .tree import hideAllBut
+            bgnode,socket = self.buildBackground(background, backdrop)
             self.addColumn()
             lightpath = self.addNode("ShaderNodeLightPath", size=2)
             hideAllBut(lightpath, ["Is Camera Ray"])
             mix = self.addNode("ShaderNodeMixShader")
             self.links.new(lightpath.outputs["Is Camera Ray"], mix.inputs["Fac"])
-            self.links.new(envnode.outputs["Background"], mix.inputs[1])
             self.links.new(bgnode.outputs["Background"], mix.inputs[2])
             socket = mix.outputs[0]
+            if envnode:
+                self.links.new(envnode.outputs["Background"], mix.inputs[1])
 
         self.addColumn()
         output = self.addNode("ShaderNodeOutputWorld")
