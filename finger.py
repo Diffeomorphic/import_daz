@@ -40,7 +40,7 @@ FingerPrints = {
     "5079-10079-5000" : "Mouth9",
     "280-500-220" : "Tear9",
     "844-1670-834" : "Toon9-floating-iris",
-    "400-764-366" : "Toon9-eyesocket",
+    "400-764-366" : "Toon9-eye-socket",
     "854-1696-848" : "Toon9-mouth",
 }
 
@@ -67,7 +67,7 @@ HomeDirs = {
     "Mouth9" : "data/DAZ 3D/Genesis 9/Genesis 9 Mouth/Morphs",
     "Toon9" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon/Morphs",
     "Toon9-floating-iris" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs",
-    "Toon9-eyesocket" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Eye Socket/Morphs",
+    "Toon9-eye-socket" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Eye Socket/Morphs",
     "Toon9-mouth" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs",
 }
 
@@ -86,7 +86,8 @@ VertexCounts = {
     2028 : "Geneis 9 eyelashes",
     5079 : "Genesis 9 mouth",
     280 : "Genesis 9 tear",
-    400 : "Toon9-eyesocket",
+    844 : "Toon9-floating-iris",
+    400 : "Toon9-eye-socket",
     854 : "Toon9-mouth",
 
 }

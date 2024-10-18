@@ -1,6 +1,6 @@
 {
 	"name" : "Toon9-floating-iris",
-	"hd-morphs" : true,
+	"hd-morphs" : false,
 	"head" : {
 		"prefix" : "head_",
 		"include" : ["head_"],
@@ -12,6 +12,12 @@
 		"include" : ["facs_ctrl_", "facs_bs_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs/Daz 3D/FACS/"
-	}
+	},
+	"anime" : {
+		"prefix" : "baseanime_",
+		"include" : ["baseanime_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs/DAZ 3D/Base Anime/"
+	}		
 }	
 		

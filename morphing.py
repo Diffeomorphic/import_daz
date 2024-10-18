@@ -37,7 +37,7 @@ from .uilist import updateScrollbars
 
 class MorphSets:
     def __init__(self):
-        self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Powerpose", "Body"]
+        self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Powerpose", "Body", "Anime"]
         self.Customs = ["Custom", "Baked"]
         self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
@@ -60,6 +60,7 @@ class MorphSets:
             "Masculine" : "Adjust JCMs",
             "Feminine" : "Adjust JCMs",
             "Flexions" : "Adjust Flexions",
+            "Anime" : "Adjust Anime",
         }
 
 
@@ -306,26 +307,28 @@ class MorphPaths:
                     strips = struct["strip"]
                 else:
                     strips = prefixes
-                folder = struct["path"]
                 includes = getShortformList(struct["include"])
                 excludes = getShortformList(struct["exclude"])
                 if "exclude2" in struct.keys():
                     excludes = excludes + getShortformList(struct["exclude2"])
                 if "exclude3" in struct.keys():
                     excludes = excludes + getShortformList(struct["exclude3"])
-
-                for abspath in GS.getAbsPaths(folder):
-                    files = list(os.listdir(abspath))
-                    files.sort()
-                    for file in files:
-                        fname,ext = os.path.splitext(file)
-                        if ext not in [".duf", ".dsf"]:
-                            continue
-                        isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
-                        key = fname.lower()
-                        if isright and key not in typeNames.keys():
-                            typeFiles[name] = canonicalPath("%s/%s" % (abspath, file))
-                            typeNames[key] = name
+                folders = struct["path"]
+                if isinstance(folders, str):
+                    folders = [folders]
+                for folder in folders:
+                    for abspath in GS.getAbsPaths(folder):
+                        files = list(os.listdir(abspath))
+                        files.sort()
+                        for file in files:
+                            fname,ext = os.path.splitext(file)
+                            if ext not in [".duf", ".dsf"]:
+                                continue
+                            isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
+                            key = fname.lower()
+                            if isright and key not in typeNames.keys():
+                                typeFiles[name] = canonicalPath("%s/%s" % (abspath, file))
+                                typeNames[key] = name
 
 
     def isRightType(self, fname, prefixes, strips, includes, excludes):
@@ -950,6 +953,17 @@ class DAZ_OT_ImportPowerpose(DazOperator, StandardMorphSelector, StandardMorphLo
     stripPrefix = "powerpose_ctrl_"
 
 
+class DAZ_OT_ImportAnime(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
+    bl_idname = "daz.import_anime"
+    bl_label = "Import Anime"
+    bl_description = "Import selected anime morphs"
+    bl_options = {'UNDO'}
+
+    morphset = "Anime"
+    bodypart = "Face"
+    stripPrefix = "baseanime_"
+
+
 class DAZ_OT_SelectMhxCompatible(bpy.types.Operator):
     bl_idname = "daz.select_mhx_compatible"
     bl_label = "MHX Compatible"
@@ -1275,6 +1289,11 @@ class MorphTypeOptions:
         description = "Import all feminine JCMs",
         default = False)
 
+    useAnime : BoolProperty(
+        name = "Anime",
+        description = "Import all anime morphs",
+        default = False)
+
     useFlexions : BoolProperty(
         name = "Flexions",
         description = "Import all flexions",
@@ -1300,6 +1319,7 @@ class MorphTypeOptions:
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useFacsdetails")
         self.layout.prop(self, "useFacsexpr")
+        self.layout.prop(self, "useAnime")
         self.layout.prop(self, "usePowerpose")
         self.layout.prop(self, "useBody")
         if self.useBody and self.isMhxAware:
@@ -1356,6 +1376,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useFacs, "Facs", "Face")
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
+        self.stripPrefix = "baseanime_"
+        self.loadMorphType(context, self.useAnime, "Anime", "Face")
         self.stripPrefix = "powerpose_ctrl_"
         self.loadMorphType(context, self.usePowerpose, "Powerpose", "Face")
         self.stripPrefix = "pJCM"
@@ -2141,6 +2163,7 @@ classes = [
     DAZ_OT_ImportFacsDetails,
     DAZ_OT_ImportFacsExpressions,
     DAZ_OT_ImportPowerpose,
+    DAZ_OT_ImportAnime,
     DAZ_OT_ImportBodyMorphs,
     DAZ_OT_SelectMhxCompatible,
     DAZ_OT_ImportFlexions,

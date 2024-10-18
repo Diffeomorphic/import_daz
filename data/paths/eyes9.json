@@ -30,6 +30,12 @@
 		"include" : ["body_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Eyes/Morphs/DAZ 3D/Base Flexions/"
-	}
+	},
+	"anime" : {
+		"prefix" : "baseanime_",
+		"include" : ["baseanime_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 9 Eyes/Morphs/DAZ 3D/Base Anime/"
+	}	
 }	
 		

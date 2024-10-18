@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 from .utils import *
 from .buildnumber import BUILD
@@ -126,6 +125,7 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.operator("daz.import_facs_details")
             self.layout.operator("daz.import_facs_expressions")
             self.layout.operator("daz.import_powerpose")
+            self.layout.operator("daz.import_anime")
             self.layout.operator("daz.import_body_morphs")
             self.layout.separator()
             self.layout.operator("daz.import_jcms")
@@ -778,6 +778,17 @@ class DAZ_PT_FacsExpressions(DAZ_PT_Morphs, bpy.types.Panel):
     uilist = "DAZ_UL_FacsExpressions"
 
 
+class DAZ_UL_Anime(DAZ_UL_StandardMorphs):
+    morphset = "Anime"
+
+class DAZ_PT_Anime(DAZ_PT_Morphs, bpy.types.Panel):
+    bl_label = "Anime"
+    bl_parent_id = "DAZ_PT_MorphGroup"
+    morphset = "Anime"
+    ftype = "DazAnime"
+    uilist = "DAZ_UL_Anime"
+
+
 class DAZ_UL_Powerpose(DAZ_UL_StandardMorphs):
     morphset = "Powerpose"
 
@@ -1280,6 +1291,7 @@ classes = [
     DAZ_UL_Facs,
     DAZ_UL_FacsDetails,
     DAZ_UL_FacsExpressions,
+    DAZ_UL_Anime,
     DAZ_UL_Powerpose,
     DAZ_UL_Body,
     DAZ_UL_JCMs,
@@ -1295,6 +1307,7 @@ classes = [
     DAZ_PT_Facs,
     DAZ_PT_FacsDetails,
     DAZ_PT_FacsExpressions,
+    DAZ_PT_Anime,
     DAZ_PT_Powerpose,
     DAZ_PT_Body,
     DAZ_PT_JCMs,
