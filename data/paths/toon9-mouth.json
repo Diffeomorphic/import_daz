@@ -1,0 +1,23 @@
+{
+	"name" : "Toon9-mouth",
+	"hd-morphs" : true,
+	"head" : {
+		"prefix" : "head_",
+		"include" : ["head_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs/Daz 3D/Head/"
+	},
+	"facs" : {
+		"prefix" : "facs_",
+		"include" : ["facs_ctrl_", "facs_bs_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs/Daz 3D/FACS/"
+	},
+	"facsexpr" : {
+		"prefix" : ["facs_ctrl_"],
+		"include" : ["facs_ctrl_"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs/Daz 3D/FACSExpressions/"
+	}
+}	
+		
