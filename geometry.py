@@ -473,7 +473,7 @@ class GeoNode(Node, SimNode):
                 for vn in set(verts):
                     vgrp.add([vn], 1.0, 'REPLACE')
                 strength = 0.01 * GS.scale
-            elif (meshtype == "Toon9-eyesocket" and
+            elif (meshtype == "Toon9-eye-socket" and
                   url == "/data/daz%203d/g9tooncommon/genesis%209%20toon%20eye%20socket/g9tooneyesocket.dsf"):
                 vgrp = None
                 strength = 0.1 * GS.scale
