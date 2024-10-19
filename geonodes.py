@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 from .error import *
 from .utils import *
@@ -93,7 +92,7 @@ class FollowProxyGroup(GeoTree):
 
 class GeograftGroup(GeoTree):
     def create(self, node, name, parent):
-        GeoTree.create(self, node, name, parent, 7)
+        GeoTree.create(self, node, name, parent, 8)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketObject", "Geograft")
         addGroupInput(self.group, "NodeSocketString", "Pairs")
@@ -107,10 +106,13 @@ class GeograftGroup(GeoTree):
         # Connect the Group Input-Geograft socket to this input
         self.links.new(self.inputs.outputs["Geograft"], graft.inputs[0])
 
+
         # Join the geograft & body objects into 1 mesh (to the end of having 1 list of vertices)\
         joinGeo = self.addNode("GeometryNodeJoinGeometry", 2)
+        # joins = [self.inputs, graft]
         joins = [self.inputs, graft]
         joins.reverse()
+
         # Connect all objets to be joined to the Join Geometry node, which is to say....2
         for node in joins:
             self.links.new(node.outputs["Geometry"], joinGeo.inputs["Geometry"])
@@ -180,37 +182,92 @@ class GeograftsGroup(GeoTree):
         addGroupInput(self.group, "NodeSocketFloat", "Distance")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
-
-    def addGrafts(self, grafts):
-        join = self.addNode("GeometryNodeJoinGeometry", 2)
+    def addGrafts(self, grafts, hum_name = ""):
+        join = self.addNode("GeometryNodeJoinGeometry", 3)
         self.links.new(self.inputs.outputs["Geometry"], join.inputs["Geometry"])
         last = join
 
-        for graft in grafts:
+        # Add named attribute (FullBody) for deleting duplicated body geometry after the merge
+        temp_body_node = self.addNode("GeometryNodeInputNamedAttribute", 1)
+        temp_body_node.data_type = 'INT'
+        temp_body_node.inputs[0].default_value = f'FullBody_{hum_name}'
+
+        merge = self.addNode("GeometryNodeMergeByDistance", 6)
+
+        graft_count = len(grafts)
+        add_edge_node_counter = 0
+        add_edge_nodes = {}
+        for node_counter, graft in enumerate(grafts, start=1):
             gname = graft.name
             addGroupInput(self.group, "NodeSocketObject", "Geograft %s" % gname)
             addGroupInput(self.group, "NodeSocketString", "Pairs %s" % gname)
             addGroupInput(self.group, "NodeSocketFloat", "Mask %s" % gname)
             addGroupInput(self.group, "NodeSocketBool", "Toggle %s" % gname)
+            addGroupInput(self.group, "NodeSocketString", "Edge %s" % gname)
 
             node = self.addGroup(GeograftGroup, "DAZ Geograft", 1)
             self.links.new(self.inputs.outputs["Geometry"], node.inputs["Geometry"])
             self.links.new(self.inputs.outputs["Geograft %s" % gname], node.inputs["Geograft"])
             self.links.new(self.inputs.outputs["Pairs %s" % gname], node.inputs["Pairs"])
             self.links.new(self.inputs.outputs["Toggle %s" % gname], node.inputs["Toggle"])
-            self.links.new(node.outputs["Geometry"], join.inputs["Geometry"])
+
+            delete_temp_body = self.addNode("GeometryNodeDeleteGeometry", 2)
+            self.links.new(temp_body_node.outputs["Attribute"], delete_temp_body.inputs["Selection"])
+            self.links.new(node.outputs["Geometry"], delete_temp_body.inputs["Geometry"])
+            self.links.new(delete_temp_body.outputs["Geometry"], join.inputs["Geometry"])
 
             toggle = self.addNode("GeometryNodeSwitch", 3)
             toggle.input_type = 'FLOAT'
             self.links.new(self.inputs.outputs["Toggle %s" % gname], toggle.inputs["Switch"])
             self.links.new(self.inputs.outputs["Mask %s" % gname], toggle.inputs["True"])
 
-            delete = self.addNode("GeometryNodeDeleteGeometry", 4)
-            self.links.new(last.outputs["Geometry"], delete.inputs["Geometry"])
-            self.links.new(toggle.outputs["Output"], delete.inputs["Selection"])
-            last = delete
+            # Limit selection to the geograft edges
+            graft_edge_attr = self.addNode("GeometryNodeInputNamedAttribute", 3)
+            graft_edge_attr.data_type = 'BOOLEAN'
 
-        merge = self.addNode("GeometryNodeMergeByDistance", 4)
+            self.links.new(self.inputs.outputs["Edge %s" % gname], graft_edge_attr.inputs["Name"])
+
+            # Connect the edge vertex group attribute to the merge by distance selection (name is the same on the graft & body object)
+            if graft_count == 1:
+                self.links.new(graft_edge_attr.outputs["Attribute"], merge.inputs["Selection"])
+            # For multiple geografts, we need to add the edges together to feed to the merge by distance selection
+            else:
+                # Only add another add node if we're not on the last graft
+                if node_counter != 2:
+                    add_edge_node_counter += 1
+                    # Add nodes to combine any edges from multiple grafts, which will then limit the merge-by-distance verts
+                    add_edge_node = self.addNode("ShaderNodeMath", 5)
+                    add_edge_node.operation = 'ADD'
+                    add_edge_nodes[add_edge_node_counter] = add_edge_node
+                    if add_edge_node_counter > 1:
+                        prev_add_node = add_edge_nodes[add_edge_node_counter-1]
+
+                # Depending on if we're on the first/middle/last/etc... add node, we have to connect the switch output
+                # to the first or second value of the add node
+
+                if node_counter % 2 != 0:
+                    if node_counter == 1:
+                        self.links.new(graft_edge_attr.outputs["Attribute"], add_edge_node.inputs[0])
+                    else:
+                        self.links.new(graft_edge_attr.outputs["Attribute"], add_edge_node.inputs[1])
+
+                if 'prev_add_node' in locals():
+                    self.links.new(prev_add_node.outputs["Value"], add_edge_node.inputs[0])
+                if node_counter >= 2:
+                    self.links.new(graft_edge_attr.outputs["Attribute"], add_edge_node.inputs[1])
+                # elif 'prev_add_node' in locals():
+                #     self.links.new(graft_edge_attr.outputs["Attribute"], prev_add_node.inputs[1])
+
+                # On the last graft geograft offset
+                if node_counter == graft_count:
+                    self.links.new(add_edge_node.outputs["Value"], merge.inputs["Selection"])
+
+            # Delete the geograft masks
+            delete_mask = self.addNode("GeometryNodeDeleteGeometry", 4)
+            self.links.new(last.outputs["Geometry"], delete_mask.inputs["Geometry"])
+            self.links.new(toggle.outputs["Output"], delete_mask.inputs["Selection"])
+            last = delete_mask
+
         self.links.new(self.inputs.outputs["Distance"], merge.inputs["Distance"])
         self.links.new(last.outputs["Geometry"], merge.inputs["Geometry"])
         self.links.new(merge.outputs["Geometry"], self.outputs.inputs["Geometry"])
