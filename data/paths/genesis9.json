@@ -63,7 +63,9 @@
 		"include" : ["baseanime_"],
 		"exclude" : [],
 		"path" : ["data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Anime/",
-			  "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Anime FACS/"]
+			  "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Anime FACS/",
+			  "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Anime FACSExpressions/"
+			 ]
 	},		
 	"body" : {
 		"prefix" : "body_",

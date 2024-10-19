@@ -871,6 +871,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                   self.useFacs or
                   self.useFacsdetails or
                   self.useFacsexpr or
+                  self.useAnime or
                   self.usePowerpose or
                   self.useBody or
                   self.useJcms or
@@ -887,6 +888,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         useFacs = self.useFacs,
                         useFacsdetails = self.useFacsdetails,
                         useFacsexpr = self.useFacsexpr,
+                        useAnime = self.useAnime,
                         usePowerpose = self.usePowerpose,
                         useBody = self.useBody,
                         useMhxOnly = self.useMhxOnly,

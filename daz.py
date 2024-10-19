@@ -387,7 +387,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     useBakedMorphs : BoolProperty(
         name = "Baked Morphs",
-        description = "Allow that baked morphs are imported,\nand display them in the Morphs panel")
+        description = "Allow that baked morphs are imported")
 
     showHiddenObjects : BoolProperty(
         name = "Show Hidden Objects",

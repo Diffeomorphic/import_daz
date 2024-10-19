@@ -141,11 +141,25 @@ class LoadMorph(DriverUser):
         self.initAmt()
 
 
+    def isBaked(self, prop):
+        if GS.useBakedMorphs:
+            return False
+        return (self.bakedName(prop) in self.baked)
+
+
+    def bakedName(self, prop):
+        prop = prop.lower()
+        words = prop.rsplit("-0x", 1)
+        if len(words) == 2:
+            return words[0]
+        return prop
+
+
     def loadAllMorphs(self, namepaths):
         name = namepaths[0][0]
         self.initAll()
         if self.rig:
-            self.baked = [key.lower() for key in self.rig.DazBaked.keys()]
+            self.baked = [self.bakedName(key) for key in self.rig.DazBaked.keys()]
         self.adjustable = {}
         self.origMorphset = self.morphset
 
@@ -207,7 +221,7 @@ class LoadMorph(DriverUser):
             showProgress(idx, npaths)
             idx += 1
             lname = name.lower()
-            if lname in self.baked and not GS.useBakedMorphs:
+            if self.isBaked(lname):
                 if lname not in self.bakedSkipped.keys():
                     self.bakedSkipped[lname] = name
             else:
@@ -248,6 +262,9 @@ class LoadMorph(DriverUser):
             return " -"
         elif isinstance(asset, Alias) and self.useSearchAlias:
             return " _"
+        prop = rawProp(self.getUniqueName(asset.getName()))
+        if self.isBaked(prop):
+            return " B"
         self.bodypart = bodypart
         skey,ok = self.buildShape(asset)
         if not ok:
@@ -426,7 +443,7 @@ class LoadMorph(DriverUser):
         from .formula import Formula, setFormulaExpr, ExprTarget
         from .modifier import Alias
         if asset.type in ["file"]:
-            return
+            return False
         prop = rawProp(self.getUniqueName(asset.getName()))
         if prop != asset.name:
             self.setAlias(asset.name, prop)
