@@ -776,9 +776,11 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         ob = context.object
         msg = ""
         if not self.meshes:
-            msg = ('No mesh associated with "%s"' % context.object.name)
+            msg = ('No mesh associated with "%s"' % ob.name)
         elif not self.chars:
             msg = ("Can not add morphs to this mesh:\n %s" % ob.name)
+        elif self.rig is None:
+            msg = 'No figure armature found "%s"' % ob.name
         if msg:
             invokeErrorMessage(msg)
             return False

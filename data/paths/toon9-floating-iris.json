@@ -5,8 +5,9 @@
 		"prefix" : "head_",
 		"include" : ["head_"],
 		"exclude" : [],
-		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs/Daz 3D/Head/"
-	},
+		"path" : ["data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs/Daz 3D/Head/",
+			  "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs/DAZ 3D/Base/"]
+	},			  
 	"facs" : {
 		"prefix" : "facs_",
 		"include" : ["facs_ctrl_", "facs_bs_"],
