@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #-------------------------------------------------------------
 #   bone.py
 #-------------------------------------------------------------
@@ -274,20 +273,13 @@ class BoneData:
     }
 
     #-------------------------------------------------------------
-    #   Alternative parent hack
+    #   Copy rotation hack
     #-------------------------------------------------------------
 
-    Parents = {
-        "l_irislocal" : "l_eye",
-        "r_irislocal" : "r_eye",
+    CopyRotation = {
+        "l_iris" : ("l_eye", 0.5),
+        "r_iris" : ("r_eye", 0.5),
     }
-
-    def setParent(self, eb, parent, rig):
-        parname = self.Parents.get(eb.name)
-        if parname is not None:
-            eb.parent = rig.data.edit_bones.get(parname, parent)
-        else:
-            eb.parent = parent
 
     #-------------------------------------------------------------
     #   animation.py

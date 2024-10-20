@@ -689,6 +689,13 @@ class ExtraBones(DriverUser):
             store.removeConstraints(db, onlyLimit=True)
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
             store.restoreConstraints(db.name, pb)
+        for pb in rig.pose.bones:
+            if not isDrvBone(pb.name):
+                for cns in pb.constraints:
+                    if (hasattr(cns, "subtarget") and
+                        isDrvBone(cns.subtarget) and
+                        drvBone(pb.name) != cns.subtarget):
+                        cns.subtarget = baseBone(cns.subtarget)
 
         if not ES.easy:
             print("  Restore bone drivers")

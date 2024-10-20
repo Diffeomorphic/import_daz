@@ -812,6 +812,7 @@ ConstraintAttributes = [
     "use_max_x", "use_max_y", "use_max_z",
     "min_x", "min_y", "min_z",
     "max_x", "max_y", "max_z",
+    "influence",
 ]
 
 def copyConstraints(src, trg, rig=None):

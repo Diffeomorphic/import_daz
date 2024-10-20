@@ -127,7 +127,7 @@ class BoneInstance(Instance):
         figure.bones[self.name] = eb.name
         figinst.bones[self.name] = self
         rdata.checkBone(self.name)
-        BD.setParent(eb, parent, rig)
+        eb.parent = parent
         eb.head = head = d2b(rdata.head)
         eb.tail = tail = d2b(rdata.tail)
         length = (head-tail).length
@@ -413,6 +413,19 @@ class BoneInstance(Instance):
         tchildren = self.targetTransform(pb, node, targets, rig)
         self.setRotationLockDaz(pb, rig)
         self.setLocationLockDaz(pb, rig)
+        if pb.name in BD.CopyRotation.keys():
+            trgname,influ = BD.CopyRotation[pb.name]
+            trg = rig.pose.bones.get(trgname)
+            if trg:
+                from .mhx import copyRotation, copyLocation
+                cns = copyRotation(pb, trg, rig, space='LOCAL')
+                cns.target_space = 'LOCAL_WITH_PARENT'
+                cns.mix_mode = 'BEFORE'
+                cns.invert_x = cns.invert_y = cns.invert_z = True
+                cns.influence = influ
+                cns = copyLocation(pb, trg, rig, space='LOCAL')
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
+                cns.use_offset = True
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildPose(figure, inFace, tchildren, missing)
