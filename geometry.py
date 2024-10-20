@@ -1442,7 +1442,7 @@ class Geometry(Asset, Channels):
 
     def buildRigidity(self, ob):
         from .modifier import buildVertexGroup
-        if self.rigidity:
+        if self.rigidity and GS.useRigidity:
             strange = False
             for group in self.rigidity.get("groups", []):
                 rgroup = ob.data.DazRigidityGroups.add()

@@ -133,6 +133,7 @@ class GlobalSettings:
         self.useHDArmature = True
         self.useAutoSmooth = True
         self.maxSubdivs = 4
+        self.useRigidity = False
         self.useSimulation = True
         self.useScaleEyeMoisture = True
         self.onFaceMaps = 'NEVER'
