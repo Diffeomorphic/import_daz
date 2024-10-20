@@ -127,7 +127,7 @@ class BoneInstance(Instance):
         figure.bones[self.name] = eb.name
         figinst.bones[self.name] = self
         rdata.checkBone(self.name)
-        eb.parent = parent
+        BD.setParent(eb, parent, rig)
         eb.head = head = d2b(rdata.head)
         eb.tail = tail = d2b(rdata.tail)
         length = (head-tail).length

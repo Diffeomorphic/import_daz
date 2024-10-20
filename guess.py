@@ -51,6 +51,10 @@ def getMaterialType(mat, defaultType='CLOTHES'):
         "sclera" : 'WHITE',
         "iris" : 'BLUE',
         "irises" : 'BLUE',
+        "eye_left" : 'BLUE',
+        "eye_right" : 'BLUE',
+        "highlight" : 'WHITE',
+        "shadow" : 'SHADOW',
 
         "skinface" : 'SKIN',
         "face" : 'SKIN',
@@ -113,6 +117,8 @@ def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
             setDiffuse(mat, (0,0,0,1))
         elif mtype == 'INVIS':
             setDiffuse(mat, (0.5,0.5,0.5,0))
+        elif mtype == 'SHADOW':
+            mat.diffuse_color = (0.5,0.5,0.5,0.2)
         else:
             setDiffuse(mat, default)
 

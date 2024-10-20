@@ -274,6 +274,22 @@ class BoneData:
     }
 
     #-------------------------------------------------------------
+    #   Alternative parent hack
+    #-------------------------------------------------------------
+
+    Parents = {
+        "l_irislocal" : "l_eye",
+        "r_irislocal" : "r_eye",
+    }
+
+    def setParent(self, eb, parent, rig):
+        parname = self.Parents.get(eb.name)
+        if parname is not None:
+            eb.parent = rig.data.edit_bones.get(parname, parent)
+        else:
+            eb.parent = parent
+
+    #-------------------------------------------------------------
     #   animation.py
     #-------------------------------------------------------------
 
