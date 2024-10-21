@@ -167,6 +167,12 @@ class BoneInstance(Instance):
 
         if self.name in BD.FaceRigs:
             isFace = True
+        trgname = BD.Irises.get(eb.name)
+        if trgname:
+            trg = rig.data.edit_bones.get(trgname)
+            if trg:
+                eb.tail = tail = trg.tail
+                print("TT", eb.name, trg.name, tail)
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildEdit(figure, figinst, rig, eb, center, isFace)
@@ -413,19 +419,14 @@ class BoneInstance(Instance):
         tchildren = self.targetTransform(pb, node, targets, rig)
         self.setRotationLockDaz(pb, rig)
         self.setLocationLockDaz(pb, rig)
-        if pb.name in BD.CopyRotation.keys():
-            trgname,influ = BD.CopyRotation[pb.name]
+
+        trgname = BD.Irises.get(pb.name)
+        if trgname:
             trg = rig.pose.bones.get(trgname)
             if trg:
-                from .mhx import copyRotation, copyLocation
-                cns = copyRotation(pb, trg, rig, space='LOCAL')
-                cns.target_space = 'LOCAL_WITH_PARENT'
-                cns.mix_mode = 'BEFORE'
-                cns.invert_x = cns.invert_y = cns.invert_z = True
-                cns.influence = influ
-                cns = copyLocation(pb, trg, rig, space='LOCAL')
-                cns.target_space = 'LOCAL_OWNER_ORIENT'
-                cns.use_offset = True
+                from .mhx import dampedTrack
+                cns = dampedTrack(pb, trg, rig)
+                cns.head_tail = 1.0
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildPose(figure, inFace, tchildren, missing)
