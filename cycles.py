@@ -807,16 +807,9 @@ class CyclesTree(Tree):
     def buildDiffuse(self):
         if not self.isEnabled("Diffuse"):
             return
+        from .cgroup import DiffuseGroup
         self.addColumn()
         color,tex = self.getDiffuseColor()
-        self.buildStandardDiffuse(color, tex)
-        self.cycles = self.diffuse
-        self.linkBumpNormal(self.diffuse)
-        LS.usedFeatures["Diffuse"] = True
-
-
-    def buildStandardDiffuse(self, color, tex):
-        from .cgroup import DiffuseGroup
         fac,factex = self.getFacFromTranslucency()
         if fac == 0:
             return
@@ -831,6 +824,9 @@ class CyclesTree(Tree):
             roughness *= self.detrough
             roughtex = self.multiplyTexs(self.detroughtex, roughtex)
         self.setRoughness(self.diffuse, "Roughness", roughness, roughtex)
+        self.cycles = self.diffuse
+        self.linkBumpNormal(self.diffuse)
+        LS.usedFeatures["Diffuse"] = True
 
 
     def getFacFromTranslucency(self):
