@@ -44,7 +44,7 @@ class CyclesMaterial(Material):
         geoname = None
         if self.geometry:
             geoname = self.geometry.name
-        return ("<%sMaterial %s r:%s g:%s i:%s t:%s>" % (treetype, self.id, self.rna, geoname, self.ignore, self.hasAnyTexture()))
+        return ("<%sMaterial %s %s r:%s g:%s i:%s t:%s>" % (treetype, self.id, self.shader, self.rna, geoname, self.ignore, self.hasAnyTexture()))
 
 
     def guessColor(self):
@@ -422,6 +422,9 @@ class CyclesTree(Tree):
             return
         self.addColumn()
         for push,n,shell in shells:
+            if shell.material.shader == 'TOON':
+                LS.toons.append(self.owner.geometry)
+                return
             node = self.addShellGroup(shell, push)
             if node:
                 self.linkCycles(node, "BSDF")

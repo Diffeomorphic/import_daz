@@ -172,7 +172,6 @@ class BoneInstance(Instance):
             trg = rig.data.edit_bones.get(trgname)
             if trg:
                 eb.tail = tail = trg.tail
-                print("TT", eb.name, trg.name, tail)
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildEdit(figure, figinst, rig, eb, center, isFace)

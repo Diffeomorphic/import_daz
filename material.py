@@ -69,7 +69,7 @@ class Material(Asset, Channels):
 
 
     def __repr__(self):
-        return ("<Material %s %s %s>" % (self.id, self.geometry.name, self.rna))
+        return ("<Material %s %s %s %s>" % (self.id, self.shader, self.geometry.name, self.rna))
 
 
     def parse(self, struct):
@@ -126,11 +126,12 @@ class Material(Asset, Channels):
 
 
     def copyShellBasics(self, dmat):
+        print("CPY", dmat, self)
         self.basemix = dmat.basemix
         self.useVolume = dmat.useVolume
         self.useTranslucency = dmat.useTranslucency
         self.isThinWall = dmat.isThinWall
-        self.shader = dmat.shader
+        #self.shader = dmat.shader
         self.enabled = dmat.enabled
         self.rna = dmat.rna
 
@@ -323,6 +324,7 @@ class Material(Asset, Channels):
 
 
     def setExtra(self, struct):
+        shadername = unquote(self.url.rsplit("#",1)[-1])
         if struct["type"] == "studio/material/uber_iray":
             self.shader = 'UBER_IRAY'
         elif struct["type"] == "studio/material/daz_brick":
@@ -349,7 +351,6 @@ class Material(Asset, Channels):
             }
             shadername = table.get(shadername, shadername)
             self.addUnsupportedShader(shadername)
-
 
     def addUnsupportedShader(self, shadername):
         if shadername not in LS.shaders.keys():
@@ -380,7 +381,8 @@ class Material(Asset, Channels):
                 if uvset:
                     self.uv_sets[uv] = self.uv_sets[uvset.name] = uvset
         for shell in self.shells.values():
-            shell.material.shader = self.shader
+            pass
+            #shell.material.shader = self.shader
         return True
 
 
