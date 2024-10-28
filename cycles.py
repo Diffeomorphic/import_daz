@@ -570,33 +570,40 @@ class CyclesTree(Tree):
             if ky != 0:
                 sy = 1/ky
                 dy = oy/ky
-            modulo,mapping = self.addMappingNode((dx,dy,sx,sy,0), None)
+            modulo,mapping,clip = self.addMappingNode((dx,dy,sx,sy,0), True)
             if mapping:
                 self.linkVector(self.texco, modulo, 0)
                 self.texco = mapping.outputs["Vector"]
 
 
-    def addMappingNode(self, data, map, imgname=""):
+    def addMappingNode(self, data, clipped):
         dx,dy,sx,sy,rz = data
+        modulo = mapping = None
+        clip = 'REPEAT'
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
-            modulo = self.addNode("ShaderNodeVectorMath", 1, size=2)
-            modulo.operation = 'MODULO'
-            modulo.hide = True
-            modulo.inputs[1].default_value = (1,1,1)
+            if clipped:
+                modulo = self.addNode("ShaderNodeVectorMath", 1, size=2)
+                modulo.operation = 'MODULO'
+                modulo.hide = True
+                modulo.inputs[1].default_value = (1,1,1)
+                clip = 'CLIP'
+
             mapping = self.addNode("ShaderNodeMapping", 1, size=2)
             mapping.vector_type = 'TEXTURE'
             mapping.hide = True
-            self.links.new(modulo.outputs[0], mapping.inputs[0])
             mapping.inputs['Location'].default_value = (dx,dy,0)
             mapping.inputs['Scale'].default_value = (sx,sy,1)
             mapping.inputs['Rotation'].default_value = (0,0,rz)
-            if map and not map.invert and hasattr(mapping, "use_min"):
-                mapping.use_min = mapping.use_max = 1
-            key = "%s:%s" % (self.owner.name, imgname)
+            #if map and not map.invert and hasattr(mapping, "use_min"):
+            #    mapping.use_min = mapping.use_max = 1
+            if modulo:
+                self.links.new(modulo.outputs[0], mapping.inputs[0])
+            else:
+                modulo = mapping
+            key = "%s:%s" % (self.owner.name, "")
             self.owner.mappingNodes.append((key, mapping, data))
-            return modulo,mapping
-        else:
-            return None,None
+
+        return modulo,mapping,clip
 
     #-------------------------------------------------------------
     #   Normal Map
@@ -1837,19 +1844,19 @@ class CyclesTree(Tree):
         ty = imgmod.get("vertical_tiles", 1)
         dy = imgmod.get("vertical_tiling_offset", 0)
         data = (dx, dy/2, 1/tx, 1/ty, 0)
-        innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma)
+        innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma, False)
         if asset.hasMapping(map) and not changed:
             data = asset.getImageMapping(img, self.owner, map)
-            innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, map.invert, map.gamma)
+            innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, map.invert, map.gamma, True)
         return innode, texnode, outnode, isnew
 
 
-    def modifyTexture(self, col, texnode, outnode, data, invert, gamma):
+    def modifyTexture(self, col, texnode, outnode, data, invert, gamma, clipped):
         innode = texnode
         changed = False
-        modulo,mapping = self.addMappingNode(data, None)
+        modulo,mapping,clip = self.addMappingNode(data, clipped)
         if mapping:
-            texnode.extension = 'CLIP'
+            texnode.extension = clip
             self.linkVector(mapping, texnode)
             innode = modulo
             changed = True
