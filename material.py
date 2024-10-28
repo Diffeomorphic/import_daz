@@ -126,12 +126,10 @@ class Material(Asset, Channels):
 
 
     def copyShellBasics(self, dmat):
-        print("CPY", dmat, self)
         self.basemix = dmat.basemix
         self.useVolume = dmat.useVolume
         self.useTranslucency = dmat.useTranslucency
         self.isThinWall = dmat.isThinWall
-        #self.shader = dmat.shader
         self.enabled = dmat.enabled
         self.rna = dmat.rna
 
@@ -324,7 +322,6 @@ class Material(Asset, Channels):
 
 
     def setExtra(self, struct):
-        shadername = unquote(self.url.rsplit("#",1)[-1])
         if struct["type"] == "studio/material/uber_iray":
             self.shader = 'UBER_IRAY'
         elif struct["type"] == "studio/material/daz_brick":

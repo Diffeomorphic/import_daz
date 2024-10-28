@@ -480,10 +480,23 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     # Improvements by Suttisak Denduangchai, issue 749, 754
     def correctForRigidity(self, ob, skey):
         from mathutils import Matrix
+
+        def getVertsFromGroup(ob, gname):
+            verts = []
+            vgrp = ob.vertex_groups.get(gname)
+            if vgrp:
+                for v in ob.data.vertices:
+                    for g in v.groups:
+                        if g.group == vgrp.index:
+                            verts.append(v.index)
+                            break
+            return verts
+
         for rgroup in ob.data.DazRigidityGroups:
             if GS.verbosity >= 3 and not ES.easy:
                 print("Rigidity group: %s" % rgroup.id)
-            refverts = [elt.a for elt in rgroup.reference_vertices]
+            #refverts = [elt.a for elt in rgroup.reference_vertices]
+            refverts = getVertsFromGroup(ob, rgroup.reference_group)
             if len(refverts) == 0:
                 continue
 
@@ -499,7 +512,8 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 return True
 
             rotmode = rgroup.rotation_mode
-            maskverts = [elt.a for elt in rgroup.mask_vertices]
+            #maskverts = [elt.a for elt in rgroup.mask_vertices]
+            maskverts = getVertsFromGroup(ob, rgroup.mask_group)
             if rotmode != "none":
                 msg = ("Not yet implemented: Rigidity rotmode = %s\n" % rotmode +
                        "Object: %s\n" % ob.name +

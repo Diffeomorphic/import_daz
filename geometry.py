@@ -1449,12 +1449,18 @@ class Geometry(Asset, Channels):
                 rgroup.id = group["id"]
                 rgroup.rotation_mode = group["rotation_mode"]
                 rgroup.scale_modes = " ".join(group["scale_modes"])
-                for vn in group["reference_vertices"]["values"]:
-                    vert = rgroup.reference_vertices.add()
-                    vert.a = vn
-                for vn in group["mask_vertices"]["values"]:
-                    vert = rgroup.mask_vertices.add()
-                    vert.a = vn
+                #for vn in group["reference_vertices"]["values"]:
+                #    vert = rgroup.reference_vertices.add()
+                #    vert.a = vn
+                #for vn in group["mask_vertices"]["values"]:
+                #    vert = rgroup.mask_vertices.add()
+                #    vert.a = vn
+                refverts = [(vn, 1.0) for vn in group["reference_vertices"]["values"]]
+                vgrp = buildVertexGroup(ob, "%s-ref" % rgroup.id, refverts)
+                rgroup.reference_group = vgrp.name
+                maskverts = [(vn, 1.0) for vn in group["mask_vertices"]["values"]]
+                vgrp = buildVertexGroup(ob, "%s-mask" % rgroup.id, maskverts)
+                rgroup.mask_group = vgrp.name
                 if group["rotation_mode"] != "none":
                     strange = True
                 for mode in group["scale_modes"]:

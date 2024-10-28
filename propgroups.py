@@ -81,8 +81,10 @@ class DazRigidityGroup(bpy.types.PropertyGroup):
     id : StringProperty()
     rotation_mode : StringProperty()
     scale_modes : StringProperty()
-    reference_vertices : CollectionProperty(type = DazIntGroup)
-    mask_vertices : CollectionProperty(type = DazIntGroup)
+    #reference_vertices : CollectionProperty(type = DazIntGroup)
+    #mask_vertices : CollectionProperty(type = DazIntGroup)
+    reference_group : StringProperty()
+    mask_group : StringProperty()
     use_transform_bones_for_scale : BoolProperty()
 
 #------------------------------------------------------------------
