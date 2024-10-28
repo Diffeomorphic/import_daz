@@ -473,7 +473,7 @@ class GeoNode(Node, SimNode):
                 for vn in set(verts):
                     vgrp.add([vn], 1.0, 'REPLACE')
                 strength = 0.01 * GS.scale
-            elif (meshtype == "Toon9-eye-socket" and
+            elif (False and meshtype == "Toon9-eye-socket" and
                   url == "/data/daz%203d/g9tooncommon/genesis%209%20toon%20eye%20socket/g9tooneyesocket.dsf"):
                 vgrp = None
                 strength = 0.1 * GS.scale
@@ -1442,7 +1442,7 @@ class Geometry(Asset, Channels):
 
     def buildRigidity(self, ob):
         from .modifier import buildVertexGroup
-        if self.rigidity and GS.useRigidity:
+        if self.rigidity:
             strange = False
             for group in self.rigidity.get("groups", []):
                 rgroup = ob.data.DazRigidityGroups.add()

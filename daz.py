@@ -568,12 +568,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             "This is useful for objects with hard edges,\n" +
             "but may lead to poor performance for organic meshes"))
 
-    useRigidity : BoolProperty(
-        name = "Rigidity",
-        description = (
-            "Take rigidity into account during morph transfer.\n" +
-            "This adds extra data to meshes which can slow down the viewport"))
-
     maxSubdivs : IntProperty(
         name = "Max Subdivision Level",
         description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
@@ -723,7 +717,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
         box.prop(self, "useAutoSmooth")
-        box.prop(self, "useRigidity")
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useScaleEyeMoisture")

@@ -1140,7 +1140,7 @@ def getFaceMeshes(rig, ob):
         return False
 
     def hasFaceName(mesh):
-        for key in ["eye", "tear", "brow", "mouth", "hair cap", "beard"]:
+        for key in ["eye", "tear", "brow", "mouth", "hair cap", "beard", "shadow plane"]:
             if key in mesh.name.lower():
                 return True
         return False

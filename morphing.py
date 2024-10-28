@@ -734,7 +734,10 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         return
     if not activateObject(context, ob):
         return
+    hides = []
     for mesh in meshes:
+        hides.append((mesh, mesh.hide_select))
+        mesh.hide_select = False
         selectSet(mesh, True)
     theFilePaths = LS.filepaths
     LS.filepaths = snames
@@ -749,6 +752,8 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         pass
     finally:
         LS.filepaths = theFilePaths
+        for mesh, hidesel in hides:
+            mesh.hide_select = hidesel
 
 #------------------------------------------------------------------
 #   Load standard morphs
