@@ -1272,10 +1272,24 @@ class Geometry(Asset, Channels):
             ob.DazVisibilityDrivers = True
         self.validateMesh(me, obname)
 
+        def addFaceMaps(ob, groups, indices, prefix):
+            facemaps = dict([(gn,[]) for gn in range(len(groups))])
+            for fn,gn in enumerate(indices):
+                facemaps[gn].append(fn)
+            if BLENDER3:
+                for gn,gname in enumerate(groups):
+                    facemap = ob.face_maps.new(name = gname)
+                    facemap.add(facemaps[gn])
+            else:
+                for gn,gname in enumerate(groups):
+                    facemap = ob.data.attributes.new("%s:%s" % (prefix, gname), 'BOOLEAN', 'FACE')
+                    for fn in facemaps[gn]:
+                        facemap.data[fn].value = True
+
         if GS.onFaceMaps == 'POLYGON_GROUPS' and me.polygons:
-            self.addFaceMaps(ob, self.polygon_groups, self.polygon_indices)
+            addFaceMaps(ob, self.polygon_groups, self.polygon_indices, "POLY")
         elif GS.onFaceMaps == 'MATERIALS' and me.polygons:
-            self.addFaceMaps(ob, self.polygon_material_groups, self.material_indices)
+            addFaceMaps(ob, self.polygon_material_groups, self.material_indices, "MTRL")
 
         guideOb = None
         if guideVerts:
@@ -1323,15 +1337,6 @@ class Geometry(Asset, Channels):
             me.DazHairType = 'SHEET'
         else:
             me.DazHairType = 'LINE'
-
-
-    def addFaceMaps(self, ob, groups, indices):
-        facemaps = dict([(mn,[]) for mn in range(len(groups))])
-        for fn,mn in enumerate(indices):
-            facemaps[mn].append(fn)
-        for mn,mname in enumerate(groups):
-            facemap = ob.face_maps.new(name = mname)
-            facemap.add(facemaps[mn])
 
 
     def creaseEdges(self, context, ob):
