@@ -349,6 +349,7 @@ class Material(Asset, Channels):
             shadername = table.get(shadername, shadername)
             self.addUnsupportedShader(shadername)
 
+
     def addUnsupportedShader(self, shadername):
         if shadername not in LS.shaders.keys():
             LS.shaders[shadername] = []

@@ -64,8 +64,7 @@ class ToonTree(CyclesTree):
 
 
     def buildShellGroups(self, shells):
-        #push,n,shell = shells[0]
-        pass
+        LS.toons.append(self.owner.geometry)
 
 
     def buildGlossy(self):
@@ -88,4 +87,4 @@ class ToonTree(CyclesTree):
         mat = self.owner.rna
         if mat:
             mat.surface_render_method = 'BLENDED'
-        LS.toons.append(self.owner.geometry)
+
