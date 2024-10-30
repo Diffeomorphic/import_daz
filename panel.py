@@ -409,8 +409,9 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         layout.operator("daz.quote_unquote")
         layout.operator("daz.print_statistics")
         layout.operator("daz.update_all")
-        layout.operator("daz.display_material_group")
-        layout.operator("daz.display_polygon_group")
+        if not BLENDER3:
+            layout.operator("daz.display_material_group")
+            layout.operator("daz.display_polygon_group")
         layout.separator()
         box = layout.box()
         if ob:

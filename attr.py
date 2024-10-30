@@ -31,19 +31,15 @@ class DisplayFaceGroup(DazPropsOperator):
         setMode('EDIT')
 
     def run(self, context):
-        ob = context.object
-        pgs = getattr(ob.data, self.attr)
-        gn = -1
-        for gn,gname in enumerate(pgs.keys()):
-            if gname == self.group:
-                break
-        if gn == -1:
-            raise DazError("Group %s not found" % gname)
-        print("Face group %d %s" % (gn, gname))
         setMode('EDIT')
         bpy.ops.mesh.select_mode(type='FACE')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
+        ob = context.object
+        pgs = getattr(ob.data, self.attr)
+        gn = int(self.group)
+        gname = pgs[gn].name
+        print("Face group %d %s" % (gn, gname))
         attr = ob.data.attributes[self.attr]
         for f in ob.data.polygons:
             f.select = (attr.data[f.index].value == gn)
@@ -51,7 +47,7 @@ class DisplayFaceGroup(DazPropsOperator):
 
 def getMaterialGroups(scn, context):
     ob = context.object
-    return [(gname, gname, gname) for gname in ob.data.DazMaterialGroup.keys()]
+    return [(str(gn), gname, gname) for gn,gname in enumerate(ob.data.DazMaterialGroup.keys())]
 
 
 class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):
@@ -67,7 +63,7 @@ class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):
 
 def getPolygonGroups(scn, context):
     ob = context.object
-    return [(gname, gname, gname) for gname in ob.data.DazPolygonGroup.keys()]
+    return [(str(gn), gname, gname) for gn,gname in enumerate(ob.data.DazPolygonGroup.keys())]
 
 class DAZ_OT_DisplayPolygonGroup(DisplayFaceGroup, IsMesh):
     bl_idname = "daz.display_polygon_group"
@@ -78,8 +74,6 @@ class DAZ_OT_DisplayPolygonGroup(DisplayFaceGroup, IsMesh):
     group : EnumProperty(
         items = getPolygonGroups,
         name = "Group")
-
-
 
 # ---------------------------------------------------------------------
 #   Initialize

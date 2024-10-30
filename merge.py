@@ -293,6 +293,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 fixer = TileFixer()
                 fixer.udimsFromGraft(graft, hum)
             self.copyBodyPart(graft, hum)
+            self.fixFaceGroups(graft, hum)
             for prop, value in graft.items():
                 if prop[0:6] == "INFLU " and prop not in influs.keys():
                     influs[prop] = value
@@ -465,6 +466,28 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         setMode('EDIT')
         bpy.ops.mesh.delete(type='VERT')
         setMode('OBJECT')
+
+
+    def fixFaceGroups(self, graft, hum):
+        if BLENDER3 or "DazVertex" not in graft.data.attributes.keys():
+            return
+
+        def fixFaceGroup(aname, graft, hum):
+            pgs = getattr(hum.data, aname)
+            n0 = len(pgs)
+            graftpgs = getattr(graft.data, aname)
+            for gname in graftpgs.keys():
+                pg = pgs.add()
+                pg.name = gname
+            attr = graft.data.attributes[aname]
+            for data in attr.data.values():
+                data.value += n0
+
+        fixFaceGroup("DazPolygonGroup", graft, hum)
+        fixFaceGroup("DazMaterialGroup", graft, hum)
+        attr = graft.data.attributes["DazVertex"]
+        for data in attr.data.values():
+            data.value = -1
 
 
     def mergeDestructively(self, context, hum, grafts, body_pair_a_verts):
