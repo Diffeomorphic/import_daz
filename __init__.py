@@ -39,7 +39,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "guess", "convert", "files", "merge", "finger",
            "matedit", "scale", "tables", "proxy", "hide",
            "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
-           "dforce", "pin", "hair", "main", "geonodes",
+           "dforce", "pin", "hair", "main", "geonodes", "attr",
            "preset", "pose_preset", "morph_preset",
            "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
@@ -107,7 +107,7 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "guess", "convert", "main", "finger",
             "matedit", "scale", "proxy", "rigify", "merge", "hide",
             "mhx", "pin", "hair", "transfer", "dforce", "gaze",
-            "hdmorphs", "ctrl_rig", "moho", "udim", "scan",
+            "hdmorphs", "ctrl_rig", "moho", "udim", "scan", "attr",
             "preset", "pose_preset", "morph_preset"]
 
 isRegistered = False

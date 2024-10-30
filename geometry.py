@@ -2002,33 +2002,6 @@ def getMeshDataFile(filepath):
     path = os.path.join(folder, "%s.json" % fname)
     return folder,path
 
-
-def restoreOrigVerts(ob, vcount):
-    if len(ob.data.DazOrigVerts) > 0:
-        return True, False
-    elif not ob.DazBlendFile:
-        return False, False
-    folder,filepath = getMeshDataFile(ob.DazBlendFile)
-    if not os.path.exists(filepath):
-        print("%s does not exist" % filepath)
-        return False, False
-    from .finger import getFingerPrint
-    finger = getFingerPrint(ob)
-    struct = JL.load(filepath)
-    for mstruct in struct["meshes"]:
-        if mstruct["finger_print"] == finger and mstruct["orig_verts"]:
-            nverts = int(mstruct["orig_finger_print"].split("-")[0])
-            if nverts == vcount or vcount < 0:
-                me = ob.data
-                me.DazOrigVerts.clear()
-                for m,n in mstruct["orig_verts"]:
-                    pg = me.DazOrigVerts.add()
-                    pg.name = str(m)
-                    pg.a = n
-                me.DazFingerPrint = mstruct["orig_finger_print"]
-                return True, True
-    return False, False
-
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -2059,8 +2032,6 @@ def register():
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
-    bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = bpy.types.PropertyGroup)
-    bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
 
     bpy.types.Object.DazBlendFile = StringProperty(
