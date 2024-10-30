@@ -481,6 +481,9 @@ class SkinBinding(Modifier):
         if GS.verbosity >= 4:
             print("Build skinbinding %s" % self.name)
 
+        selmaps = self.skin.get("selection_map")
+        if selmaps:
+            geonode.addMappings(selmaps[0])
         makeArmatureModifier(self.name, context, ob, rig)
         self.addVertexGroups(ob, geonode, rig)
         hdob = geonode.hdobject
