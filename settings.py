@@ -135,7 +135,6 @@ class GlobalSettings:
         self.maxSubdivs = 4
         self.useSimulation = True
         self.useScaleEyeMoisture = True
-        self.onFaceMaps = 'NEVER'
 
 
     def getSettingsDir(self, context):

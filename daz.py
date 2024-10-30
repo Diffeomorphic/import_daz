@@ -573,14 +573,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
         min = 1, max = 11)
 
-    onFaceMaps : EnumProperty(
-        items = [('NEVER', "Never", "Don't create maps groups"),
-                 ('MATERIALS', "Materials", "Create face maps for materials"),
-                 ('POLYGON_GROUPS', "Polygon Groups", "Create face maps for polygon groups"),
-                ],
-        name = "Face Maps",
-        description = "Generate face maps on import")
-
     useScaleEyeMoisture : BoolProperty(
         name = "Scale Eye Moisture",
         description = "Scale eye moisture vertices to avoid dark rings when rendering eyes")
@@ -720,7 +712,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useScaleEyeMoisture")
-        box.prop(self, "onFaceMaps")
         box.prop(self, "useSimulation")
 
         col = split.column()

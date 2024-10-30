@@ -1272,24 +1272,23 @@ class Geometry(Asset, Channels):
             ob.DazVisibilityDrivers = True
         self.validateMesh(me, obname)
 
-        def addFaceMaps(ob, groups, indices, prefix):
-            facemaps = dict([(gn,[]) for gn in range(len(groups))])
-            for fn,gn in enumerate(indices):
-                facemaps[gn].append(fn)
-            if BLENDER3:
-                for gn,gname in enumerate(groups):
-                    facemap = ob.face_maps.new(name = gname)
-                    facemap.add(facemaps[gn])
-            else:
-                for gn,gname in enumerate(groups):
-                    facemap = ob.data.attributes.new("%s:%s" % (prefix, gname), 'BOOLEAN', 'FACE')
-                    for fn in facemaps[gn]:
-                        facemap.data[fn].value = True
+        if not BLENDER3:
+            def addFaceMap(ob, aname, groups, indices):
+                pgs = getattr(ob.data, aname)
+                for group in groups:
+                    pg = pgs.add()
+                    pg.name = group
+                attr = ob.data.attributes.new(aname, 'INT', 'FACE')
+                for fn,gn in enumerate(indices):
+                    attr.data[fn].value = gn
 
-        if GS.onFaceMaps == 'POLYGON_GROUPS' and me.polygons:
-            addFaceMaps(ob, self.polygon_groups, self.polygon_indices, "POLY")
-        elif GS.onFaceMaps == 'MATERIALS' and me.polygons:
-            addFaceMaps(ob, self.polygon_material_groups, self.material_indices, "MTRL")
+            if me.vertices:
+                attr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
+                for vn in range(len(me.vertices)):
+                    attr.data[vn].value = vn
+            if me.polygons:
+                addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
+                addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
 
         guideOb = None
         if guideVerts:
@@ -2060,6 +2059,8 @@ def register():
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
+    bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = bpy.types.PropertyGroup)
+    bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
 
     bpy.types.Object.DazBlendFile = StringProperty(
