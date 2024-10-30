@@ -37,7 +37,10 @@ class DisplayFaceGroup(DazPropsOperator):
         setMode('OBJECT')
         ob = context.object
         pgs = getattr(ob.data, self.attr)
-        gn = int(self.group)
+        if self.group:
+            gn = int(self.group)
+        else:
+            raise DazError("No face group data")
         gname = pgs[gn].name
         print("Face group %d %s" % (gn, gname))
         attr = ob.data.attributes[self.attr]

@@ -1272,7 +1272,7 @@ class Geometry(Asset, Channels):
             ob.DazVisibilityDrivers = True
         self.validateMesh(me, obname)
 
-        if not BLENDER3:
+        if USE_ATTRIBUTES:
             def addFaceMap(ob, aname, groups, indices):
                 pgs = getattr(ob.data, aname)
                 for group in groups:
@@ -1916,62 +1916,26 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
 
     def draw(self, context):
         self.layout.prop(self, "maxSubsurf")
-        self.layout.prop(self, "useStoreData")
-        if self.useStoreData:
-            self.layout.prop(self, "useOverwrite")
 
-    def invoke(self, context, event):
-        ob = context.object
-        if (ob.DazBlendFile and ob.DazBlendFile != bpy.data.filepath):
-            self.useStoreData = False
-        return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
-        from .load_json import saveJson
+        def finalizeMesh(ob):
+            from .finger import getFingerPrint
+            for mod in ob.modifiers:
+                if mod.type == 'SUBSURF':
+                    if mod.levels > self.maxSubsurf:
+                        mod.levels = self.maxSubsurf
+                    if mod.render_levels > self.maxSubsurf:
+                        mod.render_levels = self.maxSubsurf
+            clearMeshProps(ob)
+
         ob = context.object
         rig = getRigFromContext(context)
-        self.nothing = True
-        if self.useStoreData:
-            if not bpy.data.filepath:
-                raise DazError("Save the blend file first")
-            struct = { "filetype" : "mesh_data", "meshes" : [] }
-        else:
-            struct = None
         if rig:
             for ob1 in getMeshChildren(rig):
-                self.finalizeMesh(ob1, struct)
+                finalizeMesh(ob1)
         if ob.type == 'MESH':
-            self.finalizeMesh(ob, struct)
-        if self.nothing:
-            pass
-        elif self.useStoreData:
-            rig.DazBlendFile = bpy.data.filepath
-            folder,path = getMeshDataFile(bpy.data.filepath)
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            if self.useOverwrite or not os.path.exists(path):
-                saveJson(struct, path)
-                print('Saved "%s"' % path)
-
-
-    def finalizeMesh(self, ob, struct):
-        from .finger import getFingerPrint
-        if self.useStoreData:
-            ob.DazBlendFile = bpy.data.filepath
-            mstruct = {}
-            struct["meshes"].append(mstruct)
-            mstruct["name"] = ob.name
-            mstruct["finger_print"] = getFingerPrint(ob)
-            mstruct["orig_finger_print"] = ob.data.DazFingerPrint
-            self.nothing = False
-        for mod in ob.modifiers:
-            if mod.type == 'SUBSURF':
-                if mod.levels > self.maxSubsurf:
-                    mod.levels = self.maxSubsurf
-                if mod.render_levels > self.maxSubsurf:
-                    mod.render_levels = self.maxSubsurf
-        clearMeshProps(ob)
-
+            finalizeMesh(ob)
 
 
 def clearMeshProps(ob):
@@ -1981,13 +1945,19 @@ def clearMeshProps(ob):
         if vgrp:
             ob.vertex_groups.remove(vgrp)
     me.DazRigidityGroups.clear()
-    #me.DazFingerPrint = getFingerPrint(ob)
     me.DazGraftGroup.clear()
     me.DazMaskGroup.clear()
     me.DazPolylineMaterials.clear()
     me.DazMaterialSets.clear()
     me.DazHDMaterials.clear()
     ob.DazMorphUrls.clear()
+    me.DazMaterialGroup.clear()
+    me.DazPolygonGroup.clear()
+    if USE_ATTRIBUTES:
+        for key in ["DazMaterialGroup", "DazPolygonGroup", "DazVertex"]:
+            attr = me.attributes.get(key)
+            if attr:
+                me.attributes.remove(attr)
 
 
 def getMeshDataFile(filepath):

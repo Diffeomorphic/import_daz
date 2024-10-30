@@ -22,6 +22,7 @@ from bpy.props import *
 from .settings import GS, LS, ES
 
 BLENDER3 = (bpy.app.version < (4,0,0))
+USE_ATTRIBUTES = (bpy.app.version >= (3,0,0))
 
 #-------------------------------------------------------------
 #   Bone layers

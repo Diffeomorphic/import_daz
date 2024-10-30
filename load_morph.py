@@ -61,6 +61,7 @@ class LoadMorph(DriverUser):
         self.amt2 = None
         self.mesh = None
         self.meshes = []
+        self.nverts = -1
         self.char = None
         self.chars = []
         self.modded = False
@@ -161,15 +162,17 @@ class LoadMorph(DriverUser):
         if self.rig:
             self.baked = [self.bakedName(key) for key in self.rig.DazBaked.keys()]
 
-        if self.mesh and not BLENDER3:
+        if self.mesh:
             me = self.mesh.data
-            if me.DazFingerPrint and "DazVertex" in me.attributes:
+            if USE_ATTRIBUTES and me.DazFingerPrint and "DazVertex" in me.attributes:
                 data = me.attributes["DazVertex"].data
-                nverts = int(me.DazFingerPrint.split("-",1)[0])
-                assoc = dict([(vn,-1) for vn in range(nverts)])
+                self.nverts = int(me.DazFingerPrint.split("-",1)[0])
+                assoc = dict([(vn,-1) for vn in range(self.nverts)])
                 for vn,attr in data.items():
                     assoc[attr.value] = vn
                 self.assoc = assoc
+            else:
+                self.nverts = len(me.vertices)
 
         self.adjustable = {}
         self.origMorphset = self.morphset
@@ -365,19 +368,15 @@ class LoadMorph(DriverUser):
         from .driver import makePropDriver
         from .hdmorphs import addSkeyToUrls
         useBuild = True
-        nverts = len(self.mesh.data.vertices)
-        if self.modded:
-            finger = self.mesh.data.DazFingerPrint
-            nverts = int(finger.split("-")[0])
 
         parent = self.getGraftParent(asset)
         if (asset.vertex_count < 0 or
-            asset.vertex_count == nverts or
+            asset.vertex_count == self.nverts or
             parent):
             pass
         else:
             from .finger import VertexCounts
-            msg = ("Vertex count mismatch: %d != %d" % (asset.vertex_count, len(self.mesh.data.vertices)))
+            msg = ("Vertex count mismatch: %d != %d" % (asset.vertex_count, self.nverts))
             if GS.verbosity > 2:
                 print(msg)
             if asset.hd_url:
