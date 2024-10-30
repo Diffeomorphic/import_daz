@@ -107,7 +107,6 @@ class GlobalSettings:
         self.useMuteDrivers = False
         self.ercMethod = 'NONE'
         self.useStripCategory = False
-        self.useModifiedMesh = False
         self.useDefaultDrivers = True
         self.useOptimizeJcms = False
 

@@ -421,10 +421,6 @@ def getRigParent(ob):
     return par
 
 
-def isModifiedMesh(ob):
-    return (len(ob.data.DazOrigVerts) > 0)
-
-
 def getBoneChannel(fcu):
     words = fcu.data_path.split('"')
     if words[0] == "pose.bones[":

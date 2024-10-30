@@ -369,10 +369,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Strip Category",
         description = "Strip the category name from the beginning of the morph name if they are the same")
 
-    useModifiedMesh : BoolProperty(
-        name = "Import To Modified Meshes",
-        description = "Import morphs to meshes that have been modified by merging geografts or lashes.\nWarning: can give incorrect shapekeys if meshes have been modified in edit mode")
-
     useDefaultDrivers : BoolProperty(
         name = "Default Drivers",
         description = "Create default drivers defined in the scene file")
@@ -757,7 +753,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useMuteDrivers")
         box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")
-        box.prop(self, "useModifiedMesh")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
 

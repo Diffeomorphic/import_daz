@@ -64,6 +64,7 @@ class LoadMorph(DriverUser):
         self.char = None
         self.chars = []
         self.modded = False
+        self.assoc = {}
         self.inFigure = {}
         self.duplicates = []
         self.baked = []
@@ -135,7 +136,6 @@ class LoadMorph(DriverUser):
         self.sumdrivers = {}
         self.restdrivers = {}
         self.iked = []
-        self.origRestored = []
         self.bakedSkipped = {}
         self.ercMorphs = {}
         self.initAmt()
@@ -160,6 +160,17 @@ class LoadMorph(DriverUser):
         self.initAll()
         if self.rig:
             self.baked = [self.bakedName(key) for key in self.rig.DazBaked.keys()]
+
+        if self.mesh and not BLENDER3:
+            me = self.mesh.data
+            if me.DazFingerPrint and "DazVertex" in me.attributes:
+                data = me.attributes["DazVertex"].data
+                nverts = int(me.DazFingerPrint.split("-",1)[0])
+                assoc = dict([(vn,-1) for vn in range(nverts)])
+                for vn,attr in data.items():
+                    assoc[attr.value] = vn
+                self.assoc = assoc
+
         self.adjustable = {}
         self.origMorphset = self.morphset
 
@@ -195,11 +206,6 @@ class LoadMorph(DriverUser):
                         ob.update_tag()
                 else:
                     self.mesh.update_tag()
-        if self.origRestored:
-            from .geometry import clearMeshProps
-            for ob in self.origRestored:
-                clearMeshProps(ob)
-            self.origRestored = []
 
     #------------------------------------------------------------------
     #   Make all morphs
@@ -360,15 +366,9 @@ class LoadMorph(DriverUser):
         from .hdmorphs import addSkeyToUrls
         useBuild = True
         nverts = len(self.mesh.data.vertices)
-
-        if GS.useModifiedMesh and self.modded:
-            from .geometry import restoreOrigVerts
-            hasOrig, restored = restoreOrigVerts(self.mesh, asset.vertex_count)
-            if restored and self.mesh not in self.origRestored:
-                self.origRestored.append(self.mesh)
-            if hasOrig:
-                finger = self.mesh.data.DazFingerPrint
-                nverts = int(finger.split("-")[0])
+        if self.modded:
+            finger = self.mesh.data.DazFingerPrint
+            nverts = int(finger.split("-")[0])
 
         parent = self.getGraftParent(asset)
         if (asset.vertex_count < 0 or
@@ -396,9 +396,9 @@ class LoadMorph(DriverUser):
 
         if not asset.rna:
             if parent:
-                asset.buildMorph(parent, useBuild=useBuild)
+                asset.buildMorph(parent, assoc=self.assoc, useBuild=useBuild)
             else:
-                asset.buildMorph(self.mesh, useBuild=useBuild)
+                asset.buildMorph(self.mesh, assoc=self.assoc, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
             prop = rawProp(self.getUniqueName(unquote(skey.name)))

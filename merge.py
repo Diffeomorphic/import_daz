@@ -136,13 +136,6 @@ class UVLayerMerger:
 #-------------------------------------------------------------
 
 class MergeGeograftOptions(UVLayerMergerOptions):
-    useVertexTable : BoolProperty(
-        name = "Add Vertex Table",
-        description = (
-            "Add a table with vertex numbers before and after merge.\n"+
-            "Makes it possible to add morphs after merge,\n"+
-            "but affects viewport performance"),
-        default = False)
 
     keepOriginal : BoolProperty(
         name = "Keep Original Meshes",
@@ -176,7 +169,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             self.layout.prop(self, "useGeoNodes")
         if not self.useGeoNodes:
             self.layout.prop(self, "keepOriginal")
-            self.layout.prop(self, "useVertexTable")
         self.layout.prop(self, "useSubDDisplacement")
         box = self.layout.box()
         box.label(text="UDIM Materials")
@@ -373,7 +365,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 vn2 += 1
 
         # Original vertex locations
-        if self.useVertexTable and not self.useGeoNodes:
+        if not self.useGeoNodes:
             self.origlocs = [v.co.copy() for v in hum.data.vertices]
 
         # If hum is itself a geograft, store locations
@@ -520,22 +512,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 dists = [((x-y).length, vn) for vn,y in selected.items()]
                 dists.sort()
                 pair.a = dists[0][1]
-
-        # Create a vertex table
-        if self.useVertexTable and not self.useGeoNodes:
-            vn = 0
-            eps = 1e-3*hum.DazScale
-            for vn0,r in enumerate(self.origlocs):
-                item = hum.data.DazOrigVerts.add()
-                item.name = str(vn0)
-                v = hum.data.vertices[vn]
-                if (v.co - r).length > eps:
-                    item.a = -1
-                else:
-                    item.a = vn
-                    vn += 1
-        else:
-            hum.data.DazFingerPrint = ""
 
         # Merge UV layers
         from .tree import pruneMaterials
@@ -1450,7 +1426,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                         pb = rig.pose.bones.get(bname)
                     if pb:
                         binfo.setPoseBone(pb, rig)
-                        enableBoneNumLayer(pb, rig, T_CUSTOM)
+                        enableBoneNumLayer(pb.bone, rig, T_CUSTOM)
 
         # Widgets
         if widgets:

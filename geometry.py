@@ -1963,11 +1963,7 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
             mstruct["name"] = ob.name
             mstruct["finger_print"] = getFingerPrint(ob)
             mstruct["orig_finger_print"] = ob.data.DazFingerPrint
-            origverts = [(int(item.name),item.a) for item in ob.data.DazOrigVerts]
-            origverts.sort()
-            mstruct["orig_verts"] = origverts
-            if origverts:
-                self.nothing = False
+            self.nothing = False
         for mod in ob.modifiers:
             if mod.type == 'SUBSURF':
                 if mod.levels > self.maxSubsurf:
@@ -1985,7 +1981,6 @@ def clearMeshProps(ob):
         if vgrp:
             ob.vertex_groups.remove(vgrp)
     me.DazRigidityGroups.clear()
-    me.DazOrigVerts.clear()
     #me.DazFingerPrint = getFingerPrint(ob)
     me.DazGraftGroup.clear()
     me.DazMaskGroup.clear()
@@ -2023,7 +2018,6 @@ def register():
 
     bpy.types.Armature.DazRigidityScaleFactors = bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
     bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)
-    bpy.types.Mesh.DazOrigVerts = CollectionProperty(type = DazIntGroup)
     bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
     bpy.types.Mesh.DazGraftGroup = CollectionProperty(type = DazPairGroup)
     bpy.types.Mesh.DazMaskGroup = CollectionProperty(type = DazIntGroup)

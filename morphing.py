@@ -539,7 +539,7 @@ class MorphLoader(LoadMorph, PosableMaker):
     def getFingeredRigMeshes(self, context):
         from .finger import getFingeredCharacters, getCharacter
         ob = context.object
-        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, GS.useModifiedMesh, useGenesis=False)
+        self.rig, self.meshes, self.chars, self.modded = getFingeredCharacters(ob, True, useGenesis=False)
         if ob.type == 'MESH':
             self.meshes = [ob]
             self.chars = [getCharacter(ob)]

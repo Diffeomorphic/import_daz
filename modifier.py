@@ -969,7 +969,7 @@ class Morph(FormulaAsset):
             elif LS.applyMorphs:
                 self.addMorphToVerts(ob.data)
             else:
-                skey = self.buildMorph(ob, strength=LS.morphStrength)
+                skey = self.buildMorph(ob)
         return self
 
 
@@ -982,34 +982,24 @@ class Morph(FormulaAsset):
             me.vertices[vn].co += scale * d2bu(delta[1:])
 
 
-    def buildMorph(self, ob,
-                   useBuild=True,
-                   strength=1):
+    def buildMorph(self, ob, assoc={}, useBuild=True):
 
-        def buildShapeKey(ob, skey, strength):
-            #if strength != 1:
-            #    scale = GS.scale
-            #    GS.scale *= strength
+        def buildShapeKey(ob, skey):
             for v in ob.data.vertices:
                 skey.data[v.index].co = v.co
-            if GS.zup:
-                if isModifiedMesh(ob):
-                    pgs = ob.data.DazOrigVerts
-                    for delta in self.deltas:
-                        vn0 = delta[0]
-                        vn = pgs[str(vn0)].a
-                        if vn >= 0:
-                            skey.data[vn].co += d2b90(delta[1:])
-                else:
-                    for delta in self.deltas:
-                        vn = delta[0]
+            if GS.zup and assoc:
+                for delta in self.deltas:
+                    vn = assoc.get(delta[0], -1)
+                    if vn >= 0:
                         skey.data[vn].co += d2b90(delta[1:])
+            elif GS.zup:
+                for delta in self.deltas:
+                    vn = delta[0]
+                    skey.data[vn].co += d2b90(delta[1:])
             else:
                 for delta in self.deltas:
                     vn = delta[0]
                     skey.data[vn].co += d2b00(delta[1:])
-            #if strength != 1:
-            #    GS.scale = scale
 
         sname = self.getName()
         rig = ob.parent
@@ -1021,7 +1011,7 @@ class Morph(FormulaAsset):
         skey.value = self.value
         self.rna = (skey, ob, sname)
         if useBuild:
-            buildShapeKey(ob, skey, strength)
+            buildShapeKey(ob, skey)
 
 
     def postbuild(self, context, inst):

@@ -214,7 +214,7 @@ def isGenesis(ob):
 
 
 def getCharacter(ob):
-    chars = getFingeredCharacters(ob, False, verbose=False)[2]
+    chars = getFingeredCharacters(ob, True, verbose=False)[2]
     if chars:
         return chars[0]
     return None
