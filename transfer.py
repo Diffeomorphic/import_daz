@@ -618,7 +618,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         rigidity_group.base_center_coord = base_center_vector
 
                     table = setupGroupTable(ob)
-                    continue
                     rigidity_group.affected_bones.clear()
                     affectedbones = [vx for vx in ob.vertex_groups.keys() if vx in rig.data.bones]
                     for affectedbonename in affectedbones:
