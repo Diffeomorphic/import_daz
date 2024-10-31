@@ -363,11 +363,18 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
         description = "Match material names",
         default = True)
 
+    useReassign : BoolProperty(
+        name = "Reassign Material Numbers",
+        description = "Use stored material numbers",
+        default = True)
+
     def draw(self, context):
         ColorOptions.draw(self, context)
         self.layout.prop(self, "useReplaceSlots")
         if self.useReplaceSlots:
-            self.layout.prop(self, "useMatchNames")
+            self.layout.prop(self, "useReassign")
+            if not self.useReassign:
+                self.layout.prop(self, "useMatchNames")
         self.layout.prop(self, "useAddSlots")
 
     def run(self, context):
@@ -411,30 +418,38 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
             if self.useReplaceSlots:
                 unmatched = []
                 for n,dmat in enumerate(main.materials):
-                    if self.useMatchNames:
+                    if self.useMatchNames and not self.useReassign:
                         idx,mat = self.getMatch(dmat, ob.data.materials)
                         if mat:
                             matches.append((idx, mat, dmat))
                         elif dmat.name not in ["PBRSkin"]:
                             unmatched.append(dmat)
                     else:
-                        matches.append((n, mat, dmat))
+                        matches.append((n, None, dmat))
             else:
                 unmatched = main.materials
 
             for idx,mat,dmat in matches:
                 dmat.mesh = ob
-                if dmat.partial:
+                if dmat.partial and mat:
                     self.updateMaterial(context, idx, mat, dmat)
                 else:
                     dmat.build(context)
                     dmat.postbuild()
-                    ob.data.materials[idx] = dmat.rna
+                    if idx < len(ob.data.materials):
+                        ob.data.materials[idx] = dmat.rna
+                    else:
+                        ob.data.materials.append(dmat.rna)
             if self.useAddSlots:
                 for dmat in unmatched:
                     dmat.build(context)
                     dmat.postbuild()
                     ob.data.materials.append(dmat.rna)
+            if USE_ATTRIBUTES and self.useReassign:
+                attr = ob.data.attributes.get("DazMaterialGroup")
+                if attr:
+                    for f in ob.data.polygons:
+                        f.material_index = attr.data[f.index].value
 
         if LS.render:
             LS.render.build(context)
