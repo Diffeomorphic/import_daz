@@ -1270,7 +1270,6 @@ class Geometry(Asset, Channels):
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
             ob.DazVisibilityDrivers = True
-        self.validateMesh(me, obname)
 
         if USE_ATTRIBUTES:
             def addFaceMap(ob, aname, groups, indices):
@@ -1290,6 +1289,7 @@ class Geometry(Asset, Channels):
                 addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
                 addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
 
+        self.validateMesh(me, obname)
         guideOb = None
         if guideVerts:
             guideMe = bpy.data.meshes.new("%s_GUIDE" % geonode.getName())
