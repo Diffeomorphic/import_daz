@@ -566,6 +566,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 shapekey_center_vector[n] = shapekey_center_coords[n]
             for n in range(3):
                 smat[n][n]= target_dimension[n][2]
+
             if "Rigidity" in ob.vertex_groups.keys():
                 rigidity_map_vertex_group_index = ob.vertex_groups["Rigidity"].index
                 for vn in maskverts: # Called Rigidity Participant Vertex in Daz3D
@@ -586,22 +587,22 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         rig = parent
                         break
                     parent = parent.parent
-                if rig:
-                    if ob.name in rig.data.DazRigidityScaleFactors:
-                        rigidity_group = rig.data.DazRigidityScaleFactors[ob.name]
-                    else:
-                        rigidity_group = rig.data.DazRigidityScaleFactors.add()
-                        rigidity_group.name = ob.name
-                        rigidity_group.base_center_coord = base_center_vector
 
-                    rigidity_group.affected_bones.clear()
-                    affectedbones = [vx for vx in ob.vertex_groups.keys() if vx in rig.data.bones];
-                    for affectedbonename in affectedbones:
+                if rig:
+                    def setupGroupTable(ob):
+                        table = dict([(vgrp.index, {}) for vgrp in ob.vertex_groups])
+                        for v in ob.data.vertices:
+                            for g in v.groups:
+                                table[g.group][v.index] = g
+                        return table
+
+                    def oldAffectBoneRigidity(ob, affectedbonename, rigidity_group, table):
                         newbonename = rigidity_group.affected_bones.add()
                         newbonename.name = affectedbonename
                         affectedbone_vertex_group_index = ob.vertex_groups[affectedbonename].index
                         vertex_group_weight = 0
                         rigidity_map_weight_sum = 0
+                        # Takes a long time
                         for v in ob.data.vertices:
                             vertex_enveloping_bone_map = None
                             rigidity_map = None
@@ -611,10 +612,37 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                                 if g.group == rigidity_map_vertex_group_index:
                                     rigidity_map = g
                             if(vertex_enveloping_bone_map and rigidity_map):
-                                rigidity_map_weight_sum = rigidity_map_weight_sum + vertex_enveloping_bone_map.weight*rigidity_map.weight
-                                vertex_group_weight = vertex_group_weight + vertex_enveloping_bone_map.weight
-                        if(vertex_group_weight>0):
+                                rigidity_map_weight_sum += vertex_enveloping_bone_map.weight*rigidity_map.weight
+                                vertex_group_weight += vertex_enveloping_bone_map.weight
+                        if (vertex_group_weight > 0):
                             newbonename.weight = rigidity_map_weight_sum/vertex_group_weight
+
+                    def affectBoneRigidity(ob, affectedbonename, rigidity_group, table):
+                        newbonename = rigidity_group.affected_bones.add()
+                        newbonename.name = affectedbonename
+                        affectedbone_vertex_group_index = ob.vertex_groups[affectedbonename].index
+                        vertex_group_weight = 0
+                        rigidity_map_weight_sum = 0
+                        for vn,vertex_enveloping_bone_map in table[affectedbone_vertex_group_index].items():
+                            rigidity_map = table[rigidity_map_vertex_group_index].get(vn)
+                            if rigidity_map:
+                                rigidity_map_weight_sum += vertex_enveloping_bone_map.weight*rigidity_map.weight
+                                vertex_group_weight += vertex_enveloping_bone_map.weight
+                        if (vertex_group_weight > 0):
+                            newbonename.weight = rigidity_map_weight_sum/vertex_group_weight
+
+                    if ob.name in rig.data.DazRigidityScaleFactors:
+                        rigidity_group = rig.data.DazRigidityScaleFactors[ob.name]
+                    else:
+                        rigidity_group = rig.data.DazRigidityScaleFactors.add()
+                        rigidity_group.name = ob.name
+                        rigidity_group.base_center_coord = base_center_vector
+
+                    table = setupGroupTable(ob)
+                    rigidity_group.affected_bones.clear()
+                    affectedbones = [vx for vx in ob.vertex_groups.keys() if vx in rig.data.bones]
+                    for affectedbonename in affectedbones:
+                        affectBoneRigidity(ob, affectedbonename, rigidity_group, table)
 
                     if skey.name in rigidity_group.shapekeys:
                         shapekey_scalefactor = rigidity_group.shapekeys[skey.name]
