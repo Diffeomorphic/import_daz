@@ -593,29 +593,8 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         table = dict([(vgrp.index, {}) for vgrp in ob.vertex_groups])
                         for v in ob.data.vertices:
                             for g in v.groups:
-                                table[g.group][v.index] = g
+                                table[g.group][v.index] = g.weight
                         return table
-
-                    def oldAffectBoneRigidity(ob, affectedbonename, rigidity_group, table):
-                        newbonename = rigidity_group.affected_bones.add()
-                        newbonename.name = affectedbonename
-                        affectedbone_vertex_group_index = ob.vertex_groups[affectedbonename].index
-                        vertex_group_weight = 0
-                        rigidity_map_weight_sum = 0
-                        # Takes a long time
-                        for v in ob.data.vertices:
-                            vertex_enveloping_bone_map = None
-                            rigidity_map = None
-                            for g in v.groups:
-                                if g.group == affectedbone_vertex_group_index:
-                                    vertex_enveloping_bone_map = g
-                                if g.group == rigidity_map_vertex_group_index:
-                                    rigidity_map = g
-                            if(vertex_enveloping_bone_map and rigidity_map):
-                                rigidity_map_weight_sum += vertex_enveloping_bone_map.weight*rigidity_map.weight
-                                vertex_group_weight += vertex_enveloping_bone_map.weight
-                        if (vertex_group_weight > 0):
-                            newbonename.weight = rigidity_map_weight_sum/vertex_group_weight
 
                     def affectBoneRigidity(ob, affectedbonename, rigidity_group, table):
                         newbonename = rigidity_group.affected_bones.add()
@@ -623,11 +602,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         affectedbone_vertex_group_index = ob.vertex_groups[affectedbonename].index
                         vertex_group_weight = 0
                         rigidity_map_weight_sum = 0
-                        for vn,vertex_enveloping_bone_map in table[affectedbone_vertex_group_index].items():
-                            rigidity_map = table[rigidity_map_vertex_group_index].get(vn)
-                            if rigidity_map:
-                                rigidity_map_weight_sum += vertex_enveloping_bone_map.weight*rigidity_map.weight
-                                vertex_group_weight += vertex_enveloping_bone_map.weight
+                        for vn,vertex_enveloping_bone_weight in table[affectedbone_vertex_group_index].items():
+                            rigidity_weight = table[rigidity_map_vertex_group_index].get(vn)
+                            if rigidity_weight is not None:
+                                rigidity_map_weight_sum += vertex_enveloping_bone_weight*rigidity_weight
+                                vertex_group_weight += vertex_enveloping_bone_weight
                         if (vertex_group_weight > 0):
                             newbonename.weight = rigidity_map_weight_sum/vertex_group_weight
 
@@ -639,6 +618,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         rigidity_group.base_center_coord = base_center_vector
 
                     table = setupGroupTable(ob)
+                    continue
                     rigidity_group.affected_bones.clear()
                     affectedbones = [vx for vx in ob.vertex_groups.keys() if vx in rig.data.bones]
                     for affectedbonename in affectedbones:
