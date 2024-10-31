@@ -1898,24 +1898,20 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
     bl_description = "Remove internal properties from meshes.\nDisables some tools but may improve performance"
     bl_options = {'UNDO'}
 
-    useStoreData : BoolProperty(
-        name = "Store Data",
-        description = "Store data in a file",
-        default = False)
-
-    useOverwrite : BoolProperty(
-        name = "Overwrite",
-        description = "Overwrite stored data",
-        default = False)
-
     maxSubsurf : IntProperty(
         name = "Maximal Subsurf Level",
         description = "Maximal subsurf level",
         min = 0,
         default = 2)
 
+    keepVertex : BoolProperty(
+        name = "Keep Original Vertex Numbers",
+        description = "Keep information about original vertex numbers.\nNecessary to import morphs to modified meshes",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "maxSubsurf")
+        self.layout.prop(self, "keepVertex")
 
 
     def run(self, context):
@@ -1927,7 +1923,7 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
                         mod.levels = self.maxSubsurf
                     if mod.render_levels > self.maxSubsurf:
                         mod.render_levels = self.maxSubsurf
-            clearMeshProps(ob)
+            clearMeshProps(ob, keepVertex=self.keepVertex)
 
         ob = context.object
         rig = getRigFromContext(context)
@@ -1938,7 +1934,7 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
             finalizeMesh(ob)
 
 
-def clearMeshProps(ob):
+def clearMeshProps(ob, keepVertex=False):
     me = ob.data
     for gname in ["Rigidity"]:
         vgrp = ob.vertex_groups.get(gname)
@@ -1954,10 +1950,16 @@ def clearMeshProps(ob):
     me.DazMaterialGroup.clear()
     me.DazPolygonGroup.clear()
     if USE_ATTRIBUTES:
-        for key in ["DazMaterialGroup", "DazPolygonGroup", "DazVertex"]:
+        def clearAttribute(key):
             attr = me.attributes.get(key)
             if attr:
                 me.attributes.remove(attr)
+
+        clearAttribute("DazMaterialGroup")
+        clearAttribute("DazPolygonGroup")
+        if not keepVertex:
+            clearAttribute("DazVertex")
+
 
 
 def getMeshDataFile(filepath):
