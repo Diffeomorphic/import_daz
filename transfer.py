@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import os
 import sys
 import bpy
@@ -383,6 +382,40 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         trg.select_set(True)
         trgbox = self.computeObjectBox(trg)
 
+        if "Rigidity" in trg.vertex_groups.keys() and not self.ignoreRigidity:
+            if GS.useRigidityAttributes:
+                def getVertsFromGroup(ob, gname):
+                    attr = ob.data.attributes.get(gname)
+                    if attr:
+                        return [vn for vn,data in enumerate(attr.data) if data.value]
+                    else:
+                        return []
+            else:
+                def getVertsFromGroup(ob, gname):
+                    vgrp = ob.vertex_groups.get(gname)
+                    if vgrp:
+                        idx = vgrp.index
+                        obverts = ob.data.vertices
+                        verts = [v.index for v in ob.data.vertices for g in v.groups if g.group == idx]
+                        return verts
+                    else:
+                        return []
+
+            rigidity_table = dict([(vgrp.index, {}) for vgrp in trg.vertex_groups])
+            for v in trg.data.vertices:
+                for g in v.groups:
+                    rigidity_table[g.group][v.index] = g.weight
+            rigidity_groups = []
+            for rgroup in trg.data.DazRigidityGroups:
+                refverts = getVertsFromGroup(trg, rgroup.reference_vertices)
+                if len(refverts) == 0:
+                    continue
+                maskverts = getVertsFromGroup(trg, rgroup.mask_vertices)
+                rigidity_groups.append((rgroup, refverts, maskverts))
+        else:
+            rigidity_groups = []
+            rigidity_table = None
+
         nskeys = len(snames)
         for idx,sname in enumerate(snames):
             showProgress(idx, nskeys)
@@ -415,9 +448,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 printName(" *", sname)
             elif self.autoTransfer(src, trg, hskey):
                 cskey = cskeys.key_blocks[sname]
-                if cskey and not self.ignoreRigidity:
+                if cskey and rigidity_table:
                     try:
-                        rigid = self.correctForRigidity(trg, cskey)
+                        rigid = self.correctForRigidity(trg, cskey, rigidity_groups, rigidity_table)
                     except IndexError:
                         rigid = False
                     if rigid:
@@ -478,25 +511,16 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
 
     # Improvements by Suttisak Denduangchai, issue 749, 754
-    def correctForRigidity(self, ob, skey):
+    def correctForRigidity(self, ob, skey, rigidity_groups, rigidity_table):
         from mathutils import Matrix
 
-        def getVertsFromGroup(ob, gname):
-            attr = ob.data.attributes.get(gname)
-            if attr:
-                return [vn for vn,data in enumerate(attr.data) if data.value]
-            else:
-                return []
-
-        for rgroup in ob.data.DazRigidityGroups:
+        for rgroup, refverts, maskverts in rigidity_groups:
             if GS.verbosity >= 3 and not ES.easy:
                 print("Rigidity group: %s" % rgroup.id)
-            refverts = getVertsFromGroup(ob, rgroup.reference_group)
-            if len(refverts) == 0:
-                continue
-
-            base_coords = [ob.data.vertices[vn].co for vn in refverts]
-            shapekey_coords = [skey.data[vn].co for vn in refverts]
+            obverts = ob.data.vertices
+            base_coords = [obverts[vn].co for vn in refverts]
+            skeydata = skey.data
+            shapekey_coords = [skeydata[vn].co for vn in refverts]
             base_center_coords = np.average(base_coords, axis=0)
             shapekey_center_coords = np.average(shapekey_coords, axis=0)
 
@@ -507,7 +531,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 return True
 
             rotmode = rgroup.rotation_mode
-            maskverts = getVertsFromGroup(ob, rgroup.mask_group)
             if rotmode != "none":
                 msg = ("Not yet implemented: Rigidity rotmode = %s\n" % rotmode +
                        "Object: %s\n" % ob.name +
@@ -564,15 +587,15 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             if "Rigidity" in ob.vertex_groups.keys():
                 rigidity_map_vertex_group_index = ob.vertex_groups["Rigidity"].index
                 for vn in maskverts: # Called Rigidity Participant Vertex in Daz3D
-                    v = ob.data.vertices[vn]
+                    v = obverts[vn]
                     for g in v.groups:
                         if g.group == rigidity_map_vertex_group_index:
                             # Max Rigidity (Rigidity=1) coordinate
-                            max_rigidity_coordinate = (smat @ (ob.data.vertices[vn].co - base_center_vector)) + shapekey_center_vector
+                            max_rigidity_coordinate = (smat @ (obverts[vn].co - base_center_vector)) + shapekey_center_vector
                             # Min Rigidity (Rigidity=0) coordinate
-                            min_rididity_coordinate = skey.data[vn].co
+                            min_rididity_coordinate = skeydata[vn].co
                             # Mix both coordinate using Rigidity Weight Map
-                            skey.data[vn].co = (max_rigidity_coordinate * g.weight) + ((1-g.weight)*min_rididity_coordinate)
+                            skeydata[vn].co = (max_rigidity_coordinate * g.weight) + ((1-g.weight)*min_rididity_coordinate)
                 # Save DazRigidityScaleFactor to Armature
                 parent = ob.parent
                 rig = None
@@ -583,21 +606,14 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                     parent = parent.parent
 
                 if rig:
-                    def setupGroupTable(ob):
-                        table = dict([(vgrp.index, {}) for vgrp in ob.vertex_groups])
-                        for v in ob.data.vertices:
-                            for g in v.groups:
-                                table[g.group][v.index] = g.weight
-                        return table
-
-                    def affectBoneRigidity(ob, affectedbonename, rigidity_group, table):
+                    def affectBoneRigidity(ob, affectedbonename, rigidity_group):
                         newbonename = rigidity_group.affected_bones.add()
                         newbonename.name = affectedbonename
                         affectedbone_vertex_group_index = ob.vertex_groups[affectedbonename].index
                         vertex_group_weight = 0
                         rigidity_map_weight_sum = 0
-                        for vn,vertex_enveloping_bone_weight in table[affectedbone_vertex_group_index].items():
-                            rigidity_weight = table[rigidity_map_vertex_group_index].get(vn)
+                        for vn,vertex_enveloping_bone_weight in rigidity_table[affectedbone_vertex_group_index].items():
+                            rigidity_weight = rigidity_table[rigidity_map_vertex_group_index].get(vn)
                             if rigidity_weight is not None:
                                 rigidity_map_weight_sum += vertex_enveloping_bone_weight*rigidity_weight
                                 vertex_group_weight += vertex_enveloping_bone_weight
@@ -611,11 +627,10 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         rigidity_group.name = ob.name
                         rigidity_group.base_center_coord = base_center_vector
 
-                    table = setupGroupTable(ob)
                     rigidity_group.affected_bones.clear()
                     affectedbones = [vx for vx in ob.vertex_groups.keys() if vx in rig.data.bones]
                     for affectedbonename in affectedbones:
-                        affectBoneRigidity(ob, affectedbonename, rigidity_group, table)
+                        affectBoneRigidity(ob, affectedbonename, rigidity_group)
 
                     if skey.name in rigidity_group.shapekeys:
                         shapekey_scalefactor = rigidity_group.shapekeys[skey.name]

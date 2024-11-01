@@ -1447,22 +1447,26 @@ class Geometry(Asset, Channels):
     def buildRigidity(self, ob):
         from .modifier import buildVertexGroup
         if self.rigidity:
+            def addRigid(prefix, rgroup, key):
+                aname = "%s:%s" % (prefix, rgroup.id)
+                verts = group[key]["values"]
+                if GS.useRigidityAttributes:
+                    data = ob.data.attributes.new(aname, 'BOOLEAN', 'POINT').data
+                    for vn in verts:
+                        data[vn].value = True
+                else:
+                    weights = [(vn, 1.0) for vn in verts]
+                    buildVertexGroup(ob, aname, weights)
+                setattr(rgroup, key, aname)
+
             strange = False
             for group in self.rigidity.get("groups", []):
                 rgroup = ob.data.DazRigidityGroups.add()
                 rgroup.id = group["id"]
                 rgroup.rotation_mode = group["rotation_mode"]
                 rgroup.scale_modes = " ".join(group["scale_modes"])
-                aname = "Rigid:Ref:%s" % rgroup.id
-                data = ob.data.attributes.new(aname, 'BOOLEAN', 'POINT').data
-                for vn in group["reference_vertices"]["values"]:
-                    data[vn].value = True
-                rgroup.reference_group = aname
-                aname = "Rigid:Mask:%s" % rgroup.id
-                data = ob.data.attributes.new(aname, 'BOOLEAN', 'POINT').data
-                for vn in group["mask_vertices"]["values"]:
-                    data[vn].value = True
-                rgroup.mask_group = aname
+                addRigid("Rigid:Ref", rgroup, "reference_vertices")
+                addRigid("Rigid:Mask", rgroup, "mask_vertices")
                 if group["rotation_mode"] != "none":
                     strange = True
                 for mode in group["scale_modes"]:

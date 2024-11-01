@@ -64,44 +64,8 @@ def getEditBones(rig):
             if bname in rig.pose.bones.keys():
                 hdoffsets[bname] = hdoffsets[pb.name] = hdoffsets[bname] + hdoffsets[pb.name]
 
-    processed_bonenames = []
-    '''
-    # Disabled because it wreaks havoc to G9 eyes
-    skeys = None
-    for ob in rig.children:
-        if ob.type == 'MESH' and ob.DazMesh:
-            skeys = ob.data.shape_keys
-            break
-
-    if skeys:
-        for rigidity_group in rig.data.DazRigidityScaleFactors:
-            base_center_coord = rigidity_group.base_center_coord
-            combined_all_used_shapekeys_center_coord = Vector(base_center_coord) # Copy
-            combined_all_used_shapekeys_scale_difference_from_baseshape = Matrix(([0,0,0],[0,0,0],[0,0,0]))
-            for shapekey_scale_factor in rigidity_group.shapekeys:
-                if shapekey_scale_factor.name in skeys.key_blocks.keys():
-                    shapekey = skeys.key_blocks[shapekey_scale_factor.name]
-                    if shapekey.value != 0:
-                        shapekey_center_coord = shapekey_scale_factor.shapekey_center_coord
-                        scale = shapekey_scale_factor.scale
-                        for n in range(3):
-                           combined_all_used_shapekeys_scale_difference_from_baseshape[n][n] =((shapekey.value * scale[n][n] + (1-shapekey.value) * 1)-1) + combined_all_used_shapekeys_scale_difference_from_baseshape[n][n]
-                           combined_all_used_shapekeys_center_coord[n] = (shapekey.value * (shapekey_center_coord[n] - base_center_coord[n])) + combined_all_used_shapekeys_center_coord[n]
-            combined_all_used_shapekeys_scale_difference_from_baseshape = combined_all_used_shapekeys_scale_difference_from_baseshape + Matrix.Identity(3)
-
-            for bone in rigidity_group.affected_bones:
-                parent = rig.pose.bones[bone.name].parent
-                while parent and parent.bone.get("DazExtraBone"):
-                    parent = parent.parent
-                heads[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (heads[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(heads[bone.name]+ hdoffsets[parent.name]))
-                tails[bone.name] = (bone.weight * ((combined_all_used_shapekeys_scale_difference_from_baseshape @ (tails[bone.name]-base_center_coord))+combined_all_used_shapekeys_center_coord)) + ((1-bone.weight)*(tails[bone.name]+ hdoffsets[parent.name]))
-                hdoffsets[bone.name] = (bone.weight * combined_all_used_shapekeys_scale_difference_from_baseshape @ hdoffsets[bone.name]) + ((1-bone.weight)*hdoffsets[bone.name])
-                copyTables(bone.name, "%s(drv)" % bone.name)
-                processed_bonenames.append(bone.name)
-    '''
-
     for pb in rig.pose.bones:
-        if pb.bone.get("DazExtraBone") and pb.name not in processed_bonenames :
+        if pb.bone.get("DazExtraBone"):
             parent = pb.parent
             while parent and parent.bone.get("DazExtraBone"):
                 parent = parent.parent

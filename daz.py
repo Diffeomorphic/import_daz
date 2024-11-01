@@ -573,6 +573,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Scale Eye Moisture",
         description = "Scale eye moisture vertices to avoid dark rings when rendering eyes")
 
+    useRigidityAttributes : BoolProperty(
+        name = "Rigidity Attributes",
+        description = "Use attributes rather than vertex groups for rigidity info")
+
     useSimulation : BoolProperty(
         name = "Simulation",
         description = "Add influence (pinning) vertex groups for simulation")
@@ -707,6 +711,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useAutoSmooth")
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
+        box.prop(self, "useRigidityAttributes")
         box.prop(self, "useScaleEyeMoisture")
         box.prop(self, "useSimulation")
 

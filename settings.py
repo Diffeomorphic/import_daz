@@ -109,6 +109,7 @@ class GlobalSettings:
         self.useStripCategory = False
         self.useDefaultDrivers = True
         self.useOptimizeJcms = False
+        self.useRigidityAttributes = True
 
         self.useArmature = True
         self.useLockLoc = True
