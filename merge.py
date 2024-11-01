@@ -1195,7 +1195,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 #-------------------------------------------------------------
 
 class BoneInfo:
-    def __init__(self, bone, pb, parname):
+    def __init__(self, bone, pb, parname, wmat):
         self.head = bone.head_local.copy()
         self.tail = bone.tail_local.copy()
         self.matrix_local = bone.matrix_local.copy()
@@ -1203,13 +1203,17 @@ class BoneInfo:
         self.use_deform = bone.use_deform
         self.pb = pb
         self.matrix = pb.matrix.copy()
+        self.matrix_world = wmat
 
 
     def setEditBone(self, bname, ebones):
         eb = ebones.new(bname)
         eb.head = self.head
         eb.tail = self.tail
-        eb.matrix = self.matrix_local
+        if self.matrix_world:
+            eb.matrix = self.matrix_world @ self.matrix_local
+        else:
+            eb.matrix = self.matrix_local
         self.use_deform = self.use_deform
         if self.parent is not None:
             eb.parent = ebones.get(self.parent)
@@ -1220,7 +1224,11 @@ class BoneInfo:
         from .fix import copyConstraints
         copyBoneInfo(self.pb, pb)
         copyConstraints(self.pb, pb, rig)
-        pb.matrix = self.matrix
+        if self.matrix_world:
+            #pb.matrix = self.matrix_world @ self.matrix
+            pb.matrix_basis = Matrix()
+        else:
+            pb.matrix = self.matrix
         pb.custom_shape = self.pb.custom_shape
         if hasattr(pb, "custom_shape_translation"):
             pb.custom_shape_scale_xyz = self.pb.custom_shape_scale_xyz
@@ -1275,6 +1283,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                 objects.append((ob, parent, ob.matrix_world.copy(), ob.hide_viewport, ob.hide_get()))
                 ob.hide_viewport = False
                 ob.hide_set(False)
+            wmat = None
             if ob.type == 'ARMATURE':
                 rig = ob
                 parentBone = None
@@ -1284,12 +1293,13 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                     conforms = False
                     if self.useMergeNonConforming == 'ALWAYS':
                         conforms = True
-                        parentBone = rig.parent_bone
                     elif (self.useMergeNonConforming == 'CONTROLS' and
                           rig.DazUrl.lower() in DF.WidgetControls):
                         conforms = True
-                        parentBone = rig.parent_bone
                         widgets.append(rig)
+                    if conforms:
+                        parentBone = rig.parent_bone
+                        wmat = rig.matrix_world.copy()
                 else:
                     conforms = True
                 if not conforms:
@@ -1303,7 +1313,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                         parname = bone.parent.name
                     else:
                         parname = parentBone
-                    bones[bone.name] = BoneInfo(bone, pb, parname)
+                    bones[bone.name] = BoneInfo(bone, pb, parname, wmat)
                 meshes = [child for child in rig.children if child.type == 'MESH']
                 info.append((rig, bones, meshes))
             else:
