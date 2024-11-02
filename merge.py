@@ -1194,6 +1194,10 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 #   Merge rigs
 #-------------------------------------------------------------
 
+def getDupName(subrig, bname):
+    return "%s:%s" % (subrig.name, bname)
+
+
 class BoneInfo:
     def __init__(self, bone, pb, parname, wmat):
         self.head = bone.head_local.copy()
@@ -1206,7 +1210,7 @@ class BoneInfo:
         self.matrix_world = wmat
 
 
-    def setEditBone(self, bname, ebones):
+    def setEditBone(self, bname, ebones, subrig):
         eb = ebones.new(bname)
         eb.head = self.head
         eb.tail = self.tail
@@ -1216,7 +1220,11 @@ class BoneInfo:
             eb.matrix = self.matrix_local
         self.use_deform = self.use_deform
         if self.parent is not None:
-            eb.parent = ebones.get(self.parent)
+            if self.parent in ebones.keys():
+                eb.parent = ebones[self.parent]
+            else:
+                dupname = getDupName(subrig, self.parent)
+                eb.parent = ebones.get(dupname)
 
 
     def setPoseBone(self, pb, rig):
@@ -1385,10 +1393,10 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                     if bname not in bones.keys() and bname not in taken:
                         hasNew = True
                         if bname in dups.keys():
-                            dupname = "%s:%s" % (subrig.name, bname)
-                            binfo.setEditBone(dupname, rig.data.edit_bones)
+                            dupname = getDupName(subrig, bname)
+                            binfo.setEditBone(dupname, rig.data.edit_bones, subrig)
                         else:
-                            binfo.setEditBone(bname, rig.data.edit_bones)
+                            binfo.setEditBone(bname, rig.data.edit_bones, subrig)
                             taken.append(bname)
             setMode('OBJECT')
         if hasNew:
@@ -1412,8 +1420,9 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
 
                 copyProps(subrig, rig, True)
                 copyProps(subrig.data, rig.data, False)
-                self.copyDrivers(subrig.data, rig.data, subrig, rig)
-                self.copyDrivers(subrig, rig, subrig, rig)
+                assoc = dict([(bname, getDupName(subrig, bname)) for bname in dups.keys()])
+                self.copyAssocDrivers(subrig.data, rig.data, subrig, rig, assoc)
+                self.copyAssocDrivers(subrig, rig, subrig, rig, assoc)
                 for submesh in submeshes:
                     skeys = submesh.data.shape_keys
                     if skeys:
@@ -1426,7 +1435,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                     if bname in bones.keys():
                         continue
                     elif bname in dups.keys():
-                        dupname = "%s:%s" % (subrig.name, bname)
+                        dupname = getDupName(subrig, bname)
                         for mesh in submeshes:
                             vgrp = mesh.vertex_groups.get(bname)
                             if vgrp:

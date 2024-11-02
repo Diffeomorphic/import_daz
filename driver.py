@@ -69,6 +69,9 @@ class DriverUser:
 
     def copyDriver(self, fcu, rna, old=None, new=None, assoc=None):
         channel = fcu.data_path
+        bname = getBoneChannel(fcu)[0]
+        if bname and bname in assoc.keys():
+            channel = channel.replace(bname, assoc[bname])
         idx = self.getArrayIndex(fcu)
         if rna.animation_data is None:
             try:
@@ -210,13 +213,13 @@ class DriverUser:
             self.deleteTmp()
 
 
-    def copyDrivers(self, src, trg, old, new):
+    def copyAssocDrivers(self, src, trg, old, new, assoc):
         if src.animation_data is None:
             return
         self.createTmp()
         try:
             for fcu in src.animation_data.drivers:
-                self.copyDriver(fcu, trg, old, new)
+                self.copyDriver(fcu, trg, old, new, assoc)
         finally:
             self.deleteTmp()
 
