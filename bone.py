@@ -511,6 +511,10 @@ class BoneInstance(Instance):
                 idx = self.axes[n]
                 if limit is not None:
                     mind, maxd = limit
+                    if maxd-mind > 359:
+                        if GS.verbosity >= 3:
+                            print("Unlimited rotation %s %.3f %.3f %.3f" % (pb.name, mind, maxd, maxd-mind))
+                        continue
                     minr = mind*D
                     if abs(minr) < 1e-4:
                         minr = 0
