@@ -882,12 +882,55 @@ class ToonGlossyGroup(CyclesGroup):
         maprange.inputs["From Max"].default_value = 0.2
         self.links.new(toRgb.outputs["Color"], maprange.inputs["Value"])
 
-        add,a,b,addout = self.addMixRgbNode('ADD', 4)
-        add.inputs[0].default_value = 1.0
+        screen,a,b,scrout = self.addMixRgbNode('SCREEN', 4)
+        screen.inputs[0].default_value = 1.0
         self.links.new(self.inputs.outputs["Input"], a)
         self.links.new(maprange.outputs["Result"], b)
 
-        self.links.new(addout, self.outputs.inputs["Output"])
+        self.links.new(scrout, self.outputs.inputs["Output"])
+
+# ---------------------------------------------------------------------
+#   Toon Rim Group
+# ---------------------------------------------------------------------
+
+class ToonRimGroup(CyclesGroup):
+
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Input", "Rim", "Color", "Normal"]
+        self.outsockets += ["Output"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 5)
+        addGroupInput(self.group, "NodeSocketColor", "Input")
+        addGroupInput(self.group, "NodeSocketFloat", "Rim")
+        addGroupInput(self.group, "NodeSocketColor", "Color")
+        addGroupInput(self.group, "NodeSocketVector", "Normal")
+        self.hideSlot("Normal")
+        addGroupOutput(self.group, "NodeSocketColor", "Output")
+
+
+    def addNodes(self, args=None):
+        lweight = self.addNode("ShaderNodeLayerWeight", 1)
+        self.links.new(self.inputs.outputs["Rim"], lweight.inputs["Blend"])
+        self.links.new(self.inputs.outputs["Normal"], lweight.inputs["Normal"])
+
+        maprange = self.addMapRange(2)
+        maprange.interpolation_type = 'STEPPED'
+        self.links.new(lweight.outputs["Facing"], maprange.inputs["Value"])
+
+        mult,a,b,multout = self.addMixRgbNode('MULTIPLY', 3)
+        mult.inputs[0].default_value = 1.0
+        self.links.new(maprange.outputs["Result"], a)
+        self.links.new(self.inputs.outputs["Color"], b)
+
+        screen,a,b,scrout = self.addMixRgbNode('SCREEN', 4)
+        screen.inputs[0].default_value = 1.0
+        self.links.new(multout, a)
+        self.links.new(self.inputs.outputs["Input"], b)
+
+        self.links.new(scrout, self.outputs.inputs["Output"])
 
 # ---------------------------------------------------------------------
 #   Metal Group
@@ -1971,6 +2014,7 @@ ShaderGroups = {
         "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
         "useToonDiffuse" : (ToonDiffuseGroup, "DAZ Toon Diffuse", []),
         "useToonGlossy" : (ToonGlossyGroup, "DAZ Toon Glossy", []),
+        "useToonRim" : (ToonRimGroup, "DAZ Toon Rim", []),
     }
 
 class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
@@ -2010,6 +2054,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useDecal : BoolProperty(name="Decal", default=False)
     useToonDiffuse : BoolProperty(name="Toon Diffuse", default=False)
     useToonGlossy : BoolProperty(name="Toon Glossy", default=False)
+    useToonRim : BoolProperty(name="Toon Rim", default=False)
 
     def draw(self, context):
         for key in ShaderGroups.keys():
