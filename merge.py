@@ -1264,6 +1264,10 @@ class MergeRigsOptions:
         description = "Convert face controls to bone custom shapes",
         default = True)
 
+    useApplyTransform : BoolProperty(
+        name = "Apply Transforms",
+        default = False)
+
 
 class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
     bl_idname = "daz.merge_rigs"
@@ -1286,6 +1290,43 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
         DriverUser.__init__(self)
 
     def run(self, context):
+        def findSelectedRoots(objects):
+            roots = []
+            for ob in objects:
+                if ob.type == 'ARMATURE' and ob.select_get():
+                    roots.append(ob)
+                else:
+                    roots += findSelectedRoots(ob.children)
+            return roots
+
+        # Find roots
+        roots = [ob for ob in context.view_layer.objects if ob.parent is None]
+        if self.useOnlySelected:
+            roots = findSelectedRoots(roots)
+
+        # Apply transform for all roots
+        if self.useMergeNonConforming == 'ALWAYS':
+            bpy.ops.object.select_all(action='DESELECT')
+            parents = []
+            for root in roots:
+                for ob in root.children:
+                    parents.append((ob, root, ob.matrix_world.copy()))
+                    ob.select_set(True)
+            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+
+            rootmats = []
+            bpy.ops.object.select_all(action='DESELECT')
+            for root in roots:
+                wmat = root.matrix_world.copy()
+                rootmats.append((root, wmat))
+                root.select_set(True)
+            bpy.ops.object.transform_apply()
+
+            for ob,root,wmat in parents:
+                ob.parent = root
+                setWorldMatrix(ob, wmat)
+
+        # get objects
         def getObjects(ob, parent, objects, infos, widgets, info):
             if parent and parent.type == 'ARMATURE':
                 objects.append((ob, parent, ob.matrix_world.copy(), ob.hide_viewport, ob.hide_get()))
@@ -1329,19 +1370,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
             for child in ob.children:
                 getObjects(child, parent, objects, infos, widgets, info)
 
-        def findSelectedRoots(objects):
-            roots = []
-            for ob in objects:
-                if ob.type == 'ARMATURE' and ob.select_get():
-                    roots.append(ob)
-                else:
-                    roots += findSelectedRoots(ob.children)
-            return roots
-
         # Collect info about objects and bones
-        roots = [ob for ob in context.view_layer.objects if ob.parent is None]
-        if self.useOnlySelected:
-            roots = findSelectedRoots(roots)
         objects = []
         infos = []
         widgets = []
@@ -1470,6 +1499,16 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
                 mod = getModifier(ob, 'ARMATURE')
                 if mod:
                     mod.object = parent
+
+        #
+        if self.useMergeNonConforming == 'ALWAYS':
+            bpy.ops.object.select_all(action='DESELECT')
+            for root,wmat in rootmats:
+                root.matrix_world = wmat.inverted()
+                root.select_set(True)
+            bpy.ops.object.transform_apply()
+            for root,wmat in rootmats:
+                root.matrix_world = wmat
 
         # Delete objects
         deleteObjects(context, deletes)
