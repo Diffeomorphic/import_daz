@@ -35,15 +35,6 @@ from .pin import Pinner
 from .dforce import Cloth, Collision
 
 #-------------------------------------------------------------
-#   Utilities
-#-------------------------------------------------------------
-
-def hasObjectTransforms(ob):
-    return (ob.location != Zero or
-            Vector(ob.rotation_euler) != Zero or
-            ob.scale != One)
-
-#-------------------------------------------------------------
 #   Classes
 #-------------------------------------------------------------
 
@@ -1062,11 +1053,17 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
 
     def run(self, context):
+        from .merge import applyTransformToObjects, restoreTransformsToObjects
         hair,hum = getHairAndHuman(context, True)
-        if hasObjectTransforms(hair):
-            raise DazError("Apply object transformations to %s first" % hair.name)
-        if hasObjectTransforms(hum):
-            raise DazError("Apply object transformations to %s first" % hum.name)
+        applyTransformToObjects([hair])
+        wmats = applyTransformToObjects([hum])
+        try:
+            self.makeHair(context, hair, hum)
+        finally:
+            restoreTransformsToObjects(wmats)
+
+
+    def makeHair(self, context, hair, hum):
         t1 = perf_counter()
         self.clocks = []
         if self.keepMesh:

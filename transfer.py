@@ -48,12 +48,6 @@ class MatchOperator(DazPropsOperator):
         DazPropsOperator.restoreState(self, context)
 
 
-    def checkTransforms(self, ob):
-        from .hair import hasObjectTransforms
-        if hasObjectTransforms(ob):
-            raise DazError("Apply object transformations to %s first" % ob.name)
-
-
     def prepare(self, context, src):
         updateScene(context)
         ob = self.trihuman = None
@@ -84,14 +78,14 @@ class MatchOperator(DazPropsOperator):
 
 
     def getTargets(self, src, context):
-        self.checkTransforms(src)
+        checkObjectTransforms(src)
         objects = []
         for ob in getSelectedMeshes(context):
             if (ob != src and
                 len(ob.data.polygons) > 0 and
                 (ob.get("DazConforms", True) or self.useNonConforming)):
                 objects.append(ob)
-                self.checkTransforms(ob)
+                checkObjectTransforms(ob)
                 if (ob.parent and
                     ob.parent != src.parent and
                     self.transferMethod != 'BY_NUMBER'):
@@ -1198,6 +1192,16 @@ class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsShape):
         weights = [(vn,factor*dist) for vn,dist in dists if dist > eps]
         for vn,w in weights:
             vgrp.add([vn], w, 'REPLACE')
+
+#----------------------------------------------------------
+#   Utility
+#----------------------------------------------------------
+
+def checkObjectTransforms(ob):
+    if (ob.location != Zero or
+        Vector(ob.rotation_euler) != Zero or
+        ob.scale != One):
+        raise DazError("Apply object transformations to %s first" % ob.name)
 
 #----------------------------------------------------------
 #   Initialize
