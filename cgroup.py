@@ -905,6 +905,7 @@ class ToonRimGroup(CyclesGroup):
         CyclesGroup.create(self, node, name, parent, 5)
         addGroupInput(self.group, "NodeSocketColor", "Input")
         addGroupInput(self.group, "NodeSocketFloat", "Rim")
+        self.setMinMax("Rim", 0.0, 0.0, 1.0)
         addGroupInput(self.group, "NodeSocketColor", "Color")
         addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")

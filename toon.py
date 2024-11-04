@@ -31,6 +31,7 @@ class ToonTree(CyclesTree):
         self.buildBump(uvname)
         self.column = 4
         self.buildDiffuse()
+        self.buildRim()
         self.buildGlossy()
         self.buildEmission()
 
@@ -72,15 +73,31 @@ class ToonTree(CyclesTree):
         if fac == 0:
             return
         from .cgroup import ToonGlossyGroup
-        glossy = self.addGroup(ToonGlossyGroup, "DAZ Toon Glossy")
+        node = self.addGroup(ToonGlossyGroup, "DAZ Toon Glossy")
         refl,refltex,texslot = self.getColorTex(["Glossy Reflectivity"], "COLOR", WHITE)
         rough,roughtex,texslot = self.getColorTex(["Glossy Roughness"], "NONE", 0.0)
-        self.links.new(self.diffuse.outputs["Output"], glossy.inputs["Input"])
-        self.linkColor(refltex, glossy, refl*fac, "Reflection")
-        self.linkScalar(roughtex, glossy, rough, "Roughness")
-        self.linkBumpNormal(glossy)
-        self.cycles = glossy
+        self.links.new(self.cycles.outputs["Output"], node.inputs["Input"])
+        self.linkColor(refltex, node, refl*fac, "Reflection")
+        self.linkScalar(roughtex, node, rough, "Roughness")
+        self.linkBumpNormal(node)
+        self.cycles = node
         LS.usedFeatures["Glossy"] = True
+
+
+    def buildRim(self):
+        rim = self.getValue(["Rim Amount"], 0)
+        if rim == 0:
+            return
+        from .cgroup import ToonRimGroup
+        node = self.addGroup(ToonRimGroup, "DAZ Toon Rim")
+        color,tex,texslot = self.getColorTex(["Rim Color"], "COLOR", WHITE)
+        rim,rimtex,texslot = self.getColorTex(["Rim Amount"], "NONE", 0)
+        self.links.new(self.cycles.outputs["Output"], node.inputs["Input"])
+        self.linkScalar(rimtex, node, rim, "Rim")
+        self.linkColor(tex, node, color, "Color")
+        self.linkBumpNormal(node)
+        self.cycles = node
+        LS.usedFeatures["Rim"] = True
 
 
     def setRenderSettings(self):
