@@ -919,6 +919,7 @@ class ToonRimGroup(CyclesGroup):
 
         maprange = self.addMapRange(2)
         maprange.interpolation_type = 'STEPPED'
+        maprange.inputs["Steps"].default_value = 1
         self.links.new(lweight.outputs["Facing"], maprange.inputs["Value"])
 
         mult,a,b,multout = self.addMixRgbNode('MULTIPLY', 3)
