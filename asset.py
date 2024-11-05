@@ -177,6 +177,7 @@ class Asset(Accessor):
         self.id = None
         self.url = None
         self.name = None
+        self.oldnames = []
         self.label = None
         self.type = None
         self.visible = True
@@ -324,7 +325,9 @@ class Asset(Accessor):
             if key == "type":
                 self.type = value
             elif key == "name":
-                self.name = value
+                if self.name != value:
+                    self.oldnames.append(self.name)
+                    self.name = value
             elif key == "url":
                 self.url = value
             elif key == "label":

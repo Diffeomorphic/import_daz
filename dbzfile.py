@@ -41,20 +41,34 @@ class DBZInfo:
 
 
     def getEntry(self, attr, key, inst):
+        def getFromStruct(inst, struct):
+            if inst.label in struct.keys():
+                return struct[inst.label]
+            elif inst.name in struct.keys():
+                return struct[inst.name]
+            elif 0 in struct.keys():
+                nkeys = len(struct.keys()) - 1
+                for n in range(nkeys):
+                    entry = struct.get(n)
+                    if entry is not None:
+                        struct[n] = None
+                        return entry
+                return struct.get(nkeys)
+
         entries = getattr(self, attr)
         struct = entries.get(key, {})
-        if inst.label in struct.keys():
-            return struct[inst.label]
-        elif inst.name in struct.keys():
-            return struct[inst.name]
-        elif 0 in struct.keys():
-            nkeys = len(struct.keys()) - 1
-            for n in range(nkeys):
-                entry = struct.get(n)
-                if entry is not None:
-                    struct[n] = None
-                    return entry
-            return struct.get(nkeys)
+        entry = getFromStruct(inst, struct)
+        if entry:
+            return entry
+        struct = entries.get(inst.node.name, {})
+        entry = getFromStruct(inst, struct)
+        if entry:
+            return entry
+        for key in inst.node.oldnames:
+            struct = entries.get(key, {})
+            entry = getFromStruct(inst, struct)
+        if entry:
+            return entry
         print('No DBZ data: %s "%s" "%s" "%s"' % (attr, key, inst.label, inst.name))
 
 
