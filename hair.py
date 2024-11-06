@@ -197,8 +197,12 @@ class HairOptions:
     useResizeInBlocks : BoolProperty(
         name = "Resize In Blocks",
         default = False,
-        description = "Resize hair in blocks of ten afterwards"
-    )
+        description = "Resize hair in blocks of ten afterwards")
+
+    useSnapRoots : BoolProperty(
+        name = "Snap Roots",
+        default = True,
+        description = "Snap roots to nearest point on mesh")
 
     # Settings
 
@@ -422,6 +426,17 @@ class HairSystem:
             nstrand.append(z)
         nstrand.append(strand[m-1])
         return nstrand
+
+
+    def snapRoots(self, context, hum):
+        from mathutils.bvhtree import BVHTree
+        deps = context.evaluated_depsgraph_get()
+        bvhtree = BVHTree.FromObject(hum, deps)
+        nstrands = []
+        for strand in self.strands:
+            loc = bvhtree.find_nearest(strand[0])[0]
+            nstrands.append([loc] + strand[1:])
+        self.strands = nstrands
 
 
     def build(self, context, ob):
@@ -972,6 +987,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             box.prop(self, "useCheckStrips")
         box.prop(self, "keepMesh")
         box.prop(self, "removeOldHairs")
+        box.prop(self, "useSnapRoots")
         if not self.hasSingleOutput():
             box.prop(self, "useResizeHair")
             if self.useResizeHair:
@@ -980,6 +996,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                 if not self.useAutoResize:
                     box.prop(self, "useResizeInBlocks")
         box.prop(self, "sparsity")
+
 
         col = row.column()
         box = col.box()
@@ -1143,6 +1160,9 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             hsystems = self.hairResize(self.size, hsystems, hum)
         t6 = perf_counter()
         self.clocks.append(("Resize", t6-t5))
+        if self.useSnapRoots:
+            for hsys in hsystems.values():
+                hsys.snapRoots(context, hum)
         if self.output == 'PARTICLES' and BLENDER3:
             self.makeParticleHair(context, hsystems, hum)
         else:
