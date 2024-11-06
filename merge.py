@@ -1264,12 +1264,13 @@ class MergeRigsOptions:
         description = "Convert face controls to bone custom shapes",
         default = True)
 
-    useApplyTransform : BoolProperty(
-        name = "Apply Transforms",
+    useHiddenRigs : BoolProperty(
+        name = "Include Hidden Rigs",
+        description = "Also merge bones from armatures that are hidden",
         default = False)
 
 
-class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
+class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
     bl_idname = "daz.merge_rigs"
     bl_label = "Merge Rigs"
     bl_description = "Merge selected rigs to active rig"
@@ -1282,6 +1283,7 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
 
     def draw(self, context):
         self.layout.prop(self, "useOnlySelected")
+        self.layout.prop(self, "useHiddenRigs")
         self.layout.prop(self, "duplicateDistance")
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
@@ -1302,20 +1304,23 @@ class DAZ_OT_MergeRigs(CollectionShower, DazPropsOperator, MergeRigsOptions, Dri
         roots = [ob for ob in context.view_layer.objects if ob.parent is None]
         if self.useOnlySelected:
             roots = findSelectedRoots(roots)
+        excluded = findExcludedObjects(context, self.useHiddenRigs)
         if self.useMergeNonConforming == 'ALWAYS':
-            rootmats = applyTransformToObjects(roots)
+            rootmats = applyTransformToObjects(roots, excluded)
         else:
             rootmats = []
         deletes = []
         try:
-            deletes = self.mergeRigs(context, roots)
+            deletes = self.mergeRigs(context, roots, excluded)
         finally:
             restoreTransformsToObjects(rootmats)
         deleteObjects(context, deletes)
 
 
-    def mergeRigs(self, context, roots):
+    def mergeRigs(self, context, roots, excluded):
         def getObjects(ob, parent, objects, infos, widgets, info):
+            if ob in excluded:
+                return
             if parent and parent.type == 'ARMATURE':
                 objects.append((ob, parent, ob.matrix_world.copy(), ob.hide_viewport, ob.hide_get()))
                 ob.hide_viewport = False
@@ -1649,12 +1654,34 @@ def applyArmatureModifier(ob):
 #   Apply transform to objects
 #-------------------------------------------------------------
 
-def applyTransformToObjects(objects):
+def findExcludedObjects(context, useHidden):
+    def excludeHidden(objects, layer):
+        if not (layer.exclude or layer.hide_viewport):
+            for ob in layer.collection.objects:
+                if useHidden or not (ob.hide_viewport or ob.hide_get()):
+                    objects.append(ob)
+            for child in layer.children:
+                excludeHidden(objects, child)
+
+    objects = []
+    excludeHidden(objects, context.view_layer.layer_collection)
+    objects = set(objects)
+    excluded = []
+    for ob in context.scene.objects:
+        if ob not in objects:
+            excluded.append(ob)
+    return excluded
+
+
+def applyTransformToObjects(objects, excluded=[]):
     bpy.ops.object.select_all(action='DESELECT')
     parents = []
     for ob in objects:
         for child in ob.children:
-            parents.append((child, ob, child.matrix_world.copy(), child.hide_get(), child.hide_select))
+            if child in excluded:
+                continue
+            parents.append((child, ob, child.matrix_world.copy(), child.hide_viewport, child.hide_get(), child.hide_select))
+            child.hide_viewport = False
             child.hide_set(False)
             child.hide_select = False
             child.select_set(True)
@@ -1664,31 +1691,34 @@ def applyTransformToObjects(objects):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objects:
         wmat = ob.matrix_world.copy()
-        wmats.append((ob, wmat, ob.hide_get(), ob.hide_select))
+        wmats.append((ob, wmat, ob.hide_viewport, ob.hide_get(), ob.hide_select))
+        ob.hide_viewport = False
         ob.hide_set(False)
         ob.hide_select = False
         ob.select_set(True)
     bpy.ops.object.transform_apply()
 
-    for child,ob,wmat,hide1,hide2 in parents:
+    for child,ob,wmat,hide1,hide2,hide3 in parents:
         child.parent = ob
         setWorldMatrix(child, wmat)
-        child.hide_set(hide1)
-        child.hide_select = hide2
+        child.hide_viewport = hide1
+        child.hide_set(hide2)
+        child.hide_select = hide3
 
     return wmats
 
 
 def restoreTransformsToObjects(wmats):
     bpy.ops.object.select_all(action='DESELECT')
-    for ob,wmat,hide1,hide2 in wmats:
+    for ob,wmat,hide1,hide2,hide3 in wmats:
         setWorldMatrix(ob, wmat.inverted())
         ob.select_set(True)
     bpy.ops.object.transform_apply()
-    for ob,wmat,hide1,hide2 in wmats:
+    for ob,wmat,hide1,hide2,hide3 in wmats:
         setWorldMatrix(ob, wmat)
-        ob.hide_set(hide1)
-        ob.hide_select = hide2
+        ob.hide_viewport = hide1
+        ob.hide_set(hide2)
+        ob.hide_select = hide3
 
 #-------------------------------------------------------------
 #   Merge toes
