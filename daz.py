@@ -569,7 +569,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
         min = 1, max = 11)
 
-    useScaleEyeMoisture : BoolProperty(
+    onScaleEyeMoisture : EnumProperty(
+        items = [('NONE', "None", "Don't scale eye moisture"),
+                 ('GENERATE', "Generate", "Add a displacement modifier"),
+                 ('APPLY', "Apply", "Move vertex locations")],
         name = "Scale Eye Moisture",
         description = "Scale eye moisture vertices to avoid dark rings when rendering eyes")
 
@@ -712,7 +715,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")
-        box.prop(self, "useScaleEyeMoisture")
+        box.prop(self, "onScaleEyeMoisture")
         box.prop(self, "useSimulation")
 
         col = split.column()

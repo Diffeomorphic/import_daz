@@ -457,7 +457,7 @@ class GeoNode(Node, SimNode):
 
 
     def scaleEyeMoisture(self, ob, meshtype):
-        if GS.useScaleEyeMoisture:
+        if GS.onScaleEyeMoisture != 'NONE':
             url = self.url.lower().rsplit("#",1)[0]
             if (meshtype in ["Genesis8-female", "Genesis8-male"] and
                 url in ["/data/daz%203d/genesis%208/female/genesis8female.dsf",
@@ -486,6 +486,8 @@ class GeoNode(Node, SimNode):
             mod.mid_level = 0
             if vgrp:
                 mod.vertex_group = vgrp.name
+            if GS.onScaleEyeMoisture == 'APPLY':
+                bpy.ops.object.modifier_apply(modifier=mod.name)
 
 
     def finishHD(self, context, ob, hdob, inst):

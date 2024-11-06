@@ -134,7 +134,7 @@ class GlobalSettings:
         self.useAutoSmooth = True
         self.maxSubdivs = 4
         self.useSimulation = True
-        self.useScaleEyeMoisture = True
+        self.onScaleEyeMoisture = 'APPLY'
 
 
     def getSettingsDir(self, context):
