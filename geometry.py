@@ -422,7 +422,7 @@ class GeoNode(Node, SimNode):
                     ob.data.auto_smooth_angle = angle
 
 
-            self.scaleEyeMoisture(ob, ob.DazMesh)
+            self.scaleEyeMoisture(context, ob, ob.DazMesh)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
             if hdob and hdob.data != ob.data:
@@ -433,7 +433,7 @@ class GeoNode(Node, SimNode):
                         hduvlayer.active = hduvlayer.active_render = True
                 #if GS.usePruneNodes:
                 #    pruneUvMaps(hdob)
-                self.scaleEyeMoisture(hdob, ob.DazMesh)
+                self.scaleEyeMoisture(context, hdob, ob.DazMesh)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
                 if GS.useShellDrivers:
@@ -456,7 +456,7 @@ class GeoNode(Node, SimNode):
                 shiftMesh(hdob, inst)
 
 
-    def scaleEyeMoisture(self, ob, meshtype):
+    def scaleEyeMoisture(self, context, ob, meshtype):
         if GS.onScaleEyeMoisture != 'NONE':
             url = self.url.lower().rsplit("#",1)[0]
             if (meshtype in ["Genesis8-female", "Genesis8-male"] and
@@ -481,12 +481,16 @@ class GeoNode(Node, SimNode):
                 return
 
             from .dforce import addModifierFirst
-            mod = addModifierFirst(ob, "Displace", 'DISPLACE', exclude='ARMATURE')
+            if GS.onScaleEyeMoisture == 'APPLY':
+                mod = addModifierFirst(ob, "Displace", 'DISPLACE')
+            else:
+                mod = addModifierFirst(ob, "Displace", 'DISPLACE', exclude='ARMATURE')
             mod.strength = strength
             mod.mid_level = 0
             if vgrp:
                 mod.vertex_group = vgrp.name
             if GS.onScaleEyeMoisture == 'APPLY':
+                context.view_layer.objects.active = ob
                 bpy.ops.object.modifier_apply(modifier=mod.name)
                 vgrp = ob.vertex_groups.get("Displace")
                 if vgrp:
