@@ -488,6 +488,9 @@ class GeoNode(Node, SimNode):
                 mod.vertex_group = vgrp.name
             if GS.onScaleEyeMoisture == 'APPLY':
                 bpy.ops.object.modifier_apply(modifier=mod.name)
+                vgrp = ob.vertex_groups.get("Displace")
+                if vgrp:
+                    ob.vertex_groups.remove(vgrp)
 
 
     def finishHD(self, context, ob, hdob, inst):
