@@ -14,13 +14,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import sys
 import bpy
 import math
 import numpy as np
 
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from .error import *
 from .utils import *
 from .tree import addGroupInput, addGroupOutput, getGroupInput
@@ -539,6 +538,11 @@ class HairBuilder(Pinner, Cloth, Collision):
         description = "Add a hair proxy mesh for posing or simulation",
         default = 'NONE')
 
+    useVertexGroups : BoolProperty(
+        name = "Copy Vertex Groups",
+        description = "Copy vertex groups to proxy mesh",
+        default = False)
+
     proxyType : EnumProperty(
         items = [('LINE', "Line", "Line proxy mesh"),
                  ('SHEET', "Sheet", "Sheet proxy mesh"),
@@ -569,6 +573,7 @@ class HairBuilder(Pinner, Cloth, Collision):
         layout.prop(self, "hairPoseSim")
         if self.hairPoseSim == 'POSING':
             layout.prop(self, "proxyType")
+            layout.prop(self, "useVertexGroups")
         elif self.hairPoseSim == 'SIMULATION':
             layout.prop(self, "proxyType")
             layout.prop(self, "proxyWidth")
@@ -582,7 +587,7 @@ class HairBuilder(Pinner, Cloth, Collision):
                 self.drawCollision(context, layout)
 
 
-    def buildMesh(self, context, hname, strands, hair, hum, mnames, useHead = False):
+    def buildMesh(self, context, hname, strands, hair, hum, mnames):
         def getVectors(coords):
             if len(coords) == 1:
                 return Vector((1,0,0)), Vector((0,1,0))
@@ -677,14 +682,6 @@ class HairBuilder(Pinner, Cloth, Collision):
             addWeights(vgrp, strands, nverts)
             if self.proxyType == 'TUBE':
                 addWeights(vgrp, strands, 2*nverts)
-
-        if useHead:
-            vgrp = ob.vertex_groups.new(name = "head")
-            for vn in range(len(ob.data.vertices)):
-                vgrp.add([vn], 1.0, 'REPLACE')
-            mod = ob.modifiers.new("Armature", 'ARMATURE')
-            mod.object = hair.parent
-
         return ob
 
 
@@ -693,8 +690,7 @@ class HairBuilder(Pinner, Cloth, Collision):
         if mat is None:
             mat = bpy.data.materials.new("Hair Proxy")
             mat.diffuse_color[0:3] = (1,0,0)
-        useHead = (self.hairPoseSim == 'POSING')
-        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name], useHead=False)
+        proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name])
         proxy.hide_render = True
         if self.hairPoseSim == 'SIMULATION' and self.usePinGroup:
             self.addHairPinning(proxy)
@@ -1083,9 +1079,12 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
     def makeHair(self, context, hair, hum):
         t1 = perf_counter()
         self.clocks = []
-        if self.keepMesh:
+        duphair = None
+        if self.keepMesh or self.useVertexGroups:
             activateObject(context, hair)
             bpy.ops.object.duplicate()
+            if self.useVertexGroups:
+                duphair = getSelectedObjects(context)[-1]
 
         if self.strandType == 'SHEET':
             if not hair.data.uv_layers.active:
@@ -1166,10 +1165,13 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         if self.output == 'PARTICLES' and BLENDER3:
             self.makeParticleHair(context, hsystems, hum)
         else:
-            self.makePolylineHair(context, hsystems, hair, hum)
+            self.makePolylineHair(context, hsystems, hair, hum, duphair)
         for hair in hairs:
             unlinkAll(hair, True)
         #deleteObjects(context, hairs)
+        if duphair and not self.keepMesh:
+            unlinkAll(duphair, True)
+            deleteObjects(context, [duphair])
         t7 = perf_counter()
         self.clocks.append(("Make Hair", t7-t6))
         if self.nonquads:
@@ -1191,14 +1193,14 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         print("Done")
 
 
-    def makePolylineHair(self, context, hsystems, hair, hum):
+    def makePolylineHair(self, context, hsystems, hair, hum, duphair):
         print("Make polyline hair")
         coll = getCollection(context, hair)
         if not hsystems:
             print("No hair system found")
         elif self.output in ['MESH', 'CURVES', 'HAIR_CURVES', 'PARTICLES']:
             for hsys in hsystems.values():
-                self.buildOutput(context, hsys.name, hsys.strands, hair, hum, [hsys.material], coll)
+                self.buildOutput(context, hsys.name, hsys.strands, hair, hum, [hsys.material], coll, duphair)
         elif self.output == 'POLYLINES':
             subcoll = bpy.data.collections.new(name = "Mesh Hairs")
             coll.children.link(subcoll)
@@ -1209,7 +1211,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         print("Done")
 
 
-    def buildOutput(self, context, hname, strands, hair, hum, mnames, coll):
+    def buildOutput(self, context, hname, strands, hair, hum, mnames, coll, duphair):
         proxy = None
         if self.output == 'MESH':
             ob = self.buildMesh(context, hname, strands, hair, hum, mnames)
@@ -1227,6 +1229,14 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         if proxy:
             proxy.name = "Proxy %s" % baseName(hair.name)
             self.linkHair(proxy, hum, coll)
+            if duphair:
+                from .transfer import transferVertexGroups
+                transferVertexGroups(context, duphair, [proxy], 1e-3)
+                mod = proxy.modifiers.new("Armature", 'ARMATURE')
+                mod.object = duphair.parent
+                proxy.parent = duphair.parent
+                proxy.parent_type = 'OBJECT'
+                proxy.matrix_basis = Matrix()
 
         if self.output == 'PARTICLES':
             activateObject(context, ob)
@@ -2064,9 +2074,14 @@ class HairTree(CyclesTree):
         if node:
             node.inputs[slot].default_value[0:3] == root
         if self.image:
+            xyz = self.addNode("ShaderNodeCombineXYZ", col = self.column-3)
+            xyz.inputs[0].default_value = 0.5
+            xyz.inputs[1].default_value = 0.5
+            xyz.inputs[2].default_value = 0.5
             tex = self.addNode("ShaderNodeTexImage", col=self.column-2, size=2)
             tex.image = self.image
             tex.hide = True
+            self.links.new(xyz.outputs["Vector"], tex.inputs["Vector"])
             mult,a,b,socket = self.addMixRgbNode('MULTIPLY', self.column-1, size=12)
             mult.inputs[0].default_value = 1
             self.links.new(ramp.outputs["Color"], a)
