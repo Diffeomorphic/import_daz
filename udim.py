@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 import os
 from .error import *
@@ -113,25 +112,63 @@ class TileFixer:
 
 
     def udimsFromGraft(self, graft, hum):
+        def getUVcoords(mn):
+            m = 0
+            ucoord = []
+            vcoord = []
+            for fn,f in enumerate(hum.data.polygons):
+                if fn in fmasked and f.material_index == mn:
+                    for j,vn in enumerate(f.vertices):
+                        uv = cuvlayer.data[m+j].uv
+                        ucoord.append(uv[0])
+                        vcoord.append(uv[1])
+                m += len(f.vertices)
+            return ucoord, vcoord
+
         cuvlayer = hum.data.uv_layers.active
-        ucoord = []
-        vcoord = []
         fmasked = [face.a for face in graft.data.DazMaskGroup]
-        m = 0
-        for fn,f in enumerate(hum.data.polygons):
-            if fn in fmasked:
-                for j,vn in enumerate(f.vertices):
-                    uv = cuvlayer.data[m+j].uv
-                    ucoord.append(uv[0])
-                    vcoord.append(uv[1])
-            m += len(f.vertices)
-        tile,udim,vdim = self.getTile(ucoord, vcoord)
-        print("Move %s UVs to tile %d" % (graft.name, tile))
+        tiles = {}
+        udims = {}
+        vdims = {}
+        for mn,mat in enumerate(hum.data.materials):
+            if mat:
+                ucoord,vcoord = getUVcoords(mn)
+                if ucoord:
+                    mname = stripName(mat.name)
+                    tiles[mname], udims[mname], vdims[mname] = self.getTile(ucoord, vcoord)
+
+        if len(tiles) == 0:
+            print("No UVs to shift")
+            return
+        tiledefault = list(tiles.values())[0]
+        udefault = list(udims.values())[0]
+        vdefault = list(vdims.values())[0]
         auvlayer = graft.data.uv_layers.active
-        for data in auvlayer.data:
-            uvs = data.uv
-            uvs[0] += udim - int(uvs[0])
-            uvs[1] += vdim - int(uvs[1])
+
+        def moveUVs(mn, udim, vdim):
+            m = 0
+            for f in graft.data.polygons:
+                if f.material_index == mn:
+                    for j in range(len(f.vertices)):
+                        uvs = auvlayer.data[m+j].uv
+                        uvs[0] += udim - int(uvs[0])
+                        uvs[1] += vdim - int(uvs[1])
+                m += len(f.vertices)
+
+        for mn,mat in enumerate(graft.data.materials):
+            if mat:
+                mname = stripName(mat.name)
+                if mname in tiles.keys():
+                    tile = tiles[mname]
+                    udim = udims[mname]
+                    vdim = vdims[mname]
+                else:
+                    tile = tiledefault
+                    udim = udefault
+                    vdim = vdefault
+            print("Move %s:%s UVs to tile %d" % (graft.name, mname, tile))
+            moveUVs(mn, udim, vdim)
+        return
 
 
     def getKnownTiles(self, ob):
