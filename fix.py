@@ -1255,7 +1255,8 @@ class BendTwists:
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             trg = rig.pose.bones[tname]
-            dampedTrack(bend, trg, rig)
+            cns = dampedTrack(bend, pb, rig)
+            cns.head_tail = 1.0
             copyTransform(twist, pb, rig)
             if useStretch and stretch:
                 stretchTo(bend, trg, rig, stretch, "x")
