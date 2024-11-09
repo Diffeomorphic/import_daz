@@ -21,7 +21,7 @@ from mathutils import Vector
 
 from .error import *
 from .utils import *
-from .material import WHITE, isWhite
+from .material import WHITE, NORMAL, isWhite
 from .cycles import isGroupType
 from .pbr import PBR
 from collections import OrderedDict
@@ -836,9 +836,11 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
         outnode.location = (max(xlocs) + XSIZE, 2*YSIZE)
         for key,links in self.inputs.items():
             if links and links[0].from_socket.type == 'VALUE':
-                addGroupInput(group, "NodeSocketFloat", key)
+                socket = addGroupInput(group, "NodeSocketFloat", key)
             else:
-                addGroupInput(group, "NodeSocketColor", key)
+                socket = addGroupInput(group, "NodeSocketColor", key)
+                if key.split(":",1)[0] == "Normal_map":
+                    socket.default_value = NORMAL
         if self.useBump:
             addGroupInput(group, "NodeSocketFloat", "Bump Distance")
         addGroupOutput(group, "NodeSocketShader", "BSDF")
