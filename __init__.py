@@ -52,7 +52,9 @@ if "bpy" in locals():
     #imp.reload("runtime.morph_armature")
     if DEBUG:
         imp.reload(export_daz)
-    
+        imp.reload(rig_daz)
+        imp.reload(shell_edit)
+
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     import bpy
@@ -61,6 +63,8 @@ else:
     from .runtime import morph_armature
     if DEBUG:
         from . import export_daz
+        from . import rig_daz
+        from . import shell_edit
 
 
 from .settings import GS
@@ -72,10 +76,16 @@ from .api import *
 
 import sys
 import os
-    
-def toggleExport(self, context):
+
+def toggleExportDaz(self, context):
     toggleModule("export_daz", self.useExport)
-        
+
+def toggleRigDaz(self, context):
+    toggleModule("rig_daz", self.useRigDaz)
+
+def toggleShellEdit(self, context):
+    toggleModule("shell_edit", self.useShellEdit)
+
 def toggleModule(module, enable):
     if enable:
         exec("%s.register()" % module)
@@ -105,12 +115,24 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = defaultDir,
         update = updateSettings
     )
-    
-    useExport : bpy.props.BoolProperty(
+
+    useExportDaz : bpy.props.BoolProperty(
         name = "DAZ Exporter",
         description = "Enable DAZ Exporter tools",
         default = False,
-        update = toggleExport)
+        update = toggleExportDaz)
+
+    useRigDaz : bpy.props.BoolProperty(
+        name = "DAZ Rigging",
+        description = "Enable tools for rigging DAZ figures",
+        default = False,
+        update = toggleRigDaz)
+
+    useShellEdit : bpy.props.BoolProperty(
+        name = "Shell Editor",
+        description = "Tools for editing shells and layered images",
+        default = False,
+        update = toggleShellEdit)
 
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
@@ -118,8 +140,10 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.operator("daz.load_settings_file")
         self.layout.operator("daz.save_settings_file")
         self.layout.label(text = "Features:")
-        self.layout.prop(self, "useExport")
-            
+        self.layout.prop(self, "useExportDaz")
+        self.layout.prop(self, "useRigDaz")
+        self.layout.prop(self, "useShellEdit")
+
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
@@ -132,7 +156,6 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "matedit", "scale", "proxy", "rigify", "merge", "hide",
             "mhx", "pin", "hair", "transfer", "dforce", "gaze",
             "hdmorphs", "ctrl_rig", "moho", "udim", "scan", "attr",
-            #"preset", "pose_preset", "morph_preset"
             ]
 
 isRegistered = False
@@ -147,14 +170,18 @@ def register():
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
-    
+
     bpy.utils.register_class(DazPreferences)
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useExport:
+        if prefs.useExportDaz:
             export_daz.register()
-                    
+        if prefs.useRigDaz:
+            rig_daz.register()
+        if prefs.useShellEdit:
+            shell_edit.register()
+
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
     GS.loadAbsPaths()
@@ -166,11 +193,16 @@ def unregister():
     for modname in reversed(Modules):
         if modname in Regnames:
             exec("%s.unregister()" % modname)
+
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useExport:
+        if prefs.useExportDaz:
             export_daz.unregister()
+        if prefs.useRigDaz:
+            rig_daz.unregister()
+        if prefs.useShellEdit:
+            shell_edit.unregister()
     bpy.utils.unregister_class(DazPreferences)
 
 
