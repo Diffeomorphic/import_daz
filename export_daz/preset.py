@@ -20,11 +20,11 @@ from mathutils import *
 from math import pi
 from collections import OrderedDict
 
-from .error import *
-from .utils import *
-from .fileutils import SingleFile, DufFile
-from .asset import normalizeRef, normalizeUrl
-from .load_json import saveJson
+from ..error import *
+from ..utils import *
+from ..fileutils import SingleFile, DufFile
+from ..asset import normalizeRef, normalizeUrl
+from ..load_json import saveJson
 
 #----------------------------------------------------------
 #   Preset base class

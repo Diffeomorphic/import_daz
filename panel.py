@@ -1219,20 +1219,6 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
                 op.prop = prop
                 op.object = ob.name
 
-#----------------------------------------------------------
-#   Export panel
-#----------------------------------------------------------
-
-class DAZ_PT_Export(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "Export"
-
-    def draw(self, context):
-        self.layout.operator("daz.make_control_rig")
-        self.layout.operator("daz.save_pose_preset")
-        self.layout.operator("daz.save_morph_presets")
-        self.layout.operator("daz.save_daz_figure")
-        self.layout.operator("daz.save_uv")
-
 #------------------------------------------------------------------------
 #   DAZ Rigify props panels
 #------------------------------------------------------------------------
@@ -1324,7 +1310,6 @@ classes = [
     DAZ_PT_ShellVisibility,
     DAZ_PT_DazRigifyProps,
 
-    DAZ_PT_Export,
     DAZ_PT_DazSimpleLayers,
     DAZ_PT_DazSimpleIK,
 ]

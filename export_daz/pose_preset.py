@@ -15,12 +15,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import bpy
-from .ctrl_rig import Framer
-from .animation import HideOperator, FrameConverter
-from .bone_data import BD
-from .rigify import L_CUSTOM, R_CUSTOM
-from .node import getTransformMatrices
-from .mhx import copyTransform
+from ..ctrl_rig import Framer
+from ..animation import HideOperator, FrameConverter
+from ..bone_data import BD
+from ..rigify import L_CUSTOM, R_CUSTOM
+from ..node import getTransformMatrices
+from ..mhx import copyTransform
 from .preset import *
 
 #----------------------------------------------------------

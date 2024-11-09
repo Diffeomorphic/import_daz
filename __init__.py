@@ -40,9 +40,9 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "matedit", "scale", "tables", "proxy", "hide",
            "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
            "dforce", "pin", "hair", "main", "geonodes", "attr",
-           "preset", "pose_preset", "morph_preset",
            "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
+DEBUG = True
 
 if "bpy" in locals():
     print("Reloading DAZ Importer v %d.%d.%d" % bl_info["version"])
@@ -50,12 +50,18 @@ if "bpy" in locals():
     for modname in Modules:
         exec("imp.reload(%s)" % modname)
     #imp.reload("runtime.morph_armature")
+    if DEBUG:
+        imp.reload(export_daz)
+    
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     import bpy
     for modname in Modules:
         exec("from . import %s" % modname)
     from .runtime import morph_armature
+    if DEBUG:
+        from . import export_daz
+
 
 from .settings import GS
 from .api import *
@@ -89,12 +95,19 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = defaultDir,
         update = updateSettings
     )
+    
+    useExport : bpy.props.BoolProperty(
+        name = "DAZ Exporter",
+        description = "Enable DAZ Exporter tools",
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
         #self.layout.operator("daz.update_settings")
         self.layout.operator("daz.load_settings_file")
         self.layout.operator("daz.save_settings_file")
+        self.layout.separator()
+        self.layout.prop(self, "useExport")
 
 #----------------------------------------------------------
 #   Register
@@ -108,7 +121,8 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "matedit", "scale", "proxy", "rigify", "merge", "hide",
             "mhx", "pin", "hair", "transfer", "dforce", "gaze",
             "hdmorphs", "ctrl_rig", "moho", "udim", "scan", "attr",
-            "preset", "pose_preset", "morph_preset"]
+            #"preset", "pose_preset", "morph_preset"
+            ]
 
 isRegistered = False
 
@@ -122,7 +136,13 @@ def register():
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
+    
     bpy.utils.register_class(DazPreferences)
+    addon = bpy.context.preferences.addons.get(__name__)
+    prefs = addon.preferences
+    if prefs.useExport:
+        export_daz.register()
+                    
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
     GS.loadAbsPaths()
@@ -135,6 +155,10 @@ def unregister():
     for modname in reversed(Modules):
         if modname in Regnames:
             exec("%s.unregister()" % modname)
+    addon = bpy.context.preferences.addons.get(__name__)
+    prefs = addon.preferences
+    if prefs.useExport:
+        export_daz.unregister()
 
 
 if __name__ == "__main__":
