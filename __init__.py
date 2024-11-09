@@ -78,7 +78,7 @@ import sys
 import os
 
 def toggleExportDaz(self, context):
-    toggleModule("export_daz", self.useExport)
+    toggleModule("export_daz", self.useExportDaz)
 
 def toggleRigDaz(self, context):
     toggleModule("rig_daz", self.useRigDaz)

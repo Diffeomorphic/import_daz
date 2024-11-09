@@ -15,7 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 if "bpy" in locals():
-    print("Reloading DAZ Rigging v %d.%d.%d" % bl_info["version"])
+    print("Reloading DAZ Rigging")
     import imp
     imp.reload(mute)
     imp.reload(ikgoals)
@@ -99,9 +99,16 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
 #   Register
 #----------------------------------------------------------
 
+classes = [
+    DAZ_PT_DazRigBuild,
+    DAZ_PT_DazRigPose,
+    DAZ_PT_DazMatrix
+]
+
 def register():
     print("Register DAZ Rigging")
-    panel.register()
+    for cls in classes:
+        bpy.utils.register_class(cls)
     mute.register()
     ikgoals.register()
     store.register()
@@ -109,9 +116,10 @@ def register():
     unreal.register()
 
 def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
     unreal.unregister()
     bvh.unregister()
     store.unregister()
     ikgoals.unregister()
     mute.unregister()
-    panel.unregister()
