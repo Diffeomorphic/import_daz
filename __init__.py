@@ -72,6 +72,16 @@ from .api import *
 
 import sys
 import os
+    
+def toggleExport(self, context):
+    toggleModule("export_daz", self.useExport)
+        
+def toggleModule(module, enable):
+    if enable:
+        exec("%s.register()" % module)
+    else:
+        exec("%s.unregister()" % module)
+
 
 def updateSettings(self, context):
     GS.getSettingsDir(context)
@@ -99,16 +109,17 @@ class DazPreferences(bpy.types.AddonPreferences):
     useExport : bpy.props.BoolProperty(
         name = "DAZ Exporter",
         description = "Enable DAZ Exporter tools",
-        default = False)
+        default = False,
+        update = toggleExport)
 
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
         #self.layout.operator("daz.update_settings")
         self.layout.operator("daz.load_settings_file")
         self.layout.operator("daz.save_settings_file")
-        self.layout.separator()
+        self.layout.label(text = "Features:")
         self.layout.prop(self, "useExport")
-
+            
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
@@ -140,8 +151,9 @@ def register():
     bpy.utils.register_class(DazPreferences)
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
-    if prefs.useExport:
-        export_daz.register()
+    if prefs:
+        if prefs.useExport:
+            export_daz.register()
                     
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
@@ -151,14 +163,15 @@ def register():
 def unregister():
     global isRegistered
     isRegistered = False
-    bpy.utils.unregister_class(DazPreferences)
     for modname in reversed(Modules):
         if modname in Regnames:
             exec("%s.unregister()" % modname)
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
-    if prefs.useExport:
-        export_daz.unregister()
+    if prefs:
+        if prefs.useExport:
+            export_daz.unregister()
+    bpy.utils.unregister_class(DazPreferences)
 
 
 if __name__ == "__main__":
