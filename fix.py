@@ -950,7 +950,7 @@ class ConstraintStore:
             if defbone in rig.data.bones.keys():
                 assoc[dbone] = defbone
             else:
-                assoc[dbone] = mbone
+                assoc[dbone] = mbone.replace(".bend.", ".").replace(".twist.", ".")
         restoreDrivers(rig.data, "_RIG_", assoc)
         if nrig:
             assoc = {}
