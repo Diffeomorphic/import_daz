@@ -519,14 +519,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Enable stretchiness for arms and legs",
         default = True)
 
-    bendType : EnumProperty(
-        items = [('DAMPED_TRACK', "Damped Track", "Damped track"),
-                 ('TRACK_TO', "Track To", "Track to"),
-                 ('IK', "IK", "IK constraint with chain length 1")],
-        name = "Bend Bone Constraints",
-        description = "Type of constraint on bend bones",
-        default = 'DAMPED_TRACK')
-
     useSpineIk : BoolProperty(
         name = "Spine IK",
         description = "Spine IK (experimental)",
@@ -591,7 +583,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "elbowParent")
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
-        #self.layout.prop(self, "bendType")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
         self.layout.prop(self, "useAnkleIk")
