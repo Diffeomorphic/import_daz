@@ -220,6 +220,19 @@ def dampedTrack(pb, target, rig, prop=None, expr="x"):
     return cns
 
 
+def trackTo(pb, target, rig, space='POSE'):
+    cns = pb.constraints.new('TRACK_TO')
+    cns.name = "Track To %s" % target.name
+    cns.target = rig
+    cns.subtarget = target.name
+    cns.track_axis = 'TRACK_Y'
+    cns.up_axis = 'UP_Z'
+    cns.use_target_z = True
+    cns.target_space = space
+    cns.owner_space = space
+    return cns
+
+
 def lockedTrack(pb, target, rig, prop=None, expr="x"):
     cns = pb.constraints.new('LOCKED_TRACK')
     cns.name = "Locked Track %s" % target.name
@@ -506,6 +519,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         description = "Enable stretchiness for arms and legs",
         default = True)
 
+    bendType : EnumProperty(
+        items = [('DAMPED_TRACK', "Damped Track", "Damped track"),
+                 ('TRACK_TO', "Track To", "Track to"),
+                 ('IK', "IK", "IK constraint with chain length 1")],
+        name = "Bend Bone Constraints",
+        description = "Type of constraint on bend bones",
+        default = 'TRACK_TO')
+
     useSpineIk : BoolProperty(
         name = "Spine IK",
         description = "Spine IK (experimental)",
@@ -570,6 +591,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "elbowParent")
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
+        self.layout.prop(self, "bendType")
         self.layout.prop(self, "addTweakBones")
         Fixer.draw(self, context)
         self.layout.prop(self, "useAnkleIk")

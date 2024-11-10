@@ -1244,7 +1244,7 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig, bendTwistBones, useStretch):
-        from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
+        from .mhx import dampedTrack, ikConstraint, trackTo, copyRotation, copyTransform, stretchTo
         setMode('OBJECT')
         for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
@@ -1255,8 +1255,18 @@ class BendTwists:
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             trg = rig.pose.bones[tname]
-            cns = dampedTrack(bend, pb, rig)
-            cns.head_tail = 1.0
+            if self.bendType == 'DAMPED_TRACK':
+                cns = dampedTrack(bend, pb, rig)
+                cns.head_tail = 1.0
+            elif self.bendType == 'IK':
+                cns = ikConstraint(bend, pb, None, 0, 1, rig)
+                cns.use_tail = True
+                cns.use_stretch = False
+                cns.use_location = True
+                cns.use_rotation = True
+            elif self.bendType == 'TRACK_TO':
+                cns = trackTo(bend, pb, rig)
+                cns.head_tail = 1.0
             copyTransform(twist, pb, rig)
             if useStretch and stretch:
                 stretchTo(bend, trg, rig, stretch, "x")
