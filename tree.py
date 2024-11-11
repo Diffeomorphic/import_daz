@@ -503,6 +503,7 @@ def pruneNodeTree(tree,
             useGroups and
             node.outputs and
             node.node_tree not in LS.protectedGroups):
+            isLie = node.node_tree.name.startswith("LIE")
             pruneNodeTree(node.node_tree,
                           None,
                           useDeleteUnusedNodes,
@@ -511,7 +512,7 @@ def pruneNodeTree(tree,
                           useHideOutputs,
                           keepUnusedTextures,
                           useFixColorSpace,
-                          useDazImages,
+                          (not isLie),
                           useBeautify,
                           useGroups)
             LS.protectedGroups.append(node.node_tree)
