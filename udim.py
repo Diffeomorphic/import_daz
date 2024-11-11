@@ -28,6 +28,14 @@ from .tree import getFromSocket, XSIZE, YSIZE, YSTEP
 #----------------------------------------------------------
 
 class TileFixer:
+    useLastUdimTile : BoolProperty(
+        name = "Last UDIM Tile",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useLastUdimTile")
+
+
     def findMatTiles(self, ob):
         ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
         vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
@@ -140,9 +148,16 @@ class TileFixer:
         if len(tiles) == 0:
             print("No UVs to shift")
             return
-        tiledefault = list(tiles.values())[0]
-        udefault = list(udims.values())[0]
-        vdefault = list(vdims.values())[0]
+        if self.useLastUdimTile:
+            ucoord = [data.uv[0] for data in cuvlayer.data]
+            vcoord = [data.uv[1] for data in cuvlayer.data]
+            tile, udefault, vdefault = self.getTile([max(ucoord)-0.01], [max(vcoord)-0.01])
+            tiledefault = tile+1
+            udefault += 1
+        else:
+            tiledefault = list(tiles.values())[0]
+            udefault = list(udims.values())[0]
+            vdefault = list(vdims.values())[0]
         auvlayer = graft.data.uv_layers.active
 
         def moveUVs(mn, udim, vdim):
@@ -158,7 +173,7 @@ class TileFixer:
         for mn,mat in enumerate(graft.data.materials):
             if mat:
                 mname = stripName(mat.name)
-                if mname in tiles.keys():
+                if mname in tiles.keys() and not self.useLastUdimTile:
                     tile = tiles[mname]
                     udim = udims[mname]
                     vdim = vdims[mname]
@@ -230,7 +245,7 @@ def getTileBase(string):
 #   Tiles From Graft
 #----------------------------------------------------------
 
-class DAZ_OT_TilesFromGraft(DazOperator, TileFixer, IsMesh):
+class DAZ_OT_TilesFromGraft(DazPropsOperator, TileFixer, IsMesh):
     bl_idname = "daz.tiles_from_geograft"
     bl_label = "Tiles From Geograft"
     bl_description = "Move geograft UV coordinates to same tile as body UVs"

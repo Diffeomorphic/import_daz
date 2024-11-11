@@ -36,11 +36,11 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "layers", "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "simple", "category", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
-           "guess", "convert", "files", "merge", "finger",
-           "matedit", "scale", "tables", "proxy", "hide",
+           "guess", "convert", "files", "finger",
+           "matedit", "udim", "merge", "scale", "tables", "proxy", "hide",
            "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
            "dforce", "pin", "hair", "main", "geonodes", "attr",
-           "udim", "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
+           "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
 DEBUG = True
 

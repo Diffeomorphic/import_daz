@@ -26,6 +26,7 @@ from .driver import DriverUser
 from .fileutils import DF
 from .geometry import getActiveUvLayer
 from .figure import LockEnabler
+from .udim import TileFixer
 
 #-------------------------------------------------------------
 #   Merge UV Layers
@@ -158,7 +159,7 @@ class MergeGeograftOptions(UVLayerMergerOptions):
         default = False)
 
 
-class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerger, DriverUser, IsMesh):
+class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerger, TileFixer, DriverUser, IsMesh):
     bl_idname = "daz.merge_geografts"
     bl_label = "Merge Geografts"
     bl_description = "Merge selected geografts to active object"
@@ -173,6 +174,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         box = self.layout.box()
         box.label(text="UDIM Materials")
         box.prop(self, "useFixTiles")
+        box.prop(self, "useLastUdimTile")
         self.drawUVLayer(box)
 
 
@@ -281,9 +283,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             self.renameUvLayers(graft)
             self.storeUvName(graft)
             if self.useFixTiles:
-                from .udim import TileFixer
-                fixer = TileFixer()
-                fixer.udimsFromGraft(graft, hum)
+                self.udimsFromGraft(graft, hum)
             self.copyBodyPart(graft, hum)
             self.fixFaceGroups(graft, hum)
             for prop, value in graft.items():
