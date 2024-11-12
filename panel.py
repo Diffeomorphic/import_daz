@@ -518,6 +518,13 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.clear_pose")
         op = self.layout.operator("daz.clear_morphs")
         op.morphset = "All"
+
+
+class DAZ_PT_AdvancedPosing(DAZ_PT_RuntimeTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Posing"
+    bl_label = "Advanced Posing"
+
+    def draw(self, context):
         self.layout.operator("daz.copy_absolute_pose")
         self.layout.operator("daz.prune_action")
         self.layout.separator()
@@ -1277,6 +1284,7 @@ classes = [
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
+    DAZ_PT_AdvancedPosing,
     DAZ_PT_LocksLimits,
 
     DAZ_UL_Standard,

@@ -14,7 +14,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if "bpy" in locals():
+#----------------------------------------------------------
+#   Debugging
+#----------------------------------------------------------
+
+if True:
+    pass
+elif "bpy" in locals():
     print("Reloading DAZ Rigging")
     import imp
     imp.reload(mute)
@@ -24,20 +30,21 @@ if "bpy" in locals():
     imp.reload(unreal)
 else:
     print("Loading DAZ Rigging")
-    import bpy
     from . import mute
     from . import ikgoals
     from . import store
     from . import bvh
     from . import unreal
 
+#----------------------------------------------------------
+#   Rigging panels
+#----------------------------------------------------------
+
+import bpy
 from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
 
-#----------------------------------------------------------
-#   Register
-#----------------------------------------------------------
-
 class DAZ_PT_DazRigBuild(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_SetupRigging"
     bl_label = "DAZ Rigging"
 
     def draw(self, context):
@@ -59,7 +66,8 @@ class DAZ_PT_DazRigBuild(DAZ_PT_SetupTab, bpy.types.Panel):
 
 
 class DAZ_PT_DazRigPose(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "DAZ Rigging"
+    bl_parent_id = "DAZ_PT_Posing"
+    bl_label = "More Posing"
 
     def draw(self, context):
         self.layout.operator("daz.save_poses_to_file")
@@ -109,6 +117,7 @@ def register():
     print("Register DAZ Rigging")
     for cls in classes:
         bpy.utils.register_class(cls)
+    from . import mute, ikgoals, store, bvh, unreal
     mute.register()
     ikgoals.register()
     store.register()
@@ -118,6 +127,7 @@ def register():
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    from . import mute, ikgoals, store, bvh, unreal
     unreal.unregister()
     bvh.unregister()
     store.unregister()

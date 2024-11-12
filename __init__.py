@@ -42,31 +42,29 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "dforce", "pin", "hair", "main", "geonodes", "attr",
            "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
-DEBUG = True
 
-if "bpy" in locals():
+if True:
+    pass
+elif "bpy" in locals():
     print("Reloading DAZ Importer v %d.%d.%d" % bl_info["version"])
     import imp
     for modname in Modules:
         exec("imp.reload(%s)" % modname)
-    #imp.reload("runtime.morph_armature")
-    if DEBUG:
-        imp.reload(export_daz)
-        imp.reload(rig_daz)
-        imp.reload(shell_edit)
+    imp.reload(export_daz)
+    imp.reload(rig_daz)
+    imp.reload(shell_edit)
 
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
-    import bpy
     for modname in Modules:
         exec("from . import %s" % modname)
     from .runtime import morph_armature
-    if DEBUG:
-        from . import export_daz
-        from . import rig_daz
-        from . import shell_edit
+    from . import export_daz
+    from . import rig_daz
+    from . import shell_edit
 
 
+import bpy
 from .settings import GS
 from .api import *
 
@@ -158,15 +156,10 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "hdmorphs", "ctrl_rig", "moho", "udim", "scan", "attr",
             ]
 
-isRegistered = False
-
 def register():
-    global isRegistered
-    if isRegistered:
-        print("DAZ Importer already registered")
-        return
     print("Register DAZ Importer")
-    isRegistered = True
+    for modname in Modules:
+        exec("from . import %s" % modname)
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
@@ -176,10 +169,13 @@ def register():
     prefs = addon.preferences
     if prefs:
         if prefs.useExportDaz:
+            from . import export_daz
             export_daz.register()
         if prefs.useRigDaz:
+            from . import rig_daz
             rig_daz.register()
         if prefs.useShellEdit:
+            from . import shell_edit
             shell_edit.register()
 
     GS.getSettingsDir(bpy.context)
@@ -188,8 +184,8 @@ def register():
 
 
 def unregister():
-    global isRegistered
-    isRegistered = False
+    for modname in Modules:
+        exec("from . import %s" % modname)
     for modname in reversed(Modules):
         if modname in Regnames:
             exec("%s.unregister()" % modname)
@@ -198,10 +194,13 @@ def unregister():
     prefs = addon.preferences
     if prefs:
         if prefs.useExportDaz:
+            from . import export_daz
             export_daz.unregister()
         if prefs.useRigDaz:
+            from . import rig_daz
             rig_daz.unregister()
         if prefs.useShellEdit:
+            from . import shell_edit
             shell_edit.unregister()
     bpy.utils.unregister_class(DazPreferences)
 

@@ -14,7 +14,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if "bpy" in locals():
+#----------------------------------------------------------
+#   Debugging
+#----------------------------------------------------------
+
+if True:
+    pass
+elif "bpy" in locals():
     print("Reloading DAZ Exporter")
     import imp
     imp.reload(preset)
@@ -22,16 +28,16 @@ if "bpy" in locals():
     imp.reload(morph_preset)
 else:
     print("\nLoading DAZ Exporter")
-    import bpy
     from . import preset
     from . import pose_preset
     from . import morph_preset
 
-from ..panel import DAZ_PT_RuntimeTab
-
 #----------------------------------------------------------
 #   Export panel
 #----------------------------------------------------------
+
+import bpy
+from ..panel import DAZ_PT_RuntimeTab
 
 class DAZ_PT_Export(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Export"
@@ -52,17 +58,19 @@ classes = [
 ]
 
 def register():
+    print("Register DAZ Preset Exporter")
     for cls in classes:
         bpy.utils.register_class(cls)
+    from . import preset, pose_preset, morph_preset
     preset.register()
     pose_preset.register()
     morph_preset.register()
-     
+
 
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    from . import preset, pose_preset, morph_preset
     morph_preset.unregister()
     pose_preset.unregister()
     preset.unregister()
-    

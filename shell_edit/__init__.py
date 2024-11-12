@@ -14,14 +14,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if "bpy" in locals():
+if True:
+    # Cannot register selector if this is skipped
+    pass
+elif "bpy" in locals():
     print("Reloading Shell Editor")
     import imp
     imp.reload(shell)
     imp.reload(lie)
     imp.reload(uvs)
 else:
-    import bpy
     print("Loading Shell Editor")
     from . import shell
     from . import lie
@@ -74,6 +76,7 @@ def register():
     print("Register Shell Edit")
     for cls in classes:
         bpy.utils.register_class(cls)
+    from . import shell, lie, uvs
     shell.register()
     lie.register()
     uvs.register()
@@ -81,6 +84,7 @@ def register():
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    from . import shell, lie, uvs
     uvs.unregister()
     lie.unregister()
     shell.unregister()
