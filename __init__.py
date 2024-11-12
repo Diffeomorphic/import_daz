@@ -43,7 +43,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
 
-if True:
+if False:
     pass
 elif "bpy" in locals():
     print("Reloading DAZ Importer v %d.%d.%d" % bl_info["version"])

@@ -357,6 +357,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Shapekey Mute Drivers",
         description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
 
+    useAutoEuler : BoolProperty(
+        name = "Auto Euler",
+        description = "Use auto Euler as driver rotation mode.\nImproves consistency during animation")
+
     ercMethod : EnumProperty(
         items = [('NONE', "None", "ERC morphs are ignored"),
                  ('TRANSLATION', "Translation", "ERC morphs are translations"),
@@ -759,6 +763,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useShapeCats")
         box.prop(self, "useMeshDrivers")
         box.prop(self, "useMuteDrivers")
+        box.prop(self, "useAutoEuler")
         box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")

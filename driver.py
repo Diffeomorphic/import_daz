@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 
 from .error import *
@@ -444,7 +443,9 @@ def addTransformVar(fcu, vname, ttype, rig, rig2, bname):
     trg = var.targets[0]
     trg.id = rig
     trg.bone_target = bname
-    if pb is None:
+    if GS.useAutoEuler:
+        trg.rotation_mode = 'AUTO'
+    elif pb is None:
         trg.rotation_mode = 'XYZ'
     elif pb.rotation_mode == 'QUATERNION':
         trg.rotation_mode = BD.RotationModes.get(pb.name, 'QUATERNION')

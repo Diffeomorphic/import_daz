@@ -297,6 +297,29 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
                     if final in rig.data.keys():
                         addDriver(skeys, 'key_blocks["%s"].value' % skey.name, rig.data, propRef(final), "x")
 
+#-------------------------------------------------------------
+#   Auto Eulers
+#-------------------------------------------------------------
+
+class DAZ_OT_AutoEulers(DazOperator, IsArmature):
+    bl_idname = "daz.auto_eulers"
+    bl_label = "Auto Eulers"
+    bl_description = "Convert all driver targets to auto Eulers.\nImproves consistency during animation"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        def autoEuler(rna):
+            if rna.animation_data:
+                for fcu in rna.animation_data.drivers:
+                    for var in fcu.driver.variables:
+                        for trg in var.targets:
+                            trg.rotation_mode = 'AUTO'
+
+        rig = context.object
+        autoEuler(rig)
+        autoEuler(rig.data)
+        for ob in getShapeChildren(rig):
+            autoEuler(ob.data.shape_keys)
 
 #-------------------------------------------------------------
 #   Initialize
@@ -306,6 +329,7 @@ classes = [
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,
+    DAZ_OT_AutoEulers,
 ]
 
 def register():

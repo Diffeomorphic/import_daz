@@ -105,6 +105,7 @@ class GlobalSettings:
         self.showInTerminal = True
         self.useShapeCats = True
         self.useMuteDrivers = False
+        self.useAutoEuler = True
         self.ercMethod = 'NONE'
         self.useStripCategory = False
         self.useDefaultDrivers = True

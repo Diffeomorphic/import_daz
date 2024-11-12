@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if True:
+if False:
     # Cannot register selector if this is skipped
     pass
 elif "bpy" in locals():
