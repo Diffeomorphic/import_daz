@@ -117,23 +117,6 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
                 self.layout.label(text = "Morph Drivers Disabled")
                 self.layout.operator("daz.enable_drivers")
                 return
-            self.layout.operator("daz.import_units")
-            self.layout.operator("daz.import_expressions")
-            self.layout.operator("daz.import_visemes")
-            self.layout.operator("daz.import_head")
-            self.layout.operator("daz.import_facs")
-            self.layout.operator("daz.import_facs_details")
-            self.layout.operator("daz.import_facs_expressions")
-            self.layout.operator("daz.import_powerpose")
-            self.layout.operator("daz.import_anime")
-            self.layout.operator("daz.import_body_morphs")
-            self.layout.separator()
-            self.layout.operator("daz.import_jcms")
-            self.layout.operator("daz.import_masculine")
-            self.layout.operator("daz.import_feminine")
-            self.layout.operator("daz.import_flexions")
-            self.layout.operator("daz.create_bulges")
-            self.layout.separator()
             self.layout.operator("daz.import_standard_morphs")
             self.layout.operator("daz.import_custom_morphs")
             self.layout.operator("daz.import_dbz")
@@ -145,6 +128,30 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.separator()
         self.layout.operator("daz.transfer_shapekeys")
         self.layout.operator("daz.remove_shapekeys")
+
+
+class DAZ_PT_SetupStandardMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_SetupMorphs"
+    bl_idname = "DAZ_PT_SetupStandardMorphs"
+    bl_label = "Standard Morphs"
+
+    def draw(self, context):
+        self.layout.operator("daz.import_units")
+        self.layout.operator("daz.import_expressions")
+        self.layout.operator("daz.import_visemes")
+        self.layout.operator("daz.import_head")
+        self.layout.operator("daz.import_facs")
+        self.layout.operator("daz.import_facs_details")
+        self.layout.operator("daz.import_facs_expressions")
+        self.layout.operator("daz.import_powerpose")
+        self.layout.operator("daz.import_anime")
+        self.layout.operator("daz.import_body_morphs")
+        self.layout.separator()
+        self.layout.operator("daz.import_jcms")
+        self.layout.operator("daz.import_masculine")
+        self.layout.operator("daz.import_feminine")
+        self.layout.operator("daz.import_flexions")
+        self.layout.operator("daz.create_bulges")
 
 
 class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -267,9 +274,9 @@ class DAZ_PT_AdvancedHDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
 
 
 class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
+    bl_parent_id = "DAZ_PT_SetupMaterials"
     bl_idname = "DAZ_PT_AdvancedMaterials"
-    bl_label = "Materials"
+    bl_label = "Advanced Materials"
 
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
@@ -337,9 +344,9 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):
 
 
 class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
+    bl_parent_id = "DAZ_PT_SetupRigging"
     bl_idname = "DAZ_PT_AdvancedRigging"
-    bl_label = "Rigging"
+    bl_label = "Advanced Rigging"
 
     def draw(self, context):
         self.layout.operator("daz.scale_objects")
@@ -355,11 +362,10 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.fix_limit_rot_constraints")
 
 
-
 class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
+    bl_parent_id = "DAZ_PT_SetupMorphs"
     bl_idname = "DAZ_PT_AdvancedMorphs"
-    bl_label = "Morphs"
+    bl_label = "Advanced Morphs"
 
     def draw(self, context):
         scn = context.scene
@@ -1253,6 +1259,7 @@ classes = [
     DAZ_PT_SetupCorrections,
     DAZ_PT_SetupMaterials,
     DAZ_PT_SetupMorphs,
+    DAZ_PT_SetupStandardMorphs,
     DAZ_PT_SetupVisibility,
     DAZ_PT_SetupHair,
     DAZ_PT_SetupFinishing,
