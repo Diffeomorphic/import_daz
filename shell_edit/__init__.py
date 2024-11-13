@@ -14,8 +14,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if False:
-    # Cannot register selector if this is skipped
+from ..debug import DEBUG
+
+if not DEBUG:
     pass
 elif "bpy" in locals():
     print("Reloading Shell Editor")

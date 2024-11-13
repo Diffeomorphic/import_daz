@@ -18,7 +18,9 @@
 #   Debugging
 #----------------------------------------------------------
 
-if False:
+from ..debug import DEBUG
+
+if not DEBUG:
     pass
 elif "bpy" in locals():
     print("Reloading DAZ Exporter")
