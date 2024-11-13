@@ -2515,7 +2515,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for bininfo in binbones.values():
                 self.addAutoIk(bininfo, rig, gizmo)
         elif self.controlMethod == 'WINDER':
-            from .mhx import addWinder
+            from .winder import addWinder
             self.makeGizmos(False, ["GZM_Knuckle"])
             gizmo = self.gizmos["GZM_Knuckle"]
             activateObject(context, rig)
@@ -2808,7 +2808,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             handle.bone.use_deform = False
             return handle
 
-        from .mhx import stretchTo
+        from .rig_utils import stretchTo
         bboneSize = 0.1*GS.scale
         handleSize = 0.5*GS.scale
 

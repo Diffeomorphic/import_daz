@@ -174,7 +174,7 @@ class MetaMaker(RigifyCommon):
 
     def createMeta(self, context):
         from collections import OrderedDict
-        from .mhx import connectToParent, unhideAllObjects
+        from .rig_utils import connectToParent, unhideAllObjects
         from .figure import getRigType, finalizeArmature
         from .merge import mergeBones, mergeVertexGroups, safeTransformApply
 
@@ -683,7 +683,7 @@ class Rigifier(RigifyCommon):
 
     def rigifyMeta1(self, context, rig, meta, dazrig):
         from .driver import getDrivenBoneFcurves, getPropDrivers, copyProp
-        from .mhx import unhideAllObjects, getBoneLayer
+        from .rig_utils import unhideAllObjects, getBoneLayer
 
         print("Rigify metarig")
         setMode('OBJECT')
@@ -1254,7 +1254,7 @@ class Rigifier(RigifyCommon):
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
         if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
             return
-        from .mhx import copyLocation, copyRotation, copyTransform
+        from .rig_utils import copyLocation, copyRotation, copyTransform
         rname = self.getRigifyBone(pb.name, gen.data.bones)
         if rname is None:
             return

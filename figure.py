@@ -195,7 +195,7 @@ class FigureInstance(Instance):
 
 
     def addPointingConstraints(self, rig):
-        from .mhx import dampedTrack
+        from .rig_utils import dampedTrack
         for bname,trgname in self.node.pointing.items():
             pb = rig.pose.bones.get(bname)
             trg = rig.pose.bones.get(drvBone(trgname))

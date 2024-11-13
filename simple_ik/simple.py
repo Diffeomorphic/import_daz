@@ -635,7 +635,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if cns.type == type:
                     addDriver(cns, "influence", rig, (mhxProp(prop), mhxProp("DazRotLimits")), "(1-x1)*x2")
 
-        from ..mhx import ikConstraint, addHint, copyLocation, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
+        from ..rig_utils import ikConstraint, addHint, copyLocation, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
         from ..driver import addDriver
         rpbs = rig.pose.bones
         if self.useRootBone:

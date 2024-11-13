@@ -25,22 +25,8 @@ from .propgroups import DazPairGroup
 from .driver import addDriver
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
 from .bone_data import BD
-from .mhx_data import MHX
-
-#-------------------------------------------------------------
-#
-#-------------------------------------------------------------
-
-def setMhx(rna, prop, value):
-    rna[prop] = value
-
-
-def mhxProp(prop):
-    if isinstance(prop, str):
-        return propRef(prop)
-    else:
-        prop1,prop2 = prop
-        return (propRef(prop1), propRef(prop2))
+from .rig_utils_data import MHX
+from .rig_utils import *
 
 #-------------------------------------------------------------
 #
@@ -55,26 +41,6 @@ def getBoneCopy(bname, model, rpbs, lock):
     return pb
 
 
-def deriveBone(bname, eb0, rig, layer, parent):
-    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent)
-
-
-def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbone=None):
-    eb = rig.data.edit_bones.new(bname)
-    eb.head = head
-    eb.tail = tail
-    eb.roll = normalizeRoll(roll)
-    eb.use_connect = False
-    eb.parent = parent
-    eb.use_deform = False
-    enableBoneNumLayer(eb, rig, layer)
-    if headbone:
-        LS.headbones[bname] = headbone.name
-    if tailbone:
-        LS.tailbones[bname] = tailbone.name
-    return eb
-
-
 def normalizeRoll(roll):
     if roll > 180*D:
         return roll - 360*D
@@ -82,365 +48,6 @@ def normalizeRoll(roll):
         return roll + 360*D
     else:
         return roll
-
-
-def addMuteDriver(cns, rig, prop):
-    if prop:
-        addDriver(cns, "mute", rig, mhxProp(prop), "not(x)")
-
-#-------------------------------------------------------------
-#   Constraints
-#-------------------------------------------------------------
-
-def copyTransform(bone, target, rig, prop=None, expr="x", space='POSE'):
-    cns = bone.constraints.new('COPY_TRANSFORMS')
-    cns.name = "Copy Transform %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    if prop is not None:
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    cns.owner_space = space
-    cns.target_space = space
-    return cns
-
-
-def copyTransformFkIk(bone, boneFk, boneIk, rig, prop1, prop2=None):
-    if boneFk is not None:
-        cnsFk = copyTransform(bone, boneFk, rig)
-        cnsFk.influence = 1.0
-    if boneIk is not None:
-        cnsIk = copyTransform(bone, boneIk, rig, prop1)
-        cnsIk.influence = 0.0
-        if prop2:
-            addDriver(cnsIk, "mute", rig, mhxProp(prop2), "x")
-
-
-def copyLocation(bone, target, rig, prop=None, expr="x", space='POSE'):
-    cns = bone.constraints.new('COPY_LOCATION')
-    cns.name = "Copy Location %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    if prop:
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    cns.owner_space = space
-    cns.target_space = space
-    return cns
-
-
-def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
-    cns = bone.constraints.new('COPY_ROTATION')
-    cns.name = "Copy Rotation %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.owner_space = space
-    cns.target_space = space
-    if bone.rotation_mode != 'QUATERNION':
-        setEulerOrder(cns, bone.rotation_mode)
-    elif target.rotation_mode != 'QUATERNION':
-        setEulerOrder(cns, target.rotation_mode)
-    if prop is not None:
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def copyScale(bone, target, rig, prop=None, expr="x", space='LOCAL'):
-    cns = bone.constraints.new('COPY_SCALE')
-    cns.name = "Copy Scale %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.owner_space = space
-    cns.target_space = space
-    if prop is not None:
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def limitLocation(bone, rig):
-    cns = bone.constraints.new('LIMIT_LOCATION')
-    cns.owner_space = 'LOCAL'
-    cns.use_transform_limit = True
-    return cns
-
-
-def limitRotation(bone, rig):
-    cns = bone.constraints.new('LIMIT_ROTATION')
-    cns.owner_space = 'LOCAL'
-    cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = False
-    cns.use_transform_limit = True
-    return cns
-
-
-def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
-    cns = last.constraints.new('IK')
-    cns.name = "IK %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    if pole:
-        cns.pole_target = rig
-        cns.pole_subtarget = pole.name
-        cns.pole_angle = angle*D
-    cns.chain_count = count
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def addHint(pb, rig):
-    cns = pb.constraints.new('LIMIT_ROTATION')
-    cns.name = "Hint"
-    cns.owner_space = 'LOCAL'
-    setEulerOrder(cns, pb.rotation_mode)
-    cns.min_x = cns.max_x = 18*D
-    cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = True
-    cns.use_transform_limit = True
-
-
-def stretchTo(pb, target, rig, prop=None, expr="x"):
-    cns = pb.constraints.new('STRETCH_TO')
-    cns.name = "StretchTo %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.volume = "NO_VOLUME"
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def dampedTrack(pb, target, rig, prop=None, expr="x"):
-    cns = pb.constraints.new('DAMPED_TRACK')
-    cns.name = "Damped Track %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.track_axis = 'TRACK_Y'
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def trackTo(pb, target, rig, space='POSE'):
-    cns = pb.constraints.new('TRACK_TO')
-    cns.name = "Track To %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.track_axis = 'TRACK_Y'
-    cns.up_axis = 'UP_Z'
-    cns.use_target_z = True
-    cns.target_space = space
-    cns.owner_space = space
-    return cns
-
-
-def lockedTrack(pb, target, rig, prop=None, expr="x"):
-    cns = pb.constraints.new('LOCKED_TRACK')
-    cns.name = "Locked Track %s" % target.name
-    cns.target = rig
-    cns.subtarget = target.name
-    cns.track_axis = 'TRACK_Y'
-    cns.lock_axis = 'LOCK_X'
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def childOf(pb, target, rig, prop=None, expr="x"):
-    cns = pb.constraints.new('CHILD_OF')
-    cns.name = "ChildOf %s" % target
-    cns.target = rig
-    cns.subtarget = target
-    if prop is not None:
-        cns.influence = 0.0
-        addDriver(cns, "influence", rig, mhxProp(prop), expr)
-    return cns
-
-
-def armatureConstraint(pb, rig, drivers):
-    cns = pb.constraints.new('ARMATURE')
-    for bone,prop,expr in drivers:
-        target = cns.targets.new()
-        target.target = rig
-        target.subtarget = bone
-        addDriver(target, "weight", rig, mhxProp(prop), expr)
-    return cns
-
-
-def getPropString(prop, x):
-    if isinstance(prop, tuple):
-        return prop[1], ("(1-%s)" % (x))
-    else:
-        return prop, x
-
-#-------------------------------------------------------------
-#   Winders
-#-------------------------------------------------------------
-
-def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor=1, alignRoll=False, master=None):
-    nbones = len(bnames)
-    if nbones < 2:
-        return
-    if len(layers) == 2:
-        lmain, lspine = layers
-        lhelp = lhelp2 = ldef = T_HIDDEN
-    else:
-        lmain, lspine, lhelp, lhelp2, ldef = layers
-    setMode('EDIT')
-    first = rig.data.edit_bones[bnames[0]]
-    last = rig.data.edit_bones[bnames[-1]]
-    if master:
-        master = rig.data.edit_bones.get(master)
-    roll = first.roll
-    wind = makeBone("MCH-%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent)
-    fkwind = deriveBone(windname, wind, rig, lmain, first.parent)
-    ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
-    revwind = deriveBone("REV-%s" % windname, ikwind, rig, lhelp, fkwind)
-    revikwind = deriveBone("REV-ik_%s" % windname, wind, rig, lhelp, ikwind)
-    eb0 = rig.data.edit_bones[bnames[0]]
-    for bname in bnames[1:]:
-        eb = rig.data.edit_bones[bname]
-        eb0.tail = eb.head
-        eb0 = eb
-    eb0.tail = wind.tail
-    eb = first.parent
-    for bname in bnames:
-        defb = rig.data.edit_bones[bname]
-        if alignRoll:
-            defb.roll = roll
-        defb.name = "DEF-%s" % bname
-        enableBoneNumLayer(defb, rig, ldef)
-        mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, eb)
-        eb = deriveBone(bname, defb, rig, lspine, mchb)
-
-    from .figure import copyBoneInfo
-    setMode('OBJECT')
-    wind = rig.pose.bones["MCH-%s" % windname]
-    fkwind = rig.pose.bones[windname]
-    ikwind = rig.pose.bones["ik_%s" % windname]
-    revwind = rig.pose.bones["REV-%s" % windname]
-    revikwind = rig.pose.bones["REV-ik_%s" % windname]
-    pbones = []
-    defbones = []
-    defb = None
-    for n,bname in enumerate(bnames):
-        pb = rig.pose.bones[bname]
-        pbones.append(pb)
-        mchb = rig.pose.bones["MCH-%s" % bname]
-        mchb.bone.inherit_scale = 'NONE'
-        if defb:
-            cns = stretchTo(defb, pb, rig)
-            cns.volume = 'VOLUME_XZX'
-            #addMuteDriver(cns, rig, prop1)
-        defb = rig.pose.bones["DEF-%s" % bname]
-        copyBoneInfo(defb, pb)
-        defb.bone.inherit_scale = 'NONE'
-        defbones.append(defb)
-        cns = copyTransform(defb, pb, rig, space='POSE')
-        #addMuteDriver(cns, rig, prop1)
-        cns = copyTransform(mchb, wind, rig, space='LOCAL')
-        cns.influence = factor/nbones
-        addMuteDriver(cns, rig, prop1)
-    cns = stretchTo(defb, pb, rig)
-    cns.volume = 'VOLUME_XZX'
-    cns.head_tail = 1.0
-    addMuteDriver(cns, rig, prop1)
-    copyTransformFkIk(wind, fkwind, revikwind, rig, prop2)
-    first = pbones[0]
-    fkwind.rotation_mode = first.rotation_mode
-    last = defbones[-1]
-    for pb in last.children:
-        pb.bone.inherit_scale = 'NONE'
-    return fkwind, ikwind, pbones
-
-
-def addWinder(rig, windname, bnames, layers,
-        prop=None,
-        parname=None,
-        gizmo=None,
-        useBaseLocation=False,
-        useLocation=False,
-        useScale=False,
-        xaxis=None,
-        influs=None):
-    if len(bnames) < 3:
-        print("Too few bones to wind: %s" % windname)
-        return None, []
-    setMode('EDIT')
-    first = rig.data.edit_bones[bnames[0]]
-    last = rig.data.edit_bones[bnames[-1]]
-    windbone = makeBone(windname, rig, first.head, last.tail, first.roll, layers[0], first.parent)
-    if xaxis is not None:
-        from .bone import setRoll
-        setRoll(windbone, xaxis)
-
-    setMode('OBJECT')
-    pb = rig.pose.bones[bnames[0]]
-    pbones = [pb]
-    winder = rig.pose.bones[windname]
-    if gizmo:
-        winder.custom_shape = gizmo
-        winder.bone.show_wire = True
-    winder.rotation_mode = pb.rotation_mode
-    winder.matrix_basis = pb.matrix_basis
-    #winder.lock_location = pb.lock_location
-    winder.lock_rotation = pb.lock_rotation
-    #winder.lock_scale = pb.lock_scale
-    if not (useLocation or useBaseLocation):
-        winder.lock_location = TTrue
-    if not useScale:
-        winder.lock_scale = TTrue
-
-    def setLocks(locks, cns):
-        if locks[0]:
-            cns.use_x = False
-        if locks[1]:
-            cns.use_y = False
-        if locks[2]:
-            cns.use_z = False
-
-    windedLayer = layers[1]
-    cns = copyRotation(pb, winder, rig)
-    setLocks(pb.lock_rotation, cns)
-    cns.use_offset = True
-    infl = 2*pb.bone.length/winder.length
-    if not influs:
-        influs = len(bnames)*[infl]
-    cns.influence = influs[0]
-    addMuteDriver(cns, rig, prop)
-    if useScale:
-        cns = copyScale(pb, winder, rig)
-        setLocks(pb.lock_scale, cns)
-        if pb.bone.inherit_scale != "NONE":
-            cns.influence = infl
-        addMuteDriver(cns, rig, prop)
-    if useBaseLocation or useLocation:
-        cns = copyLocation(pb, winder, rig)
-        addMuteDriver(cns, rig, prop)
-    enableBoneNumLayer(pb.bone, rig, windedLayer)
-    for bname,infl in zip(bnames[1:], influs[1:]):
-        pb = rig.pose.bones[bname]
-        pbones.append(pb)
-        cns = copyRotation(pb, winder, rig)
-        setLocks(pb.lock_rotation, cns)
-        cns.use_offset = True
-        cns.influence = infl
-        addMuteDriver(cns, rig, prop)
-        infl = 2*pb.bone.length/winder.length
-        if useScale:
-            cns = copyScale(pb, winder, rig, space='LOCAL')
-            setLocks(pb.lock_scale, cns)
-            cns.use_offset = True
-            if pb.bone.inherit_scale != "NONE":
-                cns.influence = infl
-            addMuteDriver(cns, rig, prop)
-        if useLocation:
-            cns = copyLocation(pb, winder, rig, space='LOCAL')
-            cns.use_offset = True
-            cns.influence = infl
-            addMuteDriver(cns, rig, prop)
-        enableBoneNumLayer(pb.bone, rig, windedLayer)
-    return winder, pbones
 
 
 def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
@@ -1017,6 +624,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def addBack(self, rig):
+        from .winder import addWinder, addSuperWinder
         backbones = self.getExistingBones(rig, MHX.BackBones)
         layers = [L_SPINE2, L_SPINE, L_HELP, L_HELP2, L_DEF]
         setMhx(rig, "MhaSpineControl", True)
@@ -1042,6 +650,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addShaftWinder(self, rig):
         if self.useShaftWinder:
+            from .winder import addWinder
             setMhx(rig, "MhaShaftControl", True)
             shaftbones = self.getShaftBones(rig)
             shaftbones.sort()
@@ -1134,6 +743,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def addFingerWinders(self, rig):
+        from .winder import addWinder
         if self.useFingerIk:
             rig.data.MhaFeatures |= F_FINGER
         for suffix,handlayer,finglayer,fklayer,iklayer in [
@@ -2019,7 +1629,7 @@ def setToFk(rig, layers, useInsertKeys, frame):
     return layers
 
 
-def updateWinders(rig, frame):
+def updateMhxWinders(rig, frame):
     winders = ["back"]
     for suffix in ["L", "R"]:
         winders += ["%s.%s" % (fing, suffix) for fing in MHX.Fingers]

@@ -17,7 +17,7 @@
 import bpy
 from ..fix import *
 from ..pin import Pinner
-from ..mhx import addWinder
+from ..winder import addWinder
 
 import math
 

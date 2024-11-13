@@ -423,7 +423,7 @@ class BoneInstance(Instance):
         if trgname:
             trg = rig.pose.bones.get(trgname)
             if trg:
-                from .mhx import dampedTrack
+                from .rig_utils import dampedTrack
                 cns = dampedTrack(pb, trg, rig)
                 cns.head_tail = 1.0
         for child in self.children.values():
@@ -504,7 +504,7 @@ class BoneInstance(Instance):
         #if pb.rotation_mode == 'QUATERNION':
         #    return
         if useLimits and GS.useLimitRot and not self.isPosed:
-            from .mhx import limitRotation
+            from .rig_utils import limitRotation
             cns = limitRotation(pb, rig)
             setEulerOrder(cns, BD.getDefaultMode(pb))
             for n,limit in enumerate(limits):
@@ -546,7 +546,7 @@ class BoneInstance(Instance):
                 idx = self.axes[n]
                 pb.lock_location[idx] = lock
         if useLimits and GS.useLimitLoc:
-            from .mhx import limitLocation
+            from .rig_utils import limitLocation
             cns = limitLocation(pb, rig)
             for n,limit in enumerate(limits):
                 idx = self.axes[n]

@@ -629,7 +629,7 @@ class SkinBinding(Modifier):
     }
 
     def postbuild(self, context, inst):
-        from .mhx import deriveBone, copyRotation
+        from .rig_utils import deriveBone, copyRotation
         if not self.hasTriax or GS.keepTriaxWeights:
             return
         ob,hdob,rig,geonode = self.getGeoRig(context, inst)

@@ -865,8 +865,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if not self.affectBones:
             return
         if rig.MhxRig or rig.DazRig == "mhx":
-            from .mhx import updateWinders
-            updateWinders(rig, frame)
+            from .mhx import updateMhxWinders
+            updateMhxWinders(rig, frame)
         elif rig.DazSimpleIK:
             pass
 

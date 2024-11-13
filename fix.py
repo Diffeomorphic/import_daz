@@ -414,7 +414,7 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def addTongueIkBones(self, rig, layer, deflayer):
-        from .mhx import makeBone
+        from .rig_utils import makeBone
         first = rig.data.edit_bones[self.tongueBones[0]]
         for bname in self.tongueBones:
             eb = rig.data.edit_bones[bname]
@@ -423,7 +423,8 @@ class Fixer(DriverUser):
 
 
     def addTongueControl(self, rig, layers):
-        from .mhx import setMhx, mhxProp, addWinder, stretchTo, addMuteDriver
+        from .rig_utils import setMhx, mhxProp, stretchTo, addMuteDriver
+        from .winder import addWinder
         from .driver import addDriver
         prop1 = "MhaTongueControl"
         setMhx(rig, prop1, True)
@@ -452,7 +453,7 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
-        from .mhx import makeBone, deriveBone
+        from .rig_utils import makeBone, deriveBone
         prefix = suffix.lower()
         bnames = ["%sEye" % prefix, "%s_eye" % prefix, "eye.%s" % suffix]
         for bname in bnames:
@@ -473,7 +474,7 @@ class Fixer(DriverUser):
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
-        from .mhx import makeBone, deriveBone
+        from .rig_utils import makeBone, deriveBone
         lgaze = rig.data.edit_bones.get("gaze.L")
         rgaze = rig.data.edit_bones.get("gaze.R")
         head = rig.data.edit_bones.get("head")
@@ -495,7 +496,7 @@ class Fixer(DriverUser):
                         return True
             return False
 
-        from .mhx import dampedTrack, copyRotation, setMhx
+        from .rig_utils import dampedTrack, copyRotation, setMhx
         eye = rig.pose.bones.get("eye.%s" % suffix)
         eyedrv = rig.pose.bones.get(drvBone("eye.%s" % suffix))
         gaze = rig.pose.bones.get("gaze.%s" % suffix)
@@ -511,7 +512,7 @@ class Fixer(DriverUser):
 
 
     def addGazeFollowsHead(self, rig):
-        from .mhx import copyTransform, setMhx, mhxProp
+        from .rig_utils import copyTransform, setMhx, mhxProp
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
         if gaze0 and gaze1:
@@ -524,7 +525,7 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def copyToeRotation(self, rig, mute, suffix, toenames):
-        from .mhx import copyRotation
+        from .rig_utils import copyRotation
         toe = rig.pose.bones.get("toe.%s" % suffix)
         if toe:
             for toename in toenames:
@@ -1244,7 +1245,7 @@ class BendTwists:
 
 
     def constrainBendTwists(self, rig, bendTwistBones, useStretch):
-        from .mhx import dampedTrack, copyRotation, copyTransform, stretchTo
+        from .rig_utils import dampedTrack, copyRotation, copyTransform, stretchTo
         setMode('OBJECT')
         for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
