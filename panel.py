@@ -566,7 +566,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     def hasTheseMorphs(self, rig):
         prop = "Daz%s" % self.morphset
-        return (hasattr(rig, prop) and getattr(rig, prop))
+        return getattr(rig, prop)
 
 
     def hasAdjustProp(self, rig):
@@ -649,6 +649,10 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Morphs"
     morphset = "All"
+
+    @classmethod
+    def poll(self, context):
+        return True
 
     def draw(self, context):
         rig = self.getCurrentRig(context)
