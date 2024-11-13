@@ -21,7 +21,6 @@ import os
 from mathutils import *
 from .error import *
 from .utils import *
-from .layers import *
 from .driver import DriverUser, addDriver
 
 #-------------------------------------------------------------

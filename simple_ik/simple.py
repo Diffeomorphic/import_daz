@@ -351,7 +351,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb)
             stretch.hide_select = True
 
-        from ..mhx import makeBone, deriveBone
+        from ..rig_utils import makeBone, deriveBone
         setMode('EDIT')
         ebones = rig.data.edit_bones
         if self.useRootBone:

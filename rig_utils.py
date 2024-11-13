@@ -61,33 +61,8 @@ def unhideAllObjects(context, rig):
     updateScene(context)
 
 #-------------------------------------------------------------
-#   getBoneLayer, connectToParent used by Rigify
+#   connectToParent used by Rigify
 #-------------------------------------------------------------
-
-def getBoneLayer(pb, rig, driven):
-    lname = pb.name.lower()
-    if pb.name in BD.HeadBones:
-        return L_HEAD, False
-    elif (isDrvBone(pb.name) or
-          pb.name in driven.keys() or
-          pb.name in BD.FaceRigs):
-        return L_HELP, False
-    elif pb.name in BD.Teeth:
-        return L_TWEAK, False
-    elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
-        return L_HELP2, False
-    elif pb.name[0:6] == "tongue":
-        return L_FACE, False
-    elif pb.parent:
-        par = pb.parent
-        if par.name in BD.FaceRigs:
-            return L_FACE, True
-        elif (isDrvBone(par.name) and
-              par.parent and
-              par.parent.name in BD.FaceRigs):
-            return L_FACE, True
-    return L_CUSTOM, True
-
 
 def connectToParent(rig, connectAll=False, useSplitShin=False):
     setMode('EDIT')

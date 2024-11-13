@@ -18,15 +18,15 @@ import bpy
 
 import math
 from mathutils import *
-from .error import *
-from .utils import *
+from ..error import *
+from ..utils import *
+from ..propgroups import DazPairGroup
+from ..driver import addDriver
+from ..fix import ConstraintStore, BendTwists, Fixer, GizmoUser
+from ..bone_data import BD
+from ..rig_utils import *
 from .layers import *
-from .propgroups import DazPairGroup
-from .driver import addDriver
-from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
-from .bone_data import BD
 from .mhx_data import MHX
-from .rig_utils import *
 
 #-------------------------------------------------------------
 #
@@ -68,7 +68,7 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
 #-------------------------------------------------------------
 
 def applyBoneChildren(context, rig):
-    from .node import clearParent
+    from ..node import clearParent
     unhideAllObjects(context, rig)
     bonechildren = []
     for ob in rig.children:
@@ -195,13 +195,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def storeState(self, context):
-        from .driver import muteDazFcurves
+        from ..driver import muteDazFcurves
         DazPropsOperator.storeState(self, context)
         muteDazFcurves(self.activeObject, True)
 
 
     def restoreState(self, context):
-        from .driver import muteDazFcurves
+        from ..driver import muteDazFcurves
         rig = self.activeObject
         muteDazFcurves(rig, rig.DazDriversDisabled)
         DazPropsOperator.restoreState(self, context)
@@ -248,7 +248,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def convertMhx(self, context):
-        from .figure import finalizeArmature
+        from ..figure import finalizeArmature
         rig = context.object
         self.rigname = rig.name
         rig.DazMhxLegacy = False
@@ -444,17 +444,42 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         for mname, bname in MHX.ExtraRenames:
             self.renamedBones[mname] = self.renamedBones[bname]
 
-        from .driver import getDrivenBoneFcurves
+        from ..driver import getDrivenBoneFcurves
         driven = getDrivenBoneFcurves(rig)
         for pb in rig.pose.bones:
             if pb.name in fixed:
                 continue
-            layer,unlock = getBoneLayer(pb, rig, driven)
+            layer,unlock = self.getBoneLayer(pb, rig, driven)
             enableBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
                 pb.lock_location = FFalse
         self.checkTongueIk(rig)
         self.checkFingerIk(rig)
+
+
+    def getBoneLayer(self, pb, rig, driven):
+        lname = pb.name.lower()
+        if pb.name in BD.HeadBones:
+            return L_HEAD, False
+        elif (isDrvBone(pb.name) or
+              pb.name in driven.keys() or
+              pb.name in BD.FaceRigs):
+            return L_HELP, False
+        elif pb.name in BD.Teeth:
+            return L_TWEAK, False
+        elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
+            return L_HELP2, False
+        elif pb.name[0:6] == "tongue":
+            return L_FACE, False
+        elif pb.parent:
+            par = pb.parent
+            if par.name in BD.FaceRigs:
+                return L_FACE, True
+            elif (isDrvBone(par.name) and
+                  par.parent and
+                  par.parent.name in BD.FaceRigs):
+                return L_FACE, True
+        return L_CUSTOM, True
 
 
     def restoreBoneChildren(self, bonechildren, context, rig):
@@ -472,7 +497,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                     print("Missing MHX bone:", bname, mname)
             return None
 
-        from .node import setParent
+        from ..node import setParent
         layers = getRigLayers(rig)
         enableAllRigLayers(rig)
         for (ob, bname) in bonechildren:
@@ -490,7 +515,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def addGizmos(self, rig, context):
-        from .driver import getDrivenBoneFcurves
+        from ..driver import getDrivenBoneFcurves
         setMode('OBJECT')
         self.makeGizmos(True, None)
 
@@ -574,7 +599,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     def fixKnees(self, rig):
         if not self.usePoleTargets:
             return
-        from .bone import setRoll
+        from ..bone import setRoll
         eps = 0.5
         setMode('EDIT')
         for thigh,shin,zaxis in MHX.Knees:
@@ -608,7 +633,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def addBack(self, rig):
-        from .winder import addWinder, addSuperWinder
+        from ..winder import addWinder, addSuperWinder
         backbones = self.getExistingBones(rig, MHX.BackBones)
         layers = [L_SPINE2, L_SPINE, L_HELP, L_HELP2, L_DEF]
         setMhx(rig, "MhaSpineControl", True)
@@ -634,7 +659,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
     def addShaftWinder(self, rig):
         if self.useShaftWinder:
-            from .winder import addWinder
+            from ..winder import addWinder
             setMhx(rig, "MhaShaftControl", True)
             shaftbones = self.getShaftBones(rig)
             shaftbones.sort()
@@ -688,7 +713,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                         eb.parent = sb
 
         setMode('OBJECT')
-        from .figure import copyBoneInfo
+        from ..figure import copyBoneInfo
         rpbs = rig.pose.bones
         for bname in self.tweakBones:
             if bname and bname in rpbs.keys():
@@ -727,7 +752,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def addFingerWinders(self, rig):
-        from .winder import addWinder
+        from ..winder import addWinder
         if self.useFingerIk:
             rig.data.MhaFeatures |= F_FINGER
         for suffix,handlayer,finglayer,fklayer,iklayer in [
@@ -952,7 +977,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if self.useTongueIk:
             self.addTongueIkBones(rig, L_HEAD, L_DEF)
 
-        from .figure import copyBoneInfo
+        from ..figure import copyBoneInfo
         setMode('OBJECT')
         rpbs = rig.pose.bones
         master = rpbs["master"]
@@ -1313,7 +1338,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
     #-------------------------------------------------------------
 
     def copyToeRotation(self, rig, mute, suffix, toenames):
-        from .rig_utils import copyRotation
+        from ..rig_utils import copyRotation
         toe = rig.pose.bones.get("toe.%s" % suffix)
         if toe:
             for toename in toenames:

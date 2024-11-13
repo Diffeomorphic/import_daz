@@ -33,12 +33,12 @@ bl_info = {
 Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
            "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
            "bone_data", "transform", "node", "figure", "bone", "geometry",
-           "layers", "fix", "modifier", "load_morph", "morphing", "baked",
+           "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "rig_utils", "category", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
            "guess", "convert", "files", "finger",
            "matedit", "udim", "merge", "scale", "tables", "proxy", "hide",
-           "mhx_data", "mhx", "rigify_data", "rigify", "transfer",
+           "transfer",
            "dforce", "pin", "hair", "main", "geonodes", "attr",
            "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
@@ -56,6 +56,8 @@ elif "bpy" in locals():
     imp.reload(rig_daz)
     imp.reload(shell_edit)
     imp.reload(simple_ik)
+    imp.reload(rig_mhx)
+    imp.reload(rig_rigify)
 
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
@@ -66,6 +68,8 @@ else:
     from . import rig_daz
     from . import shell_edit
     from . import simple_ik
+    from . import rig_mhx
+    from . import rig_rigify
 
 
 import bpy
@@ -90,6 +94,12 @@ def toggleShellEdit(self, context):
 
 def toggleSimpleIk(self, context):
     toggleModule("simple_ik", self.useSimpleIk)
+
+def toggleRigMhx(self, context):
+    toggleModule("rig_mhx", self.useRigMhx)
+
+def toggleRigRigify(self, context):
+    toggleModule("rig_rigify", self.useRigRigify)
 
 def toggleModule(module, enable):
     if enable:
@@ -145,6 +155,18 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleSimpleIk)
 
+    useRigMhx : bpy.props.BoolProperty(
+        name = "MHX",
+        description = "Enable tools for MHX rig",
+        default = False,
+        update = toggleRigMhx)
+
+    useRigRigify : bpy.props.BoolProperty(
+        name = "Rigify",
+        description = "Enable tools for Rigify",
+        default = False,
+        update = toggleRigRigify)
+
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
         #self.layout.operator("daz.update_settings")
@@ -155,6 +177,8 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useRigDaz")
         self.layout.prop(self, "useShellEdit")
         self.layout.prop(self, "useSimpleIk")
+        self.layout.prop(self, "useRigMhx")
+        self.layout.prop(self, "useRigRigify")
 
 #----------------------------------------------------------
 #   Register
@@ -194,6 +218,12 @@ def register():
         if prefs.useSimpleIk:
             from . import simple_ik
             simple_ik.register()
+        if prefs.useRigMhx:
+            from . import rig_mhx
+            rig_mhx.register()
+        if prefs.useRigRigify:
+            from . import rig_rigify
+            rig_rigify.register()
 
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
@@ -222,6 +252,12 @@ def unregister():
         if prefs.useSimpleIk:
             from . import simple_ik
             simple_ik.unregister()
+        if prefs.useRigMhx:
+            from . import rig_mhx
+            rig_mhx.unregister()
+        if prefs.useRigRigify:
+            from . import rig_rigify
+            rig_rigify.unregister()
     bpy.utils.unregister_class(DazPreferences)
 
 

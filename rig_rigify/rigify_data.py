@@ -15,7 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .utils import *
+from ..utils import *
 
 class RigifyData:
     def __init__(self, meta):

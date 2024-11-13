@@ -20,11 +20,11 @@ import os
 from collections import OrderedDict
 from mathutils import Vector
 
-from .error import *
-from .utils import *
+from ..error import *
+from ..utils import *
 from .layers import *
-from .fileutils import DF
-from .fix import Fixer, GizmoUser, BendTwists, ConstraintStore
+from ..fileutils import DF
+from ..fix import Fixer, GizmoUser, BendTwists, ConstraintStore
 
 #-------------------------------------------------------------
 #
@@ -174,10 +174,9 @@ class MetaMaker(RigifyCommon):
 
     def createMeta(self, context):
         from collections import OrderedDict
-        from .mhx import connectToParent
-        from .rig_utils import unhideAllObjects
-        from .figure import getRigType, finalizeArmature
-        from .merge import mergeBones, mergeVertexGroups, safeTransformApply
+        from ..rig_utils import unhideAllObjects, connectToParent
+        from ..figure import getRigType, finalizeArmature
+        from ..merge import mergeBones, mergeVertexGroups, safeTransformApply
 
         print("Create metarig")
         rig = context.object
@@ -188,7 +187,7 @@ class MetaMaker(RigifyCommon):
         self.makeRealParents(context, rig)
 
         if self.useOptimizePose:
-            from .convert import optimizePose
+            from ..convert import optimizePose
             optimizePose(context, True)
         if self.keepRig:
             dazrig = self.saveDazRig(context)
@@ -683,9 +682,8 @@ class Rigifier(RigifyCommon):
 
 
     def rigifyMeta1(self, context, rig, meta, dazrig):
-        from .driver import getDrivenBoneFcurves, getPropDrivers, copyProp
-        from .rig_utils import unhideAllObjects
-        from .mhx import getBoneLayer
+        from ..driver import getDrivenBoneFcurves, getPropDrivers, copyProp
+        from ..rig_utils import unhideAllObjects
 
         print("Rigify metarig")
         setMode('OBJECT')
@@ -805,8 +803,7 @@ class Rigifier(RigifyCommon):
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
                 self.dazBones[dname].setPose(pb, gen)
-                mhxlayer,unlock = getBoneLayer(pb, gen, driven)
-                layer = MhxRigifyLayer[mhxlayer]
+                layer,unlock = self.getBoneLayer(pb, gen, driven)
                 enableBoneNumLayer(pb.bone, gen, layer)
                 if unlock:
                     pb.lock_location = FFalse
@@ -950,7 +947,7 @@ class Rigifier(RigifyCommon):
 
         # Improve IK
         if self.useImproveIk:
-            from .rig_utils import improveIk
+            from ..rig_utils import improveIk
             improveIk(gen, exclude=self.tongueBones)
 
         #Clean up
@@ -994,8 +991,33 @@ class Rigifier(RigifyCommon):
         return gen
 
 
+    def getBoneLayer(self, pb, rig, driven):
+        lname = pb.name.lower()
+        if pb.name in BD.HeadBones:
+            return R_FACE, False
+        elif (isDrvBone(pb.name) or
+              pb.name in driven.keys() or
+              pb.name in BD.FaceRigs):
+            return R_HELP, False
+        elif pb.name in BD.Teeth:
+            return R_CUSTOM, False
+        elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, R_HELP):
+            return R_HELP, False
+        elif pb.name[0:6] == "tongue":
+            return R_DETAIL, False
+        elif pb.parent:
+            par = pb.parent
+            if par.name in BD.FaceRigs:
+                return R_DETAIL, True
+            elif (isDrvBone(par.name) and
+                  par.parent and
+                  par.parent.name in BD.FaceRigs):
+                return R_DETAIL, True
+        return R_CUSTOM, True
+
+
     def copyBoneProp(self, fcu, rig, gen, pb):
-        from .driver import copyProp
+        from ..driver import copyProp
         bname = prop = None
         words = fcu.data_path.split('"')
         if words[0] == "pose.bones[" and words[2] == "][":
@@ -1006,7 +1028,7 @@ class Rigifier(RigifyCommon):
 
 
     def copyBoneInfo(self, srcname, trgname, rig, gen):
-        from .figure import copyBoneInfo
+        from ..figure import copyBoneInfo
         if (srcname in rig.pose.bones.keys() and
             trgname in gen.pose.bones.keys()):
             srcpb = rig.pose.bones[srcname]
@@ -1272,7 +1294,7 @@ class Rigifier(RigifyCommon):
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
         if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
             return
-        from .rig_utils import copyLocation, copyRotation, copyTransform
+        from ..rig_utils import copyLocation, copyRotation, copyTransform
         rname = self.getRigifyBone(pb.name, gen.data.bones)
         if rname is None:
             return
@@ -1348,7 +1370,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
 
 
     def storeState(self, context):
-        from .driver import muteDazFcurves
+        from ..driver import muteDazFcurves
         DazPropsOperator.storeState(self, context)
         rig = context.object
         self.dazDriversDisabled = rig.DazDriversDisabled
@@ -1356,7 +1378,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
 
 
     def restoreState(self, context):
-        from .driver import muteDazFcurves
+        from ..driver import muteDazFcurves
         DazPropsOperator.restoreState(self, context)
         gen = context.object
         muteDazFcurves(gen, self.dazDriversDisabled)

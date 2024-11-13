@@ -18,9 +18,8 @@ import bpy
 from ..ctrl_rig import Framer
 from ..animation import HideOperator, FrameConverter
 from ..bone_data import BD
-from ..rigify import L_CUSTOM, R_CUSTOM
 from ..node import getTransformMatrices
-from ..mhx import copyTransform
+from ..rig_utils import copyTransform
 from .preset import *
 
 #----------------------------------------------------------
@@ -473,8 +472,10 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     else:
                         self.removeConvChildren(pb, list(self.conv.keys()))
             if rig.DazRig == "mhx":
+                from .rig_mhx import L_CUSTOM
                 customLayer = L_CUSTOM
             elif rig.DazRig[0:6] == "rigify":
+                from .rig_rigify import R_CUSTOM
                 customLayer = R_CUSTOM
             else:
                 return

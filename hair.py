@@ -28,7 +28,6 @@ from .cycles import CyclesMaterial, CyclesTree
 from .selector import Selector
 from .guess import ColorProp
 from .fix import GizmoUser
-from .layers import *
 from .transfer import MatchOperator
 from .pin import Pinner
 from .dforce import Cloth, Collision

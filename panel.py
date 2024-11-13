@@ -19,7 +19,6 @@ from .utils import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
 from .morphing import MS
-from .layers import *
 
 #----------------------------------------------------------
 #   Panels
@@ -207,12 +206,6 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Rigging"
 
     def draw(self, context):
-        self.layout.operator("daz.convert_to_mhx")
-        self.layout.separator()
-        self.layout.operator("daz.convert_to_rigify")
-        self.layout.operator("daz.create_meta")
-        self.layout.operator("daz.rigify_meta")
-        self.layout.separator()
         self.layout.operator("daz.add_mannequin")
 
 #----------------------------------------------------------
@@ -1066,31 +1059,6 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
                 op.prop = prop
                 op.object = ob.name
 
-#------------------------------------------------------------------------
-#   DAZ Rigify props panels
-#------------------------------------------------------------------------
-
-class DAZ_PT_DazRigifyProps(bpy.types.Panel):
-    bl_label = "DAZ Rigify Properties"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Item"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    @classmethod
-    def poll(cls, context):
-        ob = context.object
-        return (ob and
-                ob.DazRig in ["rigify", "rigify2"])
-
-    def draw(self, context):
-        rig = context.object
-        self.layout.prop(rig, "MhaGazeFollowsHead", text="Gaze Follows Head")
-        self.layout.prop(rig, "MhaGaze_L", text="Left Gaze")
-        self.layout.prop(rig, "MhaGaze_R", text="Right Gaze")
-        if rig.data.MhaFeatures & F_TONGUE:
-            self.layout.prop(rig, "MhaTongueIk", text="Tongue IK")
-
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
@@ -1157,7 +1125,6 @@ classes = [
     DAZ_PT_Visibility,
     DAZ_PT_ClothesVisibility,
     DAZ_PT_ShellVisibility,
-    DAZ_PT_DazRigifyProps,
 ]
 
 def register():
