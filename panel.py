@@ -21,12 +21,6 @@ from .uilist import DAZ_UL_StandardMorphs
 from .morphing import MS
 from .layers import *
 
-def getSetupEnabled(context):
-    return True
-
-def getRuntimeEnabled(context):
-    return True
-
 #----------------------------------------------------------
 #   Panels
 #----------------------------------------------------------
@@ -37,20 +31,12 @@ class DAZ_PT_SetupTab:
     bl_category = "DAZ Setup"
     bl_options = {'DEFAULT_CLOSED'}
 
-    @classmethod
-    def poll(cls, context):
-        return getSetupEnabled(context)
-
 
 class DAZ_PT_RuntimeTab:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "DAZ Runtime"
     bl_options = {'DEFAULT_CLOSED'}
-
-    @classmethod
-    def poll(cls, context):
-        return getRuntimeEnabled(context)
 
 #----------------------------------------------------------
 #   Setup panel
@@ -221,8 +207,6 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Rigging"
 
     def draw(self, context):
-        self.layout.operator("daz.add_simple_ik")
-        self.layout.separator()
         self.layout.operator("daz.convert_to_mhx")
         self.layout.separator()
         self.layout.operator("daz.convert_to_rigify")
@@ -569,8 +553,6 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     @classmethod
     def poll(self, context):
-        if not getRuntimeEnabled(context):
-            return False
         rig = self.getCurrentRig(self, context)
         return (rig and
                 not rig.DazDriversDisabled and
@@ -590,11 +572,12 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
 
     def hasTheseMorphs(self, rig):
-        return getattr(rig, "Daz%s" % self.morphset)
+        prop = "Daz%s" % self.morphset
+        return (hasattr(rig, prop) and getattr(rig, prop))
 
 
     def hasAdjustProp(self, rig):
-        adj = MS.Adjusters[self.morphset]
+        adj = MS.Adjusters.get(self.morphset, "")
         return (adj in rig.keys())
 
 
@@ -673,10 +656,6 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
     bl_label = "Morphs"
     morphset = "All"
-
-    @classmethod
-    def poll(self, context):
-        return getRuntimeEnabled(context)
 
     def draw(self, context):
         rig = self.getCurrentRig(context)
@@ -1024,151 +1003,6 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
 
 #------------------------------------------------------------------------
-#    Simple IK Panels
-#------------------------------------------------------------------------
-
-class DAZ_PT_DazSimpleLayers(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "Layers"
-
-    @classmethod
-    def poll(cls, context):
-        ob = context.object
-        return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
-
-    def draw(self, context):
-        rig = context.object
-        self.layout.label(text="Layers")
-        row = self.layout.row()
-        row.operator("daz.select_named_layers")
-        row.operator("daz.unselect_named_layers")
-        self.layout.separator()
-        layers = [
-            (S_SPINE, S_FACE),
-            (S_LARMFK, S_RARMFK),
-            (S_LARMIK, S_RARMIK),
-            (S_LLEGFK, S_RLEGFK),
-            (S_LLEGIK, S_RLEGIK),
-            (S_LHAND, S_RHAND),
-            (S_LFOOT, S_RFOOT),
-            (S_TWEAK, S_SPECIAL)]
-        for m,n in layers:
-            row = self.layout.row()
-            if BLENDER3:
-                row.prop(rig.data, "layers", index=m, toggle=True, text=SimpleLayers[m])
-                if n:
-                    row.prop(rig.data, "layers", index=n, toggle=True, text=SimpleLayers[n])
-            else:
-                cname = SimpleLayers[m]
-                coll = rig.data.collections[cname]
-                row.prop(coll, "is_visible", toggle=True, text=cname)
-                if n:
-                    cname = SimpleLayers[n]
-                    coll = rig.data.collections[cname]
-                    row.prop(coll, "is_visible", toggle=True, text=cname)
-
-
-class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "Simple IK"
-
-    @classmethod
-    def poll(cls, context):
-        ob = context.object
-        return (getRuntimeEnabled(context) and ob and ob.DazSimpleIK)
-
-    def draw(self, context):
-        def toggleFKIK(row, prop, limb):
-            if getattr(rig, prop) > 0.5:
-                text = "IK"
-                value = 0.0
-            else:
-                text = "FK"
-                value = 1.0
-            op = row.operator("daz.toggle_fk_ik", text="%s %s" % (limb, text))
-            op.prop = prop
-            op.value = value
-
-        rig = context.object
-        layout = self.layout
-        row = layout.row()
-        row.label(text = "Left")
-        row.label(text = "Right")
-        row = layout.row()
-        toggleFKIK(row, "DazArmIK_L", "Arm")
-        toggleFKIK(row, "DazArmIK_R", "Arm")
-        row = layout.row()
-        toggleFKIK(row, "DazLegIK_L", "Leg")
-        toggleFKIK(row, "DazLegIK_R", "Leg")
-        layout.label(text="IK Influence")
-        row = layout.row()
-        row.prop(rig, "DazArmIK_L", text="Arm")
-        row.prop(rig, "DazArmIK_R", text="Arm")
-        row = layout.row()
-        row.prop(rig, "DazLegIK_L", text="Leg")
-        row.prop(rig, "DazLegIK_R", text="Leg")
-        layout.label(text="IK Stretchiness")
-        row = layout.row()
-        row.prop(rig, "DazStretchArms", text="Arms")
-        row.prop(rig, "DazStretchLegs", text="Legs")
-
-        layout.label(text="Snap FK bones")
-        row = layout.row()
-        op = row.operator("daz.snap_simple_fk", text="Left Arm")
-        op.prefix = "l"
-        op.type = "Arm"
-        op.on = S_LARMFK
-        op.off = S_LARMIK
-        op = row.operator("daz.snap_simple_fk", text="Right Arm")
-        op.prefix = "r"
-        op.type = "Arm"
-        op.on = S_RARMFK
-        op.off = S_RARMIK
-        row = layout.row()
-        op = row.operator("daz.snap_simple_fk", text="Left Leg")
-        op.prefix = "l"
-        op.type = "Leg"
-        op.on = S_LLEGFK
-        op.off = S_LLEGIK
-        op = row.operator("daz.snap_simple_fk", text="Right Leg")
-        op.prefix = "r"
-        op.type = "Leg"
-        op.on = S_RLEGFK
-        op.off = S_RLEGIK
-
-        layout.label(text="Snap IK bones")
-        row = layout.row()
-        op = row.operator("daz.snap_simple_ik", text="Left Arm")
-        op.prefix = "l"
-        op.type = "Arm"
-        op.pole = "lElbow"
-        op.on = S_LARMIK
-        op.off = S_LARMFK
-        op = row.operator("daz.snap_simple_ik", text="Right Arm")
-        op.prefix = "r"
-        op.type = "Arm"
-        op.pole = "rElbow"
-        op.on = S_RARMIK
-        op.off = S_RARMFK
-        row = layout.row()
-        op = row.operator("daz.snap_simple_ik", text="Left Leg")
-        op.prefix = "l"
-        op.type = "Leg"
-        op.pole = "lKnee"
-        op.on = S_LLEGIK
-        op.off = S_LLEGFK
-        op = row.operator("daz.snap_simple_ik", text="Right Leg")
-        op.prefix = "r"
-        op.type = "Leg"
-        op.pole = "rKnee"
-        op.on = S_RLEGIK
-        op.off = S_RLEGFK
-
-        layout.separator()
-        layout.operator("daz.disable_locks_limits")
-        layout.operator("daz.snap_all_simple_fk")
-        layout.operator("daz.snap_all_simple_ik")
-        layout.operator("daz.snap_simple_fk_animation")
-
-#------------------------------------------------------------------------
 #   Visibility panels
 #------------------------------------------------------------------------
 
@@ -1177,8 +1011,7 @@ class DAZ_PT_Visibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        ob = context.object
-        return (getRuntimeEnabled(context) and ob)
+        return context.object
 
     def draw(self, context):
         pass
@@ -1325,9 +1158,6 @@ classes = [
     DAZ_PT_ClothesVisibility,
     DAZ_PT_ShellVisibility,
     DAZ_PT_DazRigifyProps,
-
-    DAZ_PT_DazSimpleLayers,
-    DAZ_PT_DazSimpleIK,
 ]
 
 def register():

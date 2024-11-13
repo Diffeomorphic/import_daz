@@ -34,7 +34,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
            "bone_data", "transform", "node", "figure", "bone", "geometry",
            "layers", "fix", "modifier", "load_morph", "morphing", "baked",
-           "animation", "simple", "rig_utils", "category", "dbzfile", "panel",
+           "animation", "rig_utils", "category", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
            "guess", "convert", "files", "finger",
            "matedit", "udim", "merge", "scale", "tables", "proxy", "hide",
@@ -55,6 +55,7 @@ elif "bpy" in locals():
     imp.reload(export_daz)
     imp.reload(rig_daz)
     imp.reload(shell_edit)
+    imp.reload(simple_ik)
 
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
@@ -64,6 +65,7 @@ else:
     from . import export_daz
     from . import rig_daz
     from . import shell_edit
+    from . import simple_ik
 
 
 import bpy
@@ -85,6 +87,9 @@ def toggleRigDaz(self, context):
 
 def toggleShellEdit(self, context):
     toggleModule("shell_edit", self.useShellEdit)
+
+def toggleSimpleIk(self, context):
+    toggleModule("simple_ik", self.useSimpleIk)
 
 def toggleModule(module, enable):
     if enable:
@@ -134,6 +139,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleShellEdit)
 
+    useSimpleIk : bpy.props.BoolProperty(
+        name = "Simple IK",
+        description = "Tools for simple IK",
+        default = False,
+        update = toggleSimpleIk)
+
     def draw(self, context):
         self.layout.prop(self, "settingsDir")
         #self.layout.operator("daz.update_settings")
@@ -143,6 +154,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useExportDaz")
         self.layout.prop(self, "useRigDaz")
         self.layout.prop(self, "useShellEdit")
+        self.layout.prop(self, "useSimpleIk")
 
 #----------------------------------------------------------
 #   Register
@@ -179,6 +191,9 @@ def register():
         if prefs.useShellEdit:
             from . import shell_edit
             shell_edit.register()
+        if prefs.useSimpleIk:
+            from . import simple_ik
+            simple_ik.register()
 
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
@@ -204,6 +219,9 @@ def unregister():
         if prefs.useShellEdit:
             from . import shell_edit
             shell_edit.unregister()
+        if prefs.useSimpleIk:
+            from . import simple_ik
+            simple_ik.unregister()
     bpy.utils.unregister_class(DazPreferences)
 
 

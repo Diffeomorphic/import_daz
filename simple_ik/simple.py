@@ -17,11 +17,11 @@
 import bpy
 import math
 from mathutils import *
-from .utils import *
-from .error import *
+from ..utils import *
+from ..error import *
+from ..bone_data import BD
+from ..animation import FrameRange
 from .layers import *
-from .bone_data import BD
-from .animation import FrameRange
 
 
 S_ARMIK = (S_LARMIK, S_RARMIK)
@@ -148,7 +148,7 @@ class SimpleIK:
 
 
     def hasAllBones(self, rig, bnames, prefix):
-        from .fix import getSuffixName
+        from ..fix import getSuffixName
         bnames = [prefix+bname for bname in bnames]
         for bname in bnames:
             if bname not in rig.data.bones.keys():
@@ -162,7 +162,7 @@ class SimpleIK:
         self.genesis = self.getGenesisType(rig)
         if not self.genesis:
             return []
-        from .fix import getPreSufName
+        from ..fix import getPreSufName
         table = getattr(self, self.genesis+type)
         prenames = []
         for bname in table:
@@ -173,7 +173,7 @@ class SimpleIK:
 
 
     def insertIKKeys(self, rig, frame):
-        from .fix import getPreSufName
+        from ..fix import getPreSufName
         bnames = ["lHandIK", "rHandIK", "lFootIK", "rFootIK",
                   "l_handIK", "r_handIK", "l_footIK", "r_footIK"]
         for bname in bnames:
@@ -311,7 +311,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
             copyOffsetDrivers(rig)
         if self.useImproveIk:
-            from .rig_utils import improveIk
+            from ..rig_utils import improveIk
             improveIk(rig)
         rig.DazSimpleIK = True
         rig.DazArmIK_L = rig.DazArmIK_R = 1.0
@@ -351,7 +351,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb)
             stretch.hide_select = True
 
-        from .mhx import makeBone, deriveBone
+        from ..mhx import makeBone, deriveBone
         setMode('EDIT')
         ebones = rig.data.edit_bones
         if self.useRootBone:
@@ -443,7 +443,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 scale = (scale,scale,scale)
             self.customShapes[csname] = (ob, Vector(scale), Vector(offset), Vector(rotation)*D)
 
-        from .fileutils import DF
+        from ..fileutils import DF
         setMode('OBJECT')
         self.gizmos = DF.loadEntry("simple", "gizmos", True)
         self.customShapes = {}
@@ -573,7 +573,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 #self.setCustomShape(pb, "CS_CircleY2")
                 print("Unknown bone:", pb.name)
 
-        from .node import createHiddenCollection
+        from ..node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
         for data in self.customShapes.values():
             ob = data[0]
@@ -635,8 +635,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 if cns.type == type:
                     addDriver(cns, "influence", rig, (mhxProp(prop), mhxProp("DazRotLimits")), "(1-x1)*x2")
 
-        from .mhx import ikConstraint, addHint, copyLocation, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
-        from .driver import addDriver
+        from ..mhx import ikConstraint, addHint, copyLocation, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
+        from ..driver import addDriver
         rpbs = rig.pose.bones
         if self.useRootBone:
             root = rpbs["Root"]
@@ -838,7 +838,7 @@ def copyOffsetDrivers(rig):
         for bname1,bname0 in missing:
             print("MISS", bname1, bname0)
 
-    from .driver import setFloatProp
+    from ..driver import setFloatProp
     copyDrivers(rig, LS.headbones, "HdOffset")
 
 
@@ -896,7 +896,7 @@ class SimpleFKSnapper(SimpleIK):
 
 
     def getSnapBones(self, rig, bnames):
-        from .fix import getPreSufName
+        from ..fix import getPreSufName
         pbones = []
         gmats = {}
         for bname in bnames:
@@ -1068,7 +1068,7 @@ class SimpleIKSnapper(SimpleIK):
 
 
     def getRevBones(self, prefix, rig):
-        from .fix import getPreSufName
+        from ..fix import getPreSufName
         if rig.DazRig == "genesis9":
             bonelist = [
                 ("%s_heelIK" % prefix, "MCH-%s_heelIK" % prefix),
@@ -1089,7 +1089,7 @@ class SimpleIKSnapper(SimpleIK):
 
 
     def snapBones(self, rig, bnames, prop, pole, shldrik, revbones):
-        from .fix import getPreSufName
+        from ..fix import getPreSufName
         hand = bnames[-1]
         handfk = rig.pose.bones.get(getPreSufName(hand, rig))
         if handfk is None:
