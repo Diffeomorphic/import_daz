@@ -34,7 +34,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
            "bone_data", "transform", "node", "figure", "bone", "geometry",
            "layers", "fix", "modifier", "load_morph", "morphing", "baked",
-           "animation", "simple", "category", "dbzfile", "panel",
+           "animation", "simple", "rig_utils", "category", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
            "guess", "convert", "files", "finger",
            "matedit", "udim", "merge", "scale", "tables", "proxy", "hide",
@@ -149,7 +149,7 @@ class DazPreferences(bpy.types.AddonPreferences):
 #----------------------------------------------------------
 
 Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
-            "figure", "geometry", "dbzfile", "simple",
+            "figure", "geometry", "dbzfile", "simple", "rig_utils",
             "fix", "animation", "morphing", "category", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",

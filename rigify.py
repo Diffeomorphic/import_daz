@@ -948,7 +948,7 @@ class Rigifier(RigifyCommon):
 
         # Improve IK
         if self.useImproveIk:
-            from .simple import improveIk
+            from .rig_utils import improveIk
             improveIk(gen, exclude=self.tongueBones)
 
         #Clean up

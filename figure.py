@@ -844,7 +844,7 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
             msg = "Rig type = %s" % rig.DazRig
         elif rig.DazSimpleIK:
             msg = "Rig has simple IK"
-        elif rig.data.DazFinalized:
+        elif rig.data.get("DazFinalized", False):
             msg = "Rig has been finalized"
         else:
             return True
@@ -942,7 +942,7 @@ def finalizeArmature(rig):
                     if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
                         pb.constraints.remove(cns)
                         break
-    rig.data.DazFinalized = True
+    rig.data["DazFinalized"] = True
 
 
 class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):
