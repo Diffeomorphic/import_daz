@@ -313,9 +313,12 @@ class DAZ_OT_AutoEulers(DazOperator, IsArmature):
                 for fcu in rna.animation_data.drivers:
                     for var in fcu.driver.variables:
                         for trg in var.targets:
-                            trg.rotation_mode = 'AUTO'
+                            if trg.bone_target in quats:
+                                trg.rotation_mode = 'AUTO'
 
         rig = context.object
+        quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
+        print("QQ", quats)
         autoEuler(rig)
         autoEuler(rig.data)
         for ob in getShapeChildren(rig):

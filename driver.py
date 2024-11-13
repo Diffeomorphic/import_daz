@@ -443,12 +443,13 @@ def addTransformVar(fcu, vname, ttype, rig, rig2, bname):
     trg = var.targets[0]
     trg.id = rig
     trg.bone_target = bname
-    if GS.useAutoEuler:
-        trg.rotation_mode = 'AUTO'
-    elif pb is None:
+    if pb is None:
         trg.rotation_mode = 'XYZ'
     elif pb.rotation_mode == 'QUATERNION':
-        trg.rotation_mode = BD.RotationModes.get(pb.name, 'QUATERNION')
+        if GS.useAutoEuler:
+            trg.rotation_mode = 'AUTO'
+        else:
+            trg.rotation_mode = BD.RotationModes.get(pb.name, 'AUTO')
     else:
         trg.rotation_mode = pb.rotation_mode
     trg.transform_type = ttype

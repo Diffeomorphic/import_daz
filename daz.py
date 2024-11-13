@@ -357,10 +357,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Shapekey Mute Drivers",
         description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
 
-    useAutoEuler : BoolProperty(
-        name = "Auto Euler",
-        description = "Use auto Euler as driver rotation mode.\nImproves consistency during animation")
-
     ercMethod : EnumProperty(
         items = [('NONE', "None", "ERC morphs are ignored"),
                  ('TRANSLATION', "Translation", "ERC morphs are translations"),
@@ -532,6 +528,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     useQuaternions : BoolProperty(
         name = "Quaternions",
         description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
+
+    useAutoEuler : BoolProperty(
+        name = "Auto Euler",
+        description = "Use Auto Euler as driver rotation mode for quaternion bones")
 
     caseSensitivePaths : BoolProperty(
         name = "Case-Sensitive Paths",
@@ -727,6 +727,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
         box.prop(self, "useQuaternions")
+        box.prop(self, "useAutoEuler")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
         box.prop(self, "useLockRot")
@@ -763,7 +764,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useShapeCats")
         box.prop(self, "useMeshDrivers")
         box.prop(self, "useMuteDrivers")
-        box.prop(self, "useAutoEuler")
         box.prop(self, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
