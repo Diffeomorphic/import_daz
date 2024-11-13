@@ -854,8 +854,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             from .rigify import setFkIk2
             self.boneLayers = setFkIk2(rig, True, self.boneLayers, self.useInsertKeys, frame)
         elif rig.MhxRig or rig.DazRig == "mhx":
-            from .mhx import setToFk
-            self.boneLayers = setToFk(rig, self.boneLayers, self.useInsertKeys, frame)
+            from .mhx import setMhxToFk
+            self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
         elif rig.DazSimpleIK:
             from .simple_ik import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)

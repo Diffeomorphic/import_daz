@@ -174,7 +174,8 @@ class MetaMaker(RigifyCommon):
 
     def createMeta(self, context):
         from collections import OrderedDict
-        from .rig_utils import connectToParent, unhideAllObjects
+        from .mhx import connectToParent
+        from .rig_utils import unhideAllObjects
         from .figure import getRigType, finalizeArmature
         from .merge import mergeBones, mergeVertexGroups, safeTransformApply
 
@@ -683,7 +684,8 @@ class Rigifier(RigifyCommon):
 
     def rigifyMeta1(self, context, rig, meta, dazrig):
         from .driver import getDrivenBoneFcurves, getPropDrivers, copyProp
-        from .rig_utils import unhideAllObjects, getBoneLayer
+        from .rig_utils import unhideAllObjects
+        from .mhx import getBoneLayer
 
         print("Rigify metarig")
         setMode('OBJECT')
@@ -1081,6 +1083,22 @@ class Rigifier(RigifyCommon):
                     vgrp.name = rname
 
             self.changeAllTargets(ob, rig, gen)
+
+
+    def changeAllTargets(self, ob, rig, newrig):
+        if ob.animation_data:
+            for fcu in ob.animation_data.drivers:
+                self.setId(fcu, rig, newrig)
+        if ob.data.animation_data:
+            for fcu in ob.data.animation_data.drivers:
+                self.setId(fcu, rig, newrig)
+        if ob.type == 'MESH':
+            if ob.data.shape_keys and ob.data.shape_keys.animation_data:
+                for fcu in ob.data.shape_keys.animation_data.drivers:
+                    self.setId(fcu, rig, newrig)
+            for mod in ob.modifiers:
+                if mod.type == 'ARMATURE' and mod.object == rig:
+                    mod.object = newrig
 
 
     def fixIkBone(self, dname, rig, rname, gen):

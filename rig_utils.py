@@ -19,6 +19,7 @@ import math
 from mathutils import *
 from .utils import *
 from .error import *
+from .driver import addDriver
 
 #----------------------------------------------------------
 #  Make bone
@@ -42,6 +43,68 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbon
     if tailbone:
         LS.tailbones[bname] = tailbone.name
     return eb
+
+
+def normalizeRoll(roll):
+    if roll > 180*D:
+        return roll - 360*D
+    elif roll < -180*D:
+        return roll + 360*D
+    else:
+        return roll
+
+
+def unhideAllObjects(context, rig):
+    for key in rig.keys():
+        if key[0:3] == "Mhh":
+            rig[key] = True
+    updateScene(context)
+
+#-------------------------------------------------------------
+#   getBoneLayer, connectToParent used by Rigify
+#-------------------------------------------------------------
+
+def getBoneLayer(pb, rig, driven):
+    lname = pb.name.lower()
+    if pb.name in BD.HeadBones:
+        return L_HEAD, False
+    elif (isDrvBone(pb.name) or
+          pb.name in driven.keys() or
+          pb.name in BD.FaceRigs):
+        return L_HELP, False
+    elif pb.name in BD.Teeth:
+        return L_TWEAK, False
+    elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
+        return L_HELP2, False
+    elif pb.name[0:6] == "tongue":
+        return L_FACE, False
+    elif pb.parent:
+        par = pb.parent
+        if par.name in BD.FaceRigs:
+            return L_FACE, True
+        elif (isDrvBone(par.name) and
+              par.parent and
+              par.parent.name in BD.FaceRigs):
+            return L_FACE, True
+    return L_CUSTOM, True
+
+
+def connectToParent(rig, connectAll=False, useSplitShin=False):
+    setMode('EDIT')
+    if useSplitShin:
+        shinBones = MHX.ConnectShin
+        otherBones = MHX.ConnectOther
+    else:
+        shinBones = []
+        otherBones = MHX.ConnectOther + MHX.ConnectShin
+    if connectAll:
+        allBones = MHX.ConnectBendTwist + shinBones + otherBones
+    else:
+        allBones = MHX.ConnectBendTwist + shinBones
+    for eb in rig.data.edit_bones:
+        if eb.name in allBones:
+            eb.parent.tail = eb.head
+            eb.use_connect = True
 
 #-------------------------------------------------------------
 #

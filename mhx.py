@@ -25,7 +25,7 @@ from .propgroups import DazPairGroup
 from .driver import addDriver
 from .fix import ConstraintStore, BendTwists, Fixer, GizmoUser
 from .bone_data import BD
-from .rig_utils_data import MHX
+from .mhx_data import MHX
 from .rig_utils import *
 
 #-------------------------------------------------------------
@@ -39,15 +39,6 @@ def getBoneCopy(bname, model, rpbs, lock):
     if lock:
         pb.lock_location = TTrue
     return pb
-
-
-def normalizeRoll(roll):
-    if roll > 180*D:
-        return roll - 360*D
-    elif roll < -180*D:
-        return roll + 360*D
-    else:
-        return roll
 
 
 def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
@@ -75,13 +66,6 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
 #-------------------------------------------------------------
 #   Bone children
 #-------------------------------------------------------------
-
-def unhideAllObjects(context, rig):
-    for key in rig.keys():
-        if key[0:3] == "Mhh":
-            rig[key] = True
-    updateScene(context)
-
 
 def applyBoneChildren(context, rig):
     from .node import clearParent
@@ -1259,6 +1243,17 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.copyToeRotation(rig, True, suffix, ["big_toe.01", "small_toe_1.01", "small_toe_2.01", "small_toe_3.01", "small_toe_4.01"])
 
 
+    def copyLocksLimits(self, rig, srcname, trgname, suffix):
+        src = rig.pose.bones["%s.%s" % (srcname, suffix)]
+        trg = rig.pose.bones["%s.%s" % (trgname, suffix)]
+        trg.lock_location = src.lock_location
+        trg.lock_rotation = src.lock_rotation
+        trg.lock_scale = src.lock_scale
+        cns = getConstraint(src, 'LIMIT_ROTATION')
+        if cns:
+            copyConstraint(cns, trg, rig)
+
+
     def flipLimits(self, rig, bname, oldname):
         roll = self.rolls[bname]
         oldroll = self.rolls[oldname]
@@ -1312,6 +1307,24 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         ikbone.lock_ik_x = fkbone.lock_rotation[0]
         ikbone.lock_ik_y = fkbone.lock_rotation[1]
         ikbone.lock_ik_z = fkbone.lock_rotation[2]
+
+    #-------------------------------------------------------------
+    #   Toe rotation
+    #-------------------------------------------------------------
+
+    def copyToeRotation(self, rig, mute, suffix, toenames):
+        from .rig_utils import copyRotation
+        toe = rig.pose.bones.get("toe.%s" % suffix)
+        if toe:
+            for toename in toenames:
+                bname = "%s.%s" % (toename, suffix)
+                pb = rig.pose.bones.get(bname)
+                if pb:
+                    cns = copyRotation(pb, toe, rig)
+                    cns.subtarget = toe.name
+                    cns.mute = mute
+                    cns.use_y = False
+                    cns.mix_mode = 'BEFORE'
 
     #-------------------------------------------------------------
     #   Fix drivers
@@ -1440,52 +1453,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         else:
             print(msg)
 
-#-------------------------------------------------------------
-#   getBoneLayer, connectToParent used by Rigify
-#-------------------------------------------------------------
-
-def getBoneLayer(pb, rig, driven):
-    lname = pb.name.lower()
-    if pb.name in BD.HeadBones:
-        return L_HEAD, False
-    elif (isDrvBone(pb.name) or
-          pb.name in driven.keys() or
-          pb.name in BD.FaceRigs):
-        return L_HELP, False
-    elif pb.name in BD.Teeth:
-        return L_TWEAK, False
-    elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
-        return L_HELP2, False
-    elif pb.name[0:6] == "tongue":
-        return L_FACE, False
-    elif pb.parent:
-        par = pb.parent
-        if par.name in BD.FaceRigs:
-            return L_FACE, True
-        elif (isDrvBone(par.name) and
-              par.parent and
-              par.parent.name in BD.FaceRigs):
-            return L_FACE, True
-    return L_CUSTOM, True
-
-
-def connectToParent(rig, connectAll=False, useSplitShin=False):
-    setMode('EDIT')
-    if useSplitShin:
-        shinBones = MHX.ConnectShin
-        otherBones = MHX.ConnectOther
-    else:
-        shinBones = []
-        otherBones = MHX.ConnectOther + MHX.ConnectShin
-    if connectAll:
-        allBones = MHX.ConnectBendTwist + shinBones + otherBones
-    else:
-        allBones = MHX.ConnectBendTwist + shinBones
-    for eb in rig.data.edit_bones:
-        if eb.name in allBones:
-            eb.parent.tail = eb.head
-            eb.use_connect = True
-
 
 def setConnected(eb, conn):
     if eb.tail != eb.parent.tail:
@@ -1594,7 +1561,7 @@ LRGizmos = {
 #   Used by load pose etc.
 #-------------------------------------------------------------
 
-def setToFk(rig, layers, useInsertKeys, frame):
+def setMhxToFk(rig, layers, useInsertKeys, frame):
     def setValue(rig, prop, value):
         if hasattr(rig, prop):
             setattr(rig, prop, value)

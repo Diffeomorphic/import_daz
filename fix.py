@@ -89,17 +89,6 @@ class Fixer(DriverUser):
             self.raiseWarning(msg)
 
 
-    def copyLocksLimits(self, rig, srcname, trgname, suffix):
-        src = rig.pose.bones["%s.%s" % (srcname, suffix)]
-        trg = rig.pose.bones["%s.%s" % (trgname, suffix)]
-        trg.lock_location = src.lock_location
-        trg.lock_rotation = src.lock_rotation
-        trg.lock_scale = src.lock_scale
-        cns = getConstraint(src, 'LIMIT_ROTATION')
-        if cns:
-            copyConstraint(cns, trg, rig)
-
-
     def fixPelvis(self, rig):
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
@@ -274,22 +263,6 @@ class Fixer(DriverUser):
             if idx >= 0:
                 fcu3.array_index = idx
         self.clearTmpDriver(0)
-
-
-    def changeAllTargets(self, ob, rig, newrig):
-        if ob.animation_data:
-            for fcu in ob.animation_data.drivers:
-                self.setId(fcu, rig, newrig)
-        if ob.data.animation_data:
-            for fcu in ob.data.animation_data.drivers:
-                self.setId(fcu, rig, newrig)
-        if ob.type == 'MESH':
-            if ob.data.shape_keys and ob.data.shape_keys.animation_data:
-                for fcu in ob.data.shape_keys.animation_data.drivers:
-                    self.setId(fcu, rig, newrig)
-            for mod in ob.modifiers:
-                if mod.type == 'ARMATURE' and mod.object == rig:
-                    mod.object = newrig
 
 
     def saveDazRig(self, context):
@@ -519,24 +492,6 @@ class Fixer(DriverUser):
             prop = "MhaGazeFollowsHead"
             setMhx(rig, prop, 1.0)
             copyTransform(gaze1, gaze0, rig, prop)
-
-    #-------------------------------------------------------------
-    #   Toe rotation
-    #-------------------------------------------------------------
-
-    def copyToeRotation(self, rig, mute, suffix, toenames):
-        from .rig_utils import copyRotation
-        toe = rig.pose.bones.get("toe.%s" % suffix)
-        if toe:
-            for toename in toenames:
-                bname = "%s.%s" % (toename, suffix)
-                pb = rig.pose.bones.get(bname)
-                if pb:
-                    cns = copyRotation(pb, toe, rig)
-                    cns.subtarget = toe.name
-                    cns.mute = mute
-                    cns.use_y = False
-                    cns.mix_mode = 'BEFORE'
 
     #-------------------------------------------------------------
     #   Tie bones
