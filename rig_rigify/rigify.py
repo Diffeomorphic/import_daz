@@ -25,6 +25,7 @@ from ..utils import *
 from .layers import *
 from ..fileutils import DF
 from ..fix import Fixer, GizmoUser, BendTwists, ConstraintStore
+from ..bone_data import BD
 
 #-------------------------------------------------------------
 #
@@ -1568,8 +1569,6 @@ def register():
         name = "Tongue IK",
         min = 0, max = 1,
         description = "Tongue bones controlled by IK")
-
-    bpy.types.Armature.MhaFeatures = IntProperty(default = 0)
 
     bpy.types.Object.DazRigifyType = StringProperty(default="")
 

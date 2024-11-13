@@ -51,6 +51,7 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
         self.layout.prop(rig, "MhaGazeFollowsHead", text="Gaze Follows Head")
         self.layout.prop(rig, "MhaGaze_L", text="Left Gaze")
         self.layout.prop(rig, "MhaGaze_R", text="Right Gaze")
+        from ..fix import F_TONGUE
         if rig.data.MhaFeatures & F_TONGUE:
             self.layout.prop(rig, "MhaTongueIk", text="Tongue IK")
 

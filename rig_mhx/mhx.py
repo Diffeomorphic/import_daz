@@ -511,6 +511,239 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         setRigLayers(rig, layers)
 
     #-------------------------------------------------------------
+    #   Bend Twist
+    #-------------------------------------------------------------
+
+    def getBendTwistNames(self, bname):
+        words = bname.split(".", 1)
+        if len(words) == 2:
+            bendname = words[0] + "Bend." + words[1]
+            twistname = words[0] + "Twist." + words[1]
+        else:
+            bendname = bname + "Bend"
+            twistname = bname + "Twist"
+        return bendname, twistname
+
+
+    def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
+        bendTwistChildren = {}
+        setMode('OBJECT')
+        rotmodes = {}
+        for bname,tname,stretch in bendTwistBones:
+            bendname,twistname = self.getBendTwistNames(bname)
+            if not (bendname in rig.pose.bones.keys() and
+                    twistname in rig.pose.bones.keys()):
+                continue
+            pb = rig.pose.bones[bendname]
+            rotmodes[bname] = pb.DazRotMode
+            self.storeConstraints(bname, pb)
+            self.removeConstraints(pb)
+            self.deleteBoneDrivers(rig, bendname)
+            pb = rig.pose.bones[twistname]
+            self.removeConstraints(pb)
+            self.deleteBoneDrivers(rig, twistname)
+
+        setMode('EDIT')
+        for bname,tname,stretch in bendTwistBones:
+            bendname,twistname = self.getBendTwistNames(bname)
+            bend = rig.data.edit_bones.get(bendname)
+            twist = rig.data.edit_bones.get(twistname)
+            target = rig.data.edit_bones.get(tname)
+            if not (bend and twist and target):
+                continue
+            eb = rig.data.edit_bones.new(bname)
+            eb.head = bend.head
+            bend.tail = twist.head
+            eb.tail = twist.tail
+            eb.roll = bend.roll
+            eb.parent = bend.parent
+            eb.use_deform = False
+            eb.use_connect = bend.use_connect
+            nbendname,ntwistname = self.getSubBoneNames(bname)
+            for child in bend.children:
+                if child != twist:
+                    if isDrvBone(child.name):
+                        bendTwistChildren[child.name] = nbendname
+                    child.parent = eb
+            for child in twist.children:
+                if isDrvBone(child.name):
+                    bendTwistChildren[child.name] = ntwistname
+                child.parent = eb
+
+        for bname3,bname2 in renames.items():
+            eb = rig.data.edit_bones[bname3]
+            eb.name = bname2
+
+        setMode('OBJECT')
+        for bname,rotmode in rotmodes.items():
+            if bname in rig.pose.bones.keys():
+                pb = rig.pose.bones[bname]
+                pb.DazRotMode = rotmode
+
+        from ..figure import copyBoneInfo
+        for bname,tname,stretch in bendTwistBones:
+            bendname,twistname = self.getBendTwistNames(bname)
+            srcbone = rig.pose.bones.get(bendname)
+            trgbone = rig.pose.bones.get(bname)
+            if srcbone and trgbone:
+                copyBoneInfo(srcbone, trgbone)
+                trgbone.DazRotLocks = FFalse
+
+        setMode('EDIT')
+        for bname,tname,stretch in bendTwistBones:
+            bendname,twistname = self.getBendTwistNames(bname)
+            if bendname in rig.data.edit_bones.keys():
+                eb = rig.data.edit_bones[bendname]
+                if keep:
+                    enableBoneNumLayer(eb, rig, L_DEF)
+                else:
+                    rig.data.edit_bones.remove(eb)
+            if twistname in rig.data.edit_bones.keys():
+                eb = rig.data.edit_bones[twistname]
+                if keep:
+                    enableBoneNumLayer(eb, rig, L_DEF)
+                else:
+                    rig.data.edit_bones.remove(eb)
+        setMode('OBJECT')
+        return bendTwistChildren
+
+
+    def joinVertexGroups(self, ob, info):
+        for bname, bend, twists in info:
+            vgbend = ob.vertex_groups.get(bend)
+            vgtwists = []
+            for twist in twists:
+                vgtwist = ob.vertex_groups.get(twist)
+                if vgtwist:
+                    vgtwists.append(vgtwist)
+            if vgbend and vgtwists:
+                pass
+            elif vgbend:
+                vgbend.name = bname
+                continue
+            elif not vgtwists:
+                continue
+
+            vgrp = ob.vertex_groups.new(name=bname)
+            indices = [vgtwist.index for vgtwist in vgtwists]
+            if vgbend:
+                indices.append(vgbend.index)
+            for v in ob.data.vertices:
+                w = 0.0
+                for g in v.groups:
+                    if g.group in indices:
+                        w += g.weight
+                if w > 1e-4:
+                    vgrp.add([v.index], w, 'REPLACE')
+            if vgbend:
+                ob.vertex_groups.remove(vgbend)
+            for vgtwist in vgtwists:
+                ob.vertex_groups.remove(vgtwist)
+            vgrp.name = bname
+
+
+    def getSubBoneNames(self, bname):
+        base,suffix = bname.split(".")
+        bendname = "%s.bend.%s" % (base, suffix)
+        twistname = "%s.twist.%s" % (base, suffix)
+        return bendname,twistname
+
+
+    def createBendTwists(self, rig, bendTwistBones, bendTwistChildren):
+        setMode('EDIT')
+        for bname,tname,stretch in bendTwistBones:
+            eb = rig.data.edit_bones.get(bname)
+            if eb is None:
+                continue
+            vec = eb.tail - eb.head
+            bendname,twistname = self.getSubBoneNames(bname)
+            bend = rig.data.edit_bones.new(bendname)
+            twist = rig.data.edit_bones.new(twistname)
+            bend.head  = eb.head
+            bend.tail = twist.head = eb.head+vec/2
+            twist.tail = eb.tail
+            bend.roll = twist.roll = eb.roll
+            bend.parent = eb.parent
+            twist.parent = bend
+            bend.use_connect = eb.use_connect
+            twist.use_connect = True
+            eb.use_deform = False
+            if self.addTweakBones:
+                btwkname = self.getTweakBoneName(bendname)
+                ttwkname = self.getTweakBoneName(twistname)
+                bendtwk = rig.data.edit_bones.new(btwkname)
+                twisttwk = rig.data.edit_bones.new(ttwkname)
+                bendtwk.head = bend.head
+                bendtwk.tail = twisttwk.head = twist.head
+                twisttwk.tail = twist.tail
+                bendtwk.roll = twisttwk.roll = eb.roll
+                bendtwk.parent = bend
+                twisttwk.parent = twist
+                bend.use_deform = twist.use_deform = False
+                bendtwk.use_deform = twisttwk.use_deform = True
+                enableBoneNumLayer(bendtwk, rig, L_DEF)
+                enableBoneNumLayer(twisttwk, rig, L_DEF)
+                setBoneNumLayer(bendtwk, rig, L_TWEAK)
+                setBoneNumLayer(twisttwk, rig, L_TWEAK)
+                enableBoneNumLayer(bend, rig, L_HELP2)
+                enableBoneNumLayer(twist, rig, L_HELP2)
+                bvgname = btwkname
+                tvgname = ttwkname
+            else:
+                bend.use_deform = twist.use_deform = True
+                enableBoneNumLayer(bend, rig, L_DEF)
+                enableBoneNumLayer(twist, rig, L_DEF)
+                bvgname = bend.name
+                tvgname = twist.name
+
+            for ob in getMeshChildren(rig):
+                if bname in ob.vertex_groups.keys():
+                    self.splitVertexGroup(ob, bname, bvgname, tvgname, eb.head, eb.tail)
+                else:
+                    base,suffix = bname.split(".",1)
+                    bendgrp = ob.vertex_groups.get("%sBend.%s" % (base, suffix))
+                    if bendgrp:
+                        bendgrp.name = bvgname
+                    twistgrp = ob.vertex_groups.get("%sTwist.%s" % (base, suffix))
+                    if twistgrp:
+                        twistgrp.name = tvgname
+
+        for bname, parname in bendTwistChildren.items():
+            eb = rig.data.edit_bones.get(bname)
+            par = rig.data.edit_bones.get(parname)
+            if eb and par:
+                eb.parent = par
+
+
+    def constrainBendTwists(self, rig, bendTwistBones, useStretch):
+        from ..rig_utils import dampedTrack, copyRotation, copyTransform, stretchTo
+        setMode('OBJECT')
+        for bname,tname,stretch in bendTwistBones:
+            bendname,twistname = self.getSubBoneNames(bname)
+            if not hasPoseBones(rig, [bname, bendname, twistname]):
+                continue
+            pb = rig.pose.bones[bname]
+            bend = rig.pose.bones[bendname]
+            twist = rig.pose.bones[twistname]
+            bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
+            trg = rig.pose.bones[tname]
+            cns = copyRotation(bend, pb, rig, space='LOCAL')
+            cns.use_y = False
+            cns = dampedTrack(bend, pb, rig)
+            cns.head_tail = 1.0
+            copyTransform(twist, pb, rig)
+            if useStretch and stretch:
+                stretchTo(bend, trg, rig, stretch, "x")
+                stretchTo(twist, trg, rig, stretch, "x")
+            if self.addTweakBones:
+                btwkname = self.getTweakBoneName(bendname)
+                ttwkname = self.getTweakBoneName(twistname)
+                bendtwk = rig.pose.bones[btwkname]
+                twisttwk = rig.pose.bones[ttwkname]
+                self.addGizmo(bendtwk, "GZM_Ball", 0.25, blen=10*rig.DazScale)
+                self.addGizmo(twisttwk, "GZM_Ball", 0.25, blen=10*rig.DazScale)
+
+    #-------------------------------------------------------------
     #   Gizmos
     #-------------------------------------------------------------
 
@@ -1269,6 +1502,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def copyLocksLimits(self, rig, srcname, trgname, suffix):
+        from ..fix import copyConstraint
         src = rig.pose.bones["%s.%s" % (srcname, suffix)]
         trg = rig.pose.bones["%s.%s" % (trgname, suffix)]
         trg.lock_location = src.lock_location
