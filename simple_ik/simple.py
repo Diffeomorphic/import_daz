@@ -217,7 +217,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.DazSimpleIK)
+        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
     useArms : BoolProperty(
         name = "Arm IK",
@@ -313,7 +313,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useImproveIk:
             from ..rig_utils import improveIk
             improveIk(rig)
-        rig.DazSimpleIK = True
+        rig["DazSimpleIK"] = True
         rig.DazArmIK_L = rig.DazArmIK_R = 1.0
         rig.DazLegIK_L = rig.DazLegIK_R = 1.0
         rig.DazStretchArms = rig.DazStretchLegs = 1.0
@@ -1463,7 +1463,6 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazSimpleIK = BoolProperty(default=False)
     bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
     bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
     bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)

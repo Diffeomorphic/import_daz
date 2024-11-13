@@ -856,7 +856,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif rig.MhxRig or rig.DazRig == "mhx":
             from .rig_mhx import setMhxToFk
             self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
-        elif rig.DazSimpleIK:
+        elif rig.get("DazSimpleIK"):
             from .simple_ik import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)
 
@@ -865,9 +865,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if not self.affectBones:
             return
         if rig.MhxRig or rig.DazRig == "mhx":
-            from .mhx import updateMhxWinders
-            updateMhxWinders(rig, frame)
-        elif rig.DazSimpleIK:
+            from .rig_mhx import mhx
+            mhx.updateMhxWinders(rig, frame)
+        elif rig.get("DazSimpleIK"):
             pass
 
 
@@ -996,7 +996,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             master = "master"
         elif rig.DazRig.startswith("rigify"):
             master = "root"
-        elif rig.DazSimpleIK:
+        elif rig.get("DazSimpleIK"):
             master = "Root"
         else:
             return None

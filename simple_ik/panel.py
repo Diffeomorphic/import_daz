@@ -37,7 +37,7 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and ob.DazSimpleIK)
+        return (ob and ob.get("DazSimpleIK"))
 
     def draw(self, context):
         rig = context.object
