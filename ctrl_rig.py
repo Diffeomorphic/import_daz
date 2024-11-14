@@ -304,7 +304,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 class DAZ_OT_AutoEulers(DazPropsOperator, IsArmature):
     bl_idname = "daz.auto_eulers"
     bl_label = "Auto Eulers"
-    bl_description = "Convert all driver targets to auto Eulers.\nImproves consistency during animation"
+    bl_description = "Convert all driver targets to auto Eulers.\nAvoids some popping during animation at the cost of JCMs accuracy"
     bl_options = {'UNDO'}
 
     useQuatsOnly : BoolProperty(
@@ -315,20 +315,23 @@ class DAZ_OT_AutoEulers(DazPropsOperator, IsArmature):
         self.layout.prop(self, "useQuatsOnly")
 
     def run(self, context):
-        def autoEuler(rna):
-            if rna.animation_data:
-                for fcu in rna.animation_data.drivers:
-                    for var in fcu.driver.variables:
-                        for trg in var.targets:
-                            if not self.useQuatsOnly or trg.bone_target in quats:
-                                trg.rotation_mode = 'AUTO'
+        makeAutoEulers(context.object, (not self.useQuatsOnly))
 
-        rig = context.object
-        quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
-        autoEuler(rig)
-        autoEuler(rig.data)
-        for ob in getShapeChildren(rig):
-            autoEuler(ob.data.shape_keys)
+
+def makeAutoEulers(rig, useAll):
+    def autoEuler(rna):
+        if rna.animation_data:
+            for fcu in rna.animation_data.drivers:
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        if useAll or trg.bone_target in quats:
+                            trg.rotation_mode = 'AUTO'
+
+    quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
+    autoEuler(rig)
+    autoEuler(rig.data)
+    for ob in getShapeChildren(rig):
+        autoEuler(ob.data.shape_keys)
 
 #-------------------------------------------------------------
 #   Initialize

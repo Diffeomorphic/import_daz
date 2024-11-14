@@ -175,18 +175,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
         self.layout.prop(self, "addTweakBones")
-        Fixer.draw(self, context)
-        self.layout.prop(self, "useAnkleIk")
-        self.layout.prop(self, "keepG9Twist")
-        self.layout.prop(self, "useRaiseError")
-
-
-    def drawRigify(self):
+        self.drawMeta()
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useShaftWinder")
         if self.useShaftWinder:
             self.layout.prop(self, "shaftName")
+        self.layout.prop(self, "useAnkleIk")
+        self.layout.prop(self, "useAutoEuler")
+        self.layout.prop(self, "keepG9Twist")
+        self.layout.prop(self, "useRaiseError")
 
 
     def invoke(self, context, event):
@@ -368,6 +366,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         deletes = self.fixConstraints(rig)
         self.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
+        if self.useAutoEuler:
+            from ..ctrl_rig import makeAutoEulers
+            makeAutoEulers(rig, False)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)
         showProgress(22, 25, "  Collect deform bones")

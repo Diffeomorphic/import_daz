@@ -531,7 +531,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     useAutoEuler : BoolProperty(
         name = "Auto Euler",
-        description = "Use Auto Euler as driver rotation mode for quaternion bones")
+        description = "Use Auto Euler as driver rotation mode for quaternion bones.\nAvoids some popping during animation at the cost of JCMs accuracy")
 
     caseSensitivePaths : BoolProperty(
         name = "Case-Sensitive Paths",

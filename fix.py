@@ -54,6 +54,11 @@ class Fixer(DriverUser):
         description = "Generate IK controls for tongue",
         default = False)
 
+    useAutoEuler : BoolProperty(
+        name = "Auto Euler",
+        description = "Use Auto Euler as driver rotation mode for quaternion bones.\nAvoids some popping during animation at the cost of JCMs accuracy",
+        default = True)
+
     keepRig : BoolProperty(
         name = "Keep DAZ Rig",
         description = "Keep the original DAZ rig for deformation",
@@ -64,11 +69,7 @@ class Fixer(DriverUser):
         description = "Change the rest pose of the deform rig to match the control rig",
         default = False)
 
-    def draw(self, context):
-        self.drawMeta(context.object)
-        self.drawRigify()
-
-    def drawMeta(self, rig):
+    def drawMeta(self):
         self.layout.prop(self, "keepRig")
         if self.keepRig:
             self.layout.prop(self, "useModifyDazRig")
@@ -77,6 +78,7 @@ class Fixer(DriverUser):
     def drawRigify(self):
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useImproveIk")
+        self.layout.prop(self, "useAutoEuler")
 
 
     def __init__(self):

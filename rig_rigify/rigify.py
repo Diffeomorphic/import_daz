@@ -951,6 +951,10 @@ class Rigifier(RigifyCommon):
             from ..rig_utils import improveIk
             improveIk(gen, exclude=self.tongueBones)
 
+        if self.useAutoEuler:
+            from ..ctrl_rig import makeAutoEulers
+            makeAutoEulers(gen, True)
+
         #Clean up
         print("  Clean up")
         #gen.data.display_type = 'WIRE'
@@ -1367,7 +1371,8 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
         self.layout.prop(self, "useDeleteMeta")
         if bpy.app.version >= (3,3,0):
             self.layout.prop(self, "useSeparateIkToe")
-        Fixer.draw(self, context)
+        self.drawMeta()
+        self.drawRigify()
 
 
     def storeState(self, context):
@@ -1404,10 +1409,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists, Constrai
 
     def draw(self, context):
         MetaMaker.draw(self, context)
-        Fixer.draw(self, context)
-
-    def drawRigify(self):
-        pass
+        self.drawMeta()
 
     def __init__(self):
         Fixer.__init__(self)
@@ -1439,10 +1441,7 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
         ConstraintStore.__init__(self)
 
     def draw(self, context):
-        Fixer.draw(self, context)
-
-    def drawMeta(self, rig):
-        pass
+        self.drawRigify()
 
     @classmethod
     def poll(self, context):
