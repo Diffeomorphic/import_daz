@@ -884,16 +884,6 @@ def findSeams(ob):
     print("Seams found")
     return  faceverts, vertfaces, neighbors,seams
 
-
-class DAZ_OT_FindSeams(DazOperator, IsMesh):
-    bl_idname = "daz.find_seams"
-    bl_label = "Find Seams"
-    bl_description = "Create seams based on existing UVs"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        findSeams(context.object)
-
 #-------------------------------------------------------------
 #   Select random strands
 #-------------------------------------------------------------
@@ -1641,7 +1631,6 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_FindSeams,
     DAZ_OT_SelectRandomStrands,
     DAZ_OT_SelectStrandsByWidth,
     DAZ_OT_SelectStrandsBySize,

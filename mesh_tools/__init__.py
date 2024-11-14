@@ -25,10 +25,14 @@ if not DEBUG:
 elif "MeshTools" in locals():
     print("Reloading Mesh Tools")
     import imp
+    imp.reload(vertex_groups)
+    imp.reload(uvmaps)
     imp.reload(lowpoly)
     imp.reload(mesh_panel)
 else:
     print("Loading Mesh Tools")
+    from . import vertex_groups
+    from . import uvmaps
     from . import lowpoly
     from . import mesh_panel
 
@@ -40,11 +44,15 @@ MeshTools = True
 
 def register():
     print("Register Mesh Tools")
-    from . import lowpoly, mesh_panel
+    from . import vertex_groups, uvmaps, lowpoly, mesh_panel
+    vertex_groups.register()
+    uvmaps.register()
     lowpoly.register()
     mesh_panel.register()
 
 def unregister():
-    from . import lowpoly, mesh_panel
+    from . import vertex_groups, uvmaps, lowpoly, mesh_panel
     mesh_panel.unregister()
     lowpoly.unregister()
+    uvmaps.unregister()
+    vertex_groups.unregister()

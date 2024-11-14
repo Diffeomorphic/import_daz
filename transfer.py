@@ -127,40 +127,8 @@ class MatchOperator(DazPropsOperator):
         self.match = (tris, w, offsets)
 
 #----------------------------------------------------------
-#   Threshold
-#----------------------------------------------------------
-
-class ThresholdFloat:
-    threshold : FloatProperty(
-        name = "Threshold",
-        description = "Minimum vertex weight to keep",
-        min = 0.0, max = 1.0,
-        precision = 4,
-        default = 1e-3)
-
-#----------------------------------------------------------
 #   Vertex group transfer
 #----------------------------------------------------------
-
-class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
-    bl_idname = "daz.transfer_vertex_groups"
-    bl_label = "Transfer Vertex Groups"
-    bl_description = "Transfer vertex groups from active to selected"
-    bl_options = {'UNDO'}
-
-    def draw(self, context):
-        self.layout.prop(self, "threshold")
-
-    def run(self, context):
-        src = context.object
-        if not src.vertex_groups:
-            raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
-        t1 = perf_counter()
-        targets = list(self.getTargets(src, context))
-        transferVertexGroups(context, src, targets, self.threshold)
-        t2 = perf_counter()
-        print("Vertex groups transferred in %.1f seconds" % (t2-t1))
-
 
 def transferVertexGroups(context, src, targets, threshold):
     activateObject(context, src)
@@ -184,23 +152,6 @@ def transferVertexGroups(context, src, targets, threshold):
 #   UV layer transfer
 #----------------------------------------------------------
 
-class DAZ_OT_TransferUvLayers(DazOperator, IsMesh):
-    bl_idname = "daz.transfer_uv_layers"
-    bl_label = "Transfer UV Layers"
-    bl_description = "Transfer UV layers from active to selected"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        src = context.object
-        if not src.data.uv_layers:
-            raise DazError("No UV layers found")
-        targets = [ob for ob in getSelectedMeshes(context) if ob != src]
-        t1 = perf_counter()
-        transferUvLayers(context, src, targets)
-        t2 = perf_counter()
-        print("UV layers transferred in %.1f seconds" % (t2-t1))
-
-
 def transferUvLayers(context, src, targets):
     activateObject(context, src)
     for trg in targets:
@@ -211,29 +162,6 @@ def transferUvLayers(context, src, targets):
         loop_mapping = 'NEAREST_POLYNOR',
         layers_select_src = 'ALL',
         layers_select_dst = 'NAME')
-
-#----------------------------------------------------------
-#   Copy vertex groups by number
-#----------------------------------------------------------
-
-class DAZ_OT_CopyVertexGroupsByNumber(DazOperator, IsMesh):
-    bl_idname = "daz.copy_vertex_groups_by_number"
-    bl_label = "Copy Vertex Groups By Number"
-    bl_description = "Copy vertex groups from active to selected meshes with the same number of vertices"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        from .finger import getFingerPrint
-        from .modifier import copyVertexGroups
-        src = context.object
-        if not src.vertex_groups:
-            raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
-        for trg in getSelectedMeshes(context):
-            if trg != src:
-                ok,msg = copyVertexGroups(src, trg)
-                if not ok:
-                    msg = "Cannot copy vertex groups %s" % msg
-                    raise DazError(msg)
 
 #----------------------------------------------------------
 #   Morphs transfer
@@ -1104,21 +1032,19 @@ class DAZ_OT_MixShapekeys(DazOperator, IsShape):
 
 #-------------------------------------------------------------
 #   Prune vertex groups
-#   pruneVertexGroups used in proxy.py
 #-------------------------------------------------------------
 
-def findVertexGroups(ob, bnames):
-    nverts = len(ob.data.vertices)
-    nvgrps = len(ob.vertex_groups)
-    vnames = [vgrp.name for vgrp in ob.vertex_groups if vgrp.name not in bnames]
-    weights = dict([(gn, np.zeros(nverts, dtype=float)) for gn in range(nvgrps)])
-    for v in ob.data.vertices:
-        for g in v.groups:
-            weights[g.group][v.index] = g.weight
-    return vnames,weights
-
-
 def pruneVertexGroups(ob, threshold, bnames, verbose):
+    def findVertexGroups(ob, bnames):
+        nverts = len(ob.data.vertices)
+        nvgrps = len(ob.vertex_groups)
+        vnames = [vgrp.name for vgrp in ob.vertex_groups if vgrp.name not in bnames]
+        weights = dict([(gn, np.zeros(nverts, dtype=float)) for gn in range(nvgrps)])
+        for v in ob.data.vertices:
+            for g in v.groups:
+                weights[g.group][v.index] = g.weight
+        return vnames,weights
+
     vnames,weights = findVertexGroups(ob, bnames)
     for vgrp in list(ob.vertex_groups):
         ob.vertex_groups.remove(vgrp)
@@ -1133,20 +1059,6 @@ def pruneVertexGroups(ob, threshold, bnames, verbose):
                 vgrp.add([int(vn)], cweights[vn], 'REPLACE')
             if verbose:
                 print("  * %s" % vname)
-
-
-class DAZ_OT_PruneVertexGroups(DazPropsOperator, ThresholdFloat, IsMesh):
-    bl_idname = "daz.prune_vertex_groups"
-    bl_label = "Prune Vertex Groups"
-    bl_description = "Remove vertices and groups with weights below threshold"
-    bl_options = {'UNDO'}
-
-    def draw(self, context):
-        self.layout.prop(self, "threshold")
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            pruneVertexGroups(ob, self.threshold, [], True)
 
 #----------------------------------------------------------
 #   Shapekey to vertexgroup
@@ -1208,11 +1120,7 @@ def checkObjectTransforms(ob):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_TransferVertexGroups,
-    DAZ_OT_TransferUvLayers,
-    DAZ_OT_CopyVertexGroupsByNumber,
     DAZ_OT_TransferShapekeys,
-    DAZ_OT_PruneVertexGroups,
     DAZ_OT_ApplyAllShapekeys,
     DAZ_OT_ApplyActiveShapekey,
     DAZ_OT_MixShapekeys,

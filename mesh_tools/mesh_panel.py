@@ -22,7 +22,16 @@ import bpy
 from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
 
 
+class DAZ_PT_Mesh(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_Mesh"
+    bl_label = "Mesh"
+
+    def draw(self, context):
+        pass
+
+
 class DAZ_PT_Lowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Mesh"
     bl_idname = "DAZ_PT_Lowpoly"
     bl_label = "Lowpoly"
 
@@ -33,12 +42,40 @@ class DAZ_PT_Lowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.add_push")
 
 
+class DAZ_PT_UvMaps(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Mesh"
+    bl_idname = "DAZ_PT_UvMaps"
+    bl_label = "UV Maps"
+
+    def draw(self, context):
+        self.layout.operator("daz.find_seams")
+        self.layout.operator("daz.load_uv")
+        self.layout.operator("daz.collapse_udims")
+        self.layout.operator("daz.restore_udims")
+
+
+class DAZ_PT_VertexGroups(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Mesh"
+    bl_idname = "DAZ_PT_VertexGroups"
+    bl_label = "Vertex Groups"
+
+    def draw(self, context):
+        self.layout.operator("daz.limit_vertex_groups")
+        self.layout.operator("daz.prune_vertex_groups")
+        self.layout.operator("daz.create_graft_groups")
+        self.layout.operator("daz.transfer_vertex_groups")
+        self.layout.operator("daz.transfer_uv_layers")
+        self.layout.operator("daz.modify_vertex_group")
+
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
 classes = [
+    DAZ_PT_Mesh,
     DAZ_PT_Lowpoly,
+    DAZ_PT_UvMaps,
+    DAZ_PT_VertexGroups,
 ]
 
 def register():

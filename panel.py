@@ -257,13 +257,9 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         #self.layout.operator("daz.replace_materials")
         self.layout.operator("daz.scale_materials")
         self.layout.separator()
-        self.layout.operator("daz.load_uv")
-        self.layout.separator()
         self.layout.operator("daz.prune_node_trees")
         self.layout.operator("daz.prune_uv_maps")
         self.layout.separator()
-        self.layout.operator("daz.collapse_udims")
-        self.layout.operator("daz.restore_udims")
         self.layout.operator("daz.tiles_from_geograft")
         self.layout.operator("daz.fix_texture_tiles")
         self.layout.separator()
@@ -280,18 +276,10 @@ class DAZ_PT_AdvancedMesh(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Mesh"
 
     def draw(self, context):
-        self.layout.operator("daz.limit_vertex_groups")
-        self.layout.operator("daz.prune_vertex_groups")
-        self.layout.operator("daz.create_graft_groups")
-        self.layout.operator("daz.transfer_vertex_groups")
-        self.layout.operator("daz.transfer_uv_layers")
-        self.layout.operator("daz.modify_vertex_group")
-        self.layout.separator()
         self.layout.operator("daz.apply_subsurf")
         self.layout.operator("daz.apply_multires")
         self.layout.operator("daz.apply_active_modifier")
         self.layout.operator("daz.copy_modifiers")
-        self.layout.operator("daz.find_seams")
 
 
 class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):

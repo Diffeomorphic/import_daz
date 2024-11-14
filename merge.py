@@ -870,50 +870,6 @@ def copyModifier(smod, tmod):
                     pass
 
 #-------------------------------------------------------------
-#   Create graft and mask vertex groups
-#-------------------------------------------------------------
-
-class DAZ_OT_CreateGraftGroups(DazOperator):
-    bl_idname = "daz.create_graft_groups"
-    bl_label = "Greate Graft Groups"
-    bl_description = "Create vertex groups from graft information"
-    bl_options = {'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and ob.data.DazGraftGroup)
-
-    def run(self, context):
-        graft = context.object
-        objects = []
-        for ob in getSelectedMeshes(context):
-            if ob != graft:
-                objects.append(ob)
-        if len(objects) != 1:
-            raise DazError("Exactly two meshes must be selected.    ")
-        hum = objects[0]
-        gname = "%s:Graft" % graft.data.name
-        mname = "%s:Mask" % graft.data.name
-        avnums = [pair.a for pair in graft.data.DazGraftGroup]
-        self.createVertexGroup(graft, gname, avnums)
-        bvnums = [pair.b for pair in graft.data.DazGraftGroup]
-        self.createVertexGroup(hum, gname, bvnums)
-        mask = {}
-        for face in graft.data.DazMaskGroup:
-            for vn in hum.data.polygons[face.a].vertices:
-                if vn not in bvnums:
-                    mask[vn] = True
-        self.createVertexGroup(hum, mname, mask.keys())
-
-
-    def createVertexGroup(self, ob, gname, vnums):
-        vgrp = ob.vertex_groups.new(name=gname)
-        for vn in vnums:
-            vgrp.add([vn], 1, 'REPLACE')
-        return vgrp
-
-#-------------------------------------------------------------
 #   Merge UV sets
 #-------------------------------------------------------------
 
@@ -1831,7 +1787,6 @@ class DAZ_OT_MergeToes(DazOperator, IsArmature):
 
 classes = [
     DAZ_OT_MergeGeografts,
-    DAZ_OT_CreateGraftGroups,
     DAZ_OT_MergeUvLayers,
     DAZ_OT_MergeMeshes,
     DAZ_OT_MergeRigs,

@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import math
 from mathutils import Vector, Matrix
 import os
@@ -25,9 +24,7 @@ from .asset import Asset, normalizeRef
 from .channels import Channels
 from .utils import *
 from .error import *
-from .load_json import JL
 from .node import Node, Instance, SimNode
-from .fileutils import SingleFile, DufFile
 
 #-------------------------------------------------------------
 #   Geonode
@@ -1735,170 +1732,6 @@ class DAZ_OT_PruneUvMaps(DazOperator, IsMesh):
         for ob in getSelectedMeshes(context):
             pruneUvMaps(ob)
 
-#-------------------------------------------------------------
-#   Collaps UDims
-#-------------------------------------------------------------
-
-def addUdimsToUVs(ob, restore, udim, vdim):
-    mat = ob.data.materials[0]
-    for uvlayer in ob.data.uv_layers:
-        m = 0
-        for fn,f in enumerate(ob.data.polygons):
-            mat = ob.data.materials[f.material_index]
-            if restore:
-                ushift = mat.DazUDim
-                vshift = mat.DazVDim
-            else:
-                ushift = udim - mat.DazUDim
-                vshift = vdim - mat.DazVDim
-            for n in range(len(f.vertices)):
-                uvlayer.data[m].uv[0] += ushift
-                uvlayer.data[m].uv[1] += vshift
-                m += 1
-
-
-class DAZ_OT_CollapseUDims(DazOperator):
-    bl_idname = "daz.collapse_udims"
-    bl_label = "Collapse UDIMs"
-    bl_description = "Restrict UV coordinates to the [0:1] range"
-    bl_options = {'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and not ob.DazUDimsCollapsed)
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            self.collapseUDims(ob)
-
-    def collapseUDims(self, ob):
-        from .material import addUdimTree
-        if ob.DazUDimsCollapsed:
-            return
-        ob.DazUDimsCollapsed = True
-        addUdimsToUVs(ob, False, 0, 0)
-        for mn,mat in enumerate(ob.data.materials):
-            if mat.DazUDimsCollapsed:
-                continue
-            mat.DazUDimsCollapsed = True
-            addUdimTree(mat.node_tree, -mat.DazUDim, -mat.DazVDim)
-
-
-class DAZ_OT_RestoreUDims(DazOperator):
-    bl_idname = "daz.restore_udims"
-    bl_label = "Restore UDIMs"
-    bl_description = "Restore original UV coordinates outside the [0:1] range"
-    bl_options = {'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'MESH' and ob.DazUDimsCollapsed)
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            self.restoreUDims(ob)
-
-    def restoreUDims(self, ob):
-        from .material import addUdimTree
-        if not ob.DazUDimsCollapsed:
-            return
-        ob.DazUDimsCollapsed = False
-        addUdimsToUVs(ob, True, 0, 0)
-        for mn,mat in enumerate(ob.data.materials):
-            if not mat.DazUDimsCollapsed:
-                continue
-            mat.DazUDimsCollapsed = False
-            addUdimTree(mat.node_tree, mat.DazUDim, mat.DazVDim)
-
-#-------------------------------------------------------------
-#   Load UVs
-#-------------------------------------------------------------
-
-class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
-    bl_idname = "daz.load_uv"
-    bl_label = "Load UV Set"
-    bl_description = "Load a UV set to the active mesh"
-    bl_options = {'UNDO'}
-
-    def invoke(self, context, event):
-        from .fileutils import getFoldersFromObject
-        folders = getFoldersFromObject(context.object, ["UV Sets/"])
-        if folders:
-            self.properties.filepath = folders[0]
-        return SingleFile.invoke(self, context, event)
-
-
-    def run(self, context):
-        from .files import parseAssetFile
-
-        ob = context.object
-        me = ob.data
-        LS.forUV(ob)
-        struct = JL.load(self.filepath)
-        asset = parseAssetFile(struct)
-        if asset is None or len(asset.uvsets) == 0:
-            raise DazError ("Not an UV asset:\n  '%s'" % self.filepath)
-
-        for uvset in asset.uvsets:
-            polyverts = uvset.getPolyVerts(me)
-            uvset.checkPolyverts(me, polyverts, True)
-            uvlayer = makeNewUvLayer(me, uvset.getLabel(), False)
-            vnmax = len(uvset.uvs)
-            m = 0
-            for fn,f in enumerate(me.polygons):
-                for n in range(len(f.vertices)):
-                    vn = polyverts[f.index][n]
-                    if vn < vnmax:
-                        uv = uvset.uvs[vn]
-                        uvlayer.data[m].uv = uv
-                    m += 1
-
-#----------------------------------------------------------
-#   Prune vertex groups
-#----------------------------------------------------------
-
-class DAZ_OT_LimitVertexGroups(DazPropsOperator, IsMesh):
-    bl_idname = "daz.limit_vertex_groups"
-    bl_label = "Limit Vertex Groups"
-    bl_description = "Limit the number of vertex groups per vertex"
-    bl_options = {'UNDO'}
-
-    limit : IntProperty(
-        name = "Limit",
-        description = "Max number of vertex group per vertex",
-        default = 4,
-        min = 1, max = 10
-    )
-
-    def draw(self, context):
-        self.layout.prop(self, "limit")
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            self.limitVertexGroups(ob)
-
-    def limitVertexGroups(self, ob):
-        deletes = dict([(vgrp.index, []) for vgrp in ob.vertex_groups])
-        weights = dict([(vgrp.index, []) for vgrp in ob.vertex_groups])
-        for v in ob.data.vertices:
-            data = [(g.weight, g.group) for g in v.groups]
-            if len(data) > self.limit:
-                data.sort()
-                vnmin = len(data) - self.limit
-                for w,gn in data[0:vnmin]:
-                    deletes[gn].append(v.index)
-                wsum = sum([w for w,gn in data[vnmin:]])
-                for w,gn in data[vnmin:]:
-                    weights[gn].append((v.index, w/wsum))
-        for vgrp in ob.vertex_groups:
-            vnums = deletes[vgrp.index]
-            if vnums:
-                vgrp.remove(vnums)
-            for vn,w in weights[vgrp.index]:
-                vgrp.add([vn], w, 'REPLACE')
-
 #----------------------------------------------------------
 #   Finalize meshes
 #----------------------------------------------------------
@@ -1987,10 +1820,6 @@ def getMeshDataFile(filepath):
 classes = [
     DAZ_OT_PruneUvMaps,
     DAZ_OT_MakeMultires,
-    DAZ_OT_CollapseUDims,
-    DAZ_OT_RestoreUDims,
-    DAZ_OT_LoadUV,
-    DAZ_OT_LimitVertexGroups,
     DAZ_OT_FinalizeMeshes,
 ]
 

@@ -1,0 +1,176 @@
+#  DAZ Importer - Tools for rigging figures imported with the DAZ Importer
+#  Copyright (c) 2016-2024, Thomas Larsson
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import bpy
+from ..error import *
+from ..utils import *
+from ..fileutils import SingleFile, DufFile
+
+#-------------------------------------------------------------
+#   Find seams
+#-------------------------------------------------------------
+
+class DAZ_OT_FindSeams(DazOperator, IsMesh):
+    bl_idname = "daz.find_seams"
+    bl_label = "Find Seams"
+    bl_description = "Create seams based on existing UVs"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from ..proxy import findSeams
+        findSeams(context.object)
+
+#-------------------------------------------------------------
+#   Load UVs
+#-------------------------------------------------------------
+
+class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
+    bl_idname = "daz.load_uv"
+    bl_label = "Load UV Set"
+    bl_description = "Load a UV set to the active mesh"
+    bl_options = {'UNDO'}
+
+    def invoke(self, context, event):
+        from ..fileutils import getFoldersFromObject
+        folders = getFoldersFromObject(context.object, ["UV Sets/"])
+        if folders:
+            self.properties.filepath = folders[0]
+        return SingleFile.invoke(self, context, event)
+
+
+    def run(self, context):
+        from ..files import parseAssetFile
+        from ..load_json import JL
+        from ..geometry import makeNewUvLayer
+
+        ob = context.object
+        me = ob.data
+        LS.forUV(ob)
+        struct = JL.load(self.filepath)
+        asset = parseAssetFile(struct)
+        if asset is None or len(asset.uvsets) == 0:
+            raise DazError ("Not an UV asset:\n  '%s'" % self.filepath)
+
+        for uvset in asset.uvsets:
+            polyverts = uvset.getPolyVerts(me)
+            uvset.checkPolyverts(me, polyverts, True)
+            uvlayer = makeNewUvLayer(me, uvset.getLabel(), False)
+            vnmax = len(uvset.uvs)
+            m = 0
+            for fn,f in enumerate(me.polygons):
+                for n in range(len(f.vertices)):
+                    vn = polyverts[f.index][n]
+                    if vn < vnmax:
+                        uv = uvset.uvs[vn]
+                        uvlayer.data[m].uv = uv
+                    m += 1
+
+#-------------------------------------------------------------
+#   Collaps UDims
+#-------------------------------------------------------------
+
+def addUdimsToUVs(ob, restore, udim, vdim):
+    mat = ob.data.materials[0]
+    for uvlayer in ob.data.uv_layers:
+        m = 0
+        for fn,f in enumerate(ob.data.polygons):
+            mat = ob.data.materials[f.material_index]
+            if restore:
+                ushift = mat.DazUDim
+                vshift = mat.DazVDim
+            else:
+                ushift = udim - mat.DazUDim
+                vshift = vdim - mat.DazVDim
+            for n in range(len(f.vertices)):
+                uvlayer.data[m].uv[0] += ushift
+                uvlayer.data[m].uv[1] += vshift
+                m += 1
+
+
+class DAZ_OT_CollapseUDims(DazOperator):
+    bl_idname = "daz.collapse_udims"
+    bl_label = "Collapse UDIMs"
+    bl_description = "Restrict UV coordinates to the [0:1] range"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and not ob.DazUDimsCollapsed)
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            self.collapseUDims(ob)
+
+    def collapseUDims(self, ob):
+        from ..material import addUdimTree
+        if ob.DazUDimsCollapsed:
+            return
+        ob.DazUDimsCollapsed = True
+        addUdimsToUVs(ob, False, 0, 0)
+        for mn,mat in enumerate(ob.data.materials):
+            if mat.DazUDimsCollapsed:
+                continue
+            mat.DazUDimsCollapsed = True
+            addUdimTree(mat.node_tree, -mat.DazUDim, -mat.DazVDim)
+
+
+class DAZ_OT_RestoreUDims(DazOperator):
+    bl_idname = "daz.restore_udims"
+    bl_label = "Restore UDIMs"
+    bl_description = "Restore original UV coordinates outside the [0:1] range"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and ob.type == 'MESH' and ob.DazUDimsCollapsed)
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            self.restoreUDims(ob)
+
+    def restoreUDims(self, ob):
+        from ..material import addUdimTree
+        if not ob.DazUDimsCollapsed:
+            return
+        ob.DazUDimsCollapsed = False
+        addUdimsToUVs(ob, True, 0, 0)
+        for mn,mat in enumerate(ob.data.materials):
+            if not mat.DazUDimsCollapsed:
+                continue
+            mat.DazUDimsCollapsed = False
+            addUdimTree(mat.node_tree, mat.DazUDim, mat.DazVDim)
+
+#-------------------------------------------------------------
+#   Initialize
+#-------------------------------------------------------------
+
+classes = [
+    DAZ_OT_FindSeams,
+    DAZ_OT_LoadUV,
+    DAZ_OT_CollapseUDims,
+    DAZ_OT_RestoreUDims,
+]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
