@@ -193,14 +193,19 @@ class CyclesMaterial(Material):
         mat = self.rna
         if useRefraction is None and mat.blend_method != 'OPAQUE':
             pass
-        elif useBlend:
-            mat.blend_method = 'BLEND'
-            mat.show_transparent_back = False
+        elif hasattr(mat, "surface_render_method"):
+            mat.surface_render_method = 'DITHERED'
         else:
-            mat.blend_method = 'HASHED'
+            if useBlend:
+                mat.blend_method = 'BLEND'
+                mat.show_transparent_back = False
+            else:
+                mat.blend_method = 'HASHED'
         if useRefraction is not None:
             mat.use_screen_refraction = useRefraction
-        if hasattr(mat, "transparent_shadow_method"):
+        if hasattr(mat, "use_transparent_shadow"):
+            mat.use_transparent_shadow = True
+        elif hasattr(mat, "transparent_shadow_method"):
             mat.transparent_shadow_method = 'HASHED'
         else:
             mat.shadow_method = 'HASHED'
