@@ -270,18 +270,6 @@ class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.make_shader_groups")
 
 
-class DAZ_PT_AdvancedMesh(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
-    bl_idname = "DAZ_PT_AdvancedMesh"
-    bl_label = "Mesh"
-
-    def draw(self, context):
-        self.layout.operator("daz.apply_subsurf")
-        self.layout.operator("daz.apply_multires")
-        self.layout.operator("daz.apply_active_modifier")
-        self.layout.operator("daz.copy_modifiers")
-
-
 class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedSimulation"
@@ -1053,7 +1041,6 @@ classes = [
     DAZ_PT_Advanced,
     DAZ_PT_AdvancedHDMesh,
     DAZ_PT_AdvancedMaterials,
-    DAZ_PT_AdvancedMesh,
     DAZ_PT_AdvancedSimulation,
     DAZ_PT_RiggingTools,
     DAZ_PT_AdvancedMorphs,

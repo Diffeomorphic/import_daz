@@ -67,6 +67,18 @@ class DAZ_PT_VertexGroups(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.transfer_uv_layers")
         self.layout.operator("daz.modify_vertex_group")
 
+
+class DAZ_PT_Modifiers(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Mesh"
+    bl_idname = "DAZ_PT_Modifiers"
+    bl_label = "Modifiers"
+
+    def draw(self, context):
+        self.layout.operator("daz.apply_subsurf")
+        self.layout.operator("daz.apply_multires")
+        self.layout.operator("daz.apply_active_modifier")
+        self.layout.operator("daz.copy_modifiers")
+
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
@@ -75,6 +87,7 @@ classes = [
     DAZ_PT_Mesh,
     DAZ_PT_Lowpoly,
     DAZ_PT_UvMaps,
+    DAZ_PT_Modifiers,
     DAZ_PT_VertexGroups,
 ]
 

@@ -264,6 +264,9 @@ def unregister():
         if prefs.useShellEdit:
             from . import shell_edit
             shell_edit.unregister()
+        if prefs.useMeshTools:
+            from . import mesh_tools
+            mesh_tools.unregister()
         if prefs.useSimpleIk:
             from . import simple_ik
             simple_ik.unregister()
