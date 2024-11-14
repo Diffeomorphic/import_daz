@@ -337,7 +337,7 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.remove_driven_bones")
         self.layout.operator("daz.fix_legacy_posable")
         self.layout.operator("daz.fix_limit_rot_constraints")
-        self.layout.operator("daz.auto_eulers")
+        self.layout.operator("daz.set_driver_modes")
 
 
 class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):

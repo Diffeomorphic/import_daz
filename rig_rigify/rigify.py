@@ -951,9 +951,9 @@ class Rigifier(RigifyCommon):
             from ..rig_utils import improveIk
             improveIk(gen, exclude=self.tongueBones)
 
-        if self.useAutoEuler:
-            from ..ctrl_rig import makeAutoEulers
-            makeAutoEulers(gen, True)
+        if self.driverRotationMode:
+            from ..ctrl_rig import setDriverModes
+            setDriverModes(gen, self.driverRotationMode, True)
 
         #Clean up
         print("  Clean up")

@@ -21,6 +21,7 @@ from mathutils import *
 from .error import *
 from .utils import *
 from .driver import DriverUser, addDriver
+from .daz import DriverModeItems
 
 #-------------------------------------------------------------
 #   Mha features
@@ -54,10 +55,11 @@ class Fixer(DriverUser):
         description = "Generate IK controls for tongue",
         default = False)
 
-    useAutoEuler : BoolProperty(
-        name = "Auto Euler",
-        description = "Use Auto Euler as driver rotation mode for quaternion bones.\nAvoids some popping during animation at the cost of JCMs accuracy",
-        default = True)
+    driverRotationMode : EnumProperty(
+        items = DriverModeItems,
+        name = "Rotation Mode",
+        description = "Use this rotation mode for drivers.\nNon-native modes avoids some popping during animation at the cost of JCMs accuracy",
+        default = 'AUTO')
 
     keepRig : BoolProperty(
         name = "Keep DAZ Rig",
@@ -78,7 +80,7 @@ class Fixer(DriverUser):
     def drawRigify(self):
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useImproveIk")
-        self.layout.prop(self, "useAutoEuler")
+        self.layout.prop(self, "driverRotationMode")
 
 
     def __init__(self):

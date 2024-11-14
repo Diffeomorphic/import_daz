@@ -301,11 +301,19 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 #   Auto Eulers
 #-------------------------------------------------------------
 
-class DAZ_OT_AutoEulers(DazPropsOperator, IsArmature):
-    bl_idname = "daz.auto_eulers"
-    bl_label = "Auto Eulers"
-    bl_description = "Convert all driver targets to auto Eulers.\nAvoids some popping during animation at the cost of JCMs accuracy"
+from .daz import DriverModeItems
+
+class DAZ_OT_SetDriverModes(DazPropsOperator, IsArmature):
+    bl_idname = "daz.set_driver_modes"
+    bl_label = "Set Driver Modes"
+    bl_description = "Change driver rotation modes.\nAvoids some popping during animation at the cost of JCMs accuracy"
     bl_options = {'UNDO'}
+
+    rotMode : EnumProperty(
+        items = DriverModeItems,
+        name = "Rotation Mode",
+        description = "Use this rotation mode",
+        default = 'AUTO')
 
     useQuatsOnly : BoolProperty(
         name = "Only Quaternion Bones",
@@ -313,25 +321,26 @@ class DAZ_OT_AutoEulers(DazPropsOperator, IsArmature):
 
     def draw(self, context):
         self.layout.prop(self, "useQuatsOnly")
+        self.layout.prop(self, "rotMode")
 
     def run(self, context):
-        makeAutoEulers(context.object, (not self.useQuatsOnly))
+        setDriverModes(context.object, self.rotMode, (not self.useQuatsOnly))
 
 
-def makeAutoEulers(rig, useAll):
-    def autoEuler(rna):
+def setDriverModes(rig, rotmode, useAll):
+    def setModes(rna):
         if rna.animation_data:
             for fcu in rna.animation_data.drivers:
                 for var in fcu.driver.variables:
                     for trg in var.targets:
                         if useAll or trg.bone_target in quats:
-                            trg.rotation_mode = 'AUTO'
+                            trg.rotation_mode = rotmode
 
     quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
-    autoEuler(rig)
-    autoEuler(rig.data)
+    setModes(rig)
+    setModes(rig.data)
     for ob in getShapeChildren(rig):
-        autoEuler(ob.data.shape_keys)
+        setModes(ob.data.shape_keys)
 
 #-------------------------------------------------------------
 #   Initialize
@@ -341,7 +350,7 @@ classes = [
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,
-    DAZ_OT_AutoEulers,
+    DAZ_OT_SetDriverModes,
 ]
 
 def register():
