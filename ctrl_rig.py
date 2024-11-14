@@ -336,6 +336,8 @@ def setDriverModes(rig, rotmode, useAll):
                         if useAll or trg.bone_target in quats:
                             trg.rotation_mode = rotmode
 
+    if rotmode == 'NATIVE':
+        return
     quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
     setModes(rig)
     setModes(rig.data)
