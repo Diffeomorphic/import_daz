@@ -24,7 +24,8 @@ from ..error import *
 from ..utils import *
 from .layers import *
 from ..fileutils import DF
-from ..fix import Fixer, GizmoUser, BendTwists, ConstraintStore
+from ..store import ConstraintStore
+from ..fix import Fixer, GizmoUser, BendTwists
 from ..bone_data import BD
 
 #-------------------------------------------------------------

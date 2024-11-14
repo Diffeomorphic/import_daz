@@ -669,7 +669,7 @@ class SkinBinding(Modifier):
             mod.normalize = False
             return mod
 
-        from .dforce import ModStore
+        from .store import ModStore
         if not activateObject(context, ob):
             return
         stores = []

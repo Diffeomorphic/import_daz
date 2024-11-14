@@ -1510,7 +1510,7 @@ class DAZ_OT_CopyModifiers(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useRemoveCloth")
 
     def run(self, context):
-        from .dforce import ModStore
+        from .store import ModStore
         src = context.object
         stores = []
         for mod in list(src.modifiers):
@@ -1612,7 +1612,7 @@ class WidgetConverter:
 
     def inheritLimits(self, pb, pb2, rig):
         if pb2.name.startswith(pb.name):
-            from .fix import copyConstraints
+            from .store import copyConstraints
             pb.lock_location = pb2.lock_location
             pb.lock_rotation = pb2.lock_rotation
             if getConstraint(pb2, 'LIMIT_LOCATION'):

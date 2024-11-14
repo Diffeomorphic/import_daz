@@ -22,7 +22,8 @@ from ..error import *
 from ..utils import *
 from ..propgroups import DazPairGroup
 from ..driver import addDriver
-from ..fix import ConstraintStore, BendTwists, Fixer, GizmoUser
+from ..store import ConstraintStore
+from ..fix import BendTwists, Fixer, GizmoUser
 from ..bone_data import BD
 from ..rig_utils import *
 from .layers import *
@@ -1503,7 +1504,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
 
 
     def copyLocksLimits(self, rig, srcname, trgname, suffix):
-        from ..fix import copyConstraint
+        from ..store import copyConstraint
         src = rig.pose.bones["%s.%s" % (srcname, suffix)]
         trg = rig.pose.bones["%s.%s" % (trgname, suffix)]
         trg.lock_location = src.lock_location

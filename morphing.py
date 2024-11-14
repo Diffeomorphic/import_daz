@@ -1151,7 +1151,7 @@ def getBulgeBone(string):
 
 def createBulges(ob, rig, selection=None, ignoreFingers=True):
     from .driver import removeModifiers, addTransformVar
-    from .dforce import ModStore
+    from .store import ModStore
     stores = []
     for mod in list(ob.modifiers):
         stores.append(ModStore(mod))

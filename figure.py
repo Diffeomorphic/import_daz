@@ -91,7 +91,7 @@ class FigureInstance(Instance):
 
 
     def poseChildren(self, ob, rig):
-        from .fix import ConstraintStore
+        from .store import ConstraintStore
         store = ConstraintStore()
         for child in ob.children:
             if child.type == 'ARMATURE':
@@ -587,7 +587,7 @@ class ExtraBones(DriverUser):
 
 
         from .driver import getShapekeyDriver
-        from .fix import ConstraintStore
+        from .store import ConstraintStore
         if getattr(rig.data, self.attr):
             msg = "Rig %s already has extra %s bones" % (rig.name, self.type)
             print(msg)

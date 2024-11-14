@@ -33,7 +33,7 @@ bl_info = {
 Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
            "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
            "bone_data", "transform", "node", "figure", "bone", "geometry",
-           "fix", "modifier", "load_morph", "morphing", "baked",
+           "store", "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "rig_utils", "category", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
            "guess", "convert", "files", "finger",

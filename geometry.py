@@ -480,7 +480,7 @@ class GeoNode(Node, SimNode):
             else:
                 return
 
-            from .dforce import addModifierFirst
+            from .store import addModifierFirst
             if GS.onScaleEyeMoisture == 'APPLY':
                 mod = addModifierFirst(ob, "Displace", 'DISPLACE')
             else:

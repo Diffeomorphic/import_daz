@@ -275,82 +275,6 @@ class SimSet(DForce):
     type = "SimSet"
 
 #-------------------------------------------------------------
-#  class for storing modifiers
-#-------------------------------------------------------------
-
-def hideModifier(ob, mtype):
-    mod = getModifier(ob, mtype)
-    if mod:
-        store = ModStore(mod)
-        ob.modifiers.remove(mod)
-        return store
-    else:
-        return None
-
-
-class ModStore:
-    def __init__(self, mod):
-        self.name = mod.name
-        self.type = mod.type
-        self.data = {}
-        self.items = {}
-        self.store(mod, self.data)
-        self.settings = {}
-        if hasattr(mod, "settings"):
-            self.store(mod.settings, self.settings)
-        self.collision_settings = {}
-        if hasattr(mod, "collision_settings"):
-            self.store(mod.collision_settings, self.collision_settings)
-
-
-    def store(self, data, struct):
-        for key in dir(data):
-            if (key[0] == '_' or
-                key == "name" or
-                key == "type"):
-                continue
-            value = getattr(data, key)
-            if (isSimpleType(value) or
-                isinstance(value, (bpy.types.Object, bpy.types.NodeTree))):
-                struct[key] = value
-        try:
-            for key,value in data.items():
-                self.items[key] = value
-        except TypeError:
-            pass
-
-
-    def restore(self, ob):
-        mod = ob.modifiers.new(self.name, self.type)
-        self.restoreData(self.data, mod)
-        for key,value in self.items.items():
-            mod[key] = value
-        if self.settings:
-            self.restoreData(self.settings, mod.settings)
-        if self.collision_settings:
-            self.restoreData(self.collision_settings, mod.collision_settings)
-
-
-    def restoreData(self, struct, data):
-        for key,value in struct.items():
-            try:
-                setattr(data, key, value)
-            except:
-                pass
-
-
-def addModifierFirst(ob, modname, modtype, exclude="NONE"):
-    stores = []
-    for mod in ob.modifiers:
-        if mod.type != exclude:
-            stores.append(ModStore(mod))
-            ob.modifiers.remove(mod)
-    mod = ob.modifiers.new(modname, modtype)
-    for store in stores:
-        store.restore(ob)
-    return mod
-
-#-------------------------------------------------------------
 #   Make Simulation
 #-------------------------------------------------------------
 
@@ -852,6 +776,20 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
             mod.use_sparse_bind = True
         bpy.ops.object.surfacedeform_bind(modifier=softbody.name)
         return True
+
+#-------------------------------------------------------------
+#   Utility
+#-------------------------------------------------------------
+
+def hideModifier(ob, mtype):
+    from .store import ModStore
+    mod = getModifier(ob, mtype)
+    if mod:
+        store = ModStore(mod)
+        ob.modifiers.remove(mod)
+        return store
+    else:
+        return None
 
 #-------------------------------------------------------------
 #   Initialize

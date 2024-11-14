@@ -539,7 +539,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         full_body_grp = hum.vertex_groups.new(name=f"FullBody_{hum.name}")
         full_body_grp.add([v.index for v in hum.data.vertices], 1.0, 'REPLACE')
 
-        from .dforce import ModStore
+        from .store import ModStore
         stores = []
         delmasks = []
         for mod in list(hum.modifiers):
@@ -1229,7 +1229,7 @@ class BoneInfo:
 
     def setPoseBone(self, pb, rig):
         from .figure import copyBoneInfo
-        from .fix import copyConstraints
+        from .store import copyConstraints
         copyBoneInfo(self.pb, pb)
         copyConstraints(self.pb, pb, rig)
         if self.matrix_world:

@@ -755,7 +755,7 @@ class HairBuilder(Pinner, Cloth, Collision):
     def addFollowProxy(self, hair, proxy):
         from .geonodes import FollowProxyGroup
         from .tree import addNodeGroup
-        from .dforce import ModStore
+        from .store import ModStore
         stores = []
         for mod in list(hair.modifiers):
             if not (mod.type == 'NODES' and
@@ -2865,7 +2865,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
 def addArmatureModifier(ob, rig, modname):
-    from .dforce import addModifierFirst
+    from .store import addModifierFirst
     mod = getModifier(ob, 'ARMATURE')
     if mod is None:
         mod = addModifierFirst(ob, modname, 'ARMATURE')
