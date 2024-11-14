@@ -220,18 +220,6 @@ class DAZ_PT_Advanced(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.import_daz_manually")
 
 
-class DAZ_PT_AdvancedLowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
-    bl_idname = "DAZ_PT_AdvancedLowpoly"
-    bl_label = "Lowpoly"
-
-    def draw(self, context):
-        self.layout.operator("daz.print_statistics")
-        self.layout.operator("daz.apply_morphs")
-        self.layout.operator("daz.make_lowpoly")
-        self.layout.operator("daz.add_push")
-
-
 class DAZ_PT_AdvancedHDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Advanced"
     bl_idname = "DAZ_PT_AdvancedHDMesh"
@@ -1075,7 +1063,6 @@ classes = [
     DAZ_PT_SetupRigging,
 
     DAZ_PT_Advanced,
-    DAZ_PT_AdvancedLowpoly,
     DAZ_PT_AdvancedHDMesh,
     DAZ_PT_AdvancedMaterials,
     DAZ_PT_AdvancedMesh,

@@ -1,0 +1,144 @@
+#  DAZ Importer - Importer for native DAZ files (.duf, .dsf)
+#  Copyright (c) 2016-2024, Thomas Larsson
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import bpy
+from ..error import *
+from ..utils import *
+
+#-------------------------------------------------------------
+#   Make Low-poly
+#-------------------------------------------------------------
+
+class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
+    bl_idname = "daz.make_lowpoly"
+    bl_label = "Make Low Poly"
+    bl_description = "Replace all selected meshes by low-poly versions"
+    bl_options = {'UNDO'}
+
+    keepUvIslands : BoolProperty(
+        name = "Keep UV Islands",
+        description = "Keep UV islands",
+        default = True)
+
+    iterations : IntProperty(
+        name = "Iterations",
+        description = "Number of times to unsubdivide",
+        default = 2)
+
+    useQuads : BoolProperty(
+        name = "Quads",
+        description = "Convert as many triangles to quads as possible",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "iterations")
+        self.layout.prop(self, "keepUvIslands")
+        self.layout.prop(self, "useQuads")
+
+    def run(self, context):
+        from math import pi
+        for ob in getSelectedMeshes(context):
+            if activateObject(context, ob):
+                setMode('EDIT')
+                bpy.ops.mesh.select_all(action='SELECT')
+                if self.keepUvIslands:
+                    bpy.ops.uv.select_all(action='SELECT')
+                    bpy.ops.uv.seams_from_islands()
+                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    setMode('OBJECT')
+                    for e in ob.data.edges:
+                        if e.use_seam:
+                            e.select = True
+                    setMode('EDIT')
+                    bpy.ops.mesh.select_more()
+                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
+                    bpy.ops.mesh.select_all(action='INVERT')
+                bpy.ops.mesh.unsubdivide(iterations = self.iterations)
+                bpy.ops.mesh.select_all(action='SELECT')
+                if self.useQuads:
+                    setMode('OBJECT')
+                    setMode('EDIT')
+                    bpy.ops.mesh.tris_convert_to_quads(face_threshold=pi, shape_threshold=pi, seam=True)
+                setMode('OBJECT')
+        return
+
+#-------------------------------------------------------------
+#  Apply morphs
+#-------------------------------------------------------------
+
+def applyShapeKeys(ob):
+    from ..category import getShapeKeyCoords
+    if ob.type != 'MESH':
+        return
+    if ob.data.shape_keys:
+        skeys,coords = getShapeKeyCoords(ob)
+        skeys.reverse()
+        for skey in skeys:
+            ob.shape_key_remove(skey)
+        skey = ob.data.shape_keys.key_blocks[0]
+        ob.shape_key_remove(skey)
+        for v in ob.data.vertices:
+            v.co = coords[v.index]
+
+
+class DAZ_OT_ApplyMorphs(DazOperator, IsMesh):
+    bl_idname = "daz.apply_morphs"
+    bl_label = "Apply Morphs"
+    bl_description = "Apply all shapekeys"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            applyShapeKeys(ob)
+
+#-------------------------------------------------------------
+#   Add push
+#-------------------------------------------------------------
+
+class DAZ_OT_AddPush(DazOperator, IsMesh):
+    bl_idname = "daz.add_push"
+    bl_label = "Add Push"
+    bl_description = "Add a push shapekey"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from ..modifier import getBasicShape
+        for ob in getSelectedMeshes(context):
+            basic,skeys,new = getBasicShape(ob)
+            skey = ob.shape_key_add(name="Push")
+            scale = ob.DazScale
+            for n,v in enumerate(ob.data.vertices):
+                skey.data[n].co += v.normal*scale
+
+#----------------------------------------------------------
+#   Initialize
+#----------------------------------------------------------
+
+classes = [
+    DAZ_OT_MakeLowPoly,
+    DAZ_OT_ApplyMorphs,
+    DAZ_OT_AddPush,
+]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)

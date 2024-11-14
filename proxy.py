@@ -28,39 +28,38 @@ from .driver import DriverUser
 #   Find polys
 #-------------------------------------------------------------
 
-def findHumanAndProxy(context):
-    hum = pxy = None
-    for ob in getSelectedMeshes(context):
-        if hum is None:
-            hum = ob
-        else:
-            pxy = ob
-    if len(pxy.data.vertices) > len(hum.data.vertices):
-        ob = pxy
-        pxy = hum
-        hum = ob
-    return hum,pxy
-
-
-def assocPxyHumVerts(hum, pxy):
-    pxyHumVerts = {}
-    hverts = [(hv.co, hv.index) for hv in hum.data.vertices]
-    hverts.sort()
-    pverts = [(pv.co, pv.index) for pv in pxy.data.vertices]
-    pverts.sort()
-    for pco,pvn in pverts:
-        hco,hvn = hverts[0]
-        while (pco-hco).length > 1e-4:
-            hverts = hverts[1:]
-            hco,hvn = hverts[0]
-        pxyHumVerts[pvn] = hvn
-    humPxyVerts = dict([(hvn,None) for hvn in range(len(hum.data.vertices))])
-    for pvn,hvn in pxyHumVerts.items():
-        humPxyVerts[hvn] = pvn
-    return pxyHumVerts, humPxyVerts
-
-
 def findPolys(context):
+
+    def findHumanAndProxy(context):
+        hum = pxy = None
+        for ob in getSelectedMeshes(context):
+            if hum is None:
+                hum = ob
+            else:
+                pxy = ob
+        if len(pxy.data.vertices) > len(hum.data.vertices):
+            ob = pxy
+            pxy = hum
+            hum = ob
+        return hum,pxy
+
+    def assocPxyHumVerts(hum, pxy):
+        pxyHumVerts = {}
+        hverts = [(hv.co, hv.index) for hv in hum.data.vertices]
+        hverts.sort()
+        pverts = [(pv.co, pv.index) for pv in pxy.data.vertices]
+        pverts.sort()
+        for pco,pvn in pverts:
+            hco,hvn = hverts[0]
+            while (pco-hco).length > 1e-4:
+                hverts = hverts[1:]
+                hco,hvn = hverts[0]
+            pxyHumVerts[pvn] = hvn
+        humPxyVerts = dict([(hvn,None) for hvn in range(len(hum.data.vertices))])
+        for pvn,hvn in pxyHumVerts.items():
+            humPxyVerts[hvn] = pvn
+        return pxyHumVerts, humPxyVerts
+
     hum,pxy = findHumanAndProxy(context)
     print(hum, pxy)
     humFaceVerts,humVertFaces = getVertFaces(hum)
@@ -141,15 +140,6 @@ def findPolys(context):
             for hfn in vlist[-1][2]:
                 hf = hum.data.polygons[hfn]
                 hf.select = True
-
-
-class DAZ_OT_FindPolys(DazOperator, IsMeshArmature):
-    bl_idname = "daz.find_polys"
-    bl_label = "Find Polys"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        findPolys(context)
 
 #-------------------------------------------------------------
 #   Make faithful proxy
@@ -839,64 +829,6 @@ def deselectEverything(ob, context):
         v.select = False
 
 #-------------------------------------------------------------
-#   Make Proxy
-#-------------------------------------------------------------
-
-class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
-    bl_idname = "daz.make_lowpoly"
-    bl_label = "Make Low Poly"
-    bl_description = "Replace all selected meshes by low-poly versions"
-    bl_options = {'UNDO'}
-
-    keepUvIslands : BoolProperty(
-        name = "Keep UV Islands",
-        description = "Keep UV islands",
-        default = True)
-
-    iterations : IntProperty(
-        name = "Iterations",
-        description = "Number of times to unsubdivide",
-        default = 2)
-
-    useQuads : BoolProperty(
-        name = "Quads",
-        description = "Convert as many triangles to quads as possible",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "iterations")
-        self.layout.prop(self, "keepUvIslands")
-        self.layout.prop(self, "useQuads")
-
-    def run(self, context):
-        from math import pi
-        for ob in getSelectedMeshes(context):
-            if activateObject(context, ob):
-                setMode('EDIT')
-                bpy.ops.mesh.select_all(action='SELECT')
-                if self.keepUvIslands:
-                    bpy.ops.uv.select_all(action='SELECT')
-                    bpy.ops.uv.seams_from_islands()
-                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
-                    bpy.ops.mesh.select_all(action='DESELECT')
-                    setMode('OBJECT')
-                    for e in ob.data.edges:
-                        if e.use_seam:
-                            e.select = True
-                    setMode('EDIT')
-                    bpy.ops.mesh.select_more()
-                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
-                    bpy.ops.mesh.select_all(action='INVERT')
-                bpy.ops.mesh.unsubdivide(iterations = self.iterations)
-                bpy.ops.mesh.select_all(action='SELECT')
-                if self.useQuads:
-                    setMode('OBJECT')
-                    setMode('EDIT')
-                    bpy.ops.mesh.tris_convert_to_quads(face_threshold=pi, shape_threshold=pi, seam=True)
-                setMode('OBJECT')
-        return
-
-#-------------------------------------------------------------
 #   Find seams
 #-------------------------------------------------------------
 
@@ -1133,35 +1065,6 @@ class DAZ_OT_SelectParentVerts(DazOperator):
         setMode('EDIT')
 
 #-------------------------------------------------------------
-#  Apply morphs
-#-------------------------------------------------------------
-
-def applyShapeKeys(ob):
-    from .category import getShapeKeyCoords
-    if ob.type != 'MESH':
-        return
-    if ob.data.shape_keys:
-        skeys,coords = getShapeKeyCoords(ob)
-        skeys.reverse()
-        for skey in skeys:
-            ob.shape_key_remove(skey)
-        skey = ob.data.shape_keys.key_blocks[0]
-        ob.shape_key_remove(skey)
-        for v in ob.data.vertices:
-            v.co = coords[v.index]
-
-
-class DAZ_OT_ApplyMorphs(DazOperator, IsMesh):
-    bl_idname = "daz.apply_morphs"
-    bl_label = "Apply Morphs"
-    bl_description = "Apply all shapekeys"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            applyShapeKeys(ob)
-
-#-------------------------------------------------------------
 #   Apply subsurf modifier
 #-------------------------------------------------------------
 
@@ -1358,25 +1261,6 @@ class DAZ_OT_PrintStatistics(bpy.types.Operator, IsMesh):
             print(line)
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=450)
-
-#-------------------------------------------------------------
-#   Add push
-#-------------------------------------------------------------
-
-class DAZ_OT_AddPush(DazOperator, IsMesh):
-    bl_idname = "daz.add_push"
-    bl_label = "Add Push"
-    bl_description = "Add a push shapekey"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        from .modifier import getBasicShape
-        for ob in getSelectedMeshes(context):
-            basic,skeys,new = getBasicShape(ob)
-            skey = ob.shape_key_add(name="Push")
-            scale = ob.DazScale
-            for n,v in enumerate(ob.data.vertices):
-                skey.data[n].co += v.normal*scale
 
 #-------------------------------------------------------------
 #   Make deflection
@@ -1757,19 +1641,15 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_FindPolys,
-    DAZ_OT_MakeLowPoly,
     DAZ_OT_FindSeams,
     DAZ_OT_SelectRandomStrands,
     DAZ_OT_SelectStrandsByWidth,
     DAZ_OT_SelectStrandsBySize,
     DAZ_OT_SelectParentVerts,
-    DAZ_OT_ApplyMorphs,
     DAZ_OT_ApplySubsurf,
     DAZ_OT_ApplyMultires,
     DAZ_OT_ApplyActiveModifier,
     DAZ_OT_PrintStatistics,
-    DAZ_OT_AddPush,
     DAZ_OT_MakeDeflection,
     DAZ_OT_CopyModifiers,
     DAZ_OT_ConvertWidgets,
