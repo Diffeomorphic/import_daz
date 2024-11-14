@@ -29,6 +29,7 @@ elif "bpy" in locals():
     imp.reload(ikgoals)
     imp.reload(store)
     imp.reload(bvh)
+    imp.reload(mannequin)
     imp.reload(unreal)
 else:
     print("Loading DAZ Rigging")
@@ -36,6 +37,7 @@ else:
     from . import ikgoals
     from . import store
     from . import bvh
+    from . import mannequin
     from . import unreal
 
 #----------------------------------------------------------
@@ -47,11 +49,12 @@ from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
 
 class DAZ_PT_DazRigBuild(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
-    bl_label = "DAZ Rigging"
+    bl_label = "More Rigging Tools"
 
     def draw(self, context):
-        self.layout.operator("daz.change_prefix_to_suffix")
-        self.layout.operator("daz.change_suffix_to_prefix")
+        self.layout.operator("daz.add_mannequin")
+        self.layout.operator("daz.categorize_objects")
+        self.layout.separator()
         self.layout.operator("daz.select_matching_bones")
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
@@ -61,7 +64,7 @@ class DAZ_PT_DazRigBuild(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.make_eulers")
         self.layout.operator("daz.lock_channels")
         self.layout.operator("daz.clear_center")
-        self.layout.operator("daz.categorize_objects")
+        return
         self.layout.separator()
         self.layout.operator("daz.set_tpose")
         self.layout.operator("daz.save_tpose")
@@ -76,6 +79,7 @@ class DAZ_PT_DazRigPose(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.load_poses_from_file")
         self.layout.operator("daz.key_all_poses")
         self.layout.operator("daz.hide_unused_links")
+        return
         self.layout.separator()
         self.layout.operator("daz.make_unreal")
         self.layout.operator("daz.export_unreal")
@@ -119,18 +123,20 @@ def register():
     print("Register DAZ Rigging")
     for cls in classes:
         bpy.utils.register_class(cls)
-    from . import mute, ikgoals, store, bvh, unreal
+    from . import mute, ikgoals, store, bvh, mannequin, unreal
     mute.register()
     ikgoals.register()
     store.register()
     bvh.register()
-    unreal.register()
+    mannequin.register()
+    #unreal.register()
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-    from . import mute, ikgoals, store, bvh, unreal
-    unreal.unregister()
+    from . import mute, ikgoals, store, bvh, mannequin, unreal
+    #unreal.unregister()
+    mannequin.unregister()
     bvh.unregister()
     store.unregister()
     ikgoals.unregister()

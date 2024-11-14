@@ -17,8 +17,8 @@
 bl_info = {
     "name": "DAZ Importer",
     "author": "Thomas Larsson",
-    "version": (4,2,1),
-    "blender": (4,2,1),
+    "version": (4,3,0),
+    "blender": (4,3,0),
     "location": "UI > DAZ Setup, DAZ Runtime",
     "description": "Importer for native DAZ files (.duf, .dsf)",
     "warning": "",
@@ -52,24 +52,24 @@ elif "bpy" in locals():
     import imp
     for modname in Modules:
         exec("imp.reload(%s)" % modname)
-    imp.reload(export_daz)
-    imp.reload(rig_daz)
-    imp.reload(shell_edit)
     imp.reload(simple_ik)
     imp.reload(rig_mhx)
     imp.reload(rig_rigify)
+    imp.reload(export_daz)
+    imp.reload(rig_daz)
+    imp.reload(shell_edit)
 
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     for modname in Modules:
         exec("from . import %s" % modname)
     from .runtime import morph_armature
-    from . import export_daz
-    from . import rig_daz
-    from . import shell_edit
     from . import simple_ik
     from . import rig_mhx
     from . import rig_rigify
+    from . import export_daz
+    from . import rig_daz
+    from . import shell_edit
 
 
 import bpy
@@ -83,15 +83,6 @@ from .api import *
 import sys
 import os
 
-def toggleExportDaz(self, context):
-    toggleModule("export_daz", self.useExportDaz)
-
-def toggleRigDaz(self, context):
-    toggleModule("rig_daz", self.useRigDaz)
-
-def toggleShellEdit(self, context):
-    toggleModule("shell_edit", self.useShellEdit)
-
 def toggleSimpleIk(self, context):
     toggleModule("simple_ik", self.useSimpleIk)
 
@@ -100,6 +91,15 @@ def toggleRigMhx(self, context):
 
 def toggleRigRigify(self, context):
     toggleModule("rig_rigify", self.useRigRigify)
+
+def toggleExportDaz(self, context):
+    toggleModule("export_daz", self.useExportDaz)
+
+def toggleRigDaz(self, context):
+    toggleModule("rig_daz", self.useRigDaz)
+
+def toggleShellEdit(self, context):
+    toggleModule("shell_edit", self.useShellEdit)
 
 def toggleModule(module, enable):
     if enable:
@@ -173,12 +173,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.operator("daz.load_settings_file")
         self.layout.operator("daz.save_settings_file")
         self.layout.label(text = "Features:")
-        self.layout.prop(self, "useExportDaz")
-        self.layout.prop(self, "useRigDaz")
-        self.layout.prop(self, "useShellEdit")
         self.layout.prop(self, "useSimpleIk")
         self.layout.prop(self, "useRigMhx")
         self.layout.prop(self, "useRigRigify")
+        self.layout.prop(self, "useExportDaz")
+        self.layout.prop(self, "useRigDaz")
+        self.layout.prop(self, "useShellEdit")
 
 #----------------------------------------------------------
 #   Register
@@ -206,15 +206,6 @@ def register():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useExportDaz:
-            from . import export_daz
-            export_daz.register()
-        if prefs.useRigDaz:
-            from . import rig_daz
-            rig_daz.register()
-        if prefs.useShellEdit:
-            from . import shell_edit
-            shell_edit.register()
         if prefs.useSimpleIk:
             from . import simple_ik
             simple_ik.register()
@@ -224,6 +215,15 @@ def register():
         if prefs.useRigRigify:
             from . import rig_rigify
             rig_rigify.register()
+        if prefs.useExportDaz:
+            from . import export_daz
+            export_daz.register()
+        if prefs.useRigDaz:
+            from . import rig_daz
+            rig_daz.register()
+        if prefs.useShellEdit:
+            from . import shell_edit
+            shell_edit.register()
 
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()

@@ -206,7 +206,8 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Rigging"
 
     def draw(self, context):
-        self.layout.operator("daz.add_mannequin")
+        pass
+
 
 #----------------------------------------------------------
 #   Advanced setup panel
