@@ -42,7 +42,7 @@ class DAZ_PT_RuntimeTab:
 #----------------------------------------------------------
 
 class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_label = "DAZ Setup (version 4.2.1.%04d)" % BUILD
+    bl_label = "DAZ Setup (version 4.3.0.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
@@ -321,14 +321,13 @@ class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.make_cloth")
 
 
-class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
+class DAZ_PT_RiggingTools(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
-    bl_idname = "DAZ_PT_AdvancedRigging"
-    bl_label = "Advanced Rigging"
+    bl_idname = "DAZ_PT_RiggingTools"
+    bl_label = "Rigging Tools"
 
     def draw(self, context):
         self.layout.operator("daz.scale_objects")
-        self.layout.operator("daz.add_extra_face_bones")
         self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.change_suffix_to_prefix")
         self.layout.separator()
@@ -336,7 +335,6 @@ class DAZ_PT_AdvancedRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.optimize_pose")
         self.layout.operator("daz.improve_ik")
         self.layout.operator("daz.remove_driven_bones")
-        self.layout.operator("daz.fix_legacy_posable")
         self.layout.operator("daz.fix_limit_rot_constraints")
         self.layout.operator("daz.set_driver_modes")
 
@@ -470,7 +468,7 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "DAZ Runtime (version 4.2.1.%04d)" % BUILD
+    bl_label = "DAZ Runtime (version 4.3.0.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
@@ -534,9 +532,6 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
             self.layout.operator("daz.enable_drivers")
         else:
             self.layout.operator("daz.disable_drivers")
-        return
-        self.layout.operator("daz.rotate_bones")
-
 
 #----------------------------------------------------------
 #   Morphs panel
@@ -1085,7 +1080,7 @@ classes = [
     DAZ_PT_AdvancedMaterials,
     DAZ_PT_AdvancedMesh,
     DAZ_PT_AdvancedSimulation,
-    DAZ_PT_AdvancedRigging,
+    DAZ_PT_RiggingTools,
     DAZ_PT_AdvancedMorphs,
 
     DAZ_PT_Utils,

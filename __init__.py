@@ -132,14 +132,14 @@ class DazPreferences(bpy.types.AddonPreferences):
     )
 
     useExportDaz : bpy.props.BoolProperty(
-        name = "DAZ Exporter",
-        description = "Enable DAZ Exporter tools",
+        name = "DAZ Preset Exporter",
+        description = "Tools for exporting presets back to DAZ Studio",
         default = False,
         update = toggleExportDaz)
 
     useRigDaz : bpy.props.BoolProperty(
-        name = "DAZ Rigging",
-        description = "Enable tools for rigging DAZ figures",
+        name = "More Rigging Tools",
+        description = "More tools for rigging DAZ figures",
         default = False,
         update = toggleRigDaz)
 
@@ -157,13 +157,13 @@ class DazPreferences(bpy.types.AddonPreferences):
 
     useRigMhx : bpy.props.BoolProperty(
         name = "MHX",
-        description = "Enable tools for MHX rig",
+        description = "Tools for MHX rig",
         default = False,
         update = toggleRigMhx)
 
     useRigRigify : bpy.props.BoolProperty(
         name = "Rigify",
-        description = "Enable tools for Rigify",
+        description = "Tools for Rigify",
         default = False,
         update = toggleRigRigify)
 

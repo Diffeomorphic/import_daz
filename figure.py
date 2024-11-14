@@ -372,52 +372,6 @@ class LegacyFigure(Figure):
     def __repr__(self):
         return ("<LegacyFigure %s>" % (self.id))
 
-
-#-------------------------------------------------------------
-#   Print bone matrix
-#-------------------------------------------------------------
-
-class DAZ_OT_PrintMatrix(DazOperator, IsArmature):
-    bl_idname = "daz.print_matrix"
-    bl_label = "Print Bone Matrix"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        pb = context.active_pose_bone
-        print(pb.name)
-        mat = pb.bone.matrix_local
-        euler = mat.to_3x3().to_euler('XYZ')
-        print(euler)
-        print(Vector(euler)/D)
-        print(mat)
-
-
-class DAZ_OT_RotateBones(DazPropsOperator, IsArmature):
-    bl_idname = "daz.rotate_bones"
-    bl_label = "Rotate Bones"
-    bl_description = "Rotate selected bones the same angle"
-    bl_options = {'UNDO'}
-
-    X : FloatProperty(name = "X")
-    Y : FloatProperty(name = "Y")
-    Z : FloatProperty(name = "Z")
-
-    def draw(self, context):
-        self.layout.prop(self, "X")
-        self.layout.prop(self, "Y")
-        self.layout.prop(self, "Z")
-
-    def run(self, context):
-        rig = context.object
-        rot = Vector((self.X, self.Y, self.Z))*D
-        quat = Euler(rot).to_quaternion()
-        for pb in rig.pose.bones:
-            if pb.bone.select:
-                if pb.rotation_mode == 'QUATERNION':
-                    pb.rotation_quaternion = quat
-                else:
-                    pb.rotation_euler = rot
-
 #-------------------------------------------------------------
 #   Add extra face bones
 #-------------------------------------------------------------
@@ -757,59 +711,6 @@ class ExtraBones(DriverUser):
                         cns.driver_remove(channel)
 
 
-class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
-    bl_idname = "daz.add_extra_face_bones"
-    bl_label = "Add Extra Face Bones"
-    bl_description = "Add an extra layer of face bones, which can be both driven and posed"
-    bl_options = {'UNDO'}
-
-    type =  "face"
-    attr = "DazExtraFaceBones"
-    button = "Add Extra Face Bones"
-
-    def getBoneNames(self, rig):
-        inface = [
-            "lEye", "rEye", "eye.L", "eye.R",
-            "lowerJaw", "upperTeeth", "lowerTeeth", "lowerFaceRig",
-            "tongue01", "tongue02", "tongue03", "tongue04",
-            "tongue05", "tongue06", "tongueBase", "tongueTip",
-        ]
-        keys = rig.pose.bones.keys()
-        bnames = [bname for bname in inface
-                  if bname in keys and
-                    drvBone(bname) not in keys]
-        bnames += getAnchoredBoneNames(rig, ["upperFaceRig", "lowerFaceRig"])
-        return bnames
-
-    def checkAllowed(self, rig):
-        return True
-
-    def changeLayer(self, eb, rig):
-        if rig.DazRig == "mhx":
-            from .rig_mhx import L_FACE
-            enableBoneNumLayer(eb, rig, L_FACE)
-        elif rig.DazRig.startswith("rigify"):
-            from .rig_rigify import R_DETAIL
-            enableBoneNumLayer(eb, rig, R_DETAIL)
-
-    def hasBoneDriver(self, bname, drivers):
-        return True
-
-
-def getAnchoredBoneNames(rig, anchors):
-    bnames = []
-    keys = rig.pose.bones.keys()
-    for anchor in anchors:
-        if anchor in keys:
-            for pb in rig.pose.bones:
-                if (not isDrvBone(pb.name) and
-                    drvBone(pb.name) not in keys and
-                    pb.parent and
-                    pb.parent.name == anchor):
-                    bnames.append(pb.name)
-    return bnames
-
-
 class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones, IsArmature):
     bl_idname = "daz.make_all_bones_posable"
     bl_label = "Make All Bones Posable"
@@ -891,41 +792,6 @@ class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
             if isDrvBone(eb.name):
                 rig.data.edit_bones.remove(eb)
         setMode('OBJECT')
-
-#-------------------------------------------------------------
-#   Fix legacy posable bones
-#-------------------------------------------------------------
-
-class DAZ_OT_FixLegacyPosable(DazOperator, ExtraBones, IsArmature):
-    bl_idname = "daz.fix_legacy_posable"
-    bl_label = "Fix Legacy Posable Bones"
-    bl_description = "Convert legacy posable bones to modern ones"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        rig = context.object
-        if rig.animation_data:
-            for fcu in rig.animation_data.drivers:
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        if isFinal(trg.bone_target):
-                            trg.bone_target = baseBone(trg.bone_target)
-        parents = {}
-        setMode('EDIT')
-        for eb in list(rig.data.edit_bones):
-            par = eb.parent
-            if par and isDrvBone(par.name):
-                eb.parent = par.parent
-                parents[eb.name] = par.name
-            if isFinal(eb.name):
-                rig.data.edit_bones.remove(eb)
-        setMode('OBJECT')
-        for bname in parents.keys():
-            self.addCopyConstraint(rig, bname, [], [])
-
-
-    def hasBoneDriver(self, bname, drivers):
-        return True
 
 #-------------------------------------------------------------
 #   Finalize bones
@@ -1126,12 +992,8 @@ class DAZ_OT_EnableAllLayers(DazOperator, IsArmature):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_PrintMatrix,
-    DAZ_OT_RotateBones,
-    DAZ_OT_SetAddExtraFaceBones,
     DAZ_OT_MakeAllBonesPosable,
     DAZ_OT_RemoveDrivenBones,
-    DAZ_OT_FixLegacyPosable,
     DAZ_OT_FinalizeArmature,
     DAZ_OT_EnableLocksLimits,
     DAZ_OT_DisableLocksLimits,
