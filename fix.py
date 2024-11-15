@@ -864,7 +864,6 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
 
 classes = [
     DAZ_OT_ChangeArmature,
-    DAZ_OT_FixLimitRotConstraints,
 ]
 
 def register():

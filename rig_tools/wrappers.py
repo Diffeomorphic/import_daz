@@ -15,6 +15,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import bpy
+from ..error import *
+from ..utils import *
+from ..daz import DriverModeItems
 
 #-------------------------------------------------------------
 #   Improve IK

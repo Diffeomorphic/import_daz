@@ -32,6 +32,7 @@ elif "RigToolsFeature" in locals():
     imp.reload(store)
     imp.reload(bvh)
     imp.reload(mannequin)
+    imp.reload(wrappers)
     imp.reload(legacy)
     #imp.reload(unreal)
     imp.reload(rig_panel)
@@ -44,6 +45,7 @@ else:
     from . import store
     from . import bvh
     from . import mannequin
+    from . import wrappers
     from . import legacy
     #from . import unreal
     from . import rig_panel
@@ -55,7 +57,8 @@ else:
 
 def register():
     print("Register Rig Tools")
-    from . import mute, ikgoals, prefix, scale, store, bvh, mannequin, legacy, rig_panel, unreal
+    from . import mute, ikgoals, prefix, scale, store, bvh
+    from . import mannequin, wrappers, legacy, rig_panel, unreal
     mute.register()
     ikgoals.register()
     prefix.register()
@@ -63,15 +66,18 @@ def register():
     store.register()
     bvh.register()
     mannequin.register()
+    wrappers.register()
     legacy.register()
     rig_panel.register()
     #unreal.register()
 
 def unregister():
-    from . import mute, ikgoals, prefix, scale, store, bvh, mannequin, legacy, rig_panel, unreal
+    from . import mute, ikgoals, prefix, scale, store, bvh
+    from . import mannequin, wrappers, legacy, rig_panel, unreal
     #unreal.unregister()
     rig_panel.unregister()
     legacy.unregister()
+    wrappers.unregister()
     mannequin.unregister()
     bvh.unregister()
     scale.unregister()
