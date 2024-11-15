@@ -55,11 +55,12 @@ elif "bpy" in locals():
     imp.reload(simple_ik)
     imp.reload(rig_mhx)
     imp.reload(rig_rigify)
-    imp.reload(export_tools)
+    imp.reload(rig_tools)
+    imp.reload(object_tools)
     imp.reload(mesh_tools)
     imp.reload(morph_tools)
     imp.reload(hd_tools)
-    imp.reload(rig_tools)
+    imp.reload(export_tools)
     imp.reload(shell_edit)
 
 else:
@@ -70,11 +71,12 @@ else:
     from . import simple_ik
     from . import rig_mhx
     from . import rig_rigify
-    from . import export_tools
+    from . import rig_tools
+    from . import object_tools
     from . import mesh_tools
     from . import morph_tools
     from . import hd_tools
-    from . import rig_tools
+    from . import export_tools
     from . import shell_edit
 
 
@@ -101,6 +103,9 @@ def toggleRigRigify(self, context):
 
 def toggleRigTools(self, context):
     toggleModule("rig_tools", self.useRigTools)
+
+def toggleObjectTools(self, context):
+    toggleModule("object_tools", self.useObjectTools)
 
 def toggleMeshTools(self, context):
     toggleModule("mesh_tools", self.useMeshTools)
@@ -196,6 +201,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleRigTools)
 
+    useObjectTools : BoolProperty(
+        name = "Object Tools",
+        description = "Tools for objects",
+        default = False,
+        update = toggleObjectTools)
+
     useShellEdit : BoolProperty(
         name = "Shell Editor",
         description = "Tools for editing shells and layered images",
@@ -211,11 +222,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useSimpleIk")
         self.layout.prop(self, "useRigMhx")
         self.layout.prop(self, "useRigRigify")
+        self.layout.prop(self, "useRigTools")
+        self.layout.prop(self, "useObjectTools")
         self.layout.prop(self, "useMeshTools")
         self.layout.prop(self, "useMorphTools")
         self.layout.prop(self, "useHDTools")
         self.layout.prop(self, "useExportTools")
-        self.layout.prop(self, "useRigTools")
         self.layout.prop(self, "useShellEdit")
 
 #----------------------------------------------------------
@@ -253,6 +265,12 @@ def register():
         if prefs.useRigRigify:
             from . import rig_rigify
             rig_rigify.register()
+        if prefs.useRigTools:
+            from . import rig_tools
+            rig_tools.register()
+        if prefs.useObjectTools:
+            from . import object_tools
+            object_tools.register()
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.register()
@@ -265,9 +283,6 @@ def register():
         if prefs.useExportTools:
             from . import export_tools
             export_tools.register()
-        if prefs.useRigTools:
-            from . import rig_tools
-            rig_tools.register()
         if prefs.useShellEdit:
             from . import shell_edit
             shell_edit.register()
@@ -287,24 +302,6 @@ def unregister():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useExportTools:
-            from . import export_tools
-            export_tools.unregister()
-        if prefs.useRigTools:
-            from . import rig_tools
-            rig_tools.unregister()
-        if prefs.useShellEdit:
-            from . import shell_edit
-            shell_edit.unregister()
-        if prefs.useMeshTools:
-            from . import mesh_tools
-            mesh_tools.unregister()
-        if prefs.useMorphTools:
-            from . import morph_tools
-            morph_tools.unregister()
-        if prefs.useHDTools:
-            from . import hd_tools
-            hd_tools.unregister()
         if prefs.useSimpleIk:
             from . import simple_ik
             simple_ik.unregister()
@@ -314,6 +311,27 @@ def unregister():
         if prefs.useRigRigify:
             from . import rig_rigify
             rig_rigify.unregister()
+        if prefs.useRigTools:
+            from . import rig_tools
+            rig_tools.unregister()
+        if prefs.useObjectTools:
+            from . import object_tools
+            object_tools.unregister()
+        if prefs.useMeshTools:
+            from . import mesh_tools
+            mesh_tools.unregister()
+        if prefs.useMorphTools:
+            from . import morph_tools
+            morph_tools.unregister()
+        if prefs.useHDTools:
+            from . import hd_tools
+            hd_tools.unregister()
+        if prefs.useExportTools:
+            from . import export_tools
+            export_tools.unregister()
+        if prefs.useShellEdit:
+            from . import shell_edit
+            shell_edit.unregister()
     bpy.utils.unregister_class(DazPreferences)
 
 

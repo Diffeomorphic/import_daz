@@ -21,17 +21,6 @@
 import bpy
 from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
 
-class DAZ_PT_Objects(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_id = "DAZ_PT_Objects"
-    bl_label = "Objects"
-
-    def draw(self, context):
-        self.layout.operator("daz.add_mannequin")
-        self.layout.operator("daz.categorize_objects")
-        self.layout.operator("daz.scale_objects")
-        self.layout.operator("daz.scale_materials")
-
-
 class DAZ_PT_Figures(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
     bl_id = "DAZ_PT_Figures"
@@ -127,7 +116,6 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_PT_Objects,
     DAZ_PT_Figures,
     DAZ_PT_Tails,
     DAZ_PT_Extra,
