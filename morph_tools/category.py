@@ -18,12 +18,12 @@ import os
 import bpy
 from mathutils import Matrix
 
-from .error import *
-from .utils import *
-from .selector import Selector, CustomSelector, CustomEnums
-from .uilist import updateScrollbars
-from .driver import DriverUser
-from .morphing import MS, MorphTypeOptions
+from ..error import *
+from ..utils import *
+from ..selector import Selector, CustomSelector, CustomEnums
+from ..uilist import updateScrollbars
+from ..driver import DriverUser
+from ..morphing import MS, MorphTypeOptions, addToCategories
 
 #------------------------------------------------------------------------
 #   General Morph selector
@@ -62,7 +62,7 @@ class GeneralMorphSelector(Selector):
 
 
     def getKeys(self, rig, ob):
-        from .morphing import getMorphList
+        from ..morphing import getMorphList
         morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
         keys = [(item.name, item.text, "All") for item in morphs]
         for cat in rig.DazMorphCats:
@@ -101,32 +101,6 @@ class GeneralMorphSelector(Selector):
             self.catnames["All"] += list(cat.morphs.keys())
             self.catnames[cat.name] = cat.morphs.keys()
         return Selector.invoke(self, context, event)
-
-#------------------------------------------------------------------------
-#   Categories
-#------------------------------------------------------------------------
-
-def addToCategories(ob, props, labels, category):
-    from .driver import setBoolProp
-    if not labels:
-        from .modifier import getCanonicalKey
-        labels = [getCanonicalKey(prop) for prop in props]
-    if props and ob is not None:
-        cats = dict([(cat.name,cat) for cat in ob.DazMorphCats])
-        if category not in cats.keys():
-            cat = ob.DazMorphCats.add()
-            cat.name = category
-        else:
-            cat = cats[category]
-        setBoolProp(cat, "active", True, True)
-        for prop,label in zip(props, labels):
-            if prop not in cat.morphs.keys():
-                morph = cat.morphs.add()
-            else:
-                morph = cat.morphs[prop]
-            morph.name = prop
-            morph.text = label
-            setBoolProp(morph, "active", True, True)
 
 #------------------------------------------------------------------------
 #   Rename category
@@ -466,8 +440,8 @@ class DAZ_OT_ProtectCategories(DazOperator, CategorySelector, CategoryBasic, IsA
         CategorySelector.draw(self, context)
 
     def runObject(self, context, ob, items):
-        from .driver import setProtected
-        from .selector import setActivated
+        from ..driver import setProtected
+        from ..selector import setActivated
         for idx,key in items:
             cat = ob.DazMorphCats[key]
             for pg in cat.morphs:
@@ -495,8 +469,8 @@ class DAZ_OT_ProtectMorphs(DazOperator, GeneralMorphSelector, IsArmature):
         GeneralMorphSelector.draw(self, context)
 
     def run(self, context):
-        from .driver import setProtected
-        from .selector import setActivated
+        from ..driver import setProtected
+        from ..selector import setActivated
         ob = context.object
         for item in self.getSelectedItems():
             prop = item.name
@@ -613,7 +587,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 
 
     def updatePropLimits(self, rig, context):
-        from .driver import setFloatProp
+        from ..driver import setFloatProp
         if self.useShapekeys:
             for ob in getShapeChildren(rig):
                 for skey in ob.data.shape_keys.key_blocks:
@@ -821,7 +795,7 @@ class DAZ_OT_AddDrivenValueNodes(DazOperator, Selector, DriverUser, IsMesh):
 
 
     def run(self, context):
-        from .driver import getShapekeyDriver
+        from ..driver import getShapekeyDriver
         ob = context.object
         skeys = ob.data.shape_keys
         if skeys is None:
@@ -930,7 +904,7 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
 
 
     def handleShapekey(self, sname, rig, ob):
-        from .driver import setFloatProp, makePropDriver
+        from ..driver import setFloatProp, makePropDriver
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[sname]
         final = finalProp(sname)
@@ -945,7 +919,7 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
 
 
     def includeShapekey(self, skeys, sname):
-        from .driver import getShapekeyDriver
+        from ..driver import getShapekeyDriver
         return (not getShapekeyDriver(skeys, sname))
 
 
@@ -1042,6 +1016,7 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
         row.prop(self, "useSubmeshes")
 
     def handleShapekey(self, sname, rig, ob):
+        from ..transfer import removeShapeDriversAndProps
         skey = ob.data.shape_keys.key_blocks[sname]
         skey.driver_remove("value")
         skey.driver_remove("mute")
@@ -1060,7 +1035,7 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
             removeShapeDriversAndProps(ob.parent, sname)
 
     def includeShapekey(self, skeys, sname):
-        from .driver import getShapekeyDriver
+        from ..driver import getShapekeyDriver
         return getShapekeyDriver(skeys, sname)
 
     def getCategory(self, rig, ob, sname):
@@ -1071,18 +1046,6 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
                 if sname == morph.name:
                     return cat.name
         return ""
-
-
-def removeShapeDriversAndProps(rig, sname):
-    if rig and rig.type == 'ARMATURE':
-        final = finalProp(sname)
-        rig.data.driver_remove(propRef(final))
-        if final in rig.data.keys():
-            del rig.data[final]
-        if sname in rig.keys():
-            del rig[sname]
-        removeFromAllMorphsets(rig, sname)
-
 
 #-------------------------------------------------------------
 #   Convert pose to shapekey
@@ -1183,7 +1146,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
 
 
     def applyArmature(self, ob, rig, mod, key, mname):
-        from .driver import getPropMinMax
+        from ..driver import getPropMinMax
         mod.name = mname
         if bpy.app.version < (2,90,0):
             bpy.ops.object.modifier_apply(apply_as='SHAPE', modifier=mname)

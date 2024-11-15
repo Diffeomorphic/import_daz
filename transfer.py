@@ -1021,7 +1021,6 @@ class DAZ_OT_MixShapekeys(DazOperator, IsShape):
 
 
     def deleteShape(self, ob, skeys, skey, sname):
-        from .category import removeShapeDriversAndProps
         skey.driver_remove("value")
         skey.driver_remove("mute")
         skey.driver_remove("slider_min")
@@ -1029,6 +1028,20 @@ class DAZ_OT_MixShapekeys(DazOperator, IsShape):
         removeShapeDriversAndProps(ob.parent, sname)
         updateDrivers(skeys)
         ob.shape_key_remove(skey)
+
+#----------------------------------------------------------
+#
+#----------------------------------------------------------
+
+def removeShapeDriversAndProps(rig, sname):
+    if rig and rig.type == 'ARMATURE':
+        final = finalProp(sname)
+        rig.data.driver_remove(propRef(final))
+        if final in rig.data.keys():
+            del rig.data[final]
+        if sname in rig.keys():
+            del rig[sname]
+        removeFromAllMorphsets(rig, sname)
 
 #-------------------------------------------------------------
 #   Prune vertex groups

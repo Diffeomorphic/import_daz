@@ -1496,6 +1496,32 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
             self.rig.DazCustomMorphs = True
 
 #------------------------------------------------------------------------
+#   Categories
+#------------------------------------------------------------------------
+
+def addToCategories(ob, props, labels, category):
+    from .driver import setBoolProp
+    if not labels:
+        from .modifier import getCanonicalKey
+        labels = [getCanonicalKey(prop) for prop in props]
+    if props and ob is not None:
+        cats = dict([(cat.name,cat) for cat in ob.DazMorphCats])
+        if category not in cats.keys():
+            cat = ob.DazMorphCats.add()
+            cat.name = category
+        else:
+            cat = cats[category]
+        setBoolProp(cat, "active", True, True)
+        for prop,label in zip(props, labels):
+            if prop not in cat.morphs.keys():
+                morph = cat.morphs.add()
+            else:
+                morph = cat.morphs[prop]
+            morph.name = prop
+            morph.text = label
+            setBoolProp(morph, "active", True, True)
+
+#------------------------------------------------------------------------
 #   PropDrivers
 #------------------------------------------------------------------------
 
@@ -1522,7 +1548,6 @@ class PropDrivers:
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True
         elif GS.useShapeCats and self.shapekeys:
-            from .category import addToCategories
             props = self.shapekeys.keys()
             for mesh in self.meshes:
                 addToCategories(mesh, props, None, self.category)
@@ -2146,7 +2171,6 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                 for shape in oldshapes:
                     shapes.remove(shape)
                 if shapes:
-                    from .category import addToCategories
                     addToCategories(ob, shapes, None, self.category)
                     ob.DazMeshMorphs = True
             return True

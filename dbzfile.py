@@ -20,8 +20,7 @@ from mathutils import Vector, Quaternion, Matrix
 from .error import *
 from .utils import *
 from .fileutils import MultiFile, DbzFile
-from .morphing import PropDrivers, PosableMaker
-from .category import addToCategories
+from .morphing import PropDrivers, PosableMaker, addToCategories
 from .uilist import updateScrollbars
 
 #------------------------------------------------------------------

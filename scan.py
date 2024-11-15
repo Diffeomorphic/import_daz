@@ -461,8 +461,7 @@ def loadScannedInfo(self, name, rig, relpath):
 #----------------------------------------------------------
 
 def loadMissingMorphs(self, context, rig, missing, cat):
-    from .morphing import CustomMorphLoader, StandardMorphLoader
-    from .category import addToCategories
+    from .morphing import CustomMorphLoader, StandardMorphLoader, addToCategories
     if not missing or not self.defins:
         return False
     standards = {}

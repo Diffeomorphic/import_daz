@@ -153,7 +153,6 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
         self.layout.operator("daz.transfer_shapekeys")
-        self.layout.operator("daz.remove_shapekeys")
 
 
 class DAZ_PT_SetupStandardMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -301,15 +300,6 @@ class DAZ_PT_MoreMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        self.layout.operator("daz.add_shape_to_category")
-        self.layout.operator("daz.remove_shape_from_category")
-        self.layout.operator("daz.rename_category")
-        self.layout.operator("daz.join_categories")
-        self.layout.operator("daz.remove_categories")
-        self.layout.operator("daz.remove_standard_morphs")
-        self.layout.operator("daz.protect_categories")
-        self.layout.operator("daz.protect_morphs")
-        self.layout.separator()
         self.layout.operator("daz.convert_morphs_to_shapekeys")
         self.layout.operator("daz.transfer_animation_to_shapekeys")
         self.layout.operator("daz.transfer_mesh_to_shape")

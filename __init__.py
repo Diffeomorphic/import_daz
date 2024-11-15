@@ -34,7 +34,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
            "bone_data", "transform", "node", "figure", "bone", "geometry",
            "store", "fix", "modifier", "load_morph", "morphing", "baked",
-           "animation", "rig_utils", "category", "dbzfile", "panel",
+           "animation", "rig_utils", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
            "guess", "convert", "files", "finger",
            "matedit", "udim", "merge", "scale", "tables", "proxy", "hide",
@@ -57,6 +57,7 @@ elif "bpy" in locals():
     imp.reload(rig_rigify)
     imp.reload(export_daz)
     imp.reload(mesh_tools)
+    imp.reload(morph_tools)
     imp.reload(hd_tools)
     imp.reload(rig_tools)
     imp.reload(shell_edit)
@@ -71,6 +72,7 @@ else:
     from . import rig_rigify
     from . import export_daz
     from . import mesh_tools
+    from . import morph_tools
     from . import hd_tools
     from . import rig_tools
     from . import shell_edit
@@ -99,6 +101,9 @@ def toggleRigRigify(self, context):
 
 def toggleMeshTools(self, context):
     toggleModule("mesh_tools", self.useMeshTools)
+
+def toggleMorphTools(self, context):
+    toggleModule("morph_tools", self.useMorphTools)
 
 def toggleHDTools(self, context):
     toggleModule("hd_tools", self.useHDTools)
@@ -167,6 +172,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleMeshTools)
 
+    useMorphTools : BoolProperty(
+        name = "Morph Tools",
+        description = "Tools for dealing with DAZ morphs",
+        default = False,
+        update = toggleMorphTools)
+
     useHDTools : BoolProperty(
         name = "HD Tools",
         description = "Tools for dealing with HD morphs",
@@ -201,6 +212,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useRigMhx")
         self.layout.prop(self, "useRigRigify")
         self.layout.prop(self, "useMeshTools")
+        self.layout.prop(self, "useMorphTools")
         self.layout.prop(self, "useHDTools")
         self.layout.prop(self, "useExportDaz")
         self.layout.prop(self, "useRigDaz")
@@ -212,7 +224,7 @@ class DazPreferences(bpy.types.AddonPreferences):
 
 Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "figure", "geometry", "dbzfile", "simple", "rig_utils",
-            "fix", "animation", "morphing", "category", "panel",
+            "fix", "animation", "morphing", "panel",
             "material", "cgroup", "render",
             "guess", "convert", "main", "finger",
             "matedit", "scale", "proxy", "rigify", "merge", "hide",
@@ -244,6 +256,9 @@ def register():
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.register()
+        if prefs.useMorphTools:
+            from . import morph_tools
+            morph_tools.register()
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.register()
@@ -284,6 +299,9 @@ def unregister():
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.unregister()
+        if prefs.useMorphTools:
+            from . import morph_tools
+            morph_tools.unregister()
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.unregister()
