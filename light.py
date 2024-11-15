@@ -156,7 +156,8 @@ class LightInstance(Instance):
         light.color = srgbToLinearCorrect(color)
         light.energy = self.getValue(["Intensity"], 1.0)
 
-        light.shadow_color = self.getValue(["Shadow Color"], BLACK)
+        if hasattr(light, "shadow_color"):
+            light.shadow_color = self.getValue(["Shadow Color"], BLACK)
         if hasattr(light, "shadow_buffer_soft"):
             light.shadow_buffer_soft = self.getValue(["Shadow Softness"], False)
         if hasattr(light, "falloff_type"):
