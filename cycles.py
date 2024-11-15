@@ -188,15 +188,18 @@ class CyclesMaterial(Material):
                         node.inputs[0].default_value /= area
 
 
-    def setTransSettings(self, useRefraction, useBlend, color, alpha):
+    def setTransSettings(self, useRefraction, blended, color, alpha):
         LS.usedFeatures["Transparent"] = True
         mat = self.rna
         if useRefraction is None and mat.blend_method != 'OPAQUE':
             pass
         elif hasattr(mat, "surface_render_method"):
-            mat.surface_render_method = 'DITHERED'
+            if blended:
+                mat.surface_render_method = 'BLENDED'
+            else:
+                mat.surface_render_method = 'DITHERED'
         else:
-            if useBlend:
+            if blended:
                 mat.blend_method = 'BLEND'
                 mat.show_transparent_back = False
             else:
