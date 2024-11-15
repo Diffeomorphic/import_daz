@@ -113,7 +113,6 @@ class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.find_missing_textures")
         self.layout.operator("daz.activate_diffuse")
         #self.layout.operator("daz.replace_materials")
-        self.layout.operator("daz.scale_materials")
         self.layout.separator()
         self.layout.operator("daz.prune_node_trees")
         self.layout.operator("daz.prune_uv_maps")
@@ -275,22 +274,6 @@ class DAZ_PT_Simulation(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.make_deflection")
         self.layout.operator("daz.make_collision")
         self.layout.operator("daz.make_cloth")
-
-
-class DAZ_PT_RiggingTools(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupRigging"
-    bl_idname = "DAZ_PT_RiggingTools"
-    bl_label = "Rigging Tools"
-
-    def draw(self, context):
-        self.layout.operator("daz.scale_objects")
-        self.layout.separator()
-        self.layout.operator("daz.batch_set_custom_shape")
-        self.layout.operator("daz.optimize_pose")
-        self.layout.operator("daz.improve_ik")
-        self.layout.operator("daz.remove_driven_bones")
-        self.layout.operator("daz.fix_limit_rot_constraints")
-        self.layout.operator("daz.set_driver_modes")
 
 #----------------------------------------------------------
 #   Utilities panel
@@ -994,7 +977,6 @@ classes = [
     DAZ_PT_SetupHair,
     DAZ_PT_SetupFinishing,
     DAZ_PT_SetupRigging,
-    DAZ_PT_RiggingTools,
     DAZ_PT_Simulation,
 
     DAZ_PT_Utils,

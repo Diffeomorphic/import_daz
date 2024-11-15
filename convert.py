@@ -78,26 +78,7 @@ def loadPose(context, rig, entry):
 
 #-------------------------------------------------------------
 #   Optimize pose for IK
-#   Function used by rigify
 #-------------------------------------------------------------
-
-class DAZ_OT_OptimizePose(DazPropsOperator, IsArmature):
-    bl_idname = "daz.optimize_pose"
-    bl_label = "Optimize Pose For IK"
-    bl_description = "Optimize pose for IK.\nIncompatible with pose loading and body morphs"
-    bl_options = {'UNDO'}
-
-    useApplyRestPose : BoolProperty(
-        name = "Apply Rest Pose",
-        description = "Apply current pose as rest pose for all armatures",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useApplyRestPose")
-
-    def run(self, context):
-        optimizePose(context, self.useApplyRestPose)
-
 
 def optimizePose(context, useApplyRestPose):
     from .merge import applyRestPoses
@@ -145,19 +126,3 @@ def getConverter(srctype, trg):
         print("No converter", srctype, trg.DazRig)
     return conv, twists
 
-#----------------------------------------------------------
-#   Initialize
-#----------------------------------------------------------
-
-classes = [
-    DAZ_OT_OptimizePose,
-]
-
-def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
-
-def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)

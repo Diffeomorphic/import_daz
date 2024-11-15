@@ -303,30 +303,6 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer):
 
 from .daz import DriverModeItems
 
-class DAZ_OT_SetDriverModes(DazPropsOperator, IsArmature):
-    bl_idname = "daz.set_driver_modes"
-    bl_label = "Set Driver Modes"
-    bl_description = "Change driver rotation modes.\nAvoids some popping during animation at the cost of JCMs accuracy"
-    bl_options = {'UNDO'}
-
-    rotMode : EnumProperty(
-        items = DriverModeItems,
-        name = "Rotation Mode",
-        description = "Use this rotation mode",
-        default = 'AUTO')
-
-    useQuatsOnly : BoolProperty(
-        name = "Only Quaternion Bones",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useQuatsOnly")
-        self.layout.prop(self, "rotMode")
-
-    def run(self, context):
-        setDriverModes(context.object, self.rotMode, (not self.useQuatsOnly))
-
-
 def setDriverModes(rig, rotmode, useAll):
     def setModes(rna):
         if rna.animation_data:
@@ -352,7 +328,6 @@ classes = [
     DAZ_OT_BakeShapekeys,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,
-    DAZ_OT_SetDriverModes,
 ]
 
 def register():

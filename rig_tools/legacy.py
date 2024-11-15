@@ -136,6 +136,23 @@ class DAZ_OT_RotateBones(DazPropsOperator, IsArmature):
                 else:
                     pb.rotation_euler = rot
 
+#-------------------------------------------------------------
+#   Fix limit rotation constraints
+#-------------------------------------------------------------
+
+class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
+    bl_idname = "daz.fix_limit_rot_constraints"
+    bl_label = "Fix Limit Rotation Constraints"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from ..bone_data import BD
+        rig = context.object
+        for pb in rig.pose.bones:
+            for cns in pb.constraints:
+                if cns.type == 'LIMIT_ROTATION':
+                    setEulerOrder(cns, BD.getDefaultMode(pb))
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -144,6 +161,7 @@ classes = [
     DAZ_OT_SetAddExtraFaceBones,
     DAZ_OT_FixLegacyPosable,
     DAZ_OT_RotateBones,
+    DAZ_OT_FixLimitRotConstraints,
 ]
 
 def register():

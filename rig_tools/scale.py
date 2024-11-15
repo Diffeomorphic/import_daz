@@ -14,11 +14,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 from bpy.types import EnumProperty, FloatProperty
-from .utils import *
-from .error import *
+from ..utils import *
+from ..error import *
 
 #-------------------------------------------------------------
 #   Set unit scale
@@ -193,7 +192,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
 
     def applyScale(self, context, ob):
-        from .merge import safeTransformApply
+        from ..merge import safeTransformApply
         scale = self.scale / ob.DazScale
         if ob.type in ['MESH', 'ARMATURE'] and activateObject(context, ob):
             self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)
