@@ -1,0 +1,423 @@
+#  DAZ Importer - Importer for native DAZ files (.duf, .dsf)
+#  Copyright (c) 2016-2024, Thomas Larsson
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import os
+import bpy
+from ..error import *
+from ..utils import *
+
+#-------------------------------------------------------------
+#   Convert pose to shapekey
+#-------------------------------------------------------------
+
+class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
+    bl_idname = "daz.transfer_animation_to_shapekeys"
+    bl_label = "Transfer Animation To Shapekeys"
+    bl_description = (
+        "Transfer the armature action to actions for shapekeys.\n" +
+        "From active armature to selected meshes.\n" +
+        "Transferred morph F-curves are removed from the armature action")
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = getRigFromContext(context)
+        if not (rig and rig.animation_data and rig.animation_data.action):
+            raise DazError("No action found")
+        actrig = rig.animation_data.action
+        meshes = getShapeChildren(rig)
+        if not meshes:
+            raise DazError("No meshes with shapekeys selected")
+
+        self.morphnames = {}
+        for morphset in MS.Standards:
+            pgs = getattr(rig, "Daz"+morphset)
+            for pg in pgs:
+                self.morphnames[pg.name] = pg.text
+        for cat in rig.DazMorphCats:
+            for pg in cat.morphs:
+                self.morphnames[pg.name] = pg.text
+
+        for ob in meshes:
+            skeys = ob.data.shape_keys
+            act = None
+            fcurves = {}
+            for fcurig in actrig.fcurves:
+                prop = getProp(fcurig.data_path)
+                if prop:
+                    skey = self.getShape(prop, skeys)
+                    if skey:
+                        channel = 'key_blocks["%s"].value' % skey.name
+                        if skeys.animation_data is None:
+                            skeys.animation_data_create()
+                        skey.keyframe_insert("value")
+                        if act is None:
+                            act = skeys.animation_data.action
+                            act.name = "%s:%s" % (ob.name, actrig.name)
+                        fcu = act.fcurves.find(channel)
+                        self.copyFcurve(fcurig, fcu)
+                        fcurves[fcurig.data_path] = fcurig
+            for fcu in fcurves.values():
+                actrig.fcurves.remove(fcu)
+
+
+    def getShape(self, prop, skeys):
+        if prop in skeys.key_blocks.keys():
+            return skeys.key_blocks[prop]
+        sname = self.morphnames.get(prop)
+        if sname in skeys.key_blocks.keys():
+            return skeys.key_blocks[sname]
+        return None
+
+
+    def copyFcurve(self, fcu1, fcu2):
+        for kp in list(fcu2.keyframe_points):
+            fcu2.keyframe_points.remove(kp, fast=True)
+        for kp in fcu1.keyframe_points:
+            fcu2.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
+        for attr in ['color', 'color_mode', 'extrapolation', 'hide', 'lock', 'mute', 'select']:
+            setattr(fcu2, attr, getattr(fcu1, attr))
+
+#-------------------------------------------------------------
+#   Transfer verts to shapekeys
+#-------------------------------------------------------------
+
+class DAZ_OT_MeshToShape(DazOperator, IsMesh):
+    bl_idname = "daz.transfer_mesh_to_shape"
+    bl_label = "Transfer Mesh To Shapekey"
+    bl_description = "Transfer selected mesh to active shapekey"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        trg = context.object
+        skeys = trg.data.shape_keys
+        if skeys is None:
+            raise DazError("Target mesh must have shapekeys")
+        idx = trg.active_shape_key_index
+        if idx == 0:
+            raise DazError("Cannot transfer to Basic shapekeys")
+        objects = [ob for ob in getSelectedMeshes(context) if ob != trg]
+        if len(objects) != 1:
+            raise DazError("Exactly two meshes must be selected")
+        src = objects[0]
+        nsverts = len(src.data.vertices)
+        ntverts = len(trg.data.vertices)
+        if nsverts != ntverts:
+            raise DazError("Vertex count mismatch:  \n%d != %d" % (nsverts, ntverts))
+        skey = skeys.key_blocks[idx]
+        for v in src.data.vertices:
+            skey.data[v.index].co = v.co
+
+#-------------------------------------------------------------
+#   Apply all shapekeys
+#-------------------------------------------------------------
+
+class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
+    bl_idname = "daz.apply_all_shapekeys"
+    bl_label = "Apply All Shapekeys"
+    bl_description = "Apply all shapekeys to selected meshes"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from ..transfer import applyAllShapekeys
+        for ob in getSelectedMeshes(context):
+            applyAllShapekeys(ob)
+
+#----------------------------------------------------------
+#   Mix Shapekeys
+#----------------------------------------------------------
+
+def shapekeyItems1(self, context):
+    filter = self.filter1.lower()
+    enums = [(sname,sname,sname)
+            for sname in context.object.data.shape_keys.key_blocks.keys()[1:]
+            if filter in sname.lower()
+           ]
+    enums.sort()
+    return enums
+
+
+def shapekeyItems2(self, context):
+    filter = self.filter2.lower()
+    enums = [(sname,sname,sname)
+              for sname in context.object.data.shape_keys.key_blocks.keys()[1:]
+              if filter in sname.lower()
+            ]
+    enums.sort()
+    return [("-", "-", "None")] + enums
+
+
+class DAZ_OT_MixShapekeys(DazOperator, IsShape):
+    bl_idname = "daz.mix_shapekeys"
+    bl_label = "Mix Shapekeys"
+    bl_description = "Mix shapekeys"
+    bl_options = {'UNDO'}
+
+    shape1 : EnumProperty(
+        items = shapekeyItems1,
+        name = "Shapekey 1",
+        description = "First shapekey")
+
+    shape2 : EnumProperty(
+        items = shapekeyItems2,
+        name = "Shapekey 2",
+        description = "Second shapekey")
+
+    factor1 : FloatProperty(
+        name = "Factor 1",
+        description = "First factor",
+        default = 1.0)
+
+    factor2 : FloatProperty(
+        name = "Factor 2",
+        description = "Second factor",
+        default = 1.0)
+
+    allSimilar : BoolProperty(
+        name = "Mix All Similar",
+        description = "Mix all shapekeys with similar names",
+        default = False)
+
+    overwrite : BoolProperty(
+        name = "Overwrite First",
+        description = "Overwrite the first shapekey",
+        default = True)
+
+    delete : BoolProperty(
+        name = "Delete Merged",
+        description = "Delete unused shapekeys after merge",
+        default = True)
+
+    newName : StringProperty(
+        name = "New shapekey",
+        description = "Name of new shapekey",
+        default = "Shapekey")
+
+    filter1 : StringProperty(
+        name = "Filter 1",
+        description = "Show only items containing this string",
+        default = ""
+        )
+
+    filter2 : StringProperty(
+        name = "Filter 2",
+        description = "Show only items containing this string",
+        default = ""
+        )
+
+    def draw(self, context):
+        row = self.layout.row()
+        row.prop(self, "allSimilar")
+        row.prop(self, "overwrite")
+        row.prop(self, "delete")
+        row = self.layout.split(factor=0.2)
+        row.label(text="")
+        row.label(text="First")
+        row.label(text="Second")
+        if self.allSimilar:
+            row = self.layout.split(factor=0.2)
+            row.label(text="Factor")
+            row.prop(self, "factor1", text="")
+            row.prop(self, "factor2", text="")
+            return
+        row = self.layout.split(factor=0.2)
+        row.label(text="")
+        row.prop(self, "filter1", icon='VIEWZOOM', text="")
+        row.prop(self, "filter2", icon='VIEWZOOM', text="")
+        row = self.layout.split(factor=0.2)
+        row.label(text="Factor")
+        row.prop(self, "factor1", text="")
+        row.prop(self, "factor2", text="")
+        row = self.layout.split(factor=0.2)
+        row.label(text="Shapekey")
+        row.prop(self, "shape1", text="")
+        row.prop(self, "shape2", text="")
+        if not self.overwrite:
+            self.layout.prop(self, "newName")
+
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_props_dialog(self, width=500)
+        return {'RUNNING_MODAL'}
+
+
+    def run(self, context):
+        ob = context.object
+        skeys = ob.data.shape_keys
+        if self.allSimilar:
+            shapes = self.findSimilar(ob, skeys)
+            for shape1,shape2 in shapes:
+                print("Mix", shape1, shape2)
+                self.mixShapekeys(ob, skeys, shape1, shape2)
+        else:
+            self.mixShapekeys(ob, skeys, self.shape1, self.shape2)
+
+
+    def findSimilar(self, ob, skeys):
+        slist = list(skeys.key_blocks.keys())
+        slist.sort()
+        shapes = []
+        for n in range(len(slist)-1):
+            shape1 = slist[n]
+            shape2 = slist[n+1]
+            words = shape2.rsplit(".",1)
+            if (len(words) == 2 and
+                words[0] == shape1):
+                shapes.append((shape1,shape2))
+        return shapes
+
+
+    def mixShapekeys(self, ob, skeys, shape1, shape2):
+        if shape1 == shape2:
+            raise DazError("Cannot merge shapekey to itself")
+        skey1 = skeys.key_blocks[shape1]
+        if shape2 == "-":
+            skey2 = None
+            factor = self.factor1 - 1
+            coords = [(self.factor1 * skey1.data[n].co - factor * v.co)
+                       for n,v in enumerate(ob.data.vertices)]
+        else:
+            skey2 = skeys.key_blocks[shape2]
+            factor = self.factor1 + self.factor2 - 1
+            coords = [(self.factor1 * skey1.data[n].co +
+                       self.factor2 * skey2.data[n].co - factor * v.co)
+                       for n,v in enumerate(ob.data.vertices)]
+        if self.overwrite:
+            skey = skey1
+        else:
+            skey = ob.shape_key_add(name=self.newName)
+        for n,co in enumerate(coords):
+            skey.data[n].co = co
+        if self.delete:
+            if skey2:
+                self.deleteShape(ob, skeys, skey2, shape2)
+            if not self.overwrite:
+                self.deleteShape(ob, skeys, skey1, shape1)
+
+
+    def deleteShape(self, ob, skeys, skey, sname):
+        skey.driver_remove("value")
+        skey.driver_remove("mute")
+        skey.driver_remove("slider_min")
+        skey.driver_remove("slider_max")
+        removeShapeDriversAndProps(ob.parent, sname)
+        updateDrivers(skeys)
+        ob.shape_key_remove(skey)
+
+#----------------------------------------------------------
+#   Shapekey to vertexgroup
+#----------------------------------------------------------
+
+class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsShape):
+    bl_idname = "daz.visualize_shapekey"
+    bl_label = "Visualize Shapekey"
+    bl_description = "Visualize shapekey as a vertex group"
+    bl_options = {'UNDO'}
+
+    mindist : FloatProperty(
+        name = "Lower Threshold",
+        description = "Lower threshold for shapekey distance, in mm",
+        min = 0.0, max = 1.0,
+        precision = 4,
+        default = 0.1)
+
+    maxdist : FloatProperty(
+        name = "Upper Threshold",
+        description = "Upper threshold for shapekey distance, in mm",
+        min = 0.0, max = 100.0,
+        precision = 4,
+        default = 1.0)
+
+    def draw(self, context):
+        self.layout.prop(self, "mindist")
+        self.layout.prop(self, "maxdist")
+
+    def run(self, context):
+        ob = context.object
+        eps = 0.1*self.mindist*ob.DazScale
+        factor = 10/(self.maxdist*ob.DazScale)
+        skeys = ob.data.shape_keys
+        skey = skeys.key_blocks[ob.active_shape_key_index]
+        if skey.name not in ob.vertex_groups:
+            vgrp = ob.vertex_groups.new(name=skey.name)
+        else:
+            vgrp = ob.vertex_groups[skey.name]
+            for vn,v in enumerate(ob.data.vertices):
+                vgrp.remove([vn])
+        dists = [(vn,(skey.data[vn].co - v.co).length) for vn,v in enumerate(ob.data.vertices)]
+        weights = [(vn,factor*dist) for vn,dist in dists if dist > eps]
+        for vn,w in weights:
+            vgrp.add([vn], w, 'REPLACE')
+
+#----------------------------------------------------------
+#   Apply selectedshapekeys
+#----------------------------------------------------------
+
+class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
+    bl_idname = "daz.apply_active_shapekey"
+    bl_label = "Apply Active Shapekey"
+    bl_description = "Add active shapekey to all other shapekeys"
+    bl_options = {'UNDO'}
+
+    def draw(self, context):
+        ob = context.object
+        skeys = ob.data.shape_keys
+        skey = skeys.key_blocks[ob.active_shape_key_index]
+        self.layout.label(text='Apply shapekey "%s"?' % skey.name)
+
+    def run(self, context):
+        t1 = perf_counter()
+        ob = context.object
+        skeys = ob.data.shape_keys
+        skey = skeys.key_blocks[ob.active_shape_key_index]
+        verts = ob.data.vertices
+        data = skey.data
+        offsets = [d.co - v.co for v,d in zip(verts, data)]
+        skey.driver_remove("value")
+        skey.driver_remove("mute")
+        skey.driver_remove("slider_min")
+        skey.driver_remove("slider_max")
+        ob.shape_key_remove(skey)
+        for v,offs in zip(verts,offsets):
+            v.co += offs
+        for skey in skeys.key_blocks:
+            print(skey.name)
+            data = skey.data
+            for d,offs in zip(data,offsets):
+                d.co += offs
+        t2 = perf_counter()
+        print("Shapekey applied in %.1f seconds" % (t2-t1))
+
+#-------------------------------------------------------------
+#   Initialize
+#-------------------------------------------------------------
+
+classes = [
+    DAZ_OT_ApplyAllShapekeys,
+    DAZ_OT_MixShapekeys,
+    DAZ_OT_VisualizeShapekey,
+    DAZ_OT_ApplyActiveShapekey,
+    DAZ_OT_MeshToShape,
+    DAZ_OT_TransferAnimationToShapekeys,
+]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)

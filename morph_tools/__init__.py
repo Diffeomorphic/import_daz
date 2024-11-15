@@ -26,9 +26,11 @@ elif "MorphFeature" in locals():
     print("Reloading Morph Tools")
     import imp
     imp.reload(category)
+    imp.reload(shapekeys)
 else:
     print("\nLoading Morph Tools")
     from . import category
+    from . import shapekeys
     MorphFeature = True
 
 #----------------------------------------------------------
@@ -44,8 +46,6 @@ class DAZ_PT_Categories(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Categories"
 
     def draw(self, context):
-        self.layout.operator("daz.remove_shapekeys")
-        self.layout.separator()
         self.layout.operator("daz.add_shape_to_category")
         self.layout.operator("daz.remove_shape_from_category")
         self.layout.operator("daz.rename_category")
@@ -55,12 +55,46 @@ class DAZ_PT_Categories(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.protect_categories")
         self.layout.operator("daz.protect_morphs")
 
+
+class DAZ_PT_Shapekeys(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_SetupMorphs"
+    bl_idname = "DAZ_PT_Shapekeys"
+    bl_label = "Shapekeys"
+
+    def draw(self, context):
+        self.layout.operator("daz.convert_morphs_to_shapekeys")
+        self.layout.operator("daz.transfer_animation_to_shapekeys")
+        self.layout.operator("daz.transfer_mesh_to_shape")
+        self.layout.separator()
+        self.layout.operator("daz.remove_shapekeys")
+        self.layout.operator("daz.apply_all_shapekeys")
+        self.layout.operator("daz.mix_shapekeys")
+        self.layout.operator("daz.visualize_shapekey")
+        self.layout.separator()
+        self.layout.operator("daz.update_slider_limits")
+        self.layout.operator("daz.update_morph_paths")
+
+
+class DAZ_PT_Drivers(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_SetupMorphs"
+    bl_idname = "DAZ_PT_Drivers"
+    bl_label = "Drivers"
+
+    def draw(self, context):
+        self.layout.operator("daz.add_shapekey_drivers")
+        self.layout.operator("daz.remove_shapekey_drivers")
+        self.layout.separator()
+        self.layout.operator("daz.remove_all_drivers")
+        self.layout.operator("daz.bake_all_erc_drivers")
+        self.layout.operator("daz.copy_drivers")
+
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
 classes = [
     DAZ_PT_Categories,
+    DAZ_PT_Shapekeys,
 ]
 
 def register():

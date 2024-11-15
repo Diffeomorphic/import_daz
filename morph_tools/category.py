@@ -848,6 +848,9 @@ class AddRemoveDriver:
                     item.select = False
         return self.invokeDialog(context)
 
+#-------------------------------------------------------------
+#   Add shapekey to category
+#-------------------------------------------------------------
 
 class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEnums, CategoryString, IsShape):
     bl_idname = "daz.add_shape_to_category"
@@ -891,6 +894,9 @@ class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEn
     def getCategory(self, rig, ob, sname):
         return ""
 
+#-------------------------------------------------------------
+#   Add shapekey drivers
+#-------------------------------------------------------------
 
 class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, CategoryString, IsShape):
     bl_idname = "daz.add_shapekey_drivers"
@@ -926,6 +932,9 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
     def getCategory(self, rig, ob, sname):
         return ""
 
+#-------------------------------------------------------------
+#   Remove shape from category
+#-------------------------------------------------------------
 
 class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
     bl_idname = "daz.remove_shape_from_category"
@@ -966,6 +975,9 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
             for prop in props:
                 removeFromPropGroup(cat.morphs, prop)
 
+#-------------------------------------------------------------
+#   Remove shapekeys
+#-------------------------------------------------------------
 
 class DAZ_OT_RemoveShapekeys(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
     bl_idname = "daz.remove_shapekeys"
@@ -990,6 +1002,9 @@ class DAZ_OT_RemoveShapekeys(DazOperator, AddRemoveDriver, CustomSelector, IsSha
     def getCategory(self, rig, ob, sname):
         return ""
 
+#-------------------------------------------------------------
+#   Remove shapekey drivers
+#-------------------------------------------------------------
 
 class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector, IsShape):
     bl_idname = "daz.remove_shapekey_drivers"
@@ -1170,107 +1185,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         return nmod
 
 #-------------------------------------------------------------
-#   Convert pose to shapekey
-#-------------------------------------------------------------
-
-class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
-    bl_idname = "daz.transfer_animation_to_shapekeys"
-    bl_label = "Transfer Animation To Shapekeys"
-    bl_description = (
-        "Transfer the armature action to actions for shapekeys.\n" +
-        "From active armature to selected meshes.\n" +
-        "Transferred morph F-curves are removed from the armature action")
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        rig = getRigFromContext(context)
-        if not (rig and rig.animation_data and rig.animation_data.action):
-            raise DazError("No action found")
-        actrig = rig.animation_data.action
-        meshes = getShapeChildren(rig)
-        if not meshes:
-            raise DazError("No meshes with shapekeys selected")
-
-        self.morphnames = {}
-        for morphset in MS.Standards:
-            pgs = getattr(rig, "Daz"+morphset)
-            for pg in pgs:
-                self.morphnames[pg.name] = pg.text
-        for cat in rig.DazMorphCats:
-            for pg in cat.morphs:
-                self.morphnames[pg.name] = pg.text
-
-        for ob in meshes:
-            skeys = ob.data.shape_keys
-            act = None
-            fcurves = {}
-            for fcurig in actrig.fcurves:
-                prop = getProp(fcurig.data_path)
-                if prop:
-                    skey = self.getShape(prop, skeys)
-                    if skey:
-                        channel = 'key_blocks["%s"].value' % skey.name
-                        if skeys.animation_data is None:
-                            skeys.animation_data_create()
-                        skey.keyframe_insert("value")
-                        if act is None:
-                            act = skeys.animation_data.action
-                            act.name = "%s:%s" % (ob.name, actrig.name)
-                        fcu = act.fcurves.find(channel)
-                        self.copyFcurve(fcurig, fcu)
-                        fcurves[fcurig.data_path] = fcurig
-            for fcu in fcurves.values():
-                actrig.fcurves.remove(fcu)
-
-
-    def getShape(self, prop, skeys):
-        if prop in skeys.key_blocks.keys():
-            return skeys.key_blocks[prop]
-        sname = self.morphnames.get(prop)
-        if sname in skeys.key_blocks.keys():
-            return skeys.key_blocks[sname]
-        return None
-
-
-    def copyFcurve(self, fcu1, fcu2):
-        for kp in list(fcu2.keyframe_points):
-            fcu2.keyframe_points.remove(kp, fast=True)
-        for kp in fcu1.keyframe_points:
-            fcu2.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
-        for attr in ['color', 'color_mode', 'extrapolation', 'hide', 'lock', 'mute', 'select']:
-            setattr(fcu2, attr, getattr(fcu1, attr))
-
-#-------------------------------------------------------------
-#   Transfer verts to shapekeys
-#-------------------------------------------------------------
-
-class DAZ_OT_MeshToShape(DazOperator, IsMesh):
-    bl_idname = "daz.transfer_mesh_to_shape"
-    bl_label = "Transfer Mesh To Shapekey"
-    bl_description = "Transfer selected mesh to active shapekey"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        trg = context.object
-        skeys = trg.data.shape_keys
-        if skeys is None:
-            raise DazError("Target mesh must have shapekeys")
-        idx = trg.active_shape_key_index
-        if idx == 0:
-            raise DazError("Cannot transfer to Basic shapekeys")
-        objects = [ob for ob in getSelectedMeshes(context) if ob != trg]
-        if len(objects) != 1:
-            raise DazError("Exactly two meshes must be selected")
-        src = objects[0]
-        nsverts = len(src.data.vertices)
-        ntverts = len(trg.data.vertices)
-        if nsverts != ntverts:
-            raise DazError("Vertex count mismatch:  \n%d != %d" % (nsverts, ntverts))
-        skey = skeys.key_blocks[idx]
-        for v in src.data.vertices:
-            skey.data[v.index].co = v.co
-
-#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -1293,8 +1207,6 @@ classes = [
     DAZ_OT_RemoveShapekeys,
 
     DAZ_OT_ConvertMorphsToShapes,
-    DAZ_OT_TransferAnimationToShapekeys,
-    DAZ_OT_MeshToShape,
 ]
 
 def register():

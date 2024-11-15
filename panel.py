@@ -292,31 +292,6 @@ class DAZ_PT_RiggingTools(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.fix_limit_rot_constraints")
         self.layout.operator("daz.set_driver_modes")
 
-
-class DAZ_PT_MoreMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupMorphs"
-    bl_idname = "DAZ_PT_MoreMorphs"
-    bl_label = "More Morph Tools"
-
-    def draw(self, context):
-        scn = context.scene
-        self.layout.operator("daz.convert_morphs_to_shapekeys")
-        self.layout.operator("daz.transfer_animation_to_shapekeys")
-        self.layout.operator("daz.transfer_mesh_to_shape")
-        self.layout.separator()
-        self.layout.operator("daz.add_shapekey_drivers")
-        self.layout.operator("daz.remove_shapekey_drivers")
-        self.layout.operator("daz.apply_all_shapekeys")
-        self.layout.operator("daz.mix_shapekeys")
-        self.layout.operator("daz.visualize_shapekey")
-        self.layout.separator()
-        self.layout.operator("daz.remove_all_drivers")
-        self.layout.operator("daz.bake_all_erc_drivers")
-        self.layout.operator("daz.copy_drivers")
-        self.layout.separator()
-        self.layout.operator("daz.update_slider_limits")
-        self.layout.operator("daz.update_morph_paths")
-
 #----------------------------------------------------------
 #   Utilities panel
 #----------------------------------------------------------
@@ -1015,7 +990,6 @@ classes = [
     DAZ_PT_MoreMaterials,
     DAZ_PT_SetupMorphs,
     DAZ_PT_SetupStandardMorphs,
-    DAZ_PT_MoreMorphs,
     DAZ_PT_SetupVisibility,
     DAZ_PT_SetupHair,
     DAZ_PT_SetupFinishing,
