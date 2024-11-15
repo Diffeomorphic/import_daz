@@ -55,7 +55,7 @@ elif "bpy" in locals():
     imp.reload(simple_ik)
     imp.reload(rig_mhx)
     imp.reload(rig_rigify)
-    imp.reload(export_daz)
+    imp.reload(export_tools)
     imp.reload(mesh_tools)
     imp.reload(morph_tools)
     imp.reload(hd_tools)
@@ -70,7 +70,7 @@ else:
     from . import simple_ik
     from . import rig_mhx
     from . import rig_rigify
-    from . import export_daz
+    from . import export_tools
     from . import mesh_tools
     from . import morph_tools
     from . import hd_tools
@@ -99,6 +99,9 @@ def toggleRigMhx(self, context):
 def toggleRigRigify(self, context):
     toggleModule("rig_rigify", self.useRigRigify)
 
+def toggleRigTools(self, context):
+    toggleModule("rig_tools", self.useRigTools)
+
 def toggleMeshTools(self, context):
     toggleModule("mesh_tools", self.useMeshTools)
 
@@ -108,11 +111,8 @@ def toggleMorphTools(self, context):
 def toggleHDTools(self, context):
     toggleModule("hd_tools", self.useHDTools)
 
-def toggleExportDaz(self, context):
-    toggleModule("export_daz", self.useExportDaz)
-
-def toggleRigDaz(self, context):
-    toggleModule("rig_tools", self.useRigDaz)
+def toggleExportTools(self, context):
+    toggleModule("export_tools", self.useExportTools)
 
 def toggleShellEdit(self, context):
     toggleModule("shell_edit", self.useShellEdit)
@@ -184,17 +184,17 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleHDTools)
 
-    useExportDaz : BoolProperty(
-        name = "DAZ Preset Exporter",
-        description = "Tools for exporting presets back to DAZ Studio",
+    useExportTools : BoolProperty(
+        name = "Export Tools",
+        description = "Tools for exporting presets and UV maps back to DAZ Studio",
         default = False,
-        update = toggleExportDaz)
+        update = toggleExportTools)
 
-    useRigDaz : BoolProperty(
-        name = "More Rigging Tools",
-        description = "More tools for rigging DAZ figures",
+    useRigTools : BoolProperty(
+        name = "Rigging Tools",
+        description = "Tools for rigging DAZ figures",
         default = False,
-        update = toggleRigDaz)
+        update = toggleRigTools)
 
     useShellEdit : BoolProperty(
         name = "Shell Editor",
@@ -214,8 +214,8 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useMeshTools")
         self.layout.prop(self, "useMorphTools")
         self.layout.prop(self, "useHDTools")
-        self.layout.prop(self, "useExportDaz")
-        self.layout.prop(self, "useRigDaz")
+        self.layout.prop(self, "useExportTools")
+        self.layout.prop(self, "useRigTools")
         self.layout.prop(self, "useShellEdit")
 
 #----------------------------------------------------------
@@ -262,10 +262,10 @@ def register():
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.register()
-        if prefs.useExportDaz:
-            from . import export_daz
-            export_daz.register()
-        if prefs.useRigDaz:
+        if prefs.useExportTools:
+            from . import export_tools
+            export_tools.register()
+        if prefs.useRigTools:
             from . import rig_tools
             rig_tools.register()
         if prefs.useShellEdit:
@@ -287,10 +287,10 @@ def unregister():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useExportDaz:
-            from . import export_daz
-            export_daz.unregister()
-        if prefs.useRigDaz:
+        if prefs.useExportTools:
+            from . import export_tools
+            export_tools.unregister()
+        if prefs.useRigTools:
             from . import rig_tools
             rig_tools.unregister()
         if prefs.useShellEdit:

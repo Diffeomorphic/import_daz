@@ -22,7 +22,7 @@ from ..debug import DEBUG
 
 if not DEBUG:
     pass
-elif "SimpleIk" in locals():
+elif "SimpleIkFeature" in locals():
     print("Reloading Simple IK")
     import imp
     imp.reload(simple)
@@ -31,8 +31,7 @@ else:
     print("Loading Simple IK")
     from . import simple
     from . import panel
-
-SimpleIk = True
+    SimpleIkFeature = True
 
 #----------------------------------------------------------
 #   Access

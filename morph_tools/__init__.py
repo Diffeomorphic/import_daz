@@ -29,7 +29,7 @@ elif "MorphFeature" in locals():
     imp.reload(shapekeys)
     imp.reload(morph_panel)
 else:
-    print("\nLoading Morph Tools")
+    print("Loading Morph Tools")
     from . import category
     from . import shapekeys
     from . import morph_panel

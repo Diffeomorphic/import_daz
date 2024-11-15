@@ -22,7 +22,7 @@ from ..debug import DEBUG
 
 if not DEBUG:
     pass
-elif "MHX" in locals():
+elif "MHXFeature" in locals():
     print("Reloading MHX")
     import imp
     imp.reload(mhx_data)
@@ -31,8 +31,7 @@ else:
     print("Loading MHX")
     from . import mhx_data
     from . import mhx
-
-MHX = True
+    MHXFeature = True
 
 #----------------------------------------------------------
 #   Access

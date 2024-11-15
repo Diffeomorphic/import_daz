@@ -23,7 +23,7 @@ from ..debug import DEBUG
 if not DEBUG:
     pass
 elif "RigToolsFeature" in locals():
-    print("Reloading DAZ Rigging")
+    print("Reloading Rig Tools")
     import imp
     imp.reload(mute)
     imp.reload(ikgoals)
@@ -35,7 +35,7 @@ elif "RigToolsFeature" in locals():
     #imp.reload(unreal)
     imp.reload(rig_panel)
 else:
-    print("Loading DAZ Rigging")
+    print("Loading Rig Tools")
     from . import mute
     from . import ikgoals
     from . import prefix
@@ -45,15 +45,14 @@ else:
     from . import legacy
     #from . import unreal
     from . import rig_panel
-
-RigToolsFeature = True
+    RigToolsFeature = True
 
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
 def register():
-    print("Register DAZ Rigging")
+    print("Register Rig Tools")
     from . import mute, ikgoals, prefix, store, bvh, mannequin, legacy, rig_panel, unreal
     mute.register()
     ikgoals.register()

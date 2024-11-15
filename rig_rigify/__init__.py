@@ -22,7 +22,7 @@ from ..debug import DEBUG
 
 if not DEBUG:
     pass
-elif "Rigify" in locals():
+elif "RigifyFeature" in locals():
     print("Reloading Rigify")
     import imp
     imp.reload(rigify_data)
@@ -33,8 +33,7 @@ else:
     from . import rigify_data
     from . import rigify
     from . import panel
-
-Rigify = True
+    RigifyFeature = True
 
 #----------------------------------------------------------
 #   Access

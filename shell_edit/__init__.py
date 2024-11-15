@@ -18,7 +18,7 @@ from ..debug import DEBUG
 
 if not DEBUG:
     pass
-elif "bpy" in locals():
+elif "ShellEditFeature" in locals():
     print("Reloading Shell Editor")
     import imp
     imp.reload(shell)
@@ -29,6 +29,7 @@ else:
     from . import shell
     from . import lie
     from . import uvs
+    ShellEditFeature = True
 
 #----------------------------------------------------------
 #   Panel

@@ -27,7 +27,7 @@ elif "HDFeature" in locals():
     import imp
     imp.reload(hd_morphs)
 else:
-    print("\nLoading HD Tools")
+    print("Loading HD Tools")
     from . import hd_morphs
     HDFeature = True
 

@@ -22,17 +22,18 @@ from ..debug import DEBUG
 
 if not DEBUG:
     pass
-elif "bpy" in locals():
-    print("Reloading DAZ Exporter")
+elif "ExportFeature" in locals():
+    print("Reloading Export Tools")
     import imp
     imp.reload(preset)
     imp.reload(pose_preset)
     imp.reload(morph_preset)
 else:
-    print("\nLoading DAZ Exporter")
+    print("Loading Export Tools")
     from . import preset
     from . import pose_preset
     from . import morph_preset
+    ExportFeature = True
 
 #----------------------------------------------------------
 #   Export panel
@@ -60,7 +61,7 @@ classes = [
 ]
 
 def register():
-    print("Register DAZ Preset Exporter")
+    print("Register Export Tools")
     for cls in classes:
         bpy.utils.register_class(cls)
     from . import preset, pose_preset, morph_preset
