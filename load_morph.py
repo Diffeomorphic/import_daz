@@ -366,7 +366,7 @@ class LoadMorph(DriverUser):
             return None,True
 
         from .driver import makePropDriver
-        from .hdmorphs import addSkeyToUrls
+        from .hd_data import addSkeyToUrls
         useBuild = True
 
         parent = self.getGraftParent(asset)

@@ -416,7 +416,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         from .load_json import JL
         from .files import parseAssetFile
         from .modifier import Morph
-        from .hdmorphs import addSkeyToUrls
+        from .hd_data import addSkeyToUrls
         LS.forMorphLoad(trg)
         struct = JL.load(filepath)
         asset = parseAssetFile(struct)

@@ -1824,7 +1824,7 @@ classes = [
 ]
 
 def register():
-    from .propgroups import DazIntGroup, DazFloatGroup, DazPairGroup, DazRigidityGroup, DazRigidityScaleFactor, DazStringStringGroup, DazTextGroup
+    from .propgroups import DazIntGroup, DazFloatGroup, DazPairGroup, DazRigidityGroup, DazRigidityScaleFactor, DazStringStringGroup, DazStringBoolGroup, DazTextGroup
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -1839,6 +1839,8 @@ def register():
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
+    bpy.types.Mesh.DazDhdmFiles = CollectionProperty(type = DazStringBoolGroup)
+    bpy.types.Mesh.DazMorphFiles = CollectionProperty(type = DazStringBoolGroup)
 
     bpy.types.Object.DazBlendFile = StringProperty(
         name = "Blend File",

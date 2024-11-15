@@ -40,7 +40,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "matedit", "udim", "merge", "scale", "tables", "proxy", "hide",
            "transfer",
            "dforce", "pin", "hair", "main", "geonodes", "attr",
-           "hdmorphs", "ctrl_rig", "moho", "gaze", "scan", "api",
+           "hd_data", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
 
 from .debug import DEBUG
@@ -57,6 +57,7 @@ elif "bpy" in locals():
     imp.reload(rig_rigify)
     imp.reload(export_daz)
     imp.reload(mesh_tools)
+    imp.reload(hd_tools)
     imp.reload(rig_tools)
     imp.reload(shell_edit)
 
@@ -70,11 +71,13 @@ else:
     from . import rig_rigify
     from . import export_daz
     from . import mesh_tools
+    from . import hd_tools
     from . import rig_tools
     from . import shell_edit
 
 
 import bpy
+from bpy.props import BoolProperty
 from .settings import GS
 from .api import *
 
@@ -97,6 +100,9 @@ def toggleRigRigify(self, context):
 def toggleMeshTools(self, context):
     toggleModule("mesh_tools", self.useMeshTools)
 
+def toggleHDTools(self, context):
+    toggleModule("hd_tools", self.useHDTools)
+
 def toggleExportDaz(self, context):
     toggleModule("export_daz", self.useExportDaz)
 
@@ -107,6 +113,7 @@ def toggleShellEdit(self, context):
     toggleModule("shell_edit", self.useShellEdit)
 
 def toggleModule(module, enable):
+    exec("from . import %s" % module)
     if enable:
         exec("%s.register()" % module)
     else:
@@ -136,43 +143,49 @@ class DazPreferences(bpy.types.AddonPreferences):
         update = updateSettings
     )
 
-    useSimpleIk : bpy.props.BoolProperty(
+    useSimpleIk : BoolProperty(
         name = "Simple IK",
         description = "Tools for simple IK",
         default = False,
         update = toggleSimpleIk)
 
-    useRigMhx : bpy.props.BoolProperty(
+    useRigMhx : BoolProperty(
         name = "MHX",
         description = "Tools for MHX rig",
         default = False,
         update = toggleRigMhx)
 
-    useRigRigify : bpy.props.BoolProperty(
+    useRigRigify : BoolProperty(
         name = "Rigify",
         description = "Tools for Rigify",
         default = False,
         update = toggleRigRigify)
 
-    useMeshTools : bpy.props.BoolProperty(
+    useMeshTools : BoolProperty(
         name = "Mesh Tools",
         description = "Tools for dealing with DAZ meshes",
         default = False,
         update = toggleMeshTools)
 
-    useExportDaz : bpy.props.BoolProperty(
+    useHDTools : BoolProperty(
+        name = "HD Tools",
+        description = "Tools for dealing with HD morphs",
+        default = False,
+        update = toggleHDTools)
+
+    useExportDaz : BoolProperty(
         name = "DAZ Preset Exporter",
         description = "Tools for exporting presets back to DAZ Studio",
         default = False,
         update = toggleExportDaz)
 
-    useRigDaz : bpy.props.BoolProperty(
+    useRigDaz : BoolProperty(
         name = "More Rigging Tools",
         description = "More tools for rigging DAZ figures",
         default = False,
         update = toggleRigDaz)
 
-    useShellEdit : bpy.props.BoolProperty(
+    useShellEdit : BoolProperty(
         name = "Shell Editor",
         description = "Tools for editing shells and layered images",
         default = False,
@@ -188,6 +201,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useRigMhx")
         self.layout.prop(self, "useRigRigify")
         self.layout.prop(self, "useMeshTools")
+        self.layout.prop(self, "useHDTools")
         self.layout.prop(self, "useExportDaz")
         self.layout.prop(self, "useRigDaz")
         self.layout.prop(self, "useShellEdit")
@@ -203,7 +217,7 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "guess", "convert", "main", "finger",
             "matedit", "scale", "proxy", "rigify", "merge", "hide",
             "mhx", "pin", "hair", "transfer", "dforce", "gaze",
-            "hdmorphs", "ctrl_rig", "moho", "udim", "scan", "attr",
+            "ctrl_rig", "moho", "udim", "scan", "attr",
             ]
 
 def register():
@@ -230,6 +244,9 @@ def register():
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.register()
+        if prefs.useHDTools:
+            from . import hd_tools
+            hd_tools.register()
         if prefs.useExportDaz:
             from . import export_daz
             export_daz.register()
@@ -267,6 +284,9 @@ def unregister():
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.unregister()
+        if prefs.useHDTools:
+            from . import hd_tools
+            hd_tools.unregister()
         if prefs.useSimpleIk:
             from . import simple_ik
             simple_ik.unregister()

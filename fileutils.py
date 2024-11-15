@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import bpy
 import os
 import json
@@ -470,3 +469,19 @@ def copyPresets(srcop, trgop):
                 shutil.copy(src, trg)
     except:
         print("Could not copy preset files")
+
+#----------------------------------------------------------
+#   Get .dhdm and jcm files
+#----------------------------------------------------------
+
+def getHDDirs(ob, attr):
+    if ob is None:
+        ob = bpy.context.object
+    if ob and ob.type == 'MESH':
+        folders = {}
+        for item in getattr(ob.data, attr):
+            folder = os.path.dirname(item.s)
+            folders[folder] = True
+        return list(folders.keys())
+    return []
+

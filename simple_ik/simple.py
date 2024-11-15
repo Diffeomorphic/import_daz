@@ -1208,7 +1208,7 @@ class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
             self.changeLayers(rig, on, off)
 
 #----------------------------------------------------------
-#   Connect bone chains
+#   Toggle FK/IK
 #----------------------------------------------------------
 
 class DAZ_OT_ToggleFkIk(DazOperator, SimpleIKSnapper):

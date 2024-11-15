@@ -38,7 +38,7 @@ class DAZ_PT_RuntimeTab:
     bl_options = {'DEFAULT_CLOSED'}
 
 #----------------------------------------------------------
-#   Setup panel
+#   Setup tab
 #----------------------------------------------------------
 
 class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -50,9 +50,13 @@ class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.easy_import_daz")
         self.layout.prop(scn, "DazFavoPath")
         self.layout.separator()
+        self.layout.operator("daz.import_daz_manually")
         self.layout.operator("daz.global_settings")
         self.layout.prop(scn, "DazPreferredRoot")
 
+#----------------------------------------------------------
+#   Corrections
+#----------------------------------------------------------
 
 class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupCorrections"
@@ -69,6 +73,9 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.apply_active_shapekey")
         self.layout.operator("daz.change_armature")
 
+#----------------------------------------------------------
+#   Materials
+#----------------------------------------------------------
 
 class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupMaterials"
@@ -89,6 +96,40 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.reset_materials")
         self.layout.operator("daz.make_combo_material")
 
+
+class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_SetupMaterials"
+    bl_idname = "DAZ_PT_MoreMaterials"
+    bl_label = "More Material Tools"
+
+    def draw(self, context):
+        self.layout.operator("daz.import_daz_materials")
+        self.layout.operator("daz.drive_shell_influence")
+        self.layout.separator()
+        self.layout.operator("daz.make_palette")
+        self.layout.operator("daz.copy_materials")
+        self.layout.separator()
+        self.layout.operator("daz.combine_scene_materials")
+        self.layout.operator("daz.find_missing_textures")
+        self.layout.operator("daz.activate_diffuse")
+        #self.layout.operator("daz.replace_materials")
+        self.layout.operator("daz.scale_materials")
+        self.layout.separator()
+        self.layout.operator("daz.prune_node_trees")
+        self.layout.operator("daz.prune_uv_maps")
+        self.layout.separator()
+        self.layout.operator("daz.tiles_from_geograft")
+        self.layout.operator("daz.fix_texture_tiles")
+        self.layout.separator()
+        self.layout.operator("daz.make_decal")
+        self.layout.prop(context.scene, "DazDecalMask")
+        self.layout.separator()
+        self.layout.operator("daz.sort_materials_by_name")
+        self.layout.operator("daz.make_shader_groups")
+
+#----------------------------------------------------------
+#   Morphs
+#----------------------------------------------------------
 
 class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupMorphs"
@@ -138,6 +179,9 @@ class DAZ_PT_SetupStandardMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.import_flexions")
         self.layout.operator("daz.create_bulges")
 
+#----------------------------------------------------------
+#   Visibility
+#----------------------------------------------------------
 
 class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupVisibility"
@@ -152,6 +196,9 @@ class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.remove_visibility_drivers")
         self.layout.operator("daz.add_shape_vis_drivers")
 
+#----------------------------------------------------------
+#   Hair
+#----------------------------------------------------------
 
 class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupHair"
@@ -180,6 +227,9 @@ class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.color_hair")
         self.layout.operator("daz.combine_hairs")
 
+#----------------------------------------------------------
+#   Finishing
+#----------------------------------------------------------
 
 class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupFinishing"
@@ -198,8 +248,10 @@ class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.remove_corrupt_drivers")
         self.layout.operator("daz.finalize_armature")
         self.layout.operator("daz.apply_rest_pose")
-        self.layout.operator("daz.connect_bone_chains")
 
+#----------------------------------------------------------
+#   Rigging
+#----------------------------------------------------------
 
 class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_SetupRigging"
@@ -208,71 +260,12 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         pass
 
-
 #----------------------------------------------------------
-#   Advanced setup panel
+#
 #----------------------------------------------------------
 
-class DAZ_PT_Advanced(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_label = "Advanced Setup"
-
-    def draw(self, context):
-        self.layout.operator("daz.import_daz_manually")
-
-
-class DAZ_PT_AdvancedHDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
-    bl_idname = "DAZ_PT_AdvancedHDMesh"
-    bl_label = "HDMesh"
-
-    def draw(self, context):
-        self.layout.operator("daz.copy_grafts_groups")
-        if bpy.app.version >= (2,90,0):
-            self.layout.operator("daz.make_multires")
-            self.layout.separator()
-        self.layout.operator("daz.bake_maps")
-        self.layout.operator("daz.load_baked_maps")
-        self.layout.separator()
-        self.layout.operator("daz.load_normal_map")
-        self.layout.operator("daz.load_scalar_disp")
-        self.layout.operator("daz.load_vector_disp")
-        self.layout.operator("daz.add_driven_value_nodes")
-
-
-class DAZ_PT_AdvancedMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupMaterials"
-    bl_idname = "DAZ_PT_AdvancedMaterials"
-    bl_label = "Advanced Materials"
-
-    def draw(self, context):
-        self.layout.operator("daz.import_daz_materials")
-        self.layout.operator("daz.drive_shell_influence")
-        self.layout.separator()
-        self.layout.operator("daz.make_palette")
-        self.layout.operator("daz.copy_materials")
-        self.layout.separator()
-        self.layout.operator("daz.combine_scene_materials")
-        self.layout.operator("daz.find_missing_textures")
-        self.layout.operator("daz.activate_diffuse")
-        #self.layout.operator("daz.replace_materials")
-        self.layout.operator("daz.scale_materials")
-        self.layout.separator()
-        self.layout.operator("daz.prune_node_trees")
-        self.layout.operator("daz.prune_uv_maps")
-        self.layout.separator()
-        self.layout.operator("daz.tiles_from_geograft")
-        self.layout.operator("daz.fix_texture_tiles")
-        self.layout.separator()
-        self.layout.operator("daz.make_decal")
-        self.layout.prop(context.scene, "DazDecalMask")
-        self.layout.separator()
-        self.layout.operator("daz.sort_materials_by_name")
-        self.layout.operator("daz.make_shader_groups")
-
-
-class DAZ_PT_AdvancedSimulation(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Advanced"
-    bl_idname = "DAZ_PT_AdvancedSimulation"
+class DAZ_PT_Simulation(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_Simulation"
     bl_label = "Simulation"
 
     def draw(self, context):
@@ -301,10 +294,10 @@ class DAZ_PT_RiggingTools(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.set_driver_modes")
 
 
-class DAZ_PT_AdvancedMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
+class DAZ_PT_MoreMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupMorphs"
-    bl_idname = "DAZ_PT_AdvancedMorphs"
-    bl_label = "Advanced Morphs"
+    bl_idname = "DAZ_PT_MoreMorphs"
+    bl_label = "More Morph Tools"
 
     def draw(self, context):
         scn = context.scene
@@ -459,9 +452,9 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
         op.morphset = "All"
 
 
-class DAZ_PT_AdvancedPosing(DAZ_PT_RuntimeTab, bpy.types.Panel):
+class DAZ_PT_MorePosing(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Posing"
-    bl_label = "Advanced Posing"
+    bl_label = "More Posing Tools"
 
     def draw(self, context):
         self.layout.operator("daz.copy_absolute_pose")
@@ -1029,24 +1022,21 @@ classes = [
     DAZ_PT_Setup,
     DAZ_PT_SetupCorrections,
     DAZ_PT_SetupMaterials,
+    DAZ_PT_MoreMaterials,
     DAZ_PT_SetupMorphs,
     DAZ_PT_SetupStandardMorphs,
+    DAZ_PT_MoreMorphs,
     DAZ_PT_SetupVisibility,
     DAZ_PT_SetupHair,
     DAZ_PT_SetupFinishing,
     DAZ_PT_SetupRigging,
-
-    DAZ_PT_Advanced,
-    DAZ_PT_AdvancedHDMesh,
-    DAZ_PT_AdvancedMaterials,
-    DAZ_PT_AdvancedSimulation,
     DAZ_PT_RiggingTools,
-    DAZ_PT_AdvancedMorphs,
+    DAZ_PT_Simulation,
 
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
-    DAZ_PT_AdvancedPosing,
+    DAZ_PT_MorePosing,
     DAZ_PT_LocksLimits,
 
     DAZ_UL_Standard,

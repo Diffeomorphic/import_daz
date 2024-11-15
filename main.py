@@ -867,7 +867,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
         isSingleHD = False
         if GS.useHDArmature:
-            from .hdmorphs import copyGraftGroups
+            from .hd_data import copyGraftGroups
             for hdob in hdmeshes:
                 baseob = getBaseMesh(hdob, meshes)
                 if baseob:
@@ -974,7 +974,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.transferShapes(context, firstMesh, hdmeshes, True, "All", useShapeAsDriver=False)
             if isSingleHD and geografts and hdmeshes:
                 print("Single HD %s, transfer geografts" % hdmeshes[0].name)
-                from .hdmorphs import getHDMaterialVertNums
+                from .hd_data import getHDMaterialVertNums
                 hdmesh = hdmeshes[0]
                 hdverts = hdmesh.data.vertices
                 for grafts,hum in geografts.values():
