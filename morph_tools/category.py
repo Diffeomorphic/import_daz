@@ -129,24 +129,6 @@ class DAZ_OT_RenameCategory(DazPropsOperator, CustomEnums, CategoryString, IsMes
         cat.name = self.category
         updateScrollbars(context)
 
-
-def removeFromPropGroup(pgs, prop):
-    idxs = []
-    for n,item in enumerate(pgs):
-        if item.name == prop:
-            idxs.append(n)
-    idxs.reverse()
-    for n in idxs:
-        pgs.remove(n)
-
-
-def removeFromAllMorphsets(rig, prop):
-    for morphset in MS.Standards:
-        pgs = getattr(rig, "Daz" + morphset)
-        removeFromPropGroup(pgs, prop)
-    for cat in rig.DazMorphCats.values():
-        removeFromPropGroup(cat.morphs, prop)
-
 #------------------------------------------------------------------------
 #   Remove category or morph type
 #------------------------------------------------------------------------
@@ -285,6 +267,7 @@ class MorphRemover(CategoryBasic):
 
 
     def removeFromPropGroups(self, rig, prop):
+        from ..transfer import removeFromPropGroup
         for morphset in MS.Standards:
             pgs = getattr(rig, "Daz%s" % morphset)
             removeFromPropGroup(pgs, prop)
@@ -634,7 +617,7 @@ class RemoveAll(MorphRemover):
 
 
     def removeDrivers(self, rna):
-        if not rna.animation_data:
+        if not (rna and rna.animation_data):
             return
         for fcu in list(rna.animation_data.drivers):
             if fcu.driver:
@@ -722,8 +705,9 @@ class DAZ_OT_BakeAllErcDrivers(DazPropsOperator, RemoveAll, DriverUser, IsArmatu
         for ob in meshes:
             skeys = ob.data.shape_keys
             shapes = self.shapes[ob.name] = {}
-            for skey in skeys.key_blocks:
-                shapes[skey.name] = skey.value
+            if skeys:
+                for skey in skeys.key_blocks:
+                    shapes[skey.name] = skey.value
 
         for rig in rigs:
             self.removeDrivers(rig.data)
@@ -742,11 +726,12 @@ class DAZ_OT_BakeAllErcDrivers(DazPropsOperator, RemoveAll, DriverUser, IsArmatu
                 setMode('OBJECT')
         for ob in meshes:
             skeys = ob.data.shape_keys
-            shapes = self.shapes[ob.name]
-            for skey in skeys.key_blocks:
-                skey.value = shapes[skey.name]
-            if self.useDeleteShapekeys:
-                bakeAllShapes(ob)
+            if skeys:
+                shapes = self.shapes[ob.name]
+                for skey in skeys.key_blocks:
+                    skey.value = shapes[skey.name]
+                if self.useDeleteShapekeys:
+                    bakeAllShapes(ob)
 
 
 def bakeAllShapes(ob):
@@ -970,6 +955,7 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
 
 
     def removeFromCategory(self, ob, props, category):
+        from ..transfer import removeFromPropGroup
         if category in ob.DazMorphCats.keys():
             cat = ob.DazMorphCats[category]
             for prop in props:

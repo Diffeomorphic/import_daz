@@ -22,7 +22,7 @@ from .error import *
 from .utils import *
 from .selector import JCMSelector
 from .driver import DriverUser
-from .morphing import RigidTransfer
+from .morphing import MS, RigidTransfer
 
 #-------------------------------------------------------------
 #
@@ -797,20 +797,6 @@ def applyAllShapekeys(ob):
         for v,co in zip(ob.data.vertices, coords):
             v.co = co
 
-#----------------------------------------------------------
-#
-#----------------------------------------------------------
-
-def removeShapeDriversAndProps(rig, sname):
-    if rig and rig.type == 'ARMATURE':
-        final = finalProp(sname)
-        rig.data.driver_remove(propRef(final))
-        if final in rig.data.keys():
-            del rig.data[final]
-        if sname in rig.keys():
-            del rig[sname]
-        removeFromAllMorphsets(rig, sname)
-
 #-------------------------------------------------------------
 #   Prune vertex groups
 #-------------------------------------------------------------
@@ -850,6 +836,35 @@ def checkObjectTransforms(ob):
         Vector(ob.rotation_euler) != Zero or
         ob.scale != One):
         raise DazError("Apply object transformations to %s first" % ob.name)
+
+
+def removeShapeDriversAndProps(rig, sname):
+    if rig and rig.type == 'ARMATURE':
+        final = finalProp(sname)
+        rig.data.driver_remove(propRef(final))
+        if final in rig.data.keys():
+            del rig.data[final]
+        if sname in rig.keys():
+            del rig[sname]
+        removeFromAllMorphsets(rig, sname)
+
+
+def removeFromPropGroup(pgs, prop):
+    idxs = []
+    for n,item in enumerate(pgs):
+        if item.name == prop:
+            idxs.append(n)
+    idxs.reverse()
+    for n in idxs:
+        pgs.remove(n)
+
+
+def removeFromAllMorphsets(rig, prop):
+    for morphset in MS.Standards:
+        pgs = getattr(rig, "Daz" + morphset)
+        removeFromPropGroup(pgs, prop)
+    for cat in rig.DazMorphCats.values():
+        removeFromPropGroup(cat.morphs, prop)
 
 #----------------------------------------------------------
 #   Initialize

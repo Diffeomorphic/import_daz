@@ -27,85 +27,27 @@ elif "MorphFeature" in locals():
     import imp
     imp.reload(category)
     imp.reload(shapekeys)
+    imp.reload(morph_panel)
 else:
     print("\nLoading Morph Tools")
     from . import category
     from . import shapekeys
+    from . import morph_panel
     MorphFeature = True
-
-#----------------------------------------------------------
-#   Panels
-#----------------------------------------------------------
-
-import bpy
-from ..panel import DAZ_PT_SetupTab
-
-class DAZ_PT_Categories(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupMorphs"
-    bl_idname = "DAZ_PT_Categories"
-    bl_label = "Categories"
-
-    def draw(self, context):
-        self.layout.operator("daz.add_shape_to_category")
-        self.layout.operator("daz.remove_shape_from_category")
-        self.layout.operator("daz.rename_category")
-        self.layout.operator("daz.join_categories")
-        self.layout.operator("daz.remove_categories")
-        self.layout.operator("daz.remove_standard_morphs")
-        self.layout.operator("daz.protect_categories")
-        self.layout.operator("daz.protect_morphs")
-
-
-class DAZ_PT_Shapekeys(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupMorphs"
-    bl_idname = "DAZ_PT_Shapekeys"
-    bl_label = "Shapekeys"
-
-    def draw(self, context):
-        self.layout.operator("daz.convert_morphs_to_shapekeys")
-        self.layout.operator("daz.transfer_animation_to_shapekeys")
-        self.layout.operator("daz.transfer_mesh_to_shape")
-        self.layout.separator()
-        self.layout.operator("daz.remove_shapekeys")
-        self.layout.operator("daz.apply_all_shapekeys")
-        self.layout.operator("daz.mix_shapekeys")
-        self.layout.operator("daz.visualize_shapekey")
-        self.layout.separator()
-        self.layout.operator("daz.update_slider_limits")
-        self.layout.operator("daz.update_morph_paths")
-
-
-class DAZ_PT_Drivers(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupMorphs"
-    bl_idname = "DAZ_PT_Drivers"
-    bl_label = "Drivers"
-
-    def draw(self, context):
-        self.layout.operator("daz.add_shapekey_drivers")
-        self.layout.operator("daz.remove_shapekey_drivers")
-        self.layout.separator()
-        self.layout.operator("daz.remove_all_drivers")
-        self.layout.operator("daz.bake_all_erc_drivers")
-        self.layout.operator("daz.copy_drivers")
 
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
-classes = [
-    DAZ_PT_Categories,
-    DAZ_PT_Shapekeys,
-]
-
 def register():
     print("Register Morph Tools")
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    from . import category
+    from . import category, shapekeys, morph_panel
     category.register()
+    shapekeys.register()
+    morph_panel.register()
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    from . import category
+    from . import category, shapekeys, morph_panel
+    morph_panel.unregister()
+    shapekeys.unregister()
     category.unregister()

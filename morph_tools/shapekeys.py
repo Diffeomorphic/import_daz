@@ -308,6 +308,7 @@ class DAZ_OT_MixShapekeys(DazOperator, IsShape):
 
 
     def deleteShape(self, ob, skeys, skey, sname):
+        from ..transfer import removeShapeDriversAndProps
         skey.driver_remove("value")
         skey.driver_remove("mute")
         skey.driver_remove("slider_min")
