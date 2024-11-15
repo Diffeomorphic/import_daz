@@ -22,11 +22,12 @@ from ..debug import DEBUG
 
 if not DEBUG:
     pass
-elif "bpy" in locals():
+elif "RigToolsFeature" in locals():
     print("Reloading DAZ Rigging")
     import imp
     imp.reload(mute)
     imp.reload(ikgoals)
+    imp.reload(prefix)
     imp.reload(store)
     imp.reload(bvh)
     imp.reload(mannequin)
@@ -37,6 +38,7 @@ else:
     print("Loading DAZ Rigging")
     from . import mute
     from . import ikgoals
+    from . import prefix
     from . import store
     from . import bvh
     from . import mannequin
@@ -44,15 +46,18 @@ else:
     #from . import unreal
     from . import rig_panel
 
+RigToolsFeature = True
+
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
 
 def register():
     print("Register DAZ Rigging")
-    from . import mute, ikgoals, store, bvh, mannequin, legacy, rig_panel, unreal
+    from . import mute, ikgoals, prefix, store, bvh, mannequin, legacy, rig_panel, unreal
     mute.register()
     ikgoals.register()
+    prefix.register()
     store.register()
     bvh.register()
     mannequin.register()
@@ -61,12 +66,13 @@ def register():
     #unreal.register()
 
 def unregister():
-    from . import mute, ikgoals, store, bvh, mannequin, legacy, rig_panel, unreal
+    from . import mute, ikgoals, prefix, store, bvh, mannequin, legacy, rig_panel, unreal
     #unreal.unregister()
     rig_panel.unregister()
     legacy.unregister()
     mannequin.unregister()
     bvh.unregister()
     store.unregister()
+    prefix.unregister()
     ikgoals.unregister()
     mute.unregister()

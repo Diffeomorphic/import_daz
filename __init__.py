@@ -57,7 +57,7 @@ elif "bpy" in locals():
     imp.reload(rig_rigify)
     imp.reload(export_daz)
     imp.reload(mesh_tools)
-    imp.reload(rig_daz)
+    imp.reload(rig_tools)
     imp.reload(shell_edit)
 
 else:
@@ -70,7 +70,7 @@ else:
     from . import rig_rigify
     from . import export_daz
     from . import mesh_tools
-    from . import rig_daz
+    from . import rig_tools
     from . import shell_edit
 
 
@@ -101,7 +101,7 @@ def toggleExportDaz(self, context):
     toggleModule("export_daz", self.useExportDaz)
 
 def toggleRigDaz(self, context):
-    toggleModule("rig_daz", self.useRigDaz)
+    toggleModule("rig_tools", self.useRigDaz)
 
 def toggleShellEdit(self, context):
     toggleModule("shell_edit", self.useShellEdit)
@@ -234,8 +234,8 @@ def register():
             from . import export_daz
             export_daz.register()
         if prefs.useRigDaz:
-            from . import rig_daz
-            rig_daz.register()
+            from . import rig_tools
+            rig_tools.register()
         if prefs.useShellEdit:
             from . import shell_edit
             shell_edit.register()
@@ -259,8 +259,8 @@ def unregister():
             from . import export_daz
             export_daz.unregister()
         if prefs.useRigDaz:
-            from . import rig_daz
-            rig_daz.unregister()
+            from . import rig_tools
+            rig_tools.unregister()
         if prefs.useShellEdit:
             from . import shell_edit
             shell_edit.unregister()

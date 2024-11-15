@@ -292,8 +292,6 @@ class DAZ_PT_RiggingTools(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.scale_objects")
-        self.layout.operator("daz.change_prefix_to_suffix")
-        self.layout.operator("daz.change_suffix_to_prefix")
         self.layout.separator()
         self.layout.operator("daz.batch_set_custom_shape")
         self.layout.operator("daz.optimize_pose")
