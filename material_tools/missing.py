@@ -17,6 +17,7 @@
 import bpy
 from ..utils import *
 from ..error import *
+from ..matedit import MaterialSelector, findUvlayers
 
 #-------------------------------------------------------------
 #   Replace material node tree
@@ -45,7 +46,7 @@ class DAZ_OT_ReplaceMaterials(MaterialSelector, DazPropsOperator, IsMesh):
         return True
 
     def run(self, context):
-        from .tree import copyNodeTree
+        from ..tree import copyNodeTree
         ob = context.object
         src = bpy.data.materials[self.material]
         uvlayers = {}
@@ -126,7 +127,7 @@ class DAZ_OT_ActivateDiffuse(DazOperator):
     bl_description = "Activate diffuse texture node,\nto make textured view work correctly"
 
     def run(self, context):
-        from .cycles import findTextureNode
+        from ..cycles import findTextureNode
         for ob in getVisibleMeshes(context):
             for mat in ob.data.materials:
                 if mat.node_tree:

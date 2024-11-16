@@ -348,6 +348,7 @@ class DAZ_OT_SortShells(DazPropsOperator, IsMesh):
     bl_description = "Sort selected material shells"
     bl_options = {'UNDO'}
 
+    from ..propgroups import DazIntGroup
     shellOrder : CollectionProperty(type = DazIntGroup)
 
     useBeautify : BoolProperty(

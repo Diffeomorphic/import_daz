@@ -15,8 +15,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import bpy
+import os
 from ..utils import *
 from ..error import *
+from ..matedit import MaterialSelector
+from ..fileutils import SingleFile, ImageFile
+from ..tree import XSIZE, YSIZE
 
 # ---------------------------------------------------------------------
 #   Make Decal
@@ -111,7 +115,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 
 
     def run(self, context):
-        from .material import setColorSpaceSRGB, setColorSpaceNone
+        from ..material import setColorSpaceSRGB, setColorSpaceNone
         img = bpy.data.images.load(self.filepath)
         if img is None:
             raise DazError("Unable to load file %s" % self.filepath)
@@ -150,7 +154,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 
     def loadDecal(self, mat, img, empty, mask, fname):
         def getFromToSockets(tree, nodeType, slot):
-            from .tree import findNodes
+            from ..tree import findNodes
             for link in tree.links.values():
                 node = link.to_node
                 if node:
@@ -164,8 +168,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
                 return None, node.inputs[slot], node.location
             return None, None, None
 
-        from .cgroup import DecalGroup
-        from .cycles import findTree
+        from ..cgroup import DecalGroup
+        from ..cycles import findTree
         tree = findTree(mat)
         nodeType,slot = self.slots[self.channel]
         fromSocket, toSocket, loc = getFromToSockets(tree, nodeType, slot)

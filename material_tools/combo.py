@@ -17,6 +17,9 @@
 import bpy
 from ..utils import *
 from ..error import *
+from ..matedit import MaterialSelector
+from ..material import NORMAL
+from ..tree import TNode, getSocket, XSIZE, YSIZE, beautifyNodeTree
 
 # ---------------------------------------------------------------------
 #   Combo materials
@@ -80,7 +83,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                     return skipShells(fromnode, fromnode.inputs[slot], slot)
             return socket,node
 
-        from .tree import findNodes
+        from ..tree import findNodes
         self.cycles = None
         for node in findNodes(tree, 'OUTPUT_MATERIAL'):
             self.outputs["BSDF"], self.cycles = skipShells(node, node.inputs["Surface"], "BSDF")
@@ -97,6 +100,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                     return True
             return False
 
+        from ..cycles import isGroupType
         for link in socket.links:
             node = link.to_node
             if node.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA', 'INVERT']:
@@ -139,7 +143,7 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
 
 
     def makeGroup(self, ob):
-        from .tree import addGroupInput, addGroupOutput
+        from ..tree import addGroupInput, addGroupOutput
         gname = "%s:%s Combo" % (ob.name, ob.active_material.name)
         group = bpy.data.node_groups.new(gname, "ShaderNodeTree")
         xlocs = [node.location[0] for node in self.nodes.values()]
