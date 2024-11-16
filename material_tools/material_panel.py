@@ -1,4 +1,4 @@
-#  DAZ Rigging - Tools for rigging figures imported with the DAZ Importer
+#  DAZ Materials - Tools for editing materials imported with the DAZ Importer
 #  Copyright (c) 2016-2024, Thomas Larsson
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -24,13 +24,9 @@ from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
 class DAZ_PT_EditMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupMaterials"
     bl_id = "DAZ_PT_EditMaterials"
-    bl_label = "Edit"
+    bl_label = "Edit Materials"
 
     def draw(self, context):
-        self.layout.operator("daz.change_skin_color")
-        self.layout.operator("daz.strip_material_names")
-        self.layout.operator("daz.copy_materials")
-        self.layout.separator()
         self.layout.operator("daz.launch_editor")
         self.layout.operator("daz.reset_materials")
         self.layout.operator("daz.make_combo_material")
@@ -41,14 +37,27 @@ class DAZ_PT_EditMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.prop(context.scene, "DazDecalMask")
 
 
+class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_SetupMaterials"
+    bl_id = "DAZ_PT_MoreMaterials"
+    bl_label = "More Material Tools"
+
+    def draw(self, context):
+        self.layout.operator("daz.change_skin_color")
+        self.layout.operator("daz.sort_materials_by_name")
+        self.layout.operator("daz.strip_material_names")
+        self.layout.operator("daz.copy_materials")
+        self.layout.separator()
+        self.layout.operator("daz.change_resolution")
+
+
 class DAZ_PT_DebugMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupMaterials"
     bl_id = "DAZ_PT_DebugMaterials"
-    bl_label = "Debugging"
+    bl_label = "Debug Materials"
 
     def draw(self, context):
         self.layout.operator("daz.update_render_settings")
-        self.layout.operator("daz.change_resolution")
         self.layout.separator()
         self.layout.operator("daz.combine_scene_materials")
         self.layout.operator("daz.find_missing_textures")
@@ -68,6 +77,7 @@ class DAZ_PT_DebugMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
 
 classes = [
     DAZ_PT_EditMaterials,
+    DAZ_PT_MoreMaterials,
     DAZ_PT_DebugMaterials,
 ]
 

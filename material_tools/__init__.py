@@ -1,4 +1,4 @@
-#  DAZ Materials - Tools for rigging figures imported with the DAZ Importer
+#  DAZ Materials - Tools for editing materials imported with the DAZ Importer
 #  Copyright (c) 2016-2024, Thomas Larsson
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -25,9 +25,19 @@ if not DEBUG:
 elif "MaterialToolsFeature" in locals():
     print("Reloading Material Tools")
     import imp
+    imp.reload(editor)
+    imp.reload(decal)
+    imp.reload(combo)
+    imp.reload(palette)
+    imp.reload(missing)
     imp.reload(material_panel)
 else:
     print("Loading Material Tools")
+    from . import editor
+    from . import decal
+    from . import combo
+    from . import palette
+    from . import missing
     from . import material_panel
     MaterialToolsFeature = True
 
@@ -37,13 +47,21 @@ else:
 
 def register():
     print("Register Material Tools")
-    bpy.utils.register_class(DAZ_PT_Materials)
-    from . import material_panel
+    from . import editor, decal, combo, palette, missing, material_panel
+    editor.register()
+    decal.register()
+    combo.register()
+    palette.register()
+    missing.register()
     material_panel.register()
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_Materials)
-    from . import material_panel
+    from . import editor, decal, combo, palette, missing, material_panel
+    editor.unregister()
+    decal.unregister()
+    combo.unregister()
+    palette.unregister()
+    missing.unregister()
     material_panel.unregister()
 
 
