@@ -17,7 +17,7 @@
 import bpy
 from ..matsel import *
 from ..selector import Selector
-from ..tree import pruneNodeTree, findNode
+from ..tree import pruneNodeTree, findNode, beautifyNodeTree
 from ..geometry import getActiveUvLayer, copyUvLayers
 from ..finger import getFingerPrint
 from ..cgroup import ShellGroup, CyclesTree
@@ -161,7 +161,7 @@ class ShellCopy:
     def draw(self, context):
         self.layout.prop(self, "useCopyUvs")
 
-    def copyShells(self, mat, nodes, src, trg):
+    def copyShells(self, context, mat, nodes, src, trg):
         tree = mat.node_tree
         output = findNode(tree, 'OUTPUT_MATERIAL')
         if output is None:
@@ -186,7 +186,7 @@ class ShellCopy:
                             sfinger = getFingerPrint(src)
                             tfinger = getFingerPrint(trg)
                             if sfinger == tfinger:
-                                copyUvLayers(src, trg, [uvname])
+                                copyUvLayers(context, src, trg, [uvname])
                         else:
                             uvname = getActiveUvLayer(trg).name
                 elif uvnode.type == 'TEX_COORD':
@@ -252,7 +252,7 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, UniqueMaterials, ShellCo
                     nodes = shells.get(mname, {})
                     if nodes:
                         mat = self.ensureUnique(mat, idx, trg)
-                        self.copyShells(mat, nodes.values(), src, trg)
+                        self.copyShells(context, mat, nodes.values(), src, trg)
                 driveShellInfluence(trg)
 
 #----------------------------------------------------------

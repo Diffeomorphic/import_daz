@@ -18,7 +18,7 @@ import bpy
 from collections import OrderedDict
 from ..utils import *
 from ..error import *
-from ..matsel import MaterialSelector, ChannelSetter
+from ..matsel import MaterialSelector
 from ..tree import XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
 from ..material import WHITE, isWhite
 from ..cycles import isGroupType

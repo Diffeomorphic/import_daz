@@ -52,6 +52,18 @@ class DAZ_PT_UvMaps(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.load_uv")
         self.layout.operator("daz.collapse_udims")
         self.layout.operator("daz.restore_udims")
+        self.layout.operator("daz.copy_uvs")
+
+
+class DAZ_PT_Attributes(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Mesh"
+    bl_idname = "DAZ_PT_Attributes"
+    bl_label = "Attributes"
+
+    def draw(self, context):
+        self.layout.operator("daz.copy_attributes")
+        self.layout.operator("daz.display_material_group")
+        self.layout.operator("daz.display_polygon_group")
 
 
 class DAZ_PT_VertexGroups(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -87,6 +99,7 @@ classes = [
     DAZ_PT_Mesh,
     DAZ_PT_Lowpoly,
     DAZ_PT_UvMaps,
+    DAZ_PT_Attributes,
     DAZ_PT_Modifiers,
     DAZ_PT_VertexGroups,
 ]

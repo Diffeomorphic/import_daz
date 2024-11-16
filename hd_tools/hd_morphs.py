@@ -20,7 +20,7 @@ from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile, theImageExtensions
 from ..material import setColorSpaceNone
-from ..matedit import MaterialSelector
+from ..matsel import MaterialSelector
 
 #-------------------------------------------------------------
 #   Node tree layout

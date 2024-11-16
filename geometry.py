@@ -724,10 +724,10 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
                 makeArmatureModifier(rig.name, context, hdob, rig)
 
 
-def copyUvLayers(context, ob, hdob, selection=None):
-    def setupLoopsMapping():
+def copyUvLayers(context, src, trg, selection=None):
+    def setupLoopsMapping(me):
         loopsMapping = {}
-        for f in hdob.data.polygons:
+        for f in me.polygons:
             loops = dict([(vn, f.loop_indices[i]) for i,vn in enumerate(f.vertices)])
             fid = tuple( sorted(list(f.vertices)) )
             if fid in loopsMapping:
@@ -735,8 +735,8 @@ def copyUvLayers(context, ob, hdob, selection=None):
             loopsMapping[fid] = loops
         return loopsMapping
 
-    def copyLayer(uvdata, hddata, loopsMapping):
-        for f in ob.data.polygons:
+    def copyLayer(srcdata, trgdata, loopsMapping):
+        for f in src.data.polygons:
             fid = tuple( sorted(list(f.vertices)) )
             if fid not in loopsMapping:
                 return False
@@ -744,30 +744,30 @@ def copyUvLayers(context, ob, hdob, selection=None):
                 if vn not in loopsMapping[fid]:
                     print("Bad vertex", vn)
                     continue
-                hdLoop = loopsMapping[fid][vn]
-                loop = f.loop_indices[i]
-                hddata[hdLoop].uv = uvdata[loop].uv
+                trgloop = loopsMapping[fid][vn]
+                srcloop = f.loop_indices[i]
+                trgdata[trgloop].uv = srcdata[srcloop].uv
         return True
 
-    def copyAllLayers():
-        loopsMapping = setupLoopsMapping()
-        for uvlayer in list(ob.data.uv_layers):
-            if selection is None or uvlayer.name in selection:
-                if uvlayer.name in hdob.data.uv_layers.keys():
-                    print('UV layer "%s" already exists' % uvlayer.name)
+    def copyAllLayers(trg):
+        loopsMapping = setupLoopsMapping(trg.data)
+        for srclayer in list(src.data.uv_layers):
+            if selection is None or srclayer.name in selection:
+                if srclayer.name in trg.data.uv_layers.keys():
+                    print('UV layer "%s" already exists' % srclayer.name)
                     continue
-                hdlayer = makeNewUvLayer(hdob.data, uvlayer.name, False)
-                ok = copyLayer(uvlayer.data, hdlayer.data, loopsMapping)
+                trglayer = makeNewUvLayer(trg.data, srclayer.name, False)
+                ok = copyLayer(srclayer.data, trglayer.data, loopsMapping)
                 if not ok:
-                    hdob.data.uv_layers.remove(hdlayer)
+                    trg.data.uv_layers.remove(trglayer)
                     return False
         return True
 
-    ok = copyAllLayers()
+    ok = copyAllLayers(trg)
     if not ok:
-        print("Cannot copy UV layer to HD mesh.")
+        print("Cannot copy UV layer to target mesh.")
         from .transfer import transferUvLayers
-        transferUvLayers(context, ob, [hdob])
+        transferUvLayers(context, src, [trg])
 
 #-------------------------------------------------------------
 #   UnGeometry
@@ -1841,6 +1841,8 @@ def register():
     bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
     bpy.types.Mesh.DazDhdmFiles = CollectionProperty(type = DazStringBoolGroup)
     bpy.types.Mesh.DazMorphFiles = CollectionProperty(type = DazStringBoolGroup)
+    bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = bpy.types.PropertyGroup)
+    bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = bpy.types.PropertyGroup)
 
     bpy.types.Object.DazBlendFile = StringProperty(
         name = "Blend File",

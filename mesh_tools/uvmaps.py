@@ -18,6 +18,7 @@ import bpy
 from ..error import *
 from ..utils import *
 from ..fileutils import SingleFile, DufFile
+from ..geometry import *
 
 #-------------------------------------------------------------
 #   Find seams
@@ -155,6 +156,38 @@ class DAZ_OT_RestoreUDims(DazOperator):
             mat.DazUDimsCollapsed = False
             addUdimTree(mat.node_tree, mat.DazUDim, mat.DazVDim)
 
+#----------------------------------------------------------
+#   Copy UV maps
+#----------------------------------------------------------
+
+def getUvMaps(scn, context):
+        me = context.object.data
+        return [(uvset.name, uvset.name, uvset.name) for uvset in me.uv_layers]
+
+class DAZ_OT_CopyUvs(DazPropsOperator, IsMesh):
+    bl_idname = "daz.copy_uvs"
+    bl_label = "Copy UVs"
+    bl_description = "Copy UV map from active mesh to selected meshes"
+    bl_options = {'UNDO'}
+
+    uvset : EnumProperty(
+        items = getUvMaps,
+        name = "UV Set",
+        description = "UV set to copy")
+
+    def draw(self, context):
+        self.layout.prop(self, "uvset")
+
+    def run(self, context):
+        from ..finger import getFingerPrint
+        src = context.object
+        sfinger = getFingerPrint(src)
+        for trg in getSelectedMeshes(context):
+            if trg != src:
+                if getFingerPrint(trg) != sfinger:
+                    raise DazError("Can not copy UVs between meshes with different topology")
+                copyUvLayers(context, src, trg, [self.uvset])
+
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
@@ -164,6 +197,7 @@ classes = [
     DAZ_OT_LoadUV,
     DAZ_OT_CollapseUDims,
     DAZ_OT_RestoreUDims,
+    DAZ_OT_CopyUvs,
 ]
 
 def register():

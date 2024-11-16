@@ -28,6 +28,7 @@ elif "MeshTools" in locals():
     imp.reload(vertex_groups)
     imp.reload(modifiers)
     imp.reload(uvmaps)
+    imp.reload(attr)
     imp.reload(lowpoly)
     imp.reload(mesh_panel)
 else:
@@ -35,6 +36,7 @@ else:
     from . import vertex_groups
     from . import modifiers
     from . import uvmaps
+    from . import attr
     from . import lowpoly
     from . import mesh_panel
 
@@ -46,17 +48,19 @@ MeshTools = True
 
 def register():
     print("Register Mesh Tools")
-    from . import vertex_groups, modifiers, uvmaps, lowpoly, mesh_panel
+    from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel
     vertex_groups.register()
     modifiers.register()
     uvmaps.register()
+    attr.register()
     lowpoly.register()
     mesh_panel.register()
 
 def unregister():
-    from . import vertex_groups, modifiers, uvmaps, lowpoly, mesh_panel
+    from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel
     mesh_panel.unregister()
     lowpoly.unregister()
     uvmaps.unregister()
+    attr.unregister()
     modifiers.unregister()
     vertex_groups.unregister()

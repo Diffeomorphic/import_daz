@@ -35,11 +35,11 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "bone_data", "transform", "node", "figure", "bone", "geometry",
            "store", "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "rig_utils", "dbzfile", "panel",
-           "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "render", "camera", "light",
+           "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon",
+           "render", "camera", "light",
            "guess", "convert", "files", "finger",
-           "matsel", "udim", "merge", "tables", "proxy", "hide",
-           "transfer",
-           "dforce", "pin", "hair", "main", "geonodes", "attr",
+           "matsel", "udim", "merge", "tables", "proxy", "hide", "transfer",
+           "dforce", "pin", "hair", "main", "geonodes",
            "hd_data", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
 
@@ -259,13 +259,13 @@ class DazPreferences(bpy.types.AddonPreferences):
 #----------------------------------------------------------
 
 Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
-            "figure", "geometry", "dbzfile", "simple", "rig_utils",
+            "figure", "geometry", "dbzfile", "rig_utils",
             "fix", "animation", "morphing", "panel",
             "material", "cgroup", "render",
             "guess", "main", "finger",
-            "matsel", "proxy", "rigify", "merge", "hide",
-            "mhx", "pin", "hair", "transfer", "gaze",
-            "ctrl_rig", "moho", "udim", "scan", "attr",
+            "matsel", "proxy", "merge", "hide",
+            "pin", "hair", "transfer", "gaze",
+            "ctrl_rig", "moho", "udim", "scan",
             ]
 
 def register():
