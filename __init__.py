@@ -57,6 +57,7 @@ elif "bpy" in locals():
     imp.reload(rig_rigify)
     imp.reload(rig_tools)
     imp.reload(object_tools)
+    imp.reload(material_tools)
     imp.reload(mesh_tools)
     imp.reload(morph_tools)
     imp.reload(hd_tools)
@@ -74,6 +75,7 @@ else:
     from . import rig_rigify
     from . import rig_tools
     from . import object_tools
+    from . import material_tools
     from . import mesh_tools
     from . import morph_tools
     from . import hd_tools
@@ -108,6 +110,9 @@ def toggleRigTools(self, context):
 
 def toggleObjectTools(self, context):
     toggleModule("object_tools", self.useObjectTools)
+
+def toggleMaterialTools(self, context):
+    toggleModule("material_tools", self.useMaterialTools)
 
 def toggleMeshTools(self, context):
     toggleModule("mesh_tools", self.useMeshTools)
@@ -176,6 +181,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleRigRigify)
 
+    useMaterialTools : BoolProperty(
+        name = "Material Tools",
+        description = "Tools for dealing with DAZ materials",
+        default = False,
+        update = toggleMaterialTools)
+
     useMeshTools : BoolProperty(
         name = "Mesh Tools",
         description = "Tools for dealing with DAZ meshes",
@@ -235,6 +246,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useRigRigify")
         self.layout.prop(self, "useRigTools")
         self.layout.prop(self, "useObjectTools")
+        self.layout.prop(self, "useMaterialTools")
         self.layout.prop(self, "useMeshTools")
         self.layout.prop(self, "useMorphTools")
         self.layout.prop(self, "useHDTools")
@@ -283,6 +295,9 @@ def register():
         if prefs.useObjectTools:
             from . import object_tools
             object_tools.register()
+        if prefs.useMaterialTools:
+            from . import material_tools
+            material_tools.register()
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.register()
@@ -332,6 +347,9 @@ def unregister():
         if prefs.useObjectTools:
             from . import object_tools
             object_tools.unregister()
+        if prefs.useMaterialTools:
+            from . import material_tools
+            material_tools.unregister()
         if prefs.useMeshTools:
             from . import mesh_tools
             mesh_tools.unregister()

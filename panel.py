@@ -82,49 +82,14 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Materials"
 
     def draw(self, context):
-        self.layout.operator("daz.update_render_settings")
         self.layout.operator("daz.save_local_textures")
         self.layout.operator("daz.resize_textures")
-        self.layout.operator("daz.change_resolution")
         self.layout.separator()
         self.layout.operator("daz.merge_materials")
-        self.layout.operator("daz.strip_material_names")
         self.layout.operator("daz.change_colors")
-        self.layout.operator("daz.change_skin_color")
-        self.layout.separator()
-        self.layout.operator("daz.launch_editor")
-        self.layout.operator("daz.reset_materials")
-        self.layout.operator("daz.make_combo_material")
-
-
-class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupMaterials"
-    bl_idname = "DAZ_PT_MoreMaterials"
-    bl_label = "More Material Tools"
-
-    def draw(self, context):
-        self.layout.operator("daz.import_daz_materials")
-        self.layout.operator("daz.drive_shell_influence")
-        self.layout.separator()
-        self.layout.operator("daz.make_palette")
-        self.layout.operator("daz.copy_materials")
-        self.layout.separator()
-        self.layout.operator("daz.combine_scene_materials")
-        self.layout.operator("daz.find_missing_textures")
-        self.layout.operator("daz.activate_diffuse")
-        #self.layout.operator("daz.replace_materials")
-        self.layout.separator()
-        self.layout.operator("daz.prune_node_trees")
-        self.layout.operator("daz.prune_uv_maps")
-        self.layout.separator()
-        self.layout.operator("daz.tiles_from_geograft")
-        self.layout.operator("daz.fix_texture_tiles")
-        self.layout.separator()
-        self.layout.operator("daz.make_decal")
-        self.layout.prop(context.scene, "DazDecalMask")
-        self.layout.separator()
         self.layout.operator("daz.sort_materials_by_name")
-        self.layout.operator("daz.make_shader_groups")
+        self.layout.separator()
+        self.layout.operator("daz.import_daz_materials")
 
 #----------------------------------------------------------
 #   Morphs
@@ -953,7 +918,6 @@ classes = [
     DAZ_PT_Setup,
     DAZ_PT_SetupCorrections,
     DAZ_PT_SetupMaterials,
-    DAZ_PT_MoreMaterials,
     DAZ_PT_SetupMorphs,
     DAZ_PT_SetupStandardMorphs,
     DAZ_PT_SetupVisibility,

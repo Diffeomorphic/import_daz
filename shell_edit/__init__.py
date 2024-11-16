@@ -54,6 +54,7 @@ class DAZ_PT_ShellEdit(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.remove_shell_images")
         self.layout.operator("daz.fix_normal_groups")
         self.layout.separator()
+        self.layout.operator("daz.drive_shell_influence")
         self.layout.operator("daz.disable_shell_drivers")
         self.layout.operator("daz.enable_shell_drivers")
         self.layout.operator("daz.remove_all_influs")

@@ -1158,17 +1158,6 @@ class DAZ_OT_ToggleShellInfluence(DazOperator, IsMeshArmature):
         updateDrivers(ob)
 
 
-class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
-    bl_idname = "daz.drive_shell_influence"
-    bl_label = "Drive Shell Influence"
-    bl_description = "Create drivers for shell and layered image influence"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            driveShellInfluence(ob)
-
-
 def driveShellInfluence(ob):
     from .driver import setFloatProp, addDriver
     rig = ob
@@ -1508,7 +1497,6 @@ classes = [
     DAZ_OT_ResetMaterials,
     DAZ_OT_MakeComboMaterials,
     DAZ_OT_MakeDecal,
-    DAZ_OT_DriveShellInfluence,
     DAZ_OT_SetShellInfluence,
     DAZ_OT_ToggleShellInfluence,
     DAZ_OT_MakePalette,

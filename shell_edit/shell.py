@@ -256,6 +256,20 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, UniqueMaterials, ShellCo
                 driveShellInfluence(trg)
 
 #----------------------------------------------------------
+#   Drive Shell influence
+#----------------------------------------------------------
+
+class DAZ_OT_DriveShellInfluence(DazOperator, IsMesh):
+    bl_idname = "daz.drive_shell_influence"
+    bl_label = "Drive Shell Influence"
+    bl_description = "Create drivers for shell and layered image influence"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for ob in getSelectedMeshes(context):
+            driveShellInfluence(ob)
+
+#----------------------------------------------------------
 #   Fix shells
 #----------------------------------------------------------
 
@@ -555,6 +569,7 @@ classes = [
     DAZ_OT_CopyShells,
     DAZ_OT_FixShells,
     DAZ_OT_SortShells,
+    DAZ_OT_DriveShellInfluence,
     DAZ_OT_AddCustomShell,
     DAZ_OT_AssignShellMap,
 ]
