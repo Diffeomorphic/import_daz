@@ -259,23 +259,6 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         pass
 
 #----------------------------------------------------------
-#
-#----------------------------------------------------------
-
-class DAZ_PT_Simulation(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_idname = "DAZ_PT_Simulation"
-    bl_label = "Simulation"
-
-    def draw(self, context):
-        self.layout.operator("daz.add_softbody")
-        self.layout.separator()
-        self.layout.operator("daz.make_simulation")
-        self.layout.separator()
-        self.layout.operator("daz.make_deflection")
-        self.layout.operator("daz.make_collision")
-        self.layout.operator("daz.make_cloth")
-
-#----------------------------------------------------------
 #   Utilities panel
 #----------------------------------------------------------
 
@@ -977,7 +960,6 @@ classes = [
     DAZ_PT_SetupHair,
     DAZ_PT_SetupFinishing,
     DAZ_PT_SetupRigging,
-    DAZ_PT_Simulation,
 
     DAZ_PT_Utils,
     DAZ_PT_Runtime,

@@ -60,6 +60,7 @@ elif "bpy" in locals():
     imp.reload(mesh_tools)
     imp.reload(morph_tools)
     imp.reload(hd_tools)
+    imp.reload(simulation_tools)
     imp.reload(export_tools)
     imp.reload(shell_edit)
 
@@ -76,6 +77,7 @@ else:
     from . import mesh_tools
     from . import morph_tools
     from . import hd_tools
+    from . import simulation_tools
     from . import export_tools
     from . import shell_edit
 
@@ -115,6 +117,9 @@ def toggleMorphTools(self, context):
 
 def toggleHDTools(self, context):
     toggleModule("hd_tools", self.useHDTools)
+
+def toggleSimulationTools(self, context):
+    toggleModule("simulation_tools", self.useSimulationTools)
 
 def toggleExportTools(self, context):
     toggleModule("export_tools", self.useExportTools)
@@ -189,6 +194,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleHDTools)
 
+    useSimulationTools : BoolProperty(
+        name = "Simulation Tools",
+        description = "Simulation",
+        default = False,
+        update = toggleSimulationTools)
+
     useExportTools : BoolProperty(
         name = "Export Tools",
         description = "Tools for exporting presets and UV maps back to DAZ Studio",
@@ -227,6 +238,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useMeshTools")
         self.layout.prop(self, "useMorphTools")
         self.layout.prop(self, "useHDTools")
+        self.layout.prop(self, "useSimulationTools")
         self.layout.prop(self, "useExportTools")
         self.layout.prop(self, "useShellEdit")
 
@@ -240,7 +252,7 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "material", "cgroup", "render",
             "guess", "main", "finger",
             "matedit", "proxy", "rigify", "merge", "hide",
-            "mhx", "pin", "hair", "transfer", "dforce", "gaze",
+            "mhx", "pin", "hair", "transfer", "gaze",
             "ctrl_rig", "moho", "udim", "scan", "attr",
             ]
 
@@ -280,6 +292,9 @@ def register():
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.register()
+        if prefs.useSimulationTools:
+            from . import simulation_tools
+            simulation_tools.register()
         if prefs.useExportTools:
             from . import export_tools
             export_tools.register()
@@ -326,6 +341,9 @@ def unregister():
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.unregister()
+        if prefs.useSimulationTools:
+            from . import simulation_tools
+            simulation_tools.unregister()
         if prefs.useExportTools:
             from . import export_tools
             export_tools.unregister()

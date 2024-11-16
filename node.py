@@ -282,7 +282,7 @@ class Instance(Accessor, Channels, SimNode):
             elif key == "Selectable":
                 self.hideSelect(value, ob)
             elif key == "Visible in Simulation":
-                ob.DazCollision = value
+                ob["DazCollision"] = value
             elif key == "Cast Shadows":
                 pass
             elif key == "Instance Mode":

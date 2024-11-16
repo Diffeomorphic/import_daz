@@ -36,6 +36,7 @@ class DataFolders:
         self.ikposes = {}
         self.presets = {}
         self.lowpoly = {}
+        self.softbody = {}
         self.altmorphs = {}
         self.scanned = {}
         self.tiles = {}
