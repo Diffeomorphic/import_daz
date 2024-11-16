@@ -18,7 +18,7 @@ import bpy
 import os
 from ..utils import *
 from ..error import *
-from ..matedit import MaterialSelector
+from ..matsel import MaterialSelector
 from ..fileutils import SingleFile, ImageFile
 from ..tree import XSIZE, YSIZE
 

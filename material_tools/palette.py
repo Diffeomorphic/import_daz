@@ -17,7 +17,7 @@
 import bpy
 from ..utils import *
 from ..error import *
-from ..matedit import findUvlayers
+from ..matsel import findUvlayers
 
 #-------------------------------------------------------------
 #   Make Material set

@@ -20,7 +20,7 @@ from .error import *
 from .utils import *
 from .fileutils import MultiFile, ImageFile
 from .material import LocalTextureSaver
-from .matedit import MaterialSelector
+from .matsel import MaterialSelector
 from .tree import getFromSocket, XSIZE, YSIZE, YSTEP
 
 #----------------------------------------------------------
@@ -206,7 +206,7 @@ class TileFixer:
     def addSkipZeroUvs(self, mat):
         from .cycles import makeCyclesTree
         from .cgroup import SkipZeroUvGroup
-        from .matedit import isShellNode
+        from .matsel import isShellNode
         ctree = makeCyclesTree(mat)
         for node in list(ctree.nodes):
             if isShellNode(node):
@@ -501,7 +501,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     def getShells(self, mats):
         from .tree import getFromNode
-        from .matedit import isShellNode
+        from .matsel import isShellNode
         nodes = {}
         for mat in mats:
             if mat.node_tree:

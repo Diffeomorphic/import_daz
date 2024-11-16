@@ -15,7 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import bpy
-from ..matedit import *
+from ..matsel import *
 from ..selector import Selector
 from ..tree import pruneNodeTree, findNode
 from ..geometry import getActiveUvLayer, copyUvLayers

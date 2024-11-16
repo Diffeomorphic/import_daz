@@ -891,7 +891,7 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Visibility"
 
     def draw(self, context):
-        from .matedit import getShellProps
+        from .matsel import getShellProps
         props = getShellProps(context)
         props.sort()
         if props:

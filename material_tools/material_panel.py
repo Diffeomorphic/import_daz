@@ -49,6 +49,10 @@ class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.strip_material_names")
         self.layout.operator("daz.copy_materials")
         self.layout.separator()
+        self.layout.operator("daz.combine_scene_materials")
+        self.layout.operator("daz.find_missing_textures")
+        self.layout.operator("daz.activate_diffuse")
+        self.layout.separator()
         self.layout.operator("daz.change_resolution")
 
 
@@ -59,10 +63,6 @@ class DAZ_PT_DebugMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.update_render_settings")
-        self.layout.separator()
-        self.layout.operator("daz.combine_scene_materials")
-        self.layout.operator("daz.find_missing_textures")
-        self.layout.operator("daz.activate_diffuse")
         self.layout.separator()
         self.layout.operator("daz.tiles_from_geograft")
         self.layout.operator("daz.fix_texture_tiles")

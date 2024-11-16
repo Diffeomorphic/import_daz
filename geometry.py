@@ -384,7 +384,7 @@ class GeoNode(Node, SimNode):
 
     def finalize(self, context, inst):
         from .material import sortMaterialsByName
-        from .matedit import driveShellInfluence
+        from .matsel import driveShellInfluence
         geo = self.data
         ob = self.rna
         if ob is None:

@@ -15,9 +15,10 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import bpy
+import os
 from ..utils import *
 from ..error import *
-from ..matedit import MaterialSelector, findUvlayers
+from ..matsel import MaterialSelector, findUvlayers
 
 #-------------------------------------------------------------
 #   Replace material node tree
@@ -84,16 +85,19 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
             for mat in ob.data.materials:
                 for node in mat.node_tree.nodes:
                     if node.type == 'TEX_IMAGE':
-                        img = node.image
-                        path = bpy.path.abspath(img.filepath)
-                        if not os.path.exists(path):
-                            newpath,res = self.findMissingPath(path)
-                            if newpath:
-                                img.filepath = newpath
-                                if res:
-                                    img.name = img.name.replace(res, "")
-                                    node.name = node.name.replace(res, "")
-                                    node.label = node.label.replace(res, "")
+                        if node.image:
+                            img = node.image
+                            path = bpy.path.abspath(img.filepath)
+                            if not os.path.exists(path):
+                                newpath,res = self.findMissingPath(path)
+                                if newpath:
+                                    img.filepath = newpath
+                                    if res:
+                                        img.name = img.name.replace(res, "")
+                                        node.name = node.name.replace(res, "")
+                                        node.label = node.label.replace(res, "")
+                        else:
+                            path = GS.getAbsPath(node.label)
 
 
     def findMissingPath(self, path):

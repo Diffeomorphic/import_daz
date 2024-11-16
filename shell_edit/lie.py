@@ -19,7 +19,7 @@ from ..tree import *
 from ..material import isWhite, isBlack, getImage
 from ..main import *
 from ..cgroup import *
-#from ..matedit import *
+#from ..matsel import *
 from ..selector import Selector
 from ..driver import setFloatProp, addDriver
 

@@ -17,7 +17,7 @@
 import bpy
 from ..utils import *
 from ..error import *
-from ..matedit import MaterialSelector
+from ..matsel import MaterialSelector
 from ..material import NORMAL
 from ..tree import TNode, getSocket, XSIZE, YSIZE, beautifyNodeTree
 

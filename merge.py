@@ -66,7 +66,7 @@ class UVLayerMerger:
                         return getUvMap(node.inputs.get("Vector"), default)
             return default
 
-        from .matedit import isShellNode
+        from .matsel import isShellNode
         from .cycles import isTexImage
         active = getActiveUvLayer(ob)
         uvmaps = {}
