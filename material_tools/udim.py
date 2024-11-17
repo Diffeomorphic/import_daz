@@ -16,230 +16,13 @@
 
 import bpy
 import os
-from .error import *
-from .utils import *
-from .fileutils import MultiFile, ImageFile
-from .material import LocalTextureSaver
-from .matsel import MaterialSelector
-from .tree import getFromSocket, XSIZE, YSIZE, YSTEP
-
-#----------------------------------------------------------
-#   Tile Fixer
-#----------------------------------------------------------
-
-class TileFixer:
-    useLastUdimTile : BoolProperty(
-        name = "Last UDIM Tile",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "useLastUdimTile")
-
-
-    def findMatTiles(self, ob):
-        ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
-        vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
-        uvlayer = ob.data.uv_layers.active
-        m = 0
-        for fn,f in enumerate(ob.data.polygons):
-            mn = f.material_index
-            ucoord = ucoords[mn]
-            vcoord = vcoords[mn]
-            for n in range(len(f.vertices)):
-                uv = uvlayer.data[m].uv
-                ucoord.append(uv[0])
-                vcoord.append(uv[1])
-                m += 1
-        self.mattiles = {}
-        for mn,mat in enumerate(ob.data.materials):
-            if mat:
-                tile,udim,vdim = self.getTile(ucoords[mn], vcoords[mn])
-                mat.DazUDim = udim
-                mat.DazVDim = vdim
-                self.mattiles[mn] = tile
-        print("Tile assignment:")
-        for mn,mat in enumerate(ob.data.materials):
-            print("  %s: %d" % (mat.name, self.mattiles[mn]))
-
-
-    def getTile(self, ucoord, vcoord):
-        umax = max(ucoord)
-        umin = min(ucoord)
-        vmax = max(vcoord)
-        vmin = min(vcoord)
-        udim = math.floor((umax+umin)/2)
-        vdim = math.floor((vmax+vmin)/2)
-        tile = 1001 + udim + 10*vdim
-        return tile, udim, vdim
-
-
-    def fixTextures(self, ob, matname):
-        def getFolder(ob, matname):
-            for mat in ob.data.materials:
-                if mat.name == matname:
-                    if mat.node_tree:
-                        for node in mat.node_tree.nodes:
-                            if node.type == 'TEX_IMAGE' and node.image:
-                                path = bpy.path.abspath(node.image.filepath)
-                                return os.path.dirname(path)
-            return None
-
-        folder = getFolder(ob, matname)
-        images = {}
-        for mn,mat in enumerate(ob.data.materials):
-            tree = mat.node_tree
-            if tree is None:
-                continue
-            mattile = self.mattiles.get(mn)
-            if mattile is None:
-                continue
-            inform = True
-            for node in tree.nodes:
-                if node.type == 'TEX_IMAGE' and node.image:
-                    path = bpy.path.abspath(node.image.filepath)
-                    file = os.path.basename(path)
-                    fname,ext = os.path.splitext(file)
-                    tile,base = getTileBase(node.image.name)
-                    if not base:
-                        continue
-                    if tile != mattile:
-                        if inform:
-                            print("Fix %s textures for tile %d" % (mat.name, mattile))
-                            inform = False
-                        newpath = os.path.join(folder, "%s_%d%s" % (base, mattile, ext))
-                        src = bpy.path.abspath(path)
-                        if src in images.keys():
-                            img = images[src]
-                        else:
-                            trg = bpy.path.abspath(newpath)
-                            img = self.changeImage(src, trg, None)
-                            img.colorspace_settings.name = node.image.colorspace_settings.name
-                            images[src] = img
-                        node.image = img
-                        node.label = "%s_%d" % (base, mattile)
-
-
-    def udimsFromGraft(self, graft, hum):
-        def getUVcoords(mn):
-            m = 0
-            ucoord = []
-            vcoord = []
-            for fn,f in enumerate(hum.data.polygons):
-                if fn in fmasked and f.material_index == mn:
-                    for j,vn in enumerate(f.vertices):
-                        uv = cuvlayer.data[m+j].uv
-                        ucoord.append(uv[0])
-                        vcoord.append(uv[1])
-                m += len(f.vertices)
-            return ucoord, vcoord
-
-        cuvlayer = hum.data.uv_layers.active
-        fmasked = [face.a for face in graft.data.DazMaskGroup]
-        tiles = {}
-        udims = {}
-        vdims = {}
-        for mn,mat in enumerate(hum.data.materials):
-            if mat:
-                ucoord,vcoord = getUVcoords(mn)
-                if ucoord:
-                    mname = stripName(mat.name)
-                    tiles[mname], udims[mname], vdims[mname] = self.getTile(ucoord, vcoord)
-
-        if len(tiles) == 0:
-            print("No UVs to shift")
-            return
-        if self.useLastUdimTile:
-            ucoord = [data.uv[0] for data in cuvlayer.data]
-            vcoord = [data.uv[1] for data in cuvlayer.data]
-            tile, udefault, vdefault = self.getTile([max(ucoord)-0.01], [max(vcoord)-0.01])
-            tiledefault = tile+1
-            udefault += 1
-        else:
-            tiledefault = list(tiles.values())[0]
-            udefault = list(udims.values())[0]
-            vdefault = list(vdims.values())[0]
-        auvlayer = graft.data.uv_layers.active
-
-        def moveUVs(mn, udim, vdim):
-            m = 0
-            for f in graft.data.polygons:
-                if f.material_index == mn:
-                    for j in range(len(f.vertices)):
-                        uvs = auvlayer.data[m+j].uv
-                        uvs[0] += udim - int(uvs[0])
-                        uvs[1] += vdim - int(uvs[1])
-                m += len(f.vertices)
-
-        for mn,mat in enumerate(graft.data.materials):
-            if mat:
-                mname = stripName(mat.name)
-                if mname in tiles.keys() and not self.useLastUdimTile:
-                    tile = tiles[mname]
-                    udim = udims[mname]
-                    vdim = vdims[mname]
-                else:
-                    tile = tiledefault
-                    udim = udefault
-                    vdim = vdefault
-            print("Move %s:%s UVs to tile %d" % (graft.name, mname, tile))
-            moveUVs(mn, udim, vdim)
-        return
-
-
-    def getKnownTiles(self, ob):
-        from .fileutils import DF
-        char = ob.DazMesh.split("-",1)[0].lower()
-        if char == "genesis8":
-            for mat in ob.data.materials:
-                if mat.name.startswith("Body"):
-                    char = "genesis81"
-                    break
-                elif mat.name.startswith("Torso"):
-                    break
-        entry = DF.loadEntry(char, "tiles", strict=False)
-        if entry:
-            return entry["tiles"]
-        else:
-            return {}
-
-
-    def addSkipZeroUvs(self, mat):
-        from .cycles import makeCyclesTree
-        from .cgroup import SkipZeroUvGroup
-        from .matsel import isShellNode
-        ctree = makeCyclesTree(mat)
-        for node in list(ctree.nodes):
-            if isShellNode(node):
-                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
-                x,y = node.location
-                skip.location = (x-XSIZE, y+YSIZE)
-                socket = getFromSocket(node.inputs["UV"])
-                if socket:
-                    ctree.links.new(socket, skip.inputs["UV"])
-                ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
-
-
-def getTileBase(string):
-    def getTileBaseFromList(words):
-        words.reverse()
-        for n,word in enumerate(words[0:2]):
-            if len(word) == 4 and word.isdigit():
-                tile = int(word)
-                if tile >= 1001 and tile <= 1100:
-                    rest = words[0:n] + words[n+1:]
-                    rest.reverse()
-                    return tile, "_".join(rest)
-        return None, ""
-
-    words = string.split("_")
-    tile,base = getTileBaseFromList(words)
-    if tile:
-        return tile, base
-    words = string.split("-")
-    tile,base = getTileBaseFromList(words)
-    if tile:
-        return tile, base
-    return None, string
+from ..error import *
+from ..utils import *
+from ..fileutils import MultiFile, ImageFile
+from ..material import LocalTextureSaver
+from ..matsel import MaterialSelector
+from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
+from ..merge import TileFixer, getTileBase
 
 #----------------------------------------------------------
 #   Tiles From Graft
@@ -288,7 +71,7 @@ def getTargetMaterial(scn, context):
 class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSelector, TileFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
-    bl_description = "Combine materials of selected mesh into a single UDIM material"
+    bl_description = "Combine materials of selected mesh into a single UDIM material.\nGeografts must be merged first"
     bl_options = {'UNDO'}
 
     trgmat : EnumProperty(items=getTargetMaterial, name="Active")
@@ -500,8 +283,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def getShells(self, mats):
-        from .tree import getFromNode
-        from .matsel import isShellNode
+        from ..tree import getFromNode
+        from ..matsel import isShellNode
         nodes = {}
         for mat in mats:
             if mat.node_tree:
@@ -520,9 +303,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
     def addShells(self, mat, shells):
         if not shells:
             return
-        from .tree import findNodes, getFromSocket, XSIZE, YSIZE
-        from .cycles import makeCyclesTree
-        from .cgroup import SkipZeroUvGroup
+        from ..cycles import makeCyclesTree
+        from ..cgroup import SkipZeroUvGroup
         ctree = makeCyclesTree(mat)
         for outp in findNodes(mat.node_tree, 'OUTPUT_MATERIAL'):
             x,y = outp.location
@@ -613,7 +395,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 
 
     def run(self, context):
-        from .material import addUdimTree
+        from ..material import addUdimTree
         ob = context.object
         udim,vdim = getUVDims(self.tile)
         for mn,umat in enumerate(self.umats):

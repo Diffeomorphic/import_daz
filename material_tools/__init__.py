@@ -26,6 +26,7 @@ elif "MaterialToolsFeature" in locals():
     print("Reloading Material Tools")
     import imp
     imp.reload(editor)
+    imp.reload(udim)
     imp.reload(decal)
     imp.reload(combo)
     imp.reload(palette)
@@ -34,6 +35,7 @@ elif "MaterialToolsFeature" in locals():
 else:
     print("Loading Material Tools")
     from . import editor
+    from . import udim
     from . import decal
     from . import combo
     from . import palette
@@ -47,17 +49,19 @@ else:
 
 def register():
     print("Register Material Tools")
-    from . import editor, decal, combo, palette, missing, material_panel
+    from . import editor, udim, decal, combo, palette, missing, material_panel
     editor.register()
     decal.register()
+    udim.register()
     combo.register()
     palette.register()
     missing.register()
     material_panel.register()
 
 def unregister():
-    from . import editor, decal, combo, palette, missing, material_panel
+    from . import editor, udim, decal, combo, palette, missing, material_panel
     editor.unregister()
+    udim.unregister()
     decal.unregister()
     combo.unregister()
     palette.unregister()

@@ -27,7 +27,7 @@ class DAZ_PT_Mesh(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Mesh"
 
     def draw(self, context):
-        pass
+        self.layout.operator("daz.merge_meshes")
 
 
 class DAZ_PT_Lowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -48,6 +48,7 @@ class DAZ_PT_UvMaps(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "UV Maps"
 
     def draw(self, context):
+        self.layout.operator("daz.merge_uv_layers")
         self.layout.operator("daz.find_seams")
         self.layout.operator("daz.load_uv")
         self.layout.operator("daz.collapse_udims")

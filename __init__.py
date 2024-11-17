@@ -38,7 +38,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon",
            "render", "camera", "light",
            "guess", "convert", "files", "finger",
-           "matsel", "udim", "merge", "tables", "proxy", "hide", "transfer",
+           "matsel", "merge", "tables", "proxy", "hide", "transfer",
            "dforce", "pin", "hair", "main", "geonodes",
            "hd_data", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
@@ -265,7 +265,7 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "guess", "main", "finger",
             "matsel", "proxy", "merge", "hide",
             "pin", "hair", "transfer", "gaze",
-            "ctrl_rig", "moho", "udim", "scan",
+            "ctrl_rig", "moho", "scan",
             ]
 
 def register():

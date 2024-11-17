@@ -37,10 +37,10 @@ class DAZ_PT_Figures(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.set_driver_modes")
 
 
-class DAZ_PT_Tails(DAZ_PT_SetupTab, bpy.types.Panel):
+class DAZ_PT_Chains(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
-    bl_id = "DAZ_PT_Tails"
-    bl_label = "Tails"
+    bl_id = "DAZ_PT_Chains"
+    bl_label = "Chains"
 
     def draw(self, context):
         self.layout.operator("daz.select_matching_bones")
@@ -117,7 +117,7 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
 classes = [
     DAZ_PT_Figures,
-    DAZ_PT_Tails,
+    DAZ_PT_Chains,
     DAZ_PT_Extra,
     DAZ_PT_DazRigPose,
     DAZ_PT_DazMatrix,

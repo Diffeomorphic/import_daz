@@ -18,6 +18,7 @@ import bpy
 from ..error import *
 from ..utils import *
 from ..fileutils import SingleFile, DufFile
+from ..merge import UVLayerMergerOptions, UVLayerMerger
 from ..geometry import *
 
 #-------------------------------------------------------------
@@ -189,6 +190,99 @@ class DAZ_OT_CopyUvs(DazPropsOperator, IsMesh):
                 copyUvLayers(context, src, trg, [self.uvset])
 
 #-------------------------------------------------------------
+#   Merge UV sets
+#-------------------------------------------------------------
+
+def getUvLayers(scn, context):
+    ob = context.object
+    enums = []
+    for n,uv in enumerate(ob.data.uv_layers):
+        ename = "%s (%d)" % (uv.name, n)
+        enums.append((str(n), ename, ename))
+    return enums
+
+#-------------------------------------------------------------
+#   Merge UV layers
+#-------------------------------------------------------------
+
+class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
+    bl_idname = "daz.merge_uv_layers"
+    bl_label = "Merge UV Layers"
+    bl_description = ("Merge an UV layer to the active render layer.\n" +
+                      "Merging the active render layer to itself replaces\n" +
+                      "any UV map nodes with texture coordinate nodes")
+    bl_options = {'UNDO'}
+
+    layer : EnumProperty(
+        items = getUvLayers,
+        name = "Layer To Merge",
+        description = "UV layer that is merged with the active render layer")
+
+    allowOverlap : BoolProperty(
+        name = "Allow Overlap",
+        description = "Allow merging overlapping UV layers",
+        default = False)
+
+    def draw(self, context):
+        self.layout.label(text="Active Layer: %s" % self.keepName)
+        self.layout.prop(self, "layer")
+        self.layout.prop(self, "allowOverlap")
+
+
+    def invoke(self, context, event):
+        ob = context.object
+        self.keepIdx = -1
+        self.keepName = "None"
+        for idx,uvlayer in enumerate(ob.data.uv_layers):
+            if uvlayer.active_render:
+                self.keepIdx = idx
+                self.keepName = uvlayer.name
+                break
+        return DazPropsOperator.invoke(self, context, event)
+
+
+    def run(self, context):
+        from ..merge import mergeUvLayers
+        ob = context.object
+        if self.keepIdx < 0:
+            raise DazError("No active UV layer found")
+        mergeIdx = int(self.layer)
+        mergeUvLayers(ob.data, self.keepIdx, mergeIdx, self.allowOverlap)
+        deselectAllVerts(ob)
+
+#-------------------------------------------------------------
+#   Merge Meshes
+#-------------------------------------------------------------
+
+class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, IsMesh):
+    bl_idname = "daz.merge_meshes"
+    bl_label = "Merge Meshes"
+    bl_description = ("Merge selected meshes to active mesh")
+    bl_options = {'UNDO'}
+
+    def draw(self, context):
+        self.drawUVLayer(self.layout)
+
+
+    def run(self, context):
+        hum = context.object
+        self.initUvNames()
+        for ob in getSelectedMeshes(context):
+            if ob != hum:
+                self.storeUvName(ob)
+        for mod in hum.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
+        nlayers = len(hum.data.uv_layers)
+        bpy.ops.object.join()
+        self.mergeUvs(hum)
+        deselectAllVerts(hum)
+        for mod in hum.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
+        print("Meshes merged")
+
+#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -198,6 +292,8 @@ classes = [
     DAZ_OT_CollapseUDims,
     DAZ_OT_RestoreUDims,
     DAZ_OT_CopyUvs,
+    DAZ_OT_MergeUvLayers,
+    DAZ_OT_MergeMeshes,
 ]
 
 def register():

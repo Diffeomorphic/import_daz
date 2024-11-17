@@ -26,7 +26,7 @@ from .driver import DriverUser
 from .fileutils import DF
 from .geometry import getActiveUvLayer
 from .figure import LockEnabler
-from .udim import TileFixer
+from .tree import getFromSocket, XSIZE, YSIZE, YSTEP
 
 #-------------------------------------------------------------
 #   Merge UV Layers
@@ -131,6 +131,224 @@ class UVLayerMerger:
             mergeUvLayers(ob.data, keepIdx, idx, self.allowOverlap)
         uvname0 = ob.data.uv_layers[keepIdx].name
         print("UV layers %s merged to %s" % (list(self.auvnames), uvname0))
+
+#----------------------------------------------------------
+#   Tile Fixer
+#----------------------------------------------------------
+
+class TileFixer:
+    useLastUdimTile : BoolProperty(
+        name = "Last UDIM Tile",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useLastUdimTile")
+
+
+    def findMatTiles(self, ob):
+        ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
+        vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
+        uvlayer = ob.data.uv_layers.active
+        m = 0
+        for fn,f in enumerate(ob.data.polygons):
+            mn = f.material_index
+            ucoord = ucoords[mn]
+            vcoord = vcoords[mn]
+            for n in range(len(f.vertices)):
+                uv = uvlayer.data[m].uv
+                ucoord.append(uv[0])
+                vcoord.append(uv[1])
+                m += 1
+        self.mattiles = {}
+        for mn,mat in enumerate(ob.data.materials):
+            if mat:
+                tile,udim,vdim = self.getTile(ucoords[mn], vcoords[mn])
+                mat.DazUDim = udim
+                mat.DazVDim = vdim
+                self.mattiles[mn] = tile
+        print("Tile assignment:")
+        for mn,mat in enumerate(ob.data.materials):
+            print("  %s: %d" % (mat.name, self.mattiles[mn]))
+
+
+    def getTile(self, ucoord, vcoord):
+        umax = max(ucoord)
+        umin = min(ucoord)
+        vmax = max(vcoord)
+        vmin = min(vcoord)
+        udim = math.floor((umax+umin)/2)
+        vdim = math.floor((vmax+vmin)/2)
+        tile = 1001 + udim + 10*vdim
+        return tile, udim, vdim
+
+
+    def fixTextures(self, ob, matname):
+        def getFolder(ob, matname):
+            for mat in ob.data.materials:
+                if mat.name == matname:
+                    if mat.node_tree:
+                        for node in mat.node_tree.nodes:
+                            if node.type == 'TEX_IMAGE' and node.image:
+                                path = bpy.path.abspath(node.image.filepath)
+                                return os.path.dirname(path)
+            return None
+
+        folder = getFolder(ob, matname)
+        images = {}
+        for mn,mat in enumerate(ob.data.materials):
+            tree = mat.node_tree
+            if tree is None:
+                continue
+            mattile = self.mattiles.get(mn)
+            if mattile is None:
+                continue
+            inform = True
+            for node in tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    path = bpy.path.abspath(node.image.filepath)
+                    file = os.path.basename(path)
+                    fname,ext = os.path.splitext(file)
+                    tile,base = getTileBase(node.image.name)
+                    if not base:
+                        continue
+                    if tile != mattile:
+                        if inform:
+                            print("Fix %s textures for tile %d" % (mat.name, mattile))
+                            inform = False
+                        newpath = os.path.join(folder, "%s_%d%s" % (base, mattile, ext))
+                        src = bpy.path.abspath(path)
+                        if src in images.keys():
+                            img = images[src]
+                        else:
+                            trg = bpy.path.abspath(newpath)
+                            img = self.changeImage(src, trg, None)
+                            img.colorspace_settings.name = node.image.colorspace_settings.name
+                            images[src] = img
+                        node.image = img
+                        node.label = "%s_%d" % (base, mattile)
+
+
+    def udimsFromGraft(self, graft, hum):
+        def getUVcoords(mn):
+            m = 0
+            ucoord = []
+            vcoord = []
+            for fn,f in enumerate(hum.data.polygons):
+                if fn in fmasked and f.material_index == mn:
+                    for j,vn in enumerate(f.vertices):
+                        uv = cuvlayer.data[m+j].uv
+                        ucoord.append(uv[0])
+                        vcoord.append(uv[1])
+                m += len(f.vertices)
+            return ucoord, vcoord
+
+        cuvlayer = hum.data.uv_layers.active
+        fmasked = [face.a for face in graft.data.DazMaskGroup]
+        tiles = {}
+        udims = {}
+        vdims = {}
+        for mn,mat in enumerate(hum.data.materials):
+            if mat:
+                ucoord,vcoord = getUVcoords(mn)
+                if ucoord:
+                    mname = stripName(mat.name)
+                    tiles[mname], udims[mname], vdims[mname] = self.getTile(ucoord, vcoord)
+
+        if len(tiles) == 0:
+            print("No UVs to shift")
+            return
+        if self.useLastUdimTile:
+            ucoord = [data.uv[0] for data in cuvlayer.data]
+            vcoord = [data.uv[1] for data in cuvlayer.data]
+            tile, udefault, vdefault = self.getTile([max(ucoord)-0.01], [max(vcoord)-0.01])
+            tiledefault = tile+1
+            udefault += 1
+        else:
+            tiledefault = list(tiles.values())[0]
+            udefault = list(udims.values())[0]
+            vdefault = list(vdims.values())[0]
+        auvlayer = graft.data.uv_layers.active
+
+        def moveUVs(mn, udim, vdim):
+            m = 0
+            for f in graft.data.polygons:
+                if f.material_index == mn:
+                    for j in range(len(f.vertices)):
+                        uvs = auvlayer.data[m+j].uv
+                        uvs[0] += udim - int(uvs[0])
+                        uvs[1] += vdim - int(uvs[1])
+                m += len(f.vertices)
+
+        for mn,mat in enumerate(graft.data.materials):
+            if mat:
+                mname = stripName(mat.name)
+                if mname in tiles.keys() and not self.useLastUdimTile:
+                    tile = tiles[mname]
+                    udim = udims[mname]
+                    vdim = vdims[mname]
+                else:
+                    tile = tiledefault
+                    udim = udefault
+                    vdim = vdefault
+            print("Move %s:%s UVs to tile %d" % (graft.name, mname, tile))
+            moveUVs(mn, udim, vdim)
+        return
+
+
+    def getKnownTiles(self, ob):
+        from .fileutils import DF
+        char = ob.DazMesh.split("-",1)[0].lower()
+        if char == "genesis8":
+            for mat in ob.data.materials:
+                if mat.name.startswith("Body"):
+                    char = "genesis81"
+                    break
+                elif mat.name.startswith("Torso"):
+                    break
+        entry = DF.loadEntry(char, "tiles", strict=False)
+        if entry:
+            return entry["tiles"]
+        else:
+            return {}
+
+
+    def addSkipZeroUvs(self, mat):
+        from .cycles import makeCyclesTree
+        from .cgroup import SkipZeroUvGroup
+        from .matsel import isShellNode
+        ctree = makeCyclesTree(mat)
+        for node in list(ctree.nodes):
+            if isShellNode(node):
+                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                x,y = node.location
+                skip.location = (x-XSIZE, y+YSIZE)
+                socket = getFromSocket(node.inputs["UV"])
+                if socket:
+                    ctree.links.new(socket, skip.inputs["UV"])
+                ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
+
+
+def getTileBase(string):
+    def getTileBaseFromList(words):
+        words.reverse()
+        for n,word in enumerate(words[0:2]):
+            if len(word) == 4 and word.isdigit():
+                tile = int(word)
+                if tile >= 1001 and tile <= 1100:
+                    rest = words[0:n] + words[n+1:]
+                    rest.reverse()
+                    return tile, "_".join(rest)
+        return None, ""
+
+    words = string.split("_")
+    tile,base = getTileBaseFromList(words)
+    if tile:
+        return tile, base
+    words = string.split("-")
+    tile,base = getTileBaseFromList(words)
+    if tile:
+        return tile, base
+    return None, string
 
 #-------------------------------------------------------------
 #   Merge geografts
@@ -826,6 +1044,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if mod.type == 'MULTIRES':
                 ob.modifiers.remove(mod)
 
+#-------------------------------------------------------------
+#   Replace node names
+#-------------------------------------------------------------
 
 def replaceNodeNames(mat, oldname, newname):
     texco = None
@@ -870,91 +1091,8 @@ def copyModifier(smod, tmod):
                     pass
 
 #-------------------------------------------------------------
-#   Merge UV sets
+#   Merge UV layers
 #-------------------------------------------------------------
-
-def getUvLayers(scn, context):
-    ob = context.object
-    enums = []
-    for n,uv in enumerate(ob.data.uv_layers):
-        ename = "%s (%d)" % (uv.name, n)
-        enums.append((str(n), ename, ename))
-    return enums
-
-
-class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
-    bl_idname = "daz.merge_uv_layers"
-    bl_label = "Merge UV Layers"
-    bl_description = ("Merge an UV layer to the active render layer.\n" +
-                      "Merging the active render layer to itself replaces\n" +
-                      "any UV map nodes with texture coordinate nodes")
-    bl_options = {'UNDO'}
-
-    layer : EnumProperty(
-        items = getUvLayers,
-        name = "Layer To Merge",
-        description = "UV layer that is merged with the active render layer")
-
-    allowOverlap : BoolProperty(
-        name = "Allow Overlap",
-        description = "Allow merging overlapping UV layers",
-        default = False)
-
-    def draw(self, context):
-        self.layout.label(text="Active Layer: %s" % self.keepName)
-        self.layout.prop(self, "layer")
-        self.layout.prop(self, "allowOverlap")
-
-
-    def invoke(self, context, event):
-        ob = context.object
-        self.keepIdx = -1
-        self.keepName = "None"
-        for idx,uvlayer in enumerate(ob.data.uv_layers):
-            if uvlayer.active_render:
-                self.keepIdx = idx
-                self.keepName = uvlayer.name
-                break
-        return DazPropsOperator.invoke(self, context, event)
-
-
-    def run(self, context):
-        ob = context.object
-        if self.keepIdx < 0:
-            raise DazError("No active UV layer found")
-        mergeIdx = int(self.layer)
-        mergeUvLayers(ob.data, self.keepIdx, mergeIdx, self.allowOverlap)
-        deselectAllVerts(ob)
-
-
-class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, IsMesh):
-    bl_idname = "daz.merge_meshes"
-    bl_label = "Merge Meshes"
-    bl_description = ("Merge selected meshes to active mesh")
-    bl_options = {'UNDO'}
-
-    def draw(self, context):
-        self.drawUVLayer(self.layout)
-
-
-    def run(self, context):
-        hum = context.object
-        self.initUvNames()
-        for ob in getSelectedMeshes(context):
-            if ob != hum:
-                self.storeUvName(ob)
-        for mod in hum.modifiers:
-            if mod.type == 'SURFACE_DEFORM':
-                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-        nlayers = len(hum.data.uv_layers)
-        bpy.ops.object.join()
-        self.mergeUvs(hum)
-        deselectAllVerts(hum)
-        for mod in hum.modifiers:
-            if mod.type == 'SURFACE_DEFORM':
-                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
-        print("Meshes merged")
-
 
 def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
     def checkLayersOverlap(keepLayer, mergeLayer):
@@ -1787,8 +1925,6 @@ class DAZ_OT_MergeToes(DazOperator, IsArmature):
 
 classes = [
     DAZ_OT_MergeGeografts,
-    DAZ_OT_MergeUvLayers,
-    DAZ_OT_MergeMeshes,
     DAZ_OT_MergeRigs,
     DAZ_OT_EliminateEmpties,
     DAZ_OT_CopyPose,

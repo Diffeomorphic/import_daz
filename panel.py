@@ -199,9 +199,6 @@ class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.merge_geografts")
-        self.layout.operator("daz.merge_meshes")
-        self.layout.operator("daz.merge_uv_layers")
-        self.layout.operator("daz.make_udim_materials")
         self.layout.operator("daz.convert_widgets")
         self.layout.operator("daz.finalize_meshes")
         self.layout.separator()
