@@ -18,6 +18,7 @@ import os
 import bpy
 from ..error import *
 from ..utils import *
+from ..morphing import MS
 
 #-------------------------------------------------------------
 #   Convert pose to shapekey

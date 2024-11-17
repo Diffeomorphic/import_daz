@@ -194,13 +194,13 @@ class MorphRemover(CategoryBasic):
             self.removeFromPropGroups(rig, raw)
         if self.useDeleteProps and self.useDeleteDrivers:
             if raw in rig.keys():
-                rig[raw] = 0.0
+                clearProp(rig, raw)
                 del rig[raw]
             if final in amt.keys():
-                amt[final] = 0.0
+                clearProp(amt, final)
                 del amt[final]
             if rest in amt.keys():
-                amt[rest] = 0.0
+                clearProp(amt, rest)
                 del amt[rest]
 
 
@@ -263,7 +263,7 @@ class MorphRemover(CategoryBasic):
                 pass
         for prop in props.keys():
             if prop in rna.keys():
-                rna[prop] = 0.0
+                clearProp(rna, prop)
 
 
     def removeFromPropGroups(self, rig, prop):
@@ -599,8 +599,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 class RemoveAll(MorphRemover):
     def draw(self, context):
         self.layout.prop(self, "useDeleteProps")
-        if self.useDeleteProps:
-            self.layout.prop(self, "useDeleteShapekeys")
+        self.layout.prop(self, "useDeleteShapekeys")
 
 
     def run(self, context):
@@ -1071,16 +1070,10 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         description = "Delete shapekeys that already exists",
         default = "BY_NAME")
 
-    useAnimation : BoolProperty(
-        name = "Convert Animation",
-        description = "Convert morph animation to shapekey animation",
-        default = True)
-
     def draw(self, context):
         GeneralMorphSelector.draw(self, context)
         row = self.layout.row()
         row.prop(self, "useLabels")
-        row.prop(self, "useAnimation")
         row.prop(self, "onDelete")
 
     def run(self, context):
@@ -1117,23 +1110,21 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         for n,pair in enumerate(items.items()):
             key,mname = pair
             showProgress(n, nitems)
-            rig[key] = 0.0
+            clearProp(rig, key)
             if mname in existing.keys():
                 del existing[mname]
                 skey = skeys.key_blocks[mname]
                 skey.name = "%s.001" % skey.name
                 existing[skey.name] = skey
             if mname:
-                rig[key] = 1.0
+                setProp(rig, key)
                 updateRigDrivers(context, rig)
                 mod = self.applyArmature(ob, rig, mod, key, mname)
-                rig[key] = 0.0
+                clearProp(rig, key)
         t2 = perf_counter()
         print("Converted %d morphs in %g seconds" % (n, t2-t1))
         updateRigDrivers(context, rig)
         deleted = []
-        if self.useAnimation and rig.animation_data:
-            self.convertFcurves(ob.data.shape_keys, rig.animation_data.action, items)
         for mname,skey in existing.items():
             self.clearShape(skey)
             deleted.append(skey.name)
@@ -1142,26 +1133,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         print("%d morphs converted in %g seconds" % (nitems, t2-t1))
         if GS.verbosity >= 3:
             print("Deleted:", deleted)
-
-
-    def convertFcurves(self, skeys, act, items):
-        if act is None or skeys is None:
-            return
-        fcurves = {}
-        for fcu in act.fcurves:
-            prop = getProp(fcu.data_path)
-            if prop and prop in items.keys():
-                fcurves[items[prop]] = fcu
-        if skeys.animation_data is None:
-            skeys.animation_data_create()
-        nact = bpy.data.actions.new(act.name)
-        skeys.animation_data.action = nact
-        for key,fcu in fcurves.items():
-            nfcu = nact.fcurves.new('key_blocks["%s"].value' % key)
-            for kp in fcu.keyframe_points:
-                nfcu.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
-        for prop,fcu in fcurves.items():
-            act.fcurves.remove(fcu)
 
 
     def clearShape(self, skey):

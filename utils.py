@@ -590,6 +590,24 @@ def isSimpleType(x):
             isinstance(x, bool) or
             x is None)
 
+def clearProp(rna, prop):
+    value = rna.get(prop)
+    if value is None or isinstance(value, float):
+        rna[prop] = 0.0
+    elif isinstance(value, bool):
+        rna[prop] = False
+    elif isinstance(value, int):
+        rna[prop] = 0
+
+def setProp(rna, prop):
+    value = rna.get(prop)
+    if value is None or isinstance(value, float):
+        rna[prop] = 1.0
+    elif isinstance(value, bool):
+        rna[prop] = True
+    elif isinstance(value, int):
+        rna[prop] = 1
+
 def addToStruct(struct, key, prop, value):
     if key not in struct.keys():
         struct[key] = {}
