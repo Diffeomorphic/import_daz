@@ -242,12 +242,12 @@ def getReldirFromObject(ob, usePeople):
     return reldir
 
 
-def findPathRecursive(pattern, relpath, subpath, library="modifier_library"):
+def findPathRecursive(pattern, relpath, subpath, library="modifier_library", useCheck=True, extensions=[".dsf", ".duf"]):
     def findFilesRecursive(folder):
         for file in os.listdir(folder):
             path = "%s/%s" % (folder, file)
             words = os.path.splitext(file.lower())
-            if lpattern.endswith(words[0]) and words[-1] in [".dsf", ".duf"]:
+            if lpattern.endswith(words[0]) and words[-1] in extensions:
                 paths.append(path)
             elif os.path.isdir(path):
                 findFilesRecursive(path)
@@ -270,7 +270,7 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library"):
             return paths[0]
         elif len(paths) > 1:
             for path in paths:
-                if checkContent(path):
+                if not useCheck or checkContent(path):
                     return path
             return paths[0]
     return None

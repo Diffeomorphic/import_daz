@@ -81,45 +81,62 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
     bl_description = "Search for missing textures of selected meshes in the DAZ database"
 
     def run(self, context):
+        def findMissingPath(path):
+            path = normalizePath(path).lower()
+            for folder,res in [("/textures/original/", ""),
+                               ("/textures/res1/", "-res1"),
+                               ("/textures/res2/", "-res2"),
+                               ("/textures/res3/", "-res3"),
+                               ("/textures/res4/", "-res4"),
+                               ("/textures/", "")]:
+                words = path.rsplit(folder, 1)
+                if len(words) == 1:
+                    continue
+                if res:
+                    file = words[1].replace(res, "")
+                else:
+                    file = words[1]
+                newpath = GS.getAbsPath("runtime/textures/%s" % file)
+                if newpath and os.path.exists(newpath):
+                    print("New path: %s" % newpath)
+                    return newpath,res
+            return None,""
+
+        def updateImage(img):
+            path = bpy.path.abspath(img.filepath)
+            if not os.path.exists(path):
+                newpath,res = findMissingPath(path)
+                if newpath:
+                    img.filepath = newpath
+                    if res:
+                        img.name = img.name.replace(res, "")
+                        node.name = node.name.replace(res, "")
+                        node.label = node.label.replace(res, "")
+
+        def findImage(node, found):
+            from ..fileutils import findPathRecursive
+            imgname = node.label
+            img = found.get(imgname)
+            if not img:
+                pattern,ext = os.path.splitext(imgname)
+                path = findPathRecursive(pattern, "Runtime/", ["Textures/"], useCheck=False, extensions=[ext])
+                if path:
+                    img = bpy.data.images.load(path)
+                    img.name = imgname
+                    found[imgname] = img
+            if img:
+                node.image = img
+
         for ob in getSelectedMeshes(context):
+            found = {}
             for mat in ob.data.materials:
                 for node in mat.node_tree.nodes:
                     if node.type == 'TEX_IMAGE':
                         if node.image:
-                            img = node.image
-                            path = bpy.path.abspath(img.filepath)
-                            if not os.path.exists(path):
-                                newpath,res = self.findMissingPath(path)
-                                if newpath:
-                                    img.filepath = newpath
-                                    if res:
-                                        img.name = img.name.replace(res, "")
-                                        node.name = node.name.replace(res, "")
-                                        node.label = node.label.replace(res, "")
+                            updateImage(node.image)
+                            found[node.label] = node.image
                         else:
-                            path = GS.getAbsPath(node.label)
-
-
-    def findMissingPath(self, path):
-        path = normalizePath(path).lower()
-        for folder,res in [("/textures/original/", ""),
-                           ("/textures/res1/", "-res1"),
-                           ("/textures/res2/", "-res2"),
-                           ("/textures/res3/", "-res3"),
-                           ("/textures/res4/", "-res4"),
-                           ("/textures/", "")]:
-            words = path.rsplit(folder, 1)
-            if len(words) == 1:
-                continue
-            if res:
-                file = words[1].replace(res, "")
-            else:
-                file = words[1]
-            newpath = GS.getAbsPath("runtime/textures/%s" % file)
-            if newpath and os.path.exists(newpath):
-                print("New path: %s" % newpath)
-                return newpath,res
-        return None,""
+                            findImage(node, found)
 
 #----------------------------------------------------------
 #   Activate diffuse texture
