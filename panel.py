@@ -51,6 +51,7 @@ class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.prop(scn, "DazFavoPath")
         self.layout.separator()
         self.layout.operator("daz.import_daz_manually")
+        self.layout.separator()
         self.layout.operator("daz.global_settings")
         self.layout.prop(scn, "DazPreferredRoot")
 

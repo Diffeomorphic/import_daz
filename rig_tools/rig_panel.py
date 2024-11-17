@@ -50,10 +50,10 @@ class DAZ_PT_Chains(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.move_graft_bones")
 
 
-class DAZ_PT_Extra(DAZ_PT_SetupTab, bpy.types.Panel):
+class DAZ_PT_MoreRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
-    bl_id = "DAZ_PT_Extra"
-    bl_label = "Extra"
+    bl_id = "DAZ_PT_MoreRigging"
+    bl_label = "More Rigging Tools"
 
     def draw(self, context):
         self.layout.operator("daz.add_extra_face_bones")
@@ -118,7 +118,7 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
 classes = [
     DAZ_PT_Figures,
     DAZ_PT_Chains,
-    DAZ_PT_Extra,
+    DAZ_PT_MoreRigging,
     DAZ_PT_DazRigPose,
     DAZ_PT_DazMatrix,
 ]
