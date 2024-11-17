@@ -1071,10 +1071,16 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         description = "Delete shapekeys that already exists",
         default = "BY_NAME")
 
+    useAnimation : BoolProperty(
+        name = "Convert Animation",
+        description = "Convert morph animation to shapekey animation",
+        default = True)
+
     def draw(self, context):
         GeneralMorphSelector.draw(self, context)
         row = self.layout.row()
         row.prop(self, "useLabels")
+        row.prop(self, "useAnimation")
         row.prop(self, "onDelete")
 
     def run(self, context):
@@ -1109,7 +1115,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         startProgress("Convert morphs to shapekeys")
         t1 = t = perf_counter()
         for n,pair in enumerate(items.items()):
-            t0 = t
             key,mname = pair
             showProgress(n, nitems)
             rig[key] = 0.0
@@ -1123,10 +1128,12 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
                 updateRigDrivers(context, rig)
                 mod = self.applyArmature(ob, rig, mod, key, mname)
                 rig[key] = 0.0
-                t = perf_counter()
-                print("Converted %s in %g seconds" % (mname, t-t0))
+        t2 = perf_counter()
+        print("Converted %d morphs in %g seconds" % (n, t2-t1))
         updateRigDrivers(context, rig)
         deleted = []
+        if self.useAnimation and rig.animation_data:
+            self.convertFcurves(ob.data.shape_keys, rig.animation_data.action, items)
         for mname,skey in existing.items():
             self.clearShape(skey)
             deleted.append(skey.name)
@@ -1135,6 +1142,26 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         print("%d morphs converted in %g seconds" % (nitems, t2-t1))
         if GS.verbosity >= 3:
             print("Deleted:", deleted)
+
+
+    def convertFcurves(self, skeys, act, items):
+        if act is None or skeys is None:
+            return
+        fcurves = {}
+        for fcu in act.fcurves:
+            prop = getProp(fcu.data_path)
+            if prop and prop in items.keys():
+                fcurves[items[prop]] = fcu
+        if skeys.animation_data is None:
+            skeys.animation_data_create()
+        nact = bpy.data.actions.new(act.name)
+        skeys.animation_data.action = nact
+        for key,fcu in fcurves.items():
+            nfcu = nact.fcurves.new('key_blocks["%s"].value' % key)
+            for kp in fcu.keyframe_points:
+                nfcu.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
+        for prop,fcu in fcurves.items():
+            act.fcurves.remove(fcu)
 
 
     def clearShape(self, skey):
