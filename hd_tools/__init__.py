@@ -53,7 +53,6 @@ class DAZ_PT_HDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.load_normal_map")
         self.layout.operator("daz.load_scalar_disp")
         self.layout.operator("daz.load_vector_disp")
-        self.layout.operator("daz.add_driven_value_nodes")
 
 #----------------------------------------------------------
 #   Register

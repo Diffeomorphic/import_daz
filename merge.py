@@ -1348,7 +1348,7 @@ class MergeRigsOptions:
     useMergeNonConforming : EnumProperty(
         items = [('NEVER', "Never", "Don't merge non-conforming bones"),
                  ('CONTROLS', "Widget Controls", "Only merge known widget controls"),
-                 ('ALL_CHILDREN', "All Children", "Merge non-conforming bones of child rigs"),
+                 ('CHILDREN', "Children", "Merge non-conforming bones of child rigs"),
                  ('ALL_RIGS', "All Rigs", "Merge all non-conforming bones, even it they belong to separate figures")],
         name = "Non-conforming Rigs",
         description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
@@ -1411,7 +1411,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 ob.parent = root
                 setWorldMatrix(ob, wmat)
         excluded = findExcludedObjects(context, self.useHiddenRigs)
-        if self.useMergeNonConforming in ['ALL_CHILDREN', 'ALL_RIGS']:
+        if self.useMergeNonConforming in ['CHILDREN', 'ALL_RIGS']:
             rootmats = applyTransformToObjects(roots, excluded)
         else:
             rootmats = []
@@ -1439,7 +1439,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     conforms = False
                 elif rig.parent_type == 'BONE':
                     conforms = False
-                    if self.useMergeNonConforming in ['ALL_CHILDREN', 'ALL_RIGS']:
+                    if self.useMergeNonConforming in ['CHILDREN', 'ALL_RIGS']:
                         conforms = True
                     elif (self.useMergeNonConforming == 'CONTROLS' and
                           rig.DazUrl.lower() in DF.WidgetControls):

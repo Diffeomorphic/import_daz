@@ -17,7 +17,7 @@
 import bpy
 from ..matsel import *
 from ..selector import Selector
-from ..tree import pruneNodeTree, findNode, beautifyNodeTree
+from ..tree import *
 from ..geometry import getActiveUvLayer, copyUvLayers
 from ..finger import getFingerPrint
 from ..cgroup import ShellGroup, CyclesTree
