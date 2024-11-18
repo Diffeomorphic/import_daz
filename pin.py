@@ -111,61 +111,11 @@ class DAZ_OT_MeshAddPinning(Pinner, DazPropsOperator, IsMesh):
         self.addHairPinning(ob)
 
 # ---------------------------------------------------------------------
-#   Modify vertex group
-# ---------------------------------------------------------------------
-
-class DAZ_OT_ModifyVertexGroup(Pinner, DazPropsOperator, IsMesh):
-    bl_idname = "daz.modify_vertex_group"
-    bl_label = "Modify Vertex Group"
-    bl_description = "Modify the active vertex group"
-    bl_options = {'UNDO'}
-
-    direction : EnumProperty(
-        items = [("+X", "+X", "+X"),
-                 ("-X", "-X", "-X"),
-                 ("+Y", "+Y", "+Y"),
-                 ("-Y", "-Y", "-Y"),
-                 ("+Z", "+Z", "+Z"),
-                 ("-Z", "-Z", "-Z")],
-        name = "Direction")
-
-
-    def draw(self, context):
-        Pinner.draw(self, context)
-        ob = context.object
-        vgrp = ob.vertex_groups.active
-        box = self.layout.box()
-        box.label(text="Vertex group: %s" % vgrp.name)
-        self.layout.prop(self, "direction")
-
-
-    def run(self, context):
-        vectors = {
-            "+X" : (1,0,0),
-            "-X" : (-1,0,0),
-            "+Y" : (0,1,0),
-            "-Y" : (0,-1,0),
-            "+Z" : (0,0,1),
-            "-Z" : (0,0,-1)
-        }
-        ob = context.object
-        vgrp = ob.vertex_groups.active
-        self.initMapping()
-        ez = Vector(vectors[self.direction])
-        zs = [ez.dot(v.co) for v in ob.data.vertices]
-        z0 = min(zs)
-        z1 = max(zs)
-        for v in ob.data.vertices:
-            w = (ez.dot(v.co) - z0)/(z1 - z0)
-            self.addWeight(vgrp, v.index, w)
-
-# ---------------------------------------------------------------------
 #   Initialize
 # ---------------------------------------------------------------------
 
 classes = [
     DAZ_OT_MeshAddPinning,
-    DAZ_OT_ModifyVertexGroup,
 ]
 
 def register():
