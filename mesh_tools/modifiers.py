@@ -37,7 +37,7 @@ class SubsurfApplier:
 
 
     def run(self, context):
-        from .driver import Driver
+        from ..driver import Driver
         ob = context.object
         mod = self.getModifier(ob)
         if not mod:
