@@ -1348,7 +1348,8 @@ class MergeRigsOptions:
     useMergeNonConforming : EnumProperty(
         items = [('NEVER', "Never", "Don't merge non-conforming bones"),
                  ('CONTROLS', "Widget Controls", "Only merge known widget controls"),
-                 ('ALWAYS', "Always", "Always merge non-conforming bones")],
+                 ('ALL_CHILDREN', "All Children", "Merge non-conforming bones of child rigs"),
+                 ('ALL_RIGS', "All Rigs", "Merge all non-conforming bones, even it they belong to separate figures")],
         name = "Non-conforming Rigs",
         description = "Also merge non-conforming rigs.\n(Bone parented and with no bones in common with main rig)",
         default = 'CONTROLS')
@@ -1373,7 +1374,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     useOnlySelected : BoolProperty(
         name = "Only Selected Rigs",
         description = "Only merge armatures that are children of selected armatures",
-        default = False)
+        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useOnlySelected")
@@ -1395,11 +1396,22 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     roots += findSelectedRoots(ob.children)
             return roots
 
+        root = context.object
         roots = [ob for ob in context.view_layer.objects if ob.parent is None]
         if self.useOnlySelected:
             roots = findSelectedRoots(roots)
+        if self.useMergeNonConforming == 'ALL_RIGS' and len(roots) > 1:
+            if root in roots:
+                subroots = [rig for rig in roots if rig != root]
+            else:
+                subroots = roots
+            roots = [ob for ob in roots if ob not in subroots]
+            for ob in subroots:
+                wmat = ob.matrix_world.copy()
+                ob.parent = root
+                setWorldMatrix(ob, wmat)
         excluded = findExcludedObjects(context, self.useHiddenRigs)
-        if self.useMergeNonConforming == 'ALWAYS':
+        if self.useMergeNonConforming in ['ALL_CHILDREN', 'ALL_RIGS']:
             rootmats = applyTransformToObjects(roots, excluded)
         else:
             rootmats = []
@@ -1427,7 +1439,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     conforms = False
                 elif rig.parent_type == 'BONE':
                     conforms = False
-                    if self.useMergeNonConforming == 'ALWAYS':
+                    if self.useMergeNonConforming in ['ALL_CHILDREN', 'ALL_RIGS']:
                         conforms = True
                     elif (self.useMergeNonConforming == 'CONTROLS' and
                           rig.DazUrl.lower() in DF.WidgetControls):
