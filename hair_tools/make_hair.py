@@ -20,17 +20,18 @@ import math
 import numpy as np
 
 from mathutils import Vector, Matrix
-from .error import *
-from .utils import *
-from .tree import addGroupInput, addGroupOutput, getGroupInput
-from .material import WHITE, GREY, BLACK, isWhite, isBlack
-from .cycles import CyclesMaterial, CyclesTree
-from .selector import Selector
-from .guess import ColorProp
-from .fix import GizmoUser
-from .transfer import MatchOperator
-from .pin import Pinner
-from .dforce import Cloth, Collision
+from ..error import *
+from ..utils import *
+from ..tree import addGroupInput, addGroupOutput, getGroupInput
+from ..material import WHITE, GREY, BLACK, isWhite, isBlack
+from ..cycles import CyclesMaterial, CyclesTree
+from ..hair_material import HairTree
+from ..selector import Selector
+from ..guess import ColorProp
+from ..fix import GizmoUser
+from ..transfer import MatchOperator
+from ..pin import Pinner
+from ..dforce import Cloth, Collision
 
 #-------------------------------------------------------------
 #   Classes
@@ -63,7 +64,7 @@ class Separator:
     def getMeshHairs(self, context, hair, hum):
         hairs = []
         if self.useSeparateLoose:
-            from .geometry import clearMeshProps
+            from ..geometry import clearMeshProps
             print("Separate loose parts")
             clearMeshProps(hair)
             bpy.ops.mesh.separate(type='LOOSE')
@@ -325,7 +326,7 @@ class HairOptions:
 
 class HairSystem:
     def __init__(self, key, n, hum, mnum, btn):
-        from .channels import Channels
+        from ..channels import Channels
         self.name = ("Hair_%s" % key)
         self.scale = hum.DazScale
         self.button = btn
@@ -712,7 +713,7 @@ class HairBuilder(Pinner, Cloth, Collision):
 
 
     def buildHairCurves(self, context, hname, strands, hair, hum, mnames):
-        from .geometry import getActiveUvLayer
+        from ..geometry import getActiveUvLayer
         curves = bpy.data.hair_curves.new(self.name)
         sizes = [len(strand) for strand in strands]
         curves.add_curves(sizes)
@@ -753,9 +754,9 @@ class HairBuilder(Pinner, Cloth, Collision):
 
 
     def addFollowProxy(self, hair, proxy):
-        from .geonodes import FollowProxyGroup
-        from .tree import addNodeGroup
-        from .store import ModStore
+        from ..geonodes import FollowProxyGroup
+        from ..tree import addNodeGroup
+        from ..store import ModStore
         stores = []
         for mod in list(hair.modifiers):
             if not (mod.type == 'NODES' and
@@ -839,7 +840,7 @@ class Tesselator:
 
     def checkTesselation(self, hair):
         # Check that there are only pure lines
-        from .tables import getVertEdges
+        from ..tables import getVertEdges
         vertedges = getVertEdges(hair)
         nverts = len(hair.data.vertices)
         print("Check hair", hair.name, nverts)
@@ -1065,7 +1066,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
 
     def run(self, context):
-        from .merge import applyTransformToObjects, restoreTransformsToObjects
+        from ..merge import applyTransformToObjects, restoreTransformsToObjects
         hair,hum = getHairAndHuman(context, True)
         applyTransformToObjects([hair])
         wmats = applyTransformToObjects([hum])
@@ -1094,7 +1095,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         elif self.strandType == 'TUBE':
             self.multiMaterials = False
 
-        from .transfer import applyAllShapekeys
+        from ..transfer import applyAllShapekeys
         applyAllShapekeys(hair)
         self.scale = hair.DazScale
         LS.hairMaterialMethod = self.hairMaterialMethod
@@ -1229,7 +1230,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             proxy.name = "Proxy %s" % baseName(hair.name)
             self.linkHair(proxy, hum, coll)
             if duphair:
-                from .transfer import transferVertexGroups
+                from ..transfer import transferVertexGroups
                 transferVertexGroups(context, duphair, [proxy], 1e-3)
                 mod = proxy.modifiers.new("Armature", 'ARMATURE')
                 mod.object = duphair.parent
@@ -1272,7 +1273,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
 
     def findMeshRects(self, hair):
-        from .tables import getVertFaces, findNeighbors
+        from ..tables import getVertFaces, findNeighbors
         #print("Find neighbors")
         self.faceverts, self.vertfaces = getVertFaces(hair)
         self.nfaces = len(hair.data.polygons)
@@ -1289,7 +1290,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
 
     def findTexRects(self, hair, mrects):
-        from .tables import getVertFaces, findNeighbors, findTexVerts
+        from ..tables import getVertFaces, findNeighbors, findTexVerts
         #print("Find texverts")
         self.texverts, self.texfaces = findTexVerts(hair, self.vertfaces)
         #print("Find tex neighbors", len(self.texverts), self.nfaces, len(self.texfaces))
@@ -1309,7 +1310,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
 
     def makeHairSystems(self, context, hum, hair):
-        from .tables import getVertFaces, findNeighbors
+        from ..tables import getVertFaces, findNeighbors
         if len(hair.data.polygons) > 0:
             mnum = hair.data.polygons[0].material_index
         else:
@@ -1949,270 +1950,11 @@ class DAZ_OT_ConnectHair(DazOperator, IsHair):
             bpy.ops.particle.connect_hair()
             bpy.ops.particle.particle_edit_toggle()
 
-#------------------------------------------------------------------------
-#   Materials
-#------------------------------------------------------------------------
-
-def buildHairMaterial(mname, color, img, context, force=False):
-    color = list(color[0:3])
-    hmat = HairMaterial(mname, color, img)
-    hmat.force = force
-    hmat.build(context, color, img)
-    return hmat.rna
-
-
-class HairMaterial(CyclesMaterial):
-
-    def __init__(self, name, color, img):
-        CyclesMaterial.__init__(self, name)
-        self.name = name
-        self.color = color
-        self.image = img
-
-
-    def guessColor(self):
-        if self.rna:
-            self.rna.diffuse_color = self.color
-
-
-    def build(self, context, color, img):
-        from .material import Material
-        if not Material.build(self, context):
-            return
-        self.tree = getHairTree(self, color, img)
-        self.tree.build()
-        self.rna.diffuse_color[0:3] = self.color
-
-
-def getHairTree(dmat, color=BLACK, img=None):
-    #print("Creating %s hair material" % LS.hairMaterialMethod)
-    if LS.hairMaterialMethod == 'HAIR_PRINCIPLED':
-        return HairPBRTree(dmat, color, img)
-    elif LS.hairMaterialMethod == 'PRINCIPLED':
-        return HairEeveeTree(dmat, color, img)
-    else:
-        return HairBSDFTree(dmat, color, img)
-
-#-------------------------------------------------------------
-#   Hair tree base
-#-------------------------------------------------------------
-
-class HairTree(CyclesTree):
-    def __init__(self, hmat, color, img):
-        CyclesTree.__init__(self, hmat)
-        self.type = 'HAIR'
-        self.color = color
-        self.image = img
-        self.root = Vector(color)
-        self.tip = Vector(color)
-        self.roottex = None
-        self.tiptex = None
-
-
-    def build(self):
-        self.makeTree()
-        self.buildLayer("")
-
-
-    def initLayer(self):
-        self.column = 4
-        self.active = None
-        self.buildBump()
-
-
-    def addTexco(self, slot):
-        CyclesTree.addTexco(self, slot)
-        self.info = self.addNode('ShaderNodeHairInfo', col=1)
-        #self.texco = self.info.outputs["Intercept"]
-
-
-    def buildOutput(self):
-        self.addColumn()
-        output = self.addNode('ShaderNodeOutputMaterial')
-        self.links.new(self.active.outputs[0], output.inputs['Surface'])
-
-
-    def buildBump(self):
-        strength = self.getValue(["Bump Strength"], 1)
-        if False and strength:
-            bump = self.addNode("ShaderNodeBump", col=2)
-            bump.inputs["Strength"].default_value = strength
-            bump.inputs["Distance"].default_value = 0.1 * GS.scale
-            bump.inputs["Height"].default_value = 1
-            self.normal = bump
-
-
-    def linkTangent(self, node):
-        self.links.new(self.info.outputs["Tangent Normal"], node.inputs["Tangent"])
-
-
-    def linkBumpNormal(self, node):
-        self.links.new(self.info.outputs["Tangent Normal"], node.inputs["Normal"])
-
-
-    def addRamp(self, node, label, root, tip, endpos=1, slot="Color"):
-        if self.image:
-            root = tip = WHITE
-        ramp = self.addNode('ShaderNodeValToRGB', col=self.column-2)
-        ramp.label = label
-        self.links.new(self.info.outputs["Intercept"], ramp.inputs['Fac'])
-        ramp.color_ramp.interpolation = 'LINEAR'
-        colramp = ramp.color_ramp
-        elt = colramp.elements[0]
-        elt.position = 0
-        if len(root) == 3:
-            elt.color = list(root) + [1]
-        else:
-            elt.color = root
-        elt = colramp.elements[1]
-        elt.position = endpos
-        if len(tip) == 3:
-            elt.color = list(tip) + [0]
-        else:
-            elt.color = tip
-        if node:
-            node.inputs[slot].default_value[0:3] == root
-        if self.image:
-            xyz = self.addNode("ShaderNodeCombineXYZ", col = self.column-3)
-            xyz.inputs[0].default_value = 0.5
-            xyz.inputs[1].default_value = 0.5
-            xyz.inputs[2].default_value = 0.5
-            tex = self.addNode("ShaderNodeTexImage", col=self.column-2, size=2)
-            tex.image = self.image
-            tex.hide = True
-            self.links.new(xyz.outputs["Vector"], tex.inputs["Vector"])
-            mult,a,b,socket = self.addMixRgbNode('MULTIPLY', self.column-1, size=12)
-            mult.inputs[0].default_value = 1
-            self.links.new(ramp.outputs["Color"], a)
-            self.links.new(tex.outputs["Color"], b)
-        else:
-            socket = ramp.outputs["Color"]
-        return ramp,socket
-
-
-    def readColor(self, factor):
-        root,self.roottex,_ = self.getColorTex(["Hair Root Color"], "COLOR", self.color, useFactor=False)
-        tip,self.tiptex,_ = self.getColorTex(["Hair Tip Color"], "COLOR", self.color, useFactor=False)
-        self.owner.rna.diffuse_color[0:3] = root
-        self.root = factor * Vector(root)
-        self.tip = factor * Vector(tip)
-
-
-    def linkRamp(self, ramp, socket, texs, node, slot):
-        out = socket
-        for tex in texs:
-            if tex:
-                mix,a,b,out = self.addMixRgbNode('MULTIPLY', col=self.column-1)
-                mix.inputs[0].default_value = 1.0
-                self.links.new(tex.outputs[0], a)
-                self.links.new(ramp.outputs[0], b)
-                break
-        self.links.new(out, node.inputs[slot])
-        return out
-
-
-    def setRoughness(self, diffuse, rough):
-        diffuse.inputs["Roughness"].default_value = rough
-
-
-    def mixSockets(self, socket1, socket2, weight):
-        mix = self.addNode('ShaderNodeMixShader')
-        mix.inputs[0].default_value = weight
-        self.links.new(socket1, mix.inputs[1])
-        self.links.new(socket2, mix.inputs[2])
-        return mix
-
-
-    def mixShaders(self, node1, node2, weight):
-        return self.mixSockets(node1.outputs[0], node2.outputs[0], weight)
-
-
-    def addShaders(self, node1, node2):
-        add = self.addNode('ShaderNodeAddShader')
-        self.links.new(node1.outputs[0], add.inputs[0])
-        self.links.new(node2.outputs[0], add.inputs[1])
-        return add
-
-#-------------------------------------------------------------
-#   Hair tree BSDF
-#-------------------------------------------------------------
-
-class HairBSDFTree(HairTree):
-
-    def buildLayer(self, uvname):
-        self.initLayer()
-        self.readColor(0.5)
-        trans = self.buildTransmission()
-        refl = self.buildHighlight()
-        self.addColumn()
-        if trans and refl:
-            #weight = self.getValue(["Highlight Weight"], 0.11)
-            weight = self.getValue(["Glossy Layer Weight"], 0.5)
-            self.active = self.mixShaders(trans, refl, weight)
-        #self.buildAnisotropic()
-        self.buildCutout()
-        self.buildOutput()
-
-
-    def buildTransmission(self):
-        root,roottex,_ = self.getColorTex(["Root Transmission Color"], "COLOR", self.color, useFactor=False)
-        tip,tiptex,_ = self.getColorTex(["Tip Transmission Color"], "COLOR", self.color, useFactor=False)
-        trans = self.addNode('ShaderNodeBsdfHair')
-        trans.component = 'Transmission'
-        trans.inputs['Offset'].default_value = 0
-        trans.inputs["RoughnessU"].default_value = 1
-        trans.inputs["RoughnessV"].default_value = 1
-        ramp,socket = self.addRamp(trans, "Transmission", root, tip)
-        self.linkRamp(ramp, socket, [roottex, tiptex], trans, "Color")
-        #self.linkTangent(trans)
-        self.active = trans
-        return trans
-
-
-    def buildHighlight(self):
-        refl = self.addNode('ShaderNodeBsdfHair')
-        refl.component = 'Reflection'
-        refl.inputs['Offset'].default_value = 0
-        refl.inputs["RoughnessU"].default_value = 0.02
-        refl.inputs["RoughnessV"].default_value = 1.0
-        ramp,socket = self.addRamp(refl, "Reflection", self.root, self.tip)
-        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], refl, "Color")
-        self.active = refl
-        return refl
-
-
-    def buildAnisotropic(self):
-        # Anisotropic
-        aniso = self.getValue(["Anisotropy"], 0)
-        if aniso:
-            if aniso > 0.2:
-                aniso = 0.2
-            node = self.addNode('ShaderNodeBsdfAnisotropic')
-            self.links.new(self.rootramp.outputs[0], node.inputs["Color"])
-            node.inputs["Anisotropy"].default_value = aniso
-            arots = self.getValue(["Anisotropy Rotations"], 0)
-            node.inputs["Rotation"].default_value = arots
-            self.linkTangent(node)
-            self.linkBumpNormal(node)
-            self.addColumn()
-            self.active = self.addShaders(self.active, node)
-
-
-    def buildCutout(self):
-        # Cutout
-        alpha = self.getValue(["Cutout Opacity"], 1)
-        if alpha < 1:
-            transp = self.addNode("ShaderNodeBsdfTransparent")
-            transp.inputs["Color"].default_value[0:3] = WHITE
-            self.addColumn()
-            self.active = self.mixShaders(transp, self.active, alpha)
-            self.owner.setTransSettings(False, False, WHITE, alpha)
-
 #-------------------------------------------------------------
 #   Hair tree for adding root transparency to existing material
 #-------------------------------------------------------------
 
-from .tree import NodeGroup
+from ..tree import NodeGroup
 
 class FadeGroup(NodeGroup, HairTree):
     def __init__(self):
@@ -2264,7 +2006,7 @@ def addFade(mat, img):
 class FadeHairTree(HairTree):
 
     def build(self, mat):
-        from .tree import findNode, findLinksTo
+        from ..tree import findNode, findLinksTo
         if mat.node_tree is None:
             print("Material %s has no nodes" % mat.name)
             return
@@ -2284,7 +2026,7 @@ class FadeHairTree(HairTree):
 
 
     def recoverTree(self, mat):
-        from .tree import findNode, YSIZE, NCOLUMNS
+        from ..tree import findNode, YSIZE, NCOLUMNS
         self.tree = mat.node_tree
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
@@ -2514,7 +2256,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             for bininfo in binbones.values():
                 self.addAutoIk(bininfo, rig, gizmo)
         elif self.controlMethod == 'WINDER':
-            from .winder import addWinder
+            from ..winder import addWinder
             self.makeGizmos(False, ["GZM_Knuckle"])
             gizmo = self.gizmos["GZM_Knuckle"]
             activateObject(context, rig)
@@ -2639,7 +2381,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def buildBones(self, context, key, sector, head, rig):
-        from .bone import setRoll
+        from ..bone import setRoll
         hair,data = sector[0]
         coord = data[1]
         hairs = [hair]
@@ -2807,7 +2549,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
             handle.bone.use_deform = False
             return handle
 
-        from .rig_utils import stretchTo
+        from ..rig_utils import stretchTo
         bboneSize = 0.1*GS.scale
         handleSize = 0.5*GS.scale
 
@@ -2865,7 +2607,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
 def addArmatureModifier(ob, rig, modname):
-    from .store import addModifierFirst
+    from ..store import addModifierFirst
     mod = getModifier(ob, 'ARMATURE')
     if mod is None:
         mod = addModifierFirst(ob, modname, 'ARMATURE')

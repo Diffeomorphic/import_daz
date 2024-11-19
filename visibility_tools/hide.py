@@ -18,9 +18,9 @@
 
 import bpy
 from bpy.props import *
-from .utils import *
-from .error import *
-from .selector import Selector
+from ..utils import *
+from ..error import *
+from ..selector import Selector
 
 def getMaskName(string):
     return "Mask_" + string.split(".",1)[0]
@@ -117,7 +117,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
 
 
     def createObjectVisibility(self, rig, ob, obname):
-        from .driver import setBoolProp, makePropDriver
+        from ..driver import setBoolProp, makePropDriver
         prop = getHidePropName(obname)
         setBoolProp(rig, prop, True, True, "Show %s" % prop)
         makePropDriver(propRef(prop), ob, "hide_viewport", rig, expr="not(x)")
@@ -125,7 +125,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
 
 
     def createMaskVisibility(self, rig, ob, obnames):
-        from .driver import makePropDriver
+        from ..driver import makePropDriver
         props = {}
         for obname in obnames:
             modname = getMaskName(obname)
@@ -243,7 +243,7 @@ class SetAllVisibility:
     prefix : StringProperty()
 
     def run(self, context):
-        from .selector import autoKeyProp
+        from ..selector import autoKeyProp
         rig = getRigFromContext(context)
         scn = context.scene
         if rig is None:
@@ -280,7 +280,7 @@ class DAZ_OT_ToggleVis(DazOperator, IsMeshArmature):
     name : StringProperty()
 
     def run(self, context):
-        from .selector import autoKeyProp
+        from ..selector import autoKeyProp
         rig = getRigFromContext(context)
         scn = context.scene
         if rig:
@@ -564,7 +564,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
         ShapekeySelector.draw(self, context)
 
     def run(self, context):
-        from .driver import addDriverVar
+        from ..driver import addDriverVar
         hum = context.object
         rig = getRigFromContext(context)
         clothes = [ob for ob in getSelectedMeshes(context) if ob != hum]

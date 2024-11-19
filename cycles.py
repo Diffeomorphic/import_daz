@@ -86,7 +86,7 @@ class CyclesMaterial(Material):
 
     def setupTree(self):
         if self.isHair():
-            from .hair import getHairTree
+            from .hair_material import getHairTree
             geo = self.geometry
             if geo and geo.isStrandHair:
                 geo.hairMaterials.append(self)

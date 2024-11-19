@@ -35,11 +35,11 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "bone_data", "transform", "node", "figure", "bone", "geometry",
            "store", "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "rig_utils", "dbzfile", "panel",
-           "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon",
+           "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "hair_material",
            "render", "camera", "light",
            "guess", "convert", "files", "finger",
-           "matsel", "merge", "tables", "proxy", "hide", "transfer",
-           "dforce", "pin", "hair", "main", "geonodes",
+           "matsel", "merge", "tables", "proxy", "transfer",
+           "dforce", "pin", "main", "geonodes",
            "hd_data", "ctrl_rig", "moho", "gaze", "scan", "api",
     ]
 
@@ -60,6 +60,8 @@ elif "bpy" in locals():
     imp.reload(material_tools)
     imp.reload(mesh_tools)
     imp.reload(morph_tools)
+    imp.reload(hair_tools)
+    imp.reload(visibility_tools)
     imp.reload(hd_tools)
     imp.reload(simulation_tools)
     imp.reload(export_tools)
@@ -78,6 +80,8 @@ else:
     from . import material_tools
     from . import mesh_tools
     from . import morph_tools
+    from . import hair_tools
+    from . import visibility_tools
     from . import hd_tools
     from . import simulation_tools
     from . import export_tools
@@ -119,6 +123,12 @@ def toggleMeshTools(self, context):
 
 def toggleMorphTools(self, context):
     toggleModule("morph_tools", self.useMorphTools)
+
+def toggleHairTools(self, context):
+    toggleModule("hair_tools", self.useHairTools)
+
+def toggleVisibilityTools(self, context):
+    toggleModule("visibility_tools", self.useVisibilityTools)
 
 def toggleHDTools(self, context):
     toggleModule("hd_tools", self.useHDTools)
@@ -199,6 +209,18 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleMorphTools)
 
+    useHairTools : BoolProperty(
+        name = "Hair Tools",
+        description = "Tools for dealing with Hair morphs",
+        default = False,
+        update = toggleHairTools)
+
+    useVisibilityTools : BoolProperty(
+        name = "Visibility Tools",
+        description = "Tools for dealing with Visibility morphs",
+        default = False,
+        update = toggleVisibilityTools)
+
     useHDTools : BoolProperty(
         name = "HD Tools",
         description = "Tools for dealing with HD morphs",
@@ -249,6 +271,8 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useMaterialTools")
         self.layout.prop(self, "useMeshTools")
         self.layout.prop(self, "useMorphTools")
+        self.layout.prop(self, "useHairTools")
+        self.layout.prop(self, "useVisibilityTools")
         self.layout.prop(self, "useHDTools")
         self.layout.prop(self, "useSimulationTools")
         self.layout.prop(self, "useExportTools")
@@ -263,8 +287,8 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "fix", "animation", "morphing", "panel",
             "material", "cgroup", "render",
             "guess", "main", "finger",
-            "matsel", "proxy", "merge", "hide",
-            "pin", "hair", "transfer", "gaze",
+            "matsel", "proxy", "merge",
+            "pin", "transfer", "gaze",
             "ctrl_rig", "moho", "scan",
             ]
 
@@ -304,6 +328,12 @@ def register():
         if prefs.useMorphTools:
             from . import morph_tools
             morph_tools.register()
+        if prefs.useHDTools:
+            from . import hair_tools
+            hair_tools.register()
+        if prefs.useHDTools:
+            from . import visibility_tools
+            visibility_tools.register()
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.register()
@@ -356,6 +386,12 @@ def unregister():
         if prefs.useMorphTools:
             from . import morph_tools
             morph_tools.unregister()
+        if prefs.useHDTools:
+            from . import hair_tools
+            hair_tools.unregister()
+        if prefs.useHDTools:
+            from . import visibility_tools
+            visibility_tools.unregister()
         if prefs.useHDTools:
             from . import hd_tools
             hd_tools.unregister()
