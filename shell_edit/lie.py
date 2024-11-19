@@ -443,7 +443,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
         if self.useDriveInfluence:
             setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
             addDriver(node.inputs[label], "default_value", rig, propRef(prop), "x")
-            rig.DazVisibilityDrivers = True
+            rig["DazVisibilityDrivers"] = True
         else:
             node.inputs[label].default_value = 1.0
             if prop in rig.keys():

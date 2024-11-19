@@ -184,7 +184,7 @@ class GeoNode(Node, SimNode):
             hdob = ob
         else:
             hdob = bpy.data.objects.new(HDName(ob.name), me)
-            hdob.DazVisibilityDrivers = ob.DazVisibilityDrivers
+            hdob["DazVisibilityDrivers"] = ob.get("DazVisibilityDrivers", False)
             self.arrangeObject(hdob, inst, context, Zero)
         hdob["DazHDMesh"] = True
         self.hdobject = inst.hdobject = hdob
@@ -1275,7 +1275,7 @@ class Geometry(Asset, Channels):
         from .finger import getFingerPrint
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
-            ob.DazVisibilityDrivers = True
+            ob["DazVisibilityDrivers"] = True
 
         if USE_ATTRIBUTES:
             def addFaceMap(ob, aname, groups, indices):

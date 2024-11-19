@@ -222,7 +222,7 @@ def getShellProps(context):
     filter = context.scene.DazFilter.lower()
     rig = getRigFromContext(context)
     if rig:
-        objects = [rig] + [ob for ob in rig.children if ob.DazVisibilityDrivers]
+        objects = [rig] + [ob for ob in rig.children if ob.get("DazVisibilityDrivers", False)]
     else:
         objects = [context.object]
     props = {}
@@ -266,7 +266,7 @@ def driveShellInfluence(ob):
                     prop = "INFLU %s" % node.label
                     setFloatProp(rig, prop, 1.0, 0.0, 10.0, True)
                     addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-                    ob.DazVisibilityDrivers = rig.DazVisibilityDrivers = True
+                    ob["DazVisibilityDrivers"] = rig["DazVisibilityDrivers"] = True
 
 
 ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]

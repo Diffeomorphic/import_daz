@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 import bpy
 from bpy.props import *
 from ..utils import *
@@ -106,8 +104,8 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
                 obnames.append(ob.name)
         for ob in getMeshChildren(rig):
             self.createMaskVisibility(rig, ob, obnames)
-            ob.DazVisibilityDrivers = True
-        rig.DazVisibilityDrivers = True
+            ob["DazVisibilityDrivers"] = True
+        rig["DazVisibilityDrivers"] = True
         updateDrivers(rig)
 
         if self.useCollections:
@@ -152,7 +150,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
             for ob in selected:
                 coll = createSubCollection(rigcoll, ob.name)
                 moveToCollection(ob, coll)
-        rig.DazVisibilityCollections = True
+        rig["DazVisibilityCollections"] = True
         print("Visibility collections created")
 
 #------------------------------------------------------------------------
@@ -200,7 +198,7 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazVisibilityDrivers)
+        return (ob and ob.type == 'ARMATURE' and ob.get("DazVisibilityDrivers", False))
 
     useAllMeshes : BoolProperty(
         name = "All Meshes In Scene",
@@ -232,61 +230,8 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
             if isHideProp(prop):
                 del rig[prop]
         updateDrivers(rig)
-        rig.DazVisibilityDrivers = False
+        rig["DazVisibilityDrivers"] = False
         print("Visibility drivers removed")
-
-#------------------------------------------------------------------------
-#   Show/Hide all
-#------------------------------------------------------------------------
-
-class SetAllVisibility:
-    prefix : StringProperty()
-
-    def run(self, context):
-        from ..selector import autoKeyProp
-        rig = getRigFromContext(context)
-        scn = context.scene
-        if rig is None:
-            return
-        for key in rig.keys():
-            if key[0:3] == "Mhh":
-                if key:
-                    rig[key] = self.on
-                    autoKeyProp(rig, key, scn, scn.frame_current, True)
-        updateDrivers(rig)
-
-
-class DAZ_OT_ShowAllVis(DazOperator, SetAllVisibility):
-    bl_idname = "daz.show_all_vis"
-    bl_label = "Show All"
-    bl_description = "Show all meshes/makeup of this rig"
-
-    on = True
-
-
-class DAZ_OT_HideAllVis(DazOperator, SetAllVisibility):
-    bl_idname = "daz.hide_all_vis"
-    bl_label = "Hide All"
-    bl_description = "Hide all meshes/makeup of this rig"
-
-    on = False
-
-
-class DAZ_OT_ToggleVis(DazOperator, IsMeshArmature):
-    bl_idname = "daz.toggle_vis"
-    bl_label = "Toggle Vis"
-    bl_description = "Toggle visibility of this mesh"
-
-    name : StringProperty()
-
-    def run(self, context):
-        from ..selector import autoKeyProp
-        rig = getRigFromContext(context)
-        scn = context.scene
-        if rig:
-            rig[self.name] = not rig[self.name]
-            autoKeyProp(rig, self.name, scn, scn.frame_current, True)
-            updateDrivers(rig)
 
 #------------------------------------------------------------------------
 #   Mask modifiers
@@ -576,7 +521,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
             form = "%s"
         props = []
         for clo in clothes:
-            if not clo.DazVisibilityDrivers:
+            if not clo.get("DazVisibilityDrivers", False):
                 raise DazError("Create visibility drivers first")
             prop = getHidePropName(clo.name)
             if prop not in rig.keys():
@@ -607,20 +552,14 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
 classes = [
     DAZ_OT_AddVisibility,
     DAZ_OT_RemoveVisibility,
-    DAZ_OT_ShowAllVis,
-    DAZ_OT_HideAllVis,
     DAZ_OT_CreateMasks,
     DAZ_OT_CopyMasks,
     DAZ_OT_AddShrinkwrap,
-    DAZ_OT_ToggleVis,
     DAZ_OT_MakeInvisible,
     DAZ_OT_AddShapeVisDrivers,
 ]
 
 def register():
-    bpy.types.Object.DazVisibilityDrivers = BoolProperty(default = False)
-    bpy.types.Object.DazVisibilityCollections = BoolProperty(default = False)
-
     for cls in classes:
         bpy.utils.register_class(cls)
 

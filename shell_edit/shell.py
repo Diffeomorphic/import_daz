@@ -522,7 +522,7 @@ class DAZ_OT_AddCustomShell(MaterialSelector, DazPropsOperator):
             prop = "INFLU %s" % shellname
             setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
             addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-            ob.DazVisibilityDrivers = rig.DazVisibilityDrivers = True
+            ob["DazVisibilityDrivers"] = rig["DazVisibilityDrivers"] = True
 
         uvmap = tree.nodes.new(type="ShaderNodeUVMap")
         uvmap.location = (x, y-YSIZE)
