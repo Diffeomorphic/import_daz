@@ -546,6 +546,52 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
                 fcu.driver.expression = form % expr[1:]
 
 #----------------------------------------------------------
+#   Shapekey selector
+#----------------------------------------------------------
+
+class DAZ_OT_SelectCoveredVerts(DazPropsOperator, IsMesh):
+    bl_idname = "daz.select_covered_verts"
+    bl_label = "Select Covered Vertices"
+    bl_description = "Select vertices that are covered by selected meshes"
+    bl_options = {'UNDO'}
+
+    distance : FloatProperty(
+        name = "Max Distance (cm)",
+        description = "Max distance between face and cover",
+        min = 0,
+        default = 1)
+
+    def draw(self, context):
+        self.layout.prop(self, "distance")
+
+    def run(self, context):
+        hum = context.object
+        dist = self.distance * GS.scale
+        verts = hum.data.vertices
+        corners = [[(vn, verts[vn].co) for vn in f.vertices] for f in hum.data.polygons]
+        normals = [f.normal for f in hum.data.polygons]
+        clothes = [clo for clo in getSelectedMeshes(context) if clo != hum]
+        uncovered = {}
+        from mathutils.bvhtree import BVHTree
+        deps = context.evaluated_depsgraph_get()
+        for clo in clothes:
+            bvhtree = BVHTree.FromObject(clo, deps)
+            for fdata,no in zip(corners, normals):
+                for vn,co in fdata:
+                    ray = bvhtree.ray_cast(co, no, dist)
+                    if ray[0] is None:
+                        for vn1,_ in fdata:
+                            uncovered[vn1] = True
+                        continue
+        activateObject(context, hum)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
+        verts = [v for v in hum.data.vertices if v.index not in uncovered]
+        for v in verts:
+            v.select = True
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -557,6 +603,7 @@ classes = [
     DAZ_OT_AddShrinkwrap,
     DAZ_OT_MakeInvisible,
     DAZ_OT_AddShapeVisDrivers,
+    DAZ_OT_SelectCoveredVerts,
 ]
 
 def register():

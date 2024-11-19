@@ -49,6 +49,7 @@ class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.add_shrinkwrap")
         self.layout.operator("daz.make_invisible")
+        self.layout.operator("daz.select_covered_verts")
         self.layout.operator("daz.create_masks")
         self.layout.operator("daz.copy_masks")
         self.layout.operator("daz.add_visibility_drivers")
