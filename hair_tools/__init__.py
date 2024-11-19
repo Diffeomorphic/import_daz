@@ -25,10 +25,14 @@ if not DEBUG:
 elif "HairToolsFeature" in locals():
     print("Reloading Hair Tools")
     import imp
+    imp.reload(hair_builder)
     imp.reload(make_hair)
+    imp.reload(hair_rig)
 else:
     print("Loading Hair Tools")
+    from . import hair_builder
     from . import make_hair
+    from . import hair_rig
     HairToolsFeature = True
 
 #----------------------------------------------------------
@@ -76,12 +80,16 @@ class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
 def register():
     print("Register Hair Tools")
     bpy.utils.register_class(DAZ_PT_SetupHair)
-    from . import make_hair
+    from . import hair_builder, make_hair, hair_rig
+    hair_builder.register()
     make_hair.register()
+    hair_rig.register()
 
 def unregister():
     bpy.utils.unregister_class(DAZ_PT_SetupHair)
-    from . import make_hair
+    from . import hair_builder, make_hair, hair_rig
+    hair_builder.unregister()
     make_hair.unregister()
+    hair_rig.unregister()
 
 

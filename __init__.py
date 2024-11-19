@@ -328,10 +328,10 @@ def register():
         if prefs.useMorphTools:
             from . import morph_tools
             morph_tools.register()
-        if prefs.useHDTools:
+        if prefs.useHairTools:
             from . import hair_tools
             hair_tools.register()
-        if prefs.useHDTools:
+        if prefs.useVisibilityTools:
             from . import visibility_tools
             visibility_tools.register()
         if prefs.useHDTools:
@@ -386,10 +386,10 @@ def unregister():
         if prefs.useMorphTools:
             from . import morph_tools
             morph_tools.unregister()
-        if prefs.useHDTools:
+        if prefs.useHairTools:
             from . import hair_tools
             hair_tools.unregister()
-        if prefs.useHDTools:
+        if prefs.useVisibilityTools:
             from . import visibility_tools
             visibility_tools.unregister()
         if prefs.useHDTools:

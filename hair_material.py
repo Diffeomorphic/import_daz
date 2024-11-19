@@ -277,3 +277,36 @@ class HairBSDFTree(HairTree):
             self.addColumn()
             self.active = self.mixShaders(transp, self.active, alpha)
             self.owner.setTransSettings(False, False, WHITE, alpha)
+
+#-------------------------------------------------------------
+#   Hair tree Principled
+#-------------------------------------------------------------
+
+class HairPBRTree(HairTree):
+
+    def buildLayer(self, uvname):
+        self.initLayer()
+        self.readColor(0.216)
+        pbr = self.active = self.addNode("ShaderNodeBsdfHairPrincipled")
+        ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip)
+        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Color")
+        pbr.inputs["Roughness"].default_value = 0.2
+        pbr.inputs["Radial Roughness"].default_value = 0.8
+        pbr.inputs["IOR"].default_value = 1.1
+        self.buildOutput()
+
+#-------------------------------------------------------------
+#   Hair tree Eevee
+#-------------------------------------------------------------
+
+class HairEeveeTree(HairTree):
+
+    def buildLayer(self, uvname):
+        self.initLayer()
+        self.readColor(0.216)
+        pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
+        ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
+        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Base Color")
+        pbr.inputs["Metallic"].default_value = 0.9
+        pbr.inputs["Roughness"].default_value = 0.2
+        self.buildOutput()
