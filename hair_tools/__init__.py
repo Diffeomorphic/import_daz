@@ -47,8 +47,8 @@ else:
 
 from ..panel import DAZ_PT_SetupTab
 
-class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_idname = "DAZ_PT_SetupHair"
+class DAZ_PT_Hair(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_Hair"
     bl_label = "Hair"
 
     def draw(self, context):
@@ -59,10 +59,10 @@ class DAZ_PT_SetupHair(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.label(text = "  Human: %s" % (hum.name if hum else None))
 
 
-class DAZ_PT_SetupHairMesh(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupHair"
-    bl_idname = "DAZ_PT_SetupHairMesh"
-    bl_label = "Hair Mesh"
+class DAZ_PT_HairSelect(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Hair"
+    bl_idname = "DAZ_PT_HairSelect"
+    bl_label = "Select Hairs"
 
     def draw(self, context):
         self.layout.operator("daz.print_statistics")
@@ -71,9 +71,9 @@ class DAZ_PT_SetupHairMesh(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.select_random_strands")
 
 
-class DAZ_PT_SetupHairProxy(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_SetupHair"
-    bl_idname = "DAZ_PT_SetupHairProxy"
+class DAZ_PT_HairProxy(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Hair"
+    bl_idname = "DAZ_PT_HairProxy"
     bl_label = "Hair Proxy"
 
     def draw(self, context):
@@ -86,9 +86,9 @@ class DAZ_PT_SetupHairProxy(DAZ_PT_SetupTab, bpy.types.Panel):
 
 
 if BLENDER3:
-    class DAZ_PT_SetupHairParticles(DAZ_PT_SetupTab, bpy.types.Panel):
-        bl_parent_id = "DAZ_PT_SetupHair"
-        bl_idname = "DAZ_PT_SetupHairParticles"
+    class DAZ_PT_HairParticles(DAZ_PT_SetupTab, bpy.types.Panel):
+        bl_parent_id = "DAZ_PT_Hair"
+        bl_idname = "DAZ_PT_HairParticles"
         bl_label = "Hair Particles"
 
         def draw(self, context):
@@ -101,33 +101,35 @@ if BLENDER3:
 #----------------------------------------------------------
 
 classes = [
-    DAZ_PT_SetupHair,
-    DAZ_PT_SetupHairMesh,
-    DAZ_PT_SetupHairProxy,
+    DAZ_PT_Hair,
+    DAZ_PT_HairSelect,
+    DAZ_PT_HairProxy,
 ]
 
 def register():
     print("Register Hair Tools")
     for cls in classes:
         bpy.utils.register_class(cls)
-    from . import hair_builder, make_hair, hair_rig
+    from . import hair_builder, make_hair, hair_rig, hair_select
     hair_builder.register()
     make_hair.register()
     hair_rig.register()
+    hair_select.register()
     if BLENDER3:
-        bpy.utils.register_class(DAZ_PT_SetupHairParticles)
+        bpy.utils.register_class(DAZ_PT_HairParticles)
         from .import particles
         particles.register()
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-    from . import hair_builder, make_hair, hair_rig
+    from . import hair_builder, make_hair, hair_rig, hair_select
     hair_builder.unregister()
     make_hair.unregister()
     hair_rig.unregister()
+    hair_select.unregister()
     if BLENDER3:
-        bpy.utils.unregister_class(DAZ_PT_SetupHairParticles)
+        bpy.utils.unregister_class(DAZ_PT_HairParticles)
         from .import particles
         particles.unregister()
 
