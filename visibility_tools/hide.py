@@ -555,41 +555,57 @@ class DAZ_OT_SelectCoveredVerts(DazPropsOperator, IsMesh):
     bl_description = "Select vertices that are covered by selected meshes"
     bl_options = {'UNDO'}
 
-    distance : FloatProperty(
+    maxDist : FloatProperty(
         name = "Max Distance (cm)",
         description = "Max distance between face and cover",
         min = 0,
-        default = 1)
+        default = 2)
+
+    minDist : FloatProperty(
+        name = "Min Distance (cm)",
+        description = "Min distance between face and cover",
+        max = 0,
+        default = -1)
 
     def draw(self, context):
-        self.layout.prop(self, "distance")
+        self.layout.prop(self, "maxDist")
+        self.layout.prop(self, "minDist")
 
     def run(self, context):
         hum = context.object
-        dist = self.distance * GS.scale
-        verts = hum.data.vertices
-        corners = [[(vn, verts[vn].co) for vn in f.vertices] for f in hum.data.polygons]
-        normals = [f.normal for f in hum.data.polygons]
         clothes = [clo for clo in getSelectedMeshes(context) if clo != hum]
-        uncovered = {}
-        from mathutils.bvhtree import BVHTree
-        deps = context.evaluated_depsgraph_get()
-        for clo in clothes:
-            bvhtree = BVHTree.FromObject(clo, deps)
-            for fdata,no in zip(corners, normals):
-                for vn,co in fdata:
-                    ray = bvhtree.ray_cast(co, no, dist)
-                    if ray[0] is None:
-                        for vn1,_ in fdata:
-                            uncovered[vn1] = True
-                        continue
         activateObject(context, hum)
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
-        verts = [v for v in hum.data.vertices if v.index not in uncovered]
-        for v in verts:
-            v.select = True
+        minDist = -self.minDist * GS.scale
+        maxDist = self.maxDist * GS.scale
+        verts = hum.data.vertices
+        corners = [[(vn, verts[vn].co) for vn in f.vertices] for f in hum.data.polygons]
+        normals = [f.normal for f in hum.data.polygons]
+        from mathutils.bvhtree import BVHTree
+        deps = context.evaluated_depsgraph_get()
+        for clo in clothes:
+            uncovered = {}
+            bvhtree = BVHTree.FromObject(clo, deps)
+            for fdata,no in zip(corners, normals):
+                for vn,co in fdata:
+                    ray = bvhtree.ray_cast(co, no, maxDist)
+                    if ray[0] is None and minDist > 0:
+                        ray = bvhtree.ray_cast(co, -no, minDist)
+                    if ray[0] is None:
+                        for vn1,_ in fdata:
+                            uncovered[vn1] = True
+                        continue
+            covered = [v for v in hum.data.vertices if v.index not in uncovered]
+            for v in covered:
+                v.select = True
+            clo.hide_set(True)
+
+
+    def sequel(self, context):
+        if context.object:
+            setMode('EDIT')
 
 #----------------------------------------------------------
 #   Initialize
