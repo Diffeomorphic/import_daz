@@ -36,7 +36,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "store", "fix", "modifier", "load_morph", "morphing", "baked",
            "animation", "rig_utils", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "hair_material",
-           "render", "camera", "light", #"visibility",
+           "render", "camera", "light", "visibility",
            "guess", "convert", "files", "finger",
            "matsel", "merge", "tables", "proxy", "transfer",
            "dforce", "pin", "main", "geonodes",
