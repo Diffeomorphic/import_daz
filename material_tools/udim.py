@@ -22,7 +22,7 @@ from ..fileutils import MultiFile, ImageFile
 from ..material import LocalTextureSaver
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
-from ..merge import TileFixer, getTileBase
+from ..merge_uvs import TileFixer, getTileBase
 
 #----------------------------------------------------------
 #   Tiles From Graft

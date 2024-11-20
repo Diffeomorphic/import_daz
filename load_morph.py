@@ -716,7 +716,7 @@ class LoadMorph(DriverUser):
 
 
     def applyErcArmature(self, context, ob):
-        from .merge import applyArmatureModifier
+        from .merge_rigs import applyArmatureModifier
         from .modifier import getBasicShape, newArmatureModifier
         from .driver import getPropMinMax, Driver
 

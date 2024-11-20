@@ -178,7 +178,7 @@ class MetaMaker(RigifyCommon):
         from collections import OrderedDict
         from ..rig_utils import unhideAllObjects, connectToParent
         from ..figure import getRigType, finalizeArmature
-        from ..merge import mergeBones, mergeVertexGroups, safeTransformApply
+        from ..merge_rigs import mergeBones, mergeVertexGroups, safeTransformApply
 
         print("Create metarig")
         rig = context.object

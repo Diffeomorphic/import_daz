@@ -21,7 +21,9 @@ from .error import *
 from .utils import *
 from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions, PosableMaker
-from .merge import MergeRigsOptions, MergeGeograftOptions, UVLayerMergerOptions
+from .merge_rigs import MergeRigsOptions
+from .merge_grafts import MergeGeograftOptions
+from .merge_uvs import UVLayerMergerOptions
 from .daz import MaterialMethodItems
 
 #------------------------------------------------------------------
@@ -1263,7 +1265,7 @@ class DAZ_OT_ApplyTransforms(DazOperator):
 
 
 def applyTransforms(objects):
-    from .merge import safeTransformApply
+    from .merge_rigs import safeTransformApply
     print("Apply transforms")
     bpy.ops.object.select_all(action='DESELECT')
     wmats = []

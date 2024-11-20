@@ -18,7 +18,7 @@ import bpy
 from ..error import *
 from ..utils import *
 from ..fileutils import SingleFile, DufFile
-from ..merge import UVLayerMergerOptions, UVLayerMerger
+from ..merge_uvs import UVLayerMergerOptions, UVLayerMerger
 from ..geometry import *
 
 #-------------------------------------------------------------

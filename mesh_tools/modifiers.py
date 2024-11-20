@@ -82,7 +82,6 @@ class SubsurfApplier:
 
 
     def recreate(self, context, ob, nob):
-        from .merge import copyModifier
         if self.useApplyRest:
             rig = ob.parent
             if rig and activateObject(context, rig):
@@ -96,6 +95,19 @@ class SubsurfApplier:
             for key in dir(mod):
                 copyModifier(mod, nmod)
         nob.parent = ob.parent
+
+
+def copyModifier(smod, tmod):
+    for attr in dir(smod):
+        if (attr[0] != "_" and
+            attr not in ["bl_rna", "is_override_data", "rna_type", "type"]):
+            value = getattr(smod, attr)
+            if (isSimpleType(value) or
+                isinstance(value, (bpy.types.Object, bpy.types.NodeTree))):
+                try:
+                    setattr(tmod, attr, getattr(smod, attr))
+                except AttributeError:
+                    pass
 
 
 def copyObject(ob, name):

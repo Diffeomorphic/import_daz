@@ -192,7 +192,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
 
     def applyScale(self, context, ob):
-        from ..merge import safeTransformApply
+        from ..merge_rigs import safeTransformApply
         scale = self.scale / ob.DazScale
         if ob.type in ['MESH', 'ARMATURE'] and activateObject(context, ob):
             self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)

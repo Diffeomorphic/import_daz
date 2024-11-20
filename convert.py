@@ -81,7 +81,7 @@ def loadPose(context, rig, entry):
 #-------------------------------------------------------------
 
 def optimizePose(context, useApplyRestPose):
-    from .merge import applyRestPoses
+    from .merge_rigs import applyRestPoses
     rig = context.object
     char = getCharacterFromRig(rig)
     if char is None:
