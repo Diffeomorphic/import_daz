@@ -242,7 +242,7 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
 
 
     def run(self, context):
-        from ..merge import mergeUvLayers
+        from ..merge_uvs import mergeUvLayers
         ob = context.object
         if self.keepIdx < 0:
             raise DazError("No active UV layer found")

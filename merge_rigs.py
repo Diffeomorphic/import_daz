@@ -690,6 +690,7 @@ class DAZ_OT_MergeToes(DazOperator, IsArmature):
 
 classes = [
     DAZ_OT_MergeRigs,
+    DAZ_OT_CopyPose,
     DAZ_OT_ApplyRestPoses,
     DAZ_OT_MergeToes,
 ]
