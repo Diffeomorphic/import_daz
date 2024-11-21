@@ -4,8 +4,8 @@
 
 import bpy
 from mathutils import Matrix
-from .utils import *
-from .error import *
+from ..utils import *
+from ..error import *
 
 #------------------------------------------------------------------
 #   Gaze transfer

@@ -18,6 +18,7 @@ elif "HairToolsFeature" in locals():
     imp.reload(hair_builder)
     imp.reload(make_hair)
     imp.reload(hair_rig)
+    imp.reload(hair_select)
     if BLENDER3:
         imp.reload(particles)
 else:
@@ -25,6 +26,7 @@ else:
     from . import hair_builder
     from . import make_hair
     from . import hair_rig
+    from . import hair_select
     if BLENDER3:
         from . import particles
     HairToolsFeature = True

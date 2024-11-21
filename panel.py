@@ -280,22 +280,7 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.clear_pose")
         op = self.layout.operator("daz.clear_morphs")
         op.morphset = "All"
-
-
-class DAZ_PT_MorePosing(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Posing"
-    bl_label = "More Posing Tools"
-
-    def draw(self, context):
-        self.layout.operator("daz.copy_absolute_pose")
         self.layout.operator("daz.prune_action")
-        self.layout.separator()
-        self.layout.operator("daz.bake_pose_to_fk_rig")
-        self.layout.operator("daz.bake_shapekeys")
-        self.layout.operator("daz.mute_control_rig")
-        self.layout.operator("daz.unmute_control_rig")
-        self.layout.operator("daz.transfer_to_gaze")
-        self.layout.operator("daz.transfer_from_gaze")
 
 
 class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
@@ -860,7 +845,6 @@ classes = [
     DAZ_PT_Utils,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
-    DAZ_PT_MorePosing,
     DAZ_PT_LocksLimits,
 
     DAZ_UL_Standard,

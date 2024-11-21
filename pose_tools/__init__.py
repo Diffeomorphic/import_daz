@@ -14,10 +14,39 @@ elif "PoseToolsFeature" in locals():
     print("Reloading Pose Tools")
     import imp
     imp.reload(save_poses)
+    imp.reload(mute)
+    imp.reload(gaze)
+    imp.reload(bake_fk)
+    imp.reload(copy_pose)
 else:
     print("Loading Pose Tools")
     from . import save_poses
+    from . import mute
+    from . import gaze
+    from . import bake_fk
+    from . import copy_pose
     PoseToolsFeature = True
+
+#----------------------------------------------------------
+#   Posing panels
+#----------------------------------------------------------
+
+import bpy
+from ..panel import DAZ_PT_RuntimeTab
+
+class DAZ_PT_DazMhxRigify(DAZ_PT_RuntimeTab, bpy.types.Panel):
+    bl_parent_id = "DAZ_PT_Posing"
+    bl_label = "MHX/Rigify"
+
+    def draw(self, context):
+        self.layout.operator("daz.bake_pose_to_fk_rig")
+        self.layout.operator("daz.bake_shapekeys")
+        self.layout.separator()
+        self.layout.operator("daz.mute_control_rig")
+        self.layout.operator("daz.unmute_control_rig")
+        self.layout.separator()
+        self.layout.operator("daz.transfer_to_gaze")
+        self.layout.operator("daz.transfer_from_gaze")
 
 
 class DAZ_PT_DazKeyPoses(DAZ_PT_RuntimeTab, bpy.types.Panel):
@@ -25,10 +54,10 @@ class DAZ_PT_DazKeyPoses(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Key Poses"
 
     def draw(self, context):
+        self.layout.operator("daz.copy_absolute_pose")
         self.layout.operator("daz.save_poses_to_file")
         self.layout.operator("daz.load_poses_from_file")
         self.layout.operator("daz.key_all_poses")
-        self.layout.operator("daz.hide_unused_links")
 
 
 class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
@@ -61,23 +90,28 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 classes = [
+    DAZ_PT_DazMhxRigify,
     DAZ_PT_DazKeyPoses,
     #DAZ_PT_DazMatrix,
 ]
 
 def register():
+    print("Register Pose Tools")
     for cls in classes:
         bpy.utils.register_class(cls)
+    from . import save_poses, mute, gaze, bake_fk, copy_pose
+    save_poses.register()
+    mute.register()
+    gaze.register()
+    bake_fk.register()
+    copy_pose.register()
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-
-def register():
-    print("Register Pose Tools")
-    from . import save_poses
-    save_poses.register()
-
-def unregister():
-    from . import save_poses
+    from . import save_poses, mute, gaze, bake_fk, copy_pose
     save_poses.unregister()
+    mute.unregister()
+    gaze.unregister()
+    bake_fk.unregister()
+    copy_pose.unregister()

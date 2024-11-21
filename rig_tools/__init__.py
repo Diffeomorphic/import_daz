@@ -13,7 +13,7 @@ if not DEBUG:
 elif "RigToolsFeature" in locals():
     print("Reloading Rig Tools")
     import imp
-    imp.reload(mute)
+    imp.reload(varia)
     imp.reload(ikgoals)
     imp.reload(prefix)
     imp.reload(wrappers)
@@ -21,7 +21,7 @@ elif "RigToolsFeature" in locals():
     imp.reload(rig_panel)
 else:
     print("Loading Rig Tools")
-    from . import mute
+    from . import varia
     from . import ikgoals
     from . import prefix
     from . import wrappers
@@ -35,9 +35,9 @@ else:
 
 def register():
     print("Register Rig Tools")
-    from . import mute, ikgoals, prefix
+    from . import varia, ikgoals, prefix
     from . import wrappers, legacy, rig_panel
-    mute.register()
+    varia.register()
     ikgoals.register()
     prefix.register()
     wrappers.register()
@@ -45,11 +45,11 @@ def register():
     rig_panel.register()
 
 def unregister():
-    from . import mute, ikgoals, prefix
+    from . import varia, ikgoals, prefix
     from . import wrappers, legacy, rig_panel
     rig_panel.unregister()
     legacy.unregister()
     wrappers.unregister()
     prefix.unregister()
     ikgoals.unregister()
-    mute.unregister()
+    varia.unregister()

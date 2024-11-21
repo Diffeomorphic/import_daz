@@ -7,7 +7,7 @@
 #----------------------------------------------------------
 
 import bpy
-from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
+from ..panel import DAZ_PT_SetupTab
 
 class DAZ_PT_Figures(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
@@ -36,6 +36,7 @@ class DAZ_PT_Chains(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.add_winders")
         self.layout.operator("daz.add_tails")
         self.layout.operator("daz.move_graft_bones")
+        self.layout.operator("daz.hide_unused_links")
 
 
 class DAZ_PT_MoreRigging(DAZ_PT_SetupTab, bpy.types.Panel):

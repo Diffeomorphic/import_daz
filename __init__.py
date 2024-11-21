@@ -41,7 +41,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "merge_uvs", "merge_grafts", "merge_rigs", "empties",
            "matsel", "tables", "proxy", "transfer",
            "dforce", "pin", "main", "geonodes",
-           "hd_data", "ctrl_rig", "moho", "gaze", "scan", "api",
+           "hd_data", "ctrl_rig", "moho", "scan", "api",
     ]
 
 from .debug import DEBUG
@@ -57,6 +57,7 @@ elif "bpy" in locals():
     imp.reload(rig_mhx)
     imp.reload(rig_rigify)
     imp.reload(rig_tools)
+    imp.reload(pose_tools)
     imp.reload(object_tools)
     imp.reload(material_tools)
     imp.reload(mesh_tools)
@@ -77,6 +78,7 @@ else:
     from . import rig_mhx
     from . import rig_rigify
     from . import rig_tools
+    from . import pose_tools
     from . import object_tools
     from . import material_tools
     from . import mesh_tools
@@ -112,6 +114,9 @@ def toggleRigRigify(self, context):
 
 def toggleRigTools(self, context):
     toggleModule("rig_tools", self.useRigTools)
+
+def togglePoseTools(self, context):
+    toggleModule("pose_tools", self.usePoseTools)
 
 def toggleObjectTools(self, context):
     toggleModule("object_tools", self.useObjectTools)
@@ -246,6 +251,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = toggleRigTools)
 
+    usePoseTools : BoolProperty(
+        name = "Pose Tools",
+        description = "Tools for posing DAZ figures",
+        default = False,
+        update = togglePoseTools)
+
     useObjectTools : BoolProperty(
         name = "Object Tools",
         description = "Tools for objects",
@@ -268,6 +279,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "useRigMhx")
         self.layout.prop(self, "useRigRigify")
         self.layout.prop(self, "useRigTools")
+        self.layout.prop(self, "usePoseTools")
         self.layout.prop(self, "useObjectTools")
         self.layout.prop(self, "useMaterialTools")
         self.layout.prop(self, "useMeshTools")
@@ -284,14 +296,13 @@ class DazPreferences(bpy.types.AddonPreferences):
 #----------------------------------------------------------
 
 Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
-            "figure", "geometry", "dbzfile", "rig_utils",
+            "figure", "geometry", "dbzfile",
             "fix", "animation", "morphing", "panel",
             "material", "cgroup", "render", "visibility",
             "guess", "main", "finger",
             "matsel", "proxy",
             "merge_grafts", "merge_rigs", "empties",
-            "pin", "transfer", "gaze",
-            "ctrl_rig", "moho", "scan",
+            "pin", "transfer", "moho", "scan",
             ]
 
 def register():
@@ -318,6 +329,9 @@ def register():
         if prefs.useRigTools:
             from . import rig_tools
             rig_tools.register()
+        if prefs.usePoseTools:
+            from . import pose_tools
+            pose_tools.register()
         if prefs.useObjectTools:
             from . import object_tools
             object_tools.register()
@@ -376,6 +390,9 @@ def unregister():
         if prefs.useRigTools:
             from . import rig_tools
             rig_tools.unregister()
+        if prefs.usePoseTools:
+            from . import pose_tools
+            pose_tools.unregister()
         if prefs.useObjectTools:
             from . import object_tools
             object_tools.unregister()
