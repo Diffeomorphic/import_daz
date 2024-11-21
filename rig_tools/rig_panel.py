@@ -1,18 +1,6 @@
-#  DAZ Rigging - Tools for rigging figures imported with the DAZ Importer
-#  Copyright (c) 2016-2024, Thomas Larsson
+# SPDX-FileCopyrightText: 2016-2024, Thomas Larsson
 #
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 #----------------------------------------------------------
 #   Rigging panels
@@ -66,51 +54,6 @@ class DAZ_PT_MoreRigging(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.rotate_bones")
         return
 
-
-class DAZ_PT_DazRigPose(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Posing"
-    bl_label = "More Posing"
-
-    def draw(self, context):
-        self.layout.operator("daz.save_poses_to_file")
-        self.layout.operator("daz.load_poses_from_file")
-        self.layout.operator("daz.key_all_poses")
-        self.layout.operator("daz.hide_unused_links")
-        return
-        self.layout.separator()
-        self.layout.operator("daz.set_tpose")
-        self.layout.operator("daz.save_tpose")
-        return
-        self.layout.separator()
-        self.layout.operator("daz.make_unreal")
-        self.layout.operator("daz.export_unreal")
-
-
-class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_parent_id = "DAZ_PT_Posing"
-    bl_label = "Matrix"
-
-    def draw(self, context):
-        def vecRow(layout, vec, text):
-            row = layout.row()
-            row.label(text=text)
-            for n in range(3):
-                row.label(text = "%.3f" % vec[n])
-
-        from mathutils import Vector
-        from ..utils import D, getSelectedArmatures
-        for rig in getSelectedArmatures(context):
-            for pb in rig.pose.bones:
-                if pb.bone.select:
-                    box = self.layout.box()
-                    box.label(text = "%s : %s" % (rig.name, pb.name))
-                    mat = rig.matrix_world @ pb.matrix
-                    loc,quat,scale = mat.decompose()
-                    vecRow(box, loc/rig.DazScale, "Location")
-                    vecRow(box, Vector(quat.to_euler())/D, "Rotation")
-                    vecRow(box, Vector(mat.col[1][0:3])/D, "Y Axis")
-                    #self.vecRow(box, scale, "Scale")
-
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------
@@ -119,8 +62,6 @@ classes = [
     DAZ_PT_Figures,
     DAZ_PT_Chains,
     DAZ_PT_MoreRigging,
-    DAZ_PT_DazRigPose,
-    DAZ_PT_DazMatrix,
 ]
 
 def register():
