@@ -2192,11 +2192,12 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        self.locks = {"location" : {}, "rotation_euler" : {}, "scale" : {}}
+        self.locks = {"location" : {}, "rotation_euler" : {}, "rotation_quaternion" : {}, "scale" : {}}
         self.limits = {"location" : {}, "rotation_euler" : {}, "scale" : {}}
         for pb in rig.pose.bones:
             self.locks["location"][pb.name] = list(pb.lock_location)
             self.locks["rotation_euler"][pb.name] = list(pb.lock_rotation)
+            self.locks["rotation_quaternion"][pb.name] = [pb.lock_rotation_w] + list(pb.lock_rotation)
             self.locks["scale"][pb.name] = list(pb.lock_scale)
             self.getLimits(self.limits["location"], pb, 'LIMIT_LOCATION', -1e10, 1e10)
             self.getLimits(self.limits["rotation_euler"], pb, 'LIMIT_ROTATION', -math.pi, math.pi)
@@ -2221,11 +2222,17 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             for fcu in deletes:
                 act.fcurves.remove(fcu)
 
+        defaults = {
+            "location" : (0,0,0),
+            "rotation_euler" : (0,0,0),
+            "rotation_quaternion" : (1,0,0,0),
+            "scale" : (1,1,1)
+        }
         for pb in rig.pose.bones:
-            for channel,default in [("location", 0.0), ("rotation_euler", 0.0), ("scale", 1.0)]:
+            for channel,vec0 in defaults.items():
                 vec = getattr(pb, channel)
                 lock = self.locks[channel][pb.name]
-                for idx in range(3):
+                for idx,default in enumerate(vec0):
                     if lock[idx]:
                         vec[idx] = default
 

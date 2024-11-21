@@ -576,6 +576,7 @@ class DAZ_OT_SelectCoveredVerts(DazPropsOperator, IsMesh):
         clothes = [clo for clo in getSelectedMeshes(context) if clo != hum]
         activateObject(context, hum)
         setMode('EDIT')
+        bpy.ops.mesh.select_mode(type='VERT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
         minDist = -self.minDist * GS.scale

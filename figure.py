@@ -793,16 +793,6 @@ class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):
         rig = context.object
         finalizeArmature(rig)
 
-#-------------------------------------------------------------
-#   Toggle locks and constraints
-#-------------------------------------------------------------
-
-def getRnaName(string):
-    if len(string) > 4 and string[-4] == ".":
-        return string[:-4]
-    else:
-        return string
-
 #----------------------------------------------------------
 #   Toggle locks
 #----------------------------------------------------------
