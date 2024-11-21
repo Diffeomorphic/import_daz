@@ -55,6 +55,9 @@ class DAZ_PT_DazKeyPoses(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.copy_absolute_pose")
+        self.layout.operator("daz.object_pose_to_bones")
+        self.layout.operator("daz.pose_to_children")
+        self.layout.separator()
         self.layout.operator("daz.save_poses_to_file")
         self.layout.operator("daz.load_poses_from_file")
         self.layout.operator("daz.key_all_poses")

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+from mathutils import Matrix
 from ..utils import *
 from ..error import *
 
@@ -47,11 +48,59 @@ class DAZ_OT_CopyAbsolutePose(DazOperator, IsArmature):
                 self.copyPose(child, trg)
 
 #----------------------------------------------------------
+#   Object pose to bones
+#----------------------------------------------------------
+
+class DAZ_OT_ObjectPoseToBones(DazOperator, IsArmature):
+    bl_idname = "daz.object_pose_to_bones"
+    bl_label = "Object Pose To Bones"
+    bl_description = "Clear object transform and transfer pose to unparented bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        mats = []
+        for pb in rig.pose.bones:
+            if pb.parent is None:
+                mat = pb.matrix.copy()
+                mats.append((pb, mat))
+        wmat = rig.matrix_world.copy()
+        rig.matrix_basis = Matrix()
+        for pb,mat in mats:
+            pb.matrix = wmat @ mat
+
+#----------------------------------------------------------
+#   Pose to children
+#----------------------------------------------------------
+
+class DAZ_OT_PoseToChildren(DazOperator, IsArmature):
+    bl_idname = "daz.pose_to_children"
+    bl_label = "Pose To Children"
+    bl_description = "Clear selected bones and transfer pose to children"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        pbones = [pb for pb in rig.pose.bones if pb.bone.select]
+        mats = []
+        for pb in rig.pose.bones:
+            if pb.parent in pbones:
+                mat = pb.matrix.copy()
+                mats.append((pb, mat))
+        for pb in pbones:
+            pb.matrix_basis = Matrix()
+        updateObject(context, rig)
+        for pb,mat in mats:
+            pb.matrix = mat
+
+#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
 classes = [
     DAZ_OT_CopyAbsolutePose,
+    DAZ_OT_ObjectPoseToBones,
+    DAZ_OT_PoseToChildren,
 ]
 
 def register():
