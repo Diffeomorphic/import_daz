@@ -1987,8 +1987,12 @@ class FrameRange(DazPropsOperator):
         default = 250)
 
     def draw(self, context):
-        self.layout.prop(self, "startFrame")
-        self.layout.prop(self, "endFrame")
+        if self.auto:
+            self.layout.prop(self, "startFrame")
+            self.layout.prop(self, "endFrame")
+        else:
+            scn = context.scene
+            self.layout.prop(scn.tool_settings, "use_keyframe_insert_auto")
 
     def getActiveFrames(self):
         def getActiveFrames0(rig):
@@ -2019,8 +2023,10 @@ class FrameRange(DazPropsOperator):
 
     def invoke(self, context, event):
         rig = context.object
+        scn = context.scene
         adata = rig.animation_data
         if adata and adata.action:
+            self.auto = True
             tmin = tmax = 1
             for fcu in adata.action.fcurves:
                 times = [kp.co[0] for kp in fcu.keyframe_points]
@@ -2030,6 +2036,7 @@ class FrameRange(DazPropsOperator):
             self.startFrame = tmin
             self.endFrame = tmax
         else:
+            self.auto = scn.tool_settings.use_keyframe_insert_auto
             self.startFrame = self.endFrame = context.scene.frame_current
         return DazPropsOperator.invoke(self, context, event)
 

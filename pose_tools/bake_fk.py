@@ -119,6 +119,7 @@ class DAZ_OT_BakeToFkRig(FrameRange, IsArmature):
 
 
     def bake(self, mats, act, context):
+        from ..animation import insertKeys
         frame = context.scene.frame_current
         for pb,bmats in mats:
             pb.matrix_basis = Matrix()
