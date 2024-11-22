@@ -220,10 +220,11 @@ class ModStore:
                 pass
 
 
-def addModifierFirst(ob, modname, modtype, exclude="NONE"):
+def addModifierFirst(ob, modname, modtype):
+    exclude = ['ARMATURE', 'MULTIRES']
     stores = []
     for mod in ob.modifiers:
-        if mod.type != exclude:
+        if mod.type not in exclude:
             stores.append(ModStore(mod))
             ob.modifiers.remove(mod)
     mod = ob.modifiers.new(modname, modtype)

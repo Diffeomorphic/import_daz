@@ -466,10 +466,7 @@ class GeoNode(Node, SimNode):
                 return
 
             from .store import addModifierFirst
-            if GS.onScaleEyeMoisture == 'APPLY':
-                mod = addModifierFirst(ob, "Displace", 'DISPLACE')
-            else:
-                mod = addModifierFirst(ob, "Displace", 'DISPLACE', exclude='ARMATURE')
+            mod = addModifierFirst(ob, "Displace", 'DISPLACE')
             mod.strength = strength
             mod.mid_level = 0
             if vgrp:
