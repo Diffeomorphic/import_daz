@@ -434,7 +434,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     words = mod.node_group.name.split(":")
                     if words[0] == "Geograft" and baseName(words[-1]) == "END":
                         hum.modifiers.remove(mod)
-            elif mod.type != 'ARMATURE':
+            elif mod.type not in ('ARMATURE', 'MULTIRES'):
                 stores.append(ModStore(mod))
                 hum.modifiers.remove(mod)
 

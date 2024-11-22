@@ -231,3 +231,13 @@ def addModifierFirst(ob, modname, modtype):
     for store in stores:
         store.restore(ob)
     return mod
+
+
+def removeModifier(ob, mtype):
+    mod = getModifier(ob, mtype)
+    if mod:
+        store = ModStore(mod)
+        ob.modifiers.remove(mod)
+        return store
+    else:
+        return None

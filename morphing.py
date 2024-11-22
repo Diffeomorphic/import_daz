@@ -1142,7 +1142,8 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
     from .store import ModStore
     stores = []
     for mod in list(ob.modifiers):
-        stores.append(ModStore(mod))
+        if mod.type != 'MULTIRES':
+            stores.append(ModStore(mod))
         ob.modifiers.remove(mod)
     if ob.data.shape_keys is None:
         ob.shape_key_add(name="Basic")

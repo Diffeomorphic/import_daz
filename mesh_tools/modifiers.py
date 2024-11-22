@@ -209,7 +209,7 @@ class DAZ_OT_CopyModifiers(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useRemoveCloth")
 
     def run(self, context):
-        from .store import ModStore
+        from ..store import ModStore
         src = context.object
         stores = []
         for mod in list(src.modifiers):

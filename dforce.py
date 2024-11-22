@@ -109,7 +109,8 @@ class Collision:
         layout.prop(self, "collDist")
 
     def addCollision(self, ob):
-        subsurf = hideModifier(ob, 'SUBSURF')
+        from .store import removeModifier
+        subsurf = removeModifier(ob, 'SUBSURF')
         mod = getModifier(ob, 'COLLISION')
         if mod is None:
             mod = ob.modifiers.new("Collision", 'COLLISION')
@@ -171,9 +172,10 @@ class Cloth:
 
 
     def addCloth(self, ob):
+        from .store import removeModifier
         scale = ob.DazScale
-        collision = hideModifier(ob, 'COLLISION')
-        subsurf = hideModifier(ob, 'SUBSURF')
+        collision = removeModifier(ob, 'COLLISION')
+        subsurf = removeModifier(ob, 'SUBSURF')
 
         cloth = getModifier(ob, 'CLOTH')
         if cloth is None:
@@ -232,17 +234,3 @@ class LinTess(DForce):
 class SimSet(DForce):
     type = "SimSet"
 
-
-#-------------------------------------------------------------
-#   Utility
-#-------------------------------------------------------------
-
-def hideModifier(ob, mtype):
-    from .store import ModStore
-    mod = getModifier(ob, mtype)
-    if mod:
-        store = ModStore(mod)
-        ob.modifiers.remove(mod)
-        return store
-    else:
-        return None
