@@ -238,7 +238,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         from ..figure import finalizeArmature
         rig = context.object
         self.rigname = rig.name
-        rig.DazMhxLegacy = False
+        rig["DazMhxLegacy"] = False
         self.makeRealParents(context, rig)
         self.meshes = getMeshChildren(rig)
         if self.keepRig:
@@ -367,7 +367,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
-        rig.MhxRig = True
+        rig["MhxRig"] = True
         rig.data.MhaFeatures |= F_IDPROPS
         enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK])
         rig.DazRig = "mhx"
@@ -1864,8 +1864,6 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazMhxLegacy = BoolProperty(default = True)
-    bpy.types.Object.MhxRig = BoolProperty(default = False)
     for cls in classes:
         bpy.utils.register_class(cls)
 
