@@ -2054,7 +2054,7 @@ def checkRenderSettings(context, force):
     }
 
     scn = context.scene
-    handle = GS.handleRenderSettings
+    handle = GS.onRenderSettings
     if force:
         handle = "UPDATE"
     msg = ""
@@ -2064,7 +2064,7 @@ def checkRenderSettings(context, force):
         msg += checkSettings(scn.eevee, renderSettingsEeveeNew, handle, "Eevee Settings", force)
     else:
         msg += checkSettings(scn.eevee, renderSettingsEeveeOld, handle, "Eevee Settings", force)
-        handle = GS.handleLightSettings
+        handle = GS.onLightSettings
         if force:
             handle = "UPDATE"
         for light in getVisibleObjects(context):

@@ -61,7 +61,7 @@ class RenderOptions(Asset, Channels):
 
 
     def build(self, context):
-        if LS.useWorld != 'NEVER':
+        if LS.worldMethod != 'NEVER':
             self.world = WorldMaterial(self, self.fileref)
             self.world.build(context)
 
@@ -93,7 +93,7 @@ class WorldMaterial(CyclesMaterial):
             return
         mode = self.getValue(["Environment Mode"], 3)
         # [Dome and Scene, Dome Only, Sun-Skies Only, Scene Only]
-        if LS.useWorld != 'ALWAYS' and mode == 3 and not self.background:
+        if LS.worldMethod != 'ALWAYS' and mode == 3 and not self.background:
             if GS.verbosity >= 3:
                 print("Import scene only")
             return
@@ -274,7 +274,7 @@ class WorldTree(CyclesTree):
 #-------------------------------------------------------------
 
 def parseRenderOptions(renderSettings, sceneSettings, backdrop, fileref):
-    if not LS.useWorld:
+    if not LS.worldMethod:
         return
     else:
         renderOptions = renderSettings["render_options"]

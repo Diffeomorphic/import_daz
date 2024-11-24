@@ -314,7 +314,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Remember the directory of the last opened file,\ninstead of starting at default location",
         default = False)
 
-    useStrengthAdjusters : EnumProperty(
+    onStrengthAdjusters : EnumProperty(
         items = [('NONE', "None", "Never add adjusters"),
                  ('Face', "Face", "Add adjusters to face morphs"),
                  ('Body', "Body", "Add adjusters to body morphs.\nNot recommended because if affects JCMs"),
@@ -430,7 +430,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Viewport",
         description = "Method to display object in viewport")
 
-    useWorld : EnumProperty(
+    worldMethod : EnumProperty(
         items = [('ALWAYS', "Always", "Always create world material"),
                  ('DOME', "Dome", "Create world material from dome"),
                  ('NEVER', "Never", "Never create world material")],
@@ -445,7 +445,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Sort Materials Alphabetically",
         description = "Materials are sorted in alphabetical order.\nIf disabled the order in the duf file is used")
 
-    handleRenderSettings : EnumProperty(
+    onRenderSettings : EnumProperty(
         items = [("IGNORE", "Ignore", "Ignore insufficient render settings"),
                  ("WARN", "Warn", "Warn about insufficient render settings"),
                  ("UPDATE", "Update", "Update insufficient render settings")],
@@ -453,7 +453,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         default = "UPDATE"
     )
 
-    handleLightSettings : EnumProperty(
+    onLightSettings : EnumProperty(
         items = [("IGNORE", "Ignore", "Ignore insufficient light settings"),
                  ("WARN", "Warn", "Warn about insufficient light settings"),
                  ("UPDATE", "Update", "Update insufficient light settings")],
@@ -704,7 +704,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
         box = col.box()
         box.label(text = "Meshes")
-        box.prop(self, "shellMethod")
+        self.enum(box, "shellMethod")
         box.prop(self, "useTriaxImprove")
         box.prop(self, "useBulgeWeights")
         box.prop(self, "useHighDef")
@@ -716,7 +716,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")
-        box.prop(self, "onScaleEyeMoisture")
+        self.enum(box, "onScaleEyeMoisture")
         box.prop(self, "useSimulation")
 
         col = split.column()
@@ -724,7 +724,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
         box.prop(self, "useQuaternions")
-        box.prop(self, "driverRotationMode")
+        self.enum(box, "driverRotationMode")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
         box.prop(self, "useLockRot")
@@ -750,7 +750,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "Morphs")
-        box.prop(self, "useStrengthAdjusters")
+        self.enum(box, "onStrengthAdjusters")
         box.prop(self, "useMakeHiddenSliders")
         box.prop(self, "useBakedMorphs")
         box.prop(self, "useDazLimits")
@@ -761,7 +761,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useShapeCats")
         box.prop(self, "useMeshDrivers")
         box.prop(self, "useMuteDrivers")
-        box.prop(self, "ercMethod")
+        self.enum(box, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
@@ -775,23 +775,23 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "Materials")
-        box.prop(self, "materialMethod")
-        box.prop(self, "sssMethod")
-        box.prop(self, "displacement_method")
-        box.prop(self, "skinMethod")
-        box.prop(self, "viewportColors")
-        box.prop(self, "useWorld")
+        self.enum(box, "materialMethod")
+        self.enum(box, "sssMethod")
+        self.enum(box, "displacement_method")
+        self.enum(box, "skinMethod")
+        self.enum(box, "viewportColors")
+        self.enum(box, "worldMethod")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")
         if bpy.app.version < (3,4,0):
             box.prop(self, "useFakeCaustics")
-        box.prop(self, "imageInterpolation")
+        self.enum(box, "imageInterpolation")
         box.prop(self, "useUnusedTextures")
         box.prop(self, "useShellDrivers")
         box.prop(self, "useLayeredInflu")
         box.prop(self, "useLayeredShells")
-        box.prop(self, "handleRenderSettings")
-        box.prop(self, "handleLightSettings")
+        self.enum(box, "onRenderSettings")
+        self.enum(box, "onLightSettings")
         box.separator()
         box.prop(self, "useDisplacement")
         box.prop(self, "useEmission")
@@ -799,6 +799,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useGhostLights")
         box.prop(self, "bumpMultiplier")
 
+    def enum(self, box, prop):
+        split = box.split()
+        propdef = self.__annotations__[prop]
+        split.label(text = propdef.keywords["name"])
+        split.prop(self, prop, text="")
 
     def run(self, context):
         GS.fromDialog(self)

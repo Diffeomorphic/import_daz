@@ -68,13 +68,13 @@ class GlobalSettings:
         self.usePruneNodes = True
 
         self.useFakeCaustics = False
-        self.handleRenderSettings = "UPDATE"
-        self.handleLightSettings = "WARN"
+        self.onRenderSettings = "UPDATE"
+        self.onLightSettings = "WARN"
         self.useVolume = True
         self.useDisplacement = True
         self.useEmission = True
         self.bumpMultiplier = 1.0
-        self.useWorld = 'DOME'
+        self.worldMethod = 'DOME'
         self.useLowerResFolders = True
         self.useMaterialsByIndex = False
         self.useMaterialsByName = False
@@ -85,7 +85,7 @@ class GlobalSettings:
         self.useLayeredInflu = False
         self.useLayeredShells = True
 
-        self.useStrengthAdjusters = 'NONE'
+        self.onStrengthAdjusters = 'NONE'
         self.useDazLimits = True
         self.sliderMultiplier = 1.0
         self.showFinalProps = False
@@ -541,7 +541,7 @@ class LocalSettings:
         self.applyMorphs = False
         self.useAnimations = False
         self.useUV = False
-        self.useWorld = 'NEVER'
+        self.worldMethod = 'NEVER'
 
         self.collection = None
         self.hdcollection = None
@@ -667,7 +667,7 @@ class LocalSettings:
         self.useModifiers = True
         self.useFormulas = True
         self.useUV = True
-        self.useWorld = GS.useWorld
+        self.worldMethod = GS.worldMethod
 
         self.getMaterialSettings(btn)
         self.useStrict = True

@@ -561,7 +561,7 @@ class LoadMorph(DriverUser):
         if not GS.useDazLimits:
             min = max = None
         elif (not ovr and
-              (GS.useStrengthAdjusters != 'NONE' or
+              (GS.onStrengthAdjusters != 'NONE' or
                self.useAdjusters)):
             min = 10 * asset.min
             max = 10 * asset.max
@@ -575,7 +575,7 @@ class LoadMorph(DriverUser):
 
     def setShapeLimits(self, skey, asset):
         if (not GS.useDazLimits or
-            GS.useStrengthAdjusters != 'NONE' or
+            GS.onStrengthAdjusters != 'NONE' or
             self.useAdjusters):
             skey.slider_min = -10
             skey.slider_max = 10
@@ -998,7 +998,7 @@ class LoadMorph(DriverUser):
                 if adj:
                     self.addAdjuster(adj, fcu, "K")
                     string += "K*"
-            if GS.useStrengthAdjusters in ['ALL', self.bodypart]:
+            if GS.onStrengthAdjusters in ['ALL', self.bodypart]:
                 adj = "Adjust Morph Strength"
                 self.addAdjuster(adj, fcu, "L")
                 string += "L*"

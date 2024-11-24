@@ -319,7 +319,7 @@ class Instance(Accessor, Channels, SimNode):
             if "type" not in extra.keys():
                 continue
             elif extra["type"] == "studio/node/environment":
-                if LS.useWorld != 'NEVER':
+                if LS.worldMethod != 'NEVER':
                     if not LS.render:
                         from .render import RenderOptions
                         LS.render = RenderOptions(self.fileref)
