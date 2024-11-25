@@ -49,6 +49,7 @@ class DAZ_PT_ShellImages(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.import_shells_as_images")
         self.layout.operator("daz.remove_shell_images")
         self.layout.operator("daz.fix_normal_groups")
+        self.layout.operator("daz.set_hsv")
 
 
 class DAZ_PT_ShellDrivers(DAZ_PT_SetupTab, bpy.types.Panel):

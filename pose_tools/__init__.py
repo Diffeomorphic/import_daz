@@ -49,9 +49,9 @@ class DAZ_PT_DazMhxRigify(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.transfer_from_gaze")
 
 
-class DAZ_PT_DazKeyPoses(DAZ_PT_RuntimeTab, bpy.types.Panel):
+class DAZ_PT_DazMorePoseTools(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_Posing"
-    bl_label = "Key Poses"
+    bl_label = "More Pose Tools"
 
     def draw(self, context):
         self.layout.operator("daz.copy_absolute_pose")
@@ -94,7 +94,7 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
 classes = [
     DAZ_PT_DazMhxRigify,
-    DAZ_PT_DazKeyPoses,
+    DAZ_PT_DazMorePoseTools,
     #DAZ_PT_DazMatrix,
 ]
 

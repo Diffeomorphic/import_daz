@@ -131,6 +131,10 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
         name = "Automatic Target Materials",
         default = True)
 
+    useHSV : BoolProperty(
+        name = "HSV Corrction",
+        default = False)
+
     targetMaterial : EnumProperty(
         items = getTargetMaterial,
         name = "Target Material",
@@ -163,6 +167,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
         #self.layout.prop(self, "useExtend")
         #self.layout.prop(self, "useOtherChannels")
         self.layout.prop(self, "midLevel")
+        self.layout.prop(self, "useHSV")
 
     def run(self, context):
         def materialBaseName(mname):
@@ -319,7 +324,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                 uvmap1,uvset1 = uvmap0,uvset0
             group = ShellLieGroup(None, key, self.midLevel)
             group.create(node, texnode, "SLIE %s %s" % (label, key), mat, uvset0)
-            group.addImage(label, value, img, mask, uvset1)
+            group.addImage(label, value, img, mask, uvset1, self.useHSV)
             tree.links.new(uvmap0.outputs[0], node.inputs[uvset0])
             tree.links.new(uvmap1.outputs[0], node.inputs[uvset1])
             if key == "Diffuse Color":
@@ -348,7 +353,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                 uvset0 = uvsets[0]
                 uvsets0 = []
             uvmap1,uvset1 = findUvmapNode(tree, uvset0, uvsets0, (0,0))
-            group.addImage(label, value, img, mask, uvset1)
+            group.addImage(label, value, img, mask, uvset1, self.useHSV)
             tree.links.new(uvmap1.outputs[0], node.inputs[uvset1])
 
         def findUvmapNode(tree, uvset, uvsets, location):
@@ -491,12 +496,20 @@ class ShellLieGroup(NodeGroup, CyclesTree):
             self.mixmode = 'MIX'
         self.colorspace = Channels[key][1]
         self.midLevel = midLevel
+        self.useHSV = (key == "Diffuse Color")
 
 
     def create(self, node, texnode, name, mat, uvset):
         CyclesTree.__init__(self, mat.node_tree)
-        NodeGroup.create(self, node, name, mat, 7)
+        NodeGroup.create(self, node, name, mat, 8)
         addGroupInput(self.group, "NodeSocketVector", uvset)
+        if self.useHSV:
+            addGroupInput(self.group, "NodeSocketFloat", "Saturation")
+            self.setMinMax("Saturation", 1.0, 0.0, 2.0)
+            addGroupInput(self.group, "NodeSocketFloat", "Value")
+            self.setMinMax("Value", 1.0, 0.0, 2.0)
+            addGroupInput(self.group, "NodeSocketFloat", "Factor")
+            self.setMinMax("Factor", 1.0, 0.0, 1.0)
         addGroupOutput(self.group, "NodeSocketColor", "Color")
         addGroupOutput(self.group, "NodeSocketFloat", "Alpha")
 
@@ -511,6 +524,10 @@ class ShellLieGroup(NodeGroup, CyclesTree):
         self.links.new(self.inputs.outputs[uvset], tex.inputs["Vector"])
         self.links.new(tex.outputs["Color"], self.outputs.inputs["Color"])
         self.links.new(tex.outputs["Alpha"], self.outputs.inputs["Alpha"])
+        if self.useHSV:
+            node.inputs["Saturation"].default_value = 1.0
+            node.inputs["Value"].default_value = 1.0
+            node.inputs["Factor"].default_value = 1.0
         self.nodes.active = tex
         tex.select = True
 
@@ -520,7 +537,7 @@ class ShellLieGroup(NodeGroup, CyclesTree):
         NodeGroup.remake(self, grpnode.node_tree, mat)
 
 
-    def addImage(self, label, value, img, mask, uvset):
+    def addImage(self, label, value, img, mask, uvset, useHSV):
         if not getGroupInput(self.group, uvset):
             addGroupInput(self.group, "NodeSocketVector", uvset)
         socket = addGroupInput(self.group, "NodeSocketFloat", label)
@@ -574,13 +591,22 @@ class ShellLieGroup(NodeGroup, CyclesTree):
             rgb.outputs["Color"].default_value[0:3] = value
             out = rgb.outputs["Color"]
 
+        if self.useHSV and useHSV:
+            hsv = self.addNode("ShaderNodeHueSaturation", 3)
+            hsv.location[1] = y
+            self.links.new(out, hsv.inputs["Color"])
+            self.links.new(self.inputs.outputs["Saturation"], hsv.inputs["Saturation"])
+            self.links.new(self.inputs.outputs["Value"], hsv.inputs["Value"])
+            self.links.new(self.inputs.outputs["Factor"], hsv.inputs["Fac"])
+            out = hsv.outputs["Color"]
+
         if mask == img:
             if img:
                 alpha = tex.outputs["Alpha"]
             else:
                 alpha = None
         elif mask:
-            masktex = self.addNode("ShaderNodeTexImage", 3)
+            masktex = self.addNode("ShaderNodeTexImage", 4)
             masktex.location[1] = y
             masktex.image = mask
             mask.colorspace_settings.name = "Non-Color"
@@ -591,14 +617,14 @@ class ShellLieGroup(NodeGroup, CyclesTree):
 
         if alpha:
             if self.midLevel:
-                sub = self.addNode("ShaderNodeMath", 4)
+                sub = self.addNode("ShaderNodeMath", 5)
                 sub.location[1] = y
                 sub.operation = 'MULTIPLY_ADD'
                 self.links.new(alpha, sub.inputs[0])
                 sub.inputs[1].default_value = 2
                 sub.inputs[2].default_value = -0.5
                 alpha = sub.outputs[0]
-            mult = self.addNode("ShaderNodeMath", 5)
+            mult = self.addNode("ShaderNodeMath", 6)
             mult.location[1] = y
             mult.operation = 'MULTIPLY'
             self.links.new(self.inputs.outputs[label], mult.inputs[0])
@@ -607,7 +633,7 @@ class ShellLieGroup(NodeGroup, CyclesTree):
         else:
             factor = self.inputs.outputs[label]
 
-        mix,a,b,mixout = self.addMixRgbNode(self.mixmode, 6)
+        mix,a,b,mixout = self.addMixRgbNode(self.mixmode, 7)
         mix.location[1] = y
         mix.inputs[0].default_value = 1.0
         self.links.new(factor, mix.inputs[0])
@@ -826,6 +852,47 @@ class DAZ_OT_FixNormalGroups(DazPropsOperator, IsMesh):
                     tree.links.new(tex.outputs["Color"], output.inputs["Color"])
 
 #----------------------------------------------------------
+#   Set HSV
+#----------------------------------------------------------
+
+class DAZ_OT_SetHSV(DazPropsOperator, IsMesh):
+    bl_idname = "daz.set_hsv"
+    bl_label = "Set HSV"
+    bl_description = "Set HSV values for shell LI groups"
+    bl_options = {'UNDO'}
+
+    saturation : FloatProperty(
+        name = "Saturation",
+        min = 0.0, max = 2.0,
+        default = 1.0)
+
+    value : FloatProperty(
+        name = "Value",
+        min = 0.0, max = 2.0,
+        default = 1.0)
+
+    factor : FloatProperty(
+        name = "Factor",
+        min = 0.0, max = 2.0,
+        default = 1.0)
+
+    def draw(self, context):
+        self.layout.prop(self, "saturation")
+        self.layout.prop(self, "value")
+        self.layout.prop(self, "factor")
+
+    def run(self, context):
+        ob = context.object
+        for mat in ob.data.materials:
+            if mat and mat.node_tree:
+                for node in mat.node_tree.nodes:
+                    if (node.type == 'GROUP' and
+                        "Saturation" in node.inputs.keys()):
+                        node.inputs["Saturation"].default_value = self.saturation
+                        node.inputs["Value"].default_value = self.value
+                        node.inputs["Factor"].default_value = self.factor
+
+#----------------------------------------------------------
 #   Utility
 #----------------------------------------------------------
 
@@ -857,6 +924,7 @@ classes = [
     DAZ_OT_UpdateShellDrivers,
     DAZ_OT_FixNormalGroups,
     DAZ_OT_RemoveAllInflus,
+    DAZ_OT_SetHSV,
 ]
 
 def register():
