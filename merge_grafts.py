@@ -532,7 +532,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 hum["DazVisibilityDrivers"] = True
         for graft in grafts:
             for mat in graft.data.materials:
-                if mat and mat.node_tree.animation_data:
+                if mat and mat.node_tree and mat.node_tree.animation_data:
                     for fcu in mat.node_tree.animation_data.drivers:
                         for var in fcu.driver.variables:
                             for trg in var.targets:

@@ -7,7 +7,7 @@ from ..tree import *
 from ..material import isWhite, isBlack, getImage
 from ..main import *
 from ..cgroup import *
-#from ..matsel import *
+from ..matsel import MaterialSelector
 from ..selector import Selector
 from ..driver import setFloatProp, addDriver
 
@@ -132,7 +132,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
         default = True)
 
     useHSV : BoolProperty(
-        name = "HSV Corrction",
+        name = "HSV Correction",
         default = False)
 
     targetMaterial : EnumProperty(
@@ -743,7 +743,7 @@ class ShellDisabler:
 
     def setMesh(self, ob, rig, targets):
         for mat in ob.data.materials:
-            if mat and mat.node_tree.animation_data:
+            if mat and mat.node_tree and mat.node_tree.animation_data:
                 for fcu in mat.node_tree.animation_data.drivers:
                     for var in fcu.driver.variables:
                         for trg in var.targets:
@@ -806,7 +806,7 @@ def updateShellDrivers(context):
     if rig:
         rig.hide_viewport = False
     for mat in ob.data.materials:
-        if mat and mat.node_tree.animation_data:
+        if mat and mat.node_tree and mat.node_tree.animation_data:
             for fcu in mat.node_tree.animation_data.drivers:
                 for var in fcu.driver.variables:
                     for trg in var.targets:
@@ -855,10 +855,10 @@ class DAZ_OT_FixNormalGroups(DazPropsOperator, IsMesh):
 #   Set HSV
 #----------------------------------------------------------
 
-class DAZ_OT_SetHSV(DazPropsOperator, IsMesh):
+class DAZ_OT_SetHSV(MaterialSelector, DazPropsOperator):
     bl_idname = "daz.set_hsv"
     bl_label = "Set HSV"
-    bl_description = "Set HSV values for shell LI groups"
+    bl_description = "Set HSV values for shell image groups"
     bl_options = {'UNDO'}
 
     saturation : FloatProperty(
@@ -880,11 +880,13 @@ class DAZ_OT_SetHSV(DazPropsOperator, IsMesh):
         self.layout.prop(self, "saturation")
         self.layout.prop(self, "value")
         self.layout.prop(self, "factor")
+        MaterialSelector.draw(self, context)
+        self.layout.operator("daz.update_materials")
 
     def run(self, context):
         ob = context.object
         for mat in ob.data.materials:
-            if mat and mat.node_tree:
+            if mat and self.useMaterial(mat):
                 for node in mat.node_tree.nodes:
                     if (node.type == 'GROUP' and
                         "Saturation" in node.inputs.keys()):
