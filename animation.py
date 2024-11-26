@@ -135,7 +135,7 @@ class FrameConverter:
                     nname = bonemap.get(bname)
                     if nname:
                         nbanim[nname] = frames
-                    elif bname == "@selection":
+                    elif self.isObject(bname):
                         nbanim[bname] = frames
             else:
                 nbanim = banim
@@ -204,7 +204,7 @@ class FrameConverter:
                 rname = bname.lower()
                 if rname in rig.data.bones.keys():
                     bonemap[bname] = rname
-                elif bname != "@selection":
+                elif not self.isObject(bname):
                     missing.append(bname)
         if missing:
             print("Missing bones:")
@@ -1033,17 +1033,25 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
 
-    KnownRigs = [
-        "Genesis",
-        "GenesisFemale",
-        "GenesisMale",
-        "Genesis2",
-        "Genesis2Female",
-        "Genesis2Male",
-        "Genesis3",
-        "Genesis3Female",
-        "Genesis3Male",
-    ]
+    def isObject(self, bname):
+        KnownRigs = [
+            "@selection",
+            "Genesis",
+            "GenesisFemale",
+            "GenesisMale",
+            "Genesis2",
+            "Genesis2Female",
+            "Genesis2Male",
+            "Genesis3",
+            "Genesis3Female",
+            "Genesis3Male",
+            "Genesis8",
+            "Genesis8Female",
+            "Genesis8Male",
+            "Genesis9",
+        ]
+        return (bname in KnownRigs)
+
 
     #-------------------------------------------------------------
     #   Animate bones
@@ -1076,7 +1084,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 twists = {}
                 self.addTwists(frame)
                 for bname,bframe in frame.items():
-                    isObject = (bname == "@selection" or bname in self.KnownRigs)
                     tfm = Transform()
                     value = 0.0
                     for key in bframe.keys():
@@ -1085,17 +1092,17 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         elif key == "rotation":
                             tfm.setRot(bframe["rotation"], prop)
                         elif key == "scale":
-                            if self.affectScale or isObject:
+                            if self.affectScale or self.isObject(bname):
                                 tfm.setScale(bframe["scale"], False, prop)
                         elif key == "general_scale":
-                            if self.affectScale or isObject:
+                            if self.affectScale or self.isObject(bname):
                                 tfm.setGeneral(bframe["general_scale"], False, prop)
                         elif key == "value" and self.affectMorphs:
                             value = bframe["value"][0]
                             self.makeValueFrame(bname, rig, bframe, value, n, offset)
                         else:
                             print("Unknown key:", bname, key)
-                    if isObject:
+                    if self.isObject(bname):
                         self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
                     elif rig.type == 'ARMATURE':
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
