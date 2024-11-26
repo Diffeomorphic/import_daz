@@ -1422,8 +1422,10 @@ class StandardAnimation:
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
         found = False
+        print("STA", self.affectMorphs, self.useScanned, rig, self.useShapekeys)
         if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
             found = loadScannedInfo(self, name, rig, relpath)
+            print("SCA", name, rig.name, found)
         if not found and rig.type == 'ARMATURE':
             self.setupAlias(rig)
         scn = context.scene

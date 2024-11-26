@@ -105,6 +105,10 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.operator("daz.load_favo_morphs")
             self.layout.separator()
         self.layout.operator("daz.transfer_shapekeys")
+        self.layout.separator()
+        self.layout.operator("daz.scan_morph_database")
+        self.layout.operator("daz.scan_morph_directory")
+        self.layout.operator("daz.check_database")
 
 
 class DAZ_PT_SetupStandardMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -165,71 +169,20 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_Utils"
     bl_label = "Utilities"
 
     def draw(self, context):
-        ob = context.object
-        scn = context.scene
-        layout = self.layout
-        layout.operator("daz.scan_absolute_paths")
-        layout.operator("daz.scan_morph_database")
-        layout.operator("daz.scan_morph_directory")
-        layout.separator()
-        layout.operator("daz.decode_file")
-        layout.operator("daz.check_database")
-        layout.operator("daz.quote_unquote")
-        layout.operator("daz.print_statistics")
-        layout.operator("daz.update_all")
-        layout.separator()
-        box = layout.box()
-        if ob:
-            box.label(text = "Active Object: %s" % ob.type)
-            box.prop(ob, "name")
-            box.prop(ob, "DazBlendFile")
-            box.prop(ob, "DazId")
-            box.prop(ob, "DazUrl")
-            box.prop(ob, "DazScene")
-            box.prop(ob, "DazRig")
-            box.prop(ob, "DazMesh")
-            if ob.type == 'MESH':
-                box.prop(ob.data, "DazFingerPrint")
-            box.prop(ob, "DazScale")
-            factor = 1/ob.DazScale
-            if ob.parent and ob.parent_type.startswith('VERTEX'):
-                self.propRow(box, ob, "parent_vertices", "ParVerts")
-        else:
-            box.label(text = "No active object")
-            factor = 1
-        layout.separator()
-        pb = context.active_pose_bone
-        box = layout.box()
-        if pb:
-            box.label(text = "Active Bone: %s" % pb.name)
-            if "DazTrueName" in pb.bone.keys():
-                box.label(text = "True Bone: %s" % pb.bone["DazTrueName"])
-            self.propRow(box, pb.bone, "DazHead")
-            self.propRow(box, pb.bone, "DazOrient")
-            self.propRow(box, pb, "DazRotMode")
-            self.propRow(box, pb, "DazLocLocks")
-            self.propRow(box, pb, "DazRotLocks")
-            mat = ob.matrix_world @ pb.matrix
-            loc,quat,scale = mat.decompose()
-            self.vecRow(box, factor*loc, "Location")
-            self.vecRow(box, Vector(quat.to_euler())/D, "Rotation")
-            self.vecRow(box, scale, "Scale")
-        else:
-            box.label(text = "No active bone")
-
-        layout.separator()
-        icon = 'CHECKBOX_HLT' if GS.silentMode else 'CHECKBOX_DEHLT'
-        layout.operator("daz.set_silent_mode", icon=icon, emboss=False)
-        layout.operator("daz.get_finger_print")
-        layout.operator("daz.inspect_world_matrix")
-        layout.operator("daz.select_parent_verts")
-        layout.operator("daz.enable_all_layers")
-        layout.operator("daz.add_content_dirs")
+        self.layout.operator("daz.scan_absolute_paths")
+        self.layout.operator("daz.add_content_dirs")
+        self.layout.separator()
+        self.layout.operator("daz.decode_file")
+        self.layout.operator("daz.quote_unquote")
+        self.layout.operator("daz.print_statistics")
+        self.layout.operator("daz.update_all")
 
 
+class PropRow:
     def propRow(self, layout, rna, prop, text=None):
         if text is None:
             text = prop[3:]
@@ -247,6 +200,71 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
         row.label(text=text)
         for n in range(3):
             row.label(text = "%.3f" % vec[n])
+
+
+class DAZ_PT_ActiveObject(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
+    bl_idname = "DAZ_PT_ActiveObject"
+    bl_parent_id = "DAZ_PT_Utils"
+    bl_label = "Active Object"
+
+    def draw(self, context):
+        ob = context.object
+        if ob:
+            self.layout.label(text = "Active Object: %s" % ob.type)
+            self.layout.prop(ob, "name")
+            self.layout.prop(ob, "DazBlendFile")
+            self.layout.prop(ob, "DazId")
+            self.layout.prop(ob, "DazUrl")
+            self.layout.prop(ob, "DazScene")
+            self.layout.prop(ob, "DazRig")
+            self.layout.prop(ob, "DazMesh")
+            if ob.type == 'MESH':
+                self.layout.prop(ob.data, "DazFingerPrint")
+            self.layout.prop(ob, "DazScale")
+            if ob.parent and ob.parent_type.startswith('VERTEX'):
+                self.propRow(self.layout, ob, "parent_vertices", "ParVerts")
+        else:
+            self.layout.label(text = "No active object")
+
+
+class DAZ_PT_ActivePoseBone(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
+    bl_idname = "DAZ_PT_ActivePoseBone"
+    bl_parent_id = "DAZ_PT_Utils"
+    bl_label = "Active PoseBone"
+
+    def draw(self, context):
+        pb = context.active_pose_bone
+        ob = context.object
+        if ob and pb:
+            self.layout.label(text = "Active Bone: %s" % pb.name)
+            if "DazTrueName" in pb.bone.keys():
+                self.layout.label(text = "True Bone: %s" % pb.bone["DazTrueName"])
+            self.propRow(self.layout, pb.bone, "DazHead")
+            self.propRow(self.layout, pb.bone, "DazOrient")
+            self.propRow(self.layout, pb, "DazRotMode")
+            self.propRow(self.layout, pb, "DazLocLocks")
+            self.propRow(self.layout, pb, "DazRotLocks")
+            mat = ob.matrix_world @ pb.matrix
+            loc,quat,scale = mat.decompose()
+            self.vecRow(self.layout, loc/ob.DazScale, "Location")
+            self.vecRow(self.layout, Vector(quat.to_euler())/D, "Rotation")
+            self.vecRow(self.layout, scale, "Scale")
+        else:
+            self.layout.label(text = "No active bone")
+
+
+class DAZ_PT_Debugging(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_Debugging"
+    bl_parent_id = "DAZ_PT_Utils"
+    bl_label = "Debugging"
+
+    def draw(self, context):
+        icon = 'CHECKBOX_HLT' if GS.silentMode else 'CHECKBOX_DEHLT'
+        self.layout.operator("daz.set_silent_mode", icon=icon, emboss=False)
+        self.layout.operator("daz.get_finger_print")
+        self.layout.operator("daz.inspect_world_matrix")
+        self.layout.operator("daz.select_parent_verts")
+        self.layout.operator("daz.enable_all_layers")
 
 #----------------------------------------------------------
 #   Runtime panel
@@ -843,6 +861,9 @@ classes = [
     DAZ_PT_SetupRigging,
 
     DAZ_PT_Utils,
+    DAZ_PT_ActiveObject,
+    DAZ_PT_ActivePoseBone,
+    DAZ_PT_Debugging,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
     DAZ_PT_LocksLimits,

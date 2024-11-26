@@ -593,7 +593,7 @@ class DAZ_OT_CheckDatabase(DazPropsOperator, CharSelector):
             for attr,name,relpath in ScanPaths:
                 needs += checkNeedUpdate(name, relpath)
         elif self.useActive and self.getActive(context.object):
-            rig, mesh, name, relpath = getCharData(context)
+            rig, mesh, name, relpath = getCharData(context, False)
             needs = checkNeedUpdates(name, relpath)
         else:
             needs = []
@@ -604,7 +604,7 @@ class DAZ_OT_CheckDatabase(DazPropsOperator, CharSelector):
             msg = "The following databases need to be rescanned:\n"
             for name in needs:
                 msg += "    %s\n" % name
-            self.raiseWarning(msg)
+            self.raiseWarning(msg, useDialog=True)
 
 #----------------------------------------------------------
 #   Initialize

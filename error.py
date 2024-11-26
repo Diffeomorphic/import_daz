@@ -34,7 +34,7 @@ class ErrorOperator(bpy.types.Operator):
             self.layout.label(text=line)
 
 
-def invokeErrorMessage(value, warning=False):
+def invokeErrorMessage(value, warning=False, useDialog=False):
     from .buildnumber import BUILD
     LS.message = value
     if not warning:
@@ -50,12 +50,14 @@ def invokeErrorMessage(value, warning=False):
     elif not warning:
         LS.message = "ERROR (4.3.0.%04d):\n%s" % (BUILD, LS.message)
         bpy.ops.daz.error('INVOKE_DEFAULT')
+    elif useDialog:
+        bpy.ops.daz.error('INVOKE_DEFAULT')
 
 
 class DazError(Exception):
 
-    def __init__(self, value, warning=False):
-        invokeErrorMessage(value, warning)
+    def __init__(self, value, warning=False, useDialog=False):
+        invokeErrorMessage(value, warning, useDialog)
 
     def __str__(self):
         return repr(LS.message)
@@ -303,10 +305,10 @@ class DazOperator(bpy.types.Operator):
         self.warnings += msg
 
 
-    def raiseWarning(self, msg):
+    def raiseWarning(self, msg, useDialog=False):
         if msg:
             self.addWarning(msg)
-            raise DazError(msg, warning=True)
+            raise DazError(msg, warning=True, useDialog=useDialog)
 
 
 def setTypedPropValue(ob, key, value, newvalue):

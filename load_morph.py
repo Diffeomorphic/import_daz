@@ -39,6 +39,7 @@ class LoadMorph(DriverUser):
     defaultMultiplier = 1.0
     useMulti = False
     disableErc = False
+    useMakePosable = False
 
     def __init__(self):
         DriverUser.__init__(self)
