@@ -89,7 +89,6 @@ class GlobalSettings:
         self.useDazLimits = True
         self.sliderMultiplier = 1.0
         self.showFinalProps = False
-        self.showUsedPropsOnly = False
         self.showInTerminal = True
         self.useShapeCats = True
         self.useMuteDrivers = False

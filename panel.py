@@ -447,7 +447,9 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
             self.layout.operator("daz.enable_drivers")
             return
         else:
-            self.layout.operator("daz.disable_drivers")
+            split = self.layout.split()
+            split.operator("daz.disable_drivers")
+            split.prop(context.scene, "showUsedPropsOnly")
         self.preamble(self.layout, rig)
         if GS.ercMethod in ('ARMATURE', 'ALL') and rig.DazRig.startswith("genesis"):
             row = self.layout.row()
@@ -909,6 +911,12 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    bpy.types.Scene.showUsedPropsOnly = BoolProperty(
+        name = "Show Used Morphs Only",
+        description = "Only display morphs with nonzero \"final\" value",
+        default = False)
+
 
 def unregister():
     for cls in reversed(classes):
