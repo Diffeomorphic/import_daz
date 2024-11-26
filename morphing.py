@@ -2139,6 +2139,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
 
 
     def addFavoMorphs(self, ob, context, hasRig):
+        from .scan import normKey
         if len(ob.data.DazFavorites) > 0:
             oldshapes = []
             if not hasRig and GS.useShapeCats and ob.data.shape_keys:

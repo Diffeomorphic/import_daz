@@ -519,12 +519,6 @@ def baseProp(string):
         return string[:-5]
     return string
 
-def normKey(key):
-    if key is None:
-        return None
-    else:
-        return unquote(key.lower())
-
 def noMeshName(string):
     string = baseName(string)
     if string.endswith(" Mesh"):

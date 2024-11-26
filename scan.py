@@ -390,6 +390,13 @@ def getScanPath(name):
         os.makedirs(scanPath)
     return os.path.join(scanPath, "%s.json" % name)
 
+
+def normKey(key):
+    if key is None:
+        return None
+    else:
+        return unquote(key)
+
 #----------------------------------------------------------
 #   Load scanned info
 #----------------------------------------------------------

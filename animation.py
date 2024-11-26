@@ -314,14 +314,13 @@ class FrameConverter:
         nstruct = {}
         for prop,frames in struct.items():
             formulas,alias = self.getFormulas(rig, prop)
-            if formulas is None:
+            if not formulas:
                 if not self.zeroFrame(frames):
                     self.used[alias] = True
                     nstruct[alias] = frames
                 continue
             for nprop,factor in formulas.items():
                 if factor == 0:
-                    print("SKIP", nprop)
                     continue
                 factor *= self.multiplier
                 if nprop not in nstruct.keys():
@@ -369,7 +368,7 @@ class FrameConverter:
         elif prop in self.formulas2.keys():
             formula = self.formulas2[prop]
         else:
-            formula = None
+            formula = {}
         if alias:
             return formula, alias
         else:
@@ -548,7 +547,7 @@ class MorphOptions(PosableMaker):
     useScanned : BoolProperty(
         name = "Use Scanned Database",
         description = "Use the scanned database to find morphs",
-        default = False)
+        default = True)
 
     affectGeograft : EnumProperty(
         items = getGeograftItems,
@@ -1422,7 +1421,6 @@ class StandardAnimation:
                             self.shapekeys[sname] = True
             self.altmorphs = loadAltMorphs(rig)
         found = False
-        print("STA", self.affectMorphs, self.useScanned, rig, self.useShapekeys)
         if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
             found = loadScannedInfo(self, name, rig, relpath)
             print("SCA", name, rig.name, found)
@@ -1479,6 +1477,7 @@ class StandardAnimation:
 
     def setupAlias(self, rig):
         from .driver import getPropMinMax
+        from .scan import normKey
         alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
         alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
         self.alias = dict(alias1 + alias2)
