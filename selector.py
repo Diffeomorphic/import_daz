@@ -464,6 +464,15 @@ def setMorphs(value, rig, mgrp, scn, frame, force):
             autoKeyProp(rig, morph, scn, frame, force)
 
 
+def multiplyMorphs(value, rig, mgrp, scn, frame, force):
+    morphs = mgrp.getRelevantMorphs(scn, rig)
+    for morph in morphs:
+        if (getActivated(rig, rig, morph, force) and
+            isinstance(rig[morph], float)):
+            rig[morph] *= value
+            autoKeyProp(rig, morph, scn, frame, force)
+
+
 def setShapes(value, ob, mgrp, scn, frame):
     morphs,skeys = mgrp.getRelevantShapes(ob)
     for morph in morphs:
@@ -503,6 +512,20 @@ class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
         scn = context.scene
         for rig in getRigsFromContext(context):
             setMorphs(self.value, rig, self, scn, scn.frame_current, False)
+            updateRigDrivers(context, rig)
+
+
+class DAZ_OT_MultiplyMorphs(DazOperator, MorphGroup, IsMeshArmature):
+    bl_idname = "daz.multiply_morphs"
+    bl_label = "Multiply Morphs"
+    bl_description = "Multiply all selected morphs of specified type with the given value.\nDoes not affect integer properties"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        scn = context.scene
+        value = scn.morphFactor
+        for rig in getRigsFromContext(context):
+            multiplyMorphs(value, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
 
 
@@ -754,6 +777,7 @@ classes = [
     DAZ_OT_DeactivateAll,
     DAZ_OT_ClearMorphs,
     DAZ_OT_SetMorphs,
+    DAZ_OT_MultiplyMorphs,
     DAZ_OT_ClearShapes,
     DAZ_OT_SetShapes,
     DAZ_OT_AddKeysets,

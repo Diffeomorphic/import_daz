@@ -82,8 +82,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
             flt_flags = [self.bitflag_filter_item] * len(morphs)
 
         if context.scene.showUsedPropsOnly and isinstance(data, bpy.types.Object):
-            amt = data.data
-            flt_flags = [flag * (amt.get(finalProp(morph.name), 0.0) != 0.0)
+            flt_flags = [flag * (data.get(morph.name, 0.0) != 0.0)
                          for flag,morph in zip(flt_flags, morphs)]
 
         flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")

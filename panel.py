@@ -366,13 +366,14 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
             self.layout.prop(rig, propRef(adj))
         if not self.hasTheseMorphs(rig):
             return
-        self.preamble(self.layout, rig)
+        self.preamble(self.layout, scn, rig)
         self.drawItems(scn, rig)
 
 
-    def preamble(self, layout, rig):
+    def preamble(self, layout, scn, rig):
         ftype = "Daz%s" % self.morphset
         self.activateLayout(layout, "", ftype, rig)
+        self.factorLayout(layout, "", scn, ftype, rig)
         self.keyLayout(layout, "", ftype, rig)
 
 
@@ -394,6 +395,15 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
         op.useMesh = self.useMesh
         op.ftype = ftype
         op = self.setMorphsBtn(split)
+        op.category = category
+        op.ftype = ftype
+
+
+    def factorLayout(self, layout, category, scn, ftype, rig):
+        split = layout.split(factor=0.75)
+        split.prop(scn, "morphFactor")
+        op = split.operator("daz.multiply_morphs", icon='DOT', text="")
+        op.morphset = self.morphset
         op.category = category
         op.ftype = ftype
 
@@ -450,7 +460,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
             split = self.layout.split()
             split.operator("daz.disable_drivers")
             split.prop(context.scene, "showUsedPropsOnly")
-        self.preamble(self.layout, rig)
+        self.preamble(self.layout, context.scene, rig)
         if GS.ercMethod in ('ARMATURE', 'ALL') and rig.DazRig.startswith("genesis"):
             row = self.layout.row()
             row.operator("daz.morph_armature")
@@ -528,11 +538,6 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
     morphset = "Facs"
     ftype = "DazFacs"
     uilist = "DAZ_UL_Facs"
-
-    def preamble(self, layout, rig):
-        layout.label(text="FaceCap and LiveLink")
-        layout.label(text="moved to BVH Retargeter")
-        DAZ_PT_Morphs.preamble(self, layout, rig)
 
 
 class DAZ_UL_FacsDetails(DAZ_UL_StandardMorphs):
@@ -666,6 +671,7 @@ class CustomDrawItems:
             return
         ftype = self.getCatFtype(cat)
         self.activateLayout(box, cat.name, ftype, rig)
+        self.factorLayout(box, cat.name, scn, ftype, rig)
         self.keyLayout(box, cat.name, ftype, rig)
         uilist = self.getUIList(cat, scn)
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
@@ -679,7 +685,7 @@ class DAZ_PT_CustomMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
     def hasTheseMorphs(self, ob):
         return ob.DazCustomMorphs
 
-    def preamble(self, layout, rig):
+    def preamble(self, layout, scn, rig):
         pass
 
     def getRna(self, ob):
@@ -916,6 +922,12 @@ def register():
         name = "Show Used Morphs Only",
         description = "Only display morphs with nonzero \"final\" value",
         default = False)
+
+    bpy.types.Scene.morphFactor = FloatProperty(
+        name = "Factor",
+        description = "Multiply all morphs in this section with this",
+        min = 0.1, max = 10,
+        default = 1.0)
 
 
 def unregister():
