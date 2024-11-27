@@ -320,7 +320,7 @@ class FrameConverter:
                     nstruct[alias] = frames
                 continue
             for nprop,factor in formulas.items():
-                if factor == 0:
+                if factor == 0 or not isinstance(factor, (int, float)):
                     continue
                 factor *= self.multiplier
                 if nprop not in nstruct.keys():
@@ -773,6 +773,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.drawFigure(context)
         else:
             self.drawProp(context)
+        self.layout.separator()
         self.drawMorphs(context)
 
 
@@ -1580,7 +1581,7 @@ class DAZ_OT_ImportAction(HideOperator, ActionOptions, AnimatorBase, StandardAni
 #   Import Poselib
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArmature):
+class DAZ_OT_ImportPoseLib(DazOperator, AnimatorBase, StandardAnimation, IsArmature):
     bl_idname = "daz.import_poselib"
     bl_label = "Import Pose Library"
     bl_description = "Import poses from DAZ pose preset file(s) to pose library"
@@ -1592,8 +1593,6 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
     atFrameOne = False
     firstFrame = -1000
     lastFrame = 1000
-    affectBones = True
-    affectMorphs = False
     preferredFolders = ["Poses/"]
 
     makeNewPoseLib : BoolProperty(
@@ -1606,13 +1605,8 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
         description = "Name of loaded pose library",
         default = "PoseLib")
 
-    if bpy.app.version < (3,0,0):
+    if bpy.app.version < (3,3,0):
         useAssetBrowser = False
-    elif bpy.app.version < (3,3,0):
-        useAssetBrowser : BoolProperty(
-            name = "Asset Browser",
-            description = "Create asset browser library",
-            default = True)
     else:
         useAssetBrowser = True
 
@@ -1635,8 +1629,6 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
-        if bpy.app.version >= (3,0,0) and bpy.app.version < (3,3,0):
-            self.layout.prop(self, "useAssetBrowser")
         if self.useAssetBrowser:
             self.layout.prop(self, "usePreviewImages")
             self.layout.prop(self, "assetTags")
@@ -1648,15 +1640,6 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
             self.layout.prop(self, "makeNewPoseLib")
             if self.makeNewPoseLib:
                 self.layout.prop(self, "poseLibName")
-
-
-    def drawMorphs(self, context):
-        pass
-
-
-    def invoke(self, context, event):
-        self.affectMorphs = False
-        return AnimatorBase.invoke(self, context, event)
 
 
     def clearAnimation(self, ob):
@@ -1687,8 +1670,13 @@ class DAZ_OT_ImportPoseLib(HideOperator, AnimatorBase, StandardAnimation, IsArma
 
 
     def addToAssetBrowser(self, rig, filepath, name):
+        if rig and rig.animation_data:
+            act = rig.animation_data.action
+        elif self.useAction:
+            raise DazError("No action generated for %s" % name)
         try:
             bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
+            #bpy.ops.asset.mark_single()
         except RuntimeError as err:
             words = str(err).split("()")
             msg = "()\n".join(words)
