@@ -460,10 +460,10 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     else:
                         self.removeConvChildren(pb, list(self.conv.keys()))
             if rig.DazRig == "mhx":
-                from ..rig_mhx import L_CUSTOM
+                from ..mhx_tools import L_CUSTOM
                 customLayer = L_CUSTOM
             elif rig.DazRig[0:6] == "rigify":
-                from ..rig_rigify import R_CUSTOM
+                from ..rigify_tools import R_CUSTOM
                 customLayer = R_CUSTOM
             else:
                 return

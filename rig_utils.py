@@ -53,7 +53,7 @@ def unhideAllObjects(context, rig):
 #-------------------------------------------------------------
 
 def connectToParent(rig, connectAll=False, useSplitShin=False):
-    from .rig_mhx.mhx_data import MHX
+    from .mhx_tools.mhx_data import MHX
     setMode('EDIT')
     if useSplitShin:
         shinBones = MHX.ConnectShin
