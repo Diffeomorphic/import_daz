@@ -156,7 +156,7 @@ class GeoNode(Node, SimNode):
             return
         elif inst.isStrandHair:
             LS.hairs[rigname].append(ob)
-        else:
+        elif ob and ob.type == 'MESH':
             LS.meshes[rigname].append(ob)
         self.assigned = True
 

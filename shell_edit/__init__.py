@@ -10,10 +10,12 @@ elif "ShellEditFeature" in locals():
     print("Reloading Shell Editor")
     import imp
     imp.reload(shell)
+    imp.reload(import_shell)
     imp.reload(lie)
 else:
     print("Loading Shell Editor")
     from . import shell
+    from . import import_shell
     from . import lie
     ShellEditFeature = True
 
@@ -30,6 +32,8 @@ class DAZ_PT_Shells(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Shells"
 
     def draw(self, context):
+        self.layout.operator("daz.import_shells")
+        self.layout.separator()
         self.layout.operator("daz.fix_shells")
         self.layout.operator("daz.replace_shells")
         self.layout.operator("daz.copy_shells")
@@ -78,13 +82,15 @@ def register():
     print("Register Shell Editor")
     for cls in classes:
         bpy.utils.register_class(cls)
-    from . import shell, lie
+    from . import shell, import_shell, lie
     shell.register()
+    import_shell.register()
     lie.register()
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-    from . import shell, lie
+    from . import shell, import_shell, lie
     lie.unregister()
+    import_shell.unregister()
     shell.unregister()

@@ -717,6 +717,17 @@ class LocalSettings:
         self.getMaterialSettings(btn)
 
 
+    def forShells(self, btn):
+        self.__init__()
+        self.reset(btn)
+        self.useNodes = True
+        self.useGeometries = True
+        self.useImages = True
+        self.useMaterials = True
+        self.useAnimations = True
+        self.getMaterialSettings(btn)
+
+
     def forEngine(self):
         self.__init__()
         self.reset()
