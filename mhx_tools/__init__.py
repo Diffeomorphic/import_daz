@@ -11,12 +11,12 @@ from ..debug import DEBUG
 if not DEBUG:
     pass
 elif "MHXFeature" in locals():
-    print("Reloading MHX")
+    print("Reloading MHX Tools")
     import imp
     imp.reload(mhx_data)
     imp.reload(mhx)
 else:
-    print("Loading MHX")
+    print("Loading MHX Tools")
     from . import mhx_data
     from . import mhx
     MHXFeature = True
@@ -53,7 +53,7 @@ classes = [
 ]
 
 def register():
-    print("Register MHX")
+    print("Register MHX Tools")
     bpy.utils.register_class(DAZ_PT_DazMhxBuild)
     from . import mhx
     mhx.register()

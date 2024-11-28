@@ -7,13 +7,13 @@ from ..debug import DEBUG
 if not DEBUG:
     pass
 elif "ShellEditFeature" in locals():
-    print("Reloading Shell Editor")
+    print("Reloading Shell Tools")
     import imp
     imp.reload(shell)
     imp.reload(import_shell)
     imp.reload(lie)
 else:
-    print("Loading Shell Editor")
+    print("Loading Shell Tools")
     from . import shell
     from . import import_shell
     from . import lie
@@ -79,7 +79,7 @@ classes = [
 ]
 
 def register():
-    print("Register Shell Editor")
+    print("Register Shell Tools")
     for cls in classes:
         bpy.utils.register_class(cls)
     from . import shell, import_shell, lie

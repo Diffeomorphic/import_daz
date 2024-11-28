@@ -11,12 +11,12 @@ from ..debug import DEBUG
 if not DEBUG:
     pass
 elif "SimpleIkFeature" in locals():
-    print("Reloading Simple IK")
+    print("Reloading Simple IK Tools")
     import imp
     imp.reload(simple)
     imp.reload(panel)
 else:
-    print("Loading Simple IK")
+    print("Loading Simple IK Tools")
     from . import simple
     from . import panel
     SimpleIkFeature = True
@@ -34,7 +34,7 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
 #----------------------------------------------------------
 
 def register():
-    print("Register Simple IK")
+    print("Register Simple IK Tools")
     from . import simple, panel
     simple.register()
     panel.register()

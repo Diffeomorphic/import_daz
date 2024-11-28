@@ -264,7 +264,7 @@ class DazPreferences(bpy.types.AddonPreferences):
         update = toggleObjectTools)
 
     useShellTools : BoolProperty(
-        name = "Shell Editor",
+        name = "Shell Tools",
         description = "Tools for editing shells and layered images",
         default = False,
         update = toggleShellTools)

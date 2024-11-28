@@ -11,13 +11,13 @@ from ..debug import DEBUG
 if not DEBUG:
     pass
 elif "RigifyFeature" in locals():
-    print("Reloading Rigify")
+    print("Reloading Rigify Tools")
     import imp
     imp.reload(rigify_data)
     imp.reload(rigify)
     imp.reload(panel)
 else:
-    print("Loading Rigify")
+    print("Loading Rigify Tools")
     from . import rigify_data
     from . import rigify
     from . import panel
@@ -42,7 +42,7 @@ from .layers import R_DETAIL, R_CUSTOM
 #----------------------------------------------------------
 
 def register():
-    print("Register Rigify")
+    print("Register Rigify Tools")
     from . import rigify, panel
     rigify.register()
     panel.register()
