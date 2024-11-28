@@ -9,8 +9,6 @@ from ..main import *
 from ..cgroup import *
 from ..matsel import MaterialSelector
 from ..selector import Selector
-from ..driver import setFloatProp, addDriver
-
 from .shell import ShellRemover
 
 def isNumber(x):
@@ -431,6 +429,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
 
 
     def addSocketDriver(self, node, label, rig):
+        from ..driver import setFloatProp, addDriver
         prop = "INFLU %s" % label
         rig.hide_viewport = False
         if self.useDriveInfluence:
@@ -783,7 +782,15 @@ class DAZ_OT_RemoveAllInflus(DazOperator, IsArmature):
     def run(self, context):
         rig = context.object
         props = [key for key in rig.keys() if key.startswith("INFLU")]
-        print(props)
+        for ob in getMeshChildren(rig):
+            for mat in ob.data.materials:
+                if mat and mat.node_tree and mat.node_tree.animation_data:
+                    drivers = mat.node_tree.animation_data.drivers
+                    for fcu in list(drivers):
+                        for var in fcu.driver.variables:
+                            for trg in var.targets:
+                                if trg.data_path.startswith('["INFLU '):
+                                    drivers.remove(fcu)
         for prop in props:
             del rig[prop]
 

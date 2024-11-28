@@ -504,14 +504,7 @@ class DAZ_OT_AddCustomShell(MaterialSelector, DazPropsOperator):
         x,y = output.location
         node.location = (x,y)
         output.location = (x+XSIZE, y)
-
-        node.inputs["Influence"].default_value = 1.0
-        if GS.useShellDrivers:
-            prop = "INFLU %s" % shellname
-            setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
-            addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-            ob["DazVisibilityDrivers"] = rig["DazVisibilityDrivers"] = True
-
+        setShellInfluence(node, shellname, rig, ob)
         uvmap = tree.nodes.new(type="ShaderNodeUVMap")
         uvmap.location = (x, y-YSIZE)
         uvmap.uv_map = uvname
@@ -523,6 +516,15 @@ class DAZ_OT_AddCustomShell(MaterialSelector, DazPropsOperator):
             for link in output.inputs[oslot].links:
                 tree.links.new(link.from_socket, node.inputs[slot])
             tree.links.new(node.outputs[slot], output.inputs[oslot])
+
+
+def setShellInfluence(node, shellname, rig, ob):
+    node.inputs["Influence"].default_value = 1.0
+    if GS.useShellDrivers:
+        prop = "INFLU %s" % shellname
+        setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
+        addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
+        ob["DazVisibilityDrivers"] = rig["DazVisibilityDrivers"] = True
 
 #----------------------------------------------------------
 #   Assign Shell Maps

@@ -22,6 +22,7 @@ class ImportShells(DazOperator, MaterialLoader, DazImageFile, MultiFile):
         from ..cycles import CyclesMaterial
         from ..tree import pruneNodeTree
         from ..matsel import isShellNode
+        from .shell import setShellInfluence
         GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
@@ -54,6 +55,7 @@ class ImportShells(DazOperator, MaterialLoader, DazImageFile, MultiFile):
                             node.node_tree = nodegroups[gname]
                         else:
                             nodegroups[gname] = node.node_tree
+                        setShellInfluence(node, node.label, cube, cube)
 
 #----------------------------------------------------------
 #   Initialize
