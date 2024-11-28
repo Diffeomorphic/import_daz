@@ -1582,7 +1582,7 @@ class DAZ_OT_ImportAction(HideOperator, ActionOptions, AnimatorBase, StandardAni
 #   Import Asset
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportAsset(DazOperator, ActionOptions, AnimatorBase, StandardAnimation, IsArmature):
+class DAZ_OT_ImportAsset(HideOperator, ActionOptions, AnimatorBase, StandardAnimation, IsArmature):
     bl_idname = "daz.import_asset"
     bl_label = "Import Asset"
     bl_description = "Import poses and morphs from DAZ pose preset file(s) to Blender assets"
