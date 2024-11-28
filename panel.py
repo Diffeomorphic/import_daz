@@ -290,7 +290,7 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.import_pose")
         self.layout.operator("daz.import_expression")
-        self.layout.operator("daz.import_poselib")
+        self.layout.operator("daz.import_asset")
         self.layout.operator("daz.import_action")
         self.layout.separator()
         self.layout.operator("daz.import_node_pose")

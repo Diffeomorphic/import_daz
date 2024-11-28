@@ -1110,7 +1110,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 self.saveScales(rig, n+offset)
 
             self.fixScales(rig)
-            self.addToPoseLib(rig, filepath)
+            self.addToAsset(rig, filepath)
             offset += n + 1
         return offset,prop
 
@@ -1176,7 +1176,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     setShapeValue(ob, prop, value, n, offset)
 
 
-    def addToPoseLib(self, rig, filepath):
+    def addToAsset(self, rig, filepath):
         pass
 
     #-------------------------------------------------------------
@@ -1567,45 +1567,48 @@ class DAZ_OT_ImportAction(HideOperator, ActionOptions, AnimatorBase, StandardAni
 
     verbose = False
     useAction = True
-    usePoseLib = False
+    useAsset = False
     preferredFolders = ["Poses/"]
 
     def draw(self, context):
         AnimatorBase.draw(self, context)
+        self.layout.separator()
         ActionOptions.draw(self, context)
 
     def run(self, context):
         StandardAnimation.run(self, context)
 
 #-------------------------------------------------------------
-#   Import Poselib
+#   Import Asset
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAnimation, IsArmature):
-    bl_idname = "daz.import_poselib"
-    bl_label = "Import Pose Library"
-    bl_description = "Import poses from DAZ pose preset file(s) to pose library"
+class DAZ_OT_ImportAsset(DazOperator, ActionOptions, AnimatorBase, StandardAnimation, IsArmature):
+    bl_idname = "daz.import_asset"
+    bl_label = "Import Asset"
+    bl_description = "Import poses and morphs from DAZ pose preset file(s) to Blender assets"
     bl_options = {'UNDO', 'PRESET'}
 
     verbose = False
     useAction = True
-    usePoseLib = True
+    useAsset = True
     preferredFolders = ["Poses/"]
-
-    makeNewPoseLib : BoolProperty(
-        name = "New Pose Library",
-        description = "Unlink current pose library and make a new one",
-        default = True)
-
-    poseLibName : StringProperty(
-        name = "PoseLib Name",
-        description = "Name of loaded pose library",
-        default = "PoseLib")
 
     if bpy.app.version < (3,3,0):
         useAssetBrowser = False
+
+        makeNewPoselib : BoolProperty(
+            name = "New PoseLib",
+            description = "Unlink current pose library and make a new one",
+            default = True)
+
+        poselibName : StringProperty(
+            name = "PoseLib Name",
+            description = "Name of loaded poselib",
+            default = "PoseLib")
     else:
         useAssetBrowser = True
+        makeNewPoselib = False
+        poselibName = ""
 
         usePreviewImages : BoolProperty(
             name = "Import Previews",
@@ -1626,8 +1629,6 @@ class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAni
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
-        #ActionOptions.draw(self, context)
-        #self.layout.separator()
         if self.useAssetBrowser:
             self.layout.prop(self, "usePreviewImages")
             self.layout.prop(self, "assetTags")
@@ -1636,28 +1637,22 @@ class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAni
             self.layout.prop(self, "assetLicense")
             self.layout.prop(self, "assetCopyright")
         else:
-            self.layout.prop(self, "makeNewPoseLib")
-            if self.makeNewPoseLib:
+            self.layout.prop(self, "makeNewPoselib")
+            if self.makeNewPoselib:
                 self.layout.prop(self, "poseLibName")
 
 
     def clearAnimation(self, ob):
-        if self.makeNewPoseLib:
-            if self.useAssetBrowser:
-                pass
-            elif ob.pose_library:
-                ob.pose_library = None
+        if self.makeNewPoselib and ob.pose_library:
+            ob.pose_library = None
 
 
     def nameAnimation(self, ob, dazfiles):
-        if self.makeNewPoseLib:
-            if self.useAssetBrowser:
-                pass
-            elif ob.pose_library:
-                ob.pose_library.name = self.poseLibName
+        if self.makeNewPoselib and ob.pose_library:
+            ob.pose_library.name = self.poseLibName
 
 
-    def addToPoseLib(self, rig, filepath):
+    def addToAsset(self, rig, filepath):
         if rig.type != 'ARMATURE' or rig.animation_data is None:
             return
         setMode('POSE')
@@ -1665,7 +1660,7 @@ class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAni
         if self.useAssetBrowser:
             self.addToAssetBrowser(rig, filepath, name)
         else:
-            self.addToOldPoseLib(rig, filepath, name)
+            self.addToOldAsset(rig, filepath, name)
 
 
     def addToAssetBrowser(self, rig, filepath, name):
@@ -1721,7 +1716,7 @@ class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAni
             assetdata.copyright=self.assetCopyright
 
 
-    def addToOldPoseLib(self, rig, filepath, name):
+    def addToOldAsset(self, rig, filepath, name):
         if rig.pose_library:
             pmarkers = rig.pose_library.pose_markers
             frame = 0
@@ -1756,7 +1751,7 @@ class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAni
 class PoseBase(AnimatorBase):
     verbose = False
     useAction = False
-    usePoseLib = False
+    useAsset = False
     atFrameOne = False
     firstFrame = -1000
     lastFrame = 1000
@@ -2160,7 +2155,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
 
 classes = [
     DAZ_OT_ImportAction,
-    DAZ_OT_ImportPoseLib,
+    DAZ_OT_ImportAsset,
     DAZ_OT_ImportPose,
     DAZ_OT_ImportExpression,
     DAZ_OT_ImportNodePose,
