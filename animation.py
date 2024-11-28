@@ -1581,18 +1581,15 @@ class DAZ_OT_ImportAction(HideOperator, ActionOptions, AnimatorBase, StandardAni
 #   Import Poselib
 #-------------------------------------------------------------
 
-class DAZ_OT_ImportPoseLib(DazOperator, AnimatorBase, StandardAnimation, IsArmature):
+class DAZ_OT_ImportPoseLib(DazOperator, ActionOptions, AnimatorBase, StandardAnimation, IsArmature):
     bl_idname = "daz.import_poselib"
     bl_label = "Import Pose Library"
     bl_description = "Import poses from DAZ pose preset file(s) to pose library"
     bl_options = {'UNDO', 'PRESET'}
 
     verbose = False
-    useAction = False
+    useAction = True
     usePoseLib = True
-    atFrameOne = False
-    firstFrame = -1000
-    lastFrame = 1000
     preferredFolders = ["Poses/"]
 
     makeNewPoseLib : BoolProperty(
@@ -1629,6 +1626,8 @@ class DAZ_OT_ImportPoseLib(DazOperator, AnimatorBase, StandardAnimation, IsArmat
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
+        #ActionOptions.draw(self, context)
+        #self.layout.separator()
         if self.useAssetBrowser:
             self.layout.prop(self, "usePreviewImages")
             self.layout.prop(self, "assetTags")
@@ -1674,24 +1673,29 @@ class DAZ_OT_ImportPoseLib(DazOperator, AnimatorBase, StandardAnimation, IsArmat
             act = rig.animation_data.action
         elif self.useAction:
             raise DazError("No action generated for %s" % name)
-        try:
-            bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
-            #bpy.ops.asset.mark_single()
-        except RuntimeError as err:
-            words = str(err).split("()")
-            msg = "()\n".join(words)
-            raise DazError(msg)
         setMode('OBJECT')
-        act = rig.animation_data.action
-        if act is None:
-            return
+        if hasattr(act, "asset_mark"):
+            act.asset_mark()
+            act.name = name
+            rig.animation_data.action = None
+        else:
+            try:
+                bpy.ops.poselib.create_pose_asset(pose_name=name, activate_new_action=True)
+            except RuntimeError as err:
+                words = str(err).split("()")
+                msg = "()\n".join(words)
+                raise DazError(msg)
+            act = rig.animation_data.action
+            if act is None:
+                return
         keep = ["location", "rotation_euler", "rotation_quaternion"]
         if self.affectScale:
             keep.append("scale")
         for fcu in list(act.fcurves):
-            words = fcu.data_path.rsplit(".", 1)
-            if words[-1] not in keep:
-                act.fcurves.remove(fcu)
+            if not isPropRef(fcu.data_path):
+                words = fcu.data_path.rsplit(".", 1)
+                if words[-1] not in keep:
+                    act.fcurves.remove(fcu)
         if self.usePreviewImages:
             previewFile = self.getPreviewFile(filepath, name)
         else:
