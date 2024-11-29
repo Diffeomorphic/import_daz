@@ -134,7 +134,7 @@ class ConstraintStore:
                 drivers = self.drivers[key] = []
                 for fcu in list(rna.animation_data.drivers):
                     if not someMatch([":Hdo:", ":Tlo:"], fcu.data_path):
-                        driver = Driver(fcu, False)
+                        driver = Driver(fcu, isArrayFcurve(fcu))
                         drivers.append(driver)
                     rna.animation_data.drivers.remove(fcu)
 

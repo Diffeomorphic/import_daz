@@ -355,6 +355,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         deletes = self.fixConstraints(rig)
         self.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
+        self.fixBendTwistDrivers(rig)
+        self.fixBendTwistDrivers(rig.data)
+        for ob in self.meshes:
+            self.fixBendTwistDrivers(ob)
+            if ob.data.shape_keys:
+                self.fixBendTwistDrivers(ob.data.shape_keys)
         if self.driverRotationMode:
             from ..ctrl_rig import setDriverModes
             setDriverModes(rig, self.driverRotationMode, False)
@@ -1621,6 +1627,22 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                                 trg.transform_type = "ROT_X"
                                 if flip == 1:
                                     fcu.driver.expression = flipString(fcu.driver.expression)
+
+
+    def fixBendTwistDrivers(self, rna):
+        if rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    if trg.bone_target:
+                        words = trg.bone_target.rsplit(".",1)
+                        if len(words) != 2:
+                            pass
+                        elif words[0][-4:] == "Bend":
+                            trg.bone_target = "%s.bend.%s" % (words[0][:-4], words[1])
+                        elif words[0][-4:] == "Twist":
+                            trg.bone_target = "%s.twist.%s" % (words[0][:-4], words[1])
 
     #-------------------------------------------------------------
     #   Markers
