@@ -469,6 +469,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                   par.parent and
                   par.parent.name in BD.FaceRigs):
                 return L_FACE, True
+        if not BLENDER3:
+            knownlayers = [T_BONES, T_CUSTOM , T_TWEAK, T_WIDGETS, T_HIDDEN]
+            layers = [coll.name for coll in rig.data.collections
+                      if pb.name in coll.bones and coll.name not in knownlayers]
+            if layers:
+                return layers[0], True
         return L_CUSTOM, True
 
 

@@ -758,6 +758,7 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
 #-------------------------------------------------------------
 
 def finalizeArmature(rig):
+    from .driver import getDrivenBoneFcurves
     extras = ExtraBones()
     drivers = getDrivenBoneFcurves(rig, useRigifySafe=True)
     for pb in rig.pose.bones:
