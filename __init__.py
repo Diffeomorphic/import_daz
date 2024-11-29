@@ -41,7 +41,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "merge_uvs", "merge_grafts", "merge_rigs", "empties",
            "matsel", "tables", "proxy", "transfer",
            "dforce", "pin", "main", "geonodes",
-           "hd_data", "ctrl_rig", "moho", "scan", "api",
+           "hd_data", "framer", "moho", "scan", "api",
     ]
 
 from .debug import DEBUG

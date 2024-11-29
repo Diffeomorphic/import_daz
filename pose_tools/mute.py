@@ -7,7 +7,7 @@ import bpy
 from mathutils import *
 from ..error import *
 from ..utils import *
-from ..ctrl_rig import Framer
+from ..framer import Framer
 
 #-------------------------------------------------------------
 #   Bake shapekeys

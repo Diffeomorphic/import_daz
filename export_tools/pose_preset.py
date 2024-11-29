@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from ..ctrl_rig import Framer
+from ..framer import Framer
 from ..animation import HideOperator, FrameConverter
 from ..bone_data import BD
 from ..node import getTransformMatrices

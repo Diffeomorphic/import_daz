@@ -519,7 +519,7 @@ class ExtraBones(DriverUser):
             for bname in fcus.keys():
                 drivers[bname] = []
                 for fcu in fcus[bname]:
-                    drivers[bname].append(Driver(fcu, True))
+                    drivers[bname].append(Driver(fcu))
             return drivers
 
         from .driver import removeDriverFCurves, getAllBoneSumDrivers

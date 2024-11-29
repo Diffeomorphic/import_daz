@@ -940,7 +940,7 @@ class Rigifier(RigifyCommon):
             improveIk(gen, exclude=self.tongueBones)
 
         if self.driverRotationMode:
-            from ..ctrl_rig import setDriverModes
+            from ..fix import setDriverModes
             setDriverModes(gen, self.driverRotationMode, True)
 
         #Clean up

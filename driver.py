@@ -282,10 +282,11 @@ def getRnaDriver(rna, path, type=None):
 #-------------------------------------------------------------
 
 class Driver:
-    def __init__(self, fcu, isArray):
+    def __init__(self, fcu):
         drv = fcu.driver
         self.data_path = fcu.data_path
-        if isArray:
+        channel = fcu.data_path.rsplit(".",1)[-1]
+        if channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
             self.array_index = fcu.array_index
         else:
             self.array_index = -1

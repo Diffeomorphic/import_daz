@@ -572,10 +572,6 @@ def isSimpleType(x):
             isinstance(x, bool) or
             x is None)
 
-def isArrayFcurve(fcu):
-    channel = fcu.data_path.rsplit(".",1)[-1]
-    return (channel in ["location", "rotation_euler", "rotation_quaternion", "scale"])
-
 def clearProp(rna, prop):
     value = rna.get(prop)
     if value is None or isinstance(value, float):

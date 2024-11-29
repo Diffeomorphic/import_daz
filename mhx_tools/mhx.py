@@ -362,7 +362,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             if ob.data.shape_keys:
                 self.fixBendTwistDrivers(ob.data.shape_keys)
         if self.driverRotationMode:
-            from ..ctrl_rig import setDriverModes
+            from ..fix import setDriverModes
             setDriverModes(rig, self.driverRotationMode, False)
         if rig.DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, ["head"], 4)

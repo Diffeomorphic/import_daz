@@ -70,7 +70,7 @@ class DAZ_OT_SetDriverModes(DazPropsOperator, IsArmature):
         self.layout.prop(self, "rotMode")
 
     def run(self, context):
-        from ..ctrl_rig import setDriverModes
+        from ..fix import setDriverModes
         setDriverModes(context.object, self.rotMode, (not self.useQuatsOnly))
 
 

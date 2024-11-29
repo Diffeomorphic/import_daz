@@ -716,7 +716,7 @@ class LoadMorph(DriverUser):
             for fcu in list(skeys.animation_data.drivers):
                 sname,channel = getShapeChannel(fcu)
                 if channel == "mute":
-                    drivers.append(Driver(fcu, False))
+                    drivers.append(Driver(fcu))
                     skeys.animation_data.drivers.remove(fcu)
         for skey in skeys.key_blocks:
             skey.mute = True
@@ -1370,7 +1370,7 @@ class LoadMorph(DriverUser):
         fcu0 = getRnaDriver(rna, path, None)
         if channel == "value":
             channel = "rotation"
-            propDriver = Driver(fcu0, False)
+            propDriver = Driver(fcu0)
         elif keep:
             if fcu0 and fcu0.driver.type == 'SCRIPTED':
                 vtargets,btargets = self.getVarBoneTargets(fcu0)
@@ -1650,7 +1650,7 @@ class LoadMorph(DriverUser):
         prop = self.getTermDriverName(prefix, 0)
         self.amt[prop] = 0.0
         fcu = self.amt.driver_add(propRef(prop))
-        driver = Driver(fcu0, True)
+        driver = Driver(fcu0)
         driver.fill(fcu)
         removeModifiers(fcu)
         return propRef(prop)

@@ -40,7 +40,7 @@ class SubsurfApplier:
         if skeys:
             if skeys.animation_data:
                 for fcu in skeys.animation_data.drivers:
-                    drivers.append(Driver(fcu, True))
+                    drivers.append(Driver(fcu))
             for idx,skey in enumerate(skeys.key_blocks):
                 tmp = copyObject(ob, skey.name)
                 applyShape(tmp, idx)
