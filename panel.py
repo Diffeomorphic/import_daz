@@ -305,7 +305,8 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Locks And Limits"
 
     def draw(self, context):
-        rig = getRigFromContext(context, strict=False)
+        self.layout.operator("daz.lock_all_channels")
+        rig = getRigFromContext(context, strict=True)
         if rig is None:
             return
         self.layout.operator("daz.enable_locks_limits")

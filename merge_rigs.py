@@ -7,7 +7,7 @@ from mathutils import Matrix
 from .utils import *
 from .error import *
 from .driver import DriverUser
-from .figure import LockEnabler
+from .locks import LockEnabler
 
 #-------------------------------------------------------------
 #   Get selected rigs
