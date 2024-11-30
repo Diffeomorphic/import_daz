@@ -452,11 +452,6 @@ class BoneOptions:
         description = "Clear the pose before loading a new one",
         default = False)
 
-    useMaster: BoolProperty(
-        name = "Master Bone",
-        description = "Object animations affect master bone rather than object transformations.\nFor Simple IK, MHX and Rigify",
-        default = False)
-
     affectScale : BoolProperty(
         name = "Affect Scale",
         description = "Include bone scale in animation.\nObject scale is always included",
@@ -489,7 +484,6 @@ class BoneOptions:
         if self.affectBones or self.affectObject:
             self.layout.prop(self, "useClearPose")
         if self.affectBones:
-            self.layout.prop(self, "useMaster")
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "affectSelectedOnly")
             self.layout.prop(self, "useConvert")
@@ -826,7 +820,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         updateScene(context)
         self.updateWinders(rig, scn.frame_current)
         setMode('OBJECT')
-        self.mergeHipObject(rig)
         return result
 
 
@@ -968,7 +961,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def isAvailable(self, pb, rig):
-        if pb.name == self.getMasterBone(rig) and not self.useMaster:
+        if pb.name == self.getMasterBone(rig):
             return False
         elif self.affectSelectedOnly:
             if pb.bone.select:
@@ -1125,8 +1118,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         master = self.getMasterBone(rig)
         if not self.affectObject:
             pass
-        elif self.useMaster and master:
-            self.transformBone(rig, master, tfm, n, offset, False)
         else:
             tfm.setObject(rig)
             if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
@@ -1355,16 +1346,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     insertKeys(twist, True, n+offset, self)
             else:
                 self.transformBone(rig, bname, tfm, n, offset, True)
-
-
-    def mergeHipObject(self, rig):
-        if self.affectObject and self.useMaster and self.affectBones and rig.type == 'ARMATURE':
-            master = self.getMasterBone(rig)
-            if master:
-                pb = rig.pose.bones[master]
-                wmat = rig.matrix_world.copy()
-                setWorldMatrix(rig, self.worldMatrix)
-                pb.matrix_basis = self.worldMatrix.inverted() @ wmat
 
 
     def findDrivers(self, rig):
