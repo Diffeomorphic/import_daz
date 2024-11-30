@@ -74,43 +74,48 @@ class DAZ_OT_ObjectPoseToBones(FrameRange, IsArmature):
         scn = context.scene
         parents = [pb for pb in rig.pose.bones if pb.parent is None]
         children = [pb for pb in rig.pose.bones if pb.parent in parents]
-
-        def poseToChildren():
-            mats = [pb.matrix.copy() for pb in children]
-            for pb in parents:
-                pb.matrix_basis = Matrix()
-                if self.auto:
-                    insertKeys(pb, True, frame)
-            updateObject(context, rig)
-            for pb,mat in zip(children, mats):
-                pb.matrix = mat
-                if self.auto:
-                    insertKeys(pb, True, frame)
-
-        def objectToBones():
-            mats = [pb.matrix.copy() for pb in parents]
-            wmat = rig.matrix_world.copy()
-            rig.matrix_basis = Matrix()
-            for pb,mat in zip(parents, mats):
-                pb.matrix = wmat @ mat
-
         if self.auto:
+            wmats = {}
+            parmats = {}
+            chmats = {}
             for frame in range(self.startFrame, self.endFrame+1):
                 scn.frame_current = frame
                 updateScene(context)
-                objectToBones()
+                wmats[frame] = rig.matrix_world.copy()
+                parmats[frame] = [pb.matrix.copy() for pb in parents]
+                chmats[frame] = [pb.matrix.copy() for pb in children]
+            for frame in range(self.startFrame, self.endFrame+1):
+                scn.frame_current = frame
+                rig.matrix_basis = Matrix()
                 insertKeys(rig, False, frame)
-                for pb in parents:
+                updateScene(context)
+                wmat = wmats[frame]
+                for pb,mat in zip(parents, parmats[frame]):
+                    if self.useSkipRoots:
+                        pb.matrix = Matrix()
+                    else:
+                        pb.matrix = wmat @ mat
                     insertKeys(pb, True, frame)
-            if self.useSkipRoots:
-                for frame in range(self.startFrame, self.endFrame+1):
-                    scn.frame_current = frame
-                    updateScene(context)
-                    poseToChildren()
+                updateScene(context)
+                if self.useSkipRoots:
+                    for pb,mat in zip(children, chmats[frame]):
+                        pb.matrix = wmat @ mat
+                        insertKeys(pb, True, frame)
         else:
-            objectToBones()
+            wmat = rig.matrix_world.copy()
+            parmats = [pb.matrix.copy() for pb in parents]
+            chmats = [pb.matrix.copy() for pb in children]
+            rig.matrix_basis = Matrix()
+            updateScene(context)
+            for pb,mat in zip(parents, parmats):
+                if self.useSkipRoots:
+                    pb.matrix = Matrix()
+                else:
+                    pb.matrix = wmat @ mat
+            updateScene(context)
             if self.useSkipRoots:
-                poseToChildren()
+                for pb,mat in zip(children, chmats):
+                    pb.matrix = wmat @ mat
 
 #----------------------------------------------------------
 #   Initialize
