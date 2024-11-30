@@ -10,10 +10,27 @@ from ..error import *
 #   Categorize
 #-------------------------------------------------------------
 
-class DAZ_OT_CategorizeObjects( DazOperator, IsMeshArmature):
+class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
     bl_idname = "daz.categorize_objects"
     bl_label = "Categorize Objects"
-    bl_description = "Move unparented objects and their children to separate categories"
+    bl_description = "Move selected unparented objects and their children to separate categories"
+
+    useMeshes : BoolProperty(
+        name = "Meshes",
+        default = True)
+
+    useArmatures : BoolProperty(
+        name = "Armatures",
+        default = True)
+
+    useEmpties : BoolProperty(
+        name = "Empties",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useMeshes")
+        self.layout.prop(self, "useArmatures")
+        self.layout.prop(self, "useEmpties")
 
     def run(self, context):
         def linkObjects(ob, coll):
@@ -24,9 +41,16 @@ class DAZ_OT_CategorizeObjects( DazOperator, IsMeshArmature):
             for child in ob.children:
                 linkObjects(child, coll)
 
+        types = []
+        if self.useMeshes:
+            types.append('MESH')
+        if self.useArmatures:
+            types.append('ARMATURE')
+        if self.useEmpties:
+            types.append('EMPTY')
         roots = []
         for ob in getSelectedObjects(context):
-            if ob.parent is None and ob.type in ['MESH', 'ARMATURE']:
+            if ob.parent is None and ob.type in types:
                 roots.append(ob)
         print("Roots", roots)
         parcoll = context.collection

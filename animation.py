@@ -396,7 +396,7 @@ class HideOperator(DazOperator):
                 self.rig.data.layers = 32*[True]
             else:
                 self.boneLayers = dict([(coll.name,coll) for coll in self.rig.data.collections if coll.is_visible])
-            self.hideLayerColls(self.rig, context.view_layer.layer_collection)
+            #self.hideLayerColls(self.rig, context.view_layer.layer_collection)
             self.muted = muteDazFcurves(self.rig, True)
             context.view_layer.objects.active = self.rig
 
@@ -999,10 +999,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         def clearShapes(ob):
             if ob.type == 'MESH' and ob.data.shape_keys:
                 for skey in ob.data.shape_keys.key_blocks:
-                    if self.useShapekeys or skey.name not in rig.keys():
-                        skey.value = 0.0
-                        #if self.useInsertKeys:
-                        #    skey.keyframe_insert("value", frame=frame)
+                    skey.value = 0.0
+                    if self.useInsertKeys:
+                        skey.keyframe_insert("value", frame=frame)
 
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
@@ -1010,7 +1009,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             tfm.setObject(rig)
             if self.useInsertKeys:
                 insertKeys(rig, False, frame, self)
-        if self.useClearMorphs and self.affectMorphs:
+        if self.useClearMorphs and self.useShapekeys and self.affectMorphs:
             clearShapes(rig)
         if rig.type != 'ARMATURE':
             return
@@ -1025,9 +1024,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         insertKeys(pb, True, frame, self)
             setChildofInverses(rig)
         if self.useClearMorphs and self.affectMorphs:
-            for ob in rig.children:
-                clearShapes(ob)
-            if not self.useShapekeys:
+            if self.useShapekeys:
+                for ob in rig.children:
+                    clearShapes(ob)
+            else:
                 from .morphing import clearAllMorphs
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
