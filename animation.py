@@ -299,10 +299,6 @@ class FrameConverter:
     #   Convert morph animations
     #-------------------------------------------------------------
 
-    def zeroFrame(self, frames):
-        return len(frames) == 1 and list(frames.values())[0] == 0
-
-
     def convertMorphAnim(self, vanim, rig, again):
         if not self.affectMorphs:
             return vanim
@@ -311,11 +307,14 @@ class FrameConverter:
         for prop,frames in vanim.items():
             struct[prop] = dict(frames)
 
+        def zeroFrame(frames):
+            return (len(frames) == 1 and list(frames.values())[0] == 0)
+
         nstruct = {}
         for prop,frames in struct.items():
             formulas,alias = self.getFormulas(rig, prop)
             if not formulas:
-                if not self.zeroFrame(frames):
+                if not zeroFrame(frames) or self.useLoadZero:
                     self.used[alias] = True
                     nstruct[alias] = frames
                 continue
@@ -341,8 +340,9 @@ class FrameConverter:
 
         nvanim = {}
         for nprop,nframes in nstruct.items():
-            self.used[nprop] = True
-            nvanim[nprop] = nframes.items()
+            if not zeroFrame(nframes) or self.useLoadZero:
+                self.used[nprop] = True
+                nvanim[nprop] = nframes.items()
         return nvanim
 
 
@@ -539,6 +539,11 @@ class MorphOptions(PosableMaker):
         description = "Load missing morphs",
         default = False)
 
+    useLoadZero : BoolProperty(
+        name = "Also Load Zero Morphs",
+        description = "Also load missing morphs with zero value",
+        default = False)
+
     category : StringProperty(
         name = "Category",
         description = "Add missing morphs to this category",
@@ -566,6 +571,7 @@ class MorphOptions(PosableMaker):
                 self.layout.prop(self, "useScanned")
                 self.layout.prop(self, "useLoadMissing")
                 if self.useLoadMissing:
+                    self.layout.prop(self, "useLoadZero")
                     self.layout.prop(self, "category")
                     PosableMaker.draw(self, context)
             self.layout.prop(self, "affectGeograft")
