@@ -58,45 +58,21 @@ class DAZ_OT_ObjectPoseToBones(FrameRange, IsArmature):
     bl_description = "Clear object transform and transfer pose to unparented bones"
     bl_options = {'UNDO'}
 
-    def run(self, context):
-        from ..animation import insertKeys
-        rig = context.object
-        scn = context.scene
-        pbones = [pb for pb in rig.pose.bones if pb.parent is None]
+    useSkipRoots: BoolProperty(
+        name = "Skip Root Bones",
+        description = "Clear unparented bones and transfer pose to its children",
+        default = True)
 
-        def objectToBones():
-            mats = [pb.matrix.copy() for pb in pbones]
-            wmat = rig.matrix_world.copy()
-            rig.matrix_basis = Matrix()
-            for pb,mat in zip(pbones, mats):
-                pb.matrix = wmat @ mat
+    def draw(self, context):
+        self.layout.prop(self, "useSkipRoots")
+        FrameRange.draw(self, context)
 
-        if self.auto:
-            for frame in range(self.startFrame, self.endFrame+1):
-                scn.frame_current = frame
-                updateScene(context)
-                objectToBones()
-                insertKeys(rig, False, frame)
-                for pb in pbones:
-                    insertKeys(pb, True, frame)
-        else:
-            objectToBones()
-
-#----------------------------------------------------------
-#   Pose to children
-#----------------------------------------------------------
-
-class DAZ_OT_PoseToChildren(FrameRange, IsArmature):
-    bl_idname = "daz.pose_to_children"
-    bl_label = "Pose To Children"
-    bl_description = "Clear selected bones and transfer pose to children"
-    bl_options = {'UNDO'}
 
     def run(self, context):
         from ..animation import insertKeys
         rig = context.object
         scn = context.scene
-        parents = [pb for pb in rig.pose.bones if pb.bone.select]
+        parents = [pb for pb in rig.pose.bones if pb.parent is None]
         children = [pb for pb in rig.pose.bones if pb.parent in parents]
 
         def poseToChildren():
@@ -111,13 +87,30 @@ class DAZ_OT_PoseToChildren(FrameRange, IsArmature):
                 if self.auto:
                     insertKeys(pb, True, frame)
 
+        def objectToBones():
+            mats = [pb.matrix.copy() for pb in parents]
+            wmat = rig.matrix_world.copy()
+            rig.matrix_basis = Matrix()
+            for pb,mat in zip(parents, mats):
+                pb.matrix = wmat @ mat
+
         if self.auto:
             for frame in range(self.startFrame, self.endFrame+1):
                 scn.frame_current = frame
                 updateScene(context)
-                poseToChildren()
+                objectToBones()
+                insertKeys(rig, False, frame)
+                for pb in parents:
+                    insertKeys(pb, True, frame)
+            if self.useSkipRoots:
+                for frame in range(self.startFrame, self.endFrame+1):
+                    scn.frame_current = frame
+                    updateScene(context)
+                    poseToChildren()
         else:
-            poseToChildren()
+            objectToBones()
+            if self.useSkipRoots:
+                poseToChildren()
 
 #----------------------------------------------------------
 #   Initialize
@@ -126,7 +119,6 @@ class DAZ_OT_PoseToChildren(FrameRange, IsArmature):
 classes = [
     DAZ_OT_CopyAbsolutePose,
     DAZ_OT_ObjectPoseToBones,
-    DAZ_OT_PoseToChildren,
 ]
 
 def register():
