@@ -802,15 +802,18 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
         from .driver import retargetDrivers
         rig = context.object
         subrigs = {}
-        for ob in getSelectedMeshes(context):
-            mod = getModifier(ob, 'ARMATURE')
-            if mod:
-                subrig = mod.object
-                if subrig and subrig != rig:
-                    subrigs[subrig.name] = subrig
-                mod.object = rig
-                if self.useRetarget and ob.data.shape_keys:
-                    retargetDrivers(ob.data.shape_keys, subrig, rig, False)
+        for ob in getSelectedObjects(context):
+            if ob == rig:
+                continue
+            if ob.type in ['MESH', 'CURVES']:
+                mod = getModifier(ob, 'ARMATURE')
+                if mod:
+                    subrig = mod.object
+                    if subrig and subrig != rig:
+                        subrigs[subrig.name] = subrig
+                    mod.object = rig
+                    if self.useRetarget and ob.data.shape_keys:
+                        retargetDrivers(ob.data.shape_keys, subrig, rig, False)
             if ob.parent and ob.parent_type == 'BONE':
                 wmat = ob.matrix_world.copy()
                 bname = ob.parent_bone

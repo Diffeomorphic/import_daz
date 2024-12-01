@@ -13,7 +13,7 @@ from ..error import *
 class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
     bl_idname = "daz.categorize_objects"
     bl_label = "Categorize Objects"
-    bl_description = "Move selected unparented objects and their children to separate categories"
+    bl_description = "Move selected objects and their children to separate categories"
 
     useMeshes : BoolProperty(
         name = "Meshes",
@@ -27,7 +27,15 @@ class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
         name = "Empties",
         default = True)
 
+    categoryHead : EnumProperty(
+        items = [('UNPARENTED', "Unparented", "Selected unparented objects"),
+                 ('CHILDREN', "Children", "Children of active object")],
+        name = "Category parent",
+        description = "Type of objects that head the categories")
+
     def draw(self, context):
+        self.layout.prop(self, "categoryHead")
+        self.layout.separator()
         self.layout.prop(self, "useMeshes")
         self.layout.prop(self, "useArmatures")
         self.layout.prop(self, "useEmpties")
@@ -48,12 +56,17 @@ class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
             types.append('ARMATURE')
         if self.useEmpties:
             types.append('EMPTY')
-        roots = []
-        for ob in getSelectedObjects(context):
-            if ob.parent is None and ob.type in types:
-                roots.append(ob)
-        print("Roots", roots)
         parcoll = context.collection
+        if self.categoryHead == 'UNPARENTED':
+            roots = [ob for ob in getSelectedObjects(context) if ob.parent is None]
+        elif self.categoryHead == 'CHILDREN':
+            ob = context.object
+            roots = ob.children
+            colls = [coll for coll in bpy.data.collections if ob.name in coll.objects]
+            if colls:
+                parcoll = colls[0]
+        roots = [ob for ob in roots if ob.type in types]
+        print("Roots", roots)
         for root in roots:
             coll = bpy.data.collections.new(root.name)
             parcoll.children.link(coll)
