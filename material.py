@@ -65,16 +65,11 @@ class Material(Asset, Channels):
         Channels.parse(self, struct)
 
 
-    def getMatName(self, id):
-        id = unquote(id)
-        key = id.split("#")[-1]
+    def addToGeoNode(self, geonode):
         if GS.useMaterialsByIndex:
-            return key
+            key = self.name
         else:
-            return skipName(key)
-
-
-    def addToGeoNode(self, geonode, key):
+            key = skipName(self.name)
         if key in geonode.materials.keys():
             msg = ("Duplicate geonode material: %s\n" % key +
                    "  %s\n" % geonode +
@@ -101,8 +96,7 @@ class Material(Asset, Channels):
                 if iref in geo.nodes.keys():
                     geonode = geo.nodes[iref]
             if geonode:
-                key = self.getMatName(self.id)
-                self.addToGeoNode(geonode, key)
+                self.addToGeoNode(geonode)
         if LS.useGeometries and "uv_set" in struct.keys():
             from .geometry import Uvset
             uvset = self.getTypedAsset(struct["uv_set"], Uvset)

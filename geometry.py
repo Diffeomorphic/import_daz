@@ -1378,7 +1378,7 @@ class Geometry(Asset, Channels):
                 if dmat.shells:
                     hasShells = True
             else:
-                if GS.verbosity > 3:
+                if GS.verbosity >= 3:
                     mats = list(geonode.materials.keys())
                     mats.sort()
                     print("Existing materials:\n  %s" % mats)
