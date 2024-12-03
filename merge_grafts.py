@@ -417,6 +417,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         full_body_grp.add([v.index for v in hum.data.vertices], 1.0, 'REPLACE')
 
         from .store import ModStore
+        from .geometry import getActiveUvLayer
         stores = []
         delmasks = []
         for mod in list(hum.modifiers):
