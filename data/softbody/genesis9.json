@@ -1,7 +1,6 @@
 {
     "name" : "genesis9",
     "bones" : {
-    	"pelvis" : "pelvis",
+    	"pelvis" : "pelvis"
     }
 }
-        

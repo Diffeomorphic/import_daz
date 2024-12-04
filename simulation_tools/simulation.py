@@ -139,6 +139,11 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
     bl_description = "Add softbody simulation to selected meshes"
     bl_options = {'UNDO'}
 
+    useTriangulate : BoolProperty(
+        name = "Triangulate",
+        description = "Add a triangulate modifier to avoid problems with concave polygons",
+        default = False)
+
     useSmooth : BoolProperty(
         name = "Smooth",
         description = "Add a corrective smooth modifier to the meshes",
@@ -165,6 +170,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         self.layout.prop(self, "useLegs")
         self.layout.separator()
         self.layout.prop(self, "useSmooth")
+        self.layout.prop(self, "useTriangulate")
         self.layout.prop(self, "useRemoveOld")
 
 
@@ -223,6 +229,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
 
         for ob in selected:
             activateObject(context, ob)
+            if softbodies and self.useTriangulate and not getModifier(ob, 'TRIANGULATE'):
+                mod = ob.modifiers.new("Triangulate", 'TRIANGULATE')
+                mod.quad_method = 'SHORTEST_DIAGONAL'
+                mod.ngon_method = 'BEAUTY'
             smooth = False
             for softbody in softbodies:
                 if self.addSurfaceDeform(ob, softbody):
