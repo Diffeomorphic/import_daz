@@ -52,10 +52,17 @@ class Preset:
         self.layout.prop(self, "useDazDirectory")
         if self.useDazDirectory:
             self.drawFiles(context)
+        self.drawAuthor()
+
+    def drawAuthor(self):
         self.layout.prop(self, "author")
         self.layout.prop(self, "email")
         self.layout.prop(self, "website")
+        self.drawPresentation()
         self.layout.prop(self, "useCompress")
+
+    def drawPresentation(self):
+        pass
 
     def drawFiles(self, context):
         self.layout.prop(context.scene, "DazPreferredRoot")

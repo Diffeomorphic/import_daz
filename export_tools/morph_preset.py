@@ -13,6 +13,21 @@ from .preset import *
 class MorphPreset(Preset):
     extension = ".dsf"
 
+    presentation : EnumProperty(
+        items = [('Shape', "Shape", "Shape"),
+                 ('Pose', "Pose", "Pose"),
+                 ('Corrective', "Corrective", "Corrective")],
+        name = "Presentation",
+        default = 'Shape')
+
+    region : StringProperty(
+        name = "Region",
+        default = "Actor")
+
+    def drawPresentation(self):
+        self.layout.prop(self, "presentation")
+        self.layout.prop(self, "region")
+
     def saveFile(self, context, filepath, ob, skey, mname, first):
         struct,filepath = self.makeDazStruct("modifier", filepath)
         modlib = struct["modifier_library"] = []
@@ -35,7 +50,7 @@ class MorphPreset(Preset):
         if ob.parent:
             struct["parent"] = normalizeUrl(ob.parent.DazUrl)
         struct["presentation"] = {
-            "type" : self.presentation,
+            "type" : "Modifier/%s" % self.presentation,
             "label" : mname,
             "description" : "",
             "icon_large" : "",
@@ -66,6 +81,15 @@ class MorphPreset(Preset):
         dstruct["values"] = deltas
         return struct
 
+
+    def addGroup(self, struct):
+        if self.presentation == "Pose":
+            struct["group"] = "/Pose Controls"
+        elif self.presentation == "Shape":
+            if self.region:
+                struct["region"] = self.region
+            struct["group"] = self.author
+
 #-------------------------------------------------------------
 #   Save morph preset
 #-------------------------------------------------------------
@@ -75,16 +99,12 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
     bl_label = "Save Morph Presets"
     bl_description = "Save selected shapekeys as a morph preset"
 
-    presentation = "Modifier/Pose"
     subdir = "Morphs"
 
     def draw(self, context):
         self.drawFiles(context)
+        self.drawAuthor()
         Selector.draw(self, context)
-
-
-    def addGroup(self, struct):
-        struct["group"] = "/Pose Controls"
 
 
     def addFormulas(self, ob, skey, mname, struct):
@@ -135,7 +155,6 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
     bl_label = "Save DAZ Figure"
     bl_description = "Save active mesh as a DAZ figure relative to the other mesh"
 
-    presentation = "Modifier/Shape"
     subdir = "Morphs"
     dialogWidth = 600
 
@@ -159,11 +178,6 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
         self.morphname = ob.name
         self.setDefaultFilepath(ob, context.scene, ob.name)
         return DazPropsOperator.invoke(self, context, event)
-
-
-    def addGroup(self, struct):
-        struct["region"] = "Actor"
-        struct["group"] = "/Full Body/People"
 
 
     def run(self, context):
