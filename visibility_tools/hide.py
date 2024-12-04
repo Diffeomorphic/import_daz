@@ -126,6 +126,16 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
 
 
     def addCollections(self, context, rig, selected):
+        def moveToCollection(ob, newcoll):
+            if newcoll is None:
+                return
+            for coll in bpy.data.collections:
+                if ob in coll.objects.values():
+                    coll.objects.unlink(ob)
+                if ob not in newcoll.objects.values():
+                    newcoll.objects.link(ob)
+
+        from ..proxy import createSubCollection
         rigcoll = getCollection(context, rig)
         if rigcoll is None:
             raise DazError("No collection found")
@@ -140,38 +150,6 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
                 moveToCollection(ob, coll)
         rig["DazVisibilityCollections"] = True
         print("Visibility collections created")
-
-#------------------------------------------------------------------------
-#   Collections
-#------------------------------------------------------------------------
-
-def createSubCollection(coll, cname):
-    def getSubColl(coll, cname):
-        for child in coll.children:
-            if child.name == cname:
-                return child
-        for child in coll.children:
-            subcoll = getSubColl(child, cname)
-            if subcoll:
-                return subcoll
-        return None
-
-    subcoll = getSubColl(coll, cname)
-    if subcoll:
-        return subcoll
-    subcoll = bpy.data.collections.new(cname)
-    coll.children.link(subcoll)
-    return subcoll
-
-
-def moveToCollection(ob, newcoll):
-    if newcoll is None:
-        return
-    for coll in bpy.data.collections:
-        if ob in coll.objects.values():
-            coll.objects.unlink(ob)
-        if ob not in newcoll.objects.values():
-            newcoll.objects.link(ob)
 
 #------------------------------------------------------------------------
 #   Remove visibility
@@ -426,43 +404,10 @@ class DAZ_OT_MakeInvisible(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
+        from ..matsel import makePermanentMaterial
         ob = context.object
         bpy.ops.object.mode_set(mode='OBJECT')
         makePermanentMaterial(ob, "Invisio", (0.8,0.8,0.8,0))
-
-
-def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
-    if mname in bpy.data.materials.keys():
-        return bpy.data.materials[mname]
-    mat = bpy.data.materials.new(mname)
-    mat.blend_method = 'CLIP'
-    mat.shadow_method = 'NONE'
-    mat.diffuse_color = color
-    mat.use_nodes = True
-    tree = mat.node_tree
-    tree.nodes.clear()
-    trans = tree.nodes.new(type = "ShaderNodeBsdfTransparent")
-    trans.location = (0, 0)
-    output = tree.nodes.new(type = "ShaderNodeOutputMaterial")
-    output.location = (200, 0)
-    output.target = 'ALL'
-    tree.links.new(trans.outputs["BSDF"], output.inputs["Surface"])
-    return mat
-
-
-def makePermanentMaterial(ob, mname, color):
-    perm = getInvisibleMaterial(mname, color)
-    mnum = -1
-    for mn,mat in enumerate(ob.data.materials):
-        if mat == perm:
-            mnum = mn
-            break
-    if mnum == -1:
-        mnum = len(ob.data.materials)
-        ob.data.materials.append(perm)
-    for f in ob.data.polygons:
-        if f.select:
-            f.material_index = mnum
 
 #----------------------------------------------------------
 #   Shapekey selector

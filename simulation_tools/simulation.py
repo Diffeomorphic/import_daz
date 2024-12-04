@@ -179,7 +179,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
 
 
     def run(self, context):
-        from ..hide import makePermanentMaterial
+        from ..matsel import makePermanentMaterial
         hum = self.human = context.object
         if hum.parent and hum.parent.type == 'ARMATURE':
             self.rig = hum.parent
@@ -414,7 +414,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
 
 
     def makeSoftbody(self, name, sstruct, hum, hstruct, coll, context):
-        from ..hide import makePermanentMaterial
+        from ..matsel import makePermanentMaterial
         softbody = self.addObject(name, sstruct, hum, hstruct, coll)
         if softbody:
             makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))

@@ -1159,6 +1159,28 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
         rig = ob.parent
         self.convertWidgets(context, rig, ob)
 
+#------------------------------------------------------------------------
+#   Collections
+#------------------------------------------------------------------------
+
+def createSubCollection(coll, cname):
+    def getSubColl(coll, cname):
+        for child in coll.children:
+            if child.name == cname:
+                return child
+        for child in coll.children:
+            subcoll = getSubColl(child, cname)
+            if subcoll:
+                return subcoll
+        return None
+
+    subcoll = getSubColl(coll, cname)
+    if subcoll:
+        return subcoll
+    subcoll = bpy.data.collections.new(cname)
+    coll.children.link(subcoll)
+    return subcoll
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------

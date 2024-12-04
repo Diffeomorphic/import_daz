@@ -131,7 +131,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         coll = rigcoll = getCollection(context, rig)
         obs = {}
         nobs = {}
-        from ..hide import createSubCollection
+        from ..proxy import createSubCollection
         colls = list(rigcoll.children)
         meshcoll = createSubCollection(rigcoll, self.meshColl)
         for coll in colls:

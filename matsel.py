@@ -318,6 +318,42 @@ def fixMaterialUvs(mats, uvset):
         for texco in texcos:
             tree.nodes.remove(texco)
 
+#----------------------------------------------------------
+#   Invisible and permanent materials
+#----------------------------------------------------------
+
+def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
+    if mname in bpy.data.materials.keys():
+        return bpy.data.materials[mname]
+    mat = bpy.data.materials.new(mname)
+    mat.blend_method = 'CLIP'
+    mat.shadow_method = 'NONE'
+    mat.diffuse_color = color
+    mat.use_nodes = True
+    tree = mat.node_tree
+    tree.nodes.clear()
+    trans = tree.nodes.new(type = "ShaderNodeBsdfTransparent")
+    trans.location = (0, 0)
+    output = tree.nodes.new(type = "ShaderNodeOutputMaterial")
+    output.location = (200, 0)
+    output.target = 'ALL'
+    tree.links.new(trans.outputs["BSDF"], output.inputs["Surface"])
+    return mat
+
+
+def makePermanentMaterial(ob, mname, color):
+    perm = getInvisibleMaterial(mname, color)
+    mnum = -1
+    for mn,mat in enumerate(ob.data.materials):
+        if mat == perm:
+            mnum = mn
+            break
+    if mnum == -1:
+        mnum = len(ob.data.materials)
+        ob.data.materials.append(perm)
+    for f in ob.data.polygons:
+        if f.select:
+            f.material_index = mnum
 
 #----------------------------------------------------------
 #   Initialize
