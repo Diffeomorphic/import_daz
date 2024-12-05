@@ -80,7 +80,9 @@ class MatchOperator(DazPropsOperator):
                     msg = '"%s" parent is not same as\n"%s" parent' % (ob.name, src.name)
                     self.addWarning(msg)
         if not objects and not ES.easy and self.needsTarget:
-            raise DazError("No target meshes with faces selected")
+            msg = ('No good target meshes selected.\nTarget meshes must have faces.\n' +
+                   'Also, shapekeys are not transferred to non-conforming meshes\nunless the option "Non-conforming meshes" is enabled')
+            raise DazError(msg)
         return objects
 
 
