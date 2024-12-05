@@ -28,21 +28,6 @@ class Preset:
         name = "Directory",
         description = "Directory relative to root path")
 
-    author : StringProperty(
-        name = "Author",
-        description = "Author info in preset file",
-        default = "Myself")
-
-    email : StringProperty(
-        name = "Email",
-        description = "Email info in preset file",
-        default = "")
-
-    website : StringProperty(
-        name = "Website",
-        description = "Website info in preset file",
-        default = "")
-
     useCompress: BoolProperty(
         name = "Compress File",
         description = "Gzip the output file",
@@ -52,12 +37,6 @@ class Preset:
         self.layout.prop(self, "useDazDirectory")
         if self.useDazDirectory:
             self.drawFiles(context)
-        self.drawAuthor()
-
-    def drawAuthor(self):
-        self.layout.prop(self, "author")
-        self.layout.prop(self, "email")
-        self.layout.prop(self, "website")
         self.drawPresentation()
         self.layout.prop(self, "useCompress")
 
@@ -70,7 +49,7 @@ class Preset:
 
     def getDefaultDirectory(self, ob):
         folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
-        return "%s/%s/%s" % (folder, self.subdir, self.author)
+        return "%s/%s/%s" % (folder, self.subdir, GS.author)
 
     def getFullDirectory(self, scn):
         return canonicalPath("%s/%s" % (scn.DazPreferredRoot, self.reldir))
@@ -95,20 +74,9 @@ class Preset:
                 self.filepath = filename
 
     def setDefaultFilepath(self, ob, scn, fname):
-        self.fromGS()
         self.reldir = self.getDefaultDirectory(ob)
         folder = self.getFullDirectory(scn)
         self.setFilepath(fname, folder)
-
-    def fromGS(self):
-        self.author = GS.author
-        self.email = GS.email
-        self.website = GS.website
-
-    def toGS(self):
-        GS.author = self.author
-        GS.email = self.email
-        GS.website = self.website
 
     def makeDazStruct(self, type, filepath):
         from datetime import datetime
@@ -120,9 +88,9 @@ class Preset:
         astruct["id"] = normalizeUrl(filepath)
         astruct["type"] = type
         astruct["contributor"] = {
-            "author" : self.author,
-            "email" : self.email,
-            "website" : self.website,
+            "author" : GS.author,
+            "email" : GS.email,
+            "website" : GS.website,
         }
         astruct["modified"] = str(datetime.now())
         struct["asset_info"] = astruct
@@ -151,7 +119,6 @@ class DAZ_OT_SaveUV(DazOperator, Preset, DufFile, SingleFile):
 
     def run(self, context):
         ob = context.object
-        self.toGS()
         uvlayer = ob.data.uv_layers.active
         filepath = self.getFilepath(context)
         struct, filepath = self.makeDazStruct("uv_set", filepath)

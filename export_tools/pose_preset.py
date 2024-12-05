@@ -122,7 +122,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
     def getDefaultDirectory(self, ob):
         folder = self.Folders.get(ob.DazMesh, "")
-        return "%sPoses/%s" % (folder, self.author)
+        return "%sPoses/%s" % (folder, GS.author)
 
 
     def invoke(self, context, event):
@@ -135,7 +135,6 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def run(self, context):
-        self.toGS()
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
         if self.useHierarchical and rig.DazRig.startswith(("mhx", "rigify")):

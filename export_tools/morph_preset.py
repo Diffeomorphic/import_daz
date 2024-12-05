@@ -88,7 +88,7 @@ class MorphPreset(Preset):
         elif self.presentation == "Shape":
             if self.region:
                 struct["region"] = self.region
-            struct["group"] = self.author
+            struct["group"] = GS.author
 
 #-------------------------------------------------------------
 #   Save morph preset
@@ -103,7 +103,8 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
 
     def draw(self, context):
         self.drawFiles(context)
-        self.drawAuthor()
+        self.drawPresentation()
+        self.layout.prop(self, "useCompress")
         Selector.draw(self, context)
 
 
@@ -119,7 +120,6 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
 
 
     def invoke(self, context, event):
-        self.fromGS()
         ob = context.object
         if ob.data.shape_keys is None:
             msg = "Object %s has no shapekeys" % ob.name
@@ -130,7 +130,6 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
 
 
     def run(self, context):
-        self.toGS()
         ob = context.object
         folder = self.getFullDirectory(context.scene)
         for item in self.getSelectedItems():
@@ -167,9 +166,6 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
         self.layout.separator()
         self.layout.prop(context.scene, "DazPreferredRoot")
         self.layout.prop(self, "reldir")
-        self.layout.prop(self, "author")
-        self.layout.prop(self, "email")
-        self.layout.prop(self, "website")
         self.layout.prop(self, "useCompress")
 
 
@@ -181,7 +177,6 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
 
 
     def run(self, context):
-        self.toGS()
         trg = getRigFromContext(context, strict=False)
         self.rootpath = context.scene.DazPreferredRoot
         self.filename = "%s%s" % (self.morphname, self.extension)
