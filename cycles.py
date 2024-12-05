@@ -179,30 +179,46 @@ class CyclesMaterial(Material):
     def setTransSettings(self, useRefraction, blended, color, alpha):
         LS.usedFeatures["Transparent"] = True
         mat = self.rna
-        if useRefraction is None and mat.blend_method != 'OPAQUE':
+        if useRefraction is None and not isOpaque(mat):
             pass
-        elif hasattr(mat, "surface_render_method"):
-            if blended:
-                mat.surface_render_method = 'BLENDED'
-            else:
-                mat.surface_render_method = 'DITHERED'
         else:
-            if blended:
-                mat.blend_method = 'BLEND'
-                mat.show_transparent_back = False
-            else:
-                mat.blend_method = 'HASHED'
+            setRenderMethod(mat, blended, False)
         if useRefraction is not None:
             mat.use_screen_refraction = useRefraction
-        if hasattr(mat, "use_transparent_shadow"):
-            mat.use_transparent_shadow = True
-        elif hasattr(mat, "transparent_shadow_method"):
-            mat.transparent_shadow_method = 'HASHED'
-        else:
-            mat.shadow_method = 'HASHED'
+        setShadowMethod(mat, True)
         if not self.isShellMat:
             mat.diffuse_color[0:3] = color
             mat.diffuse_color[3] = alpha
+
+
+def isOpaque(mat):
+    return (mat.blend_method == 'OPAQUE')
+
+
+def setRenderMethod(mat, blended, clipped):
+    if hasattr(mat, "surface_render_method"):
+        if blended:
+            mat.surface_render_method = 'BLENDED'
+        else:
+            mat.surface_render_method = 'DITHERED'
+    else:
+        if clipped:
+            mat.blend_method = 'CLIP'
+        elif blended:
+            mat.blend_method = 'BLEND'
+            mat.show_transparent_back = False
+        else:
+            mat.blend_method = 'HASHED'
+
+
+def setShadowMethod(mat, enable):
+    method = ('HASHED' if enable else 'NONE')
+    if hasattr(mat, "use_transparent_shadow"):
+        mat.use_transparent_shadow = enable
+    elif hasattr(mat, "transparent_shadow_method"):
+        mat.transparent_shadow_method = method
+    else:
+        mat.shadow_method = method
 
 #-------------------------------------------------------------
 #   Cycles node tree

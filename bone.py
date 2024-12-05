@@ -630,10 +630,12 @@ class Bone(Node):
                 "url" : self.url,
                 "target" : trgfig,
             }
-            print("Creating reference to target figure:\n", trgfig)
+            if GS.verbosity >= 3:
+                print("Creating reference to target figure:\n", trgfig)
             inst = self.makeInstance(self.fileref, struct)
             self.instances[iref] = inst
-            print("Target instance:\n", inst)
+            if GS.verbosity >= 3:
+                print("Target instance:\n", inst)
             return inst
         if (GS.verbosity <= 2 and
             len(self.instances.values()) > 0):

@@ -974,11 +974,12 @@ class Geometry(Asset, Channels):
     def getHiddenMaterial(self):
         if LS.hiddenMaterial:
             return LS.hiddenMaterial
+        from .cycles import setRenderMethod, setShadowMethod
         mat = LS.hiddenMaterial = bpy.data.materials.new("HIDDEN")
         mat.diffuse_color[3] = 0
         mat.use_nodes = True
-        mat.blend_method = 'CLIP'
-        mat.shadow_method = 'NONE'
+        setRenderMethod(mat, False, True)
+        setShadowMethod(mat, False)
         tree = mat.node_tree
         tree.nodes.clear()
         node = tree.nodes.new(type = "ShaderNodeBsdfTransparent")

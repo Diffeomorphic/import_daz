@@ -325,9 +325,10 @@ def fixMaterialUvs(mats, uvset):
 def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
     if mname in bpy.data.materials.keys():
         return bpy.data.materials[mname]
+    from .cycles import setRenderMethod, setShadowMethod
     mat = bpy.data.materials.new(mname)
-    mat.blend_method = 'CLIP'
-    mat.shadow_method = 'NONE'
+    setRenderMethod(mat, False, True)
+    setShadowMethod(mat, False)
     mat.diffuse_color = color
     mat.use_nodes = True
     tree = mat.node_tree

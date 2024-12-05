@@ -52,11 +52,13 @@ class DAZ_OT_ReplaceMaterials(MaterialSelector, DazPropsOperator, IsMesh):
 def copyMaterialAttributes(src, trg):
     attributes = [
         'blend_method', 'shadow_method', 'alpha_threshold', 'show_transparent_back', 'use_backface_culling',
+        'surface_render_method', 'transparent_shadow_method',
         'use_screen_refraction', 'use_sss_translucency', 'refraction_depth',
         'diffuse_color', 'specular_color', 'roughness', 'specular_intensity', 'metallic',
     ]
     for attr in attributes:
-        setattr(trg, attr, getattr(src, attr))
+        if hasattr(src, attr):
+            setattr(trg, attr, getattr(src, attr))
 
 
 #----------------------------------------------------------
