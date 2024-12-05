@@ -139,10 +139,13 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
     bl_description = "Add softbody simulation to selected meshes"
     bl_options = {'UNDO'}
 
-    useTriangulate : BoolProperty(
-        name = "Triangulate",
-        description = "Add a triangulate modifier to avoid problems with concave polygons",
-        default = False)
+    onConcave : EnumProperty(
+        items = [('NONE', "None", "No modification to softbody objects"),
+                 ('PLANAR', "Planar", "Make softbody faces planar"),
+                 ('TRIANGULATE', "Triangulate", "Triangulate softbody meshes")],
+        name = "Concave Polygons",
+        description = "Method to avoid problems with concave polygons",
+        default = 'NONE')
 
     useSmooth : BoolProperty(
         name = "Smooth",
@@ -170,7 +173,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         self.layout.prop(self, "useLegs")
         self.layout.separator()
         self.layout.prop(self, "useSmooth")
-        self.layout.prop(self, "useTriangulate")
+        self.layout.prop(self, "onConcave")
         self.layout.prop(self, "useRemoveOld")
 
 
@@ -217,22 +220,45 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
 
         softbodies = []
         if self.useCombinedSoftbody:
-            softbody = self.makeSoftbody("SOFTBODY", struct["softbody"], hum, hstruct, coll, context)
-            softbodies.append(softbody)
+            softbody = self.addObject("SOFTBODY", struct["softbody"], hum, hstruct, coll)
+            if softbody:
+                softbodies.append(softbody)
         else:
             for key,data in struct["softbody"].items():
                 if getattr(self, "use%s" % key):
                     sstruct = {key:data}
-                    softbody = self.makeSoftbody(key.upper(), sstruct, hum, hstruct, coll, context)
+                    softbody = self.addObject(key.upper(), sstruct, hum, hstruct, coll)
                     if softbody:
                         softbodies.append(softbody)
 
+        for softbody in softbodies:
+            coll.objects.link(softbody)
+
+        if self.onConcave != 'NONE' and softbodies:
+            bpy.ops.object.select_all(action='DESELECT')
+            for softbody in softbodies:
+                softbody.select_set(True)
+            setMode('EDIT')
+            bpy.ops.mesh.select_mode(type='FACE')
+            bpy.ops.mesh.select_all(action='SELECT')
+            if self.onConcave == 'PLANAR':
+                print("Make planar faces")
+                bpy.ops.mesh.face_make_planar(factor=1.0, repeat=1)
+            else:
+                print("Convert to tris")
+                bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
+            setMode('OBJECT')
+
+        from ..matsel import makePermanentMaterial
+        for softbody in softbodies:
+            makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
+            self.addArmature(softbody)
+            self.addSoftBody(softbody, context)
+            self.addCorrSmooth(softbody, "", 2, 'SIMPLE')
+        self.hideCollection(context, coll)
+
         for ob in selected:
             activateObject(context, ob)
-            if softbodies and self.useTriangulate and not getModifier(ob, 'TRIANGULATE'):
-                mod = ob.modifiers.new("Triangulate", 'TRIANGULATE')
-                mod.quad_method = 'SHORTEST_DIAGONAL'
-                mod.ngon_method = 'BEAUTY'
             smooth = False
             for softbody in softbodies:
                 if self.addSurfaceDeform(ob, softbody):
@@ -357,10 +383,13 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
                 return coll
         coll = bpy.data.collections.new("Simulation")
         rigcoll.children.link(coll)
+        return coll
+
+
+    def hideCollection(self, context, coll):
         layer = getLayerCollection(context, coll)
         layer.hide_viewport = True
         coll.hide_render = True
-        return coll
 
 
     def addObject(self, name, struct, hum, hstruct, coll):
@@ -421,18 +450,6 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         offsets = actcoords - basecoords
         coords = coords + offsets[match]
         return list(coords)
-
-
-    def makeSoftbody(self, name, sstruct, hum, hstruct, coll, context):
-        from ..matsel import makePermanentMaterial
-        softbody = self.addObject(name, sstruct, hum, hstruct, coll)
-        if softbody:
-            makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
-            coll.objects.link(softbody)
-            self.addArmature(softbody)
-            self.addSoftBody(softbody, context)
-            self.addCorrSmooth(softbody, "", 2, 'SIMPLE')
-        return softbody
 
 
     def addArmature(self, ob):
