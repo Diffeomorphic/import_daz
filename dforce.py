@@ -127,7 +127,8 @@ class Collision:
 #-------------------------------------------------------------
 
 def getCollections(scn, context):
-    return [(coll.name, coll.name, coll.name) for coll in bpy.data.collections]
+    colls = [(coll.name, coll.name, coll.name) for coll in bpy.data.collections]
+    return [('NONE', "None", "None")] + colls
 
 
 class Cloth:
@@ -200,7 +201,7 @@ class Cloth:
         # Collision settings
         colset = cloth.collision_settings
         colset.use_collision = self.useCollision
-        if self.useCollision:
+        if self.useCollision and self.collisionCollection != 'NONE':
             colset.collection = bpy.data.collections.get(self.collisionCollection)
         colset.distance_min = 0.1*GS.scale*self.collDist
         colset.self_distance_min = 0.1*GS.scale*self.collDist
