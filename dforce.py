@@ -114,13 +114,21 @@ class Collision:
         mod = getModifier(ob, 'COLLISION')
         if mod is None:
             mod = ob.modifiers.new("Collision", 'COLLISION')
-        ob.collision.thickness_outer = 0.1*ob.DazScale*self.collDist
+        cset = ob.collision
+        cset.damping = 1.0
+        cset.thickness_outer = 0.1*self.collDist*GS.scale
+        cset.thickness_inner = 0.1*self.collDist*GS.scale
+        cset.use_culling = True
         if subsurf:
             subsurf.restore(ob)
 
 #-------------------------------------------------------------
 #   Cloth
 #-------------------------------------------------------------
+
+def getCollections(scn, context):
+    return [(coll.name, coll.name, coll.name) for coll in bpy.data.collections]
+
 
 class Cloth:
     fixedPin = False
@@ -149,6 +157,10 @@ class Cloth:
         description = "Use collision",
         default = True)
 
+    collisionCollection : EnumProperty(
+        items = getCollections,
+        name = "Collision Collection")
+
     collQuality : IntProperty(
         name = "Collision Quality",
         description = "Collision Quality",
@@ -167,13 +179,14 @@ class Cloth:
             layout.prop(self, "pinGroup")
         layout.prop(self, "simQuality")
         layout.prop(self, "useCollision")
+        if self.useCollision:
+            layout.prop(self, "collisionCollection")
         layout.prop(self, "collQuality")
         layout.prop(self, "gsmFactor")
 
 
     def addCloth(self, ob):
         from .store import removeModifier
-        scale = ob.DazScale
         collision = removeModifier(ob, 'COLLISION')
         subsurf = removeModifier(ob, 'SUBSURF')
 
@@ -187,8 +200,10 @@ class Cloth:
         # Collision settings
         colset = cloth.collision_settings
         colset.use_collision = self.useCollision
-        colset.distance_min = 0.1*scale*self.collDist
-        colset.self_distance_min = 0.1*scale*self.collDist
+        if self.useCollision:
+            colset.collection = bpy.data.collections.get(self.collisionCollection)
+        colset.distance_min = 0.1*GS.scale*self.collDist
+        colset.self_distance_min = 0.1*GS.scale*self.collDist
         colset.collision_quality = self.collQuality
         colset.use_self_collision = False
         # Pinning

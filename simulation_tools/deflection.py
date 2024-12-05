@@ -6,12 +6,13 @@ import bpy
 from ..utils import *
 from ..error import *
 from ..fileutils import DF
+from ..dforce import Collision
 
 #-------------------------------------------------------------
 #   Make deflection
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeDeflection(DazPropsOperator, IsMesh):
+class DAZ_OT_MakeDeflection(DazPropsOperator, Collision, IsMesh):
     bl_idname = "daz.make_deflection"
     bl_label = "Make Deflection"
     bl_description = "Make a low-poly deflection mesh for the active mesh"

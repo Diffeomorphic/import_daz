@@ -25,7 +25,7 @@ class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            self.addCollision(ob)
+            addCollision(ob)
 
 #-------------------------------------------------------------
 #   Cloth
@@ -39,7 +39,6 @@ class DAZ_OT_MakeCloth(DazPropsOperator, Cloth, Collision, IsMesh):
 
     def draw(self, context):
         self.drawCloth(context, self.layout)
-        self.drawCollision(context, self.layout)
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
@@ -85,7 +84,7 @@ class Settings:
 class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
     bl_idname = "daz.make_simulation"
     bl_label = "Make Simulation"
-    bl_description = "Create simulation from Daz data"
+    bl_description = "Add cloth and collision modifiers to selected meshes from DAZ data"
     bl_options = {'UNDO'}
 
     def draw(self, context):
@@ -93,11 +92,16 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
         self.drawCollision(context, self.layout)
 
     def run(self, context):
-        for ob in getVisibleMeshes(context):
-            if ob.get("DazCollision", True):
-                self.addCollision(ob)
+        rig = context.object
+        if rig.type == 'ARMATURE':
+            meshes = getMeshChildren(rig)
+        else:
+            meshes = getSelectedMeshes(context)
+        for ob in meshes:
             if ob.get("DazCloth", False):
                 self.addCloth(ob)
+            elif ob.get("DazCollision", False):
+                addCollision(ob)
         self.saveSettings(context)
 
 #-------------------------------------------------------------
@@ -133,7 +137,7 @@ class SoftbodyOptions:
         default = True)
 
 
-class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
+class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, Collision, IsMesh):
     bl_idname = "daz.add_softbody"
     bl_label = "Add Softbody"
     bl_description = "Add softbody simulation to selected meshes"
@@ -209,30 +213,31 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
 
         hstruct = struct["mesh"]
         self.addVertexGroups(hum, selected, hstruct["vertex_groups"])
-        coll = self.addCollection(context)
+        softcoll = self.addCollection(context, "Softbody")
+        collcoll = self.addCollection(context, "Softbody Collisions")
 
-        col = self.addObject("COLLISION", struct["collision"], hum, hstruct, coll)
+        col = self.addObject("COLLISION", struct["collision"], hum, hstruct, collcoll)
         if col:
             makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
-            coll.objects.link(col)
+            collcoll.objects.link(col)
             self.addArmature(col)
             self.addCollision(col)
 
         softbodies = []
         if self.useCombinedSoftbody:
-            softbody = self.addObject("SOFTBODY", struct["softbody"], hum, hstruct, coll)
+            softbody = self.addObject("SOFTBODY", struct["softbody"], hum, hstruct, softcoll)
             if softbody:
                 softbodies.append(softbody)
         else:
             for key,data in struct["softbody"].items():
                 if getattr(self, "use%s" % key):
                     sstruct = {key:data}
-                    softbody = self.addObject(key.upper(), sstruct, hum, hstruct, coll)
+                    softbody = self.addObject(key.upper(), sstruct, hum, hstruct, softcoll)
                     if softbody:
                         softbodies.append(softbody)
 
         for softbody in softbodies:
-            coll.objects.link(softbody)
+            softcoll.objects.link(softbody)
 
         if self.onConcave != 'NONE' and softbodies:
             bpy.ops.object.select_all(action='DESELECT')
@@ -253,9 +258,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         for softbody in softbodies:
             makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
             self.addArmature(softbody)
-            self.addSoftBody(softbody, context)
+            self.addSoftBody(softbody, context, collcoll)
             self.addCorrSmooth(softbody, "", 2, 'SIMPLE')
-        self.hideCollection(context, coll)
+        self.hideCollection(context, softcoll)
+        self.hideCollection(context, collcoll)
 
         for ob in selected:
             activateObject(context, ob)
@@ -376,12 +382,12 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
                 ob.vertex_groups.remove(vgrp)
 
 
-    def addCollection(self, context):
+    def addCollection(self, context, cname):
         rigcoll = getCollection(context, self.rig)
         for coll in rigcoll.children.values():
-            if baseName(coll.name) == "Simulation":
+            if baseName(coll.name) == cname:
                 return coll
-        coll = bpy.data.collections.new("Simulation")
+        coll = bpy.data.collections.new(cname)
         rigcoll.children.link(coll)
         return coll
 
@@ -459,19 +465,10 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, IsMesh):
         ob.parent = self.rig
 
 
-    def addCollision(self, ob):
-        mod = ob.modifiers.new("Collision", 'COLLISION')
-        cset = ob.collision
-        cset.damping = 1.0
-        cset.thickness_outer = 1.0*ob.DazScale
-        cset.thickness_inner = 1.0*ob.DazScale
-        cset.use_culling = True
-
-
-    def addSoftBody(self, ob, context, coll=None):
+    def addSoftBody(self, ob, context, collcoll):
         mod = ob.modifiers.new("Softbody", 'SOFT_BODY')
         mset = mod.settings
-        mset.collision_collection = coll
+        mset.collision_collection = collcoll
         mset.friction = 0.5
         mset.mass = 2.0
         mset.vertex_group_mass = "MASS"
