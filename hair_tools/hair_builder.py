@@ -179,7 +179,8 @@ class HairBuilder(Pinner, Cloth, Collision):
         if self.hairPoseSim == 'SIMULATION' and self.usePinGroup:
             self.addHairPinning(proxy)
             if self.useClothSimulation:
-                self.addCloth(proxy)
+                self.collision = 'NONE'
+                self.addCloth(context, proxy)
         return proxy
 
 

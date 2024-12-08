@@ -108,16 +108,16 @@ class DAZ_OT_LockAllChannels(DazPropsOperator, IsObject):
     bl_label = "Lock/Unlock All Channels"
     bl_description = "Lock or unlock all channels of selected objects"
 
-    useEnable : BoolProperty(
-        name = "Enable",
+    useLock : BoolProperty(
+        name = "Lock",
         description = "Enable locks",
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useEnable")
+        self.layout.prop(self, "useLock")
 
     def run(self, context):
-        value = (TTrue if self.useEnable else FFalse)
+        value = (TTrue if self.useLock else FFalse)
         for ob in getSelectedObjects(context):
             for channel in ["lock_location", "lock_rotation", "lock_scale"]:
                 setattr(ob, channel, value)

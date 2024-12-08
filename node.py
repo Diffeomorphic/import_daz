@@ -267,10 +267,10 @@ class Instance(Accessor, Channels, SimNode):
             elif key == "Visible":
                 self.hideViewport(value, ob)
                 self.hideRender(value, ob)
-            elif key == "Selectable":
-                self.hideSelect(value, ob)
+            #elif key == "Selectable":
+            #    self.hideSelect(value, ob)
             elif key == "Visible in Simulation":
-                ob["DazCollision"] = value
+                self.setCollision(value, ob)
             elif key == "Cast Shadows":
                 pass
             elif key == "Instance Mode":
@@ -283,6 +283,13 @@ class Instance(Accessor, Channels, SimNode):
                 pass
             elif key == "Follow Target":
                 self.followTarget = self.getChannelInstance(channel)
+
+
+    def setCollision(self, value, ob):
+        ob["DazCollision"] = value
+        for geonode in self.geometries:
+            if geonode.rna:
+                geonode.rna["DazCollision"] = value
 
 
     def hideViewport(self, value, ob):

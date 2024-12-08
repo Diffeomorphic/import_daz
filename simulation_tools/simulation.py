@@ -25,7 +25,7 @@ class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
-            addCollision(ob)
+            self.addCollision(ob)
 
 #-------------------------------------------------------------
 #   Cloth
@@ -41,47 +41,15 @@ class DAZ_OT_MakeCloth(DazPropsOperator, Cloth, Collision, IsMesh):
         self.drawCloth(context, self.layout)
 
     def run(self, context):
+        self.collection = None
         for ob in getSelectedMeshes(context):
-            self.addCloth(ob)
+            self.addCloth(context, ob)
 
 #-------------------------------------------------------------
 #   Make Simulation
 #-------------------------------------------------------------
 
-class Settings:
-    filepath = "~/daz_importer_simulations.json"
-
-    props = ["simPreset", "pinGroup", "simQuality",
-             "collQuality", "gsmFactor", "collDist"]
-
-    def invoke(self, context, event):
-        from ..load_json import loadJson
-        struct = loadJson(self.filepath)
-        if struct:
-            print("Load settings from", self.filepath)
-            self.readSettings(struct)
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
-    def readSettings(self, struct):
-        if "simulation-settings" in struct.keys():
-            settings = struct["simulation-settings"]
-            for key,value in settings.items():
-                if key in self.props:
-                    setattr(self, key, value)
-
-    def saveSettings(self, context):
-        from ..load_json import saveJson
-        struct = {}
-        for key in self.props:
-            value = getattr(self, key)
-            struct[key] = value
-        filepath = os.path.expanduser(self.filepath)
-        saveJson({"simulation-settings" : struct}, filepath)
-        print("Settings file %s saved" % filepath)
-
-
-class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
+class DAZ_OT_MakeSimulation(DazPropsOperator, Collision, Cloth):
     bl_idname = "daz.make_simulation"
     bl_label = "Make Simulation"
     bl_description = "Add cloth and collision modifiers to selected meshes from DAZ data"
@@ -92,6 +60,7 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
         self.drawCollision(context, self.layout)
 
     def run(self, context):
+        self.collection = None
         rig = context.object
         if rig.type == 'ARMATURE':
             meshes = getMeshChildren(rig)
@@ -99,10 +68,9 @@ class DAZ_OT_MakeSimulation(DazOperator, Collision, Cloth, Settings):
             meshes = getSelectedMeshes(context)
         for ob in meshes:
             if ob.get("DazCloth", False):
-                self.addCloth(ob)
-            elif ob.get("DazCollision", False):
-                addCollision(ob)
-        self.saveSettings(context)
+                self.addCloth(context, ob)
+            elif ob.get("DazCollision", True):
+                self.addCollision(ob)
 
 #-------------------------------------------------------------
 #   Softbody

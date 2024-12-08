@@ -99,14 +99,8 @@ class DynSim(DForce):
 #-------------------------------------------------------------
 
 class Collision:
-    collDist : FloatProperty(
-        name = "Collision Distance",
-        description = "Minimun collision distance (mm)",
-        min = 1.0, max = 20.0,
-        default = 1.0)
-
     def drawCollision(self, context, layout):
-        layout.prop(self, "collDist")
+        pass
 
     def addCollision(self, ob):
         from .store import removeModifier
@@ -116,8 +110,9 @@ class Collision:
             mod = ob.modifiers.new("Collision", 'COLLISION')
         cset = ob.collision
         cset.damping = 1.0
-        cset.thickness_outer = 0.1*self.collDist*GS.scale
-        cset.thickness_inner = 0.1*self.collDist*GS.scale
+        cset.thickness_outer = 0.1*GS.scale
+        cset.thickness_inner = 1.0*GS.scale
+        cset.cloth_friction = 0.0
         cset.use_culling = True
         if subsurf:
             subsurf.restore(ob)
@@ -128,65 +123,29 @@ class Collision:
 
 def getCollections(scn, context):
     colls = [(coll.name, coll.name, coll.name) for coll in bpy.data.collections]
-    return [('NONE', "None", "None")] + colls
+    return [('NEW', "New", "Make new collision collection"),
+            ('NONE', "None", "Don't use collision")] + colls
 
 
 class Cloth:
     fixedPin = False
-
-    simPreset : EnumProperty(
-        items = [('cotton.json', "Cotton", "Cotton"),
-                 ('denim.json', "Denim", "Denim"),
-                 ('leather.json', "Leather", "Leather"),
-                 ('rubber.json', "Rubber", "Rubber"),
-                 ('silk.json', "Silk", "Silk")],
-        name = "Preset",
-        description = "Simulation preset")
 
     pinGroup : StringProperty(
         name = "Pin Group",
         description = "Use this group as pin group",
         default = "dForce Pin")
 
-    simQuality : IntProperty(
-        name = "Simulation Quality",
-        description = "Simulation Quality",
-        default = 16)
-
-    useCollision : BoolProperty(
-        name = "Collision",
-        description = "Use collision",
-        default = True)
-
-    collisionCollection : EnumProperty(
+    collision : EnumProperty(
         items = getCollections,
         name = "Collision Collection")
 
-    collQuality : IntProperty(
-        name = "Collision Quality",
-        description = "Collision Quality",
-        min = 1,
-        default = 4)
-
-    gsmFactor : FloatProperty(
-        name = "GSM Factor",
-        description = "GSM Factor (vertex mass multiplier)",
-        min = 0.0,
-        default = 0.5)
-
     def drawCloth(self, context, layout):
-        layout.prop(self, "simPreset")
         if not self.fixedPin:
             layout.prop(self, "pinGroup")
-        layout.prop(self, "simQuality")
-        layout.prop(self, "useCollision")
-        if self.useCollision:
-            layout.prop(self, "collisionCollection")
-        layout.prop(self, "collQuality")
-        layout.prop(self, "gsmFactor")
+        layout.prop(self, "collision")
 
 
-    def addCloth(self, ob):
+    def addCloth(self, context, ob):
         from .store import removeModifier
         collision = removeModifier(ob, 'COLLISION')
         subsurf = removeModifier(ob, 'SUBSURF')
@@ -195,17 +154,34 @@ class Cloth:
         if cloth is None:
             cloth = ob.modifiers.new("Cloth", 'CLOTH')
         cset = cloth.settings
-        self.setPreset(cset)
-        cset.mass *= self.gsmFactor
-        cset.quality = self.simQuality
+
         # Collision settings
+        def makeNewCollection(context, ob):
+            if self.collection:
+                return self.collection
+            coll = bpy.data.collections.new("Cloth Collision")
+            rig = ob.parent
+            rigcoll = getCollection(context, rig)
+            rigcoll.children.link(coll)
+            for child in getMeshChildren(rig):
+                if (child.get("DazCollision", True) and
+                    not child.get("DazCloth", False)):
+                    coll.objects.link(child)
+            return coll
+
         colset = cloth.collision_settings
-        colset.use_collision = self.useCollision
-        if self.useCollision and self.collisionCollection != 'NONE':
-            colset.collection = bpy.data.collections.get(self.collisionCollection)
-        colset.distance_min = 0.1*GS.scale*self.collDist
-        colset.self_distance_min = 0.1*GS.scale*self.collDist
-        colset.collision_quality = self.collQuality
+        if self.collision == 'NONE':
+            colset.use_collision = False
+        else:
+            if self.collision == 'NEW':
+                coll = makeNewCollection(context, ob)
+            else:
+                coll = bpy.data.collections.get(self.collision)
+            colset.use_collision = True
+            colset.collection = self.collection = coll
+        colset.distance_min = 0.1*GS.scale
+        colset.self_distance_min = 0.1*GS.scale
+        colset.collision_quality = 4
         colset.use_self_collision = False
         # Pinning
         cset.vertex_group_mass = self.pinGroup
@@ -215,19 +191,6 @@ class Cloth:
             subsurf.restore(ob)
         if collision:
             collision.restore(ob)
-
-
-    def setPreset(self, cset):
-        global theSimPresets
-        if not theSimPresets:
-            from .load_json import loadJson
-            folder = os.path.join(os.path.dirname(__file__), "data", "presets", "make_cloth")
-            for file in os.listdir(folder):
-                filepath = os.path.join(folder, file)
-                theSimPresets[file] = loadJson(filepath)
-        struct = theSimPresets[self.simPreset]
-        for key,value in struct.items():
-            setattr(cset, key, value)
 
 #-------------------------------------------------------------
 #  studio/modifier/dynamic_hair_follow

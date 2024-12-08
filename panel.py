@@ -61,6 +61,7 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.apply_rest_pose")
         self.layout.operator("daz.apply_active_shapekey")
         self.layout.operator("daz.change_armature")
+        self.layout.operator("daz.lock_all_channels")
 
 #----------------------------------------------------------
 #   Materials
@@ -305,7 +306,6 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Locks And Limits"
 
     def draw(self, context):
-        self.layout.operator("daz.lock_all_channels")
         rig = getRigFromContext(context, strict=True)
         if rig is None:
             return
