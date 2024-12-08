@@ -1202,13 +1202,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             footInvIk = deriveBone("foot.inv.ik.%s" % suffix, foot, rig, L_HELP2, footRev)
             toeInvIk = deriveBone("toe.inv.ik.%s" % suffix, toe, rig, L_HELP2, toeRev)
 
-            self.addSingleGazeBone(rig, suffix, L_HEAD, L_HELP)
+            self.addSingleGazeBone(rig, suffix, L_HEAD, L_HELP2)
 
             for bname in ["upper_arm.fk", "forearm.fk", "hand.fk",
                           "thigh.fk", "shin.fk", "foot.fk", "toe.fk"]:
                 self.rolls["%s.%s" % (bname,suffix)] = rig.data.edit_bones["%s.%s" % (bname,suffix)].roll
 
-        self.addCombinedGazeBone(rig, L_HEAD, L_HELP)
+        self.addCombinedGazeBone(rig, L_HEAD, L_HELP2)
         if self.useTongueIk:
             self.addTongueIkBones(rig, L_HEAD, L_DEF)
 

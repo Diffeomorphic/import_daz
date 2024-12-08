@@ -426,37 +426,44 @@ class Fixer(DriverUser):
     #   Gaze Bones
     #-------------------------------------------------------------
 
-    def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
-        from .rig_utils import makeBone, deriveBone
+    def getEyeBone(self, rig, suffix):
         prefix = suffix.lower()
         bnames = ["%sEye" % prefix, "%s_eye" % prefix, "eye.%s" % suffix]
         for bname in bnames:
             eye = rig.data.edit_bones.get(bname)
             if eye:
-                break
+                return eye
+        print("Did not find eye", bnames)
+        return None
+
+
+    def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
+        from .rig_utils import makeBone, deriveBone
+        eye = self.getEyeBone(rig, suffix)
         if eye is None:
-            print("Did not find eye", bnames)
             return
         drvname = drvBone("eye.%s" % suffix)
         if drvname not in rig.data.edit_bones.keys():
             eyegaze = deriveBone(drvname, eye, rig, helpLayer, eye.parent)
-            #eye.parent = eyegaze
         vec = eye.tail-eye.head
         vec.normalize()
-        loc = eye.head + vec*GS.scale*30
+        loc = eye.head + vec*GS.scale*20
         gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*GS.scale,0)), 0, headLayer, None)
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
         from .rig_utils import makeBone, deriveBone
+        leye = self.getEyeBone(rig, "L")
+        reye = self.getEyeBone(rig, "R")
         lgaze = rig.data.edit_bones.get("gaze.L")
         rgaze = rig.data.edit_bones.get("gaze.R")
         head = rig.data.edit_bones.get("head")
-        if lgaze and rgaze and head:
-            loc = (lgaze.head + rgaze.head)/2
-            gaze0 = makeBone("gaze0", rig, loc, loc+Vector((0,15*GS.scale,0)), 0, helpLayer, head)
+        uy = GS.scale*Vector((0,1,0))
+        if lgaze and rgaze and leye and reye:
+            loc = (leye.head + reye.head)/2
+            gaze0 = makeBone("gaze0", rig, loc, loc-20*uy, 0, helpLayer, head)
             gaze1 = deriveBone("gaze1", gaze0, rig, helpLayer, None)
-            gaze = deriveBone("gaze", gaze0, rig, headLayer, gaze1)
+            gaze = makeBone("gaze", rig, loc-20*uy, loc-10*uy, 0, headLayer, gaze1)
             lgaze.parent = gaze
             rgaze.parent = gaze
 
@@ -499,9 +506,8 @@ class Fixer(DriverUser):
                 cns = limitLocation(gaze, rig, prop)
                 cns.min_x = cns.min_z = -20*GS.scale
                 cns.max_x = cns.max_z = 20*GS.scale
-                cns.min_y = cns.max_y = 20*GS.scale
                 limitRotation(gaze, rig, prop)
-                dampedTrack(gaze, head, rig, prop)
+                dampedTrack(gaze, gaze0, rig, prop)
 
     #-------------------------------------------------------------
     #   Tie bones

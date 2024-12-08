@@ -952,11 +952,7 @@ class WidgetConverter:
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
         euler = Euler((0,180*D,90*D))
-        if GS.scale == 0:
-            factor = 1.0/GS.scale
-        else:
-            factor = 1.0/GS.scale
-        mat = euler.to_matrix()*factor
+        mat = euler.to_matrix()/GS.scale
         self.gizmos = []
         for idx,verts in vgverts.items():
             if not verts:
