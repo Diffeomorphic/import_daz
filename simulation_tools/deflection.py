@@ -99,16 +99,31 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, Collision, IsMesh):
             setMode('EDIT')
             bpy.ops.mesh.tris_convert_to_quads()
             setMode('OBJECT')
+
         if self.useSubsurf:
             mod = nob.modifiers.new("Subsurf", 'SUBSURF')
             mod.levels = 1
             bpy.ops.object.modifier_apply(modifier="Subsurf")
+
         if self.useShrinkwrap:
             mod = nob.modifiers.new("Shrinkwrap", 'SHRINKWRAP')
             mod.wrap_method = 'NEAREST_SURFACEPOINT'
             mod.wrap_mode = 'ON_SURFACE'
             mod.target = ob
             bpy.ops.object.modifier_apply(modifier="Shrinkwrap")
+
+        for mod in ob.modifiers:
+            if mod.type == 'SURFACE_DEFORM':
+                nmod = nob.modifiers.new(mod.name, 'SURFACE_DEFORM')
+                for attr in ["target", "falloff", "strength", "vertex_group", "use_sparse_bind"]:
+                    if hasattr(mod, attr):
+                        setattr(nmod, attr, getattr(mod, attr))
+                bpy.ops.object.surfacedeform_bind(modifier=nmod.name)
+            elif False and mod.type == 'CORRECTIVE_SMOOTH':
+                nmod = nob.modifiers.new(mod.name, 'CORRECTIVE_SMOOTH')
+                for attr in ["factor", "iterations", "scale", "smooth_type", "vertex_group"]:
+                    if hasattr(mod, attr):
+                        setattr(nmod, attr, getattr(mod, attr))
 
 #----------------------------------------------------------
 #   Initialize

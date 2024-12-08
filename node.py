@@ -255,6 +255,7 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def buildChannels(self, ob):
+        self.setCollision(True, ob)
         for channel in self.channels.values():
             if self.ignoreChannel(channel):
                 continue

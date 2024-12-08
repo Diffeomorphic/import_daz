@@ -31,7 +31,7 @@ class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
 #   Cloth
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeCloth(DazPropsOperator, Cloth, Collision, IsMesh):
+class DAZ_OT_MakeCloth(DazPropsOperator, Collision, Cloth, IsMesh):
     bl_idname = "daz.make_cloth"
     bl_label = "Make Cloth"
     bl_description = "Add cloth modifiers to selected meshes"
@@ -41,17 +41,17 @@ class DAZ_OT_MakeCloth(DazPropsOperator, Cloth, Collision, IsMesh):
         self.drawCloth(context, self.layout)
 
     def run(self, context):
-        self.collection = None
+        self.addClothCollection(context, context.object)
         for ob in getSelectedMeshes(context):
-            self.addCloth(context, ob)
+            self.addCloth(ob)
 
 #-------------------------------------------------------------
 #   Make Simulation
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeSimulation(DazPropsOperator, Collision, Cloth):
-    bl_idname = "daz.make_simulation"
-    bl_label = "Make Simulation"
+class DAZ_OT_MakeDForce(DazPropsOperator, Collision, Cloth):
+    bl_idname = "daz.make_dforce"
+    bl_label = "Make dForce Simulation"
     bl_description = "Add cloth and collision modifiers to selected meshes from DAZ data"
     bl_options = {'UNDO'}
 
@@ -60,16 +60,17 @@ class DAZ_OT_MakeSimulation(DazPropsOperator, Collision, Cloth):
         self.drawCollision(context, self.layout)
 
     def run(self, context):
-        self.collection = None
         rig = context.object
         if rig.type == 'ARMATURE':
             meshes = getMeshChildren(rig)
         else:
             meshes = getSelectedMeshes(context)
+        if meshes:
+            self.addClothCollection(context, meshes[0])
         for ob in meshes:
             if ob.get("DazCloth", False):
-                self.addCloth(context, ob)
-            elif ob.get("DazCollision", True):
+                self.addCloth(ob)
+            elif ob.get("DazCollision", False):
                 self.addCollision(ob)
 
 #-------------------------------------------------------------
@@ -541,7 +542,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, Collision, IsMesh):
 classes = [
     DAZ_OT_MakeCollision,
     DAZ_OT_MakeCloth,
-    DAZ_OT_MakeSimulation,
+    DAZ_OT_MakeDForce,
     DAZ_OT_AddSoftbody,
 ]
 

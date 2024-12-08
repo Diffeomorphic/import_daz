@@ -35,7 +35,7 @@ class DAZ_PT_Simulation(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.add_softbody")
         self.layout.separator()
-        self.layout.operator("daz.make_simulation")
+        self.layout.operator("daz.make_dforce")
         self.layout.separator()
         self.layout.operator("daz.make_deflection")
         self.layout.operator("daz.make_collision")

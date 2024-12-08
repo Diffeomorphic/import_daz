@@ -104,10 +104,11 @@ class Collision:
 
     def addCollision(self, ob):
         from .store import removeModifier
-        subsurf = removeModifier(ob, 'SUBSURF')
         mod = getModifier(ob, 'COLLISION')
-        if mod is None:
-            mod = ob.modifiers.new("Collision", 'COLLISION')
+        if mod:
+            return
+        subsurf = removeModifier(ob, 'SUBSURF')
+        mod = ob.modifiers.new("Collision", 'COLLISION')
         cset = ob.collision
         cset.damping = 1.0
         cset.thickness_outer = 0.1*GS.scale
@@ -144,8 +145,31 @@ class Cloth:
             layout.prop(self, "pinGroup")
         layout.prop(self, "collision")
 
+    def addCollision(self, ob):
+        pass
 
-    def addCloth(self, context, ob):
+    def addClothCollection(self, context, ob):
+        if self.collision == 'NONE':
+            self.collection = None
+        elif self.collision == 'NEW':
+            self.collection = bpy.data.collections.get("Cloth Collision")
+            if self.collection:
+                return
+            coll = bpy.data.collections.new("Cloth Collision")
+            rig = ob.parent
+            rigcoll = getCollection(context, rig)
+            rigcoll.children.link(coll)
+            for child in getMeshChildren(rig):
+                if (child.get("DazCollision", False) and
+                    not child.get("DazCloth", False)):
+                    coll.objects.link(child)
+        else:
+            self.collection = bpy.data.collections.get(self.collision)
+            for ob in self.collection.objects:
+                self.addCollision(ob)
+
+
+    def addCloth(self, ob):
         from .store import removeModifier
         collision = removeModifier(ob, 'COLLISION')
         subsurf = removeModifier(ob, 'SUBSURF')
@@ -154,31 +178,9 @@ class Cloth:
         if cloth is None:
             cloth = ob.modifiers.new("Cloth", 'CLOTH')
         cset = cloth.settings
-
         # Collision settings
-        def makeNewCollection(context, ob):
-            if self.collection:
-                return self.collection
-            coll = bpy.data.collections.new("Cloth Collision")
-            rig = ob.parent
-            rigcoll = getCollection(context, rig)
-            rigcoll.children.link(coll)
-            for child in getMeshChildren(rig):
-                if (child.get("DazCollision", True) and
-                    not child.get("DazCloth", False)):
-                    coll.objects.link(child)
-            return coll
-
         colset = cloth.collision_settings
-        if self.collision == 'NONE':
-            colset.use_collision = False
-        else:
-            if self.collision == 'NEW':
-                coll = makeNewCollection(context, ob)
-            else:
-                coll = bpy.data.collections.get(self.collision)
-            colset.use_collision = True
-            colset.collection = self.collection = coll
+        colset.collection = self.collection
         colset.distance_min = 0.1*GS.scale
         colset.self_distance_min = 0.1*GS.scale
         colset.collision_quality = 4

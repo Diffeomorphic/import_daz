@@ -12,7 +12,7 @@ from ..dforce import Cloth, Collision
 #   HairBuilder class
 #-------------------------------------------------------------
 
-class HairBuilder(Pinner, Cloth, Collision):
+class HairBuilder(Pinner, Collision, Cloth):
 
     hairPoseSim : EnumProperty(
         items = [('NONE', "None", "Neither posing nor simulation"),
