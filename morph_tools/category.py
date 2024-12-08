@@ -1174,7 +1174,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         offsets = [(skey.data[vn].co - v.co).length for vn,v in enumerate(ob.data.vertices)]
         omax = max(offsets)
         omin = min(offsets)
-        eps = 1e-2 * ob.DazScale    # eps = 0.1 mm
+        eps = 1e-2 * GS.scale    # eps = 0.1 mm
         if abs(omax) < eps and abs(omin) < eps:
             ob.shape_key_remove(skey)
         nmod = ob.modifiers.new(rig.name, "ARMATURE")

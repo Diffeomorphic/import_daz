@@ -169,7 +169,7 @@ class MetaMaker(RigifyCommon):
 
         print("Create metarig")
         rig = context.object
-        scale = rig.DazScale
+        scale = GS.scale
         scn = context.scene
         if not(rig and rig.type == 'ARMATURE'):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
@@ -367,7 +367,7 @@ class MetaMaker(RigifyCommon):
 
     if BLENDER3:
         def addGroupBones(self, meta, rig):
-            tail = (0,0,10*rig.DazScale)
+            tail = (0,0,10*GS.scale)
             for bname,layer,row,group in self.GroupBones:
                 eb = meta.data.edit_bones.new(bname)
                 eb.head = (0,0,0)
@@ -807,7 +807,7 @@ class Rigifier(RigifyCommon):
             customfix = []
         for bnames,scale in customfix:
             self.fixCustomShape(gen, bnames, scale)
-        self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*rig.DazScale,0)))
+        self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*GS.scale,0)))
 
         # Add DAZ properties
         print("  Add DAZ properties")

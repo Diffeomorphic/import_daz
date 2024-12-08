@@ -332,8 +332,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             mat = eb.matrix.to_3x3()
             xaxis = mat.col[0]
             zaxis = mat.col[2]
-            head = eb.head - 40*rig.DazScale*zaxis
-            tail = head + 10*rig.DazScale*Vector((0,0,1))
+            head = eb.head - 40*GS.scale*zaxis
+            tail = head + 10*GS.scale*Vector((0,0,1))
             makeBone(bname, rig, head, tail, 0, S_SPINE, parent, eb, eb)
             strname = self.stretchName(bname)
             stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb)
@@ -344,7 +344,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         ebones = rig.data.edit_bones
         if self.useRootBone:
             roots = [eb for eb in ebones if eb.parent is None]
-            root = makeBone("Root", rig, (0,0,0), (0,0,10*rig.DazScale), 0, S_SPINE, None)
+            root = makeBone("Root", rig, (0,0,0), (0,0,10*GS.scale), 0, S_SPINE, None)
             for eb in roots:
                 eb.parent = root
         else:

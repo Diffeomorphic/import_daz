@@ -82,7 +82,7 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
                     box.label(text = "%s : %s" % (rig.name, pb.name))
                     mat = rig.matrix_world @ pb.matrix
                     loc,quat,scale = mat.decompose()
-                    vecRow(box, loc/rig.DazScale, "Location")
+                    vecRow(box, loc/GS.scale, "Location")
                     vecRow(box, Vector(quat.to_euler())/D, "Rotation")
                     vecRow(box, Vector(mat.col[1][0:3])/D, "Y Axis")
                     #self.vecRow(box, scale, "Scale")

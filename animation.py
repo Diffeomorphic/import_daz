@@ -1951,7 +1951,7 @@ class DAZ_OT_PruneAction(DazOperator):
 
     def run(self, context):
         ob = context.object
-        pruneAction(ob.animation_data.action, ob.DazScale)
+        pruneAction(ob.animation_data.action, GS.scale)
 
 #----------------------------------------------------------
 #   FrameRange

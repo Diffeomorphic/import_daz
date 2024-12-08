@@ -369,7 +369,7 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
         mod.target = hum
         mod.wrap_method = 'NEAREST_SURFACEPOINT'
         mod.wrap_mode = 'OUTSIDE'
-        mod.offset = 0.1*hum.DazScale*self.offset
+        mod.offset = 0.1*GS.scale*self.offset
         if self.useAddVertexGroup:
             if modname in ob.vertex_groups.keys():
                 vgrp = ob.vertex_groups[modname]
@@ -388,7 +388,7 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
             print("Object %s already has solidify modifier" % ob.name)
         else:
             mod = ob.modifiers.new("Solidify", 'SOLIDIFY')
-        mod.thickness = 0.1*ob.DazScale*self.thickness
+        mod.thickness = 0.1*GS.scale*self.thickness
         mod.offset = 0.0
         if self.useApply and not ob.data.shape_keys:
             bpy.ops.object.modifier_apply(modifier=mod.name)

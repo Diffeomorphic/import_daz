@@ -336,8 +336,8 @@ class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsShape):
 
     def run(self, context):
         ob = context.object
-        eps = 0.1*self.mindist*ob.DazScale
-        factor = 10/(self.maxdist*ob.DazScale)
+        eps = 0.1*self.mindist*GS.scale
+        factor = 10/(self.maxdist*GS.scale)
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[ob.active_shape_key_index]
         if skey.name not in ob.vertex_groups:

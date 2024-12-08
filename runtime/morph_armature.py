@@ -34,7 +34,7 @@ def getEditBones(rig):
             tails[bname2]= tails[bname1]
 
 
-    scale = rig.DazScale
+    scale = rig.get("DazScale", 0.01)
     heads = {}
     tails = {}
     hdoffsets = {}
@@ -127,7 +127,6 @@ def onFrameChangeDaz(scn):
 
 
 def register():
-    bpy.types.Object.DazScale = bpy.props.FloatProperty(default = 0.01)
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))

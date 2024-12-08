@@ -313,7 +313,6 @@ class HairSystem:
     def __init__(self, key, n, hum, mnum, btn):
         from ..channels import Channels
         self.name = ("Hair_%s" % key)
-        self.scale = hum.DazScale
         self.button = btn
         self.npoints = n
         self.mnum = mnum
@@ -363,7 +362,7 @@ class HairSystem:
         pset.render_step = btn.nRenderStep
         pset.child_length = 1
         psys.child_seed = 0
-        pset.child_radius = 0.1*btn.childRadius*self.scale
+        pset.child_radius = 0.1*btn.childRadius*GS.scale
 
         if hasattr(ccset, "root_width"):
             ccset.root_width = 0.1*btn.rootRadius
@@ -373,7 +372,7 @@ class HairSystem:
             ccset.tip_radius = 0.1*btn.tipRadius
         if btn.strandShape == 'SHRINK':
             pset.shape = 0.99
-        ccset.radius_scale = self.scale
+        ccset.radius_scale = GS.scale
 
 
     def addStrand(self, strand):
@@ -804,7 +803,6 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
         from ..transfer import applyAllShapekeys
         applyAllShapekeys(hair)
-        self.scale = hair.DazScale
         LS.hairMaterialMethod = self.hairMaterialMethod
 
         self.nonquads = []

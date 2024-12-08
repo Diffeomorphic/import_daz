@@ -363,7 +363,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Join meshes and remove doubles
         names = [graft.name for graft in grafts]
         print("Merge %s to %s" % (names, hum.name))
-        threshold = 0.001*hum.DazScale
+        threshold = 0.001*GS.scale
         bpy.ops.object.join()
         setMode('EDIT')
         bpy.ops.mesh.remove_doubles(threshold=threshold)

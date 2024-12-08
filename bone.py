@@ -497,7 +497,10 @@ class BoneInstance(Instance):
             setEulerOrder(cns, BD.getDefaultMode(pb))
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
-                if limit is not None:
+                xyz = self.IndexComp[idx]
+                if limit is None:
+                    setattr(cns, "use_limit_%s" % xyz, False)
+                else:
                     mind, maxd = limit
                     if maxd-mind > 359:
                         if GS.verbosity >= 3:
@@ -513,7 +516,6 @@ class BoneInstance(Instance):
                         tmp = minr
                         minr = -maxr
                         maxr = -tmp
-                    xyz = self.IndexComp[idx]
                     setattr(cns, "use_limit_%s" % xyz, True)
                     setattr(cns, "min_%s" % xyz, minr)
                     setattr(cns, "max_%s" % xyz, maxr)
@@ -538,13 +540,16 @@ class BoneInstance(Instance):
             cns = limitLocation(pb, rig)
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
-                if limit is not None:
+                xyz = self.IndexComp[idx]
+                if limit is None:
+                    setattr(cns, "use_min_%s" % xyz, False)
+                    setattr(cns, "use_max_%s" % xyz, False)
+                else:
                     mind, maxd = limit
                     if self.flipped[n]:
                         tmp = mind
                         mind = -maxd
                         maxd = -tmp
-                    xyz = self.IndexComp[idx]
                     setattr(cns, "use_min_%s" % xyz, True)
                     setattr(cns, "use_max_%s" % xyz, True)
                     setattr(cns, "min_%s" % xyz, mind*GS.scale)

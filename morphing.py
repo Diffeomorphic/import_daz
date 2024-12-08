@@ -382,7 +382,7 @@ class MorphPaths:
             proj = None
             if struct:
                 deltas = struct["modifier_library"][0]["morph"]["deltas"]["values"]
-                scale = self.projectionFactor.get(char, 1.0) * ob.DazScale
+                scale = self.projectionFactor.get(char, 1.0) * GS.scale
                 proj = np.zeros((len(ob.data.vertices), 3), float)
                 vnums = np.array([delta[0] for delta in deltas])
                 offsets = np.array([scale * d2bu(delta[1:]) for delta in deltas])
@@ -1163,7 +1163,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
                 ob.vertex_groups.remove(vgrp)
                 continue
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
-            mod.strength = -2*ob.DazScale
+            mod.strength = -2*GS.scale
             mod.mid_level = 0
             mod.vertex_group = vgrp.name
             mod.show_viewport = False

@@ -443,8 +443,8 @@ class Fixer(DriverUser):
             #eye.parent = eyegaze
         vec = eye.tail-eye.head
         vec.normalize()
-        loc = eye.head + vec*rig.DazScale*30
-        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*rig.DazScale,0)), 0, headLayer, None)
+        loc = eye.head + vec*GS.scale*30
+        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*GS.scale,0)), 0, headLayer, None)
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
@@ -454,7 +454,7 @@ class Fixer(DriverUser):
         head = rig.data.edit_bones.get("head")
         if lgaze and rgaze and head:
             loc = (lgaze.head + rgaze.head)/2
-            gaze0 = makeBone("gaze0", rig, loc, loc+Vector((0,15*rig.DazScale,0)), 0, helpLayer, head)
+            gaze0 = makeBone("gaze0", rig, loc, loc+Vector((0,15*GS.scale,0)), 0, helpLayer, head)
             gaze1 = deriveBone("gaze1", gaze0, rig, helpLayer, None)
             gaze = deriveBone("gaze", gaze0, rig, headLayer, gaze1)
             lgaze.parent = gaze
@@ -486,13 +486,20 @@ class Fixer(DriverUser):
 
 
     def addGazeFollowsHead(self, rig):
-        from .rig_utils import copyTransform, setMhx, mhxProp
+        from .rig_utils import copyTransform, limitLocation, limitRotation, dampedTrack, setMhx, mhxProp
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
-        if gaze0 and gaze1:
+        gaze = rig.pose.bones.get("gaze")
+        if gaze0 and gaze1 and gaze0:
             prop = "MhaGazeFollowsHead"
             setMhx(rig, prop, 1.0)
             copyTransform(gaze1, gaze0, rig, prop)
+            cns = limitLocation(gaze, rig, prop)
+            cns.min_x = cns.min_z = -20*GS.scale
+            cns.max_x = cns.max_z = 20*GS.scale
+            cns.min_y = cns.max_y = 20*GS.scale
+            limitRotation(gaze, rig, prop)
+            dampedTrack(gaze, gaze0, rig, prop)
 
     #-------------------------------------------------------------
     #   Tie bones

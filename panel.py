@@ -247,7 +247,7 @@ class DAZ_PT_ActivePoseBone(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.propRow(self.layout, pb, "DazRotLocks")
             mat = ob.matrix_world @ pb.matrix
             loc,quat,scale = mat.decompose()
-            self.vecRow(self.layout, loc/ob.DazScale, "Location")
+            self.vecRow(self.layout, loc/GS.scale, "Location")
             self.vecRow(self.layout, Vector(quat.to_euler())/D, "Rotation")
             self.vecRow(self.layout, scale, "Scale")
         else:

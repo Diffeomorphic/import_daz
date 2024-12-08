@@ -409,7 +409,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         lastname,r0,r1 = bininfo.bones[-1]
         eb = rig.data.edit_bones.new(self.getIkName(key))
         eb.head = r1
-        eb.tail = r1 + rig.DazScale*normalize(r1-r0)
+        eb.tail = r1 + GS.scale*normalize(r1-r0)
         eb.parent = head
 
 

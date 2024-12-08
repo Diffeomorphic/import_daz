@@ -315,7 +315,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         for pb in rig.pose.bones:
             euler = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ')
             dmat = euler.to_matrix().to_4x4()
-            dmat.col[3][0:3] = Vector(pb.bone.DazHead)*rig.DazScale
+            dmat.col[3][0:3] = Vector(pb.bone.DazHead)*GS.scale
             Fn = pb.bone.matrix_local.inverted() @ self.Z @ dmat
             Fn = Fn.to_quaternion().to_matrix().to_4x4()
             for bname in self.getBoneNames(pb.name):
@@ -686,7 +686,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             objkey = self.getDazObject(rig)
             Ls = [self.Ls[frame][objkey] for frame in range(self.frame_start, self.frame_end+1)]
             locs = [L.to_translation() for L in Ls]
-            self.getTrans("", rig, rig, locs, 1/rig.DazScale, anims)
+            self.getTrans("", rig, rig, locs, 1/GS.scale, anims)
 
             rots = [L.to_euler(globalFlip[rig.rotation_mode]) for L in Ls]
             self.getRot("", rig, rig, rots, 1/D, anims)
@@ -703,7 +703,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     Ls = [self.Ls[frame][bname] for frame in range(self.frame_start, self.frame_end+1)]
                     if self.isLocUnlocked(pb, bname):
                         locs = [L.to_translation() for L in Ls]
-                        self.getTrans(bname, pb, rig, locs, 1/rig.DazScale, anims)
+                        self.getTrans(bname, pb, rig, locs, 1/GS.scale, anims)
                     rots = [L.to_euler(pb.DazRotMode) for L in Ls]
                     self.getRot(bname, pb, rig, rots, 1/D, anims)
                     if self.useScale:

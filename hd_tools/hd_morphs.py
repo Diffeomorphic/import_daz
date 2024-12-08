@@ -222,7 +222,7 @@ class DispAdder:
             disp.inputs["Midlevel"].default_value = self.midlevel
             disp.inputs["Scale"].default_value = self.scale
             if amt and prop:
-                makePropDriver(propRef(prop), disp.inputs["Scale"], "default_value", amt, "%g*x" % ob.DazScale)
+                makePropDriver(propRef(prop), disp.inputs["Scale"], "default_value", amt, "%g*x" % GS.scale)
             if self.useCompact:
                 disp.hide = True
             if last is None:

@@ -157,18 +157,24 @@ def copyScale(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     return cns
 
 
-def limitLocation(bone, rig):
+def limitLocation(bone, rig, prop=None):
     cns = bone.constraints.new('LIMIT_LOCATION')
     cns.owner_space = 'LOCAL'
+    cns.use_min_x = cns.use_min_y = cns.use_min_z = True
+    cns.use_max_x = cns.use_max_y = cns.use_max_z = True
     cns.use_transform_limit = True
+    if prop is not None:
+        addDriver(cns, "influence", rig, mhxProp(prop), "x")
     return cns
 
 
-def limitRotation(bone, rig):
+def limitRotation(bone, rig, prop=None):
     cns = bone.constraints.new('LIMIT_ROTATION')
     cns.owner_space = 'LOCAL'
-    cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = False
+    cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = True
     cns.use_transform_limit = True
+    if prop is not None:
+        addDriver(cns, "influence", rig, mhxProp(prop), "x")
     return cns
 
 

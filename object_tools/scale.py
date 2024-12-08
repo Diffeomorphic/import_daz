@@ -192,7 +192,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
 
     def fixRig(self, rig):
-        scale = self.scale / rig.DazScale
+        scale = self.scale / GS.scale
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type == 'STRETCH_TO':

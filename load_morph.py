@@ -787,7 +787,7 @@ class LoadMorph(DriverUser):
         mat = getBoneMatrix(tfm, pb, self.rig)
         loc,quat,scale = mat.decompose()
         success = False
-        if (tfm.transProp and loc.length > 0.01*self.rig.DazScale):
+        if (tfm.transProp and loc.length > 0.01*self.GS.scale):
             self.setFcurves(pb, loc, tfm.transProp, "location")
             success = True
         if tfm.rotProp:

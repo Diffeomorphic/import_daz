@@ -742,8 +742,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 ttwkname = self.getTweakBoneName(twistname)
                 bendtwk = rig.pose.bones[btwkname]
                 twisttwk = rig.pose.bones[ttwkname]
-                self.addGizmo(bendtwk, "GZM_Ball", 0.25, blen=10*rig.DazScale)
-                self.addGizmo(twisttwk, "GZM_Ball", 0.25, blen=10*rig.DazScale)
+                self.addGizmo(bendtwk, "GZM_Ball", 0.25, blen=10*GS.scale)
+                self.addGizmo(twisttwk, "GZM_Ball", 0.25, blen=10*GS.scale)
 
     #-------------------------------------------------------------
     #   Gizmos
@@ -798,7 +798,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             twkname = self.getTweakBoneName(bname)
             if twkname in rig.pose.bones.keys():
                 tb = rig.pose.bones[twkname]
-                self.addGizmo(tb, "GZM_Ball", 0.25, 0.5, blen=10*rig.DazScale)
+                self.addGizmo(tb, "GZM_Ball", 0.25, 0.5, blen=10*GS.scale)
 
     #-------------------------------------------------------------
     #   Bone groups
@@ -1081,7 +1081,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             hand0.use_connect = False
             hand0.parent = hand
 
-            size = 10*rig.DazScale
+            size = 10*GS.scale
             ez = Vector((0,0,size))
             armSocket = makeBone("armSocket.%s" % suffix, rig, upper_arm.head, upper_arm.head+ez, 0, L_TWEAK, upper_arm.parent)
             armParent = deriveBone("arm_parent.%s" % suffix, armSocket, rig, L_HELP, hip)

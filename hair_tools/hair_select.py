@@ -84,7 +84,7 @@ class DAZ_OT_SelectStrandsByWidth(DazPropsOperator, IsMesh):
             raise DazError("Mesh has no polygons")
         prox = Proxifier(ob)
         comps = prox.getComponents(ob, context)
-        maxwidth = 0.1 * self.width * ob.DazScale
+        maxwidth = 0.1 * self.width * GS.scale
         verts = ob.data.vertices
         faces = ob.data.polygons
         for comp in comps.values():
