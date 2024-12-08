@@ -873,13 +873,6 @@ def register():
 
     bpy.types.Material.DazScale = FloatProperty(default = 0)
 
-    #bpy.types.Object.DazUnits = StringProperty(default = "")
-    #bpy.types.Object.DazExpressions = StringProperty(default = "")
-    #bpy.types.Object.DazVisemes = StringProperty(default = "")
-    #bpy.types.Object.DazBodies = StringProperty(default = "")
-    #bpy.types.Object.DazFlexions = StringProperty(default = "")
-    #bpy.types.Object.DazCorrectives = StringProperty(default = "")
-
     bpy.types.Object.DazRotMode = StringProperty(default = 'XYZ')
     bpy.types.PoseBone.DazRotMode = StringProperty(default = 'XYZ')
     bpy.types.PoseBone.DazAxes = IntVectorProperty(size=3, default=(0,1,2))

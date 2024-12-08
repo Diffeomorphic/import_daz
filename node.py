@@ -977,7 +977,7 @@ class Node(Asset, Formula, Channels):
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)
         ob.DazScene = LS.scene
-        GS.scale = GS.scale
+        ob.DazScale = GS.scale
         ob.DazOrient = inst.attributes["orientation"]
         ob.DazCenter = inst.attributes["center_point"]
         self.subtractCenter(ob, inst, center)

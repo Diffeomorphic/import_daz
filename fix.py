@@ -490,16 +490,18 @@ class Fixer(DriverUser):
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
         gaze = rig.pose.bones.get("gaze")
-        if gaze0 and gaze1 and gaze0:
+        head = rig.pose.bones.get("head")
+        if gaze0 and gaze1:
             prop = "MhaGazeFollowsHead"
             setMhx(rig, prop, 1.0)
             copyTransform(gaze1, gaze0, rig, prop)
-            cns = limitLocation(gaze, rig, prop)
-            cns.min_x = cns.min_z = -20*GS.scale
-            cns.max_x = cns.max_z = 20*GS.scale
-            cns.min_y = cns.max_y = 20*GS.scale
-            limitRotation(gaze, rig, prop)
-            dampedTrack(gaze, gaze0, rig, prop)
+            if gaze and head:
+                cns = limitLocation(gaze, rig, prop)
+                cns.min_x = cns.min_z = -20*GS.scale
+                cns.max_x = cns.max_z = 20*GS.scale
+                cns.min_y = cns.max_y = 20*GS.scale
+                limitRotation(gaze, rig, prop)
+                dampedTrack(gaze, head, rig, prop)
 
     #-------------------------------------------------------------
     #   Tie bones
