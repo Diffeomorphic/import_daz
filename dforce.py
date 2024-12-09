@@ -99,9 +99,6 @@ class DynSim(DForce):
 #-------------------------------------------------------------
 
 class Collision:
-    def drawCollision(self, context, layout):
-        pass
-
     def addCollision(self, ob):
         from .store import removeModifier
         mod = getModifier(ob, 'COLLISION')
@@ -152,9 +149,6 @@ class Cloth:
         if self.collision == 'NONE':
             self.collection = None
         elif self.collision == 'NEW':
-            self.collection = bpy.data.collections.get("Cloth Collision")
-            if self.collection:
-                return
             self.collection = bpy.data.collections.new("Cloth Collision")
             rig = ob.parent
             rigcoll = getCollection(context, rig)

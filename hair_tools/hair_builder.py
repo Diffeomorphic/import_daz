@@ -68,7 +68,6 @@ class HairBuilder(Pinner, Collision, Cloth):
             layout.prop(self, "useClothSimulation")
             if self.useClothSimulation:
                 self.drawCloth(context, layout)
-                self.drawCollision(context, layout)
 
 
     def buildMesh(self, context, hname, strands, hair, hum, mnames):

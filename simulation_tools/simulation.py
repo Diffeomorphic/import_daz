@@ -14,17 +14,30 @@ from ..fileutils import DF
 #   Collision
 #-------------------------------------------------------------
 
-class DAZ_OT_MakeCollision(DazPropsOperator, Collision, IsMesh):
+class DAZ_OT_MakeCollision(DazPropsOperator, Collision, Cloth, IsMesh):
     bl_idname = "daz.make_collision"
     bl_label = "Make Collision"
     bl_description = "Add collision modifiers to selected meshes"
     bl_options = {'UNDO'}
 
     def draw(self, context):
-        self.drawCollision(context, self.layout)
+        self.layout.prop(self, "collision")
+
+    def addClothCollection(self, context, ob):
+        if self.collision == 'NONE':
+            self.collection = None
+        elif self.collision == 'NEW':
+            self.collection = bpy.data.collections.new("Cloth Collision")
+            obcoll = getCollection(context, ob)
+            obcoll.children.link(self.collection)
+        else:
+            self.collection = bpy.data.collections.get(self.collision)
 
     def run(self, context):
+        self.addClothCollection(context, context.object)
         for ob in getSelectedMeshes(context):
+            if self.collection and ob.name not in self.collection.objects:
+                self.collection.objects.link(ob)
             self.addCollision(ob)
 
 #-------------------------------------------------------------
@@ -57,7 +70,6 @@ class DAZ_OT_MakeDForce(DazPropsOperator, Collision, Cloth):
 
     def draw(self, context):
         self.drawCloth(context, self.layout)
-        self.drawCollision(context, self.layout)
 
     def run(self, context):
         rig = context.object
