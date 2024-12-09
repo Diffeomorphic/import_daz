@@ -155,14 +155,14 @@ class Cloth:
             self.collection = bpy.data.collections.get("Cloth Collision")
             if self.collection:
                 return
-            coll = bpy.data.collections.new("Cloth Collision")
+            self.collection = bpy.data.collections.new("Cloth Collision")
             rig = ob.parent
             rigcoll = getCollection(context, rig)
-            rigcoll.children.link(coll)
+            rigcoll.children.link(self.collection)
             for child in getMeshChildren(rig):
                 if (child.get("DazCollision", False) and
                     not child.get("DazCloth", False)):
-                    coll.objects.link(child)
+                    self.collection.objects.link(child)
         else:
             self.collection = bpy.data.collections.get(self.collision)
             for ob in self.collection.objects:
