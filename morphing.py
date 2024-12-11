@@ -1807,6 +1807,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
                 if not self.ignoreUrl:
                     print("Fingerprint mismatch:\n%s != %s" % (finger, ustruct["finger_print"]))
                 return
+
         useSuffix = self.onMorphSuffix
         self.onMorphSuffix = 'NONE'
         for morphset in MS.Standards:
@@ -1821,6 +1822,47 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
                 rig.DazCustomMorphs = True
                 self.adjuster = "Adjust %s" % key
                 self.loadMorphSet(context, key, ustruct, "Custom", key[7:], True)
+
+        threshold = ustruct.get("override_vertex_groups", 0)
+        if threshold > 0 and ob.data.DazGraftGroup:
+            self.fixVertexGroups(context, ob, rig, threshold)
+
+
+    def fixVertexGroups(self, context, ob, rig, threshold):
+        def removeDrivers(rna, bnames):
+            if rna.animation_data:
+                for fcu in list(rna.animation_data.drivers):
+                    bname,channel = getBoneChannel(fcu)
+                    if bname and bname in bnames:
+                        rna.animation_data.drivers.remove(fcu)
+                    else:
+                        prop = getProp(fcu.data_path)
+                        bname = prop.split(":",1)[0]
+                        if bname in bnames:
+                            rna.animation_data.drivers.remove(fcu)
+
+        from .transfer import transferVertexGroups
+        nverts = ob.data.DazVertexCount
+        children = getMeshChildren(rig)
+        hums = [mesh for mesh in children if len(mesh.data.vertices) == nverts]
+        if hums:
+            print("Update vertex groups: %s" % ob.name)
+            vgnames = [vgrp.name for vgrp in ob.vertex_groups]
+            transferVertexGroups(context, hums[0], [ob], threshold)
+            used = []
+            for mesh in children:
+                used += [vgrp.name for vgrp in mesh.vertex_groups]
+            used = set(used)
+            bnames = [vgname for vgname in vgnames if vgname not in used]
+            bnames += [drvBone(bname) for bname in bnames]
+            if bnames and activateObject(context, rig):
+                removeDrivers(rig, bnames)
+                removeDrivers(rig.data, bnames)
+                setMode('EDIT')
+                for eb in list(rig.data.edit_bones):
+                    if eb.name in bnames:
+                        rig.data.edit_bones.remove(eb)
+                setMode('OBJECT')
 
 
     def loadMorphSet(self, context, key, ustruct, morphset, cat, hide):
