@@ -191,6 +191,20 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                         mats.append(mat)
             return mats
 
+        def getExistingShells(ob, existing):
+            from ..matsel import isShellNode
+            for mat in ob.data.materials:
+                if mat and mat.node_tree:
+                    for node in mat.node_tree.nodes:
+                        if isShellNode(node):
+                            key = node.node_tree.name
+                            string = "_%s" % mat.name
+                            n = len(string)
+                            print("KK", key, string, n, key[:-n])
+                            if key[-n:] == string:
+                                key = key[:-n]
+                            existing[key] = node
+
         def setupShells(main):
             def setupShell(inst):
                 mnames = []
@@ -208,13 +222,14 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                                 invis.append(mname)
                 return mnames, invis
 
-            shells = {}
-            defaults = {}
-            for asset,inst in main.nodes:
+            def addShell(asset, inst, shells, defaults):
                 if asset.type == "node":
                     for extra in inst.extra:
                         type = extra.get("type")
                         if type == "studio/node/shell":
+                            if asset.name in self.existing.keys():
+                                print("SKIP", asset.name, self.existing.keys())
+                                return
                             mnames,invis = setupShell(inst)
                             if mnames:
                                 defaults[asset.url] = (mnames, invis)
@@ -224,11 +239,20 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                                 for geonode in inst.geometries:
                                     shells[geonode.id] = (inst.label, mnames, invis)
                             print("Shell: %s %d %d\nURL: %s" % (inst.label, len(mnames), len(invis), asset.url))
+
+            shells = {}
+            defaults = {}
+            for asset,inst in main.nodes:
+                addShell(asset, inst, shells, defaults)
             return shells
 
         global theImages
         theImages = { "sRGB" : {}, "Non-Color" : {}}
         meshes = getSelectedMeshes(context)
+        self.existing = {}
+        for ob in meshes:
+            getExistingShells(ob, self.existing)
+        print("SS", self.existing.keys())
 
         GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
