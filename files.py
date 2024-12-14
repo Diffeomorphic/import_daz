@@ -114,6 +114,10 @@ class FileAsset(Asset):
                         asset.update(mstruct)
                         self.materials.append(asset)
 
+            if LS.useUV and "uvs" in scene.keys():
+                for ustruct in scene["uvs"]:
+                    self.addNewAsset(ustruct)
+
             if LS.useModifiers and "modifiers" in scene.keys():
                 for mstruct in scene["modifiers"]:
                     asset = self.parseUrlAsset(mstruct)

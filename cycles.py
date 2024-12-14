@@ -560,6 +560,13 @@ class CyclesTree(Tree):
 
 
     def addUvNode(self, uvname):
+        geonode = self.owner.geometry
+        if geonode:
+            geo = geonode.data
+            if uvname not in geo.uv_sets.keys():
+                print("FIND", uvname, geo)
+                uvset = geo.findUvSet(uvname, geo.id)
+                print("FOU", uvset)
         if self.owner.uvNodeType == 'ATTRIBUTE':
             node = self.addNode("ShaderNodeAttribute")
             node.attribute_type == 'OBJECT'

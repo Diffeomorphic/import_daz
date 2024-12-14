@@ -1158,7 +1158,7 @@ class Geometry(Asset, Channels):
     def findUvSet(self, uv, url):
         from .asset import normalizeRef
         from .fileutils import findPathRecursive
-        folder = os.path.dirname(url)
+        folder = os.path.dirname(unquote(url))
         filepath = findPathRecursive(uv, folder, ["UV Sets/"])
         if filepath:
             relpath = GS.getRelativePath(filepath)

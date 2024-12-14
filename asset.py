@@ -154,6 +154,13 @@ class Accessor:
                 print("  ", asset)
                 LS.assets[ref2] = asset
 
+
+    def addNewAsset(self, struct):
+        asset = self.parseUrlAsset(struct)
+        if asset:
+            ref = normalizeRef("%s#%s" % (asset.fileref, struct["id"]))
+            LS.assets[ref] = asset
+
 #-------------------------------------------------------------
 #   Asset base class
 #-------------------------------------------------------------
