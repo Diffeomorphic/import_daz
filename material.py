@@ -1004,6 +1004,7 @@ class LocalTextureSaver(HiddenTextureUser):
         else:
             self.subdir = "/textures"
         self.texpath = "%s%s" % (folder, self.subdir)
+        self.basepath = "%s/textures" % folder
         print('Save textures to "%s"' % self.texpath)
         if not os.path.exists(self.texpath):
             os.makedirs(self.texpath)
@@ -1019,7 +1020,7 @@ class LocalTextureSaver(HiddenTextureUser):
             ob.DazLocalTextures = True
 
         for src,img in self.images:
-            if src.startswith(self.texpath):
+            if src.startswith(self.basepath):
                 print("Already local: %s" % src)
                 continue
             file = bpy.path.basename(src)

@@ -200,7 +200,6 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                             key = node.node_tree.name
                             string = "_%s" % mat.name
                             n = len(string)
-                            print("KK", key, string, n, key[:-n])
                             if key[-n:] == string:
                                 key = key[:-n]
                             existing[key] = node
@@ -228,7 +227,6 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
                         type = extra.get("type")
                         if type == "studio/node/shell":
                             if asset.name in self.existing.keys():
-                                print("SKIP", asset.name, self.existing.keys())
                                 return
                             mnames,invis = setupShell(inst)
                             if mnames:
@@ -252,7 +250,6 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
         self.existing = {}
         for ob in meshes:
             getExistingShells(ob, self.existing)
-        print("SS", self.existing.keys())
 
         GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])

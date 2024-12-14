@@ -288,7 +288,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         hairrig.parent_bone = self.headName
         hairrig.show_in_front = True
         for coll in bpy.data.collections:
-            if rig.name in coll.objects:
+            if hairname in coll.objects:
                 coll.objects.link(hairrig)
         activateObject(context, rig)
         setMode('EDIT')
