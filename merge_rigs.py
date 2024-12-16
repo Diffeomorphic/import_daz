@@ -272,6 +272,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             enableRigNumLayer(rig, T_CUSTOM)
 
         from .driver import copyProp, retargetDrivers
+        from .morphing import copyCategories
         def copyProps(src, trg, ovr):
             for prop,value in src.items():
                 if prop[0:3] != "Daz":
@@ -289,6 +290,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
                 copyProps(subrig, rig, True)
                 copyProps(subrig.data, rig.data, False)
+                copyCategories(subrig, rig)
                 assoc = dict([(bname, getDupName(subrig, bname)) for bname in dups.keys()])
                 self.copyAssocDrivers(subrig.data, rig.data, subrig, rig, assoc)
                 self.copyAssocDrivers(subrig, rig, subrig, rig, assoc)

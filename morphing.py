@@ -1510,6 +1510,23 @@ def addToCategories(ob, props, labels, category):
             morph.text = label
             setBoolProp(morph, "active", True, True)
 
+
+def copyCategories(src, trg):
+    from .driver import setBoolProp
+    for srccat in src.DazMorphCats:
+        trg.DazCustomMorphs = True
+        trgcat = trg.DazMorphCats.get(srccat.name)
+        if trgcat is None:
+            trgcat = trg.DazMorphCats.add()
+            trgcat.name = srccat.name
+            setBoolProp(trgcat, "active", True, True)
+        for srcmorph in srccat.morphs:
+            if srcmorph.name not in trgcat.morphs.keys():
+                trgmorph = trgcat.morphs.add()
+                trgmorph.name = srcmorph.name
+                trgmorph.text = srcmorph.text
+                setBoolProp(trgmorph, "active", True, True)
+
 #------------------------------------------------------------------------
 #   PropDrivers
 #------------------------------------------------------------------------
