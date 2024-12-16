@@ -152,10 +152,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
-    def __init__(self):
-        ConstraintStore.__init__(self)
-        Fixer.__init__(self)
-
     def draw(self, context):
         self.layout.prop(self, "usePoleTargets")
         if self.usePoleTargets:
@@ -221,6 +217,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if not self.checkMhxEnabled(rig):
             msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
             raise DazError(msg)
+        self.initFixer()
         startProgress("Convert %s to MHX" % rig.name)
         t1 = perf_counter()
         self.createTmp()

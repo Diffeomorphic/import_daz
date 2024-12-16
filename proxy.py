@@ -133,7 +133,7 @@ def findPolys(context):
 
 class Proxifier(DriverUser):
     def __init__(self, ob):
-        DriverUser.__init__(self)
+        self.initTmp()
         self.object = ob
         self.nfaces = len(ob.data.polygons)
         self.nverts = len(ob.data.vertices)

@@ -71,8 +71,8 @@ class Fixer(DriverUser):
         self.layout.prop(self, "driverRotationMode")
 
 
-    def __init__(self):
-        DriverUser.__init__(self)
+    def initFixer(self):
+        self.initTmp()
         self.messages = []
         self.renamedBones = {}
 

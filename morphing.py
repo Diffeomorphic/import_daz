@@ -514,7 +514,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
         default = True)
 
-    def __init__(self, useMakePosable=None):
+    def initMorphLoader(self, useMakePosable=None):
         LoadMorph.__init__(self)
         if useMakePosable is not None:
             self.useMakePosable = useMakePosable
@@ -787,6 +787,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
 
 
     def run(self, context):
+        self.initMorphLoader()
         if self.rig is None and not self.meshes:
             self.setupCharacter(context)
         MP.setupMorphPaths(False)
@@ -1356,6 +1357,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
+        self.initMorphLoader()
         ob = context.object
         if not self.setupCharacter(context):
             return
@@ -1622,6 +1624,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
 
 
     def run(self, context):
+        self.initMorphLoader()
         self.findIked()
         self.errors = {}
         self.faceshapes = {}
@@ -1774,6 +1777,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
+        self.initMorphLoader()
         filepath = ensureExt(self.filepath, ".json")
         struct = JL.load(filepath)
         if ("filetype" not in struct.keys() or

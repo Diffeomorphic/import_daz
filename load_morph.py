@@ -42,7 +42,7 @@ class LoadMorph(DriverUser):
     useMakePosable = False
 
     def __init__(self):
-        DriverUser.__init__(self)
+        self.initTmp()
         self.rig = None
         self.obj = None
         self.amt = None
@@ -111,7 +111,7 @@ class LoadMorph(DriverUser):
         pass
 
     def initAll(self):
-        DriverUser.__init__(self)
+        self.initTmp()
         self.alias = {}
         self.loaded = []
         self.referred = {}

@@ -122,8 +122,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
 
-    def __init__(self):
-        DriverUser.__init__(self)
 
     def run(self, context):
         def findSelectedRoots(objects):
@@ -135,6 +133,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     roots += findSelectedRoots(ob.children)
             return roots
 
+        self.initTmp()
         root = context.object
         roots = [ob for ob in context.view_layer.objects if ob.parent is None]
         if self.useOnlySelected:

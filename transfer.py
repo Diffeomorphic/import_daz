@@ -229,6 +229,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         src = context.object
         if not src.data.shape_keys:
             raise DazError("Cannot transfer because object    \n%s has no shapekeys   " % (src.name))
+        self.initTmp()
         self.eps = 0.02*GS.scale    # 0.2 mm
         if not self.useDrivers:
             self.useStrength = False

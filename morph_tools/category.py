@@ -591,6 +591,7 @@ class RemoveAll(MorphRemover):
 
 
     def run(self, context):
+        self.initTmp()
         self.targets = {}
         meshes = getSelectedMeshes(context)
         rigs = getSelectedArmatures(context)

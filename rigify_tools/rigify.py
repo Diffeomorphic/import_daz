@@ -1350,9 +1350,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
-    def __init__(self):
-        Fixer.__init__(self)
-        ConstraintStore.__init__(self)
 
     def draw(self, context):
         MetaMaker.draw(self, context)
@@ -1379,6 +1376,8 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
 
 
     def run(self, context):
+        self.initFixer()
+        ConstraintStore.__init__(self)
         t1 = perf_counter()
         print("Modifying DAZ rig to Rigify")
         rig,meta,dazrig = self.createMeta(context)
@@ -1399,16 +1398,14 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists, Constrai
         MetaMaker.draw(self, context)
         self.drawMeta()
 
-    def __init__(self):
-        Fixer.__init__(self)
-        ConstraintStore.__init__(self)
-
     @classmethod
     def poll(self, context):
         ob = context.object
         return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
     def run(self, context):
+        self.initFixer()
+        ConstraintStore.__init__(self)
         rig,meta,dazrig = self.createMeta(context)
         meta.data["DazOrigRig"] = rig.name
         if dazrig:
@@ -1424,10 +1421,6 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
 
     useDeleteMeta = False
 
-    def __init__(self):
-        Fixer.__init__(self)
-        ConstraintStore.__init__(self)
-
     def draw(self, context):
         self.drawRigify()
 
@@ -1437,6 +1430,8 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
         return (rig and rig.get("DazMetaRig"))
 
     def run(self, context):
+        self.initFixer()
+        ConstraintStore.__init__(self)
         meta = context.object
         rig = None
         self.rigname = meta.data.get("DazOrigRig")

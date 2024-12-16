@@ -401,6 +401,7 @@ class ExtraBones(DriverUser):
         if not self.checkAllowed(rig):
             return
         t1 = perf_counter()
+        self.initTmp()
         oldvis = getRigLayers(rig)
         enableAllRigLayers(rig)
         success = False

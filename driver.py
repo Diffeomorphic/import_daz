@@ -12,7 +12,7 @@ from .utils import *
 #-------------------------------------------------------------
 
 class DriverUser:
-    def __init__(self):
+    def initTmp(self):
         self.tmp = None
 
     def createTmp(self):

@@ -53,12 +53,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.drawUVLayer(box)
 
 
-    def __init__(self):
-        DriverUser.__init__(self)
-
     def run(self, context):
         from .merge_rigs import safeTransformApply
         from .finger import isGenesis
+        self.initTmp()
         safeTransformApply()
         hum = context.object
         selected_meshes = getSelectedMeshes(context)
