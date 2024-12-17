@@ -855,8 +855,13 @@ class Rigifier(RigifyCommon):
         activateObject(context, gen)
         self.bendTwistNames = {}
         self.spineBones["pelvis"] = ("spine", None)
-        if not dazrig:
-            self.changeVertexGroups(context, rig, meta, gen)
+        print("  Change vertex groups")
+        for ob in self.meshes:
+            if dazrig:
+                self.changeAllTargets(ob, rig, dazrig)
+            else:
+                self.changeVertexGroups(ob, rig, meta, gen)
+                self.changeAllTargets(ob, rig, gen)
 
         # Fix drivers
         print("  Fix drivers")
@@ -1085,34 +1090,30 @@ class Rigifier(RigifyCommon):
                 fcu.data_path = '%s"%s"%s' % (words[0], self.bendTwistNames[words[1]], words[2])
 
 
-    def changeVertexGroups(self, context, rig, meta, gen):
-        print("  Change vertex groups")
-        for ob in self.meshes:
-            if ob.parent == gen and ob.parent_type == 'BONE':
-                continue
-            ob.parent = gen
-            for dname in self.spineBones.keys():
-                rname,_pname = self.spineBones[dname]
+    def changeVertexGroups(self, ob, rig, meta, gen):
+        if ob.parent == gen and ob.parent_type == 'BONE':
+            return
+        ob.parent = gen
+        for dname in self.spineBones.keys():
+            rname,_pname = self.spineBones[dname]
+            if dname in ob.vertex_groups.keys():
+                vgrp = ob.vertex_groups[dname]
+                vgrp.name = "DEF-%s" % rname
+
+        for rname,dname in self.rigifySkel.items():
+            if str(dname[1:]) in self.limbs.keys():
+                self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
+            elif isinstance(dname, str):
                 if dname in ob.vertex_groups.keys():
                     vgrp = ob.vertex_groups[dname]
                     vgrp.name = "DEF-%s" % rname
+            else:
+                self.mergeVertexGroups(rname, dname[1], ob)
 
-            for rname,dname in self.rigifySkel.items():
-                if str(dname[1:]) in self.limbs.keys():
-                    self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
-                elif isinstance(dname, str):
-                    if dname in ob.vertex_groups.keys():
-                        vgrp = ob.vertex_groups[dname]
-                        vgrp.name = "DEF-%s" % rname
-                else:
-                    self.mergeVertexGroups(rname, dname[1], ob)
-
-            for dname,rname in self.extras.items():
-                if dname in ob.vertex_groups.keys():
-                    vgrp = ob.vertex_groups[dname]
-                    vgrp.name = rname
-
-            self.changeAllTargets(ob, rig, gen)
+        for dname,rname in self.extras.items():
+            if dname in ob.vertex_groups.keys():
+                vgrp = ob.vertex_groups[dname]
+                vgrp.name = rname
 
 
     def changeAllTargets(self, ob, rig, newrig):
