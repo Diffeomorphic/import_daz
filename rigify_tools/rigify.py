@@ -11,7 +11,6 @@ from ..error import *
 from ..utils import *
 from .layers import *
 from ..fileutils import DF
-from ..store import ConstraintStore
 from ..fix import Fixer, GizmoUser, BendTwists
 from ..bone_data import BD
 
@@ -30,6 +29,7 @@ def setupRigifyData(meta):
 
 class DazBone:
     def __init__(self, eb):
+        from ..store import ConstraintStore
         self.name = eb.name
         self.head = eb.head.copy()
         self.tail = eb.tail.copy()
@@ -188,7 +188,7 @@ class MetaMaker(RigifyCommon):
         for bname in ["lEye", "rEye", "l_eye", "r_eye"]:
             pb = rig.pose.bones.get(bname)
             if pb:
-                self.storeConstraints(bname, pb)
+                self.store.storeConstraints(bname, pb)
 
         # Create metarig
         setMode('OBJECT')
@@ -1333,7 +1333,7 @@ class Rigifier(RigifyCommon):
 #  Buttons
 #-------------------------------------------------------------
 
-class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, GizmoUser, BendTwists, ConstraintStore):
+class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, GizmoUser, BendTwists):
     bl_idname = "daz.convert_to_rigify"
     bl_label = "Convert To Rigify"
     bl_description = "Convert active rig to rigify"
@@ -1377,7 +1377,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
 
     def run(self, context):
         self.initFixer()
-        ConstraintStore.__init__(self)
         t1 = perf_counter()
         print("Modifying DAZ rig to Rigify")
         rig,meta,dazrig = self.createMeta(context)
@@ -1388,7 +1387,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
         self.printMessages()
 
 
-class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists, ConstraintStore):
+class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists):
     bl_idname = "daz.create_meta"
     bl_label = "Create Metarig"
     bl_description = "Create a metarig from the active rig"
@@ -1405,7 +1404,6 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists, Constrai
 
     def run(self, context):
         self.initFixer()
-        ConstraintStore.__init__(self)
         rig,meta,dazrig = self.createMeta(context)
         meta.data["DazOrigRig"] = rig.name
         if dazrig:
@@ -1413,7 +1411,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists, Constrai
         self.printMessages()
 
 
-class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwists, ConstraintStore):
+class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwists):
     bl_idname = "daz.rigify_meta"
     bl_label = "Rigify Metarig"
     bl_description = "Convert metarig to rigify"
@@ -1431,7 +1429,6 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
 
     def run(self, context):
         self.initFixer()
-        ConstraintStore.__init__(self)
         meta = context.object
         rig = None
         self.rigname = meta.data.get("DazOrigRig")

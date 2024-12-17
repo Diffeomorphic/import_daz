@@ -765,9 +765,6 @@ class ActionOptions:
 class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOptions):
     lockMeshes = False
 
-    def __init__(self):
-        pass
-
     def draw(self, context):
         if self.isFigure:
             self.drawFigure(context)

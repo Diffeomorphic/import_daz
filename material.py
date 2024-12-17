@@ -1606,10 +1606,9 @@ class ChangeResolution(HiddenTextureUser):
         description = "Resize all textures of the selected meshes",
         default = True)
 
-    def __init__(self):
+    def initResolution(self):
         self.filenames = []
         self.images = {}
-
 
     def getFileNames(self, paths):
         for path in paths:
@@ -1851,6 +1850,7 @@ class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
         return {'RUNNING_MODAL'}
 
     def run(self, context):
+        self.initResolution()
         self.overwrite = False
         paths = self.getAllTextures(context, True)
         self.getFileNames(paths.keys())
@@ -1878,6 +1878,7 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
         return MultiFile.invoke(self, context, event)
 
     def run(self, context):
+        self.initResolution()
         if self.resizeAll:
             paths = self.getAllTextures(context, False)
         else:

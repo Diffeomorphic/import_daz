@@ -72,9 +72,11 @@ class Fixer(DriverUser):
 
 
     def initFixer(self):
+        from .store import ConstraintStore
         self.initTmp()
         self.messages = []
         self.renamedBones = {}
+        self.store = ConstraintStore()
 
 
     def makeRealParents(self, context, rig):
@@ -470,8 +472,8 @@ class Fixer(DriverUser):
 
     def addGazeConstraint(self, rig, suffix):
         def constraintExists(pb, drv):
-            if pb.name in self.constraints.keys():
-                for struct in self.constraints[pb.name]:
+            if pb.name in self.store.constraints.keys():
+                for struct in self.store.constraints[pb.name]:
                     if (struct["type"] == 'COPY_ROTATION' and
                         struct["subtarget"] == drv.name):
                         return True

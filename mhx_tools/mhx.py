@@ -10,7 +10,6 @@ from ..error import *
 from ..utils import *
 from ..propgroups import DazPairGroup
 from ..driver import addDriver
-from ..store import ConstraintStore
 from ..fix import BendTwists, Fixer, GizmoUser
 from ..bone_data import BD
 from ..rig_utils import *
@@ -70,7 +69,7 @@ def applyBoneChildren(context, rig):
 #   Convert to MHX button
 #-------------------------------------------------------------
 
-class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, GizmoUser):
+class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     bl_idname = "daz.convert_to_mhx"
     bl_label = "Convert To MHX"
     bl_description = "Convert rig to MHX"
@@ -217,9 +216,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         if not self.checkMhxEnabled(rig):
             msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
             raise DazError(msg)
-        self.initFixer()
         startProgress("Convert %s to MHX" % rig.name)
         t1 = perf_counter()
+        self.initFixer()
         self.createTmp()
         try:
             self.convertMhx(context)
@@ -242,7 +241,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             nrig = self.saveDazRig(context)
         else:
             nrig = None
-        self.storeAllDrivers(rig, nrig, self.meshes)
+        self.store.storeAllDrivers(rig, nrig, self.meshes)
         finalizeArmature(rig)
         clearBoneCollections(rig, [T_BONES, T_HIDDEN])
         enableAllRigLayers(rig, False)
@@ -261,7 +260,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.bendTwistGenesis = []
         bendTwistBones = list(MHX.BendTwistBones)
         bendTwistChildren = {}
-        self.constraints = {}
         enableAllRigLayers(rig)
         bonechildren = applyBoneChildren(context, rig)
         for pb in rig.pose.bones:
@@ -271,7 +269,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             self.bendTwistGenesis = MHX.BendTwistGenesis38
             for pb in rig.pose.bones:
                 if pb.name.endswith(("Bend", "Twist")):
-                    self.storeConstraints(pb.name, pb)
+                    self.store.storeConstraints(pb.name, pb)
             showProgress(2, 25, "  Connect to parent")
             connectToParent(rig, connectAll=False)
             showProgress(3, 25, "  Delete bend-twist bones")
@@ -313,7 +311,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         showProgress(7, 25, "  Fix hands")
         self.fixHands(rig)
         showProgress(8, 25, "  Store all constraints")
-        self.storeAllConstraints(rig)
+        self.store.storeAllConstraints(rig)
         if useBendTwist:
             showProgress(9, 25, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones, bendTwistChildren)
@@ -350,7 +348,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
         self.restoreFixConstraints(context, rig)
         showProgress(21, 25, "  Fix constraints")
         deletes = self.fixConstraints(rig)
-        self.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
+        self.store.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
         self.fixBendTwistDrivers(rig)
         self.fixBendTwistDrivers(rig.data)
@@ -535,11 +533,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
                 continue
             pb = rig.pose.bones[bendname]
             rotmodes[bname] = pb.DazRotMode
-            self.storeConstraints(bname, pb)
-            self.removeConstraints(pb)
+            self.store.storeConstraints(bname, pb)
+            self.store.removeConstraints(pb)
             self.deleteBoneDrivers(rig, bendname)
             pb = rig.pose.bones[twistname]
-            self.removeConstraints(pb)
+            self.store.removeConstraints(pb)
             self.deleteBoneDrivers(rig, twistname)
 
         setMode('EDIT')
@@ -1416,22 +1414,22 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, ConstraintStore, BendTwists, Fixer, 
             ignore += self.tongueBones
         if self.useShaftWinder:
             ignore += self.getShaftBones(rig)
-        self.restoreAllConstraints(context, rig, ignore)
+        self.store.restoreAllConstraints(context, rig, ignore)
         if rig.DazRig not in ["genesis3", "genesis8"]:
             return
         for bname, bendname, twistnames in self.bendTwistGenesis:
-            clist = self.constraints.get(bendname, [])
+            clist = self.store.constraints.get(bendname, [])
             cinfo = getLimitRot(clist)
             if not cinfo:
                 continue
             twistname = twistnames[0]
-            clist1 = self.constraints.get(twistname, [])
+            clist1 = self.store.constraints.get(twistname, [])
             cinfo1 = getLimitRot(clist1)
             if cinfo1:
                 for key in ["use_limit_y", "min_y", "max_y"]:
                     cinfo[key] = cinfo1[key]
             pb = rig.pose.bones.get("%s.fk.%s" % (bname[:-2], bname[-1]))
-            self.restoreConstraint(cinfo, pb)
+            self.store.restoreConstraint(cinfo, pb)
 
     #-------------------------------------------------------------
     #   Toggle constraints

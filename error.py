@@ -55,7 +55,6 @@ def invokeErrorMessage(value, warning=False, useDialog=False):
 
 
 class DazError(Exception):
-
     def __init__(self, value, warning=False, useDialog=False):
         invokeErrorMessage(value, warning, useDialog)
 
