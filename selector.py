@@ -7,7 +7,6 @@ import bpy
 
 from .error import *
 from .utils import *
-from .driver import isProtected
 
 #-------------------------------------------------------------
 #   Selector
@@ -425,21 +424,11 @@ def getActivateGroup(rig, key):
 class DAZ_OT_ActivateAll(DazOperator, Activator):
     bl_idname = "daz.activate_all"
     bl_label = "All"
-    bl_description = "Activate all unprotected morphs of this type"
+    bl_description = "Activate all morphs of this type"
     bl_options = {'UNDO'}
 
     def getActivate(self, ob, prop):
-        return (not isProtected(ob, prop))
-
-
-class DAZ_OT_ActivateProtected(DazOperator, Activator):
-    bl_idname = "daz.activate_protected"
-    bl_label = "Protected"
-    bl_description = "Activate all protected morphs of this type"
-    bl_options = {'UNDO'}
-
-    def getActivate(self, ob, prop):
-        return isProtected(ob, prop)
+        return True
 
 
 class DAZ_OT_DeactivateAll(DazOperator, Activator):
@@ -500,13 +489,6 @@ class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
     bl_description = "Set all selected morphs of specified type to given value.\nDoes not affect integer properties"
     bl_options = {'UNDO'}
 
-    value : FloatProperty(
-        name = "Value",
-        description = "Set all selected morphs to this value",
-        default = 1.0)
-
-    def draw(self, context):
-        self.layout.prop(self, "value")
 
     def run(self, context):
         scn = context.scene
@@ -515,17 +497,24 @@ class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
             updateRigDrivers(context, rig)
 
 
-class DAZ_OT_MultiplyMorphs(DazOperator, MorphGroup, IsMeshArmature):
+class DAZ_OT_MultiplyMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
     bl_idname = "daz.multiply_morphs"
     bl_label = "Multiply Morphs"
-    bl_description = "Multiply all selected morphs of specified type with the given value.\nDoes not affect integer properties"
+    bl_description = "Multiply all selected morphs of specified type with the given value"
     bl_options = {'UNDO'}
+
+    factor : FloatProperty(
+        name = "Factor",
+        description = "Multiply all selected morphs with this factor",
+        default = 1.0)
+
+    def draw(self, context):
+        self.layout.prop(self, "factor")
 
     def run(self, context):
         scn = context.scene
-        value = scn.morphFactor
         for rig in getRigsFromContext(context):
-            multiplyMorphs(value, rig, self, scn, scn.frame_current, False)
+            multiplyMorphs(self.factor, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
 
 
@@ -540,23 +529,23 @@ class DAZ_OT_ClearShapes(DazOperator, MorphGroup, IsMesh):
         setShapes(0.0, context.object, self, scn, scn.frame_current)
 
 
-class DAZ_OT_SetShapes(DazPropsOperator, MorphGroup, IsMesh):
-    bl_idname = "daz.set_shapes"
-    bl_label = "Set Shapes"
-    bl_description = "Set all selected shapekey values of specified type to given value.\nDoes not affect integer properties"
+class DAZ_OT_MultiplyShapes(DazPropsOperator, MorphGroup, IsMesh):
+    bl_idname = "daz.multiply_shapes"
+    bl_label = "Multiply Shapes"
+    bl_description = "Multiply all selected shapekey values of specified type with the given factor"
     bl_options = {'UNDO'}
 
-    value : FloatProperty(
-        name = "Value",
-        description = "Set all selected shapekeys to this value",
+    factor : FloatProperty(
+        name = "Factor",
+        description = "Multiply all selected shapekeys with this value",
         default = 1.0)
 
     def draw(self, context):
-        self.layout.prop(self, "value")
+        self.layout.prop(self, "factor")
 
     def run(self, context):
         scn = context.scene
-        setShapes(self.value, context.object, self, scn, scn.frame_current)
+        multiplyShapes(self.factor, context.object, self, scn, scn.frame_current)
 
 #------------------------------------------------------------------
 #   Add morphs to keyset
@@ -773,13 +762,11 @@ classes = [
     DAZ_OT_SelectNone,
 
     DAZ_OT_ActivateAll,
-    DAZ_OT_ActivateProtected,
     DAZ_OT_DeactivateAll,
     DAZ_OT_ClearMorphs,
-    DAZ_OT_SetMorphs,
     DAZ_OT_MultiplyMorphs,
     DAZ_OT_ClearShapes,
-    DAZ_OT_SetShapes,
+    DAZ_OT_MultiplyShapes,
     DAZ_OT_AddKeysets,
     DAZ_OT_KeyMorphs,
     DAZ_OT_UnkeyMorphs,

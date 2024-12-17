@@ -481,12 +481,6 @@ if bpy.app.version < (3,0,0):
         rna_ui = getRnaUi(rna)
         return rna_ui.get(prop, {})
 
-    def setProtected(rna, prop, on):
-        rna_ui = getRnaUi(rna)
-        struct = rna_ui.get(prop, {})
-        struct["description"] = ("***" if on else "")
-        rna_ui[prop] = struct
-
 else:
     def setPropMinMax(rna, prop, default, min, max, ovr, soft=None):
         if soft is None:
@@ -510,25 +504,6 @@ else:
             return ui.as_dict()
         except KeyError:
             return {}
-
-
-    def setProtected(rna, prop, on):
-        try:
-            ui = rna.id_properties_ui(prop)
-            desc = ("***" if on else "")
-            ui.update(description = desc)
-        except KeyError:
-            pass
-
-
-def isProtected(rna, prop):
-    if isinstance(rna, bpy.types.Object) and rna.type != 'ARMATURE':
-        return False
-    elif isinstance(rna[prop], float):
-        ui = getPropUi(rna, prop)
-        return (ui.get("description") == "***")
-    else:
-        return True
 
 #-------------------------------------------------------------
 #   Properties
@@ -580,7 +555,6 @@ def copyProp(prop, src, trg, ovr):
         setBoolProp(trg, prop, value, ovr)
     elif isinstance(value,str):
         trg[prop] = value
-    setProtected(trg, prop, isProtected(src, prop))
 
 
 def truncateProp(prop):

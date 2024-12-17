@@ -374,18 +374,12 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
     def preamble(self, layout, scn, rig):
         ftype = "Daz%s" % self.morphset
         self.activateLayout(layout, "", ftype, rig)
-        self.factorLayout(layout, "", scn, ftype, rig)
         self.keyLayout(layout, "", ftype, rig)
 
 
     def activateLayout(self, layout, category, ftype, rig):
-        split = layout.split(factor=0.25)
+        split = layout.split(factor=0.33)
         op = split.operator("daz.activate_all")
-        op.morphset = self.morphset
-        op.category = category
-        op.useMesh = self.useMesh
-        op.ftype = ftype
-        op = split.operator("daz.activate_protected")
         op.morphset = self.morphset
         op.category = category
         op.useMesh = self.useMesh
@@ -395,22 +389,13 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
         op.category = category
         op.useMesh = self.useMesh
         op.ftype = ftype
-        op = self.setMorphsBtn(split)
+        op = self.multiplyMorphsBtn(split)
         op.category = category
         op.ftype = ftype
 
 
-    def factorLayout(self, layout, category, scn, ftype, rig):
-        split = layout.split(factor=0.75)
-        split.prop(scn, "morphFactor")
-        op = split.operator("daz.multiply_morphs", icon='DOT', text="")
-        op.morphset = self.morphset
-        op.category = category
-        op.ftype = ftype
-
-
-    def setMorphsBtn(self, layout):
-        op = layout.operator("daz.set_morphs")
+    def multiplyMorphsBtn(self, layout):
+        op = layout.operator("daz.multiply_morphs", text="", icon='DOT')
         op.morphset = self.morphset
         return op
 
@@ -672,7 +657,6 @@ class CustomDrawItems:
             return
         ftype = self.getCatFtype(cat)
         self.activateLayout(box, cat.name, ftype, rig)
-        self.factorLayout(box, cat.name, scn, ftype, rig)
         self.keyLayout(box, cat.name, ftype, rig)
         uilist = self.getUIList(cat, scn)
         self.layout.template_list(uilist, "", cat, "morphs", cat, "index")
@@ -752,8 +736,8 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
     def getRna(self, ob):
         return ob.data.shape_keys
 
-    def setMorphsBtn(self, layout):
-        return layout.operator("daz.set_shapes")
+    def multiplyMorphsBtn(self, layout):
+        return layout.operator("daz.multiply_shapes", text="", icon='DOT')
 
     def getCatAdjuster(self, cat):
         return "Adjust Custom/%s" % cat.name

@@ -280,7 +280,7 @@ class Formula:
 #-------------------------------------------------------------
 
 def buildBakedMorph(inst, ref, value):
-    from .driver import removeModifiers, setProtected, addDriverVar
+    from .driver import removeModifiers, addDriverVar
     from .selector import setActivated
     rig = inst.getRig()
     if rig and value != 0:
@@ -293,7 +293,6 @@ def buildBakedMorph(inst, ref, value):
         rig.data[final] = value
         if GS.verbosity > 2 and not ES.easy:
             print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
-        setProtected(rig, raw, True)
         setActivated(rig, raw, False)
         item = rig.DazBaked.add()
         item.name = raw

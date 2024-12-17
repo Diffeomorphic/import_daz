@@ -25,7 +25,6 @@ class BakedMorphLoader(MorphLoader):
 
 
 def postloadMorphs(context, filepath):
-    from .driver import setProtected
     from .selector import setActivated
     from .node import Node, Instance
     from .modifier import FormulaAsset
@@ -63,7 +62,6 @@ def postloadMorphs(context, filepath):
             label,value = data
             if isinstance(value, (float, int)):
                 ob[prop] = value*factor
-                setProtected(ob, prop, True)
                 setActivated(ob, prop, False)
                 if prop not in ob.DazBaked.keys():
                     item = ob.DazBaked.add()

@@ -21,8 +21,6 @@ class DAZ_PT_Categories(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.join_categories")
         self.layout.operator("daz.remove_categories")
         self.layout.operator("daz.remove_standard_morphs")
-        self.layout.operator("daz.protect_categories")
-        self.layout.operator("daz.protect_morphs")
 
 
 class DAZ_PT_Shapekeys(DAZ_PT_SetupTab, bpy.types.Panel):

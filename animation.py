@@ -514,7 +514,7 @@ class MorphOptions(PosableMaker):
 
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
-        description = "Clear all unprotected morph properties before loading new ones",
+        description = "Clear all active morphs before loading new ones",
         default = False)
 
     useShapekeys : BoolProperty(
@@ -987,7 +987,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if master in rig.pose.bones.keys():
             return master
 
-
     #-------------------------------------------------------------
     #   Clear pose
     #-------------------------------------------------------------
@@ -1112,7 +1111,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def makeObjectFrame(self, bname, rig, bframe, tfm, n, offset):
-        master = self.getMasterBone(rig)
         if not self.affectObject:
             pass
         else:

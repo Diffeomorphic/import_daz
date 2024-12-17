@@ -35,7 +35,6 @@ class LoadMorph(DriverUser):
     onMorphSuffix = 'NONE'
     useSearchAlias = True
     onlyProperties = False
-    useProtected = False
     defaultMultiplier = 1.0
     useMulti = False
     disableErc = False
@@ -69,7 +68,7 @@ class LoadMorph(DriverUser):
         return None
 
 
-    def addToMorphSet(self, prop, asset, hidden, protected):
+    def addToMorphSet(self, prop, asset, hidden):
         return
 
 
@@ -502,7 +501,7 @@ class LoadMorph(DriverUser):
 
 
     def addNewProp(self, raw, asset=None, skey=None):
-        from .driver import setBoolProp, getPropMinMax, setProtected
+        from .driver import setBoolProp, getPropMinMax
         from .selector import setActivated
         from .modifier import Alias, FormulaAsset
         final = finalProp(raw)
@@ -545,10 +544,8 @@ class LoadMorph(DriverUser):
                 self.setFloatLimits(self.amt, final, asset, skey, False)
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset))
             if visible:
-                if self.useProtected:
-                    setProtected(self.obj, raw, True)
-                setActivated(self.obj, raw, (not self.useProtected))
-                self.addToMorphSet(raw, asset, False, self.useProtected)
+                setActivated(self.obj, raw, True)
+                self.addToMorphSet(raw, asset, False)
         return final
 
 
@@ -872,8 +869,6 @@ class LoadMorph(DriverUser):
         for fileref in self.loaded:
             self.referred[fileref] = False
         morphset = self.morphset
-        protected = self.useProtected
-        self.useProtected = False
         namepaths = []
         groupedpaths,morphfiles = self.setupMorphGroups()
         someMissing = False
@@ -900,7 +895,6 @@ class LoadMorph(DriverUser):
             if level < 5:
                 self.makeMissingMorphs(level+1)
         self.morphset = morphset
-        self.useProtected = protected
 
 
     def setupMorphGroups(self):
@@ -1208,7 +1202,7 @@ class LoadMorph(DriverUser):
 
 
     def ensureExists(self, raw, final, default):
-        from .driver import removeModifiers, setProtected
+        from .driver import removeModifiers
         from .selector import setActivated
         if self.obj is None:
             return
@@ -1423,7 +1417,7 @@ class LoadMorph(DriverUser):
                     string = "u+%s" % string
                 self.obj[raw] = 0.0
                 self.addPathVar(fcu, "u", self.obj, propRef(raw))
-                self.addToMorphSet(raw, None, True, self.useProtected)
+                self.addToMorphSet(raw, None, True)
         string = self.multiplyMults(fcu, string)
         if self.useAdjusters:
             adj = self.getAdjustProp()

@@ -16,7 +16,6 @@ from .selector import Selector
 from .fileutils import SingleFile, MultiFile, DazFile, JsonFile, ensureExt
 from .propgroups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup, DazBulgeGroup
 from .load_morph import LoadMorph
-from .driver import isProtected
 from .uilist import updateScrollbars
 
 #-------------------------------------------------------------
@@ -98,16 +97,15 @@ def clearAllMorphs(rig, frame, useInsertKeys):
     def getAllLowerMorphNames(rig):
         props = []
         for cat in rig.DazMorphCats:
-            props += [morph.name.lower() for morph in cat.morphs]
+            props += [morph.name.lower() for morph in cat.morphs if isActiveMorph(morph.name, rig)]
         for morphset in MS.Standards:
             pg = getattr(rig, "Daz"+morphset)
-            props += [prop.lower() for prop in pg.keys()]
+            props += [prop.lower() for prop in pg.keys() if isActiveMorph(prop, rig)]
         return [prop for prop in props if "jcm" not in prop]
 
     lprops = getAllLowerMorphNames(rig)
     for prop in rig.keys():
-        if (prop.lower() in lprops and
-            not isProtected(rig, prop)):
+        if prop.lower() in lprops:
             rig[prop] = 0.0
             if useInsertKeys:
                 rig.keyframe_insert(propRef(prop), frame=frame, group=prop)
@@ -122,14 +120,15 @@ def getMorphList(ob, morphset, sets=None):
     return mlist
 
 
-def getMorphsExternal(ob, morphset, category, activeOnly):
-    def isActiveKey(key, rig):
-        if rig:
-            return (key in rig.DazActivated.keys() and
-                    rig.DazActivated[key].active)
-        else:
-            return True
+def isActiveMorph(key, rig):
+    if rig:
+        return (key in rig.DazActivated.keys() and
+                rig.DazActivated[key].active)
+    else:
+        return True
 
+
+def getMorphsExternal(ob, morphset, category, activeOnly):
     if not isinstance(ob, bpy.types.Object):
         raise DazError("get_morphs: First argument must be a Blender object, but got '%s'" % ob)
     morphset = morphset.capitalize()
@@ -147,7 +146,7 @@ def getMorphsExternal(ob, morphset, category, activeOnly):
         #    raise DazError("JCM morphs are stored in the mesh object")
         for pg in pgs:
             for key in pg.keys():
-                if key in ob.keys() and isActiveKey(key, rig):
+                if key in ob.keys() and isActiveMorph(key, rig):
                     mdict[key] = ob[key]
     elif ob.type == 'MESH':
         if activeOnly:
@@ -159,7 +158,7 @@ def getMorphsExternal(ob, morphset, category, activeOnly):
             return mdict
         for pg in pgs:
             for key in pg.keys():
-                if key in skeys.key_blocks.keys() and isActiveKey(key, rig):
+                if key in skeys.key_blocks.keys() and isActiveMorph(key, rig):
                     mdict[key] = skeys.key_blocks[key].value
     return mdict
 
@@ -656,7 +655,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         return msg
 
 
-    def addToMorphSet(self, prop, asset, hidden, protected):
+    def addToMorphSet(self, prop, asset, hidden):
         from .modifier import getCanonicalKey
         pgs = self.findPropGroup(prop)
         if pgs is None:
@@ -682,7 +681,7 @@ class MorphLoader(LoadMorph, PosableMaker):
             label = getCanonicalKey(prop)
             visible = True
         n = len(self.category)
-        if self.hideable and (hidden or not visible) and not protected:
+        if self.hideable and (hidden or not visible):
             if self.stripPrefix and label.startswith(self.stripPrefix):
                 item.text = label[len(self.stripPrefix):]
             else:
@@ -1449,9 +1448,9 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         return nstruct
 
 
-    def addToMorphSet(self, prop, asset, hidden, protected):
+    def addToMorphSet(self, prop, asset, hidden):
         self.hideable = (self.morphset in MS.JCMs)
-        StandardMorphLoader.addToMorphSet(self, prop, asset, hidden, protected)
+        StandardMorphLoader.addToMorphSet(self, prop, asset, hidden)
 
 #------------------------------------------------------------------------
 #   Custom Morph Loader
@@ -1588,11 +1587,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         default = 'ERROR'
     )
 
-    useProtected : BoolProperty(
-        name = "Protect Morphs",
-        description = "Protect rig properties from being accidentally set",
-        default = False)
-
     onlyProperties : BoolProperty(
         name = "Only Properties",
         description = "Only load properties and property drivers",
@@ -1608,7 +1602,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         if self.bodypart == "Face":
             self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "onlyProperties")
-        self.layout.prop(self, "useProtected")
         self.layout.prop(self, "treatHD")
         PosableMaker.draw(self, context)
 

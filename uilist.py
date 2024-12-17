@@ -5,7 +5,6 @@
 import bpy
 from bpy.app.handlers import persistent
 from .utils import *
-from .driver import isProtected
 
 #----------------------------------------------------------
 #   Morphs UIList
@@ -19,10 +18,7 @@ def morphText(rig, morph, prefix):
     n = len(prefix)
     if label.lower()[0:n] == prefix:
         label = label[n:]
-    if isProtected(rig, morph.name):
-        return "* %s" % label
-    else:
-        return label
+    return label
 
 
 class DAZ_UL_MorphList(bpy.types.UIList):
