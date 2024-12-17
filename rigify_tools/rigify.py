@@ -242,6 +242,8 @@ class MetaMaker(RigifyCommon):
             else:
                 mergeVertexGroups(rig, mergers)
             self.renameBones(rig, RF.Genesis38Renames, dazrig)
+            for pb in rig.pose.bones:
+                self.store.restoreBendTwist(pb.name, pb)
         elif rig.DazRig == "genesis9":
             if dazrig:
                 pass
@@ -572,11 +574,6 @@ class MetaMaker(RigifyCommon):
 #-------------------------------------------------------------
 
 class Rigifier(RigifyCommon):
-    useImproveIk : BoolProperty(
-        name = "Improve IK",
-        description = "Improve IK by storing a bending angle.\nThis is compatible with daz poses but does not work with rigify poles so they can not be used.\nNot needed if Optimize Pose for IK is used",
-        default = False)
-
     def setupExtras(self, context, rig):
         def addRecursive(pb):
             if pb.name not in self.extras.keys():
@@ -900,6 +897,24 @@ class Rigifier(RigifyCommon):
                 self.fixIkBone(dname, rig, (rname0, suffix), gen)
         self.fixBoneDrivers(gen, rig, assoc)
         self.renameBendTwistDrivers(gen.data)
+
+        # Limit constraints
+        if self.useLimitConstraints:
+            from ..store import copyConstraint
+            def addLimits(pb, rname):
+                dname = self.rigifySkel.get(rname)
+                if isinstance(dname, str):
+                    db = rig.pose.bones.get(dname)
+                    if db:
+                        for cns in db.constraints:
+                            if cns.type.startswith("LIMIT"):
+                                copyConstraint(cns, pb, gen)
+
+            for pb in gen.pose.bones:
+                addLimits(pb, pb.name)
+                if pb.name[-5:-1] == "_fk.":
+                    rname = "%s.%s" % (pb.name[:-5], pb.name[-1])
+                    addLimits(pb, rname)
 
         # Unlock bend locks
         for rname in ["upper_arm", "forearm", "thigh"]:

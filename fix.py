@@ -30,7 +30,12 @@ class Fixer(DriverUser):
 
     useImproveIk : BoolProperty(
         name = "Improve IK",
-        description = "Improve IK by prebending IK bones",
+        description = "Improve IK by storing a bending angle.\nThis is compatible with daz poses but does not work with rigify poles so they can not be used.\nNot needed if Optimize Pose for IK is used",
+        default = False)
+
+    useLimitConstraints : BoolProperty(
+        name = "Limit Constraints",
+        description = "Copy limit location and limit rotation constraints to FK bones",
         default = True)
 
     useFingerIk : BoolProperty(
@@ -68,6 +73,7 @@ class Fixer(DriverUser):
     def drawRigify(self):
         self.layout.prop(self, "useTongueIk")
         self.layout.prop(self, "useImproveIk")
+        self.layout.prop(self, "useLimitConstraints")
         self.layout.prop(self, "driverRotationMode")
 
 
@@ -742,6 +748,7 @@ class BendTwists:
                 pb.driver_remove("location")
                 pb.driver_remove("rotation_euler")
                 pb.driver_remove("scale")
+                self.store.storeConstraints(pb.name, pb)
                 for cns in list(pb.constraints):
                     pb.constraints.remove(cns)
 

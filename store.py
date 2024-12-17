@@ -22,6 +22,8 @@ ConstraintAttributes = [
     "influence",
 ]
 
+YAttributes = ["use_y", "invert_y", "use_limit_y", "use_min_y", "use_max_y", "min_y", "max_y"]
+
 def copyConstraints(src, trg, rig=None):
     for scns in src.constraints:
         copyConstraint(scns, trg, rig)
@@ -106,6 +108,24 @@ class ConstraintStore:
             self.restoreConstraint(struct, pb, target)
 
 
+    def restoreBendTwist(self, bname, pb):
+        bname = bname.replace("ForeArm", "Forearm")
+        bendname = "%sBend" % bname
+        twistname = "%sTwist" % bname
+        cns = None
+        for struct in self.constraints.get(bendname, []):
+            if struct["type"] == 'LIMIT_ROTATION':
+                cns = self.restoreConstraint(struct, pb, None)
+        for struct in self.constraints.get(twistname, []):
+            if struct["type"] == 'LIMIT_ROTATION':
+                if cns:
+                    for attr,value in struct.items():
+                        if attr in YAttributes:
+                            setattr(cns, attr, value)
+                else:
+                    self.restoreConstraint(struct, pb, None)
+
+
     def restoreConstraint(self, struct, pb, target=None):
         ctype = struct["type"]
         cns = pb.constraints.new(ctype)
@@ -114,6 +134,7 @@ class ConstraintStore:
                 setattr(cns, attr, value)
         if target and hasattr(cns, "target"):
             cns.target = target
+        return cns
 
 
     def removeConstraints(self, pb, onlyLimit=False):
