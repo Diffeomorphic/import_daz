@@ -593,7 +593,8 @@ class MorphOptions(PosableMaker):
         hasLoaded = False
         for morphset in namepathTable.keys():
             if self.useLoadMissing:
-                mloader = StandardMorphLoader(self.useMakePosable)
+                mloader = StandardMorphLoader()
+                mloader.useMakePosable = self.useMakePosable
                 mloader.getFingeredRigMeshes(context)
                 mloader.morphset = morphset
                 mloader.category = ""
@@ -611,7 +612,8 @@ class MorphOptions(PosableMaker):
                     customs[cat] = []
                 customs[cat].append(namepath)
             for cat, namepaths in customs.items():
-                mloader = CustomMorphLoader(self.useMakePosable)
+                mloader = CustomMorphLoader()
+                mloader.useMakePosable = self.useMakePosable
                 rig.DazCustomMorphs = True
                 mloader.getFingeredRigMeshes(context)
                 mloader.morphset = "Custom"

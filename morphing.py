@@ -105,7 +105,8 @@ def clearAllMorphs(rig, frame, useInsertKeys):
 
     lprops = getAllLowerMorphNames(rig)
     for prop in rig.keys():
-        if prop.lower() in lprops:
+        if (prop.lower() in lprops and
+            isinstance(rig.get(prop, 0.0), float)):
             rig[prop] = 0.0
             if useInsertKeys:
                 rig.keyframe_insert(propRef(prop), frame=frame, group=prop)
@@ -513,10 +514,9 @@ class MorphLoader(LoadMorph, PosableMaker):
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
         default = True)
 
-    def initMorphLoader(self, useMakePosable=None):
-        LoadMorph.__init__(self)
-        if useMakePosable is not None:
-            self.useMakePosable = useMakePosable
+    def initMorphLoader(self):
+        #LoadMorph.__init__(self)
+        pass
 
     def draw(self, context):
         LoadMorph.draw(self, context)
