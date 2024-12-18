@@ -1319,12 +1319,12 @@ class Rigifier(RigifyCommon):
                 cns = copyTransform(pb, rb, gen, space='LOCAL')
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
             else:
-                cns = copyLocation(pb, rb, gen, space='WORLD')
-                cns.head_tail = 1.0
                 cns = copyRotation(pb, rb, gen, space='LOCAL')
                 cns.invert_x = False
                 cns.invert_y = True
                 cns.invert_z = True
+            cns = copyLocation(pb, rb, gen, space='POSE')
+            cns.head_tail = 1.0
         elif rname.startswith("DEF-toe"):
             if bpy.app.version >= (3,0,0):
                 cns = copyTransform(pb, rb, gen, space='LOCAL')
