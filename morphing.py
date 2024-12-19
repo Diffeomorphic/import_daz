@@ -515,8 +515,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         default = True)
 
     def initMorphLoader(self):
-        #LoadMorph.__init__(self)
-        pass
+        LoadMorph.__init__(self)
 
     def draw(self, context):
         LoadMorph.draw(self, context)
