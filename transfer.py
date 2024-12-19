@@ -36,33 +36,26 @@ class MatchOperator(DazPropsOperator):
         DazPropsOperator.restoreState(self, context)
 
 
-    def prepare(self, context, src):
+    def prepareBvhTree(self, context, src):
         updateScene(context)
-        ob = self.trihuman = None
+        self.bvhtree = None
         if (self.transferMethod in ['NEAREST', 'SELECTED']):
-            ob = bpy.data.objects.new("_TRIHUMAN", src.data.copy())
-            context.scene.collection.objects.link(ob)
-            activateObject(context, ob)
+            from mathutils.bvhtree import BVHTree
+            activateObject(context, src)
             setMode('EDIT')
             bpy.ops.mesh.reveal()
-            if self.transferMethod == 'SELECTED':
-                from .tables import getVertFaces
-                _,vertFaces = getVertFaces(ob)
-                bpy.ops.mesh.select_all(action='DESELECT')
-                setMode('OBJECT')
-                for v in src.data.vertices:
-                    if v.select:
-                        ob.data.vertices[v.index].select = True
-                        for fn in vertFaces[v.index]:
-                            ob.data.polygons[fn].select = True
-                setMode('EDIT')
-                bpy.ops.mesh.select_all(action='INVERT')
-                bpy.ops.mesh.delete(type='VERT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
             setMode('OBJECT')
-            self.trihuman = ob
-        return ob
+            me = src.data
+            verts = [tuple(v.co) for v in me.vertices]
+            faces1 = [tuple(f.vertices[0:4]) for f in me.polygons]
+            tris1 = [f[0:3] for f in faces1]
+            faces2 = [f for f in faces1 if len(f) == 4]
+            tris2 = [(v0,v2,v3) for v0,v1,v2,v3 in faces2]
+            tris = tris1 + tris2
+            self.bvhtree = BVHTree.FromPolygons(verts, tris, all_triangles=True)
+            self.verts = np.array(verts)
+            self.tris = np.array(tris, dtype=np.uint32)
+            print("BVH created")
 
 
     def getTargets(self, src, context):
@@ -86,23 +79,17 @@ class MatchOperator(DazPropsOperator):
         return objects
 
 
-    def findTriangles(self, ob):
-        self.verts = np.array([list(v.co) for v in ob.data.vertices])
-        tris = [f.vertices for f in ob.data.polygons]
-        self.tris = np.array(tris, dtype=np.uint32)
-
-
-    def findMatchNearest(self, src, trg):
+    def findMatchNearest(self, bvh, trg):
         if self.projection is None:
-            closest = [(v.co, src.closest_point_on_mesh(v.co))
+            closest = [(v.co, bvh.find_nearest(v.co))
                 for v in trg.data.vertices]
         else:
-            closest = [(v.co, src.closest_point_on_mesh(v.co + Vector(self.projection[v.index])))
+            closest = [(v.co, bvh.find_nearest(v.co + Vector(self.projection[v.index])))
                 for v in trg.data.vertices]
-        # (result, location, normal, index)
+        # (position, normal, index, distance)
         cverts = np.array([list(x) for x,data in closest if data[0]])
-        offsets = np.array([list(x-data[1]) for x,data in closest if data[0]])
-        fnums = [data[3] for x,data in closest if data[0]]
+        offsets = np.array([list(x-data[0]) for x,data in closest if data[0]])
+        fnums = [data[2] for x,data in closest if data[0]]
         tris = self.tris[fnums]
         tverts = self.verts[tris]
         A = np.transpose(tverts, axes=(0,2,1))
@@ -169,7 +156,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
     transferMethod : EnumProperty(
         items = [('NEAREST', "Nearest Face", "Transfer shapekeys from nearest source face.\nUse to transfer shapekeys to clothes"),
-                 ('SELECTED', "Selected", "One transfer shapekeys from selected vertices"),
+                 #('SELECTED', "Selected", "One transfer shapekeys from selected vertices"),
                  ('BY_NUMBER', "By Number", "Transfer shapekeys by vertex number.\nBoth meshes must have the same number of vertices"),
                  ('BODY', "Body", "Only transfer vertices as long as they match exactly.\nUse to transfer shapekeys from body to merged mesh"),
                  ('GEOGRAFT', "Geograft", "Transfer shapekeys to nearest target vertex.\nUse to transfer shapekeys from geograft to merged mesh"),
@@ -234,14 +221,12 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         if not self.useDrivers:
             self.useStrength = False
         targets = self.getTargets(src, context)
-        ob = self.prepare(context, src)
+        self.prepareBvhTree(context, src)
         self.createTmp()
         try:
             failed = self.transferAllMorphs(context, src, targets)
         finally:
             self.deleteTmp()
-            if ob:
-                deleteObjects(context, [ob])
         t2 = perf_counter()
         print("Morphs transferred in %.1f seconds" % (t2-t1))
         if failed:
@@ -258,8 +243,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         hskeys = src.data.shape_keys
         if hskeys is None:
             return failed
-        if self.transferMethod in ['NEAREST', 'SELECTED']:
-            self.findTriangles(self.trihuman)
         self.driverPaths = {}
         if self.useDrivers and hskeys.animation_data:
             self.driverPaths = dict([(fcu.data_path,fcu) for fcu in hskeys.animation_data.drivers])
@@ -591,12 +574,12 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
     def findMatch(self, src, trg):
         t1 = perf_counter()
-        if self.transferMethod == 'LEGACY':
+        if self.bvhtree:
+            self.findMatchNearest(self.bvhtree, trg)
+        elif self.transferMethod == 'LEGACY':
             return True
         elif self.transferMethod == 'BODY':
             self.findMatchExact(src, trg)
-        elif self.transferMethod in ['NEAREST', 'SELECTED']:
-            self.findMatchNearest(self.trihuman, trg)
         elif self.transferMethod == 'BY_NUMBER':
             self.findMatchByNumber(src, trg)
         elif self.transferMethod == 'GEOGRAFT':
@@ -744,7 +727,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
     def autoTransferFace(self, src, trg, hskey):
         if self.transferMethod == 'SELECTED':
-            src = self.trihuman
             tskey = src.data.shape_keys.key_blocks[hskey.name]
         else:
             tskey = hskey
