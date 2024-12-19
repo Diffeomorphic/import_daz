@@ -41,10 +41,6 @@ class MatchOperator(DazPropsOperator):
         self.bvhtree = None
         if (self.transferMethod in ['NEAREST', 'SELECTED']):
             from mathutils.bvhtree import BVHTree
-            activateObject(context, src)
-            setMode('EDIT')
-            bpy.ops.mesh.reveal()
-            setMode('OBJECT')
             me = src.data
             verts = [tuple(v.co) for v in me.vertices]
             faces1 = [tuple(f.vertices[0:4]) for f in me.polygons]
@@ -55,7 +51,6 @@ class MatchOperator(DazPropsOperator):
             self.bvhtree = BVHTree.FromPolygons(verts, tris, all_triangles=True)
             self.verts = np.array(verts)
             self.tris = np.array(tris, dtype=np.uint32)
-            print("BVH created")
 
 
     def getTargets(self, src, context):

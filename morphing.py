@@ -1950,6 +1950,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                     return True
             return False
 
+        self.initMorphLoader()
         self.getFingeredRigMeshes(context)
         used = []
         facepaths = {}
@@ -2143,6 +2144,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         PosableMaker.draw(self, context)
 
     def run(self, context):
+        self.initMorphLoader()
         self.rig = getRigFromContext(context)
         meshes = getSelectedMeshes(context)
         self.setupDuplicates()

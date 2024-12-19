@@ -397,6 +397,9 @@ class Fixer(DriverUser):
 
     def addTongueIkBones(self, rig, layer, deflayer):
         from .rig_utils import makeBone
+        if self.tongueBones[0] not in rig.data.edit_bones.keys():
+            print("Tongue bone %s not found." % self.tongueBones[0])
+            return
         first = rig.data.edit_bones[self.tongueBones[0]]
         for bname in self.tongueBones:
             eb = rig.data.edit_bones[bname]
@@ -408,6 +411,9 @@ class Fixer(DriverUser):
         from .rig_utils import setMhx, mhxProp, stretchTo, addMuteDriver
         from .winder import addWinder
         from .driver import addDriver
+        if self.tongueBones[0] not in rig.data.edit_bones.keys():
+            print("Tongue bone %s not found." % self.tongueBones[0])
+            return
         prop1 = "MhaTongueControl"
         setMhx(rig, prop1, True)
         winder,pbones = addWinder(rig, "tongue", self.tongueBones, layers, prop1, useLocation=True, useScale=True)
