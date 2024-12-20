@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+from collections import OrderedDict
 
 from .error import *
 from .utils import *

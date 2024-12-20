@@ -956,9 +956,20 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                 pset.hair_step = len(hair.hair_keys) - 1
                 pset.count = len(psys.particles)
                 hsys.setHairSettings(psys, hum)
-        if self.output == 'HAIR_CURVES':
+
+        elif self.output == 'HAIR_CURVES':
             def addMod(ob, name):
                 group = bpy.data.node_groups.get(name)
+                if group is None and activateObject(context, ob):
+                    aid = "geometry_nodes\\procedural_hair_node_assets.blend\\NodeTree\\%s" % name
+                    bpy.ops.object.modifier_add_node_group(
+                        asset_library_type = 'ESSENTIALS',
+                        asset_library_identifier = "",
+                        relative_asset_identifier = aid)
+                    mod = ob.modifiers[-1]
+                    group = mod.node_group
+                    ob.modifiers.remove(mod)
+                    print('Created node group "%s"' % group.name)
                 if group:
                     mod = ob.modifiers.new(name, 'NODES')
                     mod.node_group = group
