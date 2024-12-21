@@ -231,8 +231,8 @@ def getDrivenBoneFcurves(rig, useRigifySafe=False):
     if rig.animation_data:
         skip = ["HdOffset", "TlOffset"]
         for fcu in rig.animation_data.drivers:
-            bname,channel = getBoneChannel(fcu)
-            if channel not in skip:
+            bname,channel,cnsname = getBoneChannel(fcu)
+            if channel not in skip and cnsname is None:
                 if bname not in driven.keys():
                     driven[bname] = []
                 driven[bname].append(fcu)
@@ -759,7 +759,7 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
 
     def copyDrivers(self, rna1, rna2, rig1, rig2, ovr):
         def fcukey(fcu):
-            return "%s:%d" % (fcu2.data_path, fcu2.array_index)
+            return "%s:%d" % (fcu.data_path, fcu.array_index)
 
         if rna1.animation_data is None:
             return
@@ -781,9 +781,12 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
                     del existing[key]
                 else:
                     continue
-            bname,channel = getBoneChannel(fcu1)
-            if bname and bname not in rig2.data.bones.keys():
-                continue
+            bname,channel,cnsname = getBoneChannel(fcu1)
+            if bname:
+                pb2 = rig2.pose.bones.get(bname)
+                if (pb2 is None or
+                    (cnsname and cnsname not in pb2.constraints.keys())):
+                    continue
             ensureProp(fcu1, rna1, rna2, ovr)
             fcu2 = rna2.animation_data.drivers.from_existing(src_driver=fcu1)
             retargetFcurve(fcu2, rig1, rig2)
@@ -1163,7 +1166,7 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
 
     if rig and rig.animation_data:
         for fcu in rig.animation_data.drivers:
-            bname,channel = getBoneChannel(fcu)
+            bname,channel,cnsname = getBoneChannel(fcu)
             if bname:
                 if ((channel in ["rotation_euler", "rotation_quaternion"] and useRotation) or
                     (channel == "location" and useLocation) or
@@ -1182,6 +1185,7 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
                     fcu.mute = mute
                     if sname in skeys.key_blocks.keys():
                         skey = skeys.key_blocks[sname]
+                        skey.mute = mute
                         key = "%s:%s" % (ob.name, sname)
                         if skey.mute and mute:
                             muted.append(key)

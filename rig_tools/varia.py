@@ -100,14 +100,14 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
 
     def convertAction(self, act, bnames):
         for fcu in list(act.fcurves):
-            bname,channel = getBoneChannel(fcu)
+            bname,channel,cnsname = getBoneChannel(fcu)
             if bname in bnames and channel == "rotation_euler":
                 act.fcurves.remove(fcu)
 
         qlist = {}
         deletes = []
         for fcu in act.fcurves:
-            bname,channel = getBoneChannel(fcu)
+            bname,channel,cnsname = getBoneChannel(fcu)
             if bname in bnames and channel == "rotation_quaternion":
                 deletes.append(fcu)
                 quats = qlist.get(bname)

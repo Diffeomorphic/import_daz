@@ -56,7 +56,7 @@ class GazeTransferer:
         if rig.animation_data and rig.animation_data.action:
             act = rig.animation_data.action
             for fcu in act.fcurves:
-                bname,channel = getBoneChannel(fcu)
+                bname,channel,cnsname = getBoneChannel(fcu)
                 if bname and bname in bnames:
                     for kp in fcu.keyframe_points:
                         t = kp.co[0]

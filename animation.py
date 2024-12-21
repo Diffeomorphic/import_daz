@@ -1356,7 +1356,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if (rig.animation_data and
             rig.animation_data.drivers):
             for fcu in rig.animation_data.drivers:
-                bname,channel = getBoneChannel(fcu)
+                bname,channel,cnsname = getBoneChannel(fcu)
                 if bname and channel in transforms:
                     if bname not in self.driven.keys():
                         self.driven[bname] = []
@@ -2058,7 +2058,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             act = rig.animation_data.action
             deletes = []
             for fcu in act.fcurves:
-                bname,channel = getBoneChannel(fcu)
+                bname,channel,cnsname = getBoneChannel(fcu)
                 if bname:
                     if (channel in self.locks.keys() and
                         bname in self.locks[channel].keys()):

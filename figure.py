@@ -722,8 +722,8 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
                 pb.name not in exclude):
                 if self.ignoreLocked and isLocationLocked(pb):
                     for fcu in driven[pb.name]:
-                        bname,channel = getBoneChannel(fcu)
-                        if channel != "location":
+                        bname,channel,cnsname = getBoneChannel(fcu)
+                        if channel != "location" and cnsname is None:
                             bnames[pb.name] = True
                             break
                 else:

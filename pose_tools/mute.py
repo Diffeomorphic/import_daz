@@ -142,7 +142,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         act = getCurrentAction(rig)
         shared = dict([(pb.name, pb) for pb in rig.pose.bones if pb.get("DazSharedBone")])
         for fcu in list(act.fcurves):
-            bname,channel = getBoneChannel(fcu)
+            bname,channel,cnsname = getBoneChannel(fcu)
             if (bname in shared.keys() or
                 channel is None or
                 channel.startswith("Daz")):

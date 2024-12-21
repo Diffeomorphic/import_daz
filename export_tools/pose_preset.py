@@ -432,8 +432,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def setupDriven(self, rig):
         if rig.animation_data:
             for fcu in rig.animation_data.drivers:
-                bname,channel = getBoneChannel(fcu)
-                if bname:
+                bname,channel,cnsname = getBoneChannel(fcu)
+                if bname and cnsname is None:
                     if bname not in self.driven.keys():
                         self.driven[bname] = {}
                     if channel in ["rotation_euler", "rotation_quaternion"]:

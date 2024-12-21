@@ -144,7 +144,7 @@ class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
         rig = context.object
         if rig.animation_data:
             for fcu in list(rig.animation_data.drivers):
-                bname,channel = getBoneChannel(fcu)
+                bname,channel,cnsname = getBoneChannel(fcu)
                 if bname and isDrvBone(bname):
                     fcu.data_path = fcu.data_path.replace("(drv)", "")
         for pb in rig.pose.bones:

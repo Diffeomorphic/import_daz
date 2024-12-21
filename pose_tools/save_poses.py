@@ -127,8 +127,8 @@ class PoseCollector:
         if rig.animation_data is None:
             return
         for fcu in rig.animation_data.drivers:
-            bname,channel = getBoneChannel(fcu)
-            if bname and not isDrvBone(bname):
+            bname,channel,cnsname = getBoneChannel(fcu)
+            if bname and not isDrvBone(bname) and cnsname is None:
                 self.setChannel(bname, channel, fcu.array_index)
 
 

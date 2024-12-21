@@ -413,9 +413,15 @@ def getRigParent(ob):
 def getBoneChannel(fcu):
     words = fcu.data_path.split('"')
     if words[0] == "pose.bones[":
-        return words[1], words[-1].split(".")[-1]
+        bname = words[1]
+        channel = words[-1].split(".")[-1]
+        if words[2] == "].constraints[":
+            cnsname = words[3]
+        else:
+            cnsname = None
+        return bname, channel, cnsname
     else:
-        return None, None
+        return None, None, None
 
 
 def getShapeChannel(fcu):

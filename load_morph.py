@@ -722,8 +722,8 @@ class LoadMorph(DriverUser):
             prop = baseProp(final)
             fcus = []
             for fcu in self.rig.animation_data.drivers:
-                bname,channel = getBoneChannel(fcu)
-                if bname and bname not in ercBones.keys():
+                bname,channel,cnsname = getBoneChannel(fcu)
+                if bname and bname not in ercBones.keys() and cnsname is None:
                     fcus.append((fcu, fcu.mute))
                     fcu.mute = True
             self.rig[prop] = 1.0

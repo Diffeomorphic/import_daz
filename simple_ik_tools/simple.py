@@ -803,7 +803,7 @@ def copyOffsetDrivers(rig):
     def getDrivers(rig, attr):
         fcus = {}
         for fcu in rig.animation_data.drivers:
-            bname,channel = getBoneChannel(fcu)
+            bname,channel,cnsname = getBoneChannel(fcu)
             if channel == attr:
                 if bname not in fcus.keys():
                     fcus[bname] = []

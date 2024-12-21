@@ -351,6 +351,32 @@ class DAZ_OT_VisualizeShapekey(DazPropsOperator, IsShape):
         for vn,w in weights:
             vgrp.add([vn], w, 'REPLACE')
 
+#----------------------------------------------------------
+#   Mute Shapekeys
+#----------------------------------------------------------
+
+class DAZ_OT_MuteShapekeys(DazPropsOperator, IsShape):
+    bl_idname = "daz.mute_shapekeys"
+    bl_label = "Mute Shapekeys"
+    bl_description = "Mute or unmute all shapekeys of selected meshes"
+    bl_options = {'UNDO'}
+
+    show : BoolProperty(
+        name = "Show",
+        description = "Mute shapekeys if disabled, otherwise unmute",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "show")
+
+    def run(self, context):
+        mute = (not self.show)
+        for ob in getSelectedMeshes(context):
+            skeys = ob.data.shape_keys
+            if skeys:
+                for skey in skeys.key_blocks:
+                    skey.mute = mute
+
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
@@ -361,6 +387,7 @@ classes = [
     DAZ_OT_VisualizeShapekey,
     DAZ_OT_MeshToShape,
     DAZ_OT_TransferAnimationToShapekeys,
+    DAZ_OT_MuteShapekeys,
 ]
 
 def register():

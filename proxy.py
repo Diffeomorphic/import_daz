@@ -1117,7 +1117,7 @@ class WidgetConverter:
         if bname not in self.drivers.keys():
             return
         for fcu in self.drivers[bname]:
-            bname,channel = getBoneChannel(fcu)
+            bname,channel,cnsname = getBoneChannel(fcu)
             if bname:
                 pb1 = rig.pose.bones[bname]
                 pb1.driver_remove(channel, fcu.array_index)

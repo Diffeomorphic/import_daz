@@ -1845,7 +1845,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         def removeDrivers(rna, bnames):
             if rna.animation_data:
                 for fcu in list(rna.animation_data.drivers):
-                    bname,channel = getBoneChannel(fcu)
+                    bname,channel,cnsname = getBoneChannel(fcu)
                     if bname and bname in bnames:
                         rna.animation_data.drivers.remove(fcu)
                     else:
