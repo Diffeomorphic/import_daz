@@ -89,12 +89,18 @@ class MatchOperator(DazPropsOperator):
         tverts = self.verts[tris]
         A = np.transpose(tverts, axes=(0,2,1))
         B = cverts - offsets
-        try:
-            w = np.linalg.solve(A, B)
-            msg = None
-        except np.linalg.LinAlgError:
-            msg = "Numerical error when finding match.\nConsider using the Legacy transfer method instead"
+        if (A.shape[0] != B.shape[0] or
+            len(A.shape) != 3 or
+            len(B.shape) != 2):
+            msg = "Incompatible numpy arrays: A = %s, B = %s" % (A.shape, B.shape)
+        else:
+            try:
+                w = np.linalg.solve(A, B)
+                msg = None
+            except np.linalg.LinAlgError:
+                msg = "Numerical error when finding match"
         if msg:
+            msg = "%s.\nConsider using the Legacy transfer method instead" % msg
             raise DazError(msg)
         self.match = (tris, w, offsets)
 
