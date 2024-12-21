@@ -74,7 +74,7 @@ class MatchOperator(DazPropsOperator):
         return objects
 
 
-    def findMatchNearest(self, bvh, trg):
+    def findMatchNearest(self, bvh, src, trg):
         if self.projection is None:
             closest = [(v.co, bvh.find_nearest(v.co))
                 for v in trg.data.vertices]
@@ -89,18 +89,17 @@ class MatchOperator(DazPropsOperator):
         tverts = self.verts[tris]
         A = np.transpose(tverts, axes=(0,2,1))
         B = cverts - offsets
-        if (A.shape[0] != B.shape[0] or
-            len(A.shape) != 3 or
-            len(B.shape) != 2):
-            msg = "Incompatible numpy arrays: A = %s, B = %s" % (A.shape, B.shape)
-        else:
-            try:
-                w = np.linalg.solve(A, B)
-                msg = None
-            except np.linalg.LinAlgError:
-                msg = "Numerical error when finding match"
+        try:
+            w = np.linalg.solve(A, B)
+            msg = None
+        except np.linalg.LinAlgError:
+            msg = "Numerical error when finding match"
+        except ValueError:
+            msg = "Incompatible numpy dimensions: A = %s, B = %s" % (A.shape, B.shape)
         if msg:
-            msg = "%s.\nConsider using the Legacy transfer method instead" % msg
+            msg = ("%s.\n" % msg +
+                   'Transfer from "%s" to "%s".\n' % (src.name, trg.name) +
+                   "Consider using the Legacy transfer method instead")
             raise DazError(msg)
         self.match = (tris, w, offsets)
 
@@ -576,7 +575,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     def findMatch(self, src, trg):
         t1 = perf_counter()
         if self.bvhtree:
-            self.findMatchNearest(self.bvhtree, trg)
+            self.findMatchNearest(self.bvhtree, src, trg)
         elif self.transferMethod == 'LEGACY':
             return True
         elif self.transferMethod == 'BODY':
