@@ -1235,26 +1235,97 @@ class DAZ_OT_EnableDrivers(DazOperator):
 #   Clean drivers
 #----------------------------------------------------------
 
-class DAZ_OT_RemoveCorruptDrivers(DazOperator, IsMeshArmature):
+class DAZ_OT_RemoveCorruptDrivers(DazPropsOperator, IsObject):
     bl_idname = "daz.remove_corrupt_drivers"
     bl_label = "Remove Corrupt Drivers"
-    bl_description = "Remove corrupt drivers and drivers leading to dependencey loops"
+    bl_description = "Remove corrupt drivers and constraints, and drivers leading to dependencey loops"
     bl_options = {'UNDO'}
 
+    useClearPose : BoolProperty(
+        name = "Clear Pose",
+        description = "Clear pose for objects that are not bone parented",
+        default = True)
+
+    useConstraints : BoolProperty(
+        name = "Remove Unrepairable Constraints",
+        description = "Remove constraints that can not be repaired",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useClearPose")
+        self.layout.prop(self, "useConstraints")
+
     def run(self, context):
-        cleanAllDrivers(context.object)
+        from mathutils import Matrix
 
+        def mhxMatch(bname):
+            if bname[-6:-1] == "Bend.":
+                return "%s.bend.%s" % (bname[:-6], bname[-1])
+            elif bname[-7:-1] == "Twist.":
+                return "%s.twist.%s" % (bname[:-7], bname[-1])
+            else:
+                return None
 
-def cleanAllDrivers(rig):
-    if rig.type == 'ARMATURE':
-        cleanDrivers(rig)
-        cleanDrivers(rig.data)
-        for ob in getMeshChildren(rig):
-            cleanDrivers(ob)
-            cleanDrivers(ob.data.shape_keys)
-    elif rig.type == 'MESH':
-        cleanDrivers(rig)
-        cleanDrivers(rig.data.shape_keys)
+        def cleanConstraints(rna):
+            for cns in list(rna.constraints):
+                if hasattr(cns, "target"):
+                    ob = cns.target
+                    if ob is None:
+                        rna.constraints.remove(cns)
+                    elif ob.type == 'ARMATURE':
+                        bname = cns.subtarget
+                        if bname in ob.data.bones.keys():
+                            continue
+                        mhxname = mhxMatch(bname)
+                        if mhxname in ob.data.bones.keys():
+                            cns.subtarget = mhxname
+                        elif self.useConstraints:
+                            print("Delete constraint for %s" % rna.name)
+                            rna.constraints.remove(cns)
+
+        def cleanAllDrivers(ob):
+            if ob.type == 'ARMATURE':
+                rig = ob
+                cleanConstraints(rig)
+                for pb in rig.pose.bones:
+                    cleanConstraints(pb)
+                cleanDrivers(rig)
+                cleanDrivers(rig.data)
+                for ob in rig.children:
+                    cleanAllDrivers(ob)
+            else:
+                cleanConstraints(ob)
+                cleanDrivers(ob)
+                if ob.type != 'EMPTY':
+                    cleanDrivers(ob.data)
+                if ob.type == 'MESH':
+                    cleanDrivers(ob.data.shape_keys)
+                    for mat in ob.data.materials:
+                        if mat:
+                            cleanDrivers(mat.node_tree)
+
+        def clearAllPoses(ob):
+            if ob.type == 'ARMATURE':
+                rig = ob
+                rig.matrix_basis = Matrix()
+                for pb in rig.pose.bones:
+                    pb.matrix_basis = Matrix()
+                for ob in rig.children:
+                    if ob.parent_type == 'OBJECT':
+                        clearAllPoses(ob)
+            else:
+                ob.matrix_basis = Matrix()
+
+        rig = getRigFromContext(context)
+        if rig:
+            cleanAllDrivers(rig)
+            if self.useClearPose:
+                clearAllPoses(rig)
+        else:
+            ob = context.object
+            cleanAllDrivers(ob)
+            if self.useClearPose:
+                clearAllPoses(ob)
 
 
 def cleanDrivers(rna):
@@ -1265,6 +1336,12 @@ def cleanDrivers(rna):
         if words[0] == "modifiers[":
             mod = rna.modifiers.get(words[1])
             return (mod is None)
+        elif words[0] == "pose.bones[":
+            pb = rna.pose.bones.get(words[1])
+            if pb is None:
+                return True
+            elif words[2] == "].constraints[":
+                return (words[3] not in pb.constraints.keys())
         elif words[0] == "key_blocks[":
             if words[1] not in rna.key_blocks.keys():
                 return True
@@ -1278,10 +1355,18 @@ def cleanDrivers(rna):
                 return True
         return False
 
+    def illegalExpression(drv):
+        if drv.type != 'SCRIPTED':
+            return False
+        else:
+            return drv.expression.endswith(("+)", "-)", "+", "-"))
+
     if rna and rna.animation_data:
         deletes = []
         for fcu in rna.animation_data.drivers:
             if illegal(fcu):
+                deletes.append(fcu)
+            elif illegalExpression(fcu.driver):
                 deletes.append(fcu)
             else:
                 for var in fcu.driver.variables:
@@ -1291,6 +1376,17 @@ def cleanDrivers(rna):
                             if (trg.id is None or
                                 (isPropRef(trg.data_path) and prop not in trg.id.keys())):
                                 deletes.append(fcu)
+                    elif var.type == 'TRANSFORMS':
+                        for trg in var.targets:
+                            if trg.id_type == 'OBJECT':
+                                rig = trg.id
+                                if rig is None:
+                                    deletes.append(fcu)
+                                elif (rig.type == 'ARMATURE' and
+                                      trg.bone_target and
+                                      trg.bone_target not in rig.data.bones.keys()):
+                                    deletes.append(fcu)
+
         if deletes:
             print("Delete %d corrupt drivers from %s" % (len(deletes), rna.name))
         for fcu in deletes:
@@ -1298,6 +1394,7 @@ def cleanDrivers(rna):
                 rna.animation_data.drivers.remove(fcu)
             except RuntimeError:
                 pass
+        updateDrivers(rna)
 
 #----------------------------------------------------------
 #   Initialize
