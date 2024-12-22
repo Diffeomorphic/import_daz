@@ -567,7 +567,6 @@ class LocalSettings:
         self.imageMaps = {}
         self.protectedImages = {}
         self.protectedGroups = []
-        self.textures = {}
         self.gammas = {}
         self.customShapes = []
         self.toons = []

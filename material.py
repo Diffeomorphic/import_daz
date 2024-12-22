@@ -594,10 +594,8 @@ class Material(Asset, Channels):
                     maps = []
         elif "image_file" in channel.keys():
             url = channel["image_file"]
-            map = LS.imageMaps.get(url)
-            if map is None:
-                map = Map({}, False)
-                map.url = channel["image_file"]
+            map = Map({}, False)
+            map.url = channel["image_file"]
             maps = [map]
         elif "map" in channel.keys():
             maps = Maps(self.fileref)
@@ -665,6 +663,7 @@ class Map:
         self.color = WHITE
         self.ismask = ismask
         self.image = None
+        self.texture = None
         self.gamma = 1.0
         self.size = None
         for key,default in [
@@ -688,17 +687,13 @@ class Map:
 
 
     def __repr__(self):
-        return ("<Map %s %s %s %s %.2f (%s %s)>" % (self.url, self.image, self.ismask, self.size, self.gamma, self.xoffset, self.yoffset))
+        return ("<Map %s %s %s %.2f (%s %s) (%s %s)>" % (self.label, self.ismask, self.size, self.gamma, self.xoffset, self.yoffset, self.xscale, self.yscale))
 
 
     def getTexture(self):
-        if self.url in LS.textures.keys():
-            return LS.textures[self.url]
-        else:
-            tex = Texture(self)
-        if self.url:
-            LS.textures[self.url] = tex
-        return tex
+        if self.texture is None:
+            self.texture = Texture(self)
+        return self.texture
 
 
     def build(self):
@@ -763,7 +758,6 @@ class Images(Asset):
         for map in self.maps:
             map.size = size
             map.gamma = gamma
-            LS.imageMaps[map.url] = map
 
 #-------------------------------------------------------------
 #   Texture
