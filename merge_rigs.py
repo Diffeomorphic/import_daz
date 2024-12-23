@@ -110,6 +110,11 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
     bl_description = "Merge selected rigs to active rig"
     bl_options = {'UNDO'}
 
+    useTieRigs : BoolProperty(
+        name = "Tie Rigs Instead",
+        description = "Drive bone in child rigs with copy transforms constraints",
+        default = False)
+
     useOnlySelected : BoolProperty(
         name = "Only Selected Rigs",
         description = "Only merge armatures that are children of selected armatures",
@@ -121,6 +126,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         self.layout.prop(self, "duplicateDistance")
         self.layout.prop(self, "useMergeNonConforming")
         self.layout.prop(self, "useConvertWidgets")
+        self.layout.prop(self, "useTieRigs")
 
 
     def run(self, context):
@@ -155,10 +161,29 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             rootmats = []
         deletes = []
         try:
-            deletes = self.mergeRigs(context, roots, excluded)
+            if self.useTieRigs:
+                for root in roots:
+                    self.tieRigs(root, excluded)
+            else:
+                deletes = self.mergeRigs(context, roots, excluded)
         finally:
             restoreTransformsToObjects(rootmats)
         deleteObjects(context, deletes)
+
+
+    def tieRigs(self, root, excluded):
+        from .rig_utils import copyTransform
+        for rig in root.children:
+            if (rig.type == 'ARMATURE' and
+                rig.parent_type == 'OBJECT' and
+                rig not in excluded):
+                for pb in rig.pose.bones:
+                    rb = root.pose.bones.get(pb.name)
+                    if rb:
+                        for cns in list(pb.constraints):
+                            pb.constraints.remove(cns)
+                        cns = copyTransform(pb, rb, root, space='POSE')
+                self.tieRigs(rig, excluded)
 
 
     def mergeRigs(self, context, roots, excluded):
