@@ -564,7 +564,6 @@ class LocalSettings:
         self.deflectors = {}
         self.materials = OrderedDict()
         self.images = {}
-        self.imageMaps = {}
         self.protectedImages = {}
         self.protectedGroups = []
         self.gammas = {}

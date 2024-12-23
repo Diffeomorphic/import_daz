@@ -99,8 +99,8 @@ class CyclesMaterial(Material):
     def postbuild(self):
         Material.postbuild(self)
         for key,node,data in self.mappingNodes:
-            if GS.verbosity >= 3:
-                print("Fix mapping", key)
+            if GS.verbosity >= 2:
+                print("Fix mapping", key, data)
             dx,dy,sx,sy,rz = data
             node.inputs["Location"].default_value = (dx,dy,0)
             node.inputs["Rotation"].default_value = (0,0,rz)
@@ -610,12 +610,9 @@ class CyclesTree(Tree):
 
             mapping = self.addNode("ShaderNodeMapping", 1)
             mapping.vector_type = 'TEXTURE'
-            #mapping.hide = True
             mapping.inputs['Location'].default_value = (dx,dy,0)
             mapping.inputs['Scale'].default_value = (sx,sy,1)
             mapping.inputs['Rotation'].default_value = (0,0,rz)
-            #if map and not map.invert and hasattr(mapping, "use_min"):
-            #    mapping.use_min = mapping.use_max = 1
             if modulo:
                 self.links.new(modulo.outputs[0], mapping.inputs[0])
             else:
@@ -1863,7 +1860,7 @@ class CyclesTree(Tree):
         dx = imgmod.get("horizontal_tiling_offset", 0)
         ty = imgmod.get("vertical_tiles", 1)
         dy = imgmod.get("vertical_tiling_offset", 0)
-        data = (-dx/tx, -dy/ty, 1/tx, 1/ty, 0)
+        data = (-dx/tx, dy/ty-1, 1/tx, 1/ty, 0)
         innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma, False)
         if asset.hasMapping(map) and not changed:
             data = asset.getImageMapping(img, self.owner, map)
