@@ -99,7 +99,7 @@ class CyclesMaterial(Material):
     def postbuild(self):
         Material.postbuild(self)
         for key,node,data in self.mappingNodes:
-            if GS.verbosity >= 2:
+            if GS.verbosity >= 3:
                 print("Fix mapping", key, data)
             dx,dy,sx,sy,rz = data
             node.inputs["Location"].default_value = (dx,dy,0)

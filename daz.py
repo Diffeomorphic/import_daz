@@ -854,6 +854,10 @@ def register():
         name = "URL",
         default = "")
 
+    bpy.types.Object.DazFigure = StringProperty(
+        name = "Figure",
+        default = "")
+
     bpy.types.Object.DazScene = StringProperty(
         name = "Scene",
         default = "")

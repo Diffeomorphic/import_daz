@@ -48,7 +48,7 @@ class MorphPreset(Preset):
         struct["id"] = mname
         struct["name"] = mname
         if ob.parent:
-            struct["parent"] = normalizeUrl(ob.parent.DazUrl)
+            struct["parent"] = normalizeUrl(getFigure(ob))
         struct["presentation"] = {
             "type" : "Modifier/%s" % self.presentation,
             "label" : mname,
@@ -248,7 +248,7 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
                 ]
             }
 
-        path,char = rig.DazUrl.split("#")
+        path,char = getFigure(trg).split("#")
         path = quote(path)
         char = quote(char)
         formulas = []

@@ -976,6 +976,8 @@ class Node(Asset, Formula, Channels):
             LS.hdcollection.link(ob)
         ob.DazId = self.id
         ob.DazUrl = unquote(self.url)
+        if self.figure:
+            ob.DazFigure = unquote(self.figure.url)
         ob.DazScene = LS.scene
         ob.DazScale = GS.scale
         ob.DazOrient = inst.attributes["orientation"]

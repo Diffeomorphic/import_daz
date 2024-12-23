@@ -470,6 +470,14 @@ def updatePose():
 #   More utility functions
 #-------------------------------------------------------------
 
+def getFigure(ob):
+    if ob.DazFigure:
+        return ob.DazFigure
+    elif ob.parent:
+        return ob.parent.DazUrl
+    else:
+        return None
+
 def instRef(ref):
     return ref.rsplit("#",1)[-1]
 

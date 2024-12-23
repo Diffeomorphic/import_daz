@@ -216,6 +216,7 @@ class DAZ_PT_ActiveObject(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.layout.prop(ob, "DazBlendFile")
             self.layout.prop(ob, "DazId")
             self.layout.prop(ob, "DazUrl")
+            self.layout.prop(ob, "DazFigure")
             self.layout.prop(ob, "DazScene")
             self.layout.prop(ob, "DazRig")
             self.layout.prop(ob, "DazMesh")
