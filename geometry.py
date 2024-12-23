@@ -1789,6 +1789,9 @@ def clearMeshProps(ob, keepVertex=False):
         clearAttribute("DazPolygonGroup")
         if not keepVertex:
             clearAttribute("DazVertex")
+        for key in me.attributes.keys():
+            if key.startswith("paired_body_vert_"):
+                clearAttribute(key)
 
 
 
