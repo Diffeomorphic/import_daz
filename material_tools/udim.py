@@ -293,6 +293,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             return
         from ..cycles import makeCyclesTree
         from ..cgroup import SkipZeroUvGroup
+        from ..tree import findNodes
         ctree = makeCyclesTree(mat)
         for outp in findNodes(mat.node_tree, 'OUTPUT_MATERIAL'):
             x,y = outp.location

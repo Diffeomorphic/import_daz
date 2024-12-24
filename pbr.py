@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import math
 from mathutils import Vector, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .error import *

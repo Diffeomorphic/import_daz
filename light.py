@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import math
 from .node import Node, Instance
 from .utils import *
 from .cycles import CyclesMaterial, CyclesTree
@@ -104,7 +103,7 @@ class Light(Node):
     def postTransform(self):
         if GS.zup:
             ob = self.rna
-            ob.rotation_euler[0] += math.pi/2
+            ob.rotation_euler[0] += pi/2
 
 
     def postbuild(self, context, inst):

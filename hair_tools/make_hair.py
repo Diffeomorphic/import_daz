@@ -4,8 +4,6 @@
 
 import sys
 import bpy
-import math
-
 from mathutils import Vector, Matrix
 from ..error import *
 from ..utils import *
@@ -1427,7 +1425,7 @@ class FadeGroup(NodeGroup, HairTree):
 
     def addSockets(self, socket1, socket2, col=None):
         node = self.addNode("ShaderNodeMath", col=col)
-        math.operation = 'ADD'
+        node.operation = 'ADD'
         self.links.new(socket1, node.inputs[0])
         self.links.new(socket2, node.inputs[1])
         return node

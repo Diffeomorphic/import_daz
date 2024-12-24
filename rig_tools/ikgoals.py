@@ -7,8 +7,6 @@ from ..fix import *
 from ..pin import Pinner
 from ..winder import addWinder
 
-import math
-
 #-------------------------------------------------------------
 #   Select seg01
 #-------------------------------------------------------------

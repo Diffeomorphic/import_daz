@@ -5,7 +5,6 @@
 import os
 import bpy
 from mathutils import *
-from math import pi
 from collections import OrderedDict
 
 from ..error import *

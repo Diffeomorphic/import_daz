@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import math
 from mathutils import Vector, Matrix
 import os
 import bpy

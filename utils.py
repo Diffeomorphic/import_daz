@@ -4,6 +4,7 @@
 
 import bpy
 import math
+from math import pi
 from mathutils import Vector, Euler
 from urllib.parse import quote, unquote
 from bpy.props import *
@@ -844,8 +845,8 @@ def b2d(v):
     return Vector((v[0], v[2], -v[1]))/GS.scale
 
 
-D2R = "%.6f*" % (math.pi/180)
-D = math.pi/180
+D2R = "%.6f*" % (pi/180)
+D = pi/180
 
 
 

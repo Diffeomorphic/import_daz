@@ -4,7 +4,6 @@
 
 import bpy
 import bmesh
-import math
 import numpy as np
 from mathutils import Matrix, Vector, Euler
 from collections import OrderedDict
@@ -627,8 +626,8 @@ class Instance(Accessor, Channels, SimNode):
         return worldmat, wtrans, wrot, wscale, wmat, cpoint
 
 
-    RXP = Matrix.Rotation(math.pi/2, 4, 'X')
-    RXN = Matrix.Rotation(-math.pi/2, 4, 'X')
+    RXP = Matrix.Rotation(pi/2, 4, 'X')
+    RXN = Matrix.Rotation(-pi/2, 4, 'X')
 
 
     def parentObject(self, context, ob):

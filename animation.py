@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import math
 import os
 from collections import OrderedDict
 from mathutils import *
@@ -1118,7 +1117,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         else:
             tfm.setObject(rig)
             if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
-                rig.rotation_euler[0] += math.pi/2
+                rig.rotation_euler[0] += pi/2
             if self.useInsertKeys:
                 insertKeys(rig, False, n+offset, self)
 
@@ -2051,7 +2050,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             self.locks["rotation_quaternion"][pb.name] = [pb.lock_rotation_w] + list(pb.lock_rotation)
             self.locks["scale"][pb.name] = list(pb.lock_scale)
             self.getLimits(self.limits["location"], pb, 'LIMIT_LOCATION', -1e10, 1e10)
-            self.getLimits(self.limits["rotation_euler"], pb, 'LIMIT_ROTATION', -math.pi, math.pi)
+            self.getLimits(self.limits["rotation_euler"], pb, 'LIMIT_ROTATION', -pi, pi)
             self.getLimits(self.limits["scale"], pb, 'LIMIT_SCALE', -1e10, 1e10)
 
         if rig.animation_data and rig.animation_data.action:

@@ -373,7 +373,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 rot[idx] = fcu.evaluate(frame)
         # reverse postTransform for cameras and lights before saving pose preset
         if GS.zup and rig.type in ['CAMERA', 'LIGHT']:
-            rot.x -= math.pi/2
+            rot.x -= pi/2
         mat = rot.to_matrix().to_4x4()
         if self.useScale:
             scale = rig.scale.copy()

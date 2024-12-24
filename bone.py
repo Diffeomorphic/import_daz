@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import math
-from math import pi
 from mathutils import *
 from .utils import *
 from .transform import Transform
@@ -308,7 +306,7 @@ class BoneInstance(Instance):
             vec0 /= vec0.length
             sprod = vec.dot(vec0)
             if sprod < -0.99:
-                bone.DazAngle = math.pi
+                bone.DazAngle = pi
                 bone.DazNormal = vec.cross(vec0)
             elif sprod < 0.99:
                 bone.DazAngle = math.acos(sprod)

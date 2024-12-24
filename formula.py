@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-
-import math
 from mathutils import *
 from .error import DazError, reportError
 from .utils import *

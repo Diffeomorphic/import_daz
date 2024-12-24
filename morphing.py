@@ -1173,7 +1173,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             bulges.append((vgrp.name, skey))
             ob.vertex_groups.remove(vgrp)
 
-    factor = 0.2/math.pi
+    factor = 0.2/pi
     rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
     for vgname,skey in bulges:
         bname,channel = vgname.rsplit(":",1)

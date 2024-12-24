@@ -154,12 +154,15 @@ class TileFixer:
 
 
     def getTile(self, ucoord, vcoord):
-        umax = max(ucoord)
-        umin = min(ucoord)
-        vmax = max(vcoord)
-        vmin = min(vcoord)
-        udim = math.floor((umax+umin)/2)
-        vdim = math.floor((vmax+vmin)/2)
+        if ucoord:
+            umax = max(ucoord)
+            umin = min(ucoord)
+            vmax = max(vcoord)
+            vmin = min(vcoord)
+            udim = math.floor((umax+umin)/2)
+            vdim = math.floor((vmax+vmin)/2)
+        else:
+            udim = vdim = 0
         tile = 1001 + udim + 10*vdim
         return tile, udim, vdim
 

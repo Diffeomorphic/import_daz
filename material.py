@@ -6,7 +6,6 @@ import bpy
 
 import os
 import copy
-import math
 from collections import OrderedDict
 
 from .asset import Asset

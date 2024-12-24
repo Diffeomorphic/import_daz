@@ -37,7 +37,6 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
         self.layout.prop(self, "useQuads")
 
     def run(self, context):
-        from math import pi
         for ob in getSelectedMeshes(context):
             if activateObject(context, ob):
                 setMode('EDIT')

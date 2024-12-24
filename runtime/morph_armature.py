@@ -16,7 +16,6 @@
 #
 # ---------------------------------------------------------------------------
 
-import math
 import bpy
 from bpy.app.handlers import persistent
 from mathutils import Vector, Matrix

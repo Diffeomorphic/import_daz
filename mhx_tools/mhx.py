@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-
-import math
 from mathutils import *
 from ..error import *
 from ..utils import *
@@ -1513,7 +1511,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     def flipLimits(self, rig, bname, oldname):
         roll = self.rolls[bname]
         oldroll = self.rolls[oldname]
-        flip = round(2*(roll-oldroll)/math.pi)
+        flip = round(2*(roll-oldroll)/pi)
         if flip:
             self.flips[bname.replace(".fk", "")] = flip
             pb = rig.pose.bones[bname]

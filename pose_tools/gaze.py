@@ -38,7 +38,7 @@ class GazeTransferer:
         self.gaze = rig.pose.bones["gaze"]
         self.lgaze = rig.pose.bones["gaze.L"]
         self.rgaze = rig.pose.bones["gaze.R"]
-        self.FZ = Matrix.Rotation(math.pi, 4, 'Z')
+        self.FZ = Matrix.Rotation(pi, 4, 'Z')
         self.gazedist = (self.lgaze.bone.head_local - self.leye.bone.head_local).length
 
 
