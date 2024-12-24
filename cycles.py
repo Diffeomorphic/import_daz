@@ -600,7 +600,7 @@ class CyclesTree(Tree):
         dx,dy,sx,sy,rz = data
         modulo = mapping = None
         clip = 'REPEAT'
-        if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
+        if sx != 1 or sy != 1 or not dx.is_integer() or not dy.is_integer() or rz != 0:
             if clipped:
                 modulo = self.addNode("ShaderNodeVectorMath", 1, size=2)
                 modulo.operation = 'MODULO'
