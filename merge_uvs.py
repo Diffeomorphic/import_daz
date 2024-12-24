@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+import os
 from .utils import *
 from .error import *
 from .tree import getFromSocket, XSIZE, YSIZE, YSTEP

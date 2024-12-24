@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import math
-import os
 from mathutils import *
 from .error import *
 from .utils import *

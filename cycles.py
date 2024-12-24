@@ -4,7 +4,6 @@
 
 import bpy
 import math
-import os
 from mathutils import Vector, Matrix, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .tree import Tree, NCOLUMNS, XSIZE, YSIZE, MixRGB

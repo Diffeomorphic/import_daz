@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import os
-import json
-import gzip
-import copy
 from .error import reportError
 from .utils import *
 from .load_json import JL

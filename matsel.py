@@ -3,10 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import os
-import math
-from mathutils import Vector
-
 from .error import *
 from .utils import *
 from .material import WHITE

@@ -4,7 +4,6 @@
 
 import bpy
 import collections
-import os
 
 from .asset import Asset
 from .channels import Channels

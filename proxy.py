@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import os
 import bpy
 from mathutils import Vector, Euler
 from .error import *
