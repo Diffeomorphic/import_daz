@@ -64,35 +64,6 @@ class DAZ_OT_MakeLowPoly(DazPropsOperator, IsMesh):
         return
 
 #-------------------------------------------------------------
-#  Apply morphs
-#-------------------------------------------------------------
-
-def applyShapeKeys(ob):
-    from ..category import getShapeKeyCoords
-    if ob.type != 'MESH':
-        return
-    if ob.data.shape_keys:
-        skeys,coords = getShapeKeyCoords(ob)
-        skeys.reverse()
-        for skey in skeys:
-            ob.shape_key_remove(skey)
-        skey = ob.data.shape_keys.key_blocks[0]
-        ob.shape_key_remove(skey)
-        for v in ob.data.vertices:
-            v.co = coords[v.index]
-
-
-class DAZ_OT_ApplyMorphs(DazOperator, IsMesh):
-    bl_idname = "daz.apply_morphs"
-    bl_label = "Apply Morphs"
-    bl_description = "Apply all shapekeys"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        for ob in getSelectedMeshes(context):
-            applyShapeKeys(ob)
-
-#-------------------------------------------------------------
 #   Add push
 #-------------------------------------------------------------
 
@@ -117,7 +88,6 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
 
 classes = [
     DAZ_OT_MakeLowPoly,
-    DAZ_OT_ApplyMorphs,
     DAZ_OT_AddPush,
 ]
 

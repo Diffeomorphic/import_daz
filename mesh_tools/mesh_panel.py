@@ -25,7 +25,6 @@ class DAZ_PT_Lowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.print_statistics")
-        self.layout.operator("daz.apply_morphs")
         self.layout.operator("daz.make_lowpoly")
         self.layout.operator("daz.add_push")
 
