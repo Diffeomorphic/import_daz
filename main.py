@@ -954,7 +954,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 self.transferShapes(context, firstMesh, meshes[1:], True, "All")
             finally:
                 for mesh,bmat,parent,mod in data:
-                    mod.show_viewport = True
+                    if mod:
+                        mod.show_viewport = True
                     mesh.parent = parent
                     mesh.matrix_basis = Matrix()
 
@@ -1253,7 +1254,6 @@ class DAZ_OT_ApplyTransforms(DazOperator):
 
 
 def applyTransforms(objects):
-    from .merge_rigs import safeTransformApply
     print("Apply transforms")
     bpy.ops.object.select_all(action='DESELECT')
     wmats = []
@@ -1271,6 +1271,9 @@ def applyTransforms(objects):
                 selectSet(ob, True)
         except ReferenceError:
             pass
+
+    from .merge_rigs import removeObjectDrivers, safeTransformApply
+    removeObjectDrivers(objects)
     safeTransformApply()
     for ob,wmat in wmats:
         setWorldMatrix(ob, wmat)

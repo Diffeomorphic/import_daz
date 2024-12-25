@@ -436,24 +436,81 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazOperator, IsArmature):
         applyRestPoses(context, rig, subrigs)
 
 
-def applyRestPoses(context, rig, subrigs):
+def applyRestPoses(context, rig, subrigs, useBones=True):
+    if not activateObject(context, rig):
+        return
+
+    def muteShapekeys(skeys):
+        muted = []
+        if skeys:
+            for skey in skeys.key_blocks:
+                muted.append((skey, skey.mute))
+                skey.mute = True
+        return muted
+
     children = []
-    for child in rig.children:
-        setRestPose(child, rig, context)
-        if activateObject(context, child):
-            children.append((child, child.parent_type, child.parent_bone))
+    hasamt = []
+    for ob in rig.children:
+        if activateObject(context, ob):
+            children.append((ob, ob.parent_type, ob.parent_bone, ob.matrix_world.copy()))
             bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+            if ob.type == 'MESH' and ob.parent_type == 'OBJECT':
+                mod = getModifier(ob, 'ARMATURE')
+                skeys = ob.data.shape_keys
+                if mod:
+                    hasamt.append(ob)
+                    muted = muteShapekeys(ob.data.shape_keys)
+                    applyArmatureModifier(ob)
+                    for skey,mute in muted:
+                        skey.mute = mute
+
+    def removeBoneDrivers(rig):
+        bmats = {}
+        for pb in rig.pose.bones:
+            bmats[pb.name] = pb.matrix_basis.copy()
+        changed = []
+        if rig.animation_data:
+            for fcu in list(rig.animation_data.drivers):
+                bname,channel,cnsname = getBoneChannel(fcu)
+                if cnsname is None and channel != "HdOffset":
+                    pb = rig.pose.bones[bname]
+                    value = getattr(pb, channel)[fcu.array_index]
+                    if abs(value) > 1e-6:
+                        bmat = bmats.get(bname)
+                        if bmat:
+                            rig.animation_data.drivers.remove(fcu)
+                            changed.append(bname)
+        for bname in set(changed):
+            pb = rig.pose.bones[bname]
+            pb.matrix_basis = bmats[bname]
+
     if activateObject(context, rig):
+        removeBoneDrivers(rig)
         bpy.ops.object.transform_apply()
         setMode('POSE')
         bpy.ops.pose.armature_apply()
         setMode('OBJECT')
-    for child,type,bone in children:
-        wmat = child.matrix_world.copy()
-        child.parent = rig
-        child.parent_type = type
-        child.parent_bone = bone
-        setWorldMatrix(child, wmat)
+
+    for ob,type,bone,wmat in children:
+        ob.parent = rig
+        ob.parent_type = type
+        ob.parent_bone = bone
+        setWorldMatrix(ob, wmat)
+    from .modifier import newArmatureModifier
+    for ob in hasamt:
+        newArmatureModifier(rig.name, ob, rig)
+
+
+def removeObjectDrivers(objects):
+    for ob in objects:
+        try:
+            adata = ob.animation_data
+        except ReferenceError:
+            continue
+        if adata:
+            for fcu in list(ob.animation_data.drivers):
+                if fcu.data_path in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
+                    ob.animation_data.drivers.remove(fcu)
 
 
 def safeTransformApply(useLocRot=True):
@@ -486,27 +543,6 @@ def applyAllObjectTransforms(rigs):
     except RuntimeError:
         print("Could not apply object transformations")
         return False
-
-
-def setRestPose(ob, rig, context):
-    from .node import setParent
-    if not setActiveObject(context, ob):
-        return
-    setParent(context, ob, rig)
-    if ob.parent_type != 'OBJECT' or ob.type != 'MESH':
-        return
-    if len(ob.vertex_groups) == 0:
-        print("Mesh with no vertex groups: %s" % ob.name)
-        return
-    try:
-        applyArmatureModifier(ob)
-        ok = True
-    except RuntimeError:
-        print("Could not apply armature to %s" % ob.name)
-        ok = False
-    if ok:
-        from .modifier import newArmatureModifier
-        newArmatureModifier(rig.name, ob, rig)
 
 
 def applyArmatureModifier(ob):

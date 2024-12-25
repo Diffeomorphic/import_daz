@@ -1454,6 +1454,8 @@ class LoadMorph(DriverUser):
             "scale" : ("scale", [0,2,1], [1,1,1], 1.0),
         }
 
+        if useMorphed:
+            return
         for key,mapping in mappings.items():
             moves = exprs.get(key)
             if moves:
