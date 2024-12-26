@@ -67,7 +67,7 @@ def loadPose(context, rig, entry):
 #-------------------------------------------------------------
 
 def optimizePose(context, useApplyRestPose):
-    from .merge_rigs import applyRestPoses
+    from .apply import applyRestPoses
     rig = context.object
     char = getCharacterFromRig(rig)
     if char is None:
@@ -76,7 +76,7 @@ def optimizePose(context, useApplyRestPose):
     entry = DF.loadEntry(char, "ikposes")
     loadPose(context, rig, entry)
     if useApplyRestPose:
-        applyRestPoses(context, rig, [])
+        applyRestPoses(context, rig)
 
 #-------------------------------------------------------------
 #   Bone conversion

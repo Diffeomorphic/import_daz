@@ -866,6 +866,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
         if self.useApplyTransforms:
+            from .apply import applyTransforms
             applyTransforms(objects)
 
         if mainChar and mainRig and mainMesh:
@@ -1232,56 +1233,6 @@ class DAZ_OT_DecodeFile(DazOperator, DazFile, SingleFile):
             text.from_string(string)
 
 #------------------------------------------------------------------
-#   Apply transforms
-#------------------------------------------------------------------
-
-class DAZ_OT_ApplyTransforms(DazOperator):
-    bl_idname = "daz.apply_transforms"
-    bl_label = "Apply Transforms"
-    bl_description = "Apply transforms to selected objects and its children"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        def addChildren(ob):
-            objects.append(ob)
-            for child in ob.children:
-                addChildren(child)
-
-        objects = []
-        for ob in getSelectedObjects(context):
-            addChildren(ob)
-        applyTransforms(set(objects))
-
-
-def applyTransforms(objects):
-    print("Apply transforms")
-    bpy.ops.object.select_all(action='DESELECT')
-    wmats = []
-    status = []
-    for ob in objects:
-        try:
-            status.append((ob, ob.hide_get(), ob.hide_select))
-            ob.hide_set(False)
-            ob.hide_select = False
-            if ob.parent and ob.parent_type == 'BONE':
-                wmats.append((ob, ob.matrix_world.copy()))
-            elif ob.parent and ob.parent_type.startswith('VERTEX'):
-                pass
-            elif ob.type in ['MESH', 'ARMATURE']:
-                selectSet(ob, True)
-        except ReferenceError:
-            pass
-
-    from .merge_rigs import removeObjectDrivers, safeTransformApply
-    removeObjectDrivers(objects)
-    safeTransformApply()
-    for ob,wmat in wmats:
-        setWorldMatrix(ob, wmat)
-    for ob,hide,select in status:
-        ob.hide_set(hide)
-        ob.hide_select = select
-
-#------------------------------------------------------------------
 #   Launch quoter
 #------------------------------------------------------------------
 
@@ -1340,7 +1291,6 @@ classes = [
     ImportDAZManually,
     ImportDAZMaterials,
     EasyImportDAZ,
-    DAZ_OT_ApplyTransforms,
     DAZ_OT_DecodeFile,
     DAZ_OT_Quote,
     DAZ_OT_Unquote,

@@ -38,7 +38,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "hair_material",
            "render", "camera", "light", "visibility",
            "guess", "convert", "files", "finger", "locks",
-           "merge_uvs", "merge_grafts", "merge_rigs", "empties",
+           "merge_uvs", "merge_grafts", "merge_rigs", "apply", "empties",
            "matsel", "tables", "proxy", "transfer",
            "dforce", "pin", "main", "geonodes",
            "hd_data", "framer", "moho", "scan", "api",

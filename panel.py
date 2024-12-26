@@ -618,13 +618,18 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
         return rig.DazBaked #and GS.useBakedMorphs)
 
     def draw(self, context):
-        rig = self.getCurrentRig(context)
-        if not self.hasTheseMorphs(rig):
-            return
-        for item in rig.DazBaked.values():
-            value = rig.get(item.name)
-            if value is not None:
-                self.layout.label(text = "%s : %.3f" % (item.text, value))
+        scn = context.scene
+        self.layout.prop(scn, "DazModifyBakedMorphs")
+        if scn.DazModifyBakedMorphs:
+            DAZ_PT_Morphs.draw(self, context)
+        else:
+            rig = self.getCurrentRig(context)
+            if not self.hasTheseMorphs(rig):
+                return
+            for item in rig.DazBaked.values():
+                value = rig.get(item.name)
+                if value is not None:
+                    self.layout.label(text = "%s : %.3f" % (item.text, value))
 
 #------------------------------------------------------------------------
 #    Custom panels
@@ -914,6 +919,11 @@ def register():
         description = "Multiply all morphs in this section with this",
         min = 0.1, max = 10,
         default = 1.0)
+
+    bpy.types.Scene.DazModifyBakedMorphs = BoolProperty(
+        name = "Modify Baked Morphs",
+        default = False)
+
 
 
 def unregister():
