@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+import numpy as np
 from .utils import *
 from .error import *
-
 
 #------------------------------------------------------------------
 #   Apply transforms
@@ -74,20 +74,33 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazPropsOperator, IsArmature):
     useApplyTransforms : BoolProperty(
         name = "Apply Transforms",
         description = "Apply Object Transforms",
-        default = True)
+        default = False)
+
+    useApplyShapekeys : BoolProperty(
+        name = "Apply Shapekeys",
+        description = "Apply all shapekeys",
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "useApplyTransforms")
+        self.layout.prop(self, "useApplyShapekeys")
 
     def run(self, context):
         rig = context.object
+        objects = getSelectedObjectAndChildren(context)
         if self.useApplyTransforms:
-            objects = getSelectedObjectAndChildren(context)
             applyTransforms(objects)
         applyRestPoses(context, rig)
+        if self.useApplyShapekeys:
+            for ob in objects:
+                if ob.type == 'MESH':
+                    applyAllShapekeys(ob)
 
 
 def applyRestPoses(context, rig):
+    if rig is None:
+        return
+
     def muteShapekeys(skeys):
         muted = []
         if skeys:
@@ -120,7 +133,9 @@ def applyRestPoses(context, rig):
         if rig.animation_data:
             for fcu in list(rig.animation_data.drivers):
                 bname,channel,cnsname = getBoneChannel(fcu)
-                if cnsname is None and channel != "HdOffset":
+                if (bname in rig.pose.bones.keys() and
+                    cnsname is None and
+                    channel != "HdOffset"):
                     pb = rig.pose.bones[bname]
                     value = getattr(pb, channel)[fcu.array_index]
                     if abs(value) > 1e-6:
@@ -207,6 +222,26 @@ def applyArmatureModifier(ob):
             else:
                 bpy.ops.object.modifier_apply(modifier=mname)
 
+#----------------------------------------------------------
+#   Apply shapekeys
+#----------------------------------------------------------
+
+def applyAllShapekeys(ob):
+    skeys = ob.data.shape_keys
+    applied = []
+    if skeys:
+        nverts = len(ob.data.vertices)
+        verts = np.array([v.co for v in ob.data.vertices])
+        coords = verts.copy()
+        for skey in skeys.key_blocks:
+            scoords = np.array([skey.data[n].co for n in range(nverts)])
+            coords += skey.value*(scoords - verts)
+            applied.append(skey)
+        applied.reverse()
+        for skey in applied:
+            ob.shape_key_remove(skey)
+        for v,co in zip(ob.data.vertices, coords):
+            v.co = co
 
 #----------------------------------------------------------
 #   Initialize

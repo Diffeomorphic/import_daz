@@ -582,6 +582,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Apply all transforms to objects that are not bone parented",
         default = False)
 
+    useApplyRestPoses : BoolProperty(
+        name = "Apply Rest Poses",
+        description = "Apply rest pose to all rigs.\nOnly for morphed mesh fitting",
+        default = True)
+
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge identical materials",
@@ -667,7 +672,10 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             self.subprop("duplicateDistance")
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
-        self.layout.prop(self, "useApplyTransforms")
+        if self.fitMeshes == 'MORPHED':
+            self.layout.prop(self, "useApplyRestPoses")
+        else:
+            self.layout.prop(self, "useApplyTransforms")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
@@ -683,12 +691,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "onMorphSuffix")
         if self.onMorphSuffix == 'ALL':
             self.layout.prop(self, "morphSuffix")
-        if self.fitMeshes != 'MORPHED':
-            self.layout.prop(self, "useTransferFace")
-            self.layout.prop(self, "useTransferHair")
-            self.layout.prop(self, "useTransferGeografts")
-            self.layout.prop(self, "useTransferClothes")
-            self.layout.prop(self, "useTransferHD")
+        self.layout.prop(self, "useTransferFace")
+        self.layout.prop(self, "useTransferHair")
+        self.layout.prop(self, "useTransferGeografts")
+        self.layout.prop(self, "useTransferClothes")
+        self.layout.prop(self, "useTransferHD")
         self.layout.separator()
         self.layout.prop(self, "useMergeGeografts")
         if self.useMergeGeografts:
@@ -865,7 +872,17 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         grafts,hum = geografts[baseob.name]
                         isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
-        if self.useApplyTransforms:
+        if self.fitMeshes == 'MORPHED':
+            from .apply import applyTransforms, applyRestPoses, applyAllShapekeys
+            if self.useApplyRestPoses:
+                applyTransforms(objects)
+            if firstMesh:
+                self.transferShapes(context, firstMesh, meshes[1:], True, "All")
+            if self.useApplyRestPoses:
+                applyRestPoses(context, mainRig)
+                for ob in meshes:
+                    applyAllShapekeys(ob)
+        elif self.useApplyTransforms:
             from .apply import applyTransforms
             applyTransforms(objects)
 
@@ -941,25 +958,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 useAdjusters = self.useAdjusters,
                 useMakePosable=False)
 
-        if self.fitMeshes == 'MORPHED' and firstMesh:
-            print("Transfer to all meshes")
-            data = []
-            for mesh in meshes:
-                mod = getModifier(mesh, 'ARMATURE')
-                data.append((mesh, mesh.matrix_basis.copy(), mesh.parent, mod))
-                if mod:
-                    mod.show_viewport = False
-                    mesh.parent = None
-                    mesh.matrix_basis = Matrix()
-            try:
-                self.transferShapes(context, firstMesh, meshes[1:], True, "All")
-            finally:
-                for mesh,bmat,parent,mod in data:
-                    if mod:
-                        mod.show_viewport = True
-                    mesh.parent = parent
-                    mesh.matrix_basis = Matrix()
-
         # Transfer to HD meshes
         if self.useTransferHD and firstMesh:
             print("Transfer from %s to HD meshes" % firstMesh.name)
@@ -1003,8 +1001,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     if baseName(hdob.name) in hdgraftNames:
                         hdgrafts.append(hdob)
 
-            if ((self.useTransferGeografts or self.useMergeGeografts) and
-                self.fitMeshes != 'MORPHED'):
+            if self.useTransferGeografts or self.useMergeGeografts:
                 print("Transfer to geografts")
                 for grafts,hum in geografts.values():
                     if hum == firstMesh:
@@ -1041,16 +1038,15 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     hdgrafts = []
 
         # Transfer shapekeys to clothes and lashes
-        if self.fitMeshes != 'MORPHED':
-            if self.useTransferClothes:
-                print("Transfer to clothes")
-                self.transferShapes(context, firstMesh, clothes, True, "NoFace")
-            if self.useTransferHair:
-                print("Transfer to hair meshes")
-                self.transferShapes(context, firstMesh, hairs, True, "All")
-            if self.useTransferFace:
-                print("Transfer to face meshes")
-                self.transferShapes(context, firstMesh, lashes, True, "All")
+        if self.useTransferClothes:
+            print("Transfer to clothes")
+            self.transferShapes(context, firstMesh, clothes, True, "NoFace")
+        if self.useTransferHair:
+            print("Transfer to hair meshes")
+            self.transferShapes(context, firstMesh, hairs, True, "All")
+        if self.useTransferFace:
+            print("Transfer to face meshes")
+            self.transferShapes(context, firstMesh, lashes, True, "All")
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):

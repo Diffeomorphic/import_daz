@@ -799,7 +799,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         elif self.strandType == 'TUBE':
             self.multiMaterials = False
 
-        from ..transfer import applyAllShapekeys
+        from ..apply import applyAllShapekeys
         applyAllShapekeys(hair)
         LS.hairMaterialMethod = self.hairMaterialMethod
 

@@ -119,7 +119,7 @@ class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        from ..transfer import applyAllShapekeys
+        from ..apply import applyAllShapekeys
         for ob in getSelectedMeshes(context):
             applyAllShapekeys(ob)
 

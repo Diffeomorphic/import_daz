@@ -301,7 +301,7 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "material", "cgroup", "render", "visibility",
             "guess", "main", "finger", "locks",
             "matsel", "proxy",
-            "merge_grafts", "merge_rigs", "empties",
+            "merge_grafts", "merge_rigs", "apply", "empties",
             "pin", "transfer", "moho", "scan",
             ]
 
