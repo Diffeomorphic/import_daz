@@ -54,7 +54,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def run(self, context):
-        from .merge_rigs import safeTransformApply
+        from .apply import safeTransformApply
         from .finger import isGenesis
         self.initTmp()
         safeTransformApply()
