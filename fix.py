@@ -409,7 +409,7 @@ class Fixer(DriverUser):
         from .rig_utils import setMhx, mhxProp, stretchTo, addMuteDriver
         from .winder import addWinder
         from .driver import addDriver
-        if self.tongueBones[0] not in rig.data.edit_bones.keys():
+        if self.tongueBones[0] not in rig.pose.bones.keys():
             print("Tongue bone %s not found." % self.tongueBones[0])
             return
         prop1 = "MhaTongueControl"
