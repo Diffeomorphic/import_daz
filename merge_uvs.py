@@ -112,7 +112,8 @@ class UVLayerMerger:
         for idx in idxs:
             mergeUvLayers(ob.data, keepIdx, idx, self.allowOverlap)
         uvname0 = ob.data.uv_layers[keepIdx].name
-        print("UV layers %s merged to %s" % (list(self.auvnames), uvname0))
+        if not ES.easy:
+            print("UV layers %s merged to %s" % (list(self.auvnames), uvname0))
 
 #----------------------------------------------------------
 #   Tile Fixer

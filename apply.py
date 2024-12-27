@@ -96,11 +96,13 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazPropsOperator, IsArmature):
         objects = getSelectedObjectAndChildren(context)
         if self.useApplyTransforms:
             applyTransforms(objects)
-        applyRestPoses(context, rig, self.useMergeTiedBones)
+        tied = applyRestPoses(context, rig, self.useMergeTiedBones)
         if self.useApplyShapekeys:
             for ob in objects:
                 if ob.type == 'MESH':
                     applyAllShapekeys(ob)
+        if tied:
+            deleteObjects(context, tied)
 
 
 def applyRestPoses(context, rig, useMergeTiedBones=False):
@@ -121,7 +123,7 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
                 children.append((ob, ob.parent_type, ob.parent_bone, ob.matrix_world.copy()))
                 bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
                 if ob.get("DazTiedRig") is not None:
-                    tied.append(ob)
+                    tied.append((ob, list(ob.children)))
                     applyModifiers(ob, children, hasamt, tied)
                 elif ob.type == 'MESH' and ob.parent_type == 'OBJECT':
                     mod = getModifier(ob, 'ARMATURE')
@@ -161,11 +163,13 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
             pb.matrix_basis = bmats[bname]
 
     def mergeTiedBones(tied, rig):
-        from .merge_rigs import BoneInfo
+        from .merge_rigs import BoneInfo, getDupName
         infos = []
-        for subrig in tied:
+        bnames = []
+        dups = []
+        for subrig,children in tied:
             binfos = {}
-            infos.append((subrig, binfos))
+            infos.append((subrig, binfos, children))
             for pb in subrig.pose.bones:
                 if not getConstraint(pb, 'COPY_TRANSFORMS'):
                     parname = None
@@ -173,14 +177,38 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
                         parname = pb.bone.parent.name
                     binfo = BoneInfo(pb.bone, pb, parname, None)
                     lmat = pb.bone.matrix_local.copy()
-                    binfos[pb.name] = (binfo, pb.matrix.copy())
+                    bname = pb.name
+                    binfos[bname] = (binfo, pb.matrix.copy())
+                    if bname in bnames:
+                        dups.append(bname)
+                    else:
+                        bnames.append(bname)
+        dups = set(dups)
         setMode('EDIT')
-        for subrig,binfos in infos:
+        hasnew = False
+        for subrig,binfos,children in infos:
             for bname,data in binfos.items():
                 binfo,mat = data
+                if bname in dups:
+                    bname = getDupName(subrig, bname)
                 eb = binfo.setEditBone(bname, rig.data.edit_bones, subrig)
                 eb.matrix = mat
+                hasnew = True
         setMode('OBJECT')
+        if hasnew:
+            enableRigNumLayer(rig, T_CUSTOM)
+            for subrig,binfos,children in infos:
+                for bname in binfos.keys():
+                    if bname in dups:
+                        bname = getDupName(subrig, bname)
+                    pb = rig.pose.bones.get(bname)
+                    if bname:
+                        enableBoneNumLayer(pb.bone, rig, T_CUSTOM)
+                for bname in dups:
+                    for ob in children:
+                        vgrp = ob.vertex_groups.get(bname)
+                        if vgrp:
+                            vgrp.name = getDupName(subrig, bname)
 
     if activateObject(context, rig):
         removeBoneDrivers(rig)
@@ -199,7 +227,7 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
     from .modifier import newArmatureModifier
     for ob in hasamt:
         newArmatureModifier(rig.name, ob, rig)
-    return tied
+    return [subrig for subrig,children in tied]
 
 
 def removeObjectDrivers(objects):

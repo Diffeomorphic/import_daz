@@ -792,7 +792,6 @@ class LoadMorph(DriverUser):
                 pass
             elif pb.rotation_mode == 'QUATERNION':
                 quat[0] -= 1
-                print("QQ", pb.name, quat)
                 self.setFcurves(pb, quat, tfm.rotProp, "rotation_quaternion")
                 success = True
             else:
