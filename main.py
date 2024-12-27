@@ -668,7 +668,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
-        if self.useMergeRigs:
+        if self.useMergeRigs and self.fitMeshes != 'MORPHED':
             self.subprop("duplicateDistance")
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
@@ -819,7 +819,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 bpy.ops.daz.merge_rigs(
                     useOnlySelected = True,
                     duplicateDistance = self.duplicateDistance,
-                    useMergeNonConforming = self.useMergeNonConforming)
+                    useMergeNonConforming = self.useMergeNonConforming,
+                    useTieRigs = (self.fitMeshes == 'MORPHED'))
                 mainRig = context.object
                 rigs = [mainRig]
 
@@ -872,6 +873,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         grafts,hum = geografts[baseob.name]
                         isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
+        tied = []
         if self.fitMeshes == 'MORPHED':
             from .apply import applyTransforms, applyRestPoses, applyAllShapekeys
             if self.useApplyRestPoses:
@@ -879,7 +881,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             if firstMesh:
                 self.transferShapes(context, firstMesh, meshes[1:], True, "All")
             if self.useApplyRestPoses:
-                applyRestPoses(context, mainRig)
+                tied = applyRestPoses(context, mainRig, useMergeTiedBones=True)
                 for ob in meshes:
                     applyAllShapekeys(ob)
         elif self.useApplyTransforms:
@@ -1058,15 +1060,19 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 bpy.ops.daz.finalize_armature()
 
         # Delete base meshes and rig
+        deletes = tied
         if not GS.keepBaseMesh and hdmeshes and meshes:
             firstMesh = hdmeshes[0]
             activateObject(context, firstMesh)
-            deletes = [ob for ob in meshes if ob not in hdmeshes]
+            deletes += [ob for ob in meshes if ob not in hdmeshes]
             mainMesh = None
             meshes = []
             if not GS.useHDArmature and mainRig:
                 deletes.append(mainRig)
                 mainRig = None
+
+        if deletes:
+            deletes = set(deletes)
             print("Deleting objects: %s" % [ob.name for ob in deletes])
             deleteObjects(context, deletes)
             print("Unlinking base collection")

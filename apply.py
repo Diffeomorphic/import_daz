@@ -81,25 +81,31 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazPropsOperator, IsArmature):
         description = "Apply all shapekeys",
         default = False)
 
+    useMergeTiedBones : BoolProperty(
+        name = "Merge Tied Bones",
+        description = "Merge tied bones to main rig and delete tied rigs",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useApplyTransforms")
         self.layout.prop(self, "useApplyShapekeys")
+        self.layout.prop(self, "useMergeTiedBones")
 
     def run(self, context):
         rig = context.object
         objects = getSelectedObjectAndChildren(context)
         if self.useApplyTransforms:
             applyTransforms(objects)
-        applyRestPoses(context, rig)
+        applyRestPoses(context, rig, self.useMergeTiedBones)
         if self.useApplyShapekeys:
             for ob in objects:
                 if ob.type == 'MESH':
                     applyAllShapekeys(ob)
 
 
-def applyRestPoses(context, rig):
+def applyRestPoses(context, rig, useMergeTiedBones=False):
     if rig is None:
-        return
+        return []
 
     def muteShapekeys(skeys):
         muted = []
@@ -109,21 +115,28 @@ def applyRestPoses(context, rig):
                 skey.mute = True
         return muted
 
+    def applyModifiers(rig, children, hasamt, tied):
+        for ob in rig.children:
+            if activateObject(context, ob):
+                children.append((ob, ob.parent_type, ob.parent_bone, ob.matrix_world.copy()))
+                bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+                if ob.get("DazTiedRig") is not None:
+                    tied.append(ob)
+                    applyModifiers(ob, children, hasamt, tied)
+                elif ob.type == 'MESH' and ob.parent_type == 'OBJECT':
+                    mod = getModifier(ob, 'ARMATURE')
+                    skeys = ob.data.shape_keys
+                    if mod:
+                        hasamt.append(ob)
+                        muted = muteShapekeys(ob.data.shape_keys)
+                        applyArmatureModifier(ob)
+                        for skey,mute in muted:
+                            skey.mute = mute
+
     children = []
     hasamt = []
-    for ob in rig.children:
-        if activateObject(context, ob):
-            children.append((ob, ob.parent_type, ob.parent_bone, ob.matrix_world.copy()))
-            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-            if ob.type == 'MESH' and ob.parent_type == 'OBJECT':
-                mod = getModifier(ob, 'ARMATURE')
-                skeys = ob.data.shape_keys
-                if mod:
-                    hasamt.append(ob)
-                    muted = muteShapekeys(ob.data.shape_keys)
-                    applyArmatureModifier(ob)
-                    for skey,mute in muted:
-                        skey.mute = mute
+    tied = []
+    applyModifiers(rig, children, hasamt, tied)
 
     def removeBoneDrivers(rig):
         bmats = {}
@@ -147,12 +160,36 @@ def applyRestPoses(context, rig):
             pb = rig.pose.bones[bname]
             pb.matrix_basis = bmats[bname]
 
+    def mergeTiedBones(tied, rig):
+        from .merge_rigs import BoneInfo
+        infos = []
+        for subrig in tied:
+            binfos = {}
+            infos.append((subrig, binfos))
+            for pb in subrig.pose.bones:
+                if not getConstraint(pb, 'COPY_TRANSFORMS'):
+                    parname = None
+                    if pb.bone.parent:
+                        parname = pb.bone.parent.name
+                    binfo = BoneInfo(pb.bone, pb, parname, None)
+                    lmat = pb.bone.matrix_local.copy()
+                    binfos[pb.name] = (binfo, pb.matrix.copy())
+        setMode('EDIT')
+        for subrig,binfos in infos:
+            for bname,data in binfos.items():
+                binfo,mat = data
+                eb = binfo.setEditBone(bname, rig.data.edit_bones, subrig)
+                eb.matrix = mat
+        setMode('OBJECT')
+
     if activateObject(context, rig):
         removeBoneDrivers(rig)
         bpy.ops.object.transform_apply()
         setMode('POSE')
         bpy.ops.pose.armature_apply()
         setMode('OBJECT')
+        if tied and useMergeTiedBones:
+            mergeTiedBones(tied, rig)
 
     for ob,type,bone,wmat in children:
         ob.parent = rig
@@ -162,6 +199,7 @@ def applyRestPoses(context, rig):
     from .modifier import newArmatureModifier
     for ob in hasamt:
         newArmatureModifier(rig.name, ob, rig)
+    return tied
 
 
 def removeObjectDrivers(objects):
