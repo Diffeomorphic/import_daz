@@ -1252,7 +1252,10 @@ class SubsurfaceGroup(FacMixGroup):
     def addNodes(self, args=None):
         FacMixGroup.addNodes(self, args)
         sss = self.addNode("ShaderNodeSubsurfaceScattering", 1)
-        sss.falloff = GS.sssMethod
+        try:
+            sss.falloff = GS.sssMethod
+        except TypeError:
+            pass
         self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])

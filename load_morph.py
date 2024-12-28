@@ -1876,7 +1876,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
             if parent:
                 parents.append(parent.name)
         for idx,expr in exprs.items():
-            if idx < 0:
+            if idx < 0 or expr.bone is None:
                 continue
             ok = False
             for driver,path,comp in expr.bone.mults:
