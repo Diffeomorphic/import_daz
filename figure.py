@@ -203,7 +203,17 @@ class FigureInstance(Instance):
 
 
     def setLSRig(self):
-        if LS.rigname is None or self.isMainFigure(5):
+        def isMainFigure(level):
+            if self.getConformTarget():
+                return False
+            par = self.parent
+            while (par and
+                   not isinstance(par, FigureInstance) and
+                   not par.getConformTarget()):
+                par = par.parent
+            return(par is None)
+
+        if LS.rigname is None or isMainFigure(5):
             LS.rigname = self.name
             LS.rigs[LS.rigname] = []
             LS.meshes[LS.rigname] = []

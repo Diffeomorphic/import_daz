@@ -169,17 +169,6 @@ class Instance(Accessor, Channels, SimNode):
     def getNodeId(self):
         return unquote(self.node.id.rsplit("#", 1)[-1])
 
-    def isMainFigure(self, level):
-        from .figure import FigureInstance
-        par = self.parent
-        while par and not isinstance(par, FigureInstance):
-            par = par.parent
-        if par is None:
-            return True
-        else:
-            return False
-
-
     def preprocess(self, context):
         for key,channel in self.channels.items():
             if key == "Instance Target":
@@ -564,7 +553,6 @@ class Instance(Accessor, Channels, SimNode):
     def updateMatrices(self):
         self.worldmat, self.wtrans, self.wrot, self.wscale, self.wmat, self.cpoint = self.calcMatrices(self.attributes, self.parent)
 
-
     def calcMatrices(self, attributes, parent):
         # From http://docs.daz3d.com/doku.php/public/dson_spec/object_definitions/node/start
         #
@@ -574,6 +562,9 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes that inherit scale = parent.global_scale * orientation * scale * general_scale * (orientation)-1
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
+
+        RXP = Matrix.Rotation(pi/2, 4, 'X')
+        RXN = Matrix.Rotation(-pi/2, 4, 'X')
 
         from .bone import BoneInstance
         if self.rigidFollow and self.restdata:
@@ -619,20 +610,30 @@ class Instance(Accessor, Channels, SimNode):
         transmat = Matrix.Translation(wtrans)
         wmat = transmat @ wrot @ wscale
         if GS.zup:
-            worldmat = self.RXP @ wmat @ self.RXN
+            worldmat = RXP @ wmat @ RXN
         else:
             worldmat = wmat
 
         return worldmat, wtrans, wrot, wscale, wmat, cpoint
 
 
-    RXP = Matrix.Rotation(pi/2, 4, 'X')
-    RXN = Matrix.Rotation(-pi/2, 4, 'X')
+    def getConformTarget(self):
+        for geonode in self.geometries:
+            return geonode.conform_target
+        return None
 
 
     def parentObject(self, context, ob):
         from .figure import FigureInstance
         from .bone import BoneInstance
+
+        target = self.getConformTarget()
+        if target:
+            node = self.getAsset(target)
+            if node:
+                self.parent = node.getInstance(target)
+                if self.parent:
+                    self.worldmat = self.parent.worldmat
 
         if ob is None:
             return
