@@ -692,7 +692,7 @@ class Instance(Accessor, Channels, SimNode):
             parrig = inst.rna
             if rig and parrig:
                 for key in rig.keys():
-                    if not key.startswith("Daz") and key in parrig.keys():
+                    if key in parrig.DazBaked.keys() and key in parrig.keys():
                         rig[key] = rig.data[finalProp(key)] = parrig[key]
             for geonode,pargeonode in zip(self.geometries, inst.geometries):
                 ob = geonode.rna

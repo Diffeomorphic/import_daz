@@ -469,13 +469,13 @@ class CyclesTree(Tree):
         self.buildEmission()
 
 
-    def makeTree(self):
+    def makeTree(self, slot="UV"):
         mat = self.owner.rna
         mat.use_nodes = True
         mat.node_tree.nodes.clear()
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
-        return self.addTexco("UV")
+        return self.addTexco(slot)
 
 
     def getFromMaterial(self, mat):
@@ -541,7 +541,7 @@ class CyclesTree(Tree):
             not self.owner.uv_set):
             node = self.addNode("ShaderNodeTexCoord")
             node.hide = True
-            hideAllBut(node, ["UV"])
+            hideAllBut(node, [slot])
             self.texco = node.outputs[slot]
         else:
             node, self.texco = self.addUvNode(self.owner.uv_set.name)
@@ -911,7 +911,7 @@ class CyclesTree(Tree):
         return node
 
 
-    def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, isMask=False):
+    def getColorTex(self, attr, colorSpace, default, useFactor=True, useTex=True, maxval=0, value=None, isMask=False, projection=None):
         channel = self.owner.getLayeredChannel(attr)
         if channel is None:
             return default,None,0
@@ -919,6 +919,8 @@ class CyclesTree(Tree):
             channel = channel[0]
         if useTex:
             tex,texslot = self.addTexImageNode(channel, colorSpace, isMask)
+            if projection and tex and tex.type == 'TEX_IMAGE':
+                tex.projection = projection
         else:
             tex = None
             texslot = 0

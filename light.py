@@ -50,9 +50,13 @@ class Light(Node):
         elif "directional" in struct.keys():
             self.type = 'DIRECTIONAL'
             self.info = struct["directional"]
+        elif "extra" in struct.keys():
+            for extra in struct["extra"]:
+                if extra.get("type") == "studio/node/light/daz_shader":
+                    self.type = extra.get("definition")
         else:
             self.presentation = struct["presentation"]
-            print("Strange light", self)
+            print("Strange light", self.name, self.presentation)
 
     def makeInstance(self, fileref, struct):
         return LightInstance(fileref, self, struct)
@@ -75,6 +79,13 @@ class Light(Node):
             light = bpy.data.lights.new(self.name, "SUN")
             light.shadow_soft_size = height/2
             self.twosided = False
+        elif self.type in [
+            "support/DAZ/Uber/shaderDefinitions/light/omUberEnvironment2Def.dse"
+            ]:
+            worldmat = WorldMaterial(None, inst)
+            worldmat.build(context)
+            context.scene.world = self.rna = worldmat.rna
+            return
         else:
             light = bpy.data.lights.new(self.name, "AREA")
             light.shape = ('RECTANGLE' if lgeo == 1 else 'DISK')
@@ -195,6 +206,65 @@ class LightTree(CyclesTree):
 
     def addTexco(self, slot):
         return
+
+#-------------------------------------------------------------
+#   Cycles World Material
+#-------------------------------------------------------------
+
+class WorldMaterial(CyclesMaterial):
+    def __init__(self, fileref, inst):
+        CyclesMaterial.__init__(self, fileref)
+        self.name = inst.name
+        self.channels = inst.channels
+        self.instance = inst
+        for key in self.channels.keys():
+            print(key, self.getValue([key], None))
+
+
+    def guessColor(self):
+        return
+
+
+    def build(self, context):
+        self.setupBasics()
+        if self.dontBuild():
+            return False
+        world = bpy.data.worlds.new(self.name)
+        self.rna = world
+        self.tree = WorldTree(self)
+        self.tree.build()
+        return world
+
+
+class WorldTree(CyclesTree):
+    def __init__(self, owner):
+        CyclesTree.__init__(self, owner)
+        self.type = 'World'
+
+
+    def build(self):
+        from .tree import pruneNodeTree
+        self.makeTree("Generated")
+
+        mapping = self.addNode("ShaderNodeMapping", 1)
+        mapping.vector_type = 'TEXTURE'
+        mapping.inputs["Location"].default_value = (0,0,-0.5)
+        mapping.inputs["Rotation"].default_value = (pi/2,0,0)
+        self.linkVector(self.texco, mapping)
+        self.texco = mapping.outputs["Vector"]
+
+        color,tex,_ = self.getColorTex(["Color"], "COLOR", WHITE)
+        strength = self.getValue(["Strength"], 1.0)
+        scale = self.getValue(["Intensity Scale"], 1.0)
+        envnode = self.addNode("ShaderNodeBackground")
+        envnode.inputs["Strength"].default_value = strength*scale
+        self.linkColor(tex, envnode, color, "Color")
+
+        output = self.addNode("ShaderNodeOutputWorld", 3)
+        self.links.new(envnode.outputs["Background"], output.inputs["Surface"])
+
+        if GS.usePruneNodes:
+            pruneNodeTree(self, usePruneTexco=False)
 
 
 
