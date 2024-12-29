@@ -829,16 +829,14 @@ class DAZ_OT_UpdateShellDrivers(DazOperator, IsMesh):
 
 
 def updateShellDrivers(context):
+    from .driver import forceDriverUpdate
     ob = context.object
     rig = ob.parent
     if rig:
         rig.hide_viewport = False
     for mat in ob.data.materials:
-        if mat and mat.node_tree and mat.node_tree.animation_data:
-            for fcu in mat.node_tree.animation_data.drivers:
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        trg.data_path = str(trg.data_path)
+        if mat:
+            forceDriverUpdate(mat.node_tree)
 
 #----------------------------------------------------------
 #   Disable Normal Groups

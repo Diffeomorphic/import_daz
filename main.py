@@ -175,6 +175,9 @@ class DazLoader:
         if LS.onLoadBaked:
             from .baked import postloadMorphs
             postloadMorphs(context, filepath)
+            for _,inst in main.nodes:
+                inst.setConformProps(context)
+            updateAll(context)
 
         # Do this at the very end, because it deletes nodes
         if GS.usePruneNodes:
@@ -878,9 +881,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             from .apply import applyTransforms, applyRestPoses, applyAllShapekeys
             if self.useApplyRestPoses:
                 applyTransforms(objects)
-            if firstMesh:
-                self.transferShapes(context, firstMesh, meshes[1:], True, "All")
-            if self.useApplyRestPoses:
                 tied = applyRestPoses(context, mainRig, useMergeTiedBones=True)
                 for ob in meshes:
                     applyAllShapekeys(ob)

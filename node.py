@@ -623,17 +623,23 @@ class Instance(Accessor, Channels, SimNode):
         return None
 
 
-    def parentObject(self, context, ob):
-        from .figure import FigureInstance
-        from .bone import BoneInstance
-
+    def getConformInstance(self):
         target = self.getConformTarget()
         if target:
             node = self.getAsset(target)
             if node:
-                self.parent = node.getInstance(target)
-                if self.parent:
-                    self.worldmat = self.parent.worldmat
+                return node.getInstance(target)
+        return None
+
+
+    def parentObject(self, context, ob):
+        from .figure import FigureInstance
+        from .bone import BoneInstance
+
+        inst = self.getConformInstance()
+        if inst:
+            self.parent = inst
+            self.worldmat = inst.worldmat
 
         if ob is None:
             return
@@ -676,6 +682,28 @@ class Instance(Accessor, Channels, SimNode):
             except ValueError:
                 print("Failed to invert parent matrix")
         return orient.inverted() @ lsmat @ orient
+
+
+    def setConformProps(self, context):
+        from .morphing import transferShapesToMeshes
+        inst = self.getConformInstance()
+        if inst:
+            rig = self.rna
+            parrig = inst.rna
+            if rig and parrig:
+                for key in rig.keys():
+                    if not key.startswith("Daz") and key in parrig.keys():
+                        rig[key] = rig.data[finalProp(key)] = parrig[key]
+            for geonode,pargeonode in zip(self.geometries, inst.geometries):
+                ob = geonode.rna
+                parob = pargeonode.rna
+                if ob and parob:
+                    skeys = parob.data.shape_keys
+                    if skeys:
+                        snames = [skey.name for skey in skeys.key_blocks][1:]
+                        transferShapesToMeshes(context, parob, [ob], snames,
+                            useOverwrite=False,
+                            useDrivers=False)
 
 #-------------------------------------------------------------
 #   Collection utilities

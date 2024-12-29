@@ -1148,6 +1148,14 @@ class DAZ_OT_UpdateAll(DazOperator):
     def run(self, context):
         updateAll(context)
 
+
+def forceDriverUpdate(rna):
+    if rna and rna.animation_data:
+        for fcu in rna.animation_data.drivers:
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    trg.data_path = str(trg.data_path)
+
 #----------------------------------------------------------
 #   Disable and enable drivers
 #----------------------------------------------------------
