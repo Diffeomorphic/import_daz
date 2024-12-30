@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "import_daz"
-version = "4.2.1"
+version = "4.3.0"
 name = "DAZ Importer"
 tagline = "Importer for native DAZ files (.duf, .dsf)"
 maintainer = "Thomas Larsson <thomas.larsson.01@gmail.com>"
