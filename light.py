@@ -79,6 +79,8 @@ class Light(Node):
             light = bpy.data.lights.new(self.name, "SUN")
             light.shadow_soft_size = height/2
             self.twosided = False
+            if LS.distantLight is None:
+                LS.distantLight = self
         elif self.type in [
             "support/DAZ/Uber/shaderDefinitions/light/omUberEnvironment2Def.dse"
             ]:

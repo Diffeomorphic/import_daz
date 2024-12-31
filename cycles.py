@@ -595,10 +595,13 @@ class CyclesTree(Tree):
 
 
     def addMappingNode(self, data, clipped):
+        def isInt(x):
+            return (isinstance(x, int) or x.is_integer())
+
         dx,dy,sx,sy,rz = data
         modulo = mapping = None
         clip = 'REPEAT'
-        if sx != 1 or sy != 1 or not dx.is_integer() or not dy.is_integer() or rz != 0:
+        if sx != 1 or sy != 1 or not isInt(dx) or not isInt(dy) or rz != 0:
             if clipped:
                 modulo = self.addNode("ShaderNodeVectorMath", 1, size=2)
                 modulo.operation = 'MODULO'

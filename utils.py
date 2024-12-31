@@ -134,7 +134,6 @@ else:
         coll = rig.data.collections.get(layer)
         if coll:
             coll.is_visible = value
-        print("XX", layer, coll, coll.is_visible)
 
     def makeBoneCollections(rig, table):
         for cname in table.keys():

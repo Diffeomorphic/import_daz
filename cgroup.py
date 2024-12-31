@@ -819,7 +819,7 @@ class ToonDiffuseGroup(CyclesGroup):
 
         maprange = self.addMapRange(3)
         maprange.interpolation_type = 'STEPPED'
-        maprange.inputs["From Max"].default_value = 0.05
+        maprange.inputs["From Max"].default_value = 4
         maprange.inputs["Steps"].default_value = 1
         self.links.new(toRgb.outputs["Color"], maprange.inputs["Value"])
 
@@ -921,6 +921,48 @@ class ToonRimGroup(CyclesGroup):
         self.links.new(self.inputs.outputs["Input"], b)
 
         self.links.new(scrout, self.outputs.inputs["Output"])
+
+# ---------------------------------------------------------------------
+#   Toon Light Group
+# ---------------------------------------------------------------------
+
+class ToonLightGroup(CyclesGroup):
+
+    def __init__(self):
+        CyclesGroup.__init__(self)
+        self.insockets += ["Input"]
+        self.outsockets += ["Output"]
+
+
+    def create(self, node, name, parent):
+        CyclesGroup.create(self, node, name, parent, 3)
+        addGroupInput(self.group, "NodeSocketColor", "Input")
+        addGroupOutput(self.group, "NodeSocketColor", "Output")
+
+
+    def addNodes(self, args=None):
+        mult,a,b,multout = self.addMixRgbNode('MULTIPLY', 1)
+        mult.inputs[0].default_value = 1.0
+        self.links.new(self.inputs.outputs["Input"], a)
+
+        rgb = self.addNode("ShaderNodeRGB", 0)
+        rgb.label = "Light Color"
+        rgb.outputs["Color"].default_value[0:3] = WHITE
+        self.links.new(rgb.outputs["Color"], b)
+
+        hsv = self.addNode("ShaderNodeHueSaturation", 2)
+        hsv.inputs["Hue"].default_value = 0.5
+        hsv.inputs["Saturation"].default_value = 1.0
+        hsv.inputs["Value"].default_value = 1.0
+        hsv.inputs["Fac"].default_value = 1.0
+        self.links.new(multout, hsv.inputs["Color"])
+
+        node = self.addNode("ShaderNodeValue", 1)
+        node.label = "Light Intensity"
+        node.outputs["Value"].default_value = 1.0
+        self.links.new(node.outputs["Value"], hsv.inputs["Value"])
+
+        self.links.new(hsv.outputs["Color"], self.outputs.inputs["Output"])
 
 # ---------------------------------------------------------------------
 #   Metal Group
@@ -2008,6 +2050,8 @@ ShaderGroups = {
         "useToonDiffuse" : (ToonDiffuseGroup, "DAZ Toon Diffuse", []),
         "useToonGlossy" : (ToonGlossyGroup, "DAZ Toon Glossy", []),
         "useToonRim" : (ToonRimGroup, "DAZ Toon Rim", []),
+        "useToonLight" : (ToonLightGroup, "DAZ Toon Light", []),
+
     }
 
 class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
@@ -2048,6 +2092,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useToonDiffuse : BoolProperty(name="Toon Diffuse", default=False)
     useToonGlossy : BoolProperty(name="Toon Glossy", default=False)
     useToonRim : BoolProperty(name="Toon Rim", default=False)
+    useToonLight : BoolProperty(name="Toon Light", default=False)
 
     def draw(self, context):
         for key in ShaderGroups.keys():

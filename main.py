@@ -301,21 +301,37 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
 
 
     def addToons(self, context):
+        def addCollection(cname, objects):
+            coll = bpy.data.collections.new(cname)
+            LS.collection.children.link(coll)
+            layer = getLayerCollection(context, coll)
+            if layer:
+                layer.exclude = True
+            for ob in objects:
+                coll.objects.link(ob)
+            return coll
+
+        toons = [geonode.rna for geonode in set(LS.toons) if geonode.rna and geonode.rna.type == 'MESH']
+        print("Toons: %s" % [ob.name for ob in toons])
         scn = context.scene
+        vly = context.view_layer
         scn.render.use_freestyle = True
         fset = context.view_layer.freestyle_settings
         lineset = fset.linesets.active
-        coll = bpy.data.collections.new("DAZ Toon Outline")
-        LS.collection.children.link(coll)
-        layer = getLayerCollection(context, coll)
-        if layer:
-            layer.exclude = True
-        lineset.collection = coll
+        lineset.collection = addCollection("DAZ Toon Outline", toons)
         lineset.select_by_collection = True
-        toons = [geonode.rna for geonode in set(LS.toons) if geonode.rna and geonode.rna.type == 'MESH']
-        print("Toons: %s" % [ob.name for ob in toons])
+
+        lname = "DAZ Toon Light"
+        if LS.distantLight:
+            light = LS.distantLight.rna
+        if light is None:
+            sun = bpy.data.lights.new(lname, "SUN")
+            light = bpy.data.objects.new(lname, sun)
+        coll = addCollection(lname, [light])
+        if light.name in LS.collection.objects.keys():
+            LS.collection.objects.unlink(light)
         for ob in toons:
-            coll.objects.link(ob)
+            ob.light_linking.receiver_collection = coll
 
 #------------------------------------------------------------------
 #   Import DAZ Materials

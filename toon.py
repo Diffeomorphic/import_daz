@@ -22,6 +22,7 @@ class ToonTree(CyclesTree):
         self.buildRim()
         self.buildGlossy()
         self.buildEmission()
+        self.buildLight()
 
 
     def buildBumpMap(self, bumpval, bumptex):
@@ -88,6 +89,14 @@ class ToonTree(CyclesTree):
         self.linkBumpNormal(node)
         self.cycles = node
         LS.usedFeatures["Rim"] = True
+
+
+    def buildLight(self):
+        from .cgroup import ToonLightGroup
+        node = self.addGroup(ToonLightGroup, "DAZ Toon Light")
+        if self.cycles:
+            self.links.new(self.cycles.outputs["Output"], node.inputs["Input"])
+        self.cycles = node
 
 
     def setRenderSettings(self):
