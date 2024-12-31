@@ -461,6 +461,11 @@ class BoneOptions:
         description = "Only animate selected bones",
         default = False)
 
+    useSnapIk : BoolProperty(
+        name = "Snap To IK",
+        description = "Snap final pose to IK.\nFor MHX and Simple IK rigs only",
+        default = False)
+
     useConvert : BoolProperty(
         name = "Convert Poses",
         description = "Attempt to convert poses to the current rig.",
@@ -485,6 +490,7 @@ class BoneOptions:
         if self.affectBones:
             self.layout.prop(self, "affectScale")
             self.layout.prop(self, "affectSelectedOnly")
+            self.layout.prop(self, "useSnapIk")
             self.layout.prop(self, "useConvert")
             if self.useConvert:
                 self.layout.prop(self, "srcCharacter")
@@ -832,9 +838,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def prepareRig(self, rig, frame):
         if not self.affectBones:
             return
-        if rig.DazRig == "rigify":
-            from .rigify_tools import setFkIk1
-            self.boneLayers = setFkIk1(rig, False, self.boneLayers, self.useInsertKeys, frame)
         elif rig.DazRig == "rigify2":
             from .rigify_tools import setFkIk2
             self.boneLayers = setFkIk2(rig, True, self.boneLayers, self.useInsertKeys, frame)
@@ -844,6 +847,68 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif rig.get("DazSimpleIK"):
             from .simple_ik_tools import setSimpleToFk
             self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)
+
+
+    def snapIk(self, context, rig, frame):
+        if not self.affectBones or self.snapError:
+            return
+
+        scn = context.scene
+        scn.frame_current = int(frame)
+
+        def setAuto(scn, useInsertKeys):
+            auto = scn.tool_settings.use_keyframe_insert_auto
+            scn.tool_settings.use_keyframe_insert_auto = useInsertKeys
+            return auto
+
+        if rig.get("MhxRig") or rig.DazRig == "mhx":
+            from .mhx_tools import setMhxToFk
+            try:
+                auto = setAuto(scn, self.useInsertKeys)
+                bpy.ops.mhx.snap_ik_all()
+                setAuto(scn, auto)
+                self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
+            except AttributeError:
+                self.snapError = True
+        elif rig.get("DazSimpleIK"):
+            from .simple_ik_tools import setSimpleToFk
+            try:
+                auto = setAuto(scn, self.useInsertKeys)
+                bpy.ops.daz.snap_all_simple_ik()
+                setAuto(scn, auto)
+                self.boneLayers = setSimpleToFk(rig, self.boneLayers, self.useInsertKeys, frame)
+            except AttributeError:
+                self.snapError = True
+
+
+    def enableIk(self, rig):
+        if self.snapError:
+            return
+        act = None
+        if rig.animation_data:
+            act = rig.animation_data.action
+
+        def removeFcurves(act, paths):
+            if act is None:
+                return
+            for fcu in list(act.fcurves):
+                if fcu.data_path in paths:
+                    act.fcurves.remove(fcu)
+
+        if rig.get("MhxRig") or rig.DazRig == "mhx":
+            props = ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]
+            removeFcurves(act, props)
+            for prop in props:
+                rig[prop] = 1.0
+            from .mhx_tools import setMhxLayers
+            self.boneLayers = setMhxLayers(rig, self.boneLayers, True)
+        elif rig.get("DazSimpleIK"):
+            props = ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]
+            removeFcurves(act, props)
+            for prop in props:
+                rig[prop] = 1.0
+            from .simple_ik_tools.simple import setSimpleLayers
+            self.boneLayers = setSimpleLayers(rig, self.boneLayers, True)
 
 
     def updateWinders(self, rig, frame):
@@ -1104,10 +1169,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
                 self.correctTwists(twists, rig, n, offset)
                 self.saveScales(rig, n+offset)
+                if self.useSnapIk:
+                    self.snapIk(context, rig, n+offset)
 
             self.fixScales(rig)
             self.addToAsset(rig, filepath)
             offset += n + 1
+        if self.useSnapIk:
+            self.enableIk(rig)
         return offset,prop
 
 
@@ -1407,7 +1476,6 @@ class StandardAnimation:
         found = False
         if self.affectMorphs and self.useScanned and rig and not self.useShapekeys:
             found = loadScannedInfo(self, name, rig, relpath)
-            print("SCA", name, rig.name, found)
         if not found and rig.type == 'ARMATURE':
             self.setupAlias(rig)
         scn = context.scene
@@ -1423,6 +1491,7 @@ class StandardAnimation:
         self.clearAnimation(rig)
         self.missing = {}
         self.used = {}
+        self.snapError = False
         startframe = offset = scn.frame_current
         props = []
         t1 = perf_counter()
@@ -1437,6 +1506,8 @@ class StandardAnimation:
                 props.append(prop)
 
         t2 = perf_counter()
+        if self.snapError:
+            print("MHX/Simple IK module not enabled")
         print("File %s imported in %.3f seconds" % (self.filepath, t2-t1))
         scn.frame_current = startframe
         updateScrollbars(context)

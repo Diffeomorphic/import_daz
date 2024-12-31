@@ -461,7 +461,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             if rig.DazRig == "mhx":
                 from ..mhx_tools import L_CUSTOM
                 customLayer = L_CUSTOM
-            elif rig.DazRig[0:6] == "rigify":
+            elif rig.DazRig.startswith("rigify"):
                 from ..rigify_tools import R_CUSTOM
                 customLayer = R_CUSTOM
             else:

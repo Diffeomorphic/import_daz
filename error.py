@@ -193,12 +193,15 @@ theUseDumpErrors = False
 #-------------------------------------------------------------
 
 class DazOperator(bpy.types.Operator):
+    useReport = True
+
     def execute(self, context):
         self.prequel(context)
         self.warnings = ""
         try:
             self.run(context)
-            self.report({'INFO'}, "%s finished" % self.bl_label)
+            if self.useReport:
+                self.report({'INFO'}, "%s finished" % self.bl_label)
         except DazError:
             if LS.error:
                 msg = "%s failed" % self.bl_label

@@ -201,17 +201,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 bg.colors.active = (1.0, 1.0, 0.8)
 
 
-    def checkMhxEnabled(self, rig):
-        try:
-            getattr(rig, "MhaFingerControl_L")
-            return True
-        except AttributeError:
-            return False
-
-
     def run(self, context):
         rig = context.object
-        if not self.checkMhxEnabled(rig):
+        if not checkMhxEnabled(rig):
             msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
             raise DazError(msg)
         startProgress("Convert %s to MHX" % rig.name)
@@ -1852,15 +1844,25 @@ def setMhxToFk(rig, layers, useInsertKeys, frame):
         setValue(rig, prop, 0)
     #for prop in ["MhaForearmFollow_L", "MhaForearmFollow_R"]:
     #    setValue(rig, prop, False)
+    return setMhxLayers(rig, layers, False)
+
+
+def setMhxLayers(rig, layers, useIk):
+    if useIk:
+        disable = [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]
+        enable = [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]
+    else:
+        enable = [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]
+        disable = [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]
     if BLENDER3:
-        for layer in [L_LARMFK, L_RARMFK, L_LLEGFK, L_RLEGFK]:
+        for layer in enable:
             layers[layer] = True
-        for layer in [L_LARMIK, L_RARMIK, L_LLEGIK, L_RLEGIK]:
+        for layer in disable:
             layers[layer] = False
     else:
-        for cname in ["FK Arm Left", "FK Arm Right", "FK Leg Left", "FK Leg Right"]:
+        for cname in enable:
             layers[cname] = rig.data.collections.get(cname)
-        for cname in ["IK Arm Left", "IK Arm Right", "IK Leg Left", "IK Leg Right"]:
+        for cname in disable:
             if cname in layers.keys():
                 del layers[cname]
     return layers
@@ -1875,6 +1877,10 @@ def updateMhxWinders(rig, frame):
         ikwind = rig.pose.bones.get("ik_%s" % bname)
         if revwind and ikwind:
             ikwind.matrix = revwind.matrix
+
+
+def checkMhxEnabled(rig):
+    return hasattr(rig, "MhaFingerControl_L")
 
 #-------------------------------------------------------------
 #   Register

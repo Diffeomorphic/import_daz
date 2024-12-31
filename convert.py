@@ -101,7 +101,7 @@ def getConverter(srctype, trg):
 
     if srctype == trgtype:
         return {},twists
-    if trgtype in ["mhx", "rigify", "rigify2"]:
+    if trgtype.startswith(("mhx", "rigify")):
         file = "genesis-%s" % trgtype
     elif trgtype == "genesis9":
         file = "genesis1238-genesis9"

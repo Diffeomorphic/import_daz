@@ -31,8 +31,7 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and
-                ob.DazRig in ["rigify", "rigify2"])
+        return (ob and ob.DazRig.startswith("rigify"))
 
     def draw(self, context):
         rig = context.object

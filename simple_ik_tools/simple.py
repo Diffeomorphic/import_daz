@@ -836,23 +836,33 @@ def getPoseBone(rig, bnames):
     return None
 
 
-def setSimpleToFk(rig, layers, useInsertKeys, frame):
+def setSimpleLayers(rig, layers, useIk):
+    if useIk:
+        enable = [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]
+        disable = [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]
+    else:
+        enable = [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]
+        disable = [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]
     if BLENDER3:
-        for n in [S_LARMFK, S_RARMFK, S_LLEGFK, S_RLEGFK]:
+        for n in enable:
             layers[n] = True
-        for n in [S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK]:
+        for n in disable:
             layers[n] = False
     else:
-        for cname in ["FK Arm Left", "FK Arm Right", "FK Leg Left", "FK Leg Right"]:
+        for cname in enable:
             layers[cname] = rig.data.collections.get(cname)
-        for cname in ["IK Arm Left", "IK Arm Right", "IK Leg Left", "IK Leg Right"]:
+        for cname in disable:
             if cname in layers.keys():
                 del layers[cname]
+    return layers
+
+
+def setSimpleToFk(rig, layers, useInsertKeys, frame):
     for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R", "DazStretchArms", "DazStretchLegs"]:
         setattr(rig, attr, 0)
         if useInsertKeys:
             rig.keyframe_insert(attr, frame=frame)
-    return layers
+    return setSimpleLayers(rig, layers, False)
 
 #----------------------------------------------------------
 #   FK Snap
@@ -1031,6 +1041,8 @@ class DAZ_OT_SnapAnimationFK(FrameRange, SimpleFKSnapper):
 #----------------------------------------------------------
 
 class SimpleIKSnapper(SimpleIK):
+    useReport = False
+
     def snapSimpleIK(self, rig, prefix, type, pole):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if type == "Leg":
@@ -1152,7 +1164,7 @@ class SimpleIKSnapper(SimpleIK):
         return Matrix.Translation(p)
 
 
-class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
+class DAZ_OT_SnapSimpleIK(SimpleIKSnapper, DazOperator):
     bl_idname = "daz.snap_simple_ik"
     bl_label = "Snap IK"
     bl_description = "Snap IK bones to FK bones.\nSnapping is only approximate"
@@ -1175,7 +1187,7 @@ class DAZ_OT_SnapSimpleIK(DazOperator, SimpleIKSnapper):
         self.changeLayers(rig, self.on, self.off)
 
 
-class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
+class DAZ_OT_SnapAllSimpleIK(SimpleIKSnapper, DazOperator):
     bl_idname = "daz.snap_all_simple_ik"
     bl_label = "Snap IK All"
     bl_description = "Snap all IK bones to FK bones.\nSnapping is only approximate"
@@ -1198,7 +1210,7 @@ class DAZ_OT_SnapAllSimpleIK(DazOperator, SimpleIKSnapper):
 #   Toggle FK/IK
 #----------------------------------------------------------
 
-class DAZ_OT_ToggleFkIk(DazOperator, SimpleIKSnapper):
+class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
     bl_idname = "daz.toggle_fk_ik"
     bl_label = "Toggle FK IK"
     bl_description = "Toggle FK/IK"

@@ -25,10 +25,7 @@ else:
 #   Access
 #----------------------------------------------------------
 
-def setMhxToFk(rig, layers, useInsertKeys, frame):
-    from . import mhx
-    return mhx.setMhxToFk(rig, layers, useInsertKeys, frame)
-
+from .mhx import setMhxLayers, setMhxToFk
 from .layers import L_FACE, L_CUSTOM
 
 #----------------------------------------------------------
