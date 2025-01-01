@@ -4,7 +4,7 @@
 
 import bpy
 from .cycles import CyclesTree
-from .material import WHITE, BLACK
+from .material import WHITE, BLACK, isBlack
 from .tree import colorOutput
 from .utils import *
 
@@ -21,8 +21,8 @@ class ToonTree(CyclesTree):
         self.buildDiffuse()
         self.buildRim()
         self.buildGlossy()
-        self.buildEmission()
         self.buildLight()
+        self.buildEmission()
 
 
     def buildBumpMap(self, bumpval, bumptex):
@@ -89,6 +89,14 @@ class ToonTree(CyclesTree):
         self.linkBumpNormal(node)
         self.cycles = node
         LS.usedFeatures["Rim"] = True
+
+
+    def buildXEmission(self):
+        if not GS.useEmission:
+            return
+        color = self.getColor("getChannelEmissionColor", BLACK)
+        if not isBlack(color):
+            print("Emission", self.owner.name)
 
 
     def buildLight(self):
