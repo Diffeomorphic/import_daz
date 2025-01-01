@@ -838,9 +838,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def prepareRig(self, rig, frame):
         if not self.affectBones:
             return
-        elif rig.DazRig == "rigify2":
-            from .rigify_tools import setFkIk2
-            self.boneLayers = setFkIk2(rig, True, self.boneLayers, self.useInsertKeys, frame)
+        elif rig.data.get("rig_id"):
+            from .rigify_tools import setRigifyFkIk, setRigifyLayers, clearOtherRigify
+            setRigifyFkIk(rig, True, self.useInsertKeys, frame)
+            setRigifyLayers(rig, True, self.boneLayers)
+            clearOtherRigify(rig, True, frame)
         elif rig.get("MhxRig") or rig.DazRig == "mhx":
             from .mhx_tools import setMhxToFk
             self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
@@ -869,6 +871,15 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 setAuto(scn, auto)
                 self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
             except AttributeError:
+                self.snapError = True
+        elif rig.data.get("rig_id"):
+            from .rigify_tools import setRigifyFkIk
+            try:
+                auto = setAuto(scn, self.useInsertKeys)
+                bpy.ops.daz.rigify_snap_ik_all()
+                setAuto(scn, auto)
+                setRigifyFkIk(rig, True, self.useInsertKeys, frame)
+            except KeyError:    #AttributeError:
                 self.snapError = True
         elif rig.get("DazSimpleIK"):
             from .simple_ik_tools import setSimpleToFk
@@ -902,6 +913,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 rig[prop] = 1.0
             from .mhx_tools import setMhxLayers
             self.boneLayers = setMhxLayers(rig, self.boneLayers, True)
+        elif rig.data.get("rig_id"):
+            from .rigify_tools import setRigifyLayers
+            setRigifyLayers(rig, False, self.boneLayers)
         elif rig.get("DazSimpleIK"):
             props = ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]
             removeFcurves(act, props)
