@@ -569,6 +569,7 @@ class LocalSettings:
         self.gammas = {}
         self.customShapes = []
         self.toons = []
+        self.rimtoons = []
         self.distantLight = None
         self.shellUvs = {}
         self.singleUser = False

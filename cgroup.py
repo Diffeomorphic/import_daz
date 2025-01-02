@@ -819,9 +819,14 @@ class ToonDiffuseGroup(CyclesGroup):
 
         maprange = self.addMapRange(3)
         maprange.interpolation_type = 'STEPPED'
-        maprange.inputs["From Max"].default_value = 4
+        maprange.inputs["From Max"].default_value = 0.05
         maprange.inputs["Steps"].default_value = 1
         self.links.new(toRgb.outputs["Color"], maprange.inputs["Value"])
+
+        node = self.addNode("ShaderNodeValue", 2)
+        node.label = "HDRI Threshold"
+        node.outputs["Value"].default_value = 0.05
+        self.links.new(node.outputs["Value"], maprange.inputs["From Max"])
 
         mix,a,b,mixout = self.addMixRgbNode('MIX', 4)
         self.links.new(maprange.outputs["Result"], mix.inputs[0])

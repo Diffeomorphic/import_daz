@@ -393,6 +393,8 @@ class GeoNode(Node, SimNode):
                     dmat.correctEmitArea(ob, mnum)
                     smooth = (smooth or dmat.getValue(["Smooth On"], False))
                     angle = min(angle, dmat.getValue(["Smooth Angle"], 89.9)*D)
+                    if dmat.shader == 'TOON':
+                        LS.toons.append(ob)
             if GS.useAutoSmooth:
                 if bpy.app.version >= (4,1,0):
                     if smooth:

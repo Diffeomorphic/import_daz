@@ -433,7 +433,7 @@ class CyclesTree(Tree):
         self.addColumn()
         for push,n,shell in shells:
             if shell.material.shader == 'TOON':
-                LS.toons.append(self.owner.geometry)
+                LS.rimtoons.append(self.owner.geometry)
                 return
             node = self.addShellGroup(shell, push)
             if node:

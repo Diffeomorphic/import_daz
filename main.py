@@ -303,7 +303,6 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
     def addToons(self, context):
         def addCollection(cname, objects):
             coll = bpy.data.collections.new(cname)
-            LS.collection.children.link(coll)
             layer = getLayerCollection(context, coll)
             if layer:
                 layer.exclude = True
@@ -311,14 +310,18 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
                 coll.objects.link(ob)
             return coll
 
-        toons = [geonode.rna for geonode in set(LS.toons) if geonode.rna and geonode.rna.type == 'MESH']
+        toons = set(LS.toons)
         print("Toons: %s" % [ob.name for ob in toons])
+        rimtoons = [geonode.rna for geonode in set(LS.rimtoons) if geonode.rna and geonode.rna.type == 'MESH']
+        print("Rim: %s" % [ob.name for ob in rimtoons])
         scn = context.scene
         vly = context.view_layer
         scn.render.use_freestyle = True
         fset = context.view_layer.freestyle_settings
         lineset = fset.linesets.active
-        lineset.collection = addCollection("DAZ Toon Outline", toons)
+        coll = addCollection("DAZ Toon Outline", rimtoons)
+        LS.collection.children.link(coll)
+        lineset.collection = coll
         lineset.select_by_collection = True
 
         lname = "DAZ Toon Light"
@@ -327,11 +330,9 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         if light is None:
             sun = bpy.data.lights.new(lname, "SUN")
             light = bpy.data.objects.new(lname, sun)
-        coll = addCollection(lname, [light])
-        if light.name in LS.collection.objects.keys():
-            LS.collection.objects.unlink(light)
-        for ob in toons:
-            ob.light_linking.receiver_collection = coll
+            LS.collection.objects.link(light)
+        coll = addCollection(lname, toons)
+        light.light_linking.receiver_collection = coll
 
 #------------------------------------------------------------------
 #   Import DAZ Materials

@@ -54,7 +54,7 @@ class ToonTree(CyclesTree):
 
 
     def buildShellGroups(self, shells):
-        LS.toons.append(self.owner.geometry)
+        LS.rimtoons.append(self.owner.geometry)
 
 
     def buildGlossy(self):
@@ -89,14 +89,6 @@ class ToonTree(CyclesTree):
         self.linkBumpNormal(node)
         self.cycles = node
         LS.usedFeatures["Rim"] = True
-
-
-    def buildXEmission(self):
-        if not GS.useEmission:
-            return
-        color = self.getColor("getChannelEmissionColor", BLACK)
-        if not isBlack(color):
-            print("Emission", self.owner.name)
 
 
     def buildLight(self):
