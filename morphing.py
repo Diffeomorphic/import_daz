@@ -1554,8 +1554,12 @@ class PropDrivers:
         if self.usePropDrivers and self.rig:
             self.rig.DazCustomMorphs = True
         elif GS.useShapeCats and self.shapekeys:
+            from .driver import setFloatProp, addGeneralDriver
             props = self.shapekeys.keys()
             for mesh in self.meshes:
+                for skey in self.shapekeys.values():
+                    setFloatProp(mesh, skey.name, skey.value, skey.slider_min, skey.slider_max, True)
+                    addGeneralDriver(skey, "value", mesh, propRef(skey.name), "x")
                 addToCategories(mesh, props, None, self.category)
                 mesh.DazMeshMorphs = True
 
