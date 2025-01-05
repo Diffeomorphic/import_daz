@@ -990,8 +990,8 @@ class Rigifier(RigifyCommon):
                     break
         if BLENDER3:
             from .rigify_snap import setRigifyFkIk, setRigifyLayers, clearOtherRigify
-            setRigifyFkIk(gen, False, False, 0)
-            setRigifyLayers(rig, fk, gen.data.layers)
+            setRigifyFkIk(gen, 1.0, False, 0)
+            setRigifyLayers(rig, True, gen.data.layers)
             clearOtherRigify(gen, False, 0)
         if activateObject(context, rig):
             deleteObjects(context, [rig])

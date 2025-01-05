@@ -110,7 +110,7 @@ class DAZ_OT_RigifySetFkAll(RigifyOperator):
         rig = context.object
         scn = context.scene
         auto = scn.tool_settings.use_keyframe_insert_auto
-        setRigifyFkIk(rig, True, auto, scn.frame_current)
+        setRigifyFkIk(rig, 1.0, auto, scn.frame_current)
 
 
 class DAZ_OT_RigifySetIkAll(RigifyOperator):
@@ -123,7 +123,7 @@ class DAZ_OT_RigifySetIkAll(RigifyOperator):
         rig = context.object
         scn = context.scene
         auto = scn.tool_settings.use_keyframe_insert_auto
-        setRigifyFkIk(rig, False, auto, scn.frame_current)
+        setRigifyFkIk(rig, 0.0, auto, scn.frame_current)
 
 #-------------------------------------------------------------
 #   Set rigify to IK or FK
@@ -165,10 +165,9 @@ class DAZ_OT_RigifyIkLayers(RigifyOperator):
 #-------------------------------------------------------------
 
 def setRigifyFkIk(rig, fk, useInsertKeys, frame):
-    value = float(fk)
     for bname in ["upper_arm_parent.L", "upper_arm_parent.R", "thigh_parent.L", "thigh_parent.R"]:
         pb = rig.pose.bones[bname]
-        pb["IK_FK"] = value
+        pb["IK_FK"] = fk
         if useInsertKeys:
             pb.keyframe_insert(propRef("IK_FK"), frame=frame)
 
