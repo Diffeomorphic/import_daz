@@ -721,7 +721,7 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
                     self.drawAutoItem(box, ob, skey, sname, item.text)
             self.layout.separator()
         if ob.DazMeshMorphs:
-            if GS.useMeshDrivers:
+            if ob.DazMeshDrivers:
                 prop = "Adjust Morph Strength"
                 if prop in ob.keys():
                     self.layout.prop(ob, propRef(prop))
@@ -770,7 +770,7 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
 
 
     def drawCustomBox(self, box, cat, scn, ob):
-        if GS.useMeshDrivers:
+        if ob.DazMeshDrivers:
             CustomDrawItems.drawCustomBox(self, box, cat, scn, ob)
             return
         skeys = ob.data.shape_keys

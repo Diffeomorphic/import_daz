@@ -341,10 +341,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Show In Terminal",
         description = "Display full morph names when loading and transferring morphs")
 
-    useShapeCats : BoolProperty(
-        name = "Shapekey Categories",
-        description = "Display undriven shapekeys as categories")
-
     useMuteDrivers : BoolProperty(
         name = "Shapekey Mute Drivers",
         description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
@@ -384,10 +380,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     ignoreHiddenObjects : BoolProperty(
         name = "Ignore Hidden Objects",
         description = "Don't build objects which are hidden in DAZ Studio")
-
-    useMeshDrivers : BoolProperty(
-        name = "Mesh Drivers",
-        description = "Drive shapekeys with mesh object properties")
 
     showPaths : BoolProperty(name = "Paths To DAZ Library", default = False)
     showContentDirs : BoolProperty(name = "Content Directories", default = True)
@@ -753,8 +745,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "sliderMultiplier")
         box.prop(self, "showFinalProps")
         box.prop(self, "showInTerminal")
-        box.prop(self, "useShapeCats")
-        box.prop(self, "useMeshDrivers")
         box.prop(self, "useMuteDrivers")
         self.enum(box, "ercMethod")
         box.prop(self, "useStripCategory")

@@ -110,10 +110,10 @@ class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
 
 class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
     def draw_item(self, context, layout, cat, morph, icon, active, indexProp):
-        if GS.useMeshDrivers:
+        ob = context.object
+        if ob.DazMeshDrivers:
             DAZ_UL_MorphList.draw_item(self, context, layout, cat, morph, icon, active, indexProp)
             return
-        ob = context.object
         skeys = ob.data.shape_keys
         key = morph.name
         if skeys and key in skeys.key_blocks.keys():

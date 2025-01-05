@@ -27,7 +27,9 @@ ALWAYS_BAKED = [
 class LoadMorph(DriverUser):
     morphset = None
     bodypart = "Custom"
-    usePropDrivers = True
+    useRigDrivers = True
+    useMeshDrivers = False
+    useShapeCats = False
     isJcm = False
     stripPrefix = ""
     treatHD = 'ERROR'
@@ -80,7 +82,7 @@ class LoadMorph(DriverUser):
 
     def initAmt(self):
         self.amt = self.amt2 = None
-        if self.rig:
+        if self.useRigDrivers and self.rig:
             self.obj = self.rig
             if self.rig.type == 'ARMATURE':
                 self.amt = self.rig.data
@@ -90,9 +92,12 @@ class LoadMorph(DriverUser):
             else:
                 self.amt = self.obj
                 self.rig = None
-        elif GS.useMeshDrivers and self.mesh:
+        elif self.useMeshDrivers and self.mesh:
             self.obj = self.mesh
             self.amt = self.mesh.data
+            self.mesh.DazMeshMorphs = True
+            self.mesh.DazMeshDrivers = True
+        elif self.useShapeCats and self.mesh:
             self.mesh.DazMeshMorphs = True
         elif self.obj:
             self.amt = self.obj
@@ -267,7 +272,7 @@ class LoadMorph(DriverUser):
         if not ok:
             return " #"
         prop = asset.name
-        if self.obj and self.usePropDrivers:
+        if self.obj and (self.useRigDrivers or self.useMeshDrivers):
             self.ercBones = {}
             self.makeFormulas(asset, skey)
             if self.ercBones:
@@ -398,7 +403,7 @@ class LoadMorph(DriverUser):
             elif self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
-            if self.obj and self.usePropDrivers:
+            if self.obj and (self.useRigDrivers or self.useMeshDrivers):
                 final = self.addNewProp(prop)
                 self.addShapeDriver(skey, final)
             pgs = self.mesh.data.DazBodyPart

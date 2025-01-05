@@ -52,7 +52,6 @@ class GlobalSettings:
         self.useBakedMorphs = False
         self.showHiddenObjects = False
         self.ignoreHiddenObjects = False
-        self.useMeshDrivers = True
 
         self.author = "Myself"
         self.email = ""
@@ -90,7 +89,6 @@ class GlobalSettings:
         self.sliderMultiplier = 1.0
         self.showFinalProps = False
         self.showInTerminal = True
-        self.useShapeCats = True
         self.useMuteDrivers = False
         self.driverRotationMode = 'NATIVE'
         self.ercMethod = 'NONE'

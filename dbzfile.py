@@ -469,6 +469,7 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
 
     def run(self, context):
         from .driver import setFloatProp, makePropDriver
+        self.getDriverControl()
         rig = getRigFromContext(context)
         if rig.type == 'ARMATURE':
             meshes = getMeshChildren(rig)
@@ -483,17 +484,17 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
             props.append(prop)
             for ob in meshes:
                 self.buildMeshMorph(ob, rig, dbz)
-            if self.usePropDrivers and rig:
+            if self.useRigDrivers and rig:
                 setFloatProp(rig, prop, 0.0, self.min, self.max, True)
                 final = finalProp(prop)
                 setFloatProp(rig.data, final, 0.0, self.min, self.max, False)
                 makePropDriver(propRef(prop), rig.data, propRef(final), rig, "x")
                 if GS.ercMethod != 'NONE':
                     self.buildRigMorph(context, rig, meshes, dbz)
-        if self.usePropDrivers and rig:
+        if self.useRigDrivers and rig:
             addToCategories(rig, props, None, self.category)
             rig.DazCustomMorphs = True
-        elif GS.useShapeCats:
+        elif self.useShapeCats:
             for ob in meshes:
                 addToCategories(ob, props, None, self.category)
                 ob.DazMeshMorphs = True
@@ -605,7 +606,7 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
                     skey.slider_min = self.min
                     skey.slider_max = self.max
                     print("Morph created for %s" % sname)
-                    if self.usePropDrivers and rig:
+                    if self.useRigDrivers and rig:
                         fcu = skey.driver_add("value")
                         self.setDriver(fcu, rig, sname, "a")
                     return True
