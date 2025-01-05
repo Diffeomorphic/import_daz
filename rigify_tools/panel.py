@@ -52,9 +52,6 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
         row = self.layout.row()
         row.operator("daz.rigify_fk_layers")
         row.operator("daz.rigify_ik_layers")
-        row = self.layout.row()
-        row.operator("daz.rigify_fk_animation")
-        row.operator("daz.rigify_ik_animation")
 
 #-------------------------------------------------------------
 #   Initialize

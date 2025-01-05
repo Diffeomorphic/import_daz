@@ -840,7 +840,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             return
         elif rig.data.get("rig_id"):
             from .rigify_tools import setRigifyFkIk, setRigifyLayers, clearOtherRigify
-            setRigifyFkIk(rig, 1.0, self.useInsertKeys, frame)
+            setRigifyFkIk(rig, True, self.useInsertKeys, frame)
             setRigifyLayers(rig, True, self.boneLayers)
             clearOtherRigify(rig, True, frame)
         elif rig.get("MhxRig") or rig.DazRig == "mhx":
@@ -878,7 +878,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 auto = setAuto(scn, self.useInsertKeys)
                 bpy.ops.daz.rigify_snap_ik_all()
                 setAuto(scn, auto)
-                setRigifyFkIk(rig, 1.0, self.useInsertKeys, frame)
+                setRigifyFkIk(rig, True, self.useInsertKeys, frame)
             except KeyError:    #AttributeError:
                 self.snapError = True
         elif rig.get("DazSimpleIK"):
