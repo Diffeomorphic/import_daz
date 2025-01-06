@@ -893,6 +893,12 @@ def register():
         default = FFalse
     )
 
+    bpy.types.PoseBone.DazScaleLocks = BoolVectorProperty(
+        name = "Scale Locks",
+        size = 3,
+        default = FFalse
+    )
+
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))

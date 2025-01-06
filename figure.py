@@ -875,11 +875,12 @@ classes = [
 def register():
     from .propgroups import DazStringGroup
 
-    bpy.types.Object.DazInheritScale = BoolPropOVR(
+    bpy.types.Object.DazInheritScale = bpy.props.BoolProperty(
         name = "Inherit Scale",
         description = "Bones inherit scale",
         default = True,
-        update = toggleInheritScale)
+        update = toggleInheritScale,
+        override={'LIBRARY_OVERRIDABLE'})
 
     bpy.types.Scene.DazAutoMorphArmatures = BoolProperty(
         name = "Auto Morph Armatures",

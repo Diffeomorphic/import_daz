@@ -1476,25 +1476,33 @@ classes = [
 def register():
     # Duplicated definitions from MHX RTS.
 
-    bpy.types.Object.MhaGazeFollowsHead = FloatPropOVR(0.0,
+    bpy.types.Object.MhaGazeFollowsHead = bpy.props.FloatProperty(
         name = "Gaze Follows Head",
         min = 0, max = 1,
-        description = "The gaze bone follows the head bone rotations")
+        default = 0.0,
+        description = "The gaze bone follows the head bone rotations",
+        override={'LIBRARY_OVERRIDABLE'})
 
-    bpy.types.Object.MhaGaze_L = FloatPropOVR(0.0,
+    bpy.types.Object.MhaGaze_L = bpy.props.FloatProperty(
         name = "Gaze Left",
         min = 0, max = 1,
-        description = "eye tracking the left gaze bone amount")
+        default = 0.0,
+        description = "eye tracking the left gaze bone amount",
+        override={'LIBRARY_OVERRIDABLE'})
 
-    bpy.types.Object.MhaGaze_R = FloatPropOVR(0.0,
+    bpy.types.Object.MhaGaze_R = bpy.props.FloatProperty(
         name = "Gaze Right",
         min = 0, max = 1,
-        description = "eye tracking the right gaze bone amount")
+        default = 0.0,
+        description = "eye tracking the right gaze bone amount",
+        override={'LIBRARY_OVERRIDABLE'})
 
-    bpy.types.Object.MhaTongueIk = FloatPropOVR(0.0,
+    bpy.types.Object.MhaTongueIk = bpy.props.FloatProperty(
         name = "Tongue IK",
         min = 0, max = 1,
-        description = "Tongue bones controlled by IK")
+        default = 0.0,
+        description = "Tongue bones controlled by IK",
+        override={'LIBRARY_OVERRIDABLE'})
 
     bpy.types.Object.DazRigifyType = StringProperty(default="")
 

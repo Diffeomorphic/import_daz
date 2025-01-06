@@ -7,97 +7,126 @@ from .utils import *
 from .error import *
 
 #----------------------------------------------------------
-#   Toggle locks
-#----------------------------------------------------------
-
-def toggleLocks(self, context, attr, lock):
-    if getattr(self, attr):
-        for pb in self.pose.bones:
-            setattr(pb, lock, getattr(pb, attr))
-    else:
-        for pb in self.pose.bones:
-            setattr(pb, lock, FFalse)
-
-def toggleRotLocks(self, context):
-    toggleLocks(self, context, "DazRotLocks", "lock_rotation")
-
-def toggleLocLocks(self, context):
-    toggleLocks(self, context, "DazLocLocks", "lock_location")
-
-#----------------------------------------------------------
-#   Toggle Limits
-#----------------------------------------------------------
-
-def toggleLimits(rig, context, attr, type, exclude):
-    from .driver import getDrivenBoneFcurves
-    auto = context.scene.tool_settings.use_keyframe_insert_auto
-    driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
-    for pb in rig.pose.bones:
-        if pb.name in driven.keys():
-            continue
-        for cns in pb.constraints:
-            if cns.type == type and cns.name not in exclude:
-                cns.mute = False
-                cns.influence = getattr(rig, attr)
-                if auto:
-                    cns.keyframe_insert("influence")
-
-def toggleRotLimits(rig, context):
-    exclude = ["Hint"] if rig.DazRig == "mhx" else []
-    toggleLimits(rig, context, "DazRotLimits", "LIMIT_ROTATION", exclude)
-
-def toggleLocLimits(rig, context):
-    toggleLimits(rig, context, "DazLocLimits", "LIMIT_LOCATION", [])
-
-#----------------------------------------------------------
 #   Enable locks and limits
 #----------------------------------------------------------
 
 class LockEnabler:
-    def enableLocksLimits(self, rig, lock, limit):
+    useLocation : BoolProperty(
+        name = "Location",
+        default = True)
+
+    useRotation : BoolProperty(
+        name = "Rotation",
+        default = True)
+
+    useScale : BoolProperty(
+        name = "Scale",
+        default = True)
+
+    useLocks : BoolProperty(
+        name = "Locks",
+        description = "Enable/Disable locks",
+        default = True)
+
+    useLimits : BoolProperty(
+        name = "Limits",
+        description = "Enable/Disable limits",
+        default = True)
+
+    limitType : EnumProperty(
+        items = [('INFLUENCE', "Influence", "Enable/Disable constraint influence"),
+                 ('MUTE', "Mute", "Mute/Unmute constraints"),
+                 ('BOTH', "Both", "Both influence and mute")],
+        name = "Type",
+        default = 'INFLUENCE')
+
+    useKeying : BoolProperty(
+        name = "Key",
+        description = "Key locks and constraints",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useLocation")
+        self.layout.prop(self, "useRotation")
+        self.layout.prop(self, "useScale")
+        self.layout.separator()
+        self.layout.prop(self, "useLocks")
+        self.layout.prop(self, "useLimits")
+        if self.useLimits:
+            self.layout.prop(self, "limitType")
+        self.layout.prop(self, "useKeying")
+
+    def enableLocksLimits(self, rig, lock, limit, mute):
         from .driver import getDrivenBoneFcurves
         exclude = ["Hint"] if rig.DazRig == "mhx" else []
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
-        rig.DazLocLocks = lock
-        rig.DazRotLocks = lock
-        rig.DazLocLimits = limit
-        rig.DazRotLimits = limit
+        if self.useLocks:
+            if self.useLocation:
+                rig.DazLocLocks = lock
+            if self.useRotation:
+                rig.DazRotLocks = lock
+            if self.useScale:
+                rig.DazScaleLocks = lock
+        if self.useLimits:
+            if self.useLocation:
+                rig.DazLocLimits = limit
+            if self.useRotation:
+                rig.DazRotLimits = limit
+            if self.useScale:
+                rig.DazScaleLimits = limit
         for pb in rig.pose.bones:
             if pb.name in driven.keys():
                 continue
-            self.setLocks(pb)
+            if self.useLocks:
+                self.setLocks(pb)
             for cns in pb.constraints:
-                if cns.type == 'LIMIT_LOCATION':
-                    cns.influence = limit
-                elif cns.type == 'LIMIT_ROTATION' and cns.name not in exclude:
-                    cns.influence = limit
+                if ((cns.type == 'LIMIT_LOCATION' and
+                     self.useLocation) or
+                    (cns.type == 'LIMIT_ROTATION' and
+                     self.useRotation and
+                     cns.name not in exclude) or
+                    (cns.type == 'LIMIT_SCALE' and
+                     self.useScale)):
+                    if self.limitType in ('INFLUENCE', 'BOTH'):
+                        cns.influence = limit
+                    if self.limitType in ('MUTE', 'BOTH'):
+                        cns.influence = mute
 
 
-class DAZ_OT_EnableLocksLimits(DazOperator, LockEnabler, IsMeshArmature):
+class DAZ_OT_EnableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):
     bl_idname = "daz.enable_locks_limits"
     bl_label = "Enable Locks And Limits"
     bl_description = "Enable locks and limits"
 
     def run(self, context):
         rig = getRigFromContext(context)
-        self.enableLocksLimits(rig, True, 1.0)
+        self.enableLocksLimits(rig, True, 1.0, False)
 
     def setLocks(self, pb):
-        pb.lock_location = pb.DazLocLocks
-        pb.lock_rotation = pb.DazRotLocks
+        if self.useLocation:
+            pb.lock_location = pb.DazLocLocks
+        if self.useRotation:
+            pb.lock_rotation = pb.DazRotLocks
+        if self.useScale:
+            pb.lock_scale = pb.DazScaleLocks
 
 
-class DAZ_OT_DisableLocksLimits(DazOperator, LockEnabler, IsMeshArmature):
+class DAZ_OT_DisableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):
     bl_idname = "daz.disable_locks_limits"
     bl_label = "Disable Locks And Limits"
     bl_description = "Disable locks and limits"
 
     def run(self, context):
         rig = getRigFromContext(context)
-        self.enableLocksLimits(rig, False, 0.0)
+        self.enableLocksLimits(rig, False, 0.0, True)
 
     def setLocks(self, pb):
-        pb.lock_location = pb.lock_rotation = FFalse
+        if self.useLocation:
+            pb.lock_location = FFalse
+        if self.useRotation:
+            pb.lock_rotation = FFalse
+        if self.useScale:
+            pb.lock_scale = FFalse
 
 #----------------------------------------------------------
 #   Lock or unlock all channels
@@ -133,29 +162,44 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazRotLocks = BoolPropOVR(
-        name = "Rotation Locks",
+    bpy.types.Object.DazRotLocks = bpy.props.BoolProperty(
+        name = "Rot",
         description = "Rotation Locks",
         default = True,
-        update = toggleRotLocks)
+        override={'LIBRARY_OVERRIDABLE'})
 
-    bpy.types.Object.DazLocLocks = BoolPropOVR(
-        name = "Location Locks",
+    bpy.types.Object.DazLocLocks = bpy.props.BoolProperty(
+        name = "Loc",
         description = "Location Locks",
         default = True,
-        update = toggleLocLocks)
+        override={'LIBRARY_OVERRIDABLE'})
 
-    bpy.types.Object.DazRotLimits = FloatPropOVR(1.0,
-        name = "Rotation Limits",
+    bpy.types.Object.DazScaleLocks = bpy.props.BoolProperty(
+        name = "Sca",
+        description = "Scale Locks",
+        default = True,
+        override={'LIBRARY_OVERRIDABLE'})
+
+    bpy.types.Object.DazRotLimits = bpy.props.FloatProperty(
+        name = "Rot",
         description = "Rotation Limits",
         min = 0.0, max = 1.0,
-        update = toggleRotLimits)
+        default = 1.0,
+        override={'LIBRARY_OVERRIDABLE'})
 
-    bpy.types.Object.DazLocLimits = FloatPropOVR(1.0,
-        name = "Location Limits",
+    bpy.types.Object.DazLocLimits = bpy.props.FloatProperty(
+        name = "Loc",
         description = "Location Limits",
         min = 0.0, max = 1.0,
-        update = toggleLocLimits)
+        default = 1.0,
+        override={'LIBRARY_OVERRIDABLE'})
+
+    bpy.types.Object.DazScaleLimits = bpy.props.FloatProperty(
+        name = "Sca",
+        description = "Scale Limits",
+        min = 0.0, max = 1.0,
+        default = 1.0,
+        override={'LIBRARY_OVERRIDABLE'})
 
     for cls in classes:
         bpy.utils.register_class(cls)
