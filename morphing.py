@@ -575,7 +575,7 @@ class MorphLoader(LoadMorph, PosableMaker):
             raise DazError("Neither mesh nor rig selected")
         self.setupDuplicates()
         LS.forMorphLoad(ob)
-        if not self.useRigDrivers:
+        if self.onDrivers in ['NONE', 'CATEGORY']:
             self.rig = self.obj = None
         self.errors = {}
         t1 = perf_counter()
@@ -1462,11 +1462,11 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
     useMakePosable = False
 
     def findPropGroup(self, prop):
-        if self.rig is None:
+        if self.obj is None:
             return None
         if self.morphset != "Custom":
-            return getattr(self.rig, "Daz%s" % self.morphset)
-        cats = self.rig.DazMorphCats
+            return getattr(self.obj, "Daz%s" % self.morphset)
+        cats = self.obj.DazMorphCats
         if self.category not in cats.keys():
             cat = cats.add()
             cat.name = self.category
@@ -1478,11 +1478,11 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
     def setCategory(self, cat):
         self.morphset = "Custom"
         self.category = cat
-        if self.rig:
-            if cat not in self.rig.DazMorphCats.keys():
-                pg = self.rig.DazMorphCats.add()
+        if self.obj:
+            if cat not in self.obj.DazMorphCats.keys():
+                pg = self.obj.DazMorphCats.add()
                 pg.name = cat
-            self.rig.DazCustomMorphs = True
+            self.obj.DazCustomMorphs = True
 
 #------------------------------------------------------------------------
 #   Categories
@@ -1542,29 +1542,10 @@ class PropDrivers:
         items = [('NONE', "None", "No drivers and no categories.\nOnly useful for shapekey morphs"),
                  ('RIG', "Rig", "Rig drivers and categories"),
                  ('MESH', "Mesh", "Mesh drivers and categories"),
-                 ('CATEGORIES', "Categories Only", "Mesh categories but no mesh drivers.\nOnly useful for shapekey morphs")],
+                 ('CATEGORY', "Categories Only", "Mesh categories but no mesh drivers.\nOnly useful for shapekey morphs")],
         name = "Drivers",
         description = "How to control shapekeys",
         default = 'RIG')
-
-
-    def getDriverControl(self):
-        if self.onDrivers == 'NONE':
-            self.useRigDrivers = False
-            self.useMeshDrivers = False
-            self.useShapeCats = False
-        elif self.onDrivers == 'RIG':
-            self.useRigDrivers = True
-            self.useMeshDrivers = False
-            self.useShapeCats = False
-        elif self.onDrivers == 'MESH':
-            self.useRigDrivers = False
-            self.useMeshDrivers = True
-            self.useShapeCats = True
-        elif self.onDrivers == 'CATEGORIES':
-            self.useRigDrivers = False
-            self.useMeshDrivers = False
-            self.useShapeCats = True
 
     def draw(self, context):
         self.layout.prop(self, "onDrivers")
@@ -1574,18 +1555,15 @@ class PropDrivers:
             self.layout.prop(self, "useAdjusters")
 
     def addPropDrivers(self):
-        if self.useRigDrivers and self.rig:
+        if self.useRigDrivers():
             self.rig.DazCustomMorphs = True
-        elif self.useMeshDrivers and self.shapekeys:
+        elif self.onDrivers in ['MESH', 'CATEGORY'] and self.shapekeys:
             from .driver import setFloatProp, addGeneralDriver
             props = self.shapekeys.keys()
             for mesh in self.meshes:
-                for skey in self.shapekeys.values():
-                    setFloatProp(mesh, skey.name, skey.value, skey.slider_min, skey.slider_max, True)
-                    addGeneralDriver(skey, "value", mesh, propRef(skey.name), "x")
                 addToCategories(mesh, props, None, self.category)
+                mesh.DazMeshDrivers = (self.onDrivers == 'MESH')
                 mesh.DazMeshMorphs = True
-                mesh.DazMeshDrivers = True
 
 #------------------------------------------------------------------------
 #   Import custom morphs
@@ -1645,7 +1623,6 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
 
     def run(self, context):
         self.initMorphLoader()
-        self.getDriverControl()
         self.findIked()
         self.errors = {}
         self.faceshapes = {}
@@ -2228,7 +2205,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         from .scan import normKey
         if len(ob.data.DazFavorites) > 0:
             oldshapes = []
-            if not hasRig and self.useShapeCats and ob.data.shape_keys:
+            if not hasRig and self.useShapeCats() and ob.data.shape_keys:
                 oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
             self.setupScanned(ob)
             for favo in ob.data.DazFavorites.keys():
@@ -2242,7 +2219,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.adjuster = "Adjust Custom/%s" % catname
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
-            if not hasRig and self.useShapeCats and ob.data.shape_keys:
+            if not hasRig and self.useShapeCats() and ob.data.shape_keys:
                 shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
                 for shape in oldshapes:
                     shapes.remove(shape)

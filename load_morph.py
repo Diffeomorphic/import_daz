@@ -27,9 +27,7 @@ ALWAYS_BAKED = [
 class LoadMorph(DriverUser):
     morphset = None
     bodypart = "Custom"
-    useRigDrivers = True
-    useMeshDrivers = False
-    useShapeCats = False
+    onDrivers = 'RIG'
     isJcm = False
     stripPrefix = ""
     treatHD = 'ERROR'
@@ -69,9 +67,17 @@ class LoadMorph(DriverUser):
     def getAdjustProp(self):
         return None
 
-
     def addToMorphSet(self, prop, asset, hidden):
         return
+
+    def usePropDrivers(self):
+        return (self.obj and self.onDrivers in ('RIG', 'MESH'))
+
+    def useRigDrivers(self):
+        return (self.rig and self.onDrivers == 'RIG')
+
+    def useMeshDrivers(self):
+        return (self.onDrivers in ['MESH', 'CATEGORY'])
 
 
     def initRig(self, rig, rig2):
@@ -82,7 +88,7 @@ class LoadMorph(DriverUser):
 
     def initAmt(self):
         self.amt = self.amt2 = None
-        if self.useRigDrivers and self.rig:
+        if self.onDrivers == 'RIG' and self.rig:
             self.obj = self.rig
             if self.rig.type == 'ARMATURE':
                 self.amt = self.rig.data
@@ -92,13 +98,14 @@ class LoadMorph(DriverUser):
             else:
                 self.amt = self.obj
                 self.rig = None
-        elif self.useMeshDrivers and self.mesh:
+        elif self.onDrivers == 'MESH' and self.mesh:
             self.obj = self.mesh
             self.amt = self.mesh.data
             self.mesh.DazMeshMorphs = True
             self.mesh.DazMeshDrivers = True
-        elif self.useShapeCats and self.mesh:
+        elif self.onDrivers == 'CATEGORY' and self.mesh:
             self.mesh.DazMeshMorphs = True
+            self.mesh.DazMeshDrivers = False
         elif self.obj:
             self.amt = self.obj
         if self.rig2:
@@ -272,7 +279,7 @@ class LoadMorph(DriverUser):
         if not ok:
             return " #"
         prop = asset.name
-        if self.obj and (self.useRigDrivers or self.useMeshDrivers):
+        if self.usePropDrivers():
             self.ercBones = {}
             self.makeFormulas(asset, skey)
             if self.ercBones:
@@ -403,7 +410,7 @@ class LoadMorph(DriverUser):
             elif self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
             addSkeyToUrls(self.mesh, asset, skey)
-            if self.obj and (self.useRigDrivers or self.useMeshDrivers):
+            if self.usePropDrivers():
                 final = self.addNewProp(prop)
                 self.addShapeDriver(skey, final)
             pgs = self.mesh.data.DazBodyPart
