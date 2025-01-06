@@ -63,17 +63,29 @@ class LockEnabler:
         if self.useLocks:
             if self.useLocation:
                 rig.DazLocLocks = lock
+                if self.useKeying:
+                    rig.keyframe_insert("DazLocLocks")
             if self.useRotation:
                 rig.DazRotLocks = lock
+                if self.useKeying:
+                    rig.keyframe_insert("DazRotLocks")
             if self.useScale:
                 rig.DazScaleLocks = lock
+                if self.useKeying:
+                    rig.keyframe_insert("DazScaleLocks")
         if self.useLimits:
             if self.useLocation:
                 rig.DazLocLimits = limit
+                if self.useKeying:
+                    rig.keyframe_insert("DazLocLimits")
             if self.useRotation:
                 rig.DazRotLimits = limit
+                if self.useKeying:
+                    rig.keyframe_insert("DazRotLimits")
             if self.useScale:
                 rig.DazScaleLimits = limit
+                if self.useKeying:
+                    rig.keyframe_insert("DazScaleLimits")
         for pb in rig.pose.bones:
             if pb.name in driven.keys():
                 continue
@@ -89,8 +101,12 @@ class LockEnabler:
                      self.useScale)):
                     if self.limitType in ('INFLUENCE', 'BOTH'):
                         cns.influence = limit
+                        if self.useKeying:
+                            cns.keyframe_insert("influence")
                     if self.limitType in ('MUTE', 'BOTH'):
-                        cns.influence = mute
+                        cns.mute = mute
+                        if self.useKeying:
+                            cns.keyframe_insert("mute")
 
 
 class DAZ_OT_EnableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):

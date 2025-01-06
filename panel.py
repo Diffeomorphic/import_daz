@@ -312,16 +312,31 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
             return
         self.layout.operator("daz.enable_locks_limits")
         self.layout.operator("daz.disable_locks_limits")
-        self.layout.label(text="Locks")
+
         row = self.layout.row()
-        row.prop(rig, "DazLocLocks")
-        row.prop(rig, "DazRotLocks")
-        row.prop(rig, "DazScaleLocks")
-        self.layout.label(text="Limits")
-        row = self.layout.row()
-        row.prop(rig, "DazLocLimits")
-        row.prop(rig, "DazRotLimits")
-        row.prop(rig, "DazScaleLimits")
+        col = row.column()
+        col.label(text="")
+        col.label(text="Lock")
+        col.label(text="Limit")
+
+        col = row.column()
+        col.label(text="Loc")
+        icon = ('CHECKBOX_HLT' if rig.DazLocLocks else 'CHECKBOX_DEHLT')
+        col.label(text="", icon=icon)
+        col.label(text="%.3f" % rig.DazLocLimits)
+
+        col = row.column()
+        col.label(text="Rot")
+        icon = ('CHECKBOX_HLT' if rig.DazRotLocks else 'CHECKBOX_DEHLT')
+        col.label(text="", icon=icon)
+        col.label(text="%.3f" % rig.DazRotLimits)
+
+        col = row.column()
+        col.label(text="Sca")
+        icon = ('CHECKBOX_HLT' if rig.DazScaleLocks else 'CHECKBOX_DEHLT')
+        col.label(text="", icon=icon)
+        col.label(text="%.3f" % rig.DazScaleLimits)
+
         self.layout.prop(rig, "DazInheritScale")
         self.layout.operator("daz.impose_locks_limits")
         if rig.DazDriversDisabled:
