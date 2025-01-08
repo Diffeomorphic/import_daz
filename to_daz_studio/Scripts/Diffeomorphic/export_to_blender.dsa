@@ -197,7 +197,7 @@ function normString(string)
 
 function fixBackslash(string)
 {
-    return string.replace("\\", "\\\\")
+    return string.replace(/\\/g, "\\\\")
 }
 
 
