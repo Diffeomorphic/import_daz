@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = "\"4.3.0.2465\"";
+var version = "\"4.3.0.2466\"";
 var useExportHD = false;
 var useHDConvention = false;
 var useHDUVs = false;
@@ -145,7 +145,7 @@ function exportHighdefToBlender(filepath)
 function doFigure(fp, figure)
 {
     figure.finalize();
-    startObject(fp, figure, figure.name.replace("\\", "/"), "", ",");
+    startObject(fp, figure, fixBackslash(figure.name), "", ",");
 
     var obj = figure.getObject();
     if (obj != null)
@@ -163,7 +163,7 @@ function doFigure(fp, figure)
     {
         bone = bones[i];
         bone.finalize();
-        startObject(fp, bone, bone.name.replace("\\", "/"), "        ", ",")
+        startObject(fp, bone, fixBackslash(bone.name), "        ", ",")
         fp.writeLine("                \"origin\": " + bone.getOrigin());             
         if (i == n-1) c = "";
         fp.writeLine("            }" + c );
@@ -195,6 +195,11 @@ function normString(string)
     return string.replace(/\n/g, " ");
 }
 
+function fixBackslash(string)
+{
+    return string.replace("\\", "\\\\")
+}
+
 
 function doMesh(fp, obj, start, node, str1, str2)
 {
@@ -203,7 +208,7 @@ function doMesh(fp, obj, start, node, str1, str2)
         return false;
     var clname = node.className();
     if (start)
-        startObject(fp, node, node.name.replace("\\", "/"), "", ",");
+        startObject(fp, node, fixBackslash(node.name), "", ",");
     fp.writeLine("        \"class\": \"" + clname + "\",");
     var useBase = true;
     var label = node.getLabel();
@@ -293,7 +298,7 @@ function endMesh(fp, str1, str2)
 function doProperties(fp, mat, pad)
 {
     var np = mat.getNumProperties();
-    var buf = (pad + "   \"name\": \"" + mat.name.replace("\\", "/") + "\",\n");
+    var buf = (pad + "   \"name\": \"" + fixBackslash(mat.name) + "\",\n");
     buf += (pad + "   \"properties\": {\n" );
 
     var c = ","
@@ -303,7 +308,7 @@ function doProperties(fp, mat, pad)
         var value = prop.getValue();
         if (i == np-1) c = "";
         if (prop.isNumeric())
-            buf += (pad + "      \"" + prop.name.replace("\\", "/") + "\": " + value + c + "\n");
+            buf += (pad + "      \"" + fixBackslash(prop.name) + "\": " + value + c + "\n");
     }
     buf += (pad + "   }");
     fp.writeLine(buf);
@@ -319,7 +324,7 @@ function doMaterialGroups(fp, geom, hd, endchar)
     {
         var mat = geom.getMaterialGroup(i);
         if (i == nm-1) c = "";
-        fp.writeLine("            \"" + mat.name.replace("\\", "/") + "\"" + c);
+        fp.writeLine("            \"" + fixBackslash(mat.name) + "\"" + c);
     }
     fp.writeLine("        ]" + endchar);
 }
