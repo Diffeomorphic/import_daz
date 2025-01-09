@@ -76,7 +76,7 @@ class LoadMorph(DriverUser):
     def useRigDrivers(self):
         return (self.rig and self.onDrivers == 'RIG')
 
-    def useMeshDrivers(self):
+    def useShapeCats(self):
         return (self.onDrivers in ['MESH', 'CATEGORY'])
 
 
@@ -714,7 +714,7 @@ class LoadMorph(DriverUser):
 
 
     def applyErcArmature(self, context, ob):
-        from .merge_rigs import applyArmatureModifier
+        from .apply import applyArmatureModifier
         from .modifier import getBasicShape, newArmatureModifier
         from .driver import getPropMinMax, Driver
 

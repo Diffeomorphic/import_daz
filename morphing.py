@@ -2151,16 +2151,18 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
 
     def run(self, context):
         self.initMorphLoader()
-        self.rig = getRigFromContext(context)
+        rig = getRigFromContext(context)
         meshes = getSelectedMeshes(context)
         self.setupDuplicates()
         self.missing = []
         used = []
 
         # Import figure favorites
-        if self.rig:
+        if rig:
+            self.obj = self.rig = rig
+            self.onDrivers = 'RIG'
             loaded = []
-            for ob in getMeshChildren(self.rig):
+            for ob in getMeshChildren(rig):
                 if isHDMesh(ob):
                     continue
                 used.append(ob)
@@ -2178,7 +2180,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             if self.useTransferOthers and len(loaded) == 1:
                 src,keynames = loaded[0]
                 if activateObject(context, src):
-                    for ob in getMeshChildren(self.rig):
+                    for ob in getMeshChildren(rig):
                         ob.select_set(True)
                     filepaths = LS.filepaths
                     LS.filepaths = keynames
@@ -2188,12 +2190,14 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                             ignoreRigidity = self.ignoreRigidity)
                     finally:
                         LS.filepaths = filepaths
-            self.makePosable(context, self.rig)
+            self.makePosable(context, rig)
 
         # Import prop favorites
         self.rig = None
+        self.onDrivers = 'MESH'
         for ob in meshes:
             if ob not in used and not isHDMesh(ob):
+                self.obj = self.mesh = ob
                 self.addFavoMorphs(ob, context, False)
         updateScrollbars(context)
         if self.missing:
@@ -2205,7 +2209,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         from .scan import normKey
         if len(ob.data.DazFavorites) > 0:
             oldshapes = []
-            if not hasRig and self.useShapeCats() and ob.data.shape_keys:
+            if not hasRig and ob.data.shape_keys:
                 oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
             self.setupScanned(ob)
             for favo in ob.data.DazFavorites.keys():
@@ -2219,7 +2223,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.adjuster = "Adjust Custom/%s" % catname
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
-            if not hasRig and self.useShapeCats() and ob.data.shape_keys:
+            if not hasRig and ob.data.shape_keys:
                 shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
                 for shape in oldshapes:
                     shapes.remove(shape)
