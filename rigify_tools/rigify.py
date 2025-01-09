@@ -22,6 +22,13 @@ def setupRigifyData(meta):
     from .rigify_data import RigifyData
     RF = RigifyData(meta)
 
+
+def rigifySafe(bname):
+    if bname in ["root"]:
+        return "_%s" % bname
+    else:
+        return bname
+
 #-------------------------------------------------------------
 #   DazBone
 #-------------------------------------------------------------
@@ -577,7 +584,7 @@ class Rigifier(RigifyCommon):
     def setupExtras(self, context, rig):
         def addRecursive(pb):
             if pb.name not in self.extras.keys():
-                self.extras[pb.name] = pb.name
+                self.extras[pb.name] = rigifySafe(pb.name)
             for child in pb.children:
                 addRecursive(child)
 
@@ -595,7 +602,7 @@ class Rigifier(RigifyCommon):
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
-                    self.extras[vgrp.name] = vgrp.name
+                    self.extras[vgrp.name] = rigifySafe(vgrp.name)
         for bname in ["Face_Controls_XYZ"]:
             pb = rig.pose.bones.get(bname)
             if pb:
