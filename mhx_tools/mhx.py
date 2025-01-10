@@ -907,10 +907,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         neckpar = makeBone("neckParent", rig, loc, loc+vec, hip.roll, L_HELP, neck.parent)
         neck.parent = neckpar
         setMode('OBJECT')
-        setMhx(rig, "MhaNeckFollows", 1.0)
+        setMhx(rig, "MhaNeckFollowsSpine", 1.0)
         hip = rig.pose.bones["hip"]
         neckpar = rig.pose.bones["neckParent"]
-        cns = copyRotation(neckpar, hip, rig, "MhaNeckFollows", "1-x", space='POSE')
+        cns = copyRotation(neckpar, hip, rig, "MhaNeckFollowsSpine", "1-x", space='POSE')
 
     #-------------------------------------------------------------
     #   Spine tweaks
