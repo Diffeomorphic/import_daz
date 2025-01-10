@@ -897,28 +897,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     #-------------------------------------------------------------
 
     def addHeadNeckFollow(self, rig):
-        return
         neckbones = self.getExistingBones(rig, MHX.NeckBones)
         neckname = neckbones[0]
         setMode('EDIT')
         hip = rig.data.edit_bones["hip"]
+        vec = hip.tail - hip.head
         neck = rig.data.edit_bones[neckname]
-        neckpar = neck.parent
-        neckParent = deriveBone("neckParent", neck, rig, L_HELP, hip)
-        neckParent.matrix = neckpar.matrix
-        neck.parent = neckParent
-        head = rig.data.edit_bones["head"]
-        headpar = head.parent
-        headParent = deriveBone("headParent", head, rig, L_HELP, hip)
-        headParent.matrix = neckpar.matrix
-        head.parent = headParent
+        loc = neck.head
+        neckpar = makeBone("neckParent", rig, loc, loc+vec, hip.roll, L_HELP, neck.parent)
+        neck.parent = neckpar
         setMode('OBJECT')
         setMhx(rig, "MhaNeckFollows", 1.0)
-        setMhx(rig, "MhaHeadFollows", 1.0)
-        neck = rig.pose.bones[neckname]
-        cns = copyRotation(neckParent, neckpar, rig, "MhaNeckFollows", "x", space='POSE')
-        head = rig.pose.bones["head"]
-        cns = copyRotation(headParent, neckpar, rig, "MhaHeadFollows", "x", space='POSE')
+        hip = rig.pose.bones["hip"]
+        neckpar = rig.pose.bones["neckParent"]
+        cns = copyRotation(neckpar, hip, rig, "MhaNeckFollows", "1-x", space='POSE')
 
     #-------------------------------------------------------------
     #   Spine tweaks
