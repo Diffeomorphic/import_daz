@@ -403,12 +403,19 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "SSS",
         description = "Method for subsurface scattering")
 
-    displacement_method : EnumProperty(
+    displacementMethod : EnumProperty(
         items = [('BUMP', "Bump Only", "Bump"),
                  ('DISPLACEMENT', "Displacement Only", "Details are not visible if the subdivision is not enough, renders smooth"),
                  ('BOTH', "Displacement and Bump", "Fake details with a bump map if the subdivision is not enough, renders flat.")],
         name = "Displacement Method",
         description = "Displacement method")
+
+    toonMethod : EnumProperty(
+        items = [('FREESTYLE', "Freestyle", "Freestyle"),
+                 ('LINEART', "Line Art", "Grease pencil line art"),
+                 ('SOLIDIFY', "Solidify", "Solidify modifier")],
+        name = "Toon Method",
+        description = "Toon Method")
 
     viewportColors : EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),
@@ -762,7 +769,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Materials")
         self.enum(box, "materialMethod")
         self.enum(box, "sssMethod")
-        self.enum(box, "displacement_method")
+        self.enum(box, "displacementMethod")
+        self.enum(box, "toonMethod")
         self.enum(box, "skinMethod")
         self.enum(box, "viewportColors")
         self.enum(box, "worldMethod")

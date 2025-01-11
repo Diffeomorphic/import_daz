@@ -8,6 +8,10 @@ from .material import WHITE, BLACK, isBlack
 from .tree import colorOutput
 from .utils import *
 
+#------------------------------------------------------------------
+#   Toon Tree
+#------------------------------------------------------------------
+
 class ToonTree(CyclesTree):
     def __init__(self, cmat):
         CyclesTree.__init__(self, cmat)
@@ -104,3 +108,75 @@ class ToonTree(CyclesTree):
         if mat:
             mat.surface_render_method = 'BLENDED'
 
+
+#------------------------------------------------------------------
+#   Add toons to collection
+#------------------------------------------------------------------
+
+def addToons(context):
+    def addCollection(cname, objects):
+        coll = bpy.data.collections.new(cname)
+        layer = getLayerCollection(context, coll)
+        if layer:
+            layer.exclude = True
+        for ob in objects:
+            coll.objects.link(ob)
+        return coll
+
+    toons = set(LS.toons)
+    print("Toons: %s" % [ob.name for ob in toons])
+    rimtoons = [geonode.rna for geonode in set(LS.rimtoons) if geonode.rna and geonode.rna.type == 'MESH']
+    print("Rim: %s" % [ob.name for ob in rimtoons])
+    if GS.toonMethod in ['FREESTYLE', 'LINEART']:
+        rimcoll = addCollection("DAZ Toon Outline", rimtoons)
+        LS.collection.children.link(rimcoll)
+
+    if GS.toonMethod == 'FREESTYLE':
+        scn = context.scene
+        scn.render.use_freestyle = True
+        fset = context.view_layer.freestyle_settings
+        lineset = fset.linesets.active
+        lineset.collection = rimcoll
+        lineset.select_by_collection = True
+    elif GS.toonMethod == 'LINEART':
+        bpy.ops.object.grease_pencil_add(type='LINEART_OBJECT')
+        lineart = context.object
+        lineart.name = "%s Line Art" % LS.collection.name
+        if lineart.name not in LS.collection.objects.keys():
+            LS.collection.objects.link(lineart)
+        mat = lineart.data.materials[0]
+        mat.grease_pencil.show_fill = True
+        mod = lineart.modifiers[0]
+        mod.source_type = 'COLLECTION'
+        mod.source_collection = rimcoll
+    elif GS.toonMethod == 'SOLIDIFY':
+        from .material import BLACK
+        mat = bpy.data.materials.new("Outline")
+        mat.use_nodes = True
+        mat.use_backface_culling = True
+        tree = mat.node_tree
+        tree.nodes.clear()
+        emit = tree.nodes.new("ShaderNodeEmission")
+        emit.location = (0, 0)
+        emit.inputs["Color"].default_value[0:3] = BLACK
+        output = tree.nodes.new("ShaderNodeOutputMaterial")
+        output.location = (200, 0)
+        output.target = 'ALL'
+        tree.links.new(emit.outputs["Emission"], output.inputs["Surface"])
+
+        for ob in rimtoons:
+            ob.data.materials.append(mat)
+            mod = ob.modifiers.new("Outline", 'SOLIDIFY')
+            mod.thickness = -2*GS.scale
+            mod.use_flip_normals = True
+            mod.material_offset = len(ob.data.materials)-1
+
+    lname = "DAZ Toon Light"
+    if LS.distantLight:
+        light = LS.distantLight.rna
+    if light is None:
+        sun = bpy.data.lights.new(lname, "SUN")
+        light = bpy.data.objects.new(lname, sun)
+        LS.collection.objects.link(light)
+    coll = addCollection(lname, toons)
+    light.light_linking.receiver_collection = coll

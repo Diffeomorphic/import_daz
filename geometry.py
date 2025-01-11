@@ -225,10 +225,10 @@ class GeoNode(Node, SimNode):
                     if mat:
                         if hasattr(mat, "displacement_method"):
                             if mat.displacement_method == 'DISPLACEMENT':
-                                mat.displacement_method = GS.displacement_method
+                                mat.displacement_method = GS.displacementMethod
                         else:
                             if mat.cycles.displacement_method == 'DISPLACEMENT':
-                                mat.cycles.displacement_method = GS.displacement_method
+                                mat.cycles.displacement_method = GS.displacementMethod
 
         if self.isSubdivided():
             mod = ob.modifiers.new("Subsurf", 'SUBSURF')
