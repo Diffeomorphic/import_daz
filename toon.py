@@ -151,25 +151,28 @@ def addToons(context):
         mod.source_collection = rimcoll
     elif GS.toonMethod == 'SOLIDIFY':
         from .material import BLACK
-        mat = bpy.data.materials.new("Outline")
+        mat = bpy.data.materials.get("DAZ Toon Outline")
+        if mat is None:
+            mat = bpy.data.materials.new("DAZ Toon Outline")
         mat.use_nodes = True
         mat.use_backface_culling = True
         tree = mat.node_tree
         tree.nodes.clear()
-        emit = tree.nodes.new("ShaderNodeEmission")
-        emit.location = (0, 0)
-        emit.inputs["Color"].default_value[0:3] = BLACK
+        rgb = tree.nodes.new("ShaderNodeRGB")
+        rgb.location = (0, 0)
+        rgb.outputs["Color"].default_value[0:3] = BLACK
         output = tree.nodes.new("ShaderNodeOutputMaterial")
         output.location = (200, 0)
         output.target = 'ALL'
-        tree.links.new(emit.outputs["Emission"], output.inputs["Surface"])
-
+        tree.links.new(rgb.outputs["Color"], output.inputs["Surface"])
         for ob in rimtoons:
             ob.data.materials.append(mat)
             mod = ob.modifiers.new("Outline", 'SOLIDIFY')
-            mod.thickness = -2*GS.scale
+            mod.thickness = -1*GS.scale
             mod.use_flip_normals = True
+            mod.use_rim = False
             mod.material_offset = len(ob.data.materials)-1
+
 
     lname = "DAZ Toon Light"
     if LS.distantLight:
