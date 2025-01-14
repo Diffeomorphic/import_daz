@@ -413,7 +413,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     toonMethod : EnumProperty(
         items = [('FREESTYLE', "Freestyle", "Freestyle"),
                  ('LINEART', "Line Art", "Grease pencil line art"),
-                 ('SOLIDIFY', "Solidify", "Solidify modifier")],
+                 ('SOLIDIFY', "Solidify", "Solidify modifier.\nBackface culling must be set manually for viewport shading")],
         name = "Toon Method",
         description = "Toon Method")
 

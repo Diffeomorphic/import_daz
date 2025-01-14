@@ -151,11 +151,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         influs = dict([(prop, value) for prop, value in hum.items() if prop[0:6] == "INFLU "])
         hum.active_shape_key_index = 0
         hum.show_only_shape_key = True
+        self.outlineMat = None
+        self.removeOutlineMat(hum)
         for graft in grafts:
             graft.active_shape_key_index = 0
             graft.show_only_shape_key = True
             self.renameUvLayers(graft)
             self.storeUvName(graft)
+            self.removeOutlineMat(graft)
             if self.useFixTiles:
                 self.udimsFromGraft(graft, hum)
             self.copyBodyPart(graft, hum)
@@ -317,6 +320,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         self.copyShapeKeyDrivers(hum, drivers)
         updateDrivers(hum)
+        self.restoreOutlineMat(hum)
         hum.show_only_shape_key = False
         for mod in hum.modifiers:
             if mod.type == 'SURFACE_DEFORM':
@@ -355,6 +359,19 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         attr = graft.data.attributes["DazVertex"]
         for data in attr.data.values():
             data.value = -1
+
+
+    def removeOutlineMat(self, ob):
+        mat = ob.data.materials[-1]
+        if mat and mat.name == "DAZ Toon Outline":
+            ob.data.materials.pop()
+            if self.outlineMat is None:
+                self.outlineMat = mat
+
+
+    def restoreOutlineMat(self, hum):
+        if self.outlineMat:
+            hum.data.materials.append(self.outlineMat)
 
 
     def mergeDestructively(self, context, hum, grafts, body_pair_a_verts):

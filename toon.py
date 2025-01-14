@@ -138,6 +138,7 @@ def addToons(context):
         lineset = fset.linesets.active
         lineset.collection = rimcoll
         lineset.select_by_collection = True
+
     elif GS.toonMethod == 'LINEART':
         bpy.ops.object.grease_pencil_add(type='LINEART_OBJECT')
         lineart = context.object
@@ -149,6 +150,7 @@ def addToons(context):
         mod = lineart.modifiers[0]
         mod.source_type = 'COLLECTION'
         mod.source_collection = rimcoll
+
     elif GS.toonMethod == 'SOLIDIFY':
         from .material import BLACK
         mat = bpy.data.materials.get("DAZ Toon Outline")
@@ -156,6 +158,7 @@ def addToons(context):
             mat = bpy.data.materials.new("DAZ Toon Outline")
         mat.use_nodes = True
         mat.use_backface_culling = True
+        mat.diffuse_color[0:3] = BLACK
         tree = mat.node_tree
         tree.nodes.clear()
         rgb = tree.nodes.new("ShaderNodeRGB")
@@ -165,13 +168,20 @@ def addToons(context):
         output.location = (200, 0)
         output.target = 'ALL'
         tree.links.new(rgb.outputs["Color"], output.inputs["Surface"])
+
+        shading = context.scene.display.shading
+        shading.light = 'MATCAP'
+        shading.show_backface_culling = True
+        shading.show_object_outline = False
+        print("SS", shading, shading.light)
+
         for ob in rimtoons:
             ob.data.materials.append(mat)
             mod = ob.modifiers.new("Outline", 'SOLIDIFY')
             mod.thickness = -1*GS.scale
             mod.use_flip_normals = True
             mod.use_rim = False
-            mod.material_offset = len(ob.data.materials)-1
+            mod.material_offset = 100
 
 
     lname = "DAZ Toon Light"
