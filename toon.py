@@ -58,7 +58,11 @@ class ToonTree(CyclesTree):
 
 
     def buildShellGroups(self, shells):
-        LS.rimtoons.append(self.owner.geometry)
+        geonode = self.owner.geometry
+        for push,n,shell in shells:
+            if push > geonode.push:
+                geonode.push = push
+        LS.rimtoons.append(geonode)
 
 
     def buildGlossy(self):
@@ -108,7 +112,6 @@ class ToonTree(CyclesTree):
         if mat:
             mat.surface_render_method = 'BLENDED'
 
-
 #------------------------------------------------------------------
 #   Add toons to collection
 #------------------------------------------------------------------
@@ -125,10 +128,24 @@ def addToons(context):
 
     toons = set(LS.toons)
     print("Toons: %s" % [ob.name for ob in toons])
-    rimtoons = [geonode.rna for geonode in set(LS.rimtoons) if geonode.rna and geonode.rna.type == 'MESH']
-    print("Rim: %s" % [ob.name for ob in rimtoons])
+    lname = "DAZ Toon Light"
+    if LS.distantLight:
+        light = LS.distantLight.rna
+    if light is None:
+        sun = bpy.data.lights.new(lname, "SUN")
+        light = bpy.data.objects.new(lname, sun)
+        LS.collection.objects.link(light)
+    coll = addCollection(lname, toons)
+    light.light_linking.receiver_collection = coll
+
+    if GS.toonMethod == 'NONE':
+        return
+
+    rimtoons = [(geonode.rna, geonode.push) for geonode in set(LS.rimtoons)
+                if geonode.rna and geonode.rna.type == 'MESH']
+    print("Rim: %s" % [ob.name for ob,push in rimtoons])
     if GS.toonMethod in ['FREESTYLE', 'LINEART']:
-        rimcoll = addCollection("DAZ Toon Outline", rimtoons)
+        rimcoll = addCollection("DAZ Toon Outline", [ob for ob,push in rimtoons])
         LS.collection.children.link(rimcoll)
 
     if GS.toonMethod == 'FREESTYLE':
@@ -153,9 +170,10 @@ def addToons(context):
 
     elif GS.toonMethod == 'SOLIDIFY':
         from .material import BLACK
-        mat = bpy.data.materials.get("DAZ Toon Outline")
+        oname = "DAZ Toon Outline"
+        mat = bpy.data.materials.get(oname)
         if mat is None:
-            mat = bpy.data.materials.new("DAZ Toon Outline")
+            mat = bpy.data.materials.new(oname)
         mat.use_nodes = True
         mat.use_backface_culling = True
         mat.diffuse_color[0:3] = BLACK
@@ -169,27 +187,25 @@ def addToons(context):
         output.target = 'ALL'
         tree.links.new(rgb.outputs["Color"], output.inputs["Surface"])
 
-        shading = context.scene.display.shading
-        shading.light = 'MATCAP'
-        shading.show_backface_culling = True
-        shading.show_object_outline = False
-        print("SS", shading, shading.light)
+        setToonView(context)
 
-        for ob in rimtoons:
+        for ob,push in rimtoons:
             ob.data.materials.append(mat)
             mod = ob.modifiers.new("Outline", 'SOLIDIFY')
-            mod.thickness = -1*GS.scale
+            mod.thickness = -push*GS.scale
             mod.use_flip_normals = True
             mod.use_rim = False
             mod.material_offset = 100
 
 
-    lname = "DAZ Toon Light"
-    if LS.distantLight:
-        light = LS.distantLight.rna
-    if light is None:
-        sun = bpy.data.lights.new(lname, "SUN")
-        light = bpy.data.objects.new(lname, sun)
-        LS.collection.objects.link(light)
-    coll = addCollection(lname, toons)
-    light.light_linking.receiver_collection = coll
+def setToonView(context):
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    space.shading.type = 'SOLID'
+                    space.shading.light = 'MATCAP'
+                    space.shading.color_type = 'TEXTURE'
+                    space.shading.studio_light = 'toon.exr'
+                    space.shading.show_backface_culling = True
+                    space.shading.show_object_outline = False

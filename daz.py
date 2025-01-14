@@ -411,11 +411,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Displacement method")
 
     toonMethod : EnumProperty(
-        items = [('FREESTYLE', "Freestyle", "Freestyle"),
+        items = [('NONE', "None", "No outline"),
+                 ('FREESTYLE', "Freestyle", "Freestyle"),
                  ('LINEART', "Line Art", "Grease pencil line art"),
                  ('SOLIDIFY', "Solidify", "Solidify modifier.\nBackface culling must be set manually for viewport shading")],
-        name = "Toon Method",
-        description = "Toon Method")
+        name = "Toon Outline Method",
+        description = "Toon outline method")
 
     viewportColors : EnumProperty(
         items = [('ORIGINAL', "Original", "Original diffuse color"),
