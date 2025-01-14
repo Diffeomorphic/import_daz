@@ -64,6 +64,11 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     trgmat : EnumProperty(items=getTargetMaterial, name="Active")
 
+    useGuessMissing : BoolProperty(
+        name = "Guess Missing Textures",
+        description = "Search for UDIM textures that almost match location in node tree",
+        default = True)
+
     useSaveLocalTextures : BoolProperty(
         name = "Save Local Textures",
         description = "Save local textures if not already done",
@@ -96,6 +101,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         if self.useMergeMaterials:
             self.layout.prop(self, "useStackShells")
         self.layout.prop(self, "trgmat")
+        self.layout.prop(self, "useGuessMissing")
         self.layout.label(text="Materials To Merge")
         MaterialSelector.draw(self, context)
 
@@ -152,6 +158,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 if tname not in actshells.keys():
                     shells[tname] = data
 
+        basenames = {}
         for key,actnode in texnodes[actmat.name].items():
             actnode.image.source = "TILED"
             actnode.extension = "CLIP"
@@ -164,9 +171,17 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             for mat in mats:
                 nodes = texnodes[mat.name]
                 node = nodes.get(key)
+                found = True
+                if node is None and self.useGuessMissing:
+                    if key.endswith((":A", ":B")):
+                        node = nodes.get(key[:-2])
+                        found = False
+                        if node.image:
+                            basenames[node.image.filepath] = basename
                 if node and node.image:
                     img = node.image
-                    self.updateImage(img, basename, mat.DazUDim)
+                    if found:
+                        self.updateImage(img, basename, mat.DazUDim)
                     if mat.DazUDim not in udims.keys():
                         udims[mat.DazUDim] = mat.name
                     if mat == actmat:
@@ -203,13 +218,15 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             if self.useStackShells:
                 self.addShells(actmat, shells)
         else:
-            anodes = texnodes[actmat.name]
+            actnodes = texnodes[actmat.name]
             for mat in mats:
                 if mat != actmat:
                     nodes = texnodes[mat.name]
                     for key,node in nodes.items():
-                        if key in anodes.keys():
-                            actnode = anodes[key]
+                        actnode = actnodes.get(key)
+                        if actnode is None and node.image and self.useGuessMissing:
+                            actnode = self.findBestMatch(key, node.image, mat, actnodes, basenames)
+                        if actnode:
                             img = node.image = actnode.image
                             node.extension = "CLIP"
                             node.label = actnode.label
@@ -268,6 +285,20 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
             src = os.path.join(folder, "%s%d%s" % (fname[:-6], 1001+udim, ext))
         trg = os.path.join(folder, "%s_%d%s" % (basename, 1001+udim, ext))
         self.changeImage(src, trg, img)
+
+
+    def findBestMatch(self, key, img, mat, actnodes, basenames):
+        for ext in ["A", "B"]:
+            actnode = actnodes.get("%s:%s" % (key, ext))
+            if actnode and actnode.image:
+                folder1 = os.path.dirname(img.filepath)
+                folder2 = os.path.dirname(actnode.image.filepath)
+                if folder1 == folder2:
+                    basename = basenames.get(img.filepath)
+                    if basename:
+                        self.updateImage(img, basename, mat.DazUDim)
+                    return actnode
+        return None
 
 
     def getShells(self, mats):
