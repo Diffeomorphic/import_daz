@@ -88,23 +88,24 @@ class RigifyCommon:
 
     def setupDazSkeleton(self, rig):
         if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
-            self.rigifySkel = RF.RigifyGenesis38
-            self.rigifySkel["chestUpper"] = "chestUpper"
-            self.rigifySkel["abdomen2"] = "abdomen2"
-            self.spineBones = RF.Genesis38Spine
-            self.genesisFingers = RF.Genesis1238Fingers
+            entry = DF.loadEntry("genesis12", "rigify")
         elif rig.DazRig in ["genesis3", "genesis8"]:
-            self.rigifySkel = RF.RigifyGenesis38
-            self.spineBones = RF.Genesis38Spine
-            self.genesisFingers = RF.Genesis1238Fingers
+            entry = DF.loadEntry("genesis38", "rigify")
         elif rig.DazRig == "genesis9":
-            self.rigifySkel = RF.RigifyGenesis9
-            self.spineBones = RF.Genesis9Spine
-            self.genesisFingers = RF.Genesis9Fingers
+            entry = DF.loadEntry("genesis9", "rigify")
+        self.rigifySkel = entry["skeleton"]
+        self.spineBones = entry["spine"]
+        self.fingers = entry["fingers"]
+        self.parents = entry.get("parents", {})
+        self.mergers = entry.get("mergers", {})
+        self.mergers2 = entry.get("mergers2", {})
+        self.removes = entry.get("removes", [])
+        self.renames = entry.get("renames", {})
+        self.custom_shape_fix = entry.get("custom_shape_fix", [])
 
         self.dazSkel = {}
         for rbone, dbone in self.rigifySkel.items():
-            if isinstance(dbone, tuple):
+            if isinstance(dbone, list):
                 dbone = dbone[0]
             if isinstance(dbone, str):
                 self.dazSkel[dbone] = rbone
@@ -176,6 +177,7 @@ class MetaMaker(RigifyCommon):
 
         print("Create metarig")
         rig = context.object
+        self.setupDazSkeleton(rig)
         scale = GS.scale
         scn = context.scene
         if not(rig and rig.type == 'ARMATURE'):
@@ -240,25 +242,25 @@ class MetaMaker(RigifyCommon):
             self.splitBone(rig, "abdomen", "abdomen2")
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.deleteBendTwistDrvBones(rig)
-            mergers = dict((list(RF.Genesis38Mergers1.items()) + list(RF.Genesis38Mergers2.items())))
-            mergeBones(rig, mergers, RF.Genesis38Parents, context)
+            mergeBones(rig, self.mergers, self.parents, context)
+            mergeBones(rig, self.mergers2, self.parents, context)
             if dazrig:
                 pass
             elif self.reuseBendTwists:
-                mergeVertexGroups(rig, RF.Genesis38Mergers2)
+                mergeVertexGroups(rig, self.mergers2)
             else:
                 mergeVertexGroups(rig, mergers)
-            self.renameBones(rig, RF.Genesis38Renames, dazrig)
+            self.renameBones(rig, self.renames, dazrig)
             for pb in rig.pose.bones:
                 self.store.restoreBendTwist(pb.name, pb)
         elif rig.DazRig == "genesis9":
             if dazrig:
                 pass
             elif self.reuseBendTwists:
-                self.removeVertexGroups(rig, RF.Genesis9Removes)
+                self.removeVertexGroups(rig, self.removes)
             else:
-                mergeBones(rig, RF.Genesis9Mergers, RF.Genesis9Parents, context)
-                mergeVertexGroups(rig, RF.Genesis9Mergers)
+                mergeBones(rig, self.mergers, self.parents, context)
+                mergeVertexGroups(rig, self.mergers)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
             activateObject(context, meta)
@@ -475,7 +477,7 @@ class MetaMaker(RigifyCommon):
 
         for eb in meta.data.edit_bones:
             dname = self.rigifySkel.get(eb.name)
-            if isinstance(dname, tuple):
+            if isinstance(dname, list):
                 dname,_vgrps = dname
             if isinstance(dname, str):
                 if dname in self.dazBones.keys():
@@ -483,7 +485,7 @@ class MetaMaker(RigifyCommon):
                     eb.head = dbone.head
                     eb.tail = dbone.tail
                     eb.roll = dbone.roll
-            elif isinstance(dname, tuple):
+            elif isinstance(dname, list):
                 if (dname[0] in self.dazBones.keys() and
                     dname[1] in self.dazBones.keys()):
                     dbone1 = self.dazBones[dname[0]]
@@ -593,9 +595,9 @@ class Rigifier(RigifyCommon):
         for dbone in self.spineBones.keys():
             taken.append(dbone)
         for dbone in self.rigifySkel.values():
-            if isinstance(dbone, tuple):
+            if isinstance(dbone, list):
                 dbone = dbone[0]
-                if isinstance(dbone, tuple):
+                if isinstance(dbone, list):
                     dbone = dbone[0]
             taken.append(dbone)
         for ob in self.meshes:
@@ -803,13 +805,7 @@ class Rigifier(RigifyCommon):
                 self.copyBoneInfo(dname, rname, rig, gen)
 
         # Rescale custom shapes
-        if rig.DazRig in ["genesis3", "genesis8"]:
-            customfix = RF.CustomShapeFixGenesis38
-        elif rig.DazRig == "genesis9":
-            customfix = RF.CustomShapeFixGenesis9
-        else:
-            customfix = []
-        for bnames,scale in customfix:
+        for bnames,scale in self.custom_shape_fix:
             self.fixCustomShape(gen, bnames, scale)
         self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*GS.scale,0)))
 
@@ -878,7 +874,7 @@ class Rigifier(RigifyCommon):
                 continue
             assoc[bname] = bname
         for rname,dname in self.rigifySkel.items():
-            if isinstance(dname, tuple):
+            if isinstance(dname, list):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
             assoc[dname] = orgname
@@ -1291,7 +1287,7 @@ class Rigifier(RigifyCommon):
 
     def fixFingerIk(self, rig, gen):
         for suffix in ["L", "R"]:
-            for dfing,rfing in self.genesisFingers:
+            for dfing,rfing in self.fingers:
                 for link in range(1,4):
                     dname = "%s%s%d" % (suffix.lower(), dfing, link)
                     rname = "ORG-%s.%02d.%s" % (rfing, link, suffix)

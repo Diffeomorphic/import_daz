@@ -30,6 +30,7 @@ class DataFolders:
         self.tiles = {}
         self.gizmos = {}
         self.easy = {}
+        self.rigify = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",

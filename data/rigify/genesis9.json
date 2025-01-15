@@ -1,0 +1,127 @@
+{
+    "character":    "Genesis9",
+
+    "skeleton" : {
+        "spine" :         "hip",
+
+        "thigh.L" :         "l_thigh",
+        "shin.L" :          "l_shin",
+        "foot.L" :          "l_foot",
+        "toe.L" :           "l_toes",
+
+        "thigh.R" :         "r_thigh",
+        "shin.R" :          "r_shin",
+        "foot.R" :          "r_foot",
+        "toe.R" :           "r_toes",
+
+        "abdomen" :         "spine1",
+        "abdomen2" :        "spine2",
+        "chest" :           "spine3",
+        "chestUpper" :      "spine4",
+        "neck" :            "neck1",
+        "head" :            "head",
+
+        "shoulder.L" :      "l_shoulder",
+        "upper_arm.L" :     "l_upperarm",
+        "forearm.L" :       "l_forearm",
+        "hand.L" :          "l_hand",
+
+        "shoulder.R" :      "r_shoulder",
+        "upper_arm.R" :     "r_upperarm",
+        "forearm.R" :       "r_forearm",
+        "hand.R" :          "r_hand",
+
+        "thumb.01.L" :       "l_thumb1",
+        "thumb.02.L" :       "l_thumb2",
+        "thumb.03.L" :       "l_thumb3",
+        "f_index.01.L" :     "l_index1",
+        "f_index.02.L" :     "l_index2",
+        "f_index.03.L" :     "l_index3",
+        "f_middle.01.L" :    "l_mid1",
+        "f_middle.02.L" :    "l_mid2",
+        "f_middle.03.L" :    "l_mid3",
+        "f_ring.01.L" :      "l_ring1",
+        "f_ring.02.L" :      "l_ring2",
+        "f_ring.03.L" :      "l_ring3",
+        "f_pinky.01.L" :     "l_pinky1",
+        "f_pinky.02.L" :     "l_pinky2",
+        "f_pinky.03.L" :     "l_pinky3",
+
+        "thumb.01.R" :       "r_thumb1",
+        "thumb.02.R" :       "r_thumb2",
+        "thumb.03.R" :       "r_thumb3",
+        "f_index.01.R" :     "r_index1",
+        "f_index.02.R" :     "r_index2",
+        "f_index.03.R" :     "r_index3",
+        "f_middle.01.R" :    "r_mid1",
+        "f_middle.02.R" :    "r_mid2",
+        "f_middle.03.R" :    "r_mid3",
+        "f_ring.01.R" :      "r_ring1",
+        "f_ring.02.R" :      "r_ring2",
+        "f_ring.03.R" :      "r_ring3",
+        "f_pinky.01.R" :     "r_pinky1",
+        "f_pinky.02.R" :     "r_pinky2",
+        "f_pinky.03.R" :     "r_pinky3",
+
+        "palm.01.L" :       "l_indexmetacarpal",
+        "palm.02.L" :       "l_midmetacarpal",
+        "palm.03.L" :       "l_ringmetacarpal",
+        "palm.04.L" :       "l_pinkymetacarpal",
+
+        "palm.01.R" :       "r_indexmetacarpal",
+        "palm.02.R" :       "r_midmetacarpal",
+        "palm.03.R" :       "r_ringmetacarpal",
+        "palm.04.R" :       "r_pinkymetacarpal"
+    },
+
+    "spine" : {
+        "spine1" : ["spine.001", "spine"],
+        "spine2" : ["spine.002", "spine.001"],
+        "spine3" : ["spine.003", "spine.002"],
+        "spine4" : ["spine.004", "spine.003"],
+        "neck1" : ["spine.005", "spine.004"],
+        "neck2" : ["spine.006", "spine.005"],
+        "head" : ["spine.007", "spine.006"]
+    },
+
+    "parents" : {
+    	"head" : "neck2",
+    	"neck2" : "neck1",
+        "neck1" : "spine4",
+        "spine4" : "spine3",
+        "spine3" : "spine2",
+        "spine2" : "spine1",
+        "l_forearm" : "l_upperarm",
+        "l_hand" : "l_forearm",
+        "l_shin" : "l_thigh",
+        "l_toes" : "l_foot",
+        "r_forearm" : "r_upperarm",
+        "r_hand" : "r_forearm",
+        "r_shin" : "r_thigh",
+        "r_toes" : "r_foot"
+     },
+
+    "fingers" : [
+        ["_thumb", "thumb"],
+        ["_index", "f_index"],
+        ["_mid", "f_middle"],
+        ["_ring", "f_ring"],
+        ["_pinky", "f_pinky"]
+    ],
+
+    "mergers" : {
+        "l_upperarm" : ["l_upperarmtwist1", "l_upperarmtwist2"],
+        "l_forearm" : ["l_forearmtwist1", "l_forearmtwist2"],
+        "l_thigh" : ["l_thightwist1", "l_thightwist2"],
+        "r_upperarm" : ["r_upperarmtwist1", "r_upperarmtwist2"],
+        "r_forearm" : ["r_forearmtwist1", "r_forearmtwist2"],
+        "r_thigh" : ["r_thightwist1", "r_thightwist2"]
+    },
+
+    "removes" : ["l_upperarm", "r_upperarm"],
+
+    "custom_shape_fix" : [
+        [["head", "spine_fk.007"], 4],
+        [["neck"], 0.6]
+    ]
+}

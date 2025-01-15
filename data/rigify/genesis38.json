@@ -1,0 +1,140 @@
+{
+    "character":    "Genesis38",
+
+    "skeleton" : {
+        "spine" :      "hip",
+
+        "thigh.L" :     "lThigh",
+        "shin.L" :      "lShin",
+        "foot.L" :      "lFoot",
+        "toe.L" :       "lToe",
+
+        "thigh.R" :     "rThigh",
+        "shin.R" :      "rShin",
+        "foot.R" :      "rFoot",
+        "toe.R" :       "rToe",
+
+        "abdomen" :     "abdomen",
+        "chest" :       "chest",
+        "neck" :        "neck",
+        "head" :        "head",
+
+        "shoulder.L" :      "lCollar",
+        "upper_arm.L" :     "lShldr",
+        "forearm.L" :       "lForeArm",
+        "hand.L" :          "lHand",
+
+        "shoulder.R" :      "rCollar",
+        "upper_arm.R" :     "rShldr",
+        "forearm.R" :       "rForeArm",
+        "hand.R" :          "rHand",
+
+        "thumb.01.L" :       "lThumb1",
+        "thumb.02.L" :       "lThumb2",
+        "thumb.03.L" :       "lThumb3",
+        "f_index.01.L" :     "lIndex1",
+        "f_index.02.L" :     "lIndex2",
+        "f_index.03.L" :     "lIndex3",
+        "f_middle.01.L" :    "lMid1",
+        "f_middle.02.L" :    "lMid2",
+        "f_middle.03.L" :    "lMid3",
+        "f_ring.01.L" :      "lRing1",
+        "f_ring.02.L" :      "lRing2",
+        "f_ring.03.L" :      "lRing3",
+        "f_pinky.01.L" :     "lPinky1",
+        "f_pinky.02.L" :     "lPinky2",
+        "f_pinky.03.L" :     "lPinky3",
+
+        "thumb.01.R" :       "rThumb1",
+        "thumb.02.R" :       "rThumb2",
+        "thumb.03.R" :       "rThumb3",
+        "f_index.01.R" :     "rIndex1",
+        "f_index.02.R" :     "rIndex2",
+        "f_index.03.R" :     "rIndex3",
+        "f_middle.01.R" :    "rMid1",
+        "f_middle.02.R" :    "rMid2",
+        "f_middle.03.R" :    "rMid3",
+        "f_ring.01.R" :      "rRing1",
+        "f_ring.02.R" :      "rRing2",
+        "f_ring.03.R" :      "rRing3",
+        "f_pinky.01.R" :     "rPinky1",
+        "f_pinky.02.R" :     "rPinky2",
+        "f_pinky.03.R" :     "rPinky3",
+
+        "palm.01.L" :       "lCarpal1",
+        "palm.02.L" :       "lCarpal2",
+        "palm.03.L" :       "lCarpal3",
+        "palm.04.L" :       "lCarpal4",
+
+        "palm.01.R" :       "rCarpal1",
+        "palm.02.R" :       "rCarpal2",
+        "palm.03.R" :       "rCarpal3",
+        "palm.04.R" :       "rCarpal4"
+    },
+
+    "spine" : {
+        "abdomen" :      ["spine.001", "spine"],
+        "abdomen2" :     ["spine.002", "spine.001"],
+        "chest" :        ["spine.003", "spine.002"],
+        "chestUpper" :   ["spine.004", "spine.003"],
+        "neck" :         ["spine.005", "spine.004"],
+        "neckUpper" :    ["spine.006", "spine.005"],
+        "head" :         ["spine.007", "spine.006"]
+    },
+
+    "parents": {
+    	"head" : "neckUpper",
+    	"neckUpper" : "neckLower",
+        "neckLower" :   "chestUpper",
+        "chestUpper" :  "chestLower",
+        "chestLower" :  "abdomenUpper",
+        "abdomenUpper" : "abdomenLower",
+        "lForearmBend" : "lShldrBend",
+        "lHand" : "lForearmBend",
+        "lShin" : "lThighBend",
+        "lToe" : "lFoot",
+        "rForearmBend" : "rShldrBend",
+        "rHand" : "rForearmBend",
+        "rShin" : "rThighBend",
+        "rToe" : "rFoot"
+    },
+
+    "renames" : {
+        "abdomenLower" : "abdomen",
+        "abdomenUpper" : "abdomen2",
+        "chestLower" : "chest",
+        "neckLower" : "neck",
+        "lShldrBend" : "lShldr",
+        "lForearmBend" : "lForeArm",
+        "lThighBend" : "lThigh",
+        "rShldrBend" : "rShldr",
+        "rForearmBend" : "rForeArm",
+        "rThighBend" : "rThigh"
+    },
+
+    "fingers" : [
+        ["Thumb", "thumb"],
+        ["Index", "f_index"],
+        ["Mid", "f_middle"],
+        ["Ring", "f_ring"],
+        ["Pinky", "f_pinky"]
+    ],
+
+    "mergers" : {
+        "lShldrBend" : ["lShldrTwist"],
+        "lForearmBend" : ["lForearmTwist"],
+        "lThighBend" : ["lThighTwist"],
+        "rShldrBend" : ["rShldrTwist"],
+        "rForearmBend" : ["rForearmTwist"],
+        "rThighBend" : ["rThighTwist"]
+    },
+
+    "mergers2" : {
+        "lFoot" : ["lMetatarsals"],
+        "rFoot" : ["rMetatarsals"]
+    },
+
+    "custom_shape_fix" : [
+        [["head", "spine_fk.007"], 4]
+    ]
+}
