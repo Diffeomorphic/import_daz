@@ -110,7 +110,8 @@ class ToonTree(CyclesTree):
     def setRenderSettings(self):
         mat = self.owner.rna
         if mat:
-            mat.surface_render_method = 'BLENDED'
+            from .cycles import setRenderMethod
+            setRenderMethod(mat, True, False)
 
 #------------------------------------------------------------------
 #   Add toons to collection
@@ -135,8 +136,9 @@ def addToons(context):
         sun = bpy.data.lights.new(lname, "SUN")
         light = bpy.data.objects.new(lname, sun)
         LS.collection.objects.link(light)
-    coll = addCollection(lname, toons)
-    light.light_linking.receiver_collection = coll
+    if hasattr(light, "light_linking"):
+        coll = addCollection(lname, toons)
+        light.light_linking.receiver_collection = coll
 
     if GS.toonMethod == 'NONE':
         return
@@ -157,7 +159,10 @@ def addToons(context):
         lineset.select_by_collection = True
 
     elif GS.toonMethod == 'LINEART':
-        bpy.ops.object.grease_pencil_add(type='LINEART_OBJECT')
+        try:
+            bpy.ops.object.grease_pencil_add(type='LINEART_OBJECT')
+        except AttributeError:
+            return
         lineart = context.object
         lineart.name = "%s Line Art" % LS.collection.name
         if lineart.name not in LS.collection.objects.keys():
@@ -170,12 +175,16 @@ def addToons(context):
 
     elif GS.toonMethod == 'SOLIDIFY':
         from .material import BLACK
+        from .cycles import setRenderMethod
         oname = "DAZ Toon Outline"
         mat = bpy.data.materials.get(oname)
         if mat is None:
             mat = bpy.data.materials.new(oname)
         mat.use_nodes = True
         mat.use_backface_culling = True
+        if hasattr(mat, "use_backface_culling_shadow"):
+            mat.use_backface_culling_shadow = True
+        setRenderMethod(mat, True, False)
         mat.diffuse_color[0:3] = BLACK
         tree = mat.node_tree
         tree.nodes.clear()
@@ -187,7 +196,8 @@ def addToons(context):
         output.target = 'ALL'
         tree.links.new(rgb.outputs["Color"], output.inputs["Surface"])
 
-        setToonView(context)
+        if GS.onRenderSettings == 'UPDATE':
+            setToonView(context)
 
         for ob,push in rimtoons:
             ob.data.materials.append(mat)
