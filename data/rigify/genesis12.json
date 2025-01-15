@@ -1,5 +1,6 @@
 {
     "character":    "Genesis12",
+    "adder" : 	    "armature_human_metarig_add",
 
     "skeleton" : {
         "spine" :      "hip",
@@ -118,5 +119,12 @@
         ["Mid", "f_middle"],
         ["Ring", "f_ring"],
         ["Pinky", "f_pinky"]
-    ]
+    ],
+
+    "limbs" : {
+        "Shldr" : "upper_arm",
+        "ForeArm" : "forearm",
+        "Thigh" : "thigh",
+        "Shin" : "shin"
+    }
 }

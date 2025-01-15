@@ -332,12 +332,14 @@ def getRigType1(bones, strict):
         "genesis12" : ["abdomen", "lShldr", "rThigh", "lMid3", "rMid3", "upperJaw"],
         "genesis38" : ["abdomenLower", "lShldrBend", "rThighTwist", "lMid3", "rMid3", "lSmallToe2_2", "rSmallToe2_2", "lNasolabialLower"],
         "genesis9" : ["spine1", "l_upperarm", "r_thigh", "l_mid3", "r_mid3", "l_midtoe2", "r_midtoe2", "l_nostril"],
+        "daz_dog8" : ["lPastern", "lHaunch"],
     }
 
     laxBones = {
         "genesis12" : ["abdomen", "lShldr", "rThigh"],
         "genesis38" : ["abdomenLower", "lShldrBend", "rThighTwist"],
         "genesis9" : ["spine1", "l_upperarm", "r_thigh"],
+        "daz_dog8" : ["lPastern", "lHaunch"],
     }
 
     if strict:
@@ -347,6 +349,8 @@ def getRigType1(bones, strict):
             return ("genesis2" if "lSmallToe1" in bones else "genesis")
         elif match(strictBones["genesis9"], bones):
             return "genesis9"
+        elif match(strictBones["daz_dog8"], bones):
+            return "daz_dog8"
     else:
         if match(laxBones["genesis38"], bones):
             return ("genesis3" if "lHeel" in bones else "genesis8")
@@ -354,6 +358,8 @@ def getRigType1(bones, strict):
             return ("genesis2" if "lSmallToe1" in bones else "genesis")
         elif match(laxBones["genesis9"], bones):
             return "genesis9"
+        elif match(laxBones["daz_dog8"], bones):
+            return "daz_dog8"
     if "ball.marker.L" in bones:
         return "mhx"
     else:

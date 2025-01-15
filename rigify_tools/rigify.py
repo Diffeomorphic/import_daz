@@ -93,9 +93,11 @@ class RigifyCommon:
             entry = DF.loadEntry("genesis38", "rigify")
         elif rig.DazRig == "genesis9":
             entry = DF.loadEntry("genesis9", "rigify")
+        self.adder = entry["adder"]
         self.rigifySkel = entry["skeleton"]
         self.spineBones = entry["spine"]
         self.fingers = entry["fingers"]
+        self.limbs = entry["limbs"]
         self.parents = entry.get("parents", {})
         self.mergers = entry.get("mergers", {})
         self.mergers2 = entry.get("mergers2", {})
@@ -105,10 +107,7 @@ class RigifyCommon:
 
         self.dazSkel = {}
         for rbone, dbone in self.rigifySkel.items():
-            if isinstance(dbone, list):
-                dbone = dbone[0]
-            if isinstance(dbone, str):
-                self.dazSkel[dbone] = rbone
+            self.dazSkel[dbone] = rbone
 
 
     def getDazBones(self, rig):
@@ -201,8 +200,9 @@ class MetaMaker(RigifyCommon):
 
         # Create metarig
         setMode('OBJECT')
+        adder = getattr(bpy.ops.object, self.adder)
         try:
-            bpy.ops.object.armature_human_metarig_add()
+            adder()
         except AttributeError:
             raise DazError("The Rigify add-on is not enabled. It is found under rigging.")
         bpy.ops.object.location_clear()
@@ -837,22 +837,6 @@ class Rigifier(RigifyCommon):
                     print("    Did not find bone parent %s" % dname)
                     ob.parent_type = 'OBJECT'
                 setWorldMatrix(ob, wmat)
-
-        # Limbs
-        if rig.DazRig == "genesis9":
-            self.limbs = {
-                "_upperarm" : "upper_arm",
-                "_forearm" : "forearm",
-                "_thigh" : "thigh",
-                "_shin" : "shin",
-            }
-        else:
-            self.limbs = {
-                "Shldr" : "upper_arm",
-                "ForeArm" : "forearm",
-                "Thigh" : "thigh",
-                "Shin" : "shin",
-            }
 
         # Change vertex groups
         activateObject(context, gen)

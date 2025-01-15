@@ -30,6 +30,8 @@ FingerPrints = {
     "844-1670-834" : "Toon9-floating-iris",
     "400-764-366" : "Toon9-eye-socket",
     "854-1696-848" : "Toon9-mouth",
+
+    "17272-34226-17000" : "Daz_dog8",
 }
 
 HomeDirs = {
@@ -57,6 +59,8 @@ HomeDirs = {
     "Toon9-floating-iris" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Floating Iris/Morphs",
     "Toon9-eye-socket" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Eye Socket/Morphs",
     "Toon9-mouth" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs",
+
+    "Daz_dog8" : "/data/DAZ 3D/Dog 8/Dog 8/Morphs",
 }
 
 VertexCounts = {
@@ -77,6 +81,8 @@ VertexCounts = {
     844 : "Toon9-floating-iris",
     400 : "Toon9-eye-socket",
     854 : "Toon9-mouth",
+
+    17272 : "Daz_dog8",
 
 }
 
