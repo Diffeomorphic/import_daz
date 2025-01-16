@@ -524,7 +524,6 @@ class LocalSettings:
         self.clothesColor = None
         self.fitFile = False
         self.autoMaterials = True
-        self.morphStrength = 1.0
 
         self.useNodes = False
         self.useGeometries = False
@@ -675,9 +674,7 @@ class LocalSettings:
         elif btn.fitMeshes == 'UNIQUE':
             pass
         elif btn.fitMeshes in ['TRANSFORMED', 'MORPHED']:
-            #self.useMorph = True
             self.onLoadBaked = btn.fitMeshes
-            self.morphStrength = btn.morphStrength
         elif btn.fitMeshes == 'DBZFILE':
             self.fitFile = True
 

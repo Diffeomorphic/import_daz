@@ -73,17 +73,10 @@ class FitOptions:
         description = "Mesh fitting method",
         default = 'DBZFILE')
 
-    morphStrength : FloatProperty(
-        name = "Morph Strength",
-        description = "Morph strength",
-        default = 1.0)
-
     def draw(self, context):
         box = self.layout.box()
         box.label(text = "Mesh Fitting")
         box.prop(self, "fitMeshes", expand=True)
-        if self.fitMeshes == 'MORPHED':
-            box.prop(self, "morphStrength")
         self.layout.separator()
 
 #------------------------------------------------------------------
@@ -174,10 +167,14 @@ class DazLoader:
 
         if LS.onLoadBaked:
             from .baked import postloadMorphs
-            postloadMorphs(context, filepath)
-            for _,inst in main.nodes:
-                inst.setConformProps(context)
-            updateAll(context)
+            settings = LS.getSettings()
+            try:
+                postloadMorphs(context, filepath)
+                for _,inst in main.nodes:
+                    inst.setConformProps(context)
+                updateAll(context)
+            finally:
+                LS.restoreSettings(settings)
 
         # Do this at the very end, because it deletes nodes
         if GS.usePruneNodes:
@@ -568,11 +565,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         description = "Apply all transforms to objects that are not bone parented",
         default = False)
 
-    useApplyRestPoses : BoolProperty(
-        name = "Apply Rest Poses",
-        description = "Apply rest pose to all rigs.\nOnly for morphed mesh fitting",
-        default = True)
-
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",
         description = "Merge identical materials",
@@ -654,14 +646,12 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
-        if self.useMergeRigs and self.fitMeshes != 'MORPHED':
+        if self.useMergeRigs:
             self.subprop("duplicateDistance")
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
-        if self.fitMeshes == 'MORPHED':
-            self.layout.prop(self, "useApplyRestPoses")
-        else:
-            self.layout.prop(self, "useApplyTransforms")
+            self.subprop("useTieRigs")
+        self.layout.prop(self, "useApplyTransforms")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
@@ -746,6 +736,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             raise DazError("No objects found")
         GS.silentMode = True
         visibles = getVisibleObjects(context)
+        print("RRR", LS.rigs)
+        print("MMM", LS.meshes)
         self.rigs = self.getTypedObjects(visibles, LS.rigs)
         self.meshes = self.getTypedObjects(visibles, LS.meshes)
         self.objects = self.getTypedObjects(visibles, LS.objects)
@@ -806,7 +798,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     useOnlySelected = True,
                     duplicateDistance = self.duplicateDistance,
                     useMergeNonConforming = self.useMergeNonConforming,
-                    useTieRigs = (self.fitMeshes == 'MORPHED'))
+                    useTieRigs = self.useTieRigs)
                 mainRig = context.object
                 rigs = [mainRig]
 
@@ -860,14 +852,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                         isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
         tied = []
-        if self.fitMeshes == 'MORPHED':
-            from .apply import applyTransforms, applyRestPoses, applyAllShapekeys
-            if self.useApplyRestPoses:
-                applyTransforms(objects)
-                tied = applyRestPoses(context, mainRig, useMergeTiedBones=True)
-                for ob in meshes:
-                    applyAllShapekeys(ob)
-        elif self.useApplyTransforms:
+        if self.useApplyTransforms:
             from .apply import applyTransforms
             applyTransforms(objects)
 
