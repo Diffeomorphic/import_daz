@@ -106,6 +106,7 @@ class GlobalSettings:
         self.useInheritScale = False
         self.displayLimitRot = False
         self.useBoneColors = True
+        self.ignoreG9TwistBones = False
 
         self.useInstancing = True
         self.useHairGuides = False
