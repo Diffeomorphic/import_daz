@@ -107,6 +107,7 @@ class RigifyCommon:
         entry = DF.loadEntry(self.rigify_type, "rigify")
         self.meta_bones = entry.get("meta_bones", {})
         self.head_bone = entry["head_bone"]
+        self.hip_bone = entry["hip_bone"]
         self.delete_bones = entry["delete_bones"]
 
         self.dazSkel = {}
@@ -334,7 +335,8 @@ class MetaMaker(RigifyCommon):
         ebones = meta.data.edit_bones
         eb = ebones[self.head_bone]
         deleteChildren(eb)
-        for eb in self.delete_bones:
+        for bname in self.delete_bones:
+            eb = ebones[bname]
             ebones.remove(eb)
         setMode('OBJECT')
 
@@ -526,7 +528,7 @@ class MetaMaker(RigifyCommon):
 
 
     def fitHip(self, meta):
-        hip = meta.data.edit_bones[RF.hips]
+        hip = meta.data.edit_bones[self.hip_bone]
         dbone = self.dazBones["hip"]
         hip.tail = Vector((1,2,3))
         hip.head = dbone.tail
