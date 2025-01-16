@@ -68,6 +68,7 @@ class BoneInstance(Instance):
         self.isPosed = False
         self.isBuilt = False
         self.test = False
+        self.ignoreBone = (GS.ignoreG9TwistBones and self.name.endswith(("twist1", "twist2")))
 
 
     def __repr__(self):
@@ -107,6 +108,8 @@ class BoneInstance(Instance):
     FZ = Matrix.Rotation(pi, 4, 'Z')
 
     def buildEdit(self, figure, figinst, rig, parent, center, isFace):
+        if self.ignoreBone:
+            return
         self.makeNameUnique(rig.data.edit_bones)
         rdata = self.getHeadTail(center)
         eb = rig.data.edit_bones.new(self.name)
@@ -318,10 +321,12 @@ class BoneInstance(Instance):
 
 
     def buildFormulas(self, rig, hide):
-        from .load_morph import buildBoneFormula
+        if self.ignoreBone:
+            return
         if (self.node.formulas and
             GS.useDefaultDrivers and
             self.name in rig.pose.bones.keys()):
+            from .load_morph import buildBoneFormula
             pb = rig.pose.bones[self.name]
             isrot = self.isRotMorph(self.node.formulas)
             pb.rotation_mode = self.getRotationMode(pb, isrot)
@@ -373,6 +378,8 @@ class BoneInstance(Instance):
 
 
     def buildPose(self, figure, inFace, targets, missing):
+        if self.ignoreBone:
+            return
         node = self.node
         rig = figure.rna
         if node.name not in rig.pose.bones.keys():

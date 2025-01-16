@@ -106,6 +106,7 @@ class GlobalSettings:
         self.useInheritScale = False
         self.displayLimitRot = False
         self.useBoneColors = True
+        self.ignoreG9TwistBones = False
 
         self.useInstancing = True
         self.useHairGuides = False
@@ -524,7 +525,6 @@ class LocalSettings:
         self.clothesColor = None
         self.fitFile = False
         self.autoMaterials = True
-        self.morphStrength = 1.0
 
         self.useNodes = False
         self.useGeometries = False
@@ -675,9 +675,7 @@ class LocalSettings:
         elif btn.fitMeshes == 'UNIQUE':
             pass
         elif btn.fitMeshes in ['TRANSFORMED', 'MORPHED']:
-            #self.useMorph = True
             self.onLoadBaked = btn.fitMeshes
-            self.morphStrength = btn.morphStrength
         elif btn.fitMeshes == 'DBZFILE':
             self.fitFile = True
 

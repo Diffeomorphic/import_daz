@@ -117,44 +117,40 @@ def postloadMorphs(context, filepath):
             props[key][asset.name] = (asset.label, asset.value)
 
     useMorphed = (LS.onLoadBaked == 'MORPHED')
-    settings = LS.getSettings()
-    try:
-        for key,namepaths in namepathss.items():
-            ob = objects[key]
-            print("Load baked morphs to %s" % ob.name)
-            if not isinstance(ob, bpy.types.Object):
-                continue
-            lm = setupMorphLoader(ob)
-            if lm is None:
-                continue
-            if useMorphed:
-                lm.getAllMorphs(namepaths, context)
-            addProps(props[key], lm, 1.0)
-            addFormFormulas(forms[key], ob, lm, useMorphed)
+    for key,namepaths in namepathss.items():
+        ob = objects[key]
+        print("Load baked morphs to %s" % ob.name)
+        if not isinstance(ob, bpy.types.Object):
+            continue
+        lm = setupMorphLoader(ob)
+        if lm is None:
+            continue
+        if useMorphed:
+            lm.getAllMorphs(namepaths, context)
+        addProps(props[key], lm, 1.0)
+        addFormFormulas(forms[key], ob, lm, useMorphed)
 
-            inst = parents.get(key)
-            taken = []
-            if isinstance(inst, Instance):
-                taken.append(inst)
-                node = inst.node
-                addNodeFormulas(node, ob, lm, useMorphed)
-                inst2 = inst.instanceTarget
-                if inst.instances:
-                    insts = inst.instances
-                elif inst2:
-                    insts = [inst2] + [inst3 for inst3 in inst2.instances if inst3 != inst]
-                else:
-                    insts = []
-                for inst2 in insts:
-                    if inst2 in taken:
-                        continue
-                    taken.append(inst2)
-                    ob2 = inst2.rna
-                    lm2 = setupMorphLoader(ob2)
-                    if lm2 is not None:
-                        if useMorphed:
-                            lm2.getAllMorphs(namepaths, ob2)
-                        addProps(props[key], lm2, 0.0)
-                    addNodeFormulas(node, ob2, lm2, useMorphed)
-    finally:
-        LS.restoreSettings(settings)
+        inst = parents.get(key)
+        taken = []
+        if isinstance(inst, Instance):
+            taken.append(inst)
+            node = inst.node
+            addNodeFormulas(node, ob, lm, useMorphed)
+            inst2 = inst.instanceTarget
+            if inst.instances:
+                insts = inst.instances
+            elif inst2:
+                insts = [inst2] + [inst3 for inst3 in inst2.instances if inst3 != inst]
+            else:
+                insts = []
+            for inst2 in insts:
+                if inst2 in taken:
+                    continue
+                taken.append(inst2)
+                ob2 = inst2.rna
+                lm2 = setupMorphLoader(ob2)
+                if lm2 is not None:
+                    if useMorphed:
+                        lm2.getAllMorphs(namepaths, ob2)
+                    addProps(props[key], lm2, 0.0)
+                addNodeFormulas(node, ob2, lm2, useMorphed)

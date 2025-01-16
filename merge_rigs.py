@@ -104,17 +104,17 @@ class MergeRigsOptions:
         description = "Also merge bones from armatures that are hidden",
         default = False)
 
+    useTieRigs : BoolProperty(
+        name = "Tie Rigs Instead",
+        description = "Drive bone in child rigs with copy transforms constraints",
+        default = False)
+
 
 class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmature):
     bl_idname = "daz.merge_rigs"
     bl_label = "Merge Rigs"
     bl_description = "Merge selected rigs to active rig"
     bl_options = {'UNDO'}
-
-    useTieRigs : BoolProperty(
-        name = "Tie Rigs Instead",
-        description = "Drive bone in child rigs with copy transforms constraints",
-        default = False)
 
     useOnlySelected : BoolProperty(
         name = "Only Selected Rigs",

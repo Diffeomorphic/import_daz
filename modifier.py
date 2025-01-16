@@ -4,6 +4,7 @@
 
 import bpy
 import collections
+import numpy as np
 
 from .asset import Asset
 from .channels import Channels
@@ -491,6 +492,8 @@ class SkinBinding(Modifier):
     def addVertexGroups(self, ob, geonode, rig):
         for bone in rig.data.bones:
             bone.use_deform = False
+
+        twists = {}
         for joint in self.skin["joints"]:
             bname = joint["id"]
             if bname in geonode.figure.bones.keys():
@@ -520,6 +523,7 @@ class SkinBinding(Modifier):
             else:
                 reportError("No weights for %s in %s" % (bname, ob.name), trigger=(3,5))
                 continue
+
             if GS.useBulgeWeights:
                 if "bulge_weights" in joint.keys():
                     for comp in ["x", "y", "z"]:
@@ -539,13 +543,28 @@ class SkinBinding(Modifier):
                             if right and (bvalues.get("positive_right") or bvalues.get("negative_right")):
                                 buildVertexGroup(ob, "%s:right_%s" % (vgname,comp), right["values"])
 
+            if rig.DazRig == "genesis9" and vgname in ["l_upperarm", "r_upperarm"]:
+                continue
+            elif GS.ignoreG9TwistBones and vgname.endswith(("twist1", "twist2")):
+                bname = vgname[:-6]
+                nverts = len(ob.data.vertices)
+                warr = np.zeros(nverts, dtype=float)
+                idxs = [idx for idx,w in weights["values"]]
+                warr[idxs] = [w for idx,w in weights["values"]]
+                warr += twists.get(bname, 0.0)
+                twists[bname] = warr
+                continue
 
-            removes = self.Removes.get(rig.DazRig, [])
-            if bname not in removes and weights:
+            if weights:
                 buildVertexGroup(ob, vgname, weights["values"])
                 if bname in rig.data.bones.keys() and len(weights["values"]) > 0:
                     rig.data.bones[bname].use_deform = True
 
+        for bname,warr in twists.items():
+            weights = [(idx,w) for idx,w in enumerate(warr) if w > 1e-4]
+            buildVertexGroup(ob, bname, weights)
+            if bname in rig.data.bones.keys():
+                rig.data.bones[bname].use_deform = True
 
 
     def calcLocalWeights(self, bname, joint, rig):

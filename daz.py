@@ -485,6 +485,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Bone Colors",
         description = "Colorize bones. For debugging in Blender 4")
 
+    ignoreG9TwistBones : BoolProperty(
+        name = "Ignore Genesis 9 Twist Bones",
+        description = "Don't import Genesis 9 twist bones.\nTo fix some problems for game engines")
+
     useDump : BoolProperty(
         name = "Dump Debug Info",
         description = "Dump debug info in the file\ndaz_importer_errors.text after loading file")
@@ -727,6 +731,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useLimitRot")
         box.prop(self, "useInheritScale")
         box.prop(self, "displayLimitRot")
+        box.prop(self, "ignoreG9TwistBones")
         box.prop(self, "useBoneColors")
 
         box = col.box()
