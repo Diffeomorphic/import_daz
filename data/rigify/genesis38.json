@@ -1,9 +1,16 @@
 {
     "character":    "Genesis38",
-    "adder" : 	    "armature_human_metarig_add",
+    "rigify_type" : "human",
 
     "skeleton" : {
-        "spine" :      "hip",
+        "spine" :        "hip",
+        "abdomen" :      "spine.001",
+        "abdomen2" :     "spine.002",
+        "chest" :        "spine.003",
+        "chestUpper" :   "spine.004",
+        "neck" :         "spine.005",
+        "neckUpper" :    "spine.006",
+        "head" :         "spine.007",
 
         "thigh.L" :     "lThigh",
         "shin.L" :      "lShin",
@@ -99,6 +106,26 @@
         "rShin" : "rThighBend",
         "rToe" : "rFoot"
     },
+    
+    "resize": {
+        "head" : 2.0
+    },
+
+    "deform_bones" : {
+        "abdomenLower" : "DEF-spine.001",
+        "abdomenUpper" : "DEF-spine.002",
+        "chestLower" : "DEF-spine.003",
+        "chestUpper" : "DEF-spine.004",
+        "neckLower" : "DEF-spine.005",
+        "neckUpper" : "DEF-spine.006",
+        "ShldrBend" : "DEF-upper_arm.%s",
+        "ForearmBend" : "DEF-forearm.%s",
+        "ThighBend" : "DEF-thigh.%s",
+        "ShldrTwist" : "DEF-upper_arm.%s.001",
+        "ForearmTwist" : "DEF-forearm.%s.001",
+        "ThighTwist" : "DEF-thigh.%s.001",
+        "Shin" : "DEF-shin.%s"
+    },
 
     "renames" : {
         "abdomenLower" : "abdomen",
@@ -129,6 +156,7 @@
     },
 
     "mergers" : {
+        "hip" : ["pelvis"],
         "lShldrBend" : ["lShldrTwist"],
         "lForearmBend" : ["lForearmTwist"],
         "lThighBend" : ["lThighTwist"],
@@ -138,6 +166,7 @@
     },
 
     "mergers2" : {
+        "hip" : ["pelvis"],
         "lFoot" : ["lMetatarsals"],
         "rFoot" : ["rMetatarsals"]
     },

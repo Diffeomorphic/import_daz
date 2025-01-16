@@ -1,0 +1,20 @@
+{
+    "rigify_type" : "human",
+    
+    "head_bone" : "spine.007",
+    
+    "meta_bones" : {
+            "spine" : "spine",
+            "spine-1" : "spine.001",
+            "chest" : "spine.002",
+            "chest-1" : "spine.003",
+            "chestUpper" : "spine.004",
+            "neck" : "spine.005",
+            "neckUpper" : "spine.006",
+            "head" : "spine.007"
+        },
+        
+    "delete_bones" : ["breast.L", "breast.R"]     
+
+}
+    

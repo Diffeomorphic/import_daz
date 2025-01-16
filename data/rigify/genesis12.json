@@ -1,9 +1,16 @@
 {
     "character":    "Genesis12",
-    "adder" : 	    "armature_human_metarig_add",
+    "rigify_type" : "human",
 
     "skeleton" : {
-        "spine" :      "hip",
+        "spine" :       "hip",
+        "abdomen" :     "spine.001",
+        "abdomen2" :    "spine.002",
+        "chest" :       "spine.003",
+        "chest2" :      "spine.004",
+        "neck" :        "spine.005",
+        "neck2" :       "spine.006",
+        "head" :        "spine.007",
 
         "thigh.L" :     "lThigh",
         "shin.L" :      "lShin",
@@ -18,7 +25,7 @@
         "abdomen" :     "abdomen",
         "abdomen2" :    "abdomen2",
         "chest" :       "chest",
-        "chestUpper" :  "chestUpper",
+        "chest2" :      "chest2",
         "neck" :        "neck",
         "head" :        "head",
 
@@ -75,19 +82,16 @@
         "palm.04.R" :       "rCarpal4"
     },
 
-    "spine" : {
-        "abdomen" :      ["spine.001", "spine"],
-        "abdomen2" :     ["spine.002", "spine.001"],
-        "chest" :        ["spine.003", "spine.002"],
-        "chestUpper" :   ["spine.004", "spine.003"],
-        "neck" :         ["spine.005", "spine.004"],
-        "head" :         ["spine.006", "spine.005"]
-    },
+    "split" : {
+    	"chest" : ["chest2"],
+    	"neck" :  ["neck2"],
+    	"abdomen" : ["abdomen2"]
+    }
 
     "parents": {
     	"head" : "neckLower",
-        "neckLower" : "chestUpper",
-        "chestUpper" : "chestLower",
+        "neckLower" : "chest2",
+        "chest2" : "chestLower",
         "chestLower" : "abdomenUpper",
         "abdomenUpper" : "abdomenLower",
         "lForearmBend" : "lShldrBend",
@@ -98,6 +102,10 @@
         "rHand" : "rForearmBend",
         "rShin" : "rThighBend",
         "rToe" : "rFoot"
+    },
+
+    "resize": {
+        "head" : 2.0
     },
 
     "renames" : {

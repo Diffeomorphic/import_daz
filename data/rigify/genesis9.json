@@ -1,9 +1,16 @@
 {
     "character":    "Genesis9",
-    "adder" : 	    "armature_human_metarig_add",
+    "rigify_type" : "human",
 
     "skeleton" : {
-        "spine" :         "hip",
+        "spine" :          "hip",
+        "spine1" :         "spine.001",
+        "spine2" :         "spine.002",
+        "spine3" :         "spine.003",
+        "spine4" :         "spine.004",
+        "neck1" :          "spine.005",
+        "neck2" :          "spine.006",
+        "head" :           "spine.007",
 
         "thigh.L" :         "l_thigh",
         "shin.L" :          "l_shin",
@@ -75,14 +82,8 @@
         "palm.04.R" :       "r_pinkymetacarpal"
     },
 
-    "spine" : {
-        "spine1" : ["spine.001", "spine"],
-        "spine2" : ["spine.002", "spine.001"],
-        "spine3" : ["spine.003", "spine.002"],
-        "spine4" : ["spine.004", "spine.003"],
-        "neck1" : ["spine.005", "spine.004"],
-        "neck2" : ["spine.006", "spine.005"],
-        "head" : ["spine.007", "spine.006"]
+    "resize": {
+        "head" : 2.0
     },
 
     "parents" : {

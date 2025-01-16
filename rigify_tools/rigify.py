@@ -17,12 +17,6 @@ from ..bone_data import BD
 #
 #-------------------------------------------------------------
 
-def setupRigifyData(meta):
-    global RF
-    from .rigify_data import RigifyData
-    RF = RigifyData(meta)
-
-
 def rigifySafe(bname):
     if bname in ["root"]:
         return "_%s" % bname
@@ -93,22 +87,32 @@ class RigifyCommon:
             entry = DF.loadEntry("genesis38", "rigify")
         elif rig.DazRig == "genesis9":
             entry = DF.loadEntry("genesis9", "rigify")
-        self.adder = entry["adder"]
-        self.rigifySkel = entry["skeleton"]
-        self.spineBones = entry["spine"]
+        elif rig.DazRig == "daz_dog8":
+            entry = DF.loadEntry("daz_dog8", "rigify")
+        self.rigify_type = entry["rigify_type"]
+        self.skeleton = entry["skeleton"]
+        self.spine_bones = entry.get("spine", {})
         self.fingers = entry["fingers"]
         self.limbs = entry["limbs"]
         self.parents = entry.get("parents", {})
+        self.resize = entry.get("resize", {})
+        self.split = entry.get("split", {})
+        self.deform_bones = entry.get("deform_bones", {})
         self.mergers = entry.get("mergers", {})
         self.mergers2 = entry.get("mergers2", {})
         self.removes = entry.get("removes", [])
         self.renames = entry.get("renames", {})
         self.custom_shape_fix = entry.get("custom_shape_fix", [])
 
-        self.dazSkel = {}
-        for rbone, dbone in self.rigifySkel.items():
-            self.dazSkel[dbone] = rbone
+        entry = DF.loadEntry(self.rigify_type, "rigify")
+        self.meta_bones = entry.get("meta_bones", {})
+        self.head_bone = entry["head_bone"]
+        self.delete_bones = entry["delete_bones"]
 
+        self.dazSkel = {}
+        for rbone, dbone in self.skeleton.items():
+            self.dazSkel[dbone] = rbone
+        print("DD", self.dazSkel.items())
 
     def getDazBones(self, rig):
         # Setup info about DAZ bones
@@ -200,7 +204,7 @@ class MetaMaker(RigifyCommon):
 
         # Create metarig
         setMode('OBJECT')
-        adder = getattr(bpy.ops.object, self.adder)
+        adder = getattr(bpy.ops.object, "armature_%s_metarig_add" % self.rigify_type)
         try:
             adder()
         except AttributeError:
@@ -229,7 +233,7 @@ class MetaMaker(RigifyCommon):
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
-        setupRigifyData(meta)
+        self.deleteFaceBones(meta)
 
         if activateObject(context, rig):
             safeTransformApply()
@@ -238,8 +242,8 @@ class MetaMaker(RigifyCommon):
         if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
-            self.splitBone(rig, "chest", "chestUpper")
-            self.splitBone(rig, "abdomen", "abdomen2")
+            for bname,others in self.split.items():
+                self.splitBone(rig, bname, others)
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.deleteBendTwistDrvBones(rig)
             mergeBones(rig, self.mergers, self.parents, context)
@@ -261,6 +265,11 @@ class MetaMaker(RigifyCommon):
             else:
                 mergeBones(rig, self.mergers, self.parents, context)
                 mergeVertexGroups(rig, self.mergers)
+        elif rig.DazRig == "daz_dog8":
+            for bname,others in self.split.items():
+                self.splitBone(rig, bname, others)
+            mergeBones(rig, self.mergers, self.parents, context)
+            mergeVertexGroups(rig, self.mergers)
         else:
             msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
             activateObject(context, meta)
@@ -282,12 +291,13 @@ class MetaMaker(RigifyCommon):
         self.fitToDaz(meta)
         hip = self.fitHip(meta)
 
-        if rig.DazRig in ["genesis3", "genesis8", "genesis9"]:
-            eb = meta.data.edit_bones[RF.head]
-            eb.tail = eb.head + 1.0*(eb.tail - eb.head)
+        for bname,factor in self.resize.items():
+            eb = meta.data.edit_bones[bname]
+            eb.tail = eb.head + (factor-1)*(eb.tail - eb.head)
 
         self.fixHands(meta)
-        self.fitLimbs(meta, hip)
+        if self.rigify_type == "human":
+            self.fitLimbs(meta, hip)
         if BLENDER3 and meta["DazCustomLayers"]:
             self.addGroupBones(meta, rig)
 
@@ -314,21 +324,42 @@ class MetaMaker(RigifyCommon):
         return rig, meta, dazrig
 
 
-    def splitBone(self, rig, bname, upname):
-        if upname in rig.data.bones.keys():
+    def deleteFaceBones(self, meta):
+        def deleteChildren(eb):
+            for child in eb.children:
+                deleteChildren(child)
+                ebones.remove(child)
+
+        setMode('EDIT')
+        ebones = meta.data.edit_bones
+        eb = ebones[self.head_bone]
+        deleteChildren(eb)
+        for eb in self.delete_bones:
+            ebones.remove(eb)
+        setMode('OBJECT')
+
+
+    def splitBone(self, rig, bname, others):
+        if others[0] in rig.data.bones.keys():
             return
         setMode('EDIT')
-        eblow = rig.data.edit_bones[bname]
-        vec = eblow.tail - eblow.head
-        mid = eblow.head + vec/2
-        ebup = rig.data.edit_bones.new(upname)
-        for eb in eblow.children:
-            eb.parent = ebup
-        ebup.head = mid
-        ebup.tail = eblow.tail
-        ebup.parent = eblow
-        ebup.roll = eblow.roll
-        eblow.tail = mid
+        eb0 = rig.data.edit_bones[bname]
+        nbones = len(others)+1
+        vec = (eb0.tail - eb0.head)/nbones
+        children = list(eb0.children)
+        loc = eb0.tail = eb0.head + vec
+        par = eb0
+        for n,bname in enumerate(others):
+            eb = rig.data.edit_bones.new(bname)
+            eb.head = loc
+            eb.tail = loc + vec
+            eb.roll = eb0.roll
+            eb.parent = par
+            eb.use_connect = True
+            par = eb
+            loc += vec
+        for eb in eb0.children:
+            eb.parent = par
         setMode('OBJECT')
 
 
@@ -476,7 +507,7 @@ class MetaMaker(RigifyCommon):
             eb.use_connect = False
 
         for eb in meta.data.edit_bones:
-            dname = self.rigifySkel.get(eb.name)
+            dname = self.skeleton.get(eb.name)
             if isinstance(dname, list):
                 dname,_vgrps = dname
             if isinstance(dname, str):
@@ -549,10 +580,10 @@ class MetaMaker(RigifyCommon):
 
     def fitSpine(self, meta):
         mbones = meta.data.edit_bones
-        for dname in self.spineBones.keys():
+        for dname in self.spine_bones.keys():
             if dname not in self.dazBones.keys():
                 continue
-            rname,pname = self.spineBones[dname]
+            rname,pname = self.spine_bones[dname]
             dbone = self.dazBones[dname]
             if rname in mbones.keys():
                 eb = mbones[rname]
@@ -592,9 +623,9 @@ class Rigifier(RigifyCommon):
 
         self.extras = OrderedDict()
         taken = []
-        for dbone in self.spineBones.keys():
+        for dbone in self.spine_bones.keys():
             taken.append(dbone)
-        for dbone in self.rigifySkel.values():
+        for dbone in self.skeleton.values():
             if isinstance(dbone, list):
                 dbone = dbone[0]
                 if isinstance(dbone, list):
@@ -630,18 +661,18 @@ class Rigifier(RigifyCommon):
 
 
     def getRigifyBone(self, bname, bones):
-        if bname in RF.DeformBones:
-            rname = RF.DeformBones[bname]
-        elif bname[1:] in RF.DeformBones:
+        if bname in self.deform_bones.keys():
+            rname = self.deform_bones[bname]
+        elif bname[1:] in self.deform_bones.keys():
             prefix = bname[0]
-            rname = RF.DeformBones[bname[1:]] % prefix.upper()
-        elif bname in self.spineBones.keys():
-            rname,pname = self.spineBones[bname]
+            rname = self.deform_bones[bname[1:]] % prefix.upper()
+        elif bname in self.spine_bones.keys():
+            rname,pname = self.spine_bones[bname]
             rname = "DEF-%s" % rname
         elif bname in self.dazSkel.keys():
             rname = self.dazSkel[bname]
-            if rname in RF.MetaBones.keys():
-                rname = "DEF-%s" % RF.MetaBones[rname]
+            if rname in self.meta_bones.keys():
+                rname = "DEF-%s" % self.meta_bones[rname]
             else:
                 rname = "DEF-%s" % rname
         elif bname in self.extras.keys():
@@ -682,7 +713,7 @@ class Rigifier(RigifyCommon):
 
         print("Rigify metarig")
         setMode('OBJECT')
-        setupRigifyData(meta)
+        self.deleteFaceBones(meta)
         coll = getCollection(context, rig)
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
@@ -841,7 +872,7 @@ class Rigifier(RigifyCommon):
         # Change vertex groups
         activateObject(context, gen)
         self.bendTwistNames = {}
-        self.spineBones["pelvis"] = ("spine", None)
+        #self.spine_bones["pelvis"] = ("spine", None)
         print("  Change vertex groups")
         for ob in self.meshes:
             if dazrig:
@@ -857,12 +888,12 @@ class Rigifier(RigifyCommon):
             if isDrvBone(bname) or isFinal(bname):
                 continue
             assoc[bname] = bname
-        for rname,dname in self.rigifySkel.items():
+        for rname,dname in self.skeleton.items():
             if isinstance(dname, list):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
             assoc[dname] = orgname
-        for dname,rnames in self.spineBones.items():
+        for dname,rnames in self.spine_bones.items():
             assoc[dname] = self.getOrgDefBone(rnames[0], gen)
 
         for fcu in getPropDrivers(rig):
@@ -894,7 +925,7 @@ class Rigifier(RigifyCommon):
         if self.useLimitConstraints:
             from ..store import copyConstraint
             def addLimits(pb, rname):
-                dname = self.rigifySkel.get(rname)
+                dname = self.skeleton.get(rname)
                 if isinstance(dname, str):
                     db = rig.pose.bones.get(dname)
                     if db:
@@ -1085,13 +1116,13 @@ class Rigifier(RigifyCommon):
         if ob.parent == gen and ob.parent_type == 'BONE':
             return
         ob.parent = gen
-        for dname in self.spineBones.keys():
-            rname,_pname = self.spineBones[dname]
+        for dname in self.spine_bones.keys():
+            rname,_pname = self.spine_bones[dname]
             if dname in ob.vertex_groups.keys():
                 vgrp = ob.vertex_groups[dname]
                 vgrp.name = "DEF-%s" % rname
 
-        for rname,dname in self.rigifySkel.items():
+        for rname,dname in self.skeleton.items():
             if str(dname[1:]) in self.limbs.keys():
                 self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
             elif isinstance(dname, str):
@@ -1346,17 +1377,19 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
     bl_description = "Convert active rig to rigify"
     bl_options = {'UNDO', 'PRESET'}
 
+    @classmethod
+    def poll(self, context):
+        ob = context.object
+        return (ob and
+                ob.type == 'ARMATURE' and
+                ob.DazRig.startswith(("genesis", "daz_dog8")) and
+                not ob.get("DazSimpleIK"))
+
     useDeleteMeta : BoolProperty(
         name = "Delete Metarig",
         description = "Delete intermediate rig after Rigify",
         default = True
     )
-
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
-
 
     def draw(self, context):
         MetaMaker.draw(self, context)
@@ -1400,14 +1433,17 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists):
     bl_description = "Create a metarig from the active rig"
     bl_options = {'UNDO'}
 
-    def draw(self, context):
-        MetaMaker.draw(self, context)
-        self.drawMeta()
-
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
+        return (ob and
+                ob.type == 'ARMATURE' and
+                ob.DazRig.startswith(("genesis", "daz_dog8")) and
+                not ob.get("DazSimpleIK"))
+
+    def draw(self, context):
+        MetaMaker.draw(self, context)
+        self.drawMeta()
 
     def run(self, context):
         self.initFixer()
