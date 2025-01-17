@@ -43,6 +43,10 @@ class DazBone:
         self.store = ConstraintStore()
 
 
+    def __repr__(self):
+        return ("<DBONE %s %s>" % (self.name, self.head))
+
+
     def getPose(self, pb):
         self.rotation_mode = pb.rotation_mode
         self.lock_location = pb.lock_location
@@ -70,10 +74,23 @@ def addDicts(structs):
 #   RigifyCommon
 #-------------------------------------------------------------
 
-class DazData:
+class MetaData:
     def __init__(self, entry):
-        self.skeleton = entry["skeleton"]
-        self.spine = entry.get("spine", {})
+        self.rigify_type = entry["rigify_type"]
+        self.head = entry["head"]
+        self.hip = entry["hip"]
+        self.flip_hip = entry["flip_hip"]
+        self.spine = entry["spine"]
+        self.disconnect = entry["disconnect"]
+        self.parents = entry["parents"]
+        self.delete = entry["delete"]
+        self.parameters = entry["parameters"]
+
+
+class DazData:
+    def __init__(self, entry, meta):
+        self.dazbones = entry["skeleton"]
+        self.adjust = entry.get("adjust", {})
         self.fingers = entry["fingers"]
         self.limbs = entry["limbs"]
         self.parents = entry.get("parents", {})
@@ -87,17 +104,16 @@ class DazData:
         self.renames = entry.get("renames", {})
         self.custom_shape_fix = entry.get("custom_shape_fix", [])
 
+        self.rigifybones = dict(
+            [(dbone, rbone) for rbone, dbone in self.dazbones.items()])
 
-class MetaData:
-    def __init__(self, entry):
-        self.rigify_type = entry["rigify_type"]
-        self.head = entry["head"]
-        self.hip = entry["hip"]
-        self.bones = entry["bones"]
-        self.disconnect = entry["disconnect"]
-        self.parents = entry["parents"]
-        self.delete = entry["delete"]
-        self.parameters = entry["parameters"]
+        self.spine = []
+        pname = meta.hip
+        for rname in meta.spine:
+            dname = self.dazbones[rname]
+            self.spine.append((dname, rname, pname))
+            pname = rname
+            self.deform[dname] = "DEF-%s" % rname
 
 
 class RigifyCommon:
@@ -120,13 +136,10 @@ class RigifyCommon:
         elif rig.DazRig == "daz_dog8":
             entry = DF.loadEntry("daz_dog8", "rigify")
         self.meta_type = entry["meta_type"]
-        self.daz = DazData(entry)
-        entry = DF.loadEntry(self.meta_type, "rigify")
-        self.meta = MetaData(entry)
-        self.dazSkel = {}
-        for rbone, dbone in self.daz.skeleton.items():
-            self.dazSkel[dbone] = rbone
-        print("DD", self.dazSkel.items())
+        entry2 = DF.loadEntry(self.meta_type, "rigify")
+        self.meta = MetaData(entry2)
+        self.daz = DazData(entry, self.meta)
+
 
     def getDazBones(self, rig):
         # Setup info about DAZ bones
@@ -240,15 +253,13 @@ class MetaMaker(RigifyCommon):
 
         meta["DazMetaRig"] = True
         meta.DazRig = "metarig"
-        useSplitNeck = (rig.DazRig in ["genesis3", "genesis8", "genesis9"])
-        if useSplitNeck:
-            self.splitNeck(meta)
+        useSplitNeck = (self.meta_type == "human")
         meta["DazUseSplitNeck"] = useSplitNeck
         meta["DazSplitShin"] = self.useSplitShin
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
-        self.deleteFaceBones(meta)
+        self.adjustMetaBones(meta, useSplitNeck)
 
         if activateObject(context, rig):
             safeTransformApply()
@@ -258,7 +269,7 @@ class MetaMaker(RigifyCommon):
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             for bname,others in self.daz.split.items():
-                self.daz.splitBone(rig, bname, others)
+                self.splitBone(rig, bname, others)
         elif rig.DazRig in ["genesis3", "genesis8"]:
             self.deleteBendTwistDrvBones(rig)
             mergeBones(rig, self.daz.mergers, self.daz.parents, context)
@@ -282,7 +293,7 @@ class MetaMaker(RigifyCommon):
                 mergeVertexGroups(rig, self.daz.mergers)
         elif rig.DazRig == "daz_dog8":
             for bname,others in self.daz.split.items():
-                self.daz.splitBone(rig, bname, others)
+                self.splitBone(rig, bname, others)
             mergeBones(rig, self.daz.mergers, self.daz.parents, context)
             mergeVertexGroups(rig, self.daz.mergers)
         else:
@@ -303,12 +314,10 @@ class MetaMaker(RigifyCommon):
         meta.select_set(True)
         activateObject(context, meta)
         setMode('EDIT')
-        self.fitToDaz(meta)
-        hip = self.fitHip(meta)
+        hip = self.fitToDaz(meta)
 
         for dname,factor in self.daz.resize.items():
-            rname = self.daz.skeleton[dname]
-            print("SKE", bname, rname)
+            rname = self.daz.rigifybones[dname]
             eb = meta.data.edit_bones[rname]
             eb.tail = eb.head + (factor-1)*(eb.tail - eb.head)
 
@@ -341,14 +350,33 @@ class MetaMaker(RigifyCommon):
         return rig, meta, dazrig
 
 
-    def deleteFaceBones(self, meta):
+    def adjustMetaBones(self, meta, useSplitNeck):
+        setMode('EDIT')
+        ebones = meta.data.edit_bones
+
+        # Split neck
+        if useSplitNeck:
+            spine = ebones["spine"]
+            spine3 = ebones["spine.003"]
+            bonelist={}
+            bpy.ops.armature.select_all(action='DESELECT')
+            spine3.select = True
+            bpy.ops.armature.subdivide()
+            spinebones = spine.children_recursive_basename
+            chainlength = len(spinebones)
+            for x in range(chainlength):
+                y = str(x)
+                spinebones[x].name = "spine" + "." + y
+            for x in range(chainlength):
+                y = str(x+1)
+                spinebones[x].name = "spine" + ".00" + y
+
+        # Delete face bones
         def deleteChildren(eb):
             for child in eb.children:
                 deleteChildren(child)
                 ebones.remove(child)
 
-        setMode('EDIT')
-        ebones = meta.data.edit_bones
         eb = ebones[self.meta.head]
         deleteChildren(eb)
         for bname in self.meta.delete:
@@ -484,26 +512,6 @@ class MetaMaker(RigifyCommon):
         bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Y')
 
 
-    def splitNeck(self, meta):
-        setMode('EDIT')
-        spine = meta.data.edit_bones["spine"]
-        spine3 = meta.data.edit_bones["spine.003"]
-        bonelist={}
-        bpy.ops.armature.select_all(action='DESELECT')
-        spine3.select = True
-        bpy.ops.armature.subdivide()
-        spinebones = spine.children_recursive_basename
-        chainlength = len(spinebones)
-        for x in range(chainlength):
-            y = str(x)
-            spinebones[x].name = "spine" + "." + y
-        for x in range(chainlength):
-            y = str(x+1)
-            spinebones[x].name = "spine" + ".00" + y
-        bpy.ops.armature.select_all(action='DESELECT')
-        setMode('OBJECT')
-
-
     def renameBones(self, rig, bones, dazrig):
         for dname,rname in bones.items():
             self.deleteBoneDrivers(rig, dname)
@@ -526,34 +534,36 @@ class MetaMaker(RigifyCommon):
 
 
     def fitToDaz(self, meta):
-        for eb in meta.data.edit_bones:
+        ebones = meta.data.edit_bones
+        for eb in ebones:
             eb.use_connect = False
 
-        for eb in meta.data.edit_bones:
-            dname = self.daz.skeleton.get(eb.name)
+        for eb in ebones:
+            dname = self.daz.dazbones.get(eb.name)
             if isinstance(dname, list):
                 dname,_vgrps = dname
-            if isinstance(dname, str):
-                if dname in self.dazBones.keys():
-                    dbone = self.dazBones[dname]
+            if dname in self.dazBones.keys():
+                dbone = self.dazBones[dname]
+                bnames = self.daz.adjust.get(dname)
+                if bnames:
+                    dbone1 = self.dazBones[bnames[0]]
+                    dbone2 = self.dazBones[bnames[1]]
+                    eb.head = dbone1.head
+                    eb.tail = dbone2.head
+                    eb.roll = dbone.roll
+                else:
                     eb.head = dbone.head
                     eb.tail = dbone.tail
                     eb.roll = dbone.roll
-            elif isinstance(dname, list):
-                if (dname[0] in self.dazBones.keys() and
-                    dname[1] in self.dazBones.keys()):
-                    dbone1 = self.dazBones[dname[0]]
-                    dbone2 = self.dazBones[dname[1]]
-                    eb.head = dbone1.head
-                    eb.tail = dbone2.head
 
+        # Flip hip
+        hip = ebones[self.meta.hip]
+        if self.meta.flip_hip:
+            dbone = self.dazBones["hip"]
+            hip.tail = Vector((1,2,3))
+            hip.head = dbone.tail
+            hip.tail = dbone.head
 
-    def fitHip(self, meta):
-        hip = meta.data.edit_bones[self.meta.hip]
-        dbone = self.dazBones["hip"]
-        hip.tail = Vector((1,2,3))
-        hip.head = dbone.tail
-        hip.tail = dbone.head
         return hip
 
 
@@ -602,22 +612,19 @@ class MetaMaker(RigifyCommon):
 
 
     def fitSpine(self, meta):
-        mbones = meta.data.edit_bones
-        for dname in self.daz.spine.keys():
-            if dname not in self.dazBones.keys():
-                continue
-            rname,pname = self.daz.spine[dname]
+        ebones = meta.data.edit_bones
+        for dname,rname,pname in self.daz.spine:
             dbone = self.dazBones[dname]
-            if rname in mbones.keys():
-                eb = mbones[rname]
+            if rname in ebones.keys():
+                eb = ebones[rname]
             else:
-                eb = mbones.new(dname)
+                eb = ebones.new(dname)
                 eb.name = rname
             eb.use_connect = False
             eb.head = dbone.head
             eb.tail = dbone.tail
             eb.roll = dbone.roll
-            eb.parent = mbones[pname]
+            eb.parent = ebones[pname]
             eb.use_connect = True
 
 
@@ -646,9 +653,9 @@ class Rigifier(RigifyCommon):
 
         self.extras = OrderedDict()
         taken = []
-        for dbone in self.daz.spine.keys():
+        for dbone,_,_ in self.daz.spine:
             taken.append(dbone)
-        for dbone in self.daz.skeleton.values():
+        for dbone in self.daz.dazbones.values():
             if isinstance(dbone, list):
                 dbone = dbone[0]
                 if isinstance(dbone, list):
@@ -689,15 +696,9 @@ class Rigifier(RigifyCommon):
         elif bname[1:] in self.daz.deform.keys():
             prefix = bname[0]
             rname = self.daz.deform[bname[1:]] % prefix.upper()
-        elif bname in self.daz.spine.keys():
-            rname,pname = self.daz.spine[bname]
+        elif bname in self.daz.rigifybones.keys():
+            rname = self.daz.rigifybones[bname]
             rname = "DEF-%s" % rname
-        elif bname in self.dazSkel.keys():
-            rname = self.dazSkel[bname]
-            if rname in self.meta.bones.keys():
-                rname = "DEF-%s" % self.meta.bones[rname]
-            else:
-                rname = "DEF-%s" % rname
         elif bname in self.extras.keys():
             rname = self.extras[bname]
         else:
@@ -736,7 +737,6 @@ class Rigifier(RigifyCommon):
 
         print("Rigify metarig")
         setMode('OBJECT')
-        #self.deleteFaceBones(meta)
         coll = getCollection(context, rig)
         unhideAllObjects(context, rig)
         if rig.name not in coll.objects.keys():
@@ -826,7 +826,7 @@ class Rigifier(RigifyCommon):
                     print("No parent", dbone.name, dbone.parent)
                     if isDrvBone(dbone.name):
                         continue
-                    bones = list(self.dazSkel.keys())
+                    bones = list(self.daz.rigifybones.keys())
                     bones.sort()
                     print("Bones:", bones)
                     msg = ("Bone %s has no parent %s" % (dbone.name, dbone.parent))
@@ -895,7 +895,6 @@ class Rigifier(RigifyCommon):
         # Change vertex groups
         activateObject(context, gen)
         self.bendTwistNames = {}
-        #self.daz.spine["pelvis"] = ("spine", None)
         print("  Change vertex groups")
         for ob in self.meshes:
             if dazrig:
@@ -911,13 +910,13 @@ class Rigifier(RigifyCommon):
             if isDrvBone(bname) or isFinal(bname):
                 continue
             assoc[bname] = bname
-        for rname,dname in self.daz.skeleton.items():
+        for rname,dname in self.daz.dazbones.items():
             if isinstance(dname, list):
                 dname = dname[0]
             orgname = self.getOrgDefBone(rname, gen)
             assoc[dname] = orgname
-        for dname,rnames in self.daz.spine.items():
-            assoc[dname] = self.getOrgDefBone(rnames[0], gen)
+        for dname,rname,pname in self.daz.spine:
+            assoc[dname] = self.getOrgDefBone(rname, gen)
 
         for fcu in getPropDrivers(rig):
             self.copyDriver(fcu, gen, old=rig, new=gen)
@@ -948,7 +947,7 @@ class Rigifier(RigifyCommon):
         if self.useLimitConstraints:
             from ..store import copyConstraint
             def addLimits(pb, rname):
-                dname = self.daz.skeleton.get(rname)
+                dname = self.daz.dazbones.get(rname)
                 if isinstance(dname, str):
                     db = rig.pose.bones.get(dname)
                     if db:
@@ -1139,13 +1138,12 @@ class Rigifier(RigifyCommon):
         if ob.parent == gen and ob.parent_type == 'BONE':
             return
         ob.parent = gen
-        for dname in self.daz.spine.keys():
-            rname,_pname = self.daz.spine[dname]
+        for dname,rname,pname in self.daz.spine:
             if dname in ob.vertex_groups.keys():
                 vgrp = ob.vertex_groups[dname]
                 vgrp.name = "DEF-%s" % rname
 
-        for rname,dname in self.daz.skeleton.items():
+        for rname,dname in self.daz.dazbones.items():
             if str(dname[1:]) in self.daz.limbs.keys():
                 self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
             elif isinstance(dname, str):

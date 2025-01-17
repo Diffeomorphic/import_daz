@@ -4,7 +4,7 @@
 
     "skeleton" : {
         "spine.004" :    "hip",
-        "spine.005" :    "abdomen",
+        "spine.005" :    "abdomen1",
         "spine.006" :    "abdomen2",
         "spine.007" :    "abdomen3",
         "spine.008" :    "chest",
@@ -28,13 +28,13 @@
         "toe.R" :       "rHindToes",
 
         "shoulder.L" :      "lShldrBlade",
-        "front_thigh.L" :   "lShldr",
+        "front_thigh.L" :   "lShoulder",
         "front_shin.L" :    "lForearm",
         "front_foot.L" :    "lPastern",
         "front_toe.L" :     "lForeToes",
 
         "shoulder.R" :      "rShldrBlade",
-        "front_thigh.R" :   "rShldr",
+        "front_thigh.R" :   "rShoulder",
         "front_shin.R" :    "rForearm",
         "front_foot.R" :    "rPastern",
         "front_toe.R" :     "rForeToes",
@@ -109,6 +109,10 @@
 
     },
 
+    "adjust" : {
+        "hip" : ["TailBase", "abdomen1"]
+    },
+    
     "mergers" : {    
         "hip" :      ["pelvis"],
         "neckBase" : ["neckMid"],
@@ -156,18 +160,12 @@
         "rToe" : "rFoot"
     },
 
-    "fingers" : [
-        ["Thumb", "thumb"],
-        ["Index", "f_index"],
-        ["Mid", "f_middle"],
-        ["Ring", "f_ring"],
-        ["Pinky", "f_pinky"]
-    ],
+    "fingers" : [],
 
     "limbs" : {
-        "Shldr" : "upper_arm",
-        "Forearm" : "forearm",
-        "Thigh" : "thigh",
-        "Shin" : "shin"
+        "Shoulder" : "front_thigh",
+        "Forearm" : "front_shin",
+        "Haunch" : "thigh",
+        "LowThigh" : "shin"
     }
 }

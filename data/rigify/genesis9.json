@@ -4,13 +4,13 @@
 
     "skeleton" : {
         "spine" :          "hip",
-        "spine1" :         "spine.001",
-        "spine2" :         "spine.002",
-        "spine3" :         "spine.003",
-        "spine4" :         "spine.004",
-        "neck1" :          "spine.005",
-        "neck2" :          "spine.006",
-        "head" :           "spine.007",
+        "spine.001" :      "spine1",
+        "spine.002" :      "spine2",
+        "spine.003" :      "spine3",
+        "spine.004" :      "spine4",
+        "spine.005" :      "neck1",
+        "spine.006" :      "neck2",
+        "spine.007" :      "head",
 
         "thigh.L" :         "l_thigh",
         "shin.L" :          "l_shin",
@@ -21,13 +21,6 @@
         "shin.R" :          "r_shin",
         "foot.R" :          "r_foot",
         "toe.R" :           "r_toes",
-
-        "abdomen" :         "spine1",
-        "abdomen2" :        "spine2",
-        "chest" :           "spine3",
-        "chestUpper" :      "spine4",
-        "neck" :            "neck1",
-        "head" :            "head",
 
         "shoulder.L" :      "l_shoulder",
         "upper_arm.L" :     "l_upperarm",
@@ -83,7 +76,7 @@
     },
 
     "resize": {
-        "spine.007" : 2.0
+        "head" : 2.0
     },
 
     "parents" : {

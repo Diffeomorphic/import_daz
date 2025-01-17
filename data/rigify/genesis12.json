@@ -3,14 +3,14 @@
     "meta_type" : "human",
 
     "skeleton" : {
-        "spine" :       "hip",
-        "abdomen" :     "spine.001",
-        "abdomen2" :    "spine.002",
-        "chest" :       "spine.003",
-        "chest2" :      "spine.004",
-        "neck" :        "spine.005",
-        "neck2" :       "spine.006",
-        "head" :        "spine.007",
+        "spine" :        "hip",
+        "spine.001" :    "abdomen",
+        "spine.002" :    "abdomen2",
+        "spine.003" :    "chest",
+        "spine.004" :    "chest2",
+        "spine.005" :    "neck",
+        "spine.006" :    "neck2",
+        "spine.007" :    "head",
 
         "thigh.L" :     "lThigh",
         "shin.L" :      "lShin",
@@ -79,7 +79,7 @@
     	"chest" : ["chest2"],
     	"neck" :  ["neck2"],
     	"abdomen" : ["abdomen2"]
-    }
+    },
 
     "parents": {
     	"head" : "neckLower",

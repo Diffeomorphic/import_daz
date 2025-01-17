@@ -4,13 +4,13 @@
 
     "skeleton" : {
         "spine" :        "hip",
-        "abdomen" :      "spine.001",
-        "abdomen2" :     "spine.002",
-        "chest" :        "spine.003",
-        "chestUpper" :   "spine.004",
-        "neck" :         "spine.005",
-        "neckUpper" :    "spine.006",
-        "head" :         "spine.007",
+        "spine.001" :    "abdomenLower",
+        "spine.002" :    "abdomenUpper",
+        "spine.003" :    "chestLower",
+        "spine.004" :    "chestUpper",
+        "spine.005" :    "neckLower",
+        "spine.006" :    "neckUpper",
+        "spine.007" :    "head",
 
         "thigh.L" :     "lThigh",
         "shin.L" :      "lShin",
@@ -24,12 +24,12 @@
 
         "shoulder.L" :      "lCollar",
         "upper_arm.L" :     "lShldr",
-        "forearm.L" :       "lForeArm",
+        "forearm.L" :       "lForearm",
         "hand.L" :          "lHand",
 
         "shoulder.R" :      "rCollar",
         "upper_arm.R" :     "rShldr",
-        "forearm.R" :       "rForeArm",
+        "forearm.R" :       "rForearm",
         "hand.R" :          "rHand",
 
         "thumb.01.L" :       "lThumb1",
@@ -75,16 +75,6 @@
         "palm.04.R" :       "rCarpal4"
     },
 
-    "spine" : {
-        "abdomen" :      ["spine.001", "spine"],
-        "abdomen2" :     ["spine.002", "spine.001"],
-        "chest" :        ["spine.003", "spine.002"],
-        "chestUpper" :   ["spine.004", "spine.003"],
-        "neck" :         ["spine.005", "spine.004"],
-        "neckUpper" :    ["spine.006", "spine.005"],
-        "head" :         ["spine.007", "spine.006"]
-    },
-
     "parents": {
     	"head" : "neckUpper",
     	"neckUpper" : "neckLower",
@@ -128,15 +118,11 @@
     },
 
     "renames" : {
-        "abdomenLower" : "abdomen",
-        "abdomenUpper" : "abdomen2",
-        "chestLower" : "chest",
-        "neckLower" : "neck",
         "lShldrBend" : "lShldr",
-        "lForearmBend" : "lForeArm",
+        "lForearmBend" : "lForearm",
         "lThighBend" : "lThigh",
         "rShldrBend" : "rShldr",
-        "rForearmBend" : "rForeArm",
+        "rForearmBend" : "rForearm",
         "rThighBend" : "rThigh"
     },
 
@@ -150,7 +136,7 @@
 
     "limbs" : {
         "Shldr" : "upper_arm",
-        "ForeArm" : "forearm",
+        "Forearm" : "forearm",
         "Thigh" : "thigh",
         "Shin" : "shin"
     },

@@ -4,8 +4,17 @@
     
     "head" : "spine.011",
     "hip" : "spine.004",
+    "flip_hip" : false,
     
-    "bones" : {},
+    "spine" : [
+        "spine.005",
+        "spine.006",
+        "spine.007",
+        "spine.008",
+        "spine.009",
+        "spine.010",
+        "spine.011"
+    ],
     
     "disconnect" : [
         "spine.004", 
