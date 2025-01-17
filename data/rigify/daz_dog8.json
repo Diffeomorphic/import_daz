@@ -1,6 +1,6 @@
 {
     "character":    "daz_dog8",
-    "rigify_type" : "wolf",
+    "meta_type" : "wolf",
 
     "skeleton" : {
         "spine.004" :    "hip",

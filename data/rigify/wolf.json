@@ -1,9 +1,24 @@
 {
-    "rigify_type" : "wolf",
+    "meta_type" : "wolf",
+    "rigify_type" : "rigify2",
     
-    "head_bone" : "spine.011",
+    "head" : "spine.011",
+    "hip" : "spine.004",
     
-    "delete_bones" : []
+    "bones" : {},
+    
+    "disconnect" : [
+        "spine.004", 
+        "spine.003",
+        "spine.009"
+    ],
+    
+    "parents" : {},
+    
+    "delete" : [],
+    
+    "parameters" : [
+    ]
 
 }
     

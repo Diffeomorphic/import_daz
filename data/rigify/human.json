@@ -1,33 +1,33 @@
 {
-    "rigify_type" : "human",
+    "meta_type" : "human",
+    "rigify_type" : "rigify2",
     
-    "head_bone" : "spine.007",
-    "hip_bone" : "spine",
+    "head" : "spine.007",
+    "hip" : "spine",
     
-    "meta_bones" : {
-            "spine" : "spine",
-            "spine-1" : "spine.001",
-            "chest" : "spine.002",
-            "chest-1" : "spine.003",
-            "chestUpper" : "spine.004",
-            "neck" : "spine.005",
-            "neckUpper" : "spine.006",
-            "head" : "spine.007"
-        },
+    "bones" : {
+        "spine" : "spine",
+        "spine-1" : "spine.001",
+        "chest" : "spine.002",
+        "chest-1" : "spine.003",
+        "chestUpper" : "spine.004",
+        "neck" : "spine.005",
+        "neckUpper" : "spine.006",
+        "head" : "spine.007"
+    },
      
-    "rigify_params" : {
-            ("spine", "neck_pos", 6),
-            ("spine", "pivot_pos", 1),
-        },
+    "disconnect" : ["spine", "spine.005"],
 
-    "meta_disconnect" : [self.hips, neck],
+    "parents" : {
+        "shoulder.L" : "spine.004",
+        "shoulder.R" : "spine.004"
+    },
+    
+    "delete" : ["breast.L", "breast.R"],     
 
-    "meta_parents" : {
-            "shoulder.L" : "spine.004",
-            "shoulder.R" : "spine.004",
-        },
-     
-    "delete_bones" : ["breast.L", "breast.R"]     
-
+    "parameters" : [
+        ["spine", "neck_pos", 6],
+    	["spine", "pivot_pos", 1]
+    ]
 }
     

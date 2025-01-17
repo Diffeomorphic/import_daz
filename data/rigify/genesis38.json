@@ -1,6 +1,6 @@
 {
     "character":    "Genesis38",
-    "rigify_type" : "human",
+    "meta_type" : "human",
 
     "skeleton" : {
         "spine" :        "hip",
@@ -21,11 +21,6 @@
         "shin.R" :      "rShin",
         "foot.R" :      "rFoot",
         "toe.R" :       "rToe",
-
-        "abdomen" :     "abdomen",
-        "chest" :       "chest",
-        "neck" :        "neck",
-        "head" :        "head",
 
         "shoulder.L" :      "lCollar",
         "upper_arm.L" :     "lShldr",
@@ -107,6 +102,11 @@
         "rToe" : "rFoot"
     },
     
+    "extra_parents" : {
+        "lPectoral" : "DEF-spine.004",
+        "rPectoral" : "DEF-spine.004"
+    },
+
     "resize": {
         "head" : 2.0
     },

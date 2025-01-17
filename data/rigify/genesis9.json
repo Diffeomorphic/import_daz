@@ -1,6 +1,6 @@
 {
     "character":    "Genesis9",
-    "rigify_type" : "human",
+    "meta_type" : "human",
 
     "skeleton" : {
         "spine" :          "hip",
@@ -101,7 +101,12 @@
         "r_hand" : "r_forearm",
         "r_shin" : "r_thigh",
         "r_toes" : "r_foot"
-     },
+    },
+     
+    "extra_parents" : {
+        "l_pectoral" : "DEF-spine.004",
+        "r_pectoral" : "DEF-spine.004"
+    },
 
     "fingers" : [
         ["_thumb", "thumb"],

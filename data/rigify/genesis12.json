@@ -1,6 +1,6 @@
 {
     "character":    "Genesis12",
-    "rigify_type" : "human",
+    "meta_type" : "human",
 
     "skeleton" : {
         "spine" :       "hip",
@@ -21,13 +21,6 @@
         "shin.R" :      "rShin",
         "foot.R" :      "rFoot",
         "toe.R" :       "rToe",
-
-        "abdomen" :     "abdomen",
-        "abdomen2" :    "abdomen2",
-        "chest" :       "chest",
-        "chest2" :      "chest2",
-        "neck" :        "neck",
-        "head" :        "head",
 
         "shoulder.L" :      "lCollar",
         "upper_arm.L" :     "lShldr",
@@ -102,6 +95,11 @@
         "rHand" : "rForearmBend",
         "rShin" : "rThighBend",
         "rToe" : "rFoot"
+    },
+
+    "extra_parents" : {
+        "lPectoral" : "DEF-spine.004",
+        "rPectoral" : "DEF-spine.004"
     },
 
     "resize": {
