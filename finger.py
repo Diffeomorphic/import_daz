@@ -32,6 +32,9 @@ FingerPrints = {
     "854-1696-848" : "Toon9-mouth",
 
     "17272-34226-17000" : "Daz_dog8",
+    "26111-51652-25592" : "Daz_horse3",
+    "37652-75967-38404" : "Daz_horse2",
+    "43841-87999-44222" : "Daz_big_cat2",
 }
 
 HomeDirs = {
@@ -61,6 +64,9 @@ HomeDirs = {
     "Toon9-mouth" : "/data/Daz 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs",
 
     "Daz_dog8" : "/data/DAZ 3D/Dog 8/Dog 8/Morphs",
+    "Daz_horse3" : "/data/DAZ 3D/DAZ Horse 3/DAZ Horse 3/Morphs",
+    "Daz_horse2" : "/data/DAZ 3D/DAZ Horse 2/Base/Morphs",
+    "Daz_big_cat2" : "/data/DAZ 3D/DAZ Big Cat 2/Base/Morphs",
 }
 
 VertexCounts = {
@@ -83,7 +89,9 @@ VertexCounts = {
     854 : "Toon9-mouth",
 
     17272 : "Daz_dog8",
-
+    26111 : "Daz_horse3",
+    37652 : "Daz_horse2",
+    43841 : "Daz_big_cat2",
 }
 
 FingerPrintsHD = {

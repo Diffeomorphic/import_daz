@@ -333,6 +333,9 @@ def getRigType1(bones, strict):
         "genesis38" : ["abdomenLower", "lShldrBend", "rThighTwist", "lMid3", "rMid3", "lSmallToe2_2", "rSmallToe2_2", "lNasolabialLower"],
         "genesis9" : ["spine1", "l_upperarm", "r_thigh", "l_mid3", "r_mid3", "l_midtoe2", "r_midtoe2", "l_nostril"],
         "daz_dog8" : ["lPastern", "lHaunch"],
+        "daz_horse3" : ["r_cannon_hind", "l_hoof_fore"],
+        "daz_horse2" : ["rCannonHind", "lHoofFore"],
+        "daz_big_cat2" : ["lPawHind", "Tail11", "lForeArm"],
     }
 
     laxBones = {
@@ -340,6 +343,9 @@ def getRigType1(bones, strict):
         "genesis38" : ["abdomenLower", "lShldrBend", "rThighTwist"],
         "genesis9" : ["spine1", "l_upperarm", "r_thigh"],
         "daz_dog8" : ["lPastern", "lHaunch"],
+        "daz_horse3" : ["r_cannon_hind", "l_hoof_fore"],
+        "daz_horse2" : ["rCannonHind", "lHoofFore"],
+        "daz_big_cat2" : ["lPawHind", "Tail11", "lForeArm"],
     }
 
     if strict:
@@ -347,19 +353,19 @@ def getRigType1(bones, strict):
             return ("genesis3" if "lHeel" in bones else "genesis8")
         elif match(strictBones["genesis12"], bones):
             return ("genesis2" if "lSmallToe1" in bones else "genesis")
-        elif match(strictBones["genesis9"], bones):
-            return "genesis9"
-        elif match(strictBones["daz_dog8"], bones):
-            return "daz_dog8"
+        else:
+            for key, tests in strictBones.items():
+                if match(tests, bones):
+                    return key
     else:
         if match(laxBones["genesis38"], bones):
             return ("genesis3" if "lHeel" in bones else "genesis8")
         elif match(laxBones["genesis12"], bones):
             return ("genesis2" if "lSmallToe1" in bones else "genesis")
-        elif match(laxBones["genesis9"], bones):
-            return "genesis9"
-        elif match(laxBones["daz_dog8"], bones):
-            return "daz_dog8"
+        else:
+            for key, tests in laxBones.items():
+                if match(tests, bones):
+                    return key
     if "ball.marker.L" in bones:
         return "mhx"
     else:
