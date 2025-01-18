@@ -127,8 +127,9 @@
 
     "removes" : ["l_upperarm", "r_upperarm"],
 
-    "custom_shape_fix" : [
-        [["head", "spine_fk.007"], 4],
-        [["neck"], 0.6]
-    ]
+    "custom_shape_fix" : {
+        "head" : [4.0, 0],
+        "neck" : [0.6, 0],
+        "chest" : [1.0, [0,-100,0]]
+    }
 }

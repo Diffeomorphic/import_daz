@@ -151,5 +151,26 @@
         "ForeArm" : "forearm",
         "Thigh" : "thigh",
         "Shin" : "shin"
+    },
+    
+    "custom_shape_fix" : {
+        "head" : [1.5, [0,-10,0]],
+        "neck" : [0.3, 0],
+        "chest" : [0.5, 0],
+        "torso" : [0.7, 0],
+        "spine.fk" : [0.5, 0],
+        "spine.fk.003" : [0.3, 0],
+        "hips" : [0.7, 0],
+        "tweak_spine.003" : [0.5, 0],
+        "tweak_spine" : [0.5, 0],
+        "foot_ik.L" : [4, 0],
+        "foot_ik.R" : [4, 0],
+        "hand_ik.L" : [4, 0],
+        "hand_ik.R" : [4, 0],
+        "f_toe.L" : [4, [0,-8,8]],
+        "f_toe.R" : [4, [0,-8,8]],
+        "r_toe.L" : [4, [0,-12,-12]],
+        "r_toe.R" : [4, [0,-12,-12]]
     }
+    
 }

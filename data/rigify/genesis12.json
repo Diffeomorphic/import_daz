@@ -132,5 +132,10 @@
         "ForeArm" : "forearm",
         "Thigh" : "thigh",
         "Shin" : "shin"
+    },
+
+    "custom_shape_fix" : {
+        "spine_fk.007" : [4.0, 0],
+        "chest" : [1.0, [0,-100,0]]
     }
 }

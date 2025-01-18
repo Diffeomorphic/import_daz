@@ -157,7 +157,8 @@
         "rFoot" : ["rMetatarsals"]
     },
 
-    "custom_shape_fix" : [
-        [["head", "spine_fk.007"], 4]
-    ]
+    "custom_shape_fix" : {
+        "head" : [4.0, 0],
+        "chest" : [1.0, [0,-100,0]]
+    }
 }

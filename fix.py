@@ -120,16 +120,14 @@ class Fixer(DriverUser):
         setMode('OBJECT')
 
 
-    def fixCustomShape(self, rig, bnames, scale, offset=0):
-        for bname in bnames:
-            if bname in rig.pose.bones.keys():
-                pb = rig.pose.bones[bname]
-                if pb.custom_shape:
-                    setCustomShapeTransform(pb, scale)
-                    if offset:
-                        for v in pb.custom_shape.data.vertices:
-                            v.co += offset
-                return
+    def fixCustomShape(self, rig, bname, scale, offset=None):
+        pb = rig.pose.bones.get(bname)
+        print("CCC", bname, scale, offset)
+        if pb and pb.custom_shape:
+            setCustomShapeTransform(pb, scale)
+            if offset:
+                for v in pb.custom_shape.data.vertices:
+                    v.co += offset
 
 
     def fixHands(self, rig):

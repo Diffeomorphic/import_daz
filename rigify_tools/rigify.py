@@ -103,7 +103,7 @@ class DazData:
         self.mergers2 = entry.get("mergers2", {})
         self.removes = entry.get("removes", [])
         self.renames = entry.get("renames", {})
-        self.custom_shape_fix = entry.get("custom_shape_fix", [])
+        self.custom_shape_fix = entry.get("custom_shape_fix", {})
 
         self.rigifybones = dict(
             [(dbone, rbone) for rbone, dbone in self.dazbones.items()])
@@ -873,9 +873,11 @@ class Rigifier(RigifyCommon):
                 self.copyBoneInfo(dname, rname, rig, gen)
 
         # Rescale custom shapes
-        for bnames,scale in self.daz.custom_shape_fix:
-            self.fixCustomShape(gen, bnames, scale)
-        self.fixCustomShape(gen, ["chest"], 1, Vector((0,-100*GS.scale,0)))
+        for bname,tfm in self.daz.custom_shape_fix.items():
+            scale,offset = tfm
+            if offset:
+                offset = Vector(offset)*GS.scale
+            self.fixCustomShape(gen, bname, scale, offset)
 
         # Add DAZ properties
         print("  Add DAZ properties")
