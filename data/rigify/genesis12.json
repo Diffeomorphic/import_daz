@@ -103,7 +103,7 @@
     },
 
     "resize": {
-        "head" : 2.0
+        "head" : 1.5
     },
 
     "renames" : {
@@ -135,7 +135,6 @@
     },
 
     "custom_shape_fix" : {
-        "spine_fk.007" : [4.0, 0],
-        "chest" : [1.0, [0,-100,0]]
+        "spine_fk.007" : [4.0, 0]
     }
 }
