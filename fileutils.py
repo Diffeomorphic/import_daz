@@ -107,7 +107,7 @@ class DataFolders:
         if char in table.keys():
             return table[char]
         filepath = os.path.join(os.path.dirname(__file__), "data", folder, char +  ".json")
-        print("Load", filepath)
+        print("Load", filepath, strict)
         if not os.path.exists(filepath):
             if strict:
                 msg = "File does not exist:\n%s                 " % filepath

@@ -1,0 +1,155 @@
+{
+    "character":    "daz_big_cat2",
+    "meta_type" :   "cat",
+
+    "skeleton" : {
+        "spine" :    "hip",
+        "spine.001" :    "abdomen1",
+        "spine.002" :    "abdomen2",
+        "spine.003" :    "chest",
+        "spine.004" :    "Neck1",
+        "spine.005" :    "Neck2",
+        "spine.006" :    "head",
+
+        "tail.001" :    "Tail1",
+        "tail.002" :    "Tail4",
+        "tail.003" :    "Tail7",
+        "tail.004" :    "Tail10",
+
+        "thigh.L" :     "lThigh",
+        "shin.L" :      "lShin",
+        "foot.L" :      "lTarsals",
+        "r_toe.L" :     "lPawHind",
+
+        "thigh.R" :     "rThigh",
+        "shin.R" :      "rShin",
+        "foot.R" :      "rTarsals",
+        "r_toe.R" :     "rPawHind",
+
+        "shoulder.L" :    "lCollar",
+        "upper_arm.L" :   "lShldr",
+        "forearm.L" :     "lForeArm",
+        "hand.L" :        "lPawFront",
+        "f_toe.L" :       "lPawFront1",
+
+        "shoulder.R" :    "rCollar",
+        "upper_arm.R" :   "rShldr",
+        "forearm.R" :     "rForeArm",
+        "hand.R" :        "rPawFront",
+        "f_toe.R" :       "rPawFront1",
+
+        "f_palm.001.L" :      "lToeFront1",
+        "f_index.001.L" :     "lToeFront11",
+        "f_index.002.L" :     "lToeFront12",
+        "f_palm.002.L" :      "lToeFront2",
+        "f_middle.001.L" :    "lToeFront21",
+        "f_middle.002.L" :    "lToeFront22",
+        "f_palm.003.L" :      "lToeFront3",
+        "f_ring.001.L" :      "lToeFront31",
+        "f_ring.002.L" :      "lToeFront32",
+        "f_palm.004.L" :      "lToeFront4",
+        "f_pinky.001.L" :     "lToeFront41",
+        "f_pinky.002.L" :     "lToeFront42",
+
+        "f_palm.001.R" :      "rToeFront1",
+        "f_index.001.R" :     "rToeFront11",
+        "f_index.002.R" :     "rToeFront12",
+        "f_palm.002.R" :      "rToeFront2",
+        "f_middle.001.R" :    "rToeFront21",
+        "f_middle.002.R" :    "rToeFront22",
+        "f_palm.003.R" :      "rToeFront3",
+        "f_ring.001.R" :      "rToeFront31",
+        "f_ring.002.R" :      "rToeFront32",
+        "f_palm.004.R" :      "rToeFront4",
+        "f_pinky.001.R" :     "rToeFront41",
+        "f_pinky.002.R" :     "rToeFront42",
+
+        "r_palm.001.L" :      "lToeHind1",
+        "r_index.001.L" :     "lToeHind11",
+        "r_index.002.L" :     "lToeHind12",
+        "r_palm.002.L" :      "lToeHind2",
+        "r_middle.001.L" :    "lToeHind21",
+        "r_middle.002.L" :    "lToeHind22",
+        "r_palm.003.L" :      "lToeHind3",
+        "r_ring.001.L" :      "lToeHind31",
+        "r_ring.002.L" :      "lToeHind32",
+        "r_palm.004.L" :      "lToeHind4",
+        "r_pinky.001.L" :     "lToeHind41",
+        "r_pinky.002.L" :     "lToeHind42",
+
+        "r_palm.001.R" :      "rToeHind1",
+        "r_index.001.R" :     "rToeHind11",
+        "r_index.002.R" :     "rToeHind12",
+        "r_palm.002.R" :      "rToeHind2",
+        "r_middle.001.R" :    "rToeHind21",
+        "r_middle.002.R" :    "rToeHind22",
+        "r_palm.003.R" :      "rToeHind3",
+        "r_ring.001.R" :      "rToeHind31",
+        "r_ring.002.R" :      "rToeHind32",
+        "r_palm.004.R" :      "rToeHind4",
+        "r_pinky.001.R" :     "rToeHind41",
+        "r_pinky.002.R" :     "rToeHind42"
+
+    },
+
+    "adjust" : {
+        "hip" : ["Tail1", "abdomen1"]
+    },
+    
+    "mergers" : {    
+        "Tail1" :   ["Tail2", "Tail3"],
+        "Tail4" :   ["Tail5", "Tail6"],
+        "Tail7" :   ["Tail8", "Tail9"],
+        "Tail10" :  ["Tail11", "Tail12"]
+    },    
+
+    "split" : {
+    	"lPawFront" : ["lPawFront1"],
+    	"rPawFront" : ["rPawFront1"],
+
+    	"lToeFront1" : ["lToeFront11", "lToeFront12"],
+    	"lToeFront2" : ["lToeFront21", "lToeFront22"],
+    	"lToeFront3" : ["lToeFront31", "lToeFront32"],
+    	"lToeFront4" : ["lToeFront41", "lToeFront42"],
+
+    	"rToeFront1" : ["rToeFront11", "rToeFront12"],
+    	"rToeFront2" : ["rToeFront21", "rToeFront22"],
+    	"rToeFront3" : ["rToeFront31", "rToeFront32"],
+    	"rToeFront4" : ["rToeFront41", "rToeFront42"],
+
+    	"lToeHind1" : ["lToeHind11", "lToeHind12"],
+    	"lToeHind2" : ["lToeHind21", "lToeHind22"],
+    	"lToeHind3" : ["lToeHind31", "lToeHind32"],
+    	"lToeHind4" : ["lToeHind41", "lToeHind42"],
+
+    	"rToeHind1" : ["rToeHind11", "rToeHind12"],
+    	"rToeHind2" : ["rToeHind21", "rToeHind22"],
+    	"rToeHind3" : ["rToeHind31", "rToeHind32"],
+    	"rToeHind4" : ["rToeHind41", "rToeHind42"]
+    },
+
+    "parents": {
+    	"head" : "neckLower",
+        "neckLower" : "chestUpper",
+        "chestUpper" : "chestLower",
+        "chestLower" : "abdomenUpper",
+        "abdomenUpper" : "abdomenLower",
+        "lForearmBend" : "lShldrBend",
+        "lHand" : "lForearmBend",
+        "lShin" : "lThighBend",
+        "lToe" : "lFoot",
+        "rForearmBend" : "rShldrBend",
+        "rHand" : "rForearmBend",
+        "rShin" : "rThighBend",
+        "rToe" : "rFoot"
+    },
+
+    "fingers" : [],
+
+    "limbs" : {
+        "Shldr" : "upper_arm",
+        "ForeArm" : "forearm",
+        "Thigh" : "thigh",
+        "Shin" : "shin"
+    }
+}

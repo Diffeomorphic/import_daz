@@ -5,6 +5,7 @@
     "head" : "spine.011",
     "hip" : "spine.004",
     "flip_hip" : false,
+    "disable_bbones" : true,
     
     "spine" : [
         "spine.005",

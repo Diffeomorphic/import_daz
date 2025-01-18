@@ -80,6 +80,7 @@ class MetaData:
         self.head = entry["head"]
         self.hip = entry["hip"]
         self.flip_hip = entry["flip_hip"]
+        self.disable_bbones = entry.get("disable_bbones", False)
         self.spine = entry["spine"]
         self.disconnect = entry["disconnect"]
         self.parents = entry["parents"]
@@ -127,14 +128,24 @@ class RigifyCommon:
             ("Custom ", R_CUSTOM, 13, 6)]
 
     def setupDazSkeleton(self, rig):
-        if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
-            entry = DF.loadEntry("genesis12", "rigify")
-        elif rig.DazRig in ["genesis3", "genesis8"]:
-            entry = DF.loadEntry("genesis38", "rigify")
-        elif rig.DazRig == "genesis9":
-            entry = DF.loadEntry("genesis9", "rigify")
-        elif rig.DazRig == "daz_dog8":
-            entry = DF.loadEntry("daz_dog8", "rigify")
+        table = {
+            "genesis" : "genesis12",
+            "genesis1" : "genesis12",
+            "genesis2" : "genesis12",
+            "genesis3" : "genesis38",
+            "genesis8" : "genesis38",
+            "genesis9" : "genesis9",
+            "daz_dog8" : "daz_dog8",
+            "daz_horse3" : "daz_horse3",
+            "daz_horse2" : "daz_horse2",
+            "daz_big_cat2" : "daz_big_cat2",
+        }
+
+        rigitype = table.get(rig.DazRig)
+        if rigitype:
+            entry = DF.loadEntry(rigitype, "rigify")
+        else:
+            raise DazError("BUG: Rigify for %s not supported" % rig.DazRig)
         self.meta_type = entry["meta_type"]
         entry2 = DF.loadEntry(self.meta_type, "rigify")
         self.meta = MetaData(entry2)
@@ -214,7 +225,7 @@ class MetaMaker(RigifyCommon):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
         self.makeRealParents(context, rig)
 
-        if self.useOptimizePose:
+        if self.useOptimizePose and rig.DazRig.startswith("genesis"):
             from ..convert import optimizePose
             optimizePose(context, True)
         if self.keepRig:
@@ -291,7 +302,7 @@ class MetaMaker(RigifyCommon):
             else:
                 mergeBones(rig, self.daz.mergers, self.daz.parents, context)
                 mergeVertexGroups(rig, self.daz.mergers)
-        elif rig.DazRig == "daz_dog8":
+        elif rig.DazRig in ["daz_dog8", "daz_horse2", "daz_horse3", "daz_big_cat2"]:
             for bname,others in self.daz.split.items():
                 self.splitBone(rig, bname, others)
             mergeBones(rig, self.daz.mergers, self.daz.parents, context)
@@ -773,6 +784,9 @@ class Rigifier(RigifyCommon):
         print("  Setup DAZ Skeleton")
         setActiveObject(context, rig)
         self.setupDazSkeleton(rig)
+        if self.meta.disable_bbones:
+            for bone in gen.data.bones:
+                bone.bbone_segments = 1
         self.getDazBones(rig)
 
         print("  Setup extras")
@@ -1403,7 +1417,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
         ob = context.object
         return (ob and
                 ob.type == 'ARMATURE' and
-                ob.DazRig.startswith(("genesis", "daz_dog8")) and
+                ob.DazRig.startswith(("genesis", "daz_dog", "daz_big_cat", "daz_horse")) and
                 not ob.get("DazSimpleIK"))
 
     useDeleteMeta : BoolProperty(
@@ -1459,7 +1473,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists):
         ob = context.object
         return (ob and
                 ob.type == 'ARMATURE' and
-                ob.DazRig.startswith(("genesis", "daz_dog8")) and
+                ob.DazRig.startswith(("genesis", "daz_dog", "daz_big_cat", "daz_horse")) and
                 not ob.get("DazSimpleIK"))
 
     def draw(self, context):
