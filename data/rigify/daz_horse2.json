@@ -1,0 +1,84 @@
+{
+    "character":    "daz_horse2",
+    "meta_type" :   "horse",
+
+    "skeleton" : {
+        "spine.001" :    "pelvis",
+        "spine.002" :    "abdomenH",
+        "spine.003" :    "abdomenH1",
+        "spine.004" :    "abdomenH2",
+        "spine.005" :    "chestH",
+        "spine.006" :    "chestH1",
+        "neck.001" :     "Neck1",
+        "neck.002" :     "Neck2",
+        "neck.003" :     "Neck3",
+        "neck.004" :     "head",
+
+        "tail.001" :    "Tail01",
+        "tail.002" :    "Tail02",
+        "tail.003" :    "Tail04",
+        "tail.004" :    "Tail06",
+        "tail.005" :    "Tail07",
+
+        "thigh.L" :     "lThighHind",
+        "lower_leg.L" : "lGaskin",
+        "hind_foot.L" : "lCannonHind",
+        "r_toe.L" :     "lPasternHind",
+        "r_hoof.L" :    "lHoofHind",
+
+        "thigh.R" :     "rThighHind",
+        "lower_leg.R" : "rGaskin",
+        "hind_foot.R" : "rCannonHind",
+        "r_toe.R" :     "rPasternHind",
+        "r_hoof.R" :    "rHoofHind",
+
+        "shoulder.L" :    "lShoulderH",
+        "upper_arm.L" :   "lElbow",
+        "forearm.L" :     "lForeLeg",
+        "forefoot.L" :    "lCannonFore",
+        "f_toe.L" :       "lPasternFore",
+        "f_hoof.L" :      "lHoofFore",
+
+        "shoulder.R" :    "rShoulderH",
+        "upper_arm.R" :   "rElbow",
+        "forearm.R" :     "rForeLeg",
+        "forefoot.R" :    "rCannonFore",
+        "f_toe.R" :       "rPasternFore",
+        "f_hoof.R" :      "rHoofFore"
+
+    },
+
+    "adjust" : {
+        "pelvis" : ["Tail01", "abdomenH"]
+    },
+    
+    "mergers" : {    
+        "Tail02" :   ["Tail03"],
+        "Tail04" :   ["Tail05"]
+    },    
+
+    "split" : {
+        "abdomenH" : ["abdomenH1", "abdomenH2"],
+        "chestH" : ["chestH1"]
+    },
+
+    "parents": {
+    },
+
+    "fingers" : [],
+
+    "limbs" : {
+        "Elbow" : "upper_arm",
+        "ForeLeg" : "forearm",
+        "ThighHind" : "thigh",
+        "Gaskin" : "lower_leg"
+    },
+    
+    "custom_shape_fix" : {
+        "forefoot_ik.L" : [2, [0,5,0]],
+        "forefoot_ik.R" : [2, [0,5,0]],
+        "hind_foot_ik.L" : [2, [0,5,0]],
+        "hind_foot_ik.R" : [2, [0,5,0]]
+    }
+    
+}

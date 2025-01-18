@@ -13,13 +13,11 @@ if not DEBUG:
 elif "RigifyFeature" in locals():
     print("Reloading Rigify Tools")
     import imp
-    imp.reload(rigify_data)
     imp.reload(rigify)
     imp.reload(rigify_snap)
     imp.reload(panel)
 else:
     print("Loading Rigify Tools")
-    from . import rigify_data
     from . import rigify
     from . import rigify_snap
     from . import panel

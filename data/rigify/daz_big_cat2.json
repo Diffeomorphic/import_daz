@@ -129,19 +129,6 @@
     },
 
     "parents": {
-    	"head" : "neckLower",
-        "neckLower" : "chestUpper",
-        "chestUpper" : "chestLower",
-        "chestLower" : "abdomenUpper",
-        "abdomenUpper" : "abdomenLower",
-        "lForearmBend" : "lShldrBend",
-        "lHand" : "lForearmBend",
-        "lShin" : "lThighBend",
-        "lToe" : "lFoot",
-        "rForearmBend" : "rShldrBend",
-        "rHand" : "rForearmBend",
-        "rShin" : "rThighBend",
-        "rToe" : "rFoot"
     },
 
     "fingers" : [],
