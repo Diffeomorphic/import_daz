@@ -37,7 +37,12 @@
     ],
     
     "parameters" : [
-    ]
+    ],
 
+    "layers" : [
+        "Root", "Spine", "Tail",
+        "Arm.L (IK)", "Arm.R (IK)",
+        "Leg.L (IK)", "Leg.R (IK)"
+    ]    
 }
     

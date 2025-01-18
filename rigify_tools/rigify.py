@@ -86,6 +86,11 @@ class MetaData:
         self.parents = entry["parents"]
         self.delete = entry["delete"]
         self.parameters = entry["parameters"]
+        layers = [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]
+        if BLENDER3:
+            self.layers = layers
+        else:
+            self.layers = entry.get("layers", layers)
 
 
 class DazData:
@@ -1055,7 +1060,7 @@ class Rigifier(RigifyCommon):
             if activateObject(context, meta):
                 deleteObjects(context, [meta])
         activateObject(context, gen)
-        enableRigNumLayers(gen, [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R])
+        enableRigNumLayers(gen, self.meta.layers)
         gen.name = name
         if dazrig:
             self.tieBones(context, dazrig, gen)

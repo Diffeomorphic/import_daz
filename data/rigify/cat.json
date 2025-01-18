@@ -6,7 +6,7 @@
     "hip" : "spine",
     "flip_hip" : false,
     "disable_bbones" : true,
-    
+
     "spine" : [
         "spine.001",
         "spine.002",
@@ -27,7 +27,12 @@
     "delete" : ["Breast.C", "belly.C", "pelvis.L", "pelvis.R", "pelvis.C"],
     
     "parameters" : [
-    ]
-
+    ],
+    
+    "layers" : [
+        "Root", "Spine", "Tail", "Paws",
+        "Arm.L (IK)", "Arm.R (IK)",
+        "Leg.L (IK)", "Leg.R (IK)"
+    ]    
 }
     

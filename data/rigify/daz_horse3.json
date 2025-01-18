@@ -1,0 +1,86 @@
+{
+    "character":    "daz_horse3",
+    "meta_type" :   "horse",
+
+    "skeleton" : {
+        "spine.001" :    "Bone",
+        "spine.002" :    "waist",
+        "spine.003" :    "abdomen",
+        "spine.004" :    "abdomen2",
+        "spine.005" :    "chest",
+        "spine.006" :    "chest2",
+        "neck.001" :     "neck1",
+        "neck.002" :     "neck2",
+        "neck.003" :     "neck3",
+        "neck.004" :     "head",
+
+        "tail.001" :    "tail1",
+        "tail.002" :    "tail3",
+        "tail.003" :    "tail5",
+        "tail.004" :    "tail7",
+        "tail.005" :    "tail9",
+
+        "thigh.L" :     "l_femur",
+        "lower_leg.L" : "l_tibia",
+        "hind_foot.L" : "l_cannon_hind",
+        "r_toe.L" :     "l_pastern_hind",
+        "r_hoof.L" :    "l_hoof_hind",
+
+        "thigh.R" :     "r_femur",
+        "lower_leg.R" : "r_tibia",
+        "hind_foot.R" : "r_cannon_hind",
+        "r_toe.R" :     "r_pastern_hind",
+        "r_hoof.R" :    "r_hoof_hind",
+
+        "shoulder.L" :    "l_scapula",
+        "upper_arm.L" :   "l_humerus",
+        "forearm.L" :     "l_radius",
+        "forefoot.L" :    "l_cannon_fore",
+        "f_toe.L" :       "l_pastern_fore",
+        "f_hoof.L" :      "l_hoof_fore",
+
+        "shoulder.R" :    "r_scapula",
+        "upper_arm.R" :   "r_humerus",
+        "forearm.R" :     "r_radius",
+        "forefoot.R" :    "r_cannon_fore",
+        "f_toe.R" :       "r_pastern_fore",
+        "f_hoof.R" :      "r_hoof_fore"
+    },
+
+    "adjust" : {
+        "Bone" : ["tail1", "waist"]
+    },
+    
+    "mergers" : {    
+        "tail1" :   ["tail2"],
+        "tail3" :   ["tail4"],
+        "tail5" :   ["tail6"],
+        "tail7" :   ["tail8"],
+        "tail9" :   ["tail10"]
+    },    
+
+    "split" : {
+        "abdomen" : ["abdomen2"],
+        "chest" :   ["chest2"]
+    },
+
+    "parents": {
+    },
+
+    "fingers" : [],
+
+    "limbs" : {
+        "Elbow" : "upper_arm",
+        "ForeLeg" : "forearm",
+        "ThighHind" : "thigh",
+        "Gaskin" : "lower_leg"
+    },
+    
+    "custom_shape_fix" : {
+        "forefoot_ik.L" : [2, [0,5,0]],
+        "forefoot_ik.R" : [2, [0,5,0]],
+        "hind_foot_ik.L" : [2, [0,5,0]],
+        "hind_foot_ik.R" : [2, [0,5,0]]
+    }
+    
+}
