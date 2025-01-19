@@ -105,6 +105,8 @@ class DazData:
         self.extra_parents = entry.get("extra_parents", {})
         self.resize = entry.get("resize", {})
         self.split = entry.get("split", {})
+        self.cuts = entry.get("cuts", {})
+        self.cutbase = entry.get("cutbase", {})
         self.deform = entry.get("deform_bones", {})
         self.tail = entry.get("tail", [])
         self.mergers = entry.get("mergers", {})
@@ -271,13 +273,11 @@ class MetaMaker(RigifyCommon):
 
         meta["DazMetaRig"] = True
         meta.DazRig = "metarig"
-        useSplitNeck = (self.meta_type == "human")
-        meta["DazUseSplitNeck"] = useSplitNeck
         meta["DazSplitShin"] = self.useSplitShin
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
-        self.adjustMetaBones(meta, useSplitNeck)
+        self.adjustMetaBones(meta)
 
         if activateObject(context, rig):
             safeTransformApply()
@@ -370,7 +370,7 @@ class MetaMaker(RigifyCommon):
         return rig, meta, dazrig
 
 
-    def adjustMetaBones(self, meta, useSplitNeck):
+    def adjustMetaBones(self, meta):
         setMode('EDIT')
         ebones = meta.data.edit_bones
 
@@ -379,31 +379,21 @@ class MetaMaker(RigifyCommon):
             eb = ebones[bname]
             eb.name = newname
 
-        def renameBones(base, prefix, n0):
+        # Cuts
+        for bname,ncuts in self.daz.cuts.items():
+            bpy.ops.armature.select_all(action='DESELECT')
+            eb = ebones[bname]
+            eb.select = True
+            bpy.ops.armature.subdivide(number_cuts = ncuts)
+
+        for bname,data in self.daz.cutbase.items():
+            prefix,n0 = data
+            base = ebones[bname]
             bones = base.children_recursive_basename
             for n,eb in enumerate(bones):
                 eb.name = "tmp.%d" % n
             for n,eb in enumerate(bones):
                 eb.name = "%s.%03d" % (prefix, n+n0)
-
-        # Split neck
-        if useSplitNeck:
-            spine = ebones["spine"]
-            spine3 = ebones["spine.003"]
-            bpy.ops.armature.select_all(action='DESELECT')
-            spine3.select = True
-            bpy.ops.armature.subdivide()
-            renameBones(spine, "spine", 1)
-
-        # Split tail
-        if self.daz.tail:
-            base = ebones[self.meta.tailbase]
-            for bname,ncuts in self.daz.tail:
-                bpy.ops.armature.select_all(action='DESELECT')
-                eb = ebones[bname]
-                eb.select = True
-                bpy.ops.armature.subdivide(number_cuts = ncuts)
-            renameBones(base, "tail", 2)
 
         # Delete face bones
         def deleteChildren(eb):

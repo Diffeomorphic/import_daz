@@ -81,6 +81,14 @@
     	"abdomen" : ["abdomen2"]
     },
 
+    "cuts" : {
+        "spine.003" : 1
+    },
+    
+    "cutbase" : {
+        "spine" : ["spine", 1]
+    },
+
     "parents": {
     	"head" : "neckLower",
         "neckLower" : "chest2",

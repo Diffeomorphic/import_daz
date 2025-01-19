@@ -75,6 +75,14 @@
         "palm.04.R" :       "rCarpal4"
     },
 
+    "cuts" : {
+        "spine.003" : 1
+    },
+    
+    "cutbase" : {
+        "spine" : ["spine", 1]
+    },
+
     "parents": {
     	"head" : "neckUpper",
     	"neckUpper" : "neckLower",

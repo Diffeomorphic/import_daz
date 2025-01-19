@@ -79,6 +79,14 @@
         "head" : 2.0
     },
 
+    "cuts" : {
+        "spine.003" : 1
+    },
+    
+    "cutbase" : {
+        "spine" : ["spine", 1]
+    },
+    
     "parents" : {
     	"head" : "neck2",
     	"neck2" : "neck1",

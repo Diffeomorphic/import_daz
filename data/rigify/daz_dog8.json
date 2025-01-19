@@ -129,13 +129,17 @@
     "parents": {
     },
     
-    "tail" : [
-        ["tail.001", 1],
-        ["tail.002", 2],
-        ["tail.003", 2],
-        ["tail.004", 2]
-    ],
+    "cuts" : {
+        "tail.001" : 1,
+        "tail.002" : 2,
+        "tail.003" : 2,
+        "tail.004" : 2
+    },
 
+    "cutbase" : {
+        "tail.001" : ["tail", 2]
+    },
+    
     "fingers" : [],
 
     "limbs" : {

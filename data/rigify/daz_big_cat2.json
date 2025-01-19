@@ -88,14 +88,18 @@
         "hip" : ["Tail1", "abdomen1"]
     },
     
-    "tail" : [
-        ["tail.001", 2],
-        ["tail.002", 2],
-        ["tail.003", 2],
-        ["tail.004", 2]
-    ],
+    "cuts" : {
+        "tail.001" : 2,
+        "tail.002" : 2,
+        "tail.003" : 2,
+        "tail.004" : 2
+    },
     
-   "predelete" : [
+    "cutbase" : {
+        "tail.001" : ["tail", 2]
+    },
+    
+    "predelete" : [
         "f_palm.001.L", "f_palm.002.L", "f_palm.003.L", "f_palm.004.L",
         "f_palm.001.R", "f_palm.002.R", "f_palm.003.R", "f_palm.004.R",
         "r_palm.001.L", "r_palm.002.L", "r_palm.003.L", "r_palm.004.L",
