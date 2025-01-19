@@ -585,7 +585,6 @@ class MetaMaker(RigifyCommon):
                 dbone = self.dazBones[dname]
                 bnames = self.daz.adjust.get(dname)
                 if bnames:
-                    print("ADJ", dname, bnames)
                     dbone1 = self.dazBones[bnames[0]]
                     dbone2 = self.dazBones[bnames[1]]
                     eb.head = dbone1.head
@@ -603,8 +602,6 @@ class MetaMaker(RigifyCommon):
             hip.tail = Vector((1,2,3))
             hip.head = dbone.tail
             hip.tail = dbone.head
-
-        print("HIP", hip.head, hip.tail)
         return hip
 
 

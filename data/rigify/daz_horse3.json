@@ -15,10 +15,15 @@
         "neck.004" :     "head",
 
         "tail.001" :    "tail1",
-        "tail.002" :    "tail3",
-        "tail.003" :    "tail5",
-        "tail.004" :    "tail7",
-        "tail.005" :    "tail9",
+        "tail.002" :    "tail2",
+        "tail.003" :    "tail3",
+        "tail.004" :    "tail4",
+        "tail.005" :    "tail5",
+        "tail.006" :    "tail6",
+        "tail.007" :    "tail7",
+        "tail.008" :    "tail8",
+        "tail.009" :    "tail9",
+        "tail.010" :    "tail10",
 
         "thigh.L" :     "l_femur",
         "lower_leg.L" : "l_tibia",
@@ -51,14 +56,12 @@
         "Bone" : ["tail1", "waist"]
     },
     
-    "mergers" : {    
-        "tail1" :   ["tail2"],
-        "tail3" :   ["tail4"],
-        "tail5" :   ["tail6"],
-        "tail7" :   ["tail8"],
-        "tail9" :   ["tail10"]
-    },    
-
+    "tail" : [
+        ["tail.001", 1],
+        ["tail.002", 2],
+        ["tail.003", 2]
+    ],
+    
     "split" : {
         "abdomen" : ["abdomen2"],
         "chest" :   ["chest2"]

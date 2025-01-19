@@ -16,9 +16,11 @@
 
         "tail.001" :    "Tail01",
         "tail.002" :    "Tail02",
-        "tail.003" :    "Tail04",
-        "tail.004" :    "Tail06",
-        "tail.005" :    "Tail07",
+        "tail.003" :    "Tail03",
+        "tail.004" :    "Tail04",
+        "tail.005" :    "Tail05",
+        "tail.006" :    "Tail06",
+        "tail.007" :    "Tail07",
 
         "thigh.L" :     "lThighHind",
         "lower_leg.L" : "lGaskin",
@@ -53,9 +55,12 @@
     },
     
     "mergers" : {    
-        "Tail02" :   ["Tail03"],
-        "Tail04" :   ["Tail05"]
     },    
+
+    "tail" : [
+        ["tail.002", 1],
+        ["tail.003", 1]
+    ],
 
     "split" : {
         "abdomenH" : ["abdomenH1", "abdomenH2"],

@@ -4,6 +4,7 @@
     
     "head" : "spine.006",
     "hip" : "spine",
+    "tailbase" : "tail.001",
     "flip_hip" : false,
     "disable_bbones" : true,
 

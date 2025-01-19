@@ -12,9 +12,17 @@
         "spine.006" :    "head",
 
         "tail.001" :    "Tail1",
-        "tail.002" :    "Tail4",
-        "tail.003" :    "Tail7",
-        "tail.004" :    "Tail10",
+        "tail.002" :    "Tail2",
+        "tail.003" :    "Tail3",
+        "tail.004" :    "Tail4",
+        "tail.005" :    "Tail5",
+        "tail.006" :    "Tail6",
+        "tail.007" :    "Tail7",
+        "tail.008" :    "Tail8",
+        "tail.009" :    "Tail9",
+        "tail.010" :    "Tail10",
+        "tail.011" :    "Tail11",
+        "tail.012" :    "Tail12",
 
         "thigh.L" :     "lThigh",
         "shin.L" :      "lShin",
@@ -80,14 +88,14 @@
         "hip" : ["Tail1", "abdomen1"]
     },
     
-    "mergers" : {    
-        "Tail1" :   ["Tail2", "Tail3"],
-        "Tail4" :   ["Tail5", "Tail6"],
-        "Tail7" :   ["Tail8", "Tail9"],
-        "Tail10" :  ["Tail11", "Tail12"]
-    },    
-
-    "predelete" : [
+    "tail" : [
+        ["tail.001", 2],
+        ["tail.002", 2],
+        ["tail.003", 2],
+        ["tail.004", 2]
+    ],
+    
+   "predelete" : [
         "f_palm.001.L", "f_palm.002.L", "f_palm.003.L", "f_palm.004.L",
         "f_palm.001.R", "f_palm.002.R", "f_palm.003.R", "f_palm.004.R",
         "r_palm.001.L", "r_palm.002.L", "r_palm.003.L", "r_palm.004.L",
