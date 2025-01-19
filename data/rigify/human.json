@@ -2,7 +2,6 @@
     "meta_type" : "human",
     "rigify_type" : "rigify2",
     
-    "head" : "spine.007",
     "hip" : "spine",
     "flip_hip" : true,
     
@@ -22,6 +21,8 @@
         "shoulder.L" : "spine.004",
         "shoulder.R" : "spine.004"
     },
+    
+    "delete_children" : ["spine.007"],
     
     "delete" : ["breast.L", "breast.R"],     
 

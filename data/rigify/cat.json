@@ -2,7 +2,6 @@
     "meta_type" : "cat",
     "rigify_type" : "rigify2",
     
-    "head" : "spine.006",
     "hip" : "spine",
     "tailbase" : "tail.001",
     "flip_hip" : false,
@@ -25,6 +24,8 @@
     
     "parents" : {},
     
+    "delete_children" : ["spine.006", "f_toe.L", "f_toe.R", "r_toe.L", "r_toe.R"],
+
     "delete" : ["Breast.C", "belly.C", "pelvis.L", "pelvis.R", "pelvis.C"],
     
     "parameters" : [

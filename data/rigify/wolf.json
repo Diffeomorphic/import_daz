@@ -41,6 +41,8 @@
     
     "parents" : {},
     
+    "delete_children" : ["spine.007", "front_toe.L", "front_toe.R", "toe.L", "toe.R"],
+
     "delete" : ["pelvis.L", "pelvis.R", "breast.L", "breast.R"],
     
     "parameters" : [

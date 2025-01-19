@@ -44,44 +44,7 @@
         "front_thigh.R" :   "rShoulder",
         "front_shin.R" :    "rForearm",
         "front_foot.R" :    "rPastern",
-        "front_toe.R" :     "rForeToes",
-
-        "f_index.01.L" :     "lFToes1",
-        "f_index.02.L" :     "lFToes12",
-        "f_middle.01.L" :    "lFToes2",
-        "f_middle.02.L" :    "lFToes22",
-        "f_ring.01.L" :      "lFToes3",
-        "f_ring.02.L" :      "lFToes32",
-        "f_pinky.01.L" :     "lFToes4",
-        "f_pinky.02.L" :     "lFToes42",
-
-        "f_index.01.R" :     "rFToes1",
-        "f_index.02.R" :     "rFToes12",
-        "f_middle.01.R" :    "rFToes2",
-        "f_middle.02.R" :    "rFToes22",
-        "f_ring.01.R" :      "rFToes3",
-        "f_ring.02.R" :      "rFToes32",
-        "f_pinky.01.R" :     "rFToes4",
-        "f_pinky.02.R" :     "rFToes42",
-
-        "r_index.01.L" :     "lHToes1",
-        "r_index.02.L" :     "lHToes12",
-        "r_middle.01.L" :    "lHToes2",
-        "r_middle.02.L" :    "lHToes22",
-        "r_ring.01.L" :      "lHToes3",
-        "r_ring.02.L" :      "lHToes32",
-        "r_pinky.01.L" :     "lHToes4",
-        "r_pinky.02.L" :     "lHToes42",
-
-        "r_index.01.R" :     "rHToes1",
-        "r_index.02.R" :     "rHToes12",
-        "r_middle.01.R" :    "rHToes2",
-        "r_middle.02.R" :    "rHToes22",
-        "r_ring.01.R" :      "rHToes3",
-        "r_ring.02.R" :      "rHToes32",
-        "r_pinky.01.R" :     "rHToes4",
-        "r_pinky.02.R" :     "rHToes42"
-
+        "front_toe.R" :     "rForeToes"
     },   
 
     "adjust" : {
@@ -92,39 +55,6 @@
         "hip" :      ["pelvis"],
         "neckBase" : ["neckMid"]
     },    
-
-    "predelete" : [
-        "f_palm.01.L", "f_palm.02.L", "f_palm.03.L", "f_palm.04.L",
-        "f_palm.01.R", "f_palm.02.R", "f_palm.03.R", "f_palm.04.R",
-        "r_palm.01.L", "r_palm.02.L", "r_palm.03.L", "r_palm.04.L",
-        "r_palm.01.R", "r_palm.02.R", "r_palm.03.R", "r_palm.04.R",
-        "f_index.03.L", "f_middle.03.L", "f_ring.03.L", "f_pinky.03.L", 
-        "f_index.03.R", "f_middle.03.R", "f_ring.03.R", "f_pinky.03.R", 
-        "r_index.03.L", "r_middle.03.L", "r_ring.03.L", "r_pinky.03.L", 
-        "r_index.03.R", "r_middle.03.R", "r_ring.03.R", "r_pinky.03.R"
-    ],
-
-    "split" : {
-    	"lFToes1" : ["lFToes12"],
-    	"lFToes2" : ["lFToes22"],
-    	"lFToes3" : ["lFToes32"],
-    	"lFToes4" : ["lFToes42"],
-
-    	"rFToes1" : ["rFToes12"],
-    	"rFToes2" : ["rFToes22"],
-    	"rFToes3" : ["rFToes32"],
-    	"rFToes4" : ["rFToes42"],
-
-    	"lHToes1" : ["lHToes12"],
-    	"lHToes2" : ["lHToes22"],
-    	"lHToes3" : ["lHToes32"],
-    	"lHToes4" : ["lHToes42"],
-
-    	"rHToes1" : ["rHToes12"],
-    	"rHToes2" : ["rHToes22"],
-    	"rHToes3" : ["rHToes32"],
-    	"rHToes4" : ["rHToes42"]
-    },
 
     "parents": {
     },

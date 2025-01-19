@@ -2,9 +2,7 @@
     "meta_type" : "horse",
     "rigify_type" : "rigify2",
     
-    "head" : "neck.004",
     "hip" : "spine.001",
-    "tailbase" : "tail.001",
     "flip_hip" : false,
     "disable_bbones" : true,
     
@@ -17,7 +15,8 @@
         "neck.001",
         "neck.002",
         "neck.003",
-        "neck.004"
+        "neck.004",
+        "head"
     ],
     
     "disconnect" : [
@@ -27,14 +26,18 @@
     
     "parents" : {},
     
+    "delete_children" : ["head"],
+
     "delete" : [
         "hip", "abdomen", "chest", 
         "pelvis.L", "pelvis.R", 
         "breast.L", "breast.R", 
+        "mane_base.01", "mane_top.01", 
         "mane_base.02", "mane_top.02", 
         "mane_base.03", "mane_top.03", 
         "mane_base.04", "mane_top.04", 
-        "mane_base.05", "mane_top.05" 
+        "mane_base.05", "mane_top.05",
+        "mane_base.06", "mane_top.06" 
     ],
     
     "parameters" : [

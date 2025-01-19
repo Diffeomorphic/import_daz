@@ -12,7 +12,8 @@
         "neck.001" :     "neck1",
         "neck.002" :     "neck2",
         "neck.003" :     "neck3",
-        "neck.004" :     "head",
+        "neck.004" :     "neck32",
+        "head" :         "head",
 
         "tail.001" :    "tail1",
         "tail.002" :    "tail2",
@@ -68,7 +69,8 @@
     
     "split" : {
         "abdomen" : ["abdomen2"],
-        "chest" :   ["chest2"]
+        "chest" :   ["chest2"],
+        "neck3" :   ["neck32"]
     },
 
     "parents": {

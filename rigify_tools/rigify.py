@@ -77,9 +77,7 @@ def addDicts(structs):
 class MetaData:
     def __init__(self, entry):
         self.rigify_type = entry["rigify_type"]
-        self.head = entry["head"]
         self.hip = entry["hip"]
-        self.tailbase = entry.get("tailbase")
         self.flip_hip = entry["flip_hip"]
         self.disable_bbones = entry.get("disable_bbones", False)
         self.disconnect = entry["disconnect"]
@@ -87,6 +85,7 @@ class MetaData:
         self.spine = entry["spine"]
         self.rename = entry.get("rename", [])
         self.delete = entry["delete"]
+        self.delete_children = entry.get("delete_children", [])
         self.parameters = entry["parameters"]
         layers = [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]
         if BLENDER3:
@@ -401,8 +400,9 @@ class MetaMaker(RigifyCommon):
                 deleteChildren(child)
                 ebones.remove(child)
 
-        eb = ebones[self.meta.head]
-        deleteChildren(eb)
+        for bname in self.meta.delete_children:
+            eb = ebones[bname]
+            deleteChildren(eb)
         for bname in self.meta.delete:
             eb = ebones[bname]
             ebones.remove(eb)
@@ -687,6 +687,8 @@ class Rigifier(RigifyCommon):
                     dbone = dbone[0]
             taken.append(dbone)
         for ob in self.meshes:
+            print("VGRP", ob.vertex_groups.keys())
+            print("TAK", taken)
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
@@ -695,6 +697,8 @@ class Rigifier(RigifyCommon):
             pb = rig.pose.bones.get(bname)
             if pb:
                 addRecursive(pb)
+
+        print("EXT", self.extras.keys())
         for dbone in list(self.extras.keys()):
             bone = rig.data.bones[dbone]
             while bone.parent:

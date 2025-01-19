@@ -44,43 +44,7 @@
         "upper_arm.R" :   "rShldr",
         "forearm.R" :     "rForeArm",
         "hand.R" :        "rPawFront",
-        "f_toe.R" :       "rPawFront2",
-
-        "f_index.001.L" :     "lToeFront1",
-        "f_index.002.L" :     "lToeFront12",
-        "f_middle.001.L" :    "lToeFront2",
-        "f_middle.002.L" :    "lToeFront22",
-        "f_ring.001.L" :      "lToeFront3",
-        "f_ring.002.L" :      "lToeFront32",
-        "f_pinky.001.L" :     "lToeFront4",
-        "f_pinky.002.L" :     "lToeFront42",
-
-        "f_index.001.R" :     "rToeFront1",
-        "f_index.002.R" :     "rToeFront12",
-        "f_middle.001.R" :    "rToeFront2",
-        "f_middle.002.R" :    "rToeFront22",
-        "f_ring.001.R" :      "rToeFront3",
-        "f_ring.002.R" :      "rToeFront32",
-        "f_pinky.001.R" :     "rToeFront4",
-        "f_pinky.002.R" :     "rToeFront42",
-
-        "r_index.001.L" :     "lToeHind1",
-        "r_index.002.L" :     "lToeHind12",
-        "r_middle.001.L" :    "lToeHind2",
-        "r_middle.002.L" :    "lToeHind22",
-        "r_ring.001.L" :      "lToeHind3",
-        "r_ring.002.L" :      "lToeHind32",
-        "r_pinky.001.L" :     "lToeHind4",
-        "r_pinky.002.L" :     "lToeHind42",
-
-        "r_index.001.R" :     "rToeHind1",
-        "r_index.002.R" :     "rToeHind12",
-        "r_middle.001.R" :    "rToeHind2",
-        "r_middle.002.R" :    "rToeHind22",
-        "r_ring.001.R" :      "rToeHind3",
-        "r_ring.002.R" :      "rToeHind32",
-        "r_pinky.001.R" :     "rToeHind4",
-        "r_pinky.002.R" :     "rToeHind42"
+        "f_toe.R" :       "rPawFront2"
 
     },
 
@@ -98,37 +62,10 @@
     "cutbase" : {
         "tail.001" : ["tail", 2]
     },
-    
-    "predelete" : [
-        "f_palm.001.L", "f_palm.002.L", "f_palm.003.L", "f_palm.004.L",
-        "f_palm.001.R", "f_palm.002.R", "f_palm.003.R", "f_palm.004.R",
-        "r_palm.001.L", "r_palm.002.L", "r_palm.003.L", "r_palm.004.L",
-        "r_palm.001.R", "r_palm.002.R", "r_palm.003.R", "r_palm.004.R"
-    ],
-        
+            
     "split" : {
         "lPawFront" : ["lPawFront2"],
-        "rPawFront" : ["rPawFront2"],
-
-        "lToeFront1" : ["lToeFront12"],
-        "lToeFront2" : ["lToeFront22"],
-        "lToeFront3" : ["lToeFront32"],
-        "lToeFront4" : ["lToeFront42"],
-
-        "rToeFront1" : ["rToeFront12"],
-        "rToeFront2" : ["rToeFront22"],
-        "rToeFront3" : ["rToeFront32"],
-        "rToeFront4" : ["rToeFront42"],
-
-        "lToeHind1" : ["lToeHind12"],
-        "lToeHind2" : ["lToeHind22"],
-        "lToeHind3" : ["lToeHind32"],
-        "lToeHind4" : ["lToeHind42"],
-
-        "rToeHind1" : ["rToeHind12"],
-        "rToeHind2" : ["rToeHind22"],
-        "rToeHind3" : ["rToeHind32"],
-        "rToeHind4" : ["rToeHind42"]
+        "rPawFront" : ["rPawFront2"]
     },
 
     "parents": {
