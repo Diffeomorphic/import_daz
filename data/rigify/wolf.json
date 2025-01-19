@@ -2,30 +2,45 @@
     "meta_type" : "wolf",
     "rigify_type" : "rigify2",
     
-    "head" : "spine.011",
-    "hip" : "spine.004",
+    "head" : "spine.007",
+    "hip" : "spine",
     "flip_hip" : false,
     "disable_bbones" : true,
     
+    "rename" : [
+        ["spine.003", "tail.001"],
+        ["spine.002", "tail.002"],
+        ["spine.001", "tail.003"],
+        ["spine", "tail.004"],
+        ["spine.004", "spine"],
+        ["spine.005", "spine.001"],
+        ["spine.006", "spine.002"],
+        ["spine.007", "spine.003"],
+        ["spine.008", "spine.004"],
+        ["spine.009", "spine.005"],
+        ["spine.010", "spine.006"],
+        ["spine.011", "spine.007"]
+    ],
+
     "spine" : [
+        "spine.001",
+        "spine.002",
+        "spine.003",
+        "spine.004",
         "spine.005",
         "spine.006",
-        "spine.007",
-        "spine.008",
-        "spine.009",
-        "spine.010",
-        "spine.011"
+        "spine.007"
     ],
     
     "disconnect" : [
-        "spine.004", 
-        "spine.003",
-        "spine.009"
+        "spine", 
+        "spine.005",
+        "tail.001"
     ],
     
     "parents" : {},
     
-    "delete" : [],
+    "delete" : ["pelvis.L", "pelvis.R", "breast.L", "breast.R"],
     
     "parameters" : [
     ],

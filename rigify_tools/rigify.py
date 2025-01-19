@@ -81,9 +81,10 @@ class MetaData:
         self.hip = entry["hip"]
         self.flip_hip = entry["flip_hip"]
         self.disable_bbones = entry.get("disable_bbones", False)
-        self.spine = entry["spine"]
         self.disconnect = entry["disconnect"]
         self.parents = entry["parents"]
+        self.spine = entry["spine"]
+        self.rename = entry.get("rename", [])
         self.delete = entry["delete"]
         self.parameters = entry["parameters"]
         layers = [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]
@@ -108,6 +109,7 @@ class DazData:
         self.mergers2 = entry.get("mergers2", {})
         self.removes = entry.get("removes", [])
         self.renames = entry.get("renames", {})
+        self.predelete = entry.get("predelete", [])
         self.custom_shape_fix = entry.get("custom_shape_fix", {})
 
         self.rigifybones = dict(
@@ -156,8 +158,6 @@ class RigifyCommon:
         self.meta = MetaData(entry2)
         self.daz = DazData(entry, self.meta)
 
-
-    def getDazBones(self, rig):
         # Setup info about DAZ bones
         self.dazBones = OrderedDict()
         setMode('EDIT')
@@ -322,7 +322,6 @@ class MetaMaker(RigifyCommon):
         connectToParent(rig, connectAll=True, useSplitShin=self.useSplitShin)
         print("  Setup DAZ skeleton")
         self.setupDazSkeleton(rig)
-        self.getDazBones(rig)
 
         # Fit metarig to default DAZ rig
         print("  Fit to DAZ")
@@ -343,15 +342,18 @@ class MetaMaker(RigifyCommon):
         if BLENDER3 and meta["DazCustomLayers"]:
             self.addGroupBones(meta, rig)
 
-        for eb in meta.data.edit_bones:
+        ebones = meta.data.edit_bones
+        for eb in ebones:
             if (eb.parent and
                 eb.head == eb.parent.tail and
                 eb.name not in self.meta.disconnect):
                 eb.use_connect = True
 
-        self.fitSpine(meta)
+        self.fitSpine(ebones)
         print("  Reparent bones")
-        self.reparentBones(meta, self.meta.parents)
+        self.reparentBones(ebones)
+        setMode('OBJECT')
+
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
         if BLENDER3 and meta["DazCustomLayers"]:
@@ -369,6 +371,11 @@ class MetaMaker(RigifyCommon):
     def adjustMetaBones(self, meta, useSplitNeck):
         setMode('EDIT')
         ebones = meta.data.edit_bones
+
+        # Rename
+        for bname,newname in self.meta.rename:
+            eb = ebones[bname]
+            eb.name = newname
 
         # Split neck
         if useSplitNeck:
@@ -397,6 +404,11 @@ class MetaMaker(RigifyCommon):
         deleteChildren(eb)
         for bname in self.meta.delete:
             eb = ebones[bname]
+            ebones.remove(eb)
+        for bname in self.daz.predelete:
+            eb = ebones[bname]
+            for child in eb.children:
+                child.parent = eb.parent
             ebones.remove(eb)
         setMode('OBJECT')
 
@@ -562,6 +574,7 @@ class MetaMaker(RigifyCommon):
                 dbone = self.dazBones[dname]
                 bnames = self.daz.adjust.get(dname)
                 if bnames:
+                    print("ADJ", dname, bnames)
                     dbone1 = self.dazBones[bnames[0]]
                     dbone2 = self.dazBones[bnames[1]]
                     eb.head = dbone1.head
@@ -580,6 +593,7 @@ class MetaMaker(RigifyCommon):
             hip.head = dbone.tail
             hip.tail = dbone.head
 
+        print("HIP", hip.head, hip.tail)
         return hip
 
 
@@ -627,8 +641,7 @@ class MetaMaker(RigifyCommon):
                 heel02.tail = heel02tail
 
 
-    def fitSpine(self, meta):
-        ebones = meta.data.edit_bones
+    def fitSpine(self, ebones):
         for dname,rname,pname in self.daz.spine:
             dbone = self.dazBones[dname]
             if rname in ebones.keys():
@@ -644,16 +657,14 @@ class MetaMaker(RigifyCommon):
             eb.use_connect = True
 
 
-    def reparentBones(self, rig, parents):
-        setMode('EDIT')
-        for bname,pname in parents.items():
-            if (pname in rig.data.edit_bones.keys() and
-                bname in rig.data.edit_bones.keys()):
-                eb = rig.data.edit_bones[bname]
-                parb = rig.data.edit_bones[pname]
+    def reparentBones(self, ebones):
+        for bname,pname in self.meta.parents.items():
+            if (pname in ebones.keys() and
+                bname in ebones.keys()):
+                eb = ebones[bname]
+                parb = ebones[pname]
                 eb.use_connect = False
                 eb.parent = parb
-        setMode('OBJECT')
 
 #-------------------------------------------------------------
 #   Rigifier
@@ -792,7 +803,6 @@ class Rigifier(RigifyCommon):
         if self.meta.disable_bbones:
             for bone in gen.data.bones:
                 bone.bbone_segments = 1
-        self.getDazBones(rig)
 
         print("  Setup extras")
         self.setupExtras(context, rig)
