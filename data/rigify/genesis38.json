@@ -1,5 +1,5 @@
 {
-    "character":    "Genesis38",
+    "daz_type" :  "genesis38",
     "meta_type" : "human",
 
     "skeleton" : {
@@ -156,14 +156,15 @@
         "lThighBend" : ["lThighTwist"],
         "rShldrBend" : ["rShldrTwist"],
         "rForearmBend" : ["rForearmTwist"],
-        "rThighBend" : ["rThighTwist"]
-    },
-
-    "mergers2" : {
-        "hip" : ["pelvis"],
+        "rThighBend" : ["rThighTwist"],
         "lFoot" : ["lMetatarsals"],
         "rFoot" : ["rMetatarsals"]
     },
+    
+    "reuse" : [
+    	"lShldrBend", "lForearmBend", "lThighBend",
+    	"rShldrBend", "rForearmBend", "rThighBend"
+    ],
 
     "custom_shape_fix" : {
         "head" : [4.0, 0]

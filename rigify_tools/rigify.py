@@ -109,7 +109,7 @@ class DazData:
         self.deform = entry.get("deform_bones", {})
         self.tail = entry.get("tail", [])
         self.mergers = entry.get("mergers", {})
-        self.mergers2 = entry.get("mergers2", {})
+        self.reuse = entry.get("reuse", [])
         self.removes = entry.get("removes", [])
         self.renames = entry.get("renames", {})
         self.predelete = entry.get("predelete", [])
@@ -137,6 +137,7 @@ class RigifyCommon:
             ("Face (detail) ", R_DETAIL, 2, 3),
             ("Custom ", R_CUSTOM, 13, 6)]
 
+
     def setupDazSkeleton(self, rig):
         table = {
             "genesis" : "genesis12",
@@ -151,9 +152,10 @@ class RigifyCommon:
             "daz_big_cat2" : "daz_big_cat2",
         }
 
-        rigitype = table.get(rig.DazRig)
-        if rigitype:
-            entry = DF.loadEntry(rigitype, "rigify")
+        self.daz_rig = table.get(rig.DazRig)
+        if self.daz_rig:
+            entry = DF.loadEntry(self.daz_rig, "rigify")
+            print("Setup DAZ skeleton", self.daz_rig)
         else:
             raise DazError("BUG: Rigify for %s not supported" % rig.DazRig)
         self.meta_type = entry["meta_type"]
@@ -161,7 +163,10 @@ class RigifyCommon:
         self.meta = MetaData(entry2)
         self.daz = DazData(entry, self.meta)
 
+
+    def setupDazBones(self, rig):
         # Setup info about DAZ bones
+        print("Setup DAZ bones")
         self.dazBones = OrderedDict()
         setMode('EDIT')
         for eb in rig.data.edit_bones:
@@ -282,25 +287,27 @@ class MetaMaker(RigifyCommon):
             safeTransformApply()
 
         print("  Fix bones", rig.DazRig)
-        if rig.DazRig in ["genesis", "genesis1", "genesis2"]:
+        if self.daz_rig == "genesis12":
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             for bname,others in self.daz.split.items():
                 self.splitBone(rig, bname, others)
-        elif rig.DazRig in ["genesis3", "genesis8"]:
+        elif self.daz_rig == "genesis38":
             self.deleteBendTwistDrvBones(rig)
             mergeBones(rig, self.daz.mergers, self.daz.parents, context)
-            mergeBones(rig, self.daz.mergers2, self.daz.parents, context)
             if dazrig:
                 pass
             elif self.reuseBendTwists:
-                mergeVertexGroups(rig, self.daz.mergers2)
-            else:
+                mergers = dict([(bname,bones)
+                                for bname,bones in self.daz.mergers.items()
+                                if bname not in self.daz.reuse])
                 mergeVertexGroups(rig, mergers)
+            else:
+                mergeVertexGroups(rig, self.daz.mergers)
             self.renameBones(rig, self.daz.renames, dazrig)
             for pb in rig.pose.bones:
                 self.store.restoreBendTwist(pb.name, pb)
-        elif rig.DazRig == "genesis9":
+        elif self.daz_rig == "genesis9":
             if dazrig:
                 pass
             elif self.reuseBendTwists:
@@ -308,21 +315,16 @@ class MetaMaker(RigifyCommon):
             else:
                 mergeBones(rig, self.daz.mergers, self.daz.parents, context)
                 mergeVertexGroups(rig, self.daz.mergers)
-        elif rig.DazRig in ["daz_dog8", "daz_horse2", "daz_horse3", "daz_big_cat2"]:
+        else:
             for bname,others in self.daz.split.items():
                 self.splitBone(rig, bname, others)
             mergeBones(rig, self.daz.mergers, self.daz.parents, context)
             mergeVertexGroups(rig, self.daz.mergers)
-        else:
-            msg = "Cannot rigify %s %s" % (rig.DazRig, rig.name)
-            activateObject(context, meta)
-            deleteObjects(context, [meta])
-            raise DazError(msg)
 
         print("  Connect to parent")
         connectToParent(rig, connectAll=True, useSplitShin=self.useSplitShin)
-        print("  Setup DAZ skeleton")
-        self.setupDazSkeleton(rig)
+        print("  Setup DAZ bones")
+        self.setupDazBones(rig)
 
         # Fit metarig to default DAZ rig
         print("  Fit to DAZ")
@@ -687,8 +689,6 @@ class Rigifier(RigifyCommon):
                     dbone = dbone[0]
             taken.append(dbone)
         for ob in self.meshes:
-            print("VGRP", ob.vertex_groups.keys())
-            print("TAK", taken)
             for vgrp in ob.vertex_groups:
                 if (vgrp.name not in taken and
                     vgrp.name in rig.data.bones.keys()):
@@ -698,7 +698,6 @@ class Rigifier(RigifyCommon):
             if pb:
                 addRecursive(pb)
 
-        print("EXT", self.extras.keys())
         for dbone in list(self.extras.keys()):
             bone = rig.data.bones[dbone]
             while bone.parent:
@@ -802,6 +801,7 @@ class Rigifier(RigifyCommon):
         print("  Setup DAZ Skeleton")
         setActiveObject(context, rig)
         self.setupDazSkeleton(rig)
+        self.setupDazBones(rig)
         if self.meta.disable_bbones:
             for bone in gen.data.bones:
                 bone.bbone_segments = 1
