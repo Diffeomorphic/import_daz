@@ -117,6 +117,7 @@ class DataFolders:
                 data = {}
         else:
             with safeOpen(filepath, "r") as fp:
+                print("OPEN", filepath)
                 data = json.load(fp, object_pairs_hook=OrderedDict)
         table[char] = data
         return table[char]
