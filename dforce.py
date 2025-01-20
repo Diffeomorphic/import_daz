@@ -86,11 +86,12 @@ class DynSim(DForce):
             if strength == 1.0 and not useInflu:
                 continue
             for mgrp in simset.modifier.groups:
-                mn = mnums[mgrp]
-                for f in ob.data.polygons:
-                    if f.material_index == mn:
-                        for vn in f.vertices:
-                            vgrp.add([vn], 1-strength*influ[vn], 'REPLACE')
+                mn = mnums.get(mgrp)
+                if mn is not None:
+                    for f in ob.data.polygons:
+                        if f.material_index == mn:
+                            for vn in f.vertices:
+                                vgrp.add([vn], 1-strength*influ[vn], 'REPLACE')
         return vgrp
 
 #-------------------------------------------------------------
