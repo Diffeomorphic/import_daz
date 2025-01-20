@@ -1235,7 +1235,7 @@ class Rigifier(RigifyCommon):
         def splitBone():
             bone = rig.data.bones[dname]
             if dname in ob.vertex_groups.keys():
-                self.daz.splitVertexGroup(ob, dname, bendname, twistname, bone.head_local, bone.tail_local)
+                self.splitVertexGroup(ob, dname, bendname, twistname, bone.head_local, bone.tail_local)
 
         if before:
             bendname = "DEF-%s" % rname
