@@ -87,11 +87,42 @@ class MetaData:
         self.delete = entry["delete"]
         self.delete_children = entry.get("delete_children", [])
         self.parameters = entry["parameters"]
-        layers = [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]
+
+        table = {
+            "Root" : R_ROOT,
+            "Torso" : R_TORSO,
+            "Face" : R_FACE,
+            "Detail" : R_DETAIL,
+            "ArmIK.L" : R_ARMIK_L,
+            "ArmIK.R" : R_ARMIK_R,
+            "LegIK.L" : R_LEGIK_L,
+            "LegIK.R" : R_LEGIK_R,
+            "Torso Tweak" : R_TORSOTWEAK,
+            "Help" : R_HELP
+        }
+        default_layers = [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]
         if BLENDER3:
-            self.layers = layers
+            self.layers = default_layers
+        elif "layers" in entry.keys():
+            self.layers = [table.get(layer, layer) for layer in entry["layers"]]
         else:
-            self.layers = entry.get("layers", layers)
+            self.layers = default_layers
+
+        self.gizmos = {
+            "gaze" :            ["GZM_Gaze", 1, R_FACE],
+            "gaze.L" :          ["GZM_Circle", 0.25, R_FACE],
+            "gaze.R" :          ["GZM_Circle", 0.25, R_FACE],
+            "ik_tongue" :       ["GZM_Cone", 0.4, R_FACE]
+        }
+        for key,data in entry["gizmos"].items():
+            gizmo, scale, layer = data
+            self.gizmos[key] = (gizmo, scale, table[layer])
+
+        if BLENDER3:
+            self.layer_correct = {}
+        else:
+            self.layer_correct = dict([(table[key], value)
+                for key,value in entry.get("layer_correct", {}).items()])
 
 
 class DazData:
@@ -805,6 +836,14 @@ class Rigifier(RigifyCommon):
         if self.meta.disable_bbones:
             for bone in gen.data.bones:
                 bone.bbone_segments = 1
+        if self.meta.layer_correct:
+            for bcoll in gen.data.collections:
+                name2 = self.meta.layer_correct.get(bcoll.name)
+                if name2:
+                    bcoll2 = gen.data.collections[name2]
+                    for bone in list(bcoll.bones):
+                        bcoll.unassign(bone)
+                        bcoll2.assign(bone)
 
         print("  Setup extras")
         self.setupExtras(context, rig)
@@ -1093,7 +1132,7 @@ class Rigifier(RigifyCommon):
             return R_CUSTOM, False
         elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, R_HELP):
             return R_HELP, False
-        elif pb.name[0:6] == "tongue":
+        elif lname.startswith("tongue"):
             return R_DETAIL, False
         elif pb.parent:
             par = pb.parent
@@ -1301,23 +1340,6 @@ class Rigifier(RigifyCommon):
 
 
     def addGizmos(self, gen):
-        gizmos = {
-            "lowerjaw" :        ("GZM_MJaw", 1, R_FACE),
-            "lowerJaw" :        ("GZM_MJaw", 1, R_FACE),
-            "eye.L" :           ("GZM_Circle", 0.25, R_FACE),
-            "eye.R" :           ("GZM_Circle", 0.25, R_FACE),
-            "ear.L" :           ("GZM_Circle", 0.375, R_FACE),
-            "ear.R" :           ("GZM_Circle", 0.375, R_FACE),
-            "pelvis" :          (None, 1, R_HELP),
-            "pectoral.L" :      ("GZM_Pectoral", 1, R_TORSOTWEAK),
-            "pectoral.R" :      ("GZM_Pectoral", 1, R_TORSOTWEAK),
-            "metatarsals.L" :   (None, 1, R_HELP),
-            "metatarsals.R" :   (None, 1, R_HELP),
-            "gaze" :            ("GZM_Gaze", 1, R_FACE),
-            "gaze.L" :          ("GZM_Circle", 0.25, R_FACE),
-            "gaze.R" :          ("GZM_Circle", 0.25, R_FACE),
-            "ik_tongue" :       ("GZM_Cone", 0.4, R_FACE),
-        }
         self.makeGizmos(True, ["GZM_MJaw", "GZM_Foot", "GZM_Gaze", "GZM_Pectoral", "GZM_MTongue", "GZM_Knuckle"])
         color = (1.0, 0.5, 0)
         if BLENDER3:
@@ -1327,8 +1349,9 @@ class Rigifier(RigifyCommon):
             bgrp.colors.select = (0.596, 0.898, 1.0)
             bgrp.colors.active = (0.769, 1, 1)
         for pb in gen.pose.bones:
-            if pb.name in gizmos.keys():
-                gizmo,scale,layer = gizmos[pb.name]
+            lname = pb.name.lower()
+            if pb.name in self.meta.gizmos.keys():
+                gizmo,scale,layer = self.meta.gizmos[pb.name]
                 if gizmo:
                     self.addGizmo(pb, gizmo, scale)
                 setBonegroup(pb, gen, "DAZ", color)
@@ -1337,7 +1360,7 @@ class Rigifier(RigifyCommon):
                 if not self.isEyeLid(pb):
                     self.addGizmo(pb, "GZM_Circle", 0.2)
                 setBonegroup(pb, gen, "DAZ", color)
-            elif pb.name[0:6] == "tongue":
+            elif lname.startswith("tongue"):
                 self.addGizmo(pb, "GZM_MTongue", 1)
                 setBonegroup(pb, gen, "DAZ", color)
             elif (pb.name.startswith(("bigToe", "smallToe")) or

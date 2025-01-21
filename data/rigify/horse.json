@@ -44,9 +44,15 @@
     ],
 
     "layers" : [
-        "Root", "Spine", "Tail",
-        "Arm.L (IK)", "Arm.R (IK)",
-        "Leg.L (IK)", "Leg.R (IK)"
-    ]    
+        "Root", "Spine", "Tail", "Paws", 
+        "ArmIK.L", "ArmIK.R", "LegIK.L", "LegIK.R"
+    ],
+    
+    "gizmos" : {
+        "eye.L" :           ["GZM_Circle", 0.25, "Face"],
+        "eye.R" :           ["GZM_Circle", 0.25, "Face"],
+        "ear.L" :           ["GZM_Circle", 0.375, "Face"],
+        "ear.R" :           ["GZM_Circle", 0.375, "Face"]
+    }
 }
     
