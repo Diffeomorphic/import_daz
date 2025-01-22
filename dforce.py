@@ -99,7 +99,7 @@ class DynSim(DForce):
 #-------------------------------------------------------------
 
 class Collision:
-    def addCollision(self, ob):
+    def addCollision(self, ob, coll=None):
         from .store import removeModifier
         mod = getModifier(ob, 'COLLISION')
         if mod:
@@ -114,6 +114,8 @@ class Collision:
         cset.use_culling = True
         if subsurf:
             subsurf.restore(ob)
+        if coll and ob.name not in coll.objects:
+            coll.objects.link(ob)
 
 #-------------------------------------------------------------
 #   Cloth
@@ -142,25 +144,21 @@ class Cloth:
             layout.prop(self, "pinGroup")
         layout.prop(self, "collision")
 
-    def addCollision(self, ob):
+    def addCollision(self, ob, coll=None):
         pass
 
-    def addClothCollection(self, context, ob):
-        if self.collision == 'NONE':
+    def addClothCollection(self, context, meshes):
+        if not meshes:
+            return
+        elif self.collision == 'NONE':
             self.collection = None
         elif self.collision == 'NEW':
             self.collection = bpy.data.collections.new("Cloth Collision")
-            rig = ob.parent
-            rigcoll = getCollection(context, rig)
-            rigcoll.children.link(self.collection)
-            for child in getMeshChildren(rig):
-                if (child.get("DazCollision", False) and
-                    not child.get("DazCloth", False)):
-                    self.collection.objects.link(child)
+            ob = meshes[0]
+            coll = getCollection(context, ob)
+            coll.children.link(self.collection)
         else:
             self.collection = bpy.data.collections.get(self.collision)
-            for ob in self.collection.objects:
-                self.addCollision(ob)
 
 
     def addCloth(self, ob):

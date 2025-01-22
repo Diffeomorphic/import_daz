@@ -23,22 +23,12 @@ class DAZ_OT_MakeCollision(DazPropsOperator, Collision, Cloth, IsMesh):
     def draw(self, context):
         self.layout.prop(self, "collision")
 
-    def addClothCollection(self, context, ob):
-        if self.collision == 'NONE':
-            self.collection = None
-        elif self.collision == 'NEW':
-            self.collection = bpy.data.collections.new("Cloth Collision")
-            obcoll = getCollection(context, ob)
-            obcoll.children.link(self.collection)
-        else:
-            self.collection = bpy.data.collections.get(self.collision)
-
     def run(self, context):
-        self.addClothCollection(context, context.object)
-        for ob in getSelectedMeshes(context):
-            if self.collection and ob.name not in self.collection.objects:
-                self.collection.objects.link(ob)
-            self.addCollision(ob)
+        meshes = getSelectedMeshes(context)
+        if meshes:
+            self.addClothCollection(context, meshes)
+            for ob in meshes:
+                self.addCollision(ob, self.collection)
 
 #-------------------------------------------------------------
 #   Cloth
@@ -54,9 +44,11 @@ class DAZ_OT_MakeCloth(DazPropsOperator, Collision, Cloth, IsMesh):
         self.drawCloth(context, self.layout)
 
     def run(self, context):
-        self.addClothCollection(context, context.object)
-        for ob in getSelectedMeshes(context):
-            self.addCloth(ob)
+        meshes = getSelectedMeshes(context)
+        if meshes:
+            self.addClothCollection(context, meshes)
+            for ob in meshes:
+                self.addCloth(ob)
 
 #-------------------------------------------------------------
 #   Make Simulation
@@ -72,18 +64,14 @@ class DAZ_OT_MakeDForce(DazPropsOperator, Collision, Cloth):
         self.drawCloth(context, self.layout)
 
     def run(self, context):
-        rig = context.object
-        if rig.type == 'ARMATURE':
-            meshes = getMeshChildren(rig)
-        else:
-            meshes = getSelectedMeshes(context)
+        meshes = getSelectedMeshes(context)
         if meshes:
-            self.addClothCollection(context, meshes[0])
-        for ob in meshes:
-            if ob.get("DazCloth", False):
-                self.addCloth(ob)
-            elif ob.get("DazCollision", False):
-                self.addCollision(ob)
+            self.addClothCollection(context, meshes)
+            for ob in meshes:
+                if ob.get("DazCloth", False):
+                    self.addCloth(ob)
+                elif ob.get("DazCollision", False):
+                    self.addCollision(ob, self.collection)
 
 #-------------------------------------------------------------
 #   Softbody
