@@ -88,41 +88,33 @@ class MetaData:
         self.delete_children = entry.get("delete_children", [])
         self.parameters = entry["parameters"]
 
-        table = {
-            "Root" : R_ROOT,
-            "Torso" : R_TORSO,
-            "Face" : R_FACE,
-            "Detail" : R_DETAIL,
-            "ArmIK.L" : R_ARMIK_L,
-            "ArmIK.R" : R_ARMIK_R,
-            "LegIK.L" : R_LEGIK_L,
-            "LegIK.R" : R_LEGIK_R,
-            "Torso Tweak" : R_TORSOTWEAK,
-            "Help" : R_HELP
-        }
         default_layers = [R_ROOT, R_TORSO, R_FACE, R_ARMIK_L, R_ARMIK_R, R_LEGIK_L, R_LEGIK_R]
         if BLENDER3:
             self.layers = default_layers
-        elif "layers" in entry.keys():
-            self.layers = [table.get(layer, layer) for layer in entry["layers"]]
         else:
-            self.layers = default_layers
+            self.layers = entry.get("layers", default_layers)
 
         self.gizmos = {
+            "eye.L" :           ["GZM_Circle", 0.25, R_FACE],
+            "eye.R" :           ["GZM_Circle", 0.25, R_FACE],
+            "l_eye" :           ["GZM_Circle", 0.25, R_FACE],
+            "r_eye" :           ["GZM_Circle", 0.25, R_FACE],
+            "ear.L" :           ["GZM_Circle", 0.375, R_FACE],
+            "ear.R" :           ["GZM_Circle", 0.375, R_FACE],
+            "l_ear" :           ["GZM_Circle", 0.375, R_FACE],
+            "r_ear" :           ["GZM_Circle", 0.375, R_FACE],
             "gaze" :            ["GZM_Gaze", 1, R_FACE],
             "gaze.L" :          ["GZM_Circle", 0.25, R_FACE],
             "gaze.R" :          ["GZM_Circle", 0.25, R_FACE],
-            "ik_tongue" :       ["GZM_Cone", 0.4, R_FACE]
+            "ik_tongue" :       ["GZM_Cone", 0.4, R_FACE],
         }
         for key,data in entry["gizmos"].items():
-            gizmo, scale, layer = data
-            self.gizmos[key] = (gizmo, scale, table[layer])
+            self.gizmos[key] = data
 
         if BLENDER3:
             self.layer_correct = {}
         else:
-            self.layer_correct = dict([(table[key], value)
-                for key,value in entry.get("layer_correct", {}).items()])
+            self.layer_correct = entry.get("layer_correct", {})
 
 
 class DazData:
@@ -145,6 +137,7 @@ class DazData:
         self.renames = entry.get("renames", {})
         self.predelete = entry.get("predelete", [])
         self.custom_shape_fix = entry.get("custom_shape_fix", {})
+        self.face_bones = entry.get("face_bones", [])
 
         self.rigifybones = dict(
             [(dbone, rbone) for rbone, dbone in self.dazbones.items()])
@@ -1360,6 +1353,10 @@ class Rigifier(RigifyCommon):
                 if not self.isEyeLid(pb):
                     self.addGizmo(pb, "GZM_Circle", 0.2)
                 setBonegroup(pb, gen, "DAZ", color)
+            elif pb.name in self.daz.face_bones:
+                self.addGizmo(pb, "GZM_Circle", 0.2)
+                setBonegroup(pb, gen, "DAZ", color)
+                enableBoneNumLayer(pb.bone, gen, R_FACE)
             elif lname.startswith("tongue"):
                 self.addGizmo(pb, "GZM_MTongue", 1)
                 setBonegroup(pb, gen, "DAZ", color)

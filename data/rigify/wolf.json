@@ -54,12 +54,27 @@
     ],
     
     "gizmos" : {
-        "eye.L" :           ["GZM_Circle", 0.25, "Face"],
-        "eye.R" :           ["GZM_Circle", 0.25, "Face"],
-        "ear.L" :           ["GZM_Circle", 0.375, "Face"],
-        "ear.R" :           ["GZM_Circle", 0.375, "Face"],
-        "lCarpals" :        [null, 1, "Help"],
-        "rCarpals" :        [null, 1, "Help"]
+        "jaw" :        ["GZM_MJaw", 1, "Face"],
+
+        "lFToes1" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lFToes2" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lFToes3" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lFToes4" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rFToes1" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rFToes2" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rFToes3" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rFToes4" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lHToes1" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lHToes2" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lHToes3" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "lHToes4" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rHToes1" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rHToes2" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rHToes3" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+        "rHToes4" :        ["GZM_Circle", 0.3, "Paws (Tweak)"],
+
+        "lCarpals" :        ["GZM_Circle", 1, "Help"],
+        "rCarpals" :        ["GZM_Circle", 1, "Help"]
     }
 }
     

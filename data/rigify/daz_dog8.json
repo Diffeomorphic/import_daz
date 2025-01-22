@@ -84,6 +84,15 @@
         "neck" : [0.3, 0],
         "chest" : [0.5, 0],
         "torso" : [0.7, 0]
-    }    
+    },
     
+    "face_bones": [
+        "lEarBase", "lEarMid", "lEarEnd",
+        "lBrow", "lLidLower", "lLidUpper", "leftEye",
+        "lCheek", "lMouthCorner", "lMuzzle", "lMuzzleFore",
+        "rEarBase", "rEarMid", "rEarEnd",
+        "rBrow", "rLidLower", "rLidUpper", "rightEye",
+        "rCheek", "rMouthCorner", "rMuzzle", "rMuzzleFore",
+        "jawCrease"
+    ]    
 }

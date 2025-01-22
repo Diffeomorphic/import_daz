@@ -34,13 +34,9 @@
     "gizmos" : {
         "lowerjaw" :        ["GZM_MJaw", 1, "Face"],
         "lowerJaw" :        ["GZM_MJaw", 1, "Face"],
-        "eye.L" :           ["GZM_Circle", 0.25, "Face"],
-        "eye.R" :           ["GZM_Circle", 0.25, "Face"],
-        "ear.L" :           ["GZM_Circle", 0.375, "Face"],
-        "ear.R" :           ["GZM_Circle", 0.375, "Face"],
         "pelvis" :          [null, 1, "Help"],
-        "pectoral.L" :      ["GZM_Pectoral", 1, "Torso Tweak"],
-        "pectoral.R" :      ["GZM_Pectoral", 1, "Torso Tweak"],
+        "pectoral.L" :      ["GZM_Pectoral", 1, "Torso (Tweak)"],
+        "pectoral.R" :      ["GZM_Pectoral", 1, "Torso (Tweak)"],
         "metatarsals.L" :   [null, 1, "Help"],
         "metatarsals.R" :   [null, 1, "Help"]
     }

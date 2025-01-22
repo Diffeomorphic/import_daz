@@ -49,10 +49,7 @@
     ],
     
     "gizmos" : {
-        "eye.L" :           ["GZM_Circle", 0.25, "Face"],
-        "eye.R" :           ["GZM_Circle", 0.25, "Face"],
-        "ear.L" :           ["GZM_Circle", 0.375, "Face"],
-        "ear.R" :           ["GZM_Circle", 0.375, "Face"]
+        "jaw" :        ["GZM_MJaw", 1, "Face"]
     }
 }
     
