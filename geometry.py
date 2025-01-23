@@ -1238,7 +1238,7 @@ class Geometry(Asset, Channels):
 
         self.setHairMatNums(me, polymats)
         if self.isStrandHair and not edges:
-            me.DazHairType = 'TUBE'
+            dazRna(me).DazHairType = 'TUBE'
 
         hasShells = self.addMaterials(me, geonode, context)
         for key,uvset in self.uv_sets.items():
@@ -1251,7 +1251,7 @@ class Geometry(Asset, Channels):
             if "materials" in struct.keys() and "name" in struct.keys():
                 if struct["name"][0:8] == "Template":
                     continue
-                items = me.DazMaterialSets.add()
+                items = dazRna(me).DazMaterialSets.add()
                 items.name = struct["name"]
                 for mname in struct["materials"]:
                     item = items.names.add()
@@ -1260,7 +1260,7 @@ class Geometry(Asset, Channels):
         obname = geonode.getObjectName(inst)
         ob = bpy.data.objects.new(obname, me)
         from .finger import getFingerPrint
-        me.DazFingerPrint = getFingerPrint(ob)
+        dazRna(me).DazFingerPrint = getFingerPrint(ob)
         if hasShells:
             setDaz(ob, "DazVisibilityDrivers", True)
 
@@ -1317,18 +1317,18 @@ class Geometry(Asset, Channels):
 
     def setHairMatNums(self, me, polymats):
         if self.polylines:
-            me.DazPolylineMaterials.clear()
+            dazRna(me).DazPolylineMaterials.clear()
             self.setHairType(me)
             for mnum in polymats:
-                item = me.DazPolylineMaterials.add()
+                item = dazRna(me).DazPolylineMaterials.add()
                 item.a = mnum
 
 
     def setHairType(self, me):
         if me.polygons:
-            me.DazHairType = 'SHEET'
+            dazRna(me).DazHairType = 'SHEET'
         else:
-            me.DazHairType = 'LINE'
+            dazRna(me).DazHairType = 'LINE'
 
 
     def creaseEdges(self, context, ob):
@@ -1771,15 +1771,15 @@ def clearMeshProps(ob, keepVertex=False):
         vgrp = ob.vertex_groups.get(gname)
         if vgrp:
             ob.vertex_groups.remove(vgrp)
-    me.DazRigidityGroups.clear()
-    me.DazGraftGroup.clear()
-    me.DazMaskGroup.clear()
-    me.DazPolylineMaterials.clear()
-    me.DazMaterialSets.clear()
-    me.DazHDMaterials.clear()
+    dazRna(me).DazRigidityGroups.clear()
+    dazRna(me).DazGraftGroup.clear()
+    dazRna(me).DazMaskGroup.clear()
+    dazRna(me).DazPolylineMaterials.clear()
+    dazRna(me).DazMaterialSets.clear()
+    dazRna(me).DazHDMaterials.clear()
     dazRna(ob).DazMorphUrls.clear()
-    me.DazMaterialGroup.clear()
-    me.DazPolygonGroup.clear()
+    dazRna(me).DazMaterialGroup.clear()
+    dazRna(me).DazPolygonGroup.clear()
     if USE_ATTRIBUTES:
         def clearAttribute(key):
             attr = me.attributes.get(key)
@@ -1833,11 +1833,6 @@ def register():
     bpy.types.Mesh.DazMorphFiles = CollectionProperty(type = DazStringBoolGroup)
     bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = bpy.types.PropertyGroup)
-
-    bpy.types.Object.DazBlendFile = StringProperty(
-        name = "Blend File",
-        description = "Blend file where the object is defined",
-        default = "")
 
 
 def unregister():

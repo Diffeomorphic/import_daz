@@ -36,12 +36,12 @@ class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         scn = context.scene
         self.layout.operator("daz.easy_import_daz")
-        self.layout.prop(scn, "DazFavoPath")
+        self.layout.prop(dazRna(scn), "DazFavoPath")
         self.layout.separator()
         self.layout.operator("daz.import_daz_manually")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
-        self.layout.prop(scn, "DazPreferredRoot")
+        self.layout.prop(dazRna(scn), "DazPreferredRoot")
 
 #----------------------------------------------------------
 #   Corrections
@@ -213,16 +213,15 @@ class DAZ_PT_ActiveObject(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
         if ob:
             self.layout.label(text = "Active Object: %s" % ob.type)
             self.layout.prop(ob, "name")
-            self.layout.prop(ob, "DazBlendFile")
-            self.layout.prop(ob, "DazId")
-            self.layout.prop(ob, "DazUrl")
-            self.layout.prop(ob, "DazFigure")
-            self.layout.prop(ob, "DazScene")
-            self.layout.prop(ob, "DazRig")
-            self.layout.prop(ob, "DazMesh")
+            self.layout.prop(dazRna(ob), "DazId")
+            self.layout.prop(dazRna(ob), "DazUrl")
+            self.layout.prop(dazRna(ob), "DazFigure")
+            self.layout.prop(dazRna(ob), "DazScene")
+            self.layout.prop(dazRna(ob), "DazRig")
+            self.layout.prop(dazRna(ob), "DazMesh")
             if ob.type == 'MESH':
-                self.layout.prop(ob.data, "DazFingerPrint")
-            self.layout.prop(ob, "DazScale")
+                self.layout.prop(dazRna(ob.data), "DazFingerPrint")
+            self.layout.prop(dazRna(ob), "DazScale")
             if ob.parent and ob.parent_type.startswith('VERTEX'):
                 self.propRow(self.layout, ob, "parent_vertices", "ParVerts")
         else:
@@ -277,10 +276,11 @@ class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_options = set()
 
     def draw(self, context):
+        scn = context.scene
         self.layout.operator("daz.render_frames")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
-        self.layout.prop(context.scene, "DazPreferredRoot")
+        self.layout.prop(dazRna(scn), "DazPreferredRoot")
 
 #----------------------------------------------------------
 #   Posing panel
@@ -458,6 +458,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
 
     def draw(self, context):
         rig = self.getCurrentRig(context)
+        scn = context.scene
         if not rig:
             return
         if dazRna(rig).DazDriversDisabled:
@@ -467,12 +468,12 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
         else:
             split = self.layout.split()
             split.operator("daz.disable_drivers")
-            split.prop(context.scene, "showUsedPropsOnly")
+            split.prop(scn, "showUsedPropsOnly")
         self.preamble(self.layout, context.scene, rig)
         if GS.ercMethod in ('ARMATURE', 'ALL') and dazRna(rig).DazRig.startswith("genesis"):
             row = self.layout.row()
             row.operator("daz.morph_armature")
-            row.prop(context.scene, "DazAutoMorphArmatures")
+            row.prop(dazRna(scn), "DazAutoMorphArmatures")
         prop = "Adjust Morph Strength"
         if prop in rig.keys():
             self.layout.prop(rig, propRef(prop))
@@ -640,8 +641,8 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        self.layout.prop(scn, "DazModifyBakedMorphs")
-        if scn.DazModifyBakedMorphs:
+        self.layout.prop(dazRna(scn), "DazModifyBakedMorphs")
+        if dazRna(scn).DazModifyBakedMorphs:
             DAZ_PT_Morphs.draw(self, context)
         else:
             rig = self.getCurrentRig(context)
@@ -850,6 +851,7 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     def draw(self, context):
         from .matsel import getShellProps
+        scn = context.scene
         props = getShellProps(context)
         props.sort()
         if props:
@@ -858,7 +860,7 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
             op.value = 1.0
             op = row.operator("daz.set_shell_influence", text="None")
             op.value = 0.0
-            self.layout.prop(context.scene, "DazFilter", icon='VIEWZOOM', text="")
+            self.layout.prop(dazRna(scn), "DazFilter", icon='VIEWZOOM', text="")
             for prop,ob in props:
                 row = self.layout.row()
                 row.prop(ob, propRef(prop), text=prop[6:])

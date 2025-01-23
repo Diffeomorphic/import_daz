@@ -814,13 +814,6 @@ def toggleInheritScale(self, context):
     for bone in self.data.bones:
         bone.inherit_scale = inherits
 
-#----------------------------------------------------------
-#   Toggle Morph Armature
-#----------------------------------------------------------
-
-def toggleMorphArmatures(self, context):
-    GS.toggleMorphArmatures(context.scene)
-
 #-------------------------------------------------------------
 #   Morph armature
 #-------------------------------------------------------------
@@ -885,7 +878,7 @@ classes = [
 ]
 
 def register():
-    from .propgroups import DazStringGroup
+    from .propgroups import DazStringGroup, toggleMorphArmatures
 
     bpy.types.Object.DazInheritScale = bpy.props.BoolProperty(
         name = "Inherit Scale",

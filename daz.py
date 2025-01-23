@@ -839,9 +839,7 @@ classes = [
     ErrorOperator
 ]
 
-def getRootEnums(scn, context):
-    return [(folder,folder,folder) for folder in GS.getDazPaths()]
-
+from .propgroups import getRootEnums
 def register():
     bpy.types.Scene.DazPreferredRoot = EnumProperty(
         items = getRootEnums,

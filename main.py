@@ -682,7 +682,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
 
     def invoke(self, context, event):
-        self.favoPath = context.scene.DazFavoPath
+        scn = context.scene
+        self.favoPath = dazRna(scn).DazFavoPath
         self.useFavoMorphs = (self.favoPath != "")
         return MultiFile.invoke(self, context, event)
 
@@ -736,8 +737,6 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             raise DazError("No objects found")
         GS.silentMode = True
         visibles = getVisibleObjects(context)
-        print("RRR", LS.rigs)
-        print("MMM", LS.meshes)
         self.rigs = self.getTypedObjects(visibles, LS.rigs)
         self.meshes = self.getTypedObjects(visibles, LS.meshes)
         self.objects = self.getTypedObjects(visibles, LS.objects)
@@ -746,7 +745,8 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         for rigname in self.rigs.keys():
             self.treatRig(context, rigname)
         GS.silentMode = False
-        context.scene.DazFavoPath = self.favoPath
+        scn = context.scene
+        dazRna(scn).DazFavoPath = self.favoPath
         time2 = perf_counter()
         print("File %s loaded in %.3f seconds" % (self.filepath, time2-time1))
 

@@ -201,6 +201,66 @@ class DazImporterMesh(bpy.types.PropertyGroup):
     DazMaterialGroup : CollectionProperty(type = bpy.types.PropertyGroup)
     DazFavorites : CollectionProperty(type = bpy.types.PropertyGroup)
 
+
+def getRootEnums(scn, context):
+    return [(folder,folder,folder) for folder in GS.getDazPaths()]
+
+def toggleMorphArmatures(self, context):
+    GS.toggleMorphArmatures(context.scene)
+
+class DazImporterScene(bpy.types.PropertyGroup):
+    DazPreferredRoot : EnumProperty(
+        items = getRootEnums,
+        name = "Preferred Root Directory",
+        description = "Preferred root directory used by some import tools")
+
+    DazAutoMorphArmatures : BoolProperty(
+        name = "Auto Morph Armatures",
+        description = "Automatically morph armatures on frame change",
+        default = False,
+        update = toggleMorphArmatures)
+
+    DazFavoPath : StringProperty(
+        name = "Favorite Morphs",
+        description = "Path to favorite morphs",
+        subtype = 'FILE_PATH',
+        default = "")
+
+    DazFilter : StringProperty(
+        name = "Filter",
+        description = "Show only items containing this string",
+        default = ""
+    )
+
+    DazMorphCatsContent : EnumProperty(
+        items = [],
+        name = "Morph")
+
+    DazNewCatName : StringProperty(
+        name = "New Name",
+        default = "Name")
+
+    showUsedPropsOnly : BoolProperty(
+        name = "Show Used Morphs Only",
+        description = "Only display morphs with nonzero \"final\" value",
+        default = False)
+
+    morphFactor : FloatProperty(
+        name = "Factor",
+        description = "Multiply all morphs in this section with this",
+        min = 0.1, max = 10,
+        default = 1.0)
+
+    DazModifyBakedMorphs : BoolProperty(
+        name = "Modify Baked Morphs",
+        default = False)
+
+    DazDecalMask : StringProperty(
+        name = "Decal Mask",
+        description = "Path to decal mask texture",
+        subtype = 'FILE_PATH',
+        default = "")
+
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
@@ -230,6 +290,7 @@ classes = [
     DazImporterArmature,
     DazImporterMaterial,
     DazImporterMesh,
+    DazImporterScene
     ]
 
 def register():
@@ -247,6 +308,7 @@ def register():
     bpy.types.Armature.daz_importer = PointerProperty(type=DazImporterArmature)
     bpy.types.Mesh.daz_importer = PointerProperty(type=DazImporterMesh)
     bpy.types.Material.daz_importer = PointerProperty(type=DazImporterMaterial)
+    bpy.types.Scene.daz_importer = PointerProperty(type=DazImporterScene)
 
 
 def unregister():

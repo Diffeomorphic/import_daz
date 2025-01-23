@@ -94,7 +94,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
 
     def invoke(self, context, event):
         self.setupMaterialSelector(context)
-        self.decalMask = context.scene.DazDecalMask
+        scn = context.scene
+        self.decalMask = dazRna(scn).DazDecalMask
         return SingleFile.invoke(self, context, event)
 
 

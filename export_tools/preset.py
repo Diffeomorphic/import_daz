@@ -51,7 +51,7 @@ class Preset:
         return "%s/%s/%s" % (folder, self.subdir, GS.author)
 
     def getFullDirectory(self, scn):
-        return canonicalPath("%s/%s" % (scn.DazPreferredRoot, self.reldir))
+        return canonicalPath("%s/%s" % (dazRna(scn).DazPreferredRoot, self.reldir))
 
     def getFilepath(self, context):
         if self.useDazDirectory:

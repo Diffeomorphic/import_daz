@@ -203,7 +203,8 @@ class DAZ_OT_SetShellInfluence(DazOperator, IsMeshArmature):
 
 
 def getShellProps(context):
-    filter = context.scene.DazFilter.lower()
+    scn = context.scene
+    filter = dazRna(scn).DazFilter.lower()
     rig = getRigFromContext(context)
     if rig:
         objects = [rig] + [ob for ob in rig.children if ob.get("DazVisibilityDrivers", False)]

@@ -178,7 +178,8 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
 
     def run(self, context):
         trg = getRigFromContext(context, strict=False)
-        self.rootpath = context.scene.DazPreferredRoot
+        scn = context.scene
+        self.rootpath = dazRna(scn).DazPreferredRoot
         self.filename = "%s%s" % (self.morphname, self.extension)
         self.saveFiles(context, trg, context.view_layer.objects, 2)
 

@@ -164,9 +164,9 @@ class LoadMorph(DriverUser):
 
         if self.mesh:
             me = self.mesh.data
-            if USE_ATTRIBUTES and me.DazFingerPrint and "DazVertex" in me.attributes:
+            if USE_ATTRIBUTES and dazRna(me).DazFingerPrint and "DazVertex" in me.attributes:
                 data = me.attributes["DazVertex"].data
-                self.nverts = int(me.DazFingerPrint.split("-",1)[0])
+                self.nverts = int(dazRna(me).DazFingerPrint.split("-",1)[0])
                 assoc = dict([(vn,-1) for vn in range(self.nverts)])
                 for vn,attr in data.items():
                     assoc[attr.value] = vn

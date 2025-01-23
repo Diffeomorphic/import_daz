@@ -149,7 +149,7 @@ class HairBuilder(Pinner, Collision, Cloth):
 
         me = bpy.data.meshes.new(hname)
         me.from_pydata(verts, edges, faces)
-        #me.DazHairType = self.proxyType
+        #dazRna(me).DazHairType = self.proxyType
         ob = self.buildObject(hname, me, hair, hum, mnames)
 
         def addWeights(vgrp, strands, m):

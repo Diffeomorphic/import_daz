@@ -187,7 +187,8 @@ def getFolders(reldir, subdirs, match81=True):
 
     if reldir is None:
         return []
-    prefroot = bpy.context.scene.DazPreferredRoot
+    scn = bpy.context.scene
+    prefroot = dazRna(scn).DazPreferredRoot
     preferred = []
     others = []
     reldir = unquote(reldir)
